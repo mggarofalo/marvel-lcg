@@ -6,6 +6,12 @@ repo_root=$(cd "$(dirname "$0")/.." && pwd)
 godot_bin=${GODOT_BIN:-${1:-}}
 smoke_port=${MARVEL_HOSTED_SMOKE_PORT:-41924}
 external_server=${MARVEL_HOSTED_SMOKE_EXTERNAL_SERVER:-false}
+smoke_script=res://smoke/hosted_multiplayer_smoke_runner.gd
+smoke_marker=HOSTED_MULTIPLAYER_SMOKE_OK
+if [[ ${2:-} == --invitation-layout ]]; then
+  smoke_script=res://smoke/hosted_invitation_layout_smoke_runner.gd
+  smoke_marker=HOSTED_INVITATION_LAYOUT_SMOKE_OK
+fi
 
 if [[ -z "$godot_bin" || ! -x "$godot_bin" ]]; then
   echo "Set GODOT_BIN to the Godot 4.7 .NET executable." >&2
@@ -76,11 +82,11 @@ MARVEL_ENGINE_ENDPOINT="tcp://127.0.0.1:$smoke_port" \
   MARVEL_UI_SCALE=compact \
   "${smoke_command[@]}" \
   --path "$repo_root/src/Marvel.Godot" \
-  --script res://smoke/hosted_multiplayer_smoke_runner.gd \
+  --script "$smoke_script" \
   2>&1 | tee "$smoke_log"
 smoke_status=${PIPESTATUS[0]}
 set -e
 if [[ $smoke_status -ne 0 ]] || godot_smoke_has_error "$smoke_log" \
-  || ! grep -q "HOSTED_MULTIPLAYER_SMOKE_OK" "$smoke_log"; then
+  || ! grep -q "$smoke_marker" "$smoke_log"; then
   exit 1
 fi

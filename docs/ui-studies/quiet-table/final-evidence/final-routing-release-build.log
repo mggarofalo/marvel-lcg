@@ -1,0 +1,43 @@
+  Determining projects to restore...
+  Restored /Users/michael/Source/marvel-lcg/src/Marvel.Godot/Marvel.Godot.csproj (in 121 ms).
+  30 of 31 projects are up-to-date for restore.
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Behavior.Index -> /Users/michael/Source/marvel-lcg/tools/Marvel.Behavior.Index/bin/Release/net8.0/Marvel.Behavior.Index.dll
+  Marvel.Rules.Index -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rules.Index/bin/Release/net8.0/Marvel.Rules.Index.dll
+  Marvel.MarvelCdb.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.MarvelCdb.Harvest/bin/Release/net8.0/Marvel.MarvelCdb.Harvest.dll
+  Marvel.Rulings.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rulings.Harvest/bin/Release/net8.0/Marvel.Rulings.Harvest.dll
+  Marvel.Cards.Extract -> /Users/michael/Source/marvel-lcg/tools/Marvel.Cards.Extract/bin/Release/net8.0/Marvel.Cards.Extract.dll
+  Marvel.Rules.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rules.Harvest/bin/Release/net8.0/Marvel.Rules.Harvest.dll
+  Marvel.Core.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Core.Tests/bin/Release/net8.0/Marvel.Core.Tests.dll
+  Marvel.Rules.Packs.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rules.Packs.Harvest/bin/Release/net8.0/Marvel.Rules.Packs.Harvest.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Decisions -> /Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Release/net8.0/Marvel.Decisions.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Release/net8.0/Marvel.Session.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Release/net8.0/Marvel.View.dll
+  Marvel.Session.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Session.Tests/bin/Release/net8.0/Marvel.Session.Tests.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Release/net8.0/Marvel.Cards.dll
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Rules.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/bin/Release/net8.0/Marvel.Rules.Tests.dll
+  Marvel.Sim -> /Users/michael/Source/marvel-lcg/src/Marvel.Sim/bin/Release/net8.0/Marvel.Sim.dll
+  Marvel.View.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/bin/Release/net8.0/Marvel.View.Tests.dll
+  Marvel.Behavior.Run -> /Users/michael/Source/marvel-lcg/tools/Marvel.Behavior.Run/bin/Release/net8.0/Marvel.Behavior.Run.dll
+  Marvel.Acceptance.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Acceptance.Tests/bin/Release/net8.0/Marvel.Acceptance.Tests.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Release/net8.0/Marvel.Server.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/Release/net8.0/Marvel.Server.dll
+  Marvel.Client -> /Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Release/net8.0/Marvel.Client.dll
+  Marvel.Release -> /Users/michael/Source/marvel-lcg/tools/Marvel.Release/bin/Release/net8.0/Marvel.Release.dll
+  Marvel.Decisions.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Decisions.Tests/bin/Release/net8.0/Marvel.Decisions.Tests.dll
+  Marvel.Release.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Release.Tests/bin/Release/net8.0/Marvel.Release.Tests.dll
+  Marvel.Content.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/bin/Release/net8.0/Marvel.Content.Tests.dll
+  Marvel.Server.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Server.Tests/bin/Release/net8.0/Marvel.Server.Tests.dll
+  Marvel.Architecture.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Architecture.Tests/bin/Release/net8.0/Marvel.Architecture.Tests.dll
+  Marvel.Godot -> /Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Release/Marvel.Godot.dll
+  Marvel.Godot.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Godot.Tests/bin/Release/net8.0/Marvel.Godot.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:17.36

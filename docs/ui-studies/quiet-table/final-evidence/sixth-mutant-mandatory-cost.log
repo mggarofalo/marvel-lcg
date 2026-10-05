@@ -1,0 +1,30 @@
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Release/net8.0/Marvel.Cards.dll
+  Marvel.Behavior.Run -> /Users/michael/Source/marvel-lcg/tools/Marvel.Behavior.Run/bin/Release/net8.0/Marvel.Behavior.Run.dll
+  Marvel.Content.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/bin/Release/net8.0/Marvel.Content.Tests.dll
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/bin/Release/net8.0/Marvel.Content.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:01.01]     Marvel.Content.Tests.Play.CoreAbilityCostDescriptionTests.SupportOfferNamesMandatoryExhaustionAndCounterCostBeforeEitherIsPaid(face: "01056", exhaustion: "Exhaust Tac Team", counter: "Remove 1 attack counter from Tac Team") [FAIL]
+[xUnit.net 00:00:01.02]     Marvel.Content.Tests.Play.CoreAbilityCostDescriptionTests.SupportOfferNamesMandatoryExhaustionAndCounterCostBeforeEitherIsPaid(face: "01064", exhaustion: "Exhaust Surveillance Team", counter: "Remove 1 snoop counter from Surveillance Team") [FAIL]
+  Failed Marvel.Content.Tests.Play.CoreAbilityCostDescriptionTests.SupportOfferNamesMandatoryExhaustionAndCounterCostBeforeEitherIsPaid(face: "01056", exhaustion: "Exhaust Tac Team", counter: "Remove 1 attack counter from Tac Team") [166 ms]
+  Error Message:
+   Assert.Contains() Failure: Sub-string not found
+String:    null
+Not found: "Exhaust Tac Team"
+  Stack Trace:
+     at Marvel.Content.Tests.Play.CoreAbilityCostDescriptionTests.SupportOfferNamesMandatoryExhaustionAndCounterCostBeforeEitherIsPaid(String face, String exhaustion, String counter) in /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/Play/CoreAbilityCostDescriptionTests.cs:line 32
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Marvel.Content.Tests.Play.CoreAbilityCostDescriptionTests.SupportOfferNamesMandatoryExhaustionAndCounterCostBeforeEitherIsPaid(face: "01064", exhaustion: "Exhaust Surveillance Team", counter: "Remove 1 snoop counter from Surveillance Team") [3 ms]
+  Error Message:
+   Assert.Contains() Failure: Sub-string not found
+String:    null
+Not found: "Exhaust Surveillance Team"
+  Stack Trace:
+     at Marvel.Content.Tests.Play.CoreAbilityCostDescriptionTests.SupportOfferNamesMandatoryExhaustionAndCounterCostBeforeEitherIsPaid(String face, String exhaustion, String counter) in /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/Play/CoreAbilityCostDescriptionTests.cs:line 32
+   at InvokeStub_CoreAbilityCostDescriptionTests.SupportOfferNamesMandatoryExhaustionAndCounterCostBeforeEitherIsPaid(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+
+Failed!  - Failed:     2, Passed:     0, Skipped:     0, Total:     2, Duration: 183 ms - Marvel.Content.Tests.dll (net8.0)

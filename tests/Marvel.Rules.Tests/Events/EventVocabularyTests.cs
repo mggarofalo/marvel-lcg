@@ -57,6 +57,8 @@ public sealed partial class EventVocabularyTests
     [
         new PlayAreaJoined(1, 4),
         new PlayAreaDetached(2, 5),
+        new AttackCompleted(9, 7, 7),
+        new WhenRevealedCanceled(9, 7),
     ];
 
     /// <summary>Every serialisable kind, with distinguishable payload values.</summary>
@@ -84,7 +86,7 @@ public sealed partial class EventVocabularyTests
         var documented = Documented(EmittedOnlyHeading).Keys.ToHashSet(StringComparer.Ordinal);
         var tested = EmittedOnly.Select(Kind).ToHashSet(StringComparer.Ordinal);
 
-        Assert.Equal(2, tested.Count);
+        Assert.Equal(4, tested.Count);
         Assert.Equal(tested, documented);
     }
 

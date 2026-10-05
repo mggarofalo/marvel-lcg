@@ -282,7 +282,7 @@ internal static class CardValueRendering
         badge.Name = name;
         badge.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
         badge.CustomMinimumSize = new Vector2(64, 0);
-        badge.AddChild(Label(value.Name, GodotThemeVariations.Eyebrow, $"{name}Label"));
+        if (!string.IsNullOrWhiteSpace(value.Name)) badge.AddChild(Label(value.Name, GodotThemeVariations.Caption, $"{name}Label"));
         badge.AddChild(Label(value.Value, GodotThemeVariations.CardTitle, $"{name}Value"));
         return badge;
     }
@@ -308,7 +308,7 @@ internal static class CardValueRendering
         };
         if (!string.IsNullOrWhiteSpace(heading))
         {
-            section.AddChild(Label(heading, GodotThemeVariations.Eyebrow, $"{name}Heading"));
+            section.AddChild(Label(heading, GodotThemeVariations.Caption, $"{name}Heading"));
         }
         Container valuesList = horizontal
             ? new HFlowContainer()
@@ -355,7 +355,7 @@ internal static class CardValueRendering
         "EscalationThreat" or "ESCALATION_THREAT" => "Escalation",
         "PRINTED_STAGE" => "Stage",
         _ when name.StartsWith("PRINTED", StringComparison.OrdinalIgnoreCase) => "Start",
-        _ => name.Replace('_', ' '),
+        _ => BoardFieldNames.Display(name),
     };
 
     internal static Label Label(

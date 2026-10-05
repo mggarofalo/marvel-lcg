@@ -79,7 +79,7 @@ func _play() -> Control:
 
 
 func _decision() -> Control:
-	return _node("Play/Prompt/Margin/Stack/Workbench/Action/Decision") as Control
+	return main.find_child("Decision", true, false) as Control
 
 
 func _status() -> Label:

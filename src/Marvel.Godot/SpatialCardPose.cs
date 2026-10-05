@@ -18,6 +18,7 @@ internal static class SpatialCardPose
             || !card.HasMeta("spatial_resting_position")) return;
         card.Position = card.GetMeta("spatial_resting_position").AsVector2();
         card.Rotation = (float)card.GetMeta("spatial_resting_rotation").AsDouble();
+        SpatialHandActionStrip.Refresh(card);
         card.ZIndex = card.GetMeta("spatial_resting_card_z").AsInt32();
     }
 

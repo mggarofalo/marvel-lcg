@@ -17,10 +17,8 @@ internal static class DecisionPanelSurface
             return;
         }
         int generation = panel.GetRenderGeneration();
-        if (!panel.PaymentModalOpen || selected.Targets is not null)
+        if (selected.Targets is not null && !composer.UsesAutomaticTargetSelection)
         {
-            panel.AddContent(DecisionPanel.Text(DecisionPanelCopy.TargetProgress(composer, progress.Targets),
-                GodotThemeVariations.Eyebrow));
             new DecisionDraftRenderer(panel, composer, panel.world!, panel.submitting, generation)
                 .AddTargets(selected, progress.Targets);
         }
@@ -36,7 +34,7 @@ internal static class DecisionPanelSurface
         int generation = panel.GetRenderGeneration();
         var pass = new Button
         {
-            Name = "Decline", Text = "Pass / decline", Disabled = panel.submitting,
+            Name = "Decline", Text = composer.Prompt.DeclineLabel, Disabled = panel.submitting,
         };
         panel.StyleButton(pass, panel.submitting ? InteractiveVisualState.Unavailable : InteractiveVisualState.Resting);
         pass.Pressed += () =>

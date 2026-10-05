@@ -193,6 +193,15 @@ public sealed class VillainPhaseBoostIconsAddToTheSchemeValueTests : VillainPhas
         Assert.NotNull(asked);
         Assert.Equal(Question.Order, asked.Asking);
         Assert.Equal(0, asked.Player);
+        Assert.Equal(PublicDecisionKind.MinionActivationOrder, asked.PublicKind);
+        Assert.Equal("Choose minion activation order", asked.DisplayQuestion);
+        Assert.Contains("has finished activating", asked.Description);
+        Assert.Contains("Each attacks in hero form or schemes in alter-ego form", asked.Description);
+        Assert.Equal([first.ObjectId, second.ObjectId], asked.ContextCardIds);
+        Affordance order = Assert.Single(asked.Affordances);
+        Assert.Equal(AffordanceAnchorKind.Area, order.AnchorKind);
+        Assert.Equal(first.Area.Id, order.AnchorId);
+        Assert.Equal("Confirm minion activation order", order.CommitLabel);
         Sequence.Answer(world, printed, observer, asked, new Decision(asked.Affordances[0].Id, [second.ObjectId, first.ObjectId]), events);
         Sequence.Finish(world, printed, observer, events);
         Assert.Equal(["villain", "second", "first"], observer.Enemies);

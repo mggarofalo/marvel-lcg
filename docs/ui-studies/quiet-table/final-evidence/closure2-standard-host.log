@@ -1,0 +1,1 @@
+{"event_id":"server.listener.started","process":"Marvel.Server","timestamp_utc":"2026-10-04T22:09:36.989228+00:00","process_id":4243,"duration_milliseconds":0,"disposition":"accepted","operation":"listen","product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}

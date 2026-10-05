@@ -169,6 +169,16 @@ jobs:
         shell: pwsh
         run: tools/godot-hosted-multiplayer-smoke.ps1 -GodotBin $env:GODOT_BIN
 
+      - name: Unused invitation stays in the desktop sidebar (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash tools/godot-hosted-multiplayer-smoke.sh "$GODOT_BIN" --invitation-layout
+
+      - name: Unused invitation stays in the desktop sidebar (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: tools/godot-hosted-multiplayer-smoke.ps1 -GodotBin $env:GODOT_BIN -InvitationLayout
+
       - name: The supported Linux server container hosts a restricted game
         if: runner.os == 'Linux'
         shell: bash
@@ -190,7 +200,7 @@ jobs:
           grep -q 'name: marvel-diagnostics' <<<"$compose"
           [[ $(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$image") == 0.1.0-dev.0 ]]
           docker run --rm --entrypoint dotnet "$image" Marvel.Server.dll --version |
-            grep -F 'v0.1.0-dev.0 · engine engine-replay-v2 · protocol 18 · save 4'
+            grep -F 'v0.1.0-dev.0 · engine engine-replay-v3 · protocol 19 · save 4'
           docker volume create "$volume" >/dev/null
           docker volume create "$diagnostics" >/dev/null
           docker run --detach --name "$container" \
@@ -267,6 +277,29 @@ jobs:
           path: ${{ runner.temp }}/godot-visual-qa/*.png
           if-no-files-found: error
           retention-days: 7
+
+      - name: The contextual table redesign passes rendered acceptance (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          MARVEL_SMOKE_CAPTURE_DIR: ${{ runner.temp }}/godot-redesign-qa
+        run: xvfb-run -a bash tools/godot-redesign-gate.sh "$GODOT_BIN"
+
+      - name: The contextual table redesign passes rendered acceptance (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          MARVEL_SMOKE_CAPTURE_DIR: ${{ runner.temp }}\godot-redesign-qa
+        run: tools/godot-redesign-gate.ps1 -GodotBin $env:GODOT_BIN
+
+      - name: Retain contextual table acceptance checkpoints
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: godot-redesign-qa-${{ runner.os }}
+          path: ${{ runner.temp }}/godot-redesign-qa/**/*.png
+          if-no-files-found: error
+          retention-days: 90
 
       - name: The Core behavioral obligation catalog is complete
         if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}

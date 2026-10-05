@@ -7,28 +7,40 @@ namespace Marvel.Godot;
 /// These coordinates are a presentation choice. They describe a physical reading
 /// order inside the table column and contain no gameplay or legality decisions.
 /// </remarks>
-internal sealed record AstraTableGeometry(float Width, float Height, bool LargeText)
+internal sealed record AstraTableGeometry(
+    float Width, float Height, bool LargeText, bool HasRevealingCard = false,
+    Vector2? PhysicalCardSize = null, bool HasSeatSummaries = false)
 {
     internal const float ReferenceWidth = 1320;
-    internal const float ReferenceHeight = 930;
+    internal const float ReferenceHeight = 962;
 
     internal Rect2 VillainMat => Scale(new Rect2(8, 8, 1304, 282));
-    internal Rect2 PlayerMat => Scale(new Rect2(8, 318, 1304, 596));
+    internal Rect2 PlayerMat => Scale(new Rect2(8, 254, 1304, 672));
     internal Rect2 EncounterDiscard => Scale(new Rect2(36, 72, 108, 142));
     internal Rect2 EncounterDeck => Scale(new Rect2(164, 72, 108, 142));
-    internal Rect2 MainScheme => Scale(new Rect2(330, 76, 190, 176));
-    internal Rect2 Villain => Scale(new Rect2(602, 54, 176, 220));
-    internal Rect2 SideSchemes => Scale(new Rect2(812, 76, 230, 176));
+    internal Rect2 MainScheme => new(EncounterDeck.End.X + 22, ScaleY(76), FootprintWidth, ScaleY(176));
+    internal Rect2 Villain => new(MainScheme.End.X + 16, ScaleY(54), FootprintWidth, ScaleY(220));
+    internal Rect2 SideSchemes => new(Villain.End.X + 16, ScaleY(76),
+        Math.Max(0, (HasSeatSummaries ? SeatStrip.Position.X - 16 : Width - 20) - Villain.End.X - 16), ScaleY(176));
     internal Rect2 SeatStrip => Scale(new Rect2(1060, 46, 224, 212));
-    internal Rect2 EngagedEnemies => Scale(new Rect2(582, 294, 520, 126));
-    internal Rect2 PlayerDiscard => Scale(new Rect2(36, 506, 108, 142));
-    internal Rect2 PlayerDeck => Scale(new Rect2(164, 506, 108, 142));
-    internal Rect2 Context => Scale(new Rect2(302, 350, 250, 260));
-    internal Rect2 Identity => Scale(new Rect2(586, 421, 208, 189));
-    internal Rect2 Allies => Scale(new Rect2(824, 446, 454, 200));
-    internal Rect2 Assets => Scale(new Rect2(318, 650, 836, 116));
-    internal Rect2 Hand => Scale(new Rect2(248, 630, 824, 264));
-    internal Rect2 Overflow => Scale(new Rect2(1124, 702, 164, 72));
+    internal Rect2 EngagedEnemies => Scale(new Rect2(36, 280, 246, 160));
+    internal Rect2 PlayerDiscard => Scale(new Rect2(36, 496, 108, 142));
+    internal Rect2 PlayerDeck => Scale(new Rect2(164, 496, 108, 142));
+    internal Rect2 Context => Scale(new Rect2(20, 800, 1280, 156));
+    internal bool HasSeparateRevealSlot => HasRevealingCard
+        && Assets.End.X + 2 * (FootprintWidth + 16) <= Width - 20;
+    internal Rect2 Identity => new((HasSeparateRevealSlot ? Revealing.End.X : Assets.End.X) + 16,
+        ScaleY(310), FootprintWidth, ScaleY(189));
+    internal Rect2 Allies => new(Identity.End.X + 16, ScaleY(310),
+        Math.Max(0, Width - Identity.End.X - 36), ScaleY(180));
+    internal Rect2 Assets => new(ScaleX(302), ScaleY(310), FootprintWidth, ScaleY(180));
+    internal Rect2 Upgrades => new(Width - FootprintWidth - 20, ScaleY(530), FootprintWidth, ScaleY(230));
+    internal Rect2 Revealing => new(HasSeparateRevealSlot ? Assets.End.X + 16 : Assets.Position.X,
+        ScaleY(310), FootprintWidth, ScaleY(180));
+    internal Rect2 Hand => new(Assets.Position.X, HandTop,
+        Math.Max(0, Upgrades.Position.X - Assets.Position.X - 20),
+        Math.Max(0, Context.Position.Y - HandTop - ScaleY(40)));
+    internal Rect2 Overflow => Scale(new Rect2(36, 660, 164, 44));
 
     internal SpatialCardPlacement HandCard(int index, int count, float cardWidth)
     {
@@ -37,8 +49,7 @@ internal sealed record AstraTableGeometry(float Width, float Height, bool LargeT
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, count);
 
         Rect2 hand = Hand;
-        float usable = Math.Max(cardWidth, hand.Size.X - cardWidth);
-        float step = count == 1 ? 0 : Math.Min(cardWidth * 0.68f, usable / (count - 1));
+        float step = HandStep(count, cardWidth);
         float spread = step * (count - 1);
         float start = hand.Position.X + (hand.Size.X - spread - cardWidth) / 2;
         float middle = (count - 1) / 2f;
@@ -51,6 +62,12 @@ internal sealed record AstraTableGeometry(float Width, float Height, bool LargeT
             20 + index,
             step < cardWidth);
     }
+
+    internal float HandExposedWidth(int index, int count, float cardWidth) =>
+        index == count - 1 ? cardWidth : Math.Min(cardWidth, HandStep(count, cardWidth));
+
+    private float HandStep(int count, float cardWidth) => count == 1 ? 0
+        : Math.Min(cardWidth + ScaleX(8), Math.Max(cardWidth, Hand.Size.X - cardWidth) / (count - 1));
 
     internal Vector2 Slot(Rect2 region, int index, int count, Vector2 objectSize)
     {
@@ -68,4 +85,9 @@ internal sealed record AstraTableGeometry(float Width, float Height, bool LargeT
         value.Size.Y * Height / ReferenceHeight);
 
     private float ScaleX(float value) => value * Width / ReferenceWidth;
+    private float ScaleY(float value) => value * Height / ReferenceHeight;
+    private float HandTop => Math.Max(ScaleY(510), Identity.Position.Y
+        + SpatialCardFootprint.OccupiedSize(PhysicalCardSize ?? new Vector2(176, 190)).Y + ScaleY(24));
+    private float FootprintWidth => SpatialCardFootprint.OccupiedSize(
+        PhysicalCardSize ?? new Vector2(176, 190)).X;
 }

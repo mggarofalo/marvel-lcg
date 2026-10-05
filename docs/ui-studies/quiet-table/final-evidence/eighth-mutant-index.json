@@ -1,0 +1,102 @@
+[
+  {
+    "mutant": "hydra-amount",
+    "file": "src/Marvel.Cards/Run/AbilityOptionDescription.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "filter": "HydraOptionsName",
+    "log": "eighth-mutant-hydra-amount.log",
+    "restored_sha256": "2069aecb52f685a1111108dc1b91d3f7814af8ba8b7ec34202c341a2e7d18095"
+  },
+  {
+    "mutant": "draw-recipient",
+    "file": "src/Marvel.Cards/Run/AbilityPlayerChoiceDescription.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "filter": "AChosenPlayerDrawExplains",
+    "log": "eighth-mutant-draw-recipient.log",
+    "restored_sha256": "b91e039046e5755e9db32302e60b8bde0aa1a67d3c1a291b7ef06e0c707eb6c3"
+  },
+  {
+    "mutant": "minion-blind-boost",
+    "file": "src/Marvel.Rules/Play/AttackBoostDescription.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "filter": "OrdinaryMinionDefenseMentions",
+    "log": "eighth-mutant-minion-blind-boost.log",
+    "restored_sha256": "7561df2d68a06646c4fc8a0d69723cbc1c3a5ef856386fe6a3bb534d64374e65"
+  },
+  {
+    "mutant": "attack-end-cause",
+    "file": "src/Marvel.Rules/Play/ActivationCausalCards.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "filter": "AnAttackingTreacheryStaysFaceup",
+    "log": "eighth-mutant-attack-end-cause.log",
+    "restored_sha256": "93e271c27b91d44d5b10191f8ca637ca0c9db41306a3bf37544be5af622f8f74"
+  },
+  {
+    "mutant": "public-private-cause",
+    "file": "src/Marvel.View/TableDescriptorProjection.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "filter": "ActivationCauseHasItsOwnRole",
+    "log": "eighth-mutant-public-private-cause.log",
+    "restored_sha256": "d3a66faa94dfee9fe218658acbd51010e9673731c662d4b84f67ac51ab9f3ca8"
+  },
+  {
+    "mutant": "unfiltered-prompt-cause",
+    "file": "src/Marvel.View/WorldProjection.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "filter": "ActivationCauseHasItsOwnRole",
+    "log": "eighth-mutant-unfiltered-prompt-cause.log",
+    "restored_sha256": "20184fc3cd5699745f17cbc3153c787a59729aec957dc6a2de50b7da55a49643"
+  },
+  {
+    "mutant": "receipt-cleanup",
+    "file": "src/Marvel.View/ResponseReceiptPresenter.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "filter": "ACurrentNestedCancellation",
+    "log": "eighth-mutant-receipt-cleanup.log",
+    "restored_sha256": "3c5e634dc031b8cc2c4a6d114193e843f7212b9cf0946d3805709c3b4e271519"
+  },
+  {
+    "mutant": "cancellation-source",
+    "file": "src/Marvel.Cards/Run/AbilityResolutionRevelation.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "filter": "EnhancedSpiderSenseCancelsOnly",
+    "log": "eighth-mutant-cancellation-source.log",
+    "restored_sha256": "c5c900d99a8351913f9555a02c4f42c4693f4715a3104f81d4fbd3efb78217c8"
+  },
+  {
+    "mutant": "recovery-retention",
+    "file": "src/Marvel.Godot/CompleteDecisionSheetController.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "filter": "RecoveryExplanationRemainsAvailable",
+    "log": "eighth-mutant-recovery-retention.log",
+    "restored_sha256": "e0e332420b7279cf5ec2ddf17b6ee268a74cb89adb7c9c27d1b0eba201a5ea62"
+  },
+  {
+    "mutant": "missing-offer-fallback",
+    "file": "src/Marvel.Godot/BoardContextualInteractionControls.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "filter": "ContextualFallbackTests",
+    "log": "eighth-mutant-missing-offer-fallback.log",
+    "restored_sha256": "20bdabbb6e1f1b64fca402fe863a40718792fe2b5828daa4114436922f6182c0"
+  }
+]

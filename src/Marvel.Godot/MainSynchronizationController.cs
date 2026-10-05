@@ -24,6 +24,7 @@ internal sealed class MainSynchronizationController
         GameProgressPresentation prior = main.currentProgress
             ?? GameProgressPresentation.FromResponse(main.CurrentGame!);
         bool hadUncertainMutation = main.decisionPending;
+        bool hadDraft = main.decisions.composer?.Selected is not null;
         main.synchronizing = true;
         main.RefreshSynchronizeAvailability();
         main.ApplyProgress(GameProgressPresentation.Synchronizing());
@@ -35,7 +36,7 @@ internal sealed class MainSynchronizationController
                 return;
             }
 
-            HandleResult(result, prior, hadUncertainMutation);
+            HandleResult(result, prior, hadUncertainMutation, hadDraft);
         }
         catch (Exception)
         {
@@ -85,16 +86,19 @@ internal sealed class MainSynchronizationController
     private void HandleResult(
         ClientSynchronizationResult result,
         GameProgressPresentation prior,
-        bool hadUncertainMutation)
+        bool hadUncertainMutation,
+        bool hadDraft)
     {
         if (result.Succeeded)
         {
             main.decisionPending = false;
             main.uncertainMutationError = null;
-            main.RenderGame(
+            main.boardController.RenderGame(
                 result.Response!, preserveEvents: true, priorProgress: prior,
                 operation: EngineProtocol.Sync);
             main.decisions.AuthoritativeSynchronization(result.Response!.Revision);
+            if (hadDraft && main.currentProgress?.OperationalLock is null)
+                main.ApplyProgress(GameProgressPresentation.Refreshed(result.Response!, draftCleared: true));
             main.synchronize.TooltipText = "Read the current authoritative table.";
             return;
         }

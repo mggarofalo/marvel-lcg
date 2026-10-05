@@ -1,0 +1,122 @@
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.dll
+  Marvel.Decisions -> /Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.dll
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Server.dll
+  Marvel.Client -> /Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Client.dll
+  Marvel.Godot -> /Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Godot.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.00
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M2 Pro
+
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:03:53.66201+00:00","process_id":56531,"duration_milliseconds":2,"disposition":"accepted","request_id":"667d6983d41b4d611edef043cfd0a24b","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:03:54.251208+00:00","process_id":56531,"duration_milliseconds":0,"disposition":"accepted","request_id":"90c7c42d84a292716d8e33b749993dd5","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:03:54.633502+00:00","process_id":56531,"duration_milliseconds":0,"disposition":"accepted","request_id":"0d48271597e5b3da8bf2524e1faa2786","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"session.persistence.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:03:54.755719+00:00","process_id":56531,"duration_milliseconds":19,"disposition":"accepted","request_id":"e97798cff7e91e9365de04a7f87cc04a","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"persistence","save_committed":true,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:03:54.756036+00:00","process_id":56531,"duration_milliseconds":120,"disposition":"accepted","request_id":"e97798cff7e91e9365de04a7f87cc04a","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"open","revision":0,"save_committed":true,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:03:55.681234+00:00","process_id":56531,"duration_milliseconds":11,"disposition":"accepted","request_id":"622bc94340b2d901444deccf10d7616d","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"sync","revision":0,"authorized_seat":0,"save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"session.replay.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:03:56.000099+00:00","process_id":56531,"duration_milliseconds":18,"disposition":"accepted","request_id":"88322c86581ff5f570ce7df0a1b2b4d2","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"replay","replay_verified":true,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"session.persistence.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:03:56.070058+00:00","process_id":56531,"duration_milliseconds":3,"disposition":"accepted","request_id":"88322c86581ff5f570ce7df0a1b2b4d2","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"persistence","save_committed":true,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4","expected_revision":0}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:03:56.070123+00:00","process_id":56531,"duration_milliseconds":96,"disposition":"accepted","request_id":"88322c86581ff5f570ce7df0a1b2b4d2","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"resolve","revision":1,"authorized_seat":0,"save_committed":true,"replay_verified":true,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4","expected_revision":0}
+ERROR: post-mulligan actions: Card19Action and Card23Action hand controls overlap
+Visible UI:
+Engaged with player 1
+Discard
+Empty
+▰
+31
+Deck
+The Break-In!
+THREAT  ◆ 0/7
+Escalation  1
+
+Rhino
+Stage  1
+SCH  1
+ATK  2
+HP  14/14
+
+▱
+3
+Discard
+▰
+31
+Deck
+Peter Parker
+REC  3
+HP  10/10
+
+Change Form
+Web-Shooter
+Upgrade · Hero
+COST  1
+P
+Play
+Spider-Tracer
+Upgrade · Hero
+COST  1
+E
+
+Web-Shooter
+Upgrade · Hero
+COST  1
+P
+Play
+Daredevil
+Ally · Justice
+COST  4
+P
+Play
+Black Cat
+Ally · Hero
+COST  2
+E
+Play
+Jessica Jones
+Ally · Justice
+COST  3
+E
+Play
+Other piles
+Player 1 hand · 6 cards
+Choose an action · Decision for Spider-Man
+Player phase · Round 1. Take actions or end your turn. After every player finishes, choose hand discards, draw up to hand size and ready cards.
+
+More details ↓
+End turn
+Complete choices
+You control Spider-Man. Active player: Spider-Man. Inspecting: Spider-Man.
+Refresh to receive other players' latest actions.
+Finish animation
+Undo last action
+Copy report
+Save report
+Dismiss result
+Collapse history
+Spider-Man discarded Avengers Mansion.
+Spider-Man discarded Avengers Mansion, Aunt May, and Swinging Web Kick.
+Last synced · r1
+↻
+Scale 150%
+Motion
+
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://smoke/local_game_smoke_core.gd:93)
+       [1] _redesign_gate_cards_are_locally_bounded (res://smoke/local_game_smoke_redesign_gate.gd:87)
+       [2] _redesign_gate_post_mulligan_is_safe (res://smoke/local_game_smoke_redesign_gate.gd:58)
+       [3] _post_mulligan_table_is_safe (res://smoke/local_game_smoke_mulligan_checks.gd:30)
+       [4] _mulligan_result_and_payment_are_operable (res://smoke/local_game_smoke_mulligan_checks.gd:15)
+       [5] _mulligan_result_is_operable (res://smoke/local_game_smoke_mulligan_checks.gd:199)
+       [6] _activate_exposed_control_point (res://smoke/local_game_smoke_direct_journey.gd:392)
+       [7] _control_owns_point (res://smoke/local_game_smoke_pointer_support.gd:39)

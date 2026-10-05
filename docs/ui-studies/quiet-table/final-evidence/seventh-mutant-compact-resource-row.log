@@ -1,0 +1,125 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.dll
+  Marvel.Decisions -> /Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.dll
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Server.dll
+  Marvel.Client -> /Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Client.dll
+  Marvel.Godot -> /Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Godot.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.10
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M2 Pro
+
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:31.199287+00:00","process_id":63712,"duration_milliseconds":2,"disposition":"accepted","request_id":"aefdec15c438b0ea400051f8ac640c05","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:31.74226+00:00","process_id":63712,"duration_milliseconds":0,"disposition":"accepted","request_id":"0fc31cab8779a15933c2cd297ae659ca","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:32.275295+00:00","process_id":63712,"duration_milliseconds":0,"disposition":"accepted","request_id":"cd9e41a0949aaaa9cf5c20a080f8a3e8","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"session.persistence.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:32.405147+00:00","process_id":63712,"duration_milliseconds":17,"disposition":"accepted","request_id":"37ca4538169fbed05ed1f36732905d6e","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"persistence","save_committed":true,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:32.405318+00:00","process_id":63712,"duration_milliseconds":128,"disposition":"accepted","request_id":"37ca4538169fbed05ed1f36732905d6e","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"open","revision":0,"save_committed":true,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:33.562111+00:00","process_id":63712,"duration_milliseconds":20,"disposition":"accepted","request_id":"148252cd1aa63930c6098d862bb3b7ad","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"sync","revision":0,"save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"session.replay.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:34.039956+00:00","process_id":63712,"duration_milliseconds":22,"disposition":"accepted","request_id":"05070a5eaf1403a328084a985e53f017","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"replay","replay_verified":true,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"session.persistence.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:34.101387+00:00","process_id":63712,"duration_milliseconds":2,"disposition":"accepted","request_id":"05070a5eaf1403a328084a985e53f017","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"persistence","save_committed":true,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4","expected_revision":0}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:34.101458+00:00","process_id":63712,"duration_milliseconds":91,"disposition":"accepted","request_id":"05070a5eaf1403a328084a985e53f017","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"resolve","revision":1,"save_committed":true,"replay_verified":true,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4","expected_revision":0}
+{"event_id":"session.replay.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:37.174936+00:00","process_id":63712,"duration_milliseconds":15,"disposition":"accepted","request_id":"448c181f6d9e5e28f1508d46c6878346","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"replay","replay_verified":true,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"session.persistence.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:37.219483+00:00","process_id":63712,"duration_milliseconds":2,"disposition":"accepted","request_id":"448c181f6d9e5e28f1508d46c6878346","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"persistence","save_committed":true,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4","expected_revision":1}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:37.219514+00:00","process_id":63712,"duration_milliseconds":60,"disposition":"accepted","request_id":"448c181f6d9e5e28f1508d46c6878346","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"resolve","revision":2,"save_committed":true,"replay_verified":true,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4","expected_revision":1}
+{"event_id":"session.replay.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:41.13197+00:00","process_id":63712,"duration_milliseconds":13,"disposition":"accepted","request_id":"1cd16c1796f50d9ec334c35fa38c16a9","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"replay","replay_verified":true,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"session.persistence.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:41.193508+00:00","process_id":63712,"duration_milliseconds":0,"disposition":"accepted","request_id":"1cd16c1796f50d9ec334c35fa38c16a9","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"persistence","save_committed":true,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4","expected_revision":2}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T17:53:41.193546+00:00","process_id":63712,"duration_milliseconds":75,"disposition":"accepted","request_id":"1cd16c1796f50d9ec334c35fa38c16a9","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"resolve","revision":3,"save_committed":true,"replay_verified":true,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4","expected_revision":2}
+ERROR: after end turn: ProceduralCard62 covers the current decision
+Visible UI:
+Engaged with player 1
+Discard
+Empty
+▰
+32
+Deck
+The Break-In!
+THREAT  ◆ 0/14
+Escalation  2
+
+Rhino
+Stage  1
+SCH  1
+ATK  2
+HP  28/28
+
+▱
+3
+Discard
+▰
+31
+Deck
+Peter Parker
+REC  3
+HP  10/10
+
+The Power of Leadership
+Resource · Leadership
+W
+
+Energy Channel
+Upgrade · Hero
+COST  0
+M
+Play
+Tenacity
+Upgrade · Basic
+COST  2
+E
+Play
+Nick Fury
+Ally · Basic
+COST  4
+M
+Play
+Energy Absorption
+Resource · Hero
+E
+E
+E
+
+Crisis Interdiction
+Event · Hero
+COST  2
+E
+
+Other piles
+Player 2 hand · 6 cards
+Choose an action · Decision for Captain Marvel
+Player phase · Round 1. Take actions or end your turn. After every player finishes, choose hand discards, draw up to hand size and ready cards.
+
+More details ↓
+End turn
+P1 ·  SPIDER-MAN
+HP 10 · ALTEREGO
+Observing · Inspecting
+P2 ·  CAPTAIN MARVEL
+HP 12 · ALTEREGO
+Active  ·  Answering  ·  Public focus
+Complete choices
+Shared table view. Active player: Captain Marvel. Inspecting: Spider-Man.
+Refresh to receive other players' latest actions.
+History
+Spider-Man ended their turn.
+Last synced · r3
+↻
+Scale 150%
+Motion
+
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://smoke/local_game_smoke_core.gd:93)
+       [1] _redesign_gate_cards_are_locally_bounded (res://smoke/local_game_smoke_redesign_gate.gd:87)
+       [2] _redesign_gate_after_decision_is_safe (res://smoke/local_game_smoke_redesign_gate.gd:78)
+       [3] _capture_checkpoint (res://smoke/local_game_smoke_support.gd:377)

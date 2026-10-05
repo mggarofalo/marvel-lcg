@@ -115,7 +115,7 @@ internal static class AbilityStructuralExecution
     internal static AbilityStructuralPrompt DescribeGenericChoice(
         AbilityStructuralContext context, AbilityEffect choice,
         AbilityContinuationFacts continuation) =>
-        AbilityStructuralQueries.DescribeChoice(context, choice, continuation);
+        AbilityChoicePromptDescription.DescribeChoice(context, choice, continuation);
 
     internal static Prompt DescribeSpecialChoice(
         AbilityStructuralContext context, AbilityEffect choice) => choice switch

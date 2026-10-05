@@ -146,7 +146,7 @@ public sealed class EventPresentationCardPlayIsOneActionThatNamesCardsTests : Ev
     [InlineData("k_damage", 2, 1, EventMotionKind.Heal)]
     [InlineData("c_energy", 1, 2, EventMotionKind.Counter)]
     [InlineData("k_acceleration", 0, 1, EventMotionKind.Counter)]
-    [InlineData("k_threat", 1, 2, EventMotionKind.State)]
+    [InlineData("k_threat", 1, 2, EventMotionKind.Threat)]
     [InlineData("is_exhaust", 0, 1, EventMotionKind.State)]
     [InlineData("attack", 2, 3, EventMotionKind.State)]
     public void FieldChangesChooseASemanticMotion(string field, long from, long to, EventMotionKind expected)
@@ -163,7 +163,7 @@ public sealed class EventPresentationCardPlayIsOneActionThatNamesCardsTests : Ev
     }
 
     [Theory]
-    [InlineData("k_threat", 3, 1, "Swinging Web Kick changed threat from 3 to 1.")]
+    [InlineData("k_threat", 3, 1, "Swinging Web Kick threat: 3 → 1 (2 removed).")]
     [InlineData("is_exhaust", 0, 1, "Swinging Web Kick became exhausted.")]
     [InlineData("is_exhaust", 1, 0, "Swinging Web Kick became ready.")]
     public void InternalFieldNamesHaveNaturalHistorySummaries(string field, long from, long to, string expected)

@@ -1,5 +1,7 @@
 extends "res://smoke/local_game_smoke_lifecycle_checks.gd"
 
+const SpatialBounds = preload("res://smoke/local_game_smoke_spatial_bounds.gd")
+
 const REDESIGN_GATE_ENV := "MARVEL_REDESIGN_GATE"
 
 
@@ -32,6 +34,8 @@ func _redesign_gate_opening_table_is_safe() -> bool:
 	if not await _capture_checkpoint("redesign-opening-mulligan"):
 		return false
 	if not _redesign_gate_shell_uses_desktop_width("opening mulligan"):
+		return false
+	if not _redesign_gate_cards_are_locally_bounded("opening mulligan"):
 		return false
 	if not _redesign_gate_required_mulligan_controls_are_visible():
 		return false
@@ -79,6 +83,10 @@ func _redesign_gate_after_decision_is_safe() -> bool:
 
 
 func _redesign_gate_cards_are_locally_bounded(checkpoint: String) -> bool:
+	for problem in SpatialBounds.problems(main):
+		_fail("%s: %s" % [checkpoint, problem])
+		return false
+	if not _decision_text_and_controls_do_not_overlap(checkpoint): return false
 	var surface := main.find_child("AstraTableSurface", true, false) as Control
 	if surface == null:
 		_fail("the %s checkpoint has no Astra table surface" % checkpoint)
@@ -104,6 +112,15 @@ func _redesign_gate_cards_are_locally_bounded(checkpoint: String) -> bool:
 				card.custom_minimum_size,
 				card.get_combined_minimum_size(),
 			] + " descendants=%s" % [descendants])
+			return false
+	return _redesign_gate_resource_rows_are_safe(surface)
+
+
+func _redesign_gate_resource_rows_are_safe(surface: Control) -> bool:
+	for face in surface.find_children("CardFace", "VBoxContainer", true, false):
+		if not face.is_visible_in_tree():
+			continue
+		if not _compact_card_resources_are_safe(face as Control, {}):
 			return false
 	return true
 
@@ -136,7 +153,7 @@ func _redesign_gate_shell_uses_desktop_width(checkpoint: String) -> bool:
 
 
 func _redesign_gate_required_mulligan_controls_are_visible() -> bool:
-	var submit := _attached(_attached_name(IDENTITY, "Submit"))
+	var submit := _task_commit()
 	var toggles := _hand_surface().find_children(
 		"MulliganDiscard*", "Button", true, false)
 	if submit == null or submit.disabled or toggles.size() != 6:
@@ -226,18 +243,12 @@ func _redesign_gate_inspector_dismissal_is_repeatable(
 		var inspector := await _open_card_inspector(hand_card)
 		if inspector == null:
 			return false
-		var action := _attached(_attached_name(IDENTITY, "Action"))
-		if action == null:
-			for candidate in main.find_children("Card*Action", "Button", true, false):
-				if (candidate as Button).is_visible_in_tree() \
-						and not candidate.is_queued_for_deletion() \
-						and not inspector.is_ancestor_of(candidate):
-					action = candidate as Button
-					break
+		var action := _redesign_gate_background_action(inspector)
 		if action == null:
 			_fail("inspector dismissal attempt %d has no current background action" % (attempt + 1))
 			return false
 		var action_id := action.get_instance_id()
+		var revision := (_node("Toolbar/SyncStatus") as Label).text
 		var backdrop := inspector.get_node("Backdrop") as Control
 		var click := InputEventMouseButton.new()
 		click.button_index = MOUSE_BUTTON_LEFT
@@ -256,9 +267,37 @@ func _redesign_gate_inspector_dismissal_is_repeatable(
 		var action_replaced := not is_instance_valid(action) \
 				or action.get_instance_id() != action_id
 		var choices_opened := main.find_child("CardActionChoices", true, false) != null
-		if action_replaced or choices_opened:
+		if action_replaced or choices_opened or (_node("Toolbar/SyncStatus") as Label).text != revision:
 			_fail(("inspector dismissal attempt %d activated its underlying action " \
 					+ "(replaced=%s choices=%s)") % [
 					attempt + 1, action_replaced, choices_opened])
+			return false
+	return true
+
+
+func _redesign_gate_background_action(inspector: Control) -> Button:
+	var action := _attached(_attached_name(IDENTITY, "Action"))
+	if action == null:
+		for candidate in main.find_children("Card*Action", "Button", true, false):
+			if (candidate as Button).is_visible_in_tree() \
+					and not candidate.is_queued_for_deletion() \
+					and not inspector.is_ancestor_of(candidate):
+				action = candidate as Button
+				break
+	if action == null:
+		action = _task_commit()
+	return action
+
+
+func _decision_text_and_controls_do_not_overlap(checkpoint: String) -> bool:
+	var cause := main.find_child("CausalContext", true, false) as Control
+	var actions := main.find_child("ContextualActionScroll", true, false) as Control
+	var complete := main.find_child("CompleteChoiceSheet", true, false) as Control
+	if cause == null or actions == null or complete == null:
+		_fail("the %s decision has no bounded explanation and control surfaces" % checkpoint)
+		return false
+	for control in [actions, complete]:
+		if cause.get_global_rect().grow(-1).intersects(control.get_global_rect().grow(-1)):
+			_fail("the %s action controls cover the decision explanation" % checkpoint)
 			return false
 	return true

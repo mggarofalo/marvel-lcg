@@ -46,6 +46,8 @@ namespace Marvel.Rules.Events;
 [JsonDerivedType(typeof(FieldSet), nameof(FieldSet))]
 [JsonDerivedType(typeof(PlayAreaJoined), nameof(PlayAreaJoined))]
 [JsonDerivedType(typeof(PlayAreaDetached), nameof(PlayAreaDetached))]
+[JsonDerivedType(typeof(AttackCompleted), nameof(AttackCompleted))]
+[JsonDerivedType(typeof(WhenRevealedCanceled), nameof(WhenRevealedCanceled))]
 public abstract record GameEvent
 {
     /// <summary>Occurrence-time public names for card subjects, keyed by object id.</summary>
@@ -70,8 +72,8 @@ public abstract record GameEvent
     public string Trigger { get; init; } = "";
 
     /// <summary>
-    /// The effect that ran, e.g. <c>Play</c>, <c>Attack</c>, <c>Change_Form</c>.
-    /// Empty when the transition had no player-chosen effect behind it.
+    /// The operation or semantic event verb, e.g. <c>Play</c>, <c>Attack</c>
+    /// or <c>Attack_Completed</c>. Empty when no verb is specified.
     /// </summary>
     public string Verb { get; init; } = "";
 }

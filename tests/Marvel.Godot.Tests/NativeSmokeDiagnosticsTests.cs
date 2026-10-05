@@ -54,7 +54,7 @@ public sealed class NativeSmokeDiagnosticsTests
         Assert.Contains("control.grab_focus()", script, StringComparison.Ordinal);
         Assert.Contains("scroll.ensure_control_visible(control)", script, StringComparison.Ordinal);
         Assert.Contains("func _new_client_viewport() -> SubViewport", script, StringComparison.Ordinal);
-        Assert.Contains("viewport.size = Vector2i(1280, 720)", script, StringComparison.Ordinal);
+        Assert.Contains("viewport.size = Vector2i(1920, 1080)", script, StringComparison.Ordinal);
         Assert.DoesNotContain("guest.visible = false", script, StringComparison.Ordinal);
         Assert.DoesNotContain("host.visible = false", script, StringComparison.Ordinal);
         Assert.Contains("viewport.push_input(move)", script, StringComparison.Ordinal);

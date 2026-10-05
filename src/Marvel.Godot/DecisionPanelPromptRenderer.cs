@@ -53,7 +53,7 @@ internal static class DecisionPanelPromptRenderer
         AffordancePresentation? selected,
         DecisionComposer composer)
     {
-        if (selected is null)
+        if (selected is null || MulliganPrompt.IsOpening(composer.Prompt))
         {
             return;
         }
@@ -63,7 +63,6 @@ internal static class DecisionPanelPromptRenderer
             Name = "ActionSummary",
             ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
-        summary.AddChild(DecisionPanel.Text("Preparing", GodotThemeVariations.Eyebrow));
         summary.AddChild(DecisionPanel.Text(
             DecisionCopy.ActionSummary(selected),
             selected.Consequence is null
@@ -83,13 +82,10 @@ internal static class DecisionPanelPromptRenderer
         {
             return;
         }
-        var basic = new HashSet<int>();
         AffordancePresentation[] plays = [.. prompt.Affordances
             .Where(view => panel.composer!.Prompt.Affordances.Single(option => option.Id == view.Id).PlaysCard)];
         foreach (AffordancePresentation view in prompt.Affordances.Except(plays))
         {
-            if (view.Verb is "Attack" or "Thwart" or "Recover" && basic.Add(view.AnchorId))
-                panel.AddContent(DecisionPanel.Text($"BASIC ACTIONS  ·  {view.Anchor}", GodotThemeVariations.Eyebrow, wrap: true));
             Add(panel, view, generation);
         }
         AddCardPlayMenu(panel, plays, generation);
@@ -143,13 +139,25 @@ internal static class DecisionPanelPromptRenderer
         bool unavailable = panel.submitting || !option.IsLegal;
         bool selected = panel.composer.Selected?.Id == option.Id;
         bool resolving = panel.submitting && selected;
-        var choose = new Button { Name = $"Affordance{option.Id}", Text = Text(DecisionCopy.Choice(view), unavailable, selected, resolving), Alignment = HorizontalAlignment.Left, Disabled = unavailable, ToggleMode = true, ButtonPressed = selected, TooltipText = option.Illegal ?? $"Anchor {option.AnchorId}, player {option.AnchorPlayer}" };
+        var choose = new Button { Name = $"Affordance{option.Id}", Text = Text(DecisionCopy.Choice(view), unavailable, selected, resolving), Alignment = HorizontalAlignment.Left, Disabled = unavailable, ToggleMode = true, ButtonPressed = selected, TooltipText = option.Illegal ?? DecisionCopy.ActionSummary(view) };
         panel.StyleButton(choose, resolving ? InteractiveVisualState.Selected : unavailable ? InteractiveVisualState.Unavailable : selected ? InteractiveVisualState.Selected : InteractiveVisualState.Resting);
         choose.Pressed += () => panel.SelectAffordance(option.Id, generation);
         panel.BindAnchors(choose, option.AnchorId);
         Add(destination, panel, choose);
-        if (option.Illegal is not null)
-            Add(destination, panel, DecisionPanel.Text($"! {option.Illegal}", GodotThemeVariations.DangerText, wrap: true));
+        AddExplanation(panel, view, option.Illegal, destination);
+    }
+
+    private static void AddExplanation(DecisionPanel panel, AffordancePresentation view,
+        string? illegal, Container? destination)
+    {
+        if (view.SourceState is { Length: > 0 } state)
+            Add(destination, panel, DecisionPanel.Text(state, GodotThemeVariations.Caption, wrap: true));
+        if (view.CostDescription is { Length: > 0 } cost)
+            Add(destination, panel, DecisionPanel.Text($"Costs: {cost}.", GodotThemeVariations.Caption, wrap: true));
+        if (view.Description is { Length: > 0 } effect)
+            Add(destination, panel, DecisionPanel.Text(effect, GodotThemeVariations.Caption, wrap: true));
+        if (illegal is not null)
+            Add(destination, panel, DecisionPanel.Text($"! {illegal}", GodotThemeVariations.DangerText, wrap: true));
     }
 
     private static void Add(Container? destination, DecisionPanel panel, Control control)

@@ -42,7 +42,7 @@ public sealed class TableContractTransportTests
         JsonElement table = document.RootElement.GetProperty("world").GetProperty("table");
         EngineResponse restored = EngineJson.ReadResponse(json);
 
-        Assert.Equal(18, response.Version);
+        Assert.Equal(19, response.Version);
         Assert.Equal(1, table.GetProperty("active_player").GetInt32());
         Assert.Equal([17, 23], restored.World!.Areas[0].Cards.Select(card => card.Id));
         Assert.Equal([17, 23], restored.World.Relationships.Select(relationship => relationship.Subject));
@@ -57,9 +57,10 @@ public sealed class TableContractTransportTests
         var prompt = new Prompt(0, Question.TurnOption, TimingPriority.Untimed,
             "Mulligan", "Spider-Man resolves mulligans", false,
             [new Affordance(7, "Choose", 4, 0, "unknown")
-                { AnchorKind = AffordanceAnchorKind.Area }])
+                { AnchorKind = AffordanceAnchorKind.Area, DisplayLabel = "Opening hand" }])
         {
             DisplayQuestion = "Opening hand",
+            DeclineLabel = "End turn",
         };
         var response = new EngineResponse(EngineProtocol.Version, "prompt", "game",
             Capability: null, prompt, Events: []);
@@ -69,11 +70,16 @@ public sealed class TableContractTransportTests
         EngineResponse restored = EngineJson.ReadResponse(json);
         JsonElement encoded = document.RootElement.GetProperty("prompt");
 
-        Assert.Equal(18, response.Version);
+        Assert.Equal(19, response.Version);
         Assert.Equal("Opening hand", encoded.GetProperty("display_question").GetString());
         Assert.Equal((int)AffordanceAnchorKind.Area, encoded.GetProperty("affordances")[0]
             .GetProperty("anchor_kind").GetInt32());
         Assert.Equal("Opening hand", restored.Prompt?.DisplayQuestion);
+        Assert.Equal("End turn", restored.Prompt?.DeclineLabel);
+        Assert.Equal("unknown", restored.Prompt?.Affordances[0].Label);
+        Assert.Equal("Opening hand", restored.Prompt?.Affordances[0].DisplayLabel);
+        Assert.Equal("Opening hand", PromptPresentation.From(restored.Prompt!, new WorldDescriptor(
+            [], [], [], Outcome.Unfinished)).Affordances[0].DisplayLabel);
         Assert.Equal(AffordanceAnchorKind.Area, restored.Prompt?.Affordances[0].AnchorKind);
     }
 

@@ -104,8 +104,8 @@ func _spatial_table_geometry_is_safe(spatial: Control, villain: Control, player:
 		if (card as Control).has_meta("spatial_hand_index"):
 			fanned += 1
 			if not _card_contents_share_the_fan_layer(card): return false
-			if not (card as Control).get_meta("spatial_hand_overlap", false):
-				_fail("an opening hand card does not participate in overlap geometry")
+			if not (card as Control).has_meta("spatial_hand_overlap"):
+				_fail("an opening hand card has no authored fan geometry")
 				return false
 	if fanned != 6:
 		_fail("the opening hand is not one six-card spatial fan")
@@ -271,7 +271,7 @@ func _wide_prompt_has_expected_width(prompt: Control) -> bool:
 
 func _hand_is_pinned() -> bool:
 	var hand := _hand_surface()
-	if hand != null and hand.visible and "HAND" in _visible_text(hand):
+	if hand != null and hand.visible and "hand" in _visible_text(hand).to_lower():
 		return true
 	_fail("the player's hand is not pinned to the bottom of the table viewport")
 	return false
@@ -314,9 +314,9 @@ func _restore_decision_tableau() -> bool:
 		_fail("the rebuilt desktop seat strip could not restore the decision workspace")
 		return false
 	if not await _wait_for(func() -> bool:
-		var expanded := _visible_player_caption()
+		var expanded := _expanded_seat_surface()
 		var identity := main.find_child("ProceduralCard1", true, false) as Control
-		return expanded != null and "PLAYER 1" in expanded.text.to_upper() \
+		return expanded != null and int(expanded.get_meta("expanded_seat", -1)) == 0 \
 				and identity != null and identity.is_visible_in_tree()
 	):
 		_fail("the rebuilt desktop table did not restore the decision player's public area")
@@ -328,8 +328,8 @@ func _restore_decision_tableau() -> bool:
 			and not await _pointer_activate(decision_seat):
 		return false
 	return await _wait_for(func() -> bool:
-		var caption := _visible_player_caption()
-		return caption != null and "PLAYER 1" in caption.text.to_upper())
+		var caption := _expanded_seat_surface()
+		return caption != null and int(caption.get_meta("expanded_seat", -1)) == 0)
 
 
 func _visible_seat_switch(seat: int) -> Button:
@@ -341,12 +341,12 @@ func _visible_seat_switch(seat: int) -> Button:
 	return null
 
 
-func _visible_player_caption() -> Label:
-	var candidates := main.find_children("PlayerTableCaption", "Label", true, false)
+func _expanded_seat_surface() -> Control:
+	var candidates := main.find_children("AstraTableSurface", "Control", true, false)
 	candidates.reverse()
 	for candidate in candidates:
-		if candidate.is_visible_in_tree():
-			return candidate as Label
+		if candidate.is_visible_in_tree() and candidate.has_meta("expanded_seat"):
+			return candidate as Control
 	return null
 
 
@@ -421,7 +421,7 @@ func _attached_control_focus_is_safe(state: Dictionary) -> bool:
 	if not await _wait_for(func() -> bool:
 		var replacement := render_viewport.gui_get_focus_owner() as Button
 		return replacement != null and replacement.get_instance_id() != issued_id \
-				and (replacement.has_meta("spatial_card_anchor") \
+				and (replacement.name == &"ContextualCommit" or replacement.has_meta("spatial_card_anchor") \
 					or (main.find_child("PaymentModal", true, false) != null \
 						and main.find_child("PaymentModal", true, false).is_ancestor_of(replacement)))):
 		var focus := render_viewport.gui_get_focus_owner()

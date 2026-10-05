@@ -1,0 +1,11 @@
+{
+  "current_hit_fixture_kills": 1,
+  "hosted_observer_kills": 1,
+  "intended_check": "synthetic moving target must reject stale point",
+  "kill": "intended fixture check",
+  "mutation": "omit post-awaited native hit refresh",
+  "product_mutation_kills": 15,
+  "restoration_sha_match": true,
+  "restored_sha256": "d9e170a7c0755464493f760fed4f37735377071a11b9c9dced5e7e39d35daa9a",
+  "scope": "smoke fixture only"
+}

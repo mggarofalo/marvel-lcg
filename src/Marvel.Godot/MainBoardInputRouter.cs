@@ -8,17 +8,17 @@ internal static class MainBoardInputRouter
     internal static void Route(
         Main main,
         CardInspectorFocus inspector,
-        CardInspectorStageNavigation stages,
+        CardInspectorCardNavigation cards,
         InputEvent input)
     {
-        if (main.decisions.PaymentModalOpen)
+        if (main.decisions.PaymentModalOpen || main.decisions.CompleteChoicesOpen)
         {
-            main.decisions.RoutePaymentInput(input);
+            main.decisions.RouteDecisionSurfaceInput(input);
             return;
         }
         if (main.cardInspector.Visible && main.cardInspectorPinned)
         {
-            if (stages.Route(input))
+            if (cards.Route(input))
             {
                 main.GetViewport().SetInputAsHandled();
                 return;
@@ -28,13 +28,18 @@ internal static class MainBoardInputRouter
             return;
         }
 
+        if (BoardActionChoiceSurface.RouteInput(main.GetViewport(), input))
+        {
+            return;
+        }
+
         if (main.boardRender?.RoutePointer(input) == true)
         {
             main.GetViewport().SetInputAsHandled();
             return;
         }
 
-        if (stages.Route(input))
+        if (cards.Route(input))
         {
             main.GetViewport().SetInputAsHandled();
             return;

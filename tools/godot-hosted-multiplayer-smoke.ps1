@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$GodotBin = $env:GODOT_BIN,
     [Parameter(Mandatory = $false)]
-    [int]$Port = 41924
+    [int]$Port = 41924,
+    [switch]$InvitationLayout
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,6 +28,12 @@ $serverError = [System.IO.Path]::GetTempFileName()
 $saveRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("marvel-smoke-" + [Guid]::NewGuid().ToString("N"))
 [System.IO.Directory]::CreateDirectory($saveRoot) | Out-Null
 $server = $null
+$smokeScript = if ($InvitationLayout) {
+    "res://smoke/hosted_invitation_layout_smoke_runner.gd"
+} else { "res://smoke/hosted_multiplayer_smoke_runner.gd" }
+$smokeMarker = if ($InvitationLayout) {
+    "HOSTED_INVITATION_LAYOUT_SMOKE_OK"
+} else { "HOSTED_MULTIPLAYER_SMOKE_OK" }
 try {
     $arguments = @(
         "run", "--no-build",
@@ -58,10 +65,10 @@ try {
     $env:MARVEL_ENGINE_ENDPOINT = "tcp://127.0.0.1:$Port"
     $env:MARVEL_UI_SCALE = "compact"
     $smokeOutput = & $GodotBin --audio-driver Dummy --path "$repoRoot/src/Marvel.Godot" `
-        --script res://smoke/hosted_multiplayer_smoke_runner.gd 2>&1
+        --script $smokeScript 2>&1
     $smokeOutput | Write-Output
     if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $smokeOutput) -or `
-        -not ($smokeOutput -match "HOSTED_MULTIPLAYER_SMOKE_OK")) {
+        -not ($smokeOutput -match $smokeMarker)) {
         exit 1
     }
 }

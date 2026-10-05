@@ -18,6 +18,7 @@ text or duplicate engine rules.
 | `AnchorKind` | Whether `AnchorId` is a card, area, or intentionally unspecified object |
 | `AnchorPlayer` | Seat whose board holds the anchor |
 | `Label` | Printed or domain-level option label |
+| `CommitLabel` | Optional engine-authored action and affected object for accepting this exact choice |
 | `Description` | Optional readable action text authored by the engine/card DSL |
 | `Targets` | What still has to be selected |
 | `Costs` | Legal resource-generation plans and variables |
@@ -146,6 +147,21 @@ the whole decision, such as the attacker, calculated damage, target health and
 relevant attack modifiers during a damage interrupt. Clients display it and do
 not recalculate combat state.
 
+`Prompt.PublicKind` supplies a typed, passive purpose for public waiting context.
+The table projection keeps the primary pending owner independent of a seat's
+authorized off-turn Action menu. It filters `ContextCardIds` to public, faceup
+cards already readable to the audience and does not publish private prompt text
+or choices. Minion activation ordering has its own public kind, engine-authored
+cause and commitment, and an engaged-minion area anchor. The command affordance
+identity remains stable.
+
+`Affordance.CostDescription` names mandatory arrow costs beyond the resource
+amounts and symbols already in `CostOptions`, including exhaustion, discarding,
+counter spending and damage. Cards derives it from the compiled typed ability
+cost. View preserves it alongside the exact offered source copy and current
+authorized source state. Clients display these facts without inferring payment,
+legality or an outcome from the board.
+
 ## Persistence and replay
 
 A simulation record stores the chosen affordance’s stable public identity and
@@ -170,3 +186,51 @@ of their action or timing-window verb. Clients use it to stage the source and
 open payment, while all targets, costs and legality remain in the offered
 contract. Later effect choices do not inherit this marker. Protocol 18 carries
 this distinction; labels and printed text are not a substitute for it.
+
+Protocol 19 also carries `Affordance.DeferredTargetSelection`. The engine sets
+it when an admitted effect begins with a separate card-target choice, including
+a transparent single-step sequence. The current action commits its costs;
+the later prompt owns its own answer and legal candidates. Payment is not
+reversible from that later choice. Cancellation or an intervening change can
+prevent the choice from being reached. A false value makes no promise about
+conditional or later branches. Clients must not derive this marker from event
+card kind, a missing current `Targets`, or readable text. View preserves the
+marker in `AffordancePresentation`; it never projects a future legal target set.
+
+`Affordance.CommitLabel` names the engine-established operation and affected
+object for accepting one exact offered choice, such as `Attack Rhino` or
+`Discard Avengers Mansion`. It is separate from the candidate's display name
+and opaque command label. View copies it only in an authorized prompt; clients
+render it without interpreting the effect or changing answer identity.
+
+These additive fields share the increment's unreleased protocol 19 bump.
+Readers reject unknown members, so both endpoints must run that version;
+the marker itself changes no replay, save or state-digest format. The current
+encounter-reveal timing correction is separately versioned as engine replay v3.
+
+## Decline meaning and action consequences
+
+Protocol 19 carries `Prompt.DeclineLabel`, an engine-authored name for declining.
+A player turn says `End turn`; ordinary opportunities say `Pass this opportunity`;
+defender selection says `Leave attack undefended`. Clients render the supplied
+commitment without interpreting a trace label. Both endpoints must use protocol
+19 because older readers reject unknown members. Replay/state digest formats
+are unchanged.
+
+`Affordance.DisplayLabel` supplies a readable name for a card choice, independently
+of the command label. A Rhino target displays `Rhino` while its command label
+remains `01094`. The engine supplies this name only after admitting the candidate;
+clients use the authorized prompt rather than looking up hidden card identities.
+
+Basic-power descriptions include exhaustion and current conditional ally
+consequential damage. Defender offers include exhaustion, hero DEF reduction or
+ally damage redirection, while boosts remain unresolved. Phase-end hand requests
+name discard commitments and explain the subsequent draw and ready sequence.
+These are engine-authored descriptions, preserved by the existing authorized
+prompt projection; they do not alter legality or simulate future windows.
+
+`CauseCardIds` separately names ability sources whose suspended continuations await
+the current activation. It is passive provenance, not an action or legality input.
+The view filters it to readable faces for the authorized prompt and public faces
+for the public pending situation. The view names those causes from the filtered
+snapshot; engine prose does not embed their titles.

@@ -127,7 +127,8 @@ func _attached(name: String) -> Button:
 				and control.is_visible_in_tree() \
 				and control.get_parent() != null \
 				and (control.get_parent().name == "DirectControls" \
-					or control.has_meta("spatial_upright_control")):
+					or control.has_meta("spatial_upright_control") \
+					or control.has_meta("spatial_hand_control")):
 			return control
 	return null
 

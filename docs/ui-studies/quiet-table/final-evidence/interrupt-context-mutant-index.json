@@ -1,0 +1,74 @@
+[
+  {
+    "name": "01-no-early-exposure",
+    "file": "src/Marvel.Rules/Play/SequenceWindow.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "baseline_sha256": "a636a23ec50d029a2333214ffc69b33fb698977a83466990e69a0ae9580621ca",
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/interrupt-context-mutant-01-no-early-exposure.log"
+  },
+  {
+    "name": "02-missing-information-signal",
+    "file": "src/Marvel.Rules/Play/EncounterRevealExposure.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "baseline_sha256": "d7190bbbf03d7a038b76d20583d7fe871ef31bac917f5f2ca27c6d7fd77cae30",
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/interrupt-context-mutant-02-missing-information-signal.log"
+  },
+  {
+    "name": "03-duplicate-reveal",
+    "file": "src/Marvel.Rules/Play/EncounterRevealExposure.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "baseline_sha256": "d7190bbbf03d7a038b76d20583d7fe871ef31bac917f5f2ca27c6d7fd77cae30",
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/interrupt-context-mutant-03-duplicate-reveal.log"
+  },
+  {
+    "name": "04-wrong-named-owner",
+    "file": "src/Marvel.Rules/Play/EncounterRevealExposure.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "baseline_sha256": "d7190bbbf03d7a038b76d20583d7fe871ef31bac917f5f2ca27c6d7fd77cae30",
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/interrupt-context-mutant-04-wrong-named-owner.log"
+  },
+  {
+    "name": "05-cached-dealt-owner",
+    "file": "src/Marvel.Rules/Play/PhaseStep.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "baseline_sha256": "5836e849bb9f2e18f2e2bcf6f24610bba662c2198e28fcf12138183a6ef3dd43",
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/interrupt-context-mutant-05-cached-dealt-owner.log"
+  },
+  {
+    "name": "06-assigned-instead-of-remaining",
+    "file": "src/Marvel.Rules/Timing/WindowPromptContext.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "baseline_sha256": "57de85e699c715664763d84a1ab0508d0af01ac9c0740f743fc6f0538c966164",
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/interrupt-context-mutant-06-assigned-instead-of-remaining.log"
+  },
+  {
+    "name": "07-wrong-phase-cause",
+    "file": "src/Marvel.Rules/Timing/WindowPromptContext.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "baseline_sha256": "57de85e699c715664763d84a1ab0508d0af01ac9c0740f743fc6f0538c966164",
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/interrupt-context-mutant-07-wrong-phase-cause.log"
+  },
+  {
+    "name": "08-no-causal-meaning",
+    "file": "src/Marvel.Rules/Timing/Offering.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "baseline_sha256": "a546e73ecaf23edd52e1fc2b7fabf3dc8220bcd8513ec1f62aa9c1d78f2cd003",
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/interrupt-context-mutant-08-no-causal-meaning.log"
+  }
+]

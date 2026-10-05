@@ -35,10 +35,8 @@ internal sealed class DecisionPaymentRenderer
     {
         if (selected.CostOptions.Count == 0)
         {
-            panel.AddContent(DecisionPanel.Text("No resource cost", GodotThemeVariations.StatusText));
             return;
         }
-        if (!panel.PaymentModalOpen) panel.AddContent(DecisionPanel.Text("COST", GodotThemeVariations.Caption));
         AddCostOptions(selected);
         if (composer.SelectedCost < 0)
         {
@@ -154,8 +152,8 @@ internal sealed class DecisionPaymentRenderer
             {
                 Name = $"Resource{source.Effect}",
                 Text = (composer.Resources.Contains(source.Effect)
-                        ? "✓ SELECTED  ·  "
-                        : "◇ RESOURCE  ·  ")
+                        ? "✓ "
+                        : "")
                     + $"{PromptPresentation.Describe(source.Effect, world!)}",
                 Alignment = HorizontalAlignment.Left,
                 ToggleMode = true,
@@ -178,41 +176,24 @@ internal sealed class DecisionPaymentRenderer
     }
     private void AddComponents(CostOption cost)
     {
-        if (cost.ResourceCosts.Count > 1)
-        {
-            panel.AddContent(DecisionPanel.Text(
-                "COMPONENTS  ·  " + string.Join(" + ",
-                    cost.ResourceCosts.Select((component, index) =>
-                        $"{index + 1}:{component.Cost}")),
-                GodotThemeVariations.Caption, wrap: true));
-        }
+        if (cost.ResourceCosts.Count <= 1) return;
+        foreach (ResourceCost component in cost.ResourceCosts)
+            panel.AddContent(ResourceIconRendering.Row($"Pay {component.Cost}",
+                string.Concat(component.Rule ?? []), GodotThemeVariations.Caption));
     }
 
     private void AddPaymentProgress()
     {
         PaymentProgress progress = composer.Progress().Payment;
-        if (panel.PaymentModalOpen)
-        {
-            panel.AddCommit(DecisionPanel.Text(CardPaymentPresentation.Progress(progress),
-                GodotThemeVariations.StatusText, wrap: true));
-            return;
-        }
-        panel.AddContent(DecisionPanel.Text(
-            $"PAYMENT  ·  {progress.SelectedGenerators} GENERATORS"
-            + $"  ·  {progress.AssignedIcons}/{progress.GeneratedIcons} ICONS"
-            + (progress.ExcessIcons > 0
-                ? $"  ·  {progress.ExcessIcons} EXCESS"
-                : string.Empty)
-            + (progress.RequestedVariables > 0
-                ? $"  ·  {progress.DefinedVariables}/{progress.RequestedVariables} VALUES"
-                : string.Empty)
-            + (progress.IsSatisfied ? "  ·  READY" : "  ·  INCOMPLETE"),
-            progress.ExcessIcons > 0
-                ? GodotThemeVariations.DangerText
-                : progress.IsSatisfied
-                ? GodotThemeVariations.StatusText
-                : GodotThemeVariations.Caption,
-            wrap: true));
+        string summary = $"{progress.GeneratedIcons} resource{(progress.GeneratedIcons == 1 ? "" : "s")} selected";
+        if (progress.AssignedIcons != progress.GeneratedIcons)
+            summary += $" · {progress.AssignedIcons} assigned to payment";
+        if (progress.ExcessIcons > 0) summary += $" · {progress.ExcessIcons} excess";
+        Label label = DecisionPanel.Text(summary,
+            progress.ExcessIcons > 0 ? GodotThemeVariations.DangerText : GodotThemeVariations.Caption,
+            wrap: true);
+        if (panel.PaymentModalOpen) panel.AddCommit(label);
+        else panel.AddContent(label);
     }
 
     internal void AddSubmit(DecisionProgressPresentation progress)

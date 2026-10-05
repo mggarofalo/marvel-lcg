@@ -1,0 +1,3 @@
+Current: 5d49ae6b1bfb2b13de3840d23ec99cd19c932db6c86395b8f506243f0fb2196d
+{"Id":68,"Card":"01186","Zone":"EncounterDiscardPile","Owner":-1,"Index":1,"Host":-1,"FaceUp":true,"Fields":{"is_exhaust":0,"boost_const":0,"incite":0,"peril":0,"surge":0,"victory":0,"k_threat":0}}
+Only k_threat removed from copied digest record: a3dd15a5b648deaafb8db120ca0507629ed3c848e25bbc38c74a6096e969615c

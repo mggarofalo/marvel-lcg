@@ -1,0 +1,8 @@
+The presentation project wall:
+  ok    View's forbidden engine reference fails with MARVELPRESENTATION
+  ok    Decisions' forbidden engine reference fails with MARVELPRESENTATION
+  ok    Client's forbidden engine reference fails with MARVELPRESENTATION
+  ok    Godot's forbidden engine reference fails with MARVELPRESENTATION
+  ok    a presentation project cannot expose transitive references fails with MARVELPRESENTATIONCONFIG
+
+Every forbidden presentation dependency and configuration was rejected.

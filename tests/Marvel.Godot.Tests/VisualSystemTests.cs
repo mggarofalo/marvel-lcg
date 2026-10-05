@@ -96,8 +96,9 @@ public sealed class VisualSystemTests
             SpacingMetrics spacing = VisualSystem.Spacing(scale);
             ControlMetrics controls = VisualSystem.Controls(scale);
 
-            Assert.True(type.Body >= 8);
-            Assert.True(type.Caption >= 7);
+            Assert.True(type.Body >= 12);
+            Assert.True(type.Caption >= 11);
+            Assert.True(type.Eyebrow >= 10);
             Assert.True(type.DisplayTitle > type.Heading);
             Assert.True(type.Heading > type.Body);
             Assert.True(type.Body > type.Caption);
@@ -108,9 +109,9 @@ public sealed class VisualSystemTests
             Assert.True(spacing.Medium < spacing.Large);
             Assert.True(spacing.Large < spacing.ExtraLarge);
             Assert.True(spacing.ExtraLarge < spacing.Section);
-            Assert.True(controls.MinimumHeight >= 22);
-            Assert.True(controls.MinimumPointerTarget >= 22);
-            Assert.True(controls.MinimumButtonWidth >= 48);
+            Assert.True(controls.MinimumHeight >= 34);
+            Assert.True(controls.MinimumPointerTarget >= 34);
+            Assert.True(controls.MinimumButtonWidth >= 64);
             Assert.True(controls.FocusRingWidth >= 2);
         });
     }

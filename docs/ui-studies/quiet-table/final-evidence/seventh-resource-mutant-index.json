@@ -1,0 +1,8 @@
+{
+  "mutant": "compact-resource-row",
+  "compiled": true,
+  "killed": true,
+  "exit": 1,
+  "log": "seventh-mutant-compact-resource-row.log",
+  "restored_sha256": "93bc3acb6c809ab6e02a8fe8f7f3a57648d5adb8a8602d1f5803fe12f8a46847"
+}

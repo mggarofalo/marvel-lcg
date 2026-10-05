@@ -1,0 +1,31 @@
+{
+  "setup": {
+    "Scenario": "rhino",
+    "Heroes": [
+      "spider_man"
+    ],
+    "ModularSets": null,
+    "Seed": 2
+  },
+  "decisions": 4,
+  "final_digest": "9cd71048c78ab00f419c87f9bcecbfe2c3782d8336ce24835bddd2e006c7e194",
+  "joined_revision": 4,
+  "joined_seat": 0,
+  "prompt": "Interrupt 1 threat being placed on The Break-In!?",
+  "description": "Step 1 of the villain phase would place 1 threat on The Break-In!, which currently has 0 threat. Resolve an interrupt or pass before placement.",
+  "accepted": {
+    "Affordance": 28,
+    "Targets": [],
+    "Resources": [],
+    "Values": {},
+    "Allocations": []
+  },
+  "accepted_revision": 5,
+  "accepted_followup": null,
+  "declined_followup": null,
+  "declined_question": 7,
+  "declined_label": "Spider-Man declares a defender",
+  "declined_description": "Enemy attack \u00B7 Step 2 of 6 \u00B7 Declare defender \u00B7 Resolve step\nRhino is initiating an attack against Spider-Man. Target: Spider-Man. ATK 2 before boost icons and defense. Rhino is attacking Spider-Man. ATK 2 before boost icons and defense. Choose a ready hero or ally to defend, or leave the attack undefended.",
+  "declined_phase": "VillainPhase",
+  "note": "Fresh seeded DatasetGameFactory deal; only offered decisions; every pre/post and final digest verified. No card/state/agenda injection."
+}

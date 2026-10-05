@@ -5,16 +5,47 @@ namespace Marvel.Godot.Tests;
 
 public sealed class AstraTableGeometryTests
 {
+    [Theory]
+    [InlineData(1320, 962, 224)]
+    [InlineData(1100, 820, 240)]
+    public void PhysicalInstalledFacesLeaveSpaceAboveTheRotatedHand(float width, float height, float faceHeight)
+    {
+        var table = new AstraTableGeometry(width, height, LargeText: true,
+            PhysicalCardSize: new Vector2(194, faceHeight));
+
+        Assert.True(table.Hand.Position.Y - 12 > table.Identity.Position.Y + faceHeight);
+        Assert.True(table.Hand.End.Y < table.Context.Position.Y);
+    }
+
     [Fact]
-    public void FarSideOppositionPrecedesEngagementIdentityAssetsAndHand()
+    public void OppositionStaysFarWhileSupportsFlankTheIdentityAndHandStaysNear()
     {
         var table = new AstraTableGeometry(1320, 930, LargeText: false);
 
         Assert.True(table.Villain.End.Y < table.EngagedEnemies.Position.Y);
-        Assert.True(table.EngagedEnemies.End.Y < table.Identity.Position.Y);
-        Assert.True(table.Identity.End.Y <= table.Assets.Position.Y + 24);
-        Assert.True(table.Assets.End.Y <= table.Hand.End.Y);
-        Assert.True(table.VillainMat.End.Y < table.PlayerMat.Position.Y);
+        Assert.True(table.Villain.End.Y < table.Identity.Position.Y);
+        Assert.True(table.EngagedEnemies.End.X < table.Assets.Position.X);
+        Assert.True(table.Assets.End.X < table.Identity.Position.X);
+        Assert.True(table.Allies.Position.X > table.Identity.End.X);
+        Assert.True(table.Identity.End.Y < table.Hand.Position.Y);
+        Assert.True(table.Assets.End.Y < table.Hand.Position.Y);
+        Assert.True(table.Hand.End.Y < table.Context.Position.Y);
+        Assert.False(table.Upgrades.Intersects(table.Hand));
+    }
+
+    [Theory]
+    [InlineData(1320, 962)]
+    [InlineData(1670, 962)]
+    public void RevealingCardHasItsOwnRegionBesideSupportsAndIdentity(float width, float height)
+    {
+        var table = new AstraTableGeometry(width, height, LargeText: true, HasRevealingCard: true);
+
+        Assert.False(table.Revealing.Intersects(table.Assets));
+        Assert.False(table.Revealing.Intersects(table.Identity));
+        Assert.False(table.Revealing.Intersects(table.Allies));
+        Assert.False(table.Revealing.Intersects(table.Hand));
+        Assert.True(table.Revealing.End.X < table.Identity.Position.X);
+        Assert.True(table.Allies.Position.X > table.Identity.End.X);
     }
 
     [Fact]
@@ -31,6 +62,21 @@ public sealed class AstraTableGeometryTests
         Assert.Equal(Enumerable.Range(20, 6), cards.Select(card => card.ZIndex));
         Assert.All(cards.Zip(cards.Skip(1)), pair =>
             Assert.True(pair.Second.Position.X - pair.First.Position.X < 156));
+    }
+
+    [Theory]
+    [InlineData(1100, 780)]
+    [InlineData(1320, 962)]
+    public void HandFanUsesItsAvailableWidthAndLeavesTheTaskDockUncovered(float width, float height)
+    {
+        var table = new AstraTableGeometry(width, height, LargeText: false);
+        const float cardWidth = 156;
+        SpatialCardPlacement[] cards = [.. Enumerable.Range(0, 6)
+            .Select(index => table.HandCard(index, 6, cardWidth))];
+
+        Assert.InRange(cards[0].Position.X, table.Hand.Position.X, table.Hand.Position.X + 0.01f);
+        Assert.InRange(cards[^1].Position.X + cardWidth, table.Hand.End.X - 0.01f, table.Hand.End.X + 0.01f);
+        Assert.All(cards, card => Assert.True(card.Position.Y + table.Hand.Size.Y < table.Context.Position.Y + 24));
     }
 
     [Fact]

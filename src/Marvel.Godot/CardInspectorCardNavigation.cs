@@ -3,8 +3,8 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Keeps progressive stages off the table while making them browsable in the inspector.</summary>
-internal sealed class CardInspectorStageNavigation
+/// <summary>Navigates a collection of inspectable cards without assigning stage meaning to its members.</summary>
+internal sealed class CardInspectorCardNavigation
 {
     private readonly Main main;
     private readonly Action<BoardCardPresentation, Control?, IReadOnlyList<BoardCardPresentation>> show;
@@ -12,7 +12,7 @@ internal sealed class CardInspectorStageNavigation
     private int index = -1;
     private Control? source;
 
-    internal CardInspectorStageNavigation(
+    internal CardInspectorCardNavigation(
         Main main,
         Action<BoardCardPresentation, Control?, IReadOnlyList<BoardCardPresentation>> show)
     {
@@ -39,9 +39,9 @@ internal sealed class CardInspectorStageNavigation
             return;
         }
 
-        main.cardInspectorTitle.Text = $"STAGE {index + 1} OF {sequence.Count}";
-        Button previous = Button("PreviousStage", "‹", "previous", index == 0, -1);
-        Button next = Button("NextStage", "›", "next", index == sequence.Count - 1, 1);
+        main.cardInspectorTitle.Text = $"Card {index + 1} of {sequence.Count}";
+        Button previous = Button("PreviousCard", "‹", "previous", index == 0, -1);
+        Button next = Button("NextCard", "›", "next", index == sequence.Count - 1, 1);
         header.AddChild(previous);
         header.MoveChild(previous, 0);
         header.AddChild(next);
@@ -68,7 +68,7 @@ internal sealed class CardInspectorStageNavigation
             Name = name,
             Text = text,
             Disabled = disabled,
-            TooltipText = $"Inspect {direction} stage ({(offset < 0 ? "Left" : "Right")} arrow)",
+            TooltipText = $"Inspect {direction} card ({(offset < 0 ? "Left" : "Right")} arrow)",
         };
         button.Pressed += () => Navigate(offset);
         return button;
@@ -86,7 +86,7 @@ internal sealed class CardInspectorStageNavigation
     private static void RemoveButtons(HBoxContainer header)
     {
         foreach (Node child in header.GetChildren().Where(child => child.Name.ToString()
-                     is "PreviousStage" or "NextStage"))
+                     is "PreviousCard" or "NextCard"))
         {
             header.RemoveChild(child);
             child.QueueFree();

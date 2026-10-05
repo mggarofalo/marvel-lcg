@@ -28,6 +28,8 @@ internal static class SpatialTableSurfaceRenderer
 
     private static void Prepare(Main main)
     {
+        TabletopPileInspector.Close();
+        BoardActionChoiceSurface.Close();
         BoardRenderCleanup.Clear(main.boardAreas);
         BoardRenderCleanup.Clear(main.handRail);
         main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").Visible = false;
@@ -41,7 +43,25 @@ internal static class SpatialTableSurfaceRenderer
         float width = Math.Max(expanded ? 920 : 1060, viewport.X - reserved);
         float height = Math.Min(AstraTableGeometry.ReferenceHeight, Math.Max(820, viewport.Y - 118));
         return new AstraTableGeometry(
-            width, height, main.interfaceScale >= InterfaceScale.Percent130);
+            width, height, main.interfaceScale >= InterfaceScale.Percent130,
+            HasRevealingCard: main.boardPresentation!.Areas.Any(area =>
+                area.Zone == "RevealingArea" && SpatialTableZones.Current(area).Length > 0),
+            PhysicalCardSize: PhysicalCardSize(main.boardPresentation!, main.interfaceScale),
+            HasSeatSummaries: main.boardPresentation.PlayerSummaries.Count > 1);
+    }
+
+    private static Vector2 PhysicalCardSize(BoardPresentation board, InterfaceScale scale)
+    {
+        IEnumerable<BoardCardPresentation> cards = board.Areas
+            .Where(area => area.Zone != "HandsArea")
+            .SelectMany(SpatialTableZones.Current);
+        InterfaceScale cardScale = SpatialCardMetrics.TableScale(scale);
+        Vector2 installed = SpatialCardMetrics.Envelope(cards, CardDisplaySize.Board, cardScale);
+        Vector2 revealing = SpatialCardMetrics.Envelope(board.Areas
+            .Where(area => area.Zone == "RevealingArea").SelectMany(SpatialTableZones.Current),
+            CardDisplaySize.Hand, cardScale);
+        return board.Areas.Any(area => area.Zone == "RevealingArea" && SpatialTableZones.Current(area).Length > 0)
+            ? new Vector2(Math.Max(installed.X, revealing.X), Math.Max(installed.Y, revealing.Y)) : installed;
     }
 
     private static Control CreateSurface(Main main, AstraTableGeometry geometry)
@@ -67,10 +87,10 @@ internal static class SpatialTableSurfaceRenderer
         DisplayedSeatSelection selection)
     {
         AddMat(surface, "VillainTable", geometry.VillainMat,
-            GodotThemeVariations.SpatialVillainMat, "VILLAIN'S PLAY AREA  ·  FAR SIDE");
+            GodotThemeVariations.SpatialVillainMat, "Villain's play area");
         PanelContainer playerMat = AddMat(surface, "PlayerTable", geometry.PlayerMat,
             GodotThemeVariations.SpatialPlayerMat,
-            $"PLAYER {selection.ExpandedSeat + 1}  ·  NEAR SIDE");
+            $"Player {selection.ExpandedSeat + 1}");
         result.RegisterDropTarget(selection.ExpandedSeat, playerMat);
         AddConfrontationSeam(surface, geometry, selection.ExpandedSeat);
     }
@@ -86,40 +106,22 @@ internal static class SpatialTableSurfaceRenderer
         BoardPresentation board = main.boardPresentation!;
         BoardAreaPresentation[] scenario = Lane(board, "scenario");
         BoardAreaPresentation[] player = Lane(board, $"player-{selection.ExpandedSeat}");
-        InterfaceScale cardScale = main.interfaceScale > InterfaceScale.Percent110
-            ? InterfaceScale.Percent110
-            : main.interfaceScale;
+        InterfaceScale cardScale = SpatialCardMetrics.TableScale(main.interfaceScale);
         var objects = new SpatialTableObjectRenderer(
             surface, result, geometry, cardScale, main.art, MulliganPrompt.IsOpening(prompt));
         objects.RenderScenario(scenario);
+        objects.RenderRevealing(board.Areas);
         objects.RenderPlayer(player);
         objects.RenderHosted([.. scenario.Concat(player)]);
         int handSeat = prompt?.Player ?? selection.ExpandedSeat;
         objects.RenderHand(board.Areas.FirstOrDefault(area =>
             area.Zone == "HandsArea" && area.Seat == handSeat));
-        RenderDecisionAnchors(main, objects, board, prompt);
         objects.RenderOverflow(SpatialTableObjectRenderer.Unplaced([.. scenario.Concat(player)
             .Concat(Lane(board, "other"))]));
 
         AddHandCaption(surface, geometry, board, handSeat, prompt);
         SpatialTableContextRenderer.Add(surface, result, geometry, main.CurrentGame?.World, prompt);
-    }
-
-    private static void RenderDecisionAnchors(
-        Main main,
-        SpatialTableObjectRenderer objects,
-        BoardPresentation board,
-        Prompt? prompt)
-    {
-        if (prompt is null || main.CurrentGame?.World is not { } world) return;
-        PromptPresentation decision = PromptPresentation.From(prompt, world);
-        objects.RenderDecisionAnchors(
-            board.Areas,
-            [.. decision.Affordances
-                .Where(affordance => affordance.Illegal is null)
-                .Select(affordance => affordance.Source?.CardId)
-                .OfType<int>()
-                .Distinct()]);
+        TableSidebarContent.Render(main, result, prompt, selection);
     }
 
     private static PanelContainer AddMat(
@@ -140,15 +142,6 @@ internal static class SpatialTableSurfaceRenderer
             ZIndex = 0,
         };
         surface.AddChild(mat);
-        surface.AddChild(new Label
-        {
-            Name = $"{name}Caption",
-            Text = caption,
-            Position = rect.Position + new Vector2(22, 15),
-            ThemeTypeVariation = GodotThemeVariations.Eyebrow,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-            ZIndex = 2,
-        });
         return mat;
     }
 
@@ -169,8 +162,8 @@ internal static class SpatialTableSurfaceRenderer
         surface.AddChild(new Label
         {
             Name = "EngagementCaption",
-            Text = $"ENGAGED WITH PLAYER {expandedSeat + 1}",
-            Position = seam.Position + new Vector2(154, -12),
+            Text = $"Engaged with player {expandedSeat + 1}",
+            Position = geometry.EngagedEnemies.Position - new Vector2(0, 24),
             ThemeTypeVariation = GodotThemeVariations.Caption,
             ZIndex = 3,
             MouseFilter = Control.MouseFilterEnum.Ignore,
@@ -188,29 +181,17 @@ internal static class SpatialTableSurfaceRenderer
             area.Zone == "HandsArea" && area.Seat == seat);
         int visible = hand?.Cards.Where(card => !card.Concealed).Sum(card => card.Count) ?? 0;
         int concealed = hand?.Cards.Where(card => card.Concealed).Sum(card => card.Count) ?? 0;
-        string instruction = MulliganPrompt.IsOpening(prompt)
-            ? "DRAG TO DISCARD\nOR SELECT A CARD"
-            : "DRAG AN OFFERED CARD\nTOWARD YOUR PLAY AREA";
         string heading = MulliganPrompt.IsOpening(prompt)
-            ? $"PLAYER {seat + 1} OPENING HAND"
-            : $"PLAYER {seat + 1} PRIVATE HAND";
+            ? $"Player {seat + 1} opening hand"
+            : $"Player {seat + 1} hand";
         float left = geometry.PlayerMat.Position.X + 22;
-        float top = geometry.PlayerDiscard.End.Y + 24;
+        float top = geometry.PlayerDiscard.End.Y + 12;
         surface.AddChild(new Label
         {
             Name = "SpatialHandHeading",
-            Text = $"{heading}\n{visible} VISIBLE"
-                + (concealed > 0 ? $" · {concealed} CONCEALED" : string.Empty),
+            Text = $"{heading} · {visible} cards"
+                + (concealed > 0 ? $" · {concealed} concealed" : string.Empty),
             Position = new Vector2(left, top),
-            ThemeTypeVariation = GodotThemeVariations.Eyebrow,
-            ZIndex = 60,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        });
-        surface.AddChild(new Label
-        {
-            Name = "SpatialHandInstruction",
-            Text = instruction,
-            Position = new Vector2(left, top + 52),
             ThemeTypeVariation = GodotThemeVariations.Caption,
             ZIndex = 60,
             MouseFilter = Control.MouseFilterEnum.Ignore,

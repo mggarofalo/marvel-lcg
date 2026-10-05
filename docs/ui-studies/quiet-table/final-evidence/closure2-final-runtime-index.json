@@ -1,0 +1,10 @@
+[
+  {
+    "check": "hosted-invitation-final",
+    "exit_code": 0
+  },
+  {
+    "check": "rendered-matrix",
+    "exit_code": 0
+  }
+]

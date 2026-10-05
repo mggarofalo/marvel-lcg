@@ -1,0 +1,11 @@
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Release/net8.0/Marvel.Session.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Release/net8.0/Marvel.Cards.dll
+  Marvel.Sim -> /Users/michael/Source/marvel-lcg/src/Marvel.Sim/bin/Release/net8.0/Marvel.Sim.dll
+  Marvel.Acceptance.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Acceptance.Tests/bin/Release/net8.0/Marvel.Acceptance.Tests.dll
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Acceptance.Tests/bin/Release/net8.0/Marvel.Acceptance.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 2 s - Marvel.Acceptance.Tests.dll (net8.0)

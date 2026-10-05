@@ -54,6 +54,7 @@ internal static class AbilityDeckAndRevealExecution
         if (card is null) return null;
         var from = card.Area;
         var revealing = context.World.AreaOf(DeckType.RevealingArea);
+        EncounterRevealExposure.Expose(context.World, card, context.Trigger, context.Events);
         World.MoveToTop(card, revealing);
         context.Events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(revealing),

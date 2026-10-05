@@ -10,7 +10,7 @@ var finishing := false
 
 func _new_client_viewport() -> SubViewport:
 	var viewport := SubViewport.new()
-	viewport.size = Vector2i(1280, 720)
+	viewport.size = Vector2i(1920, 1080)
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	get_tree().root.add_child(viewport)
 	return viewport

@@ -37,6 +37,10 @@ func _required_journey_paths_were_seen(state: Dictionary) -> bool:
 			or not state.captured_villain_phase:
 		_fail("the journey did not expose its attack and villain-phase checkpoints")
 		return false
+	if not multiplayer and not main.has_meta("source_chooser_focus_proved"):
+		_fail("the played journey never proved source-chooser keyboard restoration")
+		return false
+
 	if motion_enabled and not state.saw_nonblocking_motion:
 		_fail("the journey never exposed an operable prompt during event motion")
 		return false
@@ -50,16 +54,13 @@ func _required_journey_paths_were_seen(state: Dictionary) -> bool:
 
 
 func _terminal_decision_is_safe() -> bool:
+	if not _terminal_has_no_active_controls():
+		return false
 	if "VILLAIN WINS" not in _status().text and "PLAYERS LOSE" not in _status().text:
 		_fail("the terminal UI did not report the seeded loss")
 		return false
 	if main.find_child("AstraTableSurface", true, false) != null:
-		var latest := main.find_child("LatestResult", true, false) as Label
-		if latest != null and ("villain won" in latest.text.to_lower() \
-				or "players lost" in latest.text.to_lower()):
-			return true
-		_fail("the history drawer does not identify the terminal result")
-		return false
+		return _terminal_table_outcome_is_visible()
 	if not await _wait_for(func() -> bool:
 		return "DEFEAT" in _visible_text(_decision()).to_upper()):
 		_fail("the null-prompt terminal decision copy does not identify defeat")
@@ -78,6 +79,24 @@ func _terminal_decision_is_safe() -> bool:
 	if _node("Status").theme_type_variation != &"DangerStatusPanel":
 		_fail("the loss did not receive the semantic danger treatment")
 		return false
+	return true
+
+
+func _terminal_table_outcome_is_visible() -> bool:
+	var context := main.find_child("ContextualDecision", true, false) as Control
+	var outcome := _visible_text(context).to_lower() if context != null else ""
+	if "defeat" in outcome and ("villain won" in outcome or "players lost" in outcome):
+		return true
+	_fail("the terminal task surface does not identify defeat and its authoritative outcome")
+	return false
+
+
+func _terminal_has_no_active_controls() -> bool:
+	for pattern in ["ContextualCommit", "ContextualDecline", "Card*Action", "Card*Target", "Card*Generator"]:
+		for candidate in main.find_children(pattern, "Button", true, false):
+			if candidate.is_visible_in_tree() and not candidate.disabled:
+				_fail("the null-prompt terminal table retained an operable control: %s" % candidate.name)
+				return false
 	return true
 
 
@@ -100,8 +119,12 @@ func _terminal_result_is_safe() -> bool:
 		return false
 	var latest := main.find_child("LatestResult", true, false) as Label
 	if latest != null:
-		var latest_text := latest.text.to_lower()
-		return "villain won the game" in latest_text or "players lost the game" in latest_text
+		var context := main.find_child("ContextualDecision", true, false) as Control
+		var outcome := _visible_text(context).to_lower() if context != null else ""
+		if not latest.text.is_empty() and ("villain won" in outcome or "players lost" in outcome):
+			return true
+		_fail("the terminal task lost its outcome or durable result receipt")
+		return false
 	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
 	var text := _visible_text(result).to_lower()
 	if result.visible and ("villain won the game" in text or "players lost the game" in text):

@@ -35,7 +35,7 @@ internal static class BoardCardPresentationFactory
         return presented;
     }
 
-    private static BoardCardPresentation Present(CardDescriptor card, string zone)
+    internal static BoardCardPresentation Present(CardDescriptor card, string zone)
     {
         if (card.Face is null)
         {
@@ -105,7 +105,7 @@ internal static class BoardCardPresentationFactory
         bool canExhaust = kind is null or CardKind.AlterEgo or CardKind.Hero or CardKind.Ally or CardKind.Support or CardKind.Upgrade;
         string status = inPlay && canExhaust ? card.Ready ? "READY" : "EXHAUSTED" : string.Empty;
         if (inPlay && !card.FaceUp) status += status.Length == 0 ? "FACE DOWN" : "  ·  FACE DOWN";
-        return card.Host < 0 ? status : status.Length == 0 ? $"HOST {card.Host}" : $"{status}  ·  HOST {card.Host}";
+        return status;
     }
 
     internal static bool IsInPlay(string zone) => Enum.TryParse(zone, out DeckType deckType) && DeckTypes.IsInPlay(deckType);

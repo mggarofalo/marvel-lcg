@@ -1,0 +1,14 @@
+[
+  {
+    "check": "godot-wall",
+    "exit_code": 0
+  },
+  {
+    "check": "presentation-wall",
+    "exit_code": 0
+  },
+  {
+    "check": "hosted-original",
+    "exit_code": 1
+  }
+]

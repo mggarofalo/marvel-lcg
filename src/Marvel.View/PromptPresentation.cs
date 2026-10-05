@@ -13,6 +13,9 @@ public sealed record PromptPresentation(
     string Diagnostic,
     IReadOnlyList<AffordancePresentation> Affordances)
 {
+    /// <summary>Engine-authored commitment when declining is legal.</summary>
+    public string DeclineLabel { get; init; } = "Pass this opportunity";
+
     /// <summary>Readable cards whose occurrence caused the pending decision.</summary>
     public IReadOnlyList<BoardCardPresentation> ContextCards { get; init; } = [];
 
@@ -28,14 +31,15 @@ public sealed record PromptPresentation(
         return new PromptPresentation(
             BuildHeading(prompt, contextCards),
             BuildContext(prompt, world, contextCards),
-            prompt.Description?.Trim() ?? string.Empty,
-            prompt.Cancellable ? "You may pass." : "Choose to continue.",
+            BuildResolution(prompt, world),
+            prompt.Cancellable ? $"You may {prompt.DeclineLabel.ToLowerInvariant()}." : "Choose to continue.",
             $"Player {prompt.Player + 1} · {Words(prompt.Asking.ToString())}"
                 + $" · {Words(prompt.When.ToString())} · {Words(prompt.Trigger)}"
                 + $"\nWire label: {prompt.Label.Trim()}",
-            prompt.Affordances.Select(option => Present(option, world)).ToArray())
+            prompt.Affordances.Select(option => AffordancePresenter.Present(option, world)).ToArray())
         {
             ContextCards = contextCards,
+            DeclineLabel = prompt.DeclineLabel,
             ResolutionKind = Words(prompt.When.ToString()),
         };
     }
@@ -49,7 +53,7 @@ public sealed record PromptPresentation(
             .Where(entry => entry.Card.Id is not null && entry.Card.Face is not null)
             .ToDictionary(entry => entry.Card.Id!.Value);
         var presented = new List<BoardCardPresentation>();
-        foreach (int id in prompt.ContextCardIds.Distinct())
+        foreach (int id in prompt.ContextCardIds.Concat(prompt.CauseCardIds).Distinct())
         {
             if (locations.TryGetValue(id, out var entry))
             {
@@ -59,31 +63,18 @@ public sealed record PromptPresentation(
         return presented;
     }
 
+    private static string BuildResolution(Prompt prompt, WorldDescriptor world)
+    {
+        string[] causes = [.. prompt.CauseCardIds
+            .Where(id => world.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
+                .Any(card => card.Id == id && card.Face is not null))
+            .Select(id => Describe(id, world)).Distinct()];
+        string prefix = causes.Length == 0 ? string.Empty : $"Cause: {string.Join(", ", causes)}. ";
+        return prefix + (prompt.Description?.Trim() ?? string.Empty);
+    }
+
     private static BoardCardPresentation PresentContext(CardDescriptor card, string zone) =>
         BoardCardPresentationFactory.Present([card], zone)[0];
-
-    private static AffordancePresentation Present(Affordance option, WorldDescriptor world)
-    {
-        AffordanceSourceDescriptor? source = Source(option, world);
-        return new AffordancePresentation(
-            option.Id,
-            option.Label,
-            option.Description,
-            Words(option.Verb),
-            DescribeAnchor(option, world),
-            option.AnchorId,
-            option.AnchorPlayer,
-            option.Illegal,
-            option.Targets is null ? "No selection" : Describe(option.Targets),
-            option.CostOptions.Select(Describe).ToArray())
-        {
-            AnchorKind = option.AnchorKind,
-            Source = source,
-            TargetRequest = option.Targets,
-            CostOptions = option.CostOptions,
-            Relationships = Relationships(option, source, world),
-        };
-    }
 
     private static string BuildHeading(
         Prompt prompt, IReadOnlyList<BoardCardPresentation> contextCards) =>
@@ -102,7 +93,7 @@ public sealed record PromptPresentation(
         return (prompt.Asking, prompt.When) switch
         {
             (Question.Opportunity, TimingPriority.Interrupt) =>
-                $"{title} was revealed — interrupt?",
+                $"Interrupt {title}?",
             (Question.Opportunity, TimingPriority.Response) => $"Respond to {title}",
             _ => null,
         };
@@ -118,6 +109,7 @@ public sealed record PromptPresentation(
         Question.Opportunity when prompt.When == TimingPriority.Response =>
             "Choose a response",
         Question.Opportunity => "Choose an ability",
+        Question.Defender => "Choose a defender",
         Question.Element => "Choose a game element",
         _ => "Choose what happens next",
     };
@@ -128,62 +120,12 @@ public sealed record PromptPresentation(
     {
         string player = world.Players.FirstOrDefault(candidate => candidate.Seat == prompt.Player)
             ?.Name ?? $"Player {prompt.Player + 1}";
-        string subject = contextCards.Count > 0
+        string subject = prompt.PublicKind == PublicDecisionKind.MinionActivationOrder
+            ? " · Choosing minion activation order"
+            : contextCards.Count > 0
             ? $" · Resolving {contextCards[0].Title}"
             : string.Empty;
         return $"Decision for {player}{subject}";
-    }
-
-    private static AffordanceSourceDescriptor? Source(Affordance option, WorldDescriptor world)
-    {
-        if (option.AnchorKind == AffordanceAnchorKind.Card)
-        {
-            CardDescriptor? card = world.Areas
-                .SelectMany(area => area.Cards.Concat(area.Removed))
-                .FirstOrDefault(candidate => candidate.Id == option.AnchorId);
-            return card?.Id is not null && card.Location is not null
-                ? new AffordanceSourceDescriptor(option.AnchorKind, card.Id,
-                    card.Location.AreaId, card.Location.Controller)
-                : null;
-        }
-
-        if (option.AnchorKind != AffordanceAnchorKind.Area)
-        {
-            return null;
-        }
-
-        AreaDescriptor? area = world.Areas.FirstOrDefault(candidate => candidate.Id == option.AnchorId);
-        return area is null ? null : new AffordanceSourceDescriptor(
-            option.AnchorKind, null, area.Id, area.Owner);
-    }
-
-    private static List<TableRelationshipDescriptor> Relationships(
-        Affordance option,
-        AffordanceSourceDescriptor? source,
-        WorldDescriptor world)
-    {
-        if (source?.CardId is not int sourceId)
-        {
-            return [];
-        }
-        var visible = world.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
-            .Where(card => card.Id is not null).Select(card => card.Id!.Value).ToHashSet();
-        var relationships = new List<TableRelationshipDescriptor>();
-        if (option.Targets is not null)
-        {
-            relationships.AddRange(option.Targets.Legal.Where(visible.Contains)
-                .Select(target => new TableRelationshipDescriptor(
-                    RelationshipKind.OfferedTarget, sourceId, target)));
-        }
-        foreach (ResourceSource generator in option.CostOptions.SelectMany(cost => cost.Generators))
-        {
-            if (visible.Contains(generator.Effect))
-            {
-                relationships.Add(new TableRelationshipDescriptor(
-                    RelationshipKind.OfferedGenerator, sourceId, generator.Effect));
-            }
-        }
-        return relationships;
     }
 
     /// <summary>Names an authorized board object, or leaves an opaque fallback.</summary>
@@ -207,58 +149,6 @@ public sealed record PromptPresentation(
         AreaDescriptor? area = world.Areas.FirstOrDefault(candidate => candidate.Id == id);
         return area is null ? $"Object {id}" : Words(area.Zone);
     }
-
-    private static string DescribeAnchor(Affordance option, WorldDescriptor world) =>
-        option.AnchorKind switch
-        {
-            AffordanceAnchorKind.Card => DescribeCard(option.AnchorId, world),
-            AffordanceAnchorKind.Area => DescribeArea(option.AnchorId, world),
-            _ => $"Object {option.AnchorId}",
-        };
-
-    private static string DescribeCard(int id, WorldDescriptor world)
-    {
-        CardDescriptor? card = world.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
-            .FirstOrDefault(candidate => candidate.Id == id);
-        return card is null ? $"Object {id}" : Describe(id, world);
-    }
-
-    private static string DescribeArea(int id, WorldDescriptor world)
-    {
-        AreaDescriptor? area = world.Areas.FirstOrDefault(candidate => candidate.Id == id);
-        return area is null ? $"Object {id}" : Words(area.Zone);
-    }
-
-    private static string Describe(TargetRequest request)
-    {
-        if (request.IsGrouped)
-        {
-            return $"Choose one of {request.Groups!.Count} complete groups";
-        }
-
-        string count = request.Min == request.Max
-            ? $"Choose {request.Min}"
-            : $"Choose {request.Min}–{request.Max}";
-        string mode = request.IsSearch ? " search results" : " targets";
-        if (request.AllowRepeated)
-        {
-            mode += " with repetition";
-        }
-
-        return count + mode + $" from {request.Legal.Count}";
-    }
-
-    private static string Describe(CostOption cost)
-    {
-        string primary = $"Cost {cost.Cost}{CostRequirement(cost.Rule)}";
-        string alternative = cost.HasAlternative
-            ? $" or {cost.OrCost}{CostRequirement(cost.OrRule)}"
-            : string.Empty;
-        return primary + alternative + $" · {cost.Generators.Count} generators";
-    }
-
-    private static string CostRequirement(IReadOnlyList<string>? rule) =>
-        rule is { Count: > 0 } ? $" [{string.Join(", ", rule)}]" : string.Empty;
 
     /// <summary>Converts a wire identifier into readable words.</summary>
     public static string Words(string value)

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Marvel.Server",
+    "path": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/dense-fixture/bin/Release/net8.0/Marvel.Server.dll",
+    "sha256": "add746ef4dbee158f6e4ebeb592583d8a9f654d6d963573cd781895cb909d19b"
+  },
+  {
+    "name": "Marvel.Decisions",
+    "path": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/dense-fixture/bin/Release/net8.0/Marvel.Decisions.dll",
+    "sha256": "9253e908b2742059b9ba3e1e031e7c738addc545169c7ae64f545e65b7d878a0"
+  },
+  {
+    "name": "Marvel.Rules",
+    "path": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/dense-fixture/bin/Release/net8.0/Marvel.Rules.dll",
+    "sha256": "f464abacc85ae58ea65bc1276e32e9fa04813ce006a930b10a707800634b521f"
+  },
+  {
+    "name": "Marvel.Core",
+    "path": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/dense-fixture/bin/Release/net8.0/Marvel.Core.dll",
+    "sha256": "f176c34a751af5c5887ac0ea252a27c872a49e8cf39a95ca10a586ac92008617"
+  },
+  {
+    "name": "Marvel.Session",
+    "path": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/dense-fixture/bin/Release/net8.0/Marvel.Session.dll",
+    "sha256": "eb9d13f7885cae419552eead34729e6d7769afd8cd465cdda02676bb58c28e20"
+  },
+  {
+    "name": "Marvel.View",
+    "path": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/dense-fixture/bin/Release/net8.0/Marvel.View.dll",
+    "sha256": "5826398e90e42da122e45a3cedcdaa1c7a89a41e412090b22f1c20ca38d85658"
+  },
+  {
+    "name": "Marvel.Content",
+    "path": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/dense-fixture/bin/Release/net8.0/Marvel.Content.dll",
+    "sha256": "7744e6ae6a9df2f7c648200758fe751f2aa4fd5647b0c014f55c09649235a4ad"
+  },
+  {
+    "name": "Marvel.Cards",
+    "path": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/dense-fixture/bin/Release/net8.0/Marvel.Cards.dll",
+    "sha256": "d1f3a121d9b04b45c53679282c84c260f6182da45ddf696744c0f5c13d8ae6e8"
+  }
+]

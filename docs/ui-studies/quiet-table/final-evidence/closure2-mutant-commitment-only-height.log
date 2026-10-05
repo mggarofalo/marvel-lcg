@@ -1,0 +1,92 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M2 Pro
+
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T21:53:10.711774+00:00","process_id":2013,"duration_milliseconds":2,"disposition":"accepted","request_id":"f3df01dec0b7223d1065f4d0a211c4b9","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T21:53:11.288849+00:00","process_id":2013,"duration_milliseconds":0,"disposition":"accepted","request_id":"2bb2d1805f13f447a3b2bc3b8ce0aafd","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T21:53:11.827447+00:00","process_id":2013,"duration_milliseconds":0,"disposition":"accepted","request_id":"c9095b0633b8ac6d61407865346bc608","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"session.persistence.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T21:53:11.944756+00:00","process_id":2013,"duration_milliseconds":17,"disposition":"accepted","request_id":"0557b46dd14401a43ce3f9ecb2ee4adc","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"persistence","save_committed":true,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T21:53:11.94492+00:00","process_id":2013,"duration_milliseconds":115,"disposition":"accepted","request_id":"0557b46dd14401a43ce3f9ecb2ee4adc","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"open","revision":0,"save_committed":true,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+ERROR: control 'ContextualCommit' has no stable unclipped and unobscured hit area: visible [P: (1242.697, 899.0), S: (196.0, 74.0)] of [P: (1242.697, 813.0), S: (196.0, 160.0)] z=0; hovered=/root/@SubViewport@2/Main/Margin/Shell/Content/Play/Board/TableScroll/Margin/Areas/AstraTableSurface/ContextualDecision/@Control@112/ContextualActionScrollFrame/ContextualActionScroll/ContextualActionObjects/DraftCommitments/ContextualCommit z=0
+Visible UI:
+Engaged with player 1
+Discard
+Empty
+▰
+31
+Deck
+The Break-In!
+THREAT  ◆ 0/7
+Escalation  1
+
+Rhino
+Stage  1
+SCH  1
+ATK  2
+HP  14/14
+
+Discard
+Empty
+▰
+34
+Deck
+Peter Parker
+REC  3
+HP  10/10
+
+Avengers Mansion
+Support · Basic
+COST  4
+M
+◇ Available target
+□ DISCARD
+Web-Shooter
+Upgrade · Hero
+COST  1
+P
+◇ Available target
+□ DISCARD
+Aunt May
+Support · Hero
+COST  1
+E
+◇ Available target
+□ DISCARD
+Spider-Tracer
+Upgrade · Hero
+COST  1
+E
+◇ Available target
+□ DISCARD
+Web-Shooter
+Upgrade · Hero
+COST  1
+P
+◇ Available target
+□ DISCARD
+Swinging Web Kick
+Event · Hero
+COST  3
+M
+◇ Available target
+□ DISCARD
+Other piles
+Player 1 opening hand · 6 cards
+Opening hand · Decision for Spider-Man
+
+0 cards staged for replacement (up to 6).  ·  Replacements are drawn after you confirm.
+Keep hand
+Clear replacements
+Earlier
+Complete choices
+You control Spider-Man. Active player: Spider-Man. Inspecting: Spider-Man.
+Refresh to receive other players' latest actions.
+History
+Last synced · r0
+↻
+Scale 100%
+Motion
+
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://smoke/local_game_smoke_core.gd:93)
+       [1] _report_hit_area_failure (res://smoke/local_game_smoke_support.gd:104)

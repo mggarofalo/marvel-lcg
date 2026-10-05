@@ -1,0 +1,26 @@
+[
+  {
+    "label": "Attack",
+    "legal_target_count": 2
+  },
+  {
+    "label": "Thwart",
+    "legal_target_count": 2
+  },
+  {
+    "label": "Attack",
+    "legal_target_count": 2
+  },
+  {
+    "label": "Thwart",
+    "legal_target_count": 2
+  },
+  {
+    "label": "Attack",
+    "legal_target_count": 2
+  },
+  {
+    "label": "Thwart",
+    "legal_target_count": 2
+  }
+]

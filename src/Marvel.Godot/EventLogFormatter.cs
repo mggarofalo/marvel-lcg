@@ -44,7 +44,7 @@ internal static class EventLogFormatter
         IReadOnlyList<EventPresentation> entries,
         string accent) => entries.Count == 0
             ? string.Empty
-            : $"\n[color=#{accent}]EVENT CHRONOLOGY[/color]\n{FormatChronology(entries, accent)}";
+            : $"\n{FormatChronology(entries, accent)}";
 
     private static void AppendAction(
         StringBuilder text,

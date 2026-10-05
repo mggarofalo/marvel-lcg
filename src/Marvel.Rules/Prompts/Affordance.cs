@@ -86,6 +86,15 @@ public sealed record Affordance(
     string? Illegal = null,
     string? Description = null)
 {
+    /// <summary>Engine-authored display name, separate from the stable command label.</summary>
+    public string? DisplayLabel { get; init; }
+
+    /// <summary>Engine-authored action and affected object for accepting this exact option.</summary>
+    public string? CommitLabel { get; init; }
+
+    /// <summary>Mandatory non-resource costs, described by the owning engine ability.</summary>
+    public string? CostDescription { get; init; }
+
     /// <summary>The namespace that authoritatively identifies <see cref="AnchorId"/>.</summary>
     /// <remarks>
     /// Existing engine producers anchor to cards. Area producers must opt in;
@@ -98,6 +107,14 @@ public sealed record Affordance(
     /// <summary>Whether taking this offer initiates playing its source card.</summary>
     /// <remarks>The engine chooses this presentation marker so clients need not infer event plays from names or card text.</remarks>
     public bool PlaysCard { get; init; } = Verb == Play.CardPlay.Verb;
+
+    /// <summary>Whether the admitted effect starts with a separate target choice after this action's costs commit.</summary>
+    /// <remarks>
+    /// This engine-owned marker supplies no future legal targets. Cancellation or
+    /// intervening changes can prevent that choice. False makes no claim about
+    /// choices inside conditional or later effect branches.
+    /// </remarks>
+    public bool DeferredTargetSelection { get; init; }
 
     /// <summary>Whether the player can actually take this.</summary>
     /// <remarks>

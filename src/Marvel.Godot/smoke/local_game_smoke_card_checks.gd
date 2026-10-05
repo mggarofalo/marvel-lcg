@@ -154,7 +154,7 @@ func _upcoming_stages_are_safe() -> bool:
 		return false
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
-	var next := inspector.find_child("NextStage", true, false) as Button
+	var next := inspector.find_child("NextCard", true, false) as Button
 	var heading := inspector.find_child("Title", true, false) as Label
 	if not _villain_stage_inspector_is_ready(inspector, next, heading):
 		_fail("the current villain inspector does not expose bounded stage navigation")
@@ -163,12 +163,12 @@ func _upcoming_stages_are_safe() -> bool:
 		return false
 	if not await _wait_for(func() -> bool:
 		var current := inspector.find_child("Title", true, false) as Label
-		return current != null and current.text == "STAGE 2 OF 2"):
+		return current != null and current.text == "Card 2 of 2"):
 		_fail("the villain inspector did not finish navigating to the upcoming stage")
 		return false
 	heading = inspector.find_child("Title", true, false) as Label
-	var previous := inspector.find_child("PreviousStage", true, false) as Button
-	if heading == null or heading.text != "STAGE 2 OF 2" \
+	var previous := inspector.find_child("PreviousCard", true, false) as Button
+	if heading == null or heading.text != "Card 2 of 2" \
 			or previous == null or previous.disabled:
 		_fail("the villain inspector did not navigate to the upcoming stage")
 		return false
@@ -200,7 +200,7 @@ func _active_villain_stage() -> Control:
 func _villain_stage_inspector_is_ready(
 		inspector: Control, next: Button, heading: Label) -> bool:
 	return inspector.visible and next != null and heading != null \
-		and heading.text == "STAGE 1 OF 2" and not next.disabled
+		and heading.text == "Card 1 of 2" and not next.disabled
 
 
 func _secondary_areas_are_safe() -> bool:

@@ -7,6 +7,7 @@ namespace Marvel.Godot;
 internal sealed class BoardDraftInteraction
 {
     private readonly DecisionComposer composer;
+    private readonly BoardHandPlayInteraction plays;
     private readonly TableDraftBinding operations;
     private readonly IReadOnlyList<AffordancePresentation> affordances;
 
@@ -18,6 +19,7 @@ internal sealed class BoardDraftInteraction
         this.composer = composer ?? throw new ArgumentNullException(nameof(composer));
         this.operations = operations ?? throw new ArgumentNullException(nameof(operations));
         this.affordances = affordances ?? throw new ArgumentNullException(nameof(affordances));
+        plays = new BoardHandPlayInteraction(composer, operations, affordances);
     }
 
     internal BoardDraftMutation TryActivate(int? id, bool isHandCard)
@@ -81,32 +83,14 @@ internal sealed class BoardDraftInteraction
 
     internal BoardDraftMutation TryPlay(int? id, bool isHandCard, bool droppedOnPlayerLane)
     {
-        if (!isHandCard || !droppedOnPlayerLane || id is null)
-        {
-            return BoardDraftMutation.None;
-        }
-
-        int[] plays = composer.Prompt.Affordances
-            .Where(option => option.IsLegal
-                && IsVisibleCardAnchor(option.Id, id.Value)
-                && option.PlaysCard)
-            .Select(option => option.Id)
-            .ToArray();
-        return plays.Length == 1 && operations.TrySelectAffordance(plays[0])
-            ? BoardDraftMutation.Affordance
-            : BoardDraftMutation.None;
+        if (id is not { } source) return BoardDraftMutation.None;
+        IReadOnlyList<AffordancePresentation> matches = plays.Matches(source, null, isHandCard, droppedOnPlayerLane);
+        return matches.Count == 1 && plays.TrySelect(matches[0].Id, source, null, isHandCard, droppedOnPlayerLane)
+            ? BoardDraftMutation.Affordance : BoardDraftMutation.None;
     }
 
-    internal bool CanPlay(int? id, bool isHandCard)
-    {
-        if (!isHandCard || id is null)
-        {
-            return false;
-        }
-        return composer.Prompt.Affordances.Count(option => option.IsLegal
-            && IsVisibleCardAnchor(option.Id, id.Value)
-            && option.PlaysCard) == 1;
-    }
+    internal bool CanPlay(int? id, bool isHandCard) => isHandCard && id is { } source
+        && plays.SourceOffers(source).Count == 1;
 
     private bool IsVisibleCardAnchor(int affordanceId, int cardId) =>
         affordances.SingleOrDefault(affordance => affordance.Id == affordanceId) is { } affordance

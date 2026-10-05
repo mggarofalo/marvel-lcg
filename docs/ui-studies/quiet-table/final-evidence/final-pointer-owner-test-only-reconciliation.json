@@ -1,0 +1,38 @@
+{
+  "all_production_engine_view_decisions_client_server_godot_source_unchanged": true,
+  "bounded_correction": "specialized geometry helper delegates one proved-point click to existing physical-input owner, which reasserts motion immediately before one button pair; diagnostics count Down/Up/Pressed and public state",
+  "current_runtime_manifest": "final-pointer-owner-local-runtime-manifest.json",
+  "final_head_reviews_and_exact_windows_linux_ci": "required/pending",
+  "local_affected_rendered_profiles": "four passed; exact1press observed eachhistorytoggle",
+  "native_approval_retained": "R01-R65 APPROVED with original frozen identities/E-C-Q limits; these smoke files load only in test invocation",
+  "native_to_current_source_delta": [
+    "docs/godot-client.md",
+    "src/Marvel.Godot/smoke/local_game_smoke_direct_journey.gd",
+    "src/Marvel.Godot/smoke/local_game_smoke_mulligan_checks.gd"
+  ],
+  "new_driver_mutation_kill_claimed": false,
+  "new_source_manifest_sha256": "0f99b879e1094d62da9784e2df2e964844de1f97be6dbd7cbb5d97b0441f5527",
+  "postcommit_runtime_byte_equivalence_claimed": false,
+  "previous_exhaustive_ci": {
+    "linux": "success",
+    "package": "success",
+    "result": "failure",
+    "run": 37246917159,
+    "windows": "rendered150 history-toggle assertion failure"
+  },
+  "previous_feature_head": "7c5b7f005af6eef555c9fa6ccf9dfbe6fe149628",
+  "previous_pr_ci": {
+    "linux": "success",
+    "package": "success",
+    "result": "failure",
+    "run": 37246892564,
+    "windows": "rendered150 history-toggle assertion failure"
+  },
+  "product_mutation_kills": 15,
+  "required_failure": "history toggle activated=false or press count !=1; old log lacks values, both failed screenshots expanded; causal attribution remains unproven",
+  "separate_hosted_observer_kills": 1,
+  "test_only_delta_from_prior_feature": [
+    "src/Marvel.Godot/smoke/local_game_smoke_direct_journey.gd",
+    "src/Marvel.Godot/smoke/local_game_smoke_mulligan_checks.gd"
+  ]
+}

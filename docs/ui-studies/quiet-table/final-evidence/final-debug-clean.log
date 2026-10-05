@@ -1,0 +1,380 @@
+Build started 10/4/2026 8:49:49 AM.
+     1>Project "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/Marvel.Godot.csproj" on node 1 (Clean target(s)).
+     1>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Godot.deps.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Godot.runtimeconfig.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Godot.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Godot.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/GodotSharp.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/GodotSharpEditor.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Client.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Decisions.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Rules.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Server.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.View.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Core.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Session.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Content.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Cards.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Client.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Client.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Decisions.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Decisions.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Rules.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Rules.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Server.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Server.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.View.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.View.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Core.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Core.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Session.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Session.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Content.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Content.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Cards.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Cards.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/obj/Debug/Marvel.Godot.csproj.AssemblyReference.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/obj/Debug/Marvel.Godot.GeneratedMSBuildEditorConfig.editorconfig".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/obj/Debug/Marvel.Godot.AssemblyInfoInputs.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/obj/Debug/Marvel.Godot.AssemblyInfo.cs".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/obj/Debug/Marvel.Godot.csproj.CoreCompileInputs.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/obj/Debug/Marvel.Godot.sourcelink.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/obj/Debug/Marvel.G.0648E3F7.Up2Date".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/obj/Debug/Marvel.Godot.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/obj/Debug/refint/Marvel.Godot.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/obj/Debug/Marvel.Godot.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/obj/Debug/Marvel.Godot.genruntimeconfig.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/obj/Debug/ref/Marvel.Godot.dll".
+     1>Project "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/Marvel.Godot.csproj" (1) is building "/Users/michael/Source/marvel-lcg/src/Marvel.Client/Marvel.Client.csproj" (2:2) on node 1 (Clean target(s)).
+     2>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Client.deps.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Client.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Client.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Client.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Decisions.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Rules.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Server.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.View.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Core.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Session.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Content.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Cards.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Decisions.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Decisions.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Rules.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Rules.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Server.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Server.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.View.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.View.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Core.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Core.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Session.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Session.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Content.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Content.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Cards.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Cards.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/obj/Debug/net8.0/Marvel.Client.csproj.AssemblyReference.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/obj/Debug/net8.0/Marvel.Client.GeneratedMSBuildEditorConfig.editorconfig".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/obj/Debug/net8.0/Marvel.Client.AssemblyInfoInputs.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/obj/Debug/net8.0/Marvel.Client.AssemblyInfo.cs".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/obj/Debug/net8.0/Marvel.Client.csproj.CoreCompileInputs.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/obj/Debug/net8.0/Marvel.Client.sourcelink.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/obj/Debug/net8.0/Marvel.C.E420CC41.Up2Date".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/obj/Debug/net8.0/Marvel.Client.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/obj/Debug/net8.0/refint/Marvel.Client.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/obj/Debug/net8.0/Marvel.Client.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/obj/Debug/net8.0/Marvel.Client.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Client/obj/Debug/net8.0/ref/Marvel.Client.dll".
+     1>Project "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/Marvel.Godot.csproj" (1) is building "/Users/michael/Source/marvel-lcg/src/Marvel.Server/Marvel.Server.csproj" (4:2) on node 4 (Clean target(s)).
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Server.deps.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Server.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Server.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Server.xml".
+     1>Project "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/Marvel.Godot.csproj" (1) is building "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/Marvel.Decisions.csproj" (3:2) on node 2 (Clean target(s)).
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.deps.json".
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Cards.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Content.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Core.dll".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.dll".
+     1>Project "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/Marvel.Godot.csproj" (1) is building "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/Marvel.Rules.csproj" (5:2) on node 3 (Clean target(s)).
+     5>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.deps.json".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Rules.dll".
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Decisions.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Rules.dll".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Core.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Rules.pdb".
+     5>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Rules.xml".
+     5>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.xml".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Core.pdb".
+     5>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Core.dll".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Core.xml".
+     5>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Core.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Core.xml".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/obj/Debug/net8.0/Marvel.Decisions.csproj.AssemblyReference.cache".
+     1>Project "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/Marvel.Godot.csproj" (1) is building "/Users/michael/Source/marvel-lcg/src/Marvel.View/Marvel.View.csproj" (6:2) on node 5 (Clean target(s)).
+     6>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.deps.json".
+     5>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/Marvel.Rules.csproj.AssemblyReference.cache".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/obj/Debug/net8.0/Marvel.Decisions.GeneratedMSBuildEditorConfig.editorconfig".
+     5>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/Marvel.Rules.GeneratedMSBuildEditorConfig.editorconfig".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/obj/Debug/net8.0/Marvel.Decisions.AssemblyInfoInputs.cache".
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Session.dll".
+     6>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.dll".
+     5>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/Marvel.Rules.AssemblyInfoInputs.cache".
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.View.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Decisions.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Decisions.xml".
+     6>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.xml".
+     5>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/Marvel.Rules.AssemblyInfo.cs".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/Marvel.Rules.csproj.CoreCompileInputs.cache".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/obj/Debug/net8.0/Marvel.Decisions.AssemblyInfo.cs".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/obj/Debug/net8.0/Marvel.Decisions.csproj.CoreCompileInputs.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/obj/Debug/net8.0/Marvel.Decisions.sourcelink.json".
+     6>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.Rules.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.Core.dll".
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Cards.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Cards.xml".
+     5>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/Marvel.Rules.sourcelink.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/Marvel.R.F415CE65.Up2Date".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/Marvel.Rules.dll".
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Content.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Content.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Session.pdb".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/obj/Debug/net8.0/Marvel.D.C1ABB772.Up2Date".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/obj/Debug/net8.0/Marvel.Decisions.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/obj/Debug/net8.0/refint/Marvel.Decisions.dll".
+     6>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.Rules.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.Rules.xml".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/obj/Debug/net8.0/Marvel.Decisions.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/obj/Debug/net8.0/Marvel.Decisions.pdb".
+     5>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/refint/Marvel.Rules.dll".
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Session.xml".
+     6>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.Core.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.Core.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/obj/Debug/net8.0/Marvel.View.csproj.AssemblyReference.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/obj/Debug/net8.0/Marvel.View.GeneratedMSBuildEditorConfig.editorconfig".
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.View.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.View.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Core.pdb".
+     3>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/obj/Debug/net8.0/ref/Marvel.Decisions.dll".
+     5>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/Marvel.Rules.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/Marvel.Rules.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll".
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Core.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Rules.pdb".
+     6>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/obj/Debug/net8.0/Marvel.View.AssemblyInfoInputs.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/obj/Debug/net8.0/Marvel.View.AssemblyInfo.cs".
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Rules.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/obj/embedded/Debug/net8.0/Marvel.Server.csproj.AssemblyReference.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/obj/embedded/Debug/net8.0/Marvel.Server.GeneratedMSBuildEditorConfig.editorconfig".
+     6>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/obj/Debug/net8.0/Marvel.View.csproj.CoreCompileInputs.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/obj/Debug/net8.0/Marvel.View.sourcelink.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/obj/Debug/net8.0/Marvel.V.87CB3138.Up2Date".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/obj/Debug/net8.0/Marvel.View.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/obj/Debug/net8.0/refint/Marvel.View.dll".
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/obj/embedded/Debug/net8.0/Marvel.Server.AssemblyInfoInputs.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/obj/embedded/Debug/net8.0/Marvel.Server.AssemblyInfo.cs".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/obj/embedded/Debug/net8.0/Marvel.Server.csproj.CoreCompileInputs.cache".
+     6>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/obj/Debug/net8.0/Marvel.View.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/obj/Debug/net8.0/Marvel.View.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.View/obj/Debug/net8.0/ref/Marvel.View.dll".
+     4>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/obj/embedded/Debug/net8.0/Marvel.Server.sourcelink.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/obj/embedded/Debug/net8.0/Marvel.S.75C632C3.Up2Date".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/obj/embedded/Debug/net8.0/Marvel.Server.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/obj/embedded/Debug/net8.0/refint/Marvel.Server.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/obj/embedded/Debug/net8.0/Marvel.Server.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/obj/embedded/Debug/net8.0/Marvel.Server.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Server/obj/embedded/Debug/net8.0/ref/Marvel.Server.dll".
+   5:2>Project "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/Marvel.Rules.csproj" (5:2) is building "/Users/michael/Source/marvel-lcg/src/Marvel.Core/Marvel.Core.csproj" (7:2) on node 3 (Clean target(s)).
+     7>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.deps.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/Marvel.Core.GeneratedMSBuildEditorConfig.editorconfig".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/Marvel.Core.AssemblyInfoInputs.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/Marvel.Core.AssemblyInfo.cs".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/Marvel.Core.csproj.CoreCompileInputs.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/Marvel.Core.sourcelink.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/Marvel.Core.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/refint/Marvel.Core.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/Marvel.Core.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/Marvel.Core.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll".
+     7>Done Building Project "/Users/michael/Source/marvel-lcg/src/Marvel.Core/Marvel.Core.csproj" (Clean target(s)).
+     5>Done Building Project "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/Marvel.Rules.csproj" (Clean target(s)).
+     3>Done Building Project "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/Marvel.Decisions.csproj" (Clean target(s)).
+     6>Done Building Project "/Users/michael/Source/marvel-lcg/src/Marvel.View/Marvel.View.csproj" (Clean target(s)).
+   4:2>Project "/Users/michael/Source/marvel-lcg/src/Marvel.Server/Marvel.Server.csproj" (4:2) is building "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/Marvel.Cards.csproj" (8:2) on node 4 (Clean target(s)).
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.deps.json".
+   4:2>Project "/Users/michael/Source/marvel-lcg/src/Marvel.Server/Marvel.Server.csproj" (4:2) is building "/Users/michael/Source/marvel-lcg/src/Marvel.Content/Marvel.Content.csproj" (9:2) on node 1 (Clean target(s)).
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.deps.json".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.xml".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.dll".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Core.dll".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.pdb".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Rules.dll".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.xml".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Rules.pdb".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Core.dll".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Rules.xml".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Rules.dll".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Core.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Core.xml".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Rules.pdb".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/obj/Debug/net8.0/Marvel.Cards.csproj.AssemblyReference.cache".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Rules.xml".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/obj/Debug/net8.0/Marvel.Cards.GeneratedMSBuildEditorConfig.editorconfig".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Core.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Core.xml".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/obj/Debug/net8.0/Marvel.Cards.AssemblyInfoInputs.cache".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/obj/Debug/net8.0/Marvel.Content.csproj.AssemblyReference.cache".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/obj/Debug/net8.0/Marvel.Cards.AssemblyInfo.cs".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/obj/Debug/net8.0/Marvel.Content.GeneratedMSBuildEditorConfig.editorconfig".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/obj/Debug/net8.0/Marvel.Cards.csproj.CoreCompileInputs.cache".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/obj/Debug/net8.0/Marvel.Content.AssemblyInfoInputs.cache".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/obj/Debug/net8.0/Marvel.Cards.sourcelink.json".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/obj/Debug/net8.0/Marvel.Content.AssemblyInfo.cs".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/obj/Debug/net8.0/Marvel.C.EB667E28.Up2Date".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/obj/Debug/net8.0/Marvel.Content.csproj.CoreCompileInputs.cache".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/obj/Debug/net8.0/Marvel.Cards.dll".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/obj/Debug/net8.0/Marvel.Content.sourcelink.json".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/obj/Debug/net8.0/refint/Marvel.Cards.dll".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/obj/Debug/net8.0/Marvel.C.B72B6E34.Up2Date".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/obj/Debug/net8.0/Marvel.Cards.xml".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/obj/Debug/net8.0/Marvel.Content.dll".
+     8>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/obj/Debug/net8.0/Marvel.Cards.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/obj/Debug/net8.0/ref/Marvel.Cards.dll".
+     9>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/obj/Debug/net8.0/refint/Marvel.Content.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/obj/Debug/net8.0/Marvel.Content.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/obj/Debug/net8.0/Marvel.Content.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Content/obj/Debug/net8.0/ref/Marvel.Content.dll".
+     9>Done Building Project "/Users/michael/Source/marvel-lcg/src/Marvel.Content/Marvel.Content.csproj" (Clean target(s)).
+     8>Done Building Project "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/Marvel.Cards.csproj" (Clean target(s)).
+   4:2>Project "/Users/michael/Source/marvel-lcg/src/Marvel.Server/Marvel.Server.csproj" (4:2) is building "/Users/michael/Source/marvel-lcg/src/Marvel.Session/Marvel.Session.csproj" (10:2) on node 6 (Clean target(s)).
+    10>CoreClean:
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.deps.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Core.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Rules.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Rules.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Rules.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Core.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Core.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/obj/Debug/net8.0/Marvel.Session.csproj.AssemblyReference.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/obj/Debug/net8.0/Marvel.Session.GeneratedMSBuildEditorConfig.editorconfig".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/obj/Debug/net8.0/Marvel.Session.AssemblyInfoInputs.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/obj/Debug/net8.0/Marvel.Session.AssemblyInfo.cs".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/obj/Debug/net8.0/Marvel.Session.csproj.CoreCompileInputs.cache".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/obj/Debug/net8.0/Marvel.Session.sourcelink.json".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/obj/Debug/net8.0/Marvel.S.EE80647C.Up2Date".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/obj/Debug/net8.0/Marvel.Session.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/obj/Debug/net8.0/refint/Marvel.Session.dll".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/obj/Debug/net8.0/Marvel.Session.xml".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/obj/Debug/net8.0/Marvel.Session.pdb".
+         Deleting file "/Users/michael/Source/marvel-lcg/src/Marvel.Session/obj/Debug/net8.0/ref/Marvel.Session.dll".
+    10>Done Building Project "/Users/michael/Source/marvel-lcg/src/Marvel.Session/Marvel.Session.csproj" (Clean target(s)).
+     4>Done Building Project "/Users/michael/Source/marvel-lcg/src/Marvel.Server/Marvel.Server.csproj" (Clean target(s)).
+     2>Done Building Project "/Users/michael/Source/marvel-lcg/src/Marvel.Client/Marvel.Client.csproj" (Clean target(s)).
+     1>Done Building Project "/Users/michael/Source/marvel-lcg/src/Marvel.Godot/Marvel.Godot.csproj" (Clean target(s)).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.05

@@ -387,13 +387,6 @@ public sealed partial class Main : Control
         sessionController.ApplySynchronizationFailure(error, prior, hadUncertainMutation);
     internal void ReturnToJoinAfterSessionLoss(ClientStartupError error) =>
         sessionController.ReturnToJoinAfterSessionLoss(error);
-    internal void RenderGame(
-        EngineResponse response,
-        bool resetEvents = false,
-        bool preserveEvents = false,
-        GameProgressPresentation? priorProgress = null,
-        string operation = EngineProtocol.Resolve) =>
-        boardController.RenderGame(response, resetEvents, preserveEvents, priorProgress, operation);
     internal void RenderBoard(WorldDescriptor world) => boardController.RenderBoard(world);
     internal void PreviewHandCard(int? id) => boardController.PreviewHandCard(id);
     internal void ToggleCardInspector(BoardCardPresentation card, Control? source) =>

@@ -27,6 +27,7 @@ internal sealed class MainSessionController
             return;
         }
         main.resolveInFlight = true;
+        DecisionReceiptContext? receipt = CaptureReceipt(decision);
         main.RefreshSynchronizeAvailability();
         try
         {
@@ -40,7 +41,7 @@ internal sealed class MainSessionController
             {
                 return;
             }
-            HandleDecisionResult(result);
+            HandleDecisionResult(result, receipt);
         }
         catch (Exception)
         {
@@ -62,7 +63,11 @@ internal sealed class MainSessionController
             }
         }
     }
-    private void HandleDecisionResult(ClientResolutionResult result)
+    private DecisionReceiptContext? CaptureReceipt(EngineDecision decision) =>
+        main.CurrentGame?.Prompt is { } prompt
+            ? DecisionReceiptContext.From(prompt, main.CurrentGame.World!, decision.Affordance,
+                decision.Targets, decision.Resources ?? []) : null;
+    private void HandleDecisionResult(ClientResolutionResult result, DecisionReceiptContext? receipt)
     {
         if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
         {
@@ -76,7 +81,7 @@ internal sealed class MainSessionController
         }
         if (result.HasAuthoritativeView)
         {
-            ShowAuthoritativeDecision(result);
+            ShowAuthoritativeDecision(result, receipt);
             return;
         }
         ShowUnresolvedDecision(result);
@@ -91,18 +96,18 @@ internal sealed class MainSessionController
         main.promptProgress.Text = "NOT SENT  ·  RETRY SAFE";
         main.promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
     }
-    private void ShowAuthoritativeDecision(ClientResolutionResult result)
+    private void ShowAuthoritativeDecision(ClientResolutionResult result, DecisionReceiptContext? receipt)
     {
         if (result.Error is null)
         {
-            main.RenderGame(result.Response!);
+            main.boardController.RenderGame(result.Response!, acceptedReceipt: result.Succeeded ? receipt : null);
         }
         else
         {
             main.transcript.RecordFailure(
                 EngineProtocol.Resolve, main.CurrentGame!.Revision, result.Error,
                 result.MutationDisposition);
-            main.RenderGame(
+            main.boardController.RenderGame(
                 result.Response!, preserveEvents: true, priorProgress: main.currentProgress,
                 operation: EngineProtocol.Sync);
         }
@@ -246,7 +251,7 @@ internal sealed class MainSessionController
         main.SkipEventPresentation();
         main.events.Reset([]);
         main.DismissLastResult();
-        main.RenderGame(result.Response!, resetEvents: true, operation: EngineProtocol.Undo);
+        main.boardController.RenderGame(result.Response!, resetEvents: true, operation: EngineProtocol.Undo);
         main.decisionPending = false;
         main.uncertainMutationError = null;
         if (result.Error is not null)

@@ -1,0 +1,68 @@
+[
+  {
+    "mutant": "recorded-damage",
+    "file": "src/Marvel.Rules/Play/AttackCompletion.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "log": "seventh-mutant-recorded-damage.log",
+    "restored_sha256": "bc04da8f2a253e31ec0b9efc028d31ad603e2676c271f24c4f785e52b0d8e907"
+  },
+  {
+    "mutant": "lethal-accounting",
+    "file": "src/Marvel.Rules/Play/AttackDamageAccounting.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "log": "seventh-mutant-lethal-accounting.log",
+    "restored_sha256": "f9054d26f31fa819ceec7f352507153d2728b5914c43f74f9ef0118040343cd6"
+  },
+  {
+    "mutant": "completed-zero-result",
+    "file": "src/Marvel.View/AttackCompletionPresentation.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "log": "seventh-mutant-completed-zero-result.log",
+    "restored_sha256": "68e44668bc49ad3d9b664a09e326079810a3d5f35a93fc2d1f99c9bb1fdaf6d9"
+  },
+  {
+    "mutant": "concealed-boost-caption",
+    "file": "src/Marvel.Godot/SpatialTableHostAttachments.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "log": "seventh-mutant-concealed-boost-caption.log",
+    "restored_sha256": "7b6c1eb8ea217d625cdaf799b32fd496b1d68cbfe7659fadbaf428595187b7f7"
+  },
+  {
+    "mutant": "visible-continuation",
+    "file": "src/Marvel.Godot/TableScrollNavigation.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "log": "seventh-mutant-visible-continuation.log",
+    "restored_sha256": "5496425906d75423cd023aa0f4631df1fd7e0c304d5e4fa9937e048e85f7d855"
+  },
+  {
+    "mutant": "bounded-hand-controls",
+    "file": "src/Marvel.Godot/SpatialHandActionStrip.cs",
+    "compiled": true,
+    "killed": true,
+    "exit": 1,
+    "log": "seventh-mutant-bounded-hand-controls.log",
+    "restored_sha256": "badb8a94fe870e785557aa371ac9d82e4b771f4a4f4a99049481802edd50047b"
+  },
+  {
+    "mutant": "new-receipt-scroll",
+    "file": "src/Marvel.Godot/TableLatestResult.cs",
+    "compiled": true,
+    "killed": false,
+    "exit": 0,
+    "log": "seventh-mutant-new-receipt-scroll.log",
+    "restored_sha256": "82a5ac5f50b797ccf86ba35ade0eb7dfcd794d7e1c313844e0567636419b6548",
+    "classification": "Observed equivalent in exercised final native150 response-layout transitions",
+    "evidence": "Offset78 survives composition/commit; temporary max=page261/261 and162/162 clamps to0; final overflowing receipts remain0 at page98.",
+    "scope": "No equivalence claim for other layouts or standalone publication. Explicit reset retained."
+  }
+]

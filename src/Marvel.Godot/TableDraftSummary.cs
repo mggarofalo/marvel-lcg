@@ -1,13 +1,15 @@
 using Marvel.Decisions;
 using Marvel.Rules.Prompts;
+using Marvel.Rules.Play;
 using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Summarizes only the engine-authorized values in the current table draft.</summary>
+/// <summary>Describes editable choices using the current engine-authorized draft progress.</summary>
 internal static class TableDraftSummary
 {
-    internal static string? From(DecisionComposer? composer, PromptPresentation? prompt)
+    internal static string? From(
+        DecisionComposer? composer, PromptPresentation? prompt, WorldDescriptor? world = null)
     {
         if (composer?.Selected is not { } selected)
         {
@@ -17,25 +19,59 @@ internal static class TableDraftSummary
         DecisionProgressPresentation progress = composer.Progress();
         AffordancePresentation? visible = prompt?.Affordances.FirstOrDefault(
             affordance => affordance.Id == selected.Id);
-        string source = visible is null || string.IsNullOrWhiteSpace(visible.Anchor)
-            ? selected.Label
-            : $"{selected.Label} · {visible.Anchor}";
         var state = new List<string>();
-        AddTargets(state, progress.Targets);
+        if (selected.Verb is not (Game.ResolveMulligans or Game.EndPhaseVerb))
+        {
+            state.Add(visible is null ? selected.Label : DecisionCopy.ActionSummary(visible));
+        }
+        AddTargets(state, progress.Targets, selected.Verb);
+        AddSelectedObjects(state, composer, world);
         AddPayment(state, progress.Payment);
-        string readiness = progress.IsReady ? "READY" : "COMPOSING";
-        string resources = progress.Payment.CostState == CostSelectionState.Selected
-            ? $" · RES {progress.Payment.SelectedGenerators}"
-            : string.Empty;
-        return $"SELECTED · {source}\n{readiness}{resources}\n{string.Join(" · ", state)}";
+        if (!progress.IsReady && !string.IsNullOrWhiteSpace(progress.Error))
+        {
+            state.Add(progress.Error);
+        }
+        return string.Join("  ·  ", state);
     }
 
-    private static void AddTargets(List<string> state, TargetSelectionProgress targets)
+    private static void AddSelectedObjects(
+        List<string> state, DecisionComposer composer, WorldDescriptor? world)
     {
-        if (targets.Mode != TargetSelectionMode.None)
+        foreach (int target in composer.Targets)
         {
-            state.Add($"TARGETS {targets.Selected}/{targets.Minimum}–{targets.Maximum}");
+            string? detail = composer.Selected?.Targets?.Details?.GetValueOrDefault(target);
+            string? name = world is null ? null : PromptPresentation.Describe(target, world);
+            string? description = SelectedObjectDescription(name, detail);
+            if (description is not null) state.Add(description);
         }
+    }
+
+    private static string? SelectedObjectDescription(string? name, string? detail) =>
+        string.IsNullOrWhiteSpace(detail) ? name
+            : name is null ? detail : $"{name}: {detail}";
+
+    private static void AddTargets(List<string> state, TargetSelectionProgress targets, string verb)
+    {
+        if (targets.Mode == TargetSelectionMode.None)
+        {
+            return;
+        }
+        string bounds = targets.Minimum == 0
+            ? $"up to {targets.Maximum}"
+            : targets.Minimum == targets.Maximum
+                ? $"{targets.Minimum} required"
+                : $"{targets.Minimum}–{targets.Maximum} required";
+        if (verb is Game.ResolveMulligans or Game.EndPhaseVerb)
+        {
+            string purpose = verb == Game.ResolveMulligans ? "replacement" : "discard";
+            state.Add($"{targets.Selected} card{(targets.Selected == 1 ? string.Empty : "s")} staged for {purpose} ({bounds}).");
+            if (verb == Game.ResolveMulligans)
+                state.Add("Replacements are drawn after you confirm.");
+            return;
+        }
+        state.Add(targets.Mode == TargetSelectionMode.Grouped
+            ? $"{targets.Selected} group selected (1 required)."
+            : $"{targets.Selected} selected ({bounds}).");
     }
 
     private static void AddPayment(List<string> state, PaymentProgress payment)
@@ -43,13 +79,14 @@ internal static class TableDraftSummary
         switch (payment.CostState)
         {
             case CostSelectionState.Required:
-                state.Add("CHOOSE COST");
+                state.Add($"{payment.CostOptions} payment options.");
                 break;
             case CostSelectionState.Selected:
-                state.Add($"COST {payment.SelectedCost!.Value + 1}/{payment.CostOptions}");
-                break;
-            case CostSelectionState.NotRequired:
-                state.Add("NO COST");
+                state.Add($"{payment.GeneratedIcons} resource{(payment.GeneratedIcons == 1 ? string.Empty : "s")} selected.");
+                if (payment.ExcessIcons > 0)
+                {
+                    state.Add(DecisionCopy.OverpaymentWarning(payment));
+                }
                 break;
         }
     }

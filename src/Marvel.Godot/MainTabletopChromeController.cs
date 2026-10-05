@@ -50,20 +50,24 @@ internal sealed class MainTabletopChromeController
     private void SetTableChrome(bool compact)
     {
         main.GetNode<Control>("Margin/Shell/Content/StatusBarClearance").CustomMinimumSize =
-            new Vector2(0, compact ? 16 : 38);
+            new Vector2(0, compact
+                ? Math.Max(30, main.GetNode<Control>("StatusBar").GetCombinedMinimumSize().Y + 10)
+                : 38);
         foreach (string path in new[]
                  {
-                     "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader/Eyebrow",
                      "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader/Context",
                      "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader/Requirement",
                  })
         {
             main.GetNode<Control>(path).Visible = !compact;
         }
-        main.eyebrow.Visible = !compact;
+        main.buildIdentity.Visible = false;
+        main.syncStatus.TooltipText = main.buildIdentity.Text;
+        main.eyebrow.Visible = false;
+        main.promptEyebrow.Visible = false;
         main.title.Visible = !compact;
         main.description.Visible = !compact;
-        main.statusPanel.Visible = !compact;
+        main.statusPanel.Visible = !compact && !string.IsNullOrWhiteSpace(main.status.Text);
         main.GetNode<Control>("Margin/Shell").Theme = compact
             ? ClientTheme.Create(main.interfaceScale)
             : null;

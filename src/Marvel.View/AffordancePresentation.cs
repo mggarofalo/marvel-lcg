@@ -18,6 +18,21 @@ public sealed record AffordancePresentation(
     IReadOnlyList<string> Costs,
     string? Consequence = null)
 {
+    /// <summary>Readable engine-authored choice name, without changing command identity.</summary>
+    public string? DisplayLabel { get; init; }
+
+    /// <summary>Authorized engine-authored commitment text for this exact choice.</summary>
+    public string? CommitLabel { get; init; }
+
+    /// <summary>Authorized source name, distinguishing identical readable copies in their area.</summary>
+    public string? SourceName { get; init; }
+
+    /// <summary>Current authorized source HP, readiness and counters, without a predicted outcome.</summary>
+    public string? SourceState { get; init; }
+
+    /// <summary>Engine-authored non-resource costs of accepting this offered ability.</summary>
+    public string? CostDescription { get; init; }
+
     /// <summary>The declared namespace for <see cref="AnchorId"/>.</summary>
     public AffordanceAnchorKind AnchorKind { get; init; } = AffordanceAnchorKind.Unspecified;
 
@@ -26,6 +41,12 @@ public sealed record AffordancePresentation(
 
     /// <summary>The offered target structure without flattening groups, order, or repetition.</summary>
     public TargetRequest? TargetRequest { get; init; }
+
+    /// <summary>The engine identifies accepting this offer as playing its source card.</summary>
+    public bool PlaysCard { get; init; }
+
+    /// <summary>The engine establishes a separate target choice after costs, if the effect reaches resolution.</summary>
+    public bool DeferredTargetSelection { get; init; }
 
     /// <summary>The offered costs without flattening alternatives, components, variables, or generators.</summary>
     public IReadOnlyList<CostOption> CostOptions { get; init; } = [];

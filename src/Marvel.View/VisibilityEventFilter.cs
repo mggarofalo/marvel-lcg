@@ -33,11 +33,27 @@ internal static class VisibilityEventFilter
             CardDetached detached => KeepDetached(detached, addressable),
             ControlChanged changed => addressable.Contains(changed.Card) ? changed : null,
             FieldSet set => readable.Contains(set.Card) ? set : null,
+            AttackCompleted completed => KeepAttack(completed, readable),
+            WhenRevealedCanceled canceled =>
+                readable.Contains(canceled.Card) && (canceled.Source is not { } source || readable.Contains(source))
+                    ? canceled with { Subjects = KeepSubjects(canceled.Subjects,
+                        [canceled.Card, .. canceled.Source is { } known ? new[] { known } : Array.Empty<int>()]) }
+                    : null,
             PlayAreaJoined joined => joined,
             PlayAreaDetached detached => detached,
             _ => throw new InvalidOperationException(
                 $"event kind {happened.GetType().Name} has no visibility decision"),
         };
+
+    private static AttackCompleted? KeepAttack(AttackCompleted completed, HashSet<int> readable)
+    {
+        int[] subjects = [completed.Enemy, completed.Target, .. completed.Defender >= 0
+            ? new[] { completed.Defender } : Array.Empty<int>()];
+        return subjects.All(readable.Contains) ? completed with
+        {
+            Subjects = KeepSubjects(completed.Subjects, subjects),
+        } : null;
+    }
 
     private static CardAttached? KeepAttached(CardAttached value, HashSet<int> visible) =>
         visible.Contains(value.Card) && visible.Contains(value.Host) ? value : null;

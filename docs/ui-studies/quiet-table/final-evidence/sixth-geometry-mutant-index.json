@@ -1,0 +1,10 @@
+{
+  "mutant": "hand-context-geometry",
+  "file": "src/Marvel.Godot/AstraTableGeometry.cs",
+  "compiled": true,
+  "killed": true,
+  "exit": 1,
+  "log": "sixth-mutant-hand-context-geometry.log",
+  "restored_sha256": "7c339e4753f8681f190fe2604f583374053ab8e1162e0ef7eb4cd8115c08c4f5",
+  "failure": "Decision panel occludes the real MulliganDiscard45 pointer target; hovered CausalContext instead of the exposed target."
+}

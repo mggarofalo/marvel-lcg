@@ -26,7 +26,7 @@ run_redesign_smoke() {
   mkdir -p "$capture_dir"
   local smoke_log
   smoke_log=$(mktemp)
-  local -a multiplayer=()
+  local -a multiplayer=(MARVEL_SMOKE_TWO_PLAYER=false)
   if [[ "$seats" == two-player ]]; then
     multiplayer=(MARVEL_SMOKE_TWO_PLAYER=true)
   fi

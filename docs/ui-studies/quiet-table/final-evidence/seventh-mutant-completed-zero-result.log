@@ -1,0 +1,19 @@
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Release/net8.0/Marvel.View.dll
+  Marvel.View.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/bin/Release/net8.0/Marvel.View.Tests.dll
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/bin/Release/net8.0/Marvel.View.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.46]     Marvel.View.Tests.AttackCompletionPresentationTests.CompletionNamesRecordedActualDamageEvenWithoutAHealthEvent(damage: 0) [FAIL]
+  Failed Marvel.View.Tests.AttackCompletionPresentationTests.CompletionNamesRecordedActualDamageEvenWithoutAHealthEvent(damage: 0) [1 ms]
+  Error Message:
+   Assert.Contains() Failure: Sub-string not found
+String:    "Rhino's attack on Spider-Man ended. Spider-Man def"···
+Not found: "The attack dealt 0 damage."
+  Stack Trace:
+     at Marvel.View.Tests.AttackCompletionPresentationTests.CompletionNamesRecordedActualDamageEvenWithoutAHealthEvent(Int64 damage) in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/AttackCompletionPresentationTests.cs:line 51
+   at InvokeStub_AttackCompletionPresentationTests.CompletionNamesRecordedActualDamageEvenWithoutAHealthEvent(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+
+Failed!  - Failed:     1, Passed:     1, Skipped:     0, Total:     2, Duration: 29 ms - Marvel.View.Tests.dll (net8.0)

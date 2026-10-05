@@ -34,7 +34,7 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         Assert.DoesNotContain("99", option.Targets);
         Assert.DoesNotContain("Spider-Man", PromptPresentation.Describe(11, world));
         Assert.Equal("Object 99", PromptPresentation.Describe(99, world));
-        Assert.Equal("You may pass.", view.Requirement);
+        Assert.Equal("You may pass this opportunity.", view.Requirement);
         Assert.DoesNotContain("Untimed", view.Context);
     }
 

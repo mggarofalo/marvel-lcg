@@ -54,7 +54,7 @@ public static class Sequence
 
         while (world.Agenda.Current is { } step)
         {
-            if (EndDepartedActivation(world, step))
+            if (ActivationDeparture.EndDepartedActivation(world, step))
             {
                 continue;
             }
@@ -83,32 +83,13 @@ public static class Sequence
         }
         if (world.Agenda.Stage is Stage.Interrupts or Stage.Responses)
         {
-            question = WorkWindow(world, facts, abilities, events, scope, step);
+            question = SequenceWindow.Work(world, facts, abilities, events, scope, step);
             return true;
         }
         question = null;
         return false;
     }
 
-    private static bool EndDepartedActivation(World world, PhaseStep step)
-    {
-        if (step.What is Steps.EndAttack or Steps.EndSchemeEarly
-            || world.Activation is not { } activation
-            || step.ActivationId != activation.Id
-            || DeckTypes.IsInPlay(world.Cards[activation.Enemy].Area.Type)
-            || world.Agenda.Stage == Stage.Responses)
-        {
-            return false;
-        }
-        if (world.Windows.Current is not null) world.Windows.Close();
-        world.Agenda.EndActivationEarly(activation.Id, preserveCurrentOccurrence: false);
-        world.Agenda.Now(new PhaseStep(
-            activation.Attacking ? Steps.EndAttack : Steps.EndSchemeEarly,
-            step.Round, activation.Attacking ? 6 : 3,
-            Index: activation.Player, Subject: activation.Enemy,
-            Seat: activation.Player, ActivationId: activation.Id));
-        return true;
-    }
 
     private static Prompt? WorkPlan(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
@@ -123,60 +104,6 @@ public static class Sequence
         return question;
     }
 
-    private static Prompt? WorkWindow(
-        World world, ICardFacts facts, IWindowAbilities abilities,
-        List<GameEvent> events, WindowAbilityScope scope, PhaseStep step)
-    {
-        var kind = world.Agenda.Stage == Stage.Interrupts
-            ? WindowKind.Interrupt : WindowKind.Response;
-        var occurrence = world.Agenda.Begin(world, facts);
-        if (!PrepareIndirectWindow(world, step, occurrence, events)) return null;
-
-        var status = new PriorityStatusResolution(world, facts, step, occurrence, kind, events);
-        IWindowAbilities offered = step.What == Steps.PrepareIndirectAttackDamage
-            ? new OptionalDamageInterrupts(abilities) : abilities;
-        Prompt? question = Offering.Work(
-            world, offered, occurrence, kind, events, scope, status.Resolve);
-        if (question is not null) return WithAttackContext(world, facts, step, question);
-
-        status.ObserveCancellation();
-        if (status.CancelledByStatus)
-        {
-            CancelAttackWindow(world, step, occurrence, cancelOccurrence: true);
-        }
-        else if (status.CancelledOccurrence)
-        {
-            CancelAttackWindow(world, step, occurrence, cancelOccurrence: false);
-        }
-        else
-        {
-            world.Agenda.Advance(occurrence);
-        }
-        return null;
-    }
-
-    private static bool PrepareIndirectWindow(
-        World world, PhaseStep step, Occurrence occurrence, List<GameEvent> events)
-    {
-        if (step.What != Steps.PrepareIndirectAttackDamage
-            || Attack.PrepareIndirectDamage(world, step, events) > 0)
-        {
-            return true;
-        }
-        if (world.Windows.Current is not null) world.Windows.Close();
-        world.Agenda.Cancel(occurrence);
-        return false;
-    }
-
-    private static void CancelAttackWindow(
-        World world, PhaseStep step, Occurrence occurrence, bool cancelOccurrence)
-    {
-        Attack.CancelPrepared(world, step.Subject);
-        world.PendingAdditionalAttackPlayers = [];
-        if (world.Windows.Current is not null) world.Windows.Close();
-        if (cancelOccurrence) world.Agenda.Cancel(occurrence);
-    }
-
     private static Prompt? ApplyStep(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
@@ -185,149 +112,12 @@ public static class Sequence
                 $"an applying '{step.What}' agenda step has no occurrence");
         var healthBefore = world.Effects.CaptureCharacterHealth();
         Prompt? question = AgendaProcedures.ApplyWithWorldAbilities(world, facts, step, events);
-        if (question is not null) return WithAttackContext(world, facts, step, question);
+        if (question is not null) return AttackPromptContext.WithAttackContext(world, facts, step, question);
         Statuses.RemoveAfflictionsIfStalwart(world, facts, "stalwart", events);
         world.Effects.SettleLostHealth(healthBefore, step.What, events);
         if (step.What != Steps.TurnAction) world.Agenda.Advance(step, occurrence);
         if (world.IsOver) world.Agenda.Abandon();
         return null;
-    }
-
-    private sealed class PriorityStatusResolution(
-        World world, ICardFacts facts, PhaseStep step, Occurrence occurrence,
-        WindowKind kind, List<GameEvent> events)
-    {
-        public bool CancelledByStatus { get; private set; }
-        public bool CancelledOccurrence { get; private set; }
-
-        public bool Resolve()
-        {
-            if (!world.Agenda.IsOutstanding(step, occurrence))
-            {
-                CancelledOccurrence = true;
-                return true;
-            }
-            CancelledByStatus = kind == WindowKind.Interrupt
-                && step.What == Steps.Attack
-                && BasicPowerStatus.Cancelled(
-                    world, facts, world.Cards[step.Subject], Statuses.Stunned, events);
-            if (!CancelledByStatus && kind == WindowKind.Interrupt && step.What == Steps.Attack)
-            {
-                Attack.Prepare(world, facts, step);
-            }
-            return CancelledByStatus;
-        }
-
-        public void ObserveCancellation() =>
-            CancelledOccurrence |= !world.Agenda.IsOutstanding(step, occurrence);
-    }
-
-    private static Prompt WithAttackContext(
-        World world, ICardFacts facts, PhaseStep step, Prompt prompt)
-    {
-        bool finished = world.Attack is null && step.What == Steps.EndAttack;
-        EnemyAttack? attack = AttackForPrompt(world, step);
-        if (attack is null || attack.Enemy < 0 || attack.Target < 0)
-        {
-            return prompt;
-        }
-
-        Card enemy = world.Cards[attack.Enemy];
-        Card target = world.Cards[attack.Target];
-        string player = AttackPlayerName(world, attack.Player);
-        string stage = SequenceDescriptions.AttackStage(step.What);
-        string window = AttackWindowDescription(world.Agenda.Stage);
-        string situation = AttackSituation(
-            world, facts, attack, enemy, target, player, finished);
-        string[] attachments = AttackAttachments(world, facts, enemy);
-        situation = AppendAttackContext(situation, attachments, prompt.Description);
-
-        return prompt with
-        {
-            Description = $"Enemy attack · {stage} · {window}\n{situation}",
-        };
-    }
-
-    private static EnemyAttack? AttackForPrompt(World world, PhaseStep step) =>
-        world.Attack ?? (step.What == Steps.EndAttack ? world.FinishedAttack : null);
-
-    private static string AttackPlayerName(World world, int player) =>
-        player >= 0 && player < world.Seats.Count
-            ? world.Seats[player].Name
-            : $"Player {player + 1}";
-
-    private static string AppendAttackContext(
-        string situation, string[] attachments, string? description)
-    {
-        if (attachments.Length > 0)
-        {
-            situation += $" Attacker attachments: {string.Join(", ", attachments)}.";
-        }
-        if (!string.IsNullOrWhiteSpace(description)
-            && !situation.Contains(description, StringComparison.Ordinal))
-        {
-            situation += $" {description}";
-        }
-        return situation;
-    }
-
-    private static string AttackWindowDescription(Stage stage) => stage switch
-    {
-        Stage.Interrupts => "Interrupt window",
-        Stage.Responses => "Response window",
-        _ => "Resolve step",
-    };
-
-    private static string[] AttackAttachments(World world, ICardFacts facts, Card enemy) =>
-        world.Areas
-            .Where(area => area.Host == enemy.ObjectId && DeckTypes.IsInPlay(area.Type))
-            .SelectMany(area => area.Cards)
-            .Select(card => facts.Title(card.FaceId))
-            .ToArray();
-
-    private static string AttackSituation(
-        World world, ICardFacts facts, EnemyAttack attack, Card enemy, Card target,
-        string player, bool finished)
-    {
-        if (finished)
-        {
-            return FinishedAttackSituation(world, facts, attack, enemy, target, player);
-        }
-        if (attack.CalculatedDamage is { } damage)
-        {
-            return $"{facts.Title(enemy.FaceId)} is attacking {facts.Title(target.FaceId)} "
-                + $"for {damage} damage against {player}. "
-                + Damage.PreviewAttack(world, facts, enemy, enemy, target, damage);
-        }
-        long attackValue = StateFields.Modified(world, enemy, "attack", facts, world.Players);
-        return $"{facts.Title(enemy.FaceId)} is initiating an attack against {player}. "
-            + $"Target: {facts.Title(target.FaceId)}. "
-            + $"ATK {attackValue} before boost icons and defense.";
-    }
-
-    private static string FinishedAttackSituation(
-        World world, ICardFacts facts, EnemyAttack attack, Card enemy, Card target,
-        string player)
-    {
-        string targetState;
-        if (!DeckTypes.IsInPlay(target.Area.Type))
-        {
-            targetState = $"{facts.Title(target.FaceId)} was defeated.";
-        }
-        else
-        {
-            long maximum = DamagePlacement.Health(world, facts, target);
-            long current = Math.Max(0, maximum - target.Damage);
-            targetState = $"{facts.Title(target.FaceId)} is now at {current}/{maximum} HP.";
-        }
-        string damage = attack.CalculatedDamage is { } calculated
-            ? $" Calculated attack damage: {calculated}."
-            : string.Empty;
-        return $"{facts.Title(enemy.FaceId)} finished attacking "
-            + $"{facts.Title(target.FaceId)} against {player}."
-            + damage
-            + (attack.Damaged ? " The attack dealt damage. " : " No damage was dealt. ")
-            + targetState;
     }
 
     /// <summary>

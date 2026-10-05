@@ -32,6 +32,7 @@ The current public events are:
 | `PlayAreaJoined` | A play area joined a game area |
 | `PlayAreaDetached` | A play area left a game area |
 | `FieldSet` | One named gameplay field changed |
+| `AttackCompleted` | An enemy attack ended with its established target and defender |
 
 Events use card object ids and `AreaRef` values. They never contain references to
 engine objects.
@@ -54,13 +55,33 @@ These nine event kinds describe transitions visible in digest state:
 
 ### Emitted-only events
 
-Game-area topology is outside digest v2, so the engine emits these changes
-directly:
+Game-area topology, attack completion and applied cancellation are outside digest v2, so the engine
+emits these facts directly:
 
 | event | payload |
 |---|---|
 | `PlayAreaJoined` | `play_area`, `game_area` |
 | `PlayAreaDetached` | `play_area`, `game_area` |
+| `AttackCompleted` | `enemy`, `target`, `defender`, `damage_dealt` |
+| `WhenRevealedCanceled` | `card`, `source` |
+
+`AttackCompleted` identifies the attacker, final attacked character, and defender
+(`-1` when undefended). It asserts that the attack ended, including an attack
+that ended early. `damage_dealt` records the actual attack-step damage, excluding
+boost abilities; it is null when that fact is not recorded. Zero is an explicit
+completed outcome. Lethal placement finalizes this total after accounting returns,
+so damage dealt remains distinct from the target's remaining HP. Physical damage
+and prevention retain their own events. The visibility filter
+requires every named participant to be readable and retains only those subjects.
+Its engine-chosen verb is `Attack_Completed`, distinct from an `Attack` effect.
+
+`WhenRevealedCanceled` names the card whose When Revealed effects were canceled
+and the card whose ability applied that cancellation (`source` is null when no
+source was recorded). It is emitted when the
+cancellation is consumed successfully, rather than when an interrupt registers
+it. It does not cancel revelation or assert that other card effects were
+canceled. Both named cards must be readable to retain this fact in a response.
+Its engine-chosen verb is `Cancel_When_Revealed`.
 
 Every event also carries `kind`, `trigger`, and `verb`. An event may carry a
 `subjects` object mapping card object ids to visibility-safe names captured when
@@ -189,6 +210,15 @@ rule-cited tests cover that emitted-only surface.
 
 Affordances describe what the player may do next. Events describe what the last
 decision did. Both are domain wire types and arrive in the same engine response.
+
+The protocol 19 `DeferredTargetSelection` affordance marker identifies an
+effect's separate target-choice boundary after current costs commit. Cost
+events in the response are already committed even while that target prompt
+awaits an answer. The marker supplies no future candidates and does not make
+the committed payment a reversible target draft. It shares the unreleased
+protocol 19 compatibility change. The marker itself changes no replay or save
+format; exposing the current encounter before its When Revealed interrupt
+window changes intermediate events/information and uses engine replay v3.
 
 See [affordances.md](affordances.md) for input and
 [presentation-layer.md](presentation-layer.md) for transport and visibility.

@@ -1,0 +1,10 @@
+The Godot wall:
+  ok    an engine-shaped project cannot opt out of the wall
+  ok    a transitive GodotSharp reference stops the build
+  ok    the shared session journal stays below the wall
+  ok    shared presentation stays below the Godot implementation
+  ok    the presentation layer may opt out
+The runtime floor:
+  ok    a framework above the floor stops the build
+
+The wall holds, and every gate was watched firing.

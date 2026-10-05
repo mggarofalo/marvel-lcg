@@ -1,0 +1,42 @@
+{
+  "script": "tools/godot-smoke.ps1",
+  "script_sha256": "d0da6a77c1029091233166cfa0216c07addd34952c67ad003b4d30ecd1cee18f",
+  "log": "sixth-exhaustive-native-second.log",
+  "log_sha256": "220beeb92973f225b88b9b1c421e1f6211462e541b1a5224797099c41dc12edf",
+  "verdicts": {
+    "DEFERRED_EVENT_SMOKE_OK": 2,
+    "REPEATED_COMMIT_SMOKE_OK": 2,
+    "LOCAL_GAME_SMOKE_OK": 15
+  },
+  "total_profiles": 19,
+  "local_viewport": "1920x1080",
+  "solo_motion_scales": [
+    50,
+    60,
+    70,
+    80,
+    90,
+    100,
+    110,
+    120,
+    130,
+    140,
+    150
+  ],
+  "solo_reduced_motion_scale": 100,
+  "two_seat_motion_scales": [
+    100,
+    120,
+    150
+  ],
+  "focused_commitment_scales": [
+    {
+      "scale": 100,
+      "motion": "enabled"
+    },
+    {
+      "scale": 150,
+      "motion": "disabled"
+    }
+  ]
+}

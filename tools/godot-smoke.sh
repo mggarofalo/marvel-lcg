@@ -37,9 +37,10 @@ cleanup() { rm -f "$smoke_log"; }
 trap cleanup EXIT
 
 run_local_smoke() {
+  local script=${1:-res://smoke/local_game_smoke.gd}
   set +e
   "$godot_bin" --headless --audio-driver Dummy --path "$repo_root/src/Marvel.Godot" \
-    --script res://smoke/local_game_smoke.gd 2>&1 | tee "$smoke_log"
+    --script "$script" 2>&1 | tee "$smoke_log"
   local status=${PIPESTATUS[0]}
   set -e
   if [[ $status -ne 0 ]] || godot_smoke_has_error "$smoke_log"; then
@@ -56,6 +57,14 @@ else
 fi
 
 unset MARVEL_SMOKE_TWO_PLAYER
+MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+  run_local_smoke res://smoke/deferred_event_smoke.gd
+MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
+  run_local_smoke res://smoke/deferred_event_smoke.gd
+MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+  run_local_smoke res://smoke/repeated_commit_smoke.gd
+MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
+  run_local_smoke res://smoke/repeated_commit_smoke.gd
 
 for viewport in "${viewports[@]}"; do
   for scale in "${scales[@]}"; do

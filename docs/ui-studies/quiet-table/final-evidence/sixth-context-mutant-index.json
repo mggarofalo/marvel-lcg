@@ -1,0 +1,106 @@
+[
+  {
+    "mutant": "private-cause-public",
+    "file": "src/Marvel.View/WorldProjection.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-private-cause-public.log",
+    "restored_sha256": "ed43b753a598ffba81280322142457564d3c062fc7a67d089ffafc388a557c82"
+  },
+  {
+    "mutant": "offturn-owner",
+    "file": "src/Marvel.View/TableDescriptorProjection.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-offturn-owner.log",
+    "restored_sha256": "4c7de5de57694219a5edc7a68307e193de22cc4747a073799d6a71bc74037b93"
+  },
+  {
+    "mutant": "unscoped-defenders",
+    "file": "src/Marvel.View/TableDescriptorProjection.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-unscoped-defenders.log",
+    "restored_sha256": "4c7de5de57694219a5edc7a68307e193de22cc4747a073799d6a71bc74037b93"
+  },
+  {
+    "mutant": "public-purpose",
+    "file": "src/Marvel.View/TableDescriptorProjection.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-public-purpose.log",
+    "restored_sha256": "4c7de5de57694219a5edc7a68307e193de22cc4747a073799d6a71bc74037b93"
+  },
+  {
+    "mutant": "offturn-description",
+    "file": "src/Marvel.Rules/Play/GameSeatPrompts.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-offturn-description.log",
+    "restored_sha256": "0116ff3cbf6afe40b1d150570897583354c05b67a6e2be9687eb3ef5033a43af"
+  },
+  {
+    "mutant": "copy-identity",
+    "file": "src/Marvel.View/AffordanceSourcePresentation.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-copy-identity.log",
+    "restored_sha256": "a4c8cac635a3f4c54e854d11de6694ce44b70bcc1574821facc3289dccc0508d"
+  },
+  {
+    "mutant": "source-health",
+    "file": "src/Marvel.View/CardStatePresentation.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-source-health.log",
+    "restored_sha256": "913f451a2d9032dca05b5a13784b88df76e605f9b20027797208bdf412d63585"
+  },
+  {
+    "mutant": "mandatory-cost",
+    "file": "src/Marvel.Cards/Run/AbilityAffordanceDescription.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-mandatory-cost.log",
+    "restored_sha256": "a88d650fdf1e07bd5f319d03bd14587e4d0d7c32e3ff287b082b1779cc9609a5"
+  },
+  {
+    "mutant": "view-cost",
+    "file": "src/Marvel.View/AffordancePresenter.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-view-cost.log",
+    "restored_sha256": "55a13c94e102e919acd8fde18e7db36c5f0245c54403cb4b144606f2cde751ff"
+  },
+  {
+    "mutant": "event-play-intent",
+    "file": "src/Marvel.View/AffordancePresenter.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-event-play-intent.log",
+    "restored_sha256": "55a13c94e102e919acd8fde18e7db36c5f0245c54403cb4b144606f2cde751ff"
+  },
+  {
+    "mutant": "client-public-validation",
+    "file": "src/Marvel.Client/ClientTableValidation.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-client-public-validation.log",
+    "restored_sha256": "13e2b5fca3bd7d35942f9a79b5559db4edc4fad57a5c8cddd4d22fd82f4e7e98"
+  },
+  {
+    "mutant": "minion-order-anchor",
+    "file": "src/Marvel.Rules/Play/ActivationProcedure.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-minion-order-anchor.log",
+    "restored_sha256": "2bf54e4880ff620611c159cece56062e4df13db32884aee63b337faa94f7e3df"
+  },
+  {
+    "mutant": "refresh-terminal",
+    "file": "src/Marvel.Client/GameProgressPresentation.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "sixth-mutant-refresh-terminal.log",
+    "restored_sha256": "b42abbb692f94b9cc4a5a9ba767d4ab0d8f1976391bfa40562adf221f69f5a6e"
+  }
+]

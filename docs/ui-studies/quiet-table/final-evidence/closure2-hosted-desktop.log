@@ -1,0 +1,55 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Decisions -> /Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.dll
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Server.dll
+  Marvel.Client -> /Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Client.dll
+  Marvel.Godot -> /Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Godot.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.93
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.dll
+  Marvel.Decisions -> /Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/Debug/net8.0/Marvel.Server.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.76
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M2 Pro
+
+HOSTED_MULTIPLAYER_SMOKE_RUNNER_READY
+HOSTED_MULTIPLAYER_SMOKE_DRIVER_READY
+{"event_id":"transport.exchange.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T21:47:05.850415+00:00","process_id":968,"duration_milliseconds":185,"disposition":"accepted","request_id":"cb6f4da1d724f8f1a24f0ddddbdadf90","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"transport.exchange.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T21:47:05.938388+00:00","process_id":968,"duration_milliseconds":1,"disposition":"accepted","request_id":"f21d66032e8ef35b3b02cd08e999084c","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"transport.exchange.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T21:47:06.141103+00:00","process_id":968,"duration_milliseconds":189,"disposition":"accepted","request_id":"659e4971f9cf14819c4c08bf2a4cfaaf","game_id":"3b401506fb65175f38f4b6edff3ad5f2","operation":"open","revision":0,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"transport.exchange.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T21:47:07.404049+00:00","process_id":968,"duration_milliseconds":1,"disposition":"accepted","request_id":"f0af6efce014ad0ad6ad499c44a3d60b","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"transport.exchange.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T21:47:07.537511+00:00","process_id":968,"duration_milliseconds":1,"disposition":"accepted","request_id":"12d4a6d115ad772745dc7cbe82eebdd3","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"transport.exchange.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T21:47:07.599579+00:00","process_id":968,"duration_milliseconds":58,"disposition":"accepted","request_id":"6e7778aa1421f1d1b0398f4b52c5e0f9","game_id":"3b401506fb65175f38f4b6edff3ad5f2","operation":"attach","revision":0,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+ERROR: the restricted guest rendered the prompt owner's private card face: The Break-In!
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://smoke/hosted_multiplayer_smoke_support.gd:163)
+       [1] _restricted_guest_surface_is_safe (res://smoke/hosted_multiplayer_smoke.gd:95)
+       [2] _run (res://smoke/hosted_multiplayer_smoke.gd:34)
+       [3] _open_guest (res://smoke/hosted_multiplayer_smoke.gd:151)
+       [4] _wait_for (res://smoke/hosted_multiplayer_smoke_client_support.gd:84)

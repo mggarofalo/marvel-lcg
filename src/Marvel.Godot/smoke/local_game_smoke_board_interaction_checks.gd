@@ -98,14 +98,13 @@ func _pointer_activate_card_body(card: Control) -> bool:
 
 func _exposed_card_body_point(card: Control) -> Vector2:
 	var card_name := card.name
-	var rect := _visible_control_rect(card)
 	for y_fraction in [0.1, 0.25, 0.45, 0.65]:
 		for x_fraction in [0.1, 0.3, 0.5, 0.7, 0.9]:
 			if not is_instance_valid(card):
 				card = main.find_child(card_name, true, false) as Control
 				if card == null or card.is_queued_for_deletion():
 					return Vector2.INF
-				rect = _visible_control_rect(card)
+			var rect := _visible_control_rect(card)
 			var point := rect.position + Vector2(
 				rect.size.x * x_fraction, rect.size.y * y_fraction)
 			if await _control_owns_point(card, point) \

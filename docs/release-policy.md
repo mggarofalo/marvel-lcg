@@ -46,9 +46,9 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `18` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `19` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `4` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v2` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v3` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v2` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
@@ -362,3 +362,5 @@ concealed card data.
 No compatibility failure offers “continue anyway.” A recovery action changes
 the installed artifact or restores a matching backup; it never weakens parsing,
 replay, authentication or signature verification.
+
+The v3 engine exposes the current encounter card before its When Revealed interrupt window. This changes intermediate state, information and event boundaries; older replay contracts are incompatible. Protocol 19 carries engine-authored commitment labels and deferred targeting facts. RNG, state digest and save schema formats remain unchanged.

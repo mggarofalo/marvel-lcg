@@ -157,11 +157,11 @@ public static class VisualSystem
     };
 
     public static TypeMetrics Type(InterfaceScale scale) => new(
-        Scale(36, scale),
-        Scale(18, scale),
-        Scale(15, scale),
-        Scale(13, scale),
-        Scale(10, scale));
+        Math.Max(16, Scale(32, scale)),
+        Math.Max(14, Scale(16, scale)),
+        Math.Max(12, Scale(14, scale)),
+        Math.Max(11, Scale(12, scale)),
+        Math.Max(10, Scale(10, scale)));
 
     public static SpacingMetrics Spacing(InterfaceScale scale) => new(
         Scale(4, scale),
@@ -172,9 +172,9 @@ public static class VisualSystem
         Scale(32, scale));
 
     public static ControlMetrics Controls(InterfaceScale scale) => new(
-        MinimumHeight: Scale(44, scale),
-        MinimumPointerTarget: Scale(44, scale),
-        MinimumButtonWidth: Scale(96, scale),
+        MinimumHeight: Math.Max(34, Scale(44, scale)),
+        MinimumPointerTarget: Math.Max(34, Scale(44, scale)),
+        MinimumButtonWidth: Math.Max(64, Scale(96, scale)),
         FocusRingWidth: Scale(3, scale),
         CornerRadius: Scale(8, scale));
 

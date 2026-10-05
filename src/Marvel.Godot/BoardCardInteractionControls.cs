@@ -12,13 +12,15 @@ internal sealed class BoardCardInteractionControls
     private readonly Dictionary<Button, BoardInteractionFocusKey> focusKeys = [];
     private readonly Func<bool> isCurrent;
     private Func<CardPointerGesture, bool>? activate;
-    private Action<int>? activateContextual;
-    private Action? declineContextual;
-    private Container? contextualHost;
+    private readonly BoardContextualInteractionControls contextual;
     private int focusGeneration;
     private BoardInteractionFocusKey? requestedFocus;
 
-    internal BoardCardInteractionControls(Func<bool> isCurrent) => this.isCurrent = isCurrent;
+    internal BoardCardInteractionControls(Func<bool> isCurrent)
+    {
+        this.isCurrent = isCurrent;
+        contextual = new BoardContextualInteractionControls(isCurrent);
+    }
 
     internal void Track(CardControl card, BoardCardPresentation presentation, bool isHand) =>
         presentations[card] = (presentation, isHand);
@@ -26,21 +28,26 @@ internal sealed class BoardCardInteractionControls
     internal void Bind(Func<CardPointerGesture, bool> handler) =>
         activate = handler ?? throw new ArgumentNullException(nameof(handler));
 
-    internal void BindContextual(Action<int> handler, Action decline)
-    {
-        activateContextual = handler ?? throw new ArgumentNullException(nameof(handler));
-        declineContextual = decline ?? throw new ArgumentNullException(nameof(decline));
-    }
+    internal void BindContextual(
+        Action<int> handler, Action decline, Action submit, Action cancel,
+        Action<int> selectCost, Func<string> commitmentLabel) =>
+        contextual.Bind(handler, decline, submit, cancel, selectCost, commitmentLabel);
 
-    internal void RegisterContextualHost(Container host) => contextualHost = host;
+    internal void RegisterContextualHost(Container host) => contextual.Register(host);
 
     internal void Present(
         IReadOnlyDictionary<int, List<CardControl>> visible,
         DecisionComposer? composer,
         PromptPresentation? prompt)
     {
-        if (!isCurrent() || composer is null || prompt is null)
+        if (!isCurrent()) return;
+        if (composer is null || prompt is null)
         {
+            checked { focusGeneration++; }
+            Clear();
+            contextual.Clear();
+            foreach (CardControl card in visible.Values.SelectMany(cards => cards).Where(InteractionControl.IsUsable))
+                card.SetInteractionCue(CardInteractionCue.None);
             return;
         }
 
@@ -56,71 +63,17 @@ internal sealed class BoardCardInteractionControls
             }
         }
         Clear();
-        ClearContextualActions();
+        contextual.Clear();
         if (CardPaymentPresentation.UsesModal(composer)) return;
         var descriptors = BoardInteractionControlProjection.From(composer, prompt).ToList();
-
+        var installedActions = new HashSet<int>();
         foreach (CardInteractionControlDescriptor descriptor in descriptors)
         {
-            Add(visible, descriptor);
+            if (Add(visible, descriptor) && descriptor.Intent == CardInteractionIntent.Action)
+                installedActions.Add(descriptor.CardId);
         }
-        AddContextualActions(prompt);
-        AddDecline(composer);
+        contextual.Present(composer, prompt, installedActions);
         RestoreFocus(focused, generation);
-    }
-
-    private void AddContextualActions(PromptPresentation? prompt)
-    {
-        if (prompt is null || !InteractionControl.IsUsable(contextualHost))
-        {
-            return;
-        }
-        foreach (AffordancePresentation affordance in prompt.Affordances.Where(candidate =>
-                     candidate.CardAnchorId is null && candidate.Illegal is null))
-        {
-            var action = new Button
-            {
-                Name = $"ContextAction{affordance.Id}",
-                Text = $"◇ {affordance.Label}",
-                TooltipText = affordance.Description ?? affordance.Label,
-                FocusMode = Control.FocusModeEnum.All,
-                CustomMinimumSize = new Vector2(164, 44),
-                ThemeTypeVariation = GodotThemeVariations.LegalTargetButton,
-            };
-            int id = affordance.Id;
-            action.Pressed += () => activateContextual?.Invoke(id);
-            contextualHost!.AddChild(action);
-        }
-    }
-
-    private void ClearContextualActions()
-    {
-        if (!InteractionControl.IsUsable(contextualHost))
-        {
-            return;
-        }
-        foreach (Node child in contextualHost!.GetChildren())
-        {
-            contextualHost.RemoveChild(child);
-            child.QueueFree();
-        }
-    }
-
-    private void AddDecline(DecisionComposer composer)
-    {
-        if (!composer.Prompt.Cancellable || !InteractionControl.IsUsable(contextualHost)) return;
-        var pass = new Button
-        {
-            Name = "ContextualDecline", Text = "Pass", TooltipText = "Pass this optional decision.",
-            CustomMinimumSize = new Vector2(112, 44),
-            ThemeTypeVariation = GodotThemeVariations.LegalTargetButton,
-        };
-        int generation = focusGeneration;
-        pass.Pressed += () =>
-        {
-            if (isCurrent() && generation == focusGeneration) declineContextual?.Invoke();
-        };
-        contextualHost!.AddChild(pass);
     }
 
     private void Clear()
@@ -147,40 +100,30 @@ internal sealed class BoardCardInteractionControls
         focusKeys.Clear();
     }
 
-    private void Add(
+    private bool Add(
         IReadOnlyDictionary<int, List<CardControl>> visible,
         CardInteractionControlDescriptor descriptor)
     {
-        if (!visible.TryGetValue(descriptor.CardId, out List<CardControl>? cards))
-        {
-            return;
-        }
-        CardControl? card = cards.LastOrDefault(InteractionControl.IsUsable);
+        CardControl? card = VisibleCard(visible, descriptor.CardId);
         if (card is null)
         {
-            return;
+            return false;
         }
-        var button = new Button
-        {
-            Name = $"Card{descriptor.CardId}{descriptor.Intent}",
-            Text = descriptor.Text,
-            TooltipText = CardInteractionControlStyle.Tooltip(descriptor.Intent),
-            FocusMode = Control.FocusModeEnum.All,
-            ZIndex = CardInteractionControlStyle.Layer(descriptor.Intent),
-            ZAsRelative = false,
-        };
+        Button button = CreateButton(descriptor);
+        int generation = focusGeneration;
         var key = new BoardInteractionFocusKey(descriptor.CardId, descriptor.Intent);
         focusKeys.Add(button, key);
         button.Pressed += () =>
         {
+            if (!isCurrent() || generation != focusGeneration) return;
             requestedFocus = key;
             Activate(card, descriptor.Intent, descriptor.Option);
         };
-        if (!CardInteractionControlPlacement.Place(card, button, controls))
+        if (!CardInteractionControlPlacement.Place(card, button))
         {
             focusKeys.Remove(button);
             button.QueueFree();
-            return;
+            return false;
         }
         button.SetMeta("spatial_control_z", button.ZIndex);
         card.HideRedundantActionCueLabel();
@@ -191,6 +134,42 @@ internal sealed class BoardCardInteractionControls
             controls.Add(card, buttons);
         }
         buttons.Add(button);
+        return true;
+    }
+
+    private static CardControl? VisibleCard(IReadOnlyDictionary<int, List<CardControl>> visible, int id) =>
+        visible.TryGetValue(id, out List<CardControl>? cards)
+            ? cards.LastOrDefault(candidate => InteractionControl.IsUsable(candidate) && candidate.IsVisibleInTree())
+            : null;
+
+    private static Button CreateButton(CardInteractionControlDescriptor descriptor)
+    {
+        var button = new Button
+        {
+            Name = $"Card{descriptor.CardId}{descriptor.Intent}",
+            Text = descriptor.Text,
+            TooltipText = CardInteractionControlStyle.Tooltip(descriptor.Intent),
+            FocusMode = Control.FocusModeEnum.All,
+            ZIndex = CardInteractionControlStyle.Layer(descriptor.Intent),
+            ZAsRelative = false,
+            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
+            AccessibilityName = descriptor.Text,
+            ThemeTypeVariation = GodotThemeVariations.LegalTargetButton,
+        };
+
+        button.TooltipText = descriptor.Description ?? (descriptor.Intent == CardInteractionIntent.Action
+            ? descriptor.Text
+            : CardInteractionControlStyle.Tooltip(descriptor.Intent));
+        if (descriptor.Intent == CardInteractionIntent.Action)
+        {
+            button.SelfModulate = new Color(1, 1, 1, 0.72f);
+            button.MouseEntered += () => button.SelfModulate = Colors.White;
+            button.MouseExited += () => button.SelfModulate = button.HasFocus()
+                ? Colors.White : new Color(1, 1, 1, 0.72f);
+            button.FocusEntered += () => button.SelfModulate = Colors.White;
+            button.FocusExited += () => button.SelfModulate = new Color(1, 1, 1, 0.72f);
+        }
+        return button;
     }
 
     private static void PresentControlLayer(CardControl card, CardInteractionIntent intent)

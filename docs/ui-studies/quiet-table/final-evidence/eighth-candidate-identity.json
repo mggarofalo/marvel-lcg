@@ -1,0 +1,11 @@
+{
+  "source_files": 2811,
+  "source_manifest_sha256": "0d34e794f25962b9957b8e349b12a59075b111861bb2c780ac55e4d55ee0641d",
+  "directory_dlls": 12,
+  "assemblies_manifest_sha256": "6ae835b0e17c9f6f273bc8db1e6e1e271a133a0fd9bed41e0f743e87508595e1",
+  "godot_dll_sha256": "c40425cec51e1d31066174aa62b33da856af8237ed380eff2b4099175cf2f60d",
+  "managed_tests": 3475,
+  "native_profiles": 19,
+  "rendered_profiles": 4,
+  "mutants_killed": 10
+}

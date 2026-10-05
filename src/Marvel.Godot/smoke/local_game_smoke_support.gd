@@ -1,6 +1,12 @@
 extends "res://smoke/local_game_smoke_core.gd"
 
 
+func _task_commit() -> Button:
+	var control := main.find_child("ContextualCommit", true, false) as Button
+	return control if control != null and not control.is_queued_for_deletion() \
+		and control.is_visible_in_tree() else null
+
+
 func _hand_surface() -> Control:
 	var surfaces := main.find_children("AstraTableSurface", "Control", true, false)
 	surfaces.reverse()
@@ -62,13 +68,21 @@ func _control_has_real_hit_area(control: Control) -> bool:
 		# transform. Its full clipped size is proved above; repeatedly prove its
 		# central pointer target without forcing enter/exit oscillation at rotated
 		# bounding-box corners that are not part of the painted card.
-		if control.get_parent() != null and control.get_parent().name == &"SpatialControls":
+		if control.get_parent() != null and (control.get_parent().name == &"SpatialControls" \
+				or control.get_parent().name == &"DirectControls" \
+				or control.get_parent().name == &"HandActionOverlay" \
+				or str(control.get_parent().name).begins_with("MulliganOverlay")):
 			points = [rect.get_center()]
 		var proof_is_stable := true
 		for point in points:
 			if not control.get_global_rect().is_equal_approx(global_rect) \
 					or not _visible_control_rect(control).is_equal_approx(rect) \
 					or not await _control_owns_point(control, point):
+				if _attempt == CONTROL_HIT_AREA_ATTEMPTS - 1:
+					print("HIT_POINT_FAILURE control=%s point=%s mouse=%s rect=%s visible=%s hovered=%s" % [
+						control.name, point, render_viewport.get_mouse_position(),
+						control.get_global_rect(), _visible_control_rect(control),
+						render_viewport.gui_get_hovered_control()])
 				proof_is_stable = false
 				break
 		if proof_is_stable and control.get_global_rect().is_equal_approx(global_rect) \
@@ -273,6 +287,19 @@ func _focused_card_title_is_visible(card: Control, board: ScrollContainer, board
 	return false
 
 
+func _reverted_event_presentation_is_clear() -> bool:
+	var latest := main.find_child("LatestResult", true, false) as Label
+	if latest != null and not latest.text.is_empty():
+		_fail("undo left the reverted action displayed as the latest result")
+		return false
+	var cue := _node("Play/Prompt/Margin/Stack/Workbench/History/EventCue") as Control
+	var cue_summary := cue.get_node("Margin/Copy/Summary") as Label
+	if cue.is_visible_in_tree() or not cue_summary.text.is_empty():
+		_fail("undo retained or revived a reverted event cue")
+		return false
+	return true
+
+
 func _event_presentation_is_nonblocking() -> bool:
 	var cue := _node("Play/Prompt/Margin/Stack/Workbench/History/EventCue") as Control
 	var motion := _node("Toolbar/Motion") as CheckButton
@@ -303,7 +330,7 @@ func _event_presentation_is_nonblocking() -> bool:
 		_fail("skipping motion changed or cleared event history")
 		return false
 	var sync_status := _node("Toolbar/SyncStatus") as Label
-	if cue.visible or sync_status == null or not sync_status.text.begins_with("✓ Synced"):
+	if cue.visible or sync_status == null or not sync_status.text.begins_with("Last synced · r"):
 		_fail("settled motion did not collapse its cue or retain the compact sync status")
 		return false
 
@@ -318,7 +345,7 @@ func _disabled_motion_is_settled(skip: Button) -> bool:
 		return false
 	var cue := _node("Play/Prompt/Margin/Stack/Workbench/History/EventCue") as Control
 	var sync_status := _node("Toolbar/SyncStatus") as Label
-	if cue.visible or sync_status == null or not sync_status.text.begins_with("✓ Synced"):
+	if cue.visible or sync_status == null or not sync_status.text.begins_with("Last synced · r"):
 		_fail("motion-disabled presentation did not retain the compact sync status")
 		return false
 	return true
@@ -345,15 +372,16 @@ func _capture_checkpoint(checkpoint: String) -> bool:
 		])
 		return false
 
-	if not _checkpoint_image_is_rendered(checkpoint, image):
+	if not _save_checkpoint_image(checkpoint, capture_dir, image):
 		return false
-	return _save_checkpoint_image(checkpoint, capture_dir, image)
+	return _checkpoint_image_is_rendered(checkpoint, image)
 
 
 func _checkpoint_image_is_rendered(checkpoint: String, image: Image) -> bool:
 	var colors: Dictionary = {}
 	var sample := image.duplicate()
-	sample.resize(32, 18, Image.INTERPOLATE_NEAREST)
+	# Compact setup text and borders must remain in the sample alongside broad surfaces.
+	sample.resize(128, 72, Image.INTERPOLATE_NEAREST)
 	for x_step in sample.get_width():
 		for y_step in sample.get_height():
 			var pixel: Color = sample.get_pixel(x_step, y_step)
@@ -388,7 +416,7 @@ func _save_checkpoint_image(checkpoint: String, capture_dir: String, image: Imag
 func _first_enabled_choice() -> Button:
 	for button in _visible_buttons(_decision()):
 		if not button.disabled and button.name != "Submit" \
-				and button.text not in ["Pass / decline", "+", "−"]:
+				and button.name != &"Decline" and button.text not in ["+", "−"]:
 			return button
 	return null
 

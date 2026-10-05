@@ -1,0 +1,44 @@
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Release/net8.0/Marvel.View.dll
+  Marvel.View.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/bin/Release/net8.0/Marvel.View.Tests.dll
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/bin/Release/net8.0/Marvel.View.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.43]     Marvel.View.Tests.EventResultMeaningTests.RecoveryOfAPaymentCardIsNotSuppressedAsPayment [FAIL]
+[xUnit.net 00:00:00.44]     Marvel.View.Tests.EventResultMeaningTests.HandGainHistoryNeverRestoresConcealedOccurrenceIdentity(verb: "Add_To_Hand", expectedVerb: "added") [FAIL]
+[xUnit.net 00:00:00.44]     Marvel.View.Tests.EventResultMeaningTests.HandGainHistoryNeverRestoresConcealedOccurrenceIdentity(verb: "Return", expectedVerb: "returned") [FAIL]
+  Failed Marvel.View.Tests.EventResultMeaningTests.RecoveryOfAPaymentCardIsNotSuppressedAsPayment [9 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Marvel.View.Tests.EventResultMeaningTests.RecoveryOfAPaymentCardIsNotSuppressedAsPayment() in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/EventResultMeaningTests.cs:line 97
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Failed Marvel.View.Tests.EventResultMeaningTests.HandGainHistoryNeverRestoresConcealedOccurrenceIdentity(verb: "Add_To_Hand", expectedVerb: "added") [< 1 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Marvel.View.Tests.EventResultMeaningTests.HandGainHistoryNeverRestoresConcealedOccurrenceIdentity(String verb, String expectedVerb) in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/EventResultMeaningTests.cs:line 113
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Marvel.View.Tests.EventResultMeaningTests.HandGainHistoryNeverRestoresConcealedOccurrenceIdentity(verb: "Return", expectedVerb: "returned") [< 1 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at Marvel.View.Tests.EventResultMeaningTests.HandGainHistoryNeverRestoresConcealedOccurrenceIdentity(String verb, String expectedVerb) in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/EventResultMeaningTests.cs:line 113
+   at InvokeStub_EventResultMeaningTests.HandGainHistoryNeverRestoresConcealedOccurrenceIdentity(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:00.46]     Marvel.View.Tests.EventResultMeaningTests.BlackCatHistoryKeepsDiscardThenRecoveryAndOmitsPayment [FAIL]
+  Failed Marvel.View.Tests.EventResultMeaningTests.BlackCatHistoryKeepsDiscardThenRecoveryAndOmitsPayment [4 ms]
+  Error Message:
+   Assert.Equal() Failure: Collections differ
+                                                                                ↓ (pos 1)
+Expected: <generated> ["Spider-Man discarded Swinging Web Kick from Spider"···, "Spider-Man added Swinging Web Kick to their hand f"···]
+Actual:   string[]    ["Spider-Man discarded Swinging Web Kick from Spider"···]
+  Stack Trace:
+     at Marvel.View.Tests.EventResultMeaningTests.BlackCatHistoryKeepsDiscardThenRecoveryAndOmitsPayment() in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/EventResultMeaningTests.cs:line 84
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Failed!  - Failed:     4, Passed:    10, Skipped:     0, Total:    14, Duration: 51 ms - Marvel.View.Tests.dll (net8.0)

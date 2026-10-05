@@ -1,0 +1,19 @@
+[
+  ".github/workflows/ci.yml",
+  "docs/godot-client.md",
+  "docs/ui-studies/quiet-table/implementation.md",
+  "src/Marvel.Godot/BoardContextualInteractionControls.cs",
+  "src/Marvel.Godot/CardInteractionControlPlacement.cs",
+  "src/Marvel.Godot/MainLayoutController.cs",
+  "src/Marvel.Godot/TableCompactButtonStyle.cs",
+  "src/Marvel.Godot/TableSidebarContent.cs",
+  "src/Marvel.Godot/smoke/hosted_invitation_layout_checks.gd",
+  "src/Marvel.Godot/smoke/hosted_invitation_layout_smoke.gd",
+  "src/Marvel.Godot/smoke/hosted_invitation_layout_smoke_runner.gd",
+  "src/Marvel.Godot/smoke/hosted_multiplayer_smoke.gd",
+  "src/Marvel.Godot/smoke/hosted_multiplayer_smoke_support.gd",
+  "src/Marvel.Godot/smoke/hosted_multiplayer_smoke_surface_checks.gd",
+  "src/Marvel.Godot/smoke/local_game_smoke_caption_bounds.gd",
+  "tools/godot-hosted-multiplayer-smoke.ps1",
+  "tools/godot-hosted-multiplayer-smoke.sh"
+]

@@ -18,6 +18,7 @@ public sealed class PresentationAssemblyPolicyTests
             typeof(WorldDescriptor).Assembly,
             "Marvel.Rules.Events.AreaRef",
             "Marvel.Rules.Events.AreaReordered",
+            "Marvel.Rules.Events.AttackCompleted",
             "Marvel.Rules.Events.CardAttached",
             "Marvel.Rules.Events.CardDetached",
             "Marvel.Rules.Events.CardFormChanged",
@@ -31,11 +32,15 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Events.Landing",
             "Marvel.Rules.Events.PlayAreaDetached",
             "Marvel.Rules.Events.PlayAreaJoined",
+            // Passive successful-cancellation fact; no rules are reconstructed.
+            "Marvel.Rules.Events.WhenRevealedCanceled",
             "Marvel.Rules.Play.Outcome",
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.AffordanceAnchorKind",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
+            // Passive public purpose without answer choices.
+            "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.Question",
             "Marvel.Rules.Prompts.ResourceSource",
             "Marvel.Rules.Prompts.TargetRequest",
@@ -90,6 +95,8 @@ public sealed class PresentationAssemblyPolicyTests
             typeof(LocalGameClient).Assembly,
             "Marvel.Rules.Events.AreaRef",
             "Marvel.Rules.Events.AreaReordered",
+            // Closed event-payload validation accepts the engine's passive completion receipt.
+            "Marvel.Rules.Events.AttackCompleted",
             "Marvel.Rules.Events.CardAttached",
             "Marvel.Rules.Events.CardDetached",
             "Marvel.Rules.Events.CardFormChanged",
@@ -103,10 +110,14 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Events.Landing",
             "Marvel.Rules.Events.PlayAreaDetached",
             "Marvel.Rules.Events.PlayAreaJoined",
+            // Passive successful-cancellation fact; no rules are reconstructed.
+            "Marvel.Rules.Events.WhenRevealedCanceled",
             "Marvel.Rules.Play.Outcome",
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
+            // Passive public situation validation grants no decision authority.
+            "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.ResourceCost",
             "Marvel.Rules.Prompts.ResourceSource",
             "Marvel.Rules.Prompts.TargetRequest",
@@ -147,8 +158,10 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View.EventPresentation",
             "Marvel.View.GameAreaDescriptor",
             "Marvel.View.IVisibilityPolicy",
+            "Marvel.View.PendingSituationDescriptor",
             "Marvel.View.PlayerDescriptor",
             "Marvel.View.ViewerClaim",
+            "Marvel.View.TableContextDescriptor",
             "Marvel.View.WorldDescriptor");
     }
 

@@ -1,0 +1,121 @@
+{
+  "Specification": {
+    "Scenario": "rhino",
+    "Heroes": [
+      "black_panther"
+    ],
+    "ModularSets": null,
+    "Seed": 17
+  },
+  "Steps": [
+    {
+      "Prompt": "Black Panther resolves mulligans",
+      "Question": "Opening hand",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 0,
+        "Targets": [
+          23,
+          14,
+          30,
+          45,
+          39,
+          12
+        ],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "93b1c135ee510590a714ce94a034716e7174fb2dac9be233604465b3f1a6ee56",
+      "After": "8856237b819c3859e253c56bd437dc74b660091fda24d0aa3fed316c6e46db67"
+    },
+    {
+      "Prompt": "01040b: choose a card",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 19,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "8856237b819c3859e253c56bd437dc74b660091fda24d0aa3fed316c6e46db67",
+      "After": "b99d7ddb77f4970f42606562b4eff6cb611919a080f2c2f5fde6f255d7a29694"
+    },
+    {
+      "Prompt": "\n--- Black Panther\u0027s Turn (1) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "b99d7ddb77f4970f42606562b4eff6cb611919a080f2c2f5fde6f255d7a29694",
+      "After": "02333eb2acf2a5c6e474ca33fa4ad168cc164e7a3ee8af5b31ac8ce4ba8bf869"
+    },
+    {
+      "Prompt": "\n--- Black Panther\u0027s Turn (1) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "02333eb2acf2a5c6e474ca33fa4ad168cc164e7a3ee8af5b31ac8ce4ba8bf869",
+      "After": "02333eb2acf2a5c6e474ca33fa4ad168cc164e7a3ee8af5b31ac8ce4ba8bf869"
+    },
+    {
+      "Prompt": "Black Panther End Phase",
+      "Question": "Choose end-of-phase discards",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 6,
+        "Targets": [
+          28,
+          15
+        ],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "02333eb2acf2a5c6e474ca33fa4ad168cc164e7a3ee8af5b31ac8ce4ba8bf869",
+      "After": "173a58f012d896714adb4dda84a5d228fb82e662ecb73c6955026556594c3f45"
+    },
+    {
+      "Prompt": "Black Panther declares a defender",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "173a58f012d896714adb4dda84a5d228fb82e662ecb73c6955026556594c3f45",
+      "After": "2e4ee7a5b74da8bc36c5949e09cf5f43375e25d60d8f0ac4fec92086ea328866"
+    },
+    {
+      "Prompt": "Black Panther declares a defender",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "2e4ee7a5b74da8bc36c5949e09cf5f43375e25d60d8f0ac4fec92086ea328866",
+      "After": "48174c2ec5837ab645398cd008a6de1bf070fe42e193eedea57ef67d7e4591ea"
+    }
+  ],
+  "FinalDigest": "48174c2ec5837ab645398cd008a6de1bf070fe42e193eedea57ef67d7e4591ea"
+}

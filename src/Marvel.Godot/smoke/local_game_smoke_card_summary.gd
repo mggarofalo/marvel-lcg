@@ -1,5 +1,7 @@
 extends "res://smoke/local_game_smoke_layout_checks.gd"
 
+const ResourceBounds = preload("res://smoke/local_game_smoke_spatial_bounds.gd")
+
 func _card_face_is_safe(card: Control, face: Control, in_hand: bool, observed: Dictionary) -> bool:
 	observed.face = true
 	if not _compact_card_title_is_safe(card, face, in_hand):
@@ -22,8 +24,8 @@ func _compact_card_title_is_safe(card: Control, face: Control, in_hand: bool) ->
 		_fail("a board card repeats type context already conveyed by its area")
 		return false
 	var title := face.find_child("Title", true, false) as Label
-	if title == null or title.max_lines_visible != -1:
-		_fail("a board card title is truncated")
+	if title == null or title.max_lines_visible != 2 or card.tooltip_text != title.text:
+		_fail("a compact card lost its bounded title or complete inspection name")
 		return false
 	if title.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS:
 		_fail("a compact card title uses ellipsis instead of wrapping")
@@ -145,12 +147,12 @@ func _compact_card_resources_are_safe(face: Control, observed: Dictionary) -> bo
 			slot_size = slot.custom_minimum_size
 		if not _resource_slot_is_safe(slot, slot_size):
 			return false
-	return true
+	return _resource_row_uses_available_face_width(resource, tokens)
 
 
 func _resource_token_structure_is_safe(resource: HFlowContainer, token: Control, slot: Label) -> bool:
-	if resource.size_flags_horizontal != Control.SIZE_SHRINK_BEGIN:
-		_fail("a compact printed resource row does not shrink to its icons")
+	if not ResourceBounds.bounds(resource).grow(1).encloses(ResourceBounds.bounds(token)):
+		_fail("a compact printed resource token escapes its row")
 		return false
 	if slot == null or token.find_child("ResourceName*", true, false) != null:
 		_fail("a compact printed resource is not an icon-only row")
@@ -158,6 +160,20 @@ func _resource_token_structure_is_safe(resource: HFlowContainer, token: Control,
 	if not token.tooltip_text.is_empty() or not slot.tooltip_text.is_empty():
 		_fail("a compact printed resource icon exposes redundant tooltip text")
 		return false
+	return true
+
+
+func _resource_row_uses_available_face_width(resource: HFlowContainer, tokens: Array[Node]) -> bool:
+	var required: float = max(0, tokens.size() - 1) * resource.get_theme_constant("h_separation")
+	for token in tokens:
+		required += (token as Control).size.x
+	if resource.get_parent().size.x < required:
+		return true
+	var first_y: float = (tokens.front() as Control).position.y
+	for token in tokens:
+		if absf((token as Control).position.y - first_y) > 1.0:
+			_fail("printed resources wrap despite sufficient face width")
+			return false
 	return true
 
 

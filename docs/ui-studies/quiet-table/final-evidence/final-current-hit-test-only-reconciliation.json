@@ -1,0 +1,44 @@
+{
+  "bounded_correction": "shared pointer owner refreshes native hit test after each awaited frame; control/card geometry samplers resample every candidate from current bounds",
+  "delta_from_prior_feature": [
+    "src/Marvel.Godot/smoke/local_game_smoke.gd",
+    "src/Marvel.Godot/smoke/local_game_smoke_board_interaction_checks.gd",
+    "src/Marvel.Godot/smoke/local_game_smoke_direct_journey.gd",
+    "src/Marvel.Godot/smoke/local_game_smoke_pointer_support.gd"
+  ],
+  "first_local_exploratory_probes": "manual post-frame global bounds rejected transformed cards; a fresh native hit test also required updating cached card candidate geometry; neither failed probe is certification or a kill",
+  "native_approval": "R retains reviewed identities and E/C/Q limits; smoke-only changes are assessed separately",
+  "native_to_final_source_delta": [
+    "docs/godot-client.md",
+    "src/Marvel.Godot/smoke/local_game_smoke.gd",
+    "src/Marvel.Godot/smoke/local_game_smoke_board_interaction_checks.gd",
+    "src/Marvel.Godot/smoke/local_game_smoke_direct_journey.gd",
+    "src/Marvel.Godot/smoke/local_game_smoke_mulligan_checks.gd",
+    "src/Marvel.Godot/smoke/local_game_smoke_pointer_support.gd"
+  ],
+  "normal_hooks_actual_head_reviews_exact_head_ci": "required/pending",
+  "prior_7c5b7f0_cause_proven": false,
+  "prior_exhaustive_ci": 37249212664,
+  "prior_feature": "2750270fcff877e92c64fc8fbe827b4715f65397",
+  "prior_pr_ci": 37249208120,
+  "product_kills": 15,
+  "production_source_unchanged": true,
+  "runtime_byte_equivalence_claimed": false,
+  "separate_current_hit_fixture_kills": 1,
+  "separate_hosted_observer_kills": 1,
+  "source_manifest_entries": 2818,
+  "source_manifest_sha256": "2bcb77fdfef17ecaf41205e70c4cf8c56c134e66f888af42b31d67b5185f5d22",
+  "specific_container_callback_identified": false,
+  "verified_failure": {
+    "button_height": 50,
+    "current_button_y": 454.5,
+    "down": 0,
+    "hover_after": "History",
+    "hover_before": "ToggleHistory (cached)",
+    "point_y": 450,
+    "pressed": 0,
+    "profile": "Windows rendered150 single/two-player",
+    "requested": "collapse history",
+    "up": 0
+  }
+}

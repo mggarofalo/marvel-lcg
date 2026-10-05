@@ -1,0 +1,4001 @@
+{
+  "Players": [
+    {
+      "Seat": 0,
+      "Name": "Spider-Man",
+      "Eliminated": false
+    }
+  ],
+  "Areas": [
+    {
+      "Id": 0,
+      "Zone": "RemovedArea",
+      "Owner": -1,
+      "Host": -1,
+      "Cards": [],
+      "Removed": []
+    },
+    {
+      "Id": 1,
+      "Zone": "EncounterDeck",
+      "Owner": -1,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 1,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 2,
+      "Zone": "VillainDeck",
+      "Owner": -1,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": 50,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01095",
+            "Title": "Rhino",
+            "Subtitle": "",
+            "Kind": 15,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_BRUTE": 1,
+              "t_CRIMINAL": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 0,
+              "hazard": 0,
+              "health": 0,
+              "is_infinite_health": 0,
+              "printed_stage": 2,
+              "retaliate": 0,
+              "scheme": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0
+            },
+            "Traits": [
+              "BRUTE",
+              "CRIMINAL"
+            ],
+            "Cost": null,
+            "PrintedStats": {
+              "ATK": "3",
+              "SCH": "1",
+              "HP": "15*",
+              "Stage": "2"
+            },
+            "Keywords": [],
+            "RulesText": "When Revealed: Search the encounter deck and discard pile for the Breakin\u0027 \u0026 Takin\u0027 side scheme and reveal it. Shuffle the encounter deck.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed\u003C/b\u003E: Search the encounter deck and discard pile for the Breakin\u0027 \u0026 Takin\u0027 side scheme and reveal it. Shuffle the encounter deck.",
+            "ArtFaceId": "01095",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 2,
+            "Zone": "VillainDeck",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_BRUTE": 1,
+              "t_CRIMINAL": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 0,
+              "hazard": 0,
+              "health": 0,
+              "is_infinite_health": 0,
+              "printed_stage": 2,
+              "retaliate": 0,
+              "scheme": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 3,
+      "Zone": "VillainArea",
+      "Owner": -1,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": 49,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01094",
+            "Title": "Rhino",
+            "Subtitle": "",
+            "Kind": 15,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_BRUTE": 1,
+              "t_CRIMINAL": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 3,
+              "hazard": 0,
+              "health": 14,
+              "is_infinite_health": 0,
+              "printed_stage": 1,
+              "retaliate": 0,
+              "scheme": 1,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Traits": [
+              "BRUTE",
+              "CRIMINAL"
+            ],
+            "Cost": null,
+            "PrintedStats": {
+              "ATK": "2",
+              "SCH": "1",
+              "HP": "14*",
+              "Stage": "1"
+            },
+            "Keywords": [],
+            "RulesText": "",
+            "RulesMarkup": "",
+            "ArtFaceId": "01094",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 3,
+            "Zone": "VillainArea",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_BRUTE": 1,
+              "t_CRIMINAL": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 3,
+              "hazard": 0,
+              "health": 14,
+              "is_infinite_health": 0,
+              "printed_stage": 1,
+              "retaliate": 0,
+              "scheme": 1,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 4,
+      "Zone": "MainSchemesDeck",
+      "Owner": -1,
+      "Host": -1,
+      "Cards": [],
+      "Removed": []
+    },
+    {
+      "Id": 5,
+      "Zone": "MainSchemesArea",
+      "Owner": -1,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": 48,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01097b",
+            "Title": "The Break-In!",
+            "Subtitle": "",
+            "Kind": 13,
+            "Fields": {
+              "is_exhaust": 0,
+              "amplify": 0,
+              "assault": 0,
+              "escalation_threat": 1,
+              "hazard": 0,
+              "is_completed": 0,
+              "printed_stage": 1,
+              "surge": 0,
+              "target_threat": 7,
+              "k_threat": 1
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "Stage": "1",
+              "StartingThreat": "0",
+              "TargetThreat": "7*",
+              "EscalationThreat": "1*"
+            },
+            "Keywords": [],
+            "RulesText": "If this stage is completed, the players lose the game.",
+            "RulesMarkup": "\u003Cb\u003EIf this stage is completed, the players lose the game.\u003C/b\u003E",
+            "ArtFaceId": "01097b",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 5,
+            "Zone": "MainSchemesArea",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": 1,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "amplify": 0,
+              "assault": 0,
+              "escalation_threat": 1,
+              "hazard": 0,
+              "is_completed": 0,
+              "printed_stage": 1,
+              "surge": 0,
+              "target_threat": 7,
+              "k_threat": 1
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 6,
+      "Zone": "AsideDeck",
+      "Owner": 0,
+      "Host": -1,
+      "Cards": [],
+      "Removed": []
+    },
+    {
+      "Id": 7,
+      "Zone": "AsideDeck",
+      "Owner": 0,
+      "Host": -1,
+      "Cards": [],
+      "Removed": []
+    },
+    {
+      "Id": 8,
+      "Zone": "PlayerDeck",
+      "Owner": 0,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": null,
+          "Back": 0,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 0,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 0,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 0,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 9,
+      "Zone": "HandsArea",
+      "Owner": 0,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": null,
+          "Back": 0,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 0,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 0,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 0,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        },
+        {
+          "Id": null,
+          "Back": 0,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": -1,
+          "Face": null,
+          "Location": null,
+          "State": null
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 10,
+      "Zone": "HeroArea",
+      "Owner": 0,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": 1,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": false,
+          "Host": -1,
+          "Face": {
+            "Id": "01001a",
+            "Title": "Spider-Man",
+            "Subtitle": "",
+            "Kind": 3,
+            "Fields": {
+              "is_exhaust": 1,
+              "t_AVENGER": 1,
+              "ally_limit": 3,
+              "attack": 2,
+              "defense": 3,
+              "hand_size": 5,
+              "health": 4,
+              "is_infinite_health": 0,
+              "restricted_limit": 2,
+              "retaliate": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "thwart": 2,
+              "toughness": 0,
+              "vulnerable": 0,
+              "k_threat": 0,
+              "k_first_player_token": 1
+            },
+            "Traits": [
+              "AVENGER"
+            ],
+            "Cost": null,
+            "PrintedStats": {
+              "THW": "1",
+              "ATK": "2",
+              "DEF": "3",
+              "HP": "10",
+              "HS": "5"
+            },
+            "Keywords": [],
+            "RulesText": "Spider-Sense \u2014 Interrupt: When the villain initiates an attack against you, draw 1 card.",
+            "RulesMarkup": "Spider-Sense \u2014 \u003Cb\u003EInterrupt\u003C/b\u003E: When the villain initiates an attack against you, draw 1 card.",
+            "ArtFaceId": "01001a",
+            "Damage": 6,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 10,
+            "Zone": "HeroArea",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": false,
+            "Damage": 6,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 1,
+              "t_AVENGER": 1,
+              "ally_limit": 3,
+              "attack": 2,
+              "defense": 3,
+              "hand_size": 5,
+              "health": 4,
+              "is_infinite_health": 0,
+              "restricted_limit": 2,
+              "retaliate": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "thwart": 2,
+              "toughness": 0,
+              "vulnerable": 0,
+              "k_threat": 0,
+              "k_first_player_token": 1
+            },
+            "Statuses": [
+              "Stunned"
+            ]
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 11,
+      "Zone": "AsideDeck",
+      "Owner": 0,
+      "Host": -1,
+      "Cards": [],
+      "Removed": []
+    },
+    {
+      "Id": 12,
+      "Zone": "AlliesArea",
+      "Owner": 0,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": 24,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01059",
+            "Title": "Jessica Jones",
+            "Subtitle": "",
+            "Kind": 4,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_DEFENDER": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 2,
+              "attack_consequential_damage": 1,
+              "hazard": 0,
+              "health": 1,
+              "is_infinite_health": 0,
+              "retaliate": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "thwart": 2,
+              "thwart_consequential_damage": 1,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0
+            },
+            "Traits": [
+              "DEFENDER"
+            ],
+            "Cost": "3",
+            "PrintedStats": {
+              "THW": "1*",
+              "ATK": "2*",
+              "HP": "3",
+              "RES": "Y",
+              "Class": "Justice"
+            },
+            "Keywords": [],
+            "RulesText": "Jessica Jones gets \u002B1 THW for each side scheme in play.",
+            "RulesMarkup": "Jessica Jones gets \u002B1 THW for each side scheme in play.",
+            "ArtFaceId": "01059",
+            "Damage": 2,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 12,
+            "Zone": "AlliesArea",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 2,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_DEFENDER": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 2,
+              "attack_consequential_damage": 1,
+              "hazard": 0,
+              "health": 1,
+              "is_infinite_health": 0,
+              "retaliate": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "thwart": 2,
+              "thwart_consequential_damage": 1,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 23,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01058",
+            "Title": "Daredevil",
+            "Subtitle": "Matt Murdock",
+            "Kind": 4,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_DEFENDER": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 2,
+              "attack_consequential_damage": 1,
+              "hazard": 0,
+              "health": 1,
+              "is_infinite_health": 0,
+              "retaliate": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "thwart": 2,
+              "thwart_consequential_damage": 1,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0
+            },
+            "Traits": [
+              "DEFENDER"
+            ],
+            "Cost": "4",
+            "PrintedStats": {
+              "THW": "2*",
+              "ATK": "2*",
+              "HP": "3",
+              "RES": "R",
+              "Class": "Justice"
+            },
+            "Keywords": [],
+            "RulesText": "Response: After Daredevil thwarts, deal 1 damage to an enemy.",
+            "RulesMarkup": "\u003Cb\u003EResponse\u003C/b\u003E: After Daredevil thwarts, deal 1 damage to an enemy.",
+            "ArtFaceId": "01058",
+            "Damage": 2,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 12,
+            "Zone": "AlliesArea",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 2,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_DEFENDER": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 2,
+              "attack_consequential_damage": 1,
+              "hazard": 0,
+              "health": 1,
+              "is_infinite_health": 0,
+              "retaliate": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "thwart": 2,
+              "thwart_consequential_damage": 1,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 37,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01083",
+            "Title": "Mockingbird",
+            "Subtitle": "Bobbi Morse",
+            "Kind": 4,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_S.H.I.E.L.D": 1,
+              "t_SPY": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 1,
+              "attack_consequential_damage": 1,
+              "hazard": 0,
+              "health": 3,
+              "is_infinite_health": 0,
+              "retaliate": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "thwart": 1,
+              "thwart_consequential_damage": 1,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0
+            },
+            "Traits": [
+              "S.H.I.E.L.D",
+              "SPY"
+            ],
+            "Cost": "3",
+            "PrintedStats": {
+              "THW": "1*",
+              "ATK": "1*",
+              "HP": "3",
+              "RES": "R",
+              "Class": "Basic"
+            },
+            "Keywords": [],
+            "RulesText": "Response: After Mockingbird enters play, stun an enemy.",
+            "RulesMarkup": "\u003Cb\u003EResponse\u003C/b\u003E: After Mockingbird enters play, stun an enemy.",
+            "ArtFaceId": "01083",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 12,
+            "Zone": "AlliesArea",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_S.H.I.E.L.D": 1,
+              "t_SPY": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 1,
+              "attack_consequential_damage": 1,
+              "hazard": 0,
+              "health": 3,
+              "is_infinite_health": 0,
+              "retaliate": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "thwart": 1,
+              "thwart_consequential_damage": 1,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 13,
+      "Zone": "SupportsArea",
+      "Owner": 0,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": 16,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01006",
+            "Title": "Aunt May",
+            "Subtitle": "",
+            "Kind": 7,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_PERSONA": 1,
+              "permanent": 0,
+              "surge": 0
+            },
+            "Traits": [
+              "PERSONA"
+            ],
+            "Cost": "1",
+            "PrintedStats": {
+              "RES": "Y",
+              "Class": "Hero"
+            },
+            "Keywords": [],
+            "RulesText": "Alter-Ego Action: Exhaust Aunt May \u2192 heal 4 damage from Peter Parker.",
+            "RulesMarkup": "\u003Cb\u003EAlter-Ego Action\u003C/b\u003E: Exhaust Aunt May \u2192 heal 4 damage from Peter Parker.",
+            "ArtFaceId": "01006",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 13,
+            "Zone": "SupportsArea",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_PERSONA": 1,
+              "permanent": 0,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 33,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01064",
+            "Title": "Surveillance Team",
+            "Subtitle": "",
+            "Kind": 7,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_S.H.I.E.L.D": 1,
+              "permanent": 0,
+              "surge": 0
+            },
+            "Traits": [
+              "S.H.I.E.L.D"
+            ],
+            "Cost": "2",
+            "PrintedStats": {
+              "RES": "B",
+              "Class": "Justice"
+            },
+            "Keywords": [
+              "Uses (3 snoop counters)"
+            ],
+            "RulesText": "Uses (3 snoop counters). (Enters play with 3 counters. When those are gone, discard this card)\nAction: Exhaust Surveillance Team and remove 1 snoop counter from it \u2192 remove 1 threat from a scheme.",
+            "RulesMarkup": "Uses (3 snoop counters). \u003Ci\u003E(Enters play with 3 counters. When those are gone, discard this card)\u003C/i\u003E\n\u003Cb\u003EAction\u003C/b\u003E: Exhaust Surveillance Team and remove 1 snoop counter from it \u2192 remove 1 threat from a scheme.",
+            "ArtFaceId": "01064",
+            "Damage": 0,
+            "Counters": {
+              "snoop": 1
+            }
+          },
+          "Location": {
+            "AreaId": 13,
+            "Zone": "SupportsArea",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {
+              "snoop": 1
+            },
+            "Values": {
+              "is_exhaust": 0,
+              "t_S.H.I.E.L.D": 1,
+              "permanent": 0,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 34,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01064",
+            "Title": "Surveillance Team",
+            "Subtitle": "",
+            "Kind": 7,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_S.H.I.E.L.D": 1,
+              "permanent": 0,
+              "surge": 0
+            },
+            "Traits": [
+              "S.H.I.E.L.D"
+            ],
+            "Cost": "2",
+            "PrintedStats": {
+              "RES": "B",
+              "Class": "Justice"
+            },
+            "Keywords": [
+              "Uses (3 snoop counters)"
+            ],
+            "RulesText": "Uses (3 snoop counters). (Enters play with 3 counters. When those are gone, discard this card)\nAction: Exhaust Surveillance Team and remove 1 snoop counter from it \u2192 remove 1 threat from a scheme.",
+            "RulesMarkup": "Uses (3 snoop counters). \u003Ci\u003E(Enters play with 3 counters. When those are gone, discard this card)\u003C/i\u003E\n\u003Cb\u003EAction\u003C/b\u003E: Exhaust Surveillance Team and remove 1 snoop counter from it \u2192 remove 1 threat from a scheme.",
+            "ArtFaceId": "01064",
+            "Damage": 0,
+            "Counters": {
+              "snoop": 3
+            }
+          },
+          "Location": {
+            "AreaId": 13,
+            "Zone": "SupportsArea",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {
+              "snoop": 3
+            },
+            "Values": {
+              "is_exhaust": 0,
+              "t_S.H.I.E.L.D": 1,
+              "permanent": 0,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 46,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01092",
+            "Title": "Helicarrier",
+            "Subtitle": "",
+            "Kind": 7,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_LOCATION": 1,
+              "t_S.H.I.E.L.D": 1,
+              "permanent": 0,
+              "surge": 0
+            },
+            "Traits": [
+              "LOCATION",
+              "S.H.I.E.L.D"
+            ],
+            "Cost": "3",
+            "PrintedStats": {
+              "RES": "R",
+              "Class": "Basic"
+            },
+            "Keywords": [],
+            "RulesText": "Max 1 per player.\nAction: Exhaust Helicarrier \u2192 choose a player. Reduce the resource cost of the next card that player plays this phase by 1.",
+            "RulesMarkup": "Max 1 per player.\n\u003Cb\u003EAction\u003C/b\u003E: Exhaust Helicarrier \u2192 choose a player. Reduce the resource cost of the next card that player plays this phase by 1.",
+            "ArtFaceId": "01092",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 13,
+            "Zone": "SupportsArea",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_LOCATION": 1,
+              "t_S.H.I.E.L.D": 1,
+              "permanent": 0,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 14,
+      "Zone": "DiscardPile",
+      "Owner": 0,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": 43,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01089",
+            "Title": "Genius",
+            "Subtitle": "",
+            "Kind": 6,
+            "Fields": {
+              "is_exhaust": 0,
+              "surge": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "RES": "BB",
+              "Class": "Basic"
+            },
+            "Keywords": [],
+            "RulesText": "Max 1 per deck.",
+            "RulesMarkup": "Max 1 per deck.",
+            "ArtFaceId": "01089",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 22,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01009",
+            "Title": "Webbed Up",
+            "Subtitle": "",
+            "Kind": 8,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_CONDITION": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Traits": [
+              "CONDITION"
+            ],
+            "Cost": "4",
+            "PrintedStats": {
+              "RES": "R",
+              "Class": "Hero"
+            },
+            "Keywords": [],
+            "RulesText": "Hero form only. Attach to an enemy. Max 1 per enemy.\nForced Interrupt: When attached enemy would attack, discard Webbed Up instead. Then, stun that enemy.",
+            "RulesMarkup": "Hero form only. Attach to an enemy. Max 1 per enemy.\n\u003Cb\u003EForced Interrupt\u003C/b\u003E: When attached enemy would attack, discard Webbed Up instead. Then, stun that enemy.",
+            "ArtFaceId": "01009",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_CONDITION": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 15,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01005",
+            "Title": "Swinging Web Kick",
+            "Subtitle": "",
+            "Kind": 5,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_AERIAL": 1,
+              "t_ATTACK": 1,
+              "t_SUPERPOWER": 1,
+              "surge": 0
+            },
+            "Traits": [
+              "AERIAL",
+              "ATTACK",
+              "SUPERPOWER"
+            ],
+            "Cost": "3",
+            "PrintedStats": {
+              "RES": "B",
+              "Class": "Hero"
+            },
+            "Keywords": [],
+            "RulesText": "Hero Action (attack): Deal 8 damage to an enemy.",
+            "RulesMarkup": "\u003Cb\u003EHero Action\u003C/b\u003E \u003Ci\u003E(attack)\u003C/i\u003E: Deal 8 damage to an enemy.",
+            "ArtFaceId": "01005",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_AERIAL": 1,
+              "t_ATTACK": 1,
+              "t_SUPERPOWER": 1,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 17,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01007",
+            "Title": "Spider-Tracer",
+            "Subtitle": "",
+            "Kind": 8,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_ITEM": 1,
+              "t_TECH": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Traits": [
+              "ITEM",
+              "TECH"
+            ],
+            "Cost": "1",
+            "PrintedStats": {
+              "RES": "Y",
+              "Class": "Hero"
+            },
+            "Keywords": [],
+            "RulesText": "Attach to a minion.\nForced Interrupt: When attached minion is defeated, remove 3 threat from a scheme.",
+            "RulesMarkup": "Attach to a minion.\n\u003Cb\u003EForced Interrupt\u003C/b\u003E: When attached minion is defeated, remove 3 threat from a scheme.",
+            "ArtFaceId": "01007",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_ITEM": 1,
+              "t_TECH": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 45,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01091",
+            "Title": "Avengers Mansion",
+            "Subtitle": "",
+            "Kind": 7,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_AVENGER": 1,
+              "t_LOCATION": 1,
+              "permanent": 0,
+              "surge": 0
+            },
+            "Traits": [
+              "AVENGER",
+              "LOCATION"
+            ],
+            "Cost": "4",
+            "PrintedStats": {
+              "RES": "B",
+              "Class": "Basic"
+            },
+            "Keywords": [],
+            "RulesText": "Max 1 per player.\nAction: Exhaust Avengers Mansion \u2192 choose a player. That player draws 1 card.",
+            "RulesMarkup": "Max 1 per player.\n\u003Cb\u003EAction\u003C/b\u003E: Exhaust Avengers Mansion \u2192 choose a player. That player draws 1 card.",
+            "ArtFaceId": "01091",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_AVENGER": 1,
+              "t_LOCATION": 1,
+              "permanent": 0,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 29,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01062",
+            "Title": "The Power of Justice",
+            "Subtitle": "",
+            "Kind": 6,
+            "Fields": {
+              "is_exhaust": 0,
+              "surge": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "RES": "G",
+              "Class": "Justice"
+            },
+            "Keywords": [],
+            "RulesText": "Max 2 per deck.\nDouble the number of resources this card generates while paying for a Justice (yellow) card.",
+            "RulesMarkup": "Max 2 per deck.\nDouble the number of resources this card generates while paying for a Justice \u003Ci\u003E(yellow)\u003C/i\u003E card.",
+            "ArtFaceId": "01062",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 25,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01060",
+            "Title": "For Justice!",
+            "Subtitle": "",
+            "Kind": 5,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_THWART": 1,
+              "surge": 0
+            },
+            "Traits": [
+              "THWART"
+            ],
+            "Cost": "2",
+            "PrintedStats": {
+              "RES": "Y",
+              "Class": "Justice"
+            },
+            "Keywords": [],
+            "RulesText": "Hero Action (thwart): Remove 3 threat from a scheme (4 threat instead if you paid for this card using a mental resource).",
+            "RulesMarkup": "\u003Cb\u003EHero Action\u003C/b\u003E \u003Ci\u003E(thwart)\u003C/i\u003E: Remove 3 threat from a scheme (4 threat instead if you paid for this card using a [mental] resource).",
+            "ArtFaceId": "01060",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_THWART": 1,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 39,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01085",
+            "Title": "Emergency",
+            "Subtitle": "",
+            "Kind": 5,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_THWART": 1,
+              "surge": 0
+            },
+            "Traits": [
+              "THWART"
+            ],
+            "Cost": "0",
+            "PrintedStats": {
+              "RES": "Y",
+              "Class": "Basic"
+            },
+            "Keywords": [],
+            "RulesText": "Interrupt (thwart): When the villain schemes, reduce the amount of threat placed on the scheme by 1.",
+            "RulesMarkup": "\u003Cb\u003EInterrupt\u003C/b\u003E \u003Ci\u003E(thwart)\u003C/i\u003E: When the villain schemes, reduce the amount of threat placed on the scheme by 1.",
+            "ArtFaceId": "01085",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_THWART": 1,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 40,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01086",
+            "Title": "First Aid",
+            "Subtitle": "",
+            "Kind": 5,
+            "Fields": {
+              "is_exhaust": 0,
+              "surge": 0
+            },
+            "Traits": [],
+            "Cost": "1",
+            "PrintedStats": {
+              "RES": "B",
+              "Class": "Basic"
+            },
+            "Keywords": [],
+            "RulesText": "Action: Heal 2 damage from any character.",
+            "RulesMarkup": "\u003Cb\u003EAction\u003C/b\u003E: Heal 2 damage from any character.",
+            "ArtFaceId": "01086",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 41,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01087",
+            "Title": "Haymaker",
+            "Subtitle": "",
+            "Kind": 5,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_ATTACK": 1,
+              "surge": 0
+            },
+            "Traits": [
+              "ATTACK"
+            ],
+            "Cost": "2",
+            "PrintedStats": {
+              "RES": "Y",
+              "Class": "Basic"
+            },
+            "Keywords": [],
+            "RulesText": "Hero Action (attack): Deal 3 damage to an enemy.",
+            "RulesMarkup": "\u003Cb\u003EHero Action\u003C/b\u003E \u003Ci\u003E(attack)\u003C/i\u003E: Deal 3 damage to an enemy.",
+            "ArtFaceId": "01087",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_ATTACK": 1,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 21,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01009",
+            "Title": "Webbed Up",
+            "Subtitle": "",
+            "Kind": 8,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_CONDITION": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Traits": [
+              "CONDITION"
+            ],
+            "Cost": "4",
+            "PrintedStats": {
+              "RES": "R",
+              "Class": "Hero"
+            },
+            "Keywords": [],
+            "RulesText": "Hero form only. Attach to an enemy. Max 1 per enemy.\nForced Interrupt: When attached enemy would attack, discard Webbed Up instead. Then, stun that enemy.",
+            "RulesMarkup": "Hero form only. Attach to an enemy. Max 1 per enemy.\n\u003Cb\u003EForced Interrupt\u003C/b\u003E: When attached enemy would attack, discard Webbed Up instead. Then, stun that enemy.",
+            "ArtFaceId": "01009",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_CONDITION": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 38,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01084",
+            "Title": "Nick Fury",
+            "Subtitle": "",
+            "Kind": 4,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_S.H.I.E.L.D": 1,
+              "t_SPY": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 2,
+              "attack_consequential_damage": 1,
+              "hazard": 0,
+              "health": 0,
+              "is_infinite_health": 0,
+              "retaliate": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "thwart": 2,
+              "thwart_consequential_damage": 1,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0
+            },
+            "Traits": [
+              "S.H.I.E.L.D",
+              "SPY"
+            ],
+            "Cost": "4",
+            "PrintedStats": {
+              "THW": "2*",
+              "ATK": "2*",
+              "HP": "3",
+              "RES": "B",
+              "Class": "Basic"
+            },
+            "Keywords": [],
+            "RulesText": "Forced Response: After Nick Fury enters play, choose one: remove 2 threat from a scheme, draw 3 cards, or deal 4 damage to an enemy. At the end of the round, if Nick Fury is still in play, discard him.",
+            "RulesMarkup": "\u003Cb\u003EForced Response\u003C/b\u003E: After Nick Fury enters play, choose one: remove 2 threat from a scheme, draw 3 cards, or deal 4 damage to an enemy. At the end of the round, if Nick Fury is still in play, discard him.",
+            "ArtFaceId": "01084",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_S.H.I.E.L.D": 1,
+              "t_SPY": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 2,
+              "attack_consequential_damage": 1,
+              "hazard": 0,
+              "health": 0,
+              "is_infinite_health": 0,
+              "retaliate": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "thwart": 2,
+              "thwart_consequential_damage": 1,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 44,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01090",
+            "Title": "Strength",
+            "Subtitle": "",
+            "Kind": 6,
+            "Fields": {
+              "is_exhaust": 0,
+              "surge": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "RES": "RR",
+              "Class": "Basic"
+            },
+            "Keywords": [],
+            "RulesText": "Max 1 per deck.",
+            "RulesMarkup": "Max 1 per deck.",
+            "ArtFaceId": "01090",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 9,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01003",
+            "Title": "Backflip",
+            "Subtitle": "",
+            "Kind": 5,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_DEFENSE": 1,
+              "t_SKILL": 1,
+              "surge": 0
+            },
+            "Traits": [
+              "DEFENSE",
+              "SKILL"
+            ],
+            "Cost": "0",
+            "PrintedStats": {
+              "RES": "R",
+              "Class": "Hero"
+            },
+            "Keywords": [],
+            "RulesText": "Interrupt (defense): When you would take any amount of damage from an attack, prevent all of that damage.",
+            "RulesMarkup": "\u003Cb\u003EInterrupt\u003C/b\u003E \u003Ci\u003E(defense)\u003C/i\u003E: When you would take any amount of damage from an attack, prevent all of that damage.",
+            "ArtFaceId": "01003",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_DEFENSE": 1,
+              "t_SKILL": 1,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 26,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01060",
+            "Title": "For Justice!",
+            "Subtitle": "",
+            "Kind": 5,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_THWART": 1,
+              "surge": 0
+            },
+            "Traits": [
+              "THWART"
+            ],
+            "Cost": "2",
+            "PrintedStats": {
+              "RES": "Y",
+              "Class": "Justice"
+            },
+            "Keywords": [],
+            "RulesText": "Hero Action (thwart): Remove 3 threat from a scheme (4 threat instead if you paid for this card using a mental resource).",
+            "RulesMarkup": "\u003Cb\u003EHero Action\u003C/b\u003E \u003Ci\u003E(thwart)\u003C/i\u003E: Remove 3 threat from a scheme (4 threat instead if you paid for this card using a [mental] resource).",
+            "ArtFaceId": "01060",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_THWART": 1,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 42,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01088",
+            "Title": "Energy",
+            "Subtitle": "",
+            "Kind": 6,
+            "Fields": {
+              "is_exhaust": 0,
+              "surge": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "RES": "YY",
+              "Class": "Basic"
+            },
+            "Keywords": [],
+            "RulesText": "Max 1 per deck.",
+            "RulesMarkup": "Max 1 per deck.",
+            "ArtFaceId": "01088",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 8,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01002",
+            "Title": "Black Cat",
+            "Subtitle": "Felicia Hardy",
+            "Kind": 4,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_HERO_FOR_HIRE": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 1,
+              "attack_consequential_damage": 0,
+              "hazard": 0,
+              "health": 0,
+              "is_infinite_health": 0,
+              "retaliate": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "thwart": 1,
+              "thwart_consequential_damage": 1,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0
+            },
+            "Traits": [
+              "HERO FOR HIRE"
+            ],
+            "Cost": "2",
+            "PrintedStats": {
+              "THW": "1*",
+              "ATK": "1",
+              "HP": "2",
+              "RES": "Y",
+              "Class": "Hero"
+            },
+            "Keywords": [],
+            "RulesText": "Forced Response: After you play Black Cat, discard the top 2 cards of your deck. Add each card with a printed mental resource discarded this way to your hand.",
+            "RulesMarkup": "\u003Cb\u003EForced Response\u003C/b\u003E: After you play Black Cat, discard the top 2 cards of your deck. Add each card with a printed [mental] resource discarded this way to your hand.",
+            "ArtFaceId": "01002",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_HERO_FOR_HIRE": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 1,
+              "attack_consequential_damage": 0,
+              "hazard": 0,
+              "health": 0,
+              "is_infinite_health": 0,
+              "retaliate": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "thwart": 1,
+              "thwart_consequential_damage": 1,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 27,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01061",
+            "Title": "Great Responsibility",
+            "Subtitle": "",
+            "Kind": 5,
+            "Fields": {
+              "is_exhaust": 0,
+              "surge": 0
+            },
+            "Traits": [],
+            "Cost": "0",
+            "PrintedStats": {
+              "RES": "B",
+              "Class": "Justice"
+            },
+            "Keywords": [],
+            "RulesText": "Hero Interrupt: When any amount of threat would be placed on a scheme, you take it as damage instead.",
+            "RulesMarkup": "\u003Cb\u003EHero Interrupt\u003C/b\u003E: When any amount of threat would be placed on a scheme, you take it as damage instead.",
+            "ArtFaceId": "01061",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 20,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": false,
+          "Host": -1,
+          "Face": {
+            "Id": "01008",
+            "Title": "Web-Shooter",
+            "Subtitle": "",
+            "Kind": 8,
+            "Fields": {
+              "is_exhaust": 1,
+              "t_ITEM": 1,
+              "t_TECH": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Traits": [
+              "ITEM",
+              "TECH"
+            ],
+            "Cost": "1",
+            "PrintedStats": {
+              "RES": "R",
+              "Class": "Hero"
+            },
+            "Keywords": [
+              "Uses (3 web counters)"
+            ],
+            "RulesText": "Uses (3 web counters). (Enters play with 3 counters. When those are gone, discard this card)\nHero Resource: Exhaust Web-Shooter and remove 1 web counter from it \u2192 generate a wild resource.",
+            "RulesMarkup": "Uses (3 web counters). \u003Ci\u003E(Enters play with 3 counters. When those are gone, discard this card)\u003C/i\u003E\n\u003Cb\u003EHero Resource\u003C/b\u003E: Exhaust Web-Shooter and remove 1 web counter from it \u2192 generate a [wild] resource.",
+            "ArtFaceId": "01008",
+            "Damage": 0,
+            "Counters": {
+              "web": 0
+            }
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": false,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {
+              "web": 0
+            },
+            "Values": {
+              "is_exhaust": 1,
+              "t_ITEM": 1,
+              "t_TECH": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 10,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01003",
+            "Title": "Backflip",
+            "Subtitle": "",
+            "Kind": 5,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_DEFENSE": 1,
+              "t_SKILL": 1,
+              "surge": 0
+            },
+            "Traits": [
+              "DEFENSE",
+              "SKILL"
+            ],
+            "Cost": "0",
+            "PrintedStats": {
+              "RES": "R",
+              "Class": "Hero"
+            },
+            "Keywords": [],
+            "RulesText": "Interrupt (defense): When you would take any amount of damage from an attack, prevent all of that damage.",
+            "RulesMarkup": "\u003Cb\u003EInterrupt\u003C/b\u003E \u003Ci\u003E(defense)\u003C/i\u003E: When you would take any amount of damage from an attack, prevent all of that damage.",
+            "ArtFaceId": "01003",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 14,
+            "Zone": "DiscardPile",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_DEFENSE": 1,
+              "t_SKILL": 1,
+              "surge": 0
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 15,
+      "Zone": "EngagedEnemiesArea",
+      "Owner": 0,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": 55,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01101",
+            "Title": "Hydra Mercenary",
+            "Subtitle": "",
+            "Kind": 12,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_HYDRA": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 1,
+              "boost_const": 1,
+              "engaged_with": 0,
+              "guard": 1,
+              "hazard": 0,
+              "health": 3,
+              "incite": 0,
+              "is_infinite_health": 0,
+              "patrol": 0,
+              "peril": 0,
+              "quickstrike": 0,
+              "retaliate": 0,
+              "scheme": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "teamwork": 0,
+              "toughness": 0,
+              "victory": 0,
+              "villainous": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Traits": [
+              "HYDRA"
+            ],
+            "Cost": null,
+            "PrintedStats": {
+              "ATK": "1",
+              "SCH": "0",
+              "HP": "3",
+              "Boost": "1"
+            },
+            "Keywords": [
+              "Guard"
+            ],
+            "RulesText": "Guard. (While this minion is engaged with you, you cannot attack the villain.)",
+            "RulesMarkup": "Guard. \u003Ci\u003E(While this minion is engaged with you, you cannot attack the villain.)\u003C/i\u003E",
+            "ArtFaceId": "01101",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 15,
+            "Zone": "EngagedEnemiesArea",
+            "Controller": -1,
+            "EngagedWith": 0
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_HYDRA": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 1,
+              "boost_const": 1,
+              "engaged_with": 0,
+              "guard": 1,
+              "hazard": 0,
+              "health": 3,
+              "incite": 0,
+              "is_infinite_health": 0,
+              "patrol": 0,
+              "peril": 0,
+              "quickstrike": 0,
+              "retaliate": 0,
+              "scheme": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "teamwork": 0,
+              "toughness": 0,
+              "victory": 0,
+              "villainous": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 4,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01167",
+            "Title": "Vulture",
+            "Subtitle": "",
+            "Kind": 12,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_CRIMINAL": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 3,
+              "boost_const": 2,
+              "engaged_with": 0,
+              "guard": 0,
+              "hazard": 0,
+              "health": 4,
+              "incite": 0,
+              "is_infinite_health": 0,
+              "patrol": 0,
+              "peril": 0,
+              "quickstrike": 1,
+              "retaliate": 0,
+              "scheme": 1,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "teamwork": 0,
+              "toughness": 0,
+              "victory": 0,
+              "villainous": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Traits": [
+              "CRIMINAL"
+            ],
+            "Cost": null,
+            "PrintedStats": {
+              "ATK": "3",
+              "SCH": "1",
+              "HP": "4",
+              "Boost": "2"
+            },
+            "Keywords": [
+              "Quickstrike"
+            ],
+            "RulesText": "Quickstrike. (After this minion engages your hero, it attacks.)",
+            "RulesMarkup": "Quickstrike. \u003Ci\u003E(After this minion engages your hero, it attacks.)\u003C/i\u003E",
+            "ArtFaceId": "01167",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 15,
+            "Zone": "EngagedEnemiesArea",
+            "Controller": -1,
+            "EngagedWith": 0
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_CRIMINAL": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 3,
+              "boost_const": 2,
+              "engaged_with": 0,
+              "guard": 0,
+              "hazard": 0,
+              "health": 4,
+              "incite": 0,
+              "is_infinite_health": 0,
+              "patrol": 0,
+              "peril": 0,
+              "quickstrike": 1,
+              "retaliate": 0,
+              "scheme": 1,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "teamwork": 0,
+              "toughness": 0,
+              "victory": 0,
+              "villainous": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 16,
+      "Zone": "BoostCardsDeck",
+      "Owner": -1,
+      "Host": 49,
+      "Cards": [],
+      "Removed": []
+    },
+    {
+      "Id": 17,
+      "Zone": "BoostingArea",
+      "Owner": -1,
+      "Host": -1,
+      "Cards": [],
+      "Removed": []
+    },
+    {
+      "Id": 18,
+      "Zone": "EncounterDiscardPile",
+      "Owner": -1,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": 57,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01102",
+            "Title": "Sandman",
+            "Subtitle": "",
+            "Kind": 12,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_CRIMINAL": 1,
+              "t_ELITE": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 3,
+              "boost_const": 2,
+              "engaged_with": 0,
+              "guard": 0,
+              "hazard": 0,
+              "health": 0,
+              "incite": 0,
+              "is_infinite_health": 0,
+              "patrol": 0,
+              "peril": 0,
+              "quickstrike": 0,
+              "retaliate": 0,
+              "scheme": 2,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "teamwork": 0,
+              "toughness": 1,
+              "victory": 0,
+              "villainous": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Traits": [
+              "CRIMINAL",
+              "ELITE"
+            ],
+            "Cost": null,
+            "PrintedStats": {
+              "ATK": "3",
+              "SCH": "2",
+              "HP": "4",
+              "Boost": "2"
+            },
+            "Keywords": [
+              "Toughness"
+            ],
+            "RulesText": "Toughness. (This character enters play with a tough status card.)",
+            "RulesMarkup": "Toughness. \u003Ci\u003E(This character enters play with a tough status card.)\u003C/i\u003E",
+            "ArtFaceId": "01102",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_CRIMINAL": 1,
+              "t_ELITE": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 3,
+              "boost_const": 2,
+              "engaged_with": 0,
+              "guard": 0,
+              "hazard": 0,
+              "health": 0,
+              "incite": 0,
+              "is_infinite_health": 0,
+              "patrol": 0,
+              "peril": 0,
+              "quickstrike": 0,
+              "retaliate": 0,
+              "scheme": 2,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "teamwork": 0,
+              "toughness": 1,
+              "victory": 0,
+              "villainous": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 60,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01104",
+            "Title": "Hard to Keep Down",
+            "Subtitle": "",
+            "Kind": 11,
+            "Fields": {
+              "is_exhaust": 0,
+              "boost_const": 0,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {},
+            "Keywords": [],
+            "RulesText": "When Revealed: Rhino heals 4 damage. If no damage was healed this way, this card gains surge.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed\u003C/b\u003E: Rhino heals 4 damage. If no damage was healed this way, this card gains surge.",
+            "ArtFaceId": "01104",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "boost_const": 0,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 79,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01112",
+            "Title": "False Alarm",
+            "Subtitle": "",
+            "Kind": 11,
+            "Fields": {
+              "is_exhaust": 0,
+              "boost_const": 1,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "Boost": "1"
+            },
+            "Keywords": [],
+            "RulesText": "When Revealed: You are confused. If you are already confused, this card gains surge.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed\u003C/b\u003E: You are confused. If you are already confused, this card gains surge.",
+            "ArtFaceId": "01112",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "boost_const": 1,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 70,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01187",
+            "Title": "Assault",
+            "Subtitle": "",
+            "Kind": 11,
+            "Fields": {
+              "is_exhaust": 0,
+              "boost_const": 0,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {},
+            "Keywords": [],
+            "RulesText": "When Revealed (Alter-Ego): This card gains surge.\nWhen Revealed (Hero): The villain attacks you.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed (Alter-Ego)\u003C/b\u003E: This card gains surge.\n\u003Cb\u003EWhen Revealed (Hero)\u003C/b\u003E: The villain attacks you.",
+            "ArtFaceId": "01187",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "boost_const": 0,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 69,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01186",
+            "Title": "Advance",
+            "Subtitle": "",
+            "Kind": 11,
+            "Fields": {
+              "is_exhaust": 0,
+              "boost_const": 0,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {},
+            "Keywords": [],
+            "RulesText": "When Revealed: The villain schemes.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed\u003C/b\u003E: The villain schemes.",
+            "ArtFaceId": "01186",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "boost_const": 0,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 72,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01188",
+            "Title": "Caught Off Guard",
+            "Subtitle": "",
+            "Kind": 11,
+            "Fields": {
+              "is_exhaust": 0,
+              "boost_const": 1,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "Boost": "1"
+            },
+            "Keywords": [],
+            "RulesText": "When Revealed: Discard an upgrade or support you control. If no cards were discarded this way, this card gains surge.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed\u003C/b\u003E: Discard an upgrade or support you control. If no cards were discarded this way, this card gains surge.",
+            "ArtFaceId": "01188",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "boost_const": 1,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 68,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01186",
+            "Title": "Advance",
+            "Subtitle": "",
+            "Kind": 11,
+            "Fields": {
+              "is_exhaust": 0,
+              "boost_const": 0,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {},
+            "Keywords": [],
+            "RulesText": "When Revealed: The villain schemes.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed\u003C/b\u003E: The villain schemes.",
+            "ArtFaceId": "01186",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "boost_const": 0,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 58,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01103",
+            "Title": "Shocker",
+            "Subtitle": "",
+            "Kind": 12,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_CRIMINAL": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 2,
+              "boost_const": 2,
+              "engaged_with": 0,
+              "guard": 0,
+              "hazard": 0,
+              "health": 0,
+              "incite": 0,
+              "is_infinite_health": 0,
+              "patrol": 0,
+              "peril": 0,
+              "quickstrike": 0,
+              "retaliate": 0,
+              "scheme": 1,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "teamwork": 0,
+              "toughness": 0,
+              "victory": 0,
+              "villainous": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Traits": [
+              "CRIMINAL"
+            ],
+            "Cost": null,
+            "PrintedStats": {
+              "ATK": "2",
+              "SCH": "1",
+              "HP": "3",
+              "Boost": "2"
+            },
+            "Keywords": [],
+            "RulesText": "When Revealed: Deal 1 damage to each hero.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed\u003C/b\u003E: Deal 1 damage to each hero.",
+            "ArtFaceId": "01103",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_CRIMINAL": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "attack": 2,
+              "boost_const": 2,
+              "engaged_with": 0,
+              "guard": 0,
+              "hazard": 0,
+              "health": 0,
+              "incite": 0,
+              "is_infinite_health": 0,
+              "patrol": 0,
+              "peril": 0,
+              "quickstrike": 0,
+              "retaliate": 0,
+              "scheme": 1,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "teamwork": 0,
+              "toughness": 0,
+              "victory": 0,
+              "villainous": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 63,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01106",
+            "Title": "Stampede",
+            "Subtitle": "",
+            "Kind": 11,
+            "Fields": {
+              "is_exhaust": 0,
+              "boost_const": 1,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "Boost": "1"
+            },
+            "Keywords": [],
+            "RulesText": "When Revealed (Alter-Ego): This card gains surge.\nWhen Revealed (Hero): Rhino attacks you. If a character is damaged by this attack, that character is stunned.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed (Alter-Ego)\u003C/b\u003E: This card gains surge.\n\u003Cb\u003EWhen Revealed (Hero)\u003C/b\u003E: Rhino attacks you. If a character is damaged by this attack, that character is stunned.",
+            "ArtFaceId": "01106",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "boost_const": 1,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 62,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01105",
+            "Title": "\u0022I\u0027m Tough\u0022",
+            "Subtitle": "",
+            "Kind": 11,
+            "Fields": {
+              "is_exhaust": 0,
+              "boost_const": 0,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {},
+            "Keywords": [],
+            "RulesText": "When Revealed: Give Rhino a tough status card. If Rhino already has a tough status card, this card gains surge.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed\u003C/b\u003E: Give Rhino a tough status card. If Rhino already has a tough status card, this card gains surge.",
+            "ArtFaceId": "01105",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "boost_const": 0,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 64,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01106",
+            "Title": "Stampede",
+            "Subtitle": "",
+            "Kind": 11,
+            "Fields": {
+              "is_exhaust": 0,
+              "boost_const": 1,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "Boost": "1"
+            },
+            "Keywords": [],
+            "RulesText": "When Revealed (Alter-Ego): This card gains surge.\nWhen Revealed (Hero): Rhino attacks you. If a character is damaged by this attack, that character is stunned.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed (Alter-Ego)\u003C/b\u003E: This card gains surge.\n\u003Cb\u003EWhen Revealed (Hero)\u003C/b\u003E: Rhino attacks you. If a character is damaged by this attack, that character is stunned.",
+            "ArtFaceId": "01106",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "boost_const": 1,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 78,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01111",
+            "Title": "Explosion",
+            "Subtitle": "",
+            "Kind": 11,
+            "Fields": {
+              "is_exhaust": 0,
+              "boost_const": 2,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "Boost": "2"
+            },
+            "Keywords": [],
+            "RulesText": "When Revealed: If Bomb Scare is in play, assign X damage among heroes and allies, where X is the amount of threat on Bomb Scare. If Bomb Scare is not in play, this card gains surge.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed\u003C/b\u003E: If Bomb Scare is in play, assign X damage among heroes and allies, where X is the amount of threat on Bomb Scare. If Bomb Scare is not in play, this card gains surge.",
+            "ArtFaceId": "01111",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "boost_const": 2,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 52,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01099",
+            "Title": "Charge",
+            "Subtitle": "",
+            "Kind": 9,
+            "Fields": {
+              "is_exhaust": 0,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "boost_const": 2,
+              "crisis": 0,
+              "hazard": 0,
+              "incite": 0,
+              "peril": 0,
+              "permanent": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "ATK\u002B": "3",
+              "Boost": "2"
+            },
+            "Keywords": [],
+            "RulesText": "Attach to Rhino.\nstar Forced Interrupt: When Rhino attacks, the attack gains overkill. (Excess damage to an ally from this attack is dealt to that ally\u0027s controller.) At the end of this attack, discard Charge.",
+            "RulesMarkup": "Attach to Rhino.\n[star] \u003Cb\u003EForced Interrupt\u003C/b\u003E: When Rhino attacks, the attack gains overkill. \u003Ci\u003E(Excess damage to an ally from this attack is dealt to that ally\u0027s controller.)\u003C/i\u003E At the end of this attack, discard Charge.",
+            "ArtFaceId": "01099",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "boost_const": 2,
+              "crisis": 0,
+              "hazard": 0,
+              "incite": 0,
+              "peril": 0,
+              "permanent": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 74,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01190",
+            "Title": "Shadow of the Past",
+            "Subtitle": "",
+            "Kind": 11,
+            "Fields": {
+              "is_exhaust": 0,
+              "boost_const": 2,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "Boost": "2"
+            },
+            "Keywords": [],
+            "RulesText": "When Revealed: Reveal your set-aside nemesis minion and put it into play engaged with you. Reveal your set-aside nemesis side scheme and put it into play. Shuffle the rest of your set-aside nemesis encounter set into the encounter deck. If your nemesis minion does not enter the game this way, this card gains surge.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed\u003C/b\u003E: Reveal your set-aside nemesis minion and put it into play engaged with you. Reveal your set-aside nemesis side scheme and put it into play. Shuffle the rest of your set-aside nemesis encounter set into the encounter deck. If your nemesis minion does not enter the game this way, this card gains surge.",
+            "ArtFaceId": "01190",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 18,
+            "Zone": "EncounterDiscardPile",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "boost_const": 2,
+              "incite": 0,
+              "peril": 0,
+              "surge": 0,
+              "victory": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 19,
+      "Zone": "DealtEncounterCardsDeck",
+      "Owner": 0,
+      "Host": -1,
+      "Cards": [],
+      "Removed": []
+    },
+    {
+      "Id": 20,
+      "Zone": "RevealingArea",
+      "Owner": 0,
+      "Host": -1,
+      "Cards": [],
+      "Removed": []
+    },
+    {
+      "Id": 21,
+      "Zone": "UpgradesArea",
+      "Owner": 0,
+      "Host": 1,
+      "Cards": [
+        {
+          "Id": 35,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": 1,
+          "Face": {
+            "Id": "01065",
+            "Title": "Heroic Intuition",
+            "Subtitle": "",
+            "Kind": 8,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_SKILL": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Traits": [
+              "SKILL"
+            ],
+            "Cost": "2",
+            "PrintedStats": {
+              "RES": "Y",
+              "Class": "Justice"
+            },
+            "Keywords": [],
+            "RulesText": "Play under any player\u0027s control. Max 1 per player.\nYour hero gets \u002B1 THW.",
+            "RulesMarkup": "Play under any player\u0027s control. Max 1 per player.\nYour hero gets \u002B1 THW.",
+            "ArtFaceId": "01065",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 21,
+            "Zone": "UpgradesArea",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_SKILL": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Statuses": []
+          }
+        },
+        {
+          "Id": 19,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": 1,
+          "Face": {
+            "Id": "01008",
+            "Title": "Web-Shooter",
+            "Subtitle": "",
+            "Kind": 8,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_ITEM": 1,
+              "t_TECH": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Traits": [
+              "ITEM",
+              "TECH"
+            ],
+            "Cost": "1",
+            "PrintedStats": {
+              "RES": "R",
+              "Class": "Hero"
+            },
+            "Keywords": [
+              "Uses (3 web counters)"
+            ],
+            "RulesText": "Uses (3 web counters). (Enters play with 3 counters. When those are gone, discard this card)\nHero Resource: Exhaust Web-Shooter and remove 1 web counter from it \u2192 generate a wild resource.",
+            "RulesMarkup": "Uses (3 web counters). \u003Ci\u003E(Enters play with 3 counters. When those are gone, discard this card)\u003C/i\u003E\n\u003Cb\u003EHero Resource\u003C/b\u003E: Exhaust Web-Shooter and remove 1 web counter from it \u2192 generate a [wild] resource.",
+            "ArtFaceId": "01008",
+            "Damage": 0,
+            "Counters": {
+              "web": 1
+            }
+          },
+          "Location": {
+            "AreaId": 21,
+            "Zone": "UpgradesArea",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {
+              "web": 1
+            },
+            "Values": {
+              "is_exhaust": 0,
+              "t_ITEM": 1,
+              "t_TECH": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 22,
+      "Zone": "BoostCardsDeck",
+      "Owner": 0,
+      "Host": 55,
+      "Cards": [],
+      "Removed": []
+    },
+    {
+      "Id": 23,
+      "Zone": "StatusArea",
+      "Owner": 0,
+      "Host": 1,
+      "Cards": [
+        {
+          "Id": 81,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": 1,
+          "Face": {
+            "Id": "stunned",
+            "Title": "Stunned",
+            "Subtitle": "",
+            "Kind": 14,
+            "Fields": {
+              "is_exhaust": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {},
+            "Keywords": [],
+            "RulesText": "",
+            "RulesMarkup": "",
+            "ArtFaceId": "stunned",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 23,
+            "Zone": "StatusArea",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 24,
+      "Zone": "UpgradesArea",
+      "Owner": 0,
+      "Host": 55,
+      "Cards": [
+        {
+          "Id": 18,
+          "Back": 0,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": 55,
+          "Face": {
+            "Id": "01007",
+            "Title": "Spider-Tracer",
+            "Subtitle": "",
+            "Kind": 8,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_ITEM": 1,
+              "t_TECH": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Traits": [
+              "ITEM",
+              "TECH"
+            ],
+            "Cost": "1",
+            "PrintedStats": {
+              "RES": "Y",
+              "Class": "Hero"
+            },
+            "Keywords": [],
+            "RulesText": "Attach to a minion.\nForced Interrupt: When attached minion is defeated, remove 3 threat from a scheme.",
+            "RulesMarkup": "Attach to a minion.\n\u003Cb\u003EForced Interrupt\u003C/b\u003E: When attached minion is defeated, remove 3 threat from a scheme.",
+            "ArtFaceId": "01007",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 24,
+            "Zone": "UpgradesArea",
+            "Controller": 0,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_ITEM": 1,
+              "t_TECH": 1,
+              "crisis": 0,
+              "hazard": 0,
+              "permanent": 0,
+              "restricted": 0,
+              "surge": 0,
+              "temporary": 0,
+              "victory": 0
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 25,
+      "Zone": "UpgradesArea",
+      "Owner": -1,
+      "Host": 49,
+      "Cards": [
+        {
+          "Id": 54,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": 49,
+          "Face": {
+            "Id": "01100",
+            "Title": "Enhanced Ivory Horn",
+            "Subtitle": "",
+            "Kind": 9,
+            "Fields": {
+              "is_exhaust": 0,
+              "t_WEAPON": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "boost_const": 2,
+              "crisis": 0,
+              "hazard": 0,
+              "incite": 0,
+              "peril": 0,
+              "permanent": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Traits": [
+              "WEAPON"
+            ],
+            "Cost": null,
+            "PrintedStats": {
+              "ATK\u002B": "1",
+              "Boost": "2"
+            },
+            "Keywords": [],
+            "RulesText": "Attach to Rhino.\nHero Action: Spend physical physical physical resources \u2192 discard this card",
+            "RulesMarkup": "Attach to Rhino.\n\u003Cb\u003EHero Action\u003C/b\u003E: Spend [physical] [physical] [physical] resources \u2192 discard this card",
+            "ArtFaceId": "01100",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 25,
+            "Zone": "UpgradesArea",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": null,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "t_WEAPON": 1,
+              "acceleration_icon": 0,
+              "amplify": 0,
+              "boost_const": 2,
+              "crisis": 0,
+              "hazard": 0,
+              "incite": 0,
+              "peril": 0,
+              "permanent": 0,
+              "stalwart": 0,
+              "steady": 0,
+              "surge": 0,
+              "toughness": 0,
+              "victory": 0,
+              "vulnerable": 0,
+              "k_threat": 0
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 26,
+      "Zone": "RevealingArea",
+      "Owner": -1,
+      "Host": -1,
+      "Cards": [],
+      "Removed": []
+    },
+    {
+      "Id": 27,
+      "Zone": "BoostCardsDeck",
+      "Owner": 0,
+      "Host": 4,
+      "Cards": [],
+      "Removed": []
+    },
+    {
+      "Id": 28,
+      "Zone": "SideSchemesArea",
+      "Owner": -1,
+      "Host": -1,
+      "Cards": [
+        {
+          "Id": 3,
+          "Back": 1,
+          "FaceUp": true,
+          "Ready": true,
+          "Host": -1,
+          "Face": {
+            "Id": "01166",
+            "Title": "Highway Robbery",
+            "Subtitle": "",
+            "Kind": 16,
+            "Fields": {
+              "is_exhaust": 0,
+              "acceleration_icon": 1,
+              "amplify": 0,
+              "assault": 0,
+              "boost_const": 3,
+              "crisis": 0,
+              "hazard": 0,
+              "incite": 0,
+              "peril": 0,
+              "permanent": 0,
+              "surge": 0,
+              "victory": 0
+            },
+            "Traits": [],
+            "Cost": null,
+            "PrintedStats": {
+              "StartingThreat": "3*",
+              "Boost": "3"
+            },
+            "Keywords": [
+              "Acceleration"
+            ],
+            "RulesText": "When Revealed: Each player places a random card from their hand facedown here.\nWhen Defeated: Return each facedown card here to its owner\u0027s hand.",
+            "RulesMarkup": "\u003Cb\u003EWhen Revealed\u003C/b\u003E: Each player places a random card from their hand facedown here.\n\u003Cb\u003EWhen Defeated\u003C/b\u003E: Return each facedown card here to its owner\u0027s hand.",
+            "ArtFaceId": "01166",
+            "Damage": 0,
+            "Counters": {}
+          },
+          "Location": {
+            "AreaId": 28,
+            "Zone": "SideSchemesArea",
+            "Controller": -1,
+            "EngagedWith": -1
+          },
+          "State": {
+            "Ready": true,
+            "Damage": 0,
+            "Threat": 3,
+            "Counters": {},
+            "Values": {
+              "is_exhaust": 0,
+              "acceleration_icon": 1,
+              "amplify": 0,
+              "assault": 0,
+              "boost_const": 3,
+              "crisis": 0,
+              "hazard": 0,
+              "incite": 0,
+              "peril": 0,
+              "permanent": 0,
+              "surge": 0,
+              "victory": 0
+            },
+            "Statuses": []
+          }
+        }
+      ],
+      "Removed": []
+    },
+    {
+      "Id": 29,
+      "Zone": "UpgradesArea",
+      "Owner": -1,
+      "Host": 3,
+      "Cards": [
+        {
+          "Id": 13,
+          "Back": 0,
+          "FaceUp": false,
+          "Ready": true,
+          "Host": 3,
+          "Face": null,
+          "Location": null,
+          "State": null
+        }
+      ],
+      "Removed": []
+    }
+  ],
+  "GameAreas": [
+    {
+      "Id": 0,
+      "PlayAreas": [
+        -1,
+        0
+      ]
+    }
+  ],
+  "Outcome": 0,
+  "Table": {
+    "PromptOwner": null,
+    "ViewedPrivateSeat": null,
+    "ActivePlayer": 0,
+    "FirstPlayer": 0,
+    "PublicFocusSeat": 0
+  },
+  "PlayerSummaries": [
+    {
+      "Seat": 0,
+      "Identity": 1,
+      "Form": "Hero",
+      "Health": 4,
+      "EngagedEnemies": [
+        55,
+        4
+      ],
+      "Statuses": [
+        "Stunned"
+      ],
+      "OfferedDefenders": []
+    }
+  ],
+  "Relationships": [
+    {
+      "Kind": 1,
+      "Subject": 55,
+      "Related": null,
+      "Seat": 0
+    },
+    {
+      "Kind": 1,
+      "Subject": 4,
+      "Related": null,
+      "Seat": 0
+    },
+    {
+      "Kind": 0,
+      "Subject": 35,
+      "Related": 1,
+      "Seat": null
+    },
+    {
+      "Kind": 0,
+      "Subject": 19,
+      "Related": 1,
+      "Seat": null
+    },
+    {
+      "Kind": 0,
+      "Subject": 81,
+      "Related": 1,
+      "Seat": null
+    },
+    {
+      "Kind": 0,
+      "Subject": 18,
+      "Related": 55,
+      "Seat": null
+    },
+    {
+      "Kind": 0,
+      "Subject": 54,
+      "Related": 49,
+      "Seat": null
+    },
+    {
+      "Kind": 0,
+      "Subject": 13,
+      "Related": 3,
+      "Seat": null
+    }
+  ]
+}

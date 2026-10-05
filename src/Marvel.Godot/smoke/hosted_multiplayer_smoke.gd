@@ -1,5 +1,8 @@
 extends "res://smoke/hosted_multiplayer_smoke_client_support.gd"
 
+const SurfaceChecks = preload("res://smoke/hosted_multiplayer_smoke_surface_checks.gd")
+const SettlementChecks = preload("res://smoke/hosted_settlement_smoke_checks.gd")
+
 const MAX_DECISIONS := 600
 const GAME_LABEL := "hosted-multiplayer-smoke"
 
@@ -13,6 +16,15 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	var settlement_checks := SettlementChecks.new()
+	add_child(settlement_checks)
+	var observer_valid := await settlement_checks.verify()
+	var failed_case: String = settlement_checks.failed_case
+	settlement_checks.queue_free()
+	if not observer_valid:
+		_fail("the hosted settlement observer failed: " + failed_case)
+		return
+	print("HOSTED_SETTLEMENT_OBSERVER_OK cases=4")
 	checkpoint_directory = OS.get_environment("MARVEL_HOSTED_SMOKE_CHECKPOINT_DIR")
 	var packed := load("res://Main.tscn") as PackedScene
 	if packed == null:
@@ -71,31 +83,7 @@ func _open_host(packed: PackedScene) -> bool:
 
 
 func _restricted_guest_surface_is_safe() -> bool:
-	var host_hand := host.find_child("AstraTableSurface", true, false) as Control
-	var guest_hand := guest.find_child("AstraTableSurface", true, false) as Control
-	if host_hand == null:
-		host_hand = _node(host, "Play/Board/HandShelf") as Control
-	if guest_hand == null:
-		guest_hand = _node(guest, "Play/Board/HandShelf") as Control
-	if host_hand == null or guest_hand == null:
-		_fail("the restricted clients do not expose their distinct hand shelves")
-		return false
-	var host_cards := host_hand.find_children("ProceduralCard*", "", true, false)
-	if host_cards.is_empty():
-		_fail("the prompt owner has no rendered private hand to protect")
-		return false
-	var guest_text := _visible_text(guest)
-	for node in host_cards:
-		var title := (node as Control).find_child("Title", true, false) as Label
-		if title != null and not title.text.is_empty() and title.text in guest_text:
-			_fail("the restricted guest rendered the prompt owner's private card face: %s" % title.text)
-			return false
-	if not guest_hand.find_children("MulliganDiscard*", "Button", true, false).is_empty() \
-			or guest.find_child("CompleteChoiceSheet", true, false) != null:
-		_fail("the restricted guest rendered private opening-hand controls for another seat")
-		return false
-	return true
-
+	return SurfaceChecks.restricted_guest_is_safe(self)
 
 func _copy_invitation() -> String:
 	DisplayServer.clipboard_set("")
@@ -271,7 +259,10 @@ func _configure_connection(main: Control) -> void:
 
 func _answer_visible_decision(main: Control) -> bool:
 	if not await _wait_for_hosted_motion(main): return false
-	var prior_status := _status(main).text
+	var prior_revision := _hosted_response_revision(main)
+	if prior_revision < 0:
+		_fail("the hosted client has no displayed authoritative revision")
+		return false
 	var attached_decline := _contextual_decline(main)
 	if attached_decline != null and not attached_decline.disabled:
 		if not await _pointer_activate(attached_decline):
@@ -280,14 +271,14 @@ func _answer_visible_decision(main: Control) -> bool:
 		if not await _compose_table_decision(main):
 			return false
 	else:
-		return await _answer_fallback_decision(main, prior_status)
+		return await _answer_fallback_decision(main, prior_revision)
 
-	return await _wait_for_hosted_settlement(main, prior_status)
+	return await _wait_for_hosted_settlement(main, prior_revision)
 
 
-func _answer_fallback_decision(main: Control, prior_status: String) -> bool:
+func _answer_fallback_decision(main: Control, prior_revision: int) -> bool:
 	var decision := _decision(main)
-	var decline := _button(decision, "Pass / decline")
+	var decline := decision.find_child("Decline", true, false) as Button
 	if decline != null and not decline.disabled:
 		if not await _pointer_activate(decline):
 			return false
@@ -306,22 +297,9 @@ func _answer_fallback_decision(main: Control, prior_status: String) -> bool:
 			return false
 		if not await _pointer_activate(submit):
 			return false
-	return await _wait_for_hosted_settlement(main, prior_status)
+	return await _wait_for_hosted_settlement(main, prior_revision)
 
 
-func _wait_for_hosted_settlement(main: Control, prior_status: String) -> bool:
-	if not await _wait_for(func() -> bool: return _status(main).text != prior_status):
-		_fail("the hosted decision did not start: %s" % prior_status)
-		return false
-	if not await _wait_for(func() -> bool:
-		return not _status(main).text.begins_with("DECISION SENT")):
-		_fail("the hosted decision did not settle: %s" % _status(main).text)
-		return false
-	if _status(main).text.begins_with("MUTATION NOT REPEATED") \
-			or _status(main).text.begins_with("DECISION REJECTED"):
-		_fail("the hosted decision was not accepted")
-		return false
-	return true
 
 
 func _compose_table_decision(main: Control) -> bool:
@@ -329,7 +307,7 @@ func _compose_table_decision(main: Control) -> bool:
 		var payment := main.find_child("PaymentModal", true, false) as Control
 		if payment != null and payment.is_visible_in_tree():
 			return await _compose_hosted_payment(main)
-		var submit := _attached(main, "Card*Submit")
+		var submit := _task_commit(main)
 		if submit != null and not submit.disabled:
 			return await _pointer_activate(submit)
 		var control := _hosted_table_choice(main)
@@ -365,7 +343,7 @@ func _has_decision(main: Control) -> bool:
 			or "WAITING FOR ANOTHER PLAYER" in _status(main).text:
 		return false
 	var decision := _decision(main)
-	var decline := _button(decision, "Pass / decline")
+	var decline := decision.find_child("Decline", true, false) as Button
 	var submit := _submit_button(decision)
 	return _has_table_decision(main) \
 		or decline != null and not decline.disabled \
@@ -377,7 +355,7 @@ func _can_decline(main: Control) -> bool:
 	var attached := _contextual_decline(main)
 	if attached != null and not attached.disabled:
 		return true
-	var decline := _button(_decision(main), "Pass / decline")
+	var decline := _decision(main).find_child("Decline", true, false) as Button
 	return decline != null and not decline.disabled
 
 
@@ -387,13 +365,18 @@ func _contextual_decline(main: Control) -> Button:
 
 
 func _has_table_decision(main: Control) -> bool:
-	if _contextual_decline(main) != null: return true
-	for pattern in ["Card*Submit", "Card*Target", "Card*Cost", \
+	if _contextual_decline(main) != null or _task_commit(main) != null: return true
+	for pattern in ["Card*Target", "Card*Cost", \
 			"Card*Generator", "Card*Action"]:
 		if _attached(main, pattern) != null:
 			return true
 	var contextual := main.find_child("ContextAction*", true, false) as Button
 	return contextual != null and contextual.is_visible_in_tree() and not contextual.disabled
+
+
+func _task_commit(main: Control) -> Button:
+	var control := main.find_child("ContextualCommit", true, false) as Button
+	return control if control != null and control.is_visible_in_tree() else null
 
 
 func _attached(main: Control, pattern: String, skip_selected := false) -> Button:
@@ -407,11 +390,14 @@ func _attached(main: Control, pattern: String, skip_selected := false) -> Button
 
 
 func _decision_is_terminal(main: Control) -> bool:
-	return not _has_decision(main) \
-		and "No further decision is waiting" in _visible_text(_decision(main))
+	return SurfaceChecks.terminal_is_safe(self, main)
 
 
 func _hosted_table_choice(main: Control) -> Button:
+	for candidate in main.find_children("ContextualCost*", "Button", true, false):
+		var button := candidate as Button
+		if button != null and button.is_visible_in_tree() and not button.disabled and not button.button_pressed:
+			return button
 	var chooser := main.find_child("CardActionChoices", true, false) as Control
 	if chooser != null and chooser.is_visible_in_tree():
 		return _first_enabled_choice(chooser)

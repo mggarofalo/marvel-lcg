@@ -77,7 +77,7 @@ public sealed class TableContractTests
     }
 
     [Fact]
-    public void RestrictedSeatSwitchErasesConcealedCardStateAndPromptOwnership()
+    public void RestrictedSeatSwitchErasesConcealedCardStateAndActionsButKeepsPublicOwner()
     {
         World world = Board(out _, out _, out _);
         Card secret = world.CreateCard("secret", world.Seats[1].Hand);
@@ -97,7 +97,7 @@ public sealed class TableContractTests
         Assert.Null(concealed.Location);
         Assert.Null(concealed.State);
         Assert.Null(other.Prompt);
-        Assert.Null(other.World.Table?.PromptOwner);
+        Assert.Equal(1, other.World.Table?.PromptOwner);
         Assert.Equal(0, other.World.Table?.ViewedPrivateSeat);
         Assert.DoesNotContain(other.World.PlayerSummaries,
             summary => summary.EngagedEnemies.Contains(secret.ObjectId)
@@ -127,7 +127,7 @@ public sealed class TableContractTests
         BoardCardPresentation context = Assert.Single(presentation.ContextCards);
         Assert.Equal(treachery.ObjectId, context.TargetId);
         Assert.Equal("Caught Off Guard", context.Title);
-        Assert.Equal("Caught Off Guard was revealed — interrupt?", presentation.Heading);
+        Assert.Equal("Interrupt Caught Off Guard?", presentation.Heading);
         Assert.Contains("Resolving Caught Off Guard", presentation.Context);
     }
 

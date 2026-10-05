@@ -55,6 +55,9 @@ public sealed record Prompt(
     bool Cancellable,
     IReadOnlyList<Affordance> Affordances)
 {
+    /// <summary>Engine-authored meaning of legally declining this decision.</summary>
+    public string DeclineLabel { get; init; } = "Pass this opportunity";
+
     /// <summary>Visible game objects whose occurrence caused this decision.</summary>
     /// <remarks>
     /// This is an engine-authored presentation relation, not a legality input.
@@ -62,6 +65,10 @@ public sealed record Prompt(
     /// the receiving scope.
     /// </remarks>
     public IReadOnlyList<int> ContextCardIds { get; init; } = [];
+
+    /// <summary>Ability sources whose suspended continuations await the current activation.</summary>
+    /// <remarks>Passive provenance; the view removes sources unreadable to its scope.</remarks>
+    public IReadOnlyList<int> CauseCardIds { get; init; } = [];
 
     /// <summary>Readable engine-authored context for the pending decision.</summary>
     public string? Description { get; init; }
@@ -73,6 +80,18 @@ public sealed record Prompt(
     /// and never recover a question by parsing prose.
     /// </remarks>
     public string? DisplayQuestion { get; init; }
+
+    /// <summary>Public purpose, independent of private labels, choices and candidate identities.</summary>
+    public PublicDecisionKind PublicKind { get; init; } = Asking switch
+    {
+        Question.TurnOption => PublicDecisionKind.PlayerAction,
+        Question.Defender => PublicDecisionKind.Defense,
+        Question.Order => PublicDecisionKind.Order,
+        Question.Opportunity when When == Timing.TimingPriority.Interrupt => PublicDecisionKind.Interrupt,
+        Question.Opportunity when When == Timing.TimingPriority.Response => PublicDecisionKind.Response,
+        Question.Opportunity => PublicDecisionKind.Ability,
+        _ => PublicDecisionKind.Choice,
+    };
 
     /// <summary>
     /// Whether producing this prompt made concealed candidate identities knowable.

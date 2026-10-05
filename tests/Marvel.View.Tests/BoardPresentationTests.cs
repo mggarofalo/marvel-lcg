@@ -168,7 +168,7 @@ public sealed class BoardPresentationTests
         Assert.True(card.Concealed);
         Assert.Equal(41, card.TargetId);
         Assert.Equal("Face-down player card", card.Title);
-        Assert.Equal("EXHAUSTED  ·  FACE DOWN  ·  HOST 7", card.Status);
+        Assert.Equal("EXHAUSTED  ·  FACE DOWN", card.Status);
         Assert.Empty(card.Fields);
         Assert.Null(card.FaceId);
     }

@@ -4,66 +4,13 @@ using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
+using static Marvel.Cards.Run.AbilityChoicePromptDescription;
 
 namespace Marvel.Cards.Run;
 
 /// <summary>Choice legality over concrete immutable expression and suffix facts.</summary>
 internal static class AbilityStructuralQueries
 {
-    internal static AbilityStructuralPrompt DescribeChoice(
-        AbilityStructuralContext context, AbilityEffect choice,
-        AbilityContinuationFacts continuation)
-    {
-        var evidence = NewEvidence();
-        bool cards = choice is AbilityEffect.ChooseCard;
-        IEnumerable<Affordance> affordances;
-        if (choice is AbilityEffect.ChooseCard chooseCard)
-        {
-            affordances = LegalCards(context, chooseCard, continuation, evidence)
-                .Select(card => new Affordance(
-                    card.ObjectId, AbilityStructuralExecution.ChooseVerb, card.ObjectId, card.Owner,
-                    card.FaceId, Description: DescribeCard(context, chooseCard, card)));
-        }
-        else if (choice is AbilityEffect.Choose options)
-        {
-            bool requiresChange = options.Options.Any(IsExplicitDecline);
-            affordances = options.Options
-                .Select((option, index) => (Option: option, Index: index))
-                .Where(candidate => OptionIsLegal(
-                    context, candidate.Option, continuation, requiresChange, evidence))
-                .Select(candidate => new Affordance(
-                    candidate.Index, AbilityStructuralExecution.ChooseVerb,
-                    context.Expressions.Source.ObjectId, World.Scenario,
-                    candidate.Option.OperationName(),
-                    Description: options.Descriptions.IsDefaultOrEmpty
-                        ? null : options.Descriptions[candidate.Index]));
-        }
-        else
-        {
-            throw new InvalidOperationException(
-                $"'{context.SourceFace}' does not contain a generic choice");
-        }
-        var offered = affordances.ToList();
-        if (offered.Count == 0)
-        {
-            throw new RulesNotImplementedException(
-                $"'{context.SourceFace}' requires a choice and has no legal option");
-        }
-        var prompt = new Prompt(
-            context.Player, cards ? Question.Element : Question.Option,
-            TimingPriority.Untimed, Steps.CardRevealed,
-            $"{context.SourceFace}: choose {(cards ? "a card" : "an option")}",
-            Cancellable: false, offered) {
-            ContextCardIds = [context.Expressions.Source.ObjectId],
-            DisplayQuestion = choice is AbilityEffect.ChooseCard cardChoice ? AbilityEffectDescription.Question(
-                context.Expressions.World, context.SourceFace, cardChoice) : null,
-            Description = choice is AbilityEffect.ChooseCard describedChoice
-                ? AbilityEffectDescription.Summary(describedChoice) : null,
-            ExposesConcealedCandidates = choice is AbilityEffect.ChooseCard exposureChoice
-                && InspectsConcealedPile(exposureChoice.From),
-        };
-        return new AbilityStructuralPrompt(prompt, Admission(evidence));
-    }
     internal static AbilityStructuralTransition AnswerChoice(
         AbilityStructuralContext context, AbilityEffect choice,
         AbilityContinuationFacts continuation, Decision answer)
@@ -127,7 +74,7 @@ internal static class AbilityStructuralQueries
     /// valid. <c>rr:choose-option.2</c> requires a player-card option to change the
     /// game at least partially; an empty sequence is the explicit decline branch.
     /// </remarks>
-    private static bool OptionIsLegal(
+    internal static bool OptionIsLegal(
         AbilityStructuralContext context, AbilityEffect option,
         AbilityContinuationFacts continuation, bool requireStateChange,
         HashSet<AbilityEffect> evidence)
@@ -161,7 +108,7 @@ internal static class AbilityStructuralQueries
     /// <c>rr:target.2.2</c> makes choose-card a target selection, so each candidate
     /// is bound before the nested effect and structural continuation are admitted.
     /// </remarks>
-    private static List<Card> LegalCards(
+    internal static List<Card> LegalCards(
         AbilityStructuralContext context, AbilityEffect.ChooseCard choice,
         AbilityContinuationFacts continuation, HashSet<AbilityEffect> evidence)
     {
@@ -311,80 +258,6 @@ internal static class AbilityStructuralQueries
         return false;
     }
 
-    private static string DescribeCard(
-        AbilityStructuralContext context, AbilityEffect.ChooseCard choice, Card card)
-    {
-        var world = context.Expressions.World;
-        string title = world.Facts.Title(card.FaceId);
-        if (world.Facts.Kind(card.FaceId) is CardKind.Hero or CardKind.AlterEgo)
-            return $"Select {world.Seats[card.Owner].Name} → {title}";
-
-        if (ProjectedDamage(context, choice.Effect) is { } projection)
-        {
-            Card attacker = context.AbilityActor
-                ?? world.Seats[AbilityCardQueries.Resolver(
-                    context.Expressions.Bindings)].IdentityCard;
-            if (projection.IsAttack
-                && Statuses.Afflicted(world, world.Facts, attacker, Statuses.Stunned))
-            {
-                return $"{title} · Stunned cancels this attack; no damage will be dealt";
-            }
-
-            long amount = ProjectedDamageAmount(context, projection.Amount, projection.IsAttack);
-            string consequence = projection.IsAttack
-                ? Damage.PreviewAttack(
-                    world, world.Facts, attacker, context.Expressions.Source, card,
-                    amount, projection.Overkill)
-                : Damage.PreviewDamage(
-                    world, world.Facts, context.Expressions.Source, card, amount);
-            return $"{title} · {consequence}";
-        }
-
-        if (choice.Effect is AbilityEffect.RemoveThreat threat)
-        {
-            long current = card.Tokens.GetValueOrDefault("k_threat");
-            long result = current - Math.Min(current, Amount(threat.Amount, context.Expressions));
-            long threshold = world.Facts.PrintedValue(
-                card.FaceId, "TargetThreat", world.Players);
-            return threshold > 0
-                ? $"{title} · {current}/{threshold} → {result}/{threshold} threat"
-                : $"{title} · {current} → {result} threat";
-        }
-        return AbilityEffectDescription.Choice(choice.Effect, title) ?? title;
-    }
-
-    private static (AbilityNumber Amount, bool IsAttack, bool Overkill)? ProjectedDamage(
-        AbilityStructuralContext context, AbilityEffect? effect, bool attack = false)
-    {
-        if (effect is AbilityEffect.Power { Kind: AbilityPowerKind.Attack } power)
-            return ProjectedDamage(context, power.Effect, attack: true);
-        if (effect is AbilityEffect.Conditional conditional)
-            return ProjectedDamage(context,
-                Test(conditional.Test, context.Expressions)
-                    ? conditional.Then : conditional.Else, attack);
-        if (effect is AbilityEffect.Sequence sequence)
-            return ProjectedDamage(context, sequence.Effects.FirstOrDefault(), attack);
-        return effect switch
-        {
-            AbilityEffect.AttackDamage damage => (damage.Amount, true, damage.Overkill),
-            AbilityEffect.Damage damage => (damage.Amount, attack, false),
-            _ => null,
-        };
-    }
-
-    private static long ProjectedDamageAmount(
-        AbilityStructuralContext context, AbilityNumber damage, bool attack)
-    {
-        var world = context.Expressions.World;
-        long amount = AbilityAmounts.SaturatingSum(
-            Amount(damage, context.Expressions),
-            [AbilityEventModifiers.Amount(world, context.Expressions.Source, "eventDamage")]);
-        return attack
-            ? AbilityAmounts.SaturatingSum(amount,
-                [AbilityEventModifiers.Amount(world, context.Expressions.Source, "attackDamage")])
-            : amount;
-    }
-
     private static AbilityStructuralContext WithSelection(
         AbilityStructuralContext context, Card card)
     {
@@ -392,13 +265,13 @@ internal static class AbilityStructuralQueries
         return context with { Expressions = admission.Expressions };
     }
 
-    private static long Amount(AbilityNumber number, AbilityExpressionContext context)
+    internal static long Amount(AbilityNumber number, AbilityExpressionContext context)
     {
         var evaluation = Evaluation(context);
         return Publish(evaluation.Result(evaluation.Amount(number)), context.World);
     }
 
-    private static bool Test(AbilityCondition condition, AbilityExpressionContext context)
+    internal static bool Test(AbilityCondition condition, AbilityExpressionContext context)
     {
         var evaluation = Evaluation(context);
         return Publish(evaluation.Result(evaluation.Test(condition)), context.World);
@@ -407,29 +280,14 @@ internal static class AbilityStructuralQueries
     private static AbilityExpressionEvaluation Evaluation(AbilityExpressionContext context) =>
         new(context, new AbilitySelectorEvaluation(context.Bindings));
 
-    private static bool IsExplicitDecline(AbilityEffect option) =>
-        option is AbilityEffect.Sequence { Effects.Length: 0 };
-
-    private static bool InspectsConcealedPile(AbilityCardSelection selector) => selector switch
-    {
-        AbilityCardSelection.InAreas areas => areas.Areas.Any(area => area is
-            AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck),
-        AbilityCardSelection.WithTrait filtered => InspectsConcealedPile(filtered.Cards),
-        AbilityCardSelection.WithoutAnotherCopyAttached filtered =>
-            InspectsConcealedPile(filtered.Cards),
-        AbilityCardSelection.Discardable filtered => InspectsConcealedPile(filtered.Cards),
-        AbilityCardSelection.Ranked ranked => InspectsConcealedPile(ranked.Cards),
-        _ => false,
-    };
-
-    private static HashSet<AbilityEffect> NewEvidence() =>
+    internal static HashSet<AbilityEffect> NewEvidence() =>
         new(ReferenceEqualityComparer.Instance);
 
     private static void AddEvidence(
         HashSet<AbilityEffect> evidence, AbilityAdmissionResult admitted) =>
         evidence.UnionWith(admitted.CrisisIgnoringThwarts);
 
-    private static AbilityAdmissionResult Admission(HashSet<AbilityEffect> evidence) =>
+    internal static AbilityAdmissionResult Admission(HashSet<AbilityEffect> evidence) =>
         new(true, ImmutableHashSet.CreateRange<AbilityEffect>(
             ReferenceEqualityComparer.Instance, evidence));
 

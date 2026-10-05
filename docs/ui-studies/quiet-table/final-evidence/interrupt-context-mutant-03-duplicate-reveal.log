@@ -1,0 +1,30 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Release/net8.0/Marvel.Cards.dll
+  Marvel.Behavior.Run -> /Users/michael/Source/marvel-lcg/tools/Marvel.Behavior.Run/bin/Release/net8.0/Marvel.Behavior.Run.dll
+  Marvel.Content.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/bin/Release/net8.0/Marvel.Content.Tests.dll
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/bin/Release/net8.0/Marvel.Content.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:01.04]     Marvel.Content.Tests.Play.CoreInterruptContextTests.EnhancedSpiderSenseSeesOnlyTheCurrentRevealBeforeItsEffects(cancel: False) [FAIL]
+[xUnit.net 00:00:01.04]     Marvel.Content.Tests.Play.CoreInterruptContextTests.EnhancedSpiderSenseSeesOnlyTheCurrentRevealBeforeItsEffects(cancel: True) [FAIL]
+  Failed Marvel.Content.Tests.Play.CoreInterruptContextTests.EnhancedSpiderSenseSeesOnlyTheCurrentRevealBeforeItsEffects(cancel: False) [8 ms]
+  Error Message:
+   Assert.Empty() Failure: Collection was not empty
+Collection: [CardsFlipped { Subjects = , Trigger = villain phase, Verb = Reveal, Cards = <>z__ReadOnlySingleElementList`1[System.Int32], FaceUp = True }]
+  Stack Trace:
+     at Marvel.Content.Tests.Play.CoreInterruptContextTests.EnhancedSpiderSenseSeesOnlyTheCurrentRevealBeforeItsEffects(Boolean cancel) in /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/Play/CoreInterruptContextTests.cs:line 59
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Marvel.Content.Tests.Play.CoreInterruptContextTests.EnhancedSpiderSenseSeesOnlyTheCurrentRevealBeforeItsEffects(cancel: True) [1 ms]
+  Error Message:
+   Assert.Empty() Failure: Collection was not empty
+Collection: [CardsFlipped { Subjects = , Trigger = villain phase, Verb = Reveal, Cards = <>z__ReadOnlySingleElementList`1[System.Int32], FaceUp = True }]
+  Stack Trace:
+     at Marvel.Content.Tests.Play.CoreInterruptContextTests.EnhancedSpiderSenseSeesOnlyTheCurrentRevealBeforeItsEffects(Boolean cancel) in /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/Play/CoreInterruptContextTests.cs:line 59
+   at InvokeStub_CoreInterruptContextTests.EnhancedSpiderSenseSeesOnlyTheCurrentRevealBeforeItsEffects(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+
+Failed!  - Failed:     2, Passed:     6, Skipped:     0, Total:     8, Duration: 206 ms - Marvel.Content.Tests.dll (net8.0)

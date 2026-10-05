@@ -95,36 +95,16 @@ internal sealed class MainEventController
             return;
         }
 
-        int generation = ++main.lastResultGeneration;
-        bool terminal = highlights.Any(entry => entry.Motion == EventMotionKind.Terminal);
+        main.lastResultGeneration++;
         main.lastResult.Visible = true;
-        main.lastResultSummary.Text = string.Join(" ", highlights.Select(entry => entry.Summary));
-        if (main.GetNodeOrNull<Label>(
-                "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/LatestResult")
-            is { } historyResult)
-        {
-            historyResult.Text = main.lastResultSummary.Text;
-        }
+        SetLastResultText(string.Join(" ", highlights.Select(entry => entry.Summary)));
         main.lastResult.ThemeTypeVariation = highlights.Any(entry => entry.Motion is
             EventMotionKind.Defeat or EventMotionKind.Terminal)
                 ? GodotThemeVariations.DangerStatusPanel
                 : GodotThemeVariations.StatusPanel;
-        // Recent history remains discoverable without permanently displacing
-        // the current decision. A terminal result stays open because it is the
-        // table's final explanation, while ordinary results expand on demand.
-        SetLastResultExpanded(terminal);
-        if (terminal)
-        {
-            return;
-        }
-        main.GetTree().CreateTimer(Main.LastResultLifetimeSeconds).Timeout += () =>
-        {
-            if (InteractionControl.IsUsable(main)
-                && generation == main.lastResultGeneration)
-            {
-                DismissLastResult();
-            }
-        };
+        // The latest authoritative result remains readable while the next choice is available.
+        // A new accepted result, an explicit dismissal or a session reset replaces it.
+        SetLastResultExpanded(true);
     }
 
     internal void ToggleLastResult()
@@ -148,8 +128,19 @@ internal sealed class MainEventController
         main.lastResultExpanded = false;
         main.lastResult.Visible = false;
         main.lastResultSummary.Visible = false;
-        main.lastResultSummary.Text = string.Empty;
+        SetLastResultText(string.Empty);
         main.lastResultToggle.Text = "Expand";
+    }
+
+    private void SetLastResultText(string text)
+    {
+        main.lastResultSummary.Text = text;
+        main.boardRender?.PresentLastResult(text);
+        if (main.promptPanel.FindChild("LatestResult", recursive: true, owned: false)
+            is Label historyResult)
+        {
+            TableLatestResult.Present(historyResult, text);
+        }
     }
 
     internal void RenderDecisionProgress(DecisionProgressPresentation? progress)
@@ -241,9 +232,12 @@ internal sealed class MainEventController
     internal void SetEventPresentationSettled()
         => motion.SetSettled();
 
+    internal void RefreshEventCueVisibility() => motion.RefreshVisibility();
+
     internal void ApplyProgress(GameProgressPresentation progress)
     {
         main.currentProgress = progress;
+        main.decisions.PresentOperationalNotice(progress);
         main.title.Text = progress.Title;
         main.description.Text = progress.Description;
         main.status.Text = progress.Status;
@@ -264,6 +258,7 @@ internal sealed class MainEventController
             ? GodotThemeVariations.DangerText
             : GodotThemeVariations.StatusText;
         main.decisions.SetSubmitting(progress.LocksDecisions);
+        TableSidebarContent.RefreshProgress(main);
     }
 
     internal void RefreshSynchronizeAvailability()

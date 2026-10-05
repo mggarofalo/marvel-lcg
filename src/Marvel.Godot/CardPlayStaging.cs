@@ -21,9 +21,7 @@ internal sealed class CardPlayStaging : IDisposable
         sourceWasVisible = source?.Visible == true;
         if (source is not null) source.Visible = false;
         stage = new VBoxContainer { Name = "StagedCard", MouseFilter = Control.MouseFilterEnum.Ignore };
-        stage.AddChild(DecisionPanel.Text("Ready to play", GodotThemeVariations.Heading));
         stage.AddChild(CardControl.Create(card, CardDisplaySize.Full, InterfaceScale.Percent60, main.art));
-        stage.AddChild(DecisionPanel.Text("Not paid yet", GodotThemeVariations.Caption));
         overlay.AddChild(stage);
         CardInspectorFocus.IgnoreMouseRecursively(stage, interactiveRules: false);
     }

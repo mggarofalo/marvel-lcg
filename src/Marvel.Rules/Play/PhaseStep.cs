@@ -128,6 +128,8 @@ namespace Marvel.Rules.Play;
 /// The outer occurrence that owns a result produced by an internal procedure.
 /// This is engine continuation data used when that result must join the
 /// owner's eventual response window.
+/// An EndAttack step may instead retain an independent envelope of immutable
+/// owner actor facts for completion names; that envelope never opens a window.
 /// </para>
 /// <para><c>ProcedureSource</c> — The source card needed when the procedure resumes.</para>
 /// <para><c>ProcedureTrigger</c> — Event-stream provenance preserved by the procedure.</para>
@@ -320,6 +322,8 @@ public readonly record struct PhaseStep
 
         return What switch
         {
+            Steps.RevealEncounterCard => new Occurrence(id, Conditions, Subject,
+                EncounterRevealExposure.RevealingPlayer(world, world.Cards[Subject], Seat)),
             Steps.PlaceThreat => VillainPhaseThreat(id, world, facts),
             Steps.SchemeThreat => SchemeThreat(id, world, facts),
             Steps.PlaceThreatEffect when Placement is { } placement =>
@@ -448,6 +452,7 @@ public readonly record struct PhaseStep
         Steps.Attack or Steps.CharacterAttacks or Steps.CharacterThwarts or Steps.EndAttack
             or Steps.PlaceThreat or Steps.SchemeThreat or Steps.PlaceThreatEffect
             or Steps.PrepareIndirectAttackDamage
+            or Steps.RevealEncounterCard
             ? null
             : new Occurrence(
                 OccurrenceId ?? Moment.Id(Round, Number, Index), Conditions, Subject, Seat);

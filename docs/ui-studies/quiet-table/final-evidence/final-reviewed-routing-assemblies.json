@@ -1,0 +1,14 @@
+{
+  "GodotSharp.dll": "7b1d06575db78e4ea4353186be5add207e43617b836db24d65ec4088e6fad18c",
+  "GodotSharpEditor.dll": "eada28133a15ed75b9e892ebf1c73c026af6034262ba71838a204c656fd3ad08",
+  "Marvel.Cards.dll": "3f98b73cf2f973b40455464d5cfa1bcf79919cc248d3021d3ee217a8da01606c",
+  "Marvel.Client.dll": "b06b046b1981b1259bb34b4d444d812f24a7918ec1652e5f45c3780db0c22ad9",
+  "Marvel.Content.dll": "d69052849a6c857c050df94b10102c6907e288f7b8623d7e37d4252619dc3ee2",
+  "Marvel.Core.dll": "f0a3e4b71c252f733e59d7c6a131a7c6cf374b442f3804294823c5c541496520",
+  "Marvel.Decisions.dll": "3fdc0c4c22f5751011cd1a89c74c6fd5e1f4deeec2381c06342afde67af9cf75",
+  "Marvel.Godot.dll": "1fd3fdf53dc283db5e4f7ed33ebc28984b0f0411f5853c840455b0e3621a0156",
+  "Marvel.Rules.dll": "462fb50bdb37ad885b102c5d763f15c87a868d35a551d43aa25234a690a68f0a",
+  "Marvel.Server.dll": "9132e6b0a674607d929cbdd64c746b2594336659e22240cd1baf87f2ec02ed33",
+  "Marvel.Session.dll": "71cb6b2e2f73c0f38d1212119af8def21337ac942fc46332c5736cdf20c7a888",
+  "Marvel.View.dll": "42d0de431063cf428dac1df846a918c285eaeb843599d0471ee83e743dad89f6"
+}

@@ -75,7 +75,7 @@ public sealed class AbilityRunner : ICardAbilities
     public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => resolution.WhenRevealed(world, card, player);
     public IReadOnlyList<PendingAbility> WhenRevealedAbilities(World world, Card card, int player) => resolution.WhenRevealedAbilities(world, card, player);
     public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player, Occurrence occurrence) => resolution.WhenRevealed(world, card, player, occurrence);
-    public bool CancelWhenRevealed(World world, Card card, int player, Occurrence occurrence) => resolution.CancelWhenRevealed(world, card, player, occurrence);
+    public WhenRevealedCanceled? CancelWhenRevealed(World world, Card card, int player, Occurrence occurrence) => resolution.CancelWhenRevealed(world, card, player, occurrence);
     public IReadOnlyList<GameEvent> Boost(World world, Card card, int player) => resolution.Boost(world, card, player);
     public IReadOnlyList<GameEvent> ResolveSpecial(World world, Card card, int player, bool finalStep) => resolution.ResolveSpecial(world, card, player, finalStep);
     public long WouldBeDealt(World world, Card target, Card source, long amount, List<GameEvent> events) => resolution.WouldBeDealt(world, target, source, amount, events);

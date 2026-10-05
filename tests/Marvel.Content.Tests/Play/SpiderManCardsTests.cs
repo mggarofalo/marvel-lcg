@@ -73,6 +73,8 @@ public sealed class SpiderManCardsTests
         var waiting = Assert.Single(world.Agenda.Outstanding);
         var prompt = Sequence.Work(world, Cards, runner, events)!;
         var target = Assert.Single(prompt.Affordances);
+        Assert.Equal("01094", target.Label);
+        Assert.Equal("Rhino", target.DisplayLabel);
         Assert.Contains("14/14 → 6/14 HP", target.Description);
         Sequence.Answer(
             world, Cards, runner, prompt, Decision.Take(villain.ObjectId), events);
@@ -287,7 +289,10 @@ public sealed class SpiderManCardsTests
             runner.Describe(world, ability).Description);
 
         runner.Resolve(world, occurrence, ability, [payment.ObjectId], []);
-        runner.WhenRevealed(world, treachery, 0);
+        var canceled = Assert.Single(runner.WhenRevealed(world, treachery, 0)
+            .OfType<Marvel.Rules.Events.WhenRevealedCanceled>());
+        Assert.Equal(treachery.ObjectId, canceled.Card);
+        Assert.Equal(sense.ObjectId, canceled.Source);
 
         Assert.False(Statuses.Has(world, villain, Statuses.Tough));
         Assert.Equal(DeckType.RevealingArea, treachery.Area.Type);

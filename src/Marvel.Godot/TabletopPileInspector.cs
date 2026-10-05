@@ -7,13 +7,16 @@ namespace Marvel.Godot;
 internal static class TabletopPileInspector
 {
     private static PopupPanel? active;
+    private static BoardRenderResult? owner;
+    private static int? initialSelection;
 
     internal static void Show(
         Control source,
         TabletopAreaObject pile,
         BoardRenderResult result,
         InterfaceScale scale,
-        ICardArtProvider? art)
+        ICardArtProvider? art,
+        int initialIndex = 0)
     {
         Close();
         if (pile.InspectionOrder.Count == 0 || source.GetTree().Root is not { } root)
@@ -26,18 +29,32 @@ internal static class TabletopPileInspector
             Name = "PileInspector",
             Exclusive = false,
             MinSize = new Vector2I(
-                VisualSystem.Card(CardDisplaySize.Board, scale).Width + 40,
-                VisualSystem.Card(CardDisplaySize.Board, scale).MinimumHeight + 112),
+                VisualSystem.Card(CardDisplaySize.Full, scale).Width + 40,
+                VisualSystem.Card(CardDisplaySize.Full, scale).MinimumHeight + 112),
             ThemeTypeVariation = GodotThemeVariations.SurfacePanel,
         };
         active = popup;
-        popup.PopupHide += () => Release(popup);
+        owner = result;
+        initialSelection = result.SelectedAffordanceId;
+        popup.SetMeta("restore_opener_focus", true);
+        popup.PopupHide += () =>
+        {
+            bool restoreFocus = popup.GetMeta("restore_opener_focus").AsBool();
+            Release(popup);
+            Callable.From(() =>
+            {
+                if (result.IsCurrent?.Invoke() != true) return;
+                result.RefreshInteraction();
+                if (restoreFocus && InteractionControl.IsUsable(source))
+                    source.GrabFocus();
+            }).CallDeferred();
+        };
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
         stack.AddChild(new Label
         {
             Name = "PileInspectorTitle",
-            Text = pile.Area.Title,
-            ThemeTypeVariation = GodotThemeVariations.Eyebrow,
+            Text = TabletopAreaNames.Title(pile.Area.Title),
+            ThemeTypeVariation = GodotThemeVariations.Caption,
         });
         var navigation = new HBoxContainer
         {
@@ -65,7 +82,7 @@ internal static class TabletopPileInspector
         popup.AddChild(stack);
         root.AddChild(popup);
 
-        int index = 0;
+        int index = Math.Clamp(initialIndex, 0, pile.InspectionOrder.Count - 1);
         void Render()
         {
             foreach (Node child in cardSlot.GetChildren())
@@ -74,7 +91,7 @@ internal static class TabletopPileInspector
                 child.QueueFree();
             }
             BoardCardPresentation card = pile.InspectionOrder[index];
-            CardControl control = CardControl.Create(card, CardDisplaySize.Board, scale, art);
+            CardControl control = CardControl.Create(card, CardDisplaySize.Full, scale, art);
             cardSlot.AddChild(control);
             if (card.TargetId is { } target)
             {
@@ -82,7 +99,7 @@ internal static class TabletopPileInspector
             }
             result.TrackCard(control, card);
             result.RefreshInteraction();
-            position.Text = $"{index + 1} / {pile.InspectionOrder.Count}  ·  TOP FIRST";
+            position.Text = $"{index + 1} / {pile.InspectionOrder.Count} · Top first";
             previous.Disabled = index == 0;
             next.Disabled = index == pile.InspectionOrder.Count - 1;
         }
@@ -106,26 +123,41 @@ internal static class TabletopPileInspector
 
         Rect2 sourceRect = source.GetGlobalRect();
         popup.Position = new Vector2I(
-            Mathf.RoundToInt(sourceRect.Position.X),
-            Mathf.RoundToInt(sourceRect.End.Y + 6));
+            Mathf.RoundToInt(Math.Clamp(sourceRect.End.X + 12, 12,
+                Math.Max(12, source.GetViewportRect().Size.X - popup.MinSize.X - 12))),
+            72);
         popup.Popup();
+        result.RefreshInteraction();
     }
 
-    internal static void Close()
+    internal static void DraftChanged(BoardRenderResult result, int? selection)
+    {
+        if (ReferenceEquals(result, owner) && selection != initialSelection)
+            Close(restoreFocus: false);
+    }
+
+    internal static void Close(bool restoreFocus = true)
     {
         if (active is not { } popup || !GodotObject.IsInstanceValid(popup))
         {
             active = null;
+            owner = null;
             return;
         }
         active = null;
+        owner = null;
+        popup.SetMeta("restore_opener_focus", restoreFocus);
         popup.Hide();
         Release(popup);
     }
 
     private static void Release(PopupPanel popup)
     {
-        if (ReferenceEquals(active, popup)) active = null;
+        if (ReferenceEquals(active, popup))
+        {
+            active = null;
+            owner = null;
+        }
         if (!popup.IsQueuedForDeletion()) popup.QueueFree();
     }
 }

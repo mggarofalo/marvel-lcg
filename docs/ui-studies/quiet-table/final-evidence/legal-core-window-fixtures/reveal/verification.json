@@ -1,0 +1,39 @@
+{
+  "setup": {
+    "Scenario": "rhino",
+    "Heroes": [
+      "spider_man"
+    ],
+    "ModularSets": null,
+    "Seed": 3
+  },
+  "decisions": 7,
+  "final_digest": "1cafd8fc28e9ac23420101e0979548726f5ff814257042ba7a6eeb99de91ffe1",
+  "joined_revision": 7,
+  "joined_seat": 0,
+  "prompt": "Assault was revealed \u2014 interrupt?",
+  "description": "Spider-Man revealed Assault. Its When Revealed effects have not resolved. Resolve an interrupt or pass before those effects resolve.",
+  "accepted": {
+    "Affordance": 11,
+    "Targets": [],
+    "Resources": [
+      41
+    ],
+    "Values": {},
+    "Allocations": [
+      {
+        "Source": 41,
+        "Cost": 0,
+        "PaidAs": "Y"
+      }
+    ]
+  },
+  "accepted_revision": 8,
+  "accepted_followup": null,
+  "declined_followup": null,
+  "declined_question": 7,
+  "declined_label": "Spider-Man declares a defender",
+  "declined_description": "Enemy attack \u00B7 Step 2 of 6 \u00B7 Declare defender \u00B7 Resolve step\nRhino is initiating an attack against Spider-Man. Target: Spider-Man. ATK 2 before boost icons and defense. Rhino is attacking Spider-Man. ATK 2 before facedown boost cards. Choose a ready hero or ally to defend, or leave the attack undefended.",
+  "declined_phase": "VillainPhase",
+  "note": "Fresh seeded DatasetGameFactory deal; only offered decisions; every pre/post and final digest verified. No card/state/agenda injection."
+}

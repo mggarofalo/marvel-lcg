@@ -36,7 +36,7 @@ internal sealed class CardPaymentModal : IDisposable
         frame = new PanelContainer
         {
             Name = "PaymentFrame",
-            Theme = ClientTheme.Create(InterfaceScale.Standard),
+            Theme = panel.Theme,
             ThemeTypeVariation = GodotThemeVariations.SurfacePanel,
         };
         overlay.AddChild(frame);
@@ -44,11 +44,12 @@ internal sealed class CardPaymentModal : IDisposable
         frame.AddChild(Content);
         string title = PromptPresentation.Describe(panel.composer!.Selected!.AnchorId, panel.world!);
         Content.AddChild(DecisionPanel.Text($"Play {title}", GodotThemeVariations.Heading, wrap: true));
-        Content.AddChild(DecisionPanel.Text(
-            "Choose cards to discard or resource abilities to use. Nothing is spent until you confirm. Further effect choices follow payment.",
-            GodotThemeVariations.Caption, wrap: true));
         if (!string.IsNullOrWhiteSpace(prompt.Resolution))
             Content.AddChild(DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Caption, wrap: true));
+        if (draft.Selected!.DeferredTargetSelection)
+            Content.AddChild(DecisionPanel.Text(
+                "Payment commits now. Choose a target as the effect resolves; cancelling a later draft does not refund payment.",
+                GodotThemeVariations.Caption, wrap: true));
         overlay.Resized += Fit;
         frame.MinimumSizeChanged += () => Callable.From(Fit).CallDeferred();
         Fit();
@@ -69,7 +70,7 @@ internal sealed class CardPaymentModal : IDisposable
     {
         if (!InteractionControl.IsUsable(frame)) return;
         Vector2 viewport = panel.GetViewportRect().Size;
-        frame.Size = new Vector2(Math.Min(760, viewport.X - 48), Math.Min(780, viewport.Y - 64));
+        frame.Size = new Vector2(Math.Min(680, viewport.X - 48), Math.Min(660, viewport.Y - 64));
         frame.Position = (viewport - frame.Size) / 2;
         bool wide = viewport.X >= 1200;
         if (wide) frame.Position += new Vector2(140, 0);
