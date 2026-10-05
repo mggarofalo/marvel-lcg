@@ -2,8 +2,9 @@
 
 Verified baseline: main `3246b4a5261fbcf3f33db01c91a6e58b28631b12`.
 Working branch: `fix/marvel-385-effective-card-lifecycle`.
-This ledger records the local source freeze on 2026-10-05, before normal commit
-hooks and final PR-head review/CI. The PR and Plane hold subsequent landing
+This ledger records the local source freeze on 2026-10-05 after the recorded
+review corrections, before its normal commit hooks and final PR-head review/CI.
+The PR and Plane hold subsequent landing
 status. See [local validation](engine-card-lifecycle-validation.md).
 
 | Requirement | Owner and correction status | Evidence required for closure | Dependency |
@@ -12,9 +13,10 @@ status. See [local validation](engine-card-lifecycle-validation.md).
 | MARVEL-384: BP, Drone and Tech selectors contain scenario knowledge | Cards: generic trait/facing/public-area/order expressions; BP literal removed from interpreter | Control/ownership/trait/scope/order/purity/privacy tests; equivalent-program comparison and fixed-workload timings; full gates | Existing MARVEL-376 is Done |
 | MARVEL-385: location implies Drone; physical identity and active role conflated | Rules/Cards: explicit authored blank-minion profile preserves physical id, owner and face | Legal Core Ultron, Upgraded Drones, 01185 ruling, owner restoration and defeat timing tests; mutation and replay evidence | MARVEL-384 |
 | MARVEL-385: environment defeat response must be authored as data | Cards/Rules: authored 01140 forced response uses captured profile, facing and incarnation | Current response, stale reentry, facing and permanent-removal regressions pass; M04–M06 killed; final PR gates pending | Landing |
-| New assignment state and corrected lifecycle affect replay/digest | Core/Server: explicit digest v3, mandatory profile field; documentation being reconciled | Canonical format pins, profile differentiation/roundtrip, old-version rejection, in-process/socket save compatibility and bounded baseline comparisons | Stable candidate |
+| New assignment state and corrected lifecycle affect replay/digest | Core/Server: explicit digest v3, mandatory profile field and source-covered documentation | Canonical format pins, profile differentiation/roundtrip, old-version rejection, in-process/socket save compatibility and bounded baseline comparisons | Stable candidate |
 | Independent review findings | Cards: active source continuation, global/engaged ordering, nested ordered villain replacement and projected re-engagement and hosted player-area upgrades corrected | Focused regressions pass; M02/M07–M11/M15 killed; final PR-head review pending | Landing |
 | Full-game sweep finding | Cards: historical defeat selectors exclude permanently removed cards | Removal regression and all 80 acceptance cases pass; M06 killed | Landing |
+| Final PR-head review finding: an action mutates state before an unsupported singular lookup fails | Cards: deck-operation area analysis includes player deck/discard/engagement; single-card hand movement shares target and owner admission; existing hand/discard movement instructions report their area changes | Thirteen synthetic regressions prove rejection before mutation and unchanged-area execution; M16–M20; fresh hooks, final-head review and CI | Landing |
 | Landing | Requires PR/Plane evidence beyond this local checkpoint | Normal hooks; own PR; adversarial review of final head; Windows/Linux CI; authorized squash merge; green main; Plane evidence | All required rows above |
 
 The current scope is copy lifecycle, temporary blank-minion identities and the

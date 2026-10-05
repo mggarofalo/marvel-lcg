@@ -133,5 +133,50 @@
     "intendedBehaviorCaught": true,
     "killed": true,
     "log": "marvel-lifecycle-M15-hosted-area.log"
+  },
+  {
+    "name": "M16-engagement-areas",
+    "test": "SingularQueriesAfterEngagementAreRejectedBeforeMutation",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "/tmp/marvel-lifecycle-M16-engagement-areas.log"
+  },
+  {
+    "name": "M17-single-movement-target",
+    "test": "SingularQueriesAfterEngagementAreRejectedBeforeMutation",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "/tmp/marvel-lifecycle-M17-single-movement-target.log"
+  },
+  {
+    "name": "M18-hand-owner",
+    "test": "ReturningToAnOwnersHandRequiresAPhysicalPlayerOwner",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "/tmp/marvel-lifecycle-M18-hand-owner.log"
+  },
+  {
+    "name": "M19-hand-movement-areas",
+    "test": "SingularQueriesAfterHandMovementAreRejectedBeforeMutation",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "/tmp/marvel-lifecycle-M19-hand-movement-areas.log"
+  },
+  {
+    "name": "M20-hand-projection",
+    "test": "SingularQueriesAfterHandMovementAreRejectedBeforeMutation",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "/tmp/marvel-lifecycle-M20-hand-projection.log"
   }
 ]

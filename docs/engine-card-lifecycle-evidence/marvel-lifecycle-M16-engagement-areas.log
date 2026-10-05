@@ -1,0 +1,80 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Marvel.Core -> /private/tmp/marvel-lifecycle-mutants/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /private/tmp/marvel-lifecycle-mutants/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Content -> /private/tmp/marvel-lifecycle-mutants/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.Cards -> /private/tmp/marvel-lifecycle-mutants/src/Marvel.Cards/bin/Release/net8.0/Marvel.Cards.dll
+  Marvel.Behavior.Run -> /private/tmp/marvel-lifecycle-mutants/tools/Marvel.Behavior.Run/bin/Release/net8.0/Marvel.Behavior.Run.dll
+  Marvel.Content.Tests -> /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/bin/Release/net8.0/Marvel.Content.Tests.dll
+Test run for /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/bin/Release/net8.0/Marvel.Content.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 8.0.30)
+[xUnit.net 00:00:00.17]   Discovering: Marvel.Content.Tests
+[xUnit.net 00:00:00.73]   Discovered:  Marvel.Content.Tests
+[xUnit.net 00:00:00.86]   Starting:    Marvel.Content.Tests
+[xUnit.net 00:00:01.08]     Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(area: "discardPile", operation: "addToHand") [FAIL]
+[xUnit.net 00:00:01.08]       Assert.Throws() Failure: No exception was thrown
+[xUnit.net 00:00:01.08]       Expected: typeof(Marvel.Rules.Play.RulesNotImplementedException)
+[xUnit.net 00:00:01.08]       Stack Trace:
+[xUnit.net 00:00:01.08]         /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/Play/FacedownMinionAdmissionTests.cs(28,0): at Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(String area, String operation)
+[xUnit.net 00:00:01.08]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+[xUnit.net 00:00:01.08]            at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+[xUnit.net 00:00:01.17]     Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(area: "discardPile", operation: "returnOwnedToHand") [FAIL]
+[xUnit.net 00:00:01.17]       Assert.Throws() Failure: No exception was thrown
+[xUnit.net 00:00:01.17]       Expected: typeof(Marvel.Rules.Play.RulesNotImplementedException)
+[xUnit.net 00:00:01.17]       Stack Trace:
+[xUnit.net 00:00:01.17]         /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/Play/FacedownMinionAdmissionTests.cs(28,0): at Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(String area, String operation)
+[xUnit.net 00:00:01.17]            at InvokeStub_FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(Object, Span`1)
+[xUnit.net 00:00:01.17]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.26]     Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(area: "engagedEnemies", operation: "addToHand") [FAIL]
+[xUnit.net 00:00:01.26]       Assert.Throws() Failure: No exception was thrown
+[xUnit.net 00:00:01.26]       Expected: typeof(Marvel.Rules.Play.RulesNotImplementedException)
+[xUnit.net 00:00:01.26]       Stack Trace:
+[xUnit.net 00:00:01.26]         /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/Play/FacedownMinionAdmissionTests.cs(28,0): at Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(String area, String operation)
+[xUnit.net 00:00:01.26]            at InvokeStub_FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(Object, Span`1)
+[xUnit.net 00:00:01.26]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.37]     Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(area: "engagedEnemies", operation: "returnOwnedToHand") [FAIL]
+[xUnit.net 00:00:01.37]       Assert.Throws() Failure: No exception was thrown
+[xUnit.net 00:00:01.37]       Expected: typeof(Marvel.Rules.Play.RulesNotImplementedException)
+[xUnit.net 00:00:01.37]       Stack Trace:
+[xUnit.net 00:00:01.37]         /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/Play/FacedownMinionAdmissionTests.cs(28,0): at Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(String area, String operation)
+[xUnit.net 00:00:01.37]            at InvokeStub_FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(Object, Span`1)
+[xUnit.net 00:00:01.37]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.38]   Finished:    Marvel.Content.Tests (ID = '007d633fd80b2ca833d94ef41053909e0c82bdff4c6a314831e5ee28032452b8')
+  Failed Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(area: "discardPile", operation: "addToHand") [176 ms]
+  Error Message:
+   Assert.Throws() Failure: No exception was thrown
+Expected: typeof(Marvel.Rules.Play.RulesNotImplementedException)
+  Stack Trace:
+     at Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(String area, String operation) in /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/Play/FacedownMinionAdmissionTests.cs:line 28
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(area: "discardPile", operation: "returnOwnedToHand") [91 ms]
+  Error Message:
+   Assert.Throws() Failure: No exception was thrown
+Expected: typeof(Marvel.Rules.Play.RulesNotImplementedException)
+  Stack Trace:
+     at Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(String area, String operation) in /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/Play/FacedownMinionAdmissionTests.cs:line 28
+   at InvokeStub_FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(area: "engagedEnemies", operation: "addToHand") [88 ms]
+  Error Message:
+   Assert.Throws() Failure: No exception was thrown
+Expected: typeof(Marvel.Rules.Play.RulesNotImplementedException)
+  Stack Trace:
+     at Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(String area, String operation) in /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/Play/FacedownMinionAdmissionTests.cs:line 28
+   at InvokeStub_FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(area: "engagedEnemies", operation: "returnOwnedToHand") [108 ms]
+  Error Message:
+   Assert.Throws() Failure: No exception was thrown
+Expected: typeof(Marvel.Rules.Play.RulesNotImplementedException)
+  Stack Trace:
+     at Marvel.Content.Tests.Play.FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(String area, String operation) in /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/Play/FacedownMinionAdmissionTests.cs:line 28
+   at InvokeStub_FacedownMinionAdmissionTests.SingularQueriesAfterEngagementAreRejectedBeforeMutation(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+
+Test Run Failed.
+Total tests: 4
+     Failed: 4
+ Total time: 1.6509 Seconds

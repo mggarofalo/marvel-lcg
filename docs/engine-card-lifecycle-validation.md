@@ -28,6 +28,16 @@ An unordered last-card lookup after projected re-engagement explicitly raises:
 the membership trace does not represent move chronology. No migrated Core card
 uses that unsupported composition.
 
+`FacedownMinionAdmissionTests` is a synthetic contract regression, not a Core
+card transcript. Engaging the last deck card can reshuffle the discard pile;
+subsequent singular discard or engagement lookups must raise before any state,
+RNG or area allocation changes. Both hand-movement instructions share mandatory
+single-card admission. Unaffected support lookups still execute, and owner-hand
+movement requires a physical player owner. The same bounded correction covers
+dependent lookups after the existing hand/discard movement instructions;
+unsupported compositions raise during admission. Thirteen cases correct the
+final PR review's reproduced failure after a partially committed action.
+
 Authorities are vendored `rr:leaves-play.1`, `rr:leaves-play.2.3`,
 `rr:damage.step.7`, `rr:damage.step.8`, `rr:response.1`,
 `rr:removed-from-the-game.2`, printed 01140 and the vendored 01185 ruling.
@@ -92,6 +102,8 @@ expression, rebuild the selected test project and restore source between cases.
 Copied timestamps are refreshed to invalidate old mutant DLLs. Root source and
 the user's game are not mutated. [Results](engine-card-lifecycle-evidence/mutation-results.json)
 name the exact tests and retained logs.
+The [admission experiments](engine-card-lifecycle-evidence/admission-mutations.py.txt)
+apply the same procedure to the final review correction.
 
 | Mutant | Wrong decision | Distinguishing observation |
 |---|---|---|
@@ -110,8 +122,13 @@ name the exact tests and retained logs.
 | M13 | Admit zero-health profile | Compiler rejects nonpositive HP |
 | M14 | Drop nested area reads | Discard-area admission must reject the last-card lookup |
 | M15 | Exclude hosted upgrades | Inspired belongs to its host controller's player area |
+| M16 | Ignore engagement's player areas | Dependent lookup must raise before engagement or reshuffle |
+| M17 | Skip single-card movement admission | Both hand instructions must admit their singular lookup |
+| M18 | Ignore physical hand owner | Scenario-owned minion has no owner-hand action |
+| M19 | Ignore hand/discard movement's area changes | Repeated singular lookup raises before the first move |
+| M20 | Skip hand/discard movement in area projection | The sequence propagates its affected areas to admission |
 
-All 15 compile and are exercised; each is killed by its intended check. M08
+All 20 compile and are exercised; each is killed by its intended check. M08
 initially survived because the competing minion lacked BRUTE. The strengthened
 test uses Titania 01162, asserts that prerequisite and catches the mutant.
 No survivor is called equivalent; no setup/build failure counts as a kill.
