@@ -346,14 +346,13 @@ func _pointer_activate_attached(control: Control) -> bool:
 
 func _activate_exposed_control_point(control: Control) -> bool:
 	var control_name := control.name
-	var rect := _visible_control_rect(control)
 	for y_fraction in [0.2, 0.5, 0.8]:
 		for x_fraction in [0.1, 0.3, 0.5, 0.7, 0.9]:
 			if not is_instance_valid(control):
 				control = main.find_child(control_name, true, false) as Control
 				if control == null or control.is_queued_for_deletion():
 					return false
-				rect = _visible_control_rect(control)
+			var rect := _visible_control_rect(control)
 			var point := rect.position + Vector2(
 				rect.size.x * x_fraction, rect.size.y * y_fraction)
 			if not await _control_owns_point(control, point):

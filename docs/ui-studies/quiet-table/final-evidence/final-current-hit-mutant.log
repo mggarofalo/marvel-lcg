@@ -1,0 +1,37 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M2 Pro
+
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-05T01:10:01.403394+00:00","process_id":36225,"duration_milliseconds":2,"disposition":"accepted","request_id":"3c263d6d67f0a3cc412d3c90feb828d9","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-05T01:10:01.934473+00:00","process_id":36225,"duration_milliseconds":0,"disposition":"accepted","request_id":"c038441b07fc6251bb9aef471f101cef","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+POINTER_OWNERSHIP_PROBE covered=true exposed=true moved=false current=true
+ERROR: the pointer ownership probe did not reject occlusion or stale layout geometry
+Visible UI:
+Assemble the table.
+Choose an authored Core Set assignment. The engine validates it again when play starts.
+Start a game
+Join a game
+Engine endpoint
+Game label
+Start a game
+Reload setup options
+Hero
+Spider-Man
+Second hero
+Solo table · one hero
+Scenario
+Rhino
+Mode
+Standard
+Modular sets
+Use recommended · Bomb Scare
+Seed
+Leave seed blank for a fresh deal. The chosen seed remains visible for replay.
+Start game
+Scale 150%
+Motion
+
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://smoke/local_game_smoke_core.gd:93)
+       [1] _run (res://smoke/local_game_smoke.gd:29)
+       [2] _pointer_ownership_probe_is_strict (res://smoke/local_game_smoke_pointer_support.gd:107)

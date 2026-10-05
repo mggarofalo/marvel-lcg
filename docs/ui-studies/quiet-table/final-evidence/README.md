@@ -1,3 +1,7 @@
+# Current hit-ownership fixture checkpoint
+
+The final-current-hit files supersede the pointer-owner checkpoint for the test fixture. They record the verified Windows stale-point diagnostics, shared post-frame native hit proof, six-path native-to-final source assessment, four restored rendered profiles and one intended fixture-only mutant kill. Product R approval keeps its reviewed identities; production source is unchanged. These are precommit records. Actual final-head review/CI/merge/main/Plane outcomes are maintained in PR401 and MARVEL-443.
+
 # Final test-only pointer-owner correction snapshot
 
 `final-pointer-owner-feature-source-manifest.json` and `final-pointer-owner-test-only-reconciliation.json` identify two additional smoke-only paths after exact7c5b7f0 Windows rendered150 failed. All production source is unchanged from R01–R65 native approval; that verdict keeps its original source/runtime identity and limits. The additional path to `_inject_pointer_click` uses the existing physical-input owner for one proved-point click with immediate motion reassertion. Exact-one-press/public-state/keyboard requirements stay intact; local four-profile rendering passes with Down/Up/Pressed diagnostics. The prior CI cause remains unproven, and exact final-head review/Windows/Linux are mandatory.
