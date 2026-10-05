@@ -1,7 +1,7 @@
 from pathlib import Path
 import subprocess,shutil,json,re
 root=Path('/Users/michael/Source/marvel-lcg'); target=Path('/tmp/marvel-lifecycle-mutants')
-files=subprocess.check_output(['git','diff','--name-only','-z'],cwd=root).decode().split('\0')+subprocess.check_output(['git','ls-files','--others','--exclude-standard','-z'],cwd=root).decode().split('\0')
+files=subprocess.check_output(['git','diff','--name-only','-z','3246b4a5261fbcf3f33db01c91a6e58b28631b12'],cwd=root).decode().split('\0')+subprocess.check_output(['git','ls-files','--others','--exclude-standard','-z'],cwd=root).decode().split('\0')
 for name in files:
  if not name:continue
  source=root/name;dest=target/name
@@ -23,6 +23,7 @@ cases=[
  ('M11-unrepresented-order',content,'UnorderedLastAfterProjectedReengagementFailsBeforeOfferingAWrongTarget',trace,'trace.Engagement.Count > 0','trace.Engagement.Count < 0'),
  ('M12-profile-reference',content,'AssignmentReferencesAreResolvedBeforeAnyGameCanRun','src/Marvel.Cards/Dsl/AbilityProfileReferences.cs','!profiles.ContainsKey(id.Value)','id.Value.Length == 0'),
  ('M14-nested-area',content,'NamedPublicAreasPreserveTopOrderAndQueriesDoNotAllocateOrMutate','src/Marvel.Cards/Run/AbilitySelectionAreaReads.cs','AbilityCardSelection.Last filtered => filtered.Cards,','AbilityCardSelection.Last => null,'),
+ ('M15-hosted-area',content,'PublicPlayerAreasIncludeHostedUpgradesControlledByThatPlayer',selector,'&& area.PlayArea == PlayArea.Of(player))','&& area.PlayArea == PlayArea.Of(player) && area.Host == -1)'),
  ('M13-profile-health',content,'DuplicateAndInvalidDefinitionsCannotBeAcceptedAsRuntimeDefaults','src/Marvel.Cards/Dsl/AbilityProfileLowering.cs','health <= 0','health < 0'),
 ]
 def run(name,project,filters):
@@ -49,4 +50,4 @@ for name,project,test,path,before,after in cases:
  finally:p.write_text(original)
 Path('/tmp/marvel-lifecycle-mutation-results.json').write_text(json.dumps(results,indent=2)+'\n')
 if not all(r['killed'] for r in results):raise SystemExit('A mutant needs investigation')
-print('All isolated mutants restored; 14 compiling, exercised mutants caught by intended behavior checks',flush=True)
+print('All isolated mutants restored; 15 compiling, exercised mutants caught by intended behavior checks',flush=True)

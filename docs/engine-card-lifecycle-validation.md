@@ -21,7 +21,7 @@ effect, changes its live source's counter from 3 to 5, discards it and observes
 The physical destination holds zero.
 
 `ComposableCardSelectionTests` distinguishes granted/lost current traits,
-control versus ownership, public-area scope, ordering and purity. BP Claws
+control versus ownership, public-area scope (including hosted upgrades), ordering and purity. BP Claws
 lacks TECH and is still selected. Repeated-trace regressions distinguish
 replacement villain ordering and engagement into another player's area.
 An unordered last-card lookup after projected re-engagement explicitly raises:
@@ -61,11 +61,11 @@ Sequential processes used .NET 10.0.400, macOS arm64. No live cache was added.
 
 | Query | Main µs/call | Candidate µs/call | Ordered ids on both |
 |---|---:|---:|---|
-| BP upgrades | 2.777 | 3.029 | 33, 34, 35, 36 |
-| Global facedown Drones | 0.360 | 4.581 | 10, 11, 12, 26, 27, 28 |
-| Engaged Drones | 2.081 | 2.160 | 12, 11, 10 |
-| Identities with TECH upgrade in discard | 1.708 | 2.254 | 0, 16 |
-| Top TECH in chosen discard | 0.770 | 2.229 | 31 |
+| BP upgrades | 2.777 | 2.874 | 33, 34, 35, 36 |
+| Global facedown Drones | 0.360 | 4.801 | 10, 11, 12, 26, 27, 28 |
+| Engaged Drones | 2.081 | 2.295 | 12, 11, 10 |
+| Identities with TECH upgrade in discard | 1.708 | 2.352 | 0, 16 |
+| Top TECH in chosen discard | 0.770 | 2.324 | 31 |
 
 Raw [main](engine-card-lifecycle-evidence/selector-base.json) and
 [candidate](engine-card-lifecycle-evidence/selector-current.json) samples assert
@@ -109,8 +109,9 @@ name the exact tests and retained logs.
 | M12 | Admit unknown response profile | Located compiler error names missing profile |
 | M13 | Admit zero-health profile | Compiler rejects nonpositive HP |
 | M14 | Drop nested area reads | Discard-area admission must reject the last-card lookup |
+| M15 | Exclude hosted upgrades | Inspired belongs to its host controller's player area |
 
-All 14 compile and are exercised; each is killed by its intended check. M08
+All 15 compile and are exercised; each is killed by its intended check. M08
 initially survived because the competing minion lacked BRUTE. The strengthened
 test uses Titania 01162, asserts that prerequisite and catches the mutant.
 No survivor is called equivalent; no setup/build failure counts as a kill.

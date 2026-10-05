@@ -38,6 +38,26 @@ public sealed class ComposableCardSelectionTests
         Assert.Empty(Evaluate(world, source).Every(selector));
     }
 
+    [Rule("rr:play-area.1")]
+    [Rule("rr:ownership-and-control.2.1")]
+    [Fact]
+    public void PublicPlayerAreasIncludeHostedUpgradesControlledByThatPlayer()
+    {
+        // rr:play-area.1 includes "any cards in play under their control".
+        // rr:ownership-and-control.2.1 assigns an attached upgrade to the
+        // controller of its host, even when another player owns the upgrade.
+        var (world, source) = Board();
+        var ally = world.CreateCard("01002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var upgrade = world.CreateCard("01074", world.AreaOf(DeckType.UpgradesArea,
+            PlayArea.Of(0), host: ally.ObjectId, cardOwner: 1));
+        var selector = new AbilityCardSelection.InPlayerArea(DeckType.UpgradesArea, AbilityPlayer.You);
+        Assert.Equal([upgrade], Evaluate(world, source).Every(selector));
+        Assert.Equal([upgrade], Evaluate(world, source).Every(new AbilityCardSelection.Query(AbilityCardQuery.UpgradesYouControl)));
+        Assert.Equal(1, upgrade.Owner);
+        World.MoveToTop(upgrade, world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(1), cardOwner: 1));
+        Assert.Empty(Evaluate(world, source).Every(selector));
+    }
+
     [Fact]
     public void NamedPublicAreasPreserveTopOrderAndQueriesDoNotAllocateOrMutate()
     {

@@ -108,7 +108,7 @@ internal sealed class AbilitySelectorEvaluation(
 
     private IReadOnlyList<Card> PlayerAreaCards(DeckType type, int player) =>
         [.. context.World.Areas.Where(area => area.Type == type
-                && area.PlayArea == PlayArea.Of(player) && area.Host == -1)
+                && area.PlayArea == PlayArea.Of(player))
             .SelectMany(area => area.Cards)];
 
     private IReadOnlyList<Card> MatchingPlayerArea(AbilityCardSelection.WithMatchingPlayerArea selection) =>

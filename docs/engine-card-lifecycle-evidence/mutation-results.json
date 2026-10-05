@@ -124,5 +124,14 @@
     "intendedBehaviorCaught": true,
     "killed": true,
     "log": "marvel-lifecycle-M14-nested-area.log"
+  },
+  {
+    "name": "M15-hosted-area",
+    "test": "PublicPlayerAreasIncludeHostedUpgradesControlledByThatPlayer",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M15-hosted-area.log"
   }
 ]
