@@ -365,17 +365,15 @@ func _activate_exposed_control_point(control: Control) -> bool:
 				rect.size.x * x_fraction, rect.size.y * y_fraction)
 			if not await _control_owns_point(control, point):
 				continue
-			var press := InputEventMouseButton.new()
-			press.button_index = MOUSE_BUTTON_LEFT
-			press.pressed = true
-			press.position = point
-			press.global_position = point
-			render_viewport.push_input(press, true)
-			var release := InputEventMouseButton.new()
-			release.button_index = MOUSE_BUTTON_LEFT
-			release.position = point
-			release.global_position = point
-			render_viewport.push_input(release, true)
+			if control.name == &"ToggleHistory":
+				var hovered := render_viewport.gui_get_hovered_control()
+				print("HISTORY_POINTER_INJECT point=%s rect=%s mouse=%s hovered=%s button_hovered=%s" % [
+					point, control.get_global_rect(), render_viewport.get_mouse_position(),
+					hovered.name if hovered != null else "none",
+					control.is_hovered() if control is BaseButton else false])
+			# The input owner reasserts the proved point immediately before its
+			# single press/release pair, without another awaited hover frame.
+			_inject_pointer_click(point)
 			return true
 	return false
 

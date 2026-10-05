@@ -205,12 +205,24 @@ func _set_mulligan_history_expanded(expanded: bool) -> bool:
 		return false
 	var drawer := main.find_child("ToggleHistory", true, false) as Button
 	var pressed := [0]
+	var buttons := [0, 0]
 	var observe := func() -> void: pressed[0] += 1
+	var down := func() -> void: buttons[0] += 1
+	var up := func() -> void: buttons[1] += 1
 	drawer.pressed.connect(observe)
+	drawer.button_down.connect(down)
+	drawer.button_up.connect(up)
 	var activated := await _activate_exposed_control_point(drawer)
 	drawer.pressed.disconnect(observe)
+	drawer.button_down.disconnect(down)
+	drawer.button_up.disconnect(up)
+	var hovered := render_viewport.gui_get_hovered_control()
+	print("MULLIGAN_HISTORY_TOGGLE expanded=%s activated=%s pressed=%d down=%d up=%d caption=%s rect=%s hovered=%s button_hovered=%s" % [
+		expanded, activated, pressed[0], buttons[0], buttons[1], drawer.text,
+		drawer.get_global_rect(), hovered.name if hovered != null else "none",
+		drawer.is_hovered()])
 	if not activated or pressed[0] != 1:
-		_fail("the mulligan history toggle did not receive its pointer activation")
+		_fail("the mulligan history toggle did not receive exactly one pointer activation")
 		return false
 	if not await _wait_for(func() -> bool:
 		return _mulligan_history_matches(expanded)):

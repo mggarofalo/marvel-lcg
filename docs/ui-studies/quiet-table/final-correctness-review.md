@@ -1,5 +1,7 @@
 # Current PR401 correctness closure
 
+Subsequent exact7c5b7f0 CI passes Linux and Windows packaging but fails Windows rendered150 history-pointer observation. The prepared correction is smoke-only: share the existing physical click injector and add exact diagnostics, retaining every press/state/keyboard assertion. Product R approval and its original source/runtime identity remain; final-pointer-owner-test-only-reconciliation.json records the one-doc/two-smoke source delta. Four affected local profiles pass. New normal hooks, actual-final-head review and Windows/Linux CI are mandatory; no new product mutation kill or original-failure cause is claimed.
+
 At d52cb19, the Hunter confirmed a P2 input-routing defect: passive preview consumes Escape before the focused source chooser. The existing chooser owner now handles its active same-viewport route after decision-dialog/pinned-inspector priority and before background input. An exercised compiling omission mutant fails the intended Escape assertion; the restored route passes local certification.
 
 Windows receipt-dismiss failure currently establishes collapsed history at attempted focus, not a production focus defect. Independent source diagnosis found two fixture observation holes: no Pressed observation and visibility accepted before completed deferred layout. The corrected smoke waits each public state and observes exactly one press before the unchanged keyboard assertion. The original Windows event sequence remains unproven; fresh exact-head CI is mandatory.
