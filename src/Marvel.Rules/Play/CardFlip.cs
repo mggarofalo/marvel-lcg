@@ -24,7 +24,7 @@ public static class CardFlip
                 $"card {card.ObjectId} has no face '{face}'", nameof(face));
         }
 
-        CardKind before = facts.Kind(card.FaceId);
+        CardKind before = EffectiveCards.Kind(card, facts);
         CardKind after = facts.Kind(face);
 
         // `rr:flip.2.2`: a different card type discards every attached,

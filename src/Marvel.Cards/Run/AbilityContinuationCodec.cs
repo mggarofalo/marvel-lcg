@@ -69,39 +69,6 @@ internal static class AbilityContinuationCodec
             $"'{source.FaceId}' has no single choice at step {stoppedAt - 1} of its sequence");
     }
 
-    internal static RestoredContinuationState RestoreState(
-        IReadOnlyList<Card> cards, IReadOnlyList<int>? discarded,
-        IReadOnlyDictionary<string, long>? values, int actor, string sourceFace)
-    {
-        Card At(int id, string name) => id >= 0 && id < cards.Count ? cards[id]
-            : throw new RulesNotImplementedException($"'{sourceFace}' has invalid persisted {name} metadata");
-        var raw = values ?? ImmutableDictionary<string, long>.Empty;
-        var chosen = ChosenBinding(cards, raw, sourceFace);
-        var crisis = AbilityContinuationWireCodec.CrisisIgnoringThwartOrdinals(raw, sourceFace);
-        var results = raw.Where(pair => pair.Key is not PersistedChosen
-            and not PersistedChosenArea and not PersistedChosenIncarnation
-            and not PersistedSourceIncarnation
-            && !pair.Key.StartsWith(CrisisIgnoringThwartPrefix, StringComparison.Ordinal))
-            .ToImmutableDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
-        return new((discarded ?? []).Select(id => At(id, "discarded-card")).ToImmutableArray(),
-            results,
-            raw.TryGetValue(PersistedSourceIncarnation, out long sourceIncarnation)
-                ? checked((int)sourceIncarnation) : -1,
-            chosen, actor >= 0 ? At(actor, "ability-actor") : null, crisis);
-    }
-
-    internal static AbilityContinuationCardBinding? ChosenBinding(
-        IReadOnlyList<Card> cards, IReadOnlyDictionary<string, long>? values, string sourceFace)
-    {
-        if (values?.TryGetValue(PersistedChosen, out long selected) != true) return null;
-        if (selected < 0 || selected >= cards.Count)
-            throw new RulesNotImplementedException($"'{sourceFace}' has invalid persisted chosen-card metadata");
-        if (!values.TryGetValue(PersistedChosenArea, out long area)
-            || !values.TryGetValue(PersistedChosenIncarnation, out long incarnation))
-            throw new RulesNotImplementedException(
-                $"'{sourceFace}' has persisted chosen-card metadata without target provenance");
-        return new(cards[(int)selected].ObjectId, checked((int)area), checked((int)incarnation));
-    }
     internal static DecodedPowerContinuation DecodePower(
         AbilityProgram program, Card source, int abilityIndex, int powerOrdinal,
         string power, int resumeFrom, IReadOnlyList<string>? path, string savedFace,

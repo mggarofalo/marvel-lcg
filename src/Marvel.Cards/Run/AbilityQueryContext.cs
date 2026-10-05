@@ -14,6 +14,11 @@ internal sealed record AbilityQueryContext(
     AbilityCardReference? PlayerSelectionBinding, Card? Altered,
     ImmutableArray<Card> PowerTargets)
 {
+    internal CardInstanceState SourceState { get; init; } = Source.InstanceState;
+
+    internal CardInstanceState Quantities(Card card) => SourceBindingIsCurrent(card)
+        && !DeckTypes.IsInPlay(card.Area.Type)
+        ? SourceState : card.InstanceState;
     internal Card? Chosen => ChosenBinding?.Resolve(Source, "chosen");
     internal Card? PlayerSelection => PlayerSelectionBinding?.Resolve(Source, "player selection");
 

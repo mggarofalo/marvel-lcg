@@ -5,8 +5,9 @@ namespace Marvel.Rules.State;
 /// <see cref="Card.Owner"/> remains an ownership fact. A player card in a
 /// player's in-play area is instead controlled by that area's player, which is
 /// how a changed-control card remains owned by one player and controlled by
-/// another. Scenario cards and every out-of-play card fall back to ownership;
-/// placement in a player's set-aside or tucked area never grants control.
+/// another. In-play encounter identities are controlled by the scenario,
+/// including those holding a player's physical card. Out of play, control
+/// falls back to physical ownership; set-aside placement never grants control.
 /// </remarks>
 public static class CardControl
 {
@@ -15,7 +16,7 @@ public static class CardControl
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(card);
-        CardKind kind = facts.Kind(card.FaceId);
+        CardKind kind = EffectiveCards.Kind(card, facts);
         return kind is CardKind.AlterEgo
             or CardKind.Hero
             or CardKind.Ally
@@ -36,6 +37,8 @@ public static class CardControl
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
+        if (DeckTypes.IsInPlay(card.Area.Type) && !IsPlayerCard(world.Facts, card))
+            return World.Scenario;
         return IsPlayerCard(world.Facts, card)
             && DeckTypes.IsInPlay(card.Area.Type)
             && card.Area.PlayArea.IsPlayers

@@ -150,7 +150,7 @@ internal sealed class AbilityOfferQueries
                     yield return card;
 
         foreach (var card in world.Seats[player].Hand.Cards)
-            if (world.Facts.Kind(card.FaceId) == CardKind.Event) yield return card;
+            if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event) yield return card;
     }
 
     private AbilityAdmissionContext TurnAction(
@@ -167,7 +167,7 @@ internal sealed class AbilityOfferQueries
                 -1, false, null),
             new AbilityReachabilityContext
             {
-                PaymentMayMutate = cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event,
+                PaymentMayMutate = cost is not null || EffectiveCards.Kind(card, world.Facts) == CardKind.Event,
                 PaymentCost = cost,
             },
             Power: null);
@@ -187,9 +187,9 @@ internal sealed class AbilityOfferQueries
     private int? RestrictedPlayer(World world, CompiledCardAbility ability, Card card)
     {
         if (ability.AnyPlayer) return null;
-        if (world.Facts.Kind(card.FaceId) == CardKind.Obligation && card.Area.PlayArea.IsPlayers)
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Obligation && card.Area.PlayArea.IsPlayers)
             return card.Area.PlayArea.Player;
-        if (world.Facts.Kind(card.FaceId) == CardKind.Attachment
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Attachment
             && card.Area.Host >= 0 && card.Area.Host < world.Cards.Count
             && AbilityPlayerBindingAnalysis.UsesYouOrYour(program, ability, card))
         {

@@ -15,7 +15,7 @@ public sealed class CoreTranscriptRunnerAuthorityDerivedPlayerDeckTranscriptRuns
         Assert.Equal("behavior:rr:player-deck.2:published-result", result.Obligation);
         Assert.Contains(result.Events, gameEvent => gameEvent.GetType().Name == "AreaReordered");
         Assert.Contains(result.Events, gameEvent => gameEvent.GetType().Name == "CardsMoved");
-        Assert.Equal("630f931c433098646b8aaeb96e9baa0f7df8b9a95db6786153607231f57fca45", result.Digest);
+        Assert.Equal("05325a4af79242636921e854b4d3339c806c146d7eace3efde8ac4496e3f4697", result.Digest);
     }
 
     [Fact]

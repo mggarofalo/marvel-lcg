@@ -285,7 +285,7 @@
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
           "effect": { "seq": [
-            { "heal": { "card": { "query": "villain" }, "amount": { "mul": [ 2, { "count": { "query": "dronesEngagedWithYou" } } ] } } },
+            { "heal": { "card": { "query": "villain" }, "amount": { "mul": [ 2, { "count": {"withTrait":{"cards":{"query":"minionsEngagedWithYou"},"trait":"DRONE"}} } ] } } },
             {
               "if": {
                 "test": { "not": { "atLeast": { "value": { "result": "healed" }, "count": 1 } } },
@@ -296,7 +296,7 @@
         },
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
-          "effect": { "heal": { "card": { "query": "villain" }, "amount": { "count": { "query": "dronesEngagedWithYou" } } } }
+          "effect": { "heal": { "card": { "query": "villain" }, "amount": { "count": {"withTrait":{"cards":{"query":"minionsEngagedWithYou"},"trait":"DRONE"}} } } }
         }
       ]
     },
@@ -380,11 +380,33 @@
       "note": "After Ultron I attacks a player, that player chooses either 1 threat on the main scheme or one facedown Drone from the top of their deck. The completed attack occurrence identifies both Ultron as actor and the attacked player.",
       "abilities": [
         {
-          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player" },
-          "effect": { "choose": { "options": [
-            { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } },
-            { "createDrones": { "player": "you", "count": 1 } }
-          ] } }
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "choose": {
+              "options": [
+                {
+                  "placeThreat": {
+                    "scheme": {
+                      "query": "mainScheme"
+                    },
+                    "amount": 1
+                  }
+                },
+                {
+                  "engageTopAsMinion": {
+                    "player": "you",
+                    "count": 1,
+                    "profile": "effective-drone"
+                  }
+                }
+              ]
+            }
+          }
         }
       ]
     },
@@ -394,11 +416,40 @@
       "note": "When Ultron II attacks a player, his forced interrupt first creates one Drone engaged with that player, then grants Ultron +1 ATK per Drone now engaged with them until that attack ends.",
       "abilities": [
         {
-          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this", "player": "trigger.player" },
-          "effect": { "seq": [
-            { "createDrones": { "player": "you", "count": 1 } },
-            { "grantUntil": { "card": "this", "keyword": "attack", "amount": { "count": { "query": "dronesEngagedWithYou" } }, "until": "EndOfAttack" } }
-          ] }
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "ForcedInterrupt",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "engageTopAsMinion": {
+                  "player": "you",
+                  "count": 1,
+                  "profile": "effective-drone"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": "this",
+                  "keyword": "attack",
+                  "amount": {
+                    "count": {
+                      "withTrait": {
+                        "cards": {
+                          "query": "minionsEngagedWithYou"
+                        },
+                        "trait": "DRONE"
+                      }
+                    }
+                  },
+                  "until": "EndOfAttack"
+                }
+              }
+            ]
+          }
         }
       ]
     },
@@ -408,8 +459,18 @@
       "note": "When revealed, each player in player order creates one facedown Drone from the top of their own deck.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "createDrones": { "player": "each", "count": 1 } }
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "engageTopAsMinion": {
+              "player": "each",
+              "count": 1,
+              "profile": "effective-drone"
+            }
+          }
         }
       ]
     },
@@ -419,8 +480,18 @@
       "note": "When revealed, each player in player order creates one facedown Drone. Advancing to stage 2B is the generic main-scheme advance, not a second card ability.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "createDrones": { "player": "each", "count": 1 } }
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "engageTopAsMinion": {
+              "player": "each",
+              "count": 1,
+              "profile": "effective-drone"
+            }
+          }
         }
       ]
     },
@@ -430,16 +501,54 @@
       "note": "When revealed, each player in player order creates one facedown Drone. Advancing to stage 3B is the generic main-scheme advance.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "createDrones": { "player": "each", "count": 1 } }
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "engageTopAsMinion": {
+              "player": "each",
+              "count": 1,
+              "profile": "effective-drone"
+            }
+          }
         }
       ]
     },
     {
       "card": "01140",
       "name": "Ultron Drones",
-      "note": "The environment defines the facedown Drone card type, DRONE trait, and base SCH, ATK, and hit points. FacedownDrones and the defeat primitive apply those runtime semantics and return a defeated Drone to its original owner's discard pile; there is no second independently resolved tree on this face.",
-      "abilities": []
+      "note": "Defines the temporary blank Drone identity from printed 01140. Generic facedown-minion engagement assigns this profile; engine-owned minion defeat returns the underlying physical card to its owner discard without retaining transient state.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "defineProfile": {
+              "id": "effective-drone",
+              "title": "Drone",
+              "kind": "minion",
+              "traits": [
+                "DRONE"
+              ],
+              "baseValues": {
+                "SCH": 1,
+                "ATK": 1,
+                "HP": 1
+              }
+            }
+          }
+        },
+        {
+          "name": "Ultron Drones",
+          "trigger": { "event": "WhenCardDefeated", "timing": "ForcedResponse", "subject": "game" },
+          "when": { "exists": { "defeatedWithProfile": { "profile": "effective-drone", "faceDown": "true" } } },
+          "effect": { "returnOwnedToDiscard": { "defeatedWithProfile": { "profile": "effective-drone", "faceDown": "true" } } }
+        }
+      ]
     },
     {
       "card": "01142",
@@ -450,8 +559,8 @@
         {
           "trigger": { "timing": "Constant", "subject": "this" },
           "effect": { "seq": [
-            { "grantEach": { "cards": { "query": "drones" }, "keyword": "attack", "amount": 1 } },
-            { "grantEach": { "cards": { "query": "drones" }, "keyword": "health", "amount": 1 } }
+            { "grantEach": { "cards": {"inObjectIdOrder": {"faceDown": {"withTrait": {"cards": {"query": "minions"}, "trait": "DRONE"}}}}, "keyword": "attack", "amount": 1 } },
+            { "grantEach": { "cards": {"inObjectIdOrder": {"faceDown": {"withTrait": {"cards": {"query": "minions"}, "trait": "DRONE"}}}}, "keyword": "health", "amount": 1 } }
           ] }
         },
         {
@@ -467,8 +576,18 @@
       "note": "When this minion would be defeated, its forced interrupt creates a facedown Drone from the engaged player's deck. The engaged seat is read while this card is still in its engagement area.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
-          "effect": { "createDrones": { "player": "engagedPlayer", "count": 1 } }
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "WhenDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "engageTopAsMinion": {
+              "player": "engagedPlayer",
+              "count": 1,
+              "profile": "effective-drone"
+            }
+          }
         }
       ]
     },
@@ -478,18 +597,78 @@
       "note": "When revealed in hero form, every DRONE minion engaged with the resolving player attacks. The set is re-read after each activation, so a Drone created by an Advanced Ultron Drone defeated during the effect also attacks. The sentence creates one Drone if none actually attacked, including when every attempted attack was canceled by stun. In alter-ego form it creates one immediately.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
           "effect": {
             "if": {
-              "test": { "and": [
-                { "inForm": { "player": "you", "form": "hero" } },
-                { "exists": { "query": "dronesEngagedWithYou" } }
-              ] },
-              "then": { "seq": [
-                { "enemyAttacks": { "enemies": { "query": "dronesEngagedWithYou" }, "dynamic": "true" } },
-                { "if": { "test": { "not": { "atLeast": { "value": { "result": "activationMade" }, "count": 1 } } }, "then": { "createDrones": { "player": "you", "count": 1 } } } }
-              ] },
-              "else": { "createDrones": { "player": "you", "count": 1 } }
+              "test": {
+                "and": [
+                  {
+                    "inForm": {
+                      "player": "you",
+                      "form": "hero"
+                    }
+                  },
+                  {
+                    "exists": {
+                      "withTrait": {
+                        "cards": {
+                          "query": "minionsEngagedWithYou"
+                        },
+                        "trait": "DRONE"
+                      }
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "seq": [
+                  {
+                    "enemyAttacks": {
+                      "enemies": {
+                        "withTrait": {
+                          "cards": {
+                            "query": "minionsEngagedWithYou"
+                          },
+                          "trait": "DRONE"
+                        }
+                      },
+                      "dynamic": "true"
+                    }
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "not": {
+                          "atLeast": {
+                            "value": {
+                              "result": "activationMade"
+                            },
+                            "count": 1
+                          }
+                        }
+                      },
+                      "then": {
+                        "engageTopAsMinion": {
+                          "player": "you",
+                          "count": 1,
+                          "profile": "effective-drone"
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "else": {
+                "engageTopAsMinion": {
+                  "player": "you",
+                  "count": 1,
+                  "profile": "effective-drone"
+                }
+              }
             }
           }
         }
@@ -501,11 +680,39 @@
       "note": "When revealed, each player first creates a facedown Drone, then 1 threat is placed here for every Drone in play, including the ones just created.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "seq": [
-            { "createDrones": { "player": "each", "count": 1 } },
-            { "placeThreat": { "scheme": "this", "amount": { "count": { "query": "drones" } } } }
-          ] }
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "engageTopAsMinion": {
+                  "player": "each",
+                  "count": 1,
+                  "profile": "effective-drone"
+                }
+              },
+              {
+                "placeThreat": {
+                  "scheme": "this",
+                  "amount": {
+                    "count": {
+                      "faceDown": {
+                        "withTrait": {
+                          "cards": {
+                            "query": "minions"
+                          },
+                          "trait": "DRONE"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
         }
       ]
     },
@@ -528,8 +735,18 @@
       "note": "When revealed, the current first player creates two facedown Drones from the top of their deck.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "createDrones": { "player": "firstPlayer", "count": 2 } }
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "engageTopAsMinion": {
+              "player": "firstPlayer",
+              "count": 2,
+              "profile": "effective-drone"
+            }
+          }
         }
       ]
     },
@@ -2383,9 +2600,9 @@
         {
           "trigger": { "timing": "Constant", "subject": "this" },
           "effect": { "seq": [
-            { "grantEach": { "cards": { "query": "drones" }, "keyword": "attack", "amount": 1 } },
-            { "grantEach": { "cards": { "query": "drones" }, "keyword": "health", "amount": 1 } },
-            { "preventDamageWhile": { "card": "this", "condition": { "exists": { "query": "drones" } } } }
+            { "grantEach": { "cards": {"inObjectIdOrder": {"faceDown": {"withTrait": {"cards": {"query": "minions"}, "trait": "DRONE"}}}}, "keyword": "attack", "amount": 1 } },
+            { "grantEach": { "cards": {"inObjectIdOrder": {"faceDown": {"withTrait": {"cards": {"query": "minions"}, "trait": "DRONE"}}}}, "keyword": "health", "amount": 1 } },
+            { "preventDamageWhile": { "card": "this", "condition": { "exists": {"inObjectIdOrder": {"faceDown": {"withTrait": {"cards": {"query": "minions"}, "trait": "DRONE"}}}} } } }
           ] }
         },
         {
@@ -2572,8 +2789,8 @@
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
           "cost": { "exhaust": "this" },
           "effect": { "chooseCard": {
-            "from": { "query": "identitiesWithTechInDiscard" },
-            "effect": { "returnOwnedToHand": { "query": "topmostTechInChosenDiscard" } }
+            "from": {"withMatchingPlayerArea": {"cards": {"query": "identities"}, "area": "discardPile", "kind": "upgrade", "trait": "TECH"}},
+            "effect": { "returnOwnedToHand": {"last": {"withTrait": {"cards": {"inPlayerArea": {"area": "discardPile", "player": "chosenPlayer"}}, "trait": "TECH"}}} }
           } }
         }
       ]
@@ -2599,7 +2816,7 @@
       "name": "Wakanda Forever!",
       "note": "Hero Action: choose one permutation of every BLACK PANTHER upgrade you control, then resolve their Special abilities in exactly that order. The queued final member is marked as the final step of the sequence.",
       "abilities": [
-        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" }, "effect": { "resolveSpecials": { "cards": { "query": "blackPantherUpgrades" } } } }
+        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" }, "effect": { "resolveSpecials": { "cards": {"withTrait": {"cards": {"query": "upgradesYouControl"}, "trait": "BLACK_PANTHER"}} } } }
       ]
     },
     {
@@ -2607,7 +2824,7 @@
       "name": "Wakanda Forever!",
       "note": "Hero Action: choose one permutation of every BLACK PANTHER upgrade you control, then resolve their Special abilities in exactly that order. The queued final member is marked as the final step of the sequence.",
       "abilities": [
-        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" }, "effect": { "resolveSpecials": { "cards": { "query": "blackPantherUpgrades" } } } }
+        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" }, "effect": { "resolveSpecials": { "cards": {"withTrait": {"cards": {"query": "upgradesYouControl"}, "trait": "BLACK_PANTHER"}} } } }
       ]
     },
     {
@@ -2615,7 +2832,7 @@
       "name": "Wakanda Forever!",
       "note": "Hero Action: choose one permutation of every BLACK PANTHER upgrade you control, then resolve their Special abilities in exactly that order. The queued final member is marked as the final step of the sequence.",
       "abilities": [
-        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" }, "effect": { "resolveSpecials": { "cards": { "query": "blackPantherUpgrades" } } } }
+        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" }, "effect": { "resolveSpecials": { "cards": {"withTrait": {"cards": {"query": "upgradesYouControl"}, "trait": "BLACK_PANTHER"}} } } }
       ]
     },
     {
@@ -2623,7 +2840,7 @@
       "name": "Wakanda Forever!",
       "note": "Hero Action: choose one permutation of every BLACK PANTHER upgrade you control, then resolve their Special abilities in exactly that order. The queued final member is marked as the final step of the sequence.",
       "abilities": [
-        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" }, "effect": { "resolveSpecials": { "cards": { "query": "blackPantherUpgrades" } } } }
+        { "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" }, "effect": { "resolveSpecials": { "cards": {"withTrait": {"cards": {"query": "upgradesYouControl"}, "trait": "BLACK_PANTHER"}} } } }
       ]
     },
     {
@@ -2824,11 +3041,34 @@
       "note": "After villain phase step one finishes placing threat, each player in player order independently chooses either two more threat here or one facedown Drone from the top of their own deck. Each player's choice resolves in a fresh frame so 'their deck' remains that player's deck through the question.",
       "abilities": [
         {
-          "trigger": { "event": "WhenVillainPhaseStepOneEnds", "timing": "ForcedResponse", "subject": "game" },
-          "effect": { "eachPlayer": { "effect": { "choose": { "options": [
-            { "placeThreat": { "scheme": "this", "amount": 2 } },
-            { "createDrones": { "player": "you", "count": 1 } }
-          ] } } } }
+          "trigger": {
+            "event": "WhenVillainPhaseStepOneEnds",
+            "timing": "ForcedResponse",
+            "subject": "game"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "choose": {
+                  "options": [
+                    {
+                      "placeThreat": {
+                        "scheme": "this",
+                        "amount": 2
+                      }
+                    },
+                    {
+                      "engageTopAsMinion": {
+                        "player": "you",
+                        "count": 1,
+                        "profile": "effective-drone"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
         }
       ]
     },
@@ -2838,12 +3078,41 @@
       "note": "When revealed, each player in player order creates a Drone from their own deck. Its boost ability makes the attacked player either spend one energy resource or create a Drone from that player's deck.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "eachPlayer": { "effect": { "createDrones": { "player": "you", "count": 1 } } } }
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "engageTopAsMinion": {
+                  "player": "you",
+                  "count": 1,
+                  "profile": "effective-drone"
+                }
+              }
+            }
+          }
         },
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
-          "effect": { "payOrEffect": { "resources": "Y", "otherwise": { "createDrones": { "player": "you", "count": 1 } } } }
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "payOrEffect": {
+              "resources": "Y",
+              "otherwise": {
+                "engageTopAsMinion": {
+                  "player": "you",
+                  "count": 1,
+                  "profile": "effective-drone"
+                }
+              }
+            }
+          }
         }
       ]
     },
@@ -2853,12 +3122,41 @@
       "note": "When revealed, each player in player order creates a Drone from their own deck. Its boost ability makes the attacked player either spend one mental resource or create a Drone from that player's deck.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "eachPlayer": { "effect": { "createDrones": { "player": "you", "count": 1 } } } }
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "engageTopAsMinion": {
+                  "player": "you",
+                  "count": 1,
+                  "profile": "effective-drone"
+                }
+              }
+            }
+          }
         },
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
-          "effect": { "payOrEffect": { "resources": "B", "otherwise": { "createDrones": { "player": "you", "count": 1 } } } }
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "payOrEffect": {
+              "resources": "B",
+              "otherwise": {
+                "engageTopAsMinion": {
+                  "player": "you",
+                  "count": 1,
+                  "profile": "effective-drone"
+                }
+              }
+            }
+          }
         }
       ]
     },
@@ -2868,12 +3166,41 @@
       "note": "When revealed, each player in player order creates a Drone from their own deck. Its boost ability makes the attacked player either spend one physical resource or create a Drone from that player's deck.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "eachPlayer": { "effect": { "createDrones": { "player": "you", "count": 1 } } } }
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "engageTopAsMinion": {
+                  "player": "you",
+                  "count": 1,
+                  "profile": "effective-drone"
+                }
+              }
+            }
+          }
         },
         {
-          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
-          "effect": { "payOrEffect": { "resources": "R", "otherwise": { "createDrones": { "player": "you", "count": 1 } } } }
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "payOrEffect": {
+              "resources": "R",
+              "otherwise": {
+                "engageTopAsMinion": {
+                  "player": "you",
+                  "count": 1,
+                  "profile": "effective-drone"
+                }
+              }
+            }
+          }
         }
       ]
     },

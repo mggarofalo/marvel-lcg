@@ -153,7 +153,7 @@ internal static class AbilityResolutionLifecycle
             // restart the whole effect instead of resuming its own path.
             var ability = paidCost.Ability;
             execution.Use(world, source, ability, cast.Occurrence);
-            if (world.Facts.Kind(source.FaceId) == CardKind.Event)
+            if (EffectiveCards.Kind(source, world.Facts) == CardKind.Event)
             {
                 cast.Occurrence.BeginCard(
                     source.ObjectId,

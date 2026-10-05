@@ -18,6 +18,19 @@ public abstract record AbilityCardSelection
     public sealed record EnemiesWithTrait(string Trait) : AbilityCardSelection;
     /// <summary>Selected cards carrying a named trait.</summary>
     public sealed record WithTrait(AbilityCardSelection Cards, string Trait) : AbilityCardSelection;
+    /// <summary>Selected cards whose physical face is down.</summary>
+    public sealed record FaceDown(AbilityCardSelection Cards) : AbilityCardSelection;
+    /// <summary>The last card in an explicitly ordered selection.</summary>
+    public sealed record Last(AbilityCardSelection Cards) : AbilityCardSelection;
+    /// <summary>Cards in one player's explicitly named public area.</summary>
+    public sealed record InPlayerArea(DeckType Area, AbilityPlayer Player) : AbilityCardSelection;
+    /// <summary>Identities whose player's public area contains matching cards.</summary>
+    public sealed record WithMatchingPlayerArea(AbilityCardSelection Cards, DeckType Area,
+        CardKind? Kind, string? Trait) : AbilityCardSelection;
+    /// <summary>Cards defeated with an assignment in this occurrence, still the same copy.</summary>
+    public sealed record DefeatedWithProfile(string Profile, bool RequiresFaceDown) : AbilityCardSelection;
+    /// <summary>Selected cards in ascending stable object-id order.</summary>
+    public sealed record InObjectIdOrder(AbilityCardSelection Cards) : AbilityCardSelection;
     /// <summary>Cards without another attached copy of the source.</summary>
     public sealed record WithoutAnotherCopyAttached(AbilityCardSelection Cards) : AbilityCardSelection;
     /// <summary>Selected cards removable by the effect.</summary>

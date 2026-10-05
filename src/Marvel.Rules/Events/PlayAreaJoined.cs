@@ -14,7 +14,7 @@ namespace Marvel.Rules.Events;
 /// card areas or changing any card field.
 /// </para>
 /// <para>
-/// <b>Emitted-only.</b> A v2 digest cannot see game-area membership, so no
+/// <b>Emitted-only.</b> A v3 digest cannot see game-area membership, so no
 /// before/after digest comparison can derive this event. The engine can emit it
 /// directly because <c>World.Join</c> performs the operation. The split between
 /// derivable and emitted-only wire kinds is the engine's choice; the published

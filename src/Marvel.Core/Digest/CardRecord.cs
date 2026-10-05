@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Marvel.Core.Digest;
 
 /// <summary>
-/// One card in the state digest: eight keys, all present, always in this order.
+/// One card in the state digest: nine keys, all present, always in this order.
 /// </summary>
 /// <param name="Id">The card's <c>object_id</c>.</param>
 /// <param name="Card"><c>face.paper.card_id</c> of the <b>current</b> face.</param>
@@ -14,7 +14,7 @@ namespace Marvel.Core.Digest;
 /// <param name="FaceUp">Whether the card is face up.</param>
 /// <param name="Fields">Named live state. Emitted code-point ordered.</param>
 /// <remarks>
-/// The key order is fixed by <c>docs/state-digest-v2.md</c> and is not
+/// The key order is fixed by <c>docs/state-digest-v3.md</c> and is not
 /// alphabetical — it is the table order. An empty <see cref="Fields"/> means
 /// the card registers none, not that its zone was skipped.
 /// </remarks>
@@ -28,6 +28,8 @@ public sealed record CardRecord(
     bool FaceUp,
     IReadOnlyDictionary<string, long> Fields)
 {
+    /// <summary>The temporary identity, or null for the printed identity.</summary>
+    public EffectiveProfileRecord? Profile { get; init; }
     internal void WriteTo(Utf8JsonWriter writer)
     {
         writer.WriteStartObject();
@@ -38,6 +40,9 @@ public sealed record CardRecord(
         writer.WriteNumber("index", Index);
         writer.WriteNumber("host", Host);
         writer.WriteBoolean("face_up", FaceUp);
+        writer.WritePropertyName("profile");
+        if (Profile is null) writer.WriteNullValue();
+        else Profile.WriteTo(writer);
 
         writer.WriteStartObject("fields");
 

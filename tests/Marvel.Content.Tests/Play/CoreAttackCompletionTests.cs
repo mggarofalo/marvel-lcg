@@ -74,7 +74,7 @@ public sealed class CoreAttackCompletionTests
         var (_, world) = Playing(board =>
         {
             board.Seats[0].IdentityCard.TurnTo("01040a");
-            drone = FacedownDrones.EngageTop(board, 0, "test", "test", []);
+            drone = FacedownMinions.EngageTop(board, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile, "test", "test", []);
         }, heroes: ["black_panther"], scenario: "ultron");
         var events = new List<GameEvent>();
         var abilities = new NoCardAbilities();
@@ -142,7 +142,7 @@ public sealed class CoreAttackCompletionTests
         // the continuation contract, not a claimed printed Core card ability.
         Card? drone = null;
         var (_, world) = Playing(board =>
-            drone = FacedownDrones.EngageTop(board, 0, "test", "test", []),
+            drone = FacedownMinions.EngageTop(board, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile, "test", "test", []),
             hero: true, scenario: "ultron");
         var events = new List<GameEvent>();
         var abilities = new NoCardAbilities();

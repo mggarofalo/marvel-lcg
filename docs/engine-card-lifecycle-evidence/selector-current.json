@@ -1,0 +1,93 @@
+[
+  {
+    "name": "bp",
+    "ids": [
+      33,
+      34,
+      35,
+      36
+    ],
+    "medianMilliseconds": 57.4803,
+    "iterations": 20000,
+    "samples": [
+      56.9863,
+      57.338,
+      57.4803,
+      297.2856,
+      299.2789
+    ],
+    "checksum": 400000
+  },
+  {
+    "name": "global",
+    "ids": [
+      10,
+      11,
+      12,
+      26,
+      27,
+      28
+    ],
+    "medianMilliseconds": 96.0167,
+    "iterations": 20000,
+    "samples": [
+      95.8952,
+      95.9341,
+      96.0167,
+      105.6003,
+      106.729
+    ],
+    "checksum": 600000
+  },
+  {
+    "name": "engaged",
+    "ids": [
+      12,
+      11,
+      10
+    ],
+    "medianMilliseconds": 45.9068,
+    "iterations": 20000,
+    "samples": [
+      45.4066,
+      45.7182,
+      45.9068,
+      45.9155,
+      46.34
+    ],
+    "checksum": 300000
+  },
+  {
+    "name": "identities-tech",
+    "ids": [
+      0,
+      16
+    ],
+    "medianMilliseconds": 47.042,
+    "iterations": 20000,
+    "samples": [
+      44.6622,
+      46.6894,
+      47.042,
+      47.1153,
+      47.3374
+    ],
+    "checksum": 200000
+  },
+  {
+    "name": "top-tech",
+    "ids": [
+      31
+    ],
+    "medianMilliseconds": 46.4777,
+    "iterations": 20000,
+    "samples": [
+      46.018,
+      46.1658,
+      46.4777,
+      46.7356,
+      46.7883
+    ],
+    "checksum": 100000
+  }
+]

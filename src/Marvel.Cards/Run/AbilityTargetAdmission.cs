@@ -1,4 +1,5 @@
 using static Marvel.Cards.Run.AbilityAdmission;
+using static Marvel.Cards.Run.AbilityCardActionTargetAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
 using static Marvel.Cards.Run.AbilityDelayedReachability;
 using static Marvel.Cards.Run.AbilityPowerProjection;
@@ -58,10 +59,11 @@ internal static class AbilityTargetAdmission
             return StructuralTargetLegality(node, cast, bindingMayChange);
         }
         if (operation is "removeFromGame" or "reveal" or "returnToHand"
+            or "returnOwnedToHand" or "addToHand"
             or "exhaust" or "ready" or "giveStatus" or "declareDefender"
             or "attachTo" or "grantUntil" or "discard")
         {
-            return CardActionTargetLegality(node, cast);
+            return AbilityCardActionTargetAdmission.Of(node, cast);
         }
         if (operation is "dealEncounterCard" or "heal" or "dealDamage"
             or "dealAttackDamage" or "indirectDamage" or "placeThreat"
@@ -148,36 +150,6 @@ internal static class AbilityTargetAdmission
             _ => throw new InvalidOperationException("Unknown structural target operation"),
         };
 
-    private static TargetLegality CardActionTargetLegality(
-        AbilityEffect node, AbilityAdmissionScope cast) =>
-        node.OperationName() switch
-        {
-            "removeFromGame" => RemoveFromGameTargetLegality(node, cast),
-            "reveal" or "returnToHand" => CardsLegality(
-                Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)),
-            "exhaust" => CardsLegality(
-                Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)
-                    .Where(card => card.Ready)),
-            "ready" => CardsLegality(Every(
-                EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Where(card =>
-                !card.Ready && AbilityProgramQueries.CanReady(cast.World, cast.Context.Program, card))),
-            "giveStatus" => CardsLegality(StatusTargets(node, cast)),
-            "declareDefender" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } declared
-                && Attack.CanDeclareByAbility(
-                    cast.World, cast.World.Facts, declared,
-                    ReplaceableDefenseDefender(cast))
-                    ? TargetLegality.Valid : TargetLegality.Invalid,
-            "attachTo" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is null
-                ? TargetLegality.Invalid : TargetLegality.Valid,
-            "grantUntil" => Find(GrantSelectionOf(node, cast), cast) is null
-                ? TargetLegality.Invalid : TargetLegality.Valid,
-            "discard" => EffectOf<AbilityEffect.CardAction>(node, cast).Selection is var discardTarget
-                && Find(discardTarget, cast) is { } discarded
-                && CanRemoveByEffect(discardTarget, cast, discarded)
-                    ? TargetLegality.Valid : TargetLegality.Invalid,
-            _ => throw new InvalidOperationException("Unknown card-action target operation"),
-        };
-
     private static TargetLegality DamageAndThreatTargetLegality(
         AbilityEffect node, AbilityAdmissionScope cast) =>
         node.OperationName() switch
@@ -229,9 +201,6 @@ internal static class AbilityTargetAdmission
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             _ => TargetLegality.None,
         };
-
-    private static TargetLegality CardsLegality(IEnumerable<Card> candidates) =>
-        candidates.Any() ? TargetLegality.Valid : TargetLegality.Invalid;
 
     internal static TargetLegality CandidateTargetLegality(
         AbilityEffect node, AbilityAdmissionScope cast)
@@ -332,17 +301,9 @@ internal static class AbilityTargetAdmission
         string status = instruction.Status;
         return [.. Every(instruction.Cards, cast).Where(card =>
             DeckTypes.IsInPlay(card.Area.Type)
-                && CardKinds.IsCharacter(FacedownDrones.Kind(card, cast.World.Facts))
+                && CardKinds.IsCharacter(EffectiveCards.Kind(card, cast.World.Facts))
                 && Statuses.Count(cast.World, card, status)
                 < Statuses.Limit(cast.World, cast.World.Facts, card, status))];
-    }
-
-    internal static TargetLegality RemoveFromGameTargetLegality(
-        AbilityEffect node, AbilityAdmissionScope cast)
-    {
-        return Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } removed
-            && CanRemoveByEffect(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, removed)
-                ? TargetLegality.Valid : TargetLegality.Invalid;
     }
 
     internal enum TargetLegality

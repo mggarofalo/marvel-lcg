@@ -45,6 +45,9 @@ public sealed class LifecycleRulesAHostedAccelerationTokenLeavesTests : Lifecycl
         var status = world.CreateCard("status", world.AreaOf(DeckType.StatusArea, PlayArea.Of(0), ally.ObjectId));
         int incarnation = ally.Incarnation;
         Discard.Card(world, ally, "test", []);
+        Assert.Equal(0, ally.Damage);
+        Assert.True(ally.Ready);
+        Assert.Equal(0, ally.Tokens["c_charge"]);
         CardPlay.PutAllyIntoPlay(world, facts, new NoCardAbilities(), ally, 0, "test", []);
         Assert.Equal(incarnation + 1, ally.Incarnation);
         Assert.Equal(0, ally.Damage);

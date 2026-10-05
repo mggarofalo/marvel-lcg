@@ -32,7 +32,7 @@ internal sealed class AbilityEliminationLayout(
         return placement with
         {
             PlayArea = PlayArea.Of(player),
-            Engaged = FacedownDrones.Kind(world.Cards[card], world.Facts) == CardKind.Minion,
+            Engaged = EffectiveCards.Kind(world.Cards[card], world.Facts) == CardKind.Minion,
         };
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Marvel.Rules.Play;
+using Marvel.Rules.State;
 
 namespace Marvel.Cards.Dsl;
 
@@ -22,6 +23,7 @@ public sealed class AbilityProgram
         PlacementOnly = placementOnly;
         CounterPools = counterPools;
         Effects = effects;
+        Profiles = AbilityProfileDefinitions.Compile(abilities, effects);
         byCard = abilities.GroupBy(ability => ability.Card, StringComparer.Ordinal)
             .ToImmutableDictionary(group => group.Key, group => group.ToImmutableArray(), StringComparer.Ordinal);
     }
@@ -42,6 +44,8 @@ public sealed class AbilityProgram
     public ImmutableDictionary<string, CardCounterPool> CounterPools { get; }
     /// <summary>Every effect and its stable structural address.</summary>
     public ImmutableDictionary<AbilityEffectAddress, AbilityEffect> Effects { get; }
+    /// <summary>Temporary identities declared by authored constant definitions.</summary>
+    public ImmutableDictionary<string, EffectiveCardProfile> Profiles { get; }
 
     /// <summary>The abilities on one printed face, in authored order.</summary>
     public ImmutableArray<CompiledCardAbility> On(string card) => byCard.GetValueOrDefault(card, []);

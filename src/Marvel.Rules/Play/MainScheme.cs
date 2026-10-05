@@ -180,9 +180,12 @@ public static class MainScheme
         Discard.Attachments(world, scheme, trigger, events);
 
         long carried = scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken);
+        long completed = scheme.Tokens.GetValueOrDefault("is_completed");
         var removed = world.AreaOf(DeckType.RemovedArea);
         var from = scheme.Area;
         World.MoveToTop(scheme, removed);
+        // Completion is a historical engine marker, not a carried token.
+        scheme.PlaceTokens("is_completed", completed);
         events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(removed),
             [new Landing(scheme.ObjectId, removed.Cards.Count - 1)])

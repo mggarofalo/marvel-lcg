@@ -12,7 +12,7 @@ internal static class AbilityResolutionCardMovement
             new AbilityDeckAndRevealContext(
                 cast.ExpressionContext(), cast.Trigger, cast.Events,
                 execution.cardPlayAbilities, execution.readinessAbilities,
-                [.. cast.Discarded]));
+                [.. cast.Discarded]) { Program = execution.program });
         if (!result.IsHandled)
         {
             return false;

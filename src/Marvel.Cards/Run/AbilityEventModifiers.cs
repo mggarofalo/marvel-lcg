@@ -12,7 +12,7 @@ internal static class AbilityEventModifiers
 
     internal static IReadOnlyList<ContinuousEffect> Effects(World world, Card source, string kind)
     {
-        if (world.Facts.Kind(source.FaceId) != CardKind.Event) return [];
+        if (EffectiveCards.Kind(source, world.Facts) != CardKind.Event) return [];
         return [.. world.Effects.Active().Where(effect =>
             string.Equals(effect.Kind, kind, StringComparison.Ordinal)
             && effect.Affects == source.ObjectId)];

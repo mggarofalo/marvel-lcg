@@ -52,14 +52,14 @@ internal static class AbilityChoicePromptDescription
         return LegalCards(context, chooseCard, continuation, evidence)
                 .Select(card => new Affordance(
                     card.ObjectId, AbilityStructuralExecution.ChooseVerb, card.ObjectId, card.Owner,
-                    FacedownDrones.Is(card) ? FacedownDrones.EffectiveFaceId : card.FaceId,
+                    EffectiveCards.FaceId(card),
                     Description: DescribeCard(context, chooseCard, card))
                 {
                     DisplayLabel = AbilityPlayerChoiceDescription.Commitment(context, chooseCard, card)
-                        ?? FacedownDrones.Title(card, context.Expressions.World.Facts),
+                        ?? EffectiveCards.Title(card, context.Expressions.World.Facts),
                     CommitLabel = AbilityPlayerChoiceDescription.Commitment(context, chooseCard, card)
                         ?? AbilityEffectDescription.Choice(chooseCard.Effect,
-                        FacedownDrones.Title(card, context.Expressions.World.Facts)),
+                        EffectiveCards.Title(card, context.Expressions.World.Facts)),
                 });
     }
 
@@ -94,10 +94,10 @@ internal static class AbilityChoicePromptDescription
         AbilityStructuralContext context, AbilityEffect.ChooseCard choice, Card card)
     {
         var world = context.Expressions.World;
-        string title = FacedownDrones.Title(card, world.Facts);
+        string title = EffectiveCards.Title(card, world.Facts);
         if (AbilityPlayerChoiceDescription.Description(context, choice, card) is { } draw)
             return $"{title} · {draw}";
-        if (FacedownDrones.Kind(card, world.Facts) is CardKind.Hero or CardKind.AlterEgo)
+        if (EffectiveCards.Kind(card, world.Facts) is CardKind.Hero or CardKind.AlterEgo)
             return $"Select {world.Seats[card.Owner].Name} → {title}";
 
         if (ProjectedDamage(context, choice.Effect) is { } projection)
@@ -179,6 +179,10 @@ internal static class AbilityChoicePromptDescription
         AbilityCardSelection.InAreas areas => areas.Areas.Any(area => area is
             AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck),
         AbilityCardSelection.WithTrait filtered => InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.FaceDown filtered => InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.Last filtered => InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.InObjectIdOrder filtered => InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.WithMatchingPlayerArea filtered => InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.WithoutAnotherCopyAttached filtered =>
             InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.Discardable filtered => InspectsConcealedPile(filtered.Cards),

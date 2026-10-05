@@ -212,12 +212,12 @@ public static class BasicPowers
 
         var enemies = BasicPowerStatus.Enemies(world, facts);
         bool guarded = enemies.Any(enemy =>
-            FacedownDrones.Kind(enemy, facts) == CardKind.Minion
+            EffectiveCards.Kind(enemy, facts) == CardKind.Minion
             && BasicPowerStatus.Engaged(world, enemy) == player
             && StateFields.Modified(world, enemy, "guard", facts, world.Players) > 0);
 
         return guarded
-            ? [.. enemies.Where(enemy => FacedownDrones.Kind(enemy, facts) == CardKind.Minion)]
+            ? [.. enemies.Where(enemy => EffectiveCards.Kind(enemy, facts) == CardKind.Minion)]
             : enemies;
     }
 

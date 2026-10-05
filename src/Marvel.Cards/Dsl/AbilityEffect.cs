@@ -85,8 +85,10 @@ public abstract record AbilityEffect
     public sealed record DelayedStun(string? Within) : AbilityEffect;
     /// <summary>Deal facedown encounter cards to selected players.</summary>
     public sealed record DealEncounterCards(AbilityPlayerSelection Players, int Count) : AbilityEffect;
-    /// <summary>Turn top player-deck cards into engaged Drone minions.</summary>
-    public sealed record CreateDrones(AbilityPlayerSelection Players, int Count) : AbilityEffect;
+    /// <summary>Assign top physical player-deck cards the declared minion identity.</summary>
+    public sealed record EngageTopAsMinion(AbilityPlayerSelection Players, int Count, string Profile) : AbilityEffect;
+    /// <summary>A declarative temporary identity supplied by a constant card definition.</summary>
+    public sealed record DefineProfile(EffectiveCardProfile Profile) : AbilityEffect;
     /// <summary>Deal one selected encounter card to a named player.</summary>
     public sealed record DealEncounterCard(AbilityCardSelection Card, AbilityPlayer Player) : AbilityEffect;
     /// <summary>Discard random cards from the selected players' hands.</summary>

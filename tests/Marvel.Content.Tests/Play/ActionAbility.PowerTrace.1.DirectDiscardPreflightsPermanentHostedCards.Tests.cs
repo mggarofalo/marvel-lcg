@@ -64,14 +64,14 @@ public sealed class ActionAbilityPowerTraceDirectDiscardPreflightsPermanentHoste
                   "cards": { "titled": "Advanced Ultron Drone" }, "amount": 100
                 } },
                 { "grantUntil": {
-                  "card": { "query": "dronesEngagedWithYou" },
+                  "card": {"withTrait": {"cards": {"query": "minionsEngagedWithYou"}, "trait": "DRONE"}},
                   "keyword": "health", "amount": 1, "until": "EndOfRound"
                 } },
                 { "dealDamage": {
-                  "cards": { "query": "drones" }, "amount": 1
+                  "cards": {"faceDown": {"withTrait": {"cards": {"query": "minions"}, "trait": "DRONE"}}}, "amount": 1
                 } },
                 { "moveDamage": {
-                  "from": { "query": "dronesEngagedWithYou" },
+                  "from": {"withTrait": {"cards": {"query": "minionsEngagedWithYou"}, "trait": "DRONE"}},
                   "to": "you", "amount": 1
                 } },
                 { "if": {

@@ -117,7 +117,7 @@ public static class BasicPowerStatus
 
             // `rr:enemy`: "an enemy is a minion or villain."
             enemies.AddRange(area.Cards.Where(card =>
-                CardKinds.IsEnemy(FacedownDrones.Kind(card, facts))));
+                CardKinds.IsEnemy(EffectiveCards.Kind(card, facts))));
         }
 
         return enemies;

@@ -11,14 +11,26 @@ namespace Marvel.Rules.State;
 /// it, and ids are on the wire.
 /// </para>
 /// <para>
-/// <see cref="Faces"/> can be <i>replaced</i> and not merely flipped: the Ultron
-/// scenario turns a player card into a facedown drone in place, keeping the
-/// object id. Nothing at setup does that, but the model has to allow it.
+/// Printed faces and physical ownership survive temporary identities. Active
+/// characteristics and quantities belong to <see cref="InstanceState"/>;
+/// leaving play detaches that copy before the physical card enters its destination.
 /// </para>
 /// </remarks>
 public sealed class Card
 {
-    private readonly Dictionary<string, long> tokens = new(StringComparer.Ordinal);
+    private CardInstanceState state = new();
+
+    /// <summary>The quantities of this copy; a departure detaches this state.</summary>
+    public CardInstanceState InstanceState => state;
+
+    /// <summary>Assigns the active characteristics of an in-play copy.</summary>
+    public void AssignProfile(EffectiveCardProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        if (!DeckTypes.IsInPlay(Area.Type))
+            throw new InvalidOperationException("Only an in-play copy can have a temporary profile");
+        state.Profile = profile;
+    }
 
     internal Card(int objectId, IReadOnlyList<string> faces, int owner)
     {
@@ -83,80 +95,35 @@ public sealed class Card
     /// <summary>Whether the card is face up.</summary>
     public bool FaceUp { get; private set; } = true;
 
-    /// <summary>
-    /// Whether this card has ever held its token pools.
-    /// </summary>
+    /// <summary>Whether this physical card has registered token keys.</summary>
     /// <remarks>
-    /// <para>
-    /// <b>Not the same as being in play, and the digest keeps the
-    /// difference.</b> A card acquires its token pools when it enters play and
-    /// <i>never gives them back</i>: the recorded milestone board shows
-    /// <c>01105</c> with no <c>k_threat</c> key while it sits in the encounter
-    /// deck, and with <c>k_threat: 0</c> once it has been revealed — still
-    /// there two steps later, from the discard pile.
-    /// </para>
-    /// <para>
-    /// Absent and zero are different in a digest, so this is the difference
-    /// between a card that never had a threat pool and one whose pool is empty.
-    /// </para>
+    /// Engine choice: registered keys remain present at zero after departure,
+    /// distinguishing an empty pool from one that has never been registered.
+    /// This wire-format fact does not retain tokens from the ended copy.
     /// </remarks>
     public bool HasRegisteredTokens { get; private set; }
 
     /// <summary>Whether the card is ready. <c>is_exhaust</c> is its negation.</summary>
-    public bool Ready { get; private set; } = true;
+    public bool Ready => state.Ready;
 
-    /// <summary>
-    /// Damage on the card. <c>rr:damage</c>.
-    /// </summary>
+    /// <summary>Damage on the active copy, cleared when it leaves play.</summary>
     /// <remarks>
-    /// <para>
-    /// <b>Not a token pool, and that is measured rather than chosen.</b> The
-    /// digest records a character's remaining <c>health</c> and no damage key
-    /// at all — <c>StateFields</c> says so in as many words — so damage is what
-    /// is subtracted from printed hit points, not something counted beside
-    /// them. Putting it in <see cref="Tokens"/> would register a key the
-    /// recorded boards do not have.
-    /// </para>
-    /// <para>
-    /// <c>rr:damage.4</c>: damage stays on a character until it is healed or
-    /// the character leaves play, which is why this is state on the card rather
-    /// than a number an attack carries.
-    /// </para>
+    /// rr:leaves-play.2.3 returns all tokens to the token pool. Engine choice:
+    /// damage is stored separately and contributes to remaining health in the
+    /// digest; registered token keys keep their canonical spelling.
     /// </remarks>
-    public long Damage { get; private set; }
+    public long Damage => state.Damage;
 
-    /// <summary>
-    /// Tokens sitting on this card, by the digest's own key.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Threat on a scheme, damage counters, and anything else the engine keys
-    /// with a <c>k_</c> prefix. Live state, unlike everything printed — the
-    /// main scheme's <c>k_threat</c> starts at its <c>StartingThreat</c> and
-    /// climbs every villain phase.
-    /// </para>
-    /// <para>
-    /// <b>Absent and zero are different, and the digest keeps the
-    /// distinction.</b> Which <c>k_</c> keys a card registers is decided by its
-    /// kind and whether it is in play (<c>StateFields.Keys</c>); this only says
-    /// how many are there. A card out of play registers none of them however
-    /// many this holds.
-    /// </para>
-    /// </remarks>
-    public IReadOnlyDictionary<string, long> Tokens => tokens;
+    /// <summary>Token quantities of the current copy, by canonical key.</summary>
+    /// <remarks>Departure clears quantities while preserving registered keys.</remarks>
+    public IReadOnlyDictionary<string, long> Tokens => state.Tokens;
 
     /// <summary>Puts tokens on the card.</summary>
     /// <param name="kind">The digest's key, e.g. <c>k_threat</c>.</param>
     /// <param name="count">How many. Negative removes.</param>
     public void PlaceTokens(string kind, long count)
     {
-        ArgumentNullException.ThrowIfNull(kind);
-        long total = (tokens.TryGetValue(kind, out long held) ? held : 0) + count;
-
-        // Clamped rather than allowed negative: "remove 2 threat" from a scheme
-        // holding 1 removes 1, and a scheme holding -1 threat would complete on
-        // the wrong turn.
-        tokens[kind] = Math.Max(0, total);
+        state.PlaceTokens(kind, count);
     }
 
     /// <summary>Turns the card to a named face.</summary>
@@ -177,23 +144,18 @@ public sealed class Card
     /// (<c>rr:heal</c>).
     /// </remarks>
     /// <param name="amount">How much. Negative heals.</param>
-    public void TakeDamage(long amount) => Damage = Math.Max(0, Damage + amount);
+    public void TakeDamage(long amount) => state.TakeDamage(amount);
 
     /// <summary>Exhausts the card. <c>rr:exhaust-ready</c>.</summary>
-    public void Exhaust() => Ready = false;
+    public void Exhaust() => state.Exhaust();
 
     /// <summary>Readies the card. <c>rr:exhaust-ready</c>.</summary>
-    public void Refresh() => Ready = true;
+    public void Refresh() => state.Refresh();
 
     /// <summary>Clears state that cannot survive this card leaving play.</summary>
     internal void ResetForNewCopy()
     {
-        Damage = 0;
-        Ready = true;
-        foreach (string kind in tokens.Keys.ToList())
-        {
-            tokens[kind] = 0;
-        }
+        state = state.NewCopy();
     }
 
     /// <summary>Turns the card face up where it lies.</summary>
@@ -217,22 +179,29 @@ public sealed class Card
 
     internal void MovedTo(Area area)
     {
-        if (DeckTypes.IsInPlay(area.Type)
-            && (Area is null || !DeckTypes.IsInPlay(Area.Type)))
+        bool wasInPlay = Area is not null && DeckTypes.IsInPlay(Area.Type);
+        bool entersPlay = DeckTypes.IsInPlay(area.Type);
+        if (wasInPlay && !entersPlay)
+        {
+            // rr:leaves-play.1: "there is no memory of its previous state".
+            // Historical occurrences retain their own facts; the physical
+            // card in its destination does not retain the old copy's state.
+            ResetForNewCopy();
+        }
+        if (entersPlay && !wasInPlay)
         {
             if (Area is not null)
             {
-                // `rr:leaves-play.1`: this is the moment the old, out-of-play
-                // card becomes a new in-play copy. Keep the dormant fields
-                // until now because an occurrence that already began can
-                // still finish after its source leaves play.
+                // Entry starts a fresh copy, including cards whose out-of-play
+                // quantities were explicitly changed by an effect.
                 ResetForNewCopy();
             }
             Incarnation++;
         }
 
+        bool movesWithinPlay = wasInPlay && entersPlay;
         Area = area;
-        FaceUp = !DeckTypes.FaceDownOnEntry(area.Type);
+        if (!movesWithinPlay) FaceUp = !DeckTypes.FaceDownOnEntry(area.Type);
         HasRegisteredTokens |= DeckTypes.GrantsTokenPool(area.Type);
     }
 

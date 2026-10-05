@@ -214,14 +214,14 @@ public sealed class KeywordATeamworkMinionAloneTests : KeywordTestBase
         var printed = new Printed().With("sideScheme", ("Uses", "3,web")).With("playerUses", ("Uses", "3,charge"));
         var world = Board(printed);
         world.CreateCard("playerUses", world.Seats[0].Deck);
-        var drone = Assert.IsType<Card>(FacedownDrones.EngageTop(world, 0, "test", "Drone", []));
+        var drone = Assert.IsType<Card>(FacedownMinions.EngageTop(world, 0, DroneProfileFixture.Profile, "test", "Drone", []));
         var card = world.CreateCard("sideScheme", world.AreaOf(DeckType.RevealingArea));
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Characteristics.LossOf("uses"), Affects: card.ObjectId, Lasts: Duration.UntilEndOf(TimingPoints.EndOfPlayerPhase)));
         Reveal.Resolve(world, printed, card, 0, []);
         world.Effects.Expire(TimingPoints.EndOfPlayerPhase, []);
         Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
         Assert.Equal(DeckType.EngagedEnemiesArea, drone.Area.Type);
-        Assert.True(FacedownDrones.Is(drone));
+        Assert.True(EffectiveCards.HasProfile(drone));
     }
 
     [Rule("rr:ability.5")]

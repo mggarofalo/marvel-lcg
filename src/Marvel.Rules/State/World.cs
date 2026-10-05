@@ -478,20 +478,7 @@ public sealed class World
                 ? found
                 : (card.Area.Type + "/absent", -1);
 
-            bool inPlay = DeckTypes.IsInPlay(card.Area.Type);
-            records.Add(new CardRecord(
-                Id: card.ObjectId,
-                Card: card.FaceId,
-                Zone: zone,
-                Owner: card.Owner,
-                Index: index,
-                Host: card.Area.Host,
-                FaceUp: card.FaceUp,
-                Fields: StateFields.For(
-                    card, facts, Players, inPlay, card.HasRegisteredTokens,
-                    hasFirstPlayerToken: card.Owner == FirstPlayer
-                                         && card.Area.Type == DeckType.HeroArea,
-                    world: this)));
+            records.Add(CardDigestRecord.For(this, card, zone, index));
         }
 
         return new StateDigest(records);

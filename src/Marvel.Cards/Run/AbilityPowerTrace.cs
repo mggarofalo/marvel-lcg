@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilitySelectorTrace;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
 using static Marvel.Cards.Run.AbilityDelayedReachability;
@@ -210,9 +211,9 @@ internal static class AbilityPowerTrace
                 .DistinctBy(card => card.ObjectId)
                 .Where(card => !reachability.Discarded.Contains(card.ObjectId)
                     && TraceSelectorMatches(
-                        value, card, reachability.CurrentVillain, cast,
+                        value, card, new(reachability.CurrentVillain, cast,
                         reachability.Discarded, reachability.Traits,
-                        reachability.Modifiers, reachability.Engagement)),
+                        reachability.Modifiers, reachability.Engagement))),
         ];
     }
 

@@ -231,18 +231,18 @@ language without documentation.
 ```text
 addToHand afterActivation allies alliesYouControl alsoAttackEachOtherHero among
 atLeast attachedToThis attackDamaged attackableEnemies attackableMinions
-automaticTarget blackPantherUpgrades canAutomaticThwart canLegalPractice
+automaticTarget canAutomaticThwart canLegalPractice
 canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters
 charactersYouControl choose chooseCard chooseDiscardToShuffle chooseTopForHand
-countersOn createDrones damageOn dealAttackDamage dealDamage dealEncounterCards
+countersOn damageOn dealAttackDamage dealDamage dealEncounterCards
 deck defeatedByYou delayUntil discardAtRandom discardFromHand
 discardHandWithResource discardTop discardUntil discardable discardedWithResource
-doubleResourceFor drawToPrintedHandSize drones dronesEngagedWithYou dynamic
+doubleResourceFor drawToPrintedHandSize dynamic
 eachPlayer else encounterDeck encounterDiscardPile enemies
 enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
 finalStep generate generateTopDiscard giveAdditionalBoost
 grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroDefended
-heroes heroesAndAllies identities identitiesWithTechInDiscard
+heroes heroesAndAllies identities
 identitiesWithinPerPlayerLimit inForm indirectDamage isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou modified moveAttackDamage mul onto options overkill
@@ -256,10 +256,55 @@ resolveSpecials returnOwnedToHand returnToHand revealTop scheme schemes search
 shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend
 spendEnergyX startingCounters takeDamage then threatCause thwartDifferentSchemes thwartSchemes
 thwartableSchemes titleInPlay titled tokensOn topEncounterDiscardBoostPlusOne
-topmostTechInChosenDiscard undefendedAttack until upgradesAndSupportsYouControl
+undefendedAttack until upgradesAndSupportsYouControl
 upgradesYouControl wasDefeated withTrait within withoutAnotherCopyAttached
 yourAsideMinion yourAsidePile yourAsideSideScheme
 ```
+
+## Generic selection and temporary identities
+
+`withTrait` filters by current engine traits. Black Panther's upgrades are data:
+`{"withTrait":{"cards":{"query":"upgradesYouControl"},"trait":"BLACK_PANTHER"}}`.
+`inObjectIdOrder` sorts a selection by ascending stable physical object id.
+Projected engagement retains membership, not movement chronology. An unordered
+`last` over engaged enemies after projected re-engagement raises
+`RulesNotImplementedException`; explicit object-id ordering remains supported.
+The global Drone relation authors this order; engaged relations retain area order.
+`faceDown` filters physical facing; it never assigns meaning to a concealed card.
+`last` selects the final card in the operand's existing order, retaining topmost
+public discard semantics. `inPlayerArea` takes `area` and `player`, and
+`withMatchingPlayerArea` filters identities by matching cards in their player's
+public `area`, optionally by `kind` and `trait`. These public area operations
+reject hidden decks and hands. Querying an empty area does not allocate it.
+
+`defineProfile` declares an immutable blank-minion identity at an unconditional,
+cost-free Constant ability root. Its fields are `id`, `title`, `kind` (`minion`),
+`traits`, and integer `baseValues` (`SCH`, `ATK`, `HP`; positive HP required).
+`engageTopAsMinion` takes `player`, `count`, and a declared `profile` id. Lowering
+rejects missing, duplicate, nested and unknown definitions before gameplay.
+The generic engine operation moves the top physical player card into engagement,
+assigns that identity, and turns it facedown without activating the underlying
+printed abilities, resources, keywords or traits. Base values precede ordinary
+continuous modifiers. Ultron's profile is authored on 01140; selectors compose
+Minion, DRONE trait and facing as required by each card's printed text.
+
+`defeatedWithProfile` takes a declared `profile` and optional `faceDown`
+(`"true"` or `"false"`, default false). It selects the physical cards defeated
+with that assignment in the current occurrence, using captured incarnation and
+facing facts. It requires that each selected copy has left play and has not
+reentered. `returnOwnedToDiscard` places every selected physical card on top of
+its owner's discard. Ultron Drones authors its Forced Response through these
+operations; profile loss on departure does not erase the current defeat's facts.
+An unrelated defeat or a new incarnation cannot reuse that provenance.
+
+The physical card owns its printed faces and stable object id. Its composed
+`CardInstanceState` owns the current copy's profile, damage, readiness and tokens.
+An in-play move preserves that state. Leaving play detaches it immediately;
+ordinary minion defeat returns the underlying physical card to its owner's
+public discard and restores printed characteristics. Active resolutions retain
+only their own last-known source quantities, serialized under reserved
+`__continuation.source_state.` result keys; a new resolution reads the new copy.
+The hidden digest explicitly records the assignment in version 3.
 
 ## Questions and continuations
 

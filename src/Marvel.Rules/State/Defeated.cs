@@ -40,4 +40,12 @@ namespace Marvel.Rules.State;
 /// closed and checked without this having to be.
 /// </para>
 /// </param>
-public sealed record Defeated(int Card, int By, string How);
+public sealed record Defeated(int Card, int By, string How)
+{
+    /// <summary>The copy that was defeated, for response target provenance.</summary>
+    public int Incarnation { get; init; } = -1;
+    /// <summary>The temporary assignment that ended in this defeat.</summary>
+    public string? ProfileId { get; init; }
+    /// <summary>The physical facing at the triggering condition.</summary>
+    public bool WasFaceDown { get; init; }
+}

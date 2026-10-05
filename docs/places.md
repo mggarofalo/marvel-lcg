@@ -163,8 +163,8 @@ wrong is invisible until a scenario needs both.
 
 ## What is not here
 
-**Game-area topology is not part of digest v2.** The digest remains frozen
-rather than acquiring an uncited extension for research-only scenarios. These
+**Game-area topology is not part of digest v3.** Digest v3 adds active copy profiles and does not add topology for research-only
+scenarios. These
 rules are held against published pack text and focused tests; opening a scenario
 that uses them also requires an explicit state-contract decision.
 

@@ -92,7 +92,7 @@ public static class Keywords
 
         // A facedown Drone keeps the player card's printed id for object and
         // digest identity, but none of that face's printed text is active.
-        return !State.FacedownDrones.Is(card)
+        return !State.EffectiveCards.HasProfile(card)
             && facts.Attributes(card.FaceId).ContainsKey(Printed(keyword));
     }
 
@@ -130,7 +130,7 @@ public static class Keywords
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
 
-        return State.FacedownDrones.Kind(card, facts) != State.CardKind.Minion
+        return State.EffectiveCards.Kind(card, facts) != State.CardKind.Minion
             || State.StateFields.Modified(world, card, "villainous", facts, players) > 0;
     }
 }

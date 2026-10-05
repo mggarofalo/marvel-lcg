@@ -173,7 +173,7 @@ internal static class EngineHostLifecycle
         Application: "test",
         ReplayContract: EngineBuildIdentity.ReplayContract,
         RngContract: "mt19937-iso-cxx",
-        StateDigest: "state-digest-v2",
+        StateDigest: EngineBuildIdentity.StateDigest,
         CardsSha256: new string('0', 64),
         SetupSha256: new string('0', 64),
         AbilitiesSha256: new string('0', 64));

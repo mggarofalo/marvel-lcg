@@ -170,8 +170,8 @@ internal static class CoreTranscriptSceneArrangement
         SceneCard card = SceneCard(match, step);
         context.SceneRequired(step).Apply(new StackPlayerDeck(
             seat, [card], PlayerDeckRemainder.Leave));
-        Card? engaged = FacedownDrones.EngageTop(
-            context.World, seat, "behavioral fixture", "Create_Drone", context.Events);
+        Card? engaged = FacedownMinions.EngageTop(
+            context.World, seat, context.Abilities.Profiles["effective-drone"], "behavioral fixture", "Create_Drone", context.Events);
         if (engaged != context.SceneRequired(step).Find(card))
         {
             throw new TranscriptException(
@@ -183,7 +183,7 @@ internal static class CoreTranscriptSceneArrangement
         TranscriptContext context, TranscriptStep step, Match match)
     {
         int seat = Seat(match, step);
-        foreach (Card drone in FacedownDrones.EngagedWith(context.World, seat))
+        foreach (Card drone in context.World.Cards.Where(card => card.InstanceState.Profile?.Id == "effective-drone" && card.Area.PlayArea == PlayArea.Of(seat)))
         {
             drone.TurnFaceUp();
             World.MoveToTop(drone, context.World.AreaOf(

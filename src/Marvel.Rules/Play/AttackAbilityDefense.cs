@@ -60,7 +60,7 @@ internal static class AttackAbilityDefense
             return;
         }
 
-        bool character = FacedownDrones.Kind(performer, world.Facts) is
+        bool character = EffectiveCards.Kind(performer, world.Facts) is
             CardKind.Hero or CardKind.AlterEgo or CardKind.Ally;
         if (!character)
         {
@@ -106,7 +106,7 @@ internal static class AttackAbilityDefense
             return false;
         }
 
-        var kind = FacedownDrones.Kind(defender, facts);
+        var kind = EffectiveCards.Kind(defender, facts);
         return kind is CardKind.Hero or CardKind.Ally
             && (attack.Defender < 0
                 || attack.Defender == defender.ObjectId
@@ -158,7 +158,7 @@ internal static class AttackAbilityDefense
             Defender = defender.ObjectId,
             Target = defender.ObjectId,
             Player = player,
-            BasicDefense = FacedownDrones.Kind(defender, facts) == CardKind.Hero,
+            BasicDefense = EffectiveCards.Kind(defender, facts) == CardKind.Hero,
         };
         if (world.Activation is { Attacking: true } activation)
         {

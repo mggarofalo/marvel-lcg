@@ -72,7 +72,8 @@ public static class Uniqueness
     public static bool IsUnique(ICardFacts facts, IReadOnlyList<string> faces) =>
         faces.Any(face => facts.Attributes(face).ContainsKey("Unique"));
 
-    private static bool IsUnique(ICardFacts facts, Card card) => IsUnique(facts, card.Faces);
+    private static bool IsUnique(ICardFacts facts, Card card) =>
+        !EffectiveCards.HasProfile(card) && IsUnique(facts, card.Faces);
 
     private static CardNames Names(ICardFacts facts, IReadOnlyList<string> faces)
     {

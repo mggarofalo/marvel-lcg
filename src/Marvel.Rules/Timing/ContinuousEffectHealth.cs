@@ -10,7 +10,7 @@ internal static class ContinuousEffectHealth
     /// <summary>Maximum hit points before a state change can alter constants.</summary>
     internal static IReadOnlyDictionary<int, long> CaptureCharacterHealthCore(this ContinuousEffects effects) => effects.world.Cards
         .Where(card => DeckTypes.IsInPlay(card.Area.Type)
-            && CardKinds.IsCharacter(FacedownDrones.Kind(card, effects.world.Facts)))
+            && CardKinds.IsCharacter(EffectiveCards.Kind(card, effects.world.Facts)))
         .OrderBy(card => card.ObjectId)
         .ToDictionary(
             card => card.ObjectId,
@@ -41,7 +41,7 @@ internal static class ContinuousEffectHealth
             }
             var card = effects.world.Cards[id];
             if (!DeckTypes.IsInPlay(card.Area.Type)
-                || !CardKinds.IsCharacter(FacedownDrones.Kind(card, effects.world.Facts)))
+                || !CardKinds.IsCharacter(EffectiveCards.Kind(card, effects.world.Facts)))
             {
                 continue;
             }

@@ -105,7 +105,7 @@ public static class Discard
 
         var from = card.Area;
         bool exposesIdentity = DeckTypes.IsConcealedPile(from.Type)
-            || FacedownDrones.Is(card);
+            || EffectiveCards.HasProfile(card);
         int host = from.Host;
         World.MoveToTop(card, pile);
         if (exposesIdentity && card.FaceUp) world.RecordInformation(InformationKind.Reveal);

@@ -170,7 +170,7 @@ public static class CardPlayLegality
         // ("trigger an Action ability on an event card in their hand, by
         // playing that event"), which is why it is here and not offered by
         // `Price`.
-        return PlayableKind(facts.Kind(card.FaceId));
+        return PlayableKind(EffectiveCards.Kind(card, facts));
     }
 
     private static bool PermittedLocation(Seat seat, Card card, bool outOfPlayPermission) =>
@@ -197,7 +197,7 @@ public static class CardPlayLegality
         // this is an engine compatibility choice, not a Rules Reference term.
         string unit = facts.Attributes(card.FaceId)
             .GetValueOrDefault("MaxPerUnitKind", "player");
-        IReadOnlyList<int>? eligible = facts.Kind(card.FaceId) == CardKind.Upgrade
+        IReadOnlyList<int>? eligible = EffectiveCards.Kind(card, facts) == CardKind.Upgrade
             ? abilities.AttachmentTargets(world, card)
             : null;
         if (string.Equals(unit, "player", StringComparison.Ordinal))
@@ -252,22 +252,22 @@ public static class CardPlayLegality
     internal static int CountControlled(
         World world, ICardFacts facts, Card card, int controller)
     {
-        string title = facts.Title(card.FaceId);
+        string title = EffectiveCards.Title(card, facts);
         return world.Areas
             .Where(area => area.PlayArea == PlayArea.Of(controller))
             .SelectMany(area => area.Cards)
             .Count(inPlay => DeckTypes.IsInPlay(inPlay.Area.Type)
-                && string.Equals(facts.Title(inPlay.FaceId), title, StringComparison.Ordinal));
+                && string.Equals(EffectiveCards.Title(inPlay, facts), title, StringComparison.Ordinal));
     }
 
     internal static int CountAttached(
         World world, ICardFacts facts, Card card, int host)
     {
-        string title = facts.Title(card.FaceId);
+        string title = EffectiveCards.Title(card, facts);
         return world.Areas
             .Where(area => area.Host == host && DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
             .Count(attached => string.Equals(
-                facts.Title(attached.FaceId), title, StringComparison.Ordinal));
+                EffectiveCards.Title(attached, facts), title, StringComparison.Ordinal));
     }
 }

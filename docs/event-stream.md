@@ -55,7 +55,7 @@ These nine event kinds describe transitions visible in digest state:
 
 ### Emitted-only events
 
-Game-area topology, attack completion and applied cancellation are outside digest v2, so the engine
+Game-area topology, attack completion and applied cancellation are outside digest v3, so the engine
 emits these facts directly:
 
 | event | payload |
@@ -203,7 +203,7 @@ Tests hold the stream in 3 ways:
 - server tests round-trip the versioned wire records through both transports.
 
 The state digest is not an event-stream completeness oracle for game-area
-topology because that topology is deliberately outside digest v2. Direct
+topology because that topology is deliberately outside digest v3. Direct
 rule-cited tests cover that emitted-only surface.
 
 ## Relationship to affordances

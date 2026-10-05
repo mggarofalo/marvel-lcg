@@ -27,12 +27,14 @@ internal static class AbilityBookLowering
         }
 
         var attachments = LowerAttachments(book.AttachTo);
-        return new AbilityProgram(abilities.MoveToImmutable(), book.Authored.ToImmutableHashSet(StringComparer.Ordinal),
+        var program = new AbilityProgram(abilities.MoveToImmutable(), book.Authored.ToImmutableHashSet(StringComparer.Ordinal),
             attachments, book.ControlledByFirstPlayer?.ToImmutableHashSet(StringComparer.Ordinal)
                 ?? ImmutableHashSet.Create<string>(StringComparer.Ordinal),
             book.PlacementOnly?.ToImmutableHashSet(StringComparer.Ordinal) ?? ImmutableHashSet.Create<string>(StringComparer.Ordinal),
             book.CounterPools?.ToImmutableDictionary(StringComparer.Ordinal)
                 ?? ImmutableDictionary.Create<string, CardCounterPool>(StringComparer.Ordinal), effects.ToImmutable());
+        AbilityProfileReferences.Validate(book, program.Profiles);
+        return program;
     }
 
     private static CompiledCardAbility CompileAbility(

@@ -120,9 +120,14 @@ public sealed class IndirectDamageWithNoBombScareInPlayItSurgesInsteadTests : In
         var world = Deal();
         BombScare(world, threat: 40);
         Agendas.Happening(world);
-        Reveal(world, AuthoredCards.Explosion);
+        var card = world.CreateCard(AuthoredCards.Explosion, world.AreaOf(DeckType.RevealingArea));
+        var events = AuthoredCards.Runner().WhenRevealed(world, card, 0);
         var identity = world.Seats[0].IdentityCard;
-        Assert.Equal(DamagePlacement.Health(world, Cards, identity), identity.Damage);
+        Assert.Contains(events.OfType<Marvel.Rules.Events.FieldSet>(), change =>
+            change.Card == identity.ObjectId && change.Field == "health"
+            && change.From == 10 && change.To == 0);
+        Assert.Equal(0, identity.Damage);
+        Assert.False(DeckTypes.IsInPlay(identity.Area.Type));
     }
 
     [Rule("rr:indirect-damage.3.1")]
@@ -145,8 +150,11 @@ public sealed class IndirectDamageWithNoBombScareInPlayItSurgesInsteadTests : In
         Assert.Equal(1, targets.MaximumOccurrences![ally.ObjectId]);
         Assert.Equal(10, targets.MaximumOccurrences[identity.ObjectId]);
         Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, card, 0, waiting.Index, Decision.Take(card.ObjectId, [ally.ObjectId, ally.ObjectId, ally.ObjectId], [])));
-        runner.Chose(world, card, 0, waiting.Index, Decision.Take(card.ObjectId, [ally.ObjectId, identity.ObjectId, identity.ObjectId], []));
-        Assert.Equal(3, ally.Damage);
+        var events = runner.Chose(world, card, 0, waiting.Index, Decision.Take(card.ObjectId, [ally.ObjectId, identity.ObjectId, identity.ObjectId], []));
+        Assert.Contains(events.OfType<Marvel.Rules.Events.FieldSet>(), change =>
+            change.Card == ally.ObjectId && change.Field == "health" && change.From == 1 && change.To == 0);
+        Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
+        Assert.Equal(0, ally.Damage);
         Assert.Equal(2, identity.Damage);
     }
 

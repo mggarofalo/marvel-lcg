@@ -5,7 +5,7 @@ using Xunit;
 namespace Marvel.Core.Tests.Digest;
 
 /// <summary>
-/// The canonical serialisation of a board — <c>docs/state-digest-v2.md</c>.
+/// The canonical serialisation of a board — <c>docs/state-digest-v3.md</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -37,15 +37,15 @@ public sealed class StateDigestTests
     [Fact]
     public void TheKeysComeInTheTableOrderAndNotAlphabetically()
     {
-        // `id`, `card`, `zone`, `owner`, `index`, `host`, `face_up`, `fields`.
-        // Alphabetical would be `card`, `face_up`, `fields`, `host`, ... -- a
+        // `id`, `card`, `zone`, `owner`, `index`, `host`, `face_up`, `profile`, `fields`.
+        // Alphabetical would be `card`, `face_up`, `profile`, `fields`, `host`, ... -- a
         // perfectly reasonable order that would change every digest ever
         // produced.
         var card = JsonDocument.Parse(Board().Canonical())
             .RootElement.GetProperty("cards")[0];
 
         Assert.Equal(
-            ["id", "card", "zone", "owner", "index", "host", "face_up", "fields"],
+            ["id", "card", "zone", "owner", "index", "host", "face_up", "profile", "fields"],
             card.EnumerateObject().Select(property => property.Name));
     }
 
@@ -110,10 +110,10 @@ public sealed class StateDigestTests
     {
         // A document from a format this does not implement is not a board with
         // a few unknown keys -- it is a board this cannot compare at all.
-        string wrong = StateDigest.Empty.Replace("\"v\":2", "\"v\":3", StringComparison.Ordinal);
+        string wrong = StateDigest.Empty.Replace("\"v\":3", "\"v\":4", StringComparison.Ordinal);
 
         var thrown = Assert.Throws<NotSupportedException>(() => StateDigest.Parse(wrong));
-        Assert.Contains("version 3", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("version 4", thrown.Message, StringComparison.Ordinal);
     }
 
     [Theory]

@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilitySelectorTrace;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
 using static Marvel.Cards.Run.AbilityDelayedReachability;
@@ -79,6 +80,9 @@ internal static class AbilityRepeatedSelectorTrace
             AbilityCardSelection.EnemiesWithTrait trait => TraceHasTrait(current, trait.Trait, cast, []),
             AbilityCardSelection.WithTrait trait => TraceHasTrait(current, trait.Trait, cast, [])
                 && SelectorCanTrackVillain(trait.Cards, current, cast),
+            AbilityCardSelection.Last last => SelectorCanTrackVillain(last.Cards, current, cast),
+            AbilityCardSelection.InObjectIdOrder ordered => SelectorCanTrackVillain(ordered.Cards, current, cast),
+            AbilityCardSelection.FaceDown facedown => !current.FaceUp && SelectorCanTrackVillain(facedown.Cards, current, cast),
             AbilityCardSelection.WithoutAnotherCopyAttached other => SelectorCanTrackVillain(other.Cards, current, cast),
             AbilityCardSelection.Ranked ranked => SelectorCanTrackVillain(ranked.Cards, current, cast),
             _ => false,
@@ -98,8 +102,8 @@ internal static class AbilityRepeatedSelectorTrace
         }
         var candidate = cast.World.Cards[candidateId];
         return TraceSelectorMatches(
-            value, candidate, currentVillain, cast, discarded, traits, modifiers,
-            engagement)
+            value, candidate, new(currentVillain, cast, discarded, traits, modifiers,
+            engagement))
             ? candidateId
             : null;
     }
@@ -111,7 +115,7 @@ internal static class AbilityRepeatedSelectorTrace
         Dictionary<int, int> engagement)
     {
         bool villain = candidate.ObjectId == currentVillain;
-        var kind = FacedownDrones.Kind(candidate, cast.World.Facts);
+        var kind = EffectiveCards.Kind(candidate, cast.World.Facts);
         return query switch
         {
             AbilityCardQuery.Villain => villain,
@@ -123,8 +127,6 @@ internal static class AbilityRepeatedSelectorTrace
                 villain, kind, candidate, cast, discarded, modifiers, engagement),
             AbilityCardQuery.MinionsEngagedWithYou => IsEngagedMinion(
                 kind, candidate, cast.Player, engagement),
-            AbilityCardQuery.DronesEngagedWithYou => IsEngagedDrone(
-                kind, candidate, cast, discarded, traits, engagement),
             AbilityCardQuery.EnemiesEngagedWithChosenPlayer =>
                 IsEngagedWithChosenPlayer(kind, candidate, cast, engagement),
             AbilityCardQuery.UpgradesYouControl => IsControlledInArea(
@@ -152,13 +154,6 @@ internal static class AbilityRepeatedSelectorTrace
     private static bool IsEngagedMinion(
         CardKind kind, Card candidate, int player, Dictionary<int, int> engagement) =>
         kind == CardKind.Minion && TraceEngagedWith(candidate, player, engagement);
-
-    private static bool IsEngagedDrone(
-        CardKind kind, Card candidate, AbilityAdmissionScope cast, HashSet<int> discarded,
-        Dictionary<int, HashSet<string>> traits, Dictionary<int, int> engagement) =>
-        kind == CardKind.Minion
-        && TraceHasTrait(candidate, "DRONE", cast, discarded, traits)
-        && TraceEngagedWith(candidate, Resolver(cast), engagement);
 
     private static bool IsEngagedWithChosenPlayer(
         CardKind kind, Card candidate, AbilityAdmissionScope cast,
@@ -199,7 +194,7 @@ internal static class AbilityRepeatedSelectorTrace
             .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player))
             .Cards.Any(enemy => !discarded.Contains(enemy.ObjectId)
                 && !engagement.ContainsKey(enemy.ObjectId)
-                && FacedownDrones.Kind(enemy, cast.World.Facts) == CardKind.Minion
+                && EffectiveCards.Kind(enemy, cast.World.Facts) == CardKind.Minion
                 && TraceModified(
                     enemy, "guard", cast, discarded, modifiers) > 0)
             || engagement.Any(pair => pair.Value == player
@@ -219,7 +214,7 @@ internal static class AbilityRepeatedSelectorTrace
         {
             return true;
         }
-        if (FacedownDrones.InherentTraits(current, cast.World.Facts)
+        if (EffectiveCards.InherentTraits(current, cast.World.Facts)
             .Contains(trait, StringComparer.Ordinal))
         {
             return true;

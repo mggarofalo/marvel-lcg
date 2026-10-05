@@ -345,10 +345,13 @@ public sealed class SpiderManCardsTests
         Reveal.EnterPlay(world, Cards, shooter, []);
         shooter.PlaceTokens("c_web", -2);
 
-        string generated = runner.UseResource(world, 0, shooter.ObjectId, []);
+        var events = new List<GameEvent>();
+        string generated = runner.UseResource(world, 0, shooter.ObjectId, events);
 
         Assert.Equal("G", generated);
-        Assert.False(shooter.Ready);
+        Assert.Contains(events.OfType<FieldSet>(), change => change.Card == shooter.ObjectId
+            && change.Field == "is_exhaust" && change.To == 1);
+        Assert.True(shooter.Ready);
         Assert.Equal(0, shooter.Tokens.GetValueOrDefault("c_web"));
         Assert.Equal(DeckType.DiscardPile, shooter.Area.Type);
     }

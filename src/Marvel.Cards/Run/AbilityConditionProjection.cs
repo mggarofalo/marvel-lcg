@@ -44,7 +44,7 @@ internal static class AbilityConditionProjection
                 string.Equals(cast.World.Facts.Title(card.FaceId), text.Text,
                     StringComparison.Ordinal),
             AbilityCondition.IsKind kind =>
-                cast.World.Facts.Kind(card.FaceId) == kind.Kind,
+                EffectiveCards.Kind(card, cast.World.Facts) == kind.Kind,
             _ => throw new InvalidOperationException(
                 "Unknown compiled test of an entered card"),
         };

@@ -177,7 +177,7 @@ internal static class IndirectAttackAssignment
         .. world.Cards
             .Where(card => card.Area.PlayArea == PlayArea.Of(player))
             .Where(card => card.ObjectId == world.Seats[player].IdentityCard.ObjectId
-                || FacedownDrones.Kind(card, facts) == CardKind.Ally)
+                || EffectiveCards.Kind(card, facts) == CardKind.Ally)
             .Where(card => DeckTypes.IsInPlay(card.Area.Type)
                 && DamagePlacement.Health(world, facts, card) - card.Damage > 0
                 && world.DamageAbilities.CanTakeDamage(world, card, world.Cards[AttackCompletion.Current(world).Enemy]))

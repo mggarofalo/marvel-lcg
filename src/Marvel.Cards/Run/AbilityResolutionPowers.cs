@@ -141,7 +141,7 @@ internal static class AbilityResolutionPowers
         World world, Card source, IReadOnlyDictionary<string, long>? abilityResults,
         AbilityResolutionState cast)
     {
-        if (AbilityContinuationCodec.ChosenBinding(
+        if (AbilityContinuationRestoration.ChosenBinding(
             world.Cards, abilityResults, source.FaceId) is not { } outerChosen) return;
         cast.RestorePersistedSelection(
             world.Cards[outerChosen.ObjectId], outerChosen.AreaId,
@@ -243,7 +243,7 @@ internal static class AbilityResolutionPowers
         return cast.ForReachability(cast.Reachability with
         {
             PaymentMayMutate = ability.Cost is not null
-                || world.Facts.Kind(card.FaceId) == CardKind.Event,
+                || EffectiveCards.Kind(card, world.Facts) == CardKind.Event,
             PaymentCost = ability.Cost,
         });
     }
@@ -306,7 +306,7 @@ internal static class AbilityResolutionPowers
         var arrowPayment = AbilityCostPayment.Prepare(
             world, card, cast.Player, found.Cost, paying, chosen,
             execution.program, execution.resourceAbilities, values,
-            resourcesPaidByEvent: world.Facts.Kind(card.FaceId) == CardKind.Event
+            resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
                 && ResourceRequirement(found.Cost, card).Length > 0);
         var eventPayment = AbilityEventPayment.Prepare(
             world, card, cast.Player, paying, found.Effect,
@@ -326,7 +326,7 @@ internal static class AbilityResolutionPowers
         AbilityResolutionState cast)
     {
         execution.Use(world, card, found, occurrence);
-        if (world.Facts.Kind(card.FaceId) == CardKind.Event)
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event)
             occurrence.BeginCard(card.ObjectId, [address]);
         cast.RestoreAbility(address.Ordinal, []);
         cast.TrackResolution(address.Ordinal);

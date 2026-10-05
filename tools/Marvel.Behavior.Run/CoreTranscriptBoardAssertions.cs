@@ -37,8 +37,7 @@ internal static class CoreTranscriptBoardAssertions
     internal static void FacedownDroneCount(
         TranscriptContext context, TranscriptStep step, Match match)
     {
-        int actual = FacedownDrones.EngagedWith(
-            context.World, Seat(match, step)).Count;
+        int actual = context.World.Cards.Count(card => card.InstanceState.Profile?.Id == "effective-drone" && card.Area.PlayArea == PlayArea.Of(Seat(match, step)));
         int expected = Number(match, "count", step);
         if (actual != expected)
         {

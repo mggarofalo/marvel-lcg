@@ -75,6 +75,6 @@ internal sealed class AbilityResolutionExecution
     // through this boundary so no trigger, action, constant, boost, or query
     // can accidentally execute the hidden card.
     internal ImmutableArray<CompiledCardAbility> On(Card card) =>
-        FacedownDrones.Is(card) ? [] : program.On(card.FaceId);
+        EffectiveCards.HasProfile(card) ? [] : program.On(card.FaceId);
 
 }

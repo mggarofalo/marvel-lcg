@@ -75,6 +75,7 @@ public sealed class CoreDamageProhibitionTests
 
         var drone = world.CreateCard(
             "01087", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+        drone.AssignProfile(AuthoredCards.DroneProfile);
         drone.TurnFaceDown();
         Assert.False(runner.CanTakeDamage(world, ultron, source));
 

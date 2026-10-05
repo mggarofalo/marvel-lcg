@@ -50,8 +50,6 @@ public enum AbilityCardQuery
     CharactersYouControl,
     /// <summary>The authored upgradesYouControl relation.</summary>
     UpgradesYouControl,
-    /// <summary>The authored blackPantherUpgrades relation.</summary>
-    BlackPantherUpgrades,
     /// <summary>The authored enemiesEngagedWithChosenPlayer relation.</summary>
     EnemiesEngagedWithChosenPlayer,
     /// <summary>The authored alliesYouControl relation.</summary>
@@ -62,14 +60,6 @@ public enum AbilityCardQuery
     Heroes,
     /// <summary>The authored identities relation.</summary>
     Identities,
-    /// <summary>The authored identitiesWithTechInDiscard relation.</summary>
-    IdentitiesWithTechInDiscard,
-    /// <summary>The authored topmostTechInChosenDiscard relation.</summary>
-    TopmostTechInChosenDiscard,
     /// <summary>The authored characters relation.</summary>
     Characters,
-    /// <summary>The authored drones relation.</summary>
-    Drones,
-    /// <summary>The authored dronesEngagedWithYou relation.</summary>
-    DronesEngagedWithYou,
 }

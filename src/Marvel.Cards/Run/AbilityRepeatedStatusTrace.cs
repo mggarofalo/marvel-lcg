@@ -129,7 +129,7 @@ internal static class AbilityRepeatedStatusTrace
                 card.FaceId, "Cost", cast.World.Players),
             AbilityCardRank.Attack => TraceModified(
                 card, "attack", cast, discarded, modifiers),
-            AbilityCardRank.PrintedHealth => FacedownDrones.BaseValue(
+            AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(
                 card, cast.World.Facts, "HP", cast.World.Players),
             _ => throw new InvalidOperationException("Unknown compiled rank in a projected selector"),
         };

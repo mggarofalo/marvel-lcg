@@ -20,7 +20,7 @@ internal sealed class AbilityAreaMutationQuery(
     private static readonly HashSet<string> EncounterDeckOperations =
     [
         "dealEncounterCard", "dealEncounterCards", "revealTop", "discardTop",
-        "discardUntil", "createDrones",
+        "discardUntil",
     ];
 
     private static readonly HashSet<string> HandPaymentOperations =
@@ -50,9 +50,9 @@ internal sealed class AbilityAreaMutationQuery(
     private bool? SimpleDirectChange(AbilityEffect effect)
     {
         string operation = effect.OperationName();
-        if (DrawOperations.Contains(operation))
-            return Includes(DeckType.PlayerDeck, DeckType.HandsArea);
+        if (DeckOperationChange(operation) is { } deckChange) return deckChange;
         if (operation is "discard" or "removeFromGame" or "returnToHand"
+            or "returnOwnedToHand" or "addToHand" or "returnOwnedToDiscard"
             or "reveal" or "putIntoPlay")
         {
             return CardMovementChange(effect);
@@ -64,14 +64,26 @@ internal sealed class AbilityAreaMutationQuery(
             return Includes(
                 DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
                 DeckType.AsideDeck);
-        if (EncounterDeckOperations.Contains(operation))
-            return Includes(
-                DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
-                DeckType.RevealingArea, DeckType.DealtEncounterCardsDeck);
         if (HandPaymentOperations.Contains(operation))
             return Includes(DeckType.HandsArea, DeckType.DiscardPile);
         return null;
     }
+
+    private bool? DeckOperationChange(string operation) => operation switch
+    {
+        _ when DrawOperations.Contains(operation) =>
+            Includes(DeckType.PlayerDeck, DeckType.HandsArea),
+        // Engaging a player card can empty its deck and reset its discard pile;
+        // that reset can also deal a card from the encounter deck.
+        "engageTopAsMinion" => Includes(
+            DeckType.PlayerDeck, DeckType.DiscardPile, DeckType.EngagedEnemiesArea,
+            DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
+            DeckType.RevealingArea, DeckType.DealtEncounterCardsDeck),
+        _ when EncounterDeckOperations.Contains(operation) => Includes(
+            DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
+            DeckType.RevealingArea, DeckType.DealtEncounterCardsDeck),
+        _ => null,
+    };
 
     private bool CombatDirectChange(AbilityEffect effect) =>
         effect.OperationName() switch
@@ -86,12 +98,12 @@ internal sealed class AbilityAreaMutationQuery(
     private bool CardMovementChange(AbilityEffect effect) =>
         effect.OperationName() switch
         {
-            "discard" => SelectedCardMovesToDiscard(
+            "discard" or "returnOwnedToDiscard" => SelectedCardMovesToDiscard(
                 EffectOf<AbilityEffect.CardAction>(effect, context).Selection),
             "removeFromGame" => SelectedCardMoves(
                 EffectOf<AbilityEffect.CardAction>(effect, context).Selection,
                 DeckType.RemovedArea),
-            "returnToHand" => SelectedCardMoves(
+            "returnToHand" or "returnOwnedToHand" or "addToHand" => SelectedCardMoves(
                 EffectOf<AbilityEffect.CardAction>(effect, context).Selection,
                 DeckType.HandsArea),
             "reveal" => SelectedCardMoves(
@@ -150,7 +162,7 @@ internal sealed class AbilityAreaMutationQuery(
         && DiscardAreaIsQueried(card);
 
     private bool DiscardAreaIsQueried(Card card) =>
-        context.World.Facts.Kind(card.FaceId) switch
+        EffectiveCards.Kind(card, context.World.Facts) switch
         {
             CardKind.Minion => queried.Contains(DeckType.EncounterDiscardPile),
             CardKind.Ally => queried.Contains(DeckType.DiscardPile),
@@ -166,9 +178,9 @@ internal sealed class AbilityAreaMutationQuery(
                 Amount(effect.Amount, context), multiplier),
             [EventModifier(context, "eventThreatRemoval")]);
         return Every(effect.Schemes, context).Any(scheme =>
-            context.World.Facts.Kind(scheme.FaceId) == CardKind.EncounterSideScheme
+            EffectiveCards.Kind(scheme, context.World.Facts) == CardKind.EncounterSideScheme
             && scheme.Tokens.GetValueOrDefault("k_threat") <= amount
-            && AbilityProjectedStateQueries.DefeatTreeChangesArea(
+            && AbilityProjectedDefeat.DefeatTreeChangesArea(
                 scheme, queried, context));
     }
 

@@ -99,7 +99,7 @@ internal static class AttackCompletion
         // rr:attack-enemy-activation.step.6: "The attack ends." Completion
         // and its defender are established facts, even when no field changed.
         // The emitted event shape and completion verb are engine choices
-        // outside digest v2; completion is separate from an attack effect.
+        // outside digest v3; completion is separate from an attack effect.
         events.Add(new AttackCompleted(attack.Enemy, attack.Target, attack.Defender)
         {
             DamageDealt = world.FinishedActivation?.DamageDealt,
@@ -111,16 +111,15 @@ internal static class AttackCompletion
 
     internal static string SubjectTitle(World world, ICardFacts facts, int id)
     {
-        // Core player-owned minions are facedown Drones. Frozen kind and owner
-        // identify that attacker even after leaving play reveals its card face.
-        // This evidence names the occurrence; it does not reinstate card state.
+        // A temporary title belongs to the occurrence even after departure
+        // restores the physical card's printed identity.
         if (world.Agenda.Current?.ProcedureOwnerOccurrence is
-            { Actor: var actor, ActorFacts: { Kind: CardKind.Minion, Owner: >= 0 } }
+            { Actor: var actor, ActorFacts: { EffectiveTitle: { } title } }
             && actor == id)
         {
-            return FacedownDrones.EffectiveTitle;
+            return title;
         }
-        return FacedownDrones.Title(world.Cards[id], facts);
+        return EffectiveCards.Title(world.Cards[id], facts);
     }
 
     /// <summary>
@@ -211,7 +210,7 @@ internal static class AttackCompletion
         }
 
         var defender = world.Cards[attack.Defender];
-        if (FacedownDrones.Kind(defender, facts) != CardKind.Ally
+        if (EffectiveCards.Kind(defender, facts) != CardKind.Ally
             || DeckTypes.IsInPlay(defender.Area.Type))
         {
             return;

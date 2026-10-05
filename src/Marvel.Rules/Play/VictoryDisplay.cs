@@ -90,7 +90,7 @@ public static class VictoryDisplay
             .Where(area => area.Host == host.ObjectId
                 && DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
-            .Where(card => facts.Kind(card.FaceId) is
+            .Where(card => EffectiveCards.Kind(card, facts) is
                 CardKind.Attachment or CardKind.Upgrade)
             .Where(card => Timing.Keywords.Has(world, card, "victory", facts)),
     ];
@@ -119,8 +119,8 @@ public static class VictoryDisplay
         World world, ICardFacts facts, Card host, string trigger,
         List<GameEvent> events)
     {
-        string? subject = FacedownDrones.Is(host)
-            ? FacedownDrones.EffectiveTitle
+        string? subject = EffectiveCards.HasProfile(host)
+            ? EffectiveCards.Title(host, facts)
             : null;
         var victory = PreflightDefeatAttachments(world, facts, host);
         bool hostHasVictory = Timing.Keywords.Has(world, host, "victory", facts);
@@ -205,6 +205,7 @@ public static class VictoryDisplay
 
         var removed = world.AreaOf(DeckType.RemovedArea);
         var from = villain.Area;
+        var carriedTokens = villain.Tokens;
         World.MoveToTop(villain, removed);
         events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(removed),
@@ -236,7 +237,7 @@ public static class VictoryDisplay
         // `rr:villain-defeat.3.2` before either of the two below, so that a
         // tough status card carried over from the old stage is already on the
         // new one when toughness looks for it.
-        Defeat.Inherit(world, facts, villain, next, trigger, events);
+        VillainStageInheritance.Apply(world, facts, villain, next, trigger, events, carriedTokens);
 
         // The stage came out of the villain deck and into the villain's play
         // area, and `rr:enters-play` is "any time when a card transitions from

@@ -163,7 +163,7 @@ Seven, all run by hand and none on any path a game takes.
 | Touching | Read first |
 |---|---|
 | `Marvel.Core.Random`, anything that draws | [rng-contract.md](docs/rng-contract.md) |
-| `World.Digest()`, `StateFields`, zone flags, card id allocation | [state-digest-v2.md](docs/state-digest-v2.md) |
+| `World.Digest()`, `StateFields`, zone flags, card id allocation | [state-digest-v3.md](docs/state-digest-v3.md) |
 | refreshing a vendored snapshot, a new RR version, a new pack | [rules-provenance.md](docs/rules-provenance.md) |
 | citing a rule from a test, `[Rule]`, what nothing is held to | [rules-citations.md](docs/rules-citations.md) |
 | behavioral obligations, legal Gherkin scenes, executable spec coverage | [behavioral-specification.md](docs/behavioral-specification.md) |

@@ -435,7 +435,7 @@ public static class WorldSetup
 
     private static bool IsDeferredSetupEncounterCard(ICardFacts facts, Card card) =>
         card.Owner == World.Scenario
-        && facts.Kind(card.FaceId) is CardKind.Attachment or CardKind.Obligation
+        && EffectiveCards.Kind(card, facts) is CardKind.Attachment or CardKind.Obligation
             or CardKind.Treachery or CardKind.Minion or CardKind.EncounterSideScheme
             or CardKind.Environment;
 

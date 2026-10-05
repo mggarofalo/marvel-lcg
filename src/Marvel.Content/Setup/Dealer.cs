@@ -9,7 +9,7 @@ namespace Marvel.Content.Setup;
 /// <para>
 /// A card's <c>object_id</c> is its position in this sequence, and
 /// <c>object_id</c> is on the wire in every state digest — checklist item 1 of
-/// <c>docs/state-digest-v2.md</c>, <i>"everything else depends on this"</i>. So
+/// <c>docs/state-digest-v3.md</c>, <i>"everything else depends on this"</i>. So
 /// this is a wire format and not a convenience.
 /// </para>
 /// <para>

@@ -17,7 +17,7 @@ namespace Marvel.Rules.State;
 /// disagree on a player's nemesis pile, which is theirs and is the scenario's
 /// property. Neither is the card's controller, which the digest calls
 /// <c>owner</c> — that agrees with <see cref="PlayArea"/> 98.1% of the time and
-/// the 1.9% is five named rules. See <c>docs/state-digest-v2.md</c>.
+/// the 1.9% is five named rules. See <c>docs/state-digest-v3.md</c>.
 /// </para>
 /// </remarks>
 public sealed class Area

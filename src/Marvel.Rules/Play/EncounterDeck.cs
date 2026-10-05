@@ -175,7 +175,7 @@ public static class EncounterDeck
                     "the encounter deck changed while one discard effect was resolving");
             Discard.Card(world, card, trigger, events);
 
-            bool matches = facts.Kind(card.FaceId) == kind
+            bool matches = EffectiveCards.Kind(card, facts) == kind
                 && (trait is null
                     || facts.Traits(card.FaceId).Contains(trait, StringComparer.Ordinal));
 

@@ -9,120 +9,6 @@ namespace Marvel.Cards.Run;
 /// <summary>Queries card selection and resolution against a projected board.</summary>
 internal static class AbilityProjectedStateQueries
 {
-    internal static bool DefeatTreeChangesArea(
-        Card root, IReadOnlySet<DeckType> queried, AbilityAdmissionContext context)
-    {
-        var kind = context.World.Facts.Kind(root.FaceId);
-        if (RootDestinationChanges(root, kind, queried, context))
-        {
-            return true;
-        }
-        if (!RootLeavesPlay(root, kind, context))
-        {
-            return false;
-        }
-        return HostedDefeatChangesArea(root, queried, context);
-    }
-
-    private static bool RootDestinationChanges(
-        Card root, CardKind kind, IReadOnlySet<DeckType> queried,
-        AbilityAdmissionContext context)
-    {
-        bool discards = kind is CardKind.Minion or CardKind.Ally
-                or CardKind.EncounterSideScheme
-            && !Keywords.Has(context.World, root, "victory", context.World.Facts);
-        var destination = root.Owner < 0
-            ? DeckType.EncounterDiscardPile : DeckType.DiscardPile;
-        return discards && queried.Contains(destination);
-    }
-
-    private static bool RootLeavesPlay(
-        Card root, CardKind kind, AbilityAdmissionContext context)
-    {
-        if (!CardKinds.IsVillain(kind))
-        {
-            return kind is CardKind.Minion or CardKind.Ally
-                or CardKind.EncounterSideScheme;
-        }
-        var villainDeck = context.World.AreaOf(DeckType.VillainDeck).Cards;
-        var next = villainDeck.Count > 0 ? villainDeck[^1] : null;
-        return next is null || !string.Equals(
-            context.World.Facts.Title(root.FaceId),
-            context.World.Facts.Title(next.FaceId),
-            StringComparison.Ordinal);
-    }
-
-    private static bool HostedDefeatChangesArea(
-        Card root, IReadOnlySet<DeckType> queried, AbilityAdmissionContext context)
-    {
-        var pending = DefeatDescendants(root, context);
-        var seen = new HashSet<int> { root.ObjectId };
-        while (pending.TryPop(out var card))
-        {
-            RequireAcyclicDefeat(card, seen, context);
-            var destination = card.Owner < 0
-                ? DeckType.EncounterDiscardPile : DeckType.DiscardPile;
-            if (queried.Contains(destination))
-            {
-                return true;
-            }
-            PushHostedCards(pending, card, context);
-        }
-        return false;
-    }
-
-    private static Stack<Card> DefeatDescendants(
-        Card root, AbilityAdmissionContext context)
-    {
-        var pending = new Stack<Card>();
-        foreach (var card in HostedCards(root, context))
-        {
-            if (MovesToVictory(card, context))
-            {
-                foreach (var child in HostedCards(card, context))
-                {
-                    pending.Push(child);
-                }
-            }
-            else
-            {
-                pending.Push(card);
-            }
-        }
-        return pending;
-    }
-
-    private static IEnumerable<Card> HostedCards(
-        Card host, AbilityAdmissionContext context) => context.World.Areas
-        .Where(area => area.Host == host.ObjectId)
-        .SelectMany(area => area.Cards);
-
-    private static bool MovesToVictory(
-        Card card, AbilityAdmissionContext context) =>
-        context.World.Facts.Kind(card.FaceId) is CardKind.Attachment or CardKind.Upgrade
-        && DeckTypes.IsInPlay(card.Area.Type)
-        && Keywords.Has(context.World, card, "victory", context.World.Facts);
-
-    private static void PushHostedCards(
-        Stack<Card> pending, Card host, AbilityAdmissionContext context)
-    {
-        foreach (var child in HostedCards(host, context))
-        {
-            pending.Push(child);
-        }
-    }
-
-    private static void RequireAcyclicDefeat(
-        Card card, HashSet<int> seen, AbilityAdmissionContext context)
-    {
-        if (!seen.Add(card.ObjectId))
-        {
-            throw new RulesNotImplementedException(
-                $"'{context.Source.FaceId}' reaches a hosted-card cycle while "
-                + "projecting defeat");
-        }
-    }
-
     internal static List<Card> ProjectedEvery(
         AbilityCardSelection selector, AreaProjectionState state,
         AbilityAdmissionContext context)
@@ -138,6 +24,9 @@ internal static class AbilityProjectedStateQueries
                 ProjectedEnemiesWithTrait(enemies, state, context),
             AbilityCardSelection.Ranked ranked =>
                 ProjectedRanked(ranked, state, context),
+            AbilityCardSelection.Last last => [.. ProjectedEvery(last.Cards, state, context).TakeLast(1)],
+            AbilityCardSelection.FaceDown filtered => [.. ProjectedEvery(filtered.Cards, state, context).Where(card => !card.FaceUp)],
+            AbilityCardSelection.InObjectIdOrder ordered => [.. ProjectedEvery(ordered.Cards, state, context).OrderBy(card => card.ObjectId)],
             AbilityCardSelection.WithTrait trait =>
                 ProjectedWithTrait(trait, state, context),
             AbilityCardSelection.Query { Kind: AbilityCardQuery.Villain } =>
@@ -189,7 +78,7 @@ internal static class AbilityProjectedStateQueries
             AbilityCardRank.Cost => context.World.Facts.PrintedValue(
                 card.FaceId, "Cost", context.World.Players),
             AbilityCardRank.Attack => state.ModifiedOf(context, card, "attack"),
-            AbilityCardRank.PrintedHealth => FacedownDrones.BaseValue(
+            AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(
                 card, context.World.Facts, "HP", context.World.Players),
             _ => throw new InvalidOperationException(
                 "Unknown compiled card rank in area projection"),
@@ -209,7 +98,7 @@ internal static class AbilityProjectedStateQueries
             return Distinct(found);
         }
         found.RemoveAll(card =>
-            CardKinds.IsVillain(context.World.Facts.Kind(card.FaceId)));
+            CardKinds.IsVillain(EffectiveCards.Kind(card, context.World.Facts)));
         found.Add(context.World.Cards[state.ActiveVillain]);
         return Distinct(found);
     }
@@ -241,19 +130,19 @@ internal static class AbilityProjectedStateQueries
             .Where(card => AbilityProgramQueries.CanTakeDamage(
                 context.World, context.Program, card, context.Source))
             .Where(card => query != AbilityCardQuery.AttackableMinions
-                || context.World.Facts.Kind(card.FaceId) == CardKind.Minion)
+                || EffectiveCards.Kind(card, context.World.Facts) == CardKind.Minion)
             .ToList();
         if (found.Any(card => IsGuard(card, state, context)))
         {
             found.RemoveAll(card =>
-                CardKinds.IsVillain(context.World.Facts.Kind(card.FaceId)));
+                CardKinds.IsVillain(EffectiveCards.Kind(card, context.World.Facts)));
         }
         return found;
     }
 
     private static bool IsGuard(
         Card card, AreaProjectionState state, AbilityAdmissionContext context) =>
-        context.World.Facts.Kind(card.FaceId) == CardKind.Minion
+        EffectiveCards.Kind(card, context.World.Facts) == CardKind.Minion
         && state.ModifiedOf(context, card, "guard") > 0
         && (state.EngagedWith.GetValueOrDefault(card.ObjectId, -1) == Resolver(context)
             || !state.EngagedWith.ContainsKey(card.ObjectId)
@@ -263,7 +152,7 @@ internal static class AbilityProjectedStateQueries
         AbilityCardQuery query, Card card, AreaProjectionState state,
         AbilityAdmissionContext context)
     {
-        var kind = context.World.Facts.Kind(card.FaceId);
+        var kind = EffectiveCards.Kind(card, context.World.Facts);
         return query switch
         {
             AbilityCardQuery.Minions => kind == CardKind.Minion,

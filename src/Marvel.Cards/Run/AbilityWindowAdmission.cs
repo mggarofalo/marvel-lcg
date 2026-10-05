@@ -59,8 +59,8 @@ internal static class AbilityWindowAdmission
 
     private static bool CanHostWindowAbility(World world, Card card)
     {
-        if (FacedownDrones.Is(card)) return false;
-        bool eventInHand = world.Facts.Kind(card.FaceId) == CardKind.Event
+        if (EffectiveCards.HasProfile(card)) return false;
+        bool eventInHand = EffectiveCards.Kind(card, world.Facts) == CardKind.Event
             && card.Owner >= 0
             && card.Area == world.Seats[card.Owner].Hand;
         return DeckTypes.IsInPlay(card.Area.Type) || eventInHand;
@@ -105,7 +105,7 @@ internal static class AbilityWindowAdmission
             new AbilityReachabilityContext
             {
                 PaymentMayMutate = cost is not null
-                    || world.Facts.Kind(card.FaceId) == CardKind.Event,
+                    || EffectiveCards.Kind(card, world.Facts) == CardKind.Event,
                 PaymentCost = cost,
             },
             Power: null);
@@ -201,12 +201,12 @@ internal static class AbilityWindowAdmission
         {
             return null;
         }
-        if (world.Facts.Kind(card.FaceId) == CardKind.Obligation
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Obligation
             && card.Area.PlayArea.IsPlayers)
         {
             return card.Area.PlayArea.Player;
         }
-        if (world.Facts.Kind(card.FaceId) == CardKind.Attachment
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Attachment
             && card.Area.Host >= 0
             && card.Area.Host < world.Cards.Count
             && AbilityPlayerBindingAnalysis.UsesYouOrYour(program, ability, card))

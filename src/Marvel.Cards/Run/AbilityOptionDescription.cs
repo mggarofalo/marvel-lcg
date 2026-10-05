@@ -36,7 +36,7 @@ internal static class AbilityOptionDescription
         long amount = AbilityStructuralQueries.Amount(damage.Amount, context.Expressions);
         long current = AbilityAmounts.SaturatingSum(amount,
             [AbilityEventModifiers.Amount(world, context.Expressions.Source, "eventDamage")]);
-        string title = FacedownDrones.Title(recipient, world.Facts);
+        string title = EffectiveCards.Title(recipient, world.Facts);
         string preview = Damage.PreviewDamage(world, world.Facts,
             context.Expressions.Source, recipient, current);
         return ($"Take {amount} damage: {title}",

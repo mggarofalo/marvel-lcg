@@ -33,7 +33,7 @@ internal static class AttackDefenderCandidates
             var current = world.Cards[attack.Defender];
             legal = !attack.BasicDefense
                 && current.Ready
-                && FacedownDrones.Kind(current, facts) == CardKind.Hero
+                && EffectiveCards.Kind(current, facts) == CardKind.Hero
                 && BasicPowers.CanUsePower(facts, current, "DEF")
                     ? [current]
                     : [];
@@ -71,7 +71,7 @@ internal static class AttackDefenderCandidates
         // alter-ego has no DEF and cannot make one, and an exhausted hero has
         // nothing left to exhaust.
         if (identity.Ready
-            && facts.Kind(identity.FaceId) == CardKind.Hero
+            && EffectiveCards.Kind(identity, facts) == CardKind.Hero
             && BasicPowers.CanUsePower(facts, identity, "DEF"))
         {
             candidates.Add(identity);

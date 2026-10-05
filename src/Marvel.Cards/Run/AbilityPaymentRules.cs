@@ -223,7 +223,7 @@ internal static class AbilityPaymentRules
         World world, Card card, int player, CompiledCardAbility ability,
         IResourceCardAbilities resourceAbilities)
     {
-        if (world.Facts.Kind(card.FaceId) != CardKind.Event)
+        if (EffectiveCards.Kind(card, world.Facts) != CardKind.Event)
         {
             return true;
         }

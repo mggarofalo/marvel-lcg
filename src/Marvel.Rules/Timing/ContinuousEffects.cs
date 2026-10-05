@@ -415,7 +415,7 @@ public sealed class ContinuousEffects(World state)
             // effect ends and its damage is now at least its hit points, that
             // character is defeated. Other restored cards here regained a
             // zero-use keyword and follow that keyword's discard rule.
-            if (CardKinds.IsCharacter(FacedownDrones.Kind(card, world.Facts))
+            if (CardKinds.IsCharacter(EffectiveCards.Kind(card, world.Facts))
                 && StateFields.Modified(
                     world, card, "is_infinite_health", world.Facts, world.Players) <= 0
                 && card.Damage >= Play.DamagePlacement.Health(world, world.Facts, card))

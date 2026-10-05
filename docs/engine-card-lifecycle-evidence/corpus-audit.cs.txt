@@ -1,0 +1,44 @@
+using System.Reflection;
+using System.Linq.Expressions;
+using System.Collections;
+using System.Text.Json;
+
+class Audit {
+ static object? current;
+ public static void Observe(object context,object step,object match,Delegate execute){execute.DynamicInvoke(context,step,match);current=context;}
+ static object? Get(object value,string name)=>value.GetType().GetProperty(name)!.GetValue(value);
+ static void Main(string[] args){
+  string root=args[0];var assembly=Assembly.Load("Marvel.Behavior.Run");
+  var runnerType=assembly.GetType("Marvel.Behavior.Run.CoreTranscriptRunner")!;
+  var parser=assembly.GetType("Marvel.Behavior.Run.TranscriptParser")!;
+  var bindingType=assembly.GetType("Marvel.Behavior.Run.TranscriptBinding")!;
+  var runner=Activator.CreateInstance(runnerType,root)!;
+  var bindingsField=runnerType.GetField("bindings",BindingFlags.Instance|BindingFlags.NonPublic)!;
+  var bindings=(IEnumerable)bindingsField.GetValue(runner)!;
+  var list=(IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(bindingType))!;
+  foreach(var binding in bindings){
+   var execute=(Delegate)Get(binding,"Execute")!;var delegateType=execute.GetType();
+   var pars=delegateType.GetMethod("Invoke")!.GetParameters().Select(p=>Expression.Parameter(p.ParameterType)).ToArray();
+   var call=Expression.Call(typeof(Audit).GetMethod("Observe")!,Expression.Convert(pars[0],typeof(object)),Expression.Convert(pars[1],typeof(object)),Expression.Convert(pars[2],typeof(object)),Expression.Constant(execute,typeof(Delegate)));
+   var wrapped=Expression.Lambda(delegateType,call,pars).Compile();
+   list.Add(Activator.CreateInstance(bindingType,Get(binding,"Name"),Get(binding,"Kind"),Get(binding,"Pattern"),wrapped)!);
+  }
+  bindingsField.SetValue(runner,list);
+  using var catalog=JsonDocument.Parse(File.ReadAllText(Path.Combine(root,"specs/behavior/catalog.json")));
+  var exceptions=new Dictionary<string,string?>();
+  foreach(var source in catalog.RootElement.GetProperty("sources").EnumerateArray())foreach(var obligation in source.GetProperty("obligations").EnumerateArray())
+   exceptions[obligation.GetProperty("id").GetString()!]=obligation.GetProperty("exception").GetString();
+  var executeMethod=runnerType.GetMethods(BindingFlags.Instance|BindingFlags.NonPublic).Single(m=>m.Name=="Execute"&&m.GetParameters().Length==2);
+  foreach(var path in Directory.GetFiles(Path.Combine(root,"specs/behavior/core"),"*.feature").OrderBy(p=>p,StringComparer.Ordinal)){
+   var feature=parser.GetMethod("Parse",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic)!.Invoke(null,new object?[]{root,path,null})!;
+   foreach(var scenario in (IEnumerable)Get(feature,"Scenarios")!){current=null;var id=(string)Get(scenario,"Obligation")!;string reference=path.Replace(root+"/","")+"::"+Get(scenario,"Name");
+    try{var result=executeMethod.Invoke(runner,new object?[]{scenario,exceptions[id]})!;
+     var world=Get(current!,"World")!;var digest=world.GetType().GetMethod("Digest")!.Invoke(world,null)!;
+     var canonical=(string)digest.GetType().GetMethod("Canonical")!.Invoke(digest,null)!;
+     var random=Get(world,"Random")!;var generator=Get(random,"Generator")!;
+     Console.WriteLine(JsonSerializer.Serialize(new{reference,id,digest=Get(result,"Digest"),canonical,words=Get(generator,"WordsConsumed")}));
+    }catch(Exception error){while(error is TargetInvocationException&&error.InnerException is{} inner)error=inner;Console.WriteLine(JsonSerializer.Serialize(new{reference,id,error=error.Message}));}
+   }
+  }
+ }
+}

@@ -19,7 +19,7 @@ public static class CardEntry
         World world, ICardFacts facts, ICardPlayAbilities abilities, Seat seat, Card card,
         List<GameEvent> events, IReadOnlyList<int> targets)
     {
-        var kind = facts.Kind(card.FaceId);
+        var kind = EffectiveCards.Kind(card, facts);
         if (kind is CardKind.Event or CardKind.Resource)
         {
             // `rr:play-put-into-play.2`: "when an event card is played, place
@@ -115,7 +115,7 @@ public static class CardEntry
     /// </summary>
     internal static bool AllyLimit(World world, ICardFacts facts, Seat seat, Card played)
     {
-        if (FacedownDrones.Kind(played, facts) != CardKind.Ally)
+        if (EffectiveCards.Kind(played, facts) != CardKind.Ally)
         {
             return false;
         }

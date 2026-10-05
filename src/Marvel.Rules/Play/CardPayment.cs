@@ -201,7 +201,7 @@ public static class CardPayment
         // The recorded board is the check: its opening hand holds `01003`
         // Backflip, whose ability is an **Interrupt (defense)**, and the
         // recording does not offer it.
-        if (facts.Kind(card.FaceId) == CardKind.Event)
+        if (EffectiveCards.Kind(card, facts) == CardKind.Event)
         {
             return null;
         }

@@ -224,7 +224,7 @@ internal static class AbilityAdmissionAreaDependencies
                 CollectSingularAreaDependencies(place.Count, context, areas);
                 break;
             case AbilityEffect.Search search:
-                areas.UnionWith(search.Areas.Select(area => Area(area, context).Type));
+                areas.UnionWith(search.Areas.Select(AbilitySelectorEvaluation.AreaType));
                 break;
             case AbilityEffect.PutIntoPlay entering:
                 CollectCardsInDependencies(entering.Card, context, areas);
@@ -270,7 +270,7 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.Fixed or AbilityEffect.Generate
                 or AbilityEffect.DoubleResourceFor or AbilityEffect.Shuffle
                 or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
-                or AbilityEffect.DealEncounterCards or AbilityEffect.CreateDrones
+                or AbilityEffect.DealEncounterCards or AbilityEffect.EngageTopAsMinion
                 or AbilityEffect.DiscardUntil or AbilityEffect.ShuffleInto
                 or AbilityEffect.ChooseTopForHand
                 or AbilityEffect.ChooseDiscardToShuffle
@@ -341,31 +341,6 @@ internal static class AbilityAdmissionAreaDependencies
     }
 
     private static void CollectCardsInDependencies(
-        AbilityCardSelection selector, AbilityAdmissionContext context, HashSet<DeckType> areas)
-    {
-        var cast = context;
-        switch (selector)
-        {
-            case AbilityCardSelection.InAreas selection:
-                areas.UnionWith(selection.Areas.Select(area => Area(area, cast).Type));
-                break;
-            case AbilityCardSelection.WithTrait filtered: CollectCardsInDependencies(filtered.Cards, cast, areas); break;
-            case AbilityCardSelection.WithoutAnotherCopyAttached filtered: CollectCardsInDependencies(filtered.Cards, cast, areas); break;
-            case AbilityCardSelection.Discardable filtered: CollectCardsInDependencies(filtered.Cards, cast, areas); break;
-            case AbilityCardSelection.Ranked ranked: CollectCardsInDependencies(ranked.Cards, cast, areas); break;
-            case AbilityCardSelection.Bound or AbilityCardSelection.Query or AbilityCardSelection.Titled
-                or AbilityCardSelection.EnemiesWithTrait:
-                break;
-            default: throw new InvalidOperationException("Unknown compiled selector in area-dependency analysis");
-        }
-    }
-
-    private static Area Area(AbilitySearchArea area, AbilityAdmissionContext context) => area switch
-    {
-        AbilitySearchArea.EncounterDeck => context.World.AreaOf(DeckType.EncounterDeck),
-        AbilitySearchArea.EncounterDiscardPile => context.World.AreaOf(DeckType.EncounterDiscardPile),
-        AbilitySearchArea.ScenarioSetAside => context.World.AreaOf(DeckType.AsideDeck),
-        AbilitySearchArea.YourDeck => context.World.Seats[context.Query.Player].Deck,
-        _ => throw new InvalidOperationException("Unknown compiled search area"),
-    };
+        AbilityCardSelection selector, AbilityAdmissionContext context, HashSet<DeckType> areas) =>
+        areas.UnionWith(AbilitySelectionAreaReads.For(selector));
 }

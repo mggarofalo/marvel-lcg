@@ -30,7 +30,7 @@ public sealed class FacedownDroneTests
         var events = new List<GameEvent>();
 
         var drone = Assert.IsType<Card>(
-            FacedownDrones.EngageTop(world, 1, "01140", "Create_Drone", events));
+            FacedownMinions.EngageTop(world, 1, DroneProfileFixture.Profile, "01140", "Create_Drone", events));
 
         Assert.Same(top, drone);
         Assert.Equal(originalId, drone.ObjectId);
@@ -38,9 +38,9 @@ public sealed class FacedownDroneTests
         Assert.False(drone.FaceUp);
         Assert.Equal(DeckType.EngagedEnemiesArea, drone.Area.Type);
         Assert.Equal(PlayArea.Of(1), drone.Area.PlayArea);
-        Assert.Equal(CardKind.Minion, FacedownDrones.Kind(drone, facts));
-        Assert.Equal([FacedownDrones.Trait], Traits.Of(world, drone, facts));
-        Assert.Equal(1, FacedownDrones.BaseValue(drone, facts, "SCH", world.Players));
+        Assert.Equal(CardKind.Minion, EffectiveCards.Kind(drone, facts));
+        Assert.Equal(["DRONE"], Traits.Of(world, drone, facts));
+        Assert.Equal(1, EffectiveCards.BaseValue(drone, facts, "SCH", world.Players));
         Assert.Equal(1, StateFields.Modified(world, drone, "attack", facts, world.Players));
         Assert.Equal(1, DamagePlacement.Health(world, facts, drone));
         Assert.False(Keywords.IsBoosted(world, drone, facts, world.Players));
@@ -60,6 +60,8 @@ public sealed class FacedownDroneTests
 
     [Rule("rr:minion.2")]
     [Rule("rr:discard-pile.1")]
+    [Rule("rr:leaves-play.1")]
+    [Rule("rr:leaves-play.2.3")]
     [Fact]
     public void ADefeatedDroneReturnsFaceupToItsOwnersDiscardPile()
     {
@@ -72,7 +74,7 @@ public sealed class FacedownDroneTests
         var underneath = world.CreateCard("player-card", world.Seats[0].Deck);
         var events = new List<GameEvent>();
         var drone = Assert.IsType<Card>(
-            FacedownDrones.EngageTop(world, 0, "01140", "Create_Drone", events));
+            FacedownMinions.EngageTop(world, 0, DroneProfileFixture.Profile, "01140", "Create_Drone", events));
         Agendas.Happening(world);
 
         bool defeated = DamagePlacement.Deal(
@@ -84,8 +86,11 @@ public sealed class FacedownDroneTests
         Assert.Equal(DeckType.DiscardPile, drone.Area.Type);
         Assert.Equal(PlayArea.Of(0), drone.Area.PlayArea);
         Assert.True(drone.FaceUp);
-        Assert.False(FacedownDrones.Is(drone));
-        Assert.Equal(CardKind.Ally, FacedownDrones.Kind(drone, facts));
+        Assert.False(EffectiveCards.HasProfile(drone));
+        Assert.Equal(0, drone.Damage);
+        Assert.True(drone.Ready);
+        Assert.All(drone.Tokens.Values, held => Assert.Equal(0, held));
+        Assert.Equal(CardKind.Ally, EffectiveCards.Kind(drone, facts));
         Assert.Equal(["AVENGER"], Traits.Of(world, drone, facts));
         Assert.Contains(
             resolved.Information,
@@ -107,21 +112,21 @@ public sealed class FacedownDroneTests
         var facts = new Printed();
         var world = Board(facts, players: 2);
         world.CreateCard("player-card", world.Seats[0].Deck);
-        var first = FacedownDrones.EngageTop(world, 0, "test", "Create_Drone", [])!;
+        var first = FacedownMinions.EngageTop(world, 0, DroneProfileFixture.Profile, "test", "Create_Drone", [])!;
         world.CreateCard("player-card", world.Seats[1].Deck);
-        var second = FacedownDrones.EngageTop(world, 1, "test", "Create_Drone", [])!;
+        var second = FacedownMinions.EngageTop(world, 1, DroneProfileFixture.Profile, "test", "Create_Drone", [])!;
         world.CreateCard("player-card", world.Seats[0].Deck);
-        var third = FacedownDrones.EngageTop(world, 0, "test", "Create_Drone", [])!;
+        var third = FacedownMinions.EngageTop(world, 0, DroneProfileFixture.Profile, "test", "Create_Drone", [])!;
 
         Assert.Equal(
             [first.ObjectId, second.ObjectId, third.ObjectId],
-            FacedownDrones.InPlay(world).Select(card => card.ObjectId));
+            DroneProfileFixture.InPlay(world).Select(card => card.ObjectId));
         Assert.Equal(
             [first.ObjectId, third.ObjectId],
-            FacedownDrones.EngagedWith(world, 0).Select(card => card.ObjectId));
+            DroneProfileFixture.InPlay(world, 0).Select(card => card.ObjectId));
         Assert.Equal(
             [second.ObjectId],
-            FacedownDrones.EngagedWith(world, 1).Select(card => card.ObjectId));
+            DroneProfileFixture.InPlay(world, 1).Select(card => card.ObjectId));
     }
 
     private static World Board(Printed facts, int players)

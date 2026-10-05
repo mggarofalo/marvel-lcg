@@ -20,7 +20,7 @@ internal sealed class TranscriptContext
         string obligation,
         SetupCatalog setup,
         CardCatalog cards,
-        AbilityBook abilities)
+        AbilityProgram abilities)
     {
         Obligation = obligation;
         Setup = setup;
@@ -34,7 +34,7 @@ internal sealed class TranscriptContext
 
     public CardCatalog Cards { get; }
 
-    public AbilityBook Abilities { get; }
+    public AbilityProgram Abilities { get; }
 
     public CanonicalCoreScene? Scene { get; set; }
 

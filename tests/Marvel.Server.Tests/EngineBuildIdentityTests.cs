@@ -15,7 +15,7 @@ public sealed class EngineBuildIdentityTests
         Assert.Equal("local", EngineBuildIdentity.Commit);
         Assert.Equal("engine-replay-v3", EngineBuildIdentity.ReplayContract);
         Assert.Equal("mt19937-iso-cxx", EngineBuildIdentity.RngContract);
-        Assert.Equal("state-digest-v2", EngineBuildIdentity.StateDigest);
+        Assert.Equal("state-digest-v3", EngineBuildIdentity.StateDigest);
         Assert.Equal(SessionSave.CurrentSchema, EngineBuildIdentity.SaveSchema);
         Assert.Equal(EngineBuildIdentity.ProductVersion, factory.Compatibility.Application);
         Assert.Equal(EngineBuildIdentity.ReplayContract, factory.Compatibility.ReplayContract);

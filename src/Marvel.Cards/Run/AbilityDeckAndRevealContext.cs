@@ -11,6 +11,7 @@ internal sealed record AbilityDeckAndRevealContext(
     ICardPlayAbilities CardPlayAbilities, ICardReadinessAbilities Readiness,
     ImmutableArray<Card> Discarded)
 {
+    internal AbilityProgram Program { get; init; } = null!;
     internal World World => Expressions.World;
     internal Card Source => Expressions.Source;
     internal int Player => Expressions.Player;

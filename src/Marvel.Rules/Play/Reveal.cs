@@ -141,7 +141,7 @@ public static class Reveal
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (facts.Kind(card.FaceId) != CardKind.EncounterVillain
+        if (EffectiveCards.Kind(card, facts) != CardKind.EncounterVillain
             && Uniqueness.IsBlocked(world, facts, card))
         {
             // `rr:unique-icon.4.2`: a matching non-villain encounter card is
@@ -155,7 +155,7 @@ public static class Reveal
             return;
         }
 
-        var into = facts.Kind(card.FaceId) switch
+        var into = EffectiveCards.Kind(card, facts) switch
         {
             CardKind.Ally when setupController is { } controller => world.AreaOf(
                 DeckType.AlliesArea, PlayArea.Of(controller), cardOwner: controller),

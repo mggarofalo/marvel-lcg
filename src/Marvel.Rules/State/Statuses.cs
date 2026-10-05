@@ -252,7 +252,7 @@ public static class Statuses
 
         foreach (var character in world.Cards
                      .Where(card => DeckTypes.IsInPlay(card.Area.Type)
-                         && CardKinds.IsCharacter(FacedownDrones.Kind(card, facts)))
+                         && CardKinds.IsCharacter(EffectiveCards.Kind(card, facts)))
                      .OrderBy(card => card.ObjectId))
         {
             RemoveAfflictionsIfStalwart(

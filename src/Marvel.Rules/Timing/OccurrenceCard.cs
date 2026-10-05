@@ -15,6 +15,8 @@ namespace Marvel.Rules.Timing;
 /// <param name="Controller">The card's controller when the occurrence began.</param>
 public sealed record OccurrenceCard(int Card, CardKind Kind, int Owner, int Controller)
 {
+    /// <summary>The public temporary title captured before that identity ends.</summary>
+    public string? EffectiveTitle { get; init; }
     /// <summary>Whether the participant was a villain.</summary>
     public bool IsVillain => CardKinds.IsVillain(Kind);
 
@@ -40,7 +42,7 @@ public sealed record OccurrenceCard(int Card, CardKind Kind, int Owner, int Cont
     /// <summary>Capture one card's occurrence facts from the board.</summary>
     internal static OccurrenceCard Capture(Card card, ICardFacts facts)
     {
-        CardKind kind = FacedownDrones.Kind(card, facts);
+        CardKind kind = EffectiveCards.Kind(card, facts);
 
         // `rr:ownership-and-control.1` and `.2`: identities and player cards
         // are controlled by players; encounter cards are controlled by the
@@ -50,6 +52,7 @@ public sealed record OccurrenceCard(int Card, CardKind Kind, int Owner, int Cont
             ? card.Area.PlayArea.Player
             : World.Scenario;
 
-        return new OccurrenceCard(card.ObjectId, kind, card.Owner, controller);
+        return new OccurrenceCard(card.ObjectId, kind, card.Owner, controller)
+        { EffectiveTitle = card.InstanceState.Profile?.Title };
     }
 }

@@ -1,0 +1,37 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Marvel.Core -> /private/tmp/marvel-lifecycle-mutants/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /private/tmp/marvel-lifecycle-mutants/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Content -> /private/tmp/marvel-lifecycle-mutants/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.Cards -> /private/tmp/marvel-lifecycle-mutants/src/Marvel.Cards/bin/Release/net8.0/Marvel.Cards.dll
+  Marvel.Behavior.Run -> /private/tmp/marvel-lifecycle-mutants/tools/Marvel.Behavior.Run/bin/Release/net8.0/Marvel.Behavior.Run.dll
+  Marvel.Content.Tests -> /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/bin/Release/net8.0/Marvel.Content.Tests.dll
+Test run for /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/bin/Release/net8.0/Marvel.Content.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 8.0.30)
+[xUnit.net 00:00:00.13]   Discovering: Marvel.Content.Tests
+[xUnit.net 00:00:00.81]   Discovered:  Marvel.Content.Tests
+[xUnit.net 00:00:00.94]   Starting:    Marvel.Content.Tests
+[xUnit.net 00:00:01.17]     Marvel.Content.Tests.Play.TemporaryIdentityRegressionTests.AnUnresolvedDefeatResponseDoesNotReturnACardRemovedFromTheGame [FAIL]
+[xUnit.net 00:00:01.17]       Assert.DoesNotContain() Failure: Filter matched in collection
+[xUnit.net 00:00:01.17]                    ↓ (pos 0)
+[xUnit.net 00:00:01.17]       Collection: [PendingAbility { Card = 2, Type = ForcedResponse, Player = -1, Ordinal = 0 }]
+[xUnit.net 00:00:01.17]       Stack Trace:
+[xUnit.net 00:00:01.17]         /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/Play/TemporaryIdentityRegressionTests.cs(164,0): at Marvel.Content.Tests.Play.TemporaryIdentityRegressionTests.AnUnresolvedDefeatResponseDoesNotReturnACardRemovedFromTheGame()
+[xUnit.net 00:00:01.17]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+[xUnit.net 00:00:01.17]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:01.18]   Finished:    Marvel.Content.Tests (ID = '007d633fd80b2ca833d94ef41053909e0c82bdff4c6a314831e5ee28032452b8')
+  Failed Marvel.Content.Tests.Play.TemporaryIdentityRegressionTests.AnUnresolvedDefeatResponseDoesNotReturnACardRemovedFromTheGame [181 ms]
+  Error Message:
+   Assert.DoesNotContain() Failure: Filter matched in collection
+             ↓ (pos 0)
+Collection: [PendingAbility { Card = 2, Type = ForcedResponse, Player = -1, Ordinal = 0 }]
+  Stack Trace:
+     at Marvel.Content.Tests.Play.TemporaryIdentityRegressionTests.AnUnresolvedDefeatResponseDoesNotReturnACardRemovedFromTheGame() in /private/tmp/marvel-lifecycle-mutants/tests/Marvel.Content.Tests/Play/TemporaryIdentityRegressionTests.cs:line 164
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Test Run Failed.
+Total tests: 1
+     Failed: 1
+ Total time: 1.4585 Seconds

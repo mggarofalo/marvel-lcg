@@ -116,9 +116,9 @@ public sealed class ConstantAbilityTests
         var inspired = world.CreateCard("01074", world.Seats[0].Deck);
         world.Abilities = AuthoredCards.Runner();
 
-        FacedownDrones.EngageTop(world, 0, "test", "Drone", []);
+        FacedownMinions.EngageTop(world, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile, "test", "Drone", []);
 
-        Assert.Same(inspired, Assert.Single(FacedownDrones.InPlay(world)));
+        Assert.Same(inspired, Assert.Single(Marvel.Content.Tests.Cards.AuthoredCards.FacedownDrones(world)));
         Assert.Empty(world.Effects.Active());
     }
 

@@ -11,6 +11,10 @@ internal static class AbilityResolutionTypedSelectors
         AbilityCardSelection.InAreas areas => areas.Areas.Any(area => area is
             AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck),
         AbilityCardSelection.WithTrait filtered => execution.InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.FaceDown filtered => execution.InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.Last filtered => execution.InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.InObjectIdOrder filtered => execution.InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.WithMatchingPlayerArea filtered => execution.InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.WithoutAnotherCopyAttached filtered => execution.InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.Discardable filtered => execution.InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.Ranked ranked => execution.InspectsConcealedPile(ranked.Cards),

@@ -50,7 +50,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.State.CardKind",
             "Marvel.Rules.State.DeckType",
             "Marvel.Rules.State.DeckTypes",
-            "Marvel.Rules.State.FacedownDrones",
+            // Passive active-characteristic reads; no legality or mutation authority.
+            "Marvel.Rules.State.EffectiveCards",
             "Marvel.Rules.State.GameArea",
             "Marvel.Rules.State.ICardFacts",
             "Marvel.Rules.State.PlayArea",

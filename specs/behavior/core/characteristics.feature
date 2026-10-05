@@ -34,7 +34,8 @@ Feature: Core character calculations
       | next card | copy |
       | 01143     | 0    |
     When the villain schemes against seat 1 with every optional choice declined
-    Then card 01137b copy 0 has 4 threat counters
+    Then card 01137b copy 0 had field "k_threat" changed from 0 to 4
+    And card 01137b copy 0 has 0 threat counters
 
   @behavior:rr:modifiers.6.1:published-result
   @covers:behavior:rr:modifiers:published-result

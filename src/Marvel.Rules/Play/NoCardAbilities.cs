@@ -31,7 +31,7 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
-        Resources.GeneratedBy(source.FaceId, world.Facts);
+        EffectiveCards.HasProfile(source) ? string.Empty : Resources.GeneratedBy(source.FaceId, world.Facts);
 
     /// <inheritdoc/>
     public virtual DefenderChoice Defenders(

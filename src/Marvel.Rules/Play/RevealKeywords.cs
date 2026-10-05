@@ -43,7 +43,7 @@ public static class RevealKeywords
         ArgumentNullException.ThrowIfNull(events);
 
         var keywordAbilities = KeywordAbilities(world, facts, card, player);
-        if (occurrence is not null && facts.Kind(card.FaceId) == CardKind.Treachery)
+        if (occurrence is not null && EffectiveCards.Kind(card, facts) == CardKind.Treachery)
         {
             // Keyword-provided abilities have no authored-data ordinal. These
             // stable negative addresses are the engine's spelling, kept apart

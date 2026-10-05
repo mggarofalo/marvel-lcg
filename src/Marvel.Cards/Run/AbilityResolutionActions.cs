@@ -101,7 +101,7 @@ internal static class AbilityResolutionActions
         var arrowPayment = AbilityCostPayment.Prepare(
             world, card, cast.Player, found.Cost, paying, chosen,
             execution.program, execution.resourceAbilities, values,
-            resourcesPaidByEvent: world.Facts.Kind(card.FaceId) == CardKind.Event
+            resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
                 && ResourceRequirement(found.Cost, card).Length > 0);
         var eventPayment = AbilityEventPayment.Prepare(
             world, card, cast.Player, paying, found.Effect, execution.resourceAbilities,
@@ -117,7 +117,7 @@ internal static class AbilityResolutionActions
             return events;
         }
         execution.Use(world, card, found, occurrence);
-        if (world.Facts.Kind(card.FaceId) == CardKind.Event)
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event)
         {
             occurrence.BeginCard(card.ObjectId, [ability]);
         }

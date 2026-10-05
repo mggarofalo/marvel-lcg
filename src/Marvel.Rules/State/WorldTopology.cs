@@ -58,7 +58,7 @@ public static class WorldTopology
     /// </para>
     /// <para>
     /// <b>This event is emitted, not derived.</b> A game area is invisible to
-    /// the v2 digest (the original investigation), so a before/after comparison can never find
+    /// the v3 digest (the original investigation), so a before/after comparison can never find
     /// the change. This method knows it performed the join and emits one
     /// <see cref="PlayAreaJoined"/> for it.
     /// </para>
@@ -104,7 +104,7 @@ public static class WorldTopology
     /// Being in no game area is a real placement with a rules consequence, not
     /// an error state — see <c>Places.CanAffect</c>.
     /// <para>
-    /// The topology change is invisible to the v2 digest, so this emits one
+    /// The topology change is invisible to the v3 digest, so this emits one
     /// <see cref="PlayAreaDetached"/> naming the membership that was removed.
     /// A play area already outside every game area is unchanged and silent.
     /// </para>

@@ -51,7 +51,7 @@ internal sealed class AbilityEventPayment
         IReadOnlyList<ResourceAllocation>? allocations = null,
         AbilityCost? additionalCost = null)
     {
-        if (world.Facts.Kind(card.FaceId) != CardKind.Event)
+        if (EffectiveCards.Kind(card, world.Facts) != CardKind.Event)
         {
             return null;
         }

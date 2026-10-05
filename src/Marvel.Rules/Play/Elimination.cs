@@ -189,7 +189,7 @@ public static class Elimination
             // `.1` and `.2`. A non-attachment permanent is removed from the
             // game; an attachment resolves its "attach to" text first, and that
             // text is not modelled.
-            if (facts.Kind(card.FaceId) == CardKind.Attachment)
+            if (EffectiveCards.Kind(card, facts) == CardKind.Attachment)
             {
                 throw new RulesNotImplementedException(
                     $"card {card.ObjectId} is a permanent attachment on an eliminated "

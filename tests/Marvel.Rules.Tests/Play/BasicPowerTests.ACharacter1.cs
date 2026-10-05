@@ -148,7 +148,7 @@ public sealed class BasicPowerACharacterTests : BasicPowerTestBase
         Agendas.Finish(world, printed);
         Assert.False(ally.Ready);
         Assert.Equal(0, ally.Damage);
-        Assert.Equal(attacking ? 0 : 2, target.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(!attacking && reenters ? 2 : 0, target.Tokens.GetValueOrDefault("k_threat"));
         Assert.Equal(0, target.Damage);
         Assert.Empty(world.Agenda.Outstanding);
     }

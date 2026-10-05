@@ -84,7 +84,7 @@ public static class BasicPowerInitiation
         ArgumentNullException.ThrowIfNull(events);
 
         int player = character.Area.PlayArea.Player;
-        var kind = FacedownDrones.Kind(character, facts);
+        var kind = EffectiveCards.Kind(character, facts);
         bool hero = IsActiveHero(world, facts, character, kind, player);
         bool ally = IsAlly(character, kind, player);
         if ((!hero && !ally) || !CanUsePower(facts, character, "ATK"))

@@ -68,7 +68,8 @@ Feature: Core Ultron treacheries
     When card 01145 copy 0 is revealed to seat 1
     Then seat 1 may pass the pending window
     When seat 1 declines the pending opportunity
-    Then card 01137b copy 0 has 5 threat counters
+    Then card 01137b copy 0 had field "k_threat" changed from 0 to 5
+    And card 01137b copy 0 has 0 threat counters
     And seat 1 has 2 facedown Drone minions
     And card 01003 copy 0 is in seat 1's discard pile
     And card 01004 copy 0 is in seat 1's discard pile

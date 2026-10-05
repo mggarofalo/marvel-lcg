@@ -393,7 +393,7 @@ internal static class DefeatProcedure
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
         var card = world.Cards[step.Subject];
-        if (facts.Kind(card.FaceId) == CardKind.EncounterSideScheme)
+        if (EffectiveCards.Kind(card, facts) == CardKind.EncounterSideScheme)
         {
             Defeat.FinalizeScheme(world, facts, card, step.ProcedureTrigger, events);
         }
