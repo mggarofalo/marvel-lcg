@@ -157,7 +157,7 @@ public sealed class ActionAbilityProjectedStateDepartedGuardReaddsVillainToProje
                     "cost": { "exhaust": "this" },
                     "effect": { "seq": [
                       { "giveStatus": {
-                        "card": { "query": "dronesEngagedWithYou" },
+                        "card": {"withTrait": {"cards": {"query": "minionsEngagedWithYou"}, "trait": "DRONE"}},
                         "status": "stunned"
                       } },
                       { "dealDamage": {
@@ -191,12 +191,12 @@ public sealed class ActionAbilityProjectedStateDepartedGuardReaddsVillainToProje
         {
             source = InPlay(board, AuthoredCards.AuntMay);
             drone = board.CreateCard("08028", board.Seats[0].Deck);
-            FacedownDrones.EngageTop(board, 0, "test", "Create_Drone", []);
+            FacedownMinions.EngageTop(board, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile, "test", "Create_Drone", []);
             var criminal = board.CreateCard("02007", board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
             Statuses.Give(board, criminal, Statuses.Tough);
             board.CreateCard("08028", board.AreaOf(DeckType.EncounterDiscardPile));
         }, hero: true, abilities: runner);
-        Assert.True(FacedownDrones.Is(drone!));
+        Assert.True(EffectiveCards.HasProfile(drone!));
         Assert.Contains(game.Pending!.Affordances, option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
     }
 

@@ -23,6 +23,12 @@ namespace Marvel.Content.Tests.Cards;
 /// </remarks>
 internal static class AuthoredCards
 {
+    public static Marvel.Rules.State.EffectiveCardProfile DroneProfile =>
+        Program.Profiles["effective-drone"];
+
+    public static IReadOnlyList<Marvel.Rules.State.Card> FacedownDrones(Marvel.Rules.State.World world, int? player = null) =>
+        [.. world.Cards.Where(card => card.InstanceState.Profile?.Id == DroneProfile.Id
+            && (player is null || card.Area.PlayArea == Marvel.Rules.State.PlayArea.Of(player.Value)))];
     /// <summary>
     /// Every trait any printed card carries, in the engine's spelling.
     /// </summary>
@@ -175,6 +181,8 @@ internal static class AuthoredCards
 
     /// <summary>The dataset, parsed once.</summary>
     public static AbilityBook Book { get; } = AbilityCatalog.Parse(Text);
+
+    private static AbilityProgram Program { get; } = AbilityLowering.Book(Book);
 
     /// <summary>A runner over the authored cards.</summary>
     public static AbilityRunner Runner() => new(Book);

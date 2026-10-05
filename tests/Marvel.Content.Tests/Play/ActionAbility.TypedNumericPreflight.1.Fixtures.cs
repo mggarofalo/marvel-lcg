@@ -28,6 +28,7 @@ internal static class ActionAbilityTypedNumericPreflightFixtures
             effect = new AbilityNode("choose", new AbilityValue.Map(new Dictionary<string, AbilityValue> { ["options"] = new AbilityValue.List([new AbilityValue.Map(new Dictionary<string, AbilityValue> { [operation] = effect.Argument }), new AbilityValue.Map(new Dictionary<string, AbilityValue> { ["draw"] = new AbilityValue.Map(new Dictionary<string, AbilityValue> { ["player"] = new AbilityValue.Word("you"), ["count"] = new AbilityValue.Number(1), }), }), ]), }));
         }
 
-        return (new AbilityRunner(new AbilityBook([parsed.Abilities[0] with { Effect = effect }], parsed.Authored)), fields);
+        return (new AbilityRunner(new AbilityBook([parsed.Abilities[0] with { Effect = effect },
+            .. AuthoredCards.Book.Abilities.Where(ability => ability.Effect.Kind == "defineProfile")], parsed.Authored)), fields);
     }
 }

@@ -12,7 +12,7 @@ internal sealed class CardQueryEvaluator(
     [
         AbilityCardQuery.AttachedToThis, AbilityCardQuery.SideSchemes,
         AbilityCardQuery.Schemes, AbilityCardQuery.PowerTargets,
-        AbilityCardQuery.YourAsidePile, AbilityCardQuery.Drones,
+        AbilityCardQuery.YourAsidePile,
         AbilityCardQuery.Villain, AbilityCardQuery.MainScheme,
         AbilityCardQuery.YourAsideMinion, AbilityCardQuery.YourAsideSideScheme,
     ];
@@ -22,7 +22,6 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.Enemies, AbilityCardQuery.AttackableEnemies,
         AbilityCardQuery.AttackableMinions, AbilityCardQuery.ThwartableSchemes,
         AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
-        AbilityCardQuery.DronesEngagedWithYou,
     ];
     private static readonly HashSet<AbilityCardQuery> ControlledQueries =
     [
@@ -31,7 +30,6 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.SupportsYouControl,
         AbilityCardQuery.CharactersYouControl,
         AbilityCardQuery.UpgradesYouControl,
-        AbilityCardQuery.BlackPantherUpgrades,
         AbilityCardQuery.AlliesYouControl,
     ];
     private static readonly HashSet<AbilityCardQuery> IdentityQueries =
@@ -39,8 +37,6 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.IdentitiesWithinPerPlayerLimit,
         AbilityCardQuery.HeroesAndAllies, AbilityCardQuery.Allies,
         AbilityCardQuery.Heroes, AbilityCardQuery.Identities,
-        AbilityCardQuery.IdentitiesWithTechInDiscard,
-        AbilityCardQuery.TopmostTechInChosenDiscard,
         AbilityCardQuery.Characters,
     ];
 
@@ -67,7 +63,6 @@ internal sealed class CardQueryEvaluator(
              .. InArea(cast.World, DeckType.SideSchemesArea, PlayArea.Villains)],
         AbilityCardQuery.PowerTargets => cast.PowerTargets,
         AbilityCardQuery.YourAsidePile => [.. cast.World.Seats[cast.Player].Nemesis.Cards],
-        AbilityCardQuery.Drones => FacedownDrones.InPlay(cast.World),
         AbilityCardQuery.Villain => SingleIn(DeckType.VillainArea),
         AbilityCardQuery.MainScheme => SingleIn(DeckType.MainSchemesArea),
         AbilityCardQuery.YourAsideMinion => AsideOfKind(CardKind.Minion),
@@ -84,14 +79,14 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.Minions =>
             [.. cast.World.Areas.Where(area => area.Type == DeckType.EngagedEnemiesArea)
                 .SelectMany(area => area.Cards)
-                .Where(card => FacedownDrones.Kind(card, cast.World.Facts)
+                .Where(card => EffectiveCards.Kind(card, cast.World.Facts)
                     == CardKind.Minion)],
         AbilityCardQuery.Enemies =>
             [.. cast.World.Areas.Where(area => area.Type is DeckType.VillainArea
                     or DeckType.EngagedEnemiesArea)
                 .SelectMany(area => area.Cards)
                 .Where(card => CardKinds.IsEnemy(
-                    FacedownDrones.Kind(card, cast.World.Facts)))],
+                    EffectiveCards.Kind(card, cast.World.Facts)))],
         AbilityCardQuery.AttackableEnemies => Attackable(minionsOnly: false),
         AbilityCardQuery.AttackableMinions => Attackable(minionsOnly: true),
         AbilityCardQuery.ThwartableSchemes =>
@@ -99,12 +94,6 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.EnemiesEngagedWithChosenPlayer =>
             [.. InArea(cast.World, DeckType.EngagedEnemiesArea,
                 PlayArea.Of(ChosenPlayer(cast).Owner))],
-        AbilityCardQuery.DronesEngagedWithYou =>
-            [.. InArea(cast.World, DeckType.EngagedEnemiesArea, PlayArea.Of(Resolver(cast)))
-                .Where(card => FacedownDrones.Kind(card, cast.World.Facts)
-                        == CardKind.Minion
-                    && Rules.State.Traits.Has(
-                        cast.World, card, "DRONE", cast.World.Facts))],
         _ => throw new InvalidOperationException("Unknown enemy card query"),
     };
 
@@ -114,7 +103,7 @@ internal sealed class CardQueryEvaluator(
             cast.World, cast.World.Facts, Resolver(cast));
         if (minionsOnly)
             candidates = candidates.Where(enemy =>
-                FacedownDrones.Kind(enemy, cast.World.Facts) == CardKind.Minion);
+                EffectiveCards.Kind(enemy, cast.World.Facts) == CardKind.Minion);
         string missingProgram = minionsOnly
             ? "Attackable-minion queries require the authored ability program"
             : "Attackable-enemy queries require the authored ability program";
@@ -140,10 +129,6 @@ internal sealed class CardQueryEvaluator(
              .. InArea(cast.World, DeckType.AlliesArea, PlayArea.Of(cast.Player))],
         AbilityCardQuery.UpgradesYouControl =>
             [.. ControlledAreas(DeckType.UpgradesArea)],
-        AbilityCardQuery.BlackPantherUpgrades =>
-            [.. ControlledAreas(DeckType.UpgradesArea)
-                .Where(card => Rules.State.Traits.Has(
-                    cast.World, card, "BLACK_PANTHER", cast.World.Facts))],
         AbilityCardQuery.AlliesYouControl =>
             [.. InArea(cast.World, DeckType.AlliesArea, PlayArea.Of(cast.Player))],
         _ => throw new InvalidOperationException("Unknown controlled-card query"),
@@ -177,10 +162,6 @@ internal sealed class CardQueryEvaluator(
                 .Where(seat => Forms.In(cast.World, seat, cast.World.Facts, Forms.Hero))
                 .Select(seat => seat.IdentityCard)],
         AbilityCardQuery.Identities => [.. Identities()],
-        AbilityCardQuery.IdentitiesWithTechInDiscard =>
-            [.. cast.World.PlayerOrder.Where(HasTechInDiscard)
-                .Select(player => cast.World.Seats[player].IdentityCard)],
-        AbilityCardQuery.TopmostTechInChosenDiscard => TopmostTechInChosenDiscard(),
         AbilityCardQuery.Characters =>
             [.. Identities(),
              .. cast.World.Areas.Where(area => area.Type is DeckType.AlliesArea
@@ -207,20 +188,7 @@ internal sealed class CardQueryEvaluator(
         .SelectMany(area => area.Cards)
         .Count(card => DeckTypes.IsInPlay(card.Area.Type)
             && string.Equals(
-                cast.World.Facts.Title(card.FaceId), title, StringComparison.Ordinal));
-
-    private bool HasTechInDiscard(int player) =>
-        InArea(cast.World, DeckType.DiscardPile, PlayArea.Of(player)).Any(card =>
-            Rules.State.Traits.Has(cast.World, card, "TECH", cast.World.Facts));
-
-    private IReadOnlyList<Card> TopmostTechInChosenDiscard()
-    {
-        int player = ChosenPlayer(cast).Owner;
-        var card = InArea(cast.World, DeckType.DiscardPile, PlayArea.Of(player))
-            .LastOrDefault(candidate => Rules.State.Traits.Has(
-                cast.World, candidate, "TECH", cast.World.Facts));
-        return card is null ? [] : [card];
-    }
+                EffectiveCards.Title(card, cast.World.Facts), title, StringComparison.Ordinal));
 
     private IReadOnlyList<Card> SingleIn(DeckType area) =>
         cast.World.TheCardIn(area) is { } card ? [card] : [];

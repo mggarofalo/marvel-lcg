@@ -21,7 +21,8 @@ Feature: Core defeat
     And card 01101 copy 0 is a minion engaged with seat 1
     And card 01101 copy 0 has 1 damage
     When seat 1 uses their basic attack against card 01101 copy 0
-    Then card 01101 copy 0 has 0 remaining hit points
+    Then card 01101 copy 0 had field "health" changed from 2 to 0
+    And card 01101 copy 0 has 0 damage
     And card 01101 copy 0 is faceup on top of the encounter discard pile
 
   @behavior:rr:side-scheme.2:published-result

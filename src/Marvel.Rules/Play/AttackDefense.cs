@@ -80,11 +80,11 @@ internal static class AttackDefense
             ])
         {
             DeclineLabel = attack.IsDefended ? "Keep current defense" : "Leave attack undefended",
-            Description = $"{FacedownDrones.Title(enemy, facts)} is attacking "
-                + $"{FacedownDrones.Title(world.Cards[attack.Target], facts)}. "
+            Description = $"{EffectiveCards.Title(enemy, facts)} is attacking "
+                + $"{EffectiveCards.Title(world.Cards[attack.Target], facts)}. "
                 + $"ATK {attackValue} {AttackBoostDescription.Before(world, facts, enemy, Steps.DeclareDefender)}. "
                 + (attack.IsDefended
-                    ? $"{FacedownDrones.Title(world.Cards[attack.Defender], facts)} is already defending. "
+                    ? $"{EffectiveCards.Title(world.Cards[attack.Defender], facts)} is already defending. "
                         + (choice.Required ? "Use basic defense." : "Use basic defense or keep the current defense.")
                     : choice.Required ? "Choose a ready hero or ally to defend."
                     : "Choose a ready hero or ally to defend, or leave the attack undefended."),
@@ -97,7 +97,7 @@ internal static class AttackDefense
     {
         Card enemy = world.Cards[AttackCompletion.Current(world).Enemy];
         string uncertainty = AttackBoostDescription.Remaining(world, facts, enemy, Steps.DeclareDefender);
-        return facts.Kind(card.FaceId) == CardKind.Hero
+        return EffectiveCards.Kind(card, facts) == CardKind.Hero
             ? $"Exhaust {facts.Title(card.FaceId)}. Reduce attack damage by DEF {StateFields.Modified(world, card, "defense", facts, world.Players)}; this hero takes remaining damage. {uncertainty}"
             : $"Exhaust {facts.Title(card.FaceId)}. This ally takes the attack damage; no basic DEF reduction. {uncertainty}";
     }
@@ -164,7 +164,7 @@ internal static class AttackDefense
             Defender = defender.ObjectId,
             Target = defender.ObjectId,
             Player = defender.Area.PlayArea.Player,
-            BasicDefense = facts.Kind(defender.FaceId) != CardKind.Ally,
+            BasicDefense = EffectiveCards.Kind(defender, facts) != CardKind.Ally,
         };
         if (world.Activation is { Attacking: true } activation)
         {

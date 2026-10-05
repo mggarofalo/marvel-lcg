@@ -27,7 +27,7 @@ internal static class AbilityResolutionPayment
 
     private static bool IsResolvingEvent(AbilityResolutionState cast, Card card) =>
         !cast.Suspended
-        && cast.World.Facts.Kind(card.FaceId) == CardKind.Event
+        && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Event
         && card.Area.Type == DeckType.RevealingArea
         && card.Area.PlayArea == PlayArea.Of(card.Owner);
 

@@ -140,7 +140,7 @@ internal static class AbilityRepeatedDamageAnalysis
                 (TraceTest(conditional.Test, cast, discarded) ? conditional.Then : conditional.Else)
                 is { } branch && ProhibitsDamageInTrace(
                     branch, cast, source, discarded),
-            AbilityEffect.PreventDamageFrom prohibition => cast.World.Facts.Kind(source.FaceId)
+            AbilityEffect.PreventDamageFrom prohibition => EffectiveCards.Kind(source, cast.World.Facts)
                     == prohibition.SourceKind
                 && Rules.State.Traits.Has(
                     cast.World, source, prohibition.SourceTrait,

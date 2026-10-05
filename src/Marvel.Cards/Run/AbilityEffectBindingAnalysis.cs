@@ -52,7 +52,7 @@ internal static class AbilityEffectBindingAnalysis
         typeof(AbilityEffect.ChangeForm), typeof(AbilityEffect.Draw),
         typeof(AbilityEffect.DrawToHandSize),
         typeof(AbilityEffect.GrantControlledCharacters),
-        typeof(AbilityEffect.DealEncounterCards), typeof(AbilityEffect.CreateDrones),
+        typeof(AbilityEffect.DealEncounterCards), typeof(AbilityEffect.EngageTopAsMinion),
         typeof(AbilityEffect.DealEncounterCard),
     ];
     private static readonly HashSet<Type> PlacementTypes =
@@ -159,7 +159,7 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.GrantControlledCharacters grant =>
             grant.Player == AbilityPlayer.ChosenPlayer || BindingCanChange(grant.Amount),
         AbilityEffect.DealEncounterCards deal => BindingCanChange(deal.Players),
-        AbilityEffect.CreateDrones create => BindingCanChange(create.Players),
+        AbilityEffect.EngageTopAsMinion create => BindingCanChange(create.Players),
         AbilityEffect.DealEncounterCard deal =>
             BindingCanChange(deal.Card) || deal.Player == AbilityPlayer.ChosenPlayer,
         _ => throw new InvalidOperationException("Unknown player binding effect"),
@@ -193,7 +193,7 @@ internal static class AbilityEffectBindingAnalysis
     private static bool NoBindingChange(AbilityEffect effect) => effect switch
     {
         AbilityEffect.Shuffle or AbilityEffect.Search => false,
-        AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.DoubleResourceFor
+        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.DoubleResourceFor
             or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun or AbilityEffect.DiscardUntil
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource or AbilityEffect.RecoverDiscardedByResource => false,

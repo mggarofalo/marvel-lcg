@@ -42,13 +42,13 @@ internal static class AbilityResolutionInterpreter
             return null;
         }
 
-        if (world.Facts.Kind(card.FaceId) == CardKind.Obligation
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Obligation
             && card.Area.PlayArea.IsPlayers)
         {
             return card.Area.PlayArea.Player;
         }
 
-        if (world.Facts.Kind(card.FaceId) == CardKind.Attachment
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Attachment
             && card.Area.Host >= 0
             && card.Area.Host < world.Cards.Count
             && execution.UsesYouOrYour(ability, card))
@@ -351,9 +351,9 @@ internal static class AbilityResolutionInterpreter
     /// <summary>
     /// "Put the top card of your deck into play facedown … as a Drone minion."
     /// </summary>
-    internal static bool CanCreateDrones(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast) =>
-        execution.EffectOf<AbilityEffect.CreateDrones>(node, cast) is var drones
-        && AbilityAdmissionFacts.CanCreateDrones(
+    internal static bool CanEngageTopAsMinion(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast) =>
+        execution.EffectOf<AbilityEffect.EngageTopAsMinion>(node, cast) is var drones
+        && AbilityAdmissionFacts.CanEngageTopAsMinion(
             cast.World, drones.Players switch
             {
                 AbilityPlayerSelection.AllPlayers => cast.World.PlayerOrder,

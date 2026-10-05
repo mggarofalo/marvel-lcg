@@ -57,7 +57,7 @@ use the algorithms fixed by [rng-contract.md](rng-contract.md). Gameplay never
 uses wall-clock time, ambient randomness or a second RNG.
 
 `World.Digest()` serializes every card, area and gameplay field using the wire
-format in [state-digest-v2.md](state-digest-v2.md). The digest records hidden
+format in [state-digest-v3.md](state-digest-v3.md). The digest records hidden
 truth for testing and replay comparison. It never crosses the client wire.
 
 Card id allocation, iteration order, JSON spelling and RNG consumption are

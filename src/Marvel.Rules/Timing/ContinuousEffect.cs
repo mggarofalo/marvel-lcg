@@ -85,7 +85,7 @@ public sealed record ContinuousEffect(
         var player = world.Seats.FirstOrDefault(seat => seat.IdentityCard.ObjectId == identity);
         return player is not null
             && (card.ObjectId == identity
-                || (world.Facts.Kind(card.FaceId) == CardKind.Ally
+                || (EffectiveCards.Kind(card, world.Facts) == CardKind.Ally
                     && card.Area.Type == DeckType.AlliesArea
                     && card.Area.PlayArea == PlayArea.Of(player.Index)));
     }

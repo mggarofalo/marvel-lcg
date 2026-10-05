@@ -1,5 +1,7 @@
 # State digest v2
 
+Historical format. The current engine writes [state digest v3](state-digest-v3.md).
+
 `World.Digest()` serializes the complete internal card state of one game.
 `Marvel.Core.Digest.StateDigest` writes and fingerprints the canonical document.
 

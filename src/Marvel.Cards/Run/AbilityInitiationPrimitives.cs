@@ -198,10 +198,10 @@ internal static class AbilityInitiationPrimitives
             scope.World, scope.Source,
             Seat(((AbilityEffect.DrawToHandSize)effect).Player, scope));
 
-    internal static bool CanCreateDrones(
+    internal static bool CanEngageTopAsMinion(
         AbilityEffect effect, AbilityAdmissionScope scope) =>
-        effect is AbilityEffect.CreateDrones drones
-        && AbilityAdmissionFacts.CanCreateDrones(
+        effect is AbilityEffect.EngageTopAsMinion drones
+        && AbilityAdmissionFacts.CanEngageTopAsMinion(
             scope.World, Seats(drones.Players, scope), drones.Count);
 
     internal static IReadOnlyList<Card> QueryCards(

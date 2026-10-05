@@ -50,7 +50,7 @@ independent identities do:
 | Session schema | `4` | The strict persisted JSON shape changes. |
 | Engine replay contract | `engine-replay-v3` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
-| State digest | `state-digest-v2` | The canonical hidden-state serialization changes. |
+| State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
 
 The product version belongs in desktop and server metadata. The protocol

@@ -122,7 +122,7 @@ internal static class GameActions
             BasicPowerStatus.CancelledBasicPower(game.world, game.facts, user, verb, events);
             return true;
         }
-        bool ally = game.facts.Kind(user.FaceId) == CardKind.Ally;
+        bool ally = EffectiveCards.Kind(user, game.facts) == CardKind.Ally;
         if (ally && verb is BasicPowers.AttackVerb or BasicPowers.ThwartVerb)
             AllyBasicPowers.AllyPower(game.world, game.facts, user,
                 game.world.Cards[Only(input, verb)], verb, events);

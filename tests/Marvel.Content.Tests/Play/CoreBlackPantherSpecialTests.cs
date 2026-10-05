@@ -53,16 +53,20 @@ public sealed class CoreBlackPantherSpecialTests
         var world = Board();
         var claws = Upgrade(world, "01047");
         var minion = world.CreateCard(
-            "01120", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            "01129", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
         runner.ResolveSpecial(world, claws, 0, finalStep: true);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        var prompt = Sequence.Work(world, Cards, runner, [])!;
-        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(minion.ObjectId), []);
-        Sequence.Finish(world, Cards, runner, []);
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        var prompt = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(minion.ObjectId), events);
+        Sequence.Finish(world, Cards, runner, events);
 
+        Assert.Contains(events.OfType<Marvel.Rules.Events.FieldSet>(), change =>
+            change.Card == minion.ObjectId && change.Field == "health" && change.From == 7 && change.To == 3);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
         Assert.Equal(4, minion.Damage);
     }
 
@@ -105,6 +109,7 @@ public sealed class CoreBlackPantherSpecialTests
         var drone = world.CreateCard(
             "01087",
             world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+        drone.AssignProfile(AuthoredCards.DroneProfile);
         drone.TurnFaceDown();
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;

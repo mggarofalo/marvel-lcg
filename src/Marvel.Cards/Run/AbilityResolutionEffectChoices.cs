@@ -238,7 +238,7 @@ internal static class AbilityResolutionEffectChoices
         AbilityResolutionState cast, int ordinal, AbilityCardReference? chosen = null,
         IReadOnlyList<AbilityStructuralFrame>? frames = null)
     {
-        var results = new Dictionary<string, long>(cast.Results, StringComparer.Ordinal);
+        var results = new Dictionary<string, long>(cast.CaptureSourceState(), StringComparer.Ordinal);
         var ability = execution.AbilityAt(
             cast.Source, cast.Tier, ordinal, cast.AbilityFace);
         var crisis = AbilityContinuationCodec.CrisisIgnoringThwartOrdinals(

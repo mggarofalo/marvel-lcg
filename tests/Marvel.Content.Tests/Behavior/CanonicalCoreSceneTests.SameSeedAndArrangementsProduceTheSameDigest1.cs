@@ -70,7 +70,7 @@ public sealed class CanonicalCoreSceneSameSeedAndArrangementsProduceTheSameDiges
         Assert.Equal("01149", scene.World.AreaOf(DeckType.EncounterDeck).Cards[^1].FaceId);
         Assert.Equal(World.Scenario, scene.Find(new SceneCard("01149")).Owner);
         Assert.Equal(DeckType.EnvironmentArea, scene.Find(new SceneCard("01140")).Area.Type);
-        Assert.Contains(scene.World.Cards, FacedownDrones.Is);
+        Assert.Contains(scene.World.Cards, EffectiveCards.HasProfile);
     }
 
     [Theory]

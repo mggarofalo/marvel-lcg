@@ -67,9 +67,9 @@ public static class DamageRecovery
         {
             Trigger = trigger,
             Verb = verb,
-            Subjects = FacedownDrones.Is(target)
+            Subjects = EffectiveCards.HasProfile(target)
                 ? new Dictionary<int, string>
-                { [target.ObjectId] = FacedownDrones.EffectiveTitle }
+                { [target.ObjectId] = EffectiveCards.Title(target, facts) }
                 : null,
         });
 

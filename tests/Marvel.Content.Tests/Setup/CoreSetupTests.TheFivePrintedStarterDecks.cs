@@ -143,7 +143,7 @@ public sealed class CoreSetupTheFivePrintedStarterDecksTests : CoreSetupTestBase
         else if (campaign.StartsWith("ultron", StringComparison.Ordinal))
         {
             Assert.Equal(DeckType.EnvironmentArea, Assert.Single(world.Cards, card => card.FaceId == "01140").Area.Type);
-            Assert.Contains(world.Cards, FacedownDrones.Is);
+            Assert.Contains(world.Cards, EffectiveCards.HasProfile);
             var pinnedTop = world.AreaOf(DeckType.EncounterDeck).Cards.TakeLast(5).Reverse().Select(card => card.FaceId).ToList();
             Assert.Equal(campaign == "ultron" ? ["01150", "01147", "01141", "01189", "01144a"] : ["01142", "01188", "01189", "01153", "01152"], pinnedTop);
         }

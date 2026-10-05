@@ -10,10 +10,10 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
     {
         var results = CoreTranscriptCorpus.All.Where(result => result.Scenario.StartsWith("specs/behavior/core/defeat.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
         Assert.Equal(6, results.Count);
-        Assert.Equal("87b20f195af0f89ca10e94890082e869d08366a336f3b3b566b1811b99744754", results["behavior:rr:minion.2:published-result"].Digest);
-        Assert.Equal("7e0a4fc3ed4a997d5e5afda08d0606395fad4f86251d6d937d97fd5e455a8da8", results["behavior:rr:side-scheme.2:published-result"].Digest);
-        Assert.Equal("be40938c050e970910307f3563ad59453381899280587bb12e904c8865af56c7", results["behavior:rr:villain-defeat:published-result"].Digest);
-        Assert.Equal("9cc5b86fe4515ed10962285b02a812c97110b09be6de8f27b013563fa1b898d5", results["behavior:rr:winning-the-game:published-result"].Digest);
+        Assert.Equal("714ab9a88f3aed2bba1f189c4a1547ea6304421714fe210aee8d7f09afc9bea3", results["behavior:rr:minion.2:published-result"].Digest);
+        Assert.Equal("a8622c2b607e932edc2b9c2cf0da619c26a2bd8cdf552cef095116112a81a7e2", results["behavior:rr:side-scheme.2:published-result"].Digest);
+        Assert.Equal("17b6d1ed7963473a22f4dff2e1cf0883fa5e6e340e060868cde6efa38a461175", results["behavior:rr:villain-defeat:published-result"].Digest);
+        Assert.Equal("9abcbfbb07699ca2eb3b58207acbc69f9291f7462e63feb74d14237a40d02bbf", results["behavior:rr:winning-the-game:published-result"].Digest);
     }
 
     [Fact]
@@ -21,10 +21,10 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
     {
         var results = CoreTranscriptCorpus.All.Where(candidate => candidate.Scenario.StartsWith("specs/behavior/core/when-defeated.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
         Assert.Equal(5, results.Count);
-        Assert.Equal("50db94cca8ba3f53f5a0f8335d5129932351b358972e815e59dfc17879401a71", results["behavior:rr:when-defeated-abilities.2.1:published-result"].Digest);
-        Assert.Equal("cc9b0c5ed4114e87fa527bf10e21a0168a001c9ba37840dcb0d859c1737c7e11", results["behavior:rr:damage.step.6:published-result"].Digest);
-        Assert.Equal("19c28e1cd2c2b5dc32ecbd861b63d200e60fba83e49f843a442bf651964d26b8", results["behavior:rr:damage.step.7:published-result"].Digest);
-        Assert.Equal("315a8c560b9a88e6d0ca2ad9876e5374c45842428880cdbcaa104015b280ed4f", results["behavior:rr:damage.step.9:published-result"].Digest);
+        Assert.Equal("1a8795dfcd4991da8f16b1a4ffa5b423858d18b6097c0689288bfae84feb55fa", results["behavior:rr:when-defeated-abilities.2.1:published-result"].Digest);
+        Assert.Equal("01db892bd33eeadcfa93f37f285a48c76551ab1d6639bcc90af79ba68e6b2cec", results["behavior:rr:damage.step.6:published-result"].Digest);
+        Assert.Equal("25c21c78f425e04fa16aea47dfddae4b457239a5dad69c90ac8f84aea4c35e4f", results["behavior:rr:damage.step.7:published-result"].Digest);
+        Assert.Equal("728ae46a188452edf36cbe276561858b90003285802859519a087fd6d809c8b1", results["behavior:rr:damage.step.9:published-result"].Digest);
     }
 
     [Fact]
@@ -32,30 +32,30 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
     {
         var transcripts = CoreTranscriptCorpus.All.Where(result => result.Scenario.StartsWith("specs/behavior/core/villain-phase.feature::", StringComparison.Ordinal)).ToList();
         var results = transcripts.GroupBy(result => result.Obligation, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
-        Assert.Equal(["49eb772980a26105d0be9d2f5ce03d075f2fbc4b90f6d6c45dce95d92267df57", "cc8fc6aed38dad39c031bb36a3292ac6fe9483d6bffe253dc8893028ee5b764a", ], transcripts.Where(result => result.Obligation == "behavior:ruling:2ea7a5960d1275c8:published-clarification").Select(result => result.Digest).Order(StringComparer.Ordinal));
+        Assert.Equal(["90785168acdbfe04069fc52329de5a53ae5228b5bcd9b1e2b12885d1d7768a4e", "d55193bf62e08ded4a9e322c585f7f75990508603a059402b2a5c8edcd1d8512", ], transcripts.Where(result => result.Obligation == "behavior:ruling:2ea7a5960d1275c8:published-clarification").Select(result => result.Digest).Order(StringComparer.Ordinal));
         Assert.Equal(32, results.Count);
-        Assert.Equal("aadbff792b4caca6a6ecbb13041865133c3e9ce1d588d1a9c6a59834d8a97fc8", results["behavior:rr:villain-phase:published-result"].Digest);
-        Assert.Equal("056458e0067d1547ec97b141112469a9bbf885320236cab8539b54d32902c3c9", results["behavior:rr:villain-phase.step.5:published-result"].Digest);
-        Assert.Equal("d4864dcf86f264cb0b7cb1a6df0bf3832cfa3c3c388a761716b4cb8787c23d29", results["behavior:rr:attack-enemy-activation:published-result"].Digest);
-        Assert.Equal("885c3b3e7d2c026365646e9da2b7b9477f460466ef8af776f5a8528745d0b88d", results["behavior:rr:boost-boost-icon.1:published-result"].Digest);
-        Assert.Equal("cc618f9fdb3b61d223305a55351a10708c636e022166d0427903152db1d3a260", results["behavior:rr:boost-boost-icon.4:published-result"].Digest);
-        Assert.Equal("2381a42f79604d5412ae489d215fc55ad0e6b8c10a9601b5cc099e52752f3b30", results["behavior:rr:scheme-enemy-activation.step.2.b:published-result"].Digest);
-        Assert.Equal("320436d6f906243eea9bf7212d42055747e3c3494ed302dc910460131545ae6d", results["behavior:card:01178:if-villain-is-making-undefended-attack-place-condition-not-met"].Digest);
-        Assert.Equal("56d25f9a5c00d4e9955cea06c73edf7c41e1c0f38021d9b539684b97f36519fd", results["behavior:rr:defend-defense.2:published-result"].Digest);
-        Assert.Equal("aeef1195f4475b5e1b1c0fc0c2bd7a7b045e8529404e1c365c502ba181af1d93", results["behavior:rr:attack-enemy-activation.2.2:published-result"].Digest);
-        Assert.Equal("a259366a144343476f52089e383c34b94d2d5f89adac81865a523c6d276fc35d", results["behavior:rr:attack-enemy-activation.1.2:published-result"].Digest);
-        Assert.Equal("3bfbddfa17c0e145b4cf7d22ab3411fd70621eea19bbb960615fbe67991a8ad6", results["behavior:rr:defend-defense.5.2:published-result"].Digest);
-        Assert.Equal("47f4cb61477103656512e5b7a18f1dc3e90a0d3dcc3f525035a04a234e458f2c", results["behavior:card:01001a:when-villain-initiates-attack-against-you-draw"].Digest);
-        Assert.Equal("b2d9cce19ff830d1c199e194dcf16790864a98ea3df7d4dfafcea80983fd81ad", results["behavior:card:01099:when-rhino-attacks-attack-gains-overkill"].Digest);
-        Assert.Equal("19ae349185692d4d06243e8ad5b6cb272e9eae4a699a5d993d9f563aef081212", results["behavior:rr:defend-defense.3:published-result"].Digest);
-        Assert.Equal("bf83abdf023f7d0a08b4b011d6bc7c678641f3e79a07371bc5b274ffbf894c17", results["behavior:rr:attack-enemy-activation.3.2:published-result"].Digest);
-        Assert.Equal("0623b6e4b73ad819c92b02f7940d4d4db612d688361fdbc4f9d8992933df7e52", results["behavior:rr:boost-boost-icon.3:published-result"].Digest);
-        Assert.Equal("f9e1834f6d3f5862521bd902e7d8622353cacd79fd02b503547368943b9470eb", results["behavior:rr:activation.2:minion-attacks-hero"].Digest);
-        Assert.Equal("373a28f2528b37a3b32362940138c590f6d46fd14585b5dad1f3302fcdcf39d8", results["behavior:rr:activation.2:minion-schemes-against-alter-ego"].Digest);
-        Assert.Equal("080a2c1a8dfdcd99c12aeafaa40777a8d3c064a11753e890d26105140ed413c2", results["behavior:card:01003:when-you-would-take-any-amount-damage"].Digest);
-        Assert.Equal("591130ae9ca5d2bfa29ba64d56660cb89e096ef30c24e2ed669589f3e17fa2dd", results["behavior:card:01082:after-your-hero-defends-discard-indomitable-ready"].Digest);
-        Assert.Equal("30faaeaee0de61082e94349c75e92cd1594664a966961e643556694a9703b288", results["behavior:card:01077:after-your-hero-defends-against-enemy-attack"].Digest);
-        Assert.Equal("dfa94764f0b3bcd3d3a6bfd48b16cb1e9d29b5543990980a9e37403069015280", results["behavior:card:01004:when-treachery-card-is-revealed-from-encounter"].Digest);
+        Assert.Equal("10e6ff94391b5978fdb5b175f86eed57919cc6f5728d09c824f7da7bbd35bd1d", results["behavior:rr:villain-phase:published-result"].Digest);
+        Assert.Equal("b0ff2a7447a36803025223083bf02d64838a091294e678ffa8f1428cbff4dcc8", results["behavior:rr:villain-phase.step.5:published-result"].Digest);
+        Assert.Equal("1cc04cfad1df57ffc4e4c2b2e6ca3191de6f2d615871d51329cbd1e5bf8c0dc8", results["behavior:rr:attack-enemy-activation:published-result"].Digest);
+        Assert.Equal("b0c68f2a46a2e8c66317b76aac921bb2507a6ce5a67d51f4133493f5f61829d8", results["behavior:rr:boost-boost-icon.1:published-result"].Digest);
+        Assert.Equal("abfbe4b174c105d8bf418c072b1cfea79b0917c3fea1f8261cc08382686e6521", results["behavior:rr:boost-boost-icon.4:published-result"].Digest);
+        Assert.Equal("133a79973fea4acf7924ae51b863e298f70bdaa1e1a1131eda7eeb819d8e08d7", results["behavior:rr:scheme-enemy-activation.step.2.b:published-result"].Digest);
+        Assert.Equal("b31c04122c4595d7d0925a9e81357adf6c2e1b26b5087b4126175617a90375e8", results["behavior:card:01178:if-villain-is-making-undefended-attack-place-condition-not-met"].Digest);
+        Assert.Equal("3afed311809090907ecef08a62185d054961a82c50c64d1c1578d48279604075", results["behavior:rr:defend-defense.2:published-result"].Digest);
+        Assert.Equal("f2490b69959814987e20e5944b68df094b91ce836db4307016cf37a4cfb87ba2", results["behavior:rr:attack-enemy-activation.2.2:published-result"].Digest);
+        Assert.Equal("d552a161854747279b07d87ef652f78dbd349631a8137cf95c2da446b60bc5a0", results["behavior:rr:attack-enemy-activation.1.2:published-result"].Digest);
+        Assert.Equal("3d5e0d079ed8729fda8355b2044773313e524c708c13710a8cc4c574f96b45fd", results["behavior:rr:defend-defense.5.2:published-result"].Digest);
+        Assert.Equal("01d2a7cd1a08f28d4cdb3304e0e49dfea2cad7e104df1b3541f62732893cc859", results["behavior:card:01001a:when-villain-initiates-attack-against-you-draw"].Digest);
+        Assert.Equal("9bb85953b0dfce95a2256151e5dae74a29805854227b35f15a648cf52fc40ac5", results["behavior:card:01099:when-rhino-attacks-attack-gains-overkill"].Digest);
+        Assert.Equal("790be8003ca59bdeee19d09028fb6237e03cdec1754a8de7599d147482fce0ed", results["behavior:rr:defend-defense.3:published-result"].Digest);
+        Assert.Equal("3b654ea3635c6ac21fb3936205e43d553259e89c5598c62ca9026c64871c37f0", results["behavior:rr:attack-enemy-activation.3.2:published-result"].Digest);
+        Assert.Equal("289e54e1cfc0ce6d71992d6ce439d7f41a4d2a5217b35da861bab80f1fe38f66", results["behavior:rr:boost-boost-icon.3:published-result"].Digest);
+        Assert.Equal("f1f5e2ca2eb7824329fbdb0b35e53a6208c852b6bf0c461e052239a54f999571", results["behavior:rr:activation.2:minion-attacks-hero"].Digest);
+        Assert.Equal("c52dd398ac9ac69c087e013db02872a31442f61410b62b55481e36f64f0604f0", results["behavior:rr:activation.2:minion-schemes-against-alter-ego"].Digest);
+        Assert.Equal("d6a079061f1e84cb9f3578acc9e576b769af90d6cfee6823e15895b6393fc73a", results["behavior:card:01003:when-you-would-take-any-amount-damage"].Digest);
+        Assert.Equal("7f96f0d94fc1455b82b7ceb88fd4f729c34eec25c9e6485fb29e495a12c04633", results["behavior:card:01082:after-your-hero-defends-discard-indomitable-ready"].Digest);
+        Assert.Equal("9c3745c9b471dcf720f4685d9bfed1aff5976eb2259e7f57b34bd9f165f6a5d3", results["behavior:card:01077:after-your-hero-defends-against-enemy-attack"].Digest);
+        Assert.Equal("d002f1a999146884a16191abeebcecefa1a34c90c756a7ba5347ca5504422154", results["behavior:card:01004:when-treachery-card-is-revealed-from-encounter"].Digest);
     }
 
     [Fact]
@@ -63,15 +63,15 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
     {
         var results = CoreTranscriptCorpus.All.Where(result => result.Scenario.StartsWith("specs/behavior/core/status-cards.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
         Assert.Equal(10, results.Count);
-        Assert.Equal("dab07315ec82d4dffa5852140b360299a47d7cc396c78e54b34be5b4c22cfe53", results["behavior:rr:stun-stunned.5:published-result"].Digest);
-        Assert.Equal("8566f39188fee85d0c62e5330cc9104c32020f6a301f0541e007419031c2659f", results["behavior:rr:confuse-confused.5:published-result"].Digest);
-        Assert.Equal("7d7ced5d78722f6dd1c69d9a07e291dad214bd3037a647c5ceeab7a6933e2906", results["behavior:rr:stun-stunned.2:published-result"].Digest);
-        Assert.Equal("6fc1a413ed3f43e85a910bc31d784d81089286b2ee8dfb81baecf09b90a396e9", results["behavior:rr:confuse-confused.2:published-result"].Digest);
-        Assert.Equal("2101b8ad401a6a79db1f7aa993da745e667782a87ba63310ece0c412507281c2", results["behavior:rr:confuse-confused.6:published-result"].Digest);
-        Assert.Equal("5fa890a7f260b7839348e83cd891ec85e0b800b4a5f14ef66c2e19b53ec46e28", results["behavior:rr:stun-stunned.6:published-result"].Digest);
-        Assert.Equal("7d7ced5d78722f6dd1c69d9a07e291dad214bd3037a647c5ceeab7a6933e2906", results["behavior:rr:status-cards.1:published-result"].Digest);
-        Assert.Equal("ec6c7fd5a9ebfe1aff876848a982ec1ff60371028415b7ab983b9919b13b0eb2", results["behavior:rr:tough.2:published-result"].Digest);
-        Assert.Equal("99aabf9e027f556c91314e0f769edab28f3021124ddba46a06fb489e2ad2957d", results["behavior:rr:toughness:published-result"].Digest);
+        Assert.Equal("95422bc5dd7977120b841a634490f47aba4c0adcef0a3913cb29d5b9809cae48", results["behavior:rr:stun-stunned.5:published-result"].Digest);
+        Assert.Equal("9e61447b7b126911a15c09b05e5d6c20449bbae9a01509ea424503430a6b3446", results["behavior:rr:confuse-confused.5:published-result"].Digest);
+        Assert.Equal("195fbc1e543c474751df1b053bfc055e1603513496742924132dbe30862bb0c6", results["behavior:rr:stun-stunned.2:published-result"].Digest);
+        Assert.Equal("b582040e3156d41882723bb7ce9482b6d714f176fcd18f69fc4d499d83145a1a", results["behavior:rr:confuse-confused.2:published-result"].Digest);
+        Assert.Equal("01c6c3be11adc39aeb3c34666d19a3ac6663cec8504d31e2645d42457e71c599", results["behavior:rr:confuse-confused.6:published-result"].Digest);
+        Assert.Equal("857554c05fa5fd06cfa4c217680c07428af50c1e4d593c94bbe06016a9537f26", results["behavior:rr:stun-stunned.6:published-result"].Digest);
+        Assert.Equal("195fbc1e543c474751df1b053bfc055e1603513496742924132dbe30862bb0c6", results["behavior:rr:status-cards.1:published-result"].Digest);
+        Assert.Equal("e128c30e647d113852a54caed45c133212cb750f679dc6f518f685a5b42c1911", results["behavior:rr:tough.2:published-result"].Digest);
+        Assert.Equal("db08a2062631087a6053475ac7c1d50732333aa5324cc7703e38acd7edc0f5a2", results["behavior:rr:toughness:published-result"].Digest);
     }
 
     [Fact]
@@ -79,15 +79,15 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
     {
         var results = CoreTranscriptCorpus.All.Where(result => result.Scenario.StartsWith("specs/behavior/core/setup.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
         Assert.Equal(9, results.Count);
-        Assert.Equal("e72ed15ec31a9a7a09fc27204c124b81b9721e2591a43d75bed51ecd6e2f49d5", results["behavior:rr:appendix-ii-setup.step.1:published-result"].Digest);
-        Assert.Equal("8bed7c3f7cf64b3ffd42e60c6f02748eacba87495d945cc3676585b1eecd8a11", results["behavior:rr:modes-of-play.2:published-result"].Digest);
-        Assert.Equal("d932db79c8e0e61e965876db8983433706c3eb48a5b47bb57d2ff7620683e4a6", results["behavior:rr:modular-encounter-set.1:published-result"].Digest);
-        Assert.Equal("9c79668a61e30ba2e01dc4bcd26fd1082dff9e538342676341e0d9a166f3a68f", results["behavior:rr:appendix-ii-setup.step.15:published-result"].Digest);
-        Assert.Equal("063ebf9a425ae67894205a48cd6ac1444920d7f60a45925bdd2a533f28fc0aa6", results["behavior:card:01040b:search-your-deck-for-black-panther-upgrade"].Digest);
-        Assert.Equal("54c2bb02467e434575b767f841c9e99797e185436585685909b148dba160dd7a", results["behavior:card:01116a:search-encounter-deck-for-defense-network-side"].Digest);
-        Assert.Equal("708cb068b79e9ff498f862223936f2a47b8d97828f2ec789570316f24e6aeedf", results["behavior:card:01137a:put-ultron-drones-environment-into-play"].Digest);
-        Assert.Equal("da08994da99e4acd226173b829814a8f0df15b7707bfe6f89f1db11194e194df", results["behavior:card:01116a:klaw-ii-and-klaw-iii-instead-for"].Digest);
-        Assert.Equal("1be5c9432ce787a74e6be9eee98ae73fbff3a8966a33924dd282003dc8307a25", results["behavior:card:01137a:ultron-ii-and-ultron-iii-instead-for"].Digest);
+        Assert.Equal("2f9c6a8f3380beb27f4bd050577cfe041c3786528fe137487b0cf189127139ac", results["behavior:rr:appendix-ii-setup.step.1:published-result"].Digest);
+        Assert.Equal("01f6ad5a98e93248e2590f80009847ce41cf28f94476845a7c6fb1d5ef9c7bd5", results["behavior:rr:modes-of-play.2:published-result"].Digest);
+        Assert.Equal("c84cb8fa6d730f6c263103adecd6c8d30750a1553400b4256e4806af8175d412", results["behavior:rr:modular-encounter-set.1:published-result"].Digest);
+        Assert.Equal("48cca5ee5a42796f2b00375df18e4c0232c69cde1f07e104516125720136e7dd", results["behavior:rr:appendix-ii-setup.step.15:published-result"].Digest);
+        Assert.Equal("17e0cd6e760f3f0201bdfbadf27e22cd7202002092bc9c4f9d446aa5cc26a6b3", results["behavior:card:01040b:search-your-deck-for-black-panther-upgrade"].Digest);
+        Assert.Equal("d053f1672b3b860fdc70b0a46dc08712a203d0c73810e5e0f241d57045139108", results["behavior:card:01116a:search-encounter-deck-for-defense-network-side"].Digest);
+        Assert.Equal("66a27ed1b7d8f5692280431175aa43583ccf21dd52ffb8a899e2dcacd6adf346", results["behavior:card:01137a:put-ultron-drones-environment-into-play"].Digest);
+        Assert.Equal("9ff6e11a5e9807275f68698c1d8e654f81af27cff479b8814e3179cbf15861f4", results["behavior:card:01116a:klaw-ii-and-klaw-iii-instead-for"].Digest);
+        Assert.Equal("a588af4775e8d1c032e61e24d1218e421836dc01edf0dfef4fa573c6009374e7", results["behavior:card:01137a:ultron-ii-and-ultron-iii-instead-for"].Digest);
     }
 
     [Fact]
@@ -95,9 +95,9 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
     {
         var results = CoreTranscriptCorpus.All.Where(result => result.Scenario.StartsWith("specs/behavior/core/discard.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
         Assert.Equal(3, results.Count);
-        Assert.Equal("2ba5b4286eab4a1bb821b5d3c4774ee37feab34cd36737774db64c09f513b710", results["behavior:rr:discard.1:published-result"].Digest);
-        Assert.Equal("a7a02fd9e996eb1681de52ad46f6b97822f4e7ba11c0047f9ce198f87b8eec09", results["behavior:rr:discard.2:published-result"].Digest);
-        Assert.Equal("2c42f35da3197479de24e5e865d7e98f105812cb26a5ceb96c4dbd525719b56a", results["behavior:rr:discard.4:published-result"].Digest);
+        Assert.Equal("d30a7e62db3629bc4c81817304281f1eb185bacecfd1f8113d43828d2912252c", results["behavior:rr:discard.1:published-result"].Digest);
+        Assert.Equal("3437531e41ea97cddfd470fec18fe0c1db7bc0b34d2d038f3f1d75917e2caa75", results["behavior:rr:discard.2:published-result"].Digest);
+        Assert.Equal("0aa7a5c0ea184651f4d75675d90f67fd3c825ff7fcb6cb634ca19bdf7549e347", results["behavior:rr:discard.4:published-result"].Digest);
     }
 
     [Fact]
@@ -105,14 +105,14 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
     {
         var results = CoreTranscriptCorpus.All.Where(candidate => candidate.Scenario.StartsWith("specs/behavior/core/form-change.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
         Assert.Equal(8, results.Count);
-        Assert.Equal("90cc019d785eda872e3253f08a8f786009c7ec7d72a55a69148171973e0c1f46", results["behavior:rr:form-change-form.1:flip-identity"].Digest);
-        Assert.Equal("7cd5c816aad3d3414b2a168c18ef54b42152f75e6301f10b17bccde0f43a243a", results["behavior:rr:form-change-form.1:voluntary-window-and-limit"].Digest);
-        Assert.Equal("410e4fc088da5f7bc65834761ff21efefe7c57bf7489ce0c669cabd7c2b76afa", results["behavior:rr:form-change-form.3:published-result"].Digest);
-        Assert.Equal("e2ee518234c3be57040c3ab21dcfadff9a30aa12c6e0d5fc46425bd82d172ca5", results["behavior:card:01025:then-draw-up-your-printed-hand-size-intermediate"].Digest);
-        Assert.Equal("6301b86cee3485d30f133d44bddc2b4c36b9a1aafdf3f2a4aff2fff3f62abede", results["behavior:card:01025:then-draw-up-your-printed-hand-size-minimum"].Digest);
-        Assert.Equal("02934a0a9019cfb3b71e148a7f881d388edef755b04a4d61316e198fde976380", results["behavior:rr:form-change-form.4:published-result"].Digest);
-        Assert.Equal("b390e662689f7681c012ecd22494895156d1edf3446440841689575a2dee2662", results["behavior:rr:form-change-form.5:published-result"].Digest);
-        Assert.Equal("ce0ee3d8abd53d15fe6a673e15d7e2376a0455f5ca4a37db142c51153557a92e", results["behavior:rr:form-change-form.7:published-result"].Digest);
+        Assert.Equal("0c919a534d397c889e9e98cbe71726154c51140e4bdb381bc6110cee048c5bc9", results["behavior:rr:form-change-form.1:flip-identity"].Digest);
+        Assert.Equal("7f45980b7f1575a2aad014d0810c4d92ae29a03c3ab97db9fe4c067f0b79d239", results["behavior:rr:form-change-form.1:voluntary-window-and-limit"].Digest);
+        Assert.Equal("31b2f56e8e79c1578b6f3288b0053cbd308fc4f07944508a06bc2465cffcbc2b", results["behavior:rr:form-change-form.3:published-result"].Digest);
+        Assert.Equal("239aaaa8ef1d88f110f53f6dd2245c08c02285f3198e2a5733d73148c30a1619", results["behavior:card:01025:then-draw-up-your-printed-hand-size-intermediate"].Digest);
+        Assert.Equal("423b5cf71b961907c1d63dc70ad46aa0248918f52857b685d584f2d2768c43f7", results["behavior:card:01025:then-draw-up-your-printed-hand-size-minimum"].Digest);
+        Assert.Equal("159a70550d17f9aaab6d37da5311afa6741ecae3b4a5b5b89ef814a56dbc46ff", results["behavior:rr:form-change-form.4:published-result"].Digest);
+        Assert.Equal("799962ad1150e2322df59a44732bece8c9875bd39e712e569165c2bfe726e320", results["behavior:rr:form-change-form.5:published-result"].Digest);
+        Assert.Equal("604e45f501fc1af1026f2d840ed696927978c3f8e93fe3874982b37a2092ba73", results["behavior:rr:form-change-form.7:published-result"].Digest);
     }
 
     [Fact]
@@ -120,10 +120,10 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
     {
         var results = CoreTranscriptCorpus.All.Where(result => result.Scenario.StartsWith("specs/behavior/core/player-elimination.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
         Assert.Equal(5, results.Count);
-        Assert.Equal("6c82c1944e5b28e57e0ee86754575d4a25672c96571153d058d77d981623fe2e", results["behavior:rr:player-elimination:published-result"].Digest);
-        Assert.Equal("23437f86566fa85a416e49f02c9349b56b82c11c49cd53400986e668f72a73da", results["behavior:rr:player-elimination.3:published-result"].Digest);
-        Assert.Equal("1a0721e53753ef4ff3816f4aadeea4ceb699cad2b50993266a987e125b7a1e72", results["behavior:rr:player-elimination.5:published-result"].Digest);
-        Assert.Equal("c838d45bba9a3b039bc03b7084664ed0875d7d19ac9b5c8febff67f0a187569f", results["behavior:rr:player-elimination.4:published-result"].Digest);
+        Assert.Equal("77275b950cc268c82067c48f060a2d070688ebe852fa8cf13c6f527e426d65a5", results["behavior:rr:player-elimination:published-result"].Digest);
+        Assert.Equal("03661c7d3c891adb124d8a3e885c23d782c306d1e657b39662b48e317b80f646", results["behavior:rr:player-elimination.3:published-result"].Digest);
+        Assert.Equal("3775e34eb9c35a349628d652550cd9114a0c7998733004662c82465a0fa5e906", results["behavior:rr:player-elimination.5:published-result"].Digest);
+        Assert.Equal("c1e2215d7e40cc0f807a134a3d42ac4d3f8e8f55ec29e670e114056f90321ab8", results["behavior:rr:player-elimination.4:published-result"].Digest);
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
     {
         var result = Assert.Single(CoreTranscriptCorpus.All, result => result.Scenario.StartsWith("specs/behavior/core/simultaneous-resolution.feature::", StringComparison.Ordinal));
         Assert.Equal("behavior:rr:simultaneous-resolution:published-result", result.Obligation);
-        Assert.Equal("2bc61be26297584875119a424ebd448aeee32bc871cead2a7f38544d2fb6dc26", result.Digest);
+        Assert.Equal("257936164c7e0749dd7b2e7d1954996b72c1583650c97ca6ce4e6b83715b3e7a", result.Digest);
     }
 
     [Fact]
@@ -139,11 +139,11 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
     {
         var results = CoreTranscriptCorpus.All.Where(result => result.Scenario.StartsWith("specs/behavior/core/end-of-player-phase.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
         Assert.Equal(5, results.Count);
-        Assert.Equal("c81566a2f566d19ac039532532df0d728f6d5583b7028e1798eba3d555e42e23", results["behavior:rr:end-of-player-phase.step.1:optional-at-or-below"].Digest);
-        Assert.Equal("228ad5267ebe07ec00349ff20b304812ecdf680ab264bfbf98f77c49dde400d3", results["behavior:rr:end-of-player-phase.step.1:mandatory-above-limit"].Digest);
-        Assert.Equal("ba21ebd4d8f01244d40f9dbe5d30c095ea72fdd748ad123d726cdb1596ce45d6", results["behavior:rr:end-of-player-phase.step.2:below-limit"].Digest);
-        Assert.Equal("ba21ebd4d8f01244d40f9dbe5d30c095ea72fdd748ad123d726cdb1596ce45d6", results["behavior:rr:end-of-player-phase.step.2:at-limit"].Digest);
-        Assert.Equal("4159ea0cb84196706b181c689f9c9dba4b4cc6e3cf7a5775b4342eafbc166e44", results["behavior:rr:end-of-player-phase.step.3:ready-all-in-play"].Digest);
+        Assert.Equal("f3eab52cfda18db04e2f2d5fdb213fd02efd550c790908ca5f2a6913f2fd8f2c", results["behavior:rr:end-of-player-phase.step.1:optional-at-or-below"].Digest);
+        Assert.Equal("5c941bb555d6f458c769116c7fe8fa51fca83a115268598e79dd7b9a5aa2879d", results["behavior:rr:end-of-player-phase.step.1:mandatory-above-limit"].Digest);
+        Assert.Equal("4aa49996a3dbb18961fca6ed5ee0e951edb0aa33ef4be61fbedc7753d1622ec9", results["behavior:rr:end-of-player-phase.step.2:below-limit"].Digest);
+        Assert.Equal("4aa49996a3dbb18961fca6ed5ee0e951edb0aa33ef4be61fbedc7753d1622ec9", results["behavior:rr:end-of-player-phase.step.2:at-limit"].Digest);
+        Assert.Equal("93201ed18853aaa84874971fca0e0624765c8829f4cdb808877cfad227e5060d", results["behavior:rr:end-of-player-phase.step.3:ready-all-in-play"].Digest);
     }
 
     [Fact]
@@ -151,6 +151,6 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
     {
         TranscriptResult result = Assert.Single(CoreTranscriptCorpus.All, result => result.Scenario.StartsWith("specs/behavior/core/player-phase.feature::", StringComparison.Ordinal));
         Assert.Equal("behavior:rr:player-phase:published-result", result.Obligation);
-        Assert.Equal("6494d174d4898115b16d7ec8c75144afb6e359c98048422f56642012507e2d20", result.Digest);
+        Assert.Equal("906f9ea321af514b8fa7ea30215d84550d1fabc90627f21760cb35e1302f5252", result.Digest);
     }
 }

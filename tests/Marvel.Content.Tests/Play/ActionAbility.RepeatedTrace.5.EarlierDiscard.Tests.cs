@@ -105,7 +105,7 @@ public sealed class ActionAbilityRepeatedTraceEarlierDiscardTests
             { "eachPlayer": { "effect": { "if": {
               "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
               "then": { "seq": [
-                { "dealDamage": { "cards": { "query": "drones" }, "amount": 100 } },
+                { "dealDamage": { "cards": {"faceDown": {"withTrait": {"cards": {"query": "minions"}, "trait": "DRONE"}}}, "amount": 100 } },
                 { "dealDamage": { "cards": { "titled": "Ultron" }, "amount": 1 } },
                 { "moveDamage": {
                   "from": { "titled": "Ultron" },
@@ -128,7 +128,7 @@ public sealed class ActionAbilityRepeatedTraceEarlierDiscardTests
             world = board;
             source = InPlay(board, AuthoredCards.AuntMay);
             ultron = board.CreateCard("01136", board.AreaOf(DeckType.VillainArea));
-            drone = FacedownDrones.EngageTop(board, 0, "test", "Create_Drone", []);
+            drone = FacedownMinions.EngageTop(board, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile, "test", "Create_Drone", []);
             board.Seats[0].IdentityCard.TakeDamage(9);
         }, hero: true, heroes: ["spider_man", "captain_marvel"], abilities: runner));
         Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
@@ -174,22 +174,23 @@ public sealed class ActionAbilityRepeatedTraceEarlierDiscardTests
     }
 
     [Rule("rr:villain-defeat.2")]
-    [Fact]
-    public void AFilteredVillainSelectorMutatesTheNewStageBeforeTheNextFrame()
+    [Theory]
+    [InlineData("""{"withTrait":{"cards":{"query":"villain"},"trait":"BRUTE"}}""")]
+    [InlineData("""{"last":{"query":"villain"}}""")]
+    [InlineData("""{"last":{"inObjectIdOrder":{"query":"villain"}}}""")]
+    public void AFilteredVillainSelectorMutatesTheNewStageBeforeTheNextFrame(string selector)
     {
         // The new stage is the current in-play card titled Rhino. It begins
         // without the defeated stage's excess damage, then receives this
         // effect's next point. The following move must see that point or the
         // trace would offer an ability whose first frame defeats the player.
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """
+        var runner = Runner(AuthoredCards.AuntMay, "Action", $$"""
             { "eachPlayer": { "effect": { "if": {
               "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
               "then": { "seq": [
                 { "dealDamage": { "cards": { "query": "villain" }, "amount": 100 } },
                 { "dealDamage": {
-                  "cards": { "withTrait": {
-                    "cards": { "query": "villain" }, "trait": "BRUTE"
-                  } },
+                  "cards": {{selector}},
                   "amount": 1
                 } },
                 { "moveDamage": {

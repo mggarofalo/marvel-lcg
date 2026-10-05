@@ -160,7 +160,7 @@ public static class CardControlTransfer
     {
         string printedClass = facts.Attributes(card.FaceId)
             .GetValueOrDefault("Class", string.Empty);
-        if (facts.Kind(card.FaceId) is CardKind.Ally or CardKind.Support
+        if (EffectiveCards.Kind(card, facts) is CardKind.Ally or CardKind.Support
                 or CardKind.Upgrade or CardKind.Event or CardKind.Resource
             && (card.Owner < 0
                 || printedClass is "Campaign" or "Encounter" or "Scenario"))

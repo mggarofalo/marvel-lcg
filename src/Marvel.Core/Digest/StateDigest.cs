@@ -7,7 +7,7 @@ using System.Text.Json;
 namespace Marvel.Core.Digest;
 
 /// <summary>
-/// The canonical state digest, v2 — see <c>docs/state-digest-v2.md</c>.
+/// The canonical state digest, v3 — see <c>docs/state-digest-v3.md</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -16,13 +16,9 @@ namespace Marvel.Core.Digest;
 /// serialisation is not a formatting preference — it is the contract.
 /// </para>
 /// <para>
-/// The reimplementation checklist in the spec runs to ten steps. Steps 1–7
-/// populate the records from a live game and need an engine, which does not
-/// exist yet. Steps 8 and 9 — serialise exactly, compare as strings and diff
-/// only on mismatch — are pure functions over the record model and are what
-/// this file implements. They are also the steps most likely to differ between
-/// languages, because every JSON writer has opinions about key order,
-/// whitespace and non-ASCII.
+/// The writer operates on complete card records supplied by the rules engine.
+/// Canonical serialization and comparison are pure functions over those
+/// records; key order, whitespace and escaping remain part of the contract.
 /// </para>
 /// <para>
 /// The writer is <see cref="Utf8JsonWriter"/> with
@@ -33,15 +29,15 @@ namespace Marvel.Core.Digest;
 public sealed class StateDigest
 {
     /// <summary>The digest format version.</summary>
-    public const int Version = 2;
+    public const int Version = 3;
 
     /// <summary>The empty document — <b>not</b> the empty string.</summary>
     /// <remarks>
     /// An absent digest and an empty one mean different things to the
-    /// comparison: absent means "this scene predates v2 and there is nothing to
-    /// compare", empty means "the world held no cards".
+    /// comparison: absent means "there is nothing to compare", while empty
+    /// means "the world held no cards".
     /// </remarks>
-    public const string Empty = "{\"v\":2,\"cards\":[]}";
+    public const string Empty = "{\"v\":3,\"cards\":[]}";
 
     /// <summary>The cards, ascending by <see cref="CardRecord.Id"/>.</summary>
     public IReadOnlyList<CardRecord> Cards { get; }
@@ -147,7 +143,7 @@ public sealed class StateDigest
                 Index: element.GetProperty("index").GetInt32(),
                 Host: element.GetProperty("host").GetInt32(),
                 FaceUp: element.GetProperty("face_up").GetBoolean(),
-                Fields: fields));
+                Fields: fields) { Profile = EffectiveProfileRecord.Read(element.GetProperty("profile")) });
         }
 
         return new StateDigest(cards);

@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityPlayerSelectorRelations;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
 using static Marvel.Cards.Run.AbilityDelayedReachability;
@@ -32,17 +33,6 @@ internal static class AbilityRepeatedEffectAnalysis
     [
         "chooseCard", "thwartSchemes", "thwartDifferentSchemes", "legalPractice",
     ];
-
-    internal static bool RequiresChosenPlayer(AbilityCardSelection selection) => selection switch
-    {
-        AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.EnemiesEngagedWithChosenPlayer
-            or AbilityCardQuery.TopmostTechInChosenDiscard,
-        AbilityCardSelection.WithTrait filtered => RequiresChosenPlayer(filtered.Cards),
-        AbilityCardSelection.WithoutAnotherCopyAttached filtered => RequiresChosenPlayer(filtered.Cards),
-        AbilityCardSelection.Discardable filtered => RequiresChosenPlayer(filtered.Cards),
-        AbilityCardSelection.Ranked ranked => RequiresChosenPlayer(ranked.Cards),
-        _ => false,
-    };
 
     internal static bool RepeatedEffectCanChange(
         AbilityCondition test, AbilityEffect effect, AbilityAdmissionScope cast)
@@ -255,17 +245,6 @@ internal static class AbilityRepeatedEffectAnalysis
             target, repeatedEffect, cast, assumed, binding, frames)
             - target.Damage;
 
-    internal static bool RebindsToEachPlayer(AbilityCardSelection targets) => targets switch
-    {
-        AbilityCardSelection.Bound bound => bound.Binding is AbilityCardBinding.You
-            or AbilityCardBinding.YourHero or AbilityCardBinding.YourAlterEgo,
-        AbilityCardSelection.Query query => query.Kind == AbilityCardQuery.CharactersYouControl,
-        AbilityCardSelection.WithTrait trait => RebindsToEachPlayer(trait.Cards),
-        AbilityCardSelection.Ranked ranked => RebindsToEachPlayer(ranked.Cards),
-        AbilityCardSelection.WithoutAnotherCopyAttached other => RebindsToEachPlayer(other.Cards),
-        _ => false,
-    };
-
     internal static long TotalThreatRemoved(
         Card scheme, AbilityEffect node, AbilityAdmissionScope cast,
         RepeatedChange assumed = RepeatedChange.None, bool binding = false)
@@ -360,7 +339,7 @@ internal static class AbilityRepeatedEffectAnalysis
         cast.World.Areas
             .SelectMany(area => area.Cards)
             .Where(card => card.Area.Type != DeckType.EngagedEnemiesArea
-                && FacedownDrones.Kind(card, cast.World.Facts) == CardKind.Minion)
+                && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion)
             .Select(card => card.ObjectId)
             .ToHashSet();
 

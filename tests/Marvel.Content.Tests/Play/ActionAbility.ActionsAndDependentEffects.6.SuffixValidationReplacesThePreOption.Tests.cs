@@ -73,7 +73,7 @@ public sealed class ActionAbilityActionsAndDependentEffectsSuffixValidationRepla
                   "player": "chosenPlayer", "form": "hero"
                 } },
                 "then": { "chooseCard": {
-                  "from": { "query": "topmostTechInChosenDiscard" },
+                  "from": {"last": {"withTrait": {"cards": {"inPlayerArea": {"area": "discardPile", "player": "chosenPlayer"}}, "trait": "TECH"}}},
                   "effect": { "seq": [] }
                 } },
                 "else": { "chooseCard": {

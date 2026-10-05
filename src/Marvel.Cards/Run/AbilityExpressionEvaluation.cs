@@ -27,7 +27,8 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityNumber.Product product => product.Operands.Aggregate(1L, (value, operand) => value * Amount(operand)),
         AbilityNumber.Minimum minimum => minimum.Operands.Min(operand => Amount(operand)),
         AbilityNumber.CardValue value => CardNumber(value),
-        AbilityNumber.Counters counters => selectors.Find(counters.Card) is { } holder ? CounterCount(holder, counters.Counter) : 0,
+        AbilityNumber.Counters counters => selectors.Find(counters.Card) is { } holder
+            ? CounterCount(context.Bindings.Quantities(holder), counters.Counter) : 0,
         AbilityNumber.Modified modified => selectors.Find(modified.Card) is { } holder
             ? StateFields.Modified(context.World, holder, modified.Field, context.World.Facts, context.World.Players) : 0,
         AbilityNumber.Count count => selectors.Every(count.Cards).Count,
@@ -52,8 +53,8 @@ internal sealed class AbilityExpressionEvaluation(
         if (selectors.Find(value.Card) is not { } card) return 0;
         return value.Property switch
         {
-            AbilityCardNumberProperty.Threat => card.Tokens.GetValueOrDefault("k_threat"),
-            AbilityCardNumberProperty.Damage => card.Damage,
+            AbilityCardNumberProperty.Threat => context.Bindings.Quantities(card).Tokens.GetValueOrDefault("k_threat"),
+            AbilityCardNumberProperty.Damage => context.Bindings.Quantities(card).Damage,
             AbilityCardNumberProperty.RemainingHealth => Math.Max(0, DamagePlacement.Health(context.World, context.World.Facts, card) - card.Damage),
             AbilityCardNumberProperty.StartingHealth => StartingHealth(card),
             _ => throw new InvalidOperationException("Unknown compiled card number"),
@@ -82,7 +83,7 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityCondition.InForm form => Forms.In(context.World, context.World.Seats[Seat(form.Player)], context.World.Facts, form.Form),
         AbilityCondition.ActivationIs activation => context.World.Activation is { } current && current.Attacking == activation.Attack,
         AbilityCondition.CardText text => TestCardText(text),
-        AbilityCondition.IsKind kind => selectors.Find(kind.Card) is { } card && context.World.Facts.Kind(card.FaceId) == kind.Kind,
+        AbilityCondition.IsKind kind => selectors.Find(kind.Card) is { } card && EffectiveCards.Kind(card, context.World.Facts) == kind.Kind,
         AbilityCondition.WasDefeated defeated => selectors.Find(defeated.Card) is { } card
             && context.Occurrence.Defeats.Any(defeat => defeat.Card == card.ObjectId),
         AbilityCondition.IsYourIdentity identity => selectors.Find(identity.Card)?.ObjectId == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,
@@ -133,7 +134,7 @@ internal sealed class AbilityExpressionEvaluation(
 
     private long StartingHealth(Card identity)
     {
-        if (FacedownDrones.Kind(identity, context.World.Facts)
+        if (EffectiveCards.Kind(identity, context.World.Facts)
             is not (CardKind.Hero or CardKind.AlterEgo))
         {
             throw new RulesNotImplementedException(
@@ -141,12 +142,15 @@ internal sealed class AbilityExpressionEvaluation(
                 + $"non-identity card {identity.ObjectId}");
         }
 
-        return FacedownDrones.BaseValue(
+        return EffectiveCards.BaseValue(
             identity, context.World.Facts, "HP", context.World.Players);
     }
 
     // rr:all-purpose-counter.1-.2: read every typed pool for all-purpose counters.
     internal static long CounterCount(Card card, string type) =>
+        CounterCount(card.InstanceState, type);
+
+    private static long CounterCount(CardInstanceState card, string type) =>
         string.Equals(type, "allPurpose", StringComparison.Ordinal)
             ? card.Tokens
                 .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))
@@ -165,7 +169,7 @@ internal sealed class AbilityExpressionEvaluation(
         .. world.PlayerOrder.SelectMany(player => world.Areas.FirstOrDefault(area =>
                 area.Type == DeckType.DiscardPile && area.PlayArea == PlayArea.Of(player)
                 && area.Host == -1)?.Cards ?? [])
-            .Where(card => world.Facts.Kind(card.FaceId) == CardKind.Ally),
+            .Where(card => EffectiveCards.Kind(card, world.Facts) == CardKind.Ally),
     ];
 
     private bool CanMakeTheCall()

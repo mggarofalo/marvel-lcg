@@ -25,7 +25,7 @@ public sealed class CoreAttackContextPrivacyTests
             board.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
             backflip = board.Cards.First(card => card.FaceId == AuthoredCards.Backflip);
             World.MoveToTop(backflip, board.Seats[0].Hand);
-            drone = FacedownDrones.EngageTop(board, 0, "test", "test", []);
+            drone = FacedownMinions.EngageTop(board, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile, "test", "test", []);
         }, scenario: "ultron");
         var runner = AuthoredCards.Runner();
         var events = new List<GameEvent>();

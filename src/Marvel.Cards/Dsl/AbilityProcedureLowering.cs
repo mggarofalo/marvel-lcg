@@ -12,14 +12,14 @@ namespace Marvel.Cards.Dsl;
 
 internal static class AbilityProcedureLowering
 {
-    internal static AbilityEffect DealOrCreate(AbilityValue value, AbilityLocation location, bool drones)
+    internal static AbilityEffect DealEncounterCards(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "player", "count");
         var players = fields.TryGetValue("player", out var player)
             ? Players(player, location.Child("player"))
-            : drones ? throw location.Child("player").Error("missing argument 'player'") : new AbilityPlayerSelection.AllPlayers();
+            : new AbilityPlayerSelection.AllPlayers();
         int count = fields.TryGetValue("count", out var amount) ? NonnegativeCount(amount, location.Child("count")) : 1;
-        return drones ? new AbilityEffect.CreateDrones(players, count) : new AbilityEffect.DealEncounterCards(players, count);
+        return new AbilityEffect.DealEncounterCards(players, count);
     }
 
     internal static AbilityEffect.DealEncounterCard DealCardEffect(AbilityValue value, AbilityLocation location)

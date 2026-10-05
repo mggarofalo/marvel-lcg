@@ -14,7 +14,7 @@ namespace Marvel.Content.Setup;
 /// <remarks>
 /// The position of a <see cref="Creation"/> in the dealt sequence <b>is</b> the
 /// card's <c>object_id</c>, and <c>object_id</c> is on the wire in every state
-/// digest — checklist item 1 of <c>docs/state-digest-v2.md</c>, "everything else
+/// digest — checklist item 1 of <c>docs/state-digest-v3.md</c>, "everything else
 /// depends on this". So this order is a wire format, not an implementation
 /// detail.
 /// </remarks>

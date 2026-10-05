@@ -20,7 +20,7 @@ internal sealed class AbilityAreaMutationQuery(
     private static readonly HashSet<string> EncounterDeckOperations =
     [
         "dealEncounterCard", "dealEncounterCards", "revealTop", "discardTop",
-        "discardUntil", "createDrones",
+        "discardUntil", "engageTopAsMinion",
     ];
 
     private static readonly HashSet<string> HandPaymentOperations =
@@ -150,7 +150,7 @@ internal sealed class AbilityAreaMutationQuery(
         && DiscardAreaIsQueried(card);
 
     private bool DiscardAreaIsQueried(Card card) =>
-        context.World.Facts.Kind(card.FaceId) switch
+        EffectiveCards.Kind(card, context.World.Facts) switch
         {
             CardKind.Minion => queried.Contains(DeckType.EncounterDiscardPile),
             CardKind.Ally => queried.Contains(DeckType.DiscardPile),
@@ -166,9 +166,9 @@ internal sealed class AbilityAreaMutationQuery(
                 Amount(effect.Amount, context), multiplier),
             [EventModifier(context, "eventThreatRemoval")]);
         return Every(effect.Schemes, context).Any(scheme =>
-            context.World.Facts.Kind(scheme.FaceId) == CardKind.EncounterSideScheme
+            EffectiveCards.Kind(scheme, context.World.Facts) == CardKind.EncounterSideScheme
             && scheme.Tokens.GetValueOrDefault("k_threat") <= amount
-            && AbilityProjectedStateQueries.DefeatTreeChangesArea(
+            && AbilityProjectedDefeat.DefeatTreeChangesArea(
                 scheme, queried, context));
     }
 

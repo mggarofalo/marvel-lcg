@@ -359,7 +359,7 @@ internal static class ContinuousEffectRegistry
 
     internal static Card[] LostUsesCandidates(this ContinuousEffects effects) => effects.world.Cards.Where(card =>
             DeckTypes.IsInPlay(card.Area.Type)
-            && !FacedownDrones.Is(card)
+            && !EffectiveCards.HasProfile(card)
             && Characteristics.IsLost(effects.world, card, "uses")
             && effects.world.CounterPools.CounterPool(effects.world, card)?.Uses == true
             && card.Tokens
@@ -388,7 +388,7 @@ internal static class ContinuousEffectRegistry
 
         return effects.world.Cards.Where(card =>
                 DeckTypes.IsInPlay(card.Area.Type)
-                && CardKinds.IsCharacter(FacedownDrones.Kind(card, effects.world.Facts))
+                && CardKinds.IsCharacter(EffectiveCards.Kind(card, effects.world.Facts))
                 && StateFields.Modified(
                     effects.world, card, "is_infinite_health", effects.world.Facts, effects.world.Players) <= 0
                 && health.Where(effect => effect.AppliesTo(effects.world, card))

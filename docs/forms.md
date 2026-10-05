@@ -73,4 +73,4 @@ and pinned before an expansion using it becomes executable.
 
 `Seat.FormChangedInRound` is engine state used by the affordance layer. It is
 not currently part of the digest, so a digest alone is not a complete save-game
-format. See [`state-digest-v2.md`](state-digest-v2.md).
+format. See [`state-digest-v3.md`](state-digest-v3.md).

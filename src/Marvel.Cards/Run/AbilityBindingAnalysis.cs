@@ -49,14 +49,19 @@ internal static class AbilityBindingAnalysis
 
     internal static bool BindingCanChange(AbilityCardSelection selector) => selector switch
     {
+        AbilityCardSelection.InPlayerArea area => area.Player == AbilityPlayer.ChosenPlayer,
         AbilityCardSelection.Bound bound => bound.Binding is AbilityCardBinding.Chosen or AbilityCardBinding.That,
         AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.PowerTargets
-            or AbilityCardQuery.EnemiesEngagedWithChosenPlayer or AbilityCardQuery.TopmostTechInChosenDiscard,
+            or AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
         AbilityCardSelection.WithTrait trait => BindingCanChange(trait.Cards),
+        AbilityCardSelection.FaceDown trait => BindingCanChange(trait.Cards),
+        AbilityCardSelection.Last trait => BindingCanChange(trait.Cards),
+        AbilityCardSelection.InObjectIdOrder trait => BindingCanChange(trait.Cards),
+        AbilityCardSelection.WithMatchingPlayerArea trait => BindingCanChange(trait.Cards),
         AbilityCardSelection.WithoutAnotherCopyAttached other => BindingCanChange(other.Cards),
         AbilityCardSelection.Discardable discardable => BindingCanChange(discardable.Cards),
         AbilityCardSelection.Ranked ranked => BindingCanChange(ranked.Cards),
-        AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait or AbilityCardSelection.InAreas => false,
+        AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait or AbilityCardSelection.InAreas => false,
         _ => throw new InvalidOperationException("Unknown compiled selector in binding analysis"),
     };
 

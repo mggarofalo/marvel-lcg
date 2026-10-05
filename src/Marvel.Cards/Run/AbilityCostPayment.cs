@@ -103,11 +103,9 @@ internal sealed class AbilityCostPayment
     private void CommitTakeDamage(
         TakeDamage damage, CommitOutcome result, string trigger, List<GameEvent> events)
     {
-        long before = damage.Target.Damage;
-        var outcome = DamagePlacement.DealOutcome(
-            world, world.Facts, source, damage.Target, damage.Amount,
-            trigger, CardPlay.Verb, events);
-        long taken = damage.Target.Damage - before;
+        var damageResult = DamagePlacement.Resolve(world, world.Facts,
+            new DamageRequest(source, damage.Target, damage.Amount, trigger, CardPlay.Verb), events);
+        long taken = damageResult.Taken;
         if (taken != damage.Amount)
         {
             // rr:cost.12: "If any of the damage is prevented, then the cost has
@@ -116,7 +114,7 @@ internal sealed class AbilityCostPayment
                 $"'{source.FaceId}' requires {damage.Amount} damage to be taken as a "
                 + $"cost, but only {taken} was taken; rr:cost.12 leaves it unpaid");
         }
-        result.Suspended |= outcome == Damage.Outcome.Suspended;
+        result.Suspended |= damageResult.Outcome == Damage.Outcome.Suspended;
     }
 
     private void CommitBound(

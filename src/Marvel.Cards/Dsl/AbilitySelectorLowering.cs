@@ -46,6 +46,12 @@ internal static class AbilitySelectorLowering
             "titled" => new AbilityCardSelection.Titled(Text(node.Argument, child)),
             "enemiesWithTrait" => new AbilityCardSelection.EnemiesWithTrait(Text(node.Argument, child)),
             "withTrait" => WithTrait(node.Argument, child),
+            "inObjectIdOrder" => new AbilityCardSelection.InObjectIdOrder(SelectCards(node.Argument, child)),
+            "defeatedWithProfile" => DefeatedProfile(node.Argument, child),
+            "faceDown" => new AbilityCardSelection.FaceDown(SelectCards(node.Argument, child)),
+            "last" => new AbilityCardSelection.Last(SelectCards(node.Argument, child)),
+            "inPlayerArea" => PlayerArea(node.Argument, child),
+            "withMatchingPlayerArea" => MatchingPlayerArea(node.Argument, child),
             "withoutAnotherCopyAttached" => new AbilityCardSelection.WithoutAnotherCopyAttached(SelectCards(node.Argument, child)),
             "discardable" => new AbilityCardSelection.Discardable(SelectCards(node.Argument, child)),
             "minBy" or "maxBy" => Ranked(node.Argument, child, node.Kind == "maxBy"),
@@ -78,18 +84,48 @@ internal static class AbilitySelectorLowering
         "supportsYouControl" => AbilityCardQuery.SupportsYouControl,
         "charactersYouControl" => AbilityCardQuery.CharactersYouControl,
         "upgradesYouControl" => AbilityCardQuery.UpgradesYouControl,
-        "blackPantherUpgrades" => AbilityCardQuery.BlackPantherUpgrades,
         "enemiesEngagedWithChosenPlayer" => AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
         "alliesYouControl" => AbilityCardQuery.AlliesYouControl,
         "allies" => AbilityCardQuery.Allies,
         "heroes" => AbilityCardQuery.Heroes,
         "identities" => AbilityCardQuery.Identities,
-        "identitiesWithTechInDiscard" => AbilityCardQuery.IdentitiesWithTechInDiscard,
-        "topmostTechInChosenDiscard" => AbilityCardQuery.TopmostTechInChosenDiscard,
         "characters" => AbilityCardQuery.Characters,
-        "drones" => AbilityCardQuery.Drones,
-        "dronesEngagedWithYou" => AbilityCardQuery.DronesEngagedWithYou,
         _ => throw location.Error($"'{name}' is not a card query"),
+    };
+
+    private static AbilityCardSelection.DefeatedWithProfile DefeatedProfile(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "profile", "faceDown");
+        string profile = Text(Required(fields, "profile", location), location.Child("profile"));
+        if (profile.Length == 0) throw location.Child("profile").Error("expected a profile id");
+        return new(profile, Boolean(fields, "faceDown", location));
+    }
+
+    private static AbilityCardSelection.InPlayerArea PlayerArea(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "area", "player");
+        return new(PublicPlayerArea(Required(fields, "area", location), location.Child("area")),
+            LowerPlayer(Required(fields, "player", location), location.Child("player")));
+    }
+
+    private static AbilityCardSelection.WithMatchingPlayerArea MatchingPlayerArea(
+        AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "cards", "area", "kind", "trait");
+        return new(Selected(fields, "cards", location),
+            PublicPlayerArea(Required(fields, "area", location), location.Child("area")),
+            fields.TryGetValue("kind", out var kind) ? ConditionCardKind(kind, location.Child("kind")) : null,
+            OptionalText(fields, "trait", location));
+    }
+
+    private static DeckType PublicPlayerArea(AbilityValue value, AbilityLocation location) => Text(value, location) switch
+    {
+        "discardPile" => DeckType.DiscardPile,
+        "upgrades" => DeckType.UpgradesArea,
+        "allies" => DeckType.AlliesArea,
+        "supports" => DeckType.SupportsArea,
+        "engagedEnemies" => DeckType.EngagedEnemiesArea,
+        var name => throw location.Error($"'{name}' is not a public player area"),
     };
 
     internal static AbilityCardSelection.WithTrait WithTrait(AbilityValue value, AbilityLocation location)

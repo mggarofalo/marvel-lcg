@@ -180,7 +180,13 @@ public sealed class ActionAbilityQueryIsolationRepetitionReadsPublishAtTheirLive
     {
         // Evaluation is an engine-owned read boundary. Even empty areas and
         // their future ids must be unchanged by repeatedly asking for actions.
-        string condition = query == "canMakeTheCall" ? """{"canMakeTheCall":"game"}""" : $$$$$$"""{"exists":{"query":"{{{{{{query}}}}}}"}}""";
+        string selector = query switch
+        {
+            "dronesEngagedWithYou" => """{"withTrait":{"cards":{"query":"minionsEngagedWithYou"},"trait":"DRONE"}}""",
+            "identitiesWithTechInDiscard" => """{"withMatchingPlayerArea":{"cards":{"query":"identities"},"area":"discardPile","kind":"upgrade","trait":"TECH"}}""",
+            _ => $$$$$$"""{"query":"{{{{{{query}}}}}}"}""",
+        };
+        string condition = query == "canMakeTheCall" ? """{"canMakeTheCall":"game"}""" : $$$$$$"""{"exists":{{{{{{selector}}}}}}}""";
         var runner = Runner(AuthoredCards.AuntMay, "Action", $$$$$$"""
             {"if":{"test":{{{{{{condition}}}}}},
               "then":{"placeCounters":{"card":"this","counter":"test","count":1}},

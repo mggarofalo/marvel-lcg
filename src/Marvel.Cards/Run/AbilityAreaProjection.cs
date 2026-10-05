@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityProjectedDefeat;
 using static Marvel.Cards.Run.AbilityEffectStructure;
 using static Marvel.Cards.Run.AbilityRuntimeQueries;
 using static Marvel.Cards.Run.AbilityProjectedStateQueries;
@@ -38,7 +39,7 @@ internal sealed class AbilityAreaProjection
 
     private bool RootLeavesOnDefeat(Card root)
     {
-        var kind = context.World.Facts.Kind(root.FaceId);
+        var kind = EffectiveCards.Kind(root, context.World.Facts);
         if (kind is CardKind.Minion or CardKind.Ally
             or CardKind.EncounterSideScheme)
         {
@@ -97,7 +98,7 @@ internal sealed class AbilityAreaProjection
         AreaProjectionState state, int host) =>
         ProjectedHostedCards(state, host).Any(card =>
         {
-            bool movesToVictory = context.World.Facts.Kind(card.FaceId) is
+            bool movesToVictory = EffectiveCards.Kind(card, context.World.Facts) is
                     CardKind.Attachment or CardKind.Upgrade
                 && Keywords.Has(
                     context.World, card, "victory", context.World.Facts);
@@ -162,7 +163,7 @@ internal sealed class AbilityAreaProjection
             return;
         }
 
-        if (CardKinds.IsVillain(context.World.Facts.Kind(target.FaceId)))
+        if (CardKinds.IsVillain(EffectiveCards.Kind(target, context.World.Facts)))
         {
             DefeatProjectedVillain(state, target);
         }
@@ -174,7 +175,7 @@ internal sealed class AbilityAreaProjection
     }
 
     private Card ProjectedDamageTarget(AreaProjectionState state, Card target) =>
-        CardKinds.IsVillain(context.World.Facts.Kind(target.FaceId))
+        CardKinds.IsVillain(EffectiveCards.Kind(target, context.World.Facts))
             && state.ActiveVillain >= 0
                 ? context.World.Cards[state.ActiveVillain]
                 : target;

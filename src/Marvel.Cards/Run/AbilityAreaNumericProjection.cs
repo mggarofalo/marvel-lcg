@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityProjectedDefeat;
 using static Marvel.Cards.Run.AbilityEffectStructure;
 using static Marvel.Cards.Run.AbilityRuntimeQueries;
 using static Marvel.Cards.Run.AbilityProjectedStateQueries;
@@ -122,11 +123,11 @@ internal static class AbilityAreaNumericProjection
                     state.Threat[scheme.ObjectId] = Math.Max(
                         0, state.ThreatOf(scheme) - removed);
                     projection.couldDiscard |= state.ThreatOf(scheme) == 0
-                        && projection.context.World.Facts.Kind(scheme.FaceId)
+                        && EffectiveCards.Kind(scheme, projection.context.World.Facts)
                             == CardKind.EncounterSideScheme
                         && DefeatTreeChangesArea(scheme, projection.queried, projection.context);
                     if (state.ThreatOf(scheme) == 0
-                        && projection.context.World.Facts.Kind(scheme.FaceId)
+                        && EffectiveCards.Kind(scheme, projection.context.World.Facts)
                             == CardKind.EncounterSideScheme)
                     {
                         projection.MarkDiscardedTree(state, scheme);

@@ -134,7 +134,6 @@ public sealed class AbilityLoweringTests
 
     [Theory]
     [InlineData("{\"query\":\"attackableEnemies\"}", AbilityCardQuery.AttackableEnemies)]
-    [InlineData("{\"query\":\"topmostTechInChosenDiscard\"}", AbilityCardQuery.TopmostTechInChosenDiscard)]
     public void QueriesAreLoweredToNamedEngineOperations(string json, AbilityCardQuery expected)
     {
         Assert.Equal(new AbilityCardSelection.Query(expected), AbilityLowering.Cards(Selector(json), Location));

@@ -10,10 +10,10 @@ public sealed class CoreRuleTranscriptEncounterDeckBranchesHavePinnedOutcomesTes
     {
         var results = CoreTranscriptCorpus.All.Where(result => result.Scenario.StartsWith("specs/behavior/core/encounter-deck-empty.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
         Assert.Equal(4, results.Count);
-        Assert.Equal("4e166a739c6896f41af4c7102dbdab83e8e5614312cac4347bab11706243ee4a", results["behavior:rr:encounter-deck.1:empty-with-discard"].Digest);
-        Assert.Equal("4e166a739c6896f41af4c7102dbdab83e8e5614312cac4347bab11706243ee4a", results["behavior:rr:encounter-deck.2:published-result"].Digest);
-        Assert.Equal("1386625b57ce40c8d47968c346bba5d6689bd5276c5892c670661db3239f45fe", results["behavior:rr:encounter-deck.3:published-result"].Digest);
-        Assert.Equal("133186472d2488c900098c9f16d67f0872c8e3e0929803d0532e083731689738", results["behavior:rr:encounter-deck.4:published-result"].Digest);
+        Assert.Equal("554326721b1ef2635a2250f0d98340f9be0c91b4e8e9080368ca3669194c7eeb", results["behavior:rr:encounter-deck.1:empty-with-discard"].Digest);
+        Assert.Equal("554326721b1ef2635a2250f0d98340f9be0c91b4e8e9080368ca3669194c7eeb", results["behavior:rr:encounter-deck.2:published-result"].Digest);
+        Assert.Equal("ce7a1f5331bff75ee3ff31d19dc13ae8ca76bf7993a5be6de67c231373098b1d", results["behavior:rr:encounter-deck.3:published-result"].Digest);
+        Assert.Equal("eaf88e081696bc058340bb54cfccd2be5765a15eba80ca7f2caf947916cbb777", results["behavior:rr:encounter-deck.4:published-result"].Digest);
     }
 
     [Fact]
@@ -21,9 +21,9 @@ public sealed class CoreRuleTranscriptEncounterDeckBranchesHavePinnedOutcomesTes
     {
         var results = CoreTranscriptCorpus.All.Where(result => result.Scenario.StartsWith("specs/behavior/core/player-deck-empty.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
         Assert.Equal(4, results.Count);
-        Assert.Equal("c56eb62acf59a2595edbd5f1ea68d5f4943c831fd006affbe219b7f2244eb4fb", results["behavior:rr:player-deck.1:empty-with-discard"].Digest);
-        Assert.Equal("630f931c433098646b8aaeb96e9baa0f7df8b9a95db6786153607231f57fca45", results["behavior:rr:player-deck.2:published-result"].Digest);
-        Assert.Equal("632b3814faa3f565357047d8e210d63e95c9496deb89e0521cf8b45cccd6a0be", results["behavior:rr:player-deck.3:published-result"].Digest);
-        Assert.Equal("f2537289d2410f47121e99baaf5974340b605db0add098daa33cc93b63decbb9", results["behavior:rr:player-deck.4:published-result"].Digest);
+        Assert.Equal("1b2294b21eb65392d01b23c1f807bdf3ac68bed745a720e7fee2f2a44a8528a6", results["behavior:rr:player-deck.1:empty-with-discard"].Digest);
+        Assert.Equal("05325a4af79242636921e854b4d3339c806c146d7eace3efde8ac4496e3f4697", results["behavior:rr:player-deck.2:published-result"].Digest);
+        Assert.Equal("ee95624b513e86513ef7f7df82edfaf5c29ff2bd74522d1178121c6a54feb634", results["behavior:rr:player-deck.3:published-result"].Digest);
+        Assert.Equal("de4be50276700c3bf7e198d2f667f4e1585d3778681646cf1cc7cec7b858e831", results["behavior:rr:player-deck.4:published-result"].Digest);
     }
 }

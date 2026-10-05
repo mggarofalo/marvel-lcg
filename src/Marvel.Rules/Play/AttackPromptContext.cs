@@ -82,13 +82,13 @@ internal static class AttackPromptContext
         }
         if (attack.CalculatedDamage is { } damage)
         {
-            return $"{AttackCompletion.SubjectTitle(world, facts, enemy.ObjectId)} is attacking {FacedownDrones.Title(target, facts)} "
+            return $"{AttackCompletion.SubjectTitle(world, facts, enemy.ObjectId)} is attacking {EffectiveCards.Title(target, facts)} "
                 + $"for {damage} damage against {player}. "
                 + Damage.PreviewAttack(world, facts, enemy, enemy, target, damage);
         }
         long attackValue = StateFields.Modified(world, enemy, "attack", facts, world.Players);
         return $"{AttackCompletion.SubjectTitle(world, facts, enemy.ObjectId)} is initiating an attack against {player}. "
-            + $"Target: {FacedownDrones.Title(target, facts)}. "
+            + $"Target: {EffectiveCards.Title(target, facts)}. "
             + $"ATK {attackValue} {AttackBoostDescription.Before(world, facts, enemy, step.What)}.";
     }
 
@@ -99,19 +99,19 @@ internal static class AttackPromptContext
         string targetState;
         if (!DeckTypes.IsInPlay(target.Area.Type))
         {
-            targetState = $"{FacedownDrones.Title(target, facts)} was defeated.";
+            targetState = $"{EffectiveCards.Title(target, facts)} was defeated.";
         }
         else
         {
             long maximum = DamagePlacement.Health(world, facts, target);
             long current = Math.Max(0, maximum - target.Damage);
-            targetState = $"{FacedownDrones.Title(target, facts)} is now at {current}/{maximum} HP.";
+            targetState = $"{EffectiveCards.Title(target, facts)} is now at {current}/{maximum} HP.";
         }
         string damage = attack.CalculatedDamage is { } calculated
             ? $" Calculated attack damage: {calculated}."
             : string.Empty;
         return $"{AttackCompletion.SubjectTitle(world, facts, enemy.ObjectId)} finished attacking "
-            + $"{FacedownDrones.Title(target, facts)} against {player}."
+            + $"{EffectiveCards.Title(target, facts)} against {player}."
             + damage
             + (attack.Damaged ? " The attack dealt damage. " : " No damage was dealt. ")
             + targetState;

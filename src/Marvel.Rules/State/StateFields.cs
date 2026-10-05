@@ -10,7 +10,7 @@ namespace Marvel.Rules.State;
 /// <para>
 /// <b>The registered key set is part of the contract.</b> Zero-valued fields are
 /// emitted, so "a port that forgets to register <c>recover</c> fails on the key
-/// rather than passing by luck" (<c>docs/state-digest-v2.md</c>). An empty map
+/// rather than passing by luck" (<c>docs/state-digest-v3.md</c>). An empty map
 /// means the card registers nothing, never that the zone was skipped.
 /// </para>
 /// <para>
@@ -73,7 +73,7 @@ public static class StateFields
         ArgumentNullException.ThrowIfNull(facts);
 
         string faceId = card.FaceId;
-        var kind = FacedownDrones.Kind(card, facts);
+        var kind = EffectiveCards.Kind(card, facts);
         var fields = new Dictionary<string, long>(StringComparer.Ordinal)
         {
             // Three namespaces merged through one guard, as the engine does:
@@ -86,7 +86,7 @@ public static class StateFields
         // Strength has the BRUTE trait, and a digest that emitted only the
         // printed list would describe a board nobody is playing.
         foreach (string trait in world is null
-            ? FacedownDrones.InherentTraits(card, facts)
+            ? EffectiveCards.InherentTraits(card, facts)
             : Traits.Of(world, card, facts))
         {
             Merge(fields, "t_" + trait, 1);
@@ -200,7 +200,7 @@ public static class StateFields
 
         if (PrintedFrom.TryGetValue(field, out string? printedAttribute)
             && PowerAttributes.Contains(printedAttribute)
-            && !FacedownDrones.Is(card)
+            && !EffectiveCards.HasProfile(card)
             && !HasUsablePrintedPower(facts, card.FaceId, printedAttribute))
         {
             // `rr:dash-value.3`: a referenced dash is an unmodifiable zero.
@@ -219,10 +219,10 @@ public static class StateFields
         Card card, string field, ICardFacts facts, int players)
     {
         if (field == "ally_limit"
-            && FacedownDrones.Kind(card, facts) is CardKind.Hero or CardKind.AlterEgo)
+            && EffectiveCards.Kind(card, facts) is CardKind.Hero or CardKind.AlterEgo)
             return (AllyLimit, true);
         if (PrintedFrom.TryGetValue(field, out string? attribute))
-            return (FacedownDrones.BaseValue(card, facts, attribute, players), true);
+            return (EffectiveCards.BaseValue(card, facts, attribute, players), true);
         // Some consumers ask for a signed adjustment and add the base themselves.
         return (0, false);
     }
@@ -240,14 +240,14 @@ public static class StateFields
             }
 
             if (PowerAttributes.Contains(attribute)
-                && !FacedownDrones.Is(card)
+                && !EffectiveCards.HasProfile(card)
                 && !HasUsablePrintedPower(facts, faceId, attribute))
             {
                 fields[field] = 0;
                 continue;
             }
 
-            long value = FacedownDrones.BaseValue(card, facts, attribute, players);
+            long value = EffectiveCards.BaseValue(card, facts, attribute, players);
             if (world is not null)
             {
                 value = Characteristics.IsLost(world, card, field)
@@ -263,7 +263,7 @@ public static class StateFields
 
     /// <summary>Remaining hit points: printed, less the damage on the card.</summary>
     private static long Remaining(Card card, ICardFacts facts, int players) =>
-        Math.Max(0, FacedownDrones.BaseValue(card, facts, "HP", players) - card.Damage);
+        Math.Max(0, EffectiveCards.BaseValue(card, facts, "HP", players) - card.Damage);
 
     /// <summary>Everything modifying one of a card's printed values.</summary>
     private static long Adjustments(

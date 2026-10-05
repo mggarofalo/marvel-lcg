@@ -246,7 +246,7 @@ public static class Damage
         World world, ICardFacts facts, Card target, long maximum, long current,
         string health, long? taken, List<string> notes)
     {
-        Area? villainDeck = CardKinds.IsVillain(facts.Kind(target.FaceId))
+        Area? villainDeck = CardKinds.IsVillain(EffectiveCards.Kind(target, facts))
             ? world.Areas.FirstOrDefault(area => area.Type == DeckType.VillainDeck)
             : null;
         Card? nextVillain = villainDeck is { Cards.Count: > 0 } ? villainDeck.Cards[^1] : null;
@@ -259,7 +259,7 @@ public static class Damage
         }
         else
         {
-            notes.Add(CardKinds.IsVillain(facts.Kind(target.FaceId))
+            notes.Add(CardKinds.IsVillain(EffectiveCards.Kind(target, facts))
                 ? "would defeat the final villain stage"
                 : "would be defeated");
         }
@@ -269,7 +269,7 @@ public static class Damage
     private static bool CarriesOverkill(
         World world, ICardFacts facts, Card attacker, Card target, long? taken,
         long current, bool isAttack, bool granted) =>
-        isAttack && facts.Kind(target.FaceId) is CardKind.Minion or CardKind.Ally
+        isAttack && EffectiveCards.Kind(target, facts) is CardKind.Minion or CardKind.Ally
         && (granted || Keywords.Has(world, attacker, Keywords.Overkill, facts))
         && taken is { } damage && damage > current;
 
@@ -283,7 +283,7 @@ public static class Damage
         if (taken is null) return $"Retaliate {retaliate} applies if the target remains in play";
         return Keywords.Has(world, attacker, Keywords.Ranged, facts)
             ? $"Ranged ignores Retaliate {retaliate}"
-            : $"Retaliate {retaliate} will hit {FacedownDrones.Title(attacker, facts)}";
+            : $"Retaliate {retaliate} will hit {EffectiveCards.Title(attacker, facts)}";
     }
 
     private static string StageName(ICardFacts facts, Card card)

@@ -18,6 +18,8 @@ public enum AbilityCardInstruction
     ReturnToHand,
     /// <summary>Return the selected card to its owner's hand.</summary>
     ReturnOwnedToHand,
+    /// <summary>Place selected physical cards in their owners' discard piles.</summary>
+    ReturnOwnedToDiscard,
     /// <summary>Add the selected card to the resolver's hand.</summary>
     AddToHand,
     /// <summary>Reveal the selected encounter card.</summary>

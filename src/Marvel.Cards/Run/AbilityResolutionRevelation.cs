@@ -64,7 +64,7 @@ internal static class AbilityResolutionRevelation
             .ToList();
         var addresses = reveals.Select(entry => new PendingAbility(
             card.ObjectId, AbilityType.WhenRevealed, player, entry.Ordinal)).ToList();
-        if (world.Facts.Kind(card.FaceId) == CardKind.Treachery)
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Treachery)
         {
             occurrence.BeginCard(card.ObjectId, addresses);
         }
@@ -122,14 +122,14 @@ internal static class AbilityResolutionRevelation
         var cancellation = world.Effects.Active().FirstOrDefault(effect =>
             string.Equals(effect.Kind, "cancelWhenRevealed", StringComparison.Ordinal)
             && effect.Affects == card.ObjectId);
-        var kind = world.Facts.Kind(card.FaceId);
+        var kind = EffectiveCards.Kind(card, world.Facts);
         bool mayBeCanceled = !CardKinds.IsVillain(kind) && kind != CardKind.MainScheme;
         if (!mayBeCanceled || cancellation is null || !world.Effects.Use(cancellation))
         {
             return null;
         }
 
-        if (world.Facts.Kind(card.FaceId) == CardKind.Treachery)
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Treachery)
         {
             occurrence.BeginCard(card.ObjectId, addresses);
         }

@@ -1,0 +1,128 @@
+[
+  {
+    "name": "M01-departure",
+    "test": "DepartureEndsTheCopyBeforeReentry",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M01-departure.log"
+  },
+  {
+    "name": "M02-resumed-source",
+    "test": "ResumingALiveSourceKeepsItsChangesUntilItsCopyEnds",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M02-resumed-source.log"
+  },
+  {
+    "name": "M03-held-resources",
+    "test": "ATemporaryIdentitySuppressesAndThenRestoresTheHeldCardsResourcesAndText",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M03-held-resources.log"
+  },
+  {
+    "name": "M04-defeat-facing",
+    "test": "AnUnresolvedResponseCannotReuseFacingOrAnEndedIncarnation",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M04-defeat-facing.log"
+  },
+  {
+    "name": "M05-defeat-incarnation",
+    "test": "AnUnresolvedResponseCannotReuseFacingOrAnEndedIncarnation",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M05-defeat-incarnation.log"
+  },
+  {
+    "name": "M06-removed-card",
+    "test": "AnUnresolvedDefeatResponseDoesNotReturnACardRemovedFromTheGame",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M06-removed-card.log"
+  },
+  {
+    "name": "M07-explicit-order",
+    "test": "ExplicitObjectOrderIsIndependentOfEngagementInsertionOrder",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M07-explicit-order.log"
+  },
+  {
+    "name": "M08-replacement-order",
+    "test": "NestedOrderingAppliesAfterProjectedVillainReplacement",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M08-replacement-order.log"
+  },
+  {
+    "name": "M09-dynamic-order",
+    "test": "EngagementRelativeQueriesUseTheTraceLocalPlayer",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M09-dynamic-order.log"
+  },
+  {
+    "name": "M10-area-engagement",
+    "test": "EngagementRelativeQueriesUseTheTraceLocalPlayer",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M10-area-engagement.log"
+  },
+  {
+    "name": "M11-unrepresented-order",
+    "test": "UnorderedLastAfterProjectedReengagementFailsBeforeOfferingAWrongTarget",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M11-unrepresented-order.log"
+  },
+  {
+    "name": "M12-profile-reference",
+    "test": "AssignmentReferencesAreResolvedBeforeAnyGameCanRun",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M12-profile-reference.log"
+  },
+  {
+    "name": "M13-profile-health",
+    "test": "DuplicateAndInvalidDefinitionsCannotBeAcceptedAsRuntimeDefaults",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M13-profile-health.log"
+  },
+  {
+    "name": "M14-nested-area",
+    "test": "NamedPublicAreasPreserveTopOrderAndQueriesDoNotAllocateOrMutate",
+    "compiled": true,
+    "exit": 1,
+    "intendedBehaviorCaught": true,
+    "killed": true,
+    "log": "marvel-lifecycle-M14-nested-area.log"
+  }
+]

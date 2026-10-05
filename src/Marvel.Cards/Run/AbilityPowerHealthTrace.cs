@@ -90,7 +90,7 @@ internal static class AbilityPowerHealthTrace
         {
             return AdvancePowerVillain(state, damaged, first, cast);
         }
-        if (FacedownDrones.Kind(damaged, cast.World.Facts)
+        if (EffectiveCards.Kind(damaged, cast.World.Facts)
             is not (CardKind.Minion or CardKind.Ally))
         {
             if (!cast.World.Seats.Any(seat => seat.IdentityCard == damaged))

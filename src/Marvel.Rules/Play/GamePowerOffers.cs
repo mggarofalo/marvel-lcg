@@ -93,7 +93,7 @@ internal static class GamePowerOffers
     // Later windows can change the final amount, so the offered current value is conditional.
     private static string ConsequentialDescription(Game game, Card character, string verb, bool cancelled)
     {
-        if (cancelled || game.facts.Kind(character.FaceId) != CardKind.Ally) return string.Empty;
+        if (cancelled || EffectiveCards.Kind(character, game.facts) != CardKind.Ally) return string.Empty;
         bool attack = verb == BasicPowers.AttackVerb;
         long damage = game.facts.ConsequentialDamage(character.FaceId, attack ? "ATK" : "THW")
             + StateFields.Modified(game.world, character,

@@ -5,6 +5,7 @@ using static Marvel.Cards.Run.AbilityPowerProjection;
 using static Marvel.Cards.Run.AbilityPowerTrace;
 using static Marvel.Cards.Run.AbilityInitiationPrimitives;
 using static Marvel.Cards.Run.AbilityProjection;
+using static Marvel.Cards.Run.AbilitySelectorTrace;
 using static Marvel.Cards.Run.AbilityRepeatedEffectAnalysis;
 using static Marvel.Cards.Run.AbilityResolutionAdmission;
 using static Marvel.Cards.Run.AbilityInitiation;
@@ -37,10 +38,13 @@ internal static class AbilityProjection
 
     internal static bool SelectorMembershipCanChange(AbilityCardSelection selector) => selector switch
     {
+        AbilityCardSelection.FaceDown or AbilityCardSelection.Last or AbilityCardSelection.WithMatchingPlayerArea => true,
+        AbilityCardSelection.InObjectIdOrder ordered => SelectorMembershipCanChange(ordered.Cards),
+        AbilityCardSelection.InPlayerArea { Area: DeckType.EngagedEnemiesArea } => true,
         AbilityCardSelection.WithTrait or AbilityCardSelection.EnemiesWithTrait
             or AbilityCardSelection.Ranked or AbilityCardSelection.WithoutAnotherCopyAttached => true,
         AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.AttackableEnemies
-            or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.DronesEngagedWithYou
+            or AbilityCardQuery.MinionsEngagedWithYou
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer or AbilityCardQuery.UpgradesYouControl
             or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.UpgradesAndSupportsYouControl,
         _ => false,
@@ -58,96 +62,18 @@ internal static class AbilityProjection
                 .Any(stage => string.Equals(titled.Title, cast.World.Facts.Title(stage.FaceId), StringComparison.Ordinal)),
             AbilityCardSelection.EnemiesWithTrait => true,
             AbilityCardSelection.WithTrait filtered => PotentialVillainSelector(filtered.Cards, cast),
+
+            AbilityCardSelection.Last filtered => PotentialVillainSelector(filtered.Cards, cast),
+
+            AbilityCardSelection.FaceDown filtered => PotentialVillainSelector(filtered.Cards, cast),
+
+            AbilityCardSelection.InObjectIdOrder filtered => PotentialVillainSelector(filtered.Cards, cast),
+
+            AbilityCardSelection.WithMatchingPlayerArea filtered => PotentialVillainSelector(filtered.Cards, cast),
             AbilityCardSelection.WithoutAnotherCopyAttached filtered => PotentialVillainSelector(filtered.Cards, cast),
             AbilityCardSelection.Ranked ranked => PotentialVillainSelector(ranked.Cards, cast),
             _ => false,
         };
-    }
-
-    internal static List<Card> TraceCandidateCards(AbilityCardSelection selector, AbilityAdmissionScope cast) => selector switch
-    {
-        AbilityCardSelection.Ranked ranked => TraceCandidateCards(ranked.Cards, cast),
-        AbilityCardSelection.WithTrait filtered => TraceCandidateCards(filtered.Cards, cast),
-        AbilityCardSelection.WithoutAnotherCopyAttached filtered => TraceCandidateCards(filtered.Cards, cast),
-        AbilityCardSelection.EnemiesWithTrait or AbilityCardSelection.Query
-        {
-            Kind: AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies
-                or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.DronesEngagedWithYou
-                or AbilityCardQuery.EnemiesEngagedWithChosenPlayer
-        } =>
-            [.. cast.World.Areas.SelectMany(area => area.Cards)
-                .Where(card => CardKinds.IsEnemy(FacedownDrones.Kind(card, cast.World.Facts)))],
-        AbilityCardSelection.Query
-        {
-            Kind: AbilityCardQuery.UpgradesYouControl
-            or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.UpgradesAndSupportsYouControl
-        } =>
-            [.. cast.World.Areas.Where(area => area.Type is DeckType.UpgradesArea or DeckType.SupportsArea)
-                .SelectMany(area => area.Cards)],
-        _ => [.. Every(selector, cast)],
-    };
-
-    internal static bool TraceSelectorMatches(
-        AbilityCardSelection selector, Card candidate, int currentVillain, AbilityAdmissionScope cast,
-        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
-        Dictionary<(int Card, string Field), long> modifiers,
-        Dictionary<int, int> engagement) => selector switch
-        {
-            AbilityCardSelection.Query query => TraceQueryMatches(query.Kind, candidate, currentVillain,
-                cast, discarded, traits, modifiers, engagement),
-            AbilityCardSelection.Titled titled => string.Equals(titled.Title,
-                cast.World.Facts.Title(candidate.FaceId), StringComparison.Ordinal),
-            AbilityCardSelection.EnemiesWithTrait filtered =>
-                TraceHasTrait(candidate, filtered.Trait, cast, discarded, traits),
-            AbilityCardSelection.WithTrait filtered => TraceSelectorMatches(filtered.Cards, candidate,
-                    currentVillain, cast, discarded, traits, modifiers, engagement)
-                && TraceHasTrait(candidate, filtered.Trait, cast, discarded, traits),
-            AbilityCardSelection.WithoutAnotherCopyAttached filtered => TraceSelectorMatches(filtered.Cards, candidate,
-                    currentVillain, cast, discarded, traits, modifiers, engagement)
-                && !AnotherCopyAttachedInTrace(candidate, cast, discarded),
-            AbilityCardSelection.Discardable filtered => TraceSelectorMatches(filtered.Cards, candidate,
-                    currentVillain, cast, discarded, traits, modifiers, engagement)
-                && (TraceModified(candidate, "permanent", cast, discarded) <= 0
-                    || Rules.Play.Discard.SameSet(cast.World.Facts, cast.Source, candidate)),
-            AbilityCardSelection.Ranked ranked => TraceRankedSelectorIncludesCard(ranked, candidate,
-                currentVillain, cast, discarded, traits, modifiers, engagement),
-            _ => false,
-        };
-
-    internal static bool TraceRankedSelectorIncludesCard(
-        AbilityCardSelection.Ranked ranked, Card candidate, int currentVillain, AbilityAdmissionScope cast,
-        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
-        Dictionary<(int Card, string Field), long> modifiers,
-        Dictionary<int, int> engagement)
-    {
-        if (!TraceSelectorMatches(ranked.Cards, candidate, currentVillain,
-                cast, discarded, traits, modifiers, engagement)
-            || TraceModified(candidate, "permanent", cast, discarded) > 0
-                && !Rules.Play.Discard.SameSet(cast.World.Facts, cast.Source, candidate)) return false;
-
-        var candidates = RankedTraceCandidates(
-            ranked.Cards, currentVillain, cast, discarded, traits, modifiers, engagement);
-        return TraceRankedCandidatesInclude(candidates, candidate, ranked.By, ranked.Maximum,
-            cast, discarded, modifiers);
-    }
-
-    private static List<Card> RankedTraceCandidates(
-        AbilityCardSelection selector, int currentVillain, AbilityAdmissionScope cast,
-        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
-        Dictionary<(int Card, string Field), long> modifiers,
-        Dictionary<int, int> engagement)
-    {
-        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        return TraceCandidateCards(selector, cast)
-            .Select(card => card.ObjectId == boardVillain
-                ? currentVillain >= 0 ? cast.World.Cards[currentVillain] : null : card)
-            .Where(card => card is not null).Cast<Card>().DistinctBy(card => card.ObjectId)
-            .Where(card => !discarded.Contains(card.ObjectId)
-                && TraceSelectorMatches(selector, card, currentVillain,
-                    cast, discarded, traits, modifiers, engagement)
-                && (TraceModified(card, "permanent", cast, discarded) <= 0
-                    || Rules.Play.Discard.SameSet(cast.World.Facts, cast.Source, card)))
-            .ToList();
     }
 
     internal static bool TryTraceCount(
@@ -190,10 +116,10 @@ internal static class AbilityProjection
             bool projectedInPlay = card.ObjectId == next.ObjectId
                 || DeckTypes.IsInPlay(card.Area.Type) && !discarded.Contains(card.ObjectId)
                 || !DeckTypes.IsInPlay(card.Area.Type)
-                    && FacedownDrones.Kind(card, cast.World.Facts) == CardKind.Minion
+                    && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion
                     && !discarded.Contains(card.ObjectId);
-            if (projectedInPlay && TraceSelectorMatches(selector, card, next.ObjectId,
-                cast, discarded, traits, modifiers, engagement)) count++;
+            if (projectedInPlay && TraceSelectorMatches(selector, card, new(next.ObjectId,
+                cast, discarded, traits, modifiers, engagement))) count++;
         }
         return count;
     }
@@ -313,6 +239,14 @@ internal static class AbilityProjection
             AbilityCardSelection.Query { Kind: AbilityCardQuery.Heroes } =>
                 Enumerable.Range(0, cast.World.Seats.Count).Any(seat => SeatMayChange(formsMayChange, seat)),
             AbilityCardSelection.WithTrait filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
+
+            AbilityCardSelection.Last filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
+
+            AbilityCardSelection.FaceDown filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
+
+            AbilityCardSelection.InObjectIdOrder filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
+
+            AbilityCardSelection.WithMatchingPlayerArea filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
             AbilityCardSelection.Ranked ranked => CountSelectorFormsMayChange(ranked.Cards, cast, formsMayChange),
             AbilityCardSelection.WithoutAnotherCopyAttached filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
             _ => false,
@@ -325,7 +259,7 @@ internal static class AbilityProjection
         selector is AbilityCardSelection.Titled titled
             ? cast.World.Cards.FirstOrDefault(card => !DeckTypes.IsInPlay(card.Area.Type)
                 && !discarded.Contains(card.ObjectId)
-                && FacedownDrones.Kind(card, cast.World.Facts) == CardKind.Minion
+                && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion
                 && string.Equals(cast.World.Facts.Title(card.FaceId), titled.Title, StringComparison.Ordinal))
             : null;
 

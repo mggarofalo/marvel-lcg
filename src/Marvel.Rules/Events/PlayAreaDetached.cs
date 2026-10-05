@@ -15,7 +15,7 @@ namespace Marvel.Rules.Events;
 /// </para>
 /// <para>
 /// <b>Emitted-only.</b> Like <see cref="PlayAreaJoined"/>, this topology change
-/// is absent from the v2 digest. <c>World.Detach</c> observes the prior
+/// is absent from the v3 digest. <c>World.Detach</c> observes the prior
 /// membership before removing it and emits the event directly.
 /// </para>
 /// </remarks>

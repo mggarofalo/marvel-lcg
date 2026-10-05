@@ -17,7 +17,7 @@ internal static class EncounterRevealDiscard
         // treachery whose last effect initiates activations faceup until all of
         // them finish. `Then` places this behind any activations or choices the
         // When Revealed text just scheduled.
-        if (facts.Kind(card.FaceId) == CardKind.Treachery)
+        if (EffectiveCards.Kind(card, facts) == CardKind.Treachery)
         {
             world.Agenda.Then(new PhaseStep(
                 Steps.DiscardRevealedTreachery,
@@ -44,7 +44,7 @@ internal static class EncounterRevealDiscard
         // The area check keeps an ability that moved the treachery from being
         // undone. The kind check makes a reconstructed agenda refuse stale or
         // malformed continuation data rather than discarding another type.
-        if (facts.Kind(card.FaceId) != CardKind.Treachery
+        if (EffectiveCards.Kind(card, facts) != CardKind.Treachery
             || card.Area.Type != DeckType.RevealingArea)
         {
             return;

@@ -22,7 +22,7 @@ public sealed class CoreHiddenChoiceMeaningTests
         var (_, world) = Playing(board =>
         {
             drone = board.CreateCard("01091", board.Seats[0].Deck);
-            FacedownDrones.EngageTop(board, 0, "test", "Create_Drone", []);
+            FacedownMinions.EngageTop(board, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile, "test", "Create_Drone", []);
             kick = board.CreateCard(AuthoredCards.SwingingWebKick, board.Seats[0].Hand);
             genius = board.CreateCard("01089", board.Seats[0].Hand);
             energy = board.CreateCard("01088", board.Seats[0].Hand);
@@ -34,7 +34,7 @@ public sealed class CoreHiddenChoiceMeaningTests
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, events));
         Affordance target = Assert.Single(prompt.Affordances, offered => offered.AnchorId == drone!.ObjectId);
 
-        Assert.Equal(FacedownDrones.EffectiveFaceId, target.Label);
+        Assert.Equal("effective-drone", target.Label);
         Assert.Equal("Drone", target.DisplayLabel);
         Assert.Equal("Attack Drone", target.CommitLabel);
         Assert.DoesNotContain("The Power of Protection", target.CommitLabel);

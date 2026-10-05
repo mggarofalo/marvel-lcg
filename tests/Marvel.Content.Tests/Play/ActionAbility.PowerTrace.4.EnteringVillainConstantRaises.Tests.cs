@@ -30,7 +30,7 @@ public sealed class ActionAbilityPowerTraceEnteringVillainConstantRaisesTests
                   "cards": { "query": "villain" }, "amount": 100
                 } },
                 { "dealDamage": {
-                  "cards": { "query": "drones" }, "amount": 1
+                  "cards": {"faceDown": {"withTrait": {"cards": {"query": "minions"}, "trait": "DRONE"}}}, "amount": 1
                 } },
                 { "dealDamage": {
                   "cards": { "query": "attackableEnemies" }, "amount": 1
@@ -62,7 +62,7 @@ public sealed class ActionAbilityPowerTraceEnteringVillainConstantRaisesTests
             source = InPlay(board, AuthoredCards.AuntMay);
             villain = board.TheCardIn(DeckType.VillainArea)!;
             board.CreateCard("01136", board.AreaOf(DeckType.VillainDeck));
-            drone = FacedownDrones.EngageTop(board, 0, "test", "Create_Drone", []);
+            drone = FacedownMinions.EngageTop(board, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile, "test", "Create_Drone", []);
             board.Seats[0].IdentityCard.TakeDamage(9);
         }, hero: true, heroes: ["spider_man", "captain_marvel"], abilities: runner));
         Assert.Contains("constant abilities", refused.Message);

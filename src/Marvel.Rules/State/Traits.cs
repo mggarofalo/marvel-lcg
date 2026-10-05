@@ -47,7 +47,7 @@ public static class Traits
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
 
-        var printed = FacedownDrones.InherentTraits(card, facts);
+        var printed = EffectiveCards.InherentTraits(card, facts);
         var active = world.Effects.Active();
         var lost = active
             .Where(effect => effect.AppliesTo(world, card)

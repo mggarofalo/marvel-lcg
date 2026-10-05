@@ -97,11 +97,13 @@ public sealed class ActionAbilityTypedFixedCountsTopCardChoiceKeepsItsCompiledCo
     [Theory]
     [InlineData("draw", false)]
     [InlineData("draw", true)]
-    [InlineData("createDrones", false)]
-    [InlineData("createDrones", true)]
+    [InlineData("engageTopAsMinion", false)]
+    [InlineData("engageTopAsMinion", true)]
     public void FixedCountEligibilityUsesTheCompiledPositiveCount(string operation, bool choice)
     {
-        var(runner, fields) = MutableNumericRunner(operation, """{"player":"you","count":2}""", choice);
+        var(runner, fields) = MutableNumericRunner(operation, operation == "draw"
+            ? """{"player":"you","count":2}"""
+            : """{"player":"you","count":2,"profile":"effective-drone"}""", choice);
         fields["count"] = new AbilityValue.Number(0);
         Card? source = null;
         var(game, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);

@@ -1,0 +1,52 @@
+from pathlib import Path
+import subprocess,shutil,json,re
+root=Path('/Users/michael/Source/marvel-lcg'); target=Path('/tmp/marvel-lifecycle-mutants')
+files=subprocess.check_output(['git','diff','--name-only','-z'],cwd=root).decode().split('\0')+subprocess.check_output(['git','ls-files','--others','--exclude-standard','-z'],cwd=root).decode().split('\0')
+for name in files:
+ if not name:continue
+ source=root/name;dest=target/name
+ if source.exists():dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,dest);dest.touch()
+ elif dest.exists():dest.unlink()
+content='tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj'; rules='tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj'
+selector='src/Marvel.Cards/Run/AbilitySelectorEvaluation.cs'; trace='src/Marvel.Cards/Run/AbilitySelectorTrace.cs'
+cases=[
+ ('M01-departure',rules,'DepartureEndsTheCopyBeforeReentry','src/Marvel.Rules/State/Card.cs','            ResetForNewCopy();\n        }\n        if','            state.Refresh();\n        }\n        if'),
+ ('M02-resumed-source',content,'ResumingALiveSourceKeepsItsChangesUntilItsCopyEnds','src/Marvel.Cards/Run/AbilityResolutionBindings.cs','sourceState = source.Incarnation == sourceIncarnation && DeckTypes.IsInPlay(source.Area.Type)\n            ? source.InstanceState : restored;','sourceState = restored;'),
+ ('M03-held-resources',content,'ATemporaryIdentitySuppressesAndThenRestoresTheHeldCardsResourcesAndText','src/Marvel.Cards/Run/AbilityProgramQueries.cs','string printed = EffectiveCards.HasProfile(source) ? string.Empty\n            : Resources.GeneratedBy(source.FaceId, world.Facts);','string printed = Resources.GeneratedBy(source.FaceId, world.Facts);'),
+ ('M04-defeat-facing',content,'AnUnresolvedResponseCannotReuseFacingOrAnEndedIncarnation',selector,'(!defeated.RequiresFaceDown || fact.WasFaceDown)','true'),
+ ('M05-defeat-incarnation',content,'AnUnresolvedResponseCannotReuseFacingOrAnEndedIncarnation',selector,'pair.Card.Incarnation == pair.Fact.Incarnation','true'),
+ ('M06-removed-card',content,'AnUnresolvedDefeatResponseDoesNotReturnACardRemovedFromTheGame',selector,' && pair.Card.Area.Type != DeckType.RemovedArea',''),
+ ('M07-explicit-order',content,'ExplicitObjectOrderIsIndependentOfEngagementInsertionOrder',selector,'Every(ordered.Cards).OrderBy(card => card.ObjectId)','Every(ordered.Cards).OrderByDescending(card => card.ObjectId)'),
+ ('M08-replacement-order',content,'NestedOrderingAppliesAfterProjectedVillainReplacement',trace,'return UsesObjectIdOrder(selector)','return selector is AbilityCardSelection.InObjectIdOrder'),
+ ('M09-dynamic-order',content,'EngagementRelativeQueriesUseTheTraceLocalPlayer','src/Marvel.Cards/Run/AbilityProjection.cs','AbilityCardSelection.InObjectIdOrder ordered => SelectorMembershipCanChange(ordered.Cards),','AbilityCardSelection.InObjectIdOrder => false,'),
+ ('M10-area-engagement',content,'EngagementRelativeQueriesUseTheTraceLocalPlayer',trace,'&& TraceEngagedWith(candidate, Seat(area.Player, trace.Cast), trace.Engagement)','&& candidate.Area.Type == DeckType.EngagedEnemiesArea\n            && candidate.Area.PlayArea.Player == Seat(area.Player, trace.Cast)'),
+ ('M11-unrepresented-order',content,'UnorderedLastAfterProjectedReengagementFailsBeforeOfferingAWrongTarget',trace,'trace.Engagement.Count > 0','trace.Engagement.Count < 0'),
+ ('M12-profile-reference',content,'AssignmentReferencesAreResolvedBeforeAnyGameCanRun','src/Marvel.Cards/Dsl/AbilityProfileReferences.cs','!profiles.ContainsKey(id.Value)','id.Value.Length == 0'),
+ ('M14-nested-area',content,'NamedPublicAreasPreserveTopOrderAndQueriesDoNotAllocateOrMutate','src/Marvel.Cards/Run/AbilitySelectionAreaReads.cs','AbilityCardSelection.Last filtered => filtered.Cards,','AbilityCardSelection.Last => null,'),
+ ('M13-profile-health',content,'DuplicateAndInvalidDefinitionsCannotBeAcceptedAsRuntimeDefaults','src/Marvel.Cards/Dsl/AbilityProfileLowering.cs','health <= 0','health < 0'),
+]
+def run(name,project,filters):
+ log=Path('/tmp/marvel-lifecycle-'+name+'.log')
+ with log.open('w') as out:
+  process=subprocess.run(['dotnet','test',project,'-c','Release','--filter',filters,'--logger','console;verbosity=normal'],cwd=target,stdout=out,stderr=subprocess.STDOUT)
+ text=log.read_text()
+ return process.returncode,text,str(log)
+for project,label,filters in [(content,'baseline-content','FullyQualifiedName~ComposableCardSelectionTests|FullyQualifiedName~TemporaryIdentityRegressionTests|FullyQualifiedName~ActiveSourceCopyTests|FullyQualifiedName~EngagementRelativeQueriesUseTheTraceLocalPlayer|FullyQualifiedName~TemporaryProfileLoweringTests'),(rules,'baseline-rules','FullyQualifiedName~EffectiveCardLifecycleTests')]:
+ rc,text,log=run(label,project,filters)
+ print(json.dumps({'baseline':label,'exit':rc,'log':log}),flush=True)
+ if rc:raise SystemExit('Unmutated baseline failed')
+results=[]
+for name,project,test,path,before,after in cases:
+ p=target/path;original=p.read_text()
+ if original.count(before)!=1:raise SystemExit(f'{name} expression count {original.count(before)}')
+ try:
+  p.write_text(original.replace(before,after))
+  rc,output,log=run(name,project,'FullyQualifiedName~'+test)
+  compile_error=bool(re.search(r': error (CS|MSB|NETSDK)',output))
+  matched=bool(re.search(r'Failed Marvel\..*'+re.escape(test),output))
+  result={'name':name,'test':test,'compiled':not compile_error,'exit':rc,'intendedBehaviorCaught':matched,'killed':rc!=0 and not compile_error and matched,'log':log}
+  results.append(result);print(json.dumps(result),flush=True)
+ finally:p.write_text(original)
+Path('/tmp/marvel-lifecycle-mutation-results.json').write_text(json.dumps(results,indent=2)+'\n')
+if not all(r['killed'] for r in results):raise SystemExit('A mutant needs investigation')
+print('All isolated mutants restored; 14 compiling, exercised mutants caught by intended behavior checks',flush=True)

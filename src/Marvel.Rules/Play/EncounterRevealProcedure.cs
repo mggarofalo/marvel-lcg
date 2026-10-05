@@ -133,7 +133,7 @@ internal static class EncounterRevealProcedure
 
         EncounterRevealExposure.Prepare(world, card, player, events);
 
-        bool uniqueBlocked = facts.Kind(card.FaceId) != CardKind.EncounterVillain
+        bool uniqueBlocked = EffectiveCards.Kind(card, facts) != CardKind.EncounterVillain
             && Uniqueness.IsBlocked(world, facts, card);
         if (uniqueBlocked)
         {
@@ -144,7 +144,7 @@ internal static class EncounterRevealProcedure
             return;
         }
 
-        if (facts.Kind(card.FaceId) == CardKind.Attachment
+        if (EffectiveCards.Kind(card, facts) == CardKind.Attachment
             && abilities.AttachmentTargets(world, card) is { Count: > 1 } targets)
         {
             world.Agenda.ThenContinuation(new PhaseStep(
@@ -192,7 +192,7 @@ internal static class EncounterRevealProcedure
             var simultaneous = keyword.Concat(printed).ToList();
             if (simultaneous.Count > 1)
             {
-                if (facts.Kind(card.FaceId) == CardKind.Treachery)
+                if (EffectiveCards.Kind(card, facts) == CardKind.Treachery)
                 {
                     occurrence.BeginCard(card.ObjectId, simultaneous);
                 }

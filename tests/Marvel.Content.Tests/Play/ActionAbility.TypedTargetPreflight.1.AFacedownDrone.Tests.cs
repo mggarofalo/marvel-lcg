@@ -34,10 +34,10 @@ public sealed class ActionAbilityTypedTargetPreflightAFacedownDroneTests
         {
             source = InPlay(board, AuthoredCards.AuntMay);
             drone = board.CreateCard("01091", board.Seats[0].Deck);
-            FacedownDrones.EngageTop(board, 0, "test", "Create_Drone", []);
+            FacedownMinions.EngageTop(board, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile, "test", "Create_Drone", []);
             board.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 1);
         }, abilities: runner);
-        Assert.True(FacedownDrones.Is(drone!));
+        Assert.True(EffectiveCards.HasProfile(drone!));
         Assert.True(runner.CanRemoveThreat(world, world.TheCardIn(DeckType.MainSchemesArea)!));
         Assert.Contains(game.Pending!.Affordances, option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
     }

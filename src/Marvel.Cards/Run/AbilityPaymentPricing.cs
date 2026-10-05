@@ -154,7 +154,7 @@ internal static class AbilityPaymentPricing
         World world, Card card, int player, AbilityEffect effect,
         IResourceCardAbilities resourceAbilities)
     {
-        if (world.Facts.Kind(card.FaceId) != CardKind.Event)
+        if (EffectiveCards.Kind(card, world.Facts) != CardKind.Event)
         {
             return null;
         }
@@ -220,7 +220,7 @@ internal static class AbilityPaymentPricing
         }
 
         IReadOnlyList<AbilityCost> steps = cost is AbilityCost.Sequence sequence ? sequence.Costs : [cost];
-        if (world.Facts.Kind(source.FaceId) == CardKind.Event
+        if (EffectiveCards.Kind(source, world.Facts) == CardKind.Event
             && steps.Any(step => step is AbilityCost.Damage { MustTakeAll: true }))
         {
             // Playing an event pays its printed resource price through

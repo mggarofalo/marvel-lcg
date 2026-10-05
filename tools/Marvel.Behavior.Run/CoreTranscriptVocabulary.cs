@@ -21,5 +21,6 @@ internal static class CoreTranscriptVocabulary
         .. GivenTranscriptVocabulary.Bindings(),
         .. WhenTranscriptVocabulary.Bindings(),
         .. ThenTranscriptVocabulary.Bindings(),
+        .. CoreTranscriptHistoricalState.Bindings(),
     ];
 }

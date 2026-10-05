@@ -95,16 +95,16 @@ public static class WorldProjection
         {
             return null;
         }
-        bool drone = FacedownDrones.Is(card);
-        CardKind kind = FacedownDrones.Kind(card, world.Facts);
-        IReadOnlyDictionary<string, string> attributes = Attributes(world, card, drone);
-        CardFaceDescriptor face = DescribeFace(world, card, kind, attributes, drone);
+        bool assigned = EffectiveCards.HasProfile(card);
+        CardKind kind = EffectiveCards.Kind(card, world.Facts);
+        IReadOnlyDictionary<string, string> attributes = EffectiveCards.Attributes(card, world.Facts);
+        CardFaceDescriptor face = DescribeFace(world, card, kind, attributes, assigned);
         return CardDescriptorProjection.WithTableState(
             world,
             card,
             Back(printedKind),
             face,
-            drone ? CardAudience.Everyone : Audience(card, prompt, searchVisible),
+            assigned ? CardAudience.Everyone : Audience(card, prompt, searchVisible),
             addressable: !DeckTypes.FaceDownOnEntry(card.Area.Type));
     }
 
@@ -113,22 +113,22 @@ public static class WorldProjection
         Card card,
         CardKind kind,
         IReadOnlyDictionary<string, string> attributes,
-        bool drone)
+        bool assigned)
     {
         var face = new CardFaceDescriptor(
-            drone ? FacedownDrones.EffectiveFaceId : card.FaceId,
-            FacedownDrones.Title(card, world.Facts),
-            drone ? string.Empty : world.Facts.Subtitle(card.FaceId),
+            EffectiveCards.FaceId(card),
+            EffectiveCards.Title(card, world.Facts),
+            assigned ? string.Empty : world.Facts.Subtitle(card.FaceId),
             kind,
             ProjectedFields(world, card, kind))
         {
             Traits = DisplayTraits(world, card),
             Cost = attributes.TryGetValue("Cost", out string? cost) ? cost : null,
             PrintedStats = PrintedStats(attributes),
-            Keywords = drone ? [] : [.. world.Facts.Keywords(card.FaceId)],
-            RulesText = drone ? string.Empty : world.Facts.Text(card.FaceId),
-            RulesMarkup = drone ? string.Empty : world.Facts.FormattedText(card.FaceId),
-            ArtFaceId = drone ? null : card.FaceId,
+            Keywords = assigned ? [] : [.. world.Facts.Keywords(card.FaceId)],
+            RulesText = assigned ? string.Empty : world.Facts.Text(card.FaceId),
+            RulesMarkup = assigned ? string.Empty : world.Facts.FormattedText(card.FaceId),
+            ArtFaceId = assigned ? null : card.FaceId,
             Damage = card.Damage,
             Counters = card.Tokens
                 .Where(token => token.Key.StartsWith("c_", StringComparison.Ordinal))
@@ -136,15 +136,6 @@ public static class WorldProjection
         };
         return face;
     }
-
-    private static IReadOnlyDictionary<string, string> Attributes(
-        World world, Card card, bool drone) =>
-        drone
-            ? new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["SCH"] = "1", ["ATK"] = "1", ["HP"] = "1",
-            }
-            : world.Facts.Attributes(card.FaceId);
 
     private static IReadOnlyDictionary<string, long> ProjectedFields(
         World world, Card card, CardKind kind)
@@ -161,7 +152,7 @@ public static class WorldProjection
         {
             ["health"] = Math.Max(
                 0,
-                FacedownDrones.BaseValue(card, world.Facts, "HP", world.Players)
+                EffectiveCards.BaseValue(card, world.Facts, "HP", world.Players)
                 + StateFields.Modified(world, card, "health", world.Facts, world.Players)
                 - card.Damage),
         };

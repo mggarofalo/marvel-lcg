@@ -190,7 +190,7 @@ public static class CardPlay
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (facts.Kind(card.FaceId) == CardKind.Event)
+        if (EffectiveCards.Kind(card, facts) == CardKind.Event)
         {
             throw new RulesNotImplementedException(
                 $"event '{card.FaceId}' cannot be played ignoring its resource cost "
@@ -240,7 +240,7 @@ public static class CardPlay
         ArgumentNullException.ThrowIfNull(paying);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (facts.Kind(card.FaceId) == CardKind.Event)
+        if (EffectiveCards.Kind(card, facts) == CardKind.Event)
         {
             throw new RulesNotImplementedException(
                 $"event '{card.FaceId}' cannot use an out-of-zone play permission "
@@ -297,7 +297,7 @@ public static class CardPlay
         ArgumentOutOfRangeException.ThrowIfNegative(controller);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(controller, world.Players);
 
-        if (facts.Kind(ally.FaceId) != CardKind.Ally)
+        if (EffectiveCards.Kind(ally, facts) != CardKind.Ally)
         {
             throw new RulesNotImplementedException(
                 $"card {ally.ObjectId} is not an ally and cannot enter an allies area");

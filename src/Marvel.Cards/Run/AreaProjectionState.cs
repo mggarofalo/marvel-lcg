@@ -40,7 +40,7 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
         card.ObjectId, card.Tokens.GetValueOrDefault("k_threat"));
 
     public long HealthOf(AbilityAdmissionContext current, Card card) => AbilityAmounts.SaturatingSum(
-        FacedownDrones.BaseValue(
+        EffectiveCards.BaseValue(
             card, current.World.Facts, "HP", current.World.Players),
         [ModifiedOf(current, card, "health")]);
 
@@ -247,7 +247,7 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
         if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.Villain })
         {
             return CardKinds.IsVillain(
-                current.World.Facts.Kind(target.FaceId));
+                EffectiveCards.Kind(target, current.World.Facts));
         }
         // Other selectors may change membership with the projected facts.
         // Failing closed is required until that membership is projected.
@@ -271,7 +271,7 @@ internal sealed class AreaProjectionState(AbilityAdmissionContext context)
         {
             return false;
         }
-        return FacedownDrones.InherentTraits(card, current.World.Facts)
+        return EffectiveCards.InherentTraits(card, current.World.Facts)
                 .Contains(trait, StringComparer.Ordinal)
             || active.Any(effect =>
                 ProjectedTraitEffectApplies(current, effect, card)

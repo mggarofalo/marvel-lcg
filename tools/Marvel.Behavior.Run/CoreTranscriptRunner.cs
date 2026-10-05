@@ -20,7 +20,7 @@ internal sealed class CoreTranscriptRunner
     private readonly IReadOnlyList<TranscriptBinding> bindings;
     private readonly SetupCatalog setup;
     private readonly CardCatalog cards;
-    private readonly AbilityBook abilities;
+    private readonly AbilityProgram abilities;
 
     public CoreTranscriptRunner(string root)
         : this(root, null)
@@ -35,8 +35,8 @@ internal sealed class CoreTranscriptRunner
             Path.Combine(root, "datasets", "setup", "setup.json")));
         cards = CardCatalog.Parse(File.ReadAllText(
             Path.Combine(root, "datasets", "cards", "cards.json")));
-        abilities = AbilityCatalog.Parse(File.ReadAllText(
-            Path.Combine(root, "datasets", "abilities", "abilities.json")));
+        abilities = AbilityLowering.Book(AbilityCatalog.Parse(File.ReadAllText(
+            Path.Combine(root, "datasets", "abilities", "abilities.json"))));
         bindings = bindingOverride ?? DefaultVocabulary();
     }
 

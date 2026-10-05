@@ -115,7 +115,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.GrantControlledCharacters grant =>
             grant.Player == AbilityPlayer.You || Contains(grant.Amount),
         AbilityEffect.DealEncounterCards deal => Contains(deal.Players),
-        AbilityEffect.CreateDrones create => Contains(create.Players),
+        AbilityEffect.EngageTopAsMinion create => Contains(create.Players),
         AbilityEffect.DealEncounterCard deal =>
             Contains(deal.Card) || deal.Player == AbilityPlayer.You,
         _ => throw new InvalidOperationException("Unknown player-target player-binding effect"),
@@ -154,7 +154,7 @@ internal static class AbilityPlayerBindingAnalysis
     {
         AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
-        AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
+        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
             or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun or AbilityEffect.DiscardUntil
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
@@ -184,13 +184,18 @@ internal static class AbilityPlayerBindingAnalysis
             or AbilityCardQuery.IdentitySpecificInYourHand
             or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.CharactersYouControl
             or AbilityCardQuery.UpgradesYouControl or AbilityCardQuery.AlliesYouControl
-            or AbilityCardQuery.DronesEngagedWithYou,
+           ,
         AbilityCardSelection.WithTrait trait => Contains(trait.Cards),
+        AbilityCardSelection.FaceDown trait => Contains(trait.Cards),
+        AbilityCardSelection.Last trait => Contains(trait.Cards),
+        AbilityCardSelection.InObjectIdOrder trait => Contains(trait.Cards),
+        AbilityCardSelection.WithMatchingPlayerArea trait => Contains(trait.Cards),
         AbilityCardSelection.WithoutAnotherCopyAttached unoccupied => Contains(unoccupied.Cards),
         AbilityCardSelection.Discardable discardable => Contains(discardable.Cards),
         AbilityCardSelection.Ranked ranked => Contains(ranked.Cards),
+        AbilityCardSelection.InPlayerArea area => area.Player is AbilityPlayer.You or AbilityPlayer.Controller,
         AbilityCardSelection.InAreas areas => areas.Areas.Contains(AbilitySearchArea.YourDeck),
-        AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait => false,
+        AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled selector in player-binding analysis"),
     };

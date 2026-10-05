@@ -12,7 +12,7 @@ namespace Marvel.Cards.Run;
 internal static class AbilityProgramQueries
 {
     internal static IReadOnlyList<CompiledCardAbility> On(AbilityProgram program, Card card) =>
-        FacedownDrones.Is(card) ? [] : program.On(card.FaceId);
+        EffectiveCards.HasProfile(card) ? [] : program.On(card.FaceId);
 
     internal static string ResourcesGeneratedBy(
         World world, AbilityProgram program, Card source, Card? payingFor)
@@ -20,7 +20,8 @@ internal static class AbilityProgramQueries
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
 
-        string printed = Resources.GeneratedBy(source.FaceId, world.Facts);
+        string printed = EffectiveCards.HasProfile(source) ? string.Empty
+            : Resources.GeneratedBy(source.FaceId, world.Facts);
         if (payingFor is null) return printed;
 
         string classes = world.Facts.Attributes(payingFor.FaceId)
@@ -50,7 +51,7 @@ internal static class AbilityProgramQueries
         var allies = candidates.Where(card =>
             card.Ready
             && card.Area.PlayArea == PlayArea.Of(attack.Player)
-            && world.Facts.Kind(card.FaceId) == CardKind.Ally).ToList();
+            && EffectiveCards.Kind(card, world.Facts) == CardKind.Ally).ToList();
         return allies.Count > 0
             ? new DefenderChoice(allies, Required: true)
             : new DefenderChoice(candidates, Required: false);
@@ -150,7 +151,7 @@ internal static class AbilityProgramQueries
         foreach (var card in world.Areas.Where(area => DeckTypes.IsInPlay(area.Type))
                      .SelectMany(area => area.Cards))
         {
-            if (FacedownDrones.Is(card)) continue;
+            if (EffectiveCards.HasProfile(card)) continue;
             foreach (var ability in On(program, card).Where(ability =>
                          ability.Trigger.Timing == AbilityType.Constant))
             {
@@ -172,7 +173,7 @@ internal static class AbilityProgramQueries
     internal static bool CanTakeDamage(
         World world, AbilityProgram program, Card target, Card source)
     {
-        if (!DeckTypes.IsInPlay(target.Area.Type) || FacedownDrones.Is(target)) return true;
+        if (!DeckTypes.IsInPlay(target.Area.Type) || EffectiveCards.HasProfile(target)) return true;
         foreach (var ability in On(program, target).Where(ability =>
                      ability.Trigger.Timing == AbilityType.Constant))
         {
@@ -242,7 +243,7 @@ internal static class AbilityProgramQueries
             AbilityEffect.Conditional conditional => (expressions.Test(conditional.Test)
                     ? conditional.Then : conditional.Else) is { } branch
                 && ProhibitsDamage(branch, world, source, expressions),
-            AbilityEffect.PreventDamageFrom prohibition => world.Facts.Kind(source.FaceId)
+            AbilityEffect.PreventDamageFrom prohibition => EffectiveCards.Kind(source, world.Facts)
                 == prohibition.SourceKind && Rules.State.Traits.Has(
                     world, source, prohibition.SourceTrait, world.Facts),
             AbilityEffect.PreventDamageWhile prohibition => expressions.Test(prohibition.Condition),

@@ -181,10 +181,10 @@ internal static class AbilityDamageAndThreatExecution
         bool suspended = false;
         foreach (var target in Every(damage.Cards, context))
         {
-            long before = target.Damage;
-            suspended |= DamagePlacement.DealOutcome(context.World, context.World.Facts, context.Source, target,
-                amount, context.Trigger, verb, context.Events) == Damage.Outcome.Suspended;
-            if (context.Power == BasicPowers.AttackVerb && target.Damage > before)
+            var result = DamagePlacement.Resolve(context.World, context.World.Facts,
+                new DamageRequest(context.Source, target, amount, context.Trigger, verb), context.Events);
+            suspended |= result.Outcome == Damage.Outcome.Suspended;
+            if (context.Power == BasicPowers.AttackVerb && result.Taken > 0)
                 context.Occurrence.Also(Steps.DamageDealt);
         }
         if (suspended) state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
@@ -313,7 +313,7 @@ internal static class AbilityDamageAndThreatExecution
         foreach (var scheme in schemes)
         {
             if (!removal.IgnoresCrisis && scheme.Area.Type == DeckType.MainSchemesArea
-                && context.World.Facts.Kind(context.Source.FaceId) is CardKind.Event or CardKind.Ally or CardKind.Hero or CardKind.AlterEgo or CardKind.Upgrade or CardKind.Support
+                && EffectiveCards.Kind(context.Source, context.World.Facts) is CardKind.Event or CardKind.Ally or CardKind.Hero or CardKind.AlterEgo or CardKind.Upgrade or CardKind.Support
                 && MainScheme.Crisis(context.World, context.World.Facts)) continue;
             Threat.Remove(context.World, context.World.Facts, context.ThreatAbilities, scheme,
                 AbilityAmounts.SaturatingSum(AbilityAmounts.SaturatingMultiply(

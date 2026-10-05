@@ -176,73 +176,26 @@ internal sealed record AbilityResolutionState(
     public bool HasPendingDependency => StructuralPath.Any(frame =>
         frame is DependentFrame { Predecessor: true, Outcome: null });
 
-    private AbilityCardReference? chosenBinding;
-    private AbilityCardReference? playerSelectionBinding;
-    private int sourceIncarnation = Source.Incarnation;
+    private AbilityResolutionBindings Bindings { get; } = new(Source);
 
-    /// <summary>The card the player picked, once they have.</summary>
-    public Card? Chosen => CurrentCard(chosenBinding, "chosen");
-
-    /// <summary>The outer card selection used by chosen-player references.</summary>
-    public Card? PlayerSelection =>
-        CurrentCard(playerSelectionBinding, "player selection");
-
-    public int SourceBindingIncarnation => sourceIncarnation;
-
-    public void RestoreSourceIncarnation(int incarnation) =>
-        sourceIncarnation = incarnation;
-
-    /// <summary>Records the card a <c>chooseCard</c> was answered with.</summary>
-    /// <param name="card">What they picked.</param>
-    public void Choose(Card? card)
-    {
-        chosenBinding = Bind(card);
-    }
-
-    /// <summary>Records a player answer in both chosen namespaces.</summary>
-    public void ChooseSelection(Card? card)
-    {
-        var binding = Bind(card);
-        chosenBinding = binding;
-        playerSelectionBinding = binding;
-    }
-
-    public AbilityCardReference? CaptureChosen() => chosenBinding;
-
-    public AbilityCardReference? CapturePlayerSelection() => playerSelectionBinding;
-
-    public AbilityCardReference? CaptureCurrentSelection() =>
-        playerSelectionBinding ?? chosenBinding;
-
-    public void RestoreChosen(AbilityCardReference? binding) => chosenBinding = binding;
-
-    public void RestorePlayerSelection(AbilityCardReference? binding) =>
-        playerSelectionBinding = binding;
-
-    public void RestorePersistedSelection(
-        Card card, int area, int incarnation, bool overwriteChosen)
-    {
-        var binding = new AbilityCardReference(card, area, incarnation);
-        playerSelectionBinding = binding;
-        if (overwriteChosen || chosenBinding is null)
-        {
-            chosenBinding = binding;
-        }
-    }
-
-    public bool SourceBindingIsCurrent(Card card) =>
-        Source.ObjectId == card.ObjectId
-        && sourceIncarnation == card.Incarnation;
-
-    private static AbilityCardReference? Bind(Card? card) => card is null
-        ? null
-        : new AbilityCardReference(card, card.Area.Id, card.Incarnation);
-
-    private Card? CurrentCard(AbilityCardReference? binding, string name) => binding?.Resolve(Source, name);
-
-    public AbilityQueryContext QueryContext() => new(
-        World, Source, Occurrence, Player, sourceIncarnation,
-        chosenBinding, playerSelectionBinding, Altered, [.. PowerTargets]);
+    public IReadOnlyDictionary<string, long> CaptureSourceState() =>
+        Bindings.CaptureSourceState(Results);
+    public void RestoreSourceState(CardInstanceState? restored) => Bindings.RestoreSourceState(restored);
+    public Card? Chosen => Bindings.Chosen;
+    public Card? PlayerSelection => Bindings.PlayerSelection;
+    public int SourceBindingIncarnation => Bindings.SourceBindingIncarnation;
+    public void RestoreSourceIncarnation(int incarnation) => Bindings.RestoreSourceIncarnation(incarnation);
+    public void Choose(Card? card) => Bindings.Choose(card);
+    public void ChooseSelection(Card? card) => Bindings.ChooseSelection(card);
+    public AbilityCardReference? CaptureChosen() => Bindings.CaptureChosen();
+    public AbilityCardReference? CapturePlayerSelection() => Bindings.CapturePlayerSelection();
+    public AbilityCardReference? CaptureCurrentSelection() => Bindings.CaptureCurrentSelection();
+    public void RestoreChosen(AbilityCardReference? binding) => Bindings.RestoreChosen(binding);
+    public void RestorePlayerSelection(AbilityCardReference? binding) => Bindings.RestorePlayerSelection(binding);
+    public void RestorePersistedSelection(Card card, int area, int incarnation, bool overwriteChosen) =>
+        Bindings.RestorePersistedSelection(card, area, incarnation, overwriteChosen);
+    public bool SourceBindingIsCurrent(Card card) => Bindings.SourceBindingIsCurrent(card);
+    public AbilityQueryContext QueryContext() => Bindings.QueryContext(this);
 
     public AbilityExpressionContext ExpressionContext() => new(
         QueryContext(), Results.ToImmutableDictionary(StringComparer.Ordinal),

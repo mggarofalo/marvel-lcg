@@ -23,8 +23,8 @@ public sealed class CoreDroneAbilityTests
 
         runner.WhenRevealed(world, scheme, player: 0);
 
-        Assert.Single(FacedownDrones.EngagedWith(world, 0));
-        Assert.Single(FacedownDrones.EngagedWith(world, 1));
+        Assert.Single(Marvel.Content.Tests.Cards.AuthoredCards.FacedownDrones(world, 0));
+        Assert.Single(Marvel.Content.Tests.Cards.AuthoredCards.FacedownDrones(world, 1));
     }
 
     [Rule("rr:lasting-effects")]
@@ -33,7 +33,7 @@ public sealed class CoreDroneAbilityTests
     {
         var world = Board(players: 1);
         SeedDecks(world, cards: 3);
-        FacedownDrones.EngageTop(world, 0, "test", "Create_Drone", []);
+        FacedownMinions.EngageTop(world, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile, "test", "Create_Drone", []);
         var ultron = world.CreateCard("01135", world.AreaOf(DeckType.VillainArea));
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
@@ -47,7 +47,7 @@ public sealed class CoreDroneAbilityTests
         runner.Resolve(world, occurrence, ability, [], []);
 
         Assert.Collection(
-            FacedownDrones.EngagedWith(world, 0),
+            Marvel.Content.Tests.Cards.AuthoredCards.FacedownDrones(world, 0),
             _ => { },
             _ => { });
         Assert.Equal(4, StateFields.Modified(world, ultron, "attack", Cards, world.Players));
@@ -102,9 +102,9 @@ public sealed class CoreDroneAbilityTests
 
         runner.WhenRevealed(world, imperative, player: 0);
 
-        Assert.Empty(FacedownDrones.EngagedWith(world, 0));
+        Assert.Empty(Marvel.Content.Tests.Cards.AuthoredCards.FacedownDrones(world, 0));
         Assert.Collection(
-            FacedownDrones.EngagedWith(world, 1),
+            Marvel.Content.Tests.Cards.AuthoredCards.FacedownDrones(world, 1),
             _ => { },
             _ => { });
     }
@@ -119,7 +119,7 @@ public sealed class CoreDroneAbilityTests
         // cannot run "After Hulk attacks" from that hidden player card.
         var world = Board(players: 1);
         var hulk = world.CreateCard("01050", world.Seats[0].Deck);
-        FacedownDrones.EngageTop(world, 0, "test", "Create_Drone", []);
+        FacedownMinions.EngageTop(world, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile, "test", "Create_Drone", []);
         var runner = AuthoredCards.Runner();
         var occurrence = Occurrence.ForAttack(
             1,
@@ -143,7 +143,7 @@ public sealed class CoreDroneAbilityTests
         // facedown text is nevertheless inactive.
         var world = Board(players: 1);
         var helicarrier = world.CreateCard("01092", world.Seats[0].Deck);
-        FacedownDrones.EngageTop(world, 0, "test", "Create_Drone", []);
+        FacedownMinions.EngageTop(world, 0, Marvel.Content.Tests.Cards.AuthoredCards.DroneProfile, "test", "Create_Drone", []);
         var runner = AuthoredCards.Runner();
 
         Assert.DoesNotContain(

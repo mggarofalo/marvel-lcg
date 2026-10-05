@@ -62,12 +62,23 @@ public static class DamagePlacement
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(events);
 
-        var placed = Place(
-            world, facts, source, target, amount, trigger, verb, events);
-        dealt = placed.Dealt;
-        taken = placed.Taken;
-        return FinishPlaced(
-            world, facts, source, placed, trigger, verb, events, by);
+        var result = Resolve(world, facts,
+            new DamageRequest(source, target, amount, trigger, verb, by), events);
+        dealt = result.Dealt;
+        taken = result.Taken;
+        return result.Outcome;
+    }
+
+    /// <summary>Resolves damage and retains dealt/taken facts across defeat.</summary>
+    public static DamageResult Resolve(
+        World world, ICardFacts facts, DamageRequest request, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var placed = Place(world, facts, request.Source, request.Target,
+            request.Amount, request.Trigger, request.Verb, events);
+        var outcome = FinishPlaced(world, facts, request.Source, placed,
+            request.Trigger, request.Verb, events, request.By);
+        return new DamageResult(outcome, placed.Dealt, placed.Taken);
     }
 
     /// <summary>
@@ -190,9 +201,9 @@ public static class DamagePlacement
         {
             Trigger = trigger,
             Verb = verb,
-            Subjects = FacedownDrones.Is(placed.Target)
+            Subjects = EffectiveCards.HasProfile(placed.Target)
                 ? new Dictionary<int, string>
-                { [placed.Target.ObjectId] = FacedownDrones.EffectiveTitle }
+                { [placed.Target.ObjectId] = EffectiveCards.Title(placed.Target, facts) }
                 : null,
         });
     }
@@ -278,7 +289,7 @@ public static class DamagePlacement
         // `StateFields`' printed-attribute map -- remaining hit points are
         // computed, not printed -- so `Modified` on it returns the modifiers
         // alone, which is exactly the second half of this sum.
-        return FacedownDrones.BaseValue(character, facts, "HP", world.Players)
+        return EffectiveCards.BaseValue(character, facts, "HP", world.Players)
             + StateFields.Modified(world, character, "health", facts, world.Players);
     }
 }

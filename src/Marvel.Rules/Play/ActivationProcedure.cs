@@ -65,7 +65,7 @@ internal static class ActivationProcedure
         // and it schemes. Read the form immediately before each activation:
         // an earlier activation can change it.
         var identity = world.Seats[seat].IdentityCard;
-        bool attacking = facts.Kind(identity.FaceId) != CardKind.AlterEgo;
+        bool attacking = EffectiveCards.Kind(identity, facts) != CardKind.AlterEgo;
 
         var remaining = RemainingMinions(world, seat, activated);
         if (NeedsOrder(step, villain, activated, remaining))

@@ -105,7 +105,7 @@ public static class DamageAttacks
         // The same is true of control. A defeated ally moves to its owner's
         // discard pile, but `rr:overkill.1` sends excess damage to the identity
         // of the player who **controlled** it while it was defeated.
-        CardKind attackedKind = FacedownDrones.Kind(target, facts);
+        CardKind attackedKind = EffectiveCards.Kind(target, facts);
         int spillPlayer = attackedKind == CardKind.Ally
             ? target.Area.PlayArea.Player
             : -1;
@@ -120,7 +120,6 @@ public static class DamageAttacks
         // same rule, and only one of them could be right after an edit.
         var damaged = new List<Card>();
         int firstDamageEvent = events.Count;
-        long before = target.Damage;
         bool hasOverkill = Keywords.Has(world, attacker, Keywords.Overkill, facts);
         bool canRetaliate = retaliate
             && !Keywords.Has(world, attacker, Keywords.Ranged, facts);
@@ -149,10 +148,9 @@ public static class DamageAttacks
 
         long dealt = MeasuredDamage(events, firstDamageEvent);
 
-        // Measured rather than assumed. A tough status card prevents all of the
-        // damage, so the number on the dial is the only honest answer to
-        // whether the character took any.
-        RecordDamagedTarget(damaged, target, before);
+        // Placement is the fact of taking damage, even when defeat or a
+        // delayed effect subsequently ends that in-play copy.
+        if (placed.Landed) damaged.Add(target);
 
         // `rr:ranged.1` -- "this attack ignores the retaliate keyword".
         FinishOrSuspendAttack(
@@ -209,14 +207,6 @@ public static class DamageAttacks
             .Where(change => change.Field == "health"
                 && change.From is { } from && change.To is { } to && from > to)
             .Sum(change => change.From!.Value - change.To!.Value);
-
-    private static void RecordDamagedTarget(List<Card> damaged, Card target, long before)
-    {
-        if (target.Damage != before)
-        {
-            damaged.Add(target);
-        }
-    }
 
     private static void FinishOrSuspendAttack(
         World world, ICardFacts facts, Card attacker, Card source, Card target,
@@ -336,7 +326,7 @@ public static class DamageAttacks
         // left play during damage, while the character that was attacked is
         // now represented by the next stage.
         if (!DeckTypes.IsInPlay(attacked.Area.Type)
-            && CardKinds.IsVillain(facts.Kind(attacked.FaceId))
+            && CardKinds.IsVillain(EffectiveCards.Kind(attacked, facts))
             && world.TheCardIn(DeckType.VillainArea) is { } next
             && string.Equals(
                 facts.Title(attacked.FaceId), facts.Title(next.FaceId),

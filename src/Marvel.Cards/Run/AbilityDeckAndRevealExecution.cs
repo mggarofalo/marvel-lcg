@@ -21,7 +21,7 @@ internal static class AbilityDeckAndRevealExecution
                     context.World, context.Trigger, context.Events), context),
             AbilityEffect.DealEncounterCard deal => DealEncounterCard(deal, context),
             AbilityEffect.DealEncounterCards deal => DealEncounterCards(deal, context),
-            AbilityEffect.CreateDrones drones => CreateDrones(drones, context),
+            AbilityEffect.EngageTopAsMinion drones => EngageTopAsMinion(drones, context),
             AbilityEffect.DiscardUntil discard => DiscardUntil(discard, context),
             AbilityEffect.RecoverDiscardedByResource recovery =>
                 RecoverDiscardedByResource(recovery, context),
@@ -98,14 +98,15 @@ internal static class AbilityDeckAndRevealExecution
         return AbilityDeckAndRevealResult.Handled;
     }
 
-    private static AbilityDeckAndRevealResult CreateDrones(
-        AbilityEffect.CreateDrones drones, AbilityDeckAndRevealContext context)
+    private static AbilityDeckAndRevealResult EngageTopAsMinion(
+        AbilityEffect.EngageTopAsMinion drones, AbilityDeckAndRevealContext context)
     {
         foreach (int player in Players(drones.Players, context))
         {
             for (long created = 0; created < drones.Count; created++)
-                FacedownDrones.EngageTop(
-                    context.World, player, context.Trigger, "Create_Drone", context.Events);
+                FacedownMinions.EngageTop(context.World, player,
+                    context.Program.Profiles[drones.Profile], context.Trigger,
+                    "Create_Facedown_Minion", context.Events);
         }
         return AbilityDeckAndRevealResult.Handled;
     }

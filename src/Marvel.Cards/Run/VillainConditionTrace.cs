@@ -129,7 +129,7 @@ internal sealed class VillainConditionTrace(
             StringComparison.Ordinal)
         && (DeckTypes.IsInPlay(card.Area.Type)
             ? !discarded.Contains(card.ObjectId)
-            : FacedownDrones.Kind(card, cast.World.Facts) == CardKind.Minion
+            : EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion
                 && !discarded.Contains(card.ObjectId));
 
     private bool TryTraceExists(AbilityCardSelection cards, out bool result)
@@ -180,7 +180,7 @@ internal sealed class VillainConditionTrace(
         if (test is AbilityCondition.IsKind kind
             && IsProjectedVillainSelector(kind.Card))
         {
-            result = cast.World.Facts.Kind(next.FaceId) == kind.Kind;
+            result = EffectiveCards.Kind(next, cast.World.Facts) == kind.Kind;
             return true;
         }
         result = false;

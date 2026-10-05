@@ -130,14 +130,18 @@ public sealed class ActionAbilityContinuationsANoOpPlayerFramePreservesEarlierDa
 
     [Rule("rr:engage.1")]
     [Rule("rr:guard.1")]
-    [Fact]
-    public void EngagementRelativeQueriesUseTheTraceLocalPlayer()
+    [Theory]
+    [InlineData("""{"query":"minionsEngagedWithYou"}""")]
+    [InlineData("""{"inPlayerArea":{"area":"engagedEnemies","player":"you"}}""")]
+    [InlineData("""{"inObjectIdOrder":{"query":"minionsEngagedWithYou"}}""")]
+    [InlineData("""{"inObjectIdOrder":{"inPlayerArea":{"area":"engagedEnemies","player":"you"}}}""")]
+    public void EngagementRelativeQueriesUseTheTraceLocalPlayer(string selector)
     {
         // Engagement is the player's play area at runtime. During eligibility,
         // trace-local entry is that area's synthetic equivalent: after the
-        // hero re-engages Hydra, minionsEngagedWithYou must find and defeat it,
+        // hero re-engages Hydra, the selected player area must find and defeat it,
         // exposing Rhino before the lethal move and unsupported third frame.
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """
+        var runner = Runner(AuthoredCards.AuntMay, "Action", $$"""
             { "eachPlayer": { "effect": { "if": {
               "test": { "inForm": {
                 "player": "firstPlayer", "form": "alter-ego"
@@ -151,7 +155,7 @@ public sealed class ActionAbilityContinuationsANoOpPlayerFramePreservesEarlierDa
                     "where": "engagedWithYou"
                   } },
                   { "dealDamage": {
-                    "cards": { "query": "minionsEngagedWithYou" }, "amount": 3
+                    "cards": {{selector}}, "amount": 3
                   } },
                   { "dealDamage": {
                     "cards": { "query": "attackableEnemies" }, "amount": 1

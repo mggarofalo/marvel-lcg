@@ -1,0 +1,33 @@
+using System.Diagnostics;
+using System.Reflection;
+using System.Text.Json;
+using Marvel.Cards.Dsl;
+using Marvel.Cards.Run;
+using Marvel.Content;
+using Marvel.Rules.State;
+using Marvel.Rules.Timing;
+using Marvel.Rules.Events;
+class Benchmark {
+ static AbilityValue Value(JsonElement e)=>e.ValueKind switch{JsonValueKind.String=>new AbilityValue.Word(e.GetString()!),JsonValueKind.Number=>new AbilityValue.Number(e.GetInt64()),JsonValueKind.Object=>new AbilityValue.Map(e.EnumerateObject().ToDictionary(p=>p.Name,p=>Value(p.Value))),JsonValueKind.Array=>new AbilityValue.List(e.EnumerateArray().Select(Value).ToArray()),_=>throw new Exception()};
+ static object Profile(AbilityProgram program){var profiles=typeof(AbilityProgram).GetProperty("Profiles")!.GetValue(program)!;return profiles.GetType().GetProperty("Item")!.GetValue(profiles,new object[]{"effective-drone"})!;}
+ static void Main(string[] args){string root=args[0];bool current=args[1]=="current";
+ var facts=CardCatalog.Parse(File.ReadAllText(root+"/datasets/cards/cards.json"));var program=AbilityLowering.Book(AbilityCatalog.Parse(File.ReadAllText(root+"/datasets/abilities/abilities.json")));
+ var world=new World(facts,2,7){Abilities=new AbilityRunner(program)};
+ for(int i=0;i<2;i++){var seat=world.CreateSeat("p"+i);seat.IdentityCard=world.CreateCard(i==0?"01040a":"01001a",seat.Hero);for(int c=0;c<12;c++)world.CreateCard("01089",seat.Deck);for(int c=0;c<3;c++)world.CreateCard(c==0?"01037":"01008",world.AreaOf(DeckType.DiscardPile,PlayArea.Of(i),cardOwner:i));}
+ var source=world.CreateCard("01006",world.AreaOf(DeckType.SupportsArea,PlayArea.Of(0),cardOwner:0));
+ for(int i=46;i<=49;i++)world.CreateCard("010"+i,world.AreaOf(DeckType.UpgradesArea,PlayArea.Of(0),cardOwner:0));
+ var rules=typeof(World).Assembly;var engageType=rules.GetType(current?"Marvel.Rules.Play.FacedownMinions":"Marvel.Rules.State.FacedownDrones")!;
+ object? profile=current?Profile(program):null;
+ for(int i=0;i<6;i++)engageType.GetMethod("EngageTop")!.Invoke(null,current?new object?[]{world,i%2,profile,"benchmark","Engage",new List<GameEvent>()}:new object?[]{world,i%2,"benchmark","Engage",new List<GameEvent>()});
+ var identity=world.Seats[1].IdentityCard;var chosen=new AbilityCardReference(identity,identity.Area.Id,identity.Incarnation);
+ var context=new AbilityQueryContext(world,source,new Occurrence(1,[]),0,source.Incarnation,chosen,chosen,null,[]);
+ var workloads=new[]{("bp","BlackPantherUpgrades","""{"withTrait":{"cards":{"query":"upgradesYouControl"},"trait":"BLACK_PANTHER"}}"""),("global","Drones","""{"inObjectIdOrder":{"faceDown":{"withTrait":{"cards":{"query":"minions"},"trait":"DRONE"}}}}"""),("engaged","DronesEngagedWithYou","""{"withTrait":{"cards":{"query":"minionsEngagedWithYou"},"trait":"DRONE"}}"""),("identities-tech","IdentitiesWithTechInDiscard","""{"withMatchingPlayerArea":{"cards":{"query":"identities"},"area":"discardPile","kind":"upgrade","trait":"TECH"}}"""),("top-tech","TopmostTechInChosenDiscard","""{"last":{"withTrait":{"cards":{"inPlayerArea":{"area":"discardPile","player":"chosenPlayer"}},"trait":"TECH"}}}""")};
+ string before=world.Digest().Canonical();long words=world.Random.Generator.WordsConsumed;int areas=world.Areas.Count;
+ foreach(var(name,legacy,json)in workloads){using var doc=JsonDocument.Parse(json);var selector=current?AbilityLowering.Cards(Value(doc.RootElement),new("benchmark",0,"selector")):new AbilityCardSelection.Query((AbilityCardQuery)Enum.Parse(typeof(AbilityCardQuery),legacy));
+ int[] ids=new AbilitySelectorEvaluation(context,program:program).Every(selector).Select(c=>c.ObjectId).ToArray();for(int warm=0;warm<1000;warm++)new AbilitySelectorEvaluation(context,program:program).Every(selector);
+ var samples=new double[5];long checksum=0;for(int run=0;run<5;run++){var timer=Stopwatch.StartNew();for(int i=0;i<20000;i++)checksum+=new AbilitySelectorEvaluation(context,program:program).Every(selector).Count;timer.Stop();samples[run]=timer.Elapsed.TotalMilliseconds;}
+ Array.Sort(samples);Console.WriteLine(JsonSerializer.Serialize(new{name,ids,medianMilliseconds=samples[2],iterations=20000,samples,checksum}));
+ }
+ if(world.Digest().Canonical()!=before||world.Random.Generator.WordsConsumed!=words||world.Areas.Count!=areas)throw new Exception("impure queries");Console.WriteLine("purity verified; book and selectors compiled once; no live cache");
+ }
+}

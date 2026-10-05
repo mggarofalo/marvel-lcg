@@ -13,7 +13,7 @@ public static class EngineBuildIdentity
     public const string RngContract = "mt19937-iso-cxx";
 
     /// <summary>The canonical hidden-state serialization implemented by this build.</summary>
-    public const string StateDigest = "state-digest-v2";
+    public const string StateDigest = "state-digest-v3";
 
     /// <summary>The session schema written by this build.</summary>
     public const int SaveSchema = SessionSave.CurrentSchema;

@@ -107,7 +107,9 @@ public sealed class IndirectDamageUnassignedIdentityTests : IndirectDamageTestBa
         Sequence.Answer(world, Cards, runner, assign, Decision.Take(assign.Affordances[0].Id, [..Enumerable.Repeat(identity.ObjectId, amount)], []), events);
         Assert.Null(Sequence.Work(world, Cards, runner, events));
         Assert.Equal(0, identity.Damage);
-        Assert.Equal(amount, soak.Damage);
+        Assert.Contains(events.OfType<Marvel.Rules.Events.FieldSet>(), change =>
+            change.Card == soak.ObjectId && change.Field == "k_damage" && change.To == amount);
+        Assert.Equal(0, soak.Damage);
         Assert.Equal(DeckType.EncounterDiscardPile, soak.Area.Type);
         Assert.Equal(DeckType.HandsArea, backflip.Area.Type);
         DamagePlacement.Deal(world, Cards, villain, identity, 1, "later", "Damage", events);

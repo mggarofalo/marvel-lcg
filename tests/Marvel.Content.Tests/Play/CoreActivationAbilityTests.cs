@@ -139,6 +139,7 @@ public sealed class CoreActivationAbilityTests
         var original = world.CreateCard(
             "01087",
             world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+        original.AssignProfile(AuthoredCards.DroneProfile);
         original.TurnFaceDown();
         world.CreateCard("01002", world.Seats[0].Deck);
         var card = world.CreateCard("01147", world.AreaOf(DeckType.RevealingArea));
@@ -164,6 +165,7 @@ public sealed class CoreActivationAbilityTests
         var original = world.CreateCard(
             "01087",
             world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+        original.AssignProfile(AuthoredCards.DroneProfile);
         original.TurnFaceDown();
         world.CreateCard("01002", world.Seats[0].Deck);
         var card = world.CreateCard("01147", world.AreaOf(DeckType.RevealingArea));
@@ -196,6 +198,7 @@ public sealed class CoreActivationAbilityTests
         var drone = world.CreateCard(
             "01087",
             world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+        drone.AssignProfile(AuthoredCards.DroneProfile);
         drone.TurnFaceDown();
         var card = world.CreateCard("01147", world.AreaOf(DeckType.RevealingArea));
         var occurrence = new Occurrence(
@@ -224,10 +227,12 @@ public sealed class CoreActivationAbilityTests
         var first = world.CreateCard(
             "01087",
             world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+        first.AssignProfile(AuthoredCards.DroneProfile);
         first.TurnFaceDown();
         var second = world.CreateCard(
             "01088",
             world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+        second.AssignProfile(AuthoredCards.DroneProfile);
         second.TurnFaceDown();
         var card = world.CreateCard("01147", world.AreaOf(DeckType.RevealingArea));
         world.Agenda.Add(new PhaseStep(

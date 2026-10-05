@@ -32,7 +32,7 @@ public static class LabeledAbilities
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(player, world.Players);
 
         var identity = world.Seats[player].IdentityCard;
-        var kind = FacedownDrones.Kind(source, facts);
+        var kind = EffectiveCards.Kind(source, facts);
         if (kind == CardKind.Support || kind == CardKind.Ally)
         {
             return source;
@@ -57,7 +57,7 @@ public static class LabeledAbilities
 
     private static bool IsFriendlyCharacter(Card card, ICardFacts facts) =>
         card.Area.PlayArea.IsPlayers
-        && FacedownDrones.Kind(card, facts) is CardKind.Hero or CardKind.AlterEgo or CardKind.Ally;
+        && EffectiveCards.Kind(card, facts) is CardKind.Hero or CardKind.AlterEgo or CardKind.Ally;
 
     private static bool IsIdentityExtension(CardKind kind) =>
         kind is CardKind.Hero or CardKind.AlterEgo or CardKind.Event

@@ -332,7 +332,7 @@ internal static class AbilityTargetAdmission
         string status = instruction.Status;
         return [.. Every(instruction.Cards, cast).Where(card =>
             DeckTypes.IsInPlay(card.Area.Type)
-                && CardKinds.IsCharacter(FacedownDrones.Kind(card, cast.World.Facts))
+                && CardKinds.IsCharacter(EffectiveCards.Kind(card, cast.World.Facts))
                 && Statuses.Count(cast.World, card, status)
                 < Statuses.Limit(cast.World, cast.World.Facts, card, status))];
     }

@@ -109,7 +109,7 @@ internal static class AbilityCardQueries
             cast.World.Facts.Title(face), title, StringComparison.Ordinal));
 
         bool ShowsTitle(Card card) => card.FaceUp
-            && !FacedownDrones.Is(card)
+            && !EffectiveCards.HasProfile(card)
             && string.Equals(
                 cast.World.Facts.Title(card.FaceId), title, StringComparison.Ordinal);
 
@@ -123,7 +123,7 @@ internal static class AbilityCardQueries
         var matches = cast.World.Areas
             .Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
-            .Where(card => !FacedownDrones.Is(card) && HasPrintedTitle(card))
+            .Where(card => !EffectiveCards.HasProfile(card) && HasPrintedTitle(card))
             .ToList();
         if (matches.Count <= 1)
         {
@@ -178,7 +178,7 @@ internal static class AbilityCardQueries
     /// <summary>The one card of a kind in the player's set-aside pile.</summary>
     internal static Card? Aside(AbilityQueryContext cast, CardKind kind) =>
         cast.World.Seats[cast.Player].Nemesis.Cards
-            .FirstOrDefault(card => cast.World.Facts.Kind(card.FaceId) == kind);
+            .FirstOrDefault(card => EffectiveCards.Kind(card, cast.World.Facts) == kind);
 
     /// <summary>
     /// Which player is resolving this ability, or a refusal.

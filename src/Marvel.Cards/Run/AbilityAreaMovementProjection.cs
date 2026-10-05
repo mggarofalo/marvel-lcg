@@ -165,7 +165,7 @@ internal static class AbilityAreaMovementProjection
             or "drawToPrintedHandSize" or "search"
             or "shuffleInto" or "dealEncounterCard" or "dealEncounterCards"
             or "revealTop" or "discardTop" or "discardUntil"
-            or "createDrones" or "indirectDamage" or "discardFromHand"
+            or "engageTopAsMinion" or "indirectDamage" or "discardFromHand"
             or "discardUpToFromHand" or "discardAnyFromHand" or "spend"
             or "spendPrinted" or "spendEnergyX")
         {

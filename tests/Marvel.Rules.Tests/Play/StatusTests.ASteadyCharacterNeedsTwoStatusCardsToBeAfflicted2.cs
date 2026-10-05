@@ -194,7 +194,7 @@ public sealed class StatusASteadyCharacterNeedsTwoStatusCardsToBeAfflictedTests 
         var hero = world.Seats[0].IdentityCard;
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         world.CreateCard("underlying-ally", world.Seats[0].Deck);
-        var drone = Assert.IsType<Card>(FacedownDrones.EngageTop(world, 0, "test", "Create_Drone", []));
+        var drone = Assert.IsType<Card>(FacedownMinions.EngageTop(world, 0, DroneProfileFixture.Profile, "test", "Create_Drone", []));
         Grant(world, hero, Marvel.Rules.Timing.Keywords.Overkill);
         Agendas.Happening(world);
         DamageAttacks.Attack(world, printed, hero, drone, 4, "test", "Attack", []);

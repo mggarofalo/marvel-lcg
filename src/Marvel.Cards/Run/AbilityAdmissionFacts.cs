@@ -20,12 +20,12 @@ internal static class AbilityAdmissionFacts
     {
         var seat = world.Seats[player];
         int hand = seat.Hand.Cards.Count - (source.Area == seat.Hand
-            && world.Facts.Kind(source.FaceId) == CardKind.Event ? 1 : 0);
+            && EffectiveCards.Kind(source, world.Facts) == CardKind.Event ? 1 : 0);
         return hand < world.Facts.PrintedValue(
             seat.IdentityCard.FaceId, "HS", world.Players);
     }
 
-    internal static bool CanCreateDrones(
+    internal static bool CanEngageTopAsMinion(
         World world, IEnumerable<int> players, long count) =>
         count > 0 && players.Any(player =>
             world.Seats[player].Deck.Cards.Count > 0
