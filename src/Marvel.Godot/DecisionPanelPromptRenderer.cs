@@ -20,7 +20,9 @@ internal static class DecisionPanelPromptRenderer
         var scroll = new ScrollContainer
         {
             Name = "DecisionBodyScroll",
-            CustomMinimumSize = new Vector2(0, panel.ControlMetrics.MinimumPointerTarget),
+            CustomMinimumSize = new Vector2(0, panel.PaymentModalOpen
+                ? panel.ControlMetrics.MinimumHeight * 2 + 16
+                : panel.ControlMetrics.MinimumPointerTarget),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             FollowFocus = true,

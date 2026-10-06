@@ -60,7 +60,7 @@ func _draft_web_shooter() -> Control:
 	if not await _wait_for_web_shooter_draft(
 			"dragging anchor 19 did not prepare its exact Web-Shooter affordance"):
 		return null
-	return card
+	return _card_for_anchor(WEB_SHOOTER)
 
 
 func _visible_cards_named(title: String) -> Array[Node]:

@@ -422,8 +422,8 @@ func _attached_control_focus_is_safe(state: Dictionary) -> bool:
 		var replacement := render_viewport.gui_get_focus_owner() as Button
 		return replacement != null and replacement.get_instance_id() != issued_id \
 				and (replacement.name == &"ContextualCommit" or replacement.has_meta("spatial_card_anchor") \
-					or (main.find_child("PaymentModal", true, false) != null \
-						and main.find_child("PaymentModal", true, false).is_ancestor_of(replacement)))):
+					or (main.find_child("PaymentWorkspace", true, false) != null \
+						and main.find_child("PaymentWorkspace", true, false).is_ancestor_of(replacement)))):
 		var focus := render_viewport.gui_get_focus_owner()
 		var replacements := main.find_children("Card%s*" % issued_anchor, "Button", true, false) \
 				.map(func(candidate: Button) -> String:

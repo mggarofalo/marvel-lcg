@@ -12,6 +12,7 @@ internal sealed class MainTabletopController
     private int? renderedExpandedSeat;
     private bool? renderedHistoryExpanded;
     private Vector2? renderedViewport;
+    private bool renderedPayment;
 
     internal MainTabletopController(Main main)
     {
@@ -33,6 +34,7 @@ internal sealed class MainTabletopController
         renderedDesktopTabletop = desktop;
         renderedHistoryExpanded = desktop && TableHistoryDrawer.IsExpanded(main);
         renderedViewport = viewport;
+        renderedPayment = CardPaymentWorkspaceLayout.Active(main);
         return desktop ? RenderDesktop(prompt) : null;
     }
 
@@ -44,7 +46,7 @@ internal sealed class MainTabletopController
         bool historyChanged = desktop
             && renderedHistoryExpanded != TableHistoryDrawer.IsExpanded(main);
         if (main.board.Visible
-            && (geometryChanged || historyChanged
+            && (geometryChanged || historyChanged || renderedPayment != CardPaymentWorkspaceLayout.Active(main)
                 || DesktopTabletop.RouteChanged(renderedDesktopTabletop, viewport))
             && main.CurrentGame?.World is { } world)
         {

@@ -21,7 +21,7 @@ internal static class BoardInteractionBinder
         board.BindCompleteChoices(source => panel.ShowCompleteChoices(source));
         board.BindExplicitInteraction(gesture => Activate(panel, composer, gesture));
         board.BindContextualInteraction(
-            id => panel.SelectAffordance(id, panel.GetRenderGeneration()),
+            id => { if (!panel.PaymentModalOpen) panel.SelectAffordance(id, panel.GetRenderGeneration()); },
             () => Decline(panel, composer, panel.GetRenderGeneration()),
             () => Submit(panel, composer, panel.GetRenderGeneration()),
             () => CancelDraft(panel, composer),
@@ -31,12 +31,12 @@ internal static class BoardInteractionBinder
 
     private static void SelectCost(DecisionPanel panel, DecisionComposer composer, int index)
     {
-        if (CurrentOperations(panel, composer).TrySelectCost(index)) panel.Rebuild();
+        if (!panel.PaymentModalOpen && CurrentOperations(panel, composer).TrySelectCost(index)) panel.Rebuild();
     }
 
     private static void CancelDraft(DecisionPanel panel, DecisionComposer composer)
     {
-        if (!panel.IsCurrentDraft(composer, panel.GetRenderGeneration())
+        if (panel.PaymentModalOpen || !panel.IsCurrentDraft(composer, panel.GetRenderGeneration())
             || composer.Selected is not { } selected) return;
         int anchor = selected.AnchorId;
         var fresh = BoardDraftCancellation.Clear(composer);
@@ -51,7 +51,7 @@ internal static class BoardInteractionBinder
         DecisionComposer composer,
         CardPointerGesture gesture)
     {
-        if (gesture.Card.TargetId is not { } cardId)
+        if (panel.PaymentModalOpen || gesture.Card.TargetId is not { } cardId)
         {
             return false;
         }
@@ -91,7 +91,7 @@ internal static class BoardInteractionBinder
     private static BoardDraftMutation Submit(
         DecisionPanel panel, DecisionComposer composer, int generation)
     {
-        if (!panel.IsCurrentDraft(composer, generation)
+        if (panel.PaymentModalOpen || !panel.IsCurrentDraft(composer, generation)
             || !composer.TryBuild(out EngineDecision? decision, out _))
         {
             return BoardDraftMutation.None;
@@ -103,7 +103,7 @@ internal static class BoardInteractionBinder
     private static BoardDraftMutation Decline(
         DecisionPanel panel, DecisionComposer composer, int generation)
     {
-        if (!panel.IsCurrentDraft(composer, generation)
+        if (panel.PaymentModalOpen || !panel.IsCurrentDraft(composer, generation)
             || !composer.TryDecline(out EngineDecision? decision, out _))
         {
             return BoardDraftMutation.None;
