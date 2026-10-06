@@ -75,7 +75,7 @@ func _prepare_art_pack() -> void:
 
 
 func _web_shooter_draft_is_prepared() -> bool:
-	var modal := main.find_child("PaymentModal", true, false) as Control
+	var modal := main.find_child("PaymentWorkspace", true, false) as Control
 	if modal != null and modal.is_visible_in_tree(): return true
 	return _table_card_control("Card*Target") != null \
 		or _table_card_control("Card*Generator") != null \

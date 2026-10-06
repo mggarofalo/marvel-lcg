@@ -74,8 +74,7 @@ public sealed partial class Main : Control
     internal MainBoardController boardController = null!;
     internal MainEventController eventController = null!;
     internal MainLayoutController layoutController = null!;
-    internal LocalGameClient? client;
-    internal ClientSession? session;
+    internal readonly ClientGameLifecycle lifecycle = new();
     internal VBoxContainer contentStack = null!;
     internal GameProgressPresentation? currentProgress;
     internal OptionButton mode = null!;
@@ -116,15 +115,9 @@ public sealed partial class Main : Control
     internal bool lastResultExpanded;
     internal Label title = null!;
     internal string? transientInvitation;
-    internal bool decisionPending;
-    internal bool resolveInFlight;
     internal bool joining;
-    internal int setupLoadGeneration;
-    internal bool setupLoading;
-    internal bool synchronizing;
-    internal ClientStartupError? uncertainMutationError;
     /// <summary>The latest complete visibility-safe response accepted as authoritative.</summary>
-    public EngineResponse? CurrentGame { get; internal set; }
+    public EngineResponse? CurrentGame => lifecycle.CurrentGame;
     /// <inheritdoc />
     public override void _Ready()
     {
@@ -183,6 +176,7 @@ public sealed partial class Main : Control
     /// <inheritdoc />
     public override void _ExitTree()
     {
+        lifecycle.Detach();
         eventController?.ReleaseEventTween();
         boardController?.Dispose();
         ClientComposition.Flush(TimeSpan.FromSeconds(3));
@@ -347,11 +341,11 @@ public sealed partial class Main : Control
 
     internal Task LoadSetupAsync() => setupController.LoadSetupAsync();
 
-    internal bool IsCurrentSetupLoad(int generation, string requestedEndpoint) =>
+    internal bool IsCurrentSetupLoad(long generation, string requestedEndpoint) =>
         setupController.IsCurrentSetupLoad(generation, requestedEndpoint);
 
     internal void ApplySetupFailure(
-        int generation,
+        long generation,
         string requestedEndpoint,
         ClientStartupError error) =>
         setupController.ApplySetupFailure(generation, requestedEndpoint, error);
@@ -371,20 +365,12 @@ public sealed partial class Main : Control
     internal void CopyInvitation() => setupController.CopyInvitation();
     internal void CopyInteractionReport() => setupController.CopyInteractionReport();
     internal void SaveInteractionReport() => setupController.SaveInteractionReport();
-    internal void RestoreEntryAfterFailure(ClientStartupError error) =>
-        setupController.RestoreEntryAfterFailure(error);
     internal void OnDecisionSubmitted(EngineDecision decision) =>
         sessionController.OnDecisionSubmitted(decision);
     internal void OnUndoLastPressed() => sessionController.OnUndoLastPressed();
     internal void OnHistoryMetaClicked(Variant meta) => sessionController.OnHistoryMetaClicked(meta);
     internal void UndoTo(int cursor) => sessionController.UndoTo(cursor);
-    internal void ShowUnconfirmed(ClientStartupError error) => sessionController.ShowUnconfirmed(error);
     internal void OnSynchronizePressed() => sessionController.OnSynchronizePressed();
-    internal void ApplySynchronizationFailure(
-        ClientStartupError error,
-        GameProgressPresentation prior,
-        bool hadUncertainMutation) =>
-        sessionController.ApplySynchronizationFailure(error, prior, hadUncertainMutation);
     internal void ReturnToJoinAfterSessionLoss(ClientStartupError error) =>
         sessionController.ReturnToJoinAfterSessionLoss(error);
     internal void RenderBoard(WorldDescriptor world) => boardController.RenderBoard(world);
@@ -458,7 +444,7 @@ public sealed partial class Main : Control
         invitation.Editable = enabled;
         startFlow.Disabled = !enabled;
         joinFlow.Disabled = !enabled;
-        reloadSetup.Disabled = !enabled || setupLoading;
+        reloadSetup.Disabled = !enabled || lifecycle.EntryPending;
     }
 
     internal void SetAssignmentControlsEnabled(bool enabled)

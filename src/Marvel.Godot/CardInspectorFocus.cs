@@ -8,7 +8,10 @@ internal sealed class CardInspectorFocus
 {
     private readonly Main main;
     private int? returnTargetId;
+    private string? returnPaymentControl;
+    private Marvel.Decisions.DecisionComposer? returnPaymentDraft;
     private bool backdropDismissalPending;
+    private int restorationGeneration;
 
     internal CardInspectorFocus(Main main)
     {
@@ -30,7 +33,14 @@ internal sealed class CardInspectorFocus
         detail.GrabFocus();
     }
 
-    internal void RememberSource(int? targetId) => returnTargetId = targetId;
+    internal void RememberSource(int? targetId, Control? source)
+    {
+        restorationGeneration++;
+        returnTargetId = targetId;
+        returnPaymentControl = source?.Name.ToString().StartsWith("InspectPayment", StringComparison.Ordinal) == true
+            ? source.Name.ToString() : null;
+        returnPaymentDraft = returnPaymentControl is null ? null : main.decisions.composer;
+    }
 
     internal void Input(InputEvent input)
     {
@@ -119,18 +129,25 @@ internal sealed class CardInspectorFocus
     internal void Hide()
     {
         int? targetId = main.cardInspectorPinned ? returnTargetId : null;
-        int generation = checked(++main.cardInspectorGeneration);
+        string? paymentControl = main.cardInspectorPinned ? returnPaymentControl : null;
+        var paymentDraft = returnPaymentDraft;
+        main.cardInspectorGeneration++;
+        int generation = checked(++restorationGeneration);
         main.cardInspectorPinned = false;
         backdropDismissalPending = false;
         main.cardInspectorHovered = false;
         main.cardInspectorFrame.FocusMode = Control.FocusModeEnum.None;
         main.cardInspectorScroll.FocusMode = Control.FocusModeEnum.None;
         main.inspectedCardId = null;
+        if (main.cardInspector.HasMeta("inspected_card_anchor"))
+            main.cardInspector.RemoveMeta("inspected_card_anchor");
         returnTargetId = null;
+        returnPaymentControl = null;
+        returnPaymentDraft = null;
         main.cardInspector.Visible = false;
         if (targetId is not null)
         {
-            Callable.From(() => RestoreSource(targetId.Value, generation)).CallDeferred();
+            Callable.From(() => RestoreSource(targetId.Value, paymentControl, paymentDraft, generation)).CallDeferred();
         }
     }
 
@@ -216,11 +233,15 @@ internal sealed class CardInspectorFocus
         candidates[next].GrabFocus();
     }
 
-    private void RestoreSource(int targetId, int generation)
+    private void RestoreSource(int targetId, string? paymentControl,
+        Marvel.Decisions.DecisionComposer? paymentDraft, int generation)
     {
         if (InteractionControl.IsUsable(main)
-            && generation == main.cardInspectorGeneration && !main.cardInspector.Visible
-            && main.boardRender?.ControlFor(targetId) is Control source
+            && generation == restorationGeneration && !main.cardInspectorPinned
+            && (paymentControl is null || ReferenceEquals(main.decisions.composer, paymentDraft))
+            && (paymentControl is not null
+                ? main.decisions.FocusHost.FindChild(paymentControl, true, false) as Control
+                : main.boardRender?.ControlFor(targetId)) is Control source
             && InteractionControl.IsUsable(source))
         {
             source.GrabFocus();

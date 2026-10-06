@@ -51,7 +51,11 @@ internal sealed class DecisionPaymentSources
             {
                 if (operations.TryToggleGenerator(source.Id)) panel.Rebuild();
             };
-            panel.AddContent(button);
+            var row = new HBoxContainer { ThemeTypeVariation = GodotThemeVariations.CompactRow };
+            button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            row.AddChild(button);
+            row.AddChild(CardPaymentInspection.Button(panel, CardPaymentWorkspaceLayout.MainFor(panel), source.Id));
+            panel.AddContent(row);
             if (!source.DiscardsCard && !string.IsNullOrWhiteSpace(source.Reference))
             {
                 CardRulesMarkup.ResourceFont();

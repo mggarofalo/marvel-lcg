@@ -76,6 +76,8 @@ public sealed class EnemyAttackDefenderTests
         var abilities = new NoCardAbilities();
 
         var asked = Sequence.Work(world, facts, abilities, []);
+        Sequence.Answer(world, facts, abilities, asked!, Decision.Decline, []);
+        asked = Sequence.Work(world, facts, abilities, []);
         Sequence.Answer(world, facts, abilities, asked!, Decision.Take(ally.ObjectId), []);
         World.MoveToTop(
             ally, world.AreaOf(DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1));

@@ -2,7 +2,7 @@ extends "res://smoke/local_game_smoke_relationship_checks.gd"
 
 
 func _payment_modal() -> Control:
-	var modal := main.find_child("PaymentModal", true, false) as Control
+	var modal := main.find_child("PaymentWorkspace", true, false) as Control
 	return modal if modal != null and modal.is_visible_in_tree() else null
 
 
@@ -38,9 +38,10 @@ func _payment_modal_is_safe() -> bool:
 	if "Discard cards from hand" not in copy or "Resource abilities" not in copy:
 		_fail("payment does not explain its sources and commitment")
 		return false
-	var stage := modal.find_child("StagedCard", true, false) as Control
-	if stage == null or not stage.is_visible_in_tree():
-		_fail("card play has no staged card representation")
+	var played := modal.find_child("InspectPayment*", true, false) as Button
+	var table := main.find_child("AstraTableSurface", true, false) as Control
+	if played == null or table == null or modal.get_global_rect().intersects(table.get_global_rect()):
+		_fail("payment obscures the table or omits inspection of the played card")
 		return false
 	var overlay := main.find_child("RelationshipOverlay", true, false)
 	if overlay != null and overlay.get_child_count() > 0:
@@ -50,17 +51,8 @@ func _payment_modal_is_safe() -> bool:
 	if submit == null or not submit.disabled:
 		_fail("the unpaid card can be committed")
 		return false
-	for _step in 12:
-		var tab := InputEventKey.new()
-		tab.keycode = KEY_TAB
-		tab.pressed = true
-		render_viewport.push_input(tab, true)
-		await process_frame
-		var focus := render_viewport.gui_get_focus_owner()
-		if focus == null or not modal.is_ancestor_of(focus):
-			_fail("keyboard focus escaped the payment modal")
-			return false
-	return await _capture_checkpoint("card-payment-modal")
+	if not await _payment_inspection_preserves_draft(): return false
+	return await _capture_checkpoint("card-payment-workspace")
 
 
 func _payment_symbols_are_readable(modal: Control) -> bool:
@@ -122,3 +114,119 @@ func _payment_recovery_surface_is_safe() -> bool:
 	_decision().SetSubmitting(false)
 	await process_frame
 	return _payment_modal() != null
+
+
+func _payment_inspection_preserves_draft() -> bool:
+	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var resource := _payment_button("Resource*")
+	if resource == null: return false
+	var resource_name := resource.name
+	if not await _payment_source_stays_under_pointer(resource): return false
+	var refreshed := _payment_button(resource_name)
+	if refreshed == null or not refreshed.button_pressed: return false
+	if not await _inspect_payment_source_and_return(resource_name): return false
+	refreshed = _payment_button(resource_name)
+	if refreshed == null or not refreshed.button_pressed or (_node("Toolbar/SyncStatus") as Label).text != revision:
+		_fail("inspection changed an unpaid draft or committed payment")
+		return false
+	if not await _payment_history_preserves_draft(resource_name, revision): return false
+	if not await _payment_pile_preserves_draft(resource_name, revision): return false
+	refreshed = _payment_button(resource_name)
+	if not await _keyboard_activate(refreshed): return false
+	refreshed = _payment_button(resource_name)
+	if refreshed == null or refreshed.button_pressed:
+		_fail("the inspected source could not be removed from payment")
+		return false
+	return true
+
+
+func _payment_source_stays_under_pointer(resource: Button) -> bool:
+	if not await _prepare_activation(resource): return false
+	var source_name := resource.name
+	var position := resource.get_global_rect().get_center()
+	if not _pointer_activate_without_settle(resource): return false
+	for _frame in range(6): await process_frame
+	var refreshed := _payment_button(source_name)
+	if refreshed == null or absf(refreshed.get_global_rect().get_center().y - position.y) > 2.0:
+		_fail("payment selection moved the source away from the pointer")
+		return false
+	return true
+
+
+func _payment_inspect_label_fits(inspect: Button) -> bool:
+	var font := inspect.get_theme_font("font")
+	var text_width := font.get_string_size(inspect.text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+		inspect.get_theme_font_size("font_size")).x
+	var padding := inspect.get_theme_stylebox("normal").get_minimum_size().x
+	if inspect.size.x + 1.0 < text_width + padding:
+		_fail("the payment Inspect label cannot be read on one line")
+		return false
+	return true
+
+
+func _inspect_payment_source_and_return(resource_name: String) -> bool:
+	var inspect_name := "InspectPayment%s" % str(resource_name).trim_prefix("Resource")
+	var inspect := _payment_button(inspect_name)
+	if inspect == null or not _payment_inspect_label_fits(inspect): return false
+	if not await _keyboard_activate(inspect): return false
+	var inspector := main.get_node("CardInspector") as Control
+	if not await _wait_for(func() -> bool: return inspector.visible):
+		_fail("a payment source cannot be inspected without discarding it")
+		return false
+	if int(inspector.get_meta("inspected_card_anchor", -1)) != int(str(resource_name).trim_prefix("Resource")):
+		_fail("payment inspection opened a different physical card")
+		return false
+	var close := inspector.get_node("Frame/Stack/Header/Close") as Button
+	if not await _pointer_activate(close): return false
+	if not await _wait_for(func() -> bool:
+		return not inspector.visible and render_viewport.gui_get_focus_owner() == _payment_button(inspect_name)):
+		_fail("inspection did not restore the same payment source focus: visible=%s focus=%s expected=%s" % [inspector.visible, render_viewport.gui_get_focus_owner(), _payment_button(inspect_name)])
+		return false
+	return true
+
+
+func _payment_history_preserves_draft(resource_name: String, revision: String) -> bool:
+	var history := main.find_child("ToggleHistory", true, false) as Button
+	if history == null or not await _pointer_activate(history): return false
+	await process_frame
+	var source := _payment_button(resource_name)
+	var submit := _payment_button("Submit")
+	if source == null or not source.button_pressed or submit == null 			or not _control_is_fully_visible(submit) 			or (_node("Toolbar/SyncStatus") as Label).text != revision:
+		_fail("history obscured commitment or changed the unpaid payment")
+		return false
+	history = main.find_child("ToggleHistory", true, false) as Button
+	if history == null or history.text != "Collapse history" or not await _pointer_activate(history):
+		_fail("history could not close while retaining the payment")
+		return false
+	return true
+
+
+func _payment_pile_preserves_draft(resource_name: String, revision: String) -> bool:
+	var pile: Button
+	for candidate in main.find_children("InspectPile*", "Button", true, false):
+		if candidate.is_visible_in_tree() and not candidate.disabled and "Discard" in candidate.text:
+			pile = candidate
+			break
+	if pile == null or not await _pointer_activate(pile):
+		_fail("the legal mulligan discard pile cannot be inspected during payment")
+		return false
+	var popup := root.find_child("PileInspector", true, false) as PopupPanel
+	if popup == null or not popup.visible:
+		_fail("payment did not leave access to the visible discard pile")
+		return false
+	var popup_lifetime: WeakRef = weakref(popup)
+	var escape := InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	escape.pressed = true
+	popup.push_input(escape, true)
+	if not await _wait_for(func() -> bool: return popup_lifetime.get_ref() == null):
+		_fail("pile inspection could not return to the unpaid payment")
+		return false
+	if not await _wait_for(func() -> bool: return render_viewport.gui_get_focus_owner() == pile):
+		_fail("closing the pile did not restore its opener")
+		return false
+	var source := _payment_button(resource_name)
+	if source == null or not source.button_pressed or (_node("Toolbar/SyncStatus") as Label).text != revision:
+		_fail("pile inspection changed the unpaid choices")
+		return false
+	return true

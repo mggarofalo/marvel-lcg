@@ -304,7 +304,7 @@ func _answer_fallback_decision(main: Control, prior_revision: int) -> bool:
 
 func _compose_table_decision(main: Control) -> bool:
 	for selection in 10:
-		var payment := main.find_child("PaymentModal", true, false) as Control
+		var payment := main.find_child("PaymentWorkspace", true, false) as Control
 		if payment != null and payment.is_visible_in_tree():
 			return await _compose_hosted_payment(main)
 		var submit := _task_commit(main)

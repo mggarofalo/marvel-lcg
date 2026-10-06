@@ -14,7 +14,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     private InterfaceScale requestedScale = ClientTheme.ConfiguredScale();
     internal ControlMetrics ControlMetrics => VisualSystem.Controls(interfaceScale);
     internal DecisionComposer? composer;
-    private CardPaymentModal? paymentModal;
+    private CardPaymentWorkspace? paymentModal;
     private readonly CompleteDecisionSheetController choices;
     internal bool CompleteChoicesOpen => choices.IsOpen;
     internal void ShowCompleteChoices(Control source) => choices.Open(source);
@@ -24,6 +24,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal void SetCompleteChoicesVisibility(bool open) => mulliganBoard?.SetCompleteChoicesOpen(open);
     internal bool PaymentModalOpen => paymentModal is not null;
     internal Node LayoutHost => paymentModal?.Content ?? (Node)this;
+    internal Control FocusHost => paymentModal?.Content ?? (Control)this;
     internal void RouteDecisionSurfaceInput(InputEvent input)
     {
         paymentModal?.Input(input);
@@ -164,10 +165,8 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         BoardActionChoiceSurface.Close();
         int generation = lifecycle.NextRenderGeneration();
-        Control? focused = GetViewport()?.GuiGetFocusOwner();
-        string? focusName = focused is not null && IsAncestorOf(focused)
-            ? FocusKey(focused)
-            : null;
+        string? focusName = DecisionFocus.CurrentKey(this);
+        int? paymentScroll = paymentModal?.ScrollPosition(composer);
         ClearPanel();
         if (!RenderPrompt())
         {
@@ -175,7 +174,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             RenderNoDecision();
             return;
         }
-        Callable.From(() => lifecycle.RestoreFocus(focusName, focusFirst || PaymentModalOpen, generation)).CallDeferred();
+        Callable.From(() => lifecycle.RestoreFocus(focusName, focusFirst || PaymentModalOpen, generation, paymentScroll)).CallDeferred();
     }
 
     private bool RenderPrompt()
@@ -192,7 +191,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         if (CardPaymentPresentation.UsesModal(composer, submitting))
         {
             choices.Close();
-            paymentModal = new CardPaymentModal(this, prompt);
+            paymentModal = new CardPaymentWorkspace(this, prompt);
         }
         DecisionPanelPromptRenderer.CreateLayout(this, composer, prompt);
         if (paymentModal is null)
@@ -257,11 +256,9 @@ public sealed partial class DecisionPanel : VBoxContainer
         (commit ?? throw new InvalidOperationException("decision commit bar is unavailable"))
             .AddChild(control);
 
-    private string? FocusKey(Control focused) => DecisionFocus.Key(this, focused);
-
     internal void BindAnchors(Control control, params int[] ids)
     {
-        if (!PaymentModalOpen) DecisionAnchorBinding.Bind(this, control, ids);
+        DecisionAnchorBinding.Bind(this, control, ids);
     }
 
     internal static string NodeKey(string value) => new(

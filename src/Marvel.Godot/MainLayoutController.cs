@@ -128,6 +128,8 @@ internal sealed class MainLayoutController
         ConfigurePlayScrolling(gameplay, fixedTabletop, mulligan);
         main.boardController.RerenderForViewport(viewport);
         TableHistoryDrawer.Configure(main, fixedTabletop);
+        if (main.promptStack.GetNodeOrNull<Control>("PaymentWorkspace") is { } payment)
+            CardPaymentWorkspaceLayout.Fit(main, payment);
         ResetPlayContainers();
     }
 
@@ -143,7 +145,10 @@ internal sealed class MainLayoutController
             : layout.DecisionMinimumHeight;
         main.promptPanel.CustomMinimumSize = new Vector2(
             compactTableChrome
-                ? (historyExpanded ? TableHistoryDrawer.ExpandedWidth(main) : 172)
+                ? (CardPaymentWorkspaceLayout.Active(main)
+                    ? Math.Max(CardPaymentWorkspaceLayout.Width(main.GetViewportRect().Size),
+                        historyExpanded ? TableHistoryDrawer.ExpandedWidth(main) : 0)
+                    : historyExpanded ? TableHistoryDrawer.ExpandedWidth(main) : 172)
                 : 0,
             decisionHeight);
         main.decisions.CustomMinimumSize = new Vector2(

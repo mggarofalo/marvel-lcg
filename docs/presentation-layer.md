@@ -47,6 +47,17 @@ not count targets, inspect resources or parse card text to reach its own answer.
 `Marvel.Decisions` may call `TargetRequest.Allows` because that function remains
 engine-owned. The server validates the submitted answer again before mutation.
 
+`ClientGameLifecycle` owns admission of setup, entry and session requests, one
+in-flight operation, and generation checks that discard superseded completions.
+It accepts the complete validated response, revision and history together from
+`LocalGameClient`, and retains operational progress and recovery locks across
+surface changes. Its result instructs the sole prompt-bound draft to preserve,
+retry, replace or clear. Godot applies that instruction and renders the supplied
+progress; it does not maintain another request or recovery state machine.
+Godot's previous-response cache serves only presentation comparison and is
+invalidated with deferred rendering and animation when the session changes.
+Session capabilities remain outside renderable progress.
+
 The Godot project reads the authored Core Set setup surface through
 `IEngineTransport`. Its Start flow opens one or 2 ordered hero seats under an
 explicit game label. Its Join flow attaches once with a masked seat invitation.

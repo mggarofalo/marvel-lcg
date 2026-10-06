@@ -105,9 +105,9 @@ internal sealed class BoardCardInspectorController
         bool pinned,
         IReadOnlyList<BoardCardPresentation>? stages = null)
     {
-        if (main.decisions.PaymentModalOpen) return;
         int inspectorGeneration = checked(++main.cardInspectorGeneration);
         main.inspectedCardId = card.TargetId;
+        main.cardInspector.SetMeta("inspected_card_anchor", card.TargetId ?? -1);
         int? sourceId = source is CardControl sourceCard
             ? sourceCard.TargetId
             : card.TargetId;
@@ -132,7 +132,7 @@ internal sealed class BoardCardInspectorController
         main.cardInspectorClose.Visible = pinned;
         ConfigureFrame();
         Position(card, source, pinned);
-        Present(detail, sourceId, pinned, inspectorGeneration);
+        Present(detail, sourceId, source, pinned, inspectorGeneration);
     }
 
     private static void PreparePreview(CardControl detail)
@@ -218,7 +218,7 @@ internal sealed class BoardCardInspectorController
         main.cardInspectorFrame.Position = new Vector2(position.X, position.Y);
     }
 
-    private void Present(Control detail, int? sourceId, bool pinned, int inspectorGeneration)
+    private void Present(Control detail, int? sourceId, Control? source, bool pinned, int inspectorGeneration)
     {
         main.cardInspectorPinned = pinned;
         if (pinned)
@@ -243,11 +243,11 @@ internal sealed class BoardCardInspectorController
         main.cardInspectorBackdrop.MouseFilter = pinned
             ? Control.MouseFilterEnum.Stop
             : Control.MouseFilterEnum.Ignore;
-        main.cardInspectorBackdrop.Visible = pinned;
+        main.cardInspectorBackdrop.Visible = pinned && !main.decisions.PaymentModalOpen;
         main.cardInspector.Visible = true;
         if (pinned)
         {
-            inspector.RememberSource(sourceId);
+            inspector.RememberSource(sourceId, source);
             Callable.From(() => inspector.FocusDetail(inspectorGeneration)).CallDeferred();
         }
     }

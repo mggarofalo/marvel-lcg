@@ -194,7 +194,8 @@ internal sealed class SetupSelectionControls
             NumberStyles.None,
             CultureInfo.InvariantCulture,
             out _);
-        main.start.Disabled = main.setupChoices is null || !validSeed || main.gameId.Text.Length == 0;
+        main.start.Disabled = main.lifecycle.EntryPending || main.setupChoices is null
+            || !validSeed || main.gameId.Text.Length == 0;
         if (main.setupChoices is not null && !validSeed)
         {
             main.status.Text = "Enter a seed from 0 to 4294967295, or leave it blank.";
@@ -210,7 +211,7 @@ internal sealed class SetupSelectionControls
     internal void RefreshEntryAvailability()
     {
         RefreshStartAvailability();
-        main.join.Disabled = main.endpoint.Text.Length == 0
+        main.join.Disabled = main.lifecycle.EntryPending || main.endpoint.Text.Length == 0
             || main.gameId.Text.Length == 0
             || main.invitation.Text.Length == 0;
         if (!main.joining) return;

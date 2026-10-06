@@ -88,7 +88,7 @@ func _wait_for(condition: Callable) -> bool:
 
 func _compose_hosted_payment(main: Control) -> bool:
 	for _selection in 24:
-		var payment := main.find_child("PaymentModal", true, false) as Control
+		var payment := main.find_child("PaymentWorkspace", true, false) as Control
 		if payment == null or not payment.is_visible_in_tree():
 			_fail("the hosted card payment closed before confirmation")
 			return false

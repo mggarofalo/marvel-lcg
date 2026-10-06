@@ -200,7 +200,7 @@ func _keyboard_activate(control: Control, repeats := 1) -> bool:
 	control.grab_focus()
 	await process_frame
 	if render_viewport.gui_get_focus_owner() != control:
-		_fail("keyboard activation could not focus '%s'" % control.name)
+		_fail("keyboard activation could not focus '%s': actual=%s viewport=%s" % [control.name, render_viewport.gui_get_focus_owner(), control.get_viewport()])
 		return false
 	_accept_repeats_without_settle(repeats)
 	await process_frame
@@ -210,7 +210,7 @@ func _keyboard_activate(control: Control, repeats := 1) -> bool:
 func _keyboard_activate_without_settle(control: Control, repeats := 1) -> bool:
 	control.grab_focus()
 	if render_viewport.gui_get_focus_owner() != control:
-		_fail("keyboard activation could not focus '%s'" % control.name)
+		_fail("keyboard activation could not focus '%s': actual=%s viewport=%s" % [control.name, render_viewport.gui_get_focus_owner(), control.get_viewport()])
 		return false
 	_accept_repeats_without_settle(repeats)
 	return true
