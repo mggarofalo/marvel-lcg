@@ -13,6 +13,16 @@ internal sealed class MainLayoutController
         this.main = main;
         tabletopChrome = new MainTabletopChromeController(main);
     }
+    internal void RevealOutcome()
+    {
+        // Terminal presentation retains the same inspectable account as a live table.
+        TableHistoryDrawer.SelectHistory(main);
+        main.GetViewport().GuiReleaseFocus();
+        main.pageScroll.FollowFocus = false;
+        main.pageScroll.ScrollVertical = 0;
+        main.pageScroll.SetDeferred("scroll_vertical", 0);
+    }
+
     internal void ApplyInterfaceScale(InterfaceScale scale)
     {
         main.interfaceScale = scale;

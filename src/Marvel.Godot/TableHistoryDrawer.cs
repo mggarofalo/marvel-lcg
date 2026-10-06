@@ -11,6 +11,13 @@ internal static class TableHistoryDrawer
         main.promptPanel.HasMeta(ExpandedMeta)
         && main.promptPanel.GetMeta(ExpandedMeta).AsBool();
 
+    internal static void SelectHistory(Main main)
+    {
+        TabContainer workbench = main.GetNode<TabContainer>(
+            "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench");
+        workbench.CurrentTab = workbench.GetNode<Control>("History").GetIndex();
+    }
+
     internal static float ExpandedWidth(Main main)
     {
         Vector2 viewport = main.GetViewportRect().Size;
@@ -38,7 +45,7 @@ internal static class TableHistoryDrawer
         main.lastResult.Visible = false;
         main.activeResolution.Visible = false;
         workbench.TabsVisible = false;
-        workbench.CurrentTab = history.GetIndex();
+        SelectHistory(main);
         main.promptPanel.Visible = true;
         main.GetNode<Control>(
             "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader").Visible = false;
@@ -56,7 +63,7 @@ internal static class TableHistoryDrawer
         bool expanded = IsExpanded(main);
         bool payment = CardPaymentWorkspaceLayout.Active(main);
         if (history.GetNodeOrNull<Control>("TableSidebar") is { } sidebar) sidebar.Visible = !payment;
-        main.eventLog.CustomMinimumSize = new Vector2(0, payment ? 100 : 300);
+        TableHistoryViewport.Configure(main, payment);
         ConfigureCueSummary(main, expanded);
         toggle.Text = expanded ? "Collapse history" : "History";
         history.GetNode<Control>("EventHeader/Heading").Visible = false;

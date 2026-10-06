@@ -4,7 +4,11 @@ extends "res://smoke/local_game_smoke_redesign_gate.gd"
 func _terminal_table_is_safe(state: Dictionary) -> bool:
 	if not _required_journey_paths_were_seen(state):
 		return false
+	if not await _terminal_history_is_accessible(false):
+		return false
 	if not await _synchronization_preserves_history(true):
+		return false
+	if not await _terminal_history_is_accessible():
 		return false
 	if not await _terminal_decision_is_safe():
 		return false
@@ -98,6 +102,36 @@ func _terminal_has_no_active_controls() -> bool:
 				_fail("the null-prompt terminal table retained an operable control: %s" % candidate.name)
 				return false
 	return true
+
+
+# Check before refresh as well as after it: layout work during refresh can
+# conceal a terminal transition that selected an invisible workbench page.
+func _terminal_history_is_accessible(collapse_after := true) -> bool:
+	for _frame in 3:
+		await process_frame
+	var toggle := main.find_child("ToggleHistory", true, false) as Button
+	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
+	if toggle == null or not toggle.is_visible_in_tree() or not _control_is_fully_visible(toggle):
+		_fail("the terminal result has no visible history entry")
+		return false
+	var before := log.text
+	if not log.is_visible_in_tree():
+		if not await _keyboard_activate(toggle):
+			return false
+	if not await _wait_for(func() -> bool: return log.is_visible_in_tree()):
+		_fail("terminal history cannot be opened with the keyboard")
+		return false
+	if not _control_is_fully_visible(log) or log.text != before:
+		_fail("opening terminal history clipped or changed the received account: rect=%s visible=%s unchanged=%s" % [log.get_global_rect(), _visible_control_rect(log), log.text == before])
+		return false
+	if not collapse_after:
+		return true
+	if not await _pointer_activate(toggle):
+		return false
+	if not await _wait_for(func() -> bool: return not log.is_visible_in_tree()):
+		_fail("terminal history cannot be collapsed")
+		return false
+	return log.text == before and toggle.is_visible_in_tree()
 
 
 func _terminal_history_is_safe() -> bool:

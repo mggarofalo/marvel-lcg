@@ -44,7 +44,7 @@ internal sealed class MainTabletopChromeController
         TabContainer workbench = main.GetNode<TabContainer>(
             "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench");
         workbench.TabsVisible = false;
-        workbench.CurrentTab = workbench.GetNode<Control>("History").GetIndex();
+        TableHistoryDrawer.SelectHistory(main);
     }
 
     private void SetTableChrome(bool compact)

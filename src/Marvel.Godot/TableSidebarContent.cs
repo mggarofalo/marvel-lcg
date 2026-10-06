@@ -1,5 +1,6 @@
 using Godot;
 using Marvel.Client;
+using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.View;
 
@@ -19,10 +20,12 @@ internal static class TableSidebarContent
             content.RemoveChild(child);
             child.QueueFree();
         }
+        WorldDescriptor world = main.CurrentGame!.World!;
         var entry = new Button
         {
             Name = "CompleteChoiceSheet", Text = "Complete choices",
             Disabled = prompt is null, TooltipText = "See all available choices.",
+            Visible = world.Outcome == Outcome.Unfinished,
             ThemeTypeVariation = GodotThemeVariations.ChoiceButton,
             CustomMinimumSize = new Vector2(0, 44),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
@@ -31,7 +34,6 @@ internal static class TableSidebarContent
         content.AddChild(entry);
         TableCompactButtonStyle.Apply(entry);
         result.RegisterCompleteChoices(entry);
-        WorldDescriptor world = main.CurrentGame!.World!;
         TableContextDescriptor? table = world.Table;
         string own = table?.ViewedPrivateSeat is { } seat
             ? $"You control {PendingSituationPresentation.SeatName(world, seat)}."
