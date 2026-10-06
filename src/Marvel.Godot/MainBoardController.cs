@@ -11,6 +11,7 @@ namespace Marvel.Godot;
 internal sealed class MainBoardController : IDisposable
 {
     private readonly Main main;
+    private EngineResponse? displayedResponse;
     private readonly BoardCardInspectorController cardInspector;
     private readonly BoardRelationshipOverlayController relationships;
     private readonly BoardRenderLifetime renderLifetime = new();
@@ -25,24 +26,31 @@ internal sealed class MainBoardController : IDisposable
         cardInspector = new BoardCardInspectorController(main, tabletop);
     }
 
+    internal void ResetForSession()
+    {
+        renderLifetime.Advance();
+        main.SkipEventPresentation();
+        displayedResponse = null;
+        tabletop.ResetForGame();
+    }
+
     internal void RenderGame(
         EngineResponse response,
         bool resetEvents = false,
         bool preserveEvents = false,
-        GameProgressPresentation? priorProgress = null,
         string operation = EngineProtocol.Resolve,
         DecisionReceiptContext? acceptedReceipt = null)
     {
         int renderGeneration = renderLifetime.Advance();
-        Outcome previousOutcome = main.CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
-        HashSet<int> priorHistory = main.CurrentGame?.History?.Entries
+        Outcome previousOutcome = displayedResponse?.World?.Outcome ?? Outcome.Unfinished;
+        HashSet<int> priorHistory = displayedResponse?.History?.Entries
             .Select(entry => entry.Cursor)
             .ToHashSet() ?? [];
-        if (!string.Equals(main.CurrentGame?.GameId, response.GameId, StringComparison.Ordinal))
+        if (!string.Equals(displayedResponse?.GameId, response.GameId, StringComparison.Ordinal))
         {
             tabletop.ResetForGame();
         }
-        main.CurrentGame = response;
+        displayedResponse = response;
         WorldDescriptor world = response.World!;
         RenderCurrentResponse(response, world, renderGeneration);
         IReadOnlyList<EventPresentation> reportNarrative = BoardResponsePresentation.Update(
@@ -50,7 +58,7 @@ internal sealed class MainBoardController : IDisposable
             response, previousOutcome, priorHistory,
             new BoardResponsePresentation.Options(resetEvents, preserveEvents, operation, acceptedReceipt));
         main.layoutController.ApplyResponsivePlayLayout();
-        FinishRender(response, world, priorProgress, operation, reportNarrative, renderGeneration);
+        FinishRender(response, world, operation, reportNarrative, renderGeneration);
     }
     private void RenderCurrentResponse(
         EngineResponse response,
@@ -59,6 +67,7 @@ internal sealed class MainBoardController : IDisposable
     {
         // The settled table remains the primary record of how the game ended.
         // A null terminal prompt disables actions without hiding inspection or history.
+        main.setupPanel.Visible = false;
         main.board.Visible = true;
         RenderBoard(world, response.Prompt, renderGeneration);
         main.syncStatus.Visible = true;
@@ -71,7 +80,6 @@ internal sealed class MainBoardController : IDisposable
     private void FinishRender(
         EngineResponse response,
         WorldDescriptor world,
-        GameProgressPresentation? priorProgress,
         string operation,
         IReadOnlyList<EventPresentation> reportNarrative,
         int renderGeneration)
@@ -79,9 +87,7 @@ internal sealed class MainBoardController : IDisposable
         main.transcript.RecordResponse(operation, response, reportNarrative);
         // A synchronized snapshot is authoritative but is not a new
         // transition, so it does not alter the diagnostic chronology.
-        main.ApplyProgress(GameProgressPresentation.FromSynchronization(
-            response,
-            priorProgress ?? main.currentProgress));
+        main.ApplyProgress(main.lifecycle.Progress!);
         main.pageScroll.ScrollVertical = 0;
         Callable.From(() => ResetPageScroll(renderGeneration)).CallDeferred();
         main.RefreshSynchronizeAvailability();

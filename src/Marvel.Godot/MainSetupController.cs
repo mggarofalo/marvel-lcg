@@ -19,11 +19,9 @@ internal sealed class MainSetupController
     }
     internal async Task LoadSetupAsync()
     {
-        int generation = ++main.setupLoadGeneration;
+        long generation = main.lifecycle.BeginEntry();
         string requestedEndpoint = main.endpoint.Text;
-        main.setupLoading = true;
         main.setupChoices = null;
-        main.client = null;
         main.reloadSetup.Disabled = true;
         main.start.Disabled = true;
         main.SetAssignmentControlsEnabled(false);
@@ -53,10 +51,10 @@ internal sealed class MainSetupController
                 return;
             }
 
-            main.client = candidate;
             main.setupChoices = setup.Choices;
+            main.lifecycle.FinishEntry(generation);
             PopulateSetupChoices();
-            main.setupLoading = false;
+            RefreshEntryAvailability();
             main.reloadSetup.Disabled = false;
             main.title.Text = "Assemble the table.";
             main.description.Text = string.Empty;
@@ -73,12 +71,12 @@ internal sealed class MainSetupController
         }
     }
 
-    internal bool IsCurrentSetupLoad(int generation, string requestedEndpoint) =>
-        generation == main.setupLoadGeneration
+    internal bool IsCurrentSetupLoad(long generation, string requestedEndpoint) =>
+        main.IsInsideTree() && main.lifecycle.IsCurrentEntry(generation)
         && main.endpoint.Text == requestedEndpoint;
 
     internal void ApplySetupFailure(
-        int generation,
+        long generation,
         string requestedEndpoint,
         ClientStartupError error)
     {
@@ -87,15 +85,14 @@ internal sealed class MainSetupController
             return;
         }
 
-        main.setupLoading = false;
+        main.lifecycle.FinishEntry(generation);
         main.reloadSetup.Disabled = false;
         main.ShowFailure(error);
     }
 
     internal void OnEndpointChanged()
     {
-        main.setupLoadGeneration++;
-        main.setupLoading = false;
+        main.lifecycle.Detach();
         main.setupChoices = null;
         main.SetAssignmentControlsEnabled(false);
         main.reloadSetup.Disabled = false;
@@ -116,6 +113,9 @@ internal sealed class MainSetupController
 
     internal async void OnStartPressed()
     {
+        if (main.start.Disabled) return;
+        long generation = main.lifecycle.BeginEntry();
+        string requestedEndpoint = main.endpoint.Text;
         try
         {
             main.start.Disabled = true;
@@ -133,56 +133,62 @@ internal sealed class MainSetupController
                 main.endpoint.Text);
             if (!connection.Succeeded)
             {
-                RestoreEntryAfterFailure(connection.Error!);
+                RestoreEntryAfterFailure(generation, connection.Error!);
                 return;
             }
 
-            main.client = connection.Client;
-            ClientSetupResult available = await main.client!.ReadSetupAsync();
+            LocalGameClient candidate = connection.Client!;
+            ClientSetupResult available = await candidate.ReadSetupAsync();
+            if (!IsCurrentSetupLoad(generation, requestedEndpoint)) return;
             if (!available.Succeeded)
             {
-                RestoreEntryAfterFailure(available.Error!);
+                RestoreEntryAfterFailure(generation, available.Error!);
                 return;
             }
 
-            ClientEntryResult startup = await main.client.OpenSessionAsync(
+            ClientEntryResult startup = await candidate.OpenSessionAsync(
                 main.gameId.Text, available.Choices!, selection);
+            if (!IsCurrentSetupLoad(generation, requestedEndpoint)) return;
             if (!startup.Succeeded)
             {
-                RestoreEntryAfterFailure(startup.Error!);
+                RestoreEntryAfterFailure(generation, startup.Error!);
                 return;
             }
 
-            main.session = startup.Session;
-            main.currentProgress = null;
-            main.transcript.Reset(
-                uint.Parse(main.seed.Text, CultureInfo.InvariantCulture),
-                available.Choices!.Runtime,
-                InteractionTranscriptSetup.FromSelection(available.Choices, selection));
-            main.transientInvitation = startup.Invitations.Count == 0
-                ? null
-                : startup.Invitations[0].Invitation;
-            main.invitationOffer.Visible = main.transientInvitation is not null;
-            main.boardController.RenderGame(startup.Response!, resetEvents: true, operation: EngineProtocol.Open);
-            main.setupPanel.Visible = false;
-            main.board.Visible = true;
-            main.eyebrow.Text = main.endpoint.Text.Length == 0
-                ? $"CORE SET  /  EMBEDDED TABLE  /  SEED {main.seed.Text}"
-                : $"CORE SET  /  HOSTED TABLE  /  SEED {main.seed.Text}";
-            main.title.ThemeTypeVariation = GodotThemeVariations.BriefingTitle;
-            main.ApplyResponsivePlayLayout();
-            main.description.Visible = true;
-            main.pageScroll.ScrollVertical = 0;
-            main.pageScroll.SetDeferred("scroll_vertical", 0);
+            if (!main.lifecycle.Enter(generation, candidate, startup)) return;
+            ShowStartedGame(startup, available.Choices!, selection);
         }
         catch (Exception)
         {
-            main.SetSetupControlsEnabled(true);
-            RefreshStartAvailability();
-            main.ShowFailure(new ClientStartupError(
+            RestoreEntryAfterFailure(generation, new ClientStartupError(
                 "startup_failed",
                 "The selected game could not be displayed. Check the assignment and try again."));
         }
+    }
+
+    private void ShowStartedGame(ClientEntryResult startup, SetupChoices available, GameSetupSelection selection)
+    {
+        main.boardController.ResetForSession();
+        main.currentProgress = null;
+        main.transcript.Reset(
+            uint.Parse(main.seed.Text, CultureInfo.InvariantCulture),
+            available.Runtime,
+            InteractionTranscriptSetup.FromSelection(available, selection));
+        main.transientInvitation = startup.Invitations.Count == 0
+            ? null
+            : startup.Invitations[0].Invitation;
+        main.invitationOffer.Visible = main.transientInvitation is not null;
+        main.boardController.RenderGame(startup.Response!, resetEvents: true, operation: EngineProtocol.Open);
+        main.setupPanel.Visible = false;
+        main.board.Visible = true;
+        main.eyebrow.Text = main.endpoint.Text.Length == 0
+            ? $"CORE SET  /  EMBEDDED TABLE  /  SEED {main.seed.Text}"
+            : $"CORE SET  /  HOSTED TABLE  /  SEED {main.seed.Text}";
+        main.title.ThemeTypeVariation = GodotThemeVariations.BriefingTitle;
+        main.ApplyResponsivePlayLayout();
+        main.description.Visible = true;
+        main.pageScroll.ScrollVertical = 0;
+        main.pageScroll.SetDeferred("scroll_vertical", 0);
     }
 
     internal async void OnJoinPressed()
@@ -192,6 +198,8 @@ internal sealed class MainSetupController
             return;
         }
 
+        long generation = main.lifecycle.BeginEntry();
+        string requestedEndpoint = main.endpoint.Text;
         string secret = main.invitation.Text;
         main.invitation.Clear();
         try
@@ -204,26 +212,29 @@ internal sealed class MainSetupController
                 main.endpoint.Text);
             if (!connection.Succeeded)
             {
-                RestoreEntryAfterFailure(connection.Error!);
+                RestoreEntryAfterFailure(generation, connection.Error!);
                 return;
             }
 
-            main.client = connection.Client;
-            ClientSetupResult available = await main.client!.ReadSetupAsync();
+            LocalGameClient candidate = connection.Client!;
+            ClientSetupResult available = await candidate.ReadSetupAsync();
+            if (!IsCurrentSetupLoad(generation, requestedEndpoint)) return;
             if (!available.Succeeded)
             {
-                RestoreEntryAfterFailure(available.Error!);
+                RestoreEntryAfterFailure(generation, available.Error!);
                 return;
             }
-            ClientEntryResult attached = await main.client!.AttachAsync(main.gameId.Text, secret);
+            ClientEntryResult attached = await candidate.AttachAsync(main.gameId.Text, secret);
             secret = string.Empty;
+            if (!IsCurrentSetupLoad(generation, requestedEndpoint)) return;
             if (!attached.Succeeded)
             {
-                RestoreEntryAfterFailure(attached.Error!);
+                RestoreEntryAfterFailure(generation, attached.Error!);
                 return;
             }
 
-            main.session = attached.Session;
+            if (!main.lifecycle.Enter(generation, candidate, attached)) return;
+            main.boardController.ResetForSession();
             main.currentProgress = null;
             main.transcript.Reset(
                 seed: null,
@@ -245,7 +256,7 @@ internal sealed class MainSetupController
         catch (Exception)
         {
             secret = string.Empty;
-            RestoreEntryAfterFailure(new ClientStartupError(
+            RestoreEntryAfterFailure(generation, new ClientStartupError(
                 "startup_failed",
                 "The invitation could not be attached. Check the endpoint and ask the host for a new invitation."));
         }
@@ -277,8 +288,16 @@ internal sealed class MainSetupController
         main.status.Text = $"INTERACTION REPORT SAVED  ·  {path}";
     }
 
-    internal void RestoreEntryAfterFailure(ClientStartupError error)
+    private void RestoreEntryAfterFailure(long generation, ClientStartupError error)
     {
+        if (!main.IsInsideTree() || !main.lifecycle.IsCurrentLifetime(generation)) return;
+        if (!main.lifecycle.FinishEntry(generation))
+        {
+            main.lifecycle.PresentationFailed();
+            main.sessionController.ShowRecoveryControls();
+            main.ApplyProgress(main.lifecycle.Progress!);
+            return;
+        }
         main.SetSetupControlsEnabled(true);
         RefreshEntryAvailability();
         main.ShowFailure(error);
