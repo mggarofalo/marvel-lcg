@@ -392,7 +392,7 @@ public sealed partial class Main : Control
     internal void HideCardInspector() => boardController.HideCardInspector();
     internal static void IgnoreMouseRecursively(Node node) =>
         CardInspectorFocus.IgnoreMouseRecursively(node);
-    internal void RevealOutcome() => eventController.RevealOutcome();
+    internal void RevealOutcome() => layoutController.RevealOutcome();
     internal void RenderPromptSummary(Prompt? prompt, WorldDescriptor world) =>
         eventController.RenderPromptSummary(prompt, world);
     internal void RenderLastResult(

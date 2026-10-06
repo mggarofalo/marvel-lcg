@@ -21,16 +21,6 @@ internal sealed class MainEventController
         motion = new MainEventMotionController(main);
         resolutionStage = new MainResolutionStageController(main);
     }
-    internal void RevealOutcome()
-    {
-        main.GetNode<TabContainer>(
-            "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench").CurrentTab = 0;
-        main.GetViewport().GuiReleaseFocus();
-        main.pageScroll.FollowFocus = false;
-        main.pageScroll.ScrollVertical = 0;
-        main.pageScroll.SetDeferred("scroll_vertical", 0);
-    }
-
     internal void RenderPromptSummary(Prompt? prompt, WorldDescriptor world)
     {
         if (prompt is null)

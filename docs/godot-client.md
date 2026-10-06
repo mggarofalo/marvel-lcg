@@ -382,7 +382,8 @@ Web-Shooter's payment generators, drags the exact duplicate Web-Shooter anchor
 through target, resource and explicit Commit, changes to hero form and
 activates only visible buttons until the UI reports the seeded loss. It exercises
 attached action choice, target-selection, resource payment, submit and pass paths, verifies the enemy-attack interrupt
-context, checks that history and the primary result remain populated, and prints
+context, checks terminal history access with keyboard and pointer before and after refresh,
+checks that history and the primary result remain populated, and prints
 `LOCAL_GAME_SMOKE_OK` on success. The full
 matrix runs with event motion enabled; a representative desktop profile also
 completes the same game with motion disabled.
