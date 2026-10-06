@@ -63,9 +63,7 @@ internal static class TableHistoryDrawer
         bool expanded = IsExpanded(main);
         bool payment = CardPaymentWorkspaceLayout.Active(main);
         if (history.GetNodeOrNull<Control>("TableSidebar") is { } sidebar) sidebar.Visible = !payment;
-        main.eventLog.CustomMinimumSize = new Vector2(0, payment ? 100 : 300);
-        // The account scrolls inside its own viewport, including while its parent relayouts.
-        main.eventLog.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
+        TableHistoryViewport.Configure(main, payment);
         ConfigureCueSummary(main, expanded);
         toggle.Text = expanded ? "Collapse history" : "History";
         history.GetNode<Control>("EventHeader/Heading").Visible = false;
