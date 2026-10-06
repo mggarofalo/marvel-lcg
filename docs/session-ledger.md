@@ -318,6 +318,24 @@ from the active seat's hand. An in-play Action belongs to the seat that may
 currently trigger it under ownership, control, card text and encounter-card
 rules. The engine derives that seat; the client does not assign it.
 
+## Multiplayer basic-defense authority
+
+Engine replay v4 gives each eligible defending controller their own step-2
+prompt: helper seats in player order, then the attacked seat. A restricted
+capability cannot spend another seat's hero or ally readiness. A cooperative
+operator may answer each presented seat directly, without an additional consent
+modal. Passing records only that controller's opportunity and retains the other
+legal choices. A required defender cannot be declined by the final eligible
+controller. Once accepted, one defense exhausts its character and transfers the
+attack target. Existing host revision checks reject stale or competing answers.
+
+This scheduling policy is ours; control and target transfer come from
+`rr:attack-enemy-activation.step.2` and `rr:defend-defense.5`. Initiation
+interrupts retain their original attacked-player facts. The save retains each
+prompt owner and decline in its ordinary decision trace; replay reconstructs
+passed seats before resuming the same declaration occurrence. The schema and
+protocol do not change, and old replay identities fail compatibility admission.
+
 ## Transactional mutation
 
 Resolve, undo, redo and reorder follow one gameplay transaction:

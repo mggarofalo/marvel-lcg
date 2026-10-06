@@ -19,6 +19,7 @@ public sealed class EngineHostRestartQuarantinesTheFirstDivergentAuthorityRecoTe
     [InlineData("digest")]
     [InlineData("prompt")]
     [InlineData("compatibility")]
+    [InlineData("previous-replay")]
     public void RestartQuarantinesTheFirstDivergentAuthorityRecord(string field)
     {
         var store = new MemorySessionStore();
@@ -46,11 +47,11 @@ public sealed class EngineHostRestartQuarantinesTheFirstDivergentAuthorityRecoTe
             {
                 CurrentPrompt = null
             },
-            "compatibility" => stored.Save with
+            "compatibility" or "previous-replay" => stored.Save with
             {
                 Compatibility = stored.Save.Compatibility with
                 {
-                    ReplayContract = "future-contract",
+                    ReplayContract = field == "previous-replay" ? "engine-replay-v3" : "future-contract",
                 },
             },
             _ => throw new InvalidOperationException(field),

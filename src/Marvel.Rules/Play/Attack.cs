@@ -201,6 +201,7 @@ public static class Attack
             Defender = -1,
             BasicDefense = false,
             CalculatedDamage = null,
+            DefensePlayersPassed = [],
             AdditionalPlayers = attack.RemainingPlayers.Where(seat => seat != player).ToList(),
         };
     }

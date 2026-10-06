@@ -185,6 +185,8 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         var abilities = new CompletionRecorder();
         var events = new List<GameEvent>();
         var defend = Sequence.Work(world, printed, abilities, events)!;
+        Sequence.Answer(world, printed, abilities, defend, Decision.Decline, events);
+        defend = Sequence.Work(world, printed, abilities, events)!;
         Attack.MakeIndirect(world);
         Sequence.Answer(world, printed, abilities, defend, Decision.Decline, events);
         Sequence.Finish(world, printed, abilities, events);
@@ -210,6 +212,8 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         world.Abilities = abilities;
         var events = new List<GameEvent>();
         var defend = Sequence.Work(world, printed, abilities, events)!;
+        Sequence.Answer(world, printed, abilities, defend, Decision.Decline, events);
+        defend = Sequence.Work(world, printed, abilities, events)!;
         Attack.MakeIndirect(world);
         Sequence.Answer(world, printed, abilities, defend, Decision.Decline, events);
         var assign = Sequence.Work(world, printed, abilities, events)!;

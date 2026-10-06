@@ -228,6 +228,13 @@ public static class Sequence
         var occurrence = world.Agenda.Occurrence
             ?? throw new InvalidOperationException("an asking agenda step has no occurrence");
         AgendaProcedures.AnswerWithWorldAbilities(world, facts, step, input, events);
+        // Sequential controllers share the one Declare Defender occurrence;
+        // passing does not open its response window before the choice is over.
+        if (step.What == Steps.DeclareDefender && input.IsDecline
+            && Attack.DeclareDefender(world, facts, world.AttackAbilities) is not null)
+        {
+            return;
+        }
         if (QuestionAdvancesByIdentity(step)
             && world.Agenda.IsOutstanding(step, occurrence))
         {
