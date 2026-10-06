@@ -54,16 +54,10 @@ internal static class TableHistoryDrawer
         Button dismiss = EnsureDismiss(main, history, latest);
         HFlowContainer actions = EnsureActionFlow(history, dismiss);
         bool expanded = IsExpanded(main);
-        main.eventCueSummary.AutowrapMode = expanded
-            ? TextServer.AutowrapMode.WordSmart
-            : TextServer.AutowrapMode.Off;
-        main.eventCueSummary.TextOverrunBehavior = expanded
-            ? TextServer.OverrunBehavior.NoTrimming
-            : TextServer.OverrunBehavior.TrimEllipsis;
-        main.eventCueSummary.CustomMinimumSize = expanded
-            ? Vector2.Zero
-            : new Vector2(0, 44);
-        main.eventCueSummary.TooltipText = main.eventCueSummary.Text;
+        bool payment = CardPaymentWorkspaceLayout.Active(main);
+        if (history.GetNodeOrNull<Control>("TableSidebar") is { } sidebar) sidebar.Visible = !payment;
+        main.eventLog.CustomMinimumSize = new Vector2(0, payment ? 100 : 300);
+        ConfigureCueSummary(main, expanded);
         toggle.Text = expanded ? "Collapse history" : "History";
         history.GetNode<Control>("EventHeader/Heading").Visible = false;
         foreach (Control control in new Control[]
@@ -77,6 +71,7 @@ internal static class TableHistoryDrawer
             control.Visible = expanded;
         }
         TableLatestResult.Configure(latest, expanded);
+        if (payment) ((Control)latest.GetParent().GetParent()).Visible = false;
         main.eventController.RefreshEventCueVisibility();
         main.promptDiagnostic.Visible = false;
         if (history.FindChild("Skip", recursive: true, owned: false) is Button skip)
@@ -88,6 +83,20 @@ internal static class TableHistoryDrawer
                 control.Visible = expanded;
             }
         }
+    }
+
+    private static void ConfigureCueSummary(Main main, bool expanded)
+    {
+        main.eventCueSummary.AutowrapMode = expanded
+            ? TextServer.AutowrapMode.WordSmart
+            : TextServer.AutowrapMode.Off;
+        main.eventCueSummary.TextOverrunBehavior = expanded
+            ? TextServer.OverrunBehavior.NoTrimming
+            : TextServer.OverrunBehavior.TrimEllipsis;
+        main.eventCueSummary.CustomMinimumSize = expanded
+            ? Vector2.Zero
+            : new Vector2(0, 44);
+        main.eventCueSummary.TooltipText = main.eventCueSummary.Text;
     }
 
     private static HFlowContainer EnsureActionFlow(Control history, Button dismiss)

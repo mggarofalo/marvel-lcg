@@ -72,6 +72,13 @@ internal static class TabletopPileInspector
         navigation.AddChild(previous);
         navigation.AddChild(position);
         navigation.AddChild(next);
+        var close = new Button
+        {
+            Name = "ClosePileInspector", Text = "Close",
+            Shortcut = new Shortcut { Events = [new InputEventKey { Keycode = Key.Escape }] },
+        };
+        close.Pressed += popup.Hide;
+        navigation.AddChild(close);
         stack.AddChild(navigation);
         var cardSlot = new CenterContainer
         {

@@ -5,11 +5,20 @@ namespace Marvel.Godot;
 /// <summary>Restores decision focus and keeps nested decision scrolling readable.</summary>
 internal static class DecisionFocus
 {
+    internal static string? CurrentKey(DecisionPanel panel)
+    {
+        Control? focused = panel.GetViewport()?.GuiGetFocusOwner();
+        return focused is not null && panel.FocusHost.IsAncestorOf(focused)
+            ? Key(panel, focused)
+            : null;
+    }
+
     internal static void Restore(
         DecisionPanel panel,
         string? requested,
         bool focusFirst,
-        int renderGeneration)
+        int renderGeneration,
+        int? paymentScroll)
     {
         Control? candidate = EnabledControl(panel, requested);
         if (candidate is null && requested is not null)
@@ -23,7 +32,7 @@ internal static class DecisionFocus
             string? key = Key(panel, candidate);
             if (key is not null)
             {
-                FocusWhenLayoutSettles(panel, key, renderGeneration);
+                FocusWhenLayoutSettles(panel, key, renderGeneration, paymentScroll);
             }
         }
     }
@@ -52,7 +61,7 @@ internal static class DecisionFocus
 
     private static BaseButton? FirstEnabledButton(DecisionPanel panel, bool search) =>
         search
-            ? panel.FindChildren("*", "BaseButton", recursive: true, owned: false)
+            ? panel.FocusHost.FindChildren("*", "BaseButton", recursive: true, owned: false)
                 .OfType<BaseButton>()
                 .FirstOrDefault(button => !button.Disabled)
             : null;
@@ -60,9 +69,10 @@ internal static class DecisionFocus
     private static void FocusWhenLayoutSettles(
         DecisionPanel panel,
         string key,
-        int renderGeneration)
+        int renderGeneration,
+        int? paymentScroll)
     {
-        Control? candidate = InteractionControl.Find(panel, key);
+        Control? candidate = InteractionControl.Find(panel.FocusHost, key);
         if (candidate is null)
         {
             return;
@@ -77,14 +87,14 @@ internal static class DecisionFocus
                 return;
             }
 
-            EnsureVisible(settled);
+            EnsureVisible(settled, paymentScroll);
             // Nested scroll containers settle from the decision rail out to the page.
             Callable.From(() =>
             {
                 Control? final = CurrentControl(panel, key, renderGeneration);
                 if (final is not null)
                 {
-                    EnsureVisible(final);
+                    EnsureVisible(final, paymentScroll);
                 }
             }).CallDeferred();
         }).CallDeferred();
@@ -95,10 +105,10 @@ internal static class DecisionFocus
         string key,
         int renderGeneration) =>
         panel.IsInsideTree() && renderGeneration == panel.GetRenderGeneration()
-            ? InteractionControl.Find(panel, key)
+            ? InteractionControl.Find(panel.FocusHost, key)
             : null;
 
-    private static void EnsureVisible(Control control)
+    private static void EnsureVisible(Control control, int? paymentScroll)
     {
         for (Node? ancestor = control.GetParent(); ancestor is not null; ancestor = ancestor.GetParent())
         {
@@ -110,12 +120,12 @@ internal static class DecisionFocus
                     return;
                 }
 
-                EnsureVisibleWithin(scroll, control);
+                EnsureVisibleWithin(scroll, control, paymentScroll);
             }
         }
     }
 
-    private static void EnsureVisibleWithin(ScrollContainer scroll, Control control)
+    private static void EnsureVisibleWithin(ScrollContainer scroll, Control control, int? paymentScroll)
     {
         if (scroll.Name == "Margin")
         {
@@ -129,12 +139,13 @@ internal static class DecisionFocus
             }
             return;
         }
-        scroll.EnsureControlVisible(control);
+        if (scroll.Name == "DecisionBodyScroll" && paymentScroll is { } position)
+            scroll.ScrollVertical = position;
+        else
+            scroll.EnsureControlVisible(control);
         if (scroll.Name == "DecisionBodyScroll")
         {
             scroll.ScrollHorizontal = 0;
-            if (control.Name.ToString().StartsWith("Resource", StringComparison.Ordinal))
-                scroll.ScrollVertical = 0;
         }
     }
 
@@ -174,7 +185,8 @@ internal static class DecisionFocus
     }
 
     private static bool IsStableName(string name) =>
-        name is "Submit" or "Decline"
+        name is "Submit" or "Decline" or "CancelCardPlay"
+        || name.StartsWith("InspectPayment", StringComparison.Ordinal)
         || name.StartsWith("Affordance", StringComparison.Ordinal)
         || name.StartsWith("Group", StringComparison.Ordinal)
         || name.StartsWith("Target", StringComparison.Ordinal)
@@ -189,7 +201,7 @@ internal static class DecisionFocus
         {
             return null;
         }
-        return panel.FindChild(name, recursive: true, owned: false) switch
+        return panel.FocusHost.FindChild(name, recursive: true, owned: false) switch
         {
             BaseButton { Disabled: false } button => button,
             SpinBox { Editable: true } spin => spin.GetLineEdit(),
@@ -204,7 +216,7 @@ internal static class DecisionFocus
         {
             return null;
         }
-        return panel.FindChild(name, recursive: true, owned: false) is BaseButton
+        return panel.FocusHost.FindChild(name, recursive: true, owned: false) is BaseButton
         {
             Disabled: false,
         } button

@@ -39,7 +39,10 @@ internal static class SpatialTableSurfaceRenderer
     {
         Vector2 viewport = main.GetViewportRect().Size;
         bool expanded = TableHistoryDrawer.IsExpanded(main);
-        float reserved = expanded ? TableHistoryDrawer.ExpandedWidth(main) + 40 : 250;
+        float reserved = CardPaymentWorkspaceLayout.Active(main)
+            ? Math.Max(CardPaymentWorkspaceLayout.Width(viewport),
+                expanded ? TableHistoryDrawer.ExpandedWidth(main) : 0) + 40
+            : expanded ? TableHistoryDrawer.ExpandedWidth(main) + 40 : 250;
         float width = Math.Max(expanded ? 920 : 1060, viewport.X - reserved);
         float height = Math.Min(AstraTableGeometry.ReferenceHeight, Math.Max(820, viewport.Y - 118));
         return new AstraTableGeometry(

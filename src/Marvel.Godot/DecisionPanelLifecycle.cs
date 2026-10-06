@@ -89,11 +89,11 @@ internal sealed class DecisionPanelLifecycle
 
     internal int NextRenderGeneration() => checked(++renderGeneration);
 
-    internal void RestoreFocus(string? requested, bool focusFirst, int generation)
+    internal void RestoreFocus(string? requested, bool focusFirst, int generation, int? paymentScroll)
     {
         if (generation == renderGeneration)
         {
-            DecisionFocus.Restore(panel, requested, focusFirst, generation);
+            DecisionFocus.Restore(panel, requested, focusFirst, generation, paymentScroll);
         }
     }
 }

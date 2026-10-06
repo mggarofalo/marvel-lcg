@@ -12,7 +12,7 @@ internal static class BoardDragInteractionBinder
         BoardRenderResult board,
         CardPointerGesture gesture)
     {
-        if (gesture.Card.TargetId is not { } source) return false;
+        if (panel.PaymentModalOpen || gesture.Card.TargetId is not { } source) return false;
         int? destination = board.CardAt(gesture.Position, gesture.Source);
         var targeting = new BoardSourceTargetInteraction(composer,
             CurrentOperations(panel, composer), Affordances(panel, composer));
@@ -47,7 +47,7 @@ internal static class BoardDragInteractionBinder
     internal static void PreviewDrag(DecisionPanel panel, DecisionComposer composer,
         BoardRenderResult board, CardPointerGesture gesture)
     {
-        if (gesture.Card.TargetId is not { } source) return;
+        if (panel.PaymentModalOpen || gesture.Card.TargetId is not { } source) return;
         IReadOnlyList<Marvel.View.AffordancePresentation> offers = Affordances(panel, composer);
         board.PresentDestinations(offers.Where(offer => offer.CardAnchorId == source && offer.Illegal is null)
             .SelectMany(offer => offer.TargetRequest?.Legal ?? []));
@@ -101,7 +101,7 @@ internal static class BoardDragInteractionBinder
     {
         IReadOnlyList<Marvel.View.AffordancePresentation> offers = Affordances(panel, composer);
         TableDraftBinding operations = CurrentOperations(panel, composer);
-        return gesture.Card.TargetId is { } source
+        return !panel.PaymentModalOpen && gesture.Card.TargetId is { } source
             && ((gesture.IsHandCard && new BoardHandPlayInteraction(composer, operations, offers)
                     .SourceOffers(source).Count > 0)
                 || new BoardSourceTargetInteraction(composer, operations, offers).CanDrag(source));

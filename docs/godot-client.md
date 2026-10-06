@@ -223,7 +223,7 @@ chooses one before setup and displays it throughout play, so the resulting deal
 can be replayed. During play, source actions and offered targets are available
 on the table. One dock shows the current situation, editable draft, named
 commitment and latest result. Complete choices opens the full prompt editor
-using the same draft; payment uses a temporary chooser.
+using the same draft; payment uses a temporary workspace beside the table.
 
 The supported desktop viewport is 1920x1080 or larger. It keeps setup controls
 and the current commitment visible while keeping local card values readable.
@@ -277,6 +277,13 @@ At the supported desktop profile, source and target controls sit beside their
 authorized table objects. Complete choices exposes all engine-offered alternatives
 and the same prompt-bound draft in a bounded sheet; History expands independently.
 Payment identifies known cards, resource abilities and costs before commitment.
+Its temporary workspace leaves the hand and public table visible. Each source
+has separate Inspect and Discard/Use controls; inspecting its printed face,
+opening history or looking through a pile preserves the unpaid choices.
+Closing an inspected payment source restores its own control, including when
+another card has the same title. Cancel card play abandons the unpaid play;
+clicking elsewhere on the table does not cancel it. Table action and drag
+mutations are unavailable while this composition is open.
 A mandatory later target remains a separate engine decision. The primary
 commitment names the intended action.
 
@@ -395,6 +402,21 @@ tools/godot-smoke.ps1 -GodotBin "C:\path\to\Godot_v4.7.1-stable_mono_win64_conso
 # Faster pull-request profile:
 tools/godot-smoke.ps1 -GodotBin "C:\path\to\Godot_v4.7.1-stable_mono_win64_console.exe" -Representative
 ```
+
+The focused payment comparison probe uses the same real seeded Core setup and
+native pointer/keyboard helpers. It checks unpaid source inspection by exact
+card identity, focus restoration, removal of a selected source, history access,
+cancellation, recovery visibility and explicit play. Run after building:
+
+```bash
+MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 \
+  "$GODOT_BIN" --headless --audio-driver Dummy --path src/Marvel.Godot \
+  --script res://smoke/payment_comparison_smoke.gd
+```
+
+This is bounded interaction evidence. It does not establish the MARVEL-431
+Spider-Man/Justice ordinary-turn comprehension journey, dense-table acceptance,
+or human enjoyment.
 
 The hosted multiplayer smoke starts a real restricted server, loads two
 independent `Main.tscn` instances at the supported 1920×1080 desktop viewport,

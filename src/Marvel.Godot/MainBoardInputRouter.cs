@@ -11,21 +11,21 @@ internal static class MainBoardInputRouter
         CardInspectorCardNavigation cards,
         InputEvent input)
     {
-        if (main.decisions.PaymentModalOpen || main.decisions.CompleteChoicesOpen)
+        if (main.decisions.CompleteChoicesOpen)
         {
             main.decisions.RouteDecisionSurfaceInput(input);
             return;
         }
         if (main.cardInspector.Visible && main.cardInspectorPinned)
         {
-            if (cards.Route(input))
-            {
-                main.GetViewport().SetInputAsHandled();
-                return;
-            }
-
-            inspector.Input(input);
+            RouteInspector(main, inspector, cards, input);
             return;
+        }
+
+        if (main.decisions.PaymentModalOpen)
+        {
+            main.decisions.RouteDecisionSurfaceInput(input);
+            if (main.GetViewport().IsInputHandled()) return;
         }
 
         if (BoardActionChoiceSurface.RouteInput(main.GetViewport(), input))
@@ -47,4 +47,19 @@ internal static class MainBoardInputRouter
 
         inspector.Input(input);
     }
+
+    private static void RouteInspector(
+        Main main,
+        CardInspectorFocus inspector,
+        CardInspectorCardNavigation cards,
+        InputEvent input)
+    {
+        if (cards.Route(input))
+        {
+            main.GetViewport().SetInputAsHandled();
+            return;
+        }
+        inspector.Input(input);
+    }
+
 }

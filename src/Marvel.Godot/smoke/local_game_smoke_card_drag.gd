@@ -35,7 +35,7 @@ static func perform(driver, card: Control, finish: Vector2) -> bool:
 	release.global_position = finish
 	driver.render_viewport.push_input(release, true)
 	await driver.process_frame
-	if card.is_inside_tree() and card.global_position.distance_to(origin) > 2.0:
+	if is_instance_valid(card) and card.is_inside_tree() and card.global_position.distance_to(origin) > 2.0:
 		await driver.main.get_tree().create_timer(0.25).timeout
 	return true
 

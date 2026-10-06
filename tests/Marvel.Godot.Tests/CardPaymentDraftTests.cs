@@ -9,7 +9,7 @@ namespace Marvel.Godot.Tests;
 public sealed class CardPaymentDraftTests
 {
     [Fact]
-    public void CardPlayKeepsEveryPaymentChoiceInTheModalInsteadOfDrawingBoardConnections()
+    public void CardPlayKeepsEveryPaymentChoiceInItsWorkspaceInsteadOfDrawingBoardConnections()
     {
         var composer = Composer();
         composer.SelectAffordance(3);
