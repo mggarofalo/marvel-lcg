@@ -7,153 +7,34 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Owns decision submission, undo, and synchronization workflows.</summary>
+/// <summary>Connects session lifecycle results to table rendering and the sole decision draft.</summary>
 internal sealed class MainSessionController
 {
     private readonly Main main;
-    private readonly MainSynchronizationController synchronization;
     private readonly MainSessionLossRecovery recovery;
 
     internal MainSessionController(Main main)
     {
         this.main = main;
-        synchronization = new MainSynchronizationController(main);
         recovery = new MainSessionLossRecovery(main);
     }
+
     internal async void OnDecisionSubmitted(EngineDecision decision)
     {
-        if (main.decisionPending || main.resolveInFlight)
-        {
-            return;
-        }
-        main.resolveInFlight = true;
-        DecisionReceiptContext? receipt = CaptureReceipt(decision);
-        main.RefreshSynchronizeAvailability();
-        try
-        {
-            main.ApplyProgress(GameProgressPresentation.Resolving());
-            main.promptProgress.Text = "RESOLVING  ·  WAITING FOR ENGINE";
-            main.promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
-            main.transcript.RecordDecision(main.CurrentGame!.Revision, decision);
-            ClientResolutionResult result = await main.client!.ResolveAsync(
-                main.session!, decision);
-            if (!main.IsInsideTree())
-            {
-                return;
-            }
-            HandleDecisionResult(result, receipt);
-        }
-        catch (Exception)
-        {
-            if (main.IsInsideTree())
-            {
-                main.decisionPending = true;
-                main.uncertainMutationError = new ClientStartupError(
-                    "display_failed",
-                    "The decision result could not be displayed.");
-                ShowUnconfirmed(main.uncertainMutationError);
-            }
-        }
-        finally
-        {
-            main.resolveInFlight = false;
-            if (main.IsInsideTree())
-            {
-                main.RefreshSynchronizeAvailability();
-            }
-        }
-    }
-    private DecisionReceiptContext? CaptureReceipt(EngineDecision decision) =>
-        main.CurrentGame?.Prompt is { } prompt
-            ? DecisionReceiptContext.From(prompt, main.CurrentGame.World!, decision.Affordance,
+        if (!main.lifecycle.CanResolve) return;
+        EngineResponse current = main.CurrentGame!;
+        DecisionReceiptContext? receipt = current.Prompt is { } prompt
+            ? DecisionReceiptContext.From(prompt, current.World!, decision.Affordance,
                 decision.Targets, decision.Resources ?? []) : null;
-    private void HandleDecisionResult(ClientResolutionResult result, DecisionReceiptContext? receipt)
-    {
-        if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
-        {
-            main.ReturnToJoinAfterSessionLoss(result.Error ?? SessionUnavailable());
-            return;
-        }
-        if (result.MutationDisposition == ClientMutationDisposition.NotSent)
-        {
-            ShowDecisionNotSent(result.Error);
-            return;
-        }
-        if (result.HasAuthoritativeView)
-        {
-            ShowAuthoritativeDecision(result, receipt);
-            return;
-        }
-        ShowUnresolvedDecision(result);
+        main.transcript.RecordDecision(current.Revision, decision);
+        await PresentOperation(main.lifecycle.ResolveAsync(current.Revision, decision),
+            EngineProtocol.Resolve, receipt);
     }
-    private void ShowDecisionNotSent(ClientStartupError? error)
-    {
-        main.decisionPending = false;
-        main.uncertainMutationError = null;
-        main.decisions.AllowRetry(main.CurrentGame!.Revision);
-        main.ApplyProgress(GameProgressPresentation.DecisionNotSent(error ?? new ClientStartupError(
-            "decision_not_sent", "The decision did not reach the game service.")));
-        main.promptProgress.Text = "NOT SENT  ·  RETRY SAFE";
-        main.promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
-    }
-    private void ShowAuthoritativeDecision(ClientResolutionResult result, DecisionReceiptContext? receipt)
-    {
-        if (result.Error is null)
-        {
-            main.boardController.RenderGame(result.Response!, acceptedReceipt: result.Succeeded ? receipt : null);
-        }
-        else
-        {
-            main.transcript.RecordFailure(
-                EngineProtocol.Resolve, main.CurrentGame!.Revision, result.Error,
-                result.MutationDisposition);
-            main.boardController.RenderGame(
-                result.Response!, preserveEvents: true, priorProgress: main.currentProgress,
-                operation: EngineProtocol.Sync);
-        }
-        main.decisionPending = false;
-        main.uncertainMutationError = null;
-        if (result.Error is not null)
-        {
-            main.decisions.AuthoritativeSynchronization(result.Response!.Revision);
-        }
-        if (result.Error is not null)
-        {
-            main.ApplyProgress(GameProgressPresentation.Recovered(result.Response!, result.Error));
-        }
-    }
-    private void ShowUnresolvedDecision(ClientResolutionResult result)
-    {
-        ClientStartupError failure = result.Error ?? new ClientStartupError(
-            "decision_unresolved",
-            "The decision result could not be reconciled with the current table.");
-        if (result.MutationDisposition != ClientMutationDisposition.Rejected)
-        {
-            main.decisionPending = true;
-            main.uncertainMutationError = failure;
-            ShowUnconfirmed(failure);
-            return;
-        }
-        main.decisionPending = false;
-        main.uncertainMutationError = null;
-        main.ApplyProgress(GameProgressPresentation.DecisionRejected(failure));
-        main.promptProgress.Text = "REJECTED  ·  SYNCHRONIZE TABLE";
-        main.promptProgress.ThemeTypeVariation = GodotThemeVariations.DangerText;
-        main.synchronize.TooltipText = "Read the current authoritative table.";
-    }
-
-    private static ClientStartupError SessionUnavailable() => new(
-        "session_unavailable",
-        "This table session is no longer available. Join again with a new invitation.");
 
     internal void OnUndoLastPressed()
     {
-        HistoryDescriptor? history = main.CurrentGame?.History;
-        int target = (history?.Cursor ?? 0) - 1;
-        if (history?.Undo.Contains(target) == true)
-        {
-            UndoTo(target);
-        }
+        int target = (main.CurrentGame?.History?.Cursor ?? 0) - 1;
+        UndoTo(target);
     }
 
     internal void OnHistoryMetaClicked(Variant meta)
@@ -161,139 +42,121 @@ internal sealed class MainSessionController
         const string prefix = "undo:";
         string value = meta.AsString();
         if (value.StartsWith(prefix, StringComparison.Ordinal)
-            && int.TryParse(
-                value.AsSpan(prefix.Length),
-                NumberStyles.None,
-                CultureInfo.InvariantCulture,
-                out int cursor)
-            && main.CurrentGame?.History?.Undo.Contains(cursor) == true)
-        {
-            UndoTo(cursor);
-        }
+            && int.TryParse(value.AsSpan(prefix.Length), NumberStyles.None,
+                CultureInfo.InvariantCulture, out int cursor)) UndoTo(cursor);
     }
 
     internal async void UndoTo(int cursor)
     {
-        if (!CanMutate())
-        {
-            return;
-        }
+        if (main.decisions.PaymentModalOpen || !main.lifecycle.CanUndo(cursor)) return;
+        await PresentOperation(main.lifecycle.UndoAsync(cursor), EngineProtocol.Undo);
+    }
 
-        main.resolveInFlight = true;
-        main.RefreshSynchronizeAvailability();
+    internal async void OnSynchronizePressed()
+    {
+        if (!main.lifecycle.CanSynchronize) return;
+        bool hadDraft = main.decisions.composer?.Selected is not null;
+        await PresentOperation(main.lifecycle.SynchronizeAsync(hadDraft), EngineProtocol.Sync);
+    }
+
+    private async Task PresentOperation(
+        Task<ClientLifecycleUpdate?> operation, string kind, DecisionReceiptContext? receipt = null)
+    {
         try
         {
-            main.ApplyProgress(GameProgressPresentation.Resolving());
-            main.promptProgress.Text = "UNDOING  ·  VERIFYING HISTORY";
-            main.promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
-            ClientResolutionResult result = await main.client!.UndoAsync(main.session!, cursor);
-            if (!main.IsInsideTree())
-            {
-                return;
-            }
-
-            HandleUndoResult(result);
+            bool sendingDisplayed = TryPresentSending();
+            ClientLifecycleUpdate? update = await operation;
+            if (!sendingDisplayed && update is not null)
+                throw new InvalidOperationException("The sending state could not be displayed.");
+            if (!main.IsInsideTree() || update is null) return;
+            Present(update, kind, receipt);
         }
         catch (Exception)
         {
             if (main.IsInsideTree())
             {
-                main.decisionPending = true;
-                main.uncertainMutationError = new ClientStartupError(
-                    "display_failed",
-                    "The undo result could not be displayed.");
-                ShowUnconfirmed(main.uncertainMutationError);
+                main.lifecycle.PresentationFailed();
+                ShowRecoveryControls();
+                if (main.lifecycle.Progress is { } progress) main.ApplyProgress(progress);
             }
         }
         finally
         {
-            main.resolveInFlight = false;
-            if (main.IsInsideTree())
-            {
-                main.RefreshSynchronizeAvailability();
-            }
+            if (main.IsInsideTree()) main.RefreshSynchronizeAvailability();
         }
     }
 
-    private bool CanMutate() =>
-        !main.decisionPending && !main.resolveInFlight && main.client is not null && main.session is not null;
-
-    private void HandleUndoResult(ClientResolutionResult result)
+    internal void ShowRecoveryControls()
     {
-        if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
-        {
-            main.ReturnToJoinAfterSessionLoss(result.Error ?? SessionUnavailable());
-            return;
-        }
-        if (result.MutationDisposition == ClientMutationDisposition.NotSent)
-        {
-            ShowUndoNotSent(result.Error);
-            return;
-        }
-        if (result.HasAuthoritativeView)
-        {
-            ShowAuthoritativeUndo(result);
-            return;
-        }
-        ShowUnresolvedUndo(result);
-    }
-
-    private void ShowUndoNotSent(ClientStartupError? error)
-    {
-        main.ApplyProgress(GameProgressPresentation.DecisionNotSent(error ?? new ClientStartupError(
-            "history_not_sent", "The history change did not reach the game service.")));
-        main.promptProgress.Text = "UNDO NOT SENT  ·  RETRY SAFE";
-        main.promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
-    }
-
-    private void ShowAuthoritativeUndo(ClientResolutionResult result)
-    {
-        main.SkipEventPresentation();
-        main.events.Reset([]);
-        main.DismissLastResult();
-        main.boardController.RenderGame(result.Response!, resetEvents: true, operation: EngineProtocol.Undo);
-        main.decisionPending = false;
-        main.uncertainMutationError = null;
-        if (result.Error is not null)
-        {
-            main.ApplyProgress(GameProgressPresentation.Recovered(result.Response!, result.Error));
-        }
-    }
-
-    private void ShowUnresolvedUndo(ClientResolutionResult result)
-    {
-        ClientStartupError failure = result.Error ?? new ClientStartupError(
-            "history_unresolved", "The undo result could not be reconciled with the current table.");
-        if (result.MutationDisposition != ClientMutationDisposition.Rejected)
-        {
-            main.decisionPending = true;
-            main.uncertainMutationError = failure;
-            ShowUnconfirmed(failure);
-            return;
-        }
-        main.ApplyProgress(GameProgressPresentation.DecisionRejected(failure));
-        main.promptProgress.Text = "UNDO REJECTED  ·  SYNCHRONIZE TABLE";
-        main.promptProgress.ThemeTypeVariation = GodotThemeVariations.DangerText;
-    }
-
-    internal void ShowUnconfirmed(ClientStartupError error)
-    {
-        main.ApplyProgress(GameProgressPresentation.Unconfirmed(error));
-        main.promptProgress.Text =
-            $"UNCONFIRMED  ·  {error.Code.ToUpperInvariant()}  ·  RESTART OR RECONNECT";
-        main.promptProgress.ThemeTypeVariation = GodotThemeVariations.DangerText;
+        main.synchronize.Visible = true;
+        main.syncStatus.Visible = true;
         main.syncStatus.Text = "⚠ Sync needed";
-        main.synchronize.TooltipText = "Reconnect to the current authoritative table.";
+        main.synchronize.TooltipText = "Read the current authoritative table.";
+        main.RefreshSynchronizeAvailability();
     }
 
-    internal void OnSynchronizePressed() => synchronization.OnPressed();
+    private bool TryPresentSending()
+    {
+        // Observe the request even if its indicator cannot be drawn; local display
+        // failure cannot cancel or roll back a dispatched mutation.
+        try
+        {
+            main.ApplyProgress(main.lifecycle.Progress!);
+            main.RefreshSynchronizeAvailability();
+            return true;
+        }
+        catch (Exception) { return false; }
+    }
 
-    internal void ApplySynchronizationFailure(
-        ClientStartupError error,
-        GameProgressPresentation prior,
-        bool hadUncertainMutation) => synchronization.ApplyFailure(
-            error, prior, hadUncertainMutation);
+    private void Present(ClientLifecycleUpdate update, string kind, DecisionReceiptContext? receipt)
+    {
+        if (update.Draft == ClientDraftDisposition.Clear)
+        {
+            ReturnToJoinAfterSessionLoss(update.Error!);
+            return;
+        }
+        if (update.Error is not null && update.MutationDisposition is { } disposition)
+            main.transcript.RecordFailure(kind, main.CurrentGame!.Revision, update.Error, disposition);
+        RenderResponse(update, kind, receipt);
+        PresentDraftState(update);
+    }
 
-    internal void ReturnToJoinAfterSessionLoss(ClientStartupError error) =>
-        recovery.ReturnToJoin(error);
+    private void RenderResponse(ClientLifecycleUpdate update, string kind, DecisionReceiptContext? receipt)
+    {
+        if (update.Response is { } response)
+        {
+            if (kind == EngineProtocol.Undo)
+            {
+                main.SkipEventPresentation();
+                main.events.Reset([]);
+                main.DismissLastResult();
+            }
+            main.boardController.RenderGame(response,
+                resetEvents: kind == EngineProtocol.Undo,
+                preserveEvents: kind == EngineProtocol.Sync || update.Error is not null,
+                operation: update.Error is null ? kind : EngineProtocol.Sync,
+                acceptedReceipt: update.MutationAccepted ? receipt : null);
+        }
+    }
+
+    private void PresentDraftState(ClientLifecycleUpdate update)
+    {
+        if (update.Draft == ClientDraftDisposition.Replace)
+            main.decisions.AuthoritativeSynchronization(main.CurrentGame!.Revision);
+        else if (update.Draft == ClientDraftDisposition.Retry)
+            main.decisions.AllowRetry(main.CurrentGame!.Revision);
+        main.ApplyProgress(update.Progress);
+        if (update.Response is null)
+        {
+            main.promptProgress.Text = update.Progress.Status;
+            main.promptProgress.ThemeTypeVariation = update.Progress.LocksDecisions
+                ? GodotThemeVariations.DangerText : GodotThemeVariations.StatusText;
+        }
+        if (update.Response is null && update.Error is not null)
+            main.syncStatus.Text = update.Progress.Kind == GameProgressKind.DecisionNotSent
+                ? "Not sent · retry safe" : "⚠ Sync needed";
+        main.synchronize.TooltipText = "Read the current authoritative table.";
+    }
+
+    internal void ReturnToJoinAfterSessionLoss(ClientStartupError error) => recovery.ReturnToJoin(error);
 }

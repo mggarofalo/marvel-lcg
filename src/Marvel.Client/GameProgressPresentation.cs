@@ -87,6 +87,14 @@ public sealed record GameProgressPresentation(
         "DECISION SENT  ·  WAITING FOR THE AUTHORITATIVE TABLE",
         LocksDecisions: true);
 
+    /// <summary>Distinguishes undo verification from committing a new game action.</summary>
+    public static GameProgressPresentation Undoing() => Resolving() with
+    {
+        Title = "Undoing action…",
+        Description = "The engine is verifying the requested history boundary.",
+        Status = "UNDO SENT  ·  VERIFYING HISTORY",
+    };
+
     /// <summary>Locks decisions while the current authoritative table is requested.</summary>
     public static GameProgressPresentation Synchronizing() => new(
         GameProgressKind.Synchronizing,
@@ -106,6 +114,14 @@ public sealed record GameProgressPresentation(
             $"NOT SENT  ·  RETRY SAFE  ·  {error.Code.ToUpperInvariant()}",
             LocksDecisions: false);
     }
+
+    /// <summary>A proven not-sent undo leaves the displayed history boundary intact.</summary>
+    public static GameProgressPresentation UndoNotSent(ClientStartupError error) => DecisionNotSent(error) with
+    {
+        Title = "Undo not sent.",
+        Description = error.Message + " The history change was not sent. The current table remains in place. You may retry Undo.",
+        Status = $"UNDO NOT SENT  ·  RETRY SAFE  ·  {error.Code.ToUpperInvariant()}",
+    };
 
     /// <summary>Preserves the prior input policy after a read-only sync failure.</summary>
     public static GameProgressPresentation SynchronizationUnavailable(

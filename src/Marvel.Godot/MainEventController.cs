@@ -263,20 +263,13 @@ internal sealed class MainEventController
 
     internal void RefreshSynchronizeAvailability()
     {
-        main.synchronize.Disabled = MutationUnavailable();
+        main.synchronize.Disabled = !main.lifecycle.CanSynchronize;
         HistoryDescriptor? history = main.CurrentGame?.History;
         int last = (history?.Cursor ?? 0) - 1;
-        main.undoLast.Disabled = MutationUnavailable()
-            || main.decisionPending
-            || !CanUndo(history, last);
+        main.undoLast.Disabled = main.decisions.PaymentModalOpen || !main.lifecycle.CanUndo(last);
         main.undoLast.TooltipText = main.undoLast.Disabled
             ? "New information, a pending action, or table authority prevents undoing the latest action."
             : "Undo the latest completed action.";
     }
 
-    private bool MutationUnavailable() =>
-        main.session is null || main.synchronizing || main.resolveInFlight;
-
-    private static bool CanUndo(HistoryDescriptor? history, int cursor) =>
-        history?.Undo.Contains(cursor) == true;
 }

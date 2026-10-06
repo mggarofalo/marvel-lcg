@@ -14,10 +14,8 @@ internal sealed class MainSessionLossRecovery
 
     internal void ReturnToJoin(ClientStartupError error)
     {
+        main.boardController.ResetForSession();
         main.decisions.ClearDecision();
-        main.session = null;
-        main.client = null;
-        main.CurrentGame = null;
         main.transientInvitation = null;
         main.invitation.Clear();
         main.invitationOffer.Visible = false;
@@ -30,9 +28,6 @@ internal sealed class MainSessionLossRecovery
         main.boardAreas.GetChildren().ToList().ForEach(node => node.QueueFree());
         main.board.Visible = false;
         main.setupPanel.Visible = true;
-        main.decisionPending = false;
-        main.resolveInFlight = false;
-        main.uncertainMutationError = null;
         main.synchronize.TooltipText = "Read the current authoritative table.";
         main.synchronize.Disabled = true;
         main.synchronize.Visible = false;
