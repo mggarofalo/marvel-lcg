@@ -43,18 +43,20 @@ internal static class AttackDefense
         }
 
         var attack = AttackCompletion.Current(world);
-        var choice = AttackDefenderCandidates.Choice(world, facts, abilities, attack);
-        if (choice.Candidates.Count == 0)
+        var opportunity = DefenseOpportunity.Next(world, attack,
+            AttackDefenderCandidates.Choice(world, facts, abilities, attack));
+        if (opportunity is null)
         {
             return null;
         }
 
-        var seat = world.Seats[attack.Player];
+        var choice = opportunity.Choice;
+        var seat = world.Seats[opportunity.Player];
         Card enemy = world.Cards[attack.Enemy];
         long attackValue = StateFields.Modified(
             world, enemy, "attack", facts, world.Players);
         return new Prompt(
-            Player: attack.Player,
+            Player: opportunity.Player,
             Asking: Question.Defender,
             When: TimingPriority.Untimed,
             Trigger: Steps.AttackInitiated,
@@ -66,10 +68,8 @@ internal static class AttackDefense
             Cancellable: !choice.Required,
             Affordances:
             [
-                // `AnchorPlayer` is whose character it is, which is not
-                // always the player being asked: `rr:defend-defense.5` lets
-                // somebody else's hero or ally defend, and taking over makes
-                // them the attack's new target.
+                // The answering player controls every offered character.
+                // rr:defend-defense.5 permits their defense of another player.
                 .. choice.Candidates.Select(card => new Affordance(
                     Id: card.ObjectId,
                     Verb: DefenseVerb,
@@ -79,17 +79,46 @@ internal static class AttackDefense
                     Description: DefenseDescription(world, facts, card))),
             ])
         {
-            DeclineLabel = attack.IsDefended ? "Keep current defense" : "Leave attack undefended",
-            Description = $"{EffectiveCards.Title(enemy, facts)} is attacking "
+            ContextCardIds = [attack.Enemy, attack.Target],
+            DisplayQuestion = opportunity.Player == attack.Player
+                ? "Declare your defender"
+                : $"Defend {EffectiveCards.Title(world.Cards[attack.Target], facts)}?",
+            DeclineLabel = DeclineLabel(attack, opportunity),
+            Description = Description(world, facts, attack, opportunity, attackValue),
+        };
+    }
+
+    private static string DeclineLabel(EnemyAttack attack, DefenseOpportunity opportunity)
+    {
+        if (opportunity.HasLaterPlayer) return "Pass defense opportunity";
+        if (attack.IsDefended) return "Keep current defense";
+        return opportunity.Player == attack.Player
+            ? "Leave attack undefended"
+            : "Pass; leave attack undefended";
+    }
+
+    private static string Description(
+        World world, ICardFacts facts, EnemyAttack attack, DefenseOpportunity opportunity, long attackValue)
+    {
+        var enemy = world.Cards[attack.Enemy];
+        var choice = opportunity.Choice;
+        return $"{EffectiveCards.Title(enemy, facts)} is attacking "
                 + $"{EffectiveCards.Title(world.Cards[attack.Target], facts)}. "
                 + $"ATK {attackValue} {AttackBoostDescription.Before(world, facts, enemy, Steps.DeclareDefender)}. "
                 + (attack.IsDefended
                     ? $"{EffectiveCards.Title(world.Cards[attack.Defender], facts)} is already defending. "
                         + (choice.Required ? "Use basic defense." : "Use basic defense or keep the current defense.")
                     : choice.Required ? "Choose a ready hero or ally to defend."
-                    : "Choose a ready hero or ally to defend, or leave the attack undefended."),
-        };
+                    : opportunity.Player != attack.Player
+                        ? HelperDescription(opportunity)
+                        : "Choose a ready hero or ally to defend, or leave the attack undefended.");
     }
+
+    private static string HelperDescription(DefenseOpportunity opportunity)
+        => "Choose one of your ready heroes or allies to defend, or pass your defense opportunity. "
+            + (opportunity.HasLaterPlayer
+                ? "Passing offers the next eligible player a defense opportunity."
+                : "No other player can use basic defense. Passing leaves this attack undefended.");
 
     // rr:defend-defense.2: "A hero must exhaust to use this power" and damage is reduced by DEF.
     // rr:defend-defense.3: "An ally can exhaust to defend"; attack damage is dealt to that ally.
@@ -119,7 +148,10 @@ internal static class AttackDefense
         ArgumentNullException.ThrowIfNull(events);
 
         var attack = AttackCompletion.Current(world);
-        var choice = AttackDefenderCandidates.Choice(world, facts, abilities, attack);
+        var opportunity = DefenseOpportunity.Next(world, attack,
+            AttackDefenderCandidates.Choice(world, facts, abilities, attack))
+            ?? throw new RulesNotImplementedException("no basic-defense opportunity is pending");
+        var choice = opportunity.Choice;
         if (input.IsDecline)
         {
             if (choice.Required)
@@ -129,6 +161,10 @@ internal static class AttackDefense
                     + "declined");
             }
 
+            world.Attack = attack with
+            {
+                DefensePlayersPassed = [.. attack.DefensePlayersPassed, opportunity.Player],
+            };
             return;
         }
 
@@ -137,39 +173,7 @@ internal static class AttackDefense
             ?? throw new RulesNotImplementedException(
                 $"card {input.Affordance} was not offered as a defender");
 
-        // rr:defend-defense.2 and .3 -- both require exhausting the defender.
-        defender.Exhaust();
-        events.Add(new FieldSet(defender.ObjectId, "is_exhaust", 0, 1)
-        {
-            Trigger = Steps.AttackInitiated,
-            Verb = DefenseVerb,
-        });
-
-        // **The defender becomes the target, whoever they are.**
-        // `rr:defend-defense.3.1` for an ally: "that ally becomes the target
-        // character for that attack, and its controller becomes the target
-        // player". `rr:defend-defense.2` for a hero: "any remaining damage is
-        // dealt to that hero". And `.5`: "if a player defends against an enemy
-        // attack that targets a different player [...] the defending player
-        // becomes the new target of that attack."
-        //
-        // Three clauses, one move. When the target player defends with their
-        // own hero it changes nothing, which is why it read as "the target does
-        // not change" while one player was all the engine had.
-        //
-        // `BasicDefense` is the hero's alone: `rr:defend-defense.2`'s reduction
-        // belongs to the basic defense power, and `.3` gives an ally none.
-        world.Attack = attack with
-        {
-            Defender = defender.ObjectId,
-            Target = defender.ObjectId,
-            Player = defender.Area.PlayArea.Player,
-            BasicDefense = EffectiveCards.Kind(defender, facts) != CardKind.Ally,
-        };
-        if (world.Activation is { Attacking: true } activation)
-        {
-            world.Activation = activation with { Player = defender.Area.PlayArea.Player };
-        }
+        AttackDefenseCommitment.Apply(world, facts, defender, events);
     }
 
 }

@@ -300,16 +300,18 @@ public sealed class AttackAHeroReducedToZeroTests : AttackTestBase
         var abilities = new CompletionRecorder();
         Attack.AlsoResolveAgainstEachOtherHero(world);
         var events = new List<GameEvent>();
-        var first = Sequence.Work(world, facts, abilities, events)!;
-        Assert.Equal(0, first.Player);
-        Sequence.Answer(world, facts, abilities, first, Decision.Decline, events);
-        var second = Sequence.Work(world, facts, abilities, events)!;
-        Assert.Equal(1, second.Player);
-        Sequence.Answer(world, facts, abilities, second, Decision.Take(world.Seats[1].IdentityCard.ObjectId), events);
-        var third = Sequence.Work(world, facts, abilities, events)!;
-        Assert.Equal(2, third.Player);
-        Sequence.Answer(world, facts, abilities, third, Decision.Decline, events);
-        Sequence.Finish(world, facts, abilities, events);
+        var asked = Sequence.Work(world, facts, abilities, events);
+        var targets = new List<int>();
+        while (asked is not null)
+        {
+            Assert.Equal(Question.Defender, asked.Asking);
+            targets.Add(world.Attack!.Player);
+            bool selfDefense = world.Attack.Player == 1 && asked.Player == 1;
+            Sequence.Answer(world, facts, abilities, asked,
+                selfDefense ? Decision.Take(world.Seats[1].IdentityCard.ObjectId) : Decision.Decline, events);
+            asked = Sequence.Work(world, facts, abilities, events);
+        }
+        Assert.Equal([0, 0, 0, 1, 1, 1, 2, 2], targets);
         Assert.Equal([3L, 2L, 3L], world.Seats.Select(seat => seat.IdentityCard.Damage));
         Assert.False(world.Seats[1].IdentityCard.Ready);
         Assert.Equal(world.Seats.Select(seat => seat.IdentityCard.ObjectId), events.OfType<FieldSet>().Where(change => change.Field == "health").Select(change => change.Card));

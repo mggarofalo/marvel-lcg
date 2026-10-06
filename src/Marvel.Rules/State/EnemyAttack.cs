@@ -64,6 +64,13 @@ public sealed record EnemyAttack(
     bool Damaged = false, long? CalculatedDamage = null,
     IReadOnlyList<int>? AdditionalPlayers = null, bool Indirect = false)
 {
+    /// <summary>Controllers who passed their step-2 basic-defense opportunity.</summary>
+    /// <remarks>
+    /// This sequential scheduling choice is ours. It is reconstructed from accepted
+    /// decisions, does not transfer card control, and resets for each attack target.
+    /// </remarks>
+    public IReadOnlyList<int> DefensePlayersPassed { get; init; } = [];
+
     /// <summary>Whether any character was declared the defender.</summary>
     public bool IsDefended => Defender >= 0;
 

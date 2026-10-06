@@ -11,10 +11,9 @@ internal static class AttackDefenderCandidates
     {
         var candidates = new List<Card>();
 
-        // `rr:defend-defense.5` -- **every** player's characters, not just the
-        // attacked one's. "Only one player at a time can defend" (`.1`) is a
-        // limit on the answer, not on the offer, and the choice is one prompt
-        // whose affordances carry whose character each is.
+        // rr:defend-defense.5: a player may defend an attack targeting a
+        // different player. Candidate legality is independent of whose current
+        // opportunity authorizes the commitment.
         foreach (int player in world.PlayerOrder)
         {
             candidates.AddRange(For(world, facts, player));
@@ -63,6 +62,7 @@ internal static class AttackDefenderCandidates
     internal static List<Card> For(World world, ICardFacts facts, int player)
     {
         var seat = world.Seats[player];
+        if (seat.Eliminated) return [];
 
         var candidates = new List<Card>();
         var identity = seat.IdentityCard;

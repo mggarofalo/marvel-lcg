@@ -47,6 +47,26 @@ defense exhausts and applies DEF; an ally becomes the damage target without
 applying a DEF value. Card text may declare a defender earlier, including an
 already exhausted character where the text permits it.
 
+Step 2 offers basic defense to one controller at a time. Eligible helpers act
+in player order, followed by the attacked player. This deterministic ordering
+is our product choice: the rulebook requires the defending player to exhaust a
+character they control, but does not prescribe a network scheduling protocol.
+A helper's pass preserves the remaining players' choices; accepting any defense
+ends this selection. Required defense becomes non-cancellable at the last
+eligible controller. Seats without a legal candidate are skipped. These prompts
+share one declaration occurrence, so passes do not open extra timing windows.
+The answering seat is distinct from the attacked player until defense commits.
+A pass names its known consequence: offer the next eligible player a choice,
+leave the attack undefended when nobody else can use basic defense, or keep an
+already established ability defense. Skipped empty seats do not receive a
+confirmation prompt.
+
+Engine replay v4 versions this changed decision sequence. Protocol 19 and save
+schema 4 already represent prompt ownership and accepted declines; their shapes
+are unchanged. Digest v3 still serializes cards, not attack continuation state.
+Passed opportunities are reconstructed from the accepted decision trace. Earlier
+replay contracts are rejected; they are not silently migrated.
+
 Status replacement has the highest interrupt priority. If stunned replaces
 the attack, the prepared attack and activation are cleared before ordinary card
 interrupts observe them.
