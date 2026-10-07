@@ -29,8 +29,9 @@ public static class EngineProtocol
     /// and visibility-reviewed relationship subjects for direct manipulation.
     /// Version 10 also tells clients
     /// when a wild-resource declaration is observable by the resolving effect.
+    /// Version 20 requires quantity-dependent typed resource components.
     /// </summary>
-    public const int Version = 19;
+    public const int Version = 20;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;

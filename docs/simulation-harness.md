@@ -301,13 +301,17 @@ anchor, anchor player, label, legality, target request and cost options. A
 `ResourceSource.Effect` is currently a card object id and remains in the record
 as part of the payment menu.
 
-Schema 4 records those target requests and costs through the same typed
+Schema 5 records those target requests and costs through the same typed
 canonical prompt records as the session ledger. Targets omit the derived
 `is_grouped` alias; costs omit `has_alternative`, `generators`,
 `variable_requests`, and `resource_costs`, retaining their independent source
 fields instead. Null, empty, and populated `sources` remain different values.
 The rules do not define a research-record JSON shape, so this omission of
 computed aliases is an engine format choice.
+
+The acting policy is version 3. It selects the earliest smallest generator set
+accepted by the engine for all offered resource components, including typed
+variable quantities. Prior policy versions are not replayed as version 3.
 
 ## Game record stream
 
@@ -316,8 +320,10 @@ Arrays retain domain order. The stream starts with one run header, then contains
 one `start`, zero or more `step` records, and one `result` or `failure` record
 per game. One final `summary` record makes the aggregate machine-readable.
 
-The current numeric `schema` is `4`. Replay and reporting read schemas 2, 3
-and 4 so existing research records remain usable. New runs write schema 4.
+The current numeric `schema` is `5`. Replay and reporting read schemas 2–5. New runs
+write schema 5. Schema 4 predates quantity-dependent typed resource components;
+its reader assigns null to the required `repeated_resource` member. Older
+records still have to match every replayed prompt and result.
 Schema 2 keeps its frozen prompt shape with computed aliases; readers validate
 those aliases before converting the prompt to the canonical record used for
 replay. Schema 3 predates the anchor namespace discriminator, so its reader
@@ -330,13 +336,13 @@ The run header records the configuration shared by every game:
 ```json
 {
   "type": "header",
-  "schema": 3,
+  "schema": 5,
   "scenario": "rhino",
   "difficulty": "expert",
   "heroes": ["spider_man", "she_hulk"],
   "modular_sets": ["legions_of_hydra"],
   "policy": "acting",
-  "policy_version": 1,
+  "policy_version": 3,
   "policy_visibility": "full_state",
   "policy_seed": 9001,
   "decision_limit": 600,

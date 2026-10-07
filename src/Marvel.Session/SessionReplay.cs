@@ -110,6 +110,15 @@ public static class SessionReplay
         return Migrate(save, expected, open);
     }
 
+    /// <summary>Replays schema 4 with its fixed resource requirements before migration.</summary>
+    public static SessionSave MigrateSchemaFour(
+        SessionSave save, SessionCompatibility expected, Func<SessionSetup, ReplayOpenedGame> open)
+    {
+        SessionSaveJson.ValidateReadable(save);
+        if (save.Schema != 4) throw new SessionSaveException("only schema 4 can be migrated");
+        return Migrate(save, expected, open);
+    }
+
     private static SessionSave Migrate(
         SessionSave save,
         SessionCompatibility expected,

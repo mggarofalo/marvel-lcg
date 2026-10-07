@@ -9,6 +9,14 @@ namespace Marvel.Godot.Tests;
 public sealed class CardPaymentDraftTests
 {
     [Fact]
+    public void VariableTypedCostRetainsItsResourceMeaningInAccessiblePresentation()
+    {
+        var cost = new CostOption(0, "X", Components:
+            [new ResourceCost("X") { RepeatedResource = 'Y' }]);
+        Assert.Equal("Pay X Energy", DecisionCostLabel.Accessible(cost));
+    }
+
+    [Fact]
     public void CardPlayKeepsEveryPaymentChoiceInItsWorkspaceInsteadOfDrawingBoardConnections()
     {
         var composer = Composer();

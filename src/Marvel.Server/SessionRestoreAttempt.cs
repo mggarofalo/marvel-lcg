@@ -40,11 +40,15 @@ internal sealed class SessionRestoreAttempt(
 
     private StoredSession Migrate(StoredSession current, out bool migration)
     {
-        migration = current.Save.Schema is 2 or 3;
+        migration = current.Save.Schema is 2 or 3 or 4;
         if (!migration) return current;
-        SessionSave migrated = current.Save.Schema == 2
-            ? SessionReplay.MigrateSchemaTwo(current.Save, host.compatibility, host.ReplayOpen)
-            : SessionReplay.MigrateSchemaThree(current.Save, host.compatibility, host.ReplayOpen);
+        SessionSave migrated = current.Save.Schema switch
+        {
+            2 => SessionReplay.MigrateSchemaTwo(current.Save, host.compatibility, host.ReplayOpen),
+            3 => SessionReplay.MigrateSchemaThree(current.Save, host.compatibility, host.ReplayOpen),
+            4 => SessionReplay.MigrateSchemaFour(current.Save, host.compatibility, host.ReplayOpen),
+            _ => throw new SessionSaveException("save schema is not migratable"),
+        };
         return current with { Save = migrated };
     }
 

@@ -32,8 +32,8 @@ internal static class ResourcePaymentDraft
         }
 
         ResourceCost component = option.ResourceCosts[0];
-        string required = string.Concat(component.Rule ?? []);
-        if (!RequiredHasRoom(component.Cost, required, values)
+        string? required = ResourcePayment.RequiredResources(component, values);
+        if (required is null || !RequiredHasRoom(component.Cost, required, values)
             || required.Contains(preferred[0]))
         {
             return ResourcePayment.Allocate(option, paying, values);

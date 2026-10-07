@@ -240,7 +240,8 @@ jq --compact-output '
         .targets.is_grouped = ((.targets.groups // []) | length > 0)
       else . end)
       | .costs |= map(
-        .has_alternative = ((.or_cost | length) > 0)
+        (if .components != null then .components |= map(del(.repeated_resource)) else . end)
+        | .has_alternative = ((.or_cost | length) > 0)
         | .generators = (.sources // [])
         | .variable_requests = (.variables // [])
         | .resource_costs = (.components // [{cost: .cost, rule: .rule, printed: false}])));
@@ -312,5 +313,5 @@ wait_for_container_log "$prefix-downgraded" 'unsupported_downgrade'
 stop_server "$prefix-downgraded"
 
 docker run --rm --entrypoint dotnet "$current_image" Marvel.Server.dll --version |
-  grep -F "v$current_version · engine engine-replay-v6 · protocol 19 · save 4"
+  grep -F "v$current_version · engine engine-replay-v7 · protocol 20 · save 5"
 echo 'SERVER_COMMUNITY_UPGRADE_SMOKE_OK'

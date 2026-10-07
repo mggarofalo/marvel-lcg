@@ -306,7 +306,7 @@ public sealed class SessionPersistenceTests
                     File.WriteAllText(
                         badSave,
                         File.ReadAllText(badSave).Replace(
-                            "\"schema\":4",
+                            "\"schema\":5",
                             "\"schema\":999999999999999999999",
                             StringComparison.Ordinal));
                     break;

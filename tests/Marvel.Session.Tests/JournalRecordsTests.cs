@@ -382,6 +382,7 @@ public sealed class JournalRecordsTests
 
     private static void AddSchemaTwoCost(JsonObject cost)
     {
+        RemoveRepeatedResources(cost);
         cost["has_alternative"] = cost["or_cost"]!.GetValue<string>().Length > 0;
         cost["generators"] = cost["sources"]?.DeepClone() ?? new JsonArray();
         cost["variable_requests"] = cost["variables"]?.DeepClone() ?? new JsonArray();
@@ -392,6 +393,12 @@ public sealed class JournalRecordsTests
                 ["rule"] = cost["rule"]?.DeepClone(),
                 ["printed"] = false,
             });
+    }
+
+    private static void RemoveRepeatedResources(JsonObject cost)
+    {
+        foreach (JsonNode? component in cost["components"]?.AsArray() ?? [])
+            _ = component!.AsObject().Remove("repeated_resource");
     }
 
     private static int Count(string value, string needle) =>

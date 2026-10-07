@@ -74,6 +74,12 @@ the server-owned setup and accepted decision trace authoritative for save,
 restore, undo, redo and legal action reordering. Clients continue to submit
 decisions rather than state. See [session-ledger.md](session-ledger.md).
 
+Quantity-dependent typed payments use protocol 20. The engine resolves the
+required resource slots from the offered component and chosen variable; the
+composer uses that same function for readiness and icon declarations. Saves
+use schema 5 and replay contract v7; prior replay contracts fail compatibility
+before migration.
+
 ## Build boundary
 
 Godot is the only UI framework planned for the desktop client. No engine, card,
