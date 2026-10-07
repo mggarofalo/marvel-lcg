@@ -48,7 +48,7 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `19` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `4` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v4` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v5` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
