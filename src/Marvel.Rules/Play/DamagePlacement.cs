@@ -285,11 +285,6 @@ public static class DamagePlacement
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(character);
-        // The printed value plus whatever is modifying it. `health` is not in
-        // `StateFields`' printed-attribute map -- remaining hit points are
-        // computed, not printed -- so `Modified` on it returns the modifiers
-        // alone, which is exactly the second half of this sum.
-        return EffectiveCards.BaseValue(character, facts, "HP", world.Players)
-            + StateFields.Modified(world, character, "health", facts, world.Players);
+        return CardValues.MaximumHealth(world, character, facts).CurrentValue;
     }
 }

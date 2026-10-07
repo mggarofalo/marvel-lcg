@@ -48,6 +48,15 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.State.Card",
             "Marvel.Rules.State.CardControl",
             "Marvel.Rules.State.CardKind",
+            "Marvel.Rules.State.CardKinds",
+            // Passive evaluated values and original-source exposure; no mutable engine capability.
+            "Marvel.Rules.State.CardSourceExposure",
+            "Marvel.Rules.State.CardSourceSnapshot",
+            "Marvel.Rules.State.CardValueBaseKind",
+            "Marvel.Rules.State.CardValueEvaluation",
+            "Marvel.Rules.State.CardValueStep",
+            "Marvel.Rules.State.CardValueStepKind",
+            "Marvel.Rules.State.CardValues",
             "Marvel.Rules.State.DeckType",
             "Marvel.Rules.State.DeckTypes",
             // Passive active-characteristic reads; no legality or mutation authority.
@@ -62,6 +71,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.State.StateFields",
             "Marvel.Rules.State.Traits",
             "Marvel.Rules.State.World",
+            "Marvel.Rules.Timing.Duration",
             "Marvel.Rules.Timing.TimingPriority");
     }
 

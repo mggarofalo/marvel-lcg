@@ -59,4 +59,8 @@ public sealed record CardFaceDescriptor(
     /// <summary>Live counters currently on the card, by semantic counter name.</summary>
     public IReadOnlyDictionary<string, long> Counters { get; init; } =
         new Dictionary<string, long>(StringComparer.Ordinal);
+
+    /// <summary>Current in-play stats keyed by printed attribute; HP is maximum HP.</summary>
+    public IReadOnlyDictionary<string, CardEffectiveValue> EffectiveValues { get; init; } =
+        new Dictionary<string, CardEffectiveValue>(StringComparer.Ordinal);
 }

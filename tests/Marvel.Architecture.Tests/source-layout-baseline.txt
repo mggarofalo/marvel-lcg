@@ -140,7 +140,6 @@ src/Marvel.Rules/Play/Threat.cs:52: SL005: Schedule=9
 src/Marvel.Rules/Play/Threat.cs:94: SL005: Placement=11
 src/Marvel.Rules/State/Forms.cs:125: SL005: ChangeAdditional=8
 src/Marvel.Rules/State/Seat.cs:23: SL005: Seat=8
-src/Marvel.Rules/State/StateFields.cs:33: SL003: StateFields=347
 src/Marvel.Rules/State/World.cs:17: SL003: World=470
 src/Marvel.Rules/State/WorldSetup.cs:27: SL003: WorldSetup=473
 src/Marvel.Rules/Timing/ContinuousEffectRegistry.cs:8: SL003: ContinuousEffectRegistry=415
