@@ -15,6 +15,12 @@ internal static class AbilityOptionDescription
         // branch; they are not evaluated merely to explain an option.
         return option switch
         {
+            AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust,
+                Selection: AbilityCardSelection.Query { Kind: AbilityCardQuery.CharactersYouControl } } =>
+                ("Exhaust all your characters", null),
+            AbilityEffect.EngageTopAsMinion
+                { Players: AbilityPlayerSelection.OnePlayer { Player: AbilityPlayer.You } } minions =>
+                MinionOption(context, minions),
             AbilityEffect.Damage
                 { Cards: AbilityCardSelection.Bound { Binding: AbilityCardBinding.You } } damage
                 when PublicAmount(damage.Amount) => DamageOption(context, damage),
@@ -27,6 +33,15 @@ internal static class AbilityOptionDescription
 
     private static bool PublicAmount(AbilityNumber amount) =>
         amount is AbilityNumber.Constant or AbilityNumber.PerPlayer;
+
+    private static (string Label, string Description) MinionOption(
+        AbilityStructuralContext context, AbilityEffect.EngageTopAsMinion minions)
+    {
+        // The compiled public profile names the minion, not the concealed card.
+        string title = context.Program.Profiles[minions.Profile].Title;
+        return ($"Engage {minions.Count} {title}",
+            $"Put the top {minions.Count} card(s) of your deck into play facedown as {title}, engaged with you.");
+    }
 
     private static (string Label, string Description) DamageOption(
         AbilityStructuralContext context, AbilityEffect.Damage damage)

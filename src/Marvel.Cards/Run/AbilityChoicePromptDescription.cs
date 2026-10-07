@@ -41,7 +41,7 @@ internal static class AbilityChoicePromptDescription
                 : $"{context.Expressions.World.Facts.Title(context.SourceFace)}: choose an option",
             Description = choice is AbilityEffect.ChooseCard describedChoice
                 ? AbilityEffectDescription.Summary(describedChoice)
-                : "Choose one offered consequence. Only the selected option resolves.",
+                : null,
             ExposesConcealedCandidates = concealedCards,
             PublicKind = concealedCards ? PublicDecisionKind.CardSearch : PublicDecisionKind.Choice,
         };

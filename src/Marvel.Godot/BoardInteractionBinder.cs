@@ -167,28 +167,7 @@ internal static class BoardInteractionBinder
     }
 
     internal static void RestoreCardFocus(
-        DecisionPanel panel,
-        DecisionComposer composer,
-        int generation,
-        int cardId)
-    {
-        if (panel.PaymentModalOpen || !panel.IsCurrentDraft(composer, generation)) return;
-        Button[] sameCard = [.. panel.GetTree().Root
-            .FindChildren($"Card{cardId}*", "Button", true, false)
-            .OfType<Button>()
-            .Where(CanFocus)];
-        Button? candidate = sameCard.LastOrDefault() ?? panel.GetTree().Root
-            .FindChildren("Card*", "Button", true, false)
-            .OfType<Button>()
-            .LastOrDefault(button => CanFocus(button) && button.HasMeta("spatial_card_anchor"))
-            ?? panel.GetTree().Root.FindChild("ContextualCommit", true, false) as Button;
-        if (candidate is not null)
-        {
-            candidate.GrabFocus();
-            InteractionControl.ResetDisabledScrollAncestors(candidate);
-        }
-    }
-    private static bool CanFocus(Button button) =>
-        InteractionControl.IsUsable(button) && button.IsVisibleInTree() && !button.Disabled;
+        DecisionPanel panel, DecisionComposer composer, int generation, int cardId) =>
+        BoardControlFocusRestore.Restore(panel, composer, generation, cardId);
 
 }

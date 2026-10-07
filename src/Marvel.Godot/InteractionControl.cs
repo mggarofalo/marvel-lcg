@@ -11,6 +11,16 @@ internal static class InteractionControl
         && control.IsInsideTree()
         && !control.IsQueuedForDeletion();
 
+    internal static bool RestoreUnclaimedFocus(Control candidate)
+    {
+        if (!IsUsable(candidate) || !candidate.IsVisibleInTree()) return false;
+        Control? current = candidate.GetViewport().GuiGetFocusOwner();
+        if (IsUsable(current) && current!.IsVisibleInTree() && current != candidate) return false;
+        candidate.GrabFocus();
+        ResetDisabledScrollAncestors(candidate);
+        return candidate.HasFocus();
+    }
+
     internal static Control? Find(Control root, string? key)
     {
         if (!IsUsable(root) || string.IsNullOrEmpty(key))

@@ -9,7 +9,8 @@ namespace Marvel.Godot;
 internal static class TableDraftSummary
 {
     internal static string? From(
-        DecisionComposer? composer, PromptPresentation? prompt, WorldDescriptor? world = null)
+        DecisionComposer? composer, PromptPresentation? prompt, WorldDescriptor? world = null,
+        bool compact = false)
     {
         if (composer?.Selected is not { } selected)
         {
@@ -22,16 +23,24 @@ internal static class TableDraftSummary
         var state = new List<string>();
         if (selected.Verb is not (Game.ResolveMulligans or Game.EndPhaseVerb))
         {
-            state.Add(visible is null ? selected.Label : DecisionCopy.ActionSummary(visible));
+            state.Add(visible is null ? selected.Label : compact
+                ? DecisionCopy.CompactActionSummary(visible) : DecisionCopy.ActionSummary(visible));
         }
         AddTargets(state, progress.Targets, selected.Verb);
         AddSelectedObjects(state, composer, world);
-        AddPayment(state, progress.Payment);
-        if (!progress.IsReady && !string.IsNullOrWhiteSpace(progress.Error))
+        TablePaymentSummary.Add(state, progress.Payment, compact);
+        AddOutstandingChoice(state, progress, compact);
+        return string.Join("  ·  ", state.Where(value => !string.IsNullOrWhiteSpace(value)));
+    }
+
+    private static void AddOutstandingChoice(
+        List<string> state, DecisionProgressPresentation progress, bool compact)
+    {
+        if (!progress.IsReady && !string.IsNullOrWhiteSpace(progress.Error)
+            && !(compact && TablePaymentSummary.ExplainsOutstandingChoice(progress)))
         {
             state.Add(progress.Error);
         }
-        return string.Join("  ·  ", state);
     }
 
     private static void AddSelectedObjects(
@@ -74,24 +83,4 @@ internal static class TableDraftSummary
             : $"{targets.Selected} selected ({bounds}).");
     }
 
-    private static void AddPayment(List<string> state, PaymentProgress payment)
-    {
-        switch (payment.CostState)
-        {
-            case CostSelectionState.Required:
-                state.Add($"{payment.CostOptions} payment options.");
-                break;
-            case CostSelectionState.Selected:
-                state.Add($"{payment.GeneratedIcons} resource{(payment.GeneratedIcons == 1 ? string.Empty : "s")} selected.");
-                if (!payment.IsSatisfied && payment.DefinedVariables == payment.RequestedVariables)
-                    state.Add(payment.CanCoverCost
-                        ? "Assign the selected icons to the required costs."
-                        : "Select resources that cover the displayed cost and required types.");
-                if (payment.ExcessIcons > 0)
-                {
-                    state.Add(DecisionCopy.OverpaymentWarning(payment));
-                }
-                break;
-        }
-    }
 }

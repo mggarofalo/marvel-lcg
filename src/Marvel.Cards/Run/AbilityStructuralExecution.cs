@@ -137,39 +137,6 @@ internal static class AbilityStructuralExecution
             _ => new Unsupported($"'{context.SourceFace}' has no special answer for '{choice.OperationName()}'"),
         };
 
-    internal static Prompt DescribePaymentChoice(
-        AbilityStructuralContext context, AbilityEffect.PayOrEffect payment)
-    {
-        var world = context.Expressions.World;
-        var sources = CardPayment.Generators(
-            world, world.Facts, world.Seats[context.Player], context.ResourceAbilities);
-        bool payable = Resources.Pays(string.Concat(sources.SelectMany(source => source.Generates)),
-            payment.Resources.Length, payment.Resources);
-        var offers = new List<Affordance>();
-        if (payable)
-        {
-            offers.Add(new Affordance(0, ChooseVerb,
-                context.Expressions.Source.ObjectId, World.Scenario, "spend",
-                Costs: [new CostOption(context.Expressions.Source.ObjectId,
-                    payment.Resources.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    [payment.Resources], Sources: sources)]));
-        }
-        if (!payment.ExhaustOnly)
-        {
-            offers.Add(new Affordance(1, ChooseVerb,
-                context.Expressions.Source.ObjectId, World.Scenario, "effect"));
-        }
-        else if (payment.Otherwise is AbilityEffect.CardAction exhaust
-            && Every(exhaust.Selection, context).Any(card => card.Ready))
-        {
-            offers.Add(new Affordance(1, ChooseVerb,
-                context.Expressions.Source.ObjectId, World.Scenario, "exhaust"));
-        }
-        return new Prompt(context.Player, Question.Option, TimingPriority.Untimed,
-            Steps.CardRevealed, $"{context.SourceFace}: spend or "
-            + (payment.ExhaustOnly ? "exhaust" : "resolve"), false, offers);
-    }
-
     internal static AbilityStructuralTransition AnswerPaymentChoice(
         AbilityStructuralContext context, AbilityEffect.PayOrEffect payment, Decision answer)
     {
@@ -322,31 +289,5 @@ internal static class AbilityStructuralExecution
             : new Unsupported($"'{context.SourceFace}' did not offer ally {answer.Affordance}");
     }
 
-    internal static Prompt DescribeActivationOrder(
-        AbilityStructuralContext context, AbilityEffect.ActivateEnemies activation)
-    {
-        var enemies = ActivationCandidates(context, activation);
-        var ids = enemies.Select(card => card.ObjectId).ToList();
-        return new Prompt(context.Expressions.World.FirstPlayer, Question.Order, TimingPriority.Untimed,
-            Steps.CardRevealed, $"{context.SourceFace}: order enemy activations", false,
-            [new Affordance(context.Expressions.Source.ObjectId, "Order", context.Expressions.Source.ObjectId,
-                context.Expressions.World.FirstPlayer, "enemy activations",
-                new TargetRequest(ids, ids.Count, ids.Count, Rule: "rr:activation.5"))]);
-    }
-
-    internal static AbilityStructuralTransition AnswerActivationOrder(
-        AbilityStructuralContext context, AbilityEffect.ActivateEnemies activation, Decision answer)
-    {
-        var legal = ActivationCandidates(context, activation).Select(card => card.ObjectId).ToHashSet();
-        if (answer.IsDecline || answer.Affordance != context.Expressions.Source.ObjectId
-            || answer.Targets.Count != legal.Count || answer.Targets.Distinct().Count() != legal.Count
-            || answer.Targets.Any(id => !legal.Contains(id)))
-        {
-            return new Unsupported(
-                $"'{context.SourceFace}' requires one permutation of all {legal.Count} enemy activations");
-        }
-        return Activation(context, activation,
-            [.. answer.Targets.Select(id => context.Expressions.World.Cards[id])]);
-    }
 
 }

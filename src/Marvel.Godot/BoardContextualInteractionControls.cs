@@ -48,7 +48,7 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
         if (!InteractionControl.IsUsable(host)) return;
         if (composer.Selected is null)
         {
-            AddActions(prompt, installedActions);
+            AddActions(prompt, installedActions, composer.Prompt.PublicKind);
         }
         else
         {
@@ -59,18 +59,34 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
     }
 
     internal static IReadOnlyList<AffordancePresentation> FallbackActions(
-        PromptPresentation prompt, IReadOnlySet<int> installedActions) =>
+        PromptPresentation prompt, IReadOnlySet<int> installedActions,
+        PublicDecisionKind kind = PublicDecisionKind.PlayerAction) =>
         [.. prompt.Affordances.Where(candidate => candidate.Illegal is null
-            && (candidate.CardAnchorId is not { } anchor || !installedActions.Contains(anchor)))];
+            && (kind == PublicDecisionKind.Choice
+                || candidate.CardAnchorId is not { } anchor || !installedActions.Contains(anchor)))];
 
-    private void AddActions(PromptPresentation prompt, IReadOnlySet<int> installedActions)
+    private void AddActions(PromptPresentation prompt, IReadOnlySet<int> installedActions, PublicDecisionKind kind)
     {
-        foreach (AffordancePresentation offer in FallbackActions(prompt, installedActions))
+        IReadOnlyList<AffordancePresentation> offers = FallbackActions(prompt, installedActions, kind);
+        Container choices = host!;
+        if (kind == PublicDecisionKind.Choice && offers.Count == 2)
+        {
+            choices = new HBoxContainer
+            {
+                Name = "RequiredAlternatives", ThemeTypeVariation = GodotThemeVariations.TightStack,
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            };
+            host!.AddChild(choices);
+        }
+        foreach (AffordancePresentation offer in offers)
         {
             int id = offer.Id;
-            Add($"ContextAction{id}", DecisionCopy.Choice(offer),
-                () => activate?.Invoke(id), offer.Description ?? offer.Label);
-            if (offer.Description is { Length: > 0 } description)
+            string label = kind == PublicDecisionKind.Choice
+                ? offer.DisplayLabel ?? DecisionCopy.Choice(offer) : DecisionCopy.Choice(offer);
+            Button choice = Add($"ContextAction{id}", label,
+                () => activate?.Invoke(id), offer.Description ?? offer.Label, parent: choices);
+            DecisionCostLabel.AttachTo(choice, offer);
+            if (kind != PublicDecisionKind.Choice && offer.Description is { Length: > 0 } description)
                 host!.AddChild(new Label
                 {
                     Text = description, AutowrapMode = TextServer.AutowrapMode.WordSmart,

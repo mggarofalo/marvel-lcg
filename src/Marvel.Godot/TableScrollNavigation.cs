@@ -39,6 +39,14 @@ internal static class TableScrollNavigation
         void Refresh()
         {
             if (!InteractionControl.IsUsable(scroll)) return;
+            // Measure against the whole frame. Navigation must not keep itself
+            // visible solely by consuming space that the content could use.
+            if (range.MaxValue - range.MinValue <= frame.Size.Y + 1)
+            {
+                navigation.Visible = false;
+                scroll.ScrollVertical = 0;
+                return;
+            }
             bool above = range.Value > range.MinValue + 1;
             bool below = range.Value + range.Page < range.MaxValue - 1;
             navigation.Visible = above || below;

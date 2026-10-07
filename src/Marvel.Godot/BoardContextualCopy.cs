@@ -1,5 +1,6 @@
 using Godot;
 using Marvel.Decisions;
+using Marvel.Rules.Prompts;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -9,14 +10,16 @@ internal sealed class BoardContextualCopy
 {
     private WorldDescriptor? world;
     private Label? summary;
+    private Label? resolution;
     private Label? receipt;
     private string fallback = string.Empty;
 
     internal void RegisterWorld(WorldDescriptor value) => world = value;
     internal void RegisterResult(Label label) => receipt = label;
-    internal void RegisterSummary(Label label, string text)
+    internal void RegisterSummary(Label label, string text, Label resolutionLabel)
     {
         summary = label;
+        resolution = resolutionLabel;
         fallback = text;
     }
 
@@ -28,13 +31,21 @@ internal sealed class BoardContextualCopy
     internal void PresentDraft(DecisionComposer? composer, PromptPresentation? prompt)
     {
         if (!InteractionControl.IsUsable(summary)) return;
-        string text = TableDraftSummary.From(composer, prompt, world) ?? fallback;
+        if (InteractionControl.IsUsable(resolution))
+            resolution!.Visible = resolution.Text.Length > 0 && ShowsResolution(composer);
+        string text = TableDraftSummary.From(composer, prompt, world, compact: true) ?? fallback;
         summary!.Text = text;
+        summary.Visible = text.Length > 0;
         summary.TooltipText = text;
     }
 
+    internal static bool ShowsResolution(DecisionComposer? composer) =>
+        composer?.Selected is null || composer.Prompt.PublicKind != PublicDecisionKind.PlayerAction;
+
     internal void PresentFeedback(string text)
     {
-        if (InteractionControl.IsUsable(summary)) summary!.Text = text;
+        if (!InteractionControl.IsUsable(summary)) return;
+        summary!.Text = text;
+        summary.Visible = text.Length > 0;
     }
 }

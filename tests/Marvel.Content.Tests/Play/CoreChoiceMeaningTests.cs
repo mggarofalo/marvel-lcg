@@ -32,7 +32,7 @@ public sealed class CoreChoiceMeaningTests : ChoosingCardsTestBase
         Assert.Contains("Place 1 threat on The Break-In!", threat.DisplayLabel);
         Assert.Contains("0/14", threat.Description);
         Assert.Contains("prevention can change", threat.Description);
-        Assert.Contains("Only the selected option", prompt.Description);
+        Assert.Null(prompt.Description);
     }
 
     [Theory]
