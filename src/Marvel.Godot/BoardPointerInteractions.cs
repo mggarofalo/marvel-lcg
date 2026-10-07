@@ -203,12 +203,7 @@ internal sealed class BoardPointerInteractions
             || InteractiveDescendantOwnsPointer(control)) return;
         if (resting.TryGetValue(control, out var pose))
         {
-            control.MoveToFront();
-            SetDirectControlLayer(control, 400);
-            control.Position = pose.Position + new Vector2(0, -12);
-            if (!control.HasMeta("spatial_exhausted")) control.Rotation = 0;
-            if (control is CardControl hand) SpatialHandActionStrip.Refresh(hand);
-            control.ZIndex = Math.Max(140, RestingZ(control, pose.Z) + 40);
+            BoardHoverPresentation.Raise(control, RestingZ(control, pose.Z));
         }
         previewEntered(card, control);
     }
@@ -216,7 +211,7 @@ internal sealed class BoardPointerInteractions
     private void ExitCard(Control control)
     {
         if (pointerCapture is null) RestorePose(control);
-        RestoreDirectControlLayer(control);
+        BoardHoverPresentation.RestoreControls(control);
         previewExited(control);
     }
 
@@ -274,22 +269,5 @@ internal sealed class BoardPointerInteractions
 
     private static int RestingZ(Control control, int fallback) =>
         SpatialCardPose.RestingZ(control, fallback);
-
-    private static void SetDirectControlLayer(Control card, int layer) {
-        foreach (Node node in card.FindChildren("Card*", "Button", true, false))
-        {
-            if (node is Button button && button.GetParent()?.Name == "DirectControls")
-                button.ZIndex = layer;
-        }
-    }
-
-    private static void RestoreDirectControlLayer(Control card) {
-        foreach (Node node in card.FindChildren("Card*", "Button", true, false))
-        {
-            if (node is Button button && button.HasMeta("spatial_control_z"))
-                button.ZIndex = button.GetMeta("spatial_control_z").AsInt32();
-        }
-    }
-
 
 }

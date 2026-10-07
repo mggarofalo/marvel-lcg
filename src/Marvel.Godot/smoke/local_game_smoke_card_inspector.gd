@@ -38,6 +38,7 @@ func _current_hand_card() -> Control:
 func _action_card_preview_is_safe() -> bool:
 	# Seat switching and resize rebuilds are deferred; inspect only the settled live surface.
 	await main.get_tree().create_timer(0.12).timeout
+	if not await _top_row_previews_keep_their_sources(): return false
 	var card := _current_hand_card()
 	if card == null:
 		_fail("the post-mulligan table has no readable hand card")
@@ -56,7 +57,8 @@ func _open_immediate_preview(card: Control, inspector: Control) -> bool:
 	render_viewport.push_input(leave, true)
 	await process_frame
 	var resting_z := card.z_index
-	var resting_y := card.position.y
+	var resting_position := card.position
+	var resting_rotation := card.rotation
 	var body_point := await _exposed_card_body_point(card)
 	if body_point == Vector2.INF:
 		_fail("the hovered hand card has no exposed inspection body")
@@ -66,8 +68,9 @@ func _open_immediate_preview(card: Control, inspector: Control) -> bool:
 	motion.global_position = motion.position
 	render_viewport.push_input(motion, true)
 	await process_frame
-	if card.z_index <= resting_z or card.position.y >= resting_y:
-		_fail("hovering a hand card did not lift it forward in the fan")
+	if card.z_index <= resting_z or not card.position.is_equal_approx(resting_position) \
+			or not is_equal_approx(card.rotation, resting_rotation):
+		_fail("inspection must bring the card forward without moving or rotating its hit area")
 		return false
 	if not inspector.visible or (inspector.get_node("Backdrop") as Control).mouse_filter \
 			!= Control.MOUSE_FILTER_IGNORE:
@@ -78,6 +81,27 @@ func _open_immediate_preview(card: Control, inspector: Control) -> bool:
 	if (inspector.get_node("Frame") as Control).mouse_filter != Control.MOUSE_FILTER_IGNORE:
 		_fail("the hover preview can intercept another table card's pointer input")
 		return false
+	return true
+
+
+func _top_row_previews_keep_their_sources() -> bool:
+	var inspector := main.get_node("CardInspector") as Control
+	for title in ["Rhino", "The Break-In!"]:
+		var card := _tabletop_card_named(title)
+		if card == null:
+			_fail("top-row preview source is missing: %s" % title)
+			return false
+		if not await _open_immediate_preview(card, inspector): return false
+		await process_frame
+		await process_frame
+		var frame := inspector.get_node("Frame") as Control
+		if not _control_is_fully_visible(frame):
+			_fail("top-row preview is clipped: rect=%s viewport=%s" % [frame.get_global_rect(), _viewport_size()])
+			return false
+		for scroll in frame.find_children("*", "ScrollContainer", true, false):
+			if scroll.get_v_scroll_bar().visible or scroll.get_h_scroll_bar().visible:
+				_fail("top-row preview requires a scrollbar")
+				return false
 	return true
 
 
