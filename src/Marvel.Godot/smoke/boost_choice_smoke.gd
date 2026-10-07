@@ -138,6 +138,12 @@ func _discard_seeded_resources() -> bool:
 	for title in ["Vibranium", "Energy"]:
 		var card := _mulligan_card(title)
 		var discard := card.find_child("Card*Target", true, false) as Button
+		if title == "Energy" and discard != null:
+			discard.grab_focus()
+			await create_timer(0.12).timeout
+			if render_viewport.gui_get_focus_owner() != discard:
+				_fail("delayed restoration replaced the newly focused Energy discard")
+				return false
 		if discard == null or not await _keyboard_activate(discard):
 			_fail("cannot stage discard of " + title)
 			return false

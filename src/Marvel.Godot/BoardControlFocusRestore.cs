@@ -13,13 +13,10 @@ internal static class BoardControlFocusRestore
         int cardId)
     {
         if (panel.PaymentModalOpen || !panel.IsCurrentDraft(composer, generation)) return;
-        Control? current = panel.GetViewport().GuiGetFocusOwner();
-        if (InteractionControl.IsUsable(current) && current!.IsVisibleInTree()) return;
         Button? candidate = Candidate(panel.GetTree().Root, cardId);
         if (candidate is not null)
         {
-            candidate.GrabFocus();
-            InteractionControl.ResetDisabledScrollAncestors(candidate);
+            InteractionControl.RestoreUnclaimedFocus(candidate);
         }
     }
     private static Button? Candidate(Node root, int cardId)
