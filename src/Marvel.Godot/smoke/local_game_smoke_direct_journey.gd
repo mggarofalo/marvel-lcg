@@ -91,7 +91,8 @@ func _complete_web_shooter_play() -> bool:
 		return false
 	if not await _commit_once("Web-Shooter"):
 		return false
-	return await ReceiptNavigation.replacement_receipt_starts_at_top(self)
+	if not await ReceiptNavigation.replacement_receipt_starts_at_top(self): return false
+	return await preload("res://smoke/attachment_picker_checks.gd").inspect_played_upgrade(self)
 
 
 func _direct_change_form_is_played() -> bool:
