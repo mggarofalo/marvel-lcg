@@ -207,7 +207,8 @@ public sealed class BoardRenderResult
     private static void SetMulliganToggle(Button toggle, bool selected)
     {
         toggle.SetPressedNoSignal(selected);
-        toggle.Text = selected ? "✓ DISCARD" : "□ DISCARD";
+        toggle.Text = selected ? "✓" : "↻";
+        toggle.AccessibilityName = selected ? "Selected for replacement" : "Select for replacement";
         toggle.ThemeTypeVariation = selected
             ? GodotThemeVariations.SelectedTargetButton
             : GodotThemeVariations.LegalTargetButton;

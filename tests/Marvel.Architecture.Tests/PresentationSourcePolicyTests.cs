@@ -211,6 +211,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.ICardFacts.Traits(string)",
             "Marvel.Rules.State.PlayArea.IsPlayers",
             "Marvel.Rules.State.PlayArea.Player",
+            "Marvel.Rules.State.PrintedAttributeNotation.ConsequentialDamage(Marvel.Rules.State.CardKind, string, string)",
+            "Marvel.Rules.State.PrintedAttributeNotation.IsPerPlayer(Marvel.Rules.State.CardKind, string, string)",
             "Marvel.Rules.State.Seat.Eliminated",
             "Marvel.Rules.State.Seat.Index",
             "Marvel.Rules.State.Seat.Name",

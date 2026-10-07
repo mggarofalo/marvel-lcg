@@ -15,13 +15,10 @@ func _card_face_is_safe(card: Control, face: Control, in_hand: bool, observed: D
 	return _compact_card_stage_is_safe(face, observed)
 
 
-func _compact_card_title_is_safe(card: Control, face: Control, in_hand: bool) -> bool:
+func _compact_card_title_is_safe(card: Control, face: Control, _in_hand: bool) -> bool:
 	var kind := face.find_child("Kind", true, false) as Label
-	if in_hand and kind == null:
-		_fail("a hand card does not retain subordinate type information")
-		return false
-	if not in_hand and kind != null:
-		_fail("a board card repeats type context already conveyed by its area")
+	if kind == null:
+		_fail("a printed card does not retain subordinate type information")
 		return false
 	var title := face.find_child("Title", true, false) as Label
 	if title == null or title.max_lines_visible != 2 or card.tooltip_text != title.text:
@@ -43,8 +40,9 @@ func _compact_card_title_is_safe(card: Control, face: Control, in_hand: bool) ->
 
 
 func _compact_card_regions_are_safe(face: Control, observed: Dictionary) -> bool:
-	if face.find_child("RulesText", true, false) != null:
-		_fail("a compact board or hand card exposed full rules text")
+	var rules := face.find_child("RulesText", true, false) as RichTextLabel
+	if rules == null or rules.scroll_active or rules.get_content_height() > rules.size.y + 1.0:
+		_fail("printed rules are missing, scrollable, or clipped on their card")
 		return false
 	if face.find_child("PrintedValues", true, false) != null:
 		_fail("a compact card retained a PRINTED value region")
@@ -55,7 +53,7 @@ func _compact_card_regions_are_safe(face: Control, observed: Dictionary) -> bool
 	if face.find_child("ReadyIndicator", true, false) != null:
 		_fail("a compact card retained a standalone READY indicator")
 		return false
-	var summary := face.find_child("SummaryValues", true, false)
+	var summary := face.find_child("Stat*", true, false)
 	observed.compact_summary = observed.compact_summary or summary != null
 	if summary != null and not _summary_badges_are_safe(summary):
 		return false
@@ -64,8 +62,8 @@ func _compact_card_regions_are_safe(face: Control, observed: Dictionary) -> bool
 
 func _summary_badges_are_safe(summary: Control) -> bool:
 	for badge in summary.find_children("*", "Label", true, false):
-		if badge.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS:
-			_fail("a compact semantic badge uses ellipsis instead of whole-badge wrapping")
+		if badge.text.is_empty() or badge.size.y < badge.get_theme_font_size("font_size"):
+			_fail("a printed stat or annotation is empty or vertically clipped")
 			return false
 	return true
 
@@ -127,52 +125,23 @@ func _type_specific_value_was_seen(face: Control, observed: Dictionary) -> bool:
 
 
 func _compact_card_resources_are_safe(face: Control, observed: Dictionary) -> bool:
-	var resource := face.find_child("SummaryValuesRES", true, false) as HFlowContainer
-	if resource == null:
+	var resource := face.find_child("ResourceIcons", true, false) as HBoxContainer
+	if resource == null or resource.get_child_count() == 0:
 		return true
 	observed.type_specific_value = true
-	if not FileAccess.file_exists("res://assets/fonts/ChampionsIcons.ttf"):
-		_fail("the pinned Champions icon font is outside the project resource root")
+	var slots := resource.find_children("InspectorResourceIconSlot*", "Label", false, false)
+	if slots.is_empty():
+		_fail("printed resources have no canonical icon slots")
 		return false
-	var tokens := resource.find_children("ResourceToken*", "HBoxContainer", false, false)
-	if tokens.is_empty():
-		_fail("a compact resource has no icon token")
-		return false
-	var slot_size := Vector2.ZERO
-	for token_node in tokens:
-		var slot := token_node.find_child("ResourceIconSlot*", true, false) as Label
-		if not _resource_token_structure_is_safe(resource, token_node, slot):
+	var expected: Vector2 = slots.front().custom_minimum_size
+	for slot in slots:
+		if not _resource_slot_is_safe(slot as Label, expected):
 			return false
-		if slot_size == Vector2.ZERO:
-			slot_size = slot.custom_minimum_size
-		if not _resource_slot_is_safe(slot, slot_size):
+		if not ResourceBounds.bounds(resource).grow(1).encloses(ResourceBounds.bounds(slot)):
+			_fail("a printed resource glyph escapes its bottom-left region")
 			return false
-	return _resource_row_uses_available_face_width(resource, tokens)
-
-
-func _resource_token_structure_is_safe(resource: HFlowContainer, token: Control, slot: Label) -> bool:
-	if not ResourceBounds.bounds(resource).grow(1).encloses(ResourceBounds.bounds(token)):
-		_fail("a compact printed resource token escapes its row")
-		return false
-	if slot == null or token.find_child("ResourceName*", true, false) != null:
-		_fail("a compact printed resource is not an icon-only row")
-		return false
-	if not token.tooltip_text.is_empty() or not slot.tooltip_text.is_empty():
-		_fail("a compact printed resource icon exposes redundant tooltip text")
-		return false
-	return true
-
-
-func _resource_row_uses_available_face_width(resource: HFlowContainer, tokens: Array[Node]) -> bool:
-	var required: float = max(0, tokens.size() - 1) * resource.get_theme_constant("h_separation")
-	for token in tokens:
-		required += (token as Control).size.x
-	if resource.get_parent().size.x < required:
-		return true
-	var first_y: float = (tokens.front() as Control).position.y
-	for token in tokens:
-		if absf((token as Control).position.y - first_y) > 1.0:
-			_fail("printed resources wrap despite sufficient face width")
+		if slot.tooltip_text.is_empty():
+			_fail("a resource symbol has no accessible name")
 			return false
 	return true
 
@@ -203,9 +172,8 @@ func _resource_slot_is_safe(slot: Label, expected_size: Vector2) -> bool:
 
 
 func _compact_card_stage_is_safe(face: Control, observed: Dictionary) -> bool:
-	var stage := face.find_child("SummaryValuesStage", true, false)
+	var stage := face.find_child("StageCaption", true, false)
 	var health := face.find_child("ProgressValuesHEALTH", true, false)
-	var threat := face.find_child("ProgressValuesTHREAT", true, false)
 	if stage == null:
 		return true
 	if health != null:
@@ -215,14 +183,11 @@ func _compact_card_stage_is_safe(face: Control, observed: Dictionary) -> bool:
 		if face.find_child("SummaryValuesATK", true, false) == null:
 			_fail("an active villain stage is missing attack beside live health")
 			return false
-		if face.find_children("SummaryValuesStage", "Label", true, false).size() != 1:
+		if face.find_children("StageCaption", "Label", true, false).size() != 1:
 			_fail("an active villain stage is repeated beside live stats")
 			return false
 		observed.active_villain_stage = true
 		return true
-	if threat != null or face.find_child("SummaryValuesHP", true, false) != null:
-		_fail("a stored stage competes with active threat or printed health")
-		return false
 	return true
 
 

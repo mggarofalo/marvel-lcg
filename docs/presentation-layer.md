@@ -310,6 +310,23 @@ tasks, not engine or DSL fields. The descriptor supplies the already-authorized
 visible face id; presentation hints must not enter
 `datasets/abilities/abilities.json`.
 
+Printed card annotations retain their engine-owned meaning: an ally's power
+stars indicate consequential damage, while per-player marks remain separate
+from already evaluated live values. Board presentations describe these marks
+after visibility filtering. Protocol 19 remains compatible: the wire uses its
+existing printed-attribute dictionary, including uniqueness and scheme icons;
+no new wire member or gameplay decision is introduced. Older renderers may
+ignore these additional dictionary entries. Card illustrations appear only in
+enlarged inspection; table faces reserve their space for readable rules and
+current values.
+
+The physical table keeps card faces between 80% and 100%, with the upper bound
+also constrained by available table height. This preserves legible values and
+keeps the fanned hand clear of the decision area. Interface controls retain
+their independent 50–150% scale. Hover previews show a complete enlarged face
+without capturing table pointer input; explicit inspection pins the face and
+owns focus until dismissal.
+
 ## Client delivery
 
 The Godot project remains deliberately outside the engine. It:

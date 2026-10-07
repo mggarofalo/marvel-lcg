@@ -25,11 +25,11 @@ internal sealed class VisibilityFacts : ICardFacts
         faceId switch
         {
             "public-villain" => new Dictionary<string, string>(StringComparer.Ordinal)
-                { ["SCH"] = "4", ["Class"] = "Encounter" },
+                { ["SCH"] = "4", ["Class"] = "Encounter", ["Unique"] = "1" },
             "player-ally" => new Dictionary<string, string>(StringComparer.Ordinal)
                 { ["HP"] = "3" },
             "underlying-player-card" => new Dictionary<string, string>(StringComparer.Ordinal)
-                { ["HP"] = "7" },
+                { ["HP"] = "7", ["Unique"] = "1" },
             _ => new Dictionary<string, string>(StringComparer.Ordinal),
         };
 

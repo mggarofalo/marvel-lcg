@@ -2,7 +2,7 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Bounds each hand card's upright controls to its exposed fan segment.</summary>
+/// <summary>Places upright symbols at the hand card's edge or resource corner.</summary>
 internal static class SpatialHandActionStrip
 {
     internal static bool Place(CardControl card, Button button)
@@ -16,13 +16,9 @@ internal static class SpatialHandActionStrip
             };
             card.AddChild(overlay);
         }
-        float width = Math.Max(44, card.GetMeta("spatial_hand_exposed_width").AsSingle() - 12);
         button.ZAsRelative = true;
         button.ZIndex = 0;
-        button.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        button.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
-        button.CustomMinimumSize = new Vector2(width, 44);
-        button.Size = new Vector2(width, 44);
+        CardSymbolButtonStyle.Apply(button);
         overlay.AddChild(button);
         card.HideInteractionCue();
         button.SetMeta("spatial_hand_control", true);
@@ -42,10 +38,17 @@ internal static class SpatialHandActionStrip
     {
         if (!InteractionControl.IsUsable(card) || !InteractionControl.IsUsable(button)) return;
         float width = card.GetMeta("spatial_hand_exposed_width").AsSingle();
+        Vector2 offset = new(Math.Max(0, (width - CardSymbolButtonStyle.HitSize) / 2), -28);
+        if (button.GetMeta("card_control_intent", "").AsString() == "Generator"
+            && card.HasMeta("card_resource_rect"))
+        {
+            Rect2 resources = card.GetMeta("card_resource_rect").AsRect2();
+            offset = new Vector2(Math.Min(width - 44, resources.End.X - 16), resources.GetCenter().Y - 22);
+        }
         button.Rotation = -card.Rotation;
         button.Position = ((Control)button.GetParent()).GetGlobalTransform().AffineInverse()
             * (((Control)card.GetParent()).GetGlobalTransform()
-                * (card.Position + new Vector2(6, card.Size.Y - 54)));
-        button.Size = new Vector2(Math.Max(44, width - 12), 44);
+                * (card.Position + offset));
+        button.Size = new Vector2(44, 44);
     }
 }

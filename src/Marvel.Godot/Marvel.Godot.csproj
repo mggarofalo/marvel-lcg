@@ -28,6 +28,8 @@
   <ItemGroup>
     <EmbeddedResource Include="assets/icons/resources/*.svg"
                       LogicalName="Marvel.Godot.Assets.Resources.%(Filename).svg" />
+    <EmbeddedResource Include="assets/fonts/Barlow*.ttf"
+                      LogicalName="Marvel.Godot.Assets.%(Filename).ttf" />
     <EmbeddedResource Include="assets/fonts/ChampionsIcons.ttf"
                       LogicalName="Marvel.Godot.Assets.ChampionsIcons.ttf" />
   </ItemGroup>

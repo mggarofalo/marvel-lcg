@@ -281,7 +281,8 @@ func _choose_target(anchor: int) -> bool:
 	if target != null:
 		return await _pointer_activate(target)
 	var card := _card_for_anchor(anchor)
-	if card != null and "✓ Selected" in _visible_text(card):
+	var cue := card.find_child("InteractionCue", true, false) as Label if card != null else null
+	if cue != null and cue.text == "✓" and cue.accessibility_name == "Selected target":
 		return true
 	_fail("the prompt did not offer stable target anchor %d" % anchor)
 	return false

@@ -37,6 +37,9 @@ public sealed record BoardCardPresentation(
     /// <summary>Printed stats, kept separate from current live values.</summary>
     public IReadOnlyList<BoardFieldPresentation> PrintedStats { get; init; } = [];
 
+    /// <summary>Semantic annotations of printed values; none are inferred from live values.</summary>
+    public IReadOnlyList<BoardPrintedValueMark> PrintedMarks { get; init; } = [];
+
     /// <summary>Printed keyword labels.</summary>
     public IReadOnlyList<string> Keywords { get; init; } = [];
 

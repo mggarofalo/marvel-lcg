@@ -55,7 +55,7 @@ internal sealed record AstraTableGeometry(
         float middle = (count - 1) / 2f;
         float distance = index - middle;
         float rotation = Mathf.DegToRad(Mathf.Clamp(distance * 2.2f, -7, 7));
-        float drop = Mathf.Abs(distance) * 3.5f;
+        float drop = -Mathf.Abs(distance) * 3.5f;
         return new SpatialCardPlacement(
             new Vector2(start + index * step, hand.Position.Y + drop),
             rotation,

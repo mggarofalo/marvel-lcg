@@ -59,6 +59,17 @@ internal sealed class CardInspectorFocus
         }
     }
 
+    internal void ObservePreviewPointer(InputEvent input)
+    {
+        if (!main.cardInspector.Visible || main.cardInspectorPinned
+            || input is not InputEventMouseMotion motion) return;
+        bool inside = main.cardInspectorFrame.GetGlobalRect().HasPoint(motion.Position);
+        if (inside == main.cardInspectorHovered) return;
+        main.cardInspectorHovered = inside;
+        if (inside) main.cardInspectorGeneration++;
+        else ScheduleHide();
+    }
+
     private bool CompleteBackdropDismissal(InputEvent input)
     {
         if (!backdropDismissalPending

@@ -72,7 +72,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.BoardAreaProminence",
             "Marvel.View.BoardCardPresentation",
             "Marvel.View.BoardFieldPresentation",
-            "Marvel.View.BoardFieldNames",
+            "Marvel.View.BoardPrintedValueMark",
             "Marvel.View.BoardLanePresentation",
             "Marvel.View.BoardLayout",
             "Marvel.View.BoardPlayerPresentation",

@@ -90,8 +90,8 @@ func _select_mulligan_cards() -> bool:
 		return false
 	if not await _keyboard_activate(_mulligan_discard("Swinging Web Kick")):
 		return false
-	return _mulligan_discard("Avengers Mansion").text == "✓ DISCARD" \
-		and _mulligan_discard("Swinging Web Kick").text == "✓ DISCARD"
+	return _mulligan_discard("Avengers Mansion").text == "✓" \
+		and _mulligan_discard("Swinging Web Kick").text == "✓"
 
 
 func _drag_capture_is_safe() -> bool:

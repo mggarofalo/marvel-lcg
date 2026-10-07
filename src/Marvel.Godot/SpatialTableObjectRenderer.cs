@@ -211,27 +211,18 @@ internal sealed class SpatialTableObjectRenderer
 
     private void AddMulliganToggle(int id, CardControl card)
     {
-        Vector2 cardSize = card.CustomMinimumSize;
-        var overlay = new Control
-        {
-            Name = $"MulliganOverlay{id}",
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        };
         var toggle = new Button
         {
             Name = $"MulliganDiscard{id}",
-            Text = "□ DISCARD",
+            Text = "↻",
+            AccessibilityName = "Select for replacement",
             ToggleMode = true,
-            Position = new Vector2(20, cardSize.Y - 48),
-            Size = new Vector2(Math.Max(92, cardSize.X - 40), 44),
-            CustomMinimumSize = new Vector2(Math.Max(92, cardSize.X - 40), 44),
             ZIndex = 0,
             ZAsRelative = true,
             TooltipText = "Select this card for replacement. The card body remains inspection.",
         };
         toggle.Pressed += () => result.RequestMulliganTarget(id);
-        overlay.AddChild(toggle);
-        card.AddChild(overlay);
+        SpatialHandActionStrip.Place(card, toggle);
         result.RegisterMulliganToggle(id, toggle);
     }
 
