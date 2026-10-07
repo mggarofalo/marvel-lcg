@@ -12,6 +12,11 @@ namespace Marvel.Rules.Prompts;
 /// </remarks>
 public static class ResourcePayment
 {
+    /// <summary>The engine-resolved typed requirements, or null until the cost is defined.</summary>
+    public static string? RequiredResources(
+        ResourceCost cost, IReadOnlyDictionary<string, long>? values = null) =>
+        Resolve(cost, values)?.Required;
+
     /// <summary>Whether a generator can supply any slot in an offered cost.</summary>
     /// <remarks>
     /// This is partial-payment guidance, not a restriction on legal overpayment.
@@ -140,13 +145,10 @@ public static class ResourcePayment
     private static bool ComponentPaid(ResourceCost cost, System.Text.StringBuilder paid,
         IReadOnlyDictionary<string, long>? values)
     {
-        if (!Amount(cost.Cost, values, out long amount)
-            || amount < 0 || amount > int.MaxValue) return false;
+        if (Resolve(cost, values) is not { } resolved) return false;
         string assigned = paid.ToString();
-        string required = string.Concat(cost.Rule ?? []);
-        return assigned.Length == amount
-            && required.All(Resources.Types.Contains)
-            && Resources.PaysDeclared(assigned, amount, required);
+        return assigned.Length == resolved.Amount
+            && Resources.PaysDeclared(assigned, resolved.Amount, resolved.Required);
     }
 
     /// <summary>

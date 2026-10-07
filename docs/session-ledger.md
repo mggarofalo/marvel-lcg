@@ -76,13 +76,13 @@ server replay but must never cross the client boundary. A visibility-safe
 
 ## The save is a decision trace
 
-A save is one strict UTF-8 JSON document. Schema 4 has these top-level members
+A save is one strict UTF-8 JSON document. Schema 5 has these top-level members
 in this order:
 
 ```json
 {
   "format": "marvel-session",
-  "schema": 4,
+  "schema": 5,
   "compatibility": {},
   "session": {},
   "setup": {},
@@ -95,13 +95,18 @@ in this order:
 }
 ```
 
-Schemas 2 and 3 are explicit readable predecessors. Schema 2 uses its frozen
+Schemas 2, 3 and 4 are explicit readable predecessors. Schema 2 uses its frozen
 prompt shape and schema 3 predates the anchor namespace discriminator; their
 readers respectively validate aliases and assign the historic card namespace.
+Schemas 2–4 have fixed resource requirements; their readers assign null to the
+required `repeated_resource` component member. Schema 5 records a resource type
+when every unit of a quantity, including a variable quantity, requires that type.
+Replay compatibility is checked before migration; a predecessor format does not
+authorize replay under different payment semantics.
 The server then replays and verifies the complete trace and atomically commits
-a schema 4 generation before making the session available. It never rewrites
+a schema 5 generation before making the session available. It never rewrites
 the active generation in place and never publishes a partially migrated
-session. New saves and every later commit write schema 4 only.
+session. New saves and every later commit write schema 5 only.
 
 Unknown members fail loading. Missing members fail loading. A later schema uses
 a new number and an explicit migration; a reader never guesses how to interpret
@@ -590,7 +595,7 @@ their respective interfaces. A client cache is not a backup.
 
 The subsystem requires executable examples for:
 
-- byte-stable schema 4 records and strict parsing;
+- byte-stable schema 5 records and strict parsing;
 - atomic open with its initial save and owner authority, including crashes at
   each persistence boundary;
 - durable attach, credential revocation and owner retirement, including restart

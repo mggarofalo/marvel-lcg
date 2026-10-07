@@ -23,7 +23,7 @@ public sealed class SimulationHarnessLegacySchemaTests : SimulationHarnessTestBa
             offer => Assert.Equal(0, offer.GetProperty("anchor_kind").GetInt32()));
         Assert.Contains(steps, step => step.GetProperty("prompt").GetProperty("affordances").EnumerateArray()
             .Any(offer => offer.GetProperty("costs").GetArrayLength() > 0));
-        Assert.Equal(4, JsonNode.Parse(current[0])!["schema"]!.GetValue<int>());
+        Assert.Equal(5, JsonNode.Parse(current[0])!["schema"]!.GetValue<int>());
         foreach (string line in current)
         {
             JsonNode? node = JsonNode.Parse(line);
@@ -48,7 +48,7 @@ public sealed class SimulationHarnessLegacySchemaTests : SimulationHarnessTestBa
         List<string> legacy = SchemaTwoLines(current);
         long legacyBytes = legacy.Sum(line => (long)Encoding.UTF8.GetByteCount(line));
         long currentBytes = current.Sum(line => (long)Encoding.UTF8.GetByteCount(line));
-        Assert.True(currentBytes * 100 <= legacyBytes * 97, $"schema 4 used {currentBytes} bytes versus schema 2's {legacyBytes}");
+        Assert.True(currentBytes * 100 <= legacyBytes * 97, $"schema 5 used {currentBytes} bytes versus schema 2's {legacyBytes}");
         string path = Path.Combine(Path.GetTempPath(), $"marvel-sim-schema-two-{Guid.NewGuid():N}.jsonl");
         try
         {

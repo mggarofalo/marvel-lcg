@@ -74,6 +74,12 @@ the server-owned setup and accepted decision trace authoritative for save,
 restore, undo, redo and legal action reordering. Clients continue to submit
 decisions rather than state. See [session-ledger.md](session-ledger.md).
 
+Quantity-dependent typed payments use protocol 20. The engine resolves the
+required resource slots from the offered component and chosen variable; the
+composer uses that same function for readiness and icon declarations. Saves
+use schema 5 and replay contract v7; prior replay contracts fail compatibility
+before migration.
+
 ## Build boundary
 
 Godot is the only UI framework planned for the desktop client. No engine, card,
@@ -313,8 +319,8 @@ visible face id; presentation hints must not enter
 Printed card annotations retain their engine-owned meaning: an ally's power
 stars indicate consequential damage, while per-player marks remain separate
 from already evaluated live values. Board presentations describe these marks
-after visibility filtering. Protocol 19 remains compatible: the wire uses its
-existing printed-attribute dictionary, including uniqueness and scheme icons;
+after visibility filtering. These facts use the wire's existing
+printed-attribute dictionary, including uniqueness and scheme icons;
 no new wire member or gameplay decision is introduced. Older renderers may
 ignore these additional dictionary entries. Card illustrations appear only in
 enlarged inspection; table faces reserve their space for readable rules and

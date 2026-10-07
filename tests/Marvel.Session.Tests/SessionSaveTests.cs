@@ -45,7 +45,7 @@ public sealed class SessionSaveTests
     }
 
     [Fact]
-    public void SchemaFourHasAStableStrictTopLevelDocument()
+    public void SchemaFiveHasAStableStrictTopLevelDocument()
     {
         SessionSave save = Save();
 
@@ -54,7 +54,7 @@ public sealed class SessionSaveTests
 
         Assert.Equal(json, SessionSaveJson.Write(parsed));
         Assert.StartsWith(
-            "{\"format\":\"marvel-session\",\"schema\":4,\"compatibility\":",
+            "{\"format\":\"marvel-session\",\"schema\":5,\"compatibility\":",
             json,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -81,8 +81,8 @@ public sealed class SessionSaveTests
                 "\"format\":\"future-session\"",
                 StringComparison.Ordinal),
             "schema" => json.Replace(
-                "\"schema\":4",
                 "\"schema\":5",
+                "\"schema\":6",
                 StringComparison.Ordinal),
             _ => throw new InvalidOperationException(change),
         };
@@ -130,7 +130,7 @@ public sealed class SessionSaveTests
     public void SchemaTwoCanBeReadStrictlyButCannotBeWrittenAsCurrent()
     {
         string legacyJson = SessionSaveJson.Write(Save()).Replace(
-            "\"schema\":4",
+            "\"schema\":5",
             "\"schema\":2",
             StringComparison.Ordinal);
 
@@ -201,6 +201,45 @@ public sealed class SessionSaveTests
         legacy["current_prompt"]!["affordances"]![0]!["targets"]!["is_grouped"] = true;
         Assert.Throws<SessionSaveException>(() =>
             SessionSaveJson.Read(legacy.ToJsonString(SessionSaveJson.Options)));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData('Y')]
+    public void ResourceRequirementsRoundTripStrictlyAndPredecessorsCannotClaimThem(char? repeated)
+    {
+        var prompt = new Prompt(0, Question.TurnOption, TimingPriority.Untimed,
+            "Action", "Pay", false,
+            [new Affordance(7, "Action", 4, 0, "Pay", Costs:
+                [new CostOption(4, "X", Components:
+                    [new ResourceCost("X") { RepeatedResource = repeated }])])]);
+        SessionSave save = Save() with { CurrentPrompt = PromptRecord.From(prompt) };
+        string json = SessionSaveJson.Write(save);
+        SessionSave parsed = SessionSaveJson.Read(json);
+        Assert.Equal(repeated, parsed.CurrentPrompt!.Affordances[0].Costs![0].Components![0].RepeatedResource);
+        Assert.Equal(json, SessionSaveJson.Write(parsed));
+        JsonObject legacy = JsonNode.Parse(json)!.AsObject();
+        JsonObject component = legacy["current_prompt"]!["affordances"]![0]!["costs"]![0]!["components"]![0]!.AsObject();
+        _ = component.Remove("repeated_resource");
+        Assert.Throws<SessionSaveException>(() => SessionSaveJson.Read(legacy.ToJsonString()));
+        legacy["schema"] = 4;
+        SessionSave predecessor = SessionSaveJson.Read(legacy.ToJsonString());
+        Assert.Equal(4, predecessor.Schema);
+        Assert.Null(predecessor.CurrentPrompt!.Affordances[0].Costs![0].Components![0].RepeatedResource);
+        component["repeated_resource"] = "Y";
+        Assert.Throws<SessionSaveException>(() => SessionSaveJson.Read(legacy.ToJsonString()));
+    }
+
+    [Fact]
+    public void SchemaFourCannotMigrateAcrossTheTypedPaymentReplayBoundary()
+    {
+        SessionSave save = Save() with { Schema = 4 };
+        save = save with { Compatibility = save.Compatibility with { ReplayContract = "engine-replay-v6" } };
+        SessionCompatibility expected = save.Compatibility with { ReplayContract = "engine-replay-v7" };
+        SessionCompatibilityException error = Assert.Throws<SessionCompatibilityException>(() =>
+            SessionReplay.MigrateSchemaFour(save, expected,
+                _ => throw new InvalidOperationException("incompatible history must not be opened")));
+        Assert.Equal("replay_identity_mismatch", error.Category);
     }
 
     private static SessionSave Save() => new(

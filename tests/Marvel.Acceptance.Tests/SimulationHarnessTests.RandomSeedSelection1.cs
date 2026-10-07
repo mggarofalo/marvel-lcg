@@ -156,7 +156,7 @@ public sealed class SimulationHarnessRandomSeedSelectionTests : SimulationHarnes
         Assert.Equal(1, summary.ExitCode);
         var documents = Lines(record).ToList();
         var header = Assert.Single(documents, item => item.GetProperty("type").GetString() == "header");
-        Assert.Equal(2, header.GetProperty("policy_version").GetInt32());
+        Assert.Equal(3, header.GetProperty("policy_version").GetInt32());
         var first = Assert.Single(documents, item => item.GetProperty("type").GetString() == "step");
         Assert.False(first.GetProperty("prompt").GetProperty("cancellable").GetBoolean());
         Assert.False(first.GetProperty("decision").GetProperty("decline").GetBoolean());

@@ -9,7 +9,7 @@ namespace Marvel.Sim;
 internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSeeds)
 {
     public const string Name = "acting";
-    public const int Version = 2;
+    public const int Version = 3;
     public const string Visibility = "full_state";
 
     private readonly IReadOnlyList<EngineRandom> random =
@@ -282,63 +282,6 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
             .Select(card => card.ObjectId)];
     }
 
-    private static IReadOnlyList<int>? Payment(Affordance option)
-    {
-        if (option.CostOptions.Count == 0)
-        {
-            return [];
-        }
-
-        var price = option.CostOptions[0];
-        long cost = long.TryParse(
-            price.Cost,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out long fixedCost)
-            ? fixedCost
-            : price.VariableRequests.Single(variable =>
-                string.Equals(variable.Name, price.Cost, StringComparison.Ordinal)).Min;
-        string required = string.Concat(price.Rule ?? []);
-
-        for (int count = 0; count <= price.Generators.Count; count++)
-        {
-            var chosen = new List<ResourceSource>(count);
-            if (Choose(price.Generators, cost, required, count, 0, chosen) is { } payment)
-            {
-                return payment;
-            }
-        }
-
-        return null;
-    }
-
-    private static IReadOnlyList<int>? Choose(
-        IReadOnlyList<ResourceSource> sources,
-        long cost,
-        string required,
-        int remaining,
-        int start,
-        List<ResourceSource> chosen)
-    {
-        if (remaining == 0)
-        {
-            string generated = string.Concat(chosen.Select(source => source.Generates));
-            return Resources.Pays(generated, cost, required)
-                ? [.. chosen.Select(source => source.Effect)]
-                : null;
-        }
-
-        for (int index = start; index <= sources.Count - remaining; index++)
-        {
-            chosen.Add(sources[index]);
-            var payment = Choose(
-                sources, cost, required, remaining - 1, index + 1, chosen);
-            chosen.RemoveAt(chosen.Count - 1);
-            if (payment is not null)
-            {
-                return payment;
-            }
-        }
-
-        return null;
-    }
+    private static IReadOnlyList<int>? Payment(Affordance option) =>
+        PolicyPaymentSelection.Payment(option);
 }

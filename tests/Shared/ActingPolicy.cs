@@ -155,25 +155,13 @@ public sealed class ActingPolicy(int seed, int declineOneIn = 4)
         var selected = new List<int>();
         foreach (var cost in taken.CostOptions)
         {
-            if (!long.TryParse(
-                    cost.Cost, System.Globalization.CultureInfo.InvariantCulture,
-                    out long amount))
-            {
-                var variable = cost.VariableRequests.FirstOrDefault(variable =>
-                    string.Equals(variable.Name, cost.Cost, StringComparison.Ordinal));
-                if (variable.Name is null)
-                {
-                    continue;
-                }
-                amount = variable.Min;
-            }
-
-            string required = string.Concat(cost.Rule ?? []);
+            var values = cost.VariableRequests.ToDictionary(
+                variable => variable.Name, variable => variable.Min, StringComparer.Ordinal);
             var sources = cost.Generators
                 .GroupBy(source => source.Effect)
                 .Select(group => group.First())
                 .ToList();
-            var payment = SmallestPayment(sources, amount, required);
+            var payment = SmallestPayment(sources, cost, values);
             if (payment is not null)
             {
                 selected.AddRange(payment);
@@ -184,7 +172,7 @@ public sealed class ActingPolicy(int seed, int declineOneIn = 4)
     }
 
     private static IReadOnlyList<int>? SmallestPayment(
-        List<ResourceSource> sources, long amount, string required)
+        List<ResourceSource> sources, CostOption cost, IReadOnlyDictionary<string, long> values)
     {
         for (int count = 0; count <= sources.Count; count++)
         {
@@ -198,9 +186,8 @@ public sealed class ActingPolicy(int seed, int declineOneIn = 4)
             {
                 if (left == 0)
                 {
-                    return Resources.Pays(
-                        string.Concat(chosen.Select(source => source.Generates)),
-                        amount, required);
+                    return ResourcePayment.Allocate(cost,
+                        [.. chosen.Select(source => source.Effect)], values) is not null;
                 }
 
                 for (int index = start; index <= sources.Count - left; index++)

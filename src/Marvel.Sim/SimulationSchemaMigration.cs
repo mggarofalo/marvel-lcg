@@ -17,13 +17,24 @@ internal static class SimulationSchemaMigration
             ?? throw new JsonException("schema 2 decision selector was null");
     }
 
-    internal static T ReadSchemaThree<T>(string line)
+    internal static T ReadPredecessor<T>(string line, int schema)
     {
         JsonObject root = JsonNode.Parse(line)?.AsObject()
             ?? throw new JsonException("schema 3 record was null");
-        AddSchemaThreeRecord(root);
+        if (schema == 3) AddSchemaThreeRecord(root);
+        AddFixedResourceCosts(root);
+        foreach (JsonNode? step in root["recent_steps"]?.AsArray() ?? [])
+            AddFixedResourceCosts(step!.AsObject());
         return root.Deserialize<T>(RecordJson.Options)
             ?? throw new JsonException("schema 3 record was null");
+    }
+
+    private static void AddFixedResourceCosts(JsonObject record)
+    {
+        if (record["prompt"] is not JsonObject prompt) return;
+        PromptRecord parsed = SchemaFourPromptJson.Read(
+            JsonSerializer.SerializeToElement(prompt, RecordJson.Options));
+        record["prompt"] = JsonSerializer.SerializeToNode(parsed, RecordJson.Options);
     }
 
     private static void AddSchemaThreeRecord(JsonObject record)

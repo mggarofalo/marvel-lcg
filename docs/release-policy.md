@@ -46,9 +46,9 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `19` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
-| Session schema | `4` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v6` | The same setup and decision trace may resolve differently. |
+| Engine protocol | `20` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Session schema | `5` | The strict persisted JSON shape changes. |
+| Engine replay contract | `engine-replay-v7` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
@@ -171,11 +171,12 @@ when all of the following hold:
 - complete deterministic replay verifies every recorded prompt, event, RNG
   count and state fingerprint.
 
-Schema 4 is the current writer. Schemas 2 and 3 are explicit readable
-predecessors. Reading either performs the implemented replay-verified, atomic
-migration and commits schema 4 before publishing the session. Schema 3 gains
+Schema 5 is the current writer. Schemas 2, 3 and 4 are explicit readable
+predecessors. Reading one performs the implemented replay-verified, atomic
+migration and commits schema 5 before publishing the session. Schema 3 gains
 the historic card anchor namespace during decoding; schema 2 also uses its
-frozen prompt reader. “Same final board” is never sufficient evidence for
+frozen prompt reader. All three predecessors gain a null repeated-resource
+requirement. Replay identity must still match before any migration. “Same final board” is never sufficient evidence for
 migration.
 
 An unknown schema, replay identity, RNG identity, digest identity or dataset

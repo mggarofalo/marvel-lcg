@@ -6,10 +6,12 @@ using Xunit;
 
 namespace Marvel.Server.Tests;
 
-public sealed class SchemaThreeSessionPersistenceTests
+public sealed class PredecessorSessionPersistenceTests
 {
-    [Fact]
-    public void AFilesystemRestartMigratesSchemaThreeJournaledSelectors()
+    [Theory]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void AFilesystemRestartMigratesPredecessorJournaledSelectors(int schema)
     {
         string root = Path.Combine(
             Path.GetTempPath(), $"marvel-schema-three-host-{Guid.NewGuid():N}");
@@ -37,7 +39,7 @@ public sealed class SchemaThreeSessionPersistenceTests
             string directory = Assert.Single(Directory.GetDirectories(root));
             string generation = File.ReadAllText(Path.Combine(directory, "current")).Trim();
             string predecessor = Path.Combine(directory, generation + ".session.json");
-            File.WriteAllText(predecessor, SchemaThree(File.ReadAllText(predecessor)));
+            File.WriteAllText(predecessor, Predecessor(File.ReadAllText(predecessor), schema));
 
             var restarted = new EngineHost(
                 factory,
@@ -64,28 +66,38 @@ public sealed class SchemaThreeSessionPersistenceTests
         }
     }
 
-    private static string SchemaThree(string json)
+    private static string Predecessor(string json, int schema)
     {
         JsonObject root = Assert.IsType<JsonObject>(JsonNode.Parse(json));
-        root["schema"] = 3;
-        RemoveAnchorKinds(root["current_prompt"]?.AsObject());
+        root["schema"] = schema;
+        ConvertPrompt(root["current_prompt"]?.AsObject(), schema);
         foreach (JsonNode? unitNode in root["units"]!.AsArray())
         {
             foreach (JsonNode? stepNode in unitNode!["decisions"]!.AsArray())
             {
                 JsonObject step = stepNode!.AsObject();
-                RemoveAnchorKinds(step["prompt"]!.AsObject());
-                _ = step["decision"]!["selector"]!.AsObject().Remove("anchor_kind");
+                ConvertPrompt(step["prompt"]!.AsObject(), schema);
+                if (schema == 3) _ = step["decision"]!["selector"]!.AsObject().Remove("anchor_kind");
             }
         }
 
         return root.ToJsonString(SessionSaveJson.Options);
     }
 
-    private static void RemoveAnchorKinds(JsonObject? prompt)
+    private static void ConvertPrompt(JsonObject? prompt, int schema)
     {
         foreach (JsonNode? affordanceNode in prompt?["affordances"]?.AsArray() ?? [])
-            _ = affordanceNode!.AsObject().Remove("anchor_kind");
+        {
+            if (schema == 3) _ = affordanceNode!.AsObject().Remove("anchor_kind");
+            RemoveRepeatedResources(affordanceNode!.AsObject());
+        }
+    }
+
+    private static void RemoveRepeatedResources(JsonObject affordance)
+    {
+        foreach (JsonNode? cost in affordance["costs"]?.AsArray() ?? [])
+        foreach (JsonNode? component in cost!["components"]?.AsArray() ?? [])
+            _ = component!.AsObject().Remove("repeated_resource");
     }
 
     private sealed class SchemaThreeCapabilities(string value) : ISessionCapabilityIssuer

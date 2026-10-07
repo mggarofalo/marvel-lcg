@@ -254,19 +254,12 @@ public sealed class CoreGamePolicy(ICardFacts facts)
         }
 
         var price = option.CostOptions[0];
-        long cost = long.TryParse(
-            price.Cost,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out long fixedCost)
-            ? fixedCost
-            : price.VariableRequests.Single(variable =>
-                string.Equals(variable.Name, price.Cost, StringComparison.Ordinal)).Min;
-        string required = string.Concat(price.Rule ?? []);
+        var values = Values(option);
 
         for (int count = 0; count <= price.Generators.Count; count++)
         {
             var chosen = new List<ResourceSource>(count);
-            if (Choose(price.Generators, cost, required, count, 0, chosen) is { } payment)
+            if (Choose(price, values, count, 0, chosen) is { } payment)
             {
                 return payment;
             }
@@ -276,26 +269,23 @@ public sealed class CoreGamePolicy(ICardFacts facts)
     }
 
     private static IReadOnlyList<int>? Choose(
-        IReadOnlyList<ResourceSource> sources,
-        long cost,
-        string required,
+        CostOption cost,
+        IReadOnlyDictionary<string, long> values,
         int remaining,
         int start,
         List<ResourceSource> chosen)
     {
         if (remaining == 0)
         {
-            string generated = string.Concat(chosen.Select(source => source.Generates));
-            return Resources.Pays(generated, cost, required)
-                ? [.. chosen.Select(source => source.Effect)]
-                : null;
+            int[] payment = [.. chosen.Select(source => source.Effect)];
+            return ResourcePayment.Allocate(cost, payment, values) is not null ? payment : null;
         }
 
-        for (int index = start; index <= sources.Count - remaining; index++)
+        for (int index = start; index <= cost.Generators.Count - remaining; index++)
         {
-            chosen.Add(sources[index]);
+            chosen.Add(cost.Generators[index]);
             var payment = Choose(
-                sources, cost, required, remaining - 1, index + 1, chosen);
+                cost, values, remaining - 1, index + 1, chosen);
             chosen.RemoveAt(chosen.Count - 1);
             if (payment is not null)
             {

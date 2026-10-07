@@ -240,14 +240,25 @@ public abstract class SimulationHarnessTestBase
         if (record["prompt"] is JsonObject prompt)
         {
             foreach (JsonNode? affordance in prompt["affordances"]!.AsArray())
+            {
                 _ = affordance!.AsObject().Remove("anchor_kind");
+                foreach (JsonNode? cost in affordance["costs"]!.AsArray())
+                    RemoveRepeatedResources(cost!.AsObject());
+            }
         }
 
         RemoveSchemaTwoSelector(record);
     }
 
+    private static void RemoveRepeatedResources(JsonObject cost)
+    {
+        foreach (JsonNode? component in cost["components"]?.AsArray() ?? [])
+            _ = component!.AsObject().Remove("repeated_resource");
+    }
+
     protected static void AddSchemaTwoCost(JsonObject cost)
     {
+        RemoveRepeatedResources(cost);
         cost["has_alternative"] = cost["or_cost"]!.GetValue<string>().Length > 0;
         cost["generators"] = cost["sources"]?.DeepClone() ?? new JsonArray();
         cost["variable_requests"] = cost["variables"]?.DeepClone() ?? new JsonArray();

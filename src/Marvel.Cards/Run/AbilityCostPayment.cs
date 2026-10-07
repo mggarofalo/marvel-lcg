@@ -121,22 +121,23 @@ internal sealed class AbilityCostPayment
         Step step, CommitOutcome outcome, ICardCounterPools pools,
         string trigger, List<GameEvent> events)
     {
+        var physical = new AbilityPhysicalPayment(world, source);
         switch (step)
         {
             case Exhaust exhaust:
                 CommitExhaust(exhaust, trigger, events);
                 break;
             case DiscardBound discard:
-                CommitDiscardBound(discard, trigger, events);
+                physical.Discard(discard.Target.Current, trigger, events);
                 break;
             case RemoveCounters removal:
-                CommitRemoveCounters(removal, pools, trigger, events);
+                physical.RemoveCounters(removal.Target.Current, removal.Counter, removal.Count, pools, trigger, events);
                 break;
             case Heal heal:
-                outcome.Healed = CommitHeal(heal, trigger, events);
+                outcome.Healed = physical.Heal(heal.Target.Current, heal.Amount, trigger, events);
                 break;
             case DealDamage damage:
-                outcome.Suspended |= CommitDamage(damage, trigger, events);
+                outcome.Suspended |= physical.Damage(damage.Target.Current, damage.Amount, trigger, events);
                 break;
             default:
                 throw new InvalidOperationException("Unknown prepared payment instruction");
@@ -148,47 +149,6 @@ internal sealed class AbilityCostPayment
     {
         if (exhaust.Target.Current is { } target)
             AbilityCardOperations.Exhaust(target, trigger, events);
-    }
-
-    private void CommitDiscardBound(
-        DiscardBound discard, string trigger, List<GameEvent> events)
-    {
-        if (discard.Target.Current is not { } target) return;
-        bool removableArea = DeckTypes.IsInPlay(target.Area.Type)
-            || target.Area.Type is DeckType.BoostingArea
-                or DeckType.ProcessingArea or DeckType.RevealingArea;
-        if (removableArea && Discard.EffectCanRemove(world, world.Facts, source, target))
-            Discard.CardFromEffect(world, world.Facts, source, target, trigger, events);
-    }
-
-    private void CommitRemoveCounters(
-        RemoveCounters removal, ICardCounterPools pools,
-        string trigger, List<GameEvent> events)
-    {
-        var holder = removal.Target.Current
-            ?? throw new RulesNotImplementedException(
-                $"'{source.FaceId}' cannot find the card paying its counter cost");
-        AbilityCardOperations.RemoveCounters(
-            world, pools, holder, removal.Counter, removal.Count, trigger, events);
-    }
-
-    private long CommitHeal(Heal heal, string trigger, List<GameEvent> events) =>
-        heal.Target.Current is { } target
-            ? DamageRecovery.Heal(
-                world, world.Facts, target, heal.Amount, trigger, "Heal", events)
-            : 0;
-
-    private bool CommitDamage(
-        DealDamage damage, string trigger, List<GameEvent> events)
-    {
-        // Costs are not attacks. Event modifiers remain live because an earlier
-        // payment can remove the card granting a modifier.
-        long amount = AbilityAmounts.SaturatingSum(damage.Amount,
-            [AbilityEventModifiers.Amount(world, source, "eventDamage")]);
-        return damage.Target.Current is { } target
-            && DamagePlacement.DealOutcome(
-                world, world.Facts, source, target, amount, trigger,
-                "Deal_Damage", events) == Damage.Outcome.Suspended;
     }
 
     private sealed class CommitOutcome
@@ -249,9 +209,8 @@ internal sealed class AbilityCostPayment
 
         private void PrepareSteps(AbilityCost? component)
         {
-            AbilityPaymentPricing.ValidatePayment(
-                component, paying, selected, variables, world, source, player,
-                program, resourceAbilities);
+            new AbilityPaymentValidation(world, source, player, program, resourceAbilities)
+                .Validate(component, paying, selected, variables);
             if (component is null) return;
             if (component is AbilityCost.Sequence sequence)
             {
@@ -289,7 +248,7 @@ internal sealed class AbilityCostPayment
                 ordered.Add(new Spend(spend.Resources));
                 return;
             }
-            long x = AbilityPaymentPricing.DefinedVariable(variables, "X", source);
+            long x = AbilityPaymentValidation.DefinedVariable(variables, "X", source);
             ordered.Add(new Spend(
                 new string(Resources.Energy, checked((int)x)), Energy: x));
         }

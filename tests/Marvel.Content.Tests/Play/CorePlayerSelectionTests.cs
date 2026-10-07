@@ -175,6 +175,42 @@ public sealed class CorePlayerSelectionTests
     [Rule("rr:non-numerical-variable.1")]
     [Rule("rr:initiating-abilities.step.5")]
     [Fact]
+    public void EnergyChannelOfferAndExecutionRequireEnergyForEveryChosenX()
+    {
+        // rr:non-numerical-variable.1: "the value of X is defined by card ability
+        // or player choice". Energy Channel's printed cost is X energy resources.
+        // rr:initiating-abilities.step.5: "If this step is reached and the cost(s)
+        // cannot be paid, abort this process without paying any costs."
+        var world = Board("01010a");
+        var channel = world.CreateCard("01018", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("01116b", world.AreaOf(DeckType.MainSchemesArea));
+        world.CreateCard("01044", world.Seats[0].Deck);
+        var energy = world.CreateCard("01012", world.Seats[0].Hand);
+        var mental = world.CreateCard("01015", world.Seats[0].Hand);
+        var reserve = world.CreateCard("01014", world.Seats[0].Hand);
+        var game = Game.Begin(world, Cards, AuthoredCards.Runner());
+        game.Resolve(Decision.Decline);
+        var offer = Assert.Single(game.Pending!.Affordances, option => option.AnchorId == channel.ObjectId);
+        var cost = Assert.Single(offer.CostOptions);
+        var values = new Dictionary<string, long> { ["X"] = 2 };
+
+        Assert.Equal("YY", ResourcePayment.RequiredResources(Assert.Single(cost.ResourceCosts), values));
+        Assert.Null(ResourcePayment.Allocate(cost, [energy.ObjectId, mental.ObjectId], values));
+        string before = world.Digest().Canonical();
+        Assert.Throws<RulesNotImplementedException>(() => game.Resolve(
+            Decision.Take(offer.Id, [], [energy.ObjectId, mental.ObjectId], values)));
+        Assert.Equal(before, world.Digest().Canonical());
+        var allocation = ResourcePayment.Allocate(cost, [reserve.ObjectId], values);
+        Assert.NotNull(allocation);
+        game.Resolve(Decision.Take(offer.Id, [], [reserve.ObjectId], values, allocation));
+        Assert.Equal(2, channel.Tokens["c_energy"]);
+        Assert.DoesNotContain(reserve, world.Seats[0].Hand.Cards);
+        Assert.Contains(mental, world.Seats[0].Hand.Cards);
+    }
+
+    [Rule("rr:non-numerical-variable.1")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
     public void EnergyChannelRejectsAPaymentThatDoesNotDefineX()
     {
         // A generator selection is not the definition of X. Reject the forged
