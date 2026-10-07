@@ -74,7 +74,11 @@ the server-owned setup and accepted decision trace authoritative for save,
 restore, undo, redo and legal action reordering. Clients continue to submit
 decisions rather than state. See [session-ledger.md](session-ledger.md).
 
-Quantity-dependent typed payments use protocol 20. The engine resolves the
+Protocol 21 identifies authorized card search and look choices in the public
+prompt and table context. Internal concealed-candidate exposure metadata stays
+out of the wire contract. These presentation facts do not change the saved
+prompt record or replay identity. Quantity-dependent typed payments retain
+the protocol 20 resource contract. The engine resolves the
 required resource slots from the offered component and chosen variable; the
 composer uses that same function for readiness and icon declarations. Saves
 use schema 5 and replay contract v7; prior replay contracts fail compatibility

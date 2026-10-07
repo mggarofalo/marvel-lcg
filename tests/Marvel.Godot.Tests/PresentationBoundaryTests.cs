@@ -23,6 +23,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
+            // Public prompt purpose selects a presentation surface, not game legality.
+            "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.ResourceCost",
             "Marvel.Rules.Prompts.ResourceSource",
             "Marvel.Rules.Prompts.TargetRequest",

@@ -55,6 +55,8 @@ public static class PendingSituationPresentation
         PublicDecisionKind.Defense => "defense choice",
         PublicDecisionKind.Order => "ordering choice",
         PublicDecisionKind.MinionActivationOrder => "minion activation order",
+        PublicDecisionKind.CardSearch => "card search",
+        PublicDecisionKind.CardLook => "card selection",
         _ => "current choice",
     };
 }

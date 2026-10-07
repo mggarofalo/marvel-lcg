@@ -81,7 +81,8 @@ internal sealed class CompleteDecisionSheet : IDisposable
         var header = new HBoxContainer();
         header.AddChild(new Label
         {
-            Text = "Complete choices", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            Text = SearchChoiceGallery.IsChoice(panel.composer?.Prompt) ? "Choose a card" : "Complete choices",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             ThemeTypeVariation = GodotThemeVariations.Heading,
         });
         var close = new Button { Name = "CloseChoiceSheet", Text = "Return to table" };
@@ -143,6 +144,14 @@ internal sealed class CompleteDecisionSheet : IDisposable
     {
         if (!InteractionControl.IsUsable(frame)) return;
         Vector2 viewport = overlay.GetViewportRect().Size;
+        if (SearchChoiceGallery.IsChoice(panel.composer?.Prompt))
+        {
+            Rect2 bounds = SearchChoiceLayout.Frame(viewport);
+            frame.Size = bounds.Size;
+            frame.Position = bounds.Position;
+            panel.SearchChoices.RefreshLayout();
+            return;
+        }
         frame.Size = new Vector2(Math.Min(560, viewport.X - 32), Math.Min(520, Math.Max(220, viewport.Y * 0.44f)));
         frame.Position = new Vector2(viewport.X - frame.Size.X - 16, 72);
     }
@@ -186,7 +195,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
 
     private void RestoreOpenerFocus()
     {
-        Control? restore = InteractionControl.IsUsable(opener) ? opener
+        Control? restore = CanRestoreFocus(opener) ? opener
             : FindInHost("CompleteChoiceSheet") as Control;
         int generation = panel.GetRenderGeneration();
         DecisionComposer? current = panel.composer;
@@ -197,4 +206,8 @@ internal sealed class CompleteDecisionSheet : IDisposable
                 && panel.GetRenderGeneration() == generation) restore.GrabFocus();
         }).CallDeferred();
     }
+
+    private static bool CanRestoreFocus(Control control) =>
+        InteractionControl.IsUsable(control) && control.IsVisibleInTree()
+        && control.FocusMode == Control.FocusModeEnum.All;
 }

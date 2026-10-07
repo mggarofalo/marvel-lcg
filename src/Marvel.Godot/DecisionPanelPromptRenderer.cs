@@ -17,7 +17,39 @@ internal static class DecisionPanelPromptRenderer
         AffordancePresentation? selected = composer.Selected is { } option
             ? prompt.Affordances.Single(view => view.Id == option.Id)
             : null;
-        var scroll = new ScrollContainer
+        var body = new VBoxContainer
+        {
+            Name = "DecisionBody",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+        };
+        bool search = panel.CompleteChoicesOpen && SearchChoiceGallery.IsChoice(composer.Prompt);
+        if (!panel.PaymentModalOpen && !search) AddActionSummary(body, selected, composer);
+        if (search)
+        {
+            panel.LayoutHost.AddChild(body);
+        }
+        else
+        {
+            ScrollContainer scroll = CreateScroll(panel);
+            scroll.AddChild(body);
+            panel.LayoutHost.AddChild(scroll);
+        }
+
+        var commit = new VBoxContainer
+        {
+            Name = "CommitBar",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+        };
+        panel.LayoutHost.AddChild(new HSeparator());
+        panel.LayoutHost.AddChild(commit);
+        panel.InstallLayout(body, commit);
+    }
+
+    private static ScrollContainer CreateScroll(DecisionPanel panel)
+    {
+        return new ScrollContainer
         {
             Name = "DecisionBodyScroll",
             CustomMinimumSize = new Vector2(0, panel.PaymentModalOpen
@@ -29,25 +61,6 @@ internal static class DecisionPanelPromptRenderer
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
         };
-        var body = new VBoxContainer
-        {
-            Name = "DecisionBody",
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        if (!panel.PaymentModalOpen) AddActionSummary(body, selected, composer);
-        scroll.AddChild(body);
-        panel.LayoutHost.AddChild(scroll);
-
-        var commit = new VBoxContainer
-        {
-            Name = "CommitBar",
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        panel.LayoutHost.AddChild(new HSeparator());
-        panel.LayoutHost.AddChild(commit);
-        panel.InstallLayout(body, commit);
     }
 
     private static void AddActionSummary(
@@ -80,6 +93,11 @@ internal static class DecisionPanelPromptRenderer
 
     internal static void AddAffordances(DecisionPanel panel, PromptPresentation prompt, int generation)
     {
+        if (panel.CompleteChoicesOpen && SearchChoiceGallery.IsChoice(panel.composer?.Prompt))
+        {
+            panel.SearchChoices.Add(prompt, generation);
+            return;
+        }
         if (MulliganPrompt.IsOpening(panel.composer?.Prompt))
         {
             return;

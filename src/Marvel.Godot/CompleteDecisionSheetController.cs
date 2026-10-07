@@ -19,6 +19,15 @@ internal sealed class CompleteDecisionSheetController(DecisionPanel panel)
     }
 
     internal void Closed() => sheet = null;
+    internal void OpenSearchAfterRender()
+    {
+        if (!SearchChoiceGallery.IsChoice(panel.composer?.Prompt)) return;
+        var draft = panel.composer;
+        Callable.From(() =>
+        {
+            if (InteractionControl.IsUsable(panel) && ReferenceEquals(panel.composer, draft)) Open(panel);
+        }).CallDeferred();
+    }
     internal void Close() => sheet?.Close();
     internal void Input(InputEvent input) => sheet?.Input(input);
     internal void PresentProgress(GameProgressPresentation current)
