@@ -231,8 +231,7 @@ internal sealed class BoardCardInteractionControls
             .FirstOrDefault();
         if (candidate is not null)
         {
-            candidate.GrabFocus();
-            InteractionControl.ResetDisabledScrollAncestors(candidate);
+            InteractionControl.RestoreUnclaimedFocus(candidate);
             candidate.GetTree().CreateTimer(0.05).Timeout += () =>
                 ConfirmFocusAfterLayout(key, generation);
         }
@@ -245,12 +244,8 @@ internal sealed class BoardCardInteractionControls
             .Where(entry => entry.Value == key && InteractionControl.IsUsable(entry.Key))
             .Select(entry => entry.Key)
             .FirstOrDefault();
-        candidate?.GrabFocus();
-        if (candidate is not null)
-        {
-            InteractionControl.ResetDisabledScrollAncestors(candidate);
-        }
-        if (candidate?.HasFocus() == true) requestedFocus = null;
+        if (candidate is not null) InteractionControl.RestoreUnclaimedFocus(candidate);
+        requestedFocus = null;
     }
 
     private void Activate(CardControl card, CardInteractionIntent intent, int? option)

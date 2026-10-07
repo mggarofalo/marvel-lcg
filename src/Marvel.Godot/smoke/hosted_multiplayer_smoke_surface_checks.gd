@@ -34,9 +34,14 @@ static func restricted_guest_is_safe(driver: Node) -> bool:
 
 static func terminal_is_safe(driver: Node, main: Control) -> bool:
 	var entry := main.find_child("CompleteChoiceSheet", true, false) as Button
-	var cause := main.find_child("CausalContext", true, false) as Control
 	return not driver._has_table_decision(main) \
 		and (entry == null or entry.disabled) \
 		and driver._first_enabled_choice(driver._decision(main)) == null \
-		and cause != null and "Defeat" in driver._visible_text(cause) \
-		and "The players lost." in driver._visible_text(cause)
+		and _terminal_cause_visible(driver, main)
+
+
+static func _terminal_cause_visible(driver: Node, main: Control) -> bool:
+	var heading := main.find_child("ContextualHeading", true, false) as Label
+	var cause := main.find_child("CausalContext", true, false) as Control
+	return heading != null and heading.is_visible_in_tree() and heading.text == "Defeat" \
+		and cause != null and "The players lost." in driver._visible_text(cause)

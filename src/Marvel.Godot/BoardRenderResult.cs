@@ -95,7 +95,8 @@ public sealed class BoardRenderResult
     }
 
     internal void RegisterContextualWorld(WorldDescriptor world) => copy.RegisterWorld(world);
-    internal void RegisterContextualSummary(Label label, string fallback) => copy.RegisterSummary(label, fallback);
+    internal void RegisterContextualSummary(Label label, string fallback, Label resolution) =>
+        copy.RegisterSummary(label, fallback, resolution);
     internal void RegisterLastResult(Label label) => copy.RegisterResult(label);
     internal void PresentLastResult(string summary) => copy.PresentResult(summary);
     internal int? SelectedAffordanceId => currentComposer?.Selected?.Id;

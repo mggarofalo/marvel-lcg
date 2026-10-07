@@ -32,17 +32,30 @@ internal static class SpatialTableContextRenderer
             ZIndex = 12,
             ClipContents = true,
         };
-        var body = new Control { MouseFilter = Control.MouseFilterEnum.Ignore };
+        var body = new VBoxContainer
+        {
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+        };
         panel.AddChild(body);
         surface.AddChild(panel);
         Vector2 innerSize = rect.Size - panel.GetThemeStylebox("panel").GetMinimumSize();
-        float actionsWidth = Math.Min(400, innerSize.X * 0.32f);
-        float copyWidth = innerSize.X - actionsWidth - 42;
+        float actionsWidth = Math.Min(580, innerSize.X * 0.38f);
+        var columns = new HBoxContainer
+        {
+            Name = "DecisionColumns", MouseFilter = Control.MouseFilterEnum.Ignore,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            ThemeTypeVariation = GodotThemeVariations.CompactRow,
+        };
+        body.AddChild(columns);
         PromptPresentation? presentation = prompt is null ? null : PromptPresentation.From(prompt, world);
         string heading = presentation?.Heading ?? PendingSituationPresentation.Heading(world);
         if (presentation is not null) heading += $" · {presentation.Context}";
-        var causeScroll = TableScrollNavigation.Create(body, "CausalContext", "details",
-            new Rect2(14, 3, copyWidth, innerSize.Y - 6));
+        Label headingLabel = Copy(heading, GodotThemeVariations.Body);
+        headingLabel.Name = "ContextualHeading";
+        body.AddChild(headingLabel);
+        body.MoveChild(headingLabel, 0);
+        var causeScroll = TableScrollNavigation.Create(columns, "CausalContext", "details");
         var cause = new VBoxContainer
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
@@ -50,17 +63,19 @@ internal static class SpatialTableContextRenderer
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
         causeScroll.AddChild(cause);
-        cause.AddChild(Copy(heading, GodotThemeVariations.Body));
         string context = presentation is null
             ? PendingSituationPresentation.Context(world)
             : presentation.Resolution.Replace("\n", " · ");
-        cause.AddChild(Copy(context, GodotThemeVariations.Caption));
+        Label resolution = Copy(context, GodotThemeVariations.Caption);
+        cause.AddChild(resolution);
         Label summary = Copy(string.Empty, GodotThemeVariations.Caption);
         summary.Name = "DraftProgress";
         cause.AddChild(summary);
-        result.RegisterContextualSummary(summary, string.Empty);
-        var actionScroll = TableScrollNavigation.Create(body, "ContextualActionScroll", "choices",
-            new Rect2(innerSize.X - actionsWidth - 14, 3, actionsWidth, innerSize.Y - 6));
+        result.RegisterContextualSummary(summary, string.Empty, resolution);
+        var actionScroll = TableScrollNavigation.Create(columns, "ContextualActionScroll", "choices");
+        var actionFrame = (Control)actionScroll.GetParent();
+        actionFrame.SizeFlagsHorizontal = Control.SizeFlags.Fill;
+        actionFrame.CustomMinimumSize = new Vector2(actionsWidth, 0);
         var actions = new VBoxContainer
         {
             Name = "ContextualActionObjects",

@@ -45,17 +45,7 @@ internal static class ResourceIconRendering
     {
         button.AccessibilityName = accessibleName;
         button.TooltipText = accessibleName;
-        var margin = new MarginContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        margin.AddThemeConstantOverride("margin_left", 12);
-        margin.AddThemeConstantOverride("margin_right", 12);
-        margin.AddThemeConstantOverride("margin_top", 6);
-        margin.AddThemeConstantOverride("margin_bottom", 6);
-        margin.AddChild(content);
-        button.AddChild(margin);
-        margin.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        CardInspectorFocus.IgnoreMouseRecursively(content, interactiveRules: false);
-        button.CustomMinimumSize = new Vector2(button.CustomMinimumSize.X,
-            Math.Max(button.CustomMinimumSize.Y, content.GetCombinedMinimumSize().Y + 12));
+        ButtonContentLayout.Attach(button, content);
     }
 
     internal static HBoxContainer Row(string text, string resources, string variation)

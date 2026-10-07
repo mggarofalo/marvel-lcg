@@ -3,7 +3,7 @@ using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
-/// <summary>Describes an identity standing for the recipient of a chosen-player draw.</summary>
+/// <summary>Describes an identity standing for the recipient of a public player effect.</summary>
 internal static class AbilityPlayerChoiceDescription
 {
     internal static int? DrawCount(AbilityEffect.ChooseCard choice) => choice is
@@ -12,23 +12,35 @@ internal static class AbilityPlayerChoiceDescription
               { Player: AbilityPlayer.ChosenPlayer } } draw } ? draw.Count : null;
 
     internal static string? Selection(AbilityEffect.ChooseCard choice) =>
-        DrawCount(choice) is { } count ? $"choose a player to draw {Cards(count)}" : null;
+        DrawCount(choice) is { } count ? $"choose a player to draw {Cards(count)}"
+        : Discount(choice) is { } amount
+            ? $"choose a player whose next card this phase costs {amount} fewer resources" : null;
 
     internal static string? Commitment(
         AbilityStructuralContext context, AbilityEffect.ChooseCard choice, Card candidate)
     {
-        if (DrawCount(choice) is not { } count) return null;
+        if (Selection(choice) is null) return null;
         var expressions = context.Admission().WithSelection(candidate).Expressions;
         var evaluation = new AbilityExpressionEvaluation(expressions,
             new AbilitySelectorEvaluation(expressions.Bindings));
         int recipient = evaluation.Seat(AbilityPlayer.ChosenPlayer);
-        return $"{expressions.World.Seats[recipient].Name} draws {Cards(count)}";
+        string player = expressions.World.Seats[recipient].Name;
+        return DrawCount(choice) is { } count ? $"{player} draws {Cards(count)}"
+            : $"{player}: next card −{Discount(choice)}";
     }
 
     internal static string? Description(
         AbilityStructuralContext context, AbilityEffect.ChooseCard choice, Card candidate) =>
         Commitment(context, choice, candidate) is { } commitment
-            ? $"{commitment}. The drawn card's identity is not known before the draw." : null;
+            ? DrawCount(choice) is not null
+                ? $"{commitment}. The drawn card's identity is not known before the draw."
+                : $"{commitment} resource cost this phase. Applies once, when that player plays their next card."
+            : null;
+
+    private static long? Discount(AbilityEffect.ChooseCard choice) => choice is
+        { From: AbilityCardSelection.Query { Kind: AbilityCardQuery.Identities },
+          Effect: AbilityEffect.ReduceNextCardCost { Player: AbilityPlayer.ChosenPlayer,
+              Amount: AbilityNumber.Constant amount } } ? amount.Value : null;
 
     private static string Cards(int count) => $"{count} card{(count == 1 ? "" : "s")}";
 }

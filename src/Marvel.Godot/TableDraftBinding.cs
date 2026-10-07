@@ -45,5 +45,5 @@ internal sealed class TableDraftBinding
     internal bool TryToggleGenerator(int effect) =>
         IsCurrent() && operations.TryToggleGenerator(effect);
 
-    private bool IsCurrent() => isCurrent(generation, revision);
+    internal bool IsCurrent() => isCurrent(generation, revision);
 }

@@ -79,7 +79,7 @@ public sealed class SourceTargetInteractionTests
         var offer = Offer(1, 10, [20, 21, 22]) with
         {
             Targets = new TargetRequest([20, 21, 22], 2, 3),
-            Costs = [new CostOption(10, "1", Sources: [new ResourceSource(30, "E")])],
+            Costs = [new CostOption(10, "1", Sources: [new ResourceSource(30, "Y")])],
         };
         var composer = Composer(offer);
         var interaction = Interaction(composer);
@@ -110,6 +110,67 @@ public sealed class SourceTargetInteractionTests
     private static Affordance Offer(int id, int source, int[] targets) =>
         new(id, "Synthetic action", source, 0, "Use source", new TargetRequest(targets, 1, 1));
 
+    [Fact]
+    public void DeferredAbilityDropStagesOnlyTheSourceAndPreservesItsUnpaidCost()
+    {
+        var offer = Offer(1, 10, []) with
+        {
+            Targets = null, DeferredTargetSelection = true,
+            Costs = [new CostOption(10, "1", Sources: [new ResourceSource(30, "Y")])],
+        };
+        var composer = Composer(offer);
+        var interaction = Interaction(composer);
+
+        Assert.True(interaction.CanDrag(10));
+        Assert.Single(interaction.Matches(10, 99));
+        Assert.True(interaction.TrySelect(1, 10, 99));
+        Assert.Equal(1, composer.Selected!.Id);
+        Assert.Empty(composer.Targets);
+        Assert.False(composer.TryBuild(out _, out _));
+        composer.ToggleResource(30);
+        Assert.True(interaction.TrySelect(1, 10, 98));
+        Assert.Equal([30], composer.Resources);
+        Assert.Empty(composer.Targets);
+        Assert.True(composer.TryBuild(out _, out _));
+    }
+
+    [Fact]
+    public void DeferredOfferCannotOverrideCurrentTargetLegalityOrCardPlayRouting()
+    {
+        var composer = Composer(
+            Offer(1, 10, [20]) with { DeferredTargetSelection = true },
+            Offer(2, 11, []) with { Targets = null, DeferredTargetSelection = true, PlaysCard = true },
+            Offer(3, 12, []) with { Targets = null });
+        var interaction = Interaction(composer);
+
+        Assert.Empty(interaction.Matches(10, 99));
+        Assert.False(interaction.TrySelect(1, 10, 99));
+        Assert.False(interaction.CanDrag(11));
+        Assert.False(interaction.CanDrag(12));
+        Assert.Null(composer.Selected);
+    }
+
+    [Fact]
+    public void MultipleDeferredOffersRequireAnExplicitChoiceAndRejectAStaleRepeat()
+    {
+        var composer = Composer(
+            Offer(1, 10, []) with { Targets = null, DeferredTargetSelection = true },
+            Offer(2, 10, []) with { Targets = null, DeferredTargetSelection = true });
+        bool current = true;
+        var interaction = new BoardSourceTargetInteraction(composer,
+            new TableDraftBinding(composer, 1, 1, (_, _) => current), Views(composer));
+
+        Assert.Equal([1, 2], interaction.Matches(10, 99).Select(offer => offer.Id));
+        Assert.Null(composer.Selected);
+        Assert.True(interaction.TrySelect(2, 10, 99));
+        Assert.Equal(2, composer.Selected!.Id);
+        Assert.Empty(composer.Targets);
+        current = false;
+        Assert.False(interaction.TrySelect(2, 10, 99));
+        Assert.False(interaction.TrySelect(1, 10, 99));
+        Assert.Equal(2, composer.Selected!.Id);
+    }
+
     private static DecisionComposer Composer(params Affordance[] offers) => new(new Prompt(
         0, Question.TurnOption, TimingPriority.Untimed, "test", "Choose", false, offers));
 
@@ -119,5 +180,6 @@ public sealed class SourceTargetInteractionTests
     private static AffordancePresentation[] Views(DecisionComposer composer) =>
         [.. composer.Prompt.Affordances.Select(offer => new AffordancePresentation(offer.Id,
             offer.Label, null, offer.Verb, offer.Label, offer.AnchorId, offer.AnchorPlayer,
-            offer.Illegal, "", []) { AnchorKind = AffordanceAnchorKind.Card, TargetRequest = offer.Targets })];
+            offer.Illegal, "", []) { AnchorKind = AffordanceAnchorKind.Card, TargetRequest = offer.Targets,
+                DeferredTargetSelection = offer.DeferredTargetSelection, PlaysCard = offer.PlaysCard })];
 }

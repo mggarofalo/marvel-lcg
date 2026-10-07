@@ -57,7 +57,9 @@ internal static class BoardDragInteractionBinder
             ? interaction.Matches(source, target) : [];
         if (matches.Count > 0)
         {
-            board.PresentGestureFeedback(string.Join(" or ", matches.Select(DecisionCopy.ActionSummary)));
+            board.PresentGestureFeedback(string.Join(" or ", matches.Select(offer =>
+                DecisionCopy.ActionSummary(offer) + (offer.DeferredTargetSelection
+                    ? " Activate first; choose the recipient next." : ""))));
             return;
         }
         PreviewPlay(panel, composer, board, gesture, source, destination, offers);

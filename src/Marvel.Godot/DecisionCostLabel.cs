@@ -7,6 +7,18 @@ namespace Marvel.Godot;
 /// <summary>Shows engine-provided costs with canonical symbols for resource restrictions.</summary>
 internal static class DecisionCostLabel
 {
+    internal static void AttachTo(Button button, AffordancePresentation offer)
+    {
+        if (offer.CostOptions is not [var cost] || cost.HasAlternative
+            || cost.ResourceCosts is not [var component]) return;
+        string label = button.Text;
+        HBoxContainer row = ResourceIconRendering.Row($"{label} · {component.Cost}",
+            Symbols(component), GodotThemeVariations.Caption);
+        string accessible = $"{label}. {Accessible(cost)}. {button.TooltipText}";
+        button.Text = string.Empty;
+        ResourceIconRendering.ButtonContent(button, row, accessible);
+    }
+
     internal static HBoxContainer Create(CostOption cost, WorldDescriptor world, string prefix = "", bool showTarget = true)
     {
         var row = new HBoxContainer();

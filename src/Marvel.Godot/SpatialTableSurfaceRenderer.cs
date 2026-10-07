@@ -48,7 +48,7 @@ internal static class SpatialTableSurfaceRenderer
         return new AstraTableGeometry(
             width, height, main.interfaceScale >= InterfaceScale.Percent130,
             HasRevealingCard: main.boardPresentation!.Areas.Any(area =>
-                area.Zone == "RevealingArea" && SpatialTableZones.Current(area).Length > 0),
+                SpatialTableZones.IsResolving(area) && SpatialTableZones.Current(area).Length > 0),
             PhysicalCardSize: PhysicalCardSize(main.boardPresentation!, main.interfaceScale, height),
             HasSeatSummaries: main.boardPresentation.PlayerSummaries.Count > 1);
     }
@@ -61,9 +61,9 @@ internal static class SpatialTableSurfaceRenderer
         InterfaceScale cardScale = SpatialCardMetrics.TableScale(scale, height);
         Vector2 installed = SpatialCardMetrics.Envelope(cards, CardDisplaySize.Board, cardScale);
         Vector2 revealing = SpatialCardMetrics.Envelope(board.Areas
-            .Where(area => area.Zone == "RevealingArea").SelectMany(SpatialTableZones.Current),
+            .Where(SpatialTableZones.IsResolving).SelectMany(SpatialTableZones.Current),
             CardDisplaySize.Hand, cardScale);
-        return board.Areas.Any(area => area.Zone == "RevealingArea" && SpatialTableZones.Current(area).Length > 0)
+        return board.Areas.Any(area => SpatialTableZones.IsResolving(area) && SpatialTableZones.Current(area).Length > 0)
             ? new Vector2(Math.Max(installed.X, revealing.X), Math.Max(installed.Y, revealing.Y)) : installed;
     }
 

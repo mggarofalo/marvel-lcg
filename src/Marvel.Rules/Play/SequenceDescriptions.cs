@@ -14,6 +14,7 @@ internal static class SequenceDescriptions
         Steps.DealAttackDamage => "Step 5 of 6 · Deal damage",
         Steps.NextAttackTarget => "Choose the next target",
         Steps.EndAttack => "Step 6 of 6 · End attack",
+        Steps.ChooseOption => "Ability choice",
         _ => step,
     };
 }

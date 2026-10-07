@@ -56,12 +56,16 @@ public sealed class CoreLastingEffectCardsTests
         var theirs = world.CreateCard("01083", world.Seats[1].Hand);
         var runner = AuthoredCards.Runner();
 
+        Affordance action = runner.Describe(world, new PendingAbility(support.ObjectId, AbilityType.Action, 0));
+        Assert.True(action.DeferredTargetSelection);
+        Assert.Contains("choose a player", action.Description, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("next card this phase costs 1 fewer resources", action.Description);
         runner.Act(
             world, new PendingAbility(support.ObjectId, AbilityType.Action, 0), [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, support, 0, choice.Index, choice.Tier)!;
         Assert.Equal(
-            "Select p1 → Spider-Man",
+            "Spider-Man · p1: next card −1 resource cost this phase. Applies once, when that player plays their next card.",
             prompt.Affordances.Single(option =>
                 option.Id == world.Seats[1].IdentityCard.ObjectId).Description);
         AnswerCardChoice(world, runner, support, world.Seats[1].IdentityCard);
