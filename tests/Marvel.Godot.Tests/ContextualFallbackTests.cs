@@ -9,6 +9,18 @@ namespace Marvel.Godot.Tests;
 public sealed class ContextualFallbackTests
 {
     [Fact]
+    public void RequiredAlternativesRemainVisibleEvenWhenTheirSourceHasAnActionControl()
+    {
+        var prompt = new PromptPresentation("", "", "", "", "", [Offer(3, 55), Offer(4, 55),
+            Offer(5, 55) with { Illegal = "Unavailable" }]);
+
+        Assert.Equal([3, 4], BoardContextualInteractionControls.FallbackActions(prompt,
+            new HashSet<int> { 55 }, PublicDecisionKind.Choice).Select(offer => offer.Id));
+        Assert.Empty(BoardContextualInteractionControls.FallbackActions(prompt,
+            new HashSet<int> { 55 }, PublicDecisionKind.PlayerAction));
+    }
+
+    [Fact]
     public void EveryLegalOfferWithoutAnInstalledCardControlGetsAPrimaryEntry()
     {
         // Synthetic two-option choice: both source anchors are in overflow.

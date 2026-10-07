@@ -79,10 +79,10 @@ internal static class AbilityResolutionChoices
             "and" => AbilityStructuralExecution.DescribeSimultaneous(
                 structural, (AbilityEffect.Simultaneous)choice),
             "enemyAttacks" or "enemySchemes" =>
-                AbilityStructuralExecution.DescribeActivationOrder(
+                AbilityActivationOrderChoice.DescribeActivationOrder(
                     structural, (AbilityEffect.ActivateEnemies)choice),
             "payOrEffect" or "payOrExhaust" =>
-                AbilityStructuralExecution.DescribePaymentChoice(
+                AbilityPaymentChoiceDescription.Describe(
                     structural, (AbilityEffect.PayOrEffect)choice),
             "makeTheCall" => AbilityStructuralExecution.DescribeMakeTheCall(structural),
             _ => null,

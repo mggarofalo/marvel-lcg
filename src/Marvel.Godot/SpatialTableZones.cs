@@ -12,10 +12,17 @@ internal static class SpatialTableZones
     internal static bool IsExhausted(BoardCardPresentation card) =>
         card.Status.Contains("exhaust", StringComparison.OrdinalIgnoreCase);
 
+    internal static bool IsResolving(BoardAreaPresentation area) =>
+        area.Zone is "RevealingArea" or "BoostingArea";
+
+    internal static BoardAreaPresentation[] Resolving(IReadOnlyList<BoardAreaPresentation> areas) =>
+        [.. areas.Where(IsResolving).OrderBy(area => area.Zone == "BoostingArea" ? 0 : 1)];
+
     internal static readonly HashSet<string> Known = new(StringComparer.Ordinal)
     {
         "EncounterDiscardPile", "EncounterDeck", "MainSchemesArea", "VillainArea",
-        "SideSchemesArea", "RevealingArea", "DiscardPile", "PlayerDeck",
+        "SideSchemesArea", "RevealingArea", "BoostingArea", "DiscardPile", "PlayerDeck",
         "EngagedEnemiesArea", "HeroArea", "AlliesArea", "SupportsArea", "UpgradesArea",
+        "DealtEncounterCardsDeck",
     };
 }

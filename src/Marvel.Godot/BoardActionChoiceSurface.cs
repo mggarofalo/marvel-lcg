@@ -63,6 +63,7 @@ internal static class BoardActionChoiceSurface
                 Close();
             };
             stack.AddChild(button);
+            DecisionCostLabel.AttachTo(button, action);
             stack.AddChild(new Label
             {
                 Text = DecisionCopy.ActionSummary(action),

@@ -41,6 +41,7 @@ internal sealed record AstraTableGeometry(
         Math.Max(0, Upgrades.Position.X - Assets.Position.X - 20),
         Math.Max(0, Context.Position.Y - HandTop - ScaleY(40)));
     internal Rect2 Overflow => Scale(new Rect2(36, 660, 164, 44));
+    internal Rect2 PendingEncounters => Scale(new Rect2(36, 718, 236, 70));
 
     internal SpatialCardPlacement HandCard(int index, int count, float cardWidth)
     {

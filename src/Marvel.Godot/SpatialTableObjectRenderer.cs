@@ -48,7 +48,8 @@ internal sealed class SpatialTableObjectRenderer
     }
 
     internal void RenderRevealing(IReadOnlyList<BoardAreaPresentation> areas) =>
-        RenderCards(areas, "RevealingArea", geometry.Revealing, CardDisplaySize.Hand);
+        RenderCardRegion(SpatialTableZones.Resolving(areas), "RevealingArea",
+            geometry.Revealing, CardDisplaySize.Hand, int.MaxValue);
 
     internal void RenderPlayer(IReadOnlyList<BoardAreaPresentation> areas)
     {
@@ -120,6 +121,12 @@ internal sealed class SpatialTableObjectRenderer
         bool includeHosted = false)
     {
         BoardAreaPresentation[] matching = [.. areas.Where(area => area.Zone == zone && (includeHosted || area.Host < 0))];
+        RenderCardRegion(matching, zone, region, size, maximumVisible);
+    }
+
+    private void RenderCardRegion(BoardAreaPresentation[] matching, string zone,
+        Rect2 region, CardDisplaySize size, int maximumVisible)
+    {
         BoardCardPresentation[] cards = [.. matching.SelectMany(SpatialTableZones.Current)];
         if (cards.Length == 0)
         {

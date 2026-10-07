@@ -32,7 +32,7 @@ internal static class ClientThemeSurfaces
             M(8, 8, 8, 8), M(2, 2, 7, 7)));
         Panel(theme, GodotThemeVariations.SpatialDecision, Flat(
             Alpha(surface.Darkened(0.08f), 0.98f), Alpha(outline, 0.38f), 1, 6,
-            M(14, 12, 14, 12)));
+            M(14, 6, 14, 6)));
         Panel(theme, GodotThemeVariations.SpatialDropTarget, Flat(
             Alpha(hero, 0.12f), amber, 3, 38, M(18, 14, 18, 14)));
         Panel(theme, GodotThemeVariations.StatusPanel, Flat(Alpha(amber, 0.14f), Alpha(amber, 0.62f), 1, 8, M(14, 9, 14, 9), borderLeft: 5));

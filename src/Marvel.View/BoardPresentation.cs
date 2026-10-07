@@ -24,6 +24,11 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
     /// <summary>Explicit visibility-reviewed connections supplied by the snapshot.</summary>
     public IReadOnlyList<TableRelationshipDescriptor> Relationships { get; init; } = [];
 
+    /// <summary>The public count of encounter cards waiting in this player's dealt area.</summary>
+    public int PendingEncounterCount(int seat) => Areas
+        .Where(area => area.Seat == seat && area.Zone == "DealtEncounterCardsDeck")
+        .SelectMany(area => area.Cards).Sum(card => card.Count);
+
     /// <summary>Builds a fresh presentation without retaining or enriching engine state.</summary>
     public static BoardPresentation From(WorldDescriptor world)
     {

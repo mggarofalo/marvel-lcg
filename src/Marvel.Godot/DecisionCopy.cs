@@ -56,6 +56,13 @@ internal static class DecisionCopy
             : readableVerb;
     }
 
+    internal static string CompactActionSummary(AffordancePresentation view)
+    {
+        // Source state stays on its visible card; the dock retains commitments and effects.
+        string?[] parts = [view.CostDescription, view.Description, view.Consequence];
+        return string.Join(" · ", parts.Where(part => !string.IsNullOrWhiteSpace(part)).Distinct());
+    }
+
     public static string WithPaymentConsequence(string action, PaymentProgress payment) =>
         payment.ExcessIcons == 0
             ? action

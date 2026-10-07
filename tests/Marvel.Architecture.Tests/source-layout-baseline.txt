@@ -62,7 +62,6 @@ src/Marvel.Cards/Run/AbilityRunner.cs:85: SL005: WouldBeDefeated=8
 src/Marvel.Cards/Run/AbilityRunner.cs:94: SL005: Choosing=8
 src/Marvel.Cards/Run/AbilityRunner.cs:97: SL005: Chose=9
 src/Marvel.Cards/Run/AbilityRunner.cs:98: SL005: Chose=10
-src/Marvel.Cards/Run/AbilityStructuralExecution.cs:17: SL003: AbilityStructuralExecution=336
 src/Marvel.Cards/Run/AbilityStructuralFlowExecution.cs:17: SL003: AbilityStructuralFlowExecution=314
 src/Marvel.Cards/Run/AbilityWindowAdmission.cs:69: SL005: IsWaitingCandidate=9
 src/Marvel.Cards/Run/AreaProjectionState.cs:8: SL003: AreaProjectionState=367

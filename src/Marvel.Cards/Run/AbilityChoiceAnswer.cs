@@ -39,7 +39,7 @@ internal sealed class AbilityChoiceAnswer(
             ? AbilityStructuralExecution.AnswerSimultaneous(
                 execution.StructuralContext(cast),
                 (AbilityEffect.Simultaneous)choice, input)
-            : AbilityStructuralExecution.AnswerActivationOrder(
+            : AbilityActivationOrderChoice.AnswerActivationOrder(
                 execution.StructuralContext(cast),
                 (AbilityEffect.ActivateEnemies)choice, input);
         execution.ApplyStructuralDecision(answer, cast);
