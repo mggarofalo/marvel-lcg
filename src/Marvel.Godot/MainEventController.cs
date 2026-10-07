@@ -254,12 +254,7 @@ internal sealed class MainEventController
     internal void RefreshSynchronizeAvailability()
     {
         main.synchronize.Disabled = !main.lifecycle.CanSynchronize;
-        HistoryDescriptor? history = main.CurrentGame?.History;
-        int last = (history?.Cursor ?? 0) - 1;
-        main.undoLast.Disabled = main.decisions.PaymentModalOpen || !main.lifecycle.CanUndo(last);
-        main.undoLast.TooltipText = main.decisions.PaymentModalOpen
-            ? "Finish or cancel the current payment selection before undoing an action."
-            : HistoryUndoPresentation.Describe(!main.undoLast.Disabled, history, main.lifecycle.Progress);
+        HistoryUndoControl.Refresh(main);
     }
 
 }
