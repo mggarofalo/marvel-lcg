@@ -17,5 +17,6 @@ internal static class SpatialTableZones
         "EncounterDiscardPile", "EncounterDeck", "MainSchemesArea", "VillainArea",
         "SideSchemesArea", "RevealingArea", "DiscardPile", "PlayerDeck",
         "EngagedEnemiesArea", "HeroArea", "AlliesArea", "SupportsArea", "UpgradesArea",
+        "DealtEncounterCardsDeck",
     };
 }

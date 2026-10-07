@@ -33,6 +33,7 @@ public sealed class CoreSelectionResourceTests
             [top.ObjectId, second.ObjectId, third.ObjectId],
             prompt.Affordances.Select(option => option.Id));
         Assert.True(prompt.ExposesConcealedCandidates);
+        Assert.Equal(PublicDecisionKind.CardLook, prompt.PublicKind);
 
         runner.Chose(
             world, tony, 0, choice.Index, Decision.Take(second.ObjectId), choice.Tier);

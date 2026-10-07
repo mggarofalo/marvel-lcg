@@ -6,7 +6,7 @@ namespace Marvel.Cards.Run;
 /// <summary>Readable effect vocabulary derived from checked ability instructions.</summary>
 internal static class AbilityEffectDescription
 {
-    internal static string? Summary(AbilityEffect effect) => effect switch
+    internal static string? Summary(AbilityEffect effect) => AbilitySearchDescription.Summary(effect) ?? (effect switch
     {
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelWhenRevealed } =>
@@ -17,7 +17,7 @@ internal static class AbilityEffectDescription
         AbilityEffect.Sequence sequence when sequence.Effects.Length == 1 =>
             Summary(sequence.Effects[0]),
         _ => null,
-    };
+    });
 
     internal static string? Question(
         World world, string sourceFace, AbilityEffect.ChooseCard choice)
@@ -29,7 +29,7 @@ internal static class AbilityEffectDescription
     }
 
     private static string? Selection(AbilityEffect.ChooseCard choice) =>
-        AbilityPlayerChoiceDescription.Selection(choice) ?? (Action(choice.Effect) is { } action
+        AbilitySearchDescription.Selection(choice) ?? AbilityPlayerChoiceDescription.Selection(choice) ?? (Action(choice.Effect) is { } action
             ? $"choose {Article(Noun(choice.From))} to {action}"
             : null);
 
@@ -58,7 +58,8 @@ internal static class AbilityEffectDescription
     };
 
     internal static string? Choice(AbilityEffect effect, string title) =>
-        Action(effect) is { } action ? $"{Imperative(action)} {title}" : null;
+        AbilitySearchDescription.Commitment(effect, title)
+        ?? (Action(effect) is { } action ? $"{Imperative(action)} {title}" : null);
 
     private static string? Action(AbilityEffect effect) => effect switch
     {

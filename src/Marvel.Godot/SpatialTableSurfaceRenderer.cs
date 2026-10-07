@@ -115,6 +115,8 @@ internal static class SpatialTableSurfaceRenderer
         objects.RenderScenario(scenario);
         objects.RenderRevealing(board.Areas);
         objects.RenderPlayer(player);
+        PendingEncounterIndicator.Add(surface, geometry.PendingEncounters,
+            board.PendingEncounterCount(selection.ExpandedSeat), selection.ExpandedSeat);
         objects.RenderHosted([.. scenario.Concat(player)]);
         int handSeat = prompt?.Player ?? selection.ExpandedSeat;
         objects.RenderHand(board.Areas.FirstOrDefault(area =>

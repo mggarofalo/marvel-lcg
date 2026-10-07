@@ -31,6 +31,8 @@ internal static class AbilityAffordanceDescription
             Targets: AbilityCostSelection.Ask(world, ability.Player, found.Cost),
             Costs: price is null ? null : [price], Description: AbilityEffectDescription.Summary(found.Effect))
         {
+            DisplayLabel = AbilitySearchDescription.Action(found.Effect),
+            CommitLabel = AbilitySearchDescription.Action(found.Effect),
             PlaysCard = EffectiveCards.Kind(card, world.Facts) == CardKind.Event,
             DeferredTargetSelection = StartsWithTargetSelection(found.Effect),
             CostDescription = AbilityCostDescription.Summary(world, card, ability.Player, found.Cost),
