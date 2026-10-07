@@ -24,6 +24,18 @@ public sealed class EventCueCopyTests : EventPresentationTestBase
     }
 
     [Fact]
+    public void SchemeCompletionNamesTheOccurrenceWithoutExposingItsFieldMarker()
+    {
+        var happened = new FieldSet(9, "is_completed", 0, 1)
+        {
+            Subjects = new Dictionary<int, string> { [9] = "The Crimson Cowl" },
+        };
+        EventPresentation cue = EventPresenter.Present(happened, World());
+        Assert.Equal("The Crimson Cowl was completed.", cue.CueSummary);
+        Assert.Equal(cue.CueSummary, cue.Summary);
+    }
+
+    [Fact]
     public void AbsentValuesAreNotInventedAsZero()
     {
         var cue = EventPresenter.Present(new FieldSet(9, "health", null, 17), World());
