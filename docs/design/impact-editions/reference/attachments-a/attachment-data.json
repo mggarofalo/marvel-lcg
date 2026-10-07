@@ -1,0 +1,261 @@
+[
+  {
+    "card_id": "01074",
+    "title": "Inspired",
+    "card_type": "Upgrade",
+    "printed_attributes": {
+      "Class": "Leadership",
+      "Cost": "1",
+      "MaxPerUnit": "1",
+      "MaxPerUnitKind": "ally",
+      "RES": "R"
+    },
+    "printed_rules_markup": "Attach to an ally. Max 1 per ally.\nAttached ally gets +1 THW and +1 ATK.",
+    "printed_rules_plain": "Attach to an ally. Max 1 per ally.\nAttached ally gets +1 THW and +1 ATK.",
+    "relation": "attached-to-ally",
+    "display_summary": [
+      "THW +1",
+      "ATK +1"
+    ],
+    "research_only": false,
+    "tabs_svg": "tabs-row-01074.svg",
+    "tabs_png": "tabs-row-01074.png",
+    "ledger_svg": "ledger-row-01074.svg",
+    "ledger_png": "ledger-row-01074.png",
+    "disclosure_svg": "disclosure-01074.svg",
+    "disclosure_png": "disclosure-01074.png"
+  },
+  {
+    "card_id": "01163",
+    "title": "Genetically Enhanced",
+    "card_type": "Attachment",
+    "printed_attributes": {
+      "Boost": "1",
+      "Nemesis": "Jennifer Walters"
+    },
+    "printed_rules_markup": "Attach to the minion with the highest printed hit points. If there are no minions in play, this card gains surge.\nAttached minion gets +3 hit points.",
+    "printed_rules_plain": "Attach to the minion with the highest printed hit points. If there are no minions in play, this card gains surge.\nAttached minion gets +3 hit points.",
+    "relation": "attached-to-minion",
+    "display_summary": [
+      "Maximum HP +3"
+    ],
+    "research_only": false,
+    "tabs_svg": "tabs-row-01163.svg",
+    "tabs_png": "tabs-row-01163.png",
+    "ledger_svg": "ledger-row-01163.svg",
+    "ledger_png": "ledger-row-01163.png",
+    "disclosure_svg": "disclosure-01163.svg",
+    "disclosure_png": "disclosure-01163.png"
+  },
+  {
+    "card_id": "01153",
+    "title": "Concussion Blasters",
+    "card_type": "Attachment",
+    "printed_attributes": {
+      "ATK+": "1",
+      "Boost": "1"
+    },
+    "printed_rules_markup": "Attach to the villain.\nThe villain gains retaliate 1.\n<b>Hero Action</b>: Exhaust your hero and spend [energy] [energy] resources \u2192 discard this card.",
+    "printed_rules_plain": "Attach to the villain.\nThe villain gains retaliate 1.\nHero Action: Exhaust your hero and spend energy energy resources \u2192 discard this card.",
+    "relation": "attached-to-villain",
+    "display_summary": [
+      "ATK +1",
+      "Retaliate 1",
+      "Remove: exhaust hero + energy + energy"
+    ],
+    "research_only": false,
+    "tabs_svg": "tabs-row-01153.svg",
+    "tabs_png": "tabs-row-01153.png",
+    "ledger_svg": "ledger-row-01153.svg",
+    "ledger_png": "ledger-row-01153.png",
+    "disclosure_svg": "disclosure-01153.svg",
+    "disclosure_png": "disclosure-01153.png"
+  },
+  {
+    "card_id": "01099",
+    "title": "Charge",
+    "card_type": "Attachment",
+    "printed_attributes": {
+      "ATK+": "3",
+      "Boost": "2"
+    },
+    "printed_rules_markup": "Attach to Rhino.\n[star] <b>Forced Interrupt</b>: When Rhino attacks, the attack gains overkill. <i>(Excess damage to an ally from this attack is dealt to that ally's controller.)</i> At the end of this attack, discard Charge.",
+    "printed_rules_plain": "Attach to Rhino.\nstar Forced Interrupt: When Rhino attacks, the attack gains overkill. (Excess damage to an ally from this attack is dealt to that ally's controller.) At the end of this attack, discard Charge.",
+    "relation": "attached-to-rhino",
+    "display_summary": [
+      "ATK +3",
+      "Next attack gains overkill",
+      "Discard at attack end"
+    ],
+    "research_only": false,
+    "tabs_svg": "tabs-row-01099.svg",
+    "tabs_png": "tabs-row-01099.png",
+    "ledger_svg": "ledger-row-01099.svg",
+    "ledger_png": "ledger-row-01099.png",
+    "disclosure_svg": "disclosure-01099.svg",
+    "disclosure_png": "disclosure-01099.png"
+  },
+  {
+    "card_id": "01098",
+    "title": "Armored Rhino Suit",
+    "card_type": "Attachment",
+    "printed_attributes": {},
+    "printed_rules_markup": "Attach to Rhino.\n<b>Forced Interrupt</b>: When any amount of damage would be dealt to Rhino, place it here instead. Then, if there is at least 5 damage here, discard Armored Rhino Suit.",
+    "printed_rules_plain": "Attach to Rhino.\nForced Interrupt: When any amount of damage would be dealt to Rhino, place it here instead. Then, if there is at least 5 damage here, discard Armored Rhino Suit.",
+    "relation": "attached-to-rhino",
+    "display_summary": [
+      "Redirect entire incoming damage amount here",
+      "Synthetic damage here: 2",
+      "Discard after damage here reaches at least 5; no spillover or HP bonus"
+    ],
+    "research_only": false,
+    "tabs_svg": "tabs-row-01098.svg",
+    "tabs_png": "tabs-row-01098.png",
+    "ledger_svg": "ledger-row-01098.svg",
+    "ledger_png": "ledger-row-01098.png",
+    "disclosure_svg": "disclosure-01098.svg",
+    "disclosure_png": "disclosure-01098.png"
+  },
+  {
+    "card_id": "01007",
+    "title": "Spider-Tracer",
+    "card_type": "Upgrade",
+    "printed_attributes": {
+      "Class": "Hero",
+      "Cost": "1",
+      "RES": "Y"
+    },
+    "printed_rules_markup": "Attach to a minion.\n<b>Forced Interrupt</b>: When attached minion is defeated, remove 3 threat from a scheme.",
+    "printed_rules_plain": "Attach to a minion.\nForced Interrupt: When attached minion is defeated, remove 3 threat from a scheme.",
+    "relation": "attached-to-minion",
+    "display_summary": [
+      "When attached minion is defeated: remove 3 threat from a scheme"
+    ],
+    "research_only": false,
+    "tabs_svg": "tabs-row-01007.svg",
+    "tabs_png": "tabs-row-01007.png",
+    "ledger_svg": "ledger-row-01007.svg",
+    "ledger_png": "ledger-row-01007.png",
+    "disclosure_svg": "disclosure-01007.svg",
+    "disclosure_png": "disclosure-01007.png"
+  },
+  {
+    "card_id": "01036",
+    "title": "Mark V Armor",
+    "card_type": "Upgrade",
+    "printed_attributes": {
+      "Class": "Hero",
+      "Cost": "3",
+      "RES": "B",
+      "Unique": "1"
+    },
+    "printed_rules_markup": "You get +6 hit points.",
+    "printed_rules_plain": "You get +6 hit points.",
+    "relation": "controlled-upgrade",
+    "display_summary": [
+      "Maximum HP +6; damage unchanged"
+    ],
+    "research_only": false,
+    "tabs_svg": "tabs-row-01036.svg",
+    "tabs_png": "tabs-row-01036.png",
+    "ledger_svg": "ledger-row-01036.svg",
+    "ledger_png": "ledger-row-01036.png",
+    "disclosure_svg": "disclosure-01036.svg",
+    "disclosure_png": "disclosure-01036.png"
+  },
+  {
+    "card_id": "01035",
+    "title": "Arc Reactor",
+    "card_type": "Upgrade",
+    "printed_attributes": {
+      "Class": "Hero",
+      "Cost": "2",
+      "RES": "Y",
+      "Unique": "1"
+    },
+    "printed_rules_markup": "<b>Hero Action</b>: Exhaust Arc Reactor \u2192 ready Iron Man.",
+    "printed_rules_plain": "Hero Action: Exhaust Arc Reactor \u2192 ready Iron Man.",
+    "relation": "controlled-upgrade",
+    "display_summary": [
+      "Exhaust Arc Reactor: ready Iron Man"
+    ],
+    "research_only": false,
+    "tabs_svg": "tabs-row-01035.svg",
+    "tabs_png": "tabs-row-01035.png",
+    "ledger_svg": "ledger-row-01035.svg",
+    "ledger_png": "ledger-row-01035.png",
+    "disclosure_svg": "disclosure-01035.svg",
+    "disclosure_png": "disclosure-01035.png"
+  },
+  {
+    "card_id": "01142",
+    "title": "Upgraded Drones",
+    "card_type": "Attachment",
+    "printed_attributes": {},
+    "printed_rules_markup": "Attach to the Ultron Drones environment.\nEach facedown [[Drone]] minion gets +1 ATK and +1 hit point.\n<b>Hero Action</b>: Spend [energy] [mental] [physical] resources \u2192 discard this card.",
+    "printed_rules_plain": "Attach to the Ultron Drones environment.\nEach facedown Drone minion gets +1 ATK and +1 hit point.\nHero Action: Spend energy mental physical resources \u2192 discard this card.",
+    "relation": "attached-to-environment",
+    "display_summary": [
+      "Attached once to Ultron Drones environment",
+      "Each facedown Drone: ATK +1 and maximum HP +1"
+    ],
+    "research_only": false,
+    "tabs_svg": "tabs-row-01142.svg",
+    "tabs_png": "tabs-row-01142.png",
+    "ledger_svg": "ledger-row-01142.svg",
+    "ledger_png": "ledger-row-01142.png",
+    "disclosure_svg": "disclosure-01142.svg",
+    "disclosure_png": "disclosure-01142.png"
+  },
+  {
+    "card_id": "12018",
+    "title": "Reinforced Suit",
+    "card_type": "Upgrade",
+    "printed_attributes": {
+      "Class": "Leadership",
+      "Cost": "1",
+      "MaxPerUnit": "1",
+      "MaxPerUnitKind": "ally",
+      "RES": "Y"
+    },
+    "printed_rules_markup": "Attach to an ally. Max 1 per ally.\nAttached ally gets +2 hit points.",
+    "printed_rules_plain": "Attach to an ally. Max 1 per ally.\nAttached ally gets +2 hit points.",
+    "relation": "attached-to-ally",
+    "display_summary": [
+      "Research only: maximum HP +2"
+    ],
+    "research_only": true,
+    "tabs_svg": "tabs-row-12018.svg",
+    "tabs_png": "tabs-row-12018.png",
+    "ledger_svg": "ledger-row-12018.svg",
+    "ledger_png": "ledger-row-12018.png",
+    "disclosure_svg": "disclosure-12018.svg",
+    "disclosure_png": "disclosure-12018.png"
+  },
+  {
+    "card_id": "03031",
+    "title": "Enraged",
+    "card_type": "Upgrade",
+    "printed_attributes": {
+      "Class": "Aggression",
+      "Cost": "1",
+      "MaxPerUnit": "1",
+      "MaxPerUnitKind": "ally",
+      "RES": "R"
+    },
+    "printed_rules_markup": "Attach to an ally. Max 1 per ally.\nAttached ally gets +2 ATK and takes +1 consequential damage after it attacks.",
+    "printed_rules_plain": "Attach to an ally. Max 1 per ally.\nAttached ally gets +2 ATK and takes +1 consequential damage after it attacks.",
+    "relation": "attached-to-ally",
+    "display_summary": [
+      "Research only: ATK +2",
+      "Additional consequential damage 1 after attacks"
+    ],
+    "research_only": true,
+    "tabs_svg": "tabs-row-03031.svg",
+    "tabs_png": "tabs-row-03031.png",
+    "ledger_svg": "ledger-row-03031.svg",
+    "ledger_png": "ledger-row-03031.png",
+    "disclosure_svg": "disclosure-03031.svg",
+    "disclosure_png": "disclosure-03031.png"
+  }
+]

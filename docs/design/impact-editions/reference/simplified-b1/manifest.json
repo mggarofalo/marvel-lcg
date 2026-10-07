@@ -1,0 +1,291 @@
+{
+  "id": "B1-simplified",
+  "name": "Impact Editions \u00b7 simplified",
+  "index_html": "index.html",
+  "changes": "changes.txt",
+  "marker_facts": "marker-facts.json",
+  "effective_fixtures": "effective-fixtures.json",
+  "attachment_semantics": "attachment-semantics.json",
+  "faces": [
+    {
+      "card_id": "01040a",
+      "name": "Black Panther",
+      "research_only": false,
+      "full_svg": "01040a-400.svg",
+      "full_png": "01040a-400.png",
+      "compact_svg": "01040a-172.svg",
+      "compact_png": "01040a-172.png"
+    },
+    {
+      "card_id": "01134",
+      "name": "Ultron",
+      "research_only": false,
+      "full_svg": "01134-400.svg",
+      "full_png": "01134-400.png",
+      "compact_svg": "01134-172.svg",
+      "compact_png": "01134-172.png"
+    },
+    {
+      "card_id": "01143",
+      "name": "Advanced Ultron Drone",
+      "research_only": false,
+      "full_svg": "01143-400.svg",
+      "full_png": "01143-400.png",
+      "compact_svg": "01143-172.svg",
+      "compact_png": "01143-172.png"
+    },
+    {
+      "card_id": "01084",
+      "name": "Nick Fury",
+      "research_only": false,
+      "full_svg": "01084-400.svg",
+      "full_png": "01084-400.png",
+      "compact_svg": "01084-172.svg",
+      "compact_png": "01084-172.png"
+    },
+    {
+      "card_id": "01092",
+      "name": "Helicarrier",
+      "research_only": false,
+      "full_svg": "01092-400.svg",
+      "full_png": "01092-400.png",
+      "compact_svg": "01092-172.svg",
+      "compact_png": "01092-172.png"
+    },
+    {
+      "card_id": "01043a",
+      "name": "Wakanda Forever!",
+      "research_only": false,
+      "full_svg": "01043a-400.svg",
+      "full_png": "01043a-400.png",
+      "compact_svg": "01043a-172.svg",
+      "compact_png": "01043a-172.png"
+    },
+    {
+      "card_id": "01029a",
+      "name": "Iron Man",
+      "research_only": false,
+      "full_svg": "01029a-400.svg",
+      "full_png": "01029a-400.png",
+      "compact_svg": "01029a-172.svg",
+      "compact_png": "01029a-172.png"
+    },
+    {
+      "card_id": "01002",
+      "name": "Black Cat",
+      "research_only": false,
+      "full_svg": "01002-400.svg",
+      "full_png": "01002-400.png",
+      "compact_svg": "01002-172.svg",
+      "compact_png": "01002-172.png"
+    },
+    {
+      "card_id": "03014",
+      "name": "Wonder Man",
+      "research_only": true,
+      "full_svg": "03014-400.svg",
+      "full_png": "03014-400.png",
+      "compact_svg": "03014-172.svg",
+      "compact_png": "03014-172.png"
+    },
+    {
+      "card_id": "27047",
+      "name": "Dum Dum Dugan",
+      "research_only": true,
+      "full_svg": "27047-400.svg",
+      "full_png": "27047-400.png",
+      "compact_svg": "27047-172.svg",
+      "compact_png": "27047-172.png"
+    },
+    {
+      "card_id": "41001a",
+      "name": "Psylocke",
+      "research_only": true,
+      "full_svg": "41001a-400.svg",
+      "full_png": "41001a-400.png",
+      "compact_svg": "41001a-172.svg",
+      "compact_png": "41001a-172.png"
+    }
+  ],
+  "effective_faces": [
+    {
+      "card_id": "01040a",
+      "compact_png": "01040a-effective-172.png",
+      "compact_svg": "01040a-effective-172.svg",
+      "full_png": "01040a-effective-400.png",
+      "full_svg": "01040a-effective-400.svg"
+    },
+    {
+      "card_id": "01029a",
+      "compact_png": "01029a-effective-172.png",
+      "compact_svg": "01029a-effective-172.svg",
+      "full_png": "01029a-effective-400.png",
+      "full_svg": "01029a-effective-400.svg"
+    },
+    {
+      "card_id": "01084",
+      "compact_png": "01084-effective-172.png",
+      "compact_svg": "01084-effective-172.svg",
+      "full_png": "01084-effective-400.png",
+      "full_svg": "01084-effective-400.svg"
+    },
+    {
+      "card_id": "01143",
+      "compact_png": "01143-effective-172.png",
+      "compact_svg": "01143-effective-172.svg",
+      "full_png": "01143-effective-400.png",
+      "full_svg": "01143-effective-400.svg"
+    },
+    {
+      "card_id": "01094",
+      "compact_png": "01094-effective-172.png",
+      "compact_svg": "01094-effective-172.svg",
+      "full_png": "01094-effective-400.png",
+      "full_svg": "01094-effective-400.svg"
+    }
+  ],
+  "scenes": {
+    "contact-sheet": {
+      "svg": "contact-sheet.svg",
+      "png": "contact-sheet.png"
+    },
+    "full-contact-sheet": {
+      "svg": "full-contact-sheet.svg",
+      "png": "full-contact-sheet.png"
+    },
+    "stat-resource-study": {
+      "svg": "stat-resource-study.svg",
+      "png": "stat-resource-study.png"
+    },
+    "special-star-study": {
+      "svg": "special-star-study.svg",
+      "png": "special-star-study.png"
+    },
+    "effective-stat-study": {
+      "svg": "effective-stat-study.svg",
+      "png": "effective-stat-study.png"
+    },
+    "attachment-hosts": {
+      "svg": "attachment-hosts.svg",
+      "png": "attachment-hosts.png"
+    },
+    "attachment-expanded": {
+      "svg": "attachment-expanded.svg",
+      "png": "attachment-expanded.png"
+    },
+    "host-ally": {
+      "svg": "host-ally.svg",
+      "png": "host-ally.png"
+    },
+    "host-rhino": {
+      "svg": "host-rhino.svg",
+      "png": "host-rhino.png"
+    },
+    "host-minion": {
+      "svg": "host-minion.svg",
+      "png": "host-minion.png"
+    },
+    "host-iron-man": {
+      "svg": "host-iron-man.svg",
+      "png": "host-iron-man.png"
+    }
+  },
+  "attachments": [
+    {
+      "card_id": "01074",
+      "name": "Inspired",
+      "research_only": false,
+      "expanded_svg": "attachment-01074.svg",
+      "expanded_png": "attachment-01074.png"
+    },
+    {
+      "card_id": "01163",
+      "name": "Genetically Enhanced",
+      "research_only": false,
+      "expanded_svg": "attachment-01163.svg",
+      "expanded_png": "attachment-01163.png"
+    },
+    {
+      "card_id": "01153",
+      "name": "Concussion Blasters",
+      "research_only": false,
+      "expanded_svg": "attachment-01153.svg",
+      "expanded_png": "attachment-01153.png"
+    },
+    {
+      "card_id": "01099",
+      "name": "Charge",
+      "research_only": false,
+      "expanded_svg": "attachment-01099.svg",
+      "expanded_png": "attachment-01099.png"
+    },
+    {
+      "card_id": "01098",
+      "name": "Armored Rhino Suit",
+      "research_only": false,
+      "expanded_svg": "attachment-01098.svg",
+      "expanded_png": "attachment-01098.png"
+    },
+    {
+      "card_id": "01007",
+      "name": "Spider-Tracer",
+      "research_only": false,
+      "expanded_svg": "attachment-01007.svg",
+      "expanded_png": "attachment-01007.png"
+    },
+    {
+      "card_id": "01036",
+      "name": "Mark V Armor",
+      "research_only": false,
+      "expanded_svg": "attachment-01036.svg",
+      "expanded_png": "attachment-01036.png"
+    },
+    {
+      "card_id": "01035",
+      "name": "Arc Reactor",
+      "research_only": false,
+      "expanded_svg": "attachment-01035.svg",
+      "expanded_png": "attachment-01035.png"
+    },
+    {
+      "card_id": "12018",
+      "name": "Reinforced Suit",
+      "research_only": true,
+      "expanded_svg": "attachment-12018.svg",
+      "expanded_png": "attachment-12018.png"
+    },
+    {
+      "card_id": "03031",
+      "name": "Enraged",
+      "research_only": true,
+      "expanded_svg": "attachment-03031.svg",
+      "expanded_png": "attachment-03031.png"
+    },
+    {
+      "card_id": "03034",
+      "name": "Enhanced Awareness",
+      "research_only": true,
+      "expanded_svg": "attachment-03034.svg",
+      "expanded_png": "attachment-03034.png"
+    },
+    {
+      "card_id": "01136",
+      "name": "Ultron",
+      "research_only": false,
+      "expanded_svg": "attachment-01136.svg",
+      "expanded_png": "attachment-01136.png"
+    }
+  ],
+  "validation": {
+    "printed_text": "22 standalone face SVGs and 12 expanded attachments match exact normalized dataset text",
+    "glyphs": "D consequential / S printed special star / U unique extracted from pinned ChampionsIcons.ttf",
+    "resources": "Fixed green wild, red physical, golden-yellow energy, blue mental including inline text",
+    "rendered": "Native PNGs visually inspected; host values, stars, consequences and attachment titles checked",
+    "scope": "Static design; no production modification or executable-content expansion"
+  },
+  "notes": [
+    "Iron Man has no printed HS star. Effective HS3 gets a gold modified-value underline.",
+    "Wonder Man and Psylocke special markers come from verified scans and vendored *_star flags, separately from ally consequence suffixes.",
+    "Card type words retained; family words removed; traits right-aligned."
+  ]
+}

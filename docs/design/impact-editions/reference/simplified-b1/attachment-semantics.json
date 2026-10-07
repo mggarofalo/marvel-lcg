@@ -1,0 +1,112 @@
+{
+  "01074": {
+    "relation": "Attached to ally",
+    "bonus": [
+      [
+        "THW",
+        "+1"
+      ],
+      [
+        "ATK",
+        "+1"
+      ]
+    ],
+    "note": "Max 1 per ally."
+  },
+  "01163": {
+    "relation": "Attached to minion",
+    "bonus": [
+      [
+        "heart",
+        "+3"
+      ]
+    ],
+    "note": "Maximum HP; existing damage stays."
+  },
+  "01153": {
+    "relation": "Attached to villain",
+    "bonus": [
+      [
+        "ATK",
+        "+1"
+      ]
+    ],
+    "note": "Retaliate 1",
+    "remove": "Exhaust hero + [energy] [energy] \u2192 discard"
+  },
+  "01099": {
+    "relation": "Attached to Rhino",
+    "bonus": [
+      [
+        "ATK",
+        "+3*"
+      ]
+    ],
+    "note": "Next attack gains overkill; discard after attack."
+  },
+  "01098": {
+    "relation": "Attached to Rhino",
+    "bonus": [],
+    "note": "All incoming damage \u2192 here. Discard at \u22655 here."
+  },
+  "01007": {
+    "relation": "Attached to minion",
+    "bonus": [],
+    "note": "On minion defeat: remove 3 threat from a scheme."
+  },
+  "01036": {
+    "relation": "Controlled upgrade",
+    "bonus": [
+      [
+        "heart",
+        "+6"
+      ]
+    ],
+    "note": "Maximum HP; existing damage stays."
+  },
+  "01035": {
+    "relation": "Controlled upgrade",
+    "bonus": [],
+    "note": "Exhaust this \u2192 ready Iron Man."
+  },
+  "12018": {
+    "relation": "Attached to ally",
+    "bonus": [
+      [
+        "heart",
+        "+2"
+      ]
+    ],
+    "note": "Maximum HP; max 1 per ally."
+  },
+  "03031": {
+    "relation": "Attached to ally",
+    "bonus": [
+      [
+        "ATK",
+        "+2"
+      ]
+    ],
+    "note": "+1 consequential damage after attacking."
+  },
+  "03034": {
+    "relation": "Controlled upgrade",
+    "bonus": [],
+    "note": "Exhaust + spend 1 counter \u2192 [mental]",
+    "uses": "2 / 3 counters"
+  },
+  "01136": {
+    "relation": "Field effect, not attached",
+    "bonus": [
+      [
+        "ATK",
+        "+1"
+      ],
+      [
+        "heart",
+        "+1"
+      ]
+    ],
+    "note": "Each Drone; source is Ultron III."
+  }
+}

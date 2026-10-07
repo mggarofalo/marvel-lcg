@@ -1,0 +1,22 @@
+B1 / Impact Editions — finish pass
+
+Keep the angled ink field and cut-paper art as the expressive element. Everything that carries a value follows a measured grid.
+
+Palette
+Ink #132532 / paper #FFFFFF / table #E8EEF0 / secondary #506773 / modified #E8C877.
+Aspect color occupies the edge and art plane. Small functional glyphs are white on ink or ink on paper, never low-contrast aspect-on-aspect. Resources retain independent red physical, yellow energy, blue mental, green wild.
+
+Type
+Avenir Next Condensed Bold: card and attachment titles, consistently 14 at compact attachment scale.
+Avenir Next: rules regular, emphasis demibold, attachment summaries medium, type labels medium, stats demibold. No fallback/system-font mixture in the gallery.
+
+Stats
+Effective value is primary. Fine gold underline marks modification. A special star is measured from the actual numeral's trailing edge with a 0.5px gap, at its upper right. Consequence groups use the numeral's center; group width includes every icon and internal gap. Counts zero through three are represented without reserving a fake icon at zero. Resources stay lower left. Traits right-align.
+
+Attachments
+Edge tabs equal the visible host width: 172px upright, 240px quarter-turned. Titles wrap on the title font metrics; semantic summary units wrap, with no scaling of the strip. Consequences and resource references use existing canonical symbols. Type label is a separate baseline. An angled rail ends before a protected body inset: the type label and effect rows cannot touch the dark slash.
+Host ledgers are deliberately wider sidecars (250px), never masquerading as a matching-width stack. Shared title and body type match Edge tabs.
+Expansion shows the card's actual rules; source IDs and verification prose belong in data files, not on card surfaces.
+
+Scope
+Synthetic states and artwork are design fixtures. No engine, Godot, dataset, gameplay legality or runtime behavior was changed.

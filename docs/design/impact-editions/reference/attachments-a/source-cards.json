@@ -1,0 +1,316 @@
+[
+  {
+    "card_id": "01084",
+    "name": "Nick Fury",
+    "subname": "",
+    "type": "Ally",
+    "traits": [
+      "S.H.I.E.L.D",
+      "SPY"
+    ],
+    "attributes": {
+      "ATK": "2*",
+      "Class": "Basic",
+      "Cost": "4",
+      "HP": "3",
+      "RES": "B",
+      "THW": "2*",
+      "Unique": "1"
+    },
+    "text": "<b>Forced Response</b>: After Nick Fury enters play, choose one: remove 2 threat from a scheme, draw 3 cards, or deal 4 damage to an enemy. At the end of the round, if Nick Fury is still in play, discard him.",
+    "text_plain": "Forced Response: After Nick Fury enters play, choose one: remove 2 threat from a scheme, draw 3 cards, or deal 4 damage to an enemy. At the end of the round, if Nick Fury is still in play, discard him.",
+    "pack": "core",
+    "set": ""
+  },
+  {
+    "card_id": "01143",
+    "name": "Advanced Ultron Drone",
+    "subname": "",
+    "type": "Minion",
+    "traits": [
+      "DRONE"
+    ],
+    "attributes": {
+      "ATK": "1",
+      "Boost": "2",
+      "Guard": "1",
+      "HP": "4",
+      "SCH": "1"
+    },
+    "text": "Guard.\n<b>Forced Interrupt</b>: When Advanced Ultron Drone is defeated, the engaged player puts the top card of their deck into play facedown, engaged with them as a [[Drone]] minion.",
+    "text_plain": "Guard.\nForced Interrupt: When Advanced Ultron Drone is defeated, the engaged player puts the top card of their deck into play facedown, engaged with them as a Drone minion.",
+    "pack": "core",
+    "set": "ultron"
+  },
+  {
+    "card_id": "01029a",
+    "name": "Iron Man",
+    "subname": "",
+    "type": "Hero",
+    "traits": [
+      "AVENGER"
+    ],
+    "attributes": {
+      "ATK": "1",
+      "DEF": "1",
+      "HP": "9",
+      "HS": "1",
+      "THW": "2",
+      "Unique": "1"
+    },
+    "text": "You get +1 hand size for each [[Tech]] upgrade you control (to a maximum hand size of 7).",
+    "text_plain": "You get +1 hand size for each Tech upgrade you control (to a maximum hand size of 7).",
+    "pack": "core",
+    "set": "iron_man"
+  },
+  {
+    "card_id": "01094",
+    "name": "Rhino",
+    "subname": "",
+    "type": "Villain",
+    "traits": [
+      "BRUTE",
+      "CRIMINAL"
+    ],
+    "attributes": {
+      "ATK": "2",
+      "HP": "14*",
+      "SCH": "1",
+      "Stage": "1",
+      "Unique": "1"
+    },
+    "text": "",
+    "text_plain": "",
+    "pack": "core",
+    "set": "rhino"
+  },
+  {
+    "card_id": "01134",
+    "name": "Ultron",
+    "subname": "",
+    "type": "Villain",
+    "traits": [
+      "ANDROID"
+    ],
+    "attributes": {
+      "ATK": "2",
+      "HP": "17*",
+      "SCH": "1",
+      "Stage": "1",
+      "Unique": "1"
+    },
+    "text": "[star] <b>Forced Response</b>: After Ultron attacks you, choose to either place 1 threat on the main scheme or put the top card of your deck into play facedown, engaged with you as a [[Drone]] minion.",
+    "text_plain": "star Forced Response: After Ultron attacks you, choose to either place 1 threat on the main scheme or put the top card of your deck into play facedown, engaged with you as a Drone minion.",
+    "pack": "core",
+    "set": "ultron"
+  },
+  {
+    "card_id": "01074",
+    "name": "Inspired",
+    "subname": "",
+    "type": "Upgrade",
+    "traits": [
+      "CONDITION"
+    ],
+    "attributes": {
+      "Class": "Leadership",
+      "Cost": "1",
+      "MaxPerUnit": "1",
+      "MaxPerUnitKind": "ally",
+      "RES": "R"
+    },
+    "text": "Attach to an ally. Max 1 per ally.\nAttached ally gets +1 THW and +1 ATK.",
+    "text_plain": "Attach to an ally. Max 1 per ally.\nAttached ally gets +1 THW and +1 ATK.",
+    "pack": "core",
+    "set": ""
+  },
+  {
+    "card_id": "01163",
+    "name": "Genetically Enhanced",
+    "subname": "",
+    "type": "Attachment",
+    "traits": [
+      "CONDITION"
+    ],
+    "attributes": {
+      "Boost": "1",
+      "Nemesis": "Jennifer Walters"
+    },
+    "text": "Attach to the minion with the highest printed hit points. If there are no minions in play, this card gains surge.\nAttached minion gets +3 hit points.",
+    "text_plain": "Attach to the minion with the highest printed hit points. If there are no minions in play, this card gains surge.\nAttached minion gets +3 hit points.",
+    "pack": "core",
+    "set": "she_hulk_nemesis"
+  },
+  {
+    "card_id": "01153",
+    "name": "Concussion Blasters",
+    "subname": "",
+    "type": "Attachment",
+    "traits": [
+      "WEAPON"
+    ],
+    "attributes": {
+      "ATK+": "1",
+      "Boost": "1"
+    },
+    "text": "Attach to the villain.\nThe villain gains retaliate 1.\n<b>Hero Action</b>: Exhaust your hero and spend [energy] [energy] resources \u2192 discard this card.",
+    "text_plain": "Attach to the villain.\nThe villain gains retaliate 1.\nHero Action: Exhaust your hero and spend energy energy resources \u2192 discard this card.",
+    "pack": "core",
+    "set": "under_attack"
+  },
+  {
+    "card_id": "01099",
+    "name": "Charge",
+    "subname": "",
+    "type": "Attachment",
+    "traits": [],
+    "attributes": {
+      "ATK+": "3",
+      "Boost": "2"
+    },
+    "text": "Attach to Rhino.\n[star] <b>Forced Interrupt</b>: When Rhino attacks, the attack gains overkill. <i>(Excess damage to an ally from this attack is dealt to that ally's controller.)</i> At the end of this attack, discard Charge.",
+    "text_plain": "Attach to Rhino.\nstar Forced Interrupt: When Rhino attacks, the attack gains overkill. (Excess damage to an ally from this attack is dealt to that ally's controller.) At the end of this attack, discard Charge.",
+    "pack": "core",
+    "set": "rhino"
+  },
+  {
+    "card_id": "01098",
+    "name": "Armored Rhino Suit",
+    "subname": "",
+    "type": "Attachment",
+    "traits": [
+      "ARMOR"
+    ],
+    "attributes": {},
+    "text": "Attach to Rhino.\n<b>Forced Interrupt</b>: When any amount of damage would be dealt to Rhino, place it here instead. Then, if there is at least 5 damage here, discard Armored Rhino Suit.",
+    "text_plain": "Attach to Rhino.\nForced Interrupt: When any amount of damage would be dealt to Rhino, place it here instead. Then, if there is at least 5 damage here, discard Armored Rhino Suit.",
+    "pack": "core",
+    "set": "rhino"
+  },
+  {
+    "card_id": "01007",
+    "name": "Spider-Tracer",
+    "subname": "",
+    "type": "Upgrade",
+    "traits": [
+      "ITEM",
+      "TECH"
+    ],
+    "attributes": {
+      "Class": "Hero",
+      "Cost": "1",
+      "RES": "Y"
+    },
+    "text": "Attach to a minion.\n<b>Forced Interrupt</b>: When attached minion is defeated, remove 3 threat from a scheme.",
+    "text_plain": "Attach to a minion.\nForced Interrupt: When attached minion is defeated, remove 3 threat from a scheme.",
+    "pack": "core",
+    "set": "spider_man"
+  },
+  {
+    "card_id": "01035",
+    "name": "Arc Reactor",
+    "subname": "",
+    "type": "Upgrade",
+    "traits": [
+      "ITEM",
+      "TECH"
+    ],
+    "attributes": {
+      "Class": "Hero",
+      "Cost": "2",
+      "RES": "Y",
+      "Unique": "1"
+    },
+    "text": "<b>Hero Action</b>: Exhaust Arc Reactor \u2192 ready Iron Man.",
+    "text_plain": "Hero Action: Exhaust Arc Reactor \u2192 ready Iron Man.",
+    "pack": "core",
+    "set": "iron_man"
+  },
+  {
+    "card_id": "01036",
+    "name": "Mark V Armor",
+    "subname": "",
+    "type": "Upgrade",
+    "traits": [
+      "ARMOR",
+      "TECH"
+    ],
+    "attributes": {
+      "Class": "Hero",
+      "Cost": "3",
+      "RES": "B",
+      "Unique": "1"
+    },
+    "text": "You get +6 hit points.",
+    "text_plain": "You get +6 hit points.",
+    "pack": "core",
+    "set": "iron_man"
+  },
+  {
+    "card_id": "01140",
+    "name": "Ultron Drones",
+    "subname": "",
+    "type": "Environment",
+    "traits": [],
+    "attributes": {},
+    "text": "Each facedown [[Drone]] minion engaged with a player has a base SCH of 1, a base ATK of 1, and a base hit points of 1.\n<b>Forced Response</b>: After a facedown [[Drone]] minion is defeated, place that card in it's owners discard pile.",
+    "text_plain": "Each facedown Drone minion engaged with a player has a base SCH of 1, a base ATK of 1, and a base hit points of 1.\nForced Response: After a facedown Drone minion is defeated, place that card in it's owners discard pile.",
+    "pack": "core",
+    "set": "ultron"
+  },
+  {
+    "card_id": "01142",
+    "name": "Upgraded Drones",
+    "subname": "",
+    "type": "Attachment",
+    "traits": [
+      "CONDITION"
+    ],
+    "attributes": {},
+    "text": "Attach to the Ultron Drones environment.\nEach facedown [[Drone]] minion gets +1 ATK and +1 hit point.\n<b>Hero Action</b>: Spend [energy] [mental] [physical] resources \u2192 discard this card.",
+    "text_plain": "Attach to the Ultron Drones environment.\nEach facedown Drone minion gets +1 ATK and +1 hit point.\nHero Action: Spend energy mental physical resources \u2192 discard this card.",
+    "pack": "core",
+    "set": "ultron"
+  },
+  {
+    "card_id": "12018",
+    "name": "Reinforced Suit",
+    "subname": "",
+    "type": "Upgrade",
+    "traits": [
+      "ARMOR",
+      "TECH"
+    ],
+    "attributes": {
+      "Class": "Leadership",
+      "Cost": "1",
+      "MaxPerUnit": "1",
+      "MaxPerUnitKind": "ally",
+      "RES": "Y"
+    },
+    "text": "Attach to an ally. Max 1 per ally.\nAttached ally gets +2 hit points.",
+    "text_plain": "Attach to an ally. Max 1 per ally.\nAttached ally gets +2 hit points.",
+    "pack": "ant",
+    "set": ""
+  },
+  {
+    "card_id": "03031",
+    "name": "Enraged",
+    "subname": "",
+    "type": "Upgrade",
+    "traits": [
+      "CONDITION"
+    ],
+    "attributes": {
+      "Class": "Aggression",
+      "Cost": "1",
+      "MaxPerUnit": "1",
+      "MaxPerUnitKind": "ally",
+      "RES": "R"
+    },
+    "text": "Attach to an ally. Max 1 per ally.\nAttached ally gets +2 ATK and takes +1 consequential damage after it attacks.",
+    "text_plain": "Attach to an ally. Max 1 per ally.\nAttached ally gets +2 ATK and takes +1 consequential damage after it attacks.",
+    "pack": "cap",
+    "set": ""
+  }
+]

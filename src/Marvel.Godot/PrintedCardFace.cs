@@ -14,7 +14,7 @@ internal static class PrintedCardFace
             MouseFilter = Control.MouseFilterEnum.Ignore };
         bool landscape = VisualSystem.CardFrame(card.Kind).Family == CardFrameFamily.Scheme;
         Texture2D? illustration = displaySize == CardDisplaySize.Full && card.FaceId is { } id
-            ? art?.Find(id) : null;
+            ? art?.Find(id) ?? BuiltInCardArt.Instance.Find(id) : null;
         IReadOnlyList<CardStatValue> stats = CardStatValues.From(card);
         var regions = new CardFaceRegions(size, new CardFaceFeatures(landscape, card.Cost is not null || card.PrintedStats.Any(value => value.Name == "Stage"),
             illustration is not null, stats.Count > 0, card.Traits.Count > 0, displaySize == CardDisplaySize.Full, CardStatusTokens.RowCount(card)) { HasRetaliate = !card.Concealed && card.Retaliate > 0 });
@@ -48,7 +48,7 @@ internal static class PrintedCardFace
         var paper = Panel("RulesField", new Rect2(r.Traits.Position,
             new Vector2(r.Rules.Size.X, r.Rules.End.Y - r.Traits.Position.Y)), CardFaceStyle.Paper);
         face.AddChild(paper);
-        Label traits = Text(string.Join(". ", card.Traits), "Traits", r.Traits, 18 * r.Unit);
+        Label traits = Text(string.Join(". ", card.Traits), "Traits", r.Traits, CardVisualTokens.TraitSize * r.Unit);
         traits.HorizontalAlignment = HorizontalAlignment.Center;
         if (card.Traits.Count > 0) face.AddChild(traits);
         else traits.Free();

@@ -1,0 +1,236 @@
+[
+  {
+    "card_id": "01040a",
+    "name": "Black Panther",
+    "subname": "",
+    "type": "Hero",
+    "traits": [
+      "AVENGER",
+      "WAKANDA"
+    ],
+    "attributes": {
+      "ATK": "2",
+      "DEF": "2",
+      "HP": "11",
+      "HS": "5",
+      "Retaliate": "1",
+      "THW": "2",
+      "Unique": "1"
+    },
+    "text": "Retaliate 1. <i>(After this character is attacked, deal 1 damage to the attacking character.)</i>",
+    "text_plain": "Retaliate 1. (After this character is attacked, deal 1 damage to the attacking character.)",
+    "pack": "core",
+    "set": "black_panther"
+  },
+  {
+    "card_id": "01134",
+    "name": "Ultron",
+    "subname": "",
+    "type": "Villain",
+    "traits": [
+      "ANDROID"
+    ],
+    "attributes": {
+      "ATK": "2",
+      "HP": "17*",
+      "SCH": "1",
+      "Stage": "1",
+      "Unique": "1"
+    },
+    "text": "[star] <b>Forced Response</b>: After Ultron attacks you, choose to either place 1 threat on the main scheme or put the top card of your deck into play facedown, engaged with you as a [[Drone]] minion.",
+    "text_plain": "star Forced Response: After Ultron attacks you, choose to either place 1 threat on the main scheme or put the top card of your deck into play facedown, engaged with you as a Drone minion.",
+    "pack": "core",
+    "set": "ultron"
+  },
+  {
+    "card_id": "01143",
+    "name": "Advanced Ultron Drone",
+    "subname": "",
+    "type": "Minion",
+    "traits": [
+      "DRONE"
+    ],
+    "attributes": {
+      "ATK": "1",
+      "Boost": "2",
+      "Guard": "1",
+      "HP": "4",
+      "SCH": "1"
+    },
+    "text": "Guard.\n<b>Forced Interrupt</b>: When Advanced Ultron Drone is defeated, the engaged player puts the top card of their deck into play facedown, engaged with them as a [[Drone]] minion.",
+    "text_plain": "Guard.\nForced Interrupt: When Advanced Ultron Drone is defeated, the engaged player puts the top card of their deck into play facedown, engaged with them as a Drone minion.",
+    "pack": "core",
+    "set": "ultron"
+  },
+  {
+    "card_id": "01084",
+    "name": "Nick Fury",
+    "subname": "",
+    "type": "Ally",
+    "traits": [
+      "S.H.I.E.L.D",
+      "SPY"
+    ],
+    "attributes": {
+      "ATK": "2*",
+      "Class": "Basic",
+      "Cost": "4",
+      "HP": "3",
+      "RES": "B",
+      "THW": "2*",
+      "Unique": "1"
+    },
+    "text": "<b>Forced Response</b>: After Nick Fury enters play, choose one: remove 2 threat from a scheme, draw 3 cards, or deal 4 damage to an enemy. At the end of the round, if Nick Fury is still in play, discard him.",
+    "text_plain": "Forced Response: After Nick Fury enters play, choose one: remove 2 threat from a scheme, draw 3 cards, or deal 4 damage to an enemy. At the end of the round, if Nick Fury is still in play, discard him.",
+    "pack": "core",
+    "set": ""
+  },
+  {
+    "card_id": "01092",
+    "name": "Helicarrier",
+    "subname": "",
+    "type": "Support",
+    "traits": [
+      "LOCATION",
+      "S.H.I.E.L.D"
+    ],
+    "attributes": {
+      "Class": "Basic",
+      "Cost": "3",
+      "MaxPerUnit": "1",
+      "MaxPerUnitKind": "player",
+      "RES": "R"
+    },
+    "text": "Max 1 per player.\n<b>Action</b>: Exhaust Helicarrier \u2192 choose a player. Reduce the resource cost of the next card that player plays this phase by 1.",
+    "text_plain": "Max 1 per player.\nAction: Exhaust Helicarrier \u2192 choose a player. Reduce the resource cost of the next card that player plays this phase by 1.",
+    "pack": "core",
+    "set": ""
+  },
+  {
+    "card_id": "01043a",
+    "name": "Wakanda Forever!",
+    "subname": "",
+    "type": "Event",
+    "traits": [
+      "TACTIC"
+    ],
+    "attributes": {
+      "Class": "Hero",
+      "Cost": "1",
+      "RES": "Y"
+    },
+    "text": "<b>Hero Action</b>: Resolve the \"<b>Special</b>\" ability on each [[Black Panther]] upgrade you control in any order. <i>(Resolving each ability is a step in a sequence.)</i>",
+    "text_plain": "Hero Action: Resolve the \"Special\" ability on each Black Panther upgrade you control in any order. (Resolving each ability is a step in a sequence.)",
+    "pack": "core",
+    "set": "black_panther"
+  },
+  {
+    "card_id": "01029a",
+    "name": "Iron Man",
+    "subname": "",
+    "type": "Hero",
+    "traits": [
+      "AVENGER"
+    ],
+    "attributes": {
+      "ATK": "1",
+      "DEF": "1",
+      "HP": "9",
+      "HS": "1",
+      "THW": "2",
+      "Unique": "1"
+    },
+    "text": "You get +1 hand size for each [[Tech]] upgrade you control (to a maximum hand size of 7).",
+    "text_plain": "You get +1 hand size for each Tech upgrade you control (to a maximum hand size of 7).",
+    "pack": "core",
+    "set": "iron_man"
+  },
+  {
+    "card_id": "01002",
+    "name": "Black Cat",
+    "subname": "Felicia Hardy",
+    "type": "Ally",
+    "traits": [
+      "HERO FOR HIRE"
+    ],
+    "attributes": {
+      "ATK": "1",
+      "Class": "Hero",
+      "Cost": "2",
+      "HP": "2",
+      "RES": "Y",
+      "THW": "1*",
+      "Unique": "1"
+    },
+    "text": "<b>Forced Response</b>: After you play Black Cat, discard the top 2 cards of your deck. Add each card with a printed [mental] resource discarded this way to your hand.",
+    "text_plain": "Forced Response: After you play Black Cat, discard the top 2 cards of your deck. Add each card with a printed mental resource discarded this way to your hand.",
+    "pack": "core",
+    "set": "spider_man"
+  },
+  {
+    "card_id": "03014",
+    "name": "Wonder Man",
+    "subname": "Simon Williams",
+    "type": "Ally",
+    "traits": [
+      "AVENGER"
+    ],
+    "attributes": {
+      "ATK": "3*",
+      "Class": "Leadership",
+      "Cost": "2",
+      "HP": "3",
+      "RES": "R",
+      "THW": "1*",
+      "Unique": "1"
+    },
+    "text": "[star] As an additional cost for Wonder Man to attack, you must discard 1 card from your hand.",
+    "text_plain": "star As an additional cost for Wonder Man to attack, you must discard 1 card from your hand.",
+    "pack": "cap",
+    "set": ""
+  },
+  {
+    "card_id": "27047",
+    "name": "Dum Dum Dugan",
+    "subname": "",
+    "type": "Ally",
+    "traits": [
+      "S.H.I.E.L.D"
+    ],
+    "attributes": {
+      "ATK": "3**",
+      "Class": "Basic",
+      "Cost": "5",
+      "HP": "5",
+      "RES": "R",
+      "THW": "3***",
+      "Unique": "1"
+    },
+    "text": "<b>Interrupt</b>: When you use one of Dum Dum Dugan's basic powers, exhaust up to 3 [[S.H.I.E.L.D.]] cards you control. For each card exhausted this way, Dum Dum Dugan gets +1 to that power for this use.",
+    "text_plain": "Interrupt: When you use one of Dum Dum Dugan's basic powers, exhaust up to 3 S.H.I.E.L.D. cards you control. For each card exhausted this way, Dum Dum Dugan gets +1 to that power for this use.",
+    "pack": "sm",
+    "set": ""
+  },
+  {
+    "card_id": "41001a",
+    "name": "Psylocke",
+    "subname": "",
+    "type": "Hero",
+    "traits": [
+      "PSIONIC",
+      "X-FORCE"
+    ],
+    "attributes": {
+      "ATK": "1",
+      "DEF": "2",
+      "HP": "10",
+      "HS": "4",
+      "THW": "1",
+      "Unique": "1"
+    },
+    "text": "[star] <i>Psi-Energy Control</i> \u2014 <b>Interrupt</b>: When you use one of Psylocke's basic powers <i>(THW, ATK, or DEF)</i>, flip 1 [[PSI-ENERGY]] upgrade.",
+    "text_plain": "star Psi-Energy Control \u2014 Interrupt: When you use one of Psylocke's basic powers (THW, ATK, or DEF), flip 1 PSI-ENERGY upgrade.",
+    "pack": "psylocke",
+    "set": "psylocke"
+  }
+]

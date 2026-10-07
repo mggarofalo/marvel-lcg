@@ -24,15 +24,14 @@ internal static class CardFaceTokens
         foreach ((string name, string glyph) in CardRulesMarkup.ResourceTokens(resources))
         {
             Label slot = PrintedCardFace.Text(glyph, $"InspectorResourceIconSlot{index++}",
-                new Rect2(0, 0, 36 * r.Unit, 36 * r.Unit), 30 * r.Unit);
-            slot.CustomMinimumSize = new Vector2(36, 36) * r.Unit;
+                new Rect2(0, 0, CardVisualTokens.ResourceSlot * r.Unit, CardVisualTokens.ResourceSlot * r.Unit), CardVisualTokens.ResourceFontSize * r.Unit);
+            slot.CustomMinimumSize = new Vector2(CardVisualTokens.ResourceSlot, CardVisualTokens.ResourceSlot) * r.Unit;
             slot.HorizontalAlignment = HorizontalAlignment.Center;
             slot.VerticalAlignment = VerticalAlignment.Center;
             slot.AutowrapMode = TextServer.AutowrapMode.Off;
             slot.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
             slot.TooltipText = name;
-            slot.AddThemeFontOverride("font", CardRulesMarkup.ResourceFont());
-            slot.AddThemeColorOverride("font_color", Colors.White);
+            ResourceIconRendering.Style(slot, glyph[0]);
             icons.AddChild(slot);
         }
         if (index == 0 && card.PrintedStats.FirstOrDefault(value => value.Name == "Boost") is { } boost)

@@ -18,7 +18,12 @@ internal static class CardTypography
             $"Marvel.Godot.Assets.{name}.ttf") ?? throw new InvalidOperationException($"Missing card font {name}");
         var data = new byte[stream.Length];
         stream.ReadExactly(data);
-        var font = new FontFile { Data = data };
+        var font = new FontFile
+        {
+            Data = data,
+            AllowSystemFallback = false,
+            Fallbacks = [ThemeDB.FallbackFont],
+        };
         Fonts.Add(name, font);
         return font;
     }

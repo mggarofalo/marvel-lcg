@@ -53,4 +53,4 @@ Barlow Regular, Bold and Italic provide printed rules; Barlow Condensed Bold pro
 
 Pinned source: https://github.com/google/fonts/tree/7085eb89a950e85db5b166b7a58d414544b4140c/ofl/barlow
 
-The canonical symbol character assignments are pinned with the font in [icons.css](https://github.com/zzorba/marvelsdb/blob/991193c11f9d4e2057253f427c65d9055da9a3b1/src/AppBundle/Resources/public/css/icons.css): P physical, E energy, M mental, W wild, G per hero, U unique, S star, B boost, A acceleration, F amplify, C crisis, H hazard. These are display assignments, not gameplay rules.
+The canonical symbol character assignments are pinned with the font in [icons.css](https://github.com/zzorba/marvelsdb/blob/991193c11f9d4e2057253f427c65d9055da9a3b1/src/AppBundle/Resources/public/css/icons.css): P physical, E energy, M mental, W wild, G per hero, U unique, S special star, D consequential damage (the `[cost]` token), B boost, A acceleration, F amplify, C crisis, H hazard. These are display assignments, not gameplay rules.

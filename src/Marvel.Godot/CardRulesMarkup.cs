@@ -29,7 +29,7 @@ internal static class CardRulesMarkup
                 $"Embedded resource {ResourceFontManifestName} is unavailable.");
         var data = new byte[source.Length];
         source.ReadExactly(data);
-        resourceFont = new FontFile { Data = data };
+        resourceFont = new FontFile { Data = data, AllowSystemFallback = false };
         resourceFont.TakeOverPath(ResourceFontPath);
         return resourceFont;
     }

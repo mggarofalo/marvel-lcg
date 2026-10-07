@@ -24,7 +24,7 @@ internal static class PrintedCardHeader
             row.AddChild(mark);
         }
         Label title = PrintedCardFace.Text(card.Title, "Title", new Rect2(Vector2.Zero, r.Title.Size),
-            (r.Full ? 29 : 31) * r.Unit);
+            (r.Full ? CardVisualTokens.FullTitleSize : CardVisualTokens.CompactTitleSize) * r.Unit);
         title.HorizontalAlignment = HorizontalAlignment.Center;
         title.VerticalAlignment = VerticalAlignment.Center;
         title.MaxLinesVisible = 2;

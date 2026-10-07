@@ -16,7 +16,7 @@ internal static class PrintedCardStats
             face.AddChild(badge);
             float valueHeight = (r.Full ? 38 : 46) * r.Unit;
             Label value = PrintedCardFace.Text(stat.Value, $"SummaryValues{stat.Name}",
-                new Rect2(0, 0, r.Stats.Size.X, valueHeight), (r.Full ? 30 : 40) * r.Unit);
+                new Rect2(0, 0, r.Stats.Size.X, valueHeight), (r.Full ? CardVisualTokens.FullStatSize : CardVisualTokens.CompactStatSize) * r.Unit);
             value.AutowrapMode = TextServer.AutowrapMode.Off;
             value.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
             value.VerticalAlignment = VerticalAlignment.Center;
@@ -54,9 +54,10 @@ internal static class PrintedCardStats
         }
         if (stat.ConsequentialDamage > 0)
         {
-            Label marks = PrintedCardFace.Text(new string('✦', stat.ConsequentialDamage),
+            Label marks = PrintedCardFace.Text(new string('D', stat.ConsequentialDamage),
                 $"Consequential{stat.Name}", new Rect2(0, valueHeight - 16 * r.Unit, badge.Size.X, 26 * r.Unit), 16 * r.Unit);
-            marks.HorizontalAlignment = HorizontalAlignment.Right;
+            marks.AddThemeFontOverride("font", CardRulesMarkup.ResourceFont());
+            marks.HorizontalAlignment = HorizontalAlignment.Center;
             marks.AddThemeColorOverride("font_color", Colors.White);
             marks.TooltipText = $"{stat.ConsequentialDamage} consequential damage";
             badge.AddChild(marks);

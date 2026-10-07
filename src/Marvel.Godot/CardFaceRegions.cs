@@ -16,7 +16,7 @@ internal sealed class CardFaceRegions
     internal Rect2 Retaliate { get; }
     internal Rect2 Resources { get; }
     internal bool Full { get; }
-    internal float RulesFontSize => (Full ? 18 : 24) * Unit;
+    internal float RulesFontSize => (Full ? CardVisualTokens.FullBodySize : CardVisualTokens.CompactBodySize) * Unit;
     internal Rect2 Health { get; }
     internal float Unit { get; }
 
