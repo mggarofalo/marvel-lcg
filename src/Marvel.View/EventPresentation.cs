@@ -14,6 +14,9 @@ public sealed record EventPresentation(
     IReadOnlyList<int> Anchors,
     EventMotionKind Motion)
 {
+    /// <summary>Compact occurrence copy for a table cue; the full chronology remains in Summary.</summary>
+    public string? CueSummary { get; init; }
+
     /// <summary>Explicit result subjects; readable copy is never a relationship source.</summary>
     public IReadOnlyList<TableRelationshipDescriptor> Relationships { get; init; } = [];
 }

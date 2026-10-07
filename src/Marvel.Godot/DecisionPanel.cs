@@ -16,7 +16,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal DecisionComposer? composer;
     private CardPaymentWorkspace? paymentModal;
     private readonly CompleteDecisionSheetController choices;
-    internal readonly SearchChoiceGallery SearchChoices;
+    internal readonly DecisionCardChoices CardChoices;
     internal bool CompleteChoicesOpen => choices.IsOpen;
     internal void ShowCompleteChoices(Control source) => choices.Open(source);
     internal void CompleteChoicesClosed() => choices.Closed();
@@ -52,7 +52,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         lifecycle = new DecisionPanelLifecycle(this);
         choices = new CompleteDecisionSheetController(this);
-        SearchChoices = new SearchChoiceGallery(this);
+        CardChoices = new DecisionCardChoices(this);
         cardPreview.Changed += id => CardHovered?.Invoke(id);
     }
     /// <summary>Raised with one answer built from the current prompt.</summary>
@@ -98,7 +98,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             requestedScale, compactMulliganChrome, MulliganPrompt.IsOpening(prompt));
         choices.Close();
         lifecycle.Render(prompt, currentWorld, revision);
-        choices.OpenSearchAfterRender();
+        choices.OpenCardChoiceAfterRender();
     }
 
     internal static InterfaceScale EffectiveScale(

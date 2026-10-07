@@ -18,6 +18,9 @@ internal static class TableDraftSummary
         }
 
         DecisionProgressPresentation progress = composer.Progress();
+        if (composer.Prompt.PublicKind == PublicDecisionKind.MinionActivationOrder && selected.Targets is { } order)
+            return $"{progress.Targets.Selected}/{progress.Targets.Maximum} · "
+                + OrderedCardLabels.Sequence(order.Legal, composer.Targets);
         AffordancePresentation? visible = prompt?.Affordances.FirstOrDefault(
             affordance => affordance.Id == selected.Id);
         var state = new List<string>();

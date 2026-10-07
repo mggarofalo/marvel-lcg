@@ -48,28 +48,34 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
         if (!InteractionControl.IsUsable(host)) return;
         if (composer.Selected is null)
         {
+            if (composer.Prompt.PublicKind == PublicDecisionKind.PlayerAction && composer.Prompt.Cancellable)
+                AddDecline(prompt);
             AddActions(prompt, installedActions, composer.Prompt.PublicKind);
         }
         else
         {
             AddDraft(composer);
         }
-        if (composer.Selected is null && composer.Prompt.Cancellable)
-            Add("ContextualDecline", prompt.DeclineLabel, () => decline?.Invoke(), prompt.DeclineLabel);
+        if (composer.Selected is null && composer.Prompt.Cancellable
+            && composer.Prompt.PublicKind != PublicDecisionKind.PlayerAction)
+            AddDecline(prompt);
     }
+
+    private void AddDecline(PromptPresentation prompt) =>
+        Add("ContextualDecline", prompt.DeclineLabel, () => decline?.Invoke(), prompt.DeclineLabel);
 
     internal static IReadOnlyList<AffordancePresentation> FallbackActions(
         PromptPresentation prompt, IReadOnlySet<int> installedActions,
         PublicDecisionKind kind = PublicDecisionKind.PlayerAction) =>
         [.. prompt.Affordances.Where(candidate => candidate.Illegal is null
-            && (kind == PublicDecisionKind.Choice
+            && (kind is PublicDecisionKind.Choice or PublicDecisionKind.Response
                 || candidate.CardAnchorId is not { } anchor || !installedActions.Contains(anchor)))];
 
     private void AddActions(PromptPresentation prompt, IReadOnlySet<int> installedActions, PublicDecisionKind kind)
     {
         IReadOnlyList<AffordancePresentation> offers = FallbackActions(prompt, installedActions, kind);
         Container choices = host!;
-        if (kind == PublicDecisionKind.Choice && offers.Count == 2)
+        if (kind == PublicDecisionKind.Choice && offers.Count is 2 or 3)
         {
             choices = new HBoxContainer
             {
@@ -86,7 +92,9 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
             Button choice = Add($"ContextAction{id}", label,
                 () => activate?.Invoke(id), offer.Description ?? offer.Label, parent: choices);
             DecisionCostLabel.AttachTo(choice, offer);
-            if (kind != PublicDecisionKind.Choice && offer.Description is { Length: > 0 } description)
+            if (kind is not (PublicDecisionKind.Choice or PublicDecisionKind.PlayerAction)
+                && ContextualOfferDescription.SingleResponse(prompt, kind) is null
+                && offer.Description is { Length: > 0 } description)
                 host!.AddChild(new Label
                 {
                     Text = description, AutowrapMode = TextServer.AutowrapMode.WordSmart,

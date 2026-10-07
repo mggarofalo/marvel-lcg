@@ -13,6 +13,7 @@ internal sealed class CardFaceRegions
     internal Rect2 Rules { get; }
     internal Rect2 Stats { get; }
     internal Rect2 Tokens { get; }
+    internal Rect2 Retaliate { get; }
     internal Rect2 Resources { get; }
     internal bool Full { get; }
     internal float RulesFontSize => (Full ? 18 : 24) * Unit;
@@ -39,8 +40,10 @@ internal sealed class CardFaceRegions
         float textX = text.X, textY = text.Y;
         float textWidth = w - textX - inset;
         Traits = new Rect2(textX, textY, textWidth, features.HasTraits ? 28 * Unit : 0);
-        Tokens = new Rect2(textX, Traits.End.Y, textWidth, features.TokenRows * (full ? 32 : 44) * Unit);
-        float rulesY = Tokens.End.Y + (features.TokenRows > 0 ? 4 * Unit : 0);
+        Tokens = new Rect2(textX, Traits.End.Y, textWidth, features.TokenRows * LiveRowHeight(features));
+        Retaliate = new Rect2(textX, Tokens.End.Y, textWidth,
+            features.HasRetaliate ? LiveRowHeight(features) : 0);
+        float rulesY = Retaliate.End.Y + (features.TokenRows > 0 || features.HasRetaliate ? 4 * Unit : 0);
         Rules = new Rect2(textX, rulesY, textWidth, h - rulesY - 55 * Unit);
         Resources = new Rect2(inset, h - 44 * Unit, w * 0.55f, 36 * Unit);
         Health = new Rect2(w - 114 * Unit, h - 50 * Unit, 106 * Unit, 46 * Unit);
@@ -49,7 +52,16 @@ internal sealed class CardFaceRegions
     private Rect2 IllustrationBounds(Vector2 size, CardFaceFeatures features, float inset, float bodyY) =>
         !features.HasArt ? new Rect2(inset, bodyY, 0, 0) : features.Landscape
             ? new Rect2(inset, bodyY, size.X * 0.34f - inset, size.Y - bodyY - 55 * Unit)
-            : new Rect2(inset, bodyY, size.X - inset * 2, size.Y * 0.32f);
+            : new Rect2(inset, bodyY, size.X - inset * 2, PortraitIllustrationHeight(size, features));
+
+    private float LiveRowHeight(CardFaceFeatures features) => (features.Full ? 32 : 44) * Unit;
+
+    private float PortraitIllustrationHeight(Vector2 size, CardFaceFeatures features)
+    {
+        float rowHeight = LiveRowHeight(features);
+        float reserved = (features.TokenRows + (features.HasRetaliate ? 1 : 0)) * rowHeight;
+        return Math.Max(0, size.Y * 0.32f - reserved);
+    }
 
     private Vector2 TextOrigin(Vector2 size, CardFaceFeatures features, float inset, float bodyY, float railWidth)
     {

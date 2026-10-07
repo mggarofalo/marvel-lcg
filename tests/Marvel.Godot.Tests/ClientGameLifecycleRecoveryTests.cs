@@ -41,10 +41,14 @@ public sealed class ClientGameLifecycleRecoveryTests : LocalGameClientTestBase
         ClientLifecycleUpdate rejected = Assert.IsType<ClientLifecycleUpdate>(
             await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken));
         Assert.Equal(GameProgressKind.DecisionRejected, rejected.Progress.Kind);
+        Assert.Equal(rejected.Progress.Description,
+            HistoryUndoPresentation.Describe(false, original.History, rejected.Progress));
         Assert.False(lifecycle.CanResolve);
         Assert.Null(await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken));
         await lifecycle.SynchronizeAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(lifecycle.Progress!.LocksDecisions);
+        Assert.Equal(lifecycle.Progress.Description,
+            HistoryUndoPresentation.Describe(false, original.History, lifecycle.Progress));
         Assert.False(lifecycle.CanResolve);
         Assert.Equal(3, transport.Requests.Count);
     }
@@ -105,6 +109,23 @@ public sealed class ClientGameLifecycleRecoveryTests : LocalGameClientTestBase
         await lifecycle.SynchronizeAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(lifecycle.CanResolve);
     }
+
+    [Fact]
+    public async Task UnknownHistoryStatusCannotEnterClientState()
+    {
+        EngineResponse original = Initial();
+        EngineResponse malformed = original with
+        {
+            RequestId = "local-sync", Events = [],
+            History = original.History! with { UndoStatus = (HistoryUndoStatus)999 },
+        };
+        ClientGameLifecycle lifecycle = Enter(new ScriptedTransport(malformed), original);
+        ClientLifecycleUpdate update = Assert.IsType<ClientLifecycleUpdate>(
+            await lifecycle.SynchronizeAsync(cancellationToken: TestContext.Current.CancellationToken));
+        Assert.NotNull(update.Error);
+        Assert.Same(original, lifecycle.CurrentGame);
+    }
+
 
     private static EngineResponse Initial() => Host().Exchange(EngineRequest.OpenGame("source", "shared-table", Specification()))
         with { Capability = null, Invitations = null };

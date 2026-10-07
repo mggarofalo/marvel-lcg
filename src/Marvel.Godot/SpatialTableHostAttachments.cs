@@ -12,20 +12,18 @@ internal static class SpatialTableHostAttachments
     {
         BoardCardPresentation[] cards = SpatialTableZones.Current(area);
         if (cards.Length == 0) return;
-        var inspect = new Button
+        var inspect = new MenuButton
         {
             Name = $"InspectAttachments{area.Host}",
+            Flat = false,
+            ThemeTypeVariation = GodotThemeVariations.ChoiceButton,
             Text = Caption(area, cards),
             TooltipText = $"Attachments on {area.HostedBy}.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             CustomMinimumSize = new Vector2(0, 44),
         };
-        inspect.Pressed += () =>
-        {
-            if (result.IsCurrent?.Invoke() == true)
-                TabletopPileInspector.Show(inspect, TabletopAreaObject.From(area), result, scale, art);
-        };
+        TabletopInspectionMenu.Bind(inspect, [area], result, scale, art);
         SpatialCardSidecar.For(host).AddChild(inspect);
         TableCompactButtonStyle.Apply(inspect);
     }

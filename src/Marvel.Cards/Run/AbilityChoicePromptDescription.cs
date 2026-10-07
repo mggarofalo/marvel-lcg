@@ -36,11 +36,11 @@ internal static class AbilityChoicePromptDescription
             $"{context.SourceFace}: choose {(cards ? "a card" : "an option")}",
             Cancellable: false, offered) {
             ContextCardIds = [context.Expressions.Source.ObjectId],
-            DisplayQuestion = choice is AbilityEffect.ChooseCard cardChoice ? AbilityEffectDescription.Question(
+            DisplayQuestion = choice is AbilityEffect.ChooseCard cardChoice ? AbilityDamageTransferDescription.Question(context, cardChoice) ?? AbilityEffectDescription.Question(
                 context.Expressions.World, context.SourceFace, cardChoice)
                 : $"{context.Expressions.World.Facts.Title(context.SourceFace)}: choose an option",
             Description = choice is AbilityEffect.ChooseCard describedChoice
-                ? AbilityEffectDescription.Summary(describedChoice)
+                ? AbilityDamageTransferDescription.Summary(context, describedChoice) ?? AbilityEffectDescription.Summary(describedChoice)
                 : null,
             ExposesConcealedCandidates = concealedCards,
             PublicKind = concealedCards ? PublicDecisionKind.CardSearch : PublicDecisionKind.Choice,
@@ -59,7 +59,8 @@ internal static class AbilityChoicePromptDescription
                 {
                     DisplayLabel = AbilityPlayerChoiceDescription.Commitment(context, chooseCard, card)
                         ?? EffectiveCards.Title(card, context.Expressions.World.Facts),
-                    CommitLabel = AbilityPlayerChoiceDescription.Commitment(context, chooseCard, card)
+                    CommitLabel = AbilityDamageTransferDescription.Commitment(context, chooseCard, card)
+                        ?? AbilityPlayerChoiceDescription.Commitment(context, chooseCard, card)
                         ?? AbilityEffectDescription.Choice(chooseCard.Effect,
                         EffectiveCards.Title(card, context.Expressions.World.Facts)),
                 });
@@ -97,6 +98,8 @@ internal static class AbilityChoicePromptDescription
     {
         var world = context.Expressions.World;
         string title = EffectiveCards.Title(card, world.Facts);
+        if (AbilityDamageTransferDescription.Description(context, choice, card) is { } transfer)
+            return $"{title} · {transfer}";
         if (AbilityPlayerChoiceDescription.Description(context, choice, card) is { } draw)
             return $"{title} · {draw}";
         if (EffectiveCards.Kind(card, world.Facts) is CardKind.Hero or CardKind.AlterEgo)

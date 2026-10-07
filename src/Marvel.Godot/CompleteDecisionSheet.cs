@@ -81,7 +81,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
         var header = new HBoxContainer();
         header.AddChild(new Label
         {
-            Text = SearchChoiceGallery.IsChoice(panel.composer?.Prompt) ? "Choose a card" : "Complete choices",
+            Text = DecisionCardChoices.Heading(panel.composer?.Prompt),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             ThemeTypeVariation = GodotThemeVariations.Heading,
         });
@@ -98,7 +98,9 @@ internal sealed class CompleteDecisionSheet : IDisposable
         {
             Marvel.View.PromptPresentation prompt = Marvel.View.PromptPresentation.From(composer.Prompt, world);
             content.AddChild(DecisionPanel.Text(
-                $"{prompt.Heading}\n{prompt.Context}", GodotThemeVariations.Caption, wrap: true));
+                composer.Prompt.PublicKind == Marvel.Rules.Prompts.PublicDecisionKind.MinionActivationOrder
+                    ? prompt.Resolution : $"{prompt.Heading}\n{prompt.Context}",
+                GodotThemeVariations.Caption, wrap: true));
         }
         panel.Reparent(content);
         panel.Visible = true;
@@ -144,12 +146,13 @@ internal sealed class CompleteDecisionSheet : IDisposable
     {
         if (!InteractionControl.IsUsable(frame)) return;
         Vector2 viewport = overlay.GetViewportRect().Size;
-        if (SearchChoiceGallery.IsChoice(panel.composer?.Prompt))
+        if (DecisionCardChoices.IsChoice(panel.composer?.Prompt))
         {
-            Rect2 bounds = SearchChoiceLayout.Frame(viewport);
+            Rect2 bounds = panel.composer?.Prompt.PublicKind == Marvel.Rules.Prompts.PublicDecisionKind.MinionActivationOrder
+                ? CardChoiceLayout.OrderFrame(viewport) : CardChoiceLayout.Frame(viewport);
             frame.Size = bounds.Size;
             frame.Position = bounds.Position;
-            panel.SearchChoices.RefreshLayout();
+            panel.CardChoices.RefreshLayout();
             return;
         }
         frame.Size = new Vector2(Math.Min(560, viewport.X - 32), Math.Min(520, Math.Max(220, viewport.Y * 0.44f)));

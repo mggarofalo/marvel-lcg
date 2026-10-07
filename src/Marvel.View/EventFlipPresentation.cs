@@ -31,5 +31,11 @@ internal static class EventFlipPresentation
             ? $"Turned {cards} face up."
             : $"Revealed {cards}: {string.Join(" ", text)}";
     }
+    internal static string CueSummary(CardsFlipped flipped, WorldDescriptor world)
+    {
+        string purpose = !flipped.FaceUp ? "Face down"
+            : string.Equals(flipped.Verb, "Boost", StringComparison.Ordinal) ? "Boost" : "Reveal";
+        return $"{purpose} · {CardList(flipped.Cards, world, flipped)}";
+    }
 
 }

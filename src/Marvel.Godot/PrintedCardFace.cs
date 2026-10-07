@@ -17,7 +17,7 @@ internal static class PrintedCardFace
             ? art?.Find(id) : null;
         IReadOnlyList<CardStatValue> stats = CardStatValues.From(card);
         var regions = new CardFaceRegions(size, new CardFaceFeatures(landscape, card.Cost is not null || card.PrintedStats.Any(value => value.Name == "Stage"),
-            illustration is not null, stats.Count > 0, card.Traits.Count > 0, displaySize == CardDisplaySize.Full, CardStatusTokens.RowCount(card)));
+            illustration is not null, stats.Count > 0, card.Traits.Count > 0, displaySize == CardDisplaySize.Full, CardStatusTokens.RowCount(card)) { HasRetaliate = !card.Concealed && card.Retaliate > 0 });
         PrintedCardHeader.Add(face, card, regions);
         AddIllustration(face, card, regions, illustration);
         PrintedCardStats.Add(face, stats, regions);

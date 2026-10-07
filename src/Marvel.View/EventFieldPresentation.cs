@@ -61,12 +61,7 @@ internal static class EventFieldPresentation
     internal static string Summary(FieldSet set, WorldDescriptor world)
     {
         string subject = Card(set.Card, world, set);
-        if (set.Field == "is_exhaust")
-        {
-            return set.To == 1
-                ? $"{subject} became exhausted."
-                : $"{subject} became ready.";
-        }
+        if (StateSummary(set, subject) is { } state) return state;
         if (CounterName(set.Field) is { } counters)
         {
             return CounterSummary(subject, counters, set);
@@ -79,6 +74,25 @@ internal static class EventFieldPresentation
         }
         return FieldSummary(subject, field, set);
     }
+
+    internal static string CueSummary(FieldSet set, WorldDescriptor world)
+    {
+        if (StateSummary(set, Card(set.Card, world, set)) is { } state) return state;
+        if (set.From is null || set.To is null) return Summary(set, world);
+        string field = set.Field.ToLowerInvariant();
+        string label = HealthFields.Contains(field) ? "HP"
+            : DamageFields.Contains(field) ? "damage"
+            : field == "k_threat" ? "threat"
+            : CounterName(field) ?? Words(field).ToLowerInvariant();
+        return $"{Card(set.Card, world, set)} · {label} {Value(set.From)} → {Value(set.To)}";
+    }
+
+    private static string? StateSummary(FieldSet set, string subject) => set.Field switch
+    {
+        "is_exhaust" => set.To == 1 ? $"{subject} became exhausted." : $"{subject} became ready.",
+        "is_completed" when set.To == 1 => $"{subject} was completed.",
+        _ => null,
+    };
 
     private static string? CounterName(string field) =>
         field.StartsWith("c_", StringComparison.Ordinal)

@@ -156,7 +156,15 @@ public static class EventPresenter
                 $"event kind {happened.GetType().Name} has no presentation"),
         };
 
-        return EventRelationshipProjection.WithSubjects(new EventPresentation(summary, Cause(happened), anchors, motion), happened);
+        return EventRelationshipProjection.WithSubjects(new EventPresentation(summary, Cause(happened), anchors, motion)
+        {
+            CueSummary = happened switch
+            {
+                FieldSet set => EventFieldPresentation.CueSummary(set, world),
+                CardsFlipped flipped => EventFlipPresentation.CueSummary(flipped, world),
+                _ => null,
+            },
+        }, happened);
     }
 
     /// <summary>Describes a newly reached terminal state without inventing a game event.</summary>

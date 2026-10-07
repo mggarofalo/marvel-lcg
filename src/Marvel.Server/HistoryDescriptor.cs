@@ -12,4 +12,8 @@ public sealed record HistoryDescriptor(
     IReadOnlyList<int> Undo,
     IReadOnlyList<int> Redo,
     IReadOnlyList<HistoryEntryDescriptor> Entries,
-    bool ActionOpen);
+    bool ActionOpen)
+{
+    /// <summary>Public edit status, without card identities or private exposure reasons.</summary>
+    public HistoryUndoStatus UndoStatus { get; init; }
+}

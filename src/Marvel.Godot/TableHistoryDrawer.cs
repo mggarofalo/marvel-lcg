@@ -34,6 +34,7 @@ internal static class TableHistoryDrawer
         {
             main.promptPanel.Visible = true;
             main.decisions.Visible = true;
+            HistoryUndoControl.RefreshReason(main, true);
             return;
         }
 
@@ -61,6 +62,7 @@ internal static class TableHistoryDrawer
         Button dismiss = EnsureDismiss(main, history, latest);
         HFlowContainer actions = EnsureActionFlow(history, dismiss);
         bool expanded = IsExpanded(main);
+        HistoryUndoControl.RefreshReason(main, expanded);
         bool payment = CardPaymentWorkspaceLayout.Active(main);
         if (history.GetNodeOrNull<Control>("TableSidebar") is { } sidebar) sidebar.Visible = !payment;
         TableHistoryViewport.Configure(main, payment);

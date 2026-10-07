@@ -144,8 +144,8 @@ internal static class ActivationProcedure
             // player's choosing". rr:activation.1 makes each activation depend
             // on the player's form when that enemy activates.
             Description = $"{world.Facts.Title(villain.FaceId)} has finished activating against "
-                + $"{world.Seats[seat].Name}. Their engaged minions activate next, one at a time. "
-                + "Select each minion in order, then confirm. Each attacks in hero form or schemes in alter-ego form.",
+                + $"{world.Seats[seat].Name}. Choose the order of their engaged minions. "
+                + "Each attacks in hero form or schemes in alter-ego form.",
         };
     }
 

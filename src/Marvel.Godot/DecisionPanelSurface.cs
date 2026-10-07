@@ -19,8 +19,9 @@ internal static class DecisionPanelSurface
         int generation = panel.GetRenderGeneration();
         if (selected.Targets is not null && !composer.UsesAutomaticTargetSelection)
         {
-            new DecisionDraftRenderer(panel, composer, panel.world!, panel.submitting, generation)
-                .AddTargets(selected, progress.Targets);
+            if (!panel.CardChoices.AddOrderedTargets(generation))
+                new DecisionDraftRenderer(panel, composer, panel.world!, panel.submitting, generation)
+                    .AddTargets(selected, progress.Targets);
         }
         var payment = new DecisionPaymentRenderer(panel, composer, panel.world!, panel.submitting, generation);
         payment.AddCosts(selected);

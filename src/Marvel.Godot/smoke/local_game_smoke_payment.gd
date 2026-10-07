@@ -189,6 +189,7 @@ func _payment_history_preserves_draft(resource_name: String, revision: String) -
 	var history := main.find_child("ToggleHistory", true, false) as Button
 	if history == null or not await _pointer_activate(history): return false
 	await process_frame
+	if not _payment_undo_is_explained(): return false
 	var source := _payment_button(resource_name)
 	var submit := _payment_button("Submit")
 	if source == null or not source.button_pressed or submit == null 			or not _control_is_fully_visible(submit) 			or (_node("Toolbar/SyncStatus") as Label).text != revision:
@@ -197,6 +198,16 @@ func _payment_history_preserves_draft(resource_name: String, revision: String) -
 	history = main.find_child("ToggleHistory", true, false) as Button
 	if history == null or history.text != "Collapse history" or not await _pointer_activate(history):
 		_fail("history could not close while retaining the payment")
+		return false
+	return true
+
+
+func _payment_undo_is_explained() -> bool:
+	var undo := main.find_child("UndoLast", true, false) as Button
+	var reason := main.find_child("UndoReason", true, false) as Label
+	if undo == null or not undo.disabled or reason == null \
+			or not _control_is_fully_visible(reason) or "payment selection" not in reason.text:
+		_fail("the unpaid draft did not visibly explain its temporary undo restriction")
 		return false
 	return true
 

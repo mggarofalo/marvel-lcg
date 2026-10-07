@@ -103,23 +103,7 @@ internal sealed class SpatialTablePileRenderer(
             ThemeTypeVariation = GodotThemeVariations.ChoiceButton,
         };
         drawer.AddThemeFontSizeOverride("font_size", 14);
-        var choices = new List<(TabletopAreaObject Pile, int Index)>();
-        PopupMenu menu = drawer.GetPopup();
-        foreach (BoardAreaPresentation area in areas)
-        {
-            TabletopAreaObject pile = TabletopAreaObject.From(area with { Removed = [] });
-            for (int index = 0; index < pile.InspectionOrder.Count; index++)
-            {
-                menu.AddItem($"{index + 1} · {CardStatePresentation.Summary(pile.InspectionOrder[index])}", choices.Count);
-                choices.Add((pile, index));
-            }
-        }
-        menu.IdPressed += id =>
-        {
-            if (result.IsCurrent?.Invoke() != true) return;
-            var choice = choices[(int)id];
-            TabletopPileInspector.Show(drawer, choice.Pile, result, scale, art, choice.Index);
-        };
+        TabletopInspectionMenu.Bind(drawer, areas, result, scale, art);
         if (host is null) surface.AddChild(drawer);
         else
         {

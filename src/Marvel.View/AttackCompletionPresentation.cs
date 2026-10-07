@@ -12,7 +12,7 @@ internal static class AttackCompletionPresentation
             ? $"{Card(completed.Defender, world, completed)} defended."
             : "The attack was undefended.")
         + (completed.DamageDealt is { } damage
-            ? $" The attack dealt {damage.ToString(System.Globalization.CultureInfo.InvariantCulture)} damage."
+            ? $" Attack damage before prevention: {damage.ToString(System.Globalization.CultureInfo.InvariantCulture)}."
             : "");
 
     internal static int[] Anchors(AttackCompleted completed) =>

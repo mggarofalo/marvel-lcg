@@ -313,5 +313,5 @@ wait_for_container_log "$prefix-downgraded" 'unsupported_downgrade'
 stop_server "$prefix-downgraded"
 
 docker run --rm --entrypoint dotnet "$current_image" Marvel.Server.dll --version |
-  grep -F "v$current_version · engine engine-replay-v7 · protocol 21 · save 5"
+  grep -F "v$current_version · engine engine-replay-v7 · protocol 22 · save 5"
 echo 'SERVER_COMMUNITY_UPGRADE_SMOKE_OK'
