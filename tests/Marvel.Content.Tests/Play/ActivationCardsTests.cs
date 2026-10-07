@@ -241,6 +241,8 @@ public sealed class ActivationCardsTests
             Decision decision = Decision.Decline;
             if (prompt.Asking == Marvel.Rules.Prompts.Question.Defender)
             {
+                Assert.Equal(1, prompt.Description!.Split("ATK ", StringSplitOptions.None).Length - 1);
+                Assert.Contains("before boost icons and defense", prompt.Description);
                 var ownDefense = Assert.Single(prompt.Affordances,
                     offer => offer.AnchorId == world.Seats[0].IdentityCard.ObjectId);
                 decision = Decision.Take(ownDefense.Id);

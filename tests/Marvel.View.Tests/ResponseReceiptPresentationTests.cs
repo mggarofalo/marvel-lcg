@@ -74,7 +74,7 @@ public sealed class ResponseReceiptPresentationTests : EventPresentationTestBase
         ];
         IReadOnlyList<EventPresentation> receipt = ResponseReceiptPresenter.Present(events, world,
             EventCuePlanner.Plan(events, world, Outcome.Unfinished));
-        Assert.Contains(receipt, item => item.Summary.Contains("0 damage", StringComparison.Ordinal));
+        Assert.Contains(receipt, item => item.Summary.Contains("Attack damage before prevention: 0", StringComparison.Ordinal));
         Assert.Contains(receipt, item => item.Motion == EventMotionKind.HandGain
             && item.Summary.Contains("Swinging Web Kick", StringComparison.Ordinal));
     }

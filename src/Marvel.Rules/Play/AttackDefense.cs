@@ -84,7 +84,7 @@ internal static class AttackDefense
                 ? "Declare your defender"
                 : $"Defend {EffectiveCards.Title(world.Cards[attack.Target], facts)}?",
             DeclineLabel = DeclineLabel(attack, opportunity),
-            Description = Description(world, facts, attack, opportunity, attackValue),
+            Description = DefensePromptDescription.Describe(world, facts, attack, opportunity, attackValue),
         };
     }
 
@@ -96,29 +96,6 @@ internal static class AttackDefense
             ? "Leave attack undefended"
             : "Pass; leave attack undefended";
     }
-
-    private static string Description(
-        World world, ICardFacts facts, EnemyAttack attack, DefenseOpportunity opportunity, long attackValue)
-    {
-        var enemy = world.Cards[attack.Enemy];
-        var choice = opportunity.Choice;
-        return $"{EffectiveCards.Title(enemy, facts)} is attacking "
-                + $"{EffectiveCards.Title(world.Cards[attack.Target], facts)}. "
-                + $"ATK {attackValue} {AttackBoostDescription.Before(world, facts, enemy, Steps.DeclareDefender)}. "
-                + (attack.IsDefended
-                    ? $"{EffectiveCards.Title(world.Cards[attack.Defender], facts)} is already defending. "
-                        + (choice.Required ? "Use basic defense." : "Use basic defense or keep the current defense.")
-                    : choice.Required ? "Choose a ready hero or ally to defend."
-                    : opportunity.Player != attack.Player
-                        ? HelperDescription(opportunity)
-                        : "Choose a ready hero or ally to defend, or leave the attack undefended.");
-    }
-
-    private static string HelperDescription(DefenseOpportunity opportunity)
-        => "Choose one of your ready heroes or allies to defend, or pass your defense opportunity. "
-            + (opportunity.HasLaterPlayer
-                ? "Passing offers the next eligible player a defense opportunity."
-                : "No other player can use basic defense. Passing leaves this attack undefended.");
 
     // rr:defend-defense.2: "A hero must exhaust to use this power" and damage is reduced by DEF.
     // rr:defend-defense.3: "An ally can exhaust to defend"; attack damage is dealt to that ally.

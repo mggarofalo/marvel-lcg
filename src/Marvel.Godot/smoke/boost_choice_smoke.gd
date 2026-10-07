@@ -81,9 +81,10 @@ func _boost_option(title: String) -> Button:
 	return null
 
 
-func _reach_android_boost() -> bool:
+func _end_first_player_turn() -> bool:
 	if not await _select_attached_action(1, "Change Form"): return false
 	if not await _commit_once("Change Form"): return false
+	if not await _turn_end_starts_visible(): return false
 	if not await _pointer_activate(_button_named("End turn")): return false
 	if not await _wait_for(func() -> bool: return _button_named("Keep hand") != null):
 		_fail("ending the turn did not open hand discards")
@@ -92,6 +93,12 @@ func _reach_android_boost() -> bool:
 	if not await _wait_for(func() -> bool: return _button_named("Leave attack undefended") != null):
 		_fail("the seeded attack did not offer an undefended choice")
 		return false
+	return true
+
+
+func _reach_android_boost() -> bool:
+	if not await _end_first_player_turn(): return false
+	if not await _selected_defense_fits(): return false
 	if not await _pointer_activate(_button_named("Leave attack undefended")): return false
 	if not await _wait_for(func() -> bool: return _button_named("Engage 1 Drone") != null):
 		_fail("the Android Efficiency boost did not offer its consequence")
@@ -149,3 +156,26 @@ func _discard_seeded_resources() -> bool:
 			return false
 	if not await _commit_once("Discard two cards"): return false
 	return true
+
+
+func _selected_defense_fits() -> bool:
+	if not await _select_attached_action(1, "Defense"): return false
+	await process_frame
+	await process_frame
+	if not _cause_and_draft_fit(): return false
+	var summary := main.find_child("DraftProgress", true, false) as Label
+	if summary == null or "Exhaust Black Panther" not in summary.text \
+			or "DEF 2" not in summary.text or "unresolved" not in summary.text:
+		_fail("selected defense lost exhaustion, defense value or boost uncertainty")
+		return false
+	return await _pointer_activate(_button_named("Cancel draft"))
+
+
+func _turn_end_starts_visible() -> bool:
+	var end_turn := _button_named("End turn")
+	await process_frame
+	await process_frame
+	if end_turn == null or not _control_is_fully_visible(end_turn):
+		_fail("End turn must be visible without paging when the turn resumes")
+		return false
+	return _cause_and_draft_fit()

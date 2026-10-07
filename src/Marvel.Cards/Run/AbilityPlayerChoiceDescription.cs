@@ -14,28 +14,37 @@ internal static class AbilityPlayerChoiceDescription
     internal static string? Selection(AbilityEffect.ChooseCard choice) =>
         DrawCount(choice) is { } count ? $"choose a player to draw {Cards(count)}"
         : Discount(choice) is { } amount
-            ? $"choose a player whose next card this phase costs {amount} fewer resources" : null;
+            ? $"choose a player whose next card this phase costs {amount} fewer resources"
+            : AbilityPlayerDamageDescription.Selection(choice);
 
     internal static string? Commitment(
         AbilityStructuralContext context, AbilityEffect.ChooseCard choice, Card candidate)
     {
+        if (AbilityPlayerDamageDescription.Commitment(context, choice, candidate) is { } damage)
+            return damage;
         if (Selection(choice) is null) return null;
-        var expressions = context.Admission().WithSelection(candidate).Expressions;
-        var evaluation = new AbilityExpressionEvaluation(expressions,
-            new AbilitySelectorEvaluation(expressions.Bindings));
-        int recipient = evaluation.Seat(AbilityPlayer.ChosenPlayer);
-        string player = expressions.World.Seats[recipient].Name;
+        string player = Recipient(context, candidate);
         return DrawCount(choice) is { } count ? $"{player} draws {Cards(count)}"
             : $"{player}: next card −{Discount(choice)}";
     }
 
     internal static string? Description(
         AbilityStructuralContext context, AbilityEffect.ChooseCard choice, Card candidate) =>
-        Commitment(context, choice, candidate) is { } commitment
+        AbilityPlayerDamageDescription.Description(context, choice, candidate)
+        ?? (Commitment(context, choice, candidate) is { } commitment
             ? DrawCount(choice) is not null
                 ? $"{commitment}. The drawn card's identity is not known before the draw."
                 : $"{commitment} resource cost this phase. Applies once, when that player plays their next card."
-            : null;
+            : null);
+
+    internal static string Recipient(AbilityStructuralContext context, Card candidate)
+    {
+        var expressions = context.Admission().WithSelection(candidate).Expressions;
+        var evaluation = new AbilityExpressionEvaluation(expressions,
+            new AbilitySelectorEvaluation(expressions.Bindings));
+        int recipient = evaluation.Seat(AbilityPlayer.ChosenPlayer);
+        return expressions.World.Seats[recipient].Name;
+    }
 
     private static long? Discount(AbilityEffect.ChooseCard choice) => choice is
         { From: AbilityCardSelection.Query { Kind: AbilityCardQuery.Identities },

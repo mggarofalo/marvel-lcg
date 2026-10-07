@@ -21,6 +21,14 @@ public sealed class ContextualFallbackTests
     }
 
     [Fact]
+    public void OptionalResponsesRemainBesidePassEvenWithAnInstalledSourceControl()
+    {
+        var prompt = new PromptPresentation("", "", "", "", "", [Offer(3, 55)]);
+        Assert.Equal(3, Assert.Single(BoardContextualInteractionControls.FallbackActions(prompt,
+            new HashSet<int> { 55 }, PublicDecisionKind.Response)).Id);
+    }
+
+    [Fact]
     public void EveryLegalOfferWithoutAnInstalledCardControlGetsAPrimaryEntry()
     {
         // Synthetic two-option choice: both source anchors are in overflow.
