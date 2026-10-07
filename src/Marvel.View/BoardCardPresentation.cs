@@ -49,6 +49,9 @@ public sealed record BoardCardPresentation(
     /// <summary>Printed rules text with display-only emphasis and symbol tokens.</summary>
     public string RulesMarkup { get; init; } = string.Empty;
 
+    /// <summary>The authoritative current retaliation value while in play, or null when inapplicable.</summary>
+    public long? Retaliate { get; init; }
+
     /// <summary>Damage currently on the card.</summary>
     public long Damage { get; init; }
 

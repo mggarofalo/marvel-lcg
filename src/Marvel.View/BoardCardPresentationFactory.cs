@@ -45,7 +45,7 @@ internal static class BoardCardPresentationFactory
             { Back = card.Back.ToString().ToUpperInvariant(), StageRole = StageRole(zone) };
         }
         bool inPlay = IsInPlay(zone);
-        return new BoardCardPresentation(card.Id, 1, false, card.Face.Title, card.Face.Subtitle,
+        BoardCardPresentation result = new(card.Id, 1, false, card.Face.Title, card.Face.Subtitle,
             Humanize(card.Face.Kind.ToString(), false).ToUpperInvariant(), Status(card, zone, card.Face.Kind),
             VisibleFields(card, inPlay).ToArray())
         {
@@ -56,12 +56,8 @@ internal static class BoardCardPresentationFactory
             PrintedMarks = BoardPrintedValueMarks.From(card.Face.Kind, card.Face.PrintedStats),
             Classification = card.Face.PrintedStats.GetValueOrDefault("Class", string.Empty),
             Keywords = card.Face.Keywords, RulesText = card.Face.RulesText, RulesMarkup = card.Face.RulesMarkup,
-            Damage = card.Face.Damage,
-            Statuses = card.State?.Statuses ?? [],
-            Counters = card.Face.Counters.OrderBy(counter => counter.Key, StringComparer.Ordinal)
-                .Select(counter => new BoardFieldPresentation(Humanize(counter.Key, false).ToUpperInvariant(),
-                    counter.Value.ToString(CultureInfo.InvariantCulture))).ToArray(),
         };
+        return BoardCardLiveValues.Apply(result, card, inPlay);
     }
 
     private static IEnumerable<BoardFieldPresentation> VisibleFields(
