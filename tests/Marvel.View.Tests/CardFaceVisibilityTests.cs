@@ -53,6 +53,8 @@ public sealed class CardFaceVisibilityTests
             Assert.Equal("1", face.PrintedStats["ATK"]);
             Assert.Equal("1", face.PrintedStats["HP"]);
             Assert.DoesNotContain("Unique", face.PrintedStats.Keys);
+            Assert.Equal(new CardPrintedValue("1", false, false, 0), face.PrintedValues["ATK"]);
+            Assert.Equal(["ATK", "HP", "SCH"], face.PrintedValues.Keys.Order().ToArray());
             Assert.Null(face.ArtFaceId);
             Assert.Empty(face.RulesText);
         });

@@ -29,6 +29,10 @@ public sealed record CardFaceDescriptor(
     public IReadOnlyDictionary<string, string> PrintedStats { get; init; } =
         new Dictionary<string, string>(StringComparer.Ordinal);
 
+    /// <summary>Source-supported printed symbols and marks, without evaluating live values.</summary>
+    public IReadOnlyDictionary<string, CardPrintedValue> PrintedValues { get; init; } =
+        new Dictionary<string, CardPrintedValue>();
+
     /// <summary>The printed keyword labels, in catalog order.</summary>
     public IReadOnlyList<string> Keywords { get; init; } = [];
 

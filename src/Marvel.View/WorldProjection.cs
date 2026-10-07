@@ -125,6 +125,9 @@ public static class WorldProjection
             Traits = DisplayTraits(world, card),
             Cost = attributes.TryGetValue("Cost", out string? cost) ? cost : null,
             PrintedStats = PrintedStats(attributes),
+            PrintedValues = CardPrintedValues.From(assigned
+                ? PrintedStatFacts.From(kind, attributes)
+                : world.Facts.PrintedStats(card.FaceId)),
             Keywords = assigned ? [] : [.. world.Facts.Keywords(card.FaceId)],
             RulesText = assigned ? string.Empty : world.Facts.Text(card.FaceId),
             RulesMarkup = assigned ? string.Empty : world.Facts.FormattedText(card.FaceId),

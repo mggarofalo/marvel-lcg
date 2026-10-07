@@ -1,4 +1,3 @@
-using Marvel.Rules.State;
 using Marvel.View;
 using Xunit;
 
@@ -13,7 +12,11 @@ public sealed class PrintedCardFactsTests
         BoardCardPresentation card = Card("ALLY", printed) with
         {
             Fields = [new("ATTACK", "4"), new("THWART", "0")],
-            PrintedMarks = BoardPrintedValueMarks.From(CardKind.Ally, printed),
+            PrintedMarks = BoardPrintedValueMarks.From(new Dictionary<string, CardPrintedValue>
+            {
+                ["ATK"] = new("2", false, false, 1),
+                ["THW"] = new("1", false, false, 2),
+            }),
         };
 
         CardStatValue attack = Assert.Single(CardStatValues.From(card), value => value.Name == "ATK");
@@ -31,7 +34,12 @@ public sealed class PrintedCardFactsTests
         Dictionary<string, string> printed = new() { ["EscalationThreat"] = "1*", ["StartingThreat"] = "0", ["HS"] = "6" };
         BoardCardPresentation card = Card("MAIN SCHEME", printed) with
         {
-            PrintedMarks = BoardPrintedValueMarks.From(CardKind.MainScheme, printed),
+            PrintedMarks = BoardPrintedValueMarks.From(new Dictionary<string, CardPrintedValue>
+            {
+                ["EscalationThreat"] = new("1", false, true, 0),
+                ["StartingThreat"] = new("0", false, false, 0),
+                ["HS"] = new("6", false, false, 0),
+            }),
         };
         CardStatValue baseline = Assert.Single(CardStatValues.From(card), value => value.Name == "EscalationThreat");
         Assert.True(baseline.PerPlayer);

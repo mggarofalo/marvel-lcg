@@ -67,7 +67,7 @@ than repeating a title-and-product inference.
 
 Two places on the card, so two readers.
 
-**The stat box** is structured data upstream. `Printed` maps it, and three
+**The stat box** is structured data upstream. `PrintedNumbers` maps it, and three
 things in that mapping are worth knowing:
 
 - **A character's box, an attachment's modifiers.** `rr:attachment.1` makes an
@@ -92,6 +92,38 @@ keyword. A bare substring search gives it one.
 A colon, a lower-case first letter, or a name longer than three words ends the
 keyword run. Reminder text neither counts nor ends it — `rr:reminder-text`,
 "reminder text has no effect on gameplay".
+
+## Printed symbols and markers
+
+`stat_annotations` preserves source facts the numeric engine attributes cannot
+express. It is generated offline from structured MarvelSDB fields, without
+interpreting rules text. For example, Wonder Man's `attack_star: true` becomes
+`"stat_annotations": { "ATK": { "special_star": true } }`, independently of
+his `ATK: "3*"` consequential-damage notation. Charge uses `ATK+` because its
+printed value modifies its host. Iron Man has no hand-size annotation: a
+conditional hand-size ability does not imply a printed star.
+
+For character stats, a source value of `-1` prints `X`; a present null field
+prints a dash, or a star when its corresponding `*_star` flag is true. Missing
+source fields stay absent unless an explicit `*_star` flag identifies a
+star-valued field. A boost-star-only field retains zero numeric boost icons. The annotation's `value` preserves `X`, `—`, or `★`
+without replacing the numeric attributes consumed by the engine. Hulk's THW
+dash and Titania's ATK X therefore remain distinct from zero and absent stats.
+A source `cost_star` is a special reminder, so its annotation explicitly sets
+`per_player: false` to disambiguate the raw attribute suffix.
+
+`CardCatalog.PrintedStats` merges these facts with the typed per-player and
+consequential-damage meanings of the attributes. `Marvel.View` copies that
+canonical result into its visibility-filtered face contract; a renderer does
+not parse punctuation or infer a printed star from a live-value change. Boost
+stars remain independent of numeric boost-icon counts. Research-only expansion
+metadata does not admit those cards into executable content.
+
+Annotations change the card dataset's byte fingerprint, as any dataset edit
+does. They do not alter existing engine attributes, RNG, or state-digest fields.
+Core face records also supply behavioral-authority fingerprints: review affected
+entries in `specs/behavior/adjudications.json`, then regenerate and check
+`Marvel.Behavior.Index` when adding or correcting their annotations.
 
 ## The supplement
 

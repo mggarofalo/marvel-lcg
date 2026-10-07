@@ -1,15 +1,15 @@
-using Marvel.Rules.State;
-
 namespace Marvel.View;
 
-/// <summary>Describes authorized print annotations through the dataset notation owner.</summary>
+/// <summary>Copies canonical printed facts without interpreting rendered text.</summary>
 public static class BoardPrintedValueMarks
 {
-    /// <summary>Projects marks without evaluating quantities or consulting game state.</summary>
+    /// <summary>Projects authorized printed values without consulting gameplay state.</summary>
     public static IReadOnlyList<BoardPrintedValueMark> From(
-        CardKind kind, IReadOnlyDictionary<string, string> printed) =>
-        [.. printed.Where(value => value.Value.Contains('*')).Select(value =>
-            new BoardPrintedValueMark(value.Key,
-                PrintedAttributeNotation.IsPerPlayer(kind, value.Key, value.Value),
-                PrintedAttributeNotation.ConsequentialDamage(kind, value.Key, value.Value)))];
+        IReadOnlyDictionary<string, CardPrintedValue> printed) =>
+        [.. printed.Select(value => new BoardPrintedValueMark(
+            value.Key, value.Value.PerPlayer, value.Value.ConsequentialDamage)
+        {
+            Value = value.Value.Value,
+            SpecialStar = value.Value.SpecialStar,
+        })];
 }

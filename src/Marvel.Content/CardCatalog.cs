@@ -22,9 +22,9 @@ namespace Marvel.Content;
 /// </remarks>
 public sealed class CardCatalog : ICardFacts
 {
-    private readonly IReadOnlyDictionary<string, CardCatalogJson.CardCatalogEntry> cards;
+    private readonly IReadOnlyDictionary<string, CardCatalogEntry> cards;
 
-    private CardCatalog(IReadOnlyDictionary<string, CardCatalogJson.CardCatalogEntry> cards) => this.cards = cards;
+    private CardCatalog(IReadOnlyDictionary<string, CardCatalogEntry> cards) => this.cards = cards;
 
     /// <summary>How many cards the catalog holds.</summary>
     public int Count => cards.Count;
@@ -43,7 +43,7 @@ public sealed class CardCatalog : ICardFacts
             throw new JsonException("the card dataset has no 'cards' array");
         }
 
-        var parsed = new Dictionary<string, CardCatalogJson.CardCatalogEntry>(StringComparer.Ordinal);
+        var parsed = new Dictionary<string, CardCatalogEntry>(StringComparer.Ordinal);
         foreach (var element in array.EnumerateArray())
         {
             string id = element.GetProperty("card_id").GetString()
@@ -84,6 +84,10 @@ public sealed class CardCatalog : ICardFacts
 
     /// <inheritdoc />
     public CardKind Kind(string faceId) => Find(faceId).Kind;
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, PrintedStatValue> PrintedStats(string faceId) =>
+        Find(faceId).PrintedStats;
 
     /// <inheritdoc />
     public string EncounterSet(string faceId) => Find(faceId).Set;
@@ -297,7 +301,7 @@ public sealed class CardCatalog : ICardFacts
     public static long Evaluate(string printed, int players, long fallback = 0) =>
         PrintedAttributeNotation.Evaluate(printed, players, fallback);
 
-    private CardCatalogJson.CardCatalogEntry Find(string faceId)
+    private CardCatalogEntry Find(string faceId)
     {
         ArgumentNullException.ThrowIfNull(faceId);
         return cards.TryGetValue(faceId, out var entry)

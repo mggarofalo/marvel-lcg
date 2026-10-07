@@ -62,6 +62,10 @@ public interface ICardFacts
     /// <param name="faceId">A printed card id.</param>
     IReadOnlyDictionary<string, string> Attributes(string faceId);
 
+    /// <summary>Printed numerals, symbols and marks, independent of evaluated game values.</summary>
+    IReadOnlyDictionary<string, PrintedStatValue> PrintedStats(string faceId) =>
+        PrintedStatFacts.From(Kind(faceId), Attributes(faceId));
+
     /// <summary>The lower-case names of counter types printed by this face.</summary>
     /// <remarks>
     /// Counter types are open-ended card data: Energy Channel names energy

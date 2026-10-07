@@ -11,8 +11,8 @@ public static class CardCatalogJson
     {
         var traits = new List<string>();
         var printedTraitLabels = new List<string>();
-        ReadTraits(element, traits, printedTraitLabels);
-        Dictionary<string, string> attributes = ReadAttributes(element);
+        CardCatalogAttributes.ReadTraits(element, traits, printedTraitLabels);
+        Dictionary<string, string> attributes = CardCatalogAttributes.ReadAttributes(element);
         CardKind kind = ReadKind(element);
         string set = ReadString(element, "set");
         IReadOnlyList<string> linkedTo = ReadStrings(element, "linked_to");
@@ -35,40 +35,10 @@ public static class CardCatalogJson
         return new CardCatalogEntry(
             kind, set, linkedTo, traits, printedTraitLabels, attributes, title, subtitle, printed,
             formatted, KeywordsOf(attributes),
-            CounterTypesOf(printed, attributes), CounterMaximumsOf(printed));
-    }
-
-    private static void ReadTraits(
-        JsonElement element, List<string> traits, List<string> labels)
-    {
-        if (!element.TryGetProperty("traits", out JsonElement values)
-            || values.ValueKind != JsonValueKind.Array)
+            CounterTypesOf(printed, attributes), CounterMaximumsOf(printed))
         {
-            return;
-        }
-        foreach (JsonElement value in values.EnumerateArray())
-        {
-            if (value.GetString() is { Length: > 0 } text)
-            {
-                labels.Add(text);
-                traits.Add(CardCatalog.TraitKey(text));
-            }
-        }
-    }
-
-    private static Dictionary<string, string> ReadAttributes(JsonElement element)
-    {
-        var result = new Dictionary<string, string>(StringComparer.Ordinal);
-        if (!element.TryGetProperty("attributes", out JsonElement values)
-            || values.ValueKind != JsonValueKind.Object)
-        {
-            return result;
-        }
-        foreach (JsonProperty attribute in values.EnumerateObject())
-        {
-            result[attribute.Name] = attribute.Value.GetString() ?? string.Empty;
-        }
-        return result;
+            PrintedStats = CardCatalogPrintedStats.Read(element, kind, attributes),
+        };
     }
 
     private static CardKind ReadKind(JsonElement element) =>
@@ -316,18 +286,4 @@ public static class CardCatalogJson
         _ => CardKind.Unknown,
     };
 
-    internal sealed record CardCatalogEntry(
-        CardKind Kind,
-        string Set,
-        IReadOnlyList<string> LinkedTo,
-        IReadOnlyList<string> Traits,
-        IReadOnlyList<string> PrintedTraits,
-        IReadOnlyDictionary<string, string> Attributes,
-        string Title,
-        string Subtitle,
-        string Text,
-        string FormattedText,
-        IReadOnlyList<string> Keywords,
-        IReadOnlyList<string> CounterTypes,
-        IReadOnlyDictionary<string, long> CounterMaximums);
 }

@@ -75,6 +75,8 @@ internal static class Cards
 
                 writer.WriteEndObject();
 
+                StatAnnotations.Write(writer, card.StatAnnotations);
+
                 if (card.LinkedTo.Count > 0)
                 {
                     writer.WriteStartArray("linked_to"u8);
@@ -142,7 +144,10 @@ internal static class Cards
             facts.TryGetProperty("type", out var kind) ? kind.GetString() ?? "" : "",
             StringList(facts, "traits"), Attributes(facts),
             StringList(facts, "linked_to"), Field(element, "text"),
-            Field(element, "pack"), Field(element, "set"));
+            Field(element, "pack"), Field(element, "set"))
+        {
+            StatAnnotations = StatAnnotations.Read(facts),
+        };
     }
 
     private static SortedDictionary<string, string> Attributes(JsonElement facts)
@@ -201,6 +206,8 @@ internal static class Cards
                     $"{id} [{string.Join(' ', old.LinkedTo)}] -> [{string.Join(' ', built.LinkedTo)}]");
             }
 
+            ReportAnnotations(old, built, Note);
+
             foreach (string key in old.Attributes.Keys
                 .Concat(built.Attributes.Keys)
                 .Distinct(StringComparer.Ordinal)
@@ -229,6 +236,17 @@ internal static class Cards
 
         Console.Error.WriteLine($"{lines.Count,6}  differences in total");
         return 0;
+    }
+
+    private static void ReportAnnotations(Card before, Card after, Action<string, string> note)
+    {
+        foreach (string key in before.StatAnnotations.Keys.Concat(after.StatAnnotations.Keys)
+            .Distinct(StringComparer.Ordinal).OrderBy(key => key, StringComparer.Ordinal))
+        {
+            before.StatAnnotations.TryGetValue(key, out StatAnnotation? old);
+            after.StatAnnotations.TryGetValue(key, out StatAnnotation? built);
+            if (old != built) note($"stat {key}", $"{before.Id} {old} -> {built}");
+        }
     }
 
     private static string Field(JsonElement element, string name) =>
