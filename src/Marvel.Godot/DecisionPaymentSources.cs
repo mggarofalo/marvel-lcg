@@ -34,15 +34,17 @@ internal sealed class DecisionPaymentSources
         foreach (PaymentSourcePresentation source in sources)
         {
             bool selected = composer.Resources.Contains(source.Id);
+            bool available = DecisionResourceEligibility.CanToggle(composer, source.Id);
             string verb = source.DiscardsCard ? "Discard" : "Use";
             var button = new Button
             {
                 Name = $"Resource{source.Id}",
-                Text = $"{(selected ? "✓ " : "")}{verb} {source.Name}",
+                Text = $"{(selected ? "✓ " : "")}{verb} {source.Name}"
+                    + (available ? "" : " · Does not pay this cost"),
                 Alignment = HorizontalAlignment.Left,
                 ToggleMode = true,
                 ButtonPressed = selected,
-                Disabled = panel.submitting,
+                Disabled = panel.submitting || !available,
                 TooltipText = selected ? "Remove this source from the payment." : "Add this source to the payment.",
             };
             ResourceIconRendering.Apply(button, source.Resources);

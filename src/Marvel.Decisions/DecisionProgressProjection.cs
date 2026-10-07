@@ -63,7 +63,10 @@ internal static class DecisionProgressProjection
             composer.Assignments.Count,
             composer.Values.Count,
             requested.Length,
-            paymentSatisfied);
+            paymentSatisfied)
+        {
+            CanCoverCost = ResourcePayment.Allocate(cost, composer.Resources, composer.Values) is not null,
+        };
     }
 
     private static PaymentProgress Empty(

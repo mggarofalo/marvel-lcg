@@ -50,6 +50,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.Decisions.DecisionProgressPresentation",
             "Marvel.Decisions.EngineDecision",
             "Marvel.Decisions.PaymentProgress",
+            // Guided source selection delegates slot matching to the engine.
+            "Marvel.Decisions.DecisionResourceEligibility",
             "Marvel.Decisions.ResourceIconAssignment",
             "Marvel.Decisions.TableDraftOperations",
             "Marvel.Decisions.TargetSelectionMode",

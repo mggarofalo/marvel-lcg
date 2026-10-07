@@ -122,7 +122,8 @@ public sealed class TableDraftOperations
         if (!HasLegalSelection()
             || cost is null
             || !composer.CostApplies(cost)
-            || !cost.Generators.Any(generator => generator.Effect == effect))
+            || !cost.Generators.Any(generator => generator.Effect == effect)
+            || !DecisionResourceEligibility.CanToggle(composer, effect))
         {
             return false;
         }

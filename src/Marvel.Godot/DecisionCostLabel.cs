@@ -9,12 +9,9 @@ internal static class DecisionCostLabel
 {
     internal static HBoxContainer Create(CostOption cost, WorldDescriptor world, string prefix = "", bool showTarget = true)
     {
-        HBoxContainer row = ResourceIconRendering.Row($"{prefix}Pay {cost.Cost}",
-            string.Concat(cost.Rule ?? []), GodotThemeVariations.Body);
+        var row = new HBoxContainer();
         row.Name = "PaymentCost";
-        if (cost.HasAlternative)
-            row.AddChild(ResourceIconRendering.Row($"OR {cost.OrCost}",
-                string.Concat(cost.OrRule ?? []), GodotThemeVariations.Body));
+        row.AddChild(Requirements(cost, prefix));
         if (showTarget && cost.Target != 0)
         {
             Label target = DecisionPanel.Text($"· {PromptPresentation.Describe(cost.Target, world)}",
@@ -23,6 +20,18 @@ internal static class DecisionCostLabel
             row.AddChild(target);
         }
         return row;
+    }
+
+    internal static VBoxContainer Requirements(CostOption cost, string prefix = "")
+    {
+        var rows = new VBoxContainer { Name = "PaymentRequirements" };
+        foreach (ResourceCost component in cost.ResourceCosts)
+            rows.AddChild(ResourceIconRendering.Row($"{prefix}Pay {component.Cost}",
+                string.Concat(component.Rule ?? []), GodotThemeVariations.Body));
+        if (cost.Components is null && cost.HasAlternative)
+            rows.AddChild(ResourceIconRendering.Row($"OR {cost.OrCost}",
+                string.Concat(cost.OrRule ?? []), GodotThemeVariations.Body));
+        return rows;
     }
     internal static string Accessible(CostOption cost) =>
         $"Pay {cost.Cost} {CardRulesMarkup.ResourceNames(string.Concat(cost.Rule ?? []))}"

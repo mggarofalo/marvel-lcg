@@ -47,7 +47,9 @@ internal static class BoardInteractionCueProjection
         if (composer.SelectedCost >= 0 && composer.SelectedCost < selected.CostOptions.Count)
         {
             Add(cues, selected.CostOptions[composer.SelectedCost].Generators
-                .Select(source => source.Effect), CardInteractionCue.LegalGenerator);
+                .Select(source => source.Effect)
+                .Where(effect => DecisionResourceEligibility.CanToggle(composer, effect)),
+                CardInteractionCue.LegalGenerator);
         }
         Add(cues, composer.Resources, CardInteractionCue.SelectedGenerator);
     }

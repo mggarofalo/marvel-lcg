@@ -54,7 +54,7 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
         {
             AddDraft(composer);
         }
-        if (composer.Prompt.Cancellable)
+        if (composer.Selected is null && composer.Prompt.Cancellable)
             Add("ContextualDecline", prompt.DeclineLabel, () => decline?.Invoke(), prompt.DeclineLabel);
     }
 
@@ -108,7 +108,12 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
 
     private void AddCostChoices(DecisionComposer composer)
     {
-        if (composer.Selected is not { CostOptions.Count: > 1 } selected) return;
+        if (composer.Selected is not { CostOptions.Count: > 0 } selected) return;
+        if (selected.CostOptions.Count == 1)
+        {
+            host!.AddChild(DecisionCostLabel.Requirements(selected.CostOptions[0]));
+            return;
+        }
         for (int index = 0; index < selected.CostOptions.Count; index++)
         {
             int option = index;

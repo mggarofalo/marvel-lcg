@@ -49,7 +49,6 @@ internal sealed class DecisionPaymentRenderer
         else AddGenerators(selectedCost);
         new DecisionPaymentResourceAssignmentRenderer(
             panel, composer, world, submitting, generation).Add(selectedCost);
-        AddComponents(selectedCost);
         AddPaymentProgress();
     }
     private void AddCostOptions(Affordance selected)
@@ -148,17 +147,19 @@ internal sealed class DecisionPaymentRenderer
     {
         foreach (ResourceSource source in cost.Generators)
         {
+            bool available = DecisionResourceEligibility.CanToggle(composer, source.Effect);
             var choose = new Button
             {
                 Name = $"Resource{source.Effect}",
                 Text = (composer.Resources.Contains(source.Effect)
                         ? "✓ "
                         : "")
-                    + $"{PromptPresentation.Describe(source.Effect, world!)}",
+                    + $"{PromptPresentation.Describe(source.Effect, world!)}"
+                    + (available ? "" : " · Does not pay this cost"),
                 Alignment = HorizontalAlignment.Left,
                 ToggleMode = true,
                 ButtonPressed = composer.Resources.Contains(source.Effect),
-                Disabled = submitting,
+                Disabled = submitting || !available,
             };
             ResourceIconRendering.Apply(choose, source.Generates);
             panel.StyleButton(
@@ -174,14 +175,6 @@ internal sealed class DecisionPaymentRenderer
             panel.AddContent(choose);
         }
     }
-    private void AddComponents(CostOption cost)
-    {
-        if (cost.ResourceCosts.Count <= 1) return;
-        foreach (ResourceCost component in cost.ResourceCosts)
-            panel.AddContent(ResourceIconRendering.Row($"Pay {component.Cost}",
-                string.Concat(component.Rule ?? []), GodotThemeVariations.Caption));
-    }
-
     private void AddPaymentProgress()
     {
         PaymentProgress progress = composer.Progress().Payment;

@@ -89,6 +89,36 @@ public sealed class TableDraftOperationsTests : DecisionComposerTestBase
         Assert.Equal([41], composer.Resources);
     }
 
+    [Fact]
+    public void TypedPaymentGuidesMatchingSourcesAndStillAllowsExplicitExcess()
+    {
+        var cost = new CostOption(0, "1", Rule: ["R"], Sources:
+            [new ResourceSource(41, "B"), new ResourceSource(42, "R"), new ResourceSource(43, "G")]);
+        var composer = new DecisionComposer(Prompt(false,
+            new Affordance(14, "Use", 101, 0, "Typed cost", Costs: [cost])));
+        var operations = new TableDraftOperations(composer);
+        Assert.True(operations.TrySelectAffordance(14));
+        Assert.False(DecisionResourceEligibility.Contributes(composer, 41));
+        Assert.True(DecisionResourceEligibility.Contributes(composer, 42));
+        Assert.True(DecisionResourceEligibility.Contributes(composer, 43));
+        Assert.False(operations.TryToggleGenerator(41));
+        Assert.Empty(composer.Resources);
+        Assert.False(composer.TryBuild(out _, out _));
+
+        Assert.True(operations.TryToggleGenerator(42));
+        Assert.True(composer.TryBuild(out _, out _));
+        Assert.True(operations.TryToggleGenerator(41));
+        Assert.True(composer.TryBuild(out _, out _));
+        Assert.Equal(1, composer.Progress().Payment.ExcessIcons);
+
+        Assert.True(operations.TryToggleGenerator(42));
+        Assert.False(composer.TryBuild(out _, out _));
+        Assert.True(operations.TryToggleGenerator(41));
+        Assert.Empty(composer.Resources);
+        Assert.True(operations.TryToggleGenerator(43));
+        Assert.True(composer.TryBuild(out _, out _));
+    }
+
     private static (TableDraftOperations Operations, DecisionComposer Composer) Operations(TargetRequest request)
     {
         var composer = new DecisionComposer(Prompt(false,

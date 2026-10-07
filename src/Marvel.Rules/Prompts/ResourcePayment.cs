@@ -1,4 +1,5 @@
 using Marvel.Rules.Play;
+using static Marvel.Rules.Prompts.ResourcePaymentRequirements;
 
 namespace Marvel.Rules.Prompts;
 
@@ -11,6 +12,31 @@ namespace Marvel.Rules.Prompts;
 /// </remarks>
 public static class ResourcePayment
 {
+    /// <summary>Whether a generator can supply any slot in an offered cost.</summary>
+    /// <remarks>
+    /// This is partial-payment guidance, not a restriction on legal overpayment.
+    /// An unresolved variable keeps the source available until its cost is known.
+    /// </remarks>
+    public static bool CanContribute(
+        CostOption option, int effect, IReadOnlyDictionary<string, long>? values = null)
+    {
+        ArgumentNullException.ThrowIfNull(option);
+        ResourceSource[] sources = [.. option.Generators.Where(source => source.Effect == effect)];
+        if (sources.Length != 1 || sources[0].Generates.Length == 0) return false;
+        return ContributesTo(option.ResourceCosts, sources[0], values)
+            || option.Components is null && option.HasAlternative
+            && ContributesTo([new ResourceCost(option.OrCost, option.OrRule)], sources[0], values);
+    }
+
+    private static bool ContributesTo(
+        IReadOnlyList<ResourceCost> costs, ResourceSource source,
+        IReadOnlyDictionary<string, long>? values)
+    {
+        List<Slot>? slots = Slots(costs, values);
+        return slots is null || slots.Any(slot => source.Generates.Any(icon =>
+            Accepts(icon, slot.Required, slot.Printed)));
+    }
+
     /// <summary>
     /// Whether an explicit player allocation pays the selected option with
     /// exactly the named generators and variable values.
@@ -184,26 +210,6 @@ public static class ResourcePayment
         return new AllocationSearch(slots, icons).Allocate();
     }
 
-    private static List<Slot>? Slots(
-        IReadOnlyList<ResourceCost> costs, IReadOnlyDictionary<string, long>? values)
-    {
-        var slots = new List<Slot>();
-        for (int component = 0; component < costs.Count; component++)
-        {
-            if (!Amount(costs[component].Cost, values, out long amount)
-                || amount < 0 || amount > int.MaxValue) return null;
-            string required = string.Concat(costs[component].Rule ?? []);
-            if (required.Length > amount || required.Any(resource => !Resources.Types.Contains(resource)))
-                return null;
-            slots.AddRange(required.Select(resource =>
-                new Slot(component, resource, costs[component].Printed)));
-            slots.AddRange(Enumerable.Repeat(
-                new Slot(component, Required: null, costs[component].Printed),
-                checked((int)amount - required.Length)));
-        }
-        return slots;
-    }
-
     private sealed class AllocationSearch(List<Slot> slots, List<Icon> icons)
     {
         private readonly bool[] used = new bool[icons.Count];
@@ -256,23 +262,6 @@ public static class ResourcePayment
         }
     }
 
-    private static bool Amount(
-        string written,
-        IReadOnlyDictionary<string, long>? values,
-        out long amount) =>
-        long.TryParse(
-            written,
-            System.Globalization.NumberStyles.None,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out amount)
-        || values is not null && values.TryGetValue(written, out amount);
-
-    private static bool Accepts(char printed, char? required, bool printedCost) =>
-        required is null
-        || printed == required
-        || !printedCost && printed == Resources.Wild;
-
-    private readonly record struct Slot(int Component, char? Required, bool Printed);
     private readonly record struct Icon(int Source, char Printed);
     private readonly record struct Choice(int Source, int Component, char Declared);
 }
