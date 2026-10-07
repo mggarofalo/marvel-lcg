@@ -184,6 +184,7 @@ public static class WorldProjection
             "REC", "THW", "ATK", "DEF", "SCH", "HP", "HS", "Stage",
             "REC+", "THW+", "ATK+", "DEF+", "SCH+", "HP+",
             "StartingThreat", "TargetThreat", "EscalationThreat", "Boost", "RES", "Class",
+            "Unique", "Acceleration", "Amplify", "Crisis", "Hazard",
         ];
         return names
             .Where(attributes.ContainsKey)

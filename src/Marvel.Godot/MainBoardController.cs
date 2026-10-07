@@ -127,15 +127,15 @@ internal sealed class MainBoardController : IDisposable
         rendered.RegisterContextualWorld(world);
         rendered.PresentLastResult(main.lastResultSummary.Text);
         rendered.CardActivated += cardInspector.Toggle;
-        rendered.CardPreviewEntered += cardInspector.PreviewCardAfterDelay;
+        rendered.CardPreviewEntered += cardInspector.PreviewCard;
         rendered.CardPreviewExited += cardInspector.LeaveCardPreview;
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
             && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
         relationships.Bind(rendered);
         main.decisions.BindMulliganTargets(rendered);
-        if (main.cardInspectorPinned
-            && (main.inspectedCardId is not { } inspected
-                || rendered.ControlFor(inspected) is null))
+        if (!main.cardInspectorPinned
+            || main.inspectedCardId is not { } inspected
+            || rendered.ControlFor(inspected) is null)
         {
             cardInspector.Hide();
         }

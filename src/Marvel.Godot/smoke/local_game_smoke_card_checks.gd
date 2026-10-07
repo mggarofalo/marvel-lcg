@@ -76,7 +76,7 @@ func _mulligan_cards_are_safe() -> bool:
 		var toggle := toggle_node as Button
 		var desktop_minimum := 44 if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080" \
 			else _scaled_metric(44)
-		if not toggle.toggle_mode or toggle.text != "□ DISCARD" \
+		if not toggle.toggle_mode or toggle.text != "↻" or toggle.accessibility_name != "Select for replacement" \
 				or toggle.custom_minimum_size.y < desktop_minimum:
 			_fail("a mulligan checkbox is not explicit, keyboard-operable, and generously sized" \
 				+ " toggle=%s text=%s minimum=%s expected=%s pressed=%s" % [
@@ -97,13 +97,19 @@ func _tabletop_essentials_are_safe() -> bool:
 		if card == null or card.custom_minimum_size.x < expected_width:
 			_fail("the tabletop essential '%s' did not retain readable board geometry" % title)
 			return false
-	var villain_text := _visible_text(_tabletop_card_named("Rhino"))
-	var identity_text := _visible_text(_tabletop_card_named("Peter Parker"))
-	var scheme_text := _visible_text(_tabletop_card_named("The Break-In!"))
-	if "HP" not in villain_text or "HP" not in identity_text \
-			or "THREAT" not in scheme_text:
-		_fail("the tabletop omitted a current villain, identity, or scheme value")
-		return false
+	for title in ["Rhino", "Peter Parker", "The Break-In!"]:
+		var card := _tabletop_card_named(title)
+		var progress := card.find_child("ProgressValues*", true, false) as Label
+		if progress == null or progress.text.is_empty() or "/" not in progress.text:
+			_fail("the tabletop omitted a live health or threat value for %s" % title)
+			return false
+	var observed := {"face": false, "back": false, "compact_summary": false,
+		"type_specific_value": false, "health": false, "progress": false, "active_villain_stage": false}
+	for card in main.find_children("ProceduralCard*", "PanelContainer", true, false):
+		var face := card.find_child("CardFace", true, false) as Control
+		if card.is_visible_in_tree() and face != null \
+				and not _card_face_is_safe(card, face, card.has_meta("spatial_hand_index"), observed):
+			return false
 	return true
 
 
@@ -192,7 +198,8 @@ func _active_villain_stage() -> Control:
 	for candidate in candidates:
 		if is_instance_valid(candidate) and not candidate.is_queued_for_deletion() \
 				and candidate.is_visible_in_tree() \
-				and candidate.find_child("SummaryValuesStage", true, false) != null:
+				and candidate.find_child("StageCaption", true, false) != null \
+				and candidate.find_child("SummaryValuesSCH", true, false) != null:
 			return candidate as Control
 	return null
 

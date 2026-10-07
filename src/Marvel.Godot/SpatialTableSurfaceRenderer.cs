@@ -49,16 +49,16 @@ internal static class SpatialTableSurfaceRenderer
             width, height, main.interfaceScale >= InterfaceScale.Percent130,
             HasRevealingCard: main.boardPresentation!.Areas.Any(area =>
                 area.Zone == "RevealingArea" && SpatialTableZones.Current(area).Length > 0),
-            PhysicalCardSize: PhysicalCardSize(main.boardPresentation!, main.interfaceScale),
+            PhysicalCardSize: PhysicalCardSize(main.boardPresentation!, main.interfaceScale, height),
             HasSeatSummaries: main.boardPresentation.PlayerSummaries.Count > 1);
     }
 
-    private static Vector2 PhysicalCardSize(BoardPresentation board, InterfaceScale scale)
+    private static Vector2 PhysicalCardSize(BoardPresentation board, InterfaceScale scale, float height)
     {
         IEnumerable<BoardCardPresentation> cards = board.Areas
             .Where(area => area.Zone != "HandsArea")
             .SelectMany(SpatialTableZones.Current);
-        InterfaceScale cardScale = SpatialCardMetrics.TableScale(scale);
+        InterfaceScale cardScale = SpatialCardMetrics.TableScale(scale, height);
         Vector2 installed = SpatialCardMetrics.Envelope(cards, CardDisplaySize.Board, cardScale);
         Vector2 revealing = SpatialCardMetrics.Envelope(board.Areas
             .Where(area => area.Zone == "RevealingArea").SelectMany(SpatialTableZones.Current),
@@ -109,7 +109,7 @@ internal static class SpatialTableSurfaceRenderer
         BoardPresentation board = main.boardPresentation!;
         BoardAreaPresentation[] scenario = Lane(board, "scenario");
         BoardAreaPresentation[] player = Lane(board, $"player-{selection.ExpandedSeat}");
-        InterfaceScale cardScale = SpatialCardMetrics.TableScale(main.interfaceScale);
+        InterfaceScale cardScale = SpatialCardMetrics.TableScale(main.interfaceScale, geometry.Height);
         var objects = new SpatialTableObjectRenderer(
             surface, result, geometry, cardScale, main.art, MulliganPrompt.IsOpening(prompt));
         objects.RenderScenario(scenario);

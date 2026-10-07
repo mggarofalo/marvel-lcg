@@ -55,6 +55,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.State.GameArea",
             "Marvel.Rules.State.ICardFacts",
             "Marvel.Rules.State.PlayArea",
+            "Marvel.Rules.State.PrintedAttributeNotation",
             "Marvel.Rules.State.Seat",
             "Marvel.Rules.State.StateFields",
             "Marvel.Rules.State.Traits",

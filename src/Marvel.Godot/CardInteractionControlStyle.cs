@@ -3,6 +3,17 @@ namespace Marvel.Godot;
 /// <summary>Copy and layering for a card-local decision control.</summary>
 internal static class CardInteractionControlStyle
 {
+    internal static string Symbol(CardInteractionControlDescriptor descriptor) =>
+        (descriptor.Cue & (CardInteractionCue.SelectedTarget | CardInteractionCue.SelectedGenerator
+            | CardInteractionCue.SelectedDestructiveChoice)) != 0 ? "✓"
+        : descriptor.Intent switch
+        {
+            CardInteractionIntent.Action => "↗",
+            CardInteractionIntent.Target => "◎",
+            CardInteractionIntent.Generator => "+",
+            _ => descriptor.Text,
+        };
+
     internal static string Tooltip(CardInteractionIntent intent) => intent switch
     {
         CardInteractionIntent.Target => "Choose this offered target.",

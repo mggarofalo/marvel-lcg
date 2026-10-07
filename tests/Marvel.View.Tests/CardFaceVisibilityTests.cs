@@ -52,6 +52,7 @@ public sealed class CardFaceVisibilityTests
             Assert.Equal("1", face.PrintedStats["SCH"]);
             Assert.Equal("1", face.PrintedStats["ATK"]);
             Assert.Equal("1", face.PrintedStats["HP"]);
+            Assert.DoesNotContain("Unique", face.PrintedStats.Keys);
             Assert.Null(face.ArtFaceId);
             Assert.Empty(face.RulesText);
         });
@@ -100,6 +101,7 @@ public sealed class CardFaceVisibilityTests
         Assert.Equal(["BRUTE", "AERIAL"], face.Traits);
         Assert.Equal("4", face.PrintedStats["SCH"]);
         Assert.Equal("Encounter", face.PrintedStats["Class"]);
+        Assert.Equal("1", face.PrintedStats["Unique"]);
         Assert.Null(face.Cost);
         Assert.Equal(["Guard"], face.Keywords);
         Assert.Equal("Guard.", face.RulesText);

@@ -40,7 +40,7 @@ func _direct_black_cat_is_played() -> bool:
 	if not await super._direct_black_cat_is_played():
 		return false
 	var entry := _attached(_attached_name(BLACK_CAT, "Action"))
-	if entry == null or not entry.text.begins_with("Actions"):
+	if entry == null or not entry.accessibility_name.begins_with("Actions"):
 		print("SOURCE_CHOOSER_FOCUS_PENDING: no ambiguous ally action in this legal state")
 		return true
 	return await _source_chooser_restores_keyboard_focus()
@@ -115,7 +115,7 @@ func _source_chooser_focus_when_offered() -> bool:
 	if main.has_meta("source_chooser_focus_proved"):
 		return true
 	var entry := _attached(_attached_name(BLACK_CAT, "Action"))
-	if entry == null or not entry.text.begins_with("Actions"):
+	if entry == null or not entry.accessibility_name.begins_with("Actions"):
 		return true
 	if not await _source_chooser_restores_keyboard_focus():
 		return false

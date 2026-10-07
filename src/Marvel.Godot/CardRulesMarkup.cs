@@ -15,21 +15,6 @@ internal static class CardRulesMarkup
         "Marvel.Godot.Assets.ChampionsIcons.ttf";
     private static FontFile? resourceFont;
 
-    private static readonly Dictionary<string, string> Symbols =
-        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["physical"] = "P",
-            ["energy"] = "E",
-            ["mental"] = "M",
-            ["wild"] = "W",
-            ["star"] = "✦",
-            ["per_hero"] = "◆",
-        };
-
-    private static readonly HashSet<string> ResourceSymbols = new(
-        ["physical", "mental", "energy", "wild"],
-        StringComparer.OrdinalIgnoreCase);
-
     /// <summary>Loads the pinned font without relying on Godot's import scan.</summary>
     public static Font ResourceFont()
     {
@@ -53,14 +38,16 @@ internal static class CardRulesMarkup
     public static string ToBbCode(
         string markup,
         string fallback,
-        InterfaceScale scale = InterfaceScale.Standard)
+        InterfaceScale scale = InterfaceScale.Standard,
+        int? symbolSize = null)
     {
         string source = string.IsNullOrWhiteSpace(markup) ? fallback : markup;
         var result = new StringBuilder(source.Length + 32);
         var literal = new StringBuilder();
         for (int index = 0; index < source.Length;)
         {
-            if (!TryAppendToken(source, ref index, result, literal, scale))
+            if (!TryAppendToken(source, ref index, result, literal,
+                symbolSize ?? VisualSystem.ResourceIcon("M", scale).FontSize))
             {
                 literal.Append(source[index]);
                 index++;
@@ -75,12 +62,12 @@ internal static class CardRulesMarkup
         ref int index,
         StringBuilder result,
         StringBuilder literal,
-        InterfaceScale scale) =>
+        int symbolSize) =>
         TryAppendBold(source, ref index, result, literal)
         || TryAppendItalic(source, ref index, result, literal)
         || TryAppendRule(source, ref index, result, literal)
         || TryAppendBracketedLiteral(source, ref index, result, literal)
-        || TryAppendSymbol(source, ref index, result, literal, scale);
+        || TryAppendSymbol(source, ref index, result, literal, symbolSize);
 
     private static bool TryAppendBold(
         string source, ref int index, StringBuilder result, StringBuilder literal)
@@ -152,34 +139,21 @@ internal static class CardRulesMarkup
         ref int index,
         StringBuilder result,
         StringBuilder literal,
-        InterfaceScale scale)
+        int symbolSize)
     {
         if (source[index] != '[')
         {
             return false;
         }
         int end = source.IndexOf(']', index + 1);
-        if (end < 0 || !Symbols.TryGetValue(source[(index + 1)..end], out string? symbol))
+        if (end < 0 || !CardSymbols.TryGet(source[(index + 1)..end], out string? symbol))
         {
             return false;
         }
         FlushLiteral(result, literal);
-        AppendSymbol(result, source[(index + 1)..end], symbol, scale);
+        result.Append(CardSymbols.Markup(symbol, symbolSize));
         index = end + 1;
         return true;
-    }
-
-    private static void AppendSymbol(
-        StringBuilder result, string name, string symbol, InterfaceScale scale)
-    {
-        if (!ResourceSymbols.Contains(name))
-        {
-            result.Append("[b]").Append(symbol).Append("[/b]");
-            return;
-        }
-        ResourceIconMetrics metrics = VisualSystem.ResourceIcon(symbol, scale);
-        result.Append("[font=").Append(ResourceFontPath).Append("][font_size=")
-            .Append(metrics.FontSize).Append(']').Append(symbol).Append("[/font_size][/font]");
     }
 
     private static void AppendToken(

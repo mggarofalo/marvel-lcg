@@ -43,12 +43,13 @@ func _action_card_preview_is_safe() -> bool:
 		_fail("the post-mulligan table has no readable hand card")
 		return false
 	var inspector := main.get_node("CardInspector") as Control
-	if not await _open_delayed_preview(card, inspector): return false
+	if not await _open_immediate_preview(card, inspector): return false
+	if not await preload("res://smoke/local_game_smoke_preview_switch.gd").perform(self, card, inspector): return false
 	if not await _bridge_and_dismiss_preview(inspector): return false
 	return await _hover_preview_pins_on_click(card, inspector)
 
 
-func _open_delayed_preview(card: Control, inspector: Control) -> bool:
+func _open_immediate_preview(card: Control, inspector: Control) -> bool:
 	var leave := InputEventMouseMotion.new()
 	leave.position = Vector2(4, 4)
 	leave.global_position = leave.position
@@ -68,15 +69,14 @@ func _open_delayed_preview(card: Control, inspector: Control) -> bool:
 	if card.z_index <= resting_z or card.position.y >= resting_y:
 		_fail("hovering a hand card did not lift it forward in the fan")
 		return false
-	if inspector.visible:
-		_fail("the table-card hover preview ignored its short opening delay")
-		return false
-	await main.get_tree().create_timer(0.38).timeout
 	if not inspector.visible or (inspector.get_node("Backdrop") as Control).mouse_filter \
 			!= Control.MOUSE_FILTER_IGNORE:
 		var hovered := render_viewport.gui_get_hovered_control()
-		_fail("hovering readable card %s at %s did not open preview; hovered=%s" % [
+		_fail("hovering readable card %s at %s did not immediately open preview; hovered=%s" % [
 			card.name, body_point, hovered.get_path() if hovered != null else "none"])
+		return false
+	if (inspector.get_node("Frame") as Control).mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		_fail("the hover preview can intercept another table card's pointer input")
 		return false
 	return true
 
@@ -293,8 +293,9 @@ func _inspector_frame_is_safe(inspector: Control) -> bool:
 			Rect2(Vector2.ZERO, _viewport_size())).size != frame.size:
 		_fail("the pointer-aware card inspector left the visible viewport")
 		return false
-	if face.find_child("IllustrationRegion", true, false) == null:
-		_fail("the full card frame did not reserve an illustration region")
+	var art := face.find_child("IllustrationRegion", true, false)
+	if art != null and art.find_child("Illustration", true, false) == null:
+		_fail("the card reserved an empty illustration region")
 		return false
 	if not _inspector_resources_are_safe(face):
 		return false
@@ -313,7 +314,7 @@ func _inspector_resources_are_safe(face: Control) -> bool:
 		_fail("the inspector printed resources retained tooltip text")
 		return false
 	var icon := resources.find_child("InspectorResourceIconSlot0", true, false) as Label
-	if icon == null or icon.text != "M" or not icon.tooltip_text.is_empty():
+	if icon == null or icon.text != "M" or icon.tooltip_text.is_empty():
 		_fail("the inspector printed resource is not an icon-only row")
 		return false
 	return _inspector_resource_icon_is_safe(icon)
