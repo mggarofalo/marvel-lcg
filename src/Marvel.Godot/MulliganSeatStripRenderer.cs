@@ -43,10 +43,11 @@ internal static class MulliganSeatStripRenderer
         foreach (PlayerSummaryDescriptor summary in board.PlayerSummaries.OrderBy(item => item.Seat))
         {
             BoardLanePresentation? lane = board.Lanes.FirstOrDefault(item => item.Seat == summary.Seat);
+            int pendingEncounters = board.PendingEncounterCount(summary.Seat);
             var select = new Button
             {
                 Name = $"SeatSwitch{summary.Seat}",
-                Text = SeatLabel(lane, summary, compact)
+                Text = SeatLabel(lane, summary, compact, pendingEncounters)
                     + $"\n{RoleMarkers(summary.Seat, selection)}"
                     + (summary.Seat == selection.ExpandedSeat ? "\nInspecting this seat" : ""),
                 Disabled = summary.Seat == selection.ExpandedSeat,
@@ -55,7 +56,8 @@ internal static class MulliganSeatStripRenderer
                 ClipText = false,
                 AutowrapMode = TextServer.AutowrapMode.Word,
                 TooltipText = $"{RoleMarkers(summary.Seat, selection)}. "
-                    + "Show this public player workspace without changing the pending decision.",
+                    + "Show this public player workspace without changing the pending decision. "
+                    + PendingEncounterIndicator.Description(pendingEncounters, summary.Seat),
             };
             if (compact)
             {
@@ -71,10 +73,11 @@ internal static class MulliganSeatStripRenderer
     private static string SeatLabel(
         BoardLanePresentation? lane,
         PlayerSummaryDescriptor seat,
-        bool compact)
+        bool compact, int pendingEncounters)
     {
         string title = lane?.Title ?? $"PLAYER {seat.Seat + 1}";
-        string health = seat.Health is { } current ? $"HP {current}" : "HP —";
+        string health = (seat.Health is { } current ? $"HP {current}" : "HP —")
+            + PendingEncounterIndicator.Compact(pendingEncounters);
         string form = string.IsNullOrWhiteSpace(seat.Form) ? string.Empty : $" · {seat.Form.ToUpperInvariant()}";
         string statuses = seat.Statuses.Count == 0
             ? string.Empty
