@@ -24,4 +24,8 @@ public enum PublicDecisionKind
     Order,
     /// <summary>The engaged player's minion activation order.</summary>
     MinionActivationOrder,
+    /// <summary>A committed search selecting among its authorized matching cards.</summary>
+    CardSearch,
+    /// <summary>A choice among cards an ability allows its player to look at.</summary>
+    CardLook,
 }

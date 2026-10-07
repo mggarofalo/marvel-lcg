@@ -16,6 +16,8 @@ internal static class AbilityChoicePromptDescription
     {
         var evidence = NewEvidence();
         bool cards = choice is AbilityEffect.ChooseCard;
+        bool concealedCards = choice is AbilityEffect.ChooseCard exposureChoice
+            && InspectsConcealedPile(exposureChoice.From);
         IEnumerable<Affordance> affordances = choice switch
         {
             AbilityEffect.ChooseCard selecting => CardChoices(context, selecting, continuation, evidence),
@@ -40,8 +42,8 @@ internal static class AbilityChoicePromptDescription
             Description = choice is AbilityEffect.ChooseCard describedChoice
                 ? AbilityEffectDescription.Summary(describedChoice)
                 : "Choose one offered consequence. Only the selected option resolves.",
-            ExposesConcealedCandidates = choice is AbilityEffect.ChooseCard exposureChoice
-                && InspectsConcealedPile(exposureChoice.From),
+            ExposesConcealedCandidates = concealedCards,
+            PublicKind = concealedCards ? PublicDecisionKind.CardSearch : PublicDecisionKind.Choice,
         };
         return new AbilityStructuralPrompt(prompt, Admission(evidence));
     }

@@ -130,6 +130,9 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Prompts.Prompt.Trigger",
             "Marvel.Rules.Prompts.Prompt.When",
             "Marvel.Rules.Prompts.PublicDecisionKind.Ability",
+            // Public search/look purpose conveys no concealed candidates.
+            "Marvel.Rules.Prompts.PublicDecisionKind.CardLook",
+            "Marvel.Rules.Prompts.PublicDecisionKind.CardSearch",
             "Marvel.Rules.Prompts.PublicDecisionKind.Defense",
             "Marvel.Rules.Prompts.PublicDecisionKind.EndPhaseDiscards",
             "Marvel.Rules.Prompts.PublicDecisionKind.Interrupt",

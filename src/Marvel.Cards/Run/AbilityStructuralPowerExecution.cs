@@ -160,7 +160,7 @@ internal static class AbilityStructuralPowerExecution
             $"{context.SourceFace}: choose a top card", false,
             cards.Select(card => new Affordance(card.ObjectId, ChooseVerb,
                 card.ObjectId, context.Player, card.FaceId)).ToList())
-        { ExposesConcealedCandidates = true };
+        { ExposesConcealedCandidates = true, PublicKind = PublicDecisionKind.CardLook };
     }
 
     internal static AbilityStructuralTransition AnswerTopForHand(
