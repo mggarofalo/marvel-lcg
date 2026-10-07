@@ -55,6 +55,9 @@ public sealed class EngineHostRestrictedSeatsReceiveOnlyTheirTurnOptionsTests : 
         SessionSave save = Assert.Single(store.Load()).Save;
         Assert.Equal(frontierBeforeAction, save.EditFrontier);
         Assert.Empty(save.Units[^1].Exposures);
+        EngineResponse otherAuthority = host.Exchange(EngineRequest.SyncGame(
+            "history-authority", "actions", RequiredCapability(opened)));
+        Assert.Equal(HistoryUndoStatus.OtherPlayer, otherAuthority.History!.UndoStatus);
         EngineResponse staleActive = host.Exchange(EngineRequest.ResolveGame("stale-active", "actions", RequiredCapability(opened), new EngineDecision(activeOnly.Id, []), active.Revision));
         Assert.Equal("stale_decision", staleActive.Error?.Code);
     }

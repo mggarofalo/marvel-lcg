@@ -33,6 +33,7 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Events.AreaRef.Id",
             "Marvel.Rules.Events.AreaRef.Owner",
             "Marvel.Rules.Events.AreaRef.Zone",
+            "Marvel.Rules.Events.AreaRef.operator ==(Marvel.Rules.Events.AreaRef, Marvel.Rules.Events.AreaRef)",
             "Marvel.Rules.Events.AreaReordered.Area",
             "Marvel.Rules.Events.AreaReordered.Order",
             // Passive completed-attack participants and measured result; no live attack calculation.

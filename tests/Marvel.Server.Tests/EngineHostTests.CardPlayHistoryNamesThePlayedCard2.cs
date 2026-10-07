@@ -19,8 +19,10 @@ public sealed class EngineHostCardPlayHistoryNamesThePlayedCardTests : EngineHos
     {
         var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root), new SequenceCapabilities("history-owner"));
         EngineResponse opened = host.Exchange(EngineRequest.OpenGame("open", "narrative-history", new GameSpecification("rhino", ["spider_man"], [], Seed: 1)));
+        Assert.Equal(HistoryUndoStatus.NoHistory, opened.History!.UndoStatus);
         int[] mulligan = Hand(opened, 0).Where(card => card.Face?.Title is "Avengers Mansion" or "Aunt May" or "Swinging Web Kick").Select(card => card.Id!.Value).ToArray();
         EngineResponse turn = host.Exchange(EngineRequest.ResolveGame("mulligan", "narrative-history", RequiredCapability(opened), new EngineDecision(Assert.Single(opened.Prompt!.Affordances).Id, mulligan), opened.Revision));
+        Assert.Equal(HistoryUndoStatus.ProtectedHistory, turn.History!.UndoStatus);
         CardDescriptor webShooter = Hand(turn, 0).First(card => card.Face?.Title == "Web-Shooter");
         CardDescriptor peter = Assert.Single(turn.World!.Areas.SelectMany(area => area.Cards.Concat(area.Removed)), card => card.Face?.Title == "Peter Parker");
         Affordance play = Assert.Single(turn.Prompt!.Affordances, option => option.Verb == "Play" && option.AnchorId == webShooter.Id);
@@ -33,6 +35,7 @@ public sealed class EngineHostCardPlayHistoryNamesThePlayedCardTests : EngineHos
         EngineResponse played = host.Exchange(request);
         EngineResponse synchronized = host.Exchange(EngineRequest.SyncGame("sync", "narrative-history", RequiredCapability(opened)));
         Assert.Null(played.Error);
+        Assert.Equal(HistoryUndoStatus.Available, played.History!.UndoStatus);
         HistoryEntryDescriptor entry = Assert.Single(played.History!.Entries, item => item.Cursor == 1);
         Assert.Equal("Spider-Man played Web-Shooter, generating resources from Scientist.", entry.Summary);
         Assert.Equal(played.History.Entries, synchronized.History!.Entries);
@@ -68,6 +71,7 @@ public sealed class EngineHostCardPlayHistoryNamesThePlayedCardTests : EngineHos
         Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
         EngineResponse played = host.Exchange(EngineRequest.ResolveGame("play", "event-history", capability, decision!, hero.Revision));
         Assert.True(played.History!.ActionOpen);
+        Assert.Equal(HistoryUndoStatus.ActionInProgress, played.History.UndoStatus);
         Assert.DoesNotContain(played.History.Entries, entry => entry.Cursor == 2);
         while (played.History!.ActionOpen)
         {

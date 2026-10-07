@@ -190,7 +190,8 @@ internal static class ClientResponseValidation
     internal static bool HasCompleteHistory(HistoryDescriptor? history)
     {
         if (!HasHistoryParts(history)) return false;
-        if (history!.Entries.Any(entry => !CompleteEntry(entry, history.Cursor))) return false;
+        if (!Enum.IsDefined(history!.UndoStatus)) return false;
+        if (history.Entries.Any(entry => !CompleteEntry(entry, history.Cursor))) return false;
         if (history.ActionOpen && (history.Undo.Count > 0 || history.Redo.Count > 0)) return false;
 
         int[] entryCursors = [.. history.Entries.Select(entry => entry.Cursor)];

@@ -92,9 +92,7 @@ public sealed class ClientGameLifecycle
     public bool CanUndo(int cursor) => CanSynchronize && AllowsHistoryChange
         && CurrentGame?.History?.Undo.Contains(cursor) == true;
 
-    private bool AllowsHistoryChange => uncertain is null && Progress?.OperationalLock is null
-        && (Progress?.LocksDecisions == false || Progress?.Kind is GameProgressKind.WaitingForOtherPlayer
-            or GameProgressKind.PlayersWin or GameProgressKind.PlayersLose or GameProgressKind.VillainWins);
+    private bool AllowsHistoryChange => uncertain is null && HistoryRequestAdmission.Allows(Progress);
 
     /// <summary>Submits once, preserving a proven not-sent draft and never retrying uncertainty.</summary>
     public Task<ClientLifecycleUpdate?> ResolveAsync(

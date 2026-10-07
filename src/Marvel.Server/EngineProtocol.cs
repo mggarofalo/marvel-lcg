@@ -31,8 +31,9 @@ public static class EngineProtocol
     /// when a wild-resource declaration is observable by the resolving effect.
     /// Version 20 requires quantity-dependent typed resource components.
     /// Version 21 identifies authorized card search and look choices publicly.
+    /// Version 22 adds a visibility-safe latest-action undo status.
     /// </summary>
-    public const int Version = 21;
+    public const int Version = 22;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;

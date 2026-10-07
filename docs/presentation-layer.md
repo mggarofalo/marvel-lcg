@@ -352,3 +352,10 @@ The editor launch and native complete-game smoke are documented in
 
 `Marvel.Sim` remains the non-Godot driver. It proves the engine is playable and
 diagnosable without opening the graphical client.
+
+Protocol 22 adds `history.undo_status`, a bounded latest-action edit status:
+`0` unavailable, `1` available, `2` no history, `3` action in progress,
+`4` protected history, or `5` another player's authority. Protected history does not name the private draw,
+search, reveal or randomness signal, its objects, or any concealed result.
+Another player's operation is classified by authority before protection.
+Replay and save identities remain unchanged.

@@ -10,6 +10,11 @@ internal static class EventMovementPresentation
     internal static string Summary(CardsMoved moved, WorldDescriptor world)
     {
         string cards = CardList(moved.Cards.Select(card => card.Card), world, moved);
+        if (string.Equals(moved.Verb, "Return_To_Discard", StringComparison.Ordinal))
+        {
+            return ReturnedToDiscard(moved, cards, world);
+        }
+
         if (IsDraw(moved))
         {
             string player = Player(moved.To.Owner, world);
@@ -51,6 +56,11 @@ internal static class EventMovementPresentation
 
         return $"Moved {cards} from {Area(moved.From, world)} to {Area(moved.To, world)}.";
     }
+
+    private static string ReturnedToDiscard(CardsMoved moved, string cards, WorldDescriptor world) =>
+        moved.From == moved.To
+            ? $"Now in {Area(moved.To, world)}: {cards}."
+            : $"Returned {cards} to {Area(moved.To, world)}.";
 
     private static bool IsDraw(CardsMoved moved) =>
         ZoneIs(moved.From, "PlayerDeck")

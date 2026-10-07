@@ -136,6 +136,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Server.HeroSetupChoice",
             "Marvel.Server.HistoryDescriptor",
             "Marvel.Server.HistoryEntryDescriptor",
+            "Marvel.Server.HistoryUndoStatus",
             "Marvel.Server.HttpTelemetryExporter",
             "Marvel.Server.IEngineEndpoint",
             "Marvel.Server.IEngineTransport",

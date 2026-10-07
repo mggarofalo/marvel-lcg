@@ -91,21 +91,7 @@ internal sealed class AuthorizedSessionProjector(
                 unit.Cursor, presented.Summary, presented.Details));
         }
 
-        bool actionOpen = save.Units.Any(unit => unit.Status != "complete");
-        if (actionOpen)
-        {
-            return new HistoryDescriptor(save.Cursor, [], [], entries, ActionOpen: true);
-        }
-
-        int[] undo = Enumerable.Range(save.EditFrontier, save.Cursor - save.EditFrontier)
-            .Where(target => EditableBy(
-                save.Units.Skip(target).Take(save.Cursor - target), scope))
-            .ToArray();
-        int[] redo = Enumerable.Range(save.Cursor + 1, save.Units.Count - save.Cursor)
-            .Where(target => EditableBy(
-                save.Units.Skip(save.Cursor).Take(target - save.Cursor), scope))
-            .ToArray();
-        return new HistoryDescriptor(save.Cursor, undo, redo, entries, ActionOpen: false);
+        return SessionHistoryEditProjection.Describe(save, scope, entries);
     }
 
     public static bool EditableBy(IEnumerable<JournalUnit> units, ViewScope scope)

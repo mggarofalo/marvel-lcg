@@ -42,6 +42,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.Client.GameProgressPresentation",
             "Marvel.Client.GameSeed",
             "Marvel.Client.GameSetupSelection",
+            "Marvel.Client.HistoryUndoPresentation",
             "Marvel.Client.InteractionTranscript",
             "Marvel.Client.InteractionTranscriptSetup",
             "Marvel.Client.LocalClientConnection",
