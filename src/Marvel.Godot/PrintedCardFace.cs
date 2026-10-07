@@ -88,10 +88,11 @@ internal static class PrintedCardFace
     {
         var panel = new Panel { Name = name, Position = bounds.Position, Size = bounds.Size,
             MouseFilter = Control.MouseFilterEnum.Ignore };
-        panel.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = color,
+        using var style = new StyleBoxFlat { BgColor = color,
             BorderColor = CardFaceStyle.Ink, BorderWidthLeft = 1, BorderWidthRight = 1,
             BorderWidthTop = 1, BorderWidthBottom = 1, ContentMarginLeft = 0,
-            ContentMarginRight = 0, ContentMarginTop = 0, ContentMarginBottom = 0 });
+            ContentMarginRight = 0, ContentMarginTop = 0, ContentMarginBottom = 0 };
+        panel.AddThemeStyleboxOverride("panel", style);
         return panel;
     }
 

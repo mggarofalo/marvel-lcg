@@ -147,7 +147,8 @@ internal sealed class BoardCardInspectorController
     {
         main.cardInspectorScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever;
         main.cardInspectorScroll.VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever;
-        main.cardInspectorFrame.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
+        using var empty = new StyleBoxEmpty();
+        main.cardInspectorFrame.AddThemeStyleboxOverride("panel", empty);
     }
 
 

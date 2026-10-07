@@ -48,7 +48,8 @@ public sealed partial class CardControl : PanelContainer
         };
         control.FocusEntered += control.QueueRedraw;
         control.FocusExited += control.QueueRedraw;
-        control.AddThemeStyleboxOverride("panel", CardFaceStyle.Frame(card));
+        using StyleBoxFlat frame = CardFaceStyle.Frame(card);
+        control.AddThemeStyleboxOverride("panel", frame);
         var surface = new Control
         {
             Name = "CardSurface", MouseFilter = MouseFilterEnum.Pass,
