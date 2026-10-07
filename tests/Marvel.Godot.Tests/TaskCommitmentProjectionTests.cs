@@ -99,6 +99,8 @@ public sealed class TaskCommitmentProjectionTests
         Assert.True(cleared.TryBuild(out EngineDecision? answer, out _));
         Assert.Empty(answer!.Targets);
         Assert.Equal([1, 2], composer.Targets);
+        Assert.True(BoardContextualInteractionControls.CanClearDraft(composer));
+        Assert.False(BoardContextualInteractionControls.CanClearDraft(cleared));
     }
 
     [Fact]
@@ -139,10 +141,13 @@ public sealed class TaskCommitmentProjectionTests
         Assert.Empty(composer.Targets);
         Assert.True(composer.TryBuild(out EngineDecision? proposed, out _));
         Assert.Empty(proposed!.Targets);
+        Assert.False(BoardContextualInteractionControls.CanClearDraft(composer));
         composer.SelectTargets([1]);
+        Assert.True(BoardContextualInteractionControls.CanClearDraft(composer));
         DecisionComposer cleared = BoardDraftCancellation.Clear(composer);
         Assert.Equal(3, cleared.Selected!.Id);
         Assert.Empty(cleared.Targets);
+        Assert.False(BoardContextualInteractionControls.CanClearDraft(cleared));
     }
 
     [Fact]

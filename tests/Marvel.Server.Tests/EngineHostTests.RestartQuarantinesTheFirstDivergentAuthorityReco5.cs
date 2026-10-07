@@ -51,7 +51,7 @@ public sealed class EngineHostRestartQuarantinesTheFirstDivergentAuthorityRecoTe
             {
                 Compatibility = stored.Save.Compatibility with
                 {
-                    ReplayContract = field == "previous-replay" ? "engine-replay-v4" : "future-contract",
+                    ReplayContract = field == "previous-replay" ? "engine-replay-v5" : "future-contract",
                 },
             },
             _ => throw new InvalidOperationException(field),

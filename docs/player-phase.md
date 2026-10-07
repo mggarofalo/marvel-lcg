@@ -104,7 +104,7 @@ the eliminated player.
 
 | Step | Execution |
 |---|---|
-| 1. discard cards and come down to hand size | one prompt per player, in player order |
+| 1. discard cards and come down to hand size | one prompt per nonempty hand, in player order |
 | 2. draw up to hand size | one simultaneous table step |
 | 3. ready all cards | one simultaneous table step, including encounter cards |
 | 4. expire effects ending with the phase | `PhaseEnd.EndPlayerPhase` |

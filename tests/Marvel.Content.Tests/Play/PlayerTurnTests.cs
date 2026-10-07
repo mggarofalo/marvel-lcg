@@ -92,6 +92,76 @@ public sealed class PlayerTurnTests
         Assert.Equal(1, game.Pending!.Player);
     }
 
+    [Rule("rr:end-of-player-phase.step.1")]
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(1, 0)]
+    public void EmptyHandsDoNotInterruptOrderedDiscardChoices(int first, int expected)
+    {
+        // "In player order, each player may discard any number of cards from
+        // their hand." An empty hand offers no discard selection.
+        var (game, world) = BeginFrom(first, "spider_man", "she_hulk");
+        ResolveMulligans(game);
+        foreach (var card in world.Seats[first].Hand.Cards.ToArray())
+            World.MoveToTop(card, world.Seats[first].Deck);
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Decline);
+
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+        Assert.Equal(expected, game.Pending!.Player);
+        Assert.NotEmpty(game.Pending.Affordances.Single().Targets!.Legal);
+        Assert.Equal(0, game.Pending.Affordances.Single().Targets!.Min);
+    }
+
+    [Rule("rr:end-of-player-phase.step.1")]
+    [Rule("rr:end-of-player-phase.step.2")]
+    [Fact]
+    public void EmptyHandsAreSkippedBetweenSeatsWithoutDrawingBeforeDiscardsFinish()
+    {
+        var (game, world) = BeginFrom(2,
+            "spider_man", "she_hulk", "captain_marvel", "iron_man");
+        ResolveMulligans(game);
+        foreach (int player in new[] { 0, 2 })
+            foreach (var card in world.Seats[player].Hand.Cards.ToArray())
+                World.MoveToTop(card, world.Seats[player].Deck);
+        for (int turn = 0; turn < 4; turn++) game.Resolve(Decision.Decline);
+
+        Assert.Equal(3, game.Pending!.Player);
+        game.Resolve(Decision.Decline);
+
+        Assert.Equal(GamePhase.EndPhase, game.Phase);
+        Assert.Equal(1, game.Pending!.Player);
+        Assert.Empty(world.Seats[0].Hand.Cards);
+        Assert.Empty(world.Seats[2].Hand.Cards);
+    }
+
+    [Rule("rr:end-of-player-phase.step.1")]
+    [Rule("rr:end-of-player-phase.step.2")]
+    [Rule("rr:end-of-player-phase.step.3")]
+    [Fact]
+    public void AllEmptyHandsReachDrawAndReadyWithoutAClientAnswer()
+    {
+        // After ordered discards, "each player simultaneously draws up to
+        // their hand size" and then "readies all of their cards".
+        var (game, world) = Begin("spider_man", "she_hulk");
+        ResolveMulligans(game);
+        foreach (var seat in world.Seats)
+        {
+            foreach (var card in seat.Hand.Cards.ToArray())
+                World.MoveToTop(card, seat.Deck);
+            seat.IdentityCard.Exhaust();
+        }
+        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Decline);
+
+        Assert.NotEqual(GamePhase.EndPhase, game.Phase);
+        Assert.All(world.Seats, seat =>
+        {
+            Assert.NotEmpty(seat.Hand.Cards);
+            Assert.True(seat.IdentityCard.Ready);
+        });
+    }
+
     [Rule("rr:form-change-form.1")]
     [Fact]
     public void EachPlayerGetsTheirOwnFormChangeInARound()
