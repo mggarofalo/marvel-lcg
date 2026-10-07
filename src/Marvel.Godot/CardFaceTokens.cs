@@ -11,6 +11,7 @@ internal static class CardFaceTokens
         AddResources(face, card, regions);
         AddProgress(face, card, regions);
         CardStatusTokens.Add(face, card, regions);
+        CardRetaliateToken.Add(face, card, regions);
     }
 
     private static void AddResources(Control face, BoardCardPresentation card, CardFaceRegions r)
