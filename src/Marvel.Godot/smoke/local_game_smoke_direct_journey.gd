@@ -122,7 +122,8 @@ func _undo_and_replay_change_form() -> bool:
 		return false
 	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
 	var undo := main.find_child("UndoLast", true, false) as Button
-	if undo.disabled or "Spider-Man changed form." not in history.get_parsed_text():
+	if undo.disabled or undo.tooltip_text != "Undo the latest completed action." \
+			or "Spider-Man changed form." not in history.get_parsed_text():
 		_fail("the direct form change has no authoritative history undo")
 		return false
 	var revision := (_node("Toolbar/SyncStatus") as Label).text

@@ -261,9 +261,9 @@ internal sealed class MainEventController : IDisposable
         HistoryDescriptor? history = main.CurrentGame?.History;
         int last = (history?.Cursor ?? 0) - 1;
         main.undoLast.Disabled = main.decisions.PaymentModalOpen || !main.lifecycle.CanUndo(last);
-        main.undoLast.TooltipText = main.undoLast.Disabled
-            ? "New information, a pending action, or table authority prevents undoing the latest action."
-            : "Undo the latest completed action.";
+        main.undoLast.TooltipText = main.decisions.PaymentModalOpen
+            ? "Finish or cancel the current payment selection before undoing an action."
+            : HistoryUndoPresentation.Describe(!main.undoLast.Disabled, history, main.lifecycle.Progress);
     }
 
     public void Dispose() => motion.Dispose();

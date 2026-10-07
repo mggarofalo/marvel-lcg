@@ -92,6 +92,14 @@ func _submit_mulligan() -> bool:
 		return _attached(_attached_name(IDENTITY, "Action")) != null):
 		_fail("the seeded mulligan did not reach the player-action affordances")
 		return false
+	return _protected_mulligan_undo_is_explained()
+
+
+func _protected_mulligan_undo_is_explained() -> bool:
+	var undo := main.find_child("UndoLast", true, false) as Button
+	if undo == null or not undo.disabled or "exposed information" not in undo.tooltip_text:
+		_fail("replacing opening cards did not explain its information-protected undo boundary")
+		return false
 	return true
 
 
