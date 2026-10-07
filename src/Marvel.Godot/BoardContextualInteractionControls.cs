@@ -93,9 +93,14 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
         };
         host!.AddChild(commitments);
         Add("ContextualCommit", label, () => submit?.Invoke(), label, !progress.IsReady, commitments);
-        Add("ContextualCancelDraft", CancelLabel(composer.Prompt), () => cancel?.Invoke(),
-            "Clear these uncommitted choices. Accepted actions remain in play.", parent: commitments);
+        if (CanClearDraft(composer))
+            Add("ContextualCancelDraft", CancelLabel(composer.Prompt), () => cancel?.Invoke(),
+                "Clear these uncommitted choices. Accepted actions remain in play.", parent: commitments);
     }
+
+    internal static bool CanClearDraft(DecisionComposer composer) =>
+        !(MulliganPrompt.IsOpening(composer.Prompt) || InitialTableDraft.IsRequiredEndPhase(composer.Prompt))
+        || composer.Targets.Count > 0;
 
     private static string CancelLabel(Prompt prompt) => MulliganPrompt.IsOpening(prompt)
         ? "Clear replacements"
