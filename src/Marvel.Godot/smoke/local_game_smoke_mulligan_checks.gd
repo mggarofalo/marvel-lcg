@@ -92,15 +92,21 @@ func _submit_mulligan() -> bool:
 		return _attached(_attached_name(IDENTITY, "Action")) != null):
 		_fail("the seeded mulligan did not reach the player-action affordances")
 		return false
-	return _protected_mulligan_undo_is_explained()
+	return await _protected_mulligan_undo_is_explained()
 
 
 func _protected_mulligan_undo_is_explained() -> bool:
+	if not await _set_history_drawer(true): return false
 	var undo := main.find_child("UndoLast", true, false) as Button
-	if undo == null or not undo.disabled or "exposed information" not in undo.tooltip_text:
-		_fail("replacing opening cards did not explain its information-protected undo boundary")
+	var reason := main.find_child("UndoReason", true, false) as Label
+	if undo == null or not undo.disabled or reason == null or not reason.is_visible_in_tree() \
+			or "exposed information" not in reason.text:
+		_fail("replacing opening cards did not visibly explain its information-protected undo boundary")
 		return false
-	return true
+	if not render_viewport.get_visible_rect().encloses(reason.get_global_rect()):
+		_fail("the protected undo explanation is clipped outside the viewport")
+		return false
+	return await _set_history_drawer(false)
 
 
 func _complete_second_opening_hand() -> bool:

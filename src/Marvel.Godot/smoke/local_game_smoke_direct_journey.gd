@@ -126,6 +126,7 @@ func _undo_and_replay_change_form() -> bool:
 			or "Spider-Man changed form." not in history.get_parsed_text():
 		_fail("the direct form change has no authoritative history undo")
 		return false
+	if not _available_undo_has_no_restriction(): return false
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
 	if not await _pointer_activate(undo) or not await _wait_for(func() -> bool:
 		return (_node("Toolbar/SyncStatus") as Label).text != revision):
@@ -135,6 +136,10 @@ func _undo_and_replay_change_form() -> bool:
 		return false
 	if not await _set_history_drawer(false):
 		return false
+	return await _replay_restored_change_form()
+
+
+func _replay_restored_change_form() -> bool:
 	var action := _attached(_attached_name(IDENTITY, "Action"))
 	if action == null or not await _pointer_activate_attached(action):
 		_fail("the restored identity cannot repeat Change Form")
@@ -470,3 +475,11 @@ func _offered_action_button(surface: Control, verb: String) -> Button:
 		if candidate.is_visible_in_tree() and candidate.get_meta("offered_verb", "") == verb:
 			return candidate as Button
 	return null
+
+
+func _available_undo_has_no_restriction() -> bool:
+	var reason := main.find_child("UndoReason", true, false) as Label
+	if reason != null and reason.is_visible_in_tree():
+		_fail("available undo retained a stale restriction explanation")
+		return false
+	return true
