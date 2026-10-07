@@ -177,7 +177,7 @@ public sealed partial class Main : Control
     public override void _ExitTree()
     {
         lifecycle.Detach();
-        eventController?.ReleaseEventTween();
+        eventController?.Dispose();
         boardController?.Dispose();
         ClientComposition.Flush(TimeSpan.FromSeconds(3));
     }
@@ -249,10 +249,10 @@ public sealed partial class Main : Control
         {
             if (!enabled)
             {
-                SkipEventPresentation();
+                eventController.PauseEventPresentation();
             }
         };
-        eventSkip.Pressed += SkipEventPresentation;
+        eventSkip.Pressed += eventController.CompleteEventPresentation;
         undoLast.Pressed += OnUndoLastPressed;
         eventLog.MetaClicked += OnHistoryMetaClicked;
         copyReport.Pressed += CopyInteractionReport;

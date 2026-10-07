@@ -9,7 +9,7 @@ using Marvel.View;
 namespace Marvel.Godot;
 
 /// <summary>Owns prompt summaries, event chronology, and progress presentation.</summary>
-internal sealed class MainEventController
+internal sealed class MainEventController : IDisposable
 {
     private readonly Main main;
     private readonly MainEventMotionController motion;
@@ -213,6 +213,10 @@ internal sealed class MainEventController
     internal void SkipEventPresentation()
         => motion.Skip();
 
+    internal void PauseEventPresentation() => motion.Pause();
+
+    internal void CompleteEventPresentation() => motion.Complete();
+
     internal void ReleaseEventTween()
         => motion.ReleaseTween();
 
@@ -261,5 +265,7 @@ internal sealed class MainEventController
             ? "New information, a pending action, or table authority prevents undoing the latest action."
             : "Undo the latest completed action.";
     }
+
+    public void Dispose() => motion.Dispose();
 
 }

@@ -70,6 +70,11 @@ MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled 
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/search_choice_smoke.gd
 
+MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+  run_local_smoke res://smoke/result_playback_smoke.gd
+MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
+  run_local_smoke res://smoke/result_playback_smoke.gd
+
 for viewport in "${viewports[@]}"; do
   for scale in "${scales[@]}"; do
     MARVEL_UI_SCALE="$scale" MARVEL_SMOKE_VIEWPORT="$viewport" MARVEL_SMOKE_MOTION=enabled \

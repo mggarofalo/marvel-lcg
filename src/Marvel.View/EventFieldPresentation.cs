@@ -80,6 +80,18 @@ internal static class EventFieldPresentation
         return FieldSummary(subject, field, set);
     }
 
+    internal static string CueSummary(FieldSet set, WorldDescriptor world)
+    {
+        if (set.From is null || set.To is null || set.Field == "is_exhaust")
+            return Summary(set, world);
+        string field = set.Field.ToLowerInvariant();
+        string label = HealthFields.Contains(field) ? "HP"
+            : DamageFields.Contains(field) ? "damage"
+            : field == "k_threat" ? "threat"
+            : CounterName(field) ?? Words(field).ToLowerInvariant();
+        return $"{Card(set.Card, world, set)} · {label} {Value(set.From)} → {Value(set.To)}";
+    }
+
     private static string? CounterName(string field) =>
         field.StartsWith("c_", StringComparison.Ordinal)
             ? Words(field[2..]).ToLowerInvariant() + " counters"

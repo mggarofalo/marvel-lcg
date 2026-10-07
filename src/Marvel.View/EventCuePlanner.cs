@@ -59,6 +59,17 @@ public static class EventCuePlanner
         return new EventBatchPresentation(history, cues, highlights);
     }
 
+    /// <summary>Chooses a durable result using the same consequence priorities as the receipt.</summary>
+    public static int SettledCueIndex(IReadOnlyList<EventPresentation> cues)
+    {
+        ArgumentNullException.ThrowIfNull(cues);
+        IReadOnlyList<EventPresentation> highlights = Highlight(cues);
+        EventPresentation? preferred = highlights.Count == 0 ? null : highlights[^1];
+        for (int index = cues.Count - 1; index >= 0; index--)
+            if (cues[index] == preferred) return index;
+        return -1;
+    }
+
     private static IReadOnlyList<EventPresentation> Highlight(
         IReadOnlyList<EventPresentation> cues)
     {

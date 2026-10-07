@@ -7,7 +7,6 @@ internal static class EventCueBoardFocus
 {
     internal static void Present(Main main, EventPresentation entry)
     {
-        main.eventCueSummary.Text = entry.Summary;
         main.boardController.FocusEventAnchors(entry.Anchors);
     }
 }
