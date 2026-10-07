@@ -154,6 +154,7 @@ internal sealed class BoardCardInteractionControls
             ZAsRelative = false,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
             AccessibilityName = descriptor.Text,
+            Disabled = descriptor.Cue.HasFlag(CardInteractionCue.Unavailable),
             ThemeTypeVariation = GodotThemeVariations.LegalTargetButton,
         };
 

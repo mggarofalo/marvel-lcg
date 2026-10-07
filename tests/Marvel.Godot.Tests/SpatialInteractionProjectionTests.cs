@@ -108,6 +108,35 @@ public sealed class SpatialInteractionProjectionTests
     }
 
     [Fact]
+    public void TypedPaymentDoesNotAdvertiseANonmatchingSourceAsUseful()
+    {
+        var cost = new CostOption(19, "1", Rule: ["R"], Sources:
+            [new ResourceSource(41, "B"), new ResourceSource(42, "R"), new ResourceSource(43, "G")]);
+        var composer = Composer(new Affordance(3, "Use", 19, 0, "Tenacity", Costs: [cost]));
+        composer.SelectAffordance(3);
+        PromptPresentation prompt = Prompt([Visible(3, 19)], [cost]);
+
+        var controls = BoardInteractionControlProjection.From(composer, prompt);
+        var mental = Assert.Single(controls, control => control.CardId == 41);
+        Assert.Equal("Does not pay this cost", mental.Text);
+        Assert.Equal(CardInteractionCue.Unavailable, mental.Cue);
+        Assert.All(controls.Where(control => control.CardId is 42 or 43), control =>
+            Assert.Equal(CardInteractionCue.LegalGenerator, control.Cue));
+        Assert.DoesNotContain(41, BoardInteractionCueProjection.From(composer, prompt).Keys);
+
+        // A draft loaded with an unusable source is still explained and cannot commit.
+        composer.ToggleResource(41);
+        Assert.False(composer.Progress().Payment.CanCoverCost);
+        Assert.Contains("required types", TableDraftSummary.From(composer, prompt));
+        Assert.False(composer.TryBuild(out _, out _));
+
+        composer.ToggleResource(42);
+        Assert.True(composer.Progress().Payment.CanCoverCost);
+        Assert.True(composer.TryBuild(out _, out _));
+        Assert.Contains("1 excess resource will be lost", TableDraftSummary.From(composer, prompt));
+    }
+
+    [Fact]
     public void TableDraftSummaryDoesNotInventTargetsForAnOfferWithoutTargetSelection()
     {
         var composer = Composer(new Affordance(3, "Play", 19, 0, "Web-Shooter"));

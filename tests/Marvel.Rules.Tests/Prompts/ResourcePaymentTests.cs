@@ -7,6 +7,49 @@ namespace Marvel.Rules.Tests.Prompts;
 
 public sealed class ResourcePaymentTests
 {
+    [Rule("rr:wild-resource")]
+    [Theory]
+    [InlineData("R", true)]
+    [InlineData("G", true)]
+    [InlineData("B", false)]
+    [InlineData("Y", false)]
+    [InlineData("BR", true)]
+    public void ContributionIdentifiesIconsThatCanPayAPhysicalCost(string icons, bool expected)
+    {
+        // A wild resource may be used as physical; mental and energy cannot
+        // fill a physical-only slot. This does not reject legal excess icons.
+        var cost = new CostOption(0, "1", Rule: ["R"], Sources: [new ResourceSource(7, icons)]);
+        Assert.Equal(expected, ResourcePayment.CanContribute(cost, 7));
+        Assert.False(ResourcePayment.CanContribute(cost, 8));
+    }
+
+    [Rule("rr:printed.1.1")]
+    [Fact]
+    public void ContributionPreservesPrintedRequirementsAndGenericComponents()
+    {
+        // "Wild resources cannot be spent as other resource types for such a cost."
+        var cost = new CostOption(0, "1", Sources: [new ResourceSource(7, "G")],
+            Components: [new ResourceCost("1", ["R"], Printed: true)]);
+        Assert.False(ResourcePayment.CanContribute(cost, 7));
+        Assert.True(ResourcePayment.CanContribute(cost with
+        {
+            Components = [new ResourceCost("1", ["R"], Printed: true), new ResourceCost("1")],
+        }, 7));
+    }
+
+    [Fact]
+    public void ContributionConsidersAlternativesAndUnresolvedVariables()
+    {
+        var cost = new CostOption(0, "1", Rule: ["R"], OrCost: "2",
+            Sources: [new ResourceSource(7, "B")]);
+        Assert.True(ResourcePayment.CanContribute(cost, 7));
+        Assert.False(ResourcePayment.CanContribute(cost with { OrCost = "" }, 7));
+        var variable = cost with { Cost = "X", Rule = null, OrCost = "" };
+        Assert.True(ResourcePayment.CanContribute(variable, 7));
+        Assert.False(ResourcePayment.CanContribute(variable, 7, new Dictionary<string, long> { ["X"] = 0 }));
+        Assert.True(ResourcePayment.CanContribute(variable, 7, new Dictionary<string, long> { ["X"] = 2 }));
+    }
+
     [Rule("rr:cost.5")]
     [Rule("rr:cost.5.1")]
     [Fact]

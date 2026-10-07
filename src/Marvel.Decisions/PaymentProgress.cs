@@ -15,6 +15,9 @@ public sealed record PaymentProgress(
     int RequestedVariables,
     bool IsSatisfied)
 {
+    /// <summary>Whether selected generators could cover the cost with a legal allocation.</summary>
+    public bool CanCoverCost { get; init; }
+
     /// <summary>Generated icons that a complete payment will lose as excess.</summary>
     public int ExcessIcons => IsSatisfied
         ? Math.Max(0, GeneratedIcons - AssignedIcons)

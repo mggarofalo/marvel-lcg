@@ -25,7 +25,7 @@ internal static class RelationshipRoutePlanner
             return vertical;
         }
 
-        foreach (Vector2[] detour in Detours(start, finish, obstacles))
+        foreach (Vector2[] detour in Detours(start, finish, obstacles).OrderBy(Length))
         {
             if (Clear(detour, obstacles))
             {
@@ -35,6 +35,9 @@ internal static class RelationshipRoutePlanner
 
         return null;
     }
+
+    private static float Length(Vector2[] path) =>
+        Enumerable.Range(1, path.Length - 1).Sum(index => path[index - 1].DistanceTo(path[index]));
 
     private static (Vector2 Start, Vector2 Finish) CardEdges(Rect2 source, Rect2 target)
     {

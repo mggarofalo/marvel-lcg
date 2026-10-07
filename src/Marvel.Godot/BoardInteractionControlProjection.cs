@@ -98,14 +98,25 @@ internal static class BoardInteractionControlProjection
         foreach (int generator in cost.Generators
                      .Select(source => source.Effect).Distinct().OrderBy(id => id))
         {
-            bool selectedGenerator = composer.Resources.Contains(generator);
-            controls.Add(new CardInteractionControlDescriptor(
-                generator,
-                CardInteractionIntent.Generator,
-                selectedGenerator ? "✓ Resource selected" : "Use resource",
-                selectedGenerator
-                    ? CardInteractionCue.SelectedGenerator
-                    : CardInteractionCue.LegalGenerator));
+            controls.Add(GeneratorControl(composer, generator));
         }
     }
+
+    private static CardInteractionControlDescriptor GeneratorControl(DecisionComposer composer, int generator)
+    {
+        bool selectedGenerator = composer.Resources.Contains(generator);
+        bool available = DecisionResourceEligibility.CanToggle(composer, generator);
+        bool contributes = DecisionResourceEligibility.Contributes(composer, generator);
+        return new CardInteractionControlDescriptor(
+            generator,
+            CardInteractionIntent.Generator,
+            selectedGenerator ? "✓ Resource selected"
+                : contributes ? "Use resource" : available ? "Add excess resource" : "Does not pay this cost",
+            selectedGenerator
+                ? CardInteractionCue.SelectedGenerator
+                : available ? CardInteractionCue.LegalGenerator : CardInteractionCue.Unavailable,
+            Description: contributes ? "Contributes to the selected cost."
+                : "This source does not match the required resources. Pay the cost before adding excess resources.");
+    }
+
 }

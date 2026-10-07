@@ -146,8 +146,7 @@ public sealed class InteractionSurfaceProjectionTests
         Assert.False(composer.CostApplies(cost));
         Assert.DoesNotContain(BoardInteractionControlProjection.From(composer, prompt),
             control => control.Intent == CardInteractionIntent.Generator);
-        Assert.Equal(CardInteractionCue.LegalGenerator,
-            BoardInteractionCueProjection.From(composer, prompt)[41]);
+        Assert.DoesNotContain(41, BoardInteractionCueProjection.From(composer, prompt).Keys);
 
         composer.SelectTargets([11]);
 
@@ -156,6 +155,8 @@ public sealed class InteractionSurfaceProjectionTests
             BoardInteractionControlProjection.From(composer, prompt),
             control => control.Intent == CardInteractionIntent.Generator);
         Assert.Equal(41, generator.CardId);
+        Assert.Equal(CardInteractionCue.LegalGenerator,
+            BoardInteractionCueProjection.From(composer, prompt)[41]);
     }
 
     [Fact]
@@ -187,6 +188,19 @@ public sealed class InteractionSurfaceProjectionTests
         Vector2[] direct = Assert.IsType<Vector2[]>(RelationshipRoutePlanner.Route(source, target, []));
 
         Assert.Equal([new Vector2(10, 20), new Vector2(10, 100)], direct);
+    }
+
+    [Fact]
+    public void PaymentConnectorChoosesTheNearbyDetourInsteadOfTheFarBoardEdge()
+    {
+        Rect2 source = new(0, 100, 20, 20);
+        Rect2 target = new(100, 100, 20, 20);
+        Rect2[] blockers = [new(45, 90, 30, 40), new(300, -1000, 20, 20)];
+
+        Vector2[] path = Assert.IsType<Vector2[]>(RelationshipRoutePlanner.Route(source, target, blockers));
+
+        Assert.Equal(4, path.Length);
+        Assert.All(path, point => Assert.InRange(point.Y, 100, 150));
     }
 
     [Fact]
@@ -240,7 +254,9 @@ public sealed class InteractionSurfaceProjectionTests
     [Fact]
     public void SelectedPromptDrawsOnlyActionableTargetAndGeneratorLinks()
     {
-        var composer = Composer(new Affordance(3, "Use", 19, 0, "Visible"));
+        var cost = new CostOption(19, "1", Rule: ["R"], Sources:
+            [new ResourceSource(23, "R"), new ResourceSource(24, "B")]);
+        var composer = Composer(new Affordance(3, "Use", 19, 0, "Visible", Costs: [cost]));
         composer.SelectAffordance(3);
         PromptPresentation prompt = Prompt(composer.Prompt,
         [
@@ -252,6 +268,7 @@ public sealed class InteractionSurfaceProjectionTests
                     new TableRelationshipDescriptor(RelationshipKind.Result, 19, 21),
                     new TableRelationshipDescriptor(RelationshipKind.OfferedTarget, 19, 22),
                     new TableRelationshipDescriptor(RelationshipKind.OfferedGenerator, 19, 23),
+                    new TableRelationshipDescriptor(RelationshipKind.OfferedGenerator, 19, 24),
                     new TableRelationshipDescriptor(RelationshipKind.Engagement, 19, null, 0),
                 ],
             },
