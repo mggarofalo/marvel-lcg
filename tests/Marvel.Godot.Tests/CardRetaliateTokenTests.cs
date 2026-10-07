@@ -20,7 +20,7 @@ public sealed class CardRetaliateTokenTests
     }
 
     [Theory]
-    [InlineData(176, 246, false)]
+    [InlineData(172, 240, false)]
     [InlineData(264, 369, false)]
     [InlineData(400, 560, true)]
     public void CurrentRetaliationFitsItsOwnRowWithoutMovingStatsOrCorners(int width, int height, bool full)
@@ -43,13 +43,15 @@ public sealed class CardRetaliateTokenTests
     [InlineData(2, true)]
     public void OptionalPortraitArtYieldsItsSpaceToCurrentValues(int tokenRows, bool retaliate)
     {
-        var features = new CardFaceFeatures(false, false, true, true, true, true, 0);
+        var features = new CardFaceFeatures(false, false, true, true, true, true, 0)
+        { RulesHeight = 180, TitleHeight = 42 };
         var plain = new CardFaceRegions(new Vector2(392, 552), features);
         var current = new CardFaceRegions(new Vector2(392, 552), features with
         { TokenRows = tokenRows, HasRetaliate = retaliate });
         Assert.True(current.Illustration.Size.Y < plain.Illustration.Size.Y);
         Assert.True(current.Rules.Size.Y >= plain.Rules.Size.Y - 4 * current.Unit - 0.001f);
-        Assert.Equal(plain.Stats, current.Stats);
+        Assert.Equal(plain.Stats.Size, current.Stats.Size);
+        Assert.False(current.Stats.Intersects(current.Rules));
         Assert.Equal(plain.Health, current.Health);
     }
 

@@ -12,6 +12,7 @@ internal static class ClientThemeTypography
         theme.SetFont("normal_font", "RichTextLabel", CardTypography.Body);
         theme.SetFont("bold_font", "RichTextLabel", CardTypography.Bold);
         theme.SetFont("italics_font", "RichTextLabel", CardTypography.Italic);
+        theme.SetFont("bold_italics_font", "RichTextLabel", CardTypography.BoldItalic);
         foreach (string variation in new[] { GodotThemeVariations.CardTitle,
             GodotThemeVariations.DisplayTitle, GodotThemeVariations.Heading })
             theme.SetFont("font", variation, CardTypography.Title);
@@ -40,6 +41,7 @@ internal static class ClientThemeTypography
         theme.SetFontSize("normal_font_size", GodotThemeVariations.CardRulesRich, type.Body);
         theme.SetFontSize("bold_font_size", GodotThemeVariations.CardRulesRich, type.Body);
         theme.SetFontSize("italics_font_size", GodotThemeVariations.CardRulesRich, type.Body);
+        theme.SetFontSize("bold_italics_font_size", GodotThemeVariations.CardRulesRich, type.Body);
     }
 
     private static void Label(

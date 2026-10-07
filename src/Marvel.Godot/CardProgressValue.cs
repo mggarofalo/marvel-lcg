@@ -14,15 +14,15 @@ internal sealed record CardProgressValue(string FieldName, string Value, bool Is
         {
             if (card.Fields.FirstOrDefault(field => field.Name == "TARGET_THREAT") is { } maximum)
                 return new(threat.Name, $"{threat.Value}/{maximum.Value}", true, false);
-            if (card.PrintedStats.FirstOrDefault(field => field.Name == "TargetThreat") is { } printedMaximum)
-                return new(threat.Name, $"{threat.Value}/{printedMaximum.Value.TrimEnd('*')}", true,
-                    IsPerPlayer(card, printedMaximum.Name));
+            if (card.PrintedMarks.FirstOrDefault(field => field.Attribute == "TargetThreat") is { } printedMaximum)
+                return new(threat.Name, $"{threat.Value}/{printedMaximum.Value}", true,
+                    IsPerPlayer(card, printedMaximum.Attribute));
             return new(threat.Name, threat.Value, true, false);
         }
-        BoardFieldPresentation? printed = card.PrintedStats.FirstOrDefault(field => field.Name == "HP")
-            ?? card.PrintedStats.FirstOrDefault(field => field.Name == "TargetThreat");
-        return printed is null ? null : new(printed.Name, printed.Value.TrimEnd('*'),
-            printed.Name == "TargetThreat", IsPerPlayer(card, printed.Name));
+        BoardPrintedValueMark? printed = card.PrintedMarks.FirstOrDefault(field => field.Attribute == "HP")
+            ?? card.PrintedMarks.FirstOrDefault(field => field.Attribute == "TargetThreat");
+        return printed is null ? null : new(printed.Attribute, printed.Value,
+            printed.Attribute == "TargetThreat", printed.PerPlayer);
     }
 
     private static bool IsPerPlayer(BoardCardPresentation card, string attribute) =>

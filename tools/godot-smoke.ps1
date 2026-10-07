@@ -20,6 +20,8 @@ if ($LASTEXITCODE -ne 0 -or -not $version.StartsWith("4.7.")) {
 dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+& "$PSScriptRoot/godot-smoke-card-faces.ps1" -GodotBin $GodotBin
+
 function Invoke-LocalSmoke {
     param([string]$Script = "res://smoke/local_game_smoke.gd")
     $output = & $GodotBin --headless --audio-driver Dummy --path "$repoRoot/src/Marvel.Godot" `

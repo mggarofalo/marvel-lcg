@@ -53,13 +53,13 @@ public sealed partial class CardControl : PanelContainer
         var surface = new Control
         {
             Name = "CardSurface", MouseFilter = MouseFilterEnum.Pass,
-            CustomMinimumSize = control.CustomMinimumSize - new Vector2(8, 8),
+            CustomMinimumSize = control.CustomMinimumSize - Vector2.One * (2 * CardVisualTokens.FrameInset),
         };
         control.AddChild(surface);
         Control body = CardFaceRendering.CreateBody(card, size, layout, scale, art);
         surface.AddChild(body);
         if (body.FindChild("ResourceIcons", true, false) is Control resources)
-            control.SetMeta("card_resource_rect", new Rect2(resources.Position + new Vector2(4, 4), resources.Size));
+            control.SetMeta("card_resource_rect", new Rect2(resources.Position + Vector2.One * CardVisualTokens.FrameInset, resources.Size));
         if (card.Concealed)
         {
             body.Size = surface.CustomMinimumSize;
@@ -91,7 +91,7 @@ public sealed partial class CardControl : PanelContainer
     public override void _Draw()
     {
         CardInteractionDrawing.Draw(this, interactionCue, highlighted || presented);
-        if (HasFocus()) DrawRect(new Rect2(new Vector2(-4, -4), Size + new Vector2(8, 8)),
+        if (HasFocus()) DrawRect(new Rect2(new Vector2(-4, -4), Size + Vector2.One * (2 * CardVisualTokens.FrameInset)),
             Colors.White, filled: false, width: 1.5f);
     }
 

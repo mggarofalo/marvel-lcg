@@ -4,5 +4,7 @@ namespace Marvel.Godot;
 internal sealed record CardStatValue(string Name, string Printed, string Value,
     bool PerPlayer, int ConsequentialDamage)
 {
-    internal bool Modified => Printed != Value;
+    internal bool SpecialStar { get; init; }
+    internal bool IsBareStar => Value == "★";
+    internal bool Modified { get; init; }
 }

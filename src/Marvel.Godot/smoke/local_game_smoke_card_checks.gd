@@ -198,7 +198,7 @@ func _active_villain_stage() -> Control:
 	for candidate in candidates:
 		if is_instance_valid(candidate) and not candidate.is_queued_for_deletion() \
 				and candidate.is_visible_in_tree() \
-				and candidate.find_child("StageCaption", true, false) != null \
+				and candidate.find_child("StageValue", true, false) != null \
 				and candidate.find_child("SummaryValuesSCH", true, false) != null:
 			return candidate as Control
 	return null

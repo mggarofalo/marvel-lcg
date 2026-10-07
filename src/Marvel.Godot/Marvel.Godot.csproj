@@ -26,6 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="assets/icons/card/*.svg"
+                      LogicalName="Marvel.Godot.Assets.CardIcons.%(Filename).svg" />
     <EmbeddedResource Include="assets/art/*.svg"
                       LogicalName="Marvel.Godot.Assets.Art.%(Filename).svg" />
     <EmbeddedResource Include="assets/icons/resources/*.svg"

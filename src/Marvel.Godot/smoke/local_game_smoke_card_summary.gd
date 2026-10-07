@@ -172,10 +172,13 @@ func _resource_slot_is_safe(slot: Label, expected_size: Vector2) -> bool:
 
 
 func _compact_card_stage_is_safe(face: Control, observed: Dictionary) -> bool:
-	var stage := face.find_child("StageCaption", true, false)
+	var stage := face.find_child("StageValue", true, false) as Label
 	var health := face.find_child("ProgressValuesHEALTH", true, false)
 	if stage == null:
 		return true
+	if stage.text not in ["I", "II", "III", "IV"] or not stage.tooltip_text.begins_with("Stage "):
+		_fail("a stage corner lost its Roman numeral or stage meaning")
+		return false
 	if health != null:
 		if face.find_child("SummaryValuesSCH", true, false) == null:
 			_fail("an active villain stage is missing scheme beside live health")
@@ -183,7 +186,7 @@ func _compact_card_stage_is_safe(face: Control, observed: Dictionary) -> bool:
 		if face.find_child("SummaryValuesATK", true, false) == null:
 			_fail("an active villain stage is missing attack beside live health")
 			return false
-		if face.find_children("StageCaption", "Label", true, false).size() != 1:
+		if face.find_children("StageValue", "Label", true, false).size() != 1:
 			_fail("an active villain stage is repeated beside live stats")
 			return false
 		observed.active_villain_stage = true

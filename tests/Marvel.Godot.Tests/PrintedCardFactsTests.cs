@@ -11,7 +11,9 @@ public sealed class PrintedCardFactsTests
         Dictionary<string, string> printed = new() { ["ATK"] = "2*", ["THW"] = "1**" };
         BoardCardPresentation card = Card("ALLY", printed) with
         {
-            Fields = [new("ATTACK", "4"), new("THWART", "0")],
+            Fields = [new("ATTACK", "99"), new("THWART", "99")],
+            EffectiveValues = new Dictionary<string, CardEffectiveValue>
+            { ["ATK"] = new(2, 4, "Printed", true, []), ["THW"] = new(1, 0, "Printed", true, []) },
             PrintedMarks = BoardPrintedValueMarks.From(new Dictionary<string, CardPrintedValue>
             {
                 ["ATK"] = new("2", false, false, 1),
@@ -53,7 +55,7 @@ public sealed class PrintedCardFactsTests
         }), value => value.Name == "EscalationThreat");
         Assert.Equal("3", live.Value);
         Assert.Equal("1", live.Printed);
-        Assert.True(live.Modified);
+        Assert.False(live.Modified);
         Assert.False(live.PerPlayer);
     }
 
@@ -75,6 +77,44 @@ public sealed class PrintedCardFactsTests
         Assert.Equal(shown, value.Value);
         Assert.Equal(shown, value.Printed);
         Assert.False(value.Modified);
+    }
+
+    [Theory]
+    [InlineData("—", false)]
+    [InlineData("X", true)]
+    [InlineData("★", true)]
+    [InlineData("0", false)]
+    public void CanonicalSymbolsDoNotDependOnLegacyAttributePresence(string value, bool special)
+    {
+        BoardCardPresentation card = Card("ALLY", new()) with
+        {
+            PrintedMarks = [new("ATK", false, 2) { Value = value, SpecialStar = special }],
+            Fields = [new("ATTACK", "0")],
+        };
+        CardStatValue stat = Assert.Single(CardStatValues.From(card));
+        Assert.Equal(value, stat.Value);
+        Assert.Equal(special, stat.SpecialStar);
+        Assert.Equal(value == "★", stat.IsBareStar);
+        Assert.Equal(2, stat.ConsequentialDamage);
+        Assert.Empty(CardStatValues.From(card with { PrintedMarks = [], Fields = [] }));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ResolvedXUsesAuthoritativeModificationFlag(bool modified)
+    {
+        BoardCardPresentation card = Card("ENCOUNTER MINION", new()) with
+        {
+            PrintedMarks = [new("ATK", false, 0) { Value = "X", SpecialStar = true }],
+            EffectiveValues = new Dictionary<string, CardEffectiveValue>
+            { ["ATK"] = new(6, modified ? 9 : 6, "Defined", modified, []) },
+        };
+        CardStatValue value = Assert.Single(CardStatValues.From(card));
+        Assert.Equal("X", value.Printed);
+        Assert.Equal(modified ? "9" : "6", value.Value);
+        Assert.Equal(modified, value.Modified);
+        Assert.True(value.SpecialStar);
     }
 
     [Fact]
@@ -103,5 +143,7 @@ public sealed class PrintedCardFactsTests
         new(1, 1, false, "Visible card", "", kind, "", [])
         {
             PrintedStats = [.. printed.Select(value => new BoardFieldPresentation(value.Key, value.Value))],
+            PrintedMarks = BoardPrintedValueMarks.From(printed.ToDictionary(value => value.Key,
+                value => new CardPrintedValue(value.Value, false, false, 0))),
         };
 }

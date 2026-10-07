@@ -9,20 +9,43 @@ internal static class PrintedCardFace
     internal static Control Create(BoardCardPresentation card, CardLayoutMetrics layout,
         InterfaceScale scale, ICardArtProvider? art, CardDisplaySize displaySize)
     {
-        Vector2 size = new(layout.Width - 8, layout.MinimumHeight - 8);
+        Vector2 size = new(layout.Width - 2 * CardVisualTokens.FrameInset,
+            layout.MinimumHeight - 2 * CardVisualTokens.FrameInset);
         var face = new Control { Name = "CardFace", CustomMinimumSize = size,
             MouseFilter = Control.MouseFilterEnum.Ignore };
         bool landscape = VisualSystem.CardFrame(card.Kind).Family == CardFrameFamily.Scheme;
-        Texture2D? illustration = displaySize == CardDisplaySize.Full && card.FaceId is { } id
+        Texture2D? illustration = card.FaceId is { } id
             ? art?.Find(id) ?? BuiltInCardArt.Instance.Find(id) : null;
         IReadOnlyList<CardStatValue> stats = CardStatValues.From(card);
-        var regions = new CardFaceRegions(size, new CardFaceFeatures(landscape, card.Cost is not null || card.PrintedStats.Any(value => value.Name == "Stage"),
-            illustration is not null, stats.Count > 0, card.Traits.Count > 0, displaySize == CardDisplaySize.Full, CardStatusTokens.RowCount(card)) { HasRetaliate = !card.Concealed && card.Retaliate > 0 });
-        PrintedCardHeader.Add(face, card, regions);
-        AddIllustration(face, card, regions, illustration);
-        PrintedCardStats.Add(face, stats, regions);
-        AddRules(face, card, regions, scale);
-        CardFaceTokens.Add(face, card, regions);
+        var features = new CardFaceFeatures(landscape, card.Cost is not null || card.PrintedStats.Any(value => value.Name == "Stage"),
+            illustration is not null, stats.Count > 0, card.Traits.Count > 0,
+            displaySize == CardDisplaySize.Full, CardStatusTokens.RowCount(card))
+        { HasRetaliate = !card.Concealed && card.Retaliate > 0,
+            HasConsequences = stats.Any(stat => stat.ConsequentialDamage > 0),
+            HasProgress = CardProgressValue.From(card) is not null };
+        var provisional = new CardFaceRegions(size, features);
+        RichTextLabel rules = CardRulesRendering.Create(card, scale, provisional.RulesFontSize);
+        rules.Size = new Vector2(provisional.Rules.Size.X, size.Y);
+        face.AddChild(rules);
+        CardFaceTokens.Add(face, card, provisional);
+        face.Ready += () =>
+        {
+            var regions = new CardFaceRegions(size, features with
+            {
+                RulesHeight = rules.GetContentHeight(),
+                TitleHeight = PrintedCardHeader.MeasureTitle(card, provisional),
+            });
+            face.SetMeta("measured_rules", rules.GetContentHeight());
+            face.SetMeta("ink_end", regions.InkEnd);
+            face.SetMeta("title_height", regions.Title.Size.Y);
+            CardFacePlanes.Add(face, card, regions, size);
+            PrintedCardHeader.Add(face, card, regions);
+            AddIllustration(face, card, regions, illustration);
+            PrintedCardStats.Add(face, stats, regions);
+            AddRules(face, card, regions, rules);
+            CardStatusTokens.Add(face, card, regions);
+            CardRetaliateToken.Add(face, card, regions);
+        };
         return face;
     }
 
@@ -30,44 +53,28 @@ internal static class PrintedCardFace
         CardFaceRegions r, Texture2D? texture)
     {
         if (texture is null) return;
-        var well = Panel("IllustrationRegion", r.Illustration, CardFaceStyle.Accent(card).Darkened(0.6f));
+        if (r.Illustration.Size.Y <= 0) return;
+        var well = new Control { Name = "IllustrationRegion", Position = r.Illustration.Position,
+            Size = r.Illustration.Size, ClipContents = true, MouseFilter = Control.MouseFilterEnum.Ignore };
         face.AddChild(well);
-        if (texture is not null)
-        {
-            var image = new TextureRect { Name = "Illustration", Texture = texture,
-                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-                StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
-                MouseFilter = Control.MouseFilterEnum.Ignore };
-            well.AddChild(image);
-            image.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        }
+        var image = new TextureRect { Name = "Illustration", Texture = texture,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
+            MouseFilter = Control.MouseFilterEnum.Ignore };
+        well.AddChild(image);
+        image.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
     }
 
-    private static void AddRules(Control face, BoardCardPresentation card, CardFaceRegions r, InterfaceScale scale)
+    private static void AddRules(Control face, BoardCardPresentation card, CardFaceRegions r, RichTextLabel rules)
     {
-        var paper = Panel("RulesField", new Rect2(r.Traits.Position,
-            new Vector2(r.Rules.Size.X, r.Rules.End.Y - r.Traits.Position.Y)), CardFaceStyle.Paper);
-        face.AddChild(paper);
-        Label traits = Text(string.Join(". ", card.Traits), "Traits", r.Traits, CardVisualTokens.TraitSize * r.Unit);
-        traits.HorizontalAlignment = HorizontalAlignment.Center;
+        Label traits = Text(string.Join(". ", card.Traits).ToUpperInvariant(), "Traits", r.Traits,
+            (r.Full ? CardVisualTokens.FullTraitSize : CardVisualTokens.CompactTraitSize) * r.Density);
+        traits.HorizontalAlignment = HorizontalAlignment.Right;
+        traits.AddThemeFontOverride("font", CardTypography.Bold);
         if (card.Traits.Count > 0) face.AddChild(traits);
         else traits.Free();
-        CardRulesMarkup.ResourceFont();
-        var rules = new RichTextLabel
-        {
-            Name = "RulesText", Position = r.Rules.Position + new Vector2(8, 2) * r.Unit,
-            Size = r.Rules.Size - new Vector2(16, 4) * r.Unit,
-            BbcodeEnabled = true, Text = CardRulesMarkup.ToBbCode(card.RulesMarkup, card.RulesText, scale,
-                Mathf.RoundToInt(r.RulesFontSize * 1.22f)),
-            ScrollActive = false, FitContent = false, MouseFilter = Control.MouseFilterEnum.Ignore,
-        };
-        rules.AddThemeFontOverride("normal_font", CardTypography.Body);
-        rules.AddThemeFontOverride("bold_font", CardTypography.Bold);
-        rules.AddThemeFontOverride("italics_font", CardTypography.Italic);
-        rules.AddThemeColorOverride("default_color", CardFaceStyle.Ink);
-        foreach (string font in new[] { "normal_font_size", "bold_font_size", "italics_font_size" })
-            rules.AddThemeFontSizeOverride(font, Math.Max(5, Mathf.RoundToInt(r.RulesFontSize)));
-        face.AddChild(rules);
+        rules.Position = r.Rules.Position;
+        rules.Size = r.Rules.Size;
     }
 
     internal static Label Text(string text, string name, Rect2 bounds, float fontSize)

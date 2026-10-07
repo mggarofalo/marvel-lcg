@@ -83,6 +83,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.BoardStageRole",
             // Passive authorized state summaries; no outcome calculation.
             "Marvel.View.CardStatePresentation",
+            // Engine-evaluated quantity and modification flag; the renderer does not evaluate sources.
+            "Marvel.View.CardEffectiveValue",
             "Marvel.View.DecisionReceiptContext",
             "Marvel.View.ResponseReceiptPresenter",
             "Marvel.View.EventBatchPresentation",

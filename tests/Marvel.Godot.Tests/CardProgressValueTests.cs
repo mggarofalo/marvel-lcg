@@ -16,7 +16,7 @@ public sealed class CardProgressValueTests
         {
             Fields = [new("HEALTH", health)],
             PrintedStats = [new("HP", "4*")],
-            PrintedMarks = [new("HP", true, 0)],
+            PrintedMarks = [new("HP", true, 0) { Value = "4" }],
         };
 
         CardProgressValue value = Assert.IsType<CardProgressValue>(CardProgressValue.From(card));
@@ -34,7 +34,7 @@ public sealed class CardProgressValueTests
         {
             Fields = [new("THREAT", threat), new("TARGET_THREAT", "14")],
             PrintedStats = [new("TargetThreat", "7*")],
-            PrintedMarks = [new("TargetThreat", true, 0)],
+            PrintedMarks = [new("TargetThreat", true, 0) { Value = "7" }],
         };
 
         CardProgressValue value = Assert.IsType<CardProgressValue>(CardProgressValue.From(card));
@@ -50,7 +50,7 @@ public sealed class CardProgressValueTests
         {
             Fields = [new("THREAT", "2")],
             PrintedStats = [new("TargetThreat", "7*")],
-            PrintedMarks = [new("TargetThreat", true, 0)],
+            PrintedMarks = [new("TargetThreat", true, 0) { Value = "7" }],
         };
 
         CardProgressValue value = Assert.IsType<CardProgressValue>(CardProgressValue.From(card));

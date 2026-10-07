@@ -19,7 +19,8 @@ internal static class CardFaceRendering
 
     private static Control Back(BoardCardPresentation card, CardLayoutMetrics layout)
     {
-        Vector2 size = new(layout.Width - 8, layout.MinimumHeight - 8);
+        Vector2 size = new(layout.Width - 2 * CardVisualTokens.FrameInset,
+            layout.MinimumHeight - 2 * CardVisualTokens.FrameInset);
         var content = new Control { Name = "CardBack", CustomMinimumSize = size,
             MouseFilter = Control.MouseFilterEnum.Ignore };
         string caption = string.IsNullOrWhiteSpace(card.Back) ? "Concealed" : TabletopAreaNames.Title(card.Back);
