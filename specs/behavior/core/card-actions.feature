@@ -135,13 +135,15 @@ Feature: Core card actions
   @covers:behavior:card:01049:move-1-damage-from-your-hero-enemy-condition-not-met
   @rr:move.2 @card:01043a @card:01049
   Scenario: Vibranium Suit cannot move damage when its hero has none
-    # Rhino remains a valid enemy target, but the undamaged hero is not a valid
-    # source for the move. The Special resolves without creating damage.
+    # rr:target.3 requires an effect on the target. The undamaged hero has
+    # no damage to move, so the Suit is skipped and Tactical Genius resolves.
     Given a canonical Core scene is dealt
       | campaign | heroes        | seed |
       | rhino    | black_panther | 841  |
     And seat 1 shows identity face 01040a
     And card 01049 copy 0 is an upgrade attached to seat 1's identity
+    And card 01048 copy 0 is an upgrade attached to seat 1's identity
+    And card 01097b copy 0 has 2 threat counters
     And seat 1's hand contains exactly these cards
       | card   | copy |
       | 01043a | 0    |
@@ -149,15 +151,18 @@ Feature: Core card actions
     When seat 1 initiates card 01043a copy 0's action paying with these cards
       | card  | copy |
       | 01088 | 0    |
-    Then seat 1 is asked to order 1 card for the pending action
+    Then seat 1 is asked to order 2 cards for the pending action
     When seat 1 orders these cards for the pending action
       | card  | copy |
       | 01049 | 0    |
-    Then card 01094 copy 0 is offered by the pending action
-    When seat 1 chooses card 01094 copy 0 for the pending action
+      | 01048 | 0    |
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
     Then card 01040a copy 0 has 0 damage
     And card 01094 copy 0 has 0 damage
+    And card 01097b copy 0 has 0 threat counters
     And 0 Move_Damage events were emitted
+    And 0 Attack events were emitted
 
   @behavior:card:01046:deal-1-damage-villain-and-each-enemy-condition-met
   @covers:behavior:card:01046:choose-player

@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityEffectTargetAdmission;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityCardActionTargetAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
@@ -67,140 +68,12 @@ internal static class AbilityTargetAdmission
         }
         if (operation is "dealEncounterCard" or "heal" or "dealDamage"
             or "dealAttackDamage" or "indirectDamage" or "placeThreat"
-            or "removeThreat")
+            or "removeThreat" or "moveDamage" or "moveAttackDamage")
         {
             return DamageAndThreatTargetLegality(node, cast);
         }
         return OtherTargetLegality(node, cast, bindingMayChange);
     }
-
-    private static TargetLegality CompositeTargetLegality(
-        AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange) =>
-        node.OperationName() switch
-        {
-            "seq" => SequenceTargetLegality(node, cast, bindingMayChange),
-            "and" => CombineTargetLegality(
-                OrderedEffects(node).Select(child =>
-                    TargetLegalityOf(child, cast, bindingMayChange))),
-            "if" when bindingMayChange
-                    && BindingCanChange(ConditionalOf(node, cast).Test) =>
-                CombineTargetLegality(ConditionalBranches((AbilityEffect.Conditional)node)
-                    .Where(value => value is not null)
-                    .Select(value => TargetLegalityOf(
-                        value, cast, bindingMayChange))),
-            "if" => ConditionalBranch(node, Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
-                is { } branch
-                    ? TargetLegalityOf(branch, cast, bindingMayChange)
-                    : TargetLegality.None,
-            _ => throw new InvalidOperationException("Unknown composite target operation"),
-        };
-
-    private static TargetLegality DependentTargetLegality(
-        AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange) =>
-        node.OperationName() switch
-        {
-            "then" when ActiveChoices(EffectBody(node), cast).Any() =>
-                TargetLegalityOf(
-                    EffectBody(node), cast, bindingMayChange),
-            "then" => ResolutionOf(EffectBody(node), cast)
-                == AdmissionResolution.Full
-                    ? CombineTargetLegality(
-                    [
-                        TargetLegalityOf(
-                            EffectBody(node), cast, bindingMayChange),
-                        TargetLegalityOf(
-                            EffectFollowing(node), cast, bindingMayChange),
-                    ])
-                    : TargetLegalityOf(
-                        EffectBody(node), cast, bindingMayChange),
-            "otherwise" when ActiveChoices(EffectBody(node), cast).Any() =>
-                TargetLegalityOf(
-                    EffectBody(node), cast, bindingMayChange),
-            "otherwise" => ResolutionOf(EffectBody(node), cast)
-                == AdmissionResolution.None
-                    ? TargetLegalityOf(
-                        EffectFollowing(node), cast, bindingMayChange)
-                    : TargetLegalityOf(
-                        EffectBody(node), cast, bindingMayChange),
-            _ => throw new InvalidOperationException("Unknown dependent target operation"),
-        };
-
-    private static TargetLegality StructuralTargetLegality(
-        AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange) =>
-        node.OperationName() switch
-        {
-            "forEach" => ForEachCount(node, cast) <= 0
-                ? TargetLegality.None
-                : TargetLegalityOf(
-                    EffectBody(node), cast, bindingMayChange),
-            "attack" => CanTargetAttack(node, cast)
-                ? TargetLegality.Valid : TargetLegality.Invalid,
-            "thwart" => CanTargetThwart(node, cast)
-                ? TargetLegality.Valid : TargetLegality.Invalid,
-            "defense" => TargetLegalityOf(
-                EffectBody(node), cast, bindingMayChange),
-
-            // The choice itself is validated by CanInitiateChoice and
-            // OptionIsLegal. Future-target lasting effects have no target node
-            // in this tree, so they fall through to None.
-            "choose" or "eachTime" => TargetLegality.None,
-            "delayUntil" => TargetLegality.None,
-            "chooseCard" => CanInitiateChooseCard(node, cast)
-                ? TargetLegality.Valid : TargetLegality.Invalid,
-            _ => throw new InvalidOperationException("Unknown structural target operation"),
-        };
-
-    private static TargetLegality DamageAndThreatTargetLegality(
-        AbilityEffect node, AbilityAdmissionScope cast) =>
-        node.OperationName() switch
-        {
-            "dealEncounterCard" => Find(EffectOf<AbilityEffect.DealEncounterCard>(node, cast).Card, cast) is null
-                ? TargetLegality.Invalid : TargetLegality.Valid,
-            "heal" => Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { Damage: > 0 }
-                && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0
-                    ? TargetLegality.Valid : TargetLegality.Invalid,
-            "dealDamage" or "dealAttackDamage" =>
-                Amount(DamageAmountOf(node, cast), cast) > 0
-                    ? CardsLegality(DamageTargets(DamageSelectionOf(node, cast), cast))
-                    : TargetLegality.Invalid,
-            "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) <= 0
-                ? TargetLegality.Invalid
-                : CardsLegality(Assignable(DamageSelectionOf(node, cast), cast)),
-            "placeThreat" => Amount(EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount, cast) <= 0
-                ? TargetLegality.Invalid
-                : CardsLegality(Every(ThreatSelectionOf(node, cast), cast)),
-            "removeThreat" => Every(ThreatSelectionOf(node, cast), cast).Any(scheme =>
-                scheme.Tokens.GetValueOrDefault("k_threat") > 0
-                && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
-                && CanRemoveThreatFrom(node, cast, scheme))
-                ? TargetLegality.Valid : TargetLegality.Invalid,
-            _ => throw new InvalidOperationException("Unknown damage or threat target operation"),
-        };
-
-    private static TargetLegality OtherTargetLegality(
-        AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange) =>
-        node.OperationName() switch
-        {
-            "enemyAttacks" or "enemySchemes" =>
-                CardsLegality(Every(ActivationOf(node, cast).Enemies, cast)),
-            "putIntoPlay" => Find(EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast) is null
-                ? TargetLegality.Invalid : TargetLegality.Valid,
-            "placeAtRandom" => Find(EffectOf<AbilityEffect.PlaceAtRandom>(node, cast).Host, cast) is null
-                ? TargetLegality.Invalid : TargetLegality.Valid,
-            "draw" when cast.Chosen is null
-                    && bindingMayChange
-                    && BindingCanChange(((AbilityEffect.Draw)node).Players) =>
-                CanInitiateDraw(node, cast)
-                    ? TargetLegality.Valid : TargetLegality.Invalid,
-            "draw" when BindingCanChange(((AbilityEffect.Draw)node).Players)
-                    && (cast.PlayerSelection ?? cast.Chosen) is { Owner: < 0 } =>
-                TargetLegality.Invalid,
-            "draw" => AbilityRepeatedStatusTrace.CanDraw(node, cast)
-                ? TargetLegality.Valid : TargetLegality.Invalid,
-            "search" => HasSearchableArea(node, cast)
-                ? TargetLegality.Valid : TargetLegality.Invalid,
-            _ => TargetLegality.None,
-        };
 
     internal static TargetLegality CandidateTargetLegality(
         AbilityEffect node, AbilityAdmissionScope cast)
