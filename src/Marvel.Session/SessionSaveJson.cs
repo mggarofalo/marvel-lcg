@@ -11,7 +11,7 @@ namespace Marvel.Session;
 /// <summary>Strict, deterministic JSON for the canonical save document.</summary>
 public static class SessionSaveJson
 {
-    /// <summary>The strict snake-case serialization contract for schema 4.</summary>
+    /// <summary>The strict snake-case serialization contract for schema 5.</summary>
     public static JsonSerializerOptions Options { get; } = CreateOptions();
 
     /// <summary>Validates and writes one canonical save document.</summary>
@@ -36,6 +36,7 @@ public static class SessionSaveJson
             {
                 return ReadSchemaThree(json);
             }
+            if (schema == 4) return ReadSchemaFour(json);
 
             var save = JsonSerializer.Deserialize<SessionSave>(json, Options)
                 ?? throw new SessionSaveException("save contains no session document");
@@ -61,11 +62,11 @@ public static class SessionSaveJson
             : null;
     }
 
-    /// <summary>Validates either the current schema or the one migratable predecessor.</summary>
+    /// <summary>Validates the current schema or a supported predecessor.</summary>
     public static void ValidateReadable(SessionSave save)
     {
         ArgumentNullException.ThrowIfNull(save);
-        if (save.Schema is 2 or 3)
+        if (save.Schema is 2 or 3 or 4)
         {
             ValidatePredecessor(save);
             return;
@@ -141,7 +142,7 @@ public static class SessionSaveJson
     {
         JsonObject root = JsonNode.Parse(decision.GetRawText())?.AsObject()
             ?? throw new JsonException("schema 2 decision is null");
-        AddCardAnchorKind(root["selector"]?.AsObject()
+        PredecessorPromptJson.AddCardAnchorKind(root["selector"]?.AsObject()
             ?? throw new JsonException("schema 2 decision selector is null"));
         return root.Deserialize<DurableDecision>(Options)
             ?? throw new JsonException("schema 2 decision is null");
@@ -151,64 +152,28 @@ public static class SessionSaveJson
     {
         JsonObject root = JsonNode.Parse(json)?.AsObject()
             ?? throw new JsonException("schema 3 save is null");
-        AddCardAnchorKinds(root);
+        PredecessorPromptJson.AddCardAnchorKinds(root);
+        PredecessorPromptJson.AddFixedResourceCosts(root);
         SessionSave save = root.Deserialize<SessionSave>(Options)
             ?? throw new JsonException("schema 3 save is null");
         ValidatePredecessor(save);
         return save;
     }
 
-    private static void AddCardAnchorKinds(JsonObject root)
+    private static SessionSave ReadSchemaFour(string json)
     {
-        AddCardAnchorKind(root["current_prompt"]?.AsObject());
-        foreach (JsonObject record in JournalSteps(root))
-        {
-            AddCardAnchorKind(record["prompt"]?.AsObject());
-            AddCardAnchorKind(record["decision"]?["selector"]?.AsObject());
-        }
-    }
-
-    private static IEnumerable<JsonObject> JournalSteps(JsonObject root) =>
-        (root["units"]?.AsArray() ?? []).SelectMany(unit =>
-            unit?["decisions"]?.AsArray() ?? []).Select(step => step?.AsObject()
-                ?? throw new JsonException("schema 3 journal step is null"));
-
-    private static void AddCardAnchorKind(JsonObject? record)
-    {
-        if (record is null) return;
-        if (record.ContainsKey("anchor_id"))
-        {
-            AddCardAnchorKindToSelector(record);
-            return;
-        }
-
-        AddCardAnchorKindToAffordances(record);
-    }
-
-    private static void AddCardAnchorKindToSelector(JsonObject selector)
-    {
-        if (selector.ContainsKey("anchor_kind"))
-            throw new JsonException("predecessor decision selector has anchor_kind");
-        selector["anchor_kind"] = selector["decline"]?.GetValue<bool>() == true
-            ? null
-            : (int)AffordanceAnchorKind.Card;
-    }
-
-    private static void AddCardAnchorKindToAffordances(JsonObject prompt)
-    {
-        foreach (JsonNode? affordance in prompt["affordances"]?.AsArray() ?? [])
-        {
-            JsonObject choice = affordance?.AsObject()
-                ?? throw new JsonException("schema 3 affordance is null");
-            if (choice.ContainsKey("anchor_kind"))
-                throw new JsonException("predecessor affordance has anchor_kind");
-            choice["anchor_kind"] = (int)AffordanceAnchorKind.Card;
-        }
+        JsonObject root = JsonNode.Parse(json)?.AsObject()
+            ?? throw new JsonException("schema 4 save is null");
+        PredecessorPromptJson.AddFixedResourceCosts(root);
+        SessionSave save = root.Deserialize<SessionSave>(Options)
+            ?? throw new JsonException("schema 4 save is null");
+        ValidatePredecessor(save);
+        return save;
     }
 
     private static void ValidatePredecessor(SessionSave save)
     {
-        if (save.Schema is not (2 or 3))
+        if (save.Schema is not (2 or 3 or 4))
         {
             throw new SessionSaveException("save schema is not migratable");
         }

@@ -118,6 +118,13 @@ declared type improves a numeric result. A decision composer may pre-fill that
 single useful declaration as a reversible draft. Several preferences, or an
 observable effect the engine cannot rank, remain an explicit player choice.
 
+A resource component may carry `RepeatedResource`: every unit of its `Cost`
+requires that resource type. For a variable cost X, the engine resolves X typed
+slots, not one typed slot followed by generic slots. It is mutually exclusive
+with fixed `Rule` requirements. `ResourcePayment.RequiredResources` supplies
+the resolved requirement to draft composition; the renderer does not expand it.
+Protocol 20 carries this contract and rejects older endpoints.
+
 ## Legality
 
 An affordance may carry an `Illegal` reason so a client can show why a visible

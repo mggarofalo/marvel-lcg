@@ -18,7 +18,7 @@ namespace Marvel.Sim;
 
 internal static class SimulationHarnessSupport
 {
-    internal const int RecordSchema = 4;
+    internal const int RecordSchema = 5;
     internal const int PreviousRecordSchema = 3;
     private const int OldestRecordSchema = 2;
     internal const int RecentEventLimit = 20;
@@ -196,10 +196,10 @@ internal static class SimulationHarnessSupport
             return (T)(object)ReadSchemaTwoFailure(line);
         }
 
-        if (schema == PreviousRecordSchema
+        if (schema is PreviousRecordSchema or 4
             && (typeof(T) == typeof(StepRecord) || typeof(T) == typeof(FailureRecord)))
         {
-            return SimulationSchemaMigration.ReadSchemaThree<T>(line);
+            return SimulationSchemaMigration.ReadPredecessor<T>(line, schema);
         }
 
         return JsonSerializer.Deserialize<T>(line, RecordJson.Options)
@@ -208,11 +208,11 @@ internal static class SimulationHarnessSupport
 
     internal static void ValidateRecordSchema(int schema)
     {
-        if (schema is not (OldestRecordSchema or PreviousRecordSchema or RecordSchema))
+        if (schema is not (OldestRecordSchema or PreviousRecordSchema or 4 or RecordSchema))
         {
             throw new SimulationUsageException(
                 $"record schema {schema} is not supported; expected "
-                + $"{OldestRecordSchema}, {PreviousRecordSchema} or {RecordSchema}");
+                + $"{OldestRecordSchema}, {PreviousRecordSchema}, 4 or {RecordSchema}");
         }
     }
 

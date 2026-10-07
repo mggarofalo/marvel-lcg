@@ -79,11 +79,11 @@ public sealed class CommunityReleasePolicyTests
             workflow, StringComparison.Ordinal);
         Assert.Contains("needs: [identity, acceptance-record, server-sign]",
             workflow, StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v6 · protocol 19 · save 4", workflow,
+        Assert.Contains("engine-replay-v7 · protocol 20 · save 5", workflow,
             StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v6 · protocol 19 · save 4", serverUpgrade,
+        Assert.Contains("engine-replay-v7 · protocol 20 · save 5", serverUpgrade,
             StringComparison.Ordinal);
-        Assert.Contains("protocol:19,save_schema:4", workflow, StringComparison.Ordinal);
+        Assert.Contains("protocol:20,save_schema:5", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("protocol:14", workflow, StringComparison.Ordinal);
         Assert.Contains("def schema_two_prompt", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("jq --compact-output '", serverUpgrade, StringComparison.Ordinal);
@@ -119,15 +119,15 @@ public sealed class CommunityReleasePolicyTests
     }
 
     [Fact]
-    public void ReleaseMatrixPinsSchemaFourAsTheCurrentMigrationDestination()
+    public void ReleaseMatrixPinsSchemaFiveAsTheCurrentMigrationDestination()
     {
         string matrix = File.ReadAllText(Path.Combine(
             RepositoryPaths.Root, "docs", "release-test-matrix.md"));
 
-        Assert.Contains("Empty schema `4` volume", matrix, StringComparison.Ordinal);
-        Assert.Contains("Existing schema `2` or `3` save", matrix, StringComparison.Ordinal);
-        Assert.Contains("migrate to schema `4`", matrix, StringComparison.Ordinal);
-        Assert.Contains("Newer schema `4` save preserved", matrix, StringComparison.Ordinal);
+        Assert.Contains("Empty schema `5` volume", matrix, StringComparison.Ordinal);
+        Assert.Contains("Existing schema `2`, `3` or `4` save", matrix, StringComparison.Ordinal);
+        Assert.Contains("migrate to schema `5`", matrix, StringComparison.Ordinal);
+        Assert.Contains("Newer schema `5` save preserved", matrix, StringComparison.Ordinal);
         Assert.DoesNotContain("migrate to schema `3`", matrix, StringComparison.Ordinal);
     }
 
@@ -179,8 +179,8 @@ public sealed class CommunityReleasePolicyTests
             "Linux server interrupted candidate",
             "Linux server downgrade",
             "unsupported_downgrade",
-            "engine-replay-v6",
-            "protocol `19`",
+            "engine-replay-v7",
+            "protocol `20`",
             "TrustedPeople",
         })
         {

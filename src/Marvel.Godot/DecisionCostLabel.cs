@@ -27,16 +27,20 @@ internal static class DecisionCostLabel
         var rows = new VBoxContainer { Name = "PaymentRequirements" };
         foreach (ResourceCost component in cost.ResourceCosts)
             rows.AddChild(ResourceIconRendering.Row($"{prefix}Pay {component.Cost}",
-                string.Concat(component.Rule ?? []), GodotThemeVariations.Body));
+                Symbols(component), GodotThemeVariations.Body));
         if (cost.Components is null && cost.HasAlternative)
             rows.AddChild(ResourceIconRendering.Row($"OR {cost.OrCost}",
                 string.Concat(cost.OrRule ?? []), GodotThemeVariations.Body));
         return rows;
     }
     internal static string Accessible(CostOption cost) =>
-        $"Pay {cost.Cost} {CardRulesMarkup.ResourceNames(string.Concat(cost.Rule ?? []))}"
+        string.Join("; ", cost.ResourceCosts.Select(component =>
+            $"Pay {component.Cost} {CardRulesMarkup.ResourceNames(Symbols(component))}"))
         + (cost.HasAlternative
             ? $" or {cost.OrCost} {CardRulesMarkup.ResourceNames(string.Concat(cost.OrRule ?? []))}"
             : string.Empty);
+
+    private static string Symbols(ResourceCost component) =>
+        component.RepeatedResource?.ToString() ?? string.Concat(component.Rule ?? []);
 
 }

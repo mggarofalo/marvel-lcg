@@ -10,12 +10,13 @@ namespace Marvel.Session;
 public sealed record ResourceCostComponentRecord(
     [property: JsonRequired] string Cost,
     [property: JsonRequired] IReadOnlyList<string>? Rule,
-    [property: JsonRequired] bool Printed)
+    [property: JsonRequired] bool Printed,
+    [property: JsonRequired] char? RepeatedResource = null)
 {
     /// <summary>Captures one engine-authored payment component.</summary>
     public static ResourceCostComponentRecord From(ResourceCost component)
     {
         ArgumentNullException.ThrowIfNull(component);
-        return new(component.Cost, component.Rule, component.Printed);
+        return new(component.Cost, component.Rule, component.Printed, component.RepeatedResource);
     }
 }
