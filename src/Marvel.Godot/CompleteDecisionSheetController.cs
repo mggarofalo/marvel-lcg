@@ -19,9 +19,9 @@ internal sealed class CompleteDecisionSheetController(DecisionPanel panel)
     }
 
     internal void Closed() => sheet = null;
-    internal void OpenSearchAfterRender()
+    internal void OpenCardChoiceAfterRender()
     {
-        if (!SearchChoiceGallery.IsChoice(panel.composer?.Prompt)) return;
+        if (!DecisionCardChoices.IsChoice(panel.composer?.Prompt)) return;
         var draft = panel.composer;
         Callable.From(() =>
         {

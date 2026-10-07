@@ -169,6 +169,13 @@ public sealed class CoreBlackPantherSpecialTests
         runner.ResolveSpecial(world, suit, 0, finalStep);
         var events = new List<Marvel.Rules.Events.GameEvent>();
         var prompt = Sequence.Work(world, Cards, runner, events)!;
+        Assert.Contains("choose where to move damage", prompt.DisplayQuestion);
+        Assert.Contains($"Move up to {(finalStep ? 2 : 1)} damage from Black Panther", prompt.Description);
+        Assert.Contains($"{damage} damage available", prompt.Description);
+        Affordance target = Assert.Single(prompt.Affordances, option => option.AnchorId == enemy.ObjectId);
+        Assert.Equal($"Move {moved} damage to Ultron", target.CommitLabel);
+        Assert.Contains($"Move {moved} damage from Black Panther", target.Description);
+        Assert.Contains("Retaliate 1", target.Description);
         Sequence.Answer(world, Cards, runner, prompt, Decision.Take(enemy.ObjectId), events);
         Sequence.Finish(world, Cards, runner, events);
 
@@ -228,6 +235,8 @@ public sealed class CoreBlackPantherSpecialTests
         runner.ResolveSpecial(world, suit, 0, finalStep: true);
         var events = new List<Marvel.Rules.Events.GameEvent>();
         var prompt = Sequence.Work(world, Cards, runner, events)!;
+        if (stunned)
+            Assert.Contains("Stunned cancels this attack; no damage moves", prompt.Affordances.Single().Description);
         Sequence.Answer(world, Cards, runner, prompt, Decision.Take(enemy.ObjectId), events);
         Sequence.Finish(world, Cards, runner, events);
         Assert.Equal(stunned ? damage : 0, hero.Damage);

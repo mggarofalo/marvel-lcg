@@ -20,7 +20,7 @@ internal sealed class SearchChoiceGallery(DecisionPanel panel)
     {
         if (!panel.CompleteChoicesOpen || !ReferenceEquals(draft, panel.composer)) return;
         Vector2 viewport = panel.GetViewportRect().Size;
-        if (capacity != SearchChoiceLayout.Capacity(viewport) || cardScale != SearchChoiceLayout.CardScale(viewport))
+        if (capacity != CardChoiceLayout.Capacity(viewport) || cardScale != CardChoiceLayout.CardScale(viewport))
             panel.Rebuild();
     }
 
@@ -28,8 +28,8 @@ internal sealed class SearchChoiceGallery(DecisionPanel panel)
     {
         if (!ReferenceEquals(draft, panel.composer)) { draft = panel.composer; page = 0; }
         Vector2 viewport = panel.GetViewportRect().Size;
-        capacity = SearchChoiceLayout.Capacity(viewport);
-        cardScale = SearchChoiceLayout.CardScale(viewport);
+        capacity = CardChoiceLayout.Capacity(viewport);
+        cardScale = CardChoiceLayout.CardScale(viewport);
         int pages = Math.Max(1, (prompt.Affordances.Count + capacity - 1) / capacity);
         page = Math.Clamp(page, 0, pages - 1);
         var row = new HBoxContainer { Name = "SearchCards", Alignment = BoxContainer.AlignmentMode.Center };

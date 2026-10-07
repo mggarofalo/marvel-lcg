@@ -43,8 +43,7 @@ internal static class DecisionFocus
         while (current is not null && current != panel)
         {
             string name = current.Name.ToString();
-            if (name.StartsWith("SearchResult", StringComparison.Ordinal))
-                return "Affordance" + name["SearchResult".Length..];
+            if (CardChoiceFocus.Key(name) is { } key) return key;
             if (IsStableName(name))
             {
                 return name;
@@ -55,13 +54,11 @@ internal static class DecisionFocus
     }
 
     private static string? PairedControlName(string requested) =>
-        requested == "PreviousSearchPage" ? "NextSearchPage"
-        : requested == "NextSearchPage" ? "PreviousSearchPage"
-        : requested.EndsWith("Add", StringComparison.Ordinal)
+        CardChoiceFocus.PairedPage(requested) ?? (requested.EndsWith("Add", StringComparison.Ordinal)
             ? requested[..^3] + "Remove"
             : requested.EndsWith("Remove", StringComparison.Ordinal)
                 ? requested[..^6] + "Add"
-                : null;
+                : null);
 
     private static BaseButton? FirstEnabledButton(DecisionPanel panel, bool search) =>
         search
@@ -189,7 +186,7 @@ internal static class DecisionFocus
     }
 
     private static bool IsStableName(string name) =>
-        name is "Submit" or "Decline" or "CancelCardPlay" or "PreviousSearchPage" or "NextSearchPage"
+        name is "Submit" or "Decline" or "CancelCardPlay" || CardChoiceFocus.IsPage(name)
         || name.StartsWith("InspectPayment", StringComparison.Ordinal)
         || name.StartsWith("Affordance", StringComparison.Ordinal)
         || name.StartsWith("Group", StringComparison.Ordinal)

@@ -23,7 +23,7 @@ internal static class DecisionPanelPromptRenderer
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
-        bool search = panel.CompleteChoicesOpen && SearchChoiceGallery.IsChoice(composer.Prompt);
+        bool search = panel.CompleteChoicesOpen && DecisionCardChoices.IsChoice(composer.Prompt);
         if (!panel.PaymentModalOpen && !search) AddActionSummary(body, selected, composer);
         if (search)
         {
@@ -93,9 +93,11 @@ internal static class DecisionPanelPromptRenderer
 
     internal static void AddAffordances(DecisionPanel panel, PromptPresentation prompt, int generation)
     {
+        if (panel.CompleteChoicesOpen && panel.composer?.Selected is not null
+            && InitialTableDraft.IsMinionOrder(panel.composer.Prompt)) return;
         if (panel.CompleteChoicesOpen && SearchChoiceGallery.IsChoice(panel.composer?.Prompt))
         {
-            panel.SearchChoices.Add(prompt, generation);
+            panel.CardChoices.AddSearch(prompt, generation);
             return;
         }
         if (MulliganPrompt.IsOpening(panel.composer?.Prompt))

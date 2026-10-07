@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Marvel.Godot.Tests;
 
-public sealed class SearchChoiceLayoutTests
+public sealed class CardChoiceLayoutTests
 {
     [Theory]
     [InlineData(PublicDecisionKind.CardSearch, false, true)]
@@ -30,9 +30,9 @@ public sealed class SearchChoiceLayoutTests
     public void SearchOffersSeveralReadableWholeCardsWithoutViewportOverflow(int width, int height, int count)
     {
         var viewport = new Vector2(width, height);
-        Rect2 frame = SearchChoiceLayout.Frame(viewport);
-        CardLayoutMetrics card = VisualSystem.Card(CardDisplaySize.Full, SearchChoiceLayout.CardScale(viewport));
-        Assert.Equal(count, SearchChoiceLayout.Capacity(viewport));
+        Rect2 frame = CardChoiceLayout.Frame(viewport);
+        CardLayoutMetrics card = VisualSystem.Card(CardDisplaySize.Full, CardChoiceLayout.CardScale(viewport));
+        Assert.Equal(count, CardChoiceLayout.Capacity(viewport));
         Assert.True(new Rect2(Vector2.Zero, viewport).Encloses(frame));
         Assert.True(count * (card.Width + 24) + 64 <= frame.Size.X);
         Assert.True(card.MinimumHeight + 200 <= frame.Size.Y);
