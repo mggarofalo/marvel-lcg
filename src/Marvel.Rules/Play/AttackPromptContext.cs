@@ -22,7 +22,9 @@ internal static class AttackPromptContext
         string player = AttackPlayerName(world, attack.Player);
         string stage = SequenceDescriptions.AttackStage(step.What);
         string window = AttackWindowDescription(world.Agenda.Stage);
-        string situation = AttackSituation(
+        bool defenseContext = prompt.PublicKind == PublicDecisionKind.Defense
+            && !string.IsNullOrWhiteSpace(prompt.Description);
+        string situation = defenseContext ? prompt.Description! : AttackSituation(
             world, facts, attack, enemy, target, player, step);
         string[] attachments = AttackAttachments(world, facts, enemy);
         situation = AppendAttackContext(situation, attachments, prompt.Description);
@@ -30,7 +32,8 @@ internal static class AttackPromptContext
 
         return prompt with
         {
-            Description = $"Enemy attack · {stage} · {window}\n{situation}",
+            Description = defenseContext ? $"Enemy attack · {situation}"
+                : $"Enemy attack · {stage} · {window}\n{situation}",
             CauseCardIds = causes,
         };
     }

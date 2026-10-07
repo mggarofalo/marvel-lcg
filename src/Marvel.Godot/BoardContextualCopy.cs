@@ -33,7 +33,8 @@ internal sealed class BoardContextualCopy
         if (!InteractionControl.IsUsable(summary)) return;
         if (InteractionControl.IsUsable(resolution))
             resolution!.Visible = resolution.Text.Length > 0 && ShowsResolution(composer);
-        string text = TableDraftSummary.From(composer, prompt, world, compact: true) ?? fallback;
+        string text = TableDraftSummary.From(composer, prompt, world, compact: true)
+            ?? ContextualOfferDescription.SingleResponse(prompt, composer?.Prompt.PublicKind) ?? fallback;
         summary!.Text = text;
         summary.Visible = text.Length > 0;
         summary.TooltipText = text;

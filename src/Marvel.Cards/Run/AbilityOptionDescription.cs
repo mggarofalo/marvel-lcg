@@ -8,6 +8,10 @@ namespace Marvel.Cards.Run;
 internal static class AbilityOptionDescription
 {
     internal static (string? Label, string? Description) From(
+        AbilityStructuralContext context, AbilityEffect option) =>
+        AbilityTargetedOptionDescription.From(context, option) ?? Direct(context, option);
+
+    private static (string? Label, string? Description) Direct(
         AbilityStructuralContext context, AbilityEffect option)
     {
         // These admitted relations name public objects. More general selectors
@@ -23,16 +27,14 @@ internal static class AbilityOptionDescription
                 MinionOption(context, minions),
             AbilityEffect.Damage
                 { Cards: AbilityCardSelection.Bound { Binding: AbilityCardBinding.You } } damage
-                when PublicAmount(damage.Amount) => DamageOption(context, damage),
+                when AbilityPublicAmounts.IsFixed(damage.Amount) => DamageOption(context, damage),
             AbilityEffect.PlaceThreat
-                { Schemes: AbilityCardSelection.Query { Kind: AbilityCardQuery.MainScheme } } threat
-                when PublicAmount(threat.Amount) => ThreatOption(context, threat),
+                { Schemes: AbilityCardSelection.Query { Kind: AbilityCardQuery.MainScheme }
+                    or AbilityCardSelection.Bound { Binding: AbilityCardBinding.This } } threat
+                when AbilityPublicAmounts.IsFixed(threat.Amount) => ThreatOption(context, threat),
             _ => (AbilityEffectDescription.Summary(option), null),
         };
     }
-
-    private static bool PublicAmount(AbilityNumber amount) =>
-        amount is AbilityNumber.Constant or AbilityNumber.PerPlayer;
 
     private static (string Label, string Description) MinionOption(
         AbilityStructuralContext context, AbilityEffect.EngageTopAsMinion minions)
@@ -68,6 +70,6 @@ internal static class AbilityOptionDescription
         long threshold = world.Facts.PrintedValue(scheme.FaceId, "TargetThreat", world.Players);
         string state = threshold > 0 ? $"{current}/{threshold}" : current.ToString();
         return ($"Place {amount} threat on {world.Facts.Title(scheme.FaceId)}",
-            $"Main scheme currently has {state} threat. Interrupts and prevention can change the placement.");
+            $"{world.Facts.Title(scheme.FaceId)} currently has {state} threat. Interrupts and prevention can change the placement.");
     }
 }

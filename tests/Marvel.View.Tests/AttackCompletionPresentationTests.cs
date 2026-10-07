@@ -1,6 +1,7 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
+using Marvel.Tests;
 using Xunit;
 
 namespace Marvel.View.Tests;
@@ -39,8 +40,12 @@ public sealed class AttackCompletionPresentationTests : EventPresentationTestBas
     [Theory]
     [InlineData(0)]
     [InlineData(2)]
-    public void CompletionNamesRecordedActualDamageEvenWithoutAHealthEvent(long damage)
+    [Rule("rr:damage.3.2")]
+    public void CompletionDistinguishesRecordedDamageFromHealthLossAfterPrevention(long damage)
     {
+        // rr:damage.3.2: "When the amount of damage a character takes is modified
+        // (such as by damage being prevented), the amount of damage dealt is not modified."
+        // The explicit before-prevention wording is our presentation choice.
         var completed = new AttackCompleted(9, 7, 7)
         {
             DamageDealt = damage,
@@ -48,8 +53,9 @@ public sealed class AttackCompletionPresentationTests : EventPresentationTestBas
         };
         EventPresentation presented = Assert.Single(EventPresenter.Present([completed], World()));
 
-        Assert.Contains($"The attack dealt {damage} damage.", presented.Summary);
+        Assert.Contains($"Attack damage before prevention: {damage}.", presented.Summary);
         Assert.Contains("Spider-Man defended.", presented.Summary);
+        Assert.DoesNotContain("The attack dealt", presented.Summary);
     }
 
     [Theory]
