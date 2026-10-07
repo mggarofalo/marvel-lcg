@@ -42,6 +42,9 @@ public sealed record ContinuousEffect(
     Duration? Lasts = null,
     string Scope = "")
 {
+    /// <summary>Whether the numeric amount defines the base or modifies it.</summary>
+    public ContinuousValueRole ValueRole { get; init; }
+
     /// <summary>A live set containing the characters one player controls.</summary>
     public const string CharactersControlledBy = "charactersControlledBy";
 

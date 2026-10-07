@@ -51,6 +51,7 @@ internal static class AbilityEffectStructure
         AbilityEffect.RemoveThreat threat => threat.Amount,
         AbilityEffect.PreventDamage damage => damage.Amount,
         AbilityEffect.GrantField grant => grant.Amount,
+        AbilityEffect.DefineBaseValue definition => definition.Value,
         AbilityEffect.GrantControlledCharacters grant => grant.Amount,
         AbilityEffect.ReduceNextCardCost reduction => reduction.Amount,
         _ => null,

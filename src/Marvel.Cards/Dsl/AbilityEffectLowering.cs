@@ -82,6 +82,7 @@ internal static class AbilityEffectLowering
             "payOrEffect" or "payOrExhaust" => PayAlternative(argument, child, node.Kind == "payOrExhaust"),
             "grant" or "grantEach" or "grantUntil" => GrantEffect(argument, child, node.Kind == "grantEach", node.Kind == "grantUntil"),
             "grantCharactersControlledBy" => GrantControlledEffect(argument, child),
+            "defineBaseValue" => AbilityBaseDefinitions.Lower(argument, child),
             "preventDamageFrom" => DamageProhibition(argument, child),
             "preventDamageWhile" => ConditionalDamageProhibition(argument, child),
             "delayUntil" => DelayedEffect(argument, child),

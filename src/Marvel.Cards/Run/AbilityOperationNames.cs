@@ -53,6 +53,7 @@ internal static class AbilityOperationNames
         AbilityEffect.DealEncounterCards => "dealEncounterCards",
         AbilityEffect.EngageTopAsMinion => "engageTopAsMinion",
         AbilityEffect.DefineProfile => "defineProfile",
+        AbilityEffect.DefineBaseValue => "defineBaseValue",
         AbilityEffect.DealEncounterCard => "dealEncounterCard",
         AbilityEffect.DiscardAtRandom => "discardAtRandom",
         AbilityEffect.PlaceAtRandom => "placeAtRandom",

@@ -9,6 +9,33 @@ namespace Marvel.Rules.Tests.State;
 
 public sealed class CardValueEvaluationTests
 {
+    [Rule("rr:base-value")]
+    [Rule("rr:modifiers")]
+    [Rule("rr:loses.2")]
+    [Fact]
+    public void ADefinitionReplacesTheBaseBeforeModifiersRegardlessOfRegistrationOrder()
+    {
+        // "A defined value before modifiers are applied." A lost
+        // characteristic "cannot be regained" while the loss remains active.
+        var (world, hero) = Board();
+        world.Effects.Register(new(EffectSource.LastingEffect, "attack", 2, Affects: hero.ObjectId));
+        world.Effects.Register(new(EffectSource.ConstantAbility, "attack", 6,
+            hero.ObjectId, hero.ObjectId) { ValueRole = ContinuousValueRole.BaseDefinition });
+
+        CardValueEvaluation value = CardValues.Evaluate(world, hero, "attack", world.Facts, 1);
+        Assert.Equal(CardValueBaseKind.Defined, value.BaseKind);
+        Assert.Equal(6, value.BaseValue);
+        Assert.Equal(8, value.CurrentValue);
+        Assert.Equal(new[] { CardValueStepKind.DefineBase, CardValueStepKind.Add }, value.Steps.Select(step => step.Kind));
+        Assert.Equal(new long[] { 6, 8 }, value.Steps.Select(step => step.Result));
+
+        world.Effects.Register(new(EffectSource.LastingEffect, Characteristics.LossOf("attack"), Affects: hero.ObjectId));
+        value = CardValues.Evaluate(world, hero, "attack", world.Facts, 1);
+        Assert.Equal(6, value.BaseValue);
+        Assert.Equal(0, value.CurrentValue);
+        Assert.Equal(new[] { CardValueStepKind.DefineBase, CardValueStepKind.Lost }, value.Steps.Select(step => step.Kind));
+    }
+
     [Rule("rr:modifiers")]
     [Fact]
     public void TheNumericConsumerAndExplanationUseTheSameOrderedEvaluation()

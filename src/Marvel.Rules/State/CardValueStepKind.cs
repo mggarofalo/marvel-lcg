@@ -11,4 +11,6 @@ public enum CardValueStepKind
     Unmodifiable,
     /// <summary>The completed quantity cannot be less than zero.</summary>
     MinimumZero,
+    /// <summary>Resolve the intrinsic base before applying modifiers.</summary>
+    DefineBase,
 }

@@ -180,6 +180,10 @@ public static class StateFieldCatalog
         PrintedFrom.ContainsKey(field)
         || field is "health" or "ally_limit";
 
+    /// <summary>Whether a field is one of the five printed basic powers.</summary>
+    public static bool IsBasicPowerField(string field) =>
+        PrintedFrom.TryGetValue(field, out string? attribute) && PowerAttributes.Contains(attribute);
+
     // What a card attached to another adds to it. The engine's own attribute
     // names, and a closed set: 116 cards carry `ATK+`, 50 carry `SCH+`, four
     // carry `THW+`, and all but one of the 170 are attachments.

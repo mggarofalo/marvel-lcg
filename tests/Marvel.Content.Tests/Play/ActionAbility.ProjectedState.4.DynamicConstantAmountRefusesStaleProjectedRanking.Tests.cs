@@ -44,14 +44,14 @@ public sealed class ActionAbilityProjectedStateDynamicConstantAmountRefusesStale
         var grant = ((AbilityValue.Map)titaniaAbility.Effect.Argument).Entries.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
         var snapshotSource = titaniaAbility with
         {
-            Effect = new AbilityNode("grant", new AbilityValue.Map(grant))
+            Effect = new AbilityNode(titaniaAbility.Effect.Kind, new AbilityValue.Map(grant))
         };
         var runner = new Marvel.Cards.Run.AbilityRunner(new AbilityBook([..AuthoredCards.Book.Abilities.Where(ability => ability.Card != "01162"), snapshotSource, ..local.Abilities], AuthoredCards.Book.Authored.Concat(local.Authored).ToHashSet(StringComparer.Ordinal), AuthoredCards.Book.AttachTo));
         if (replaceAuthoredAmount)
         {
             // Engine choice: projection analyzes the compiled instruction,
             // not a caller-owned replacement that hides its dynamic amount.
-            grant["amount"] = new AbilityValue.Number(0);
+            grant["value"] = new AbilityValue.Number(0);
         }
 
         Card? source = null;

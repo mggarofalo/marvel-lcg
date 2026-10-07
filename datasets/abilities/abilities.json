@@ -2558,7 +2558,7 @@
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
-          "effect": { "grant": { "card": "this", "keyword": "attack", "amount": { "remainingHealth": "this" } } }
+          "effect": { "defineBaseValue": { "field": "attack", "value": { "remainingHealth": "this" } } }
         }
       ]
     },

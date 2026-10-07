@@ -1,3 +1,4 @@
+using Marvel.Rules.Play;
 using Marvel.Rules.Timing;
 using static Marvel.Rules.State.StateFieldCatalog;
 
@@ -45,11 +46,19 @@ public static class CardValues
         long value, CardValueBaseKind kind)
     {
         IReadOnlyList<ContinuousEffect> active = world.Effects.Active();
+        var steps = new List<CardValueStep>();
+        if (DefinedBase(world, card, field, active) is { } definition)
+        {
+            // rr:non-numerical-variable: "treat that variable as the defined value."
+            value = definition.Amount;
+            kind = CardValueBaseKind.Defined;
+            steps.Add(new(CardValueStepKind.DefineBase, value, value, Source(world, definition), definition.Lasts));
+        }
         ContinuousEffect? loss = active.FirstOrDefault(effect =>
             effect.Kind == Characteristics.LossOf(field) && effect.AppliesTo(world, card));
         if (loss is not null)
             return new(field, value, kind, 0,
-                [new(CardValueStepKind.Lost, 0, 0, Source(world, loss), loss.Lasts)]);
+                [.. steps, new(CardValueStepKind.Lost, 0, 0, Source(world, loss), loss.Lasts)]);
 
         if (IsUnmodifiable(card, field, facts))
         {
@@ -57,7 +66,6 @@ public static class CardValues
             return new(field, value, kind, 0, [new(CardValueStepKind.Unmodifiable, 0, 0)]);
         }
 
-        var steps = new List<CardValueStep>();
         long current = value;
         foreach ((long amount, CardSourceSnapshot source) in Attachments(world, card, field, facts, players))
         {
@@ -65,9 +73,8 @@ public static class CardValues
             steps.Add(new(CardValueStepKind.Add, amount, current, source, Duration.WhileInPlay));
         }
 
-        foreach (ContinuousEffect effect in active)
+        foreach (ContinuousEffect effect in Modifiers(world, card, field, active))
         {
-            if (effect.Kind != field || !effect.AppliesTo(world, card)) continue;
             current += effect.Amount;
             steps.Add(new(CardValueStepKind.Add, effect.Amount, current, Source(world, effect), effect.Lasts));
         }
@@ -79,6 +86,24 @@ public static class CardValues
             steps.Add(new(CardValueStepKind.MinimumZero, 0, current));
         }
         return new(field, value, kind, current, steps.ToArray());
+    }
+
+    private static IEnumerable<ContinuousEffect> Modifiers(
+        World world, Card card, string field, IReadOnlyList<ContinuousEffect> active) =>
+        active.Where(effect => effect.ValueRole == ContinuousValueRole.Modifier
+            && effect.Kind == field && effect.AppliesTo(world, card));
+
+    private static ContinuousEffect? DefinedBase(
+        World world, Card card, string field, IReadOnlyList<ContinuousEffect> active)
+    {
+        ContinuousEffect[] definitions = active.Where(effect =>
+            effect.ValueRole == ContinuousValueRole.BaseDefinition
+            && effect.Kind == field && effect.AppliesTo(world, card)).ToArray();
+        if (definitions.Length == 0) return null;
+        if (definitions.Length != 1 || !IsBasicPowerField(field)
+            || definitions[0].Source != EffectSource.ConstantAbility || definitions[0].Card != card.ObjectId)
+            throw new RulesNotImplementedException($"ambiguous or unsupported base definition for '{field}'");
+        return definitions[0];
     }
 
     private static bool IsUnmodifiable(Card card, string field, ICardFacts facts) =>

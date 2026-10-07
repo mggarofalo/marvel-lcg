@@ -25,16 +25,23 @@ remaining HP from the engine for every character kind.
 Each value carries `BaseValue`, `CurrentValue`, `BaseKind`, `IsModified`, and
 authorized `Calculation` rows. `HP.CurrentValue` is maximum HP. `Damage` is the
 damage on the copy, and `Fields.health` is its remaining HP.
+`BoardCardPresentation` carries the same authorized `EffectiveValues` for native
+consumers. Concealed cards have an empty map; a public replacement face carries
+only its replacement quantities.
 
 The main face can show `CurrentValue` and mark `IsModified`. Printed facts stay
 in their separate contract. Source inspection can show each authorized operation,
 its resolved amount, named source, printed source text, and stated duration.
-`BaseKind` distinguishes printed characteristics from a replacement identity.
+`BaseKind` distinguishes printed characteristics, replacement identities, and
+active intrinsic definitions.
 `BaseValue` is the evaluator's numeric base, not a replacement for the printed
-label. Variable ink such as Titania's X must come from `PrintedValues`; her
-normalized numeric base is zero and her DSL supplies the resolved quantity.
-Source text preserves that definition. Consumers must not present a numeric zero
-as her printed X or turn that definition into a printed addition equation.
+label. Variable ink such as Titania's X comes from `PrintedValues`; her compiled
+`DefineBaseValue` instruction supplies the resolved base before any modifier.
+Its `DefineBase` calculation row names the source and resolved definition, not
+an additive contribution. X changing with its defining quantity does not by
+itself mark the stat modified. An external contribution that changes that
+resolved base does. Consumers must not turn the definition into a printed
+addition equation.
 
 `Calculation` is a source explanation, **not a complete arithmetic equation**.
 Private or unavailable sources have no rows, placeholders, counts, original
@@ -72,6 +79,15 @@ effects or projections. Registration reconstructs source snapshots during replay
 No save member, schema number, RNG contract, or state-digest spelling changes for
 this metadata. The ledger restart test verifies reconstruction and an unchanged
 serialized save using a deterministic lasting-effect fixture.
+
+Intrinsic basic-power definitions are unconditional constant roots in the DSL.
+The compiler rejects duplicate definitions, nested/conditional definitions, and
+unsupported fields. Derived effects carry an explicit base-definition role;
+the numeric evaluator resolves that role before additions regardless of effect
+ordering. This supports the admitted Core variable power without guessing from
+a name, normalized zero, or printed prose. The ability-book fingerprint changes
+with the authored definition node, so the existing dataset compatibility gate
+rejects saves made against a different ability book.
 
 This is the current-value/source slice of MARVEL-396. It does not establish the
 broader MARVEL-445 authority browser, historical rule/ruling navigation, or

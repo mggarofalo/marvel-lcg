@@ -11,4 +11,6 @@ public enum CardValueBaseKind
     Rule,
     /// <summary>A signed adjustment whose consumer supplies the base.</summary>
     Adjustment,
+    /// <summary>A numerical base defined by the card's active text.</summary>
+    Defined,
 }

@@ -73,6 +73,8 @@ public abstract record AbilityEffect
     public sealed record GrantTrait(AbilityCardSelection Cards, string Trait, bool EachCard, string? Until) : AbilityEffect;
     /// <summary>Grant a supported modifier, continuously or until a timing point.</summary>
     public sealed record GrantField(AbilityCardSelection Cards, string Field, AbilityNumber Amount, bool EachCard, string? Until) : AbilityEffect;
+    /// <summary>Define the source's own basic-power base before modifiers.</summary>
+    public sealed record DefineBaseValue(string Field, AbilityNumber Value) : AbilityEffect;
     /// <summary>Grant modifiers to all characters controlled by the named player.</summary>
     public sealed record GrantControlledCharacters(AbilityPlayer Player, ImmutableArray<string> Fields, AbilityNumber Amount, string Until) : AbilityEffect;
     /// <summary>Prohibit damage to the source from matching damage sources.</summary>

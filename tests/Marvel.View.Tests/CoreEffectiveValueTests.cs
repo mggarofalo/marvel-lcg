@@ -3,6 +3,7 @@ using Marvel.Cards.Run;
 using Marvel.Content;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.Tests;
 using Xunit;
 
@@ -133,6 +134,47 @@ public sealed class CoreEffectiveValueTests
         Assert.Empty(Face(world, advanced).EffectiveValues["ATK"].Calculation);
         World.MoveToTop(upgrade, world.AreaOf(DeckType.EncounterDiscardPile));
         Assert.Equal(1, Face(world, drone).EffectiveValues["ATK"].CurrentValue);
+    }
+
+    [Rule("rr:non-numerical-variable")]
+    [Rule("rr:base-value")]
+    [Rule("rr:modifiers")]
+    [Theory]
+    [InlineData(0, 6)]
+    [InlineData(4, 2)]
+    [InlineData(6, 0)]
+    public void TitaniasResolvedXIsTheBaseAndOnlyAnExternalChangeMarksItModified(int damage, int resolved)
+    {
+        // "Treat that variable as the defined value." A base is defined
+        // "before modifiers are applied"; Titania defines X as remaining HP.
+        var world = Board("01040a");
+        Card titania = world.CreateCard("01162", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        titania.TakeDamage(damage);
+        string digest = world.Digest().Canonical();
+        CardEffectiveValue value = Face(world, titania).EffectiveValues["ATK"];
+        Assert.Equal("Defined", value.BaseKind);
+        Assert.Equal(resolved, value.BaseValue);
+        Assert.Equal(resolved, value.CurrentValue);
+        Assert.False(value.IsModified);
+        CardValueCalculation definition = Assert.Single(value.Calculation);
+        Assert.Equal("DefineBase", definition.Operation);
+        Assert.Equal(resolved, definition.Amount);
+        Assert.Equal("Titania", definition.Source!.Title);
+        Assert.Equal(titania.ObjectId, definition.Source.CardId);
+        Assert.Equal(digest, world.Digest().Canonical());
+
+        // A synthetic lasting +2 isolates external modification from the
+        // actual authored X definition; it asserts no additional card ability.
+        using var modifier = world.Effects.Register(new(EffectSource.LastingEffect, "attack", 2,
+            world.Seats[0].IdentityCard.ObjectId, titania.ObjectId, Duration.UntilEndOf(TimingPoints.EndOfRound)));
+        value = Face(world, titania).EffectiveValues["ATK"];
+        Assert.Equal(resolved, value.BaseValue);
+        Assert.Equal(resolved + 2, value.CurrentValue);
+        Assert.True(value.IsModified);
+        Assert.Collection(value.Calculation,
+            row => Assert.Equal("DefineBase", row.Operation), row => Assert.Equal("Add", row.Operation));
+        modifier.Dispose();
+        Assert.False(Face(world, titania).EffectiveValues["ATK"].IsModified);
     }
 
     private static World Board(string identity)
