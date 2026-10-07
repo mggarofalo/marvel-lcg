@@ -210,17 +210,17 @@ public static class VisualSystem
             Scale(400, scale), Scale(560, scale),
             ShowSubtitle: true, ShowTraits: true, ShowPrintedStats: true),
         CardDisplaySize.Board => new(
-            Scale(176, scale), Scale(190, scale),
+            Scale(176, scale), Scale(246, scale),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: true),
         CardDisplaySize.Hand => new(
-            Scale(156, scale), Scale(176, scale),
+            Scale(156, scale), Scale(218, scale),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: false),
         // The opening hand is the one supported six-card decision. Its scale is
         // deliberately capped so 150% preserves six independently reachable
         // choices on the 1920px desktop table; this is a product layout choice.
         CardDisplaySize.Mulligan => new(
             MulliganWidth(scale),
-            Scale(116, scale),
+            (int)Math.Round(MulliganWidth(scale) * 1.4),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: false),
         _ => throw new ArgumentOutOfRangeException(nameof(size), size, "unsupported card size"),
     };

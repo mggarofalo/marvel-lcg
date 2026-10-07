@@ -53,6 +53,7 @@ internal static class BoardCardPresentationFactory
             Traits = card.Face.Traits, Cost = card.Face.Cost,
             PrintedStats = card.Face.PrintedStats.Where(field => field.Key != "Class")
                 .Select(field => new BoardFieldPresentation(field.Key, field.Value)).ToArray(),
+            PrintedMarks = BoardPrintedValueMarks.From(card.Face.Kind, card.Face.PrintedStats),
             Classification = card.Face.PrintedStats.GetValueOrDefault("Class", string.Empty),
             Keywords = card.Face.Keywords, RulesText = card.Face.RulesText, RulesMarkup = card.Face.RulesMarkup,
             Damage = card.Face.Damage,

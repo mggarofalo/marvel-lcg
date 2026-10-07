@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using Marvel.Rules.State;
 
@@ -228,7 +227,7 @@ public sealed class CardCatalog : ICardFacts
             return fallback;
         }
 
-        return IsConsequential(entry.Kind, attribute)
+        return PrintedAttributeNotation.IsConsequential(entry.Kind, attribute)
             ? Evaluate(printed.Replace("*", string.Empty, StringComparison.Ordinal),
                        players, fallback)
             : Evaluate(printed, players, fallback);
@@ -249,26 +248,10 @@ public sealed class CardCatalog : ICardFacts
     {
         ArgumentNullException.ThrowIfNull(attribute);
         var entry = Find(faceId);
-        return IsConsequential(entry.Kind, attribute)
-               && entry.Attributes.TryGetValue(attribute, out string? printed)
-            ? printed.Count(letter => letter == '*')
+        return entry.Attributes.TryGetValue(attribute, out string? printed)
+            ? PrintedAttributeNotation.ConsequentialDamage(entry.Kind, attribute, printed)
             : 0;
     }
-
-    // `rr:consequential-damage` is an ally rule -- "after an **ally** attacks"
-    // -- and only these two fields have icons beneath them. Everything else
-    // keeps the per-player reading.
-    //
-    // **The kind check cannot be observed on today's pool** and is kept anyway:
-    // no non-ally card prints a starred `ATK` or `THW`, so deleting it changes
-    // nothing a test could see. It is the difference between "allies have
-    // consequential damage" and "a star in ATK is consequential damage", and
-    // the first is what the rule says. A minion printing a starred ATK in some
-    // later pack would find the second reading already wrong.
-    private static bool IsConsequential(CardKind kind, string attribute) =>
-        kind == CardKind.Ally
-        && (string.Equals(attribute, "ATK", StringComparison.Ordinal)
-            || string.Equals(attribute, "THW", StringComparison.Ordinal));
 
     /// <summary>
     /// The digest's spelling of a trait, without the <c>t_</c> prefix.
@@ -311,25 +294,8 @@ public sealed class CardCatalog : ICardFacts
     /// <param name="printed">The printed string.</param>
     /// <param name="players">How many players are in the game.</param>
     /// <param name="fallback">What to answer when it is not a number.</param>
-    public static long Evaluate(string printed, int players, long fallback = 0)
-    {
-        ArgumentNullException.ThrowIfNull(printed);
-
-        int stars = printed.Count(character => character == '*');
-        string digits = printed.TrimEnd('*');
-        if (!long.TryParse(digits, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture,
-                           out long value))
-        {
-            return fallback;
-        }
-
-        for (int multiplied = 0; multiplied < stars; multiplied++)
-        {
-            value *= players;
-        }
-
-        return value;
-    }
+    public static long Evaluate(string printed, int players, long fallback = 0) =>
+        PrintedAttributeNotation.Evaluate(printed, players, fallback);
 
     private CardCatalogJson.CardCatalogEntry Find(string faceId)
     {

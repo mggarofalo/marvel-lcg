@@ -58,7 +58,7 @@ public sealed class AstraTableGeometryTests
         Assert.All(cards, card => Assert.True(card.Overlaps));
         Assert.True(cards[0].Rotation < 0);
         Assert.True(cards[^1].Rotation > 0);
-        Assert.True(cards[2].Position.Y < cards[0].Position.Y);
+        Assert.True(cards[2].Position.Y > cards[0].Position.Y);
         Assert.Equal(Enumerable.Range(20, 6), cards.Select(card => card.ZIndex));
         Assert.All(cards.Zip(cards.Skip(1)), pair =>
             Assert.True(pair.Second.Position.X - pair.First.Position.X < 156));
@@ -77,6 +77,27 @@ public sealed class AstraTableGeometryTests
         Assert.InRange(cards[0].Position.X, table.Hand.Position.X, table.Hand.Position.X + 0.01f);
         Assert.InRange(cards[^1].Position.X + cardWidth, table.Hand.End.X - 0.01f, table.Hand.End.X + 0.01f);
         Assert.All(cards, card => Assert.True(card.Position.Y + table.Hand.Size.Y < table.Context.Position.Y + 24));
+    }
+
+    [Fact]
+    public void PrintedPortraitsAndTheirRotatedFanLeaveTheDecisionVisible()
+    {
+        foreach (float height in new[] { 820f, 900f, 962f })
+        {
+            InterfaceScale scale = SpatialCardMetrics.TableScale(InterfaceScale.Percent150, height);
+            CardLayoutMetrics board = VisualSystem.Card(CardDisplaySize.Board, scale);
+            CardLayoutMetrics hand = VisualSystem.Card(CardDisplaySize.Hand, scale);
+            var table = new AstraTableGeometry(1320, height, true,
+                PhysicalCardSize: new Vector2(board.Width, board.MinimumHeight));
+            foreach (int index in Enumerable.Range(0, 6))
+            {
+                SpatialCardPlacement card = table.HandCard(index, 6, hand.Width);
+                float extent = Math.Abs(MathF.Sin(card.Rotation)) * hand.Width / 2
+                    + Math.Abs(MathF.Cos(card.Rotation)) * hand.MinimumHeight / 2;
+                Assert.True(card.Position.Y + hand.MinimumHeight / 2 + extent < table.Context.Position.Y,
+                    $"Hand card {index} overlaps the decision at table height {height}");
+            }
+        }
     }
 
     [Fact]

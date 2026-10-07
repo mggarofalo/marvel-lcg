@@ -46,3 +46,11 @@ The Godot assembly embeds the local file under
 `Marvel.Godot.Assets.ChampionsIcons.ttf`. At runtime, the exact embedded bytes
 back the cached `res://assets/fonts/ChampionsIcons.runtime.tres` font resource
 used by compact cards and inspector markup.
+
+# Card typography
+
+Barlow Regular, Bold and Italic provide printed rules; Barlow Condensed Bold provides card titles and large values. These fonts are vendored from the Google Fonts repository at commit `7085eb89a950e85db5b166b7a58d414544b4140c`, under `ofl/barlow/` and `ofl/barlowcondensed/`. Copyright 2017 The Barlow Project Authors. The accompanying [SIL Open Font License](Barlow-OFL.txt) permits redistribution. Runtime loading uses embedded bytes and requires no network or Godot import scan.
+
+Pinned source: https://github.com/google/fonts/tree/7085eb89a950e85db5b166b7a58d414544b4140c/ofl/barlow
+
+The canonical symbol character assignments are pinned with the font in [icons.css](https://github.com/zzorba/marvelsdb/blob/991193c11f9d4e2057253f427c65d9055da9a3b1/src/AppBundle/Resources/public/css/icons.css): P physical, E energy, M mental, W wild, G per hero, U unique, S star, B boost, A acceleration, F amplify, C crisis, H hazard. These are display assignments, not gameplay rules.

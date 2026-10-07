@@ -16,11 +16,7 @@ internal static class CardInteractionControlPlacement
             return card.AddInteractionControl(button);
         VBoxContainer sidecar = SpatialCardSidecar.For(card);
         sidecar.AddChild(button);
-        TableCompactButtonStyle.Apply(button);
-        button.CustomMinimumSize = new Vector2(0, 44);
-        button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        button.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        button.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
+        CardSymbolButtonStyle.Apply(button);
         button.ZAsRelative = true;
         button.ZIndex = 0;
         button.SetMeta("spatial_upright_control", true);

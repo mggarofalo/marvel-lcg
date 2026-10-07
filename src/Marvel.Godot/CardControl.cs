@@ -12,7 +12,6 @@ public sealed partial class CardControl : PanelContainer
     private CardInteractionCue interactionCue;
     private Label? interactionLabel;
     private GridContainer? interactionControls;
-    private InterfaceScale interactionScale;
 
     private CardControl()
     {
@@ -31,10 +30,6 @@ public sealed partial class CardControl : PanelContainer
         ArgumentNullException.ThrowIfNull(card);
         CardLayoutMetrics layout = LayoutFor(card, size, scale);
         string variation = VariationFor(card, size);
-        float cueHeight = 22 * layout.Width / 144.0f;
-        float stripHeight = size is CardDisplaySize.Hand or CardDisplaySize.Mulligan
-            ? Math.Max(cueHeight, VisualSystem.Controls(scale).MinimumPointerTarget)
-            : cueHeight;
         var control = new CardControl
         {
             Name = "ProceduralCard",
@@ -50,55 +45,43 @@ public sealed partial class CardControl : PanelContainer
             baseVariation = variation,
             ThemeTypeVariation = variation,
             Theme = ClientTheme.Create(scale),
-            interactionScale = scale,
         };
         control.FocusEntered += control.QueueRedraw;
         control.FocusExited += control.QueueRedraw;
-        var content = new VBoxContainer
+        control.AddThemeStyleboxOverride("panel", CardFaceStyle.Frame(card));
+        var surface = new Control
         {
-            Name = "CardContent",
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-            MouseFilter = MouseFilterEnum.Ignore,
-        };
-        Control body = CardFaceRendering.CreateBody(card, size, layout, scale, art);
-        body.CustomMinimumSize = new Vector2(
-            Math.Max(1, layout.Width - 32),
-            Math.Max(1, control.CustomMinimumSize.Y - 32 - stripHeight));
-        content.AddChild(body);
-        control.interactionLabel = new Label
-        {
-            Name = "InteractionCue",
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Bottom,
-            MouseFilter = MouseFilterEnum.Ignore,
-            ThemeTypeVariation = GodotThemeVariations.Caption,
-            Visible = !card.Concealed,
-            ZIndex = 0,
-            ClipText = true,
-            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
-            CustomMinimumSize = card.Concealed ? Vector2.Zero : new Vector2(0, stripHeight),
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-        };
-        control.interactionControls = new GridContainer
-        {
-            Name = "DirectControls",
-            Columns = 2,
-            MouseFilter = MouseFilterEnum.Pass,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-        };
-        var surface = new VBoxContainer
-        {
-            Name = "CardSurface",
-            MouseFilter = MouseFilterEnum.Pass,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
+            Name = "CardSurface", MouseFilter = MouseFilterEnum.Pass,
+            CustomMinimumSize = control.CustomMinimumSize - new Vector2(8, 8),
         };
         control.AddChild(surface);
-        surface.AddChild(content);
-        surface.AddChild(control.interactionControls);
-        // A permanent row keeps prompt cues separate from printed values and
-        // keeps physical card geometry stable as the selection changes.
+        Control body = CardFaceRendering.CreateBody(card, size, layout, scale, art);
+        surface.AddChild(body);
+        if (body.FindChild("ResourceIcons", true, false) is Control resources)
+            control.SetMeta("card_resource_rect", new Rect2(resources.Position + new Vector2(4, 4), resources.Size));
+        if (card.Concealed)
+        {
+            body.Size = surface.CustomMinimumSize;
+            body.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        }
+        control.interactionLabel = new Label
+        {
+            Name = "InteractionCue", Position = new Vector2(layout.Width - 36, 4),
+            Size = new Vector2(28, 28), HorizontalAlignment = HorizontalAlignment.Center,
+            MouseFilter = MouseFilterEnum.Ignore, Visible = !card.Concealed,
+        };
+        control.interactionLabel.AddThemeColorOverride("font_color", CardFaceStyle.Ink);
+        control.interactionLabel.AddThemeColorOverride("font_outline_color", CardFaceStyle.Paper);
+        control.interactionLabel.AddThemeConstantOverride("outline_size", 4);
+        control.interactionLabel.AddThemeFontSizeOverride("font_size", 18);
         surface.AddChild(control.interactionLabel);
+        control.interactionControls = new GridContainer
+        {
+            Name = "DirectControls", Columns = 2, MouseFilter = MouseFilterEnum.Pass,
+            Position = new Vector2(layout.Width - 52, -28),
+            Size = new Vector2(44, 44),
+        };
+        surface.AddChild(control.interactionControls);
         control.Size = control.CustomMinimumSize;
         return control;
     }
@@ -106,8 +89,9 @@ public sealed partial class CardControl : PanelContainer
     /// <summary>Keeps keyboard focus distinct from prompt selection on the same face.</summary>
     public override void _Draw()
     {
+        CardInteractionDrawing.Draw(this, interactionCue, highlighted || presented);
         if (HasFocus()) DrawRect(new Rect2(new Vector2(-4, -4), Size + new Vector2(8, 8)),
-            Colors.White, filled: false, width: 3);
+            Colors.White, filled: false, width: 1.5f);
     }
 
     internal static CardLayoutMetrics LayoutFor(
@@ -130,28 +114,6 @@ public sealed partial class CardControl : PanelContainer
         card.Concealed
             ? GodotThemeVariations.ConcealedCard
             : VisualSystem.CardFrame(card.Kind).ThemeVariation;
-
-    internal static float CompactHeight(
-        BoardCardPresentation card,
-        CardLayoutMetrics layout,
-        CardDisplaySize size)
-    {
-        IReadOnlyList<BoardFieldPresentation> values = CompactValues(card, size);
-        int progressRows = values.Count(IsCompactProgressValue);
-        int resourcesRows = values.Count(value => value.Name == "RES");
-        int badgeCount = values.Count - progressRows - values.Count(value => value.Name == "RES");
-        int valueRows = (badgeCount + 2) / 3 + progressRows + resourcesRows;
-        int titleCharactersPerLine = size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 14 : 18;
-        int titleRows = Math.Max(
-            1,
-            (int)Math.Ceiling(card.Title.Length / (double)titleCharactersPerLine));
-        int textRows = (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 1 : 0)
-            + titleRows
-            + (CompactState(card, size) is null ? 0 : 1)
-            + valueRows;
-        float scale = layout.Width / (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 144.0f : 156.0f);
-        return Math.Max(layout.MinimumHeight, textRows * 22 * scale + 20 * scale);
-    }
 
     /// <summary>Applies or clears the prompt-anchor focus treatment.</summary>
     public void SetHighlighted(bool value)
@@ -180,6 +142,12 @@ public sealed partial class CardControl : PanelContainer
 
         interactionCue = value;
         cue.Text = CueText(value);
+        cue.AccessibilityName = CueDescription(value);
+        cue.TooltipText = cue.AccessibilityName;
+        bool resource = (value & (CardInteractionCue.LegalGenerator | CardInteractionCue.SelectedGenerator)) != 0;
+        cue.Position = resource && HasMeta("card_resource_rect")
+            ? GetMeta("card_resource_rect").AsRect2().End - new Vector2(24, 28)
+            : new Vector2(Size.X - 36, 4);
 
         RefreshTreatment();
     }
@@ -200,7 +168,7 @@ public sealed partial class CardControl : PanelContainer
         if (interactionLabel is not null) interactionLabel.Visible = false;
     }
 
-    /// <summary>Adds a prompt-authorized control in this card's reserved action strip.</summary>
+    /// <summary>Adds a prompt-authorized symbol at the card edge.</summary>
     internal bool AddInteractionControl(Button control)
     {
         ArgumentNullException.ThrowIfNull(control);
@@ -220,16 +188,12 @@ public sealed partial class CardControl : PanelContainer
         cue.Text = CueText(interactionCue);
         cue.Visible = false;
 
-        control.CustomMinimumSize = new Vector2(
-            0, VisualSystem.Controls(interactionScale).MinimumPointerTarget);
-        control.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        CardSymbolButtonStyle.Apply(control);
         if (GetParent() is Container parent)
         {
             parent.QueueSort();
         }
         directControls.Columns = directControls.GetChildCount() == 0 ? 1 : 2;
-        control.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        control.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         directControls.AddChild(control);
         return true;
     }
@@ -254,37 +218,24 @@ public sealed partial class CardControl : PanelContainer
         }
     }
 
-    private void RefreshTreatment() =>
-        ThemeTypeVariation = highlighted || presented
-            || interactionCue.HasFlag(CardInteractionCue.SelectedTarget)
-            || interactionCue.HasFlag(CardInteractionCue.SelectedGenerator)
-            || interactionCue.HasFlag(CardInteractionCue.SelectedDestructiveChoice)
-            ? GodotThemeVariations.FocusedCard
-            : baseVariation;
-
-    private static string CueText(CardInteractionCue cue)
+    private void RefreshTreatment()
     {
-        var labels = new List<string>();
-        if (cue.HasFlag(CardInteractionCue.Unavailable)) labels.Add("— UNAVAILABLE");
-        if (cue.HasFlag(CardInteractionCue.SelectedDestructiveChoice)) labels.Add("✓ DISCARD");
-        else if (cue.HasFlag(CardInteractionCue.DestructiveChoice)) labels.Add("◇ DISCARD");
-        if (cue.HasFlag(CardInteractionCue.SelectedTarget)) labels.Add("✓ Selected");
-        else if (cue.HasFlag(CardInteractionCue.LegalTarget)) labels.Add("◇ Available target");
-        if (cue.HasFlag(CardInteractionCue.SelectedGenerator)) labels.Add("✓ PAY");
-        else if (cue.HasFlag(CardInteractionCue.LegalGenerator)) labels.Add("◇ PAY");
-        return string.Join("  ", labels);
+        ThemeTypeVariation = baseVariation;
+        QueueRedraw();
     }
 
+    private static string CueText(CardInteractionCue cue) =>
+        (cue & (CardInteractionCue.SelectedTarget | CardInteractionCue.SelectedGenerator
+            | CardInteractionCue.SelectedDestructiveChoice)) != 0 ? "✓"
+        : cue.HasFlag(CardInteractionCue.LegalTarget) ? "◎"
+        : cue.HasFlag(CardInteractionCue.OfferedAction) ? "↗"
+        : cue.HasFlag(CardInteractionCue.Unavailable) ? "×" : "";
 
-    internal static IReadOnlyList<BoardFieldPresentation> CompactValues(
-        BoardCardPresentation card, CardDisplaySize size) =>
-        CardValueRendering.CompactValues(card, size);
-
-    internal static bool IsCompactProgressValue(BoardFieldPresentation value) =>
-        CardValueRendering.IsCompactProgressValue(value);
-
-    internal static string? CompactState(
-        BoardCardPresentation card, CardDisplaySize size) =>
-        CardValueRendering.CompactState(card, size);
-
+    private static string CueDescription(CardInteractionCue cue) =>
+        cue.HasFlag(CardInteractionCue.SelectedTarget) ? "Selected target"
+        : cue.HasFlag(CardInteractionCue.SelectedGenerator) ? "Selected payment source"
+        : cue.HasFlag(CardInteractionCue.SelectedDestructiveChoice) ? "Staged discard"
+        : cue.HasFlag(CardInteractionCue.LegalTarget) ? "Available target"
+        : cue.HasFlag(CardInteractionCue.OfferedAction) ? "Available action"
+        : cue.HasFlag(CardInteractionCue.Unavailable) ? "Unavailable" : "";
 }

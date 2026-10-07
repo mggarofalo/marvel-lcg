@@ -147,7 +147,7 @@ internal sealed class BoardCardInteractionControls
         var button = new Button
         {
             Name = $"Card{descriptor.CardId}{descriptor.Intent}",
-            Text = descriptor.Text,
+            Text = CardInteractionControlStyle.Symbol(descriptor),
             TooltipText = CardInteractionControlStyle.Tooltip(descriptor.Intent),
             FocusMode = Control.FocusModeEnum.All,
             ZIndex = CardInteractionControlStyle.Layer(descriptor.Intent),
@@ -157,6 +157,8 @@ internal sealed class BoardCardInteractionControls
             Disabled = descriptor.Cue.HasFlag(CardInteractionCue.Unavailable),
             ThemeTypeVariation = GodotThemeVariations.LegalTargetButton,
         };
+        button.SetMeta("card_control_intent", descriptor.Intent.ToString());
+        CardSymbolButtonStyle.Apply(button);
 
         button.TooltipText = descriptor.Description ?? (descriptor.Intent == CardInteractionIntent.Action
             ? descriptor.Text

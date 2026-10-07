@@ -11,6 +11,7 @@ internal static class MainBoardInputRouter
         CardInspectorCardNavigation cards,
         InputEvent input)
     {
+        inspector.ObservePreviewPointer(input);
         if (main.decisions.CompleteChoicesOpen)
         {
             main.decisions.RouteDecisionSurfaceInput(input);
@@ -33,11 +34,7 @@ internal static class MainBoardInputRouter
             return;
         }
 
-        if (main.boardRender?.RoutePointer(input) == true)
-        {
-            main.GetViewport().SetInputAsHandled();
-            return;
-        }
+        if (RouteBoardPointer(main, inspector, input)) return;
 
         if (cards.Route(input))
         {
@@ -46,6 +43,14 @@ internal static class MainBoardInputRouter
         }
 
         inspector.Input(input);
+    }
+
+    private static bool RouteBoardPointer(Main main, CardInspectorFocus inspector, InputEvent input)
+    {
+        if (main.boardRender?.RoutePointer(input) != true) return false;
+        if (input is InputEventMouseMotion) inspector.Hide();
+        main.GetViewport().SetInputAsHandled();
+        return true;
     }
 
     private static void RouteInspector(
