@@ -33,7 +33,8 @@ internal static class CardVisualSample
             MouseFilter = Control.MouseFilterEnum.Ignore };
         owner.AddChild(backdrop);
         backdrop.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        var column = new VBoxContainer { Position = new Vector2(32, 24), Theme = ClientTheme.Create() };
+        var column = new VBoxContainer { Position = new Vector2(32, 24) };
+        ClientThemeInstallation.Apply(column);
         column.AddThemeConstantOverride("separation", 16);
         owner.AddChild(column);
         column.AddChild(Label("Impact Editions — native primitives", CardTypography.Title, 32));

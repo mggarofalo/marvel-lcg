@@ -18,7 +18,8 @@ internal static class CardFaceSample
         {
             BoardCardPresentation[] cards = JsonSerializer.Deserialize<BoardCardPresentation[]>(
                 File.ReadAllText(option["--marvel-b1-faces=".Length..]))!;
-            var root = new Control { Name = "B1FaceFixtures", Theme = ClientTheme.Create() };
+            var root = new Control { Name = "B1FaceFixtures" };
+            ClientThemeInstallation.Apply(root);
             owner.AddChild(root);
             foreach (BoardCardPresentation card in cards)
                 foreach (CardDisplaySize size in new[] { CardDisplaySize.Board, CardDisplaySize.Full })

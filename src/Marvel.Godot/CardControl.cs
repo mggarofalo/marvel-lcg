@@ -68,8 +68,8 @@ public sealed partial class CardControl : PanelContainer
                 : CursorShape.PointingHand,
             baseVariation = variation,
             ThemeTypeVariation = variation,
-            Theme = ClientTheme.Create(scale),
         };
+        ClientThemeInstallation.Apply(control, scale);
         control.FocusEntered += control.QueueRedraw;
         control.FocusExited += control.QueueRedraw;
         using StyleBoxFlat frame = CardFaceStyle.Frame(card);

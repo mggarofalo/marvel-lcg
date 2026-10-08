@@ -29,9 +29,9 @@ internal static class TabletopPileInspector
         {
             Name = "PileInspector",
             Exclusive = false,
-            Theme = ClientTheme.Create(scale),
             ThemeTypeVariation = GodotThemeVariations.SurfacePanel,
         };
+        ClientThemeInstallation.Apply(popup, scale);
         active = popup;
         owner = result;
         initialSelection = result.SelectedAffordanceId;

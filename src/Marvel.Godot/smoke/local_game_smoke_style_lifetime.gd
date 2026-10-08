@@ -4,14 +4,18 @@ extends RefCounted
 static func release(main: Control) -> Array[String]:
 	var tree := main.get_tree()
 	var observed := observe(main)
+	var themes := observe_themes(main)
 	var failures: Array[String] = []
 	if observed.is_empty() and OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080":
 		failures.append("the desktop journey exercised no compact pile styles")
+	if themes.size() != 2:
+		failures.append("the desktop shell has no installed main and status themes")
 	main.queue_free()
 	main = null
 	await tree.process_frame
 	await tree.process_frame
 	failures.append_array(problems(observed))
+	failures.append_array(problems(themes, "fresh theme"))
 	return failures
 
 
@@ -25,9 +29,17 @@ static func observe(main: Control) -> Array[WeakRef]:
 	return observed
 
 
-static func problems(observed: Array[WeakRef]) -> Array[String]:
+static func observe_themes(main: Control) -> Array[WeakRef]:
+	var observed: Array[WeakRef] = []
+	for control in [main, main.get_node("StatusBar")]:
+		if control.theme != null:
+			observed.append(weakref(control.theme))
+	return observed
+
+
+static func problems(observed: Array[WeakRef], kind: String = "compact button style") -> Array[String]:
 	var failures: Array[String] = []
 	for resource in observed:
 		if resource.get_ref() != null:
-			failures.append("a compact button style outlived its freed control")
+			failures.append("a %s outlived its freed control" % kind)
 	return failures

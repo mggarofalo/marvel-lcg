@@ -124,7 +124,7 @@ public sealed partial class Main : Control
         if (ClientDiagnosticEntry.TryStart(this)) return;
         InterfaceScale scale = ClientTheme.ConfiguredScale();
         interfaceScale = scale;
-        Theme = ClientTheme.Create(scale);
+        ClientThemeInstallation.Apply(this, scale);
         GetNode<ColorRect>("Table").Color = ClientTheme.ToGodot(VisualSystem.Palette.Canvas);
         GetNode<ColorRect>("TopRule").Color = ClientTheme.ToGodot(VisualSystem.Palette.Danger);
         GetNode<ColorRect>(

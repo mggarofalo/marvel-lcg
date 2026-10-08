@@ -13,7 +13,8 @@ internal static class CardInspectionSample
         if (option is null) return false;
         owner.SetProcessInput(false);
         foreach (Node child in owner.GetChildren()) if (child is CanvasItem item) item.Hide();
-        var root = new Control { Name = "B1InspectionFixtures", Theme = ClientTheme.Create() };
+        var root = new Control { Name = "B1InspectionFixtures" };
+        ClientThemeInstallation.Apply(root);
         owner.AddChild(root);
         BoardCardPresentation[] cards = JsonSerializer.Deserialize<BoardCardPresentation[]>(File.ReadAllText(option["--marvel-b1-inspection=".Length..]))!;
         foreach (BoardCardPresentation card in cards.Where(card => !card.Concealed))

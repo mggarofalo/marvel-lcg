@@ -26,11 +26,11 @@ internal sealed class MainLayoutController
     internal void ApplyInterfaceScale(InterfaceScale scale)
     {
         main.interfaceScale = scale;
-        main.Theme = ClientTheme.Create(scale);
+        ClientThemeInstallation.Apply(main, scale);
         // The scale control is the ruler for the rest of the interface. Keep
         // its own geometry fixed so changing the value does not move the
         // pointer target beneath the user's hand.
-        main.GetNode<Control>("StatusBar").Theme = ClientTheme.Create(InterfaceScale.Compact);
+        ClientThemeInstallation.Apply(main.GetNode<Control>("StatusBar"), InterfaceScale.Compact);
         main.interfaceScaleValue.Text = $"Scale {Mathf.RoundToInt(VisualSystem.ScalePercent(scale))}%";
         main.decisions.SetInterfaceScale(scale);
         float minimumHeight = VisualSystem.Controls(scale).MinimumHeight;

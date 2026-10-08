@@ -68,11 +68,7 @@ internal sealed class MainTabletopChromeController
         main.title.Visible = !compact;
         main.description.Visible = !compact;
         main.statusPanel.Visible = !compact && !string.IsNullOrWhiteSpace(main.status.Text);
-        main.GetNode<Control>("Margin/Shell").Theme = compact
-            ? ClientTheme.Create(main.interfaceScale)
-            : null;
-        main.board.Theme = compact ? ClientTheme.Create(main.interfaceScale) : null;
-        main.promptPanel.Theme = compact ? ClientTheme.Create(main.interfaceScale) : null;
+        ApplyTableThemes(compact);
         main.promptPanel.ThemeTypeVariation = compact
             ? GodotThemeVariations.TabletopDock
             : GodotThemeVariations.SurfacePanel;
@@ -99,5 +95,14 @@ internal sealed class MainTabletopChromeController
         main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").ThemeTypeVariation = compact
             ? GodotThemeVariations.TabletopShelf
             : GodotThemeVariations.SurfacePanel;
+    }
+
+    private void ApplyTableThemes(bool compact)
+    {
+        foreach (Control control in new[] { main.GetNode<Control>("Margin/Shell"), main.board, main.promptPanel })
+        {
+            if (compact) ClientThemeInstallation.Apply(control, main.interfaceScale);
+            else control.Theme = null;
+        }
     }
 }

@@ -13,7 +13,8 @@ internal static class CardLiveStateSample
         if (option is null) return false;
         owner.SetProcessInput(false);
         foreach (Node child in owner.GetChildren()) if (child is CanvasItem item) item.Hide();
-        var root = new Control { Name = "B1StateFixtures", Theme = ClientTheme.Create() };
+        var root = new Control { Name = "B1StateFixtures" };
+        ClientThemeInstallation.Apply(root);
         owner.AddChild(root);
         BoardCardPresentation[] cards = JsonSerializer.Deserialize<BoardCardPresentation[]>(File.ReadAllText(option["--marvel-b1-state=".Length..]))!;
         foreach (BoardCardPresentation card in cards) Add(root, card);
