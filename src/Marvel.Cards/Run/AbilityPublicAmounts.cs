@@ -11,8 +11,10 @@ internal static class AbilityPublicAmounts
     internal static bool IsCurrentStep(AbilityNumber number) => number switch
     {
         AbilityNumber.Constant or AbilityNumber.PerPlayer => true,
-        AbilityNumber.Conditional { Test: AbilityCondition.Flag { Kind: AbilityConditionFact.FinalStep } } choice =>
-            IsCurrentStep(choice.Then) && IsCurrentStep(choice.Else),
+        AbilityNumber.Conditional choice =>
+            IsCurrentStep(choice.Test) && IsCurrentStep(choice.Then) && IsCurrentStep(choice.Else),
         _ => false,
     };
+    internal static bool IsCurrentStep(AbilityCondition condition) =>
+        condition is AbilityCondition.Flag { Kind: AbilityConditionFact.FinalStep };
 }

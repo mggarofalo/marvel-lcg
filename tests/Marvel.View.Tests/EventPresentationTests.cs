@@ -20,7 +20,7 @@ public abstract class EventPresentationTestBase
             Verb = "Play"
         },
     };
-    protected static GameEvent[] Events() => [new CardsCreated(AreaRef.Scenario("EncounterDeck"), [new CreatedCard(7, "01001")]), new CardsMoved(AreaRef.Scenario("EncounterDeck"), AreaRef.Scenario("DiscardPileArea"), [new Landing(7, 0)]), new AreaReordered(AreaRef.Scenario("EncounterDeck"), [7]), new CardFormChanged(7, "01001a", "01001b"), new CardsFlipped([7], true), new CardAttached(7, 9), new CardDetached(7, 9), new ControlChanged(7, 0, 1), new FieldSet(7, "health", 1, 2), new AttackCompleted(9, 7, 7), new PlayAreaJoined(0, 1), new PlayAreaDetached(0, 1), new WhenRevealedCanceled(9, 7), ];
+    protected static GameEvent[] Events() => [new CardsCreated(AreaRef.Scenario("EncounterDeck"), [new CreatedCard(7, "01001")]), new CardsMoved(AreaRef.Scenario("EncounterDeck"), AreaRef.Scenario("DiscardPileArea"), [new Landing(7, 0)]), new AreaReordered(AreaRef.Scenario("EncounterDeck"), [7]), new CardFormChanged(7, "01001a", "01001b"), new CardsFlipped([7], true), new CardAttached(7, 9), new CardDetached(7, 9), new ControlChanged(7, 0, 1), new FieldSet(7, "health", 1, 2), new AttackCompleted(9, 7, 7), new PlayAreaJoined(0, 1), new PlayAreaDetached(0, 1), new WhenRevealedCanceled(9, 7), new CardsShuffledIntoDeck(0, 2, ["Energy", "Vibranium"]), ];
     protected static CardsMoved Move(int card, string from, string to, string verb) => new(AreaRef.Player(from, 0), AreaRef.Player(to, 0), [new Landing(card, 0)])
     {
         Verb = verb,

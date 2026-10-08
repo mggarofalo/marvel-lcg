@@ -26,6 +26,6 @@ internal static class DefensePromptDescription
     private static string HelperDescription(DefenseOpportunity opportunity)
         => opportunity.HasLaterPlayer
                 ? "Passing offers the next eligible player a defense opportunity."
-                : "No other player can use basic defense. Passing leaves this attack undefended.";
+                : "Choose a defender, or pass and leave this attack undefended.";
 
 }

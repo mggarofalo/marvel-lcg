@@ -147,6 +147,8 @@ public static class EventPresenter
                 AttackCompletionPresentation.Summary(completed, world),
                 AttackCompletionPresentation.Anchors(completed),
                 EventMotionKind.Attack),
+            CardsShuffledIntoDeck shuffled => (
+                DeckReturnPresentation.Summary(shuffled, world), [], EventMotionKind.DeckReturn),
             WhenRevealedCanceled canceled => (
                 canceled.Source is { } source
                     ? $"{Card(source, world, canceled)} canceled {Card(canceled.Card, world, canceled)}'s When Revealed effects."

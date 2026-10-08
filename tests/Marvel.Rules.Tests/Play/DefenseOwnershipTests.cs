@@ -147,8 +147,7 @@ public sealed class DefenseOwnershipTests : AttackTestBase
         var helper = Sequence.Work(world, facts, new NoCardAbilities(), [])!;
         Assert.Equal(1, helper.Player);
         Assert.Equal("Pass; leave attack undefended", helper.DeclineLabel);
-        Assert.Contains("No other player can use basic defense.", helper.Description);
-        Assert.Contains("Passing leaves this attack undefended.", helper.Description);
+        Assert.Contains("Choose a defender, or pass and leave this attack undefended.", helper.Description);
         Sequence.Answer(world, facts, new NoCardAbilities(), helper, Decision.Decline, []);
         Sequence.Finish(world, facts, new NoCardAbilities(), []);
         Assert.Equal(2, world.Seats[0].IdentityCard.Damage);

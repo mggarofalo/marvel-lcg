@@ -20,6 +20,7 @@ internal static class CardRulesMarkup
     {
         if (resourceFont is not null)
         {
+            FontAtlasLifetime.Retain(resourceFont);
             return resourceFont;
         }
 
@@ -31,6 +32,7 @@ internal static class CardRulesMarkup
         source.ReadExactly(data);
         resourceFont = new FontFile { Data = data, AllowSystemFallback = false };
         resourceFont.TakeOverPath(ResourceFontPath);
+        FontAtlasLifetime.Retain(resourceFont);
         return resourceFont;
     }
 

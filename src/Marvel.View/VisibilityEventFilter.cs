@@ -34,6 +34,7 @@ internal static class VisibilityEventFilter
             ControlChanged changed => addressable.Contains(changed.Card) ? changed : null,
             FieldSet set => readable.Contains(set.Card) ? set : null,
             AttackCompleted completed => KeepAttack(completed, readable),
+            CardsShuffledIntoDeck shuffled => shuffled with { Subjects = null },
             WhenRevealedCanceled canceled =>
                 readable.Contains(canceled.Card) && (canceled.Source is not { } source || readable.Contains(source))
                     ? canceled with { Subjects = KeepSubjects(canceled.Subjects,

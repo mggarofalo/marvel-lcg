@@ -74,6 +74,11 @@ the server-owned setup and accepted decision trace authoritative for save,
 restore, undo, redo and legal action reordering. Clients continue to submit
 decisions rather than state. See [session-ledger.md](session-ledger.md).
 
+Protocol 25 adds completed deck-shuffle receipts containing only destination
+seat, count and previously public titles. No returned card's hidden identity or
+position crosses the wire. Replay v9 records this additional semantic event;
+the RNG and state-digest contracts remain unchanged.
+
 Protocol 24 adds the passive `SpecialAbilityNext` and `VisibleCardSelection`
 purposes. Visible target requests carry `exclusive_sets`: engine-authored sets
 of card ids from which at most one distinct card may be selected. The composer

@@ -55,12 +55,14 @@ internal static class AbilityChoicePromptDescription
                 .Select(card => new Affordance(
                     card.ObjectId, AbilityStructuralExecution.ChooseVerb, card.ObjectId, card.Owner,
                     EffectiveCards.FaceId(card),
-                    Description: DescribeCard(context, chooseCard, card))
+                    Description: DescribeCardChoice(context, chooseCard, card))
                 {
                     DisplayLabel = AbilityPlayerChoiceDescription.Commitment(context, chooseCard, card)
                         ?? EffectiveCards.Title(card, context.Expressions.World.Facts),
                     CommitLabel = AbilityDamageTransferDescription.Commitment(context, chooseCard, card)
                         ?? AbilityPlayerChoiceDescription.Commitment(context, chooseCard, card)
+                        ?? AbilityPublicInstructionDescription.From(context, chooseCard.Effect,
+                            EffectiveCards.Title(card, context.Expressions.World.Facts))
                         ?? AbilityEffectDescription.Choice(chooseCard.Effect,
                         EffectiveCards.Title(card, context.Expressions.World.Facts)),
                 });
@@ -76,7 +78,7 @@ internal static class AbilityChoicePromptDescription
                 .Where(candidate => OptionIsLegal(
                     context, candidate.Option, continuation, requiresChange, evidence))
                 .Select(candidate => (candidate.Option, candidate.Index,
-                    Meaning: AbilityOptionDescription.From(context, candidate.Option)))
+                    Meaning: AbilityOptionDescription.From(context, candidate.Option, options)))
                 .Select(candidate => new Affordance(
                     candidate.Index, AbilityStructuralExecution.ChooseVerb,
                     context.Expressions.Source.ObjectId, World.Scenario,
@@ -93,6 +95,13 @@ internal static class AbilityChoicePromptDescription
                 });
     }
 
+    private static string DescribeCardChoice(
+        AbilityStructuralContext context, AbilityEffect.ChooseCard choice, Card card)
+    {
+        string description = DescribeCard(context, choice, card);
+        return context.Expressions.FinalStep ? $"Final step. {description}" : description;
+    }
+
     private static string DescribeCard(
         AbilityStructuralContext context, AbilityEffect.ChooseCard choice, Card card)
     {
@@ -105,75 +114,13 @@ internal static class AbilityChoicePromptDescription
         if (EffectiveCards.Kind(card, world.Facts) is CardKind.Hero or CardKind.AlterEgo)
             return $"Select {world.Seats[card.Owner].Name} → {title}";
 
-        if (ProjectedDamage(context, choice.Effect) is { } projection)
-            return DescribeDamage(context, projection, card, title);
+        if (AbilityChoiceDamageDescription.Description(context, choice, card) is { } damage)
+            return damage;
 
-        if (choice.Effect is AbilityEffect.RemoveThreat threat)
-        {
-            long current = card.Tokens.GetValueOrDefault("k_threat");
-            long result = current - Math.Min(current, Amount(threat.Amount, context.Expressions));
-            long threshold = world.Facts.PrintedValue(
-                card.FaceId, "TargetThreat", world.Players);
-            return threshold > 0
-                ? $"{title} · {current}/{threshold} → {result}/{threshold} threat"
-                : $"{title} · {current} → {result} threat";
-        }
-        return AbilityEffectDescription.Choice(choice.Effect, title) ?? title;
-    }
-
-    private static string DescribeDamage(AbilityStructuralContext context,
-        (AbilityNumber Amount, bool IsAttack, bool Overkill) projection, Card card, string title)
-    {
-        var world = context.Expressions.World;
-            Card attacker = context.AbilityActor
-                ?? world.Seats[AbilityCardQueries.Resolver(
-                    context.Expressions.Bindings)].IdentityCard;
-            if (projection.IsAttack
-                && Statuses.Afflicted(world, world.Facts, attacker, Statuses.Stunned))
-            {
-                return $"{title} · Stunned cancels this attack; no damage will be dealt";
-            }
-
-            long amount = ProjectedDamageAmount(context, projection.Amount, projection.IsAttack);
-            string consequence = projection.IsAttack
-                ? Damage.PreviewAttack(
-                    world, world.Facts, attacker, context.Expressions.Source, card,
-                    amount, projection.Overkill)
-                : Damage.PreviewDamage(
-                    world, world.Facts, context.Expressions.Source, card, amount);
-            return $"{title} · {consequence}";
-    }
-
-    private static (AbilityNumber Amount, bool IsAttack, bool Overkill)? ProjectedDamage(
-        AbilityStructuralContext context, AbilityEffect? effect, bool attack = false)
-    {
-        if (effect is AbilityEffect.Power { Kind: AbilityPowerKind.Attack } power)
-            return ProjectedDamage(context, power.Effect, attack: true);
-        if (effect is AbilityEffect.Conditional conditional)
-            return ProjectedDamage(context,
-                Test(conditional.Test, context.Expressions)
-                    ? conditional.Then : conditional.Else, attack);
-        if (effect is AbilityEffect.Sequence sequence)
-            return ProjectedDamage(context, sequence.Effects.FirstOrDefault(), attack);
-        return effect switch
-        {
-            AbilityEffect.AttackDamage damage => (damage.Amount, true, damage.Overkill),
-            AbilityEffect.Damage damage => (damage.Amount, attack, false),
-            _ => null,
-        };
-    }
-
-    private static long ProjectedDamageAmount(
-        AbilityStructuralContext context, AbilityNumber damage, bool attack)
-    {
-        var world = context.Expressions.World;
-        long amount = AbilityAmounts.SaturatingSum(
-            Amount(damage, context.Expressions),
-            [AbilityEventModifiers.Amount(world, context.Expressions.Source, "eventDamage")]);
-        return attack
-            ? AbilityAmounts.SaturatingSum(amount,
-                [AbilityEventModifiers.Amount(world, context.Expressions.Source, "attackDamage")])
-            : amount;
+        if (AbilityChoiceThreatDescription.Description(context, choice, card) is { } threat)
+            return threat;
+        return AbilityPublicInstructionDescription.From(context, choice.Effect, title)
+            ?? AbilityEffectDescription.Choice(choice.Effect, title) ?? title;
     }
 
     internal static bool IsExplicitDecline(AbilityEffect option) =>

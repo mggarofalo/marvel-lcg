@@ -40,9 +40,17 @@ internal static class AbilityCardStateExecution
         IReadOnlyList<Card> selected, AbilityCardStateContext context)
     {
         var deck = context.World.Seats[context.Player].Deck;
+        // rr:discard-pile.2: "Each discard pile is open information".
+        // Capture public names before entering the concealed, randomized deck.
+        string[] publicTitles = selected
+            .Where(card => card.Area.Type == DeckType.DiscardPile && card.FaceUp)
+            .Select(card => EffectiveCards.Title(card, context.World.Facts))
+            .Order(StringComparer.Ordinal).ToArray();
         foreach (var card in selected)
             World.MoveToTop(card, deck);
         context.World.Shuffle(deck);
+        context.Events.Add(new CardsShuffledIntoDeck(context.Player, selected.Count, publicTitles)
+        { Trigger = context.Trigger, Verb = "Shuffle_Into" });
     }
 
     internal static void DiscardCards(IReadOnlyList<Card> cards, string verb, AbilityCardStateContext context)

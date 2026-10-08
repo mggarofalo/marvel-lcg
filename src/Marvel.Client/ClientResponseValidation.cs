@@ -216,39 +216,7 @@ internal static class ClientResponseValidation
         target >= 0 && target < cursor && entries.Contains(target);
 
     internal static bool HasCompleteEvents(IReadOnlyList<GameEvent>? events) =>
-        events is not null && events.All(CompleteEvent);
-
-    private static bool CompleteEvent(GameEvent happened) =>
-        happened is not null && happened.Trigger is not null && happened.Verb is not null
-        && CompleteEventPayload(happened);
-
-    private static bool CompleteEventPayload(GameEvent happened) => happened switch
-            {
-                CardsCreated created => Complete(created.Area)
-                    && created.Cards is not null
-                    && created.Cards.All(card => card.Card is not null),
-                CardsMoved moved => Complete(moved.From)
-                    && Complete(moved.To)
-                    && moved.Cards is not null,
-                AreaReordered reordered => Complete(reordered.Area)
-                    && reordered.Order is not null,
-                CardFormChanged changed => changed.From is not null
-                    && changed.To is not null,
-                CardsFlipped flipped => flipped.Cards is not null,
-                CardAttached => true,
-                CardDetached => true,
-                ControlChanged => true,
-                PlayAreaJoined => true,
-                PlayAreaDetached => true,
-                FieldSet set => set.Field is not null,
-                AttackCompleted => true,
-                WhenRevealedCanceled canceled => canceled.Card >= 0
-                    && (canceled.Source is null or >= 0),
-                _ => false,
-            };
-
-    internal static bool Complete(AreaRef area) =>
-        area.Zone is not null && area.Id is not null;
+        events is not null && events.All(ClientEventValidation.Complete);
 
     internal static bool Complete(EngineError error) =>
         error.Code is not null && error.Message is not null;

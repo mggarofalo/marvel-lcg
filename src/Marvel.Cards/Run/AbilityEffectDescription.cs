@@ -7,7 +7,8 @@ namespace Marvel.Cards.Run;
 internal static class AbilityEffectDescription
 {
     internal static string? Summary(AbilityEffect effect) => AbilitySearchDescription.Summary(effect)
-        ?? AbilityRevealDescription.Summary(effect) ?? (effect switch
+        ?? AbilityRevealDescription.Summary(effect)
+        ?? AbilityReadinessDescription.Summary(effect) ?? (effect switch
     {
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),
         AbilityEffect.Draw draw => DrawSummary(draw),

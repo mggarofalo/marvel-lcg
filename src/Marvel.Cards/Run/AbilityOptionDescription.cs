@@ -8,8 +8,18 @@ namespace Marvel.Cards.Run;
 internal static class AbilityOptionDescription
 {
     internal static (string? Label, string? Description) From(
-        AbilityStructuralContext context, AbilityEffect option) =>
-        AbilityTargetedOptionDescription.From(context, option) ?? Direct(context, option);
+        AbilityStructuralContext context, AbilityEffect option, AbilityEffect.Choose? alternatives = null)
+    {
+        if (option is AbilityEffect.Sequence { Effects.IsEmpty: true }
+            && alternatives?.Options.Any(candidate => candidate is AbilityEffect.ChangeForm { Player: AbilityPlayer.You }) == true)
+            return ("Remain in your current form", "Remain in your current form");
+        if (AbilityPublicInstructionDescription.From(context, option) is { } instruction)
+        {
+            string label = char.ToUpperInvariant(instruction[0]) + instruction[1..];
+            return (label, label);
+        }
+        return AbilityTargetedOptionDescription.From(context, option) ?? Direct(context, option);
+    }
 
     private static (string? Label, string? Description) Direct(
         AbilityStructuralContext context, AbilityEffect option)

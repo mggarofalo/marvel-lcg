@@ -76,8 +76,19 @@ func _play_ancestral_knowledge() -> bool:
 
 func _finish_shuffle() -> bool:
 	if not await _confirm_shuffle(): return false
+	if not await _wait_for(_shuffle_receipt_visible):
+		_fail("completed shuffle lost its named, counted result receipt")
+		return false
 	if not await _inspect_remaining_discard(): return false
 	return await _capture_checkpoint("ancestral-shuffle-result")
+
+
+func _shuffle_receipt_visible() -> bool:
+	var cue := main.find_child("ResultCue", true, false) as Label
+	var playback := main.find_child("PlayResults", true, false) as Button
+	return cue != null and cue.is_visible_in_tree() and playback != null \
+		and playback.text == "▶" \
+		and cue.text == "Black Panther shuffled 2 cards (Med Team, Vibranium) into their deck."
 
 
 func _confirm_shuffle() -> bool:
