@@ -121,8 +121,7 @@ internal static class SpatialTableSurfaceRenderer
         int handSeat = prompt?.Player ?? selection.ExpandedSeat;
         objects.RenderHand(board.Areas.FirstOrDefault(area =>
             area.Zone == "HandsArea" && area.Seat == handSeat));
-        objects.RenderOverflow(SpatialTableObjectRenderer.Unplaced([.. scenario.Concat(player)
-            .Concat(Lane(board, "other"))]));
+        objects.RenderOverflow([.. scenario.Concat(player).Concat(Lane(board, "other"))]);
 
         AddHandCaption(surface, geometry, board, handSeat, prompt);
         SpatialTableContextRenderer.Add(surface, result, geometry, main.CurrentGame?.World, prompt);

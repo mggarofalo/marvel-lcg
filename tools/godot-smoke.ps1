@@ -22,6 +22,7 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 & "$PSScriptRoot/godot-smoke-card-faces.ps1" -GodotBin $GodotBin
 & "$PSScriptRoot/godot-smoke-live-state.ps1" -GodotBin $GodotBin
+& "$PSScriptRoot/godot-smoke-sources.ps1" -GodotBin $GodotBin
 
 function Invoke-LocalSmoke {
     param([string]$Script = "res://smoke/local_game_smoke.gd")

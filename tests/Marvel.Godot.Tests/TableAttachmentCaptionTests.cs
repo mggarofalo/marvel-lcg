@@ -35,6 +35,6 @@ public sealed class TableAttachmentCaptionTests
             new(null, 1, true, "1 concealed encounter card", "", "", "", [])];
         var area = new BoardAreaPresentation(1, "Attachments", "", cards, []);
 
-        Assert.Equal("Attached\n2", SpatialTableHostAttachments.Caption(area, cards));
+        Assert.Equal("Cards\n2", SpatialTableHostAttachments.Caption(area, cards));
     }
 }

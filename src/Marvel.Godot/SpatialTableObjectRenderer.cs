@@ -69,14 +69,20 @@ internal sealed class SpatialTableObjectRenderer
 
     internal void RenderHosted(IReadOnlyList<BoardAreaPresentation> areas)
     {
-        foreach (BoardAreaPresentation area in areas.Where(candidate => candidate.Host >= 0))
+        foreach (var host in hosts)
         {
-            if (!hosts.TryGetValue(area.Host, out var host))
-            {
-                continue;
-            }
-            SpatialTableHostAttachments.Add(host.Control, area, result, scale, art);
+            SpatialTableHostAttachments.Add(host.Value.Control, CardSourceGroups.Attached(areas, host.Key), result, scale, art);
         }
+        foreach (BoardAreaPresentation area in areas.Where(area => area.Host >= 0))
+            if (hosts.TryGetValue(area.Host, out var host))
+                SpatialTableHostAttachments.AddOther(host.Control, area, result, scale, art);
+        int seat = areas.FirstOrDefault(area => area.Zone == "HeroArea")?.Seat ?? -1;
+        BoardCardPresentation[] controlled = CardSourceGroups.Controlled(areas, seat);
+        if (controlled.Length == 0) return;
+        VBoxContainer ledger = CardSourceCollection.Create(controlled, CardSourceStrip.LedgerWidth, result, scale, "Controlled upgrades");
+        ledger.Name = "ControlledSourceLedger";
+        ledger.Position = geometry.Upgrades.Position;
+        surface.AddChild(ledger);
     }
 
     internal void RenderHand(BoardAreaPresentation? hand)
@@ -103,14 +109,14 @@ internal sealed class SpatialTableObjectRenderer
     }
 
     internal static IReadOnlyList<BoardAreaPresentation> Unplaced(
-        IReadOnlyList<BoardAreaPresentation> areas) => [.. areas.Where(area =>
+        IReadOnlyList<BoardAreaPresentation> areas, IReadOnlyCollection<int>? visibleHosts = null) => [.. areas.Where(area =>
         area.Prominence != BoardAreaProminence.Empty
         && area.Zone != "HandsArea"
-        && area.Host < 0
-        && !SpatialTableZones.Known.Contains(area.Zone))];
+        && (area.Host < 0 && !SpatialTableZones.Known.Contains(area.Zone)
+            || area.Host >= 0 && visibleHosts is not null && !visibleHosts.Contains(area.Host)))];
 
     internal void RenderOverflow(IReadOnlyList<BoardAreaPresentation> areas)
-        => piles.RenderOverflow(areas, geometry.Overflow);
+        => piles.RenderOverflow(Unplaced(areas, hosts.Keys), geometry.Overflow);
 
     private void RenderCards(
         IReadOnlyList<BoardAreaPresentation> areas,
@@ -127,6 +133,8 @@ internal sealed class SpatialTableObjectRenderer
     private void RenderCardRegion(BoardAreaPresentation[] matching, string zone,
         Rect2 region, CardDisplaySize size, int maximumVisible)
     {
+        matching = [.. matching.Select(area => area with
+        { Cards = [.. area.Cards.Where(card => !CardSourceGroups.IsLocalSource(card))] })];
         BoardCardPresentation[] cards = [.. matching.SelectMany(SpatialTableZones.Current)];
         if (cards.Length == 0)
         {

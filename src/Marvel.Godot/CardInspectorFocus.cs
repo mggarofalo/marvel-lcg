@@ -255,7 +255,7 @@ internal sealed class CardInspectorFocus
                 : main.boardRender?.ControlFor(targetId)) is Control source
             && InteractionControl.IsUsable(source))
         {
-            source.GrabFocus();
+            CardFocusPreview.Restore(source);
             InteractionControl.ResetDisabledScrollAncestors(source);
         }
     }

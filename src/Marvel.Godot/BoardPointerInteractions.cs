@@ -41,6 +41,7 @@ internal sealed class BoardPointerInteractions
         SpatialCardPose.Store(control);
         control.MouseEntered += () => EnterCard(control, card);
         control.MouseExited += () => ExitCard(control);
+        CardFocusPreview.Bind(control, () => EnterCard(control, card), () => ExitCard(control));
         control.GuiInput += input => HandleCardInput(control, card, isHandCard, input);
     }
 

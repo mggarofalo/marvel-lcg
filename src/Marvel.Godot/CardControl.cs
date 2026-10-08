@@ -29,12 +29,35 @@ public sealed partial class CardControl : PanelContainer
     {
         ArgumentNullException.ThrowIfNull(card);
         CardLayoutMetrics layout = LayoutFor(card, size, scale);
-        string variation = VariationFor(card, size);
+        CardControl control = CreateShell(card, SpatialCardMetrics.FaceSize(card, size, layout, scale), scale);
+        var surface = new Control
+        {
+            Name = "CardSurface", MouseFilter = MouseFilterEnum.Pass,
+            CustomMinimumSize = control.CustomMinimumSize - Vector2.One * (2 * CardVisualTokens.FrameInset),
+        };
+        control.AddChild(surface);
+        Control body = CardFaceRendering.CreateBody(card, size, layout, scale, art);
+        surface.AddChild(body);
+        if (body.FindChild("ResourceIcons", true, false) is Control resources)
+            control.SetMeta("card_resource_rect", new Rect2(resources.Position + Vector2.One * CardVisualTokens.FrameInset, resources.Size));
+        if (card.Concealed)
+        {
+            body.Size = surface.CustomMinimumSize;
+            body.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        }
+        control.AddInteractionChrome(surface, layout.Width);
+        control.Size = control.CustomMinimumSize;
+        return control;
+    }
+
+    private static CardControl CreateShell(BoardCardPresentation card, Vector2 dimensions, InterfaceScale scale)
+    {
+        string variation = VariationFor(card, CardDisplaySize.Board);
         var control = new CardControl
         {
             Name = "ProceduralCard",
             TargetId = card.TargetId,
-            CustomMinimumSize = SpatialCardMetrics.FaceSize(card, size, layout, scale),
+            CustomMinimumSize = dimensions,
             SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
             TooltipText = CardLiveStateRendering.Description(card),
             AccessibilityName = CardLiveStateRendering.Description(card),
@@ -51,41 +74,50 @@ public sealed partial class CardControl : PanelContainer
         control.FocusExited += control.QueueRedraw;
         using StyleBoxFlat frame = CardFaceStyle.Frame(card);
         control.AddThemeStyleboxOverride("panel", frame);
-        var surface = new Control
+        return control;
+    }
+
+    internal static CardControl CreateSource(BoardCardPresentation card, float width, InterfaceScale scale)
+    {
+        CardControl control = CreateShell(card, new Vector2(width, 0), scale);
+        using var paper = new StyleBoxFlat { BgColor = CardFaceStyle.Paper,
+            BorderColor = CardFaceStyle.Ink, BorderWidthBottom = 1,
+            ContentMarginLeft = 4, ContentMarginRight = 4, ContentMarginTop = 4, ContentMarginBottom = 4 };
+        control.AddThemeStyleboxOverride("panel", paper);
+        var content = new VBoxContainer { Name = "SourceBody", MouseFilter = MouseFilterEnum.Ignore };
+        control.AddChild(content);
+        content.AddChild(CardSourceStrip.Create(card, width));
+        var overlay = new Control { Name = "SourceInteraction", MouseFilter = MouseFilterEnum.Ignore };
+        control.AddChild(overlay);
+        control.AddInteractionChrome(overlay, width);
+        overlay.RemoveChild(control.interactionControls!);
+        content.AddChild(control.interactionControls!);
+        control.interactionControls!.Visible = false;
+        control.SetMeta("source_strip", true);
+        control.AccessibilityName = card.Title + ". " + string.Join(". ", CardSourceSummary.Lines(card));
+        return control;
+    }
+
+    private void AddInteractionChrome(Control surface, float width)
+    {
+        interactionLabel = new Label
         {
-            Name = "CardSurface", MouseFilter = MouseFilterEnum.Pass,
-            CustomMinimumSize = control.CustomMinimumSize - Vector2.One * (2 * CardVisualTokens.FrameInset),
-        };
-        control.AddChild(surface);
-        Control body = CardFaceRendering.CreateBody(card, size, layout, scale, art);
-        surface.AddChild(body);
-        if (body.FindChild("ResourceIcons", true, false) is Control resources)
-            control.SetMeta("card_resource_rect", new Rect2(resources.Position + Vector2.One * CardVisualTokens.FrameInset, resources.Size));
-        if (card.Concealed)
-        {
-            body.Size = surface.CustomMinimumSize;
-            body.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        }
-        control.interactionLabel = new Label
-        {
-            Name = "InteractionCue", Position = new Vector2(layout.Width - 36, 4),
+            Name = "InteractionCue", Position = new Vector2(width - 36, 4),
             Size = new Vector2(28, 28), HorizontalAlignment = HorizontalAlignment.Center,
-            MouseFilter = MouseFilterEnum.Ignore, Visible = !card.Concealed,
+            MouseFilter = MouseFilterEnum.Ignore, Visible = baseVariation != GodotThemeVariations.ConcealedCard,
         };
-        control.interactionLabel.AddThemeColorOverride("font_color", CardFaceStyle.Ink);
-        control.interactionLabel.AddThemeColorOverride("font_outline_color", CardFaceStyle.Paper);
-        control.interactionLabel.AddThemeConstantOverride("outline_size", 4);
-        control.interactionLabel.AddThemeFontSizeOverride("font_size", 18);
-        surface.AddChild(control.interactionLabel);
-        control.interactionControls = new GridContainer
+        interactionLabel.AddThemeColorOverride("font_color", CardFaceStyle.Ink);
+        interactionLabel.AddThemeColorOverride("font_outline_color", CardFaceStyle.Paper);
+        interactionLabel.AddThemeConstantOverride("outline_size", 4);
+        interactionLabel.AddThemeFontSizeOverride("font_size", 18);
+        surface.AddChild(interactionLabel);
+        interactionControls = new GridContainer
         {
             Name = "DirectControls", Columns = 2, MouseFilter = MouseFilterEnum.Pass,
-            Position = new Vector2(layout.Width - 52, -28),
+            Position = new Vector2(width - 52, -28),
             Size = new Vector2(44, 44),
         };
-        surface.AddChild(control.interactionControls);
-        control.Size = control.CustomMinimumSize;
-        return control;
+        surface.AddChild(interactionControls);
     }
 
     /// <summary>Keeps keyboard focus distinct from prompt selection on the same face.</summary>
@@ -196,6 +228,7 @@ public sealed partial class CardControl : PanelContainer
             parent.QueueSort();
         }
         directControls.Columns = directControls.GetChildCount() == 0 ? 1 : 2;
+        directControls.Visible = true;
         directControls.AddChild(control);
         return true;
     }
@@ -205,6 +238,7 @@ public sealed partial class CardControl : PanelContainer
     {
         if (interactionControls is not null)
         {
+            if (HasMeta("source_strip")) interactionControls.Visible = false;
             foreach (Node child in interactionControls.GetChildren())
             {
                 interactionControls.RemoveChild(child);
