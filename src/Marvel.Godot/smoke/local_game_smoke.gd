@@ -36,14 +36,23 @@ func _run() -> void:
 		return
 	if not await _terminal_table_is_safe(journey):
 		return
+	if not await _release_table_resources():
+		return
 	print("LOCAL_GAME_SMOKE_OK decisions=%d motion=%s" % [
 		journey.decisions,
 		"enabled" if motion_enabled else "disabled",
 	])
-	main.queue_free()
-	await process_frame
-	await process_frame
 	quit(0)
+
+
+func _release_table_resources() -> bool:
+	var lifetime = preload("res://smoke/local_game_smoke_style_lifetime.gd")
+	var problems: Array[String] = await lifetime.release(main)
+	main = null
+	for problem in problems:
+		_fail(problem)
+		return false
+	return true
 
 
 func _open_setup(packed: PackedScene) -> bool:
