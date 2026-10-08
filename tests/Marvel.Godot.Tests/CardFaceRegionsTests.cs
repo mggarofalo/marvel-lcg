@@ -10,11 +10,11 @@ public sealed class CardFaceRegionsTests
     [InlineData(172, 240, false)]
     [InlineData(264, 369, false)]
     [InlineData(400, 560, true)]
-    public void StatusTokensDoNotMoveTheStatOrCornerAnchors(int width, int height, bool full)
+    public void PrintedIconsDoNotMoveTheStatOrCornerAnchors(int width, int height, bool full)
     {
         var features = new CardFaceFeatures(false, true, false, true, true, full, 0);
         var plain = new CardFaceRegions(new Vector2(width - 8, height - 8), features);
-        var statuses = new CardFaceRegions(new Vector2(width - 8, height - 8), features with { TokenRows = 2 });
+        var statuses = new CardFaceRegions(new Vector2(width - 8, height - 8), features with { PrintedIconRows = 2 });
 
         Assert.Equal(plain.Stats, statuses.Stats);
         Assert.Equal(plain.Cost, statuses.Cost);
@@ -40,7 +40,7 @@ public sealed class CardFaceRegionsTests
     }
 
     [Fact]
-    public void IllustratedInspectorKeepsRulesAndStatusesOutOfTheStatRail()
+    public void IllustratedInspectorKeepsRulesAndPrintedIconsOutOfTheStatRail()
     {
         var regions = new CardFaceRegions(new Vector2(392, 552),
             new CardFaceFeatures(false, false, true, true, true, true, 2));

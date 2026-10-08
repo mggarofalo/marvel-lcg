@@ -19,8 +19,8 @@ internal sealed record CardFaceMetrics(bool Full, float Unit, float Density)
     internal float TitleFontSize => (Full ? CardVisualTokens.FullTitleSize : CardVisualTokens.CompactTitleSize) * Density;
 
     internal float Rail(bool landscape, bool consequences) =>
-        (Full ? (landscape ? 44 : 66) : landscape ? 24 : consequences ? 29 : 25) * Density;
+        (Full ? (landscape ? 44 : 66) : landscape ? 24 : consequences ? 29 : 23) * Density;
 
     internal float Footer(bool landscape) =>
-        (landscape ? (Full ? 48 : 23) : (Full ? 56 : 26)) * Density;
+        (Full ? 64 : landscape ? 23 : 26) * Density;
 }

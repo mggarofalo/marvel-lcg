@@ -121,10 +121,10 @@ public sealed class PrintedCardFactsTests
     public void FaceTokensPreserveSuppliedOrientationStatesWithoutAddingReadyClutter()
     {
         BoardCardPresentation card = Card("MINION", new()) with { Status = "EXHAUSTED  ·  FACE DOWN" };
-        var tokens = CardStatusTokens.Entries(card);
-        Assert.Contains(tokens, token => token.Name == "EXHAUSTED" && token.Text == "↷");
-        Assert.Contains(tokens, token => token.Name == "FACE DOWN" && token.Text == "▧");
-        Assert.Empty(CardStatusTokens.Entries(card with { Status = "READY" }));
+        var tokens = CardStatusEntries.From(card);
+        Assert.Contains(tokens, token => token.Name == "EXHAUSTED" && token.Text == "Exhausted");
+        Assert.Contains(tokens, token => token.Name == "FACE DOWN" && token.Text == "Face Down");
+        Assert.Empty(CardStatusEntries.From(card with { Status = "READY" }));
     }
 
     [Fact]

@@ -96,8 +96,9 @@ internal sealed class BoardCardInspectorController
         ClearContent();
         InterfaceScale inspectionScale = CardInspectorFocus.FittedScale(
             card, main.interfaceScale, main.Size.Y);
-        CardControl detail = CardControl.Create(
-            card, CardDisplaySize.Full, inspectionScale, main.art);
+        Control detail = CardStateDetails.Wrap(CardControl.Create(
+            card, CardDisplaySize.Full, inspectionScale, main.art), card, beside: true,
+            inspect: valueSource => Show(valueSource, source, pinned: true, stages: [card, valueSource]));
         detail.FocusMode = Control.FocusModeEnum.All;
         CardInspectorFocus.IgnoreMouseRecursively(detail);
         main.cardInspectorContent.AddChild(detail);
@@ -112,6 +113,14 @@ internal sealed class BoardCardInspectorController
         layout.BindMeasurement(detail, card, source, pinned);
         layout.Position(card, source, pinned);
         Present(detail, sourceId, source, pinned, inspectorGeneration);
+    }
+
+    internal void Refresh(BoardPresentation board, BoardRenderResult rendered)
+    {
+        BoardCardPresentation? current = BoardInspectorSequences.Current(board, main.inspectedCardId);
+        Control? source = current?.TargetId is { } id ? rendered.ControlFor(id) : null;
+        if (!main.cardInspectorPinned || current is null || source is null) inspector.Hide();
+        else Show(current, source, pinned: true);
     }
 
     internal void Input(InputEvent input) =>

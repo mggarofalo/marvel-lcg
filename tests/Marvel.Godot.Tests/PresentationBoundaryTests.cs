@@ -85,6 +85,10 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.CardStatePresentation",
             // Engine-evaluated quantity and modification flag; the renderer does not evaluate sources.
             "Marvel.View.CardEffectiveValue",
+            // Disclosed source text and duration are read-only inspection facts.
+            "Marvel.View.CardValueCalculation",
+            "Marvel.View.CardValueSourceDescriptor",
+            "Marvel.View.CardValueDuration",
             "Marvel.View.DecisionReceiptContext",
             "Marvel.View.ResponseReceiptPresenter",
             "Marvel.View.EventBatchPresentation",

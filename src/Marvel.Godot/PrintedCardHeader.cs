@@ -6,9 +6,16 @@ namespace Marvel.Godot;
 /// <summary>Owns left-aligned identity and distinct cost/stage corner treatments.</summary>
 internal static class PrintedCardHeader
 {
-    internal static float MeasureTitle(BoardCardPresentation card, CardFaceRegions r) =>
-        CardTypography.Title.GetMultilineStringSize(card.Title.ToUpperInvariant(), HorizontalAlignment.Left,
-            r.Title.Size.X - UniqueWidth(card, r), Mathf.RoundToInt(r.TitleFontSize)).Y;
+    internal static float MeasureTitle(BoardCardPresentation card, CardFaceRegions r, Control owner)
+    {
+        Label measure = PrintedCardFace.Text(card.Title.ToUpperInvariant(), "TitleMeasurement",
+            new Rect2(0, 0, r.Title.Size.X - UniqueWidth(card, r), 4096), r.TitleFontSize);
+        owner.AddChild(measure);
+        float height = measure.GetLineCount() * measure.GetLineHeight();
+        owner.RemoveChild(measure);
+        measure.Free();
+        return height;
+    }
 
     internal static void Add(Control face, BoardCardPresentation card, CardFaceRegions r)
     {

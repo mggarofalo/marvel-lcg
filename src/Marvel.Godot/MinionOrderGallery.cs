@@ -80,7 +80,7 @@ internal sealed class MinionOrderGallery(DecisionPanel panel)
         };
         face.SetInteractionCue(selected ? CardInteractionCue.SelectedTarget : CardInteractionCue.LegalTarget);
         face.HideInteractionCue();
-        column.AddChild(face);
+        column.AddChild(CardStateDetails.Wrap(face, card, beside: false));
     }
 
     private void Toggle(int target, TableDraftBinding operations)

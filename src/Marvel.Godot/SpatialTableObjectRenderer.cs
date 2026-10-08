@@ -188,6 +188,7 @@ internal sealed class SpatialTableObjectRenderer
         control.SetMeta("spatial_resting_z", z);
         control.MouseFilter = Control.MouseFilterEnum.Pass;
         surface.AddChild(control);
+        if (!isHand) SpatialCardSidecar.State(control, card);
         control.Size = control.CustomMinimumSize;
         Callable.From(() =>
         {
@@ -213,7 +214,7 @@ internal sealed class SpatialTableObjectRenderer
         control.PivotOffset = control.CustomMinimumSize / 2;
         control.Rotation = Mathf.Pi / 2;
         control.SetMeta("spatial_exhausted", true);
-        SpatialCardSidecar.Caption(control, $"{card.Title} · Exhausted");
+        SpatialCardSidecar.Place(control);
     }
 
     private void AddMulliganToggle(int id, CardControl card)

@@ -133,12 +133,7 @@ internal sealed class MainBoardController : IDisposable
             && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
         relationships.Bind(rendered);
         main.decisions.BindMulliganTargets(rendered);
-        if (!main.cardInspectorPinned
-            || main.inspectedCardId is not { } inspected
-            || rendered.ControlFor(inspected) is null)
-        {
-            cardInspector.Hide();
-        }
+        cardInspector.Refresh(main.boardPresentation!, rendered);
     }
     private BoardRenderResult RenderCompactBoard()
     {

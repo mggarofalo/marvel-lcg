@@ -6,5 +6,5 @@ namespace Marvel.Godot;
 internal static class ClientDiagnosticEntry
 {
     internal static bool TryStart(Control owner) =>
-        PackagedHostedSmoke.TryStart(owner) || CardVisualSample.TryStart(owner) || CardFaceSample.TryStart(owner);
+        PackagedHostedSmoke.TryStart(owner) || CardVisualSample.TryStart(owner) || CardFaceSample.TryStart(owner) || CardLiveStateSample.TryStart(owner);
 }

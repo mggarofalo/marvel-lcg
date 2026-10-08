@@ -6,6 +6,18 @@ namespace Marvel.Godot.Tests;
 public sealed class AstraTableGeometryTests
 {
     [Theory]
+    [InlineData(80)]
+    [InlineData(100)]
+    public void EngagedCardsReserveTheirFaceAndUprightStateBeforeSupports(int percent)
+    {
+        CardLayoutMetrics face = VisualSystem.Card(CardDisplaySize.Board, (InterfaceScale)percent);
+        var size = new Vector2(face.Width, face.MinimumHeight);
+        var table = new AstraTableGeometry(1320, 962, false, PhysicalCardSize: size);
+        Assert.True(table.EngagedEnemies.Size.X >= SpatialCardFootprint.OccupiedSize(size).X);
+        Assert.True(table.Assets.Position.X > table.EngagedEnemies.End.X);
+    }
+
+    [Theory]
     [InlineData(1320, 962, 224)]
     [InlineData(1100, 820, 240)]
     public void PhysicalInstalledFacesLeaveSpaceAboveTheRotatedHand(float width, float height, float faceHeight)
@@ -36,11 +48,12 @@ public sealed class AstraTableGeometryTests
     [Theory]
     [InlineData(1320, 962)]
     [InlineData(1670, 962)]
-    public void RevealingCardHasItsOwnRegionBesideSupportsAndIdentity(float width, float height)
+    public void RevealingCardKeepsItsOwnIdentitySpaceAndUsesTheDenseSupportFallback(float width, float height)
     {
         var table = new AstraTableGeometry(width, height, LargeText: true, HasRevealingCard: true);
 
-        Assert.False(table.Revealing.Intersects(table.Assets));
+        if (table.HasSeparateRevealSlot) Assert.False(table.Revealing.Intersects(table.Assets));
+        else Assert.Equal(table.Assets, table.Revealing);
         Assert.False(table.Revealing.Intersects(table.Identity));
         Assert.False(table.Revealing.Intersects(table.Allies));
         Assert.False(table.Revealing.Intersects(table.Hand));

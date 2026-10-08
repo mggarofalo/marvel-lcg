@@ -5,7 +5,7 @@ namespace Marvel.Godot;
 /// <summary>Owns the occupied face and upright sidecar bounds of one physical card.</summary>
 internal static class SpatialCardFootprint
 {
-    internal const float SidecarWidth = 88;
+    internal const float SidecarWidth = 132;
     internal const float Gap = 8;
 
     internal static Vector2 OccupiedSize(Vector2 face) =>
@@ -29,6 +29,6 @@ internal static class SpatialCardFootprint
         sidecar.Rotation = -card.Rotation;
         sidecar.Position = ((Control)sidecar.GetParent()).GetGlobalTransform().AffineInverse()
             * new Vector2(face.End.X + Gap, face.Position.Y);
-        sidecar.Size = new Vector2(SidecarWidth, face.Size.Y);
+        sidecar.Size = new Vector2(SidecarWidth, Math.Max(card.Size.X, card.Size.Y));
     }
 }

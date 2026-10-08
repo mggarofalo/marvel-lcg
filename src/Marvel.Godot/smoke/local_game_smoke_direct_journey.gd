@@ -237,7 +237,7 @@ func _visible_exhausted_caption(anchor: int) -> Label:
 	var card := _card_for_anchor(anchor)
 	if card == null:
 		return null
-	var caption := card.get_node_or_null("SpatialOverlay/SpatialControls/Contents/PhysicalCardCaption") as Label
+	var caption := card.get_node_or_null("SpatialOverlay/LiveState/UprightIdentity") as Label
 	return caption if caption != null and caption.is_visible_in_tree() else null
 
 

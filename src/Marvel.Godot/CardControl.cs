@@ -36,7 +36,8 @@ public sealed partial class CardControl : PanelContainer
             TargetId = card.TargetId,
             CustomMinimumSize = SpatialCardMetrics.FaceSize(card, size, layout, scale),
             SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
-            TooltipText = card.Title,
+            TooltipText = CardLiveStateRendering.Description(card),
+            AccessibilityName = CardLiveStateRendering.Description(card),
             FocusMode = card.Concealed ? FocusModeEnum.None : FocusModeEnum.All,
             MouseFilter = MouseFilterEnum.Pass,
             MouseDefaultCursorShape = card.Concealed

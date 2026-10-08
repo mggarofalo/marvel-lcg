@@ -73,6 +73,7 @@ internal static class CardFaceTokens
         label.AddThemeColorOverride("font_color", threat ? CardFaceStyle.Ink : Colors.White);
         label.TooltipText = threat ? $"Threat {value.Value}" : $"Hit points {value.Value}";
         token.AddChild(label);
+        AddMaximumMark(token, label, value, r);
         if (value.PerPlayer)
         {
             Label perPlayer = PrintedCardStats.Symbol("G", "ProgressPerPlayer",
@@ -80,6 +81,21 @@ internal static class CardFaceTokens
             perPlayer.AddThemeColorOverride("font_color", threat ? CardFaceStyle.Ink : Colors.White);
             token.AddChild(perPlayer);
         }
+    }
+
+    private static void AddMaximumMark(Control token, Label label, CardProgressValue value, CardFaceRegions r)
+    {
+        if (!value.MaximumModified) return;
+        int slash = value.Value.IndexOf('/');
+        if (slash < 0) return;
+        int size = label.GetThemeFontSize("font_size");
+        float whole = CardTypography.Bold.GetStringSize(value.Value, fontSize: size).X;
+        float maximum = CardTypography.Bold.GetStringSize(value.Value[(slash + 1)..], fontSize: size).X;
+        var line = new ColorRect { Name = "ModifiedHealthMaximum",
+            Position = new Vector2(label.Position.X + (label.Size.X + whole) / 2 - maximum, token.Size.Y - 3 * r.Density),
+            Size = new Vector2(maximum, Math.Max(1, 1.5f * r.Density)),
+            Color = ClientTheme.ToGodot(CardVisualTokens.Modified), MouseFilter = Control.MouseFilterEnum.Ignore };
+        token.AddChild(line);
     }
 
 }

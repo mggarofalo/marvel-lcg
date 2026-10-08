@@ -23,7 +23,7 @@ internal sealed record AstraTableGeometry(
     internal Rect2 SideSchemes => new(Villain.End.X + 16, ScaleY(76),
         Math.Max(0, (HasSeatSummaries ? SeatStrip.Position.X - 16 : Width - 20) - Villain.End.X - 16), ScaleY(176));
     internal Rect2 SeatStrip => Scale(new Rect2(1060, 46, 224, 212));
-    internal Rect2 EngagedEnemies => Scale(new Rect2(36, 280, 246, 160));
+    internal Rect2 EngagedEnemies => new(ScaleX(36), ScaleY(280), FootprintWidth, ScaleY(160));
     internal Rect2 PlayerDiscard => Scale(new Rect2(36, 496, 108, 142));
     internal Rect2 PlayerDeck => Scale(new Rect2(164, 496, 108, 142));
     internal Rect2 Context => Scale(new Rect2(20, 800, 1280, 156));
@@ -33,7 +33,7 @@ internal sealed record AstraTableGeometry(
         ScaleY(310), FootprintWidth, ScaleY(189));
     internal Rect2 Allies => new(Identity.End.X + 16, ScaleY(310),
         Math.Max(0, Width - Identity.End.X - 36), ScaleY(180));
-    internal Rect2 Assets => new(ScaleX(302), ScaleY(310), FootprintWidth, ScaleY(180));
+    internal Rect2 Assets => new(Math.Max(ScaleX(302), EngagedEnemies.End.X + 16), ScaleY(310), FootprintWidth, ScaleY(180));
     internal Rect2 Upgrades => new(Width - FootprintWidth - 20, ScaleY(530), FootprintWidth, ScaleY(230));
     internal Rect2 Revealing => new(HasSeparateRevealSlot ? Assets.End.X + 16 : Assets.Position.X,
         ScaleY(310), FootprintWidth, ScaleY(180));

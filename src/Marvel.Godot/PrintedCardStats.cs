@@ -66,7 +66,8 @@ internal static class PrintedCardStats
         if (r.Full)
             AddCaption(cell, Name(stat.Name), $"StatName{stat.Name}",
                 new Rect2(29 * r.Density, baseline + 3 * r.Density,
-                    cell.Size.X - 29 * r.Density, 12 * r.Density), 10 * r.Density);
+                    cell.Size.X - 29 * r.Density,
+                    CardTypography.Title.GetHeight(Math.Max(5, Mathf.RoundToInt(10 * r.Density)))), 10 * r.Density);
     }
 
     private static void AddCaption(Control cell, string text, string name, Rect2 bounds, float fontSize)

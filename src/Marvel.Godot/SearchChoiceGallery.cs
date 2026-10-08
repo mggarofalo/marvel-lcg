@@ -76,7 +76,7 @@ internal sealed class SearchChoiceGallery(DecisionPanel panel)
                 panel.SelectAffordance(option.Id, generation);
             }
         };
-        row.AddChild(face);
+        row.AddChild(CardStateDetails.Wrap(face, card, beside: false));
         face.SetInteractionCue(selected ? CardInteractionCue.SelectedTarget : CardInteractionCue.LegalTarget);
         face.HideInteractionCue();
         face.GetNode<Control>("CardSurface").AddChild(choice);

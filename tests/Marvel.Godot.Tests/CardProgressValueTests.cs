@@ -70,5 +70,17 @@ public sealed class CardProgressValueTests
         Assert.Null(CardProgressValue.From(card with { Concealed = true }));
     }
 
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(2, false)]
+    [InlineData(2, true)]
+    public void MaximumModificationIsSuppliedIndependentlyOfDamage(long damage, bool modified)
+    {
+        var card = Card() with { Damage = damage, Fields = [new("HEALTH", "5/7")],
+            EffectiveValues = new Dictionary<string, CardEffectiveValue>
+            { ["HP"] = new(7, 7, "Printed", modified, []) } };
+        Assert.Equal(modified, CardProgressValue.From(card)!.MaximumModified);
+    }
+
     private static BoardCardPresentation Card() => new(1, 1, false, "Sample", "", "", "", []);
 }

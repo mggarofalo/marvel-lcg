@@ -21,7 +21,7 @@ func _compact_card_title_is_safe(card: Control, face: Control, _in_hand: bool) -
 		_fail("a printed card does not retain subordinate type information")
 		return false
 	var title := face.find_child("Title", true, false) as Label
-	if title == null or title.max_lines_visible != 2 or card.tooltip_text != title.text:
+	if title == null or title.max_lines_visible != 2 or not (card.tooltip_text == title.text or card.tooltip_text.begins_with(title.text + " · ")):
 		_fail("a compact card lost its bounded title or complete inspection name")
 		return false
 	if title.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS:

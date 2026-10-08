@@ -7,6 +7,10 @@ internal sealed class BoardInspectorSequences
 {
     private readonly Dictionary<int, IReadOnlyList<BoardCardPresentation>> byCard = [];
 
+    internal static BoardCardPresentation? Current(BoardPresentation board, int? id) =>
+        id is null ? null : board.Areas.SelectMany(area => area.Cards)
+            .FirstOrDefault(card => card.TargetId == id && !card.Concealed);
+
     internal void Register(IReadOnlyList<BoardCardPresentation> cards)
     {
         if (cards.Count < 2)

@@ -99,7 +99,7 @@ internal static class TabletopPileInspector
             }
             BoardCardPresentation card = pile.InspectionOrder[index];
             CardControl control = CardControl.Create(card, CardDisplaySize.Full, scale, art);
-            cardSlot.AddChild(control);
+            cardSlot.AddChild(CardStateDetails.Wrap(control, card, beside: false));
             if (card.TargetId is { } target)
             {
                 result.Register(target, control);

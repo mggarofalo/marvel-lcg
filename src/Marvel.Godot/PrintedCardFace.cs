@@ -19,9 +19,8 @@ internal static class PrintedCardFace
         IReadOnlyList<CardStatValue> stats = CardStatValues.From(card);
         var features = new CardFaceFeatures(landscape, card.Cost is not null || card.PrintedStats.Any(value => value.Name == "Stage"),
             illustration is not null, stats.Count > 0, card.Traits.Count > 0,
-            displaySize == CardDisplaySize.Full, CardStatusTokens.RowCount(card))
-        { HasRetaliate = !card.Concealed && card.Retaliate > 0,
-            HasConsequences = stats.Any(stat => stat.ConsequentialDamage > 0),
+            displaySize == CardDisplaySize.Full, CardPrintedIcons.RowCount(card))
+        { HasConsequences = stats.Any(stat => stat.ConsequentialDamage > 0),
             HasProgress = CardProgressValue.From(card) is not null };
         var provisional = new CardFaceRegions(size, features);
         RichTextLabel rules = CardRulesRendering.Create(card, scale, provisional.RulesFontSize);
@@ -33,7 +32,7 @@ internal static class PrintedCardFace
             var regions = new CardFaceRegions(size, features with
             {
                 RulesHeight = rules.GetContentHeight(),
-                TitleHeight = PrintedCardHeader.MeasureTitle(card, provisional),
+                TitleHeight = PrintedCardHeader.MeasureTitle(card, provisional, face),
             });
             face.SetMeta("measured_rules", rules.GetContentHeight());
             face.SetMeta("ink_end", regions.InkEnd);
@@ -43,8 +42,7 @@ internal static class PrintedCardFace
             AddIllustration(face, card, regions, illustration);
             PrintedCardStats.Add(face, stats, regions);
             AddRules(face, card, regions, rules);
-            CardStatusTokens.Add(face, card, regions);
-            CardRetaliateToken.Add(face, card, regions);
+            CardPrintedIcons.Add(face, card, regions);
         };
         return face;
     }
@@ -82,6 +80,7 @@ internal static class PrintedCardFace
         var label = new Label { Name = name,
             MouseFilter = Control.MouseFilterEnum.Ignore, AutowrapMode = TextServer.AutowrapMode.WordSmart,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis, ClipText = true };
+        label.AddThemeConstantOverride("line_spacing", 0);
         label.AddThemeFontOverride("font", CardTypography.Title);
         label.AddThemeFontSizeOverride("font_size", Math.Max(5, Mathf.RoundToInt(fontSize)));
         label.AddThemeColorOverride("font_color", CardFaceStyle.Ink);
