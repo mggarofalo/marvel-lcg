@@ -228,8 +228,8 @@ public sealed class BoardPresentationTests
         Assert.Equal("Carol Danvers", card.Subtitle);
         Assert.Equal("HERO", card.Kind);
         Assert.Equal("EXHAUSTED", card.Status);
-        Assert.Equal(["HEALTH", "THWART"], card.Fields.Select(field => field.Name));
-        Assert.Equal(["11/13", "2"], card.Fields.Select(field => field.Value));
+        Assert.Equal(["AMPLIFY", "HEALTH", "THWART"], card.Fields.Select(field => field.Name));
+        Assert.Equal(["0", "11/13", "2"], card.Fields.Select(field => field.Value));
         Assert.Equal(["AVENGER", "AERIAL"], card.Traits);
         Assert.Equal("3", card.Cost);
         Assert.Equal(["THW", "ATK", "RES"], card.PrintedStats.Select(field => field.Name));
@@ -244,7 +244,7 @@ public sealed class BoardPresentationTests
     }
 
     [Fact]
-    public void InPlayZeroHealthAndThreatRemainVisibleWhileEmptyFlagsDoNot()
+    public void InPlayZeroHealthThreatAndSuppressionRemainVisible()
     {
         CardDescriptor defeated = new(
             7,
@@ -289,11 +289,11 @@ public sealed class BoardPresentationTests
         ]));
 
         Assert.Equal(
-            new BoardFieldPresentation("HEALTH", "0/14"),
-            Assert.Single(board.Areas[0].Cards).Fields.Single());
+            [new BoardFieldPresentation("AMPLIFY", "0"), new("HEALTH", "0/14")],
+            Assert.Single(board.Areas[0].Cards).Fields);
         Assert.Equal(
-            new BoardFieldPresentation("THREAT", "0"),
-            Assert.Single(board.Areas[1].Cards).Fields.Single());
+            [new BoardFieldPresentation("ACCELERATION_ICON", "0"), new("THREAT", "0")],
+            Assert.Single(board.Areas[1].Cards).Fields);
     }
 
     [Fact]
@@ -324,7 +324,7 @@ public sealed class BoardPresentationTests
                 World(areas: [Area(1, "HeroArea", 0, [identity])])).Areas).Cards);
 
         Assert.Equal(
-            ["ATTACK", "DEFENSE", "RECOVER", "THWART"],
+            ["AMPLIFY", "ATTACK", "DEFENSE", "RECOVER", "THWART"],
             card.Fields.Select(field => field.Name));
         Assert.All(card.Fields, field => Assert.Equal("0", field.Value));
     }

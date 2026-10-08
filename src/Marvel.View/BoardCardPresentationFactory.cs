@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 using Marvel.Rules.State;
 
@@ -7,9 +6,6 @@ namespace Marvel.View;
 /// <summary>Builds visibility-safe card tiles for a board presentation.</summary>
 internal static class BoardCardPresentationFactory
 {
-    private static readonly HashSet<string> LiveZeroFields = new(
-        ["attack", "defense", "recover", "scheme", "thwart"], StringComparer.Ordinal);
-
     internal static List<BoardCardPresentation> Present(IReadOnlyList<CardDescriptor> cards, string zone)
     {
         var presented = new List<BoardCardPresentation>();
@@ -47,7 +43,7 @@ internal static class BoardCardPresentationFactory
         bool inPlay = IsInPlay(zone);
         BoardCardPresentation result = new(card.Id, 1, false, card.Face.Title, card.Face.Subtitle,
             Humanize(card.Face.Kind.ToString(), false).ToUpperInvariant(), Status(card, zone, card.Face.Kind),
-            VisibleFields(card, inPlay).ToArray())
+            BoardCardFields.Present(card, inPlay).ToArray())
         {
             Back = card.Back.ToString().ToUpperInvariant(), FaceId = card.Face.ArtFaceId, StageRole = StageRole(zone),
             Traits = card.Face.Traits, Cost = card.Face.Cost,
@@ -62,41 +58,6 @@ internal static class BoardCardPresentationFactory
         return BoardCardLiveValues.Apply(result, card, inPlay);
     }
 
-    private static IEnumerable<BoardFieldPresentation> VisibleFields(
-        CardDescriptor card,
-        bool inPlay)
-    {
-        IEnumerable<BoardFieldPresentation> fields = card.Face!.Fields
-            .Where(field => VisibleField(field, inPlay, card.Face.Kind))
-            .OrderBy(field => field.Key, StringComparer.Ordinal)
-            .Select(field => new BoardFieldPresentation(
-                FieldName(field.Key), FieldValue(field, card.Face.Damage)));
-        foreach (BoardFieldPresentation field in fields)
-        {
-            yield return field;
-        }
-        if (card.State?.Threat is { } threat
-            && card.Face.Kind is CardKind.MainScheme or CardKind.EncounterSideScheme
-            && !card.Face.Fields.ContainsKey("k_threat"))
-        {
-            yield return new BoardFieldPresentation(
-                "THREAT", threat.ToString(CultureInfo.InvariantCulture));
-        }
-    }
-
-    private static bool VisibleField(KeyValuePair<string, long> field, bool inPlay, CardKind kind)
-    {
-        if (field.Key.StartsWith("t_", StringComparison.Ordinal) || field.Key == "is_exhaust") return false;
-        bool schemeThreat = field.Key == "k_threat" && kind is CardKind.MainScheme or CardKind.EncounterSideScheme;
-        return field.Key != "k_threat" || schemeThreat
-            ? field.Value != 0 || inPlay && (LiveZeroFields.Contains(field.Key) || field.Key == "health" || schemeThreat)
-            : false;
-    }
-
-    private static string FieldName(string key) => Humanize(key.StartsWith("k_", StringComparison.Ordinal) ? key[2..] : key, false).ToUpperInvariant();
-    private static string FieldValue(KeyValuePair<string, long> field, long damage) => field.Key == "health"
-        ? $"{field.Value.ToString(CultureInfo.InvariantCulture)}/{(field.Value + damage).ToString(CultureInfo.InvariantCulture)}"
-        : field.Value.ToString(CultureInfo.InvariantCulture);
     private static BoardStageRole StageRole(string zone) => zone switch { "VillainArea" or "MainSchemesArea" => BoardStageRole.Current, "VillainDeck" or "MainSchemesDeck" => BoardStageRole.Upcoming, _ => BoardStageRole.None };
     private static string Status(CardDescriptor card, string zone, CardKind? kind)
     {
