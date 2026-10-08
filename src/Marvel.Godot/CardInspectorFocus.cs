@@ -137,9 +137,9 @@ internal sealed class CardInspectorFocus
             && (focused == main.cardInspectorFrame || main.cardInspectorFrame.IsAncestorOf(focused));
     }
 
-    internal void Hide()
+    internal void Hide(bool restoreFocus = true)
     {
-        int? targetId = main.cardInspectorPinned ? returnTargetId : null;
+        int? targetId = main.cardInspectorPinned && restoreFocus ? returnTargetId : null;
         string? paymentControl = main.cardInspectorPinned ? returnPaymentControl : null;
         var paymentDraft = returnPaymentDraft;
         main.cardInspectorGeneration++;

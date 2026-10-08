@@ -11,10 +11,10 @@ internal static class SpatialCardFootprint
     internal static Vector2 OccupiedSize(Vector2 face) =>
         new(Math.Max(face.X, face.Y) + Gap + SidecarWidth, Math.Max(face.X, face.Y));
 
-    internal static Rect2 Face(CardControl card)
+    internal static Rect2 Face(Control card) => Bounds(card.GetGlobalTransform(), card.Size);
+
+    internal static Rect2 Bounds(Transform2D pose, Vector2 size)
     {
-        Transform2D pose = card.GetGlobalTransform();
-        Vector2 size = card.Size;
         Vector2[] corners = [pose * Vector2.Zero, pose * new Vector2(size.X, 0),
             pose * size, pose * new Vector2(0, size.Y)];
         Vector2 start = new(corners.Min(point => point.X), corners.Min(point => point.Y));

@@ -96,9 +96,8 @@ internal sealed class BoardCardInspectorController
         ClearContent();
         InterfaceScale inspectionScale = CardInspectorFocus.FittedScale(
             card, main.interfaceScale, main.Size.Y);
-        Control detail = CardStateDetails.Wrap(CardControl.Create(
-            card, CardDisplaySize.Full, inspectionScale, main.art), card, beside: true,
-            inspect: valueSource => Show(valueSource, source, pinned: true, stages: [card, valueSource]));
+        Control detail = CardInspectionContent.Create(card, inspectionScale, main.art, beside: true,
+            inspect: valueSource => OpenValueSource(valueSource, card, source)).Body;
         detail.FocusMode = Control.FocusModeEnum.All;
         CardInspectorFocus.IgnoreMouseRecursively(detail);
         main.cardInspectorContent.AddChild(detail);
@@ -130,6 +129,13 @@ internal sealed class BoardCardInspectorController
     internal void BindFocus(Control control) => inspector.BindFocus(control);
     internal bool HasFocus() => inspector.HasFocus();
     internal void Hide() => inspector.Hide();
+    internal void Reset() { previewSource = null; inspector.Hide(restoreFocus: false); }
+
+    private void OpenValueSource(BoardCardPresentation source, BoardCardPresentation host, Control? opener)
+    {
+        BoardCardPresentation detail = BoardInspectorSequences.Source(main.boardPresentation, source);
+        Show(detail, opener, pinned: true, stages: [host, detail]);
+    }
 
     private Control? HandSource(int id, BoardCardPresentation? card)
     {

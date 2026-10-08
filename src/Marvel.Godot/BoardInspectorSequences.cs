@@ -11,13 +11,12 @@ internal sealed class BoardInspectorSequences
         id is null ? null : board.Areas.SelectMany(area => area.Cards)
             .FirstOrDefault(card => card.TargetId == id && !card.Concealed);
 
+    internal static BoardCardPresentation Source(BoardPresentation? board, BoardCardPresentation source) =>
+        board is not null && Current(board, source.TargetId) is { } current
+            ? current : source with { TargetId = null };
+
     internal void Register(IReadOnlyList<BoardCardPresentation> cards)
     {
-        if (cards.Count < 2)
-        {
-            return;
-        }
-
         foreach (BoardCardPresentation card in cards)
         {
             if (card.TargetId is { } id)
@@ -26,6 +25,10 @@ internal sealed class BoardInspectorSequences
             }
         }
     }
+
+    internal BoardCardPresentation Source(BoardCardPresentation source) =>
+        For(source.TargetId).FirstOrDefault(card => card.TargetId == source.TargetId && !card.Concealed)
+            ?? source with { TargetId = null };
 
     internal IReadOnlyList<BoardCardPresentation> For(int? id) =>
         id is { } target && byCard.TryGetValue(target, out var cards) ? cards : [];

@@ -28,6 +28,7 @@ internal sealed class MainBoardController : IDisposable
 
     internal void ResetForSession()
     {
+        cardInspector.Reset();
         renderLifetime.Advance();
         main.SkipEventPresentation();
         displayedResponse = null;
@@ -48,6 +49,7 @@ internal sealed class MainBoardController : IDisposable
             .ToHashSet() ?? [];
         if (!string.Equals(displayedResponse?.GameId, response.GameId, StringComparison.Ordinal))
         {
+            cardInspector.Reset();
             tabletop.ResetForGame();
         }
         displayedResponse = response;

@@ -26,8 +26,8 @@ internal sealed class CardInspectorLayout(Main main)
         HBoxContainer header = main.cardInspectorTitle.GetParent<HBoxContainer>();
         float headerHeight = pinned ? header.GetCombinedMinimumSize().Y + 12 : 0;
         Control? currentSource = CurrentSource(source, card.TargetId);
-        Rect2 sourceRect = currentSource?.GetGlobalRect() ?? new Rect2(
-            main.GetViewport().GetMousePosition(), Vector2.Zero);
+        Rect2 sourceRect = currentSource is not null ? SpatialCardFootprint.Face(currentSource)
+            : new Rect2(main.GetViewport().GetMousePosition(), Vector2.Zero);
         Rect2 frame = CardInspectorPlacement.Fit(main.Size, sourceRect,
             detailSize + new Vector2(20, headerHeight),
             OccupiedCards(pinned, currentSource), VisibleActions(pinned));
@@ -43,7 +43,7 @@ internal sealed class CardInspectorLayout(Main main)
     private Rect2[]? OccupiedCards(bool pinned, Control? source) => pinned ? null
         : main.boardRender?.VisibleCardControls()
             .Where(control => control != source && control.IsVisibleInTree())
-            .Select(control => control.GetGlobalRect()).ToArray();
+            .Select(control => SpatialCardFootprint.Face(control)).ToArray();
 
     private Rect2[]? VisibleActions(bool pinned) => pinned ? null
         : main.FindChildren("*", "BaseButton", true, false).OfType<BaseButton>()

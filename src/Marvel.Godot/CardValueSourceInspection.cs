@@ -56,9 +56,14 @@ internal sealed class CardValueSourceInspection
         string? printed = mark is null ? null : mark.Value + (mark.PerPlayer ? " per player" : "");
         CardLiveStateRendering.AddLabel(content, $"Current {value.CurrentValue.ToString(CultureInfo.InvariantCulture)}"
             + (value.IsModified ? " · modified" : ""), "InspectedCurrentValue", 18);
+        CardLiveStateRendering.AddLabel(content, BaseDescription(value), "InspectedBaseValue", 14);
         if (printed is not null)
             CardLiveStateRendering.AddLabel(content, $"Printed {printed}", "InspectedPrintedValue", 14);
     }
+
+    internal static string BaseDescription(CardEffectiveValue value) =>
+        $"Base {value.BaseValue.ToString(CultureInfo.InvariantCulture)}" + (value.BaseKind switch
+        { "Defined" => " · defined", "Replacement" => " · replacement", _ => "" });
 
     private static void AddSource(VBoxContainer parent, CardValueCalculation row, Action<BoardCardPresentation> inspect)
     {

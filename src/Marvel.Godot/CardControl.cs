@@ -113,7 +113,8 @@ public sealed partial class CardControl : PanelContainer
         surface.AddChild(interactionLabel);
         interactionControls = new GridContainer
         {
-            Name = "DirectControls", Columns = 2, MouseFilter = MouseFilterEnum.Pass,
+            Name = "DirectControls", Columns = 2, MouseFilter = MouseFilterEnum.Ignore,
+            Visible = false,
             Position = new Vector2(width - 52, -28),
             Size = new Vector2(44, 44),
         };
@@ -238,7 +239,7 @@ public sealed partial class CardControl : PanelContainer
     {
         if (interactionControls is not null)
         {
-            if (HasMeta("source_strip")) interactionControls.Visible = false;
+            interactionControls.Visible = false;
             foreach (Node child in interactionControls.GetChildren())
             {
                 interactionControls.RemoveChild(child);

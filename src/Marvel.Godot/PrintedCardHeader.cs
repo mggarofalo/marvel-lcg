@@ -30,7 +30,7 @@ internal static class PrintedCardHeader
         title.Uppercase = true;
         title.HorizontalAlignment = HorizontalAlignment.Left;
         title.VerticalAlignment = VerticalAlignment.Top;
-        title.MaxLinesVisible = 2;
+        title.MaxLinesVisible = r.Full ? -1 : 2;
         title.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         title.AddThemeColorOverride("font_color", Colors.White);
         face.AddChild(title);

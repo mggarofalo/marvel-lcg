@@ -107,6 +107,9 @@ public sealed class BoardRenderResult
         pointer.Track(control, card, isHandCard);
     }
 
+    internal void TrackInspection(CardControl control, BoardCardPresentation card) =>
+        interactionControls.Track(control, card, isHand: false);
+
     /// <summary>Records the authored table pose after spatial placement is complete.</summary>
     internal void UpdateRestingPose(Control control) =>
         pointer.UpdateRestingPose(control);

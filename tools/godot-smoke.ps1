@@ -23,6 +23,7 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 & "$PSScriptRoot/godot-smoke-card-faces.ps1" -GodotBin $GodotBin
 & "$PSScriptRoot/godot-smoke-live-state.ps1" -GodotBin $GodotBin
 & "$PSScriptRoot/godot-smoke-sources.ps1" -GodotBin $GodotBin
+& "$PSScriptRoot/godot-smoke-inspection.ps1" -GodotBin $GodotBin
 
 function Invoke-LocalSmoke {
     param([string]$Script = "res://smoke/local_game_smoke.gd")
@@ -46,9 +47,11 @@ Remove-Item Env:MARVEL_SMOKE_TWO_PLAYER -ErrorAction SilentlyContinue
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_VIEWPORT = "1920x1080"
 $env:MARVEL_SMOKE_MOTION = "enabled"
+Invoke-LocalSmoke "res://smoke/ultron_inspection_smoke.gd"
 Invoke-LocalSmoke "res://smoke/boost_choice_smoke.gd"
 $env:MARVEL_UI_SCALE = "150"
 $env:MARVEL_SMOKE_MOTION = "disabled"
+Invoke-LocalSmoke "res://smoke/ultron_inspection_smoke.gd"
 Invoke-LocalSmoke "res://smoke/boost_choice_smoke.gd"
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
