@@ -5,13 +5,6 @@ namespace Marvel.Godot;
 /// <summary>Reserves a temporary sidebar workspace without covering the physical table.</summary>
 internal static class CardPaymentWorkspaceLayout
 {
-    internal static Main MainFor(Node node)
-    {
-        for (Node? parent = node; parent is not null; parent = parent.GetParent())
-            if (parent is Main main) return main;
-        throw new InvalidOperationException("The payment workspace needs its table host.");
-    }
-
     internal static bool Active(Main main) =>
         CardPaymentPresentation.UsesModal(main.decisions.composer, main.decisions.submitting);
 

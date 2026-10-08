@@ -166,6 +166,11 @@ internal static class TabletopPileInspector
             Close(restoreFocus: false);
     }
 
+    internal static void CloseFor(BoardRenderResult result)
+    {
+        if (ReferenceEquals(result, owner)) Close(restoreFocus: false);
+    }
+
     internal static void Close(bool restoreFocus = true)
     {
         if (active is not { } popup || !GodotObject.IsInstanceValid(popup))

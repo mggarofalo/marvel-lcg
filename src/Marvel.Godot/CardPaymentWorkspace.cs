@@ -19,7 +19,7 @@ internal sealed class CardPaymentWorkspace : IDisposable
         this.panel = panel;
         draft = panel.composer!;
         generation = panel.GetRenderGeneration();
-        main = CardPaymentWorkspaceLayout.MainFor(panel);
+        main = ClientSceneHost.MainFor(panel);
         frame = new PanelContainer
         {
             Name = "PaymentWorkspace", Theme = panel.Theme,

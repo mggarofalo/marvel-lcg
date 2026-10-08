@@ -35,55 +35,15 @@ internal sealed class SearchChoiceGallery(DecisionPanel panel)
         var row = new HBoxContainer { Name = "SearchCards", Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 24);
         panel.AddContent(row);
-        BoardCardPresentation[] cards = [.. BoardPresentation.From(panel.world!).Areas
-            .SelectMany(area => area.Cards).Where(card => !card.Concealed)];
+        BoardPresentation board = BoardPresentation.From(panel.world!);
+        IReadOnlyList<BoardCardPresentation> cards = SearchChoiceCandidates.From(prompt, board);
+        var inspection = new SearchChoiceInspection(panel, cards, board, generation);
         foreach (AffordancePresentation option in prompt.Affordances.Skip(page * capacity).Take(capacity))
         {
             BoardCardPresentation? card = cards.FirstOrDefault(candidate => candidate.TargetId == option.CardAnchorId);
-            AddChoice(row, option, card, generation, cardScale);
+            SearchChoiceCard.Add(panel, row, option, card, generation, cardScale, inspection);
         }
         AddNavigation(pages, generation);
-    }
-
-    private void AddChoice(HBoxContainer row, AffordancePresentation option,
-        BoardCardPresentation? card, int generation, InterfaceScale scale)
-    {
-        bool selected = panel.composer!.Selected?.Id == option.Id;
-        var choice = new Button
-        {
-            Name = $"Affordance{option.Id}", Text = selected ? "✓" : "◎",
-            AccessibilityName = $"Select {option.SourceName ?? card?.Title ?? option.Label}",
-            Disabled = panel.submitting || option.Illegal is not null,
-            CustomMinimumSize = new Vector2(44, 44),
-        };
-        choice.TooltipText = choice.AccessibilityName;
-        choice.Pressed += () => panel.SelectAffordance(option.Id, generation);
-        if (card is null)
-        {
-            choice.Text = option.DisplayLabel ?? option.Label;
-            row.AddChild(choice);
-            return;
-        }
-        CardControl face = CardControl.Create(card, CardDisplaySize.Full, scale);
-        face.Name = $"SearchResult{option.Id}";
-        face.GuiInput += input =>
-        {
-            if (choice.Disabled) return;
-            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false }
-                || input.IsActionPressed("ui_accept"))
-            {
-                face.AcceptEvent();
-                panel.SelectAffordance(option.Id, generation);
-            }
-        };
-        row.AddChild(CardStateDetails.Wrap(face, card, beside: false));
-        face.SetInteractionCue(selected ? CardInteractionCue.SelectedTarget : CardInteractionCue.LegalTarget);
-        face.HideInteractionCue();
-        face.GetNode<Control>("CardSurface").AddChild(choice);
-        choice.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight);
-        choice.Position = new Vector2(face.Size.X - 48, 4);
-        CardSymbolButtonStyle.Apply(choice);
-        choice.AddThemeColorOverride("font_color", CardFaceStyle.Ink);
     }
 
     private void AddNavigation(int pages, int generation)
