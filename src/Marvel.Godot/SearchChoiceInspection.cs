@@ -19,8 +19,7 @@ internal sealed class SearchChoiceInspection
         this.panel = panel;
         draft = panel.composer!;
         this.generation = generation;
-        result = new BoardRenderResult { IsCurrent = IsCurrent };
-        result.Inspector.Register(board.Areas.SelectMany(area => area.Cards).Where(card => !card.Concealed).ToArray());
+        result = new BoardRenderResult(board) { IsCurrent = IsCurrent };
         collection = TabletopAreaObject.From(new(-1, "Card choices", "", candidates.Reverse().ToArray(), []));
     }
 

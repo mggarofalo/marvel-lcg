@@ -2,8 +2,8 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Indexes card sequences that are browsable without rendering every card on the table.</summary>
-internal sealed class BoardInspectorSequences
+/// <summary>Resolves sources from one authorized snapshot and indexes independent browsing sequences.</summary>
+internal sealed class BoardInspectorSequences(BoardPresentation? board = null)
 {
     private readonly Dictionary<int, IReadOnlyList<BoardCardPresentation>> byCard = [];
 
@@ -27,8 +27,7 @@ internal sealed class BoardInspectorSequences
     }
 
     internal BoardCardPresentation Source(BoardCardPresentation source) =>
-        For(source.TargetId).FirstOrDefault(card => card.TargetId == source.TargetId && !card.Concealed)
-            ?? source with { TargetId = null };
+        Source(board, source);
 
     internal IReadOnlyList<BoardCardPresentation> For(int? id) =>
         id is { } target && byCard.TryGetValue(target, out var cards) ? cards : [];

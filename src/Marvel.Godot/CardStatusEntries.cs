@@ -26,7 +26,7 @@ internal static class CardStatusEntries
     {
         foreach (string name in new[] { "Acceleration", "Amplify", "Crisis", "Hazard", "Guard", "Patrol", "Steady", "Stalwart" })
         {
-            string liveName = name == "Acceleration" ? "ACCELERATION ICON" : name.ToUpperInvariant();
+            string liveName = name == "Acceleration" ? "ACCELERATION_ICON" : name.ToUpperInvariant();
             BoardFieldPresentation? value = card.Fields.FirstOrDefault(field => field.Name == liveName);
             if (value is null || value.Value == "0") continue;
             result.Add((name, value.Value == "1" ? name : $"{name} {value.Value}"));

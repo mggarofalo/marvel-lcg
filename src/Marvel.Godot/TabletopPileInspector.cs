@@ -155,6 +155,7 @@ internal static class TabletopPileInspector
     private static void OpenSource(Control opener, BoardCardPresentation host, BoardCardPresentation source,
         BoardRenderResult result, InterfaceScale scale, ICardArtProvider? art)
     {
+        if (result.IsCurrent?.Invoke() != true) return;
         BoardCardPresentation detail = result.Inspector.Source(source);
         var area = new BoardAreaPresentation(-1, "Card details", "", [host, detail], []);
         Show(opener, TabletopAreaObject.From(area), result, scale, art, allowActions: false);

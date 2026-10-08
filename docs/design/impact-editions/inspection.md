@@ -57,6 +57,22 @@ repaired and exercised by the same pointer/keyboard checks. The smoke harness
 also learned to retain instance IDs across dismissal, rather than pass a freed
 popup as a typed parameter; native diagnostic output remains a gate failure.
 
+## Off-table source resolution
+
+Drawer source inspection resolves against the render's complete authorized board
+snapshot. Per-region previous/next navigation remains independent: an attachment
+to an off-table environment is still a full current source without joining the
+engaged-minion browsing order. Every new render owns a fresh lookup; removed and
+concealed cards cannot resolve, historical source references retain no live id,
+and a stale drawer callback cannot open another source.
+
+The regression fixture deals canonical Ultron with seed 989 and uses the
+invariant-checked Upgraded Drones attachment arrangement. A Drone's ATK source
+opens the full attachment with its current persistent facts even when only the
+engaged region is registered for browsing. Separate cases cover fresh empty,
+removed, concealed, and historical snapshots. These are automated assertions,
+not an independent comprehension review.
+
 ## Product review boundary
 
 These are automated headless checks. The earlier Computer Use refusal for Godot

@@ -42,7 +42,7 @@ public sealed class CardLiveStateFixtureTests
             Damage = 4, Fields = [new("HEALTH", "5/9")], Retaliate = 1 });
         fixtures.Add(Assert.Single(projected, card => card.Kind == "MAIN SCHEME") with
         { Title = "Synthetic near-threshold scheme", Fields = [new("THREAT", "13"), new("TARGET_THREAT", "14"),
-            new("ESCALATION_THREAT", "2"), new("HAZARD", "1"), new("ACCELERATION ICON", "2")] });
+            new("ESCALATION_THREAT", "2"), new("HAZARD", "1"), new("ACCELERATION_ICON", "2")] });
         fixtures.Add(new(null, 4, true, "4 concealed encounter cards", "Identity and order hidden", "CONCEALED PILE", "", [])
             { Back = "ENCOUNTER" });
         fixtures.Add(ordinary with { TargetId = 701, Title = "Fresh Drone", Statuses = [], Counters = [], Damage = 0 });

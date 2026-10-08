@@ -37,8 +37,8 @@ internal static class CardInspectionSample
         face.Size = face.CustomMinimumSize;
         if (SpatialTableZones.IsExhausted(card)) { face.PivotOffset = face.Size / 2; face.Rotation = Mathf.Pi / 2; }
         AddNeighbor(fixture, face);
-        var result = new BoardRenderResult { IsCurrent = () => true };
-        result.Inspector.Register(all.Where(value => !value.Concealed).ToArray());
+        var snapshot = new BoardPresentation([new(1, "Authorized cards", "", all, [])]);
+        var result = new BoardRenderResult(snapshot) { IsCurrent = () => true };
         var area = new BoardAreaPresentation(1, "Card details", "", [card, .. all.Where(value => value.Concealed)], []);
         result.CardActivated += (selected, source) => TabletopPileInspector.Show(source,
             TabletopAreaObject.From(area), result, ClientTheme.ConfiguredScale(), null, allowActions: false);

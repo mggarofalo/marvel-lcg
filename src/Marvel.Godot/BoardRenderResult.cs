@@ -8,7 +8,7 @@ namespace Marvel.Godot;
 public sealed class BoardRenderResult
 {
     private readonly Dictionary<int, List<CardControl>> controls = [];
-    internal readonly BoardInspectorSequences Inspector = new();
+    internal readonly BoardInspectorSequences Inspector;
     private readonly Dictionary<Control, Action> areaExpanders = [];
     private readonly Dictionary<int, Button> mulliganToggles = [];
     private readonly BoardCardInteractionControls interactionControls;
@@ -21,8 +21,10 @@ public sealed class BoardRenderResult
     private Button? completeChoicesEntry;
     private Container? contextualActions;
     private bool completeChoicesOpen;
-    public BoardRenderResult()
+    /// <summary>Owns controls and source lookup for one authorized board snapshot.</summary>
+    public BoardRenderResult(BoardPresentation? board = null)
     {
+        Inspector = new(board);
         reveal = new BoardControlReveal(this);
         interactionControls = new BoardCardInteractionControls(IsCurrentRender);
         pointer = new BoardPointerInteractions(

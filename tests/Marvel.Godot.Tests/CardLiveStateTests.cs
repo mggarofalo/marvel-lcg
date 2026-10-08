@@ -30,12 +30,31 @@ public sealed class CardLiveStateTests
     [Fact]
     public void LiveZeroSuppressesPrintedIconsAndNamesDoNotBecomeResourceSymbols()
     {
-        var card = Card() with { Fields = [new("HAZARD", "0"), new("GUARD", "1"), new("ACCELERATION ICON", "1")],
+        var card = Card() with { Fields = [new("HAZARD", "0"), new("GUARD", "1"), new("ACCELERATION_ICON", "1")],
             PrintedStats = [new("Hazard", "2"), new("Acceleration", "1")] };
         var rows = CardStatusEntries.From(card);
         Assert.DoesNotContain(rows, row => row.Name == "Hazard");
         Assert.Contains(rows, row => row.Text == "Guard");
         Assert.Contains(rows, row => row.Text == "Acceleration");
+    }
+
+    [Theory]
+    [InlineData(1, "Acceleration")]
+    [InlineData(2, "Acceleration 2")]
+    [InlineData(0, null)]
+    public void AccelerationUsesTheProjectedFieldNameAndLiveQuantity(long quantity, string? expected)
+    {
+        // Synthetic authorized contract: the producer owns field spelling and the live value.
+        var face = new CardFaceDescriptor("scheme", "Scheme", "", Marvel.Rules.State.CardKind.EncounterSideScheme,
+            new Dictionary<string, long> { ["acceleration_icon"] = quantity })
+        { PrintedStats = new Dictionary<string, string> { ["Acceleration"] = "1" } };
+        var card = new CardDescriptor(7, CardBack.Encounter, true, true, -1, face);
+        var world = new WorldDescriptor([], [new(1, "SideSchemesArea", -1, -1, [card], [])], [],
+            Marvel.Rules.Play.Outcome.Unfinished);
+        BoardCardPresentation projected = Assert.Single(Assert.Single(BoardPresentation.From(world).Areas).Cards);
+        var rows = CardStatusEntries.From(projected).Where(row => row.Name == "Acceleration").ToArray();
+        if (expected is null) Assert.Empty(rows);
+        else Assert.Equal(expected, Assert.Single(rows).Text);
     }
 
     [Fact]

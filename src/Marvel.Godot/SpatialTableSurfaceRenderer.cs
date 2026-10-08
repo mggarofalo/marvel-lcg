@@ -17,7 +17,7 @@ internal static class SpatialTableSurfaceRenderer
         Prepare(main);
         AstraTableGeometry geometry = Geometry(main);
         Control surface = CreateSurface(main, geometry);
-        var result = new BoardRenderResult();
+        var result = new BoardRenderResult(main.boardPresentation);
         AddMats(surface, result, geometry, selection);
         RenderObjects(main, result, surface, geometry, selection, prompt);
         AddSeats(surface, geometry, main.boardPresentation!, selection, switchSeat);
