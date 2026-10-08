@@ -266,4 +266,8 @@ public class NoCardAbilities : ICardAbilities
     public virtual Prompts.Affordance Describe(World world, PendingAbility ability) =>
         throw new RulesNotImplementedException(
             "nothing is waiting in any window, so nothing can be described from one");
+
+    /// <inheritdoc/>
+    public virtual PersistentAbilityDescription DescribePersistent(Card card) => new([], false);
+
 }

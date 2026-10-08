@@ -24,6 +24,7 @@ internal static class CardDescriptorProjection
                 Face = null,
                 Location = null,
                 State = null,
+                Persistent = null,
                 Audience = CardAudience.Nobody,
                 Addressable = false,
             };

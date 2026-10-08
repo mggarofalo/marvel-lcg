@@ -41,6 +41,9 @@ public sealed record BoardCardPresentation(
     public IReadOnlyDictionary<string, CardEffectiveValue> EffectiveValues { get; init; } =
         new Dictionary<string, CardEffectiveValue>(StringComparer.Ordinal);
 
+    /// <summary>Authorized relationship and persistent effects, including already-applied contributions.</summary>
+    public CardPersistentDescriptor? Persistent { get; init; }
+
     /// <summary>Semantic annotations of printed values; none are inferred from live values.</summary>
     public IReadOnlyList<BoardPrintedValueMark> PrintedMarks { get; init; } = [];
 

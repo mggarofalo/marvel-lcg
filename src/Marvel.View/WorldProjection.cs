@@ -24,6 +24,7 @@ public static class WorldProjection
         var searchVisible = promptVisible ? SearchResults(prompt!) : [];
         WorldDescriptor complete = Describe(world, prompt, searchVisible);
         WorldDescriptor visible = CardValueProjection.WithValues(world, Filter(complete, scope), scope);
+        visible = CardPersistentProjection.WithFacts(world, visible, scope);
         var addressableIds = visible.Areas
             .SelectMany(area => area.Cards.Concat(area.Removed))
             .Where(card => card.Id.HasValue)

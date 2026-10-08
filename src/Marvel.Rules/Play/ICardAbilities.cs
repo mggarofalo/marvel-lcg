@@ -18,6 +18,6 @@ public interface ICardAbilities : IWindowAbilities, ICardCounterPools,
     ICardPowerAbilities, IResourceCardAbilities, ICardContinuationAbilities,
     IActivationCompletionAbilities, ICardReadinessAbilities,
     ICardSetupAbilities, ICardPlacementAbilities, ICardConstantAbilities, ICardActionAbilities,
-    IAttackCardAbilities, ICardPlayAbilities, IRevealCardAbilities
+    IAttackCardAbilities, ICardPlayAbilities, IRevealCardAbilities, ICardPersistentAbilities
 {
 }

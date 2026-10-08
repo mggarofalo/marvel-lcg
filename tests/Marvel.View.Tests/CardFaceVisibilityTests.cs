@@ -149,7 +149,7 @@ public sealed class CardFaceVisibilityTests
     {
         string[] publicWhileHidden = ["Back", "FaceUp", "Ready", "Host"];
         string[] redacted = ["Id", "Face"];
-        string[] readableOnly = ["Location", "State"];
+        string[] readableOnly = ["Location", "Persistent", "State"];
         string[] declared = typeof(CardDescriptor).GetProperties()
             .Where(property => property.GetMethod?.IsPublic == true)
             .Select(property => property.Name)
