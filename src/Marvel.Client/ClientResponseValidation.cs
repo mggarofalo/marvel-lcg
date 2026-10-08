@@ -165,11 +165,8 @@ internal static class ClientResponseValidation
         && area.Removed is not null && area.Cards.Concat(area.Removed).All(CompleteCard);
 
     private static bool CompleteCard(CardDescriptor card) => card is not null
-        && (card.Face is null || CompleteFace(card.Face));
-
-    private static bool CompleteFace(CardFaceDescriptor face) =>
-        face.Id is not null && face.Title is not null && face.Subtitle is not null
-        && face.Fields is not null;
+        && (card.Face is null || ClientCardValidation.Complete(face: card.Face))
+        && ClientPersistentValidation.Complete(card.Persistent);
 
     internal static bool HasCompleteGameplayResponse(
         EngineResponse response,

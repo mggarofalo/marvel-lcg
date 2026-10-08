@@ -71,7 +71,7 @@ visible = false
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"Caption"
-text = "v0.1.0-dev.0 · engine engine-replay-v7 · protocol 22 · save 5"
+text = "v0.1.0-dev.0 · engine engine-replay-v7 · protocol 23 · save 5"
 
 [node name="Spacer" type="Control" parent="StatusBar" unique_id=1000000009]
 layout_mode = 2

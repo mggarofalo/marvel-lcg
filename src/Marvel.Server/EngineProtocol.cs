@@ -32,8 +32,9 @@ public static class EngineProtocol
     /// Version 20 requires quantity-dependent typed resource components.
     /// Version 21 identifies authorized card search and look choices publicly.
     /// Version 22 adds a visibility-safe latest-action undo status.
+    /// Version 23 separates printed stat marks from effective-value explanations.
     /// </summary>
-    public const int Version = 22;
+    public const int Version = 23;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;
