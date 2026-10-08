@@ -21,7 +21,7 @@ func _run() -> void:
 		var identity := str(card.get_meta("fixture_id")) + "/" + str(card.get_meta("fixture_size"))
 		_check_text(card, identity, failures)
 		_check_identity_lines(card, identity, failures)
-		_check_footer(card, identity, failures)
+		preload("res://smoke/card_progress_checks.gd").check(card, identity, failures)
 		_check_marks(card, identity, failures)
 	if not failures.is_empty():
 		for failure in failures: push_error("B1_FACES_FAILED " + failure)
@@ -93,17 +93,13 @@ func _check_consequences(card: Control, cell: Control, number: Control, mark: Di
 
 
 func _check_identity_lines(card: Control, identity: String, failures: Array[String]) -> void:
+	var kind := card.find_child("Kind", true, false) as Label
+	if kind != null and kind.text.begins_with("ENCOUNTER "):
+		failures.append(identity + " redundant encounter type prefix")
 	for name in ["Traits", "Kind"]:
 		var label := card.find_child(name, true, false) as Label
 		if label != null and label.get_line_count() > label.get_visible_line_count():
 			failures.append(identity + " clipped identity line " + name)
-
-
-func _check_footer(card: Control, identity: String, failures: Array[String]) -> void:
-	var health := card.find_child("ProgressToken", true, false) as Control
-	var resources := card.find_child("ResourceIcons", true, false) as Control
-	if health != null and resources != null and health.get_rect().intersects(resources.get_rect()):
-		failures.append(identity + " resources overlap the health target " + str(resources.get_rect()) + " " + str(health.get_rect()))
 
 
 func _check_modifier(cell: Control, attribute: String, expected: Dictionary,

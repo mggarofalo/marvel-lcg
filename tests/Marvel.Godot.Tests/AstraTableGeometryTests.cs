@@ -29,6 +29,32 @@ public sealed class AstraTableGeometryTests
         Assert.True(table.Hand.End.Y < table.Context.Position.Y);
     }
 
+    [Theory]
+    [InlineData(50)]
+    [InlineData(80)]
+    [InlineData(100)]
+    [InlineData(150)]
+    public void ControlledSourcePickerClearsFocusedPlayerCardsAndLeavesRoomForItsSource(int percent)
+    {
+        foreach (float height in new[] { 820f, 900f, 962f })
+        {
+            InterfaceScale scale = SpatialCardMetrics.TableScale((InterfaceScale)percent, height);
+            CardLayoutMetrics face = VisualSystem.Card(CardDisplaySize.Board, scale);
+            var size = new Vector2(face.Width, face.MinimumHeight);
+            var table = new AstraTableGeometry(1670, height, percent >= 130, PhysicalCardSize: size);
+            var picker = new Rect2(table.Upgrades.Position, new Vector2(CardSourceStrip.LedgerWidth, 44));
+            // Presentation choice: six pixels enclose the card's outer focus stroke.
+            var focusedAlly = new Rect2(table.Allies.Position, size).Grow(6);
+
+            Assert.True(picker.Position.Y >= focusedAlly.End.Y + 8,
+                $"The source picker intrudes into the focused player row at {percent}% / {height}px.");
+            Assert.False(picker.Intersects(table.Hand));
+            Assert.True(picker.End.X <= table.Width);
+            // The visible strip and its action remain above the current decision.
+            Assert.True(picker.End.Y + 160 < table.Context.Position.Y);
+        }
+    }
+
     [Fact]
     public void OppositionStaysFarWhileSupportsFlankTheIdentityAndHandStaysNear()
     {

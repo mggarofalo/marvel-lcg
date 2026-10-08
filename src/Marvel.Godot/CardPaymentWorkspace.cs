@@ -29,18 +29,7 @@ internal sealed class CardPaymentWorkspace : IDisposable
         CardPaymentWorkspaceLayout.Install(main, frame);
         Content = new VBoxContainer { Name = "PaymentContent", ThemeTypeVariation = GodotThemeVariations.TightStack };
         frame.AddChild(Content);
-        string title = PromptPresentation.Describe(panel.composer!.Selected!.AnchorId, panel.world!);
-        Content.AddChild(DecisionPanel.Text($"Play {title}", GodotThemeVariations.Heading, wrap: true));
-        if (!string.IsNullOrWhiteSpace(prompt.Resolution))
-            Content.AddChild(DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Caption, wrap: true));
-        if (draft.Selected!.DeferredTargetSelection)
-            Content.AddChild(DecisionPanel.Text(
-                "Payment commits now. Choose a target as the effect resolves; cancelling a later draft does not refund payment.",
-                GodotThemeVariations.Caption, wrap: true));
-        Content.AddChild(DecisionPanel.Text(
-            "Inspect cards or the table while choosing what to spend. Nothing is paid until you confirm.",
-            GodotThemeVariations.Caption, wrap: true));
-        Content.AddChild(CardPaymentInspection.Button(panel, main, draft.Selected!.AnchorId, "Inspect played card"));
+        CardPaymentWorkspaceHeader.Add(Content, panel, main, draft, prompt);
         Callable.From(() => CardPaymentWorkspaceLayout.Refresh(main)).CallDeferred();
     }
 

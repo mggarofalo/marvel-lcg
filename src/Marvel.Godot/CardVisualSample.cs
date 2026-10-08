@@ -38,6 +38,7 @@ internal static class CardVisualSample
         owner.AddChild(column);
         column.AddChild(Label("Impact Editions — native primitives", CardTypography.Title, 32));
         column.AddChild(Label("Synthetic visual specimen · frame geometry is reviewed separately", CardTypography.Body, 18));
+        UiTypographySample.Add(column);
         AddResources(column, CardVisualTokens.Paper, CardVisualTokens.Ink);
         AddResources(column, CardVisualTokens.Ink, CardVisualTokens.Paper);
         var scales = new HBoxContainer();

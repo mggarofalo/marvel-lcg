@@ -31,8 +31,8 @@ Historical sources retain text but acquire no live target link. Duplicate titles
 remain separate source rows. Choice galleries retain live state below their face.
 
 Current keyword badges use supplied live fields. They do not recover an absent
-current field from printed stats. The current View contract can omit zero-valued
-keyword fields; a future explicit zero/keyword description belongs in View.
+current field from printed stats. View preserves explicitly supplied zero-valued fields on in-play cards;
+an absent field remains absent.
 Printed keyword rules and printed scheme icons remain printed facts, not a
 renderer claim that their current value is nonzero.
 

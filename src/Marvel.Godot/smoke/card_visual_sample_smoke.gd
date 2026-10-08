@@ -11,6 +11,11 @@ func _run() -> void:
 	root.add_child(main)
 	await process_frame
 	await process_frame
+	var failures: Array[String] = []
+	preload("res://smoke/ui_typography_checks.gd").check(main, failures)
+	if not failures.is_empty():
+		_fail("; ".join(failures))
+		return
 	var cards := main.find_child("B1Cards", true, false) as HBoxContainer
 	if cards == null or main.is_processing_input():
 		_fail("the specimen did not isolate its GUI from uninitialized game input")

@@ -1,4 +1,28 @@
-# Foundation validation
+# Integration review, 8 October 2026
+
+Independent Computer Use review exercised the real Core client at commit
+`324d11029dcb28695c684c567035b725f4a4aee5`: solo Spider-Man against Rhino,
+Standard/Bomb Scare, seed 31, through round 2 (revisions 0–12), at 80%, 100%
+and 150% scale. This was a bounded first-turn review, not full-game acceptance.
+
+The reviewer successfully exercised reversible mulligan, unpaid-play cancellation,
+mixed resource payment, Helicarrier recipient/discount continuity, modified THW
+and source inspection, attack results, end-phase drawing/readying, Spider-Sense,
+defense, and an additional Stampede attack. The review held acceptance on missing
+UI glyphs, invisible scheme footer numerals, and crowded payment choices at 150%.
+An initial claim that Spider-Sense omitted its draw effect was retracted after
+checking the visible explanation; it is not an outstanding defect.
+
+Repairs and final interactive retests remain in progress. Computer Use access
+returned after another restart. Full games, dense boards, multiplayer, search,
+typed payment, recovery, undo and complete keyboard/reduced-motion coverage have
+not yet received independent interactive acceptance on the final build.
+
+Baseline automated validation passed 3,923 managed tests and the required Linux,
+Windows and package CI jobs. Those results apply to the baseline above, not to
+subsequent repairs. Automated traversal does not establish comprehension.
+
+# Foundation validation record
 
 MARVEL-461, macOS, Godot 4.7.1 .NET, 1920×1080 project viewport.
 The foundation commit containing this record is the reviewed source identity.

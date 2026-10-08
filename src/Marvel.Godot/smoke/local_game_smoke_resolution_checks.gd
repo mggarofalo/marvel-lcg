@@ -2,6 +2,12 @@ extends "res://smoke/local_game_smoke_terminal_checks.gd"
 
 
 func _active_resolution_is_safe(state: Dictionary) -> bool:
+	var surface := main.find_child("AstraTableSurface", true, false) as Control
+	var context := main.find_child("ContextualDecision", true, false) as Control
+	if surface != null:
+		for problem in SpatialBounds.controlled_source_problems(surface, context):
+			_fail(problem)
+			return false
 	var active := _node("Play/Prompt/Margin/Stack/ActiveResolution") as Control
 	if not active.visible:
 		return await _hidden_resolution_is_safe(state)

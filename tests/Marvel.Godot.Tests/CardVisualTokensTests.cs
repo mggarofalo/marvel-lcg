@@ -52,7 +52,7 @@ public sealed class CardVisualTokensTests
     public void RequiredFontsAndOriginalFallbackArePackagedWithoutImportOrNetwork()
     {
         var assembly = typeof(CardControl).Assembly;
-        foreach (string font in new[] { "Barlow-Regular", "Barlow-Bold", "Barlow-Italic", "BarlowCondensed-Bold", "ChampionsIcons" })
+        foreach (string font in new[] { "Barlow-Regular", "Barlow-Bold", "Barlow-Italic", "BarlowCondensed-Bold", "DejaVuSans", "ChampionsIcons" })
         {
             using Stream? bytes = assembly.GetManifestResourceStream($"Marvel.Godot.Assets.{font}.ttf");
             Assert.NotNull(bytes);

@@ -64,9 +64,11 @@ func _check_card(sample: Control, failures: Array[String]) -> void:
 		failures.append(identity + " maximum modification differs from supplied flag")
 	_check_labels(state, identity, failures)
 	_check_rules(card, identity, failures)
+	preload("res://smoke/card_progress_checks.gd").check(card, identity, failures)
 	var detail := sample.find_child("StateInspection", true, false) as Control
 	_check_labels(detail, identity + " inspection", failures)
 	_check_rules(detail, identity + " inspection", failures)
+	preload("res://smoke/card_progress_checks.gd").check(detail, identity + " inspection", failures)
 	if detail.get_global_rect().end.y > 1080:
 		failures.append(identity + " inspection exceeds desktop height")
 

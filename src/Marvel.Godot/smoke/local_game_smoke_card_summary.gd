@@ -82,6 +82,11 @@ func _diagnostic_fields_are_hidden(face: Control) -> bool:
 
 
 func _compact_card_progress_is_safe(face: Control, observed: Dictionary) -> bool:
+	var failures: Array[String] = []
+	preload("res://smoke/card_progress_checks.gd").check(face, str(face.name), failures)
+	if not failures.is_empty():
+		_fail("; ".join(failures))
+		return false
 	var health := face.find_child("ProgressValuesHEALTH", true, false) as Label
 	if health != null:
 		observed.health = true

@@ -34,6 +34,8 @@
                       LogicalName="Marvel.Godot.Assets.Resources.%(Filename).svg" />
     <EmbeddedResource Include="assets/fonts/Barlow*.ttf"
                       LogicalName="Marvel.Godot.Assets.%(Filename).ttf" />
+    <EmbeddedResource Include="assets/fonts/DejaVuSans.ttf"
+                      LogicalName="Marvel.Godot.Assets.DejaVuSans.ttf" />
     <EmbeddedResource Include="assets/fonts/ChampionsIcons.ttf"
                       LogicalName="Marvel.Godot.Assets.ChampionsIcons.ttf" />
   </ItemGroup>

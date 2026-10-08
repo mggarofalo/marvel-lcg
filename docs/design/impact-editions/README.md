@@ -23,8 +23,8 @@ labels, inline rules and SVG-derived textures. Small functional glyphs use paper
 values; Barlow Regular, Bold and Italic for rules, emphasis and body copy.
 The shell inherits Barlow Regular and uses the same condensed title family.
 The packaged faces supply Regular 400, Bold 700 and Italic 400; condensed titles
-use Bold 700. System font fallback is disabled. Godot’s bundled fallback font
-handles characters outside Barlow’s coverage; canonical game symbols always use
+use Bold 700. System font fallback is disabled. Packaged DejaVu Sans handles
+characters outside Barlow’s coverage; canonical game symbols always use
 the dedicated icon font, with system fallback disabled. No local Avenir lookup
 is involved. A missing packaged font fails
 instead of silently substituting an unreviewed face. Barlow's available weights,
