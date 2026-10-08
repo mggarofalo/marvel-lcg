@@ -17,7 +17,7 @@ internal static class SpatialTableSurfaceRenderer
         Prepare(main);
         AstraTableGeometry geometry = Geometry(main);
         Control surface = CreateSurface(main, geometry);
-        var result = new BoardRenderResult();
+        var result = new BoardRenderResult(main.boardPresentation);
         AddMats(surface, result, geometry, selection);
         RenderObjects(main, result, surface, geometry, selection, prompt);
         AddSeats(surface, geometry, main.boardPresentation!, selection, switchSeat);
@@ -121,12 +121,10 @@ internal static class SpatialTableSurfaceRenderer
         int handSeat = prompt?.Player ?? selection.ExpandedSeat;
         objects.RenderHand(board.Areas.FirstOrDefault(area =>
             area.Zone == "HandsArea" && area.Seat == handSeat));
-        objects.RenderOverflow(SpatialTableObjectRenderer.Unplaced([.. scenario.Concat(player)
-            .Concat(Lane(board, "other"))]));
+        objects.RenderOverflow([.. scenario.Concat(player).Concat(Lane(board, "other"))]);
 
         AddHandCaption(surface, geometry, board, handSeat, prompt);
         SpatialTableContextRenderer.Add(surface, result, geometry, main.CurrentGame?.World, prompt);
-        TableSidebarContent.Render(main, result, prompt, selection);
     }
 
     private static PanelContainer AddMat(

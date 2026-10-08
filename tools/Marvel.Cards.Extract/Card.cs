@@ -39,6 +39,10 @@ internal sealed record Card(
     string Pack,
     string Set)
 {
+    /// <summary>Printed facts that cannot be reconstructed from numeric engine attributes.</summary>
+    public IReadOnlyDictionary<string, StatAnnotation> StatAnnotations { get; init; } =
+        new Dictionary<string, StatAnnotation>();
+
     /// <summary>The text box with the markup taken out.</summary>
     public string Plain => Printed.Plain(Text);
 }

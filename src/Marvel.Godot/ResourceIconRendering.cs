@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Xml.Linq;
 using Godot;
 
 namespace Marvel.Godot;
@@ -5,7 +7,7 @@ namespace Marvel.Godot;
 /// <summary>Uses the same canonical resource shapes in buttons, menus and card faces.</summary>
 internal static class ResourceIconRendering
 {
-    private const int Size = 28;
+    private const int Size = CardVisualTokens.ResourceSize;
     private static readonly Dictionary<string, Texture2D> textures = [];
 
     internal static Texture2D? Texture(string resources)
@@ -21,7 +23,7 @@ internal static class ResourceIconRendering
                 ?? throw new InvalidOperationException("The canonical resource icon is unavailable.");
             using var reader = new StreamReader(source);
             using var icon = new Image();
-            if (icon.LoadSvgFromString(reader.ReadToEnd()) != Error.Ok)
+            if (icon.LoadSvgFromString(ColoredOutline(reader.ReadToEnd(), glyphs[index])) != Error.Ok)
                 throw new InvalidOperationException("The canonical resource icon could not be decoded.");
             icon.Resize(Size, Size);
             image.BlitRect(icon, new Rect2I(0, 0, Size, Size), new Vector2I(index * Size, 0));
@@ -29,6 +31,31 @@ internal static class ResourceIconRendering
         Texture2D texture = ImageTexture.CreateFromImage(image);
         textures.Add(glyphs, texture);
         return texture;
+    }
+
+    internal static void Style(Label label, char glyph)
+    {
+        label.AddThemeFontOverride("font", CardRulesMarkup.ResourceFont());
+        label.AddThemeColorOverride("font_color", ClientTheme.ToGodot(CardVisualTokens.Resource(glyph)));
+        label.AddThemeColorOverride("font_outline_color", CardFaceStyle.Ink);
+        label.AddThemeConstantOverride("outline_size", CardVisualTokens.ResourceOutline);
+    }
+
+    private static string ColoredOutline(string svg, char glyph)
+    {
+        XElement root = XElement.Parse(svg);
+        float[] viewBox = root.Attribute("viewBox")!.Value.Split(' ')
+            .Select(value => float.Parse(value, CultureInfo.InvariantCulture)).ToArray();
+        string stroke = (Math.Max(viewBox[2], viewBox[3]) / Size * CardVisualTokens.ResourceOutline).ToString(CultureInfo.InvariantCulture);
+        foreach (XElement path in root.Descendants().Where(element => element.Name.LocalName == "path"))
+        {
+            path.SetAttributeValue("fill", "#" + ClientTheme.ToGodot(CardVisualTokens.Resource(glyph)).ToHtml(false));
+            path.SetAttributeValue("stroke", "#" + CardFaceStyle.Ink.ToHtml(false));
+            path.SetAttributeValue("stroke-width", stroke);
+            path.SetAttributeValue("stroke-linejoin", "round");
+            path.SetAttributeValue("paint-order", "stroke fill");
+        }
+        return root.ToString(SaveOptions.DisableFormatting);
     }
 
     internal static void Apply(Button button, string resources)

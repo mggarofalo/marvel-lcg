@@ -34,6 +34,7 @@ func _payment_modal_is_safe() -> bool:
 		_fail("card play did not open its payment modal")
 		return false
 	if not _payment_symbols_are_readable(modal): return false
+	if not _payment_choices_are_comparable(modal): return false
 	var copy := _visible_text(modal)
 	if "Discard cards from hand" not in copy or "Resource abilities" not in copy:
 		_fail("payment does not explain its sources and commitment")
@@ -53,6 +54,22 @@ func _payment_modal_is_safe() -> bool:
 		return false
 	if not await _payment_inspection_preserves_draft(): return false
 	return await _capture_checkpoint("card-payment-workspace")
+
+
+func _payment_choices_are_comparable(modal: Control) -> bool:
+	var scroll := modal.find_child("DecisionBodyScroll", true, false) as Control
+	if scroll == null:
+		_fail("payment does not expose its source choices")
+		return false
+	var sources := modal.find_children("Resource*", "Button", true, false)
+	var complete := 0
+	for source in sources:
+		if source.is_visible_in_tree() and scroll.get_global_rect().encloses(source.get_global_rect()):
+			complete += 1
+	if complete < mini(3, sources.size()):
+		_fail("payment cannot compare three complete resource choices without scrolling")
+		return false
+	return true
 
 
 func _payment_symbols_are_readable(modal: Control) -> bool:
@@ -225,6 +242,22 @@ func _payment_pile_preserves_draft(resource_name: String, revision: String) -> b
 	if popup == null or not popup.visible:
 		_fail("payment did not leave access to the visible discard pile")
 		return false
+	if not await _close_payment_pile(popup): return false
+	if not await _wait_for(func() -> bool: return render_viewport.gui_get_focus_owner() == pile):
+		_fail("closing the pile did not restore its opener")
+		return false
+	var source := _payment_button(resource_name)
+	if source == null or not source.button_pressed or (_node("Toolbar/SyncStatus") as Label).text != revision:
+		_fail("pile inspection changed the unpaid choices")
+		return false
+	return true
+
+
+func _close_payment_pile(popup: PopupPanel) -> bool:
+	if popup.theme == null:
+		_fail("pile inspection has no installed theme")
+		return false
+	var theme_lifetime: WeakRef = weakref(popup.theme)
 	var popup_lifetime: WeakRef = weakref(popup)
 	var escape := InputEventKey.new()
 	escape.keycode = KEY_ESCAPE
@@ -233,11 +266,7 @@ func _payment_pile_preserves_draft(resource_name: String, revision: String) -> b
 	if not await _wait_for(func() -> bool: return popup_lifetime.get_ref() == null):
 		_fail("pile inspection could not return to the unpaid payment")
 		return false
-	if not await _wait_for(func() -> bool: return render_viewport.gui_get_focus_owner() == pile):
-		_fail("closing the pile did not restore its opener")
-		return false
-	var source := _payment_button(resource_name)
-	if source == null or not source.button_pressed or (_node("Toolbar/SyncStatus") as Label).text != revision:
-		_fail("pile inspection changed the unpaid choices")
+	if theme_lifetime.get_ref() != null:
+		_fail("the closed pile inspector retained its owned theme")
 		return false
 	return true

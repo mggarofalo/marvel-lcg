@@ -137,9 +137,9 @@ internal sealed class CardInspectorFocus
             && (focused == main.cardInspectorFrame || main.cardInspectorFrame.IsAncestorOf(focused));
     }
 
-    internal void Hide()
+    internal void Hide(bool restoreFocus = true)
     {
-        int? targetId = main.cardInspectorPinned ? returnTargetId : null;
+        int? targetId = main.cardInspectorPinned && restoreFocus ? returnTargetId : null;
         string? paymentControl = main.cardInspectorPinned ? returnPaymentControl : null;
         var paymentDraft = returnPaymentDraft;
         main.cardInspectorGeneration++;
@@ -255,7 +255,7 @@ internal sealed class CardInspectorFocus
                 : main.boardRender?.ControlFor(targetId)) is Control source
             && InteractionControl.IsUsable(source))
         {
-            source.GrabFocus();
+            CardFocusPreview.Restore(source);
             InteractionControl.ResetDisabledScrollAncestors(source);
         }
     }

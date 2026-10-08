@@ -7,14 +7,14 @@ namespace Marvel.Godot.Tests;
 public sealed class CardFaceRegionsTests
 {
     [Theory]
-    [InlineData(176, 246, false)]
+    [InlineData(172, 240, false)]
     [InlineData(264, 369, false)]
     [InlineData(400, 560, true)]
-    public void StatusTokensDoNotMoveTheStatOrCornerAnchors(int width, int height, bool full)
+    public void PrintedIconsDoNotMoveTheStatOrCornerAnchors(int width, int height, bool full)
     {
         var features = new CardFaceFeatures(false, true, false, true, true, full, 0);
         var plain = new CardFaceRegions(new Vector2(width - 8, height - 8), features);
-        var statuses = new CardFaceRegions(new Vector2(width - 8, height - 8), features with { TokenRows = 2 });
+        var statuses = new CardFaceRegions(new Vector2(width - 8, height - 8), features with { PrintedIconRows = 2 });
 
         Assert.Equal(plain.Stats, statuses.Stats);
         Assert.Equal(plain.Cost, statuses.Cost);
@@ -40,7 +40,7 @@ public sealed class CardFaceRegionsTests
     }
 
     [Fact]
-    public void IllustratedInspectorKeepsRulesAndStatusesOutOfTheStatRail()
+    public void IllustratedInspectorKeepsRulesAndPrintedIconsOutOfTheStatRail()
     {
         var regions = new CardFaceRegions(new Vector2(392, 552),
             new CardFaceFeatures(false, false, true, true, true, true, 2));
@@ -52,6 +52,18 @@ public sealed class CardFaceRegionsTests
         Assert.True(regions.Rules.Size.Y > 0);
     }
 
+    [Theory]
+    [InlineData(164, 232, false)]
+    [InlineData(392, 552, true)]
+    public void ResourceHitFieldDoesNotOverlapHealth(int width, int height, bool full)
+    {
+        var regions = new CardFaceRegions(new Vector2(width, height),
+            new CardFaceFeatures(false, true, true, true, true, full, 0) { HasProgress = true });
+        Assert.False(regions.Resources.Intersects(regions.Health));
+        Assert.True(regions.Resources.Size.X > 0);
+        Assert.True(regions.Resources.End.X < regions.Health.Position.X);
+    }
+
     [Fact]
     public void ConcealedCardKeepsAPortraitFootprintWithoutConsultingHiddenIdentity()
     {
@@ -59,7 +71,7 @@ public sealed class CardFaceRegionsTests
         CardLayoutMetrics layout = CardControl.LayoutFor(card, CardDisplaySize.Board, InterfaceScale.Percent100);
         Vector2 size = SpatialCardMetrics.FaceSize(card, CardDisplaySize.Board, layout, InterfaceScale.Percent100);
 
-        Assert.Equal(new Vector2(176, 246), size);
+        Assert.Equal(new Vector2(172, 240), size);
         Assert.Equal(size, SpatialCardMetrics.FaceSize(card with { Title = "Other generic back" },
             CardDisplaySize.Board, layout, InterfaceScale.Percent100));
     }

@@ -124,13 +124,15 @@ Feature: Identity defeat and player elimination
       | 01104     | 0    |
       | 01101     | 1    |
     When villain phase 1 resolves with every optional choice declined until a required decision
-    Then seat 1 is asked to order 2 cards for the pending action
-    When seat 1 orders these cards for the pending action
-      | card  | copy |
-      | 01101 | 0    |
-      | 01103 | 0    |
+    Then card 01101 copy 0 is offered by the pending action
+    And card 01103 copy 0 is offered by the pending action
+    When seat 1 chooses card 01101 copy 0 for the pending action
     Then seat 1 may pass the pending window
     When seat 1 declines the pending opportunity
     Then card 01101 copy 0 is engaged with seat 2
     And card 01103 copy 0 is engaged with seat 2
-    And card 01010a copy 0 has 5 damage
+    And card 01010a copy 0 has 2 damage
+    And card 01101 copy 0 is offered by the pending action
+    And card 01103 copy 0 is offered by the pending action
+    When seat 2 chooses card 01101 copy 0 for the pending action
+    Then card 01010a copy 0 has 5 damage

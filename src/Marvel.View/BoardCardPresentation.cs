@@ -37,6 +37,13 @@ public sealed record BoardCardPresentation(
     /// <summary>Printed stats, kept separate from current live values.</summary>
     public IReadOnlyList<BoardFieldPresentation> PrintedStats { get; init; } = [];
 
+    /// <summary>Authorized live quantities and their source explanations, keyed by stat attribute.</summary>
+    public IReadOnlyDictionary<string, CardEffectiveValue> EffectiveValues { get; init; } =
+        new Dictionary<string, CardEffectiveValue>(StringComparer.Ordinal);
+
+    /// <summary>Authorized relationship and persistent effects, including already-applied contributions.</summary>
+    public CardPersistentDescriptor? Persistent { get; init; }
+
     /// <summary>Semantic annotations of printed values; none are inferred from live values.</summary>
     public IReadOnlyList<BoardPrintedValueMark> PrintedMarks { get; init; } = [];
 

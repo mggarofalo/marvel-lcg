@@ -76,7 +76,7 @@ public static class EventCuePlanner
         var useful = cues.Where(cue => cue.Motion is
             EventMotionKind.Damage or EventMotionKind.Heal or EventMotionKind.Threat or EventMotionKind.Status
             or EventMotionKind.Attack or EventMotionKind.Defeat or EventMotionKind.Terminal
-            or EventMotionKind.HandGain or EventMotionKind.Counter).ToList();
+            or EventMotionKind.HandGain or EventMotionKind.Counter or EventMotionKind.DeckReturn).ToList();
         if (useful.Count == 0)
         {
             // A completed action still deserves acknowledgement when it did

@@ -35,7 +35,8 @@ func _choose_setup_upgrade() -> bool:
 	for _page in range(4):
 		for candidate in _search_frame().find_children("SearchResult*", "Control", true, false):
 			if "Energy Daggers" in _visible_text(candidate):
-				if not await _keyboard_activate(candidate): return false
+				var select := candidate.find_child("Affordance*", true, false) as Button
+				if not await _keyboard_activate(select): return false
 				if not await _pointer_activate(_button_named("Add Energy Daggers to your hand")): return false
 				return await _wait_for(func() -> bool: return _button_named("End turn") != null)
 		var next := main.find_child("NextSearchPage", true, false) as Button

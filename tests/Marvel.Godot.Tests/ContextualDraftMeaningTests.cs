@@ -51,6 +51,55 @@ public sealed class ContextualDraftMeaningTests
     }
 
     [Fact]
+    public void CompactDefenseKeepsTheSelectedCharacterStateBesideItsCommitmentAndUncertainty()
+    {
+        // Synthetic authorized offers verify summary composition, not native collection visibility.
+        const string uncertainty = "Boosts and later effects are unresolved.";
+        var composer = new DecisionComposer(new Prompt(0, Question.Defender,
+            TimingPriority.Untimed, "Attack", "Choose a defender", true,
+            [new Affordance(1, "Defend", 10, 0, "Defend"), new Affordance(2, "Defend", 20, 0, "Defend")]));
+        var widow = new AffordancePresentation(1, "Defend", $"Exhaust Black Widow. {uncertainty}",
+            "Defend", "Black Widow", 10, 0, null, "", [])
+        { SourceName = "Black Widow", SourceState = "HP 2/2 · Ready" };
+        var shuri = new AffordancePresentation(2, "Defend", $"Exhaust Shuri. This ally takes the attack damage; no basic DEF reduction. {uncertainty}",
+            "Defend", "Shuri", 20, 0, null, "", [])
+        { SourceName = "Shuri", SourceState = "HP 1/3 · Ready · Tough" };
+        var prompt = new PromptPresentation("", "", "", "", "", [widow, shuri]);
+        composer.SelectAffordance(2);
+
+        string text = Assert.IsType<string>(TableDraftSummary.From(composer, prompt, compact: true));
+
+        Assert.StartsWith("Shuri · HP 1/3 · Ready · Tough", text);
+        Assert.Contains(shuri.Description!, text);
+        Assert.DoesNotContain("Black Widow", text);
+        Assert.DoesNotContain("defeated", text);
+        Assert.DoesNotContain('\n', text);
+        Assert.Equal(2, composer.Selected!.Id);
+        Assert.Empty(composer.Targets);
+        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.Equal(2, decision!.Affordance);
+
+        composer.SelectAffordance(1);
+        string changed = Assert.IsType<string>(TableDraftSummary.From(composer, prompt, compact: true));
+        Assert.StartsWith("Black Widow · HP 2/2 · Ready", changed);
+        Assert.DoesNotContain("Shuri", changed);
+        Assert.DoesNotContain("Tough", changed);
+    }
+
+    [Fact]
+    public void DefenseWithoutAuthorizedSourceStateKeepsOnlyTheOfferedExplanation()
+    {
+        var composer = new DecisionComposer(new Prompt(0, Question.Defender,
+            TimingPriority.Untimed, "Attack", "Defend", true, [new Affordance(1, "Defend", 10, 0, "Defend")]));
+        composer.SelectAffordance(1);
+        var offer = new AffordancePresentation(1, "Defend", "Boosts are unresolved.",
+            "Defend", "Character", 10, 0, null, "", []);
+        var prompt = new PromptPresentation("", "", "", "", "", [offer]);
+
+        Assert.Equal("Boosts are unresolved.", TableDraftSummary.From(composer, prompt, compact: true));
+    }
+
+    [Fact]
     public void CompactPaymentKeepsSelectionAndExcessWithoutRepeatingAllocationInstructions()
     {
         var composer = new DecisionComposer(new Prompt(0, Question.Option,

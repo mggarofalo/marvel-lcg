@@ -132,27 +132,6 @@ internal static class AbilityStructuralPowerExecution
         new(context.Expressions, context.Program, context.Trigger, [], context.AbilityActor, null, context.Power,
             context.HasContinuation, null, null, 0, context.ThreatAbilities);
 
-    internal static Prompt DescribeSpecials(AbilityStructuralContext context, AbilityEffect.CardAction specials)
-    {
-        var cards = Every(specials.Selection, context);
-        return new Prompt(context.Player, Question.Element, TimingPriority.Untimed,
-            Steps.ResolveSpecial, $"{context.SourceFace}: order Special abilities", false,
-            [new Affordance(context.Expressions.Source.ObjectId, ChooseVerb,
-                context.Expressions.Source.ObjectId, context.Player, specials.OperationName(),
-                new TargetRequest([.. cards.Select(card => card.ObjectId)], cards.Count, cards.Count))]);
-    }
-
-    internal static AbilityStructuralTransition AnswerSpecials(
-        AbilityStructuralContext context, AbilityEffect.CardAction specials, Decision answer)
-    {
-        var legal = Every(specials.Selection, context).Select(card => card.ObjectId).ToHashSet();
-        return answer.IsDecline || answer.Targets.Count != legal.Count
-            || answer.Targets.Distinct().Count() != legal.Count
-            || answer.Targets.Any(id => !legal.Contains(id))
-            ? new Unsupported($"'{context.SourceFace}' requires one permutation of all {legal.Count} Special abilities")
-            : new ResolveSpecialsCommand([.. answer.Targets]);
-    }
-
     internal static Prompt DescribeTopForHand(AbilityStructuralContext context, AbilityEffect.ChooseTopForHand top)
     {
         var cards = TopCards(context.Expressions.World.Seats[context.Player].Deck, top.Count);
@@ -173,32 +152,10 @@ internal static class AbilityStructuralPowerExecution
     }
 
     internal static Prompt DescribeDiscardShuffle(
-        AbilityStructuralContext context, AbilityEffect.ChooseDiscardToShuffle discard)
-    {
-        var area = context.Expressions.World.AreaOf(DeckType.DiscardPile,
-            PlayArea.Of(context.Player), cardOwner: context.Player);
-        int maximum = Math.Min(discard.Maximum, area.Cards.Select(card =>
-            context.Expressions.World.Facts.Title(card.FaceId)).Distinct().Count());
-        return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
-            $"{context.SourceFace}: choose cards to shuffle", false,
-            [new Affordance(context.Expressions.Source.ObjectId, ChooseVerb,
-                context.Expressions.Source.ObjectId, context.Player, discard.OperationName(),
-                new TargetRequest([.. area.Cards.Select(card => card.ObjectId)], 1, maximum))]);
-    }
+        AbilityStructuralContext context, AbilityEffect.ChooseDiscardToShuffle discard) =>
+        AbilityDiscardShuffleDescription.Describe(context, discard);
 
     internal static AbilityStructuralTransition AnswerDiscardShuffle(
-        AbilityStructuralContext context, AbilityEffect.ChooseDiscardToShuffle discard, Decision answer)
-    {
-        var area = context.Expressions.World.AreaOf(DeckType.DiscardPile,
-            PlayArea.Of(context.Player), cardOwner: context.Player);
-        var cards = answer.Targets.Select(id => area.Cards.FirstOrDefault(card => card.ObjectId == id)).ToList();
-        if (answer.IsDecline || cards.Any(card => card is null)
-            || cards.Count < 1 || cards.Count > discard.Maximum
-            || cards.Select(card => context.Expressions.World.Facts.Title(card!.FaceId)).Distinct().Count() != cards.Count)
-        {
-            return new Unsupported($"'{context.SourceFace}' requires one to {discard.Maximum} cards with different titles");
-        }
-        return new ShuffleDiscardCommand([.. answer.Targets]);
-    }
-
+        AbilityStructuralContext context, AbilityEffect.ChooseDiscardToShuffle discard, Decision answer) =>
+        AbilityDiscardShuffleDescription.Answer(context, discard, answer);
 }

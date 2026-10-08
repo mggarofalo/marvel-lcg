@@ -12,7 +12,8 @@ internal static class TableCompactButtonStyle
         button.AddThemeFontSizeOverride("font_size", 14);
         foreach (string state in new[] { "normal", "hover", "pressed", "hover_pressed", "disabled" })
         {
-            var style = (StyleBox)button.GetThemeStylebox(state).Duplicate();
+            // The button retains the native resource; the owned wrapper is temporary.
+            using var style = (StyleBox)button.GetThemeStylebox(state).Duplicate();
             style.ContentMarginLeft = 0;
             style.ContentMarginRight = 0;
             style.ContentMarginTop = 4;

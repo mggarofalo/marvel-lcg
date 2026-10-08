@@ -33,6 +33,9 @@ internal sealed class TableDraftBinding
     internal bool TryToggleTarget(int id) =>
         IsCurrent() && operations.TryToggleTarget(id);
 
+    internal bool CanToggleTarget(int id) =>
+        IsCurrent() && operations.CanToggleTarget(id);
+
     internal bool TryAddTarget(int id) =>
         IsCurrent() && operations.TryAddTarget(id);
 

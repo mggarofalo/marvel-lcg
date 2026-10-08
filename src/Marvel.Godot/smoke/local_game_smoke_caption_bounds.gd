@@ -3,6 +3,7 @@ extends RefCounted
 # Measures whole words against the actual themed control, not an opening screenshot.
 static func problems(main: Control) -> Array[String]:
 	var failures: Array[String] = []
+	failures.append_array(preload("res://smoke/local_game_smoke_action_pages.gd").problems(main))
 	for node in main.find_children("*", "Button", true, false):
 		var button := node as Button
 		if button.is_visible_in_tree() and _bounded_caption(button):

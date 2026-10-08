@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marvel.View.Tests;
 
-// Authorized descriptor fixtures test source copy identity and state formatting.
+// Synthetic authorized descriptor fixtures test source copy identity and state formatting.
 public sealed class AffordanceSourceStateTests
 {
     [Fact]
@@ -38,6 +38,34 @@ public sealed class AffordanceSourceStateTests
 
         Assert.Contains("HP 1", choice.SourceState);
         Assert.Contains("1 consequential damage", choice.Description);
+        Assert.DoesNotContain("defeated", choice.SourceState);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void DefenderStateUsesOnlyItsReadableCurrentHealthAndStatusCards(bool readable)
+    {
+        CardDescriptor defender = Card(8, "Shuri", CardKind.Ally, health: 1);
+        defender = defender with
+        {
+            Face = readable ? defender.Face! with { Damage = 2 } : null,
+            State = defender.State! with { Damage = 2, Statuses = ["Tough", "Stunned", "STUNNED"] },
+        };
+        var world = Board("AlliesArea", [Card(7, "Black Widow", CardKind.Ally, health: 2), defender]);
+        var prompt = new Prompt(0, Question.Defender, TimingPriority.Untimed, "Attack", "Defend", true,
+            [new Affordance(8, "Defend", 8, 0, "Defend")]);
+
+        AffordancePresentation choice = Assert.Single(PromptPresentation.From(prompt, world).Affordances);
+
+        if (!readable)
+        {
+            Assert.Null(choice.SourceName);
+            Assert.Null(choice.SourceState);
+            return;
+        }
+        Assert.Equal("Shuri", choice.SourceName);
+        Assert.Equal("HP 1/3 · Ready · Tough · 2 × Stunned · 3 snoop counters", choice.SourceState);
         Assert.DoesNotContain("defeated", choice.SourceState);
     }
 

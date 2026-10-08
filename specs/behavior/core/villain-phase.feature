@@ -759,7 +759,8 @@ Feature: Core villain phase
   @rr:minion.3 @rr:villain-phase.step.2.b
   Scenario: The engaged player orders multiple minion activations after the villain
     # Step two resolves the villain first. With two engaged minions remaining,
-    # their player chooses a complete order before either minion activates.
+    # their player chooses the next minion; the remaining minion follows only
+    # after the chosen activation and its timing windows finish.
     Given a canonical Core scene is dealt
       | campaign | heroes     | seed |
       | rhino    | captain_marvel | 1109 |
@@ -773,11 +774,9 @@ Feature: Core villain phase
       | 01104     | 0    |
       | 01101     | 1    |
     When villain phase 1 resolves with every optional choice declined until a required decision
-    Then seat 1 is asked to order 2 cards for the pending action
-    When seat 1 orders these cards for the pending action
-      | card  | copy |
-      | 01102 | 0    |
-      | 01103 | 0    |
+    Then card 01102 copy 0 is offered by the pending action
+    And card 01103 copy 0 is offered by the pending action
+    When seat 1 chooses card 01102 copy 0 for the pending action
     Then card 01010a copy 0 has 7 damage
 
   @behavior:ruling:2ea7a5960d1275c8:published-clarification
@@ -794,11 +793,9 @@ Feature: Core villain phase
       | 01121     | 0    |
       | 01120     | 0    |
     When villain phase 1 resolves with every optional choice declined until a required decision
-    Then seat 1 is asked to order 2 cards for the pending action
-    When seat 1 orders these cards for the pending action
-      | card  | copy |
-      | 01121 | 0    |
-      | 01121 | 1    |
+    Then card 01121 copy 0 is offered by the pending action
+    And card 01121 copy 1 is offered by the pending action
+    When seat 1 chooses card 01121 copy 0 for the pending action
     Then card 01121 copy 0 is engaged with seat 1
     And card 01001a copy 0 has 3 damage
 

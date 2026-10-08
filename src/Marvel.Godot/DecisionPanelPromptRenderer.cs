@@ -94,7 +94,7 @@ internal static class DecisionPanelPromptRenderer
     internal static void AddAffordances(DecisionPanel panel, PromptPresentation prompt, int generation)
     {
         if (panel.CompleteChoicesOpen && panel.composer?.Selected is not null
-            && InitialTableDraft.IsMinionOrder(panel.composer.Prompt)) return;
+            && InitialTableDraft.IsVisibleCardChoice(panel.composer.Prompt)) return;
         if (panel.CompleteChoicesOpen && SearchChoiceGallery.IsChoice(panel.composer?.Prompt))
         {
             panel.CardChoices.AddSearch(prompt, generation);

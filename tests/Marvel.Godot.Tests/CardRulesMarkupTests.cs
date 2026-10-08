@@ -12,7 +12,7 @@ public sealed class CardRulesMarkupTests
             "unused");
 
         Assert.Equal(
-            "[b]Hero Action[/b] [i](attack)[/i]: Spend a [font=res://assets/fonts/ChampionsIcons.runtime.tres][font_size=22]M[/font_size][/font] resource while [i]Aerial[/i].",
+            "[b]Hero Action[/b] [i](attack)[/i]: Spend a [outline_size=1][outline_color=#132532][color=#2675B8][font=res://assets/fonts/ChampionsIcons.runtime.tres][font_size=22]M[/font_size][/font][/color][/outline_color][/outline_size] resource while [i]Aerial[/i].",
             rendered);
     }
 
@@ -61,8 +61,8 @@ public sealed class CardRulesMarkupTests
             scale);
 
         Assert.Equal(
-            $"Spend a [font={CardRulesMarkup.ResourceFontPath}]"
-                + $"[font_size={expectedMentalSize}]M[/font_size][/font] resource.",
+            $"Spend a [outline_size=1][outline_color=#132532][color=#2675B8][font={CardRulesMarkup.ResourceFontPath}]"
+                + $"[font_size={expectedMentalSize}]M[/font_size][/font][/color][/outline_color][/outline_size] resource.",
             rendered);
         Assert.DoesNotContain(">B<", rendered);
     }

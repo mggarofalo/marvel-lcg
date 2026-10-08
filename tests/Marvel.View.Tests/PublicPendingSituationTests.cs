@@ -128,7 +128,7 @@ public sealed class PublicPendingSituationTests
         Card minion = world.CreateCard("01107", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         Prompt prompt = Choice([minion.ObjectId]) with { PublicKind = PublicDecisionKind.MinionActivationOrder };
         VisibleResult visible = WorldProjection.For(world, prompt, [], Scope(world, 0));
-        Assert.Contains("Choosing minion activation order", PromptPresentation.From(visible.Prompt!, visible.World).Context);
+        Assert.Contains("Choosing the next minion activation", PromptPresentation.From(visible.Prompt!, visible.World).Context);
         Assert.DoesNotContain("Resolving", PendingSituationPresentation.Context(visible.World));
     }
 

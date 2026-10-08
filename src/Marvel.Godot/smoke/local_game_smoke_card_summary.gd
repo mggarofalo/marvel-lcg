@@ -21,7 +21,7 @@ func _compact_card_title_is_safe(card: Control, face: Control, _in_hand: bool) -
 		_fail("a printed card does not retain subordinate type information")
 		return false
 	var title := face.find_child("Title", true, false) as Label
-	if title == null or title.max_lines_visible != 2 or card.tooltip_text != title.text:
+	if title == null or title.max_lines_visible != 2 or not (card.tooltip_text == title.text or card.tooltip_text.begins_with(title.text + " · ")):
 		_fail("a compact card lost its bounded title or complete inspection name")
 		return false
 	if title.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS:
@@ -82,6 +82,11 @@ func _diagnostic_fields_are_hidden(face: Control) -> bool:
 
 
 func _compact_card_progress_is_safe(face: Control, observed: Dictionary) -> bool:
+	var failures: Array[String] = []
+	preload("res://smoke/card_progress_checks.gd").check(face, str(face.name), failures)
+	if not failures.is_empty():
+		_fail("; ".join(failures))
+		return false
 	var health := face.find_child("ProgressValuesHEALTH", true, false) as Label
 	if health != null:
 		observed.health = true
@@ -172,10 +177,13 @@ func _resource_slot_is_safe(slot: Label, expected_size: Vector2) -> bool:
 
 
 func _compact_card_stage_is_safe(face: Control, observed: Dictionary) -> bool:
-	var stage := face.find_child("StageCaption", true, false)
+	var stage := face.find_child("StageValue", true, false) as Label
 	var health := face.find_child("ProgressValuesHEALTH", true, false)
 	if stage == null:
 		return true
+	if stage.text not in ["I", "II", "III", "IV"] or not stage.tooltip_text.begins_with("Stage "):
+		_fail("a stage corner lost its Roman numeral or stage meaning")
+		return false
 	if health != null:
 		if face.find_child("SummaryValuesSCH", true, false) == null:
 			_fail("an active villain stage is missing scheme beside live health")
@@ -183,7 +191,7 @@ func _compact_card_stage_is_safe(face: Control, observed: Dictionary) -> bool:
 		if face.find_child("SummaryValuesATK", true, false) == null:
 			_fail("an active villain stage is missing attack beside live health")
 			return false
-		if face.find_children("StageCaption", "Label", true, false).size() != 1:
+		if face.find_children("StageValue", "Label", true, false).size() != 1:
 			_fail("an active villain stage is repeated beside live stats")
 			return false
 		observed.active_villain_stage = true

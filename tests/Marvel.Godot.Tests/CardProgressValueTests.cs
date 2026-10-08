@@ -16,7 +16,7 @@ public sealed class CardProgressValueTests
         {
             Fields = [new("HEALTH", health)],
             PrintedStats = [new("HP", "4*")],
-            PrintedMarks = [new("HP", true, 0)],
+            PrintedMarks = [new("HP", true, 0) { Value = "4" }],
         };
 
         CardProgressValue value = Assert.IsType<CardProgressValue>(CardProgressValue.From(card));
@@ -34,7 +34,7 @@ public sealed class CardProgressValueTests
         {
             Fields = [new("THREAT", threat), new("TARGET_THREAT", "14")],
             PrintedStats = [new("TargetThreat", "7*")],
-            PrintedMarks = [new("TargetThreat", true, 0)],
+            PrintedMarks = [new("TargetThreat", true, 0) { Value = "7" }],
         };
 
         CardProgressValue value = Assert.IsType<CardProgressValue>(CardProgressValue.From(card));
@@ -50,7 +50,7 @@ public sealed class CardProgressValueTests
         {
             Fields = [new("THREAT", "2")],
             PrintedStats = [new("TargetThreat", "7*")],
-            PrintedMarks = [new("TargetThreat", true, 0)],
+            PrintedMarks = [new("TargetThreat", true, 0) { Value = "7" }],
         };
 
         CardProgressValue value = Assert.IsType<CardProgressValue>(CardProgressValue.From(card));
@@ -68,6 +68,18 @@ public sealed class CardProgressValueTests
         };
         Assert.Equal("0", CardProgressValue.From(card)?.Value);
         Assert.Null(CardProgressValue.From(card with { Concealed = true }));
+    }
+
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(2, false)]
+    [InlineData(2, true)]
+    public void MaximumModificationIsSuppliedIndependentlyOfDamage(long damage, bool modified)
+    {
+        var card = Card() with { Damage = damage, Fields = [new("HEALTH", "5/7")],
+            EffectiveValues = new Dictionary<string, CardEffectiveValue>
+            { ["HP"] = new(7, 7, "Printed", modified, []) } };
+        Assert.Equal(modified, CardProgressValue.From(card)!.MaximumModified);
     }
 
     private static BoardCardPresentation Card() => new(1, 1, false, "Sample", "", "", "", []);

@@ -101,7 +101,10 @@ public sealed class ActionAbilityTypedChoicePreviewsChoicePreviewDistinguishesAt
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         string title = world.Facts.Title(villain.FaceId);
         long health = Damage.Health(world, world.Facts, villain);
-        Assert.Equal(structure is "leading" or "then" or "else" ? $"{title} · {health}/{health} → {health - 2}/{health} HP" : title, choice.Description);
+        string quantity = structure == "leading"
+            ? "Current damage: 2 before prevention and replacement. Later effects can change the result. " : "";
+        Assert.Equal(structure is "leading" or "then" or "else"
+            ? $"{title} · {quantity}{health}/{health} → {health - 2}/{health} HP" : title, choice.Description);
         Assert.Equal(0, villain.Damage);
         Assert.False(world.Agenda.IsBusy);
     }

@@ -103,6 +103,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.PreventDamage damage => Contains(damage.Amount),
         AbilityEffect.GrantTrait grant => Contains(grant.Cards),
         AbilityEffect.GrantField grant => Contains(grant.Cards) || Contains(grant.Amount),
+        AbilityEffect.DefineBaseValue definition => Contains(definition.Value),
         AbilityEffect.PreventDamageWhile prevention => Contains(prevention.Condition),
         _ => throw new InvalidOperationException("Unknown threat player-binding effect"),
     };

@@ -16,6 +16,11 @@ public static class CardStatePresentation
         if (health is not null) parts.Add($"HP {health.Value}");
         if (!string.IsNullOrWhiteSpace(card.Status))
             parts.Add(CultureInfo.InvariantCulture.TextInfo.ToTitleCase(card.Status.ToLowerInvariant()));
+        foreach (var status in card.Statuses.GroupBy(value => value, StringComparer.OrdinalIgnoreCase))
+        {
+            string name = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(status.Key.ToLowerInvariant());
+            parts.Add(status.Count() > 1 ? $"{status.Count()} × {name}" : name);
+        }
         parts.AddRange(card.Counters.Select(counter =>
             $"{counter.Value} {counter.Name.ToLowerInvariant()} counters"));
         return string.Join(" · ", parts);

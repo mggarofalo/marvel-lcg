@@ -65,6 +65,21 @@ from it:
 
 `note` records authoring judgment. The runtime does not read it.
 
+A printed variable basic power has an intrinsic base definition, for example:
+
+```json
+"effect": { "defineBaseValue": {
+  "field": "attack", "value": { "remainingHealth": "this" }
+} }
+```
+
+This is the source's own base before modifiers, as defined by
+`rr:non-numerical-variable` and `rr:base-value`. It must be the root of an
+unconditional, cost-free constant ability, with at most one definition per
+face and field. The supported fields are the five basic powers. The resolved
+definition is distinct from an additive `grant`, so quantity explanations and
+modified indicators use the same base as numeric evaluation.
+
 Cards that print placement instructions can also carry `attachTo` or
 `controlledBy`. A card whose text gives it counters as it enters play carries
 `startingCounters`:

@@ -5,7 +5,7 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
-/// <summary>A read-only projection of a forced would-be-defeated interrupt.</summary>
+/// <summary>Resolves each player's villain activation and live remaining minion activations.</summary>
 
 internal static class ActivationProcedure
 {
@@ -22,7 +22,7 @@ internal static class ActivationProcedure
             throw new RulesNotImplementedException(
                 $"activation step '{step.What}' asked nothing and cannot take an answer");
         }
-        Order(world, step, input);
+        MinionActivationChoice.Answer(world, step, input);
     }
 
     /// <summary>
@@ -61,30 +61,15 @@ internal static class ActivationProcedure
             return null;
         }
 
-        // `rr:activation.1`: hero form and the enemy attacks, alter-ego form
-        // and it schemes. Read the form immediately before each activation:
-        // an earlier activation can change it.
-        var identity = world.Seats[seat].IdentityCard;
-        bool attacking = EffectiveCards.Kind(identity, facts) != CardKind.AlterEgo;
-
-        var remaining = RemainingMinions(world, seat, activated);
+        var remaining = MinionActivationChoice.Remaining(world, seat, step);
         if (NeedsOrder(step, villain, activated, remaining))
-            return OrderPrompt(world, villain, seat, remaining);
+            return MinionActivationChoice.Describe(world, villain, seat, remaining);
 
         int? enemy = NextEnemy(step, villain, activated, remaining);
 
         if (enemy is { } next)
         {
-            world.Agenda.Then(new PhaseStep(
-                attacking ? Steps.Attack : Steps.Scheme,
-                step.Round, 2, Index: seat, Subject: next, Seat: seat));
-            world.Agenda.Then(step with
-            {
-                ActivatedEnemies = [.. activated, next],
-                ActivationPlayers = playerOrder,
-                ActivationOrder = step.ActivationOrder,
-                OccurrenceId = null,
-            });
+            ScheduleNext(world, facts, step, playerOrder, seat, next);
             return null;
         }
 
@@ -92,114 +77,56 @@ internal static class ActivationProcedure
         // are activating joins this procedure. The continuation above therefore
         // re-reads the area only after the preceding activation has completely
         // resolved. The list prevents a surviving minion from being chosen
-        // again. A newly engaged group is ordered when this chosen order has
-        // been exhausted.
+        // again. The next choice sees every currently engaged, unactivated minion.
         world.Agenda.Then(step with
         {
             Index = step.Index + 1,
             ActivatedEnemies = [],
             ActivationPlayers = playerOrder,
             ActivationOrder = null,
+            ProcedureAmounts = null,
             OccurrenceId = null,
         });
         return null;
     }
 
-    private static List<Card> RemainingMinions(
-        World world, int seat, IReadOnlyList<int> activated) => world
-        .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat)).Cards
-        .Where(minion => !activated.Contains(minion.ObjectId))
-        .OrderBy(minion => minion.ObjectId).ToList();
+    private static void ScheduleNext(World world, ICardFacts facts, PhaseStep step,
+        IReadOnlyList<int> playerOrder, int seat, int next)
+    {
+        // `rr:activation.1`: hero form and the enemy attacks, alter-ego form
+        // and it schemes. Read the form immediately before each activation:
+        // an earlier activation can change it.
+        var identity = world.Seats[seat].IdentityCard;
+        bool attacking = EffectiveCards.Kind(identity, facts) != CardKind.AlterEgo;
+
+        world.Agenda.Then(new PhaseStep(
+            attacking ? Steps.Attack : Steps.Scheme,
+            step.Round, 2, Index: seat, Subject: next, Seat: seat));
+        world.Agenda.Then(step with
+        {
+            ActivatedEnemies = [.. step.ActivatedEnemies ?? [], next],
+            // The engine records the in-play incarnation: rr:minion.4 also
+            // applies when a departed physical card engages again as a new instance.
+            ProcedureAmounts = new Dictionary<int, long>(step.ProcedureAmounts
+                ?? new Dictionary<int, long>()) { [next] = world.Cards[next].Incarnation },
+            ActivationPlayers = playerOrder,
+            ActivationOrder = null,
+            OccurrenceId = null,
+        });
+    }
 
     private static bool NeedsOrder(
-        PhaseStep step, Card villain, IReadOnlyList<int> activated, List<Card> remaining)
-    {
-        bool orderHasCandidate = step.ActivationOrder?.Any(candidate =>
-            !activated.Contains(candidate)
-            && remaining.Any(minion => minion.ObjectId == candidate)) == true;
-        return activated.Contains(villain.ObjectId) && !orderHasCandidate && remaining.Count > 1;
-    }
-
-    private static Prompt OrderPrompt(World world, Card villain, int seat, List<Card> remaining)
-    {
-        var ids = remaining.Select(minion => minion.ObjectId).ToList();
-        return new Prompt(seat, Question.Order, TimingPriority.Untimed,
-            Steps.EnemiesActivate,
-            $"{world.Seats[seat].Name} orders engaged minion activations", false,
-            [new Affordance(villain.ObjectId, "Order",
-                world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat)).Id, seat,
-                "engaged minions", new TargetRequest(ids, ids.Count, ids.Count,
-                    Rule: "rr:minion.3"))
-            {
-                AnchorKind = AffordanceAnchorKind.Area,
-                DisplayLabel = "Order minion activations",
-                CommitLabel = "Confirm minion activation order",
-                Description = "Choose every engaged minion in the order you want it to activate.",
-            }])
-        {
-            PublicKind = PublicDecisionKind.MinionActivationOrder,
-            DisplayQuestion = "Choose minion activation order",
-            ContextCardIds = ids,
-            // rr:minion.3: "one minion at a time and in an order of the engaged
-            // player's choosing". rr:activation.1 makes each activation depend
-            // on the player's form when that enemy activates.
-            Description = $"{world.Facts.Title(villain.FaceId)} has finished activating against "
-                + $"{world.Seats[seat].Name}. Choose the order of their engaged minions. "
-                + "Each attacks in hero form or schemes in alter-ego form.",
-        };
-    }
+        PhaseStep step, Card villain, IReadOnlyList<int> activated, List<Card> remaining) =>
+        activated.Contains(villain.ObjectId)
+        && step.ActivationOrder?.Any(id => remaining.Any(card => card.ObjectId == id)) != true
+        && remaining.Count > 1;
 
     private static int? NextEnemy(
         PhaseStep step, Card villain, IReadOnlyList<int> activated, List<Card> remaining)
     {
         if (!activated.Contains(villain.ObjectId)) return villain.ObjectId;
-        int? ordered = step.ActivationOrder?
-            .Where(candidate => !activated.Contains(candidate)
-                && remaining.Any(minion => minion.ObjectId == candidate))
-            .Select(candidate => (int?)candidate).FirstOrDefault();
-        return ordered ?? remaining.Select(minion => (int?)minion.ObjectId).FirstOrDefault();
+        return step.ActivationOrder?.Where(id => remaining.Any(card => card.ObjectId == id))
+            .Select(id => (int?)id).FirstOrDefault()
+            ?? remaining.Select(card => (int?)card.ObjectId).FirstOrDefault();
     }
-
-    internal static void Order(World world, PhaseStep step, Decision input)
-    {
-        var playerOrder = step.ActivationPlayers ?? world.PlayerOrder.ToList();
-        if (step.Index < 0 || step.Index >= playerOrder.Count)
-        {
-            throw new RulesNotImplementedException(
-                "the minion-order continuation has no engaged player");
-        }
-        int seat = playerOrder[step.Index];
-        var villain = world.TheCardIn(DeckType.VillainArea)
-            ?? throw new RulesNotImplementedException(
-                "minion activations cannot be ordered without a villain");
-        var activated = step.ActivatedEnemies ?? [];
-        var candidates = world
-            .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat))
-            .Cards
-            .Where(minion => !activated.Contains(minion.ObjectId))
-            .Select(minion => minion.ObjectId)
-            .OrderBy(id => id)
-            .ToList();
-        var request = new TargetRequest(
-            candidates, candidates.Count, candidates.Count, Rule: "rr:minion.3");
-
-        if (input.IsDecline
-            || input.Affordance != villain.ObjectId
-            || !request.Allows(input.Targets))
-        {
-            throw new RulesNotImplementedException(
-                $"player {seat} must order every engaged minion activation; "
-                + $"offered [{string.Join(',', candidates)}], chose "
-                + $"[{string.Join(',', input.Targets)}], affordance "
-                + $"{input.Affordance} (expected {villain.ObjectId})");
-        }
-
-        world.Agenda.Then(step with
-        {
-            ActivationOrder = [.. input.Targets],
-            ProcedureCandidates = [.. candidates],
-            OccurrenceId = null,
-        });
-    }
-
 }

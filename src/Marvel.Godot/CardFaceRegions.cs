@@ -2,72 +2,91 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Stable printed-card slots shared by table cards, searches and inspection.</summary>
+/// <summary>Allocates B1 ink, illustration, and paper around measured text at fixed type sizes.</summary>
 internal sealed class CardFaceRegions
 {
-    internal Rect2 Title { get; }
-    internal Rect2 Cost { get; }
-    internal Rect2 Kind { get; }
-    internal Rect2 Illustration { get; }
-    internal Rect2 Traits { get; }
-    internal Rect2 Rules { get; }
-    internal Rect2 Stats { get; }
-    internal Rect2 Tokens { get; }
-    internal Rect2 Retaliate { get; }
-    internal Rect2 Resources { get; }
-    internal bool Full { get; }
-    internal float RulesFontSize => (Full ? 18 : 24) * Unit;
-    internal Rect2 Health { get; }
-    internal float Unit { get; }
+    private readonly CardFaceMetrics metrics;
+    internal Rect2 Title { get; private set; }
+    internal Rect2 Cost { get; private set; }
+    internal Rect2 Kind { get; private set; }
+    internal Rect2 Illustration { get; private set; }
+    internal Rect2 Traits { get; private set; }
+    internal Rect2 Rules { get; private set; }
+    internal Rect2 Stats { get; private set; }
+    internal Rect2 Tokens { get; private set; }
+    internal Rect2 Resources { get; private set; }
+    internal Rect2 Health { get; private set; }
+    internal bool Full => metrics.Full;
+    internal float Unit => metrics.Unit;
+    internal float Density => metrics.Density;
+    internal float InkEnd { get; private set; }
+    internal float RulesFontSize => metrics.RulesFontSize;
+    internal float TitleFontSize => metrics.TitleFontSize;
 
     internal CardFaceRegions(Vector2 size, CardFaceFeatures features)
     {
-        float w = size.X, h = size.Y;
-        bool landscape = features.Landscape, full = features.Full;
-        Full = full;
-        Unit = landscape ? h / 400f : w / 400f;
-        float inset = 8 * Unit;
-        float header = (full ? 72 : 92) * Unit;
-        float costWidth = features.HasPrimary ? 56 * Unit : 0;
-        Cost = new Rect2(0, 0, costWidth, header);
-        Title = new Rect2(costWidth + inset, 0, w - costWidth - inset * 2, header);
-        Kind = new Rect2(inset, header, w - inset * 2, 26 * Unit);
-        float bodyY = header + 28 * Unit;
-        float railWidth = (full ? 58 : 72) * Unit;
-        Stats = new Rect2(inset, bodyY + 32 * Unit, railWidth, h - bodyY - 87 * Unit);
-        Illustration = IllustrationBounds(size, features, inset, bodyY);
-        Vector2 text = TextOrigin(size, features, inset, bodyY, railWidth);
-        float textX = text.X, textY = text.Y;
-        float textWidth = w - textX - inset;
-        Traits = new Rect2(textX, textY, textWidth, features.HasTraits ? 28 * Unit : 0);
-        Tokens = new Rect2(textX, Traits.End.Y, textWidth, features.TokenRows * LiveRowHeight(features));
-        Retaliate = new Rect2(textX, Tokens.End.Y, textWidth,
-            features.HasRetaliate ? LiveRowHeight(features) : 0);
-        float rulesY = Retaliate.End.Y + (features.TokenRows > 0 || features.HasRetaliate ? 4 * Unit : 0);
-        Rules = new Rect2(textX, rulesY, textWidth, h - rulesY - 55 * Unit);
-        Resources = new Rect2(inset, h - 44 * Unit, w * 0.55f, 36 * Unit);
-        Health = new Rect2(w - 114 * Unit, h - 50 * Unit, 106 * Unit, 46 * Unit);
+        float shortSide = features.Landscape ? size.Y : size.X;
+        metrics = new(features.Full, shortSide / 400, shortSide / (features.Full ? 400 : 172));
+        ArrangeHeader(size, features);
+        ArrangeInk(size, features);
+        ArrangePaper(size, features);
+        ArrangeFooter(size, features);
     }
 
-    private Rect2 IllustrationBounds(Vector2 size, CardFaceFeatures features, float inset, float bodyY) =>
-        !features.HasArt ? new Rect2(inset, bodyY, 0, 0) : features.Landscape
-            ? new Rect2(inset, bodyY, size.X * 0.34f - inset, size.Y - bodyY - 55 * Unit)
-            : new Rect2(inset, bodyY, size.X - inset * 2, PortraitIllustrationHeight(size, features));
-
-    private float LiveRowHeight(CardFaceFeatures features) => (features.Full ? 32 : 44) * Unit;
-
-    private float PortraitIllustrationHeight(Vector2 size, CardFaceFeatures features)
+    private void ArrangeHeader(Vector2 size, CardFaceFeatures features)
     {
-        float rowHeight = LiveRowHeight(features);
-        float reserved = (features.TokenRows + (features.HasRetaliate ? 1 : 0)) * rowHeight;
-        return Math.Max(0, size.Y * 0.32f - reserved);
+        float pad = metrics.Padding;
+        float cost = features.HasPrimary ? metrics.Cost : 0;
+        Cost = new Rect2(pad, pad, cost, cost);
+        float titleX = pad + (features.HasPrimary ? cost + metrics.CostGap : 0);
+        float titleHeight = features.TitleHeight > 0 ? features.TitleHeight : metrics.DefaultTitleHeight;
+        Title = new Rect2(titleX, pad, size.X - titleX - pad, titleHeight);
+        Kind = new Rect2(pad, Math.Max(Title.End.Y, Cost.End.Y) + 2 * Density,
+            size.X - 2 * pad - metrics.AspectWidth, metrics.KindHeight);
     }
 
-    private Vector2 TextOrigin(Vector2 size, CardFaceFeatures features, float inset, float bodyY, float railWidth)
+    private void ArrangeInk(Vector2 size, CardFaceFeatures features)
     {
-        float x = features.HasArt && features.Landscape ? size.X * 0.36f : features.HasStats
-            ? inset + railWidth + 8 * Unit : inset;
-        float y = features.HasArt && !features.Landscape ? Illustration.End.Y + 8 * Unit : bodyY;
-        return new Vector2(x, y);
+        float rail = features.HasStats ? metrics.Rail(features.Landscape, features.HasConsequences) : 0;
+        if (features.Landscape) rail = Math.Max(rail, features.PrintedIconRows * metrics.RowHeight);
+        float minimum = Kind.End.Y + rail + metrics.Gap;
+        float desired = features.HasArt ? size.Y * metrics.ArtFraction : minimum;
+        InkEnd = Math.Max(minimum, Math.Min(desired, AvailableInk(size.Y, features)));
+        float tokenWidth = features.Landscape && features.PrintedIconRows > 0 ? metrics.TokenWidth : 0;
+        Stats = new Rect2(metrics.Padding, InkEnd - rail, size.X - 2 * metrics.Padding - tokenWidth, rail);
+        Illustration = features.HasArt
+            ? new Rect2(size.X * 0.56f, Kind.End.Y, size.X * 0.44f, Math.Max(0, Stats.Position.Y - Kind.End.Y))
+            : new Rect2(metrics.Padding, Kind.End.Y, 0, 0);
+    }
+
+    private float PrintedIconHeight(CardFaceFeatures features) =>
+        features.Landscape ? 0 : features.PrintedIconRows * metrics.RowHeight;
+
+    private float AvailableInk(float height, CardFaceFeatures features) =>
+        height - metrics.Footer(features.Landscape) - (features.HasTraits ? metrics.TraitHeight : 0)
+        - PrintedIconHeight(features) - features.RulesHeight - metrics.Gap * (PrintedIconHeight(features) > 0 ? 3 : 2);
+
+    private void ArrangePaper(Vector2 size, CardFaceFeatures features)
+    {
+        float pad = metrics.Padding, width = size.X - 2 * pad;
+        Traits = new Rect2(pad, InkEnd + metrics.Gap, width, features.HasTraits ? metrics.TraitHeight : 0);
+        float tokenHeight = features.PrintedIconRows * metrics.RowHeight;
+        Tokens = features.Landscape
+            ? new Rect2(Stats.End.X, Stats.Position.Y, metrics.TokenWidth, tokenHeight)
+            : new Rect2(pad, Traits.End.Y, width, tokenHeight);
+        float rulesY = (features.Landscape ? Traits.End.Y : Tokens.End.Y)
+            + (PrintedIconHeight(features) > 0 ? metrics.Gap : 0);
+        Rules = new Rect2(pad, rulesY, width,
+            Math.Max(0, size.Y - metrics.Footer(features.Landscape) - metrics.Gap - rulesY));
+    }
+
+    private void ArrangeFooter(Vector2 size, CardFaceFeatures features)
+    {
+        float footer = metrics.Footer(features.Landscape);
+        Health = new Rect2(size.X - metrics.Padding - metrics.HealthWidth, size.Y - footer,
+            metrics.HealthWidth, footer - metrics.Gap);
+        float resourceWidth = features.HasProgress ? Health.Position.X - metrics.Padding - metrics.Gap
+            : size.X - 2 * metrics.Padding;
+        Resources = new Rect2(metrics.Padding, size.Y - footer, resourceWidth, footer - metrics.Gap);
     }
 }

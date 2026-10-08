@@ -126,7 +126,7 @@ internal sealed class BoardCardInteractionControls
             return false;
         }
         button.SetMeta("spatial_control_z", button.ZIndex);
-        card.HideRedundantActionCueLabel();
+        card.HideInteractionCue();
         PresentControlLayer(card, descriptor.Intent);
         if (!controls.TryGetValue(card, out List<Button>? buttons))
         {

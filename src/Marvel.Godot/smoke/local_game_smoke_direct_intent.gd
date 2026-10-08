@@ -166,6 +166,10 @@ func _active_cues_leave_printed_values_readable() -> bool:
 	for card in main.find_children("ProceduralCard*", "PanelContainer", true, false):
 		var cue := card.find_child("InteractionCue", true, false) as Label
 		if cue == null or cue.text.is_empty() or not cue.is_visible_in_tree(): continue
+		var anchor := str(card.name).trim_prefix("ProceduralCard")
+		if anchor.is_valid_int() and _attached("Card%sTarget" % anchor) != null:
+			_fail("a non-interactive target glyph duplicates the actual target selector")
+			return false
 		var content := card.find_child("CardContent", true, false)
 		if content == null: continue
 		for node in content.find_children("*", "Label", true, false):

@@ -20,6 +20,7 @@ internal static class CardRulesMarkup
     {
         if (resourceFont is not null)
         {
+            FontAtlasLifetime.Retain(resourceFont);
             return resourceFont;
         }
 
@@ -29,8 +30,9 @@ internal static class CardRulesMarkup
                 $"Embedded resource {ResourceFontManifestName} is unavailable.");
         var data = new byte[source.Length];
         source.ReadExactly(data);
-        resourceFont = new FontFile { Data = data };
+        resourceFont = new FontFile { Data = data, AllowSystemFallback = false };
         resourceFont.TakeOverPath(ResourceFontPath);
+        FontAtlasLifetime.Retain(resourceFont);
         return resourceFont;
     }
 

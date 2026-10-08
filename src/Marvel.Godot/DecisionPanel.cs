@@ -71,7 +71,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     public void SetInterfaceScale(InterfaceScale scale)
     {
         requestedScale = scale;
-        Theme = ClientTheme.Create(scale);
+        ClientThemeInstallation.Apply(this, scale);
         // The table's physical cards keep their own bounded geometry. The
         // expanded editor uses the player's requested reading scale.
         InterfaceScale effectiveScale = EffectiveScale(

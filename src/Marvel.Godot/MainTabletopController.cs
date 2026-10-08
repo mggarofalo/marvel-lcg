@@ -14,6 +14,8 @@ internal sealed class MainTabletopController
     private Vector2? renderedViewport;
     private bool renderedPayment;
 
+    internal int? InspectedSeat => renderedDesktopTabletop == true ? renderedExpandedSeat : null;
+
     internal MainTabletopController(Main main)
     {
         this.main = main;

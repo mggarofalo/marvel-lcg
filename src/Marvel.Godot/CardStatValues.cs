@@ -1,3 +1,4 @@
+using System.Globalization;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -7,7 +8,7 @@ internal static class CardStatValues
 {
     private static readonly (string Printed, string Current)[] Names =
     [
-        ("THW", "THWART"), ("ATK", "ATTACK"), ("DEF", "DEFENSE"), ("SCH", "SCHEME"),
+        ("THW", "THWART"), ("SCH", "SCHEME"), ("ATK", "ATTACK"), ("DEF", "DEFENSE"),
         ("REC", "RECOVER"), ("HS", "HAND_SIZE"),
         ("REC+", "REC+"), ("THW+", "THW+"), ("ATK+", "ATK+"),
         ("DEF+", "DEF+"), ("SCH+", "SCH+"), ("HP+", "HP+"),
@@ -27,20 +28,40 @@ internal static class CardStatValues
 
     private static CardStatValue? Select(BoardCardPresentation card, string name, string currentName)
     {
-        BoardFieldPresentation? printed = card.PrintedStats.FirstOrDefault(value => value.Name == name);
+        BoardPrintedValueMark? printed = card.PrintedMarks.FirstOrDefault(value => value.Attribute == name);
         BoardFieldPresentation? current = card.Fields.FirstOrDefault(value => value.Name == currentName || value.Name == name);
-        if (printed is null && current is null) return null;
-        return Describe(name, printed, current, card.PrintedMarks.FirstOrDefault(value => value.Attribute == name));
+        CardEffectiveValue? effective = card.EffectiveValues.GetValueOrDefault(name);
+        if (printed is null && current is null && effective is null) return null;
+        string? evaluated = EvaluatedValue(effective);
+        string baseline = Numeral(name, PrintedValue(printed, current, evaluated));
+        string fallback = Fallback(printed, current, evaluated);
+        return Describe(name, baseline, Numeral(name, evaluated ?? fallback), printed,
+            ShowsPerPlayer(effective, current, printed), effective);
     }
 
-    private static CardStatValue Describe(string name, BoardFieldPresentation? printed,
-        BoardFieldPresentation? current, BoardPrintedValueMark? mark) =>
-        new(name, Numeral(name, (printed ?? current!).Value), Numeral(name, (current ?? printed!).Value),
-            current is null && mark?.PerPlayer == true, mark?.ConsequentialDamage ?? 0);
+    private static CardStatValue Describe(string name, string baseline, string value,
+        BoardPrintedValueMark? printed, bool perPlayer, CardEffectiveValue? effective) =>
+        new(name, baseline, value, perPlayer, printed?.ConsequentialDamage ?? 0)
+        {
+            SpecialStar = printed?.SpecialStar == true,
+            Modified = effective?.IsModified == true,
+        };
+
+    private static string? EvaluatedValue(CardEffectiveValue? effective) =>
+        effective?.CurrentValue.ToString(CultureInfo.InvariantCulture);
+
+    private static string PrintedValue(BoardPrintedValueMark? printed, BoardFieldPresentation? current, string? evaluated) =>
+        printed?.Value ?? current?.Value ?? evaluated!;
+
+    private static string Fallback(BoardPrintedValueMark? printed, BoardFieldPresentation? current, string? evaluated) =>
+        printed?.Value is "X" or "—" or "★" ? printed.Value : current?.Value ?? printed?.Value ?? evaluated!;
+
+    private static bool ShowsPerPlayer(CardEffectiveValue? effective, BoardFieldPresentation? current,
+        BoardPrintedValueMark? printed) => effective is null && current is null && printed?.PerPlayer == true;
 
     private static string Numeral(string name, string value)
     {
-        string numeral = value.TrimEnd('*');
+        string numeral = value;
         return name.EndsWith('+') && !numeral.StartsWith('+') && !numeral.StartsWith('-')
             ? $"+{numeral}" : numeral;
     }

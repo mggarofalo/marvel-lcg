@@ -48,4 +48,7 @@ public enum EventMotionKind
 
     /// <summary>The game reached its final outcome.</summary>
     Terminal,
+
+    /// <summary>Known cards were shuffled into a concealed deck.</summary>
+    DeckReturn,
 }

@@ -6,11 +6,11 @@ namespace Marvel.Cards.Run;
 /// <summary>Readable effect vocabulary derived from checked ability instructions.</summary>
 internal static class AbilityEffectDescription
 {
-    internal static string? Summary(AbilityEffect effect) => AbilitySearchDescription.Summary(effect) ?? (effect switch
+    internal static string? Summary(AbilityEffect effect) => AbilitySearchDescription.Summary(effect)
+        ?? AbilityRevealDescription.Summary(effect)
+        ?? AbilityReadinessDescription.Summary(effect) ?? (effect switch
     {
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),
-        AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelWhenRevealed } =>
-            "Cancel the revealed treachery's When Revealed effects",
         AbilityEffect.Draw draw => DrawSummary(draw),
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
         AbilityEffect.Power power => Summary(power.Effect),

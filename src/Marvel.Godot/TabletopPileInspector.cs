@@ -16,9 +16,10 @@ internal static class TabletopPileInspector
         BoardRenderResult result,
         InterfaceScale scale,
         ICardArtProvider? art,
-        int initialIndex = 0)
+        int initialIndex = 0,
+        bool allowActions = true)
     {
-        Close();
+        Close(restoreFocus: false);
         if (pile.InspectionOrder.Count == 0 || source.GetTree().Root is not { } root)
         {
             return;
@@ -28,27 +29,13 @@ internal static class TabletopPileInspector
         {
             Name = "PileInspector",
             Exclusive = false,
-            MinSize = new Vector2I(
-                VisualSystem.Card(CardDisplaySize.Full, scale).Width + 40,
-                VisualSystem.Card(CardDisplaySize.Full, scale).MinimumHeight + 112),
             ThemeTypeVariation = GodotThemeVariations.SurfacePanel,
         };
+        ClientThemeInstallation.Apply(popup, scale);
         active = popup;
         owner = result;
         initialSelection = result.SelectedAffordanceId;
-        popup.SetMeta("restore_opener_focus", true);
-        popup.PopupHide += () =>
-        {
-            bool restoreFocus = popup.GetMeta("restore_opener_focus").AsBool();
-            Release(popup);
-            Callable.From(() =>
-            {
-                if (result.IsCurrent?.Invoke() != true) return;
-                result.RefreshInteraction();
-                if (restoreFocus && InteractionControl.IsUsable(source))
-                    source.GrabFocus();
-            }).CallDeferred();
-        };
+        BindDismissal(popup, source, result);
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
         stack.AddChild(new Label
         {
@@ -61,20 +48,20 @@ internal static class TabletopPileInspector
             Name = "PileInspectorNavigation",
             ThemeTypeVariation = GodotThemeVariations.CompactRow,
         };
-        var previous = new Button { Name = "PreviousPileCard", Text = "‹", TooltipText = "Previous card" };
+        var previous = new Button { Name = "PreviousPileCard", Text = "‹", TooltipText = "Previous card", CustomMinimumSize = new Vector2(44, 44) };
         var position = new Label
         {
             Name = "PileInspectorPosition",
             HorizontalAlignment = HorizontalAlignment.Center,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        var next = new Button { Name = "NextPileCard", Text = "›", TooltipText = "Next card" };
+        var next = new Button { Name = "NextPileCard", Text = "›", TooltipText = "Next card", CustomMinimumSize = new Vector2(44, 44) };
         navigation.AddChild(previous);
         navigation.AddChild(position);
         navigation.AddChild(next);
         var close = new Button
         {
-            Name = "ClosePileInspector", Text = "Close",
+            Name = "ClosePileInspector", Text = "Close", CustomMinimumSize = new Vector2(44, 44),
             Shortcut = new Shortcut { Events = [new InputEventKey { Keycode = Key.Escape }] },
         };
         close.Pressed += popup.Hide;
@@ -98,17 +85,22 @@ internal static class TabletopPileInspector
                 child.QueueFree();
             }
             BoardCardPresentation card = pile.InspectionOrder[index];
-            CardControl control = CardControl.Create(card, CardDisplaySize.Full, scale, art);
-            cardSlot.AddChild(control);
-            if (card.TargetId is { } target)
+            InterfaceScale fitted = CardInspectorFocus.FittedScale(card, scale, source.GetViewportRect().Size.Y - 96);
+            CardInspectionContent detail = CardInspectionContent.Create(card, fitted, art, beside: true,
+                inspect: valueSource => OpenSource(source, card, valueSource, result, scale, art));
+            CardControl control = detail.Face;
+            cardSlot.AddChild(detail.Body);
+            if (allowActions && card.TargetId is { } target)
             {
                 result.Register(target, control);
+                result.TrackInspection(control, card);
             }
-            result.TrackCard(control, card);
             result.RefreshInteraction();
-            position.Text = $"{index + 1} / {pile.InspectionOrder.Count} · Top first";
+            position.Text = $"{index + 1} / {pile.InspectionOrder.Count}" + (pile.IsPile ? " · Top first" : "");
             previous.Disabled = index == 0;
             next.Disabled = index == pile.InspectionOrder.Count - 1;
+            detail.Body.MinimumSizeChanged += () => Callable.From(() => Fit(popup, stack, source)).CallDeferred();
+            Callable.From(() => Fit(popup, stack, source)).CallDeferred();
         }
         previous.Pressed += () =>
         {
@@ -128,19 +120,56 @@ internal static class TabletopPileInspector
         };
         Render();
 
-        Rect2 sourceRect = source.GetGlobalRect();
-        popup.Position = new Vector2I(
-            Mathf.RoundToInt(Math.Clamp(sourceRect.End.X + 12, 12,
-                Math.Max(12, source.GetViewportRect().Size.X - popup.MinSize.X - 12))),
-            72);
         popup.Popup();
         result.RefreshInteraction();
+    }
+
+    private static void BindDismissal(PopupPanel popup, Control source, BoardRenderResult result)
+    {
+        popup.SetMeta("restore_opener_focus", true);
+        popup.PopupHide += () =>
+        {
+            bool restoreFocus = popup.GetMeta("restore_opener_focus").AsBool();
+            Release(popup);
+            Callable.From(() =>
+            {
+                if (result.IsCurrent?.Invoke() != true) return;
+                result.RefreshInteraction();
+                if (restoreFocus && InteractionControl.IsUsable(source))
+                    CardFocusPreview.Restore(source);
+            }).CallDeferred();
+        };
+    }
+
+    private static void Fit(PopupPanel popup, Control content, Control source)
+    {
+        if (!GodotObject.IsInstanceValid(popup) || popup.IsQueuedForDeletion()
+            || !InteractionControl.IsUsable(source)) return;
+        Rect2 frame = CardInspectorPlacement.Fit(source.GetViewportRect().Size,
+            SpatialCardFootprint.Face(source), content.GetCombinedMinimumSize() + new Vector2(20, 20));
+        popup.MinSize = new Vector2I(Mathf.CeilToInt(frame.Size.X), Mathf.CeilToInt(frame.Size.Y));
+        popup.Size = popup.MinSize;
+        popup.Position = new Vector2I(Mathf.RoundToInt(frame.Position.X), Mathf.RoundToInt(frame.Position.Y));
+    }
+
+    private static void OpenSource(Control opener, BoardCardPresentation host, BoardCardPresentation source,
+        BoardRenderResult result, InterfaceScale scale, ICardArtProvider? art)
+    {
+        if (result.IsCurrent?.Invoke() != true) return;
+        BoardCardPresentation detail = result.Inspector.Source(source);
+        var area = new BoardAreaPresentation(-1, "Card details", "", [host, detail], []);
+        Show(opener, TabletopAreaObject.From(area), result, scale, art, allowActions: false);
     }
 
     internal static void DraftChanged(BoardRenderResult result, int? selection)
     {
         if (ReferenceEquals(result, owner) && selection != initialSelection)
             Close(restoreFocus: false);
+    }
+
+    internal static void CloseFor(BoardRenderResult result)
+    {
+        if (ReferenceEquals(result, owner)) Close(restoreFocus: false);
     }
 
     internal static void Close(bool restoreFocus = true)

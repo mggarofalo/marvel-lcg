@@ -88,6 +88,8 @@ public sealed class ActionAbilityTypedFixedCountsTopCardChoiceKeepsItsCompiledCo
         var choice = Assert.Single(world.Agenda.Outstanding);
         fields["max"] = new AbilityValue.Number(4);
         int[] targets = cards.Take(duplicateTitle ? 2 : 3).Select(card => card.ObjectId).ToArray();
+        var prompt = runner.Choosing(world, source, 0, choice.Index, choice.Tier)!;
+        Assert.False(Assert.Single(prompt.Affordances).Targets!.Allows(targets));
         Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, source, 0, choice.Index, Decision.Take(source.ObjectId, targets, []), choice.Tier));
         Assert.Equal(cards, discard.Cards);
         Assert.Empty(world.Seats[0].Deck.Cards);

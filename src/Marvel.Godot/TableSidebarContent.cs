@@ -11,7 +11,7 @@ internal static class TableSidebarContent
 {
     private const string HistoryPath = "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History";
 
-    internal static void Render(Main main, BoardRenderResult result, Prompt? prompt, DisplayedSeatSelection selection)
+    internal static void Render(Main main, BoardRenderResult result, Prompt? prompt, int? inspectedSeat)
     {
         Control history = main.GetNode<Control>(HistoryPath);
         VBoxContainer content = EnsureContent(history);
@@ -39,7 +39,8 @@ internal static class TableSidebarContent
             ? $"You control {PendingSituationPresentation.SeatName(world, seat)}."
             : "Shared table view.";
         string active = table is null ? "" : $" Active player: {PendingSituationPresentation.SeatName(world, table.ActivePlayer)}.";
-        string inspecting = $" Inspecting: {PendingSituationPresentation.SeatName(world, selection.ExpandedSeat)}.";
+        string inspecting = inspectedSeat is { } inspected
+            ? $" Inspecting: {PendingSituationPresentation.SeatName(world, inspected)}." : "";
         content.AddChild(Copy("SeatContext", own + active + inspecting));
         content.AddChild(Copy("TableOperationalNotice", ""));
         result.RegisterLastResult(TableHistoryDrawer.EnsureLatestResult(main, history));

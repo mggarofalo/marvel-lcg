@@ -187,45 +187,8 @@ public static class StateFields
     /// <param name="facts">The printed card data.</param>
     /// <param name="players">How many players are in the game.</param>
     public static long Modified(
-        World world, Card card, string field, ICardFacts facts, int players)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(card);
-        ArgumentNullException.ThrowIfNull(facts);
-
-        if (Characteristics.IsLost(world, card, field))
-        {
-            return 0;
-        }
-
-        if (PrintedFrom.TryGetValue(field, out string? printedAttribute)
-            && PowerAttributes.Contains(printedAttribute)
-            && !EffectiveCards.HasProfile(card)
-            && !HasUsablePrintedPower(facts, card.FaceId, printedAttribute))
-        {
-            // `rr:dash-value.3`: a referenced dash is an unmodifiable zero.
-            // Return before either attached or lasting modifiers are read.
-            return 0;
-        }
-
-        (long value, bool hasBaseValue) = BaseValue(card, field, facts, players);
-
-        long modified = value + Adjustments(world, card, field, facts, players);
-        // `rr:modifiers.4`: clamp complete values, not adjustment-only fields.
-        return hasBaseValue ? Math.Max(0, modified) : modified;
-    }
-
-    private static (long Value, bool Present) BaseValue(
-        Card card, string field, ICardFacts facts, int players)
-    {
-        if (field == "ally_limit"
-            && EffectiveCards.Kind(card, facts) is CardKind.Hero or CardKind.AlterEgo)
-            return (AllyLimit, true);
-        if (PrintedFrom.TryGetValue(field, out string? attribute))
-            return (EffectiveCards.BaseValue(card, facts, attribute, players), true);
-        // Some consumers ask for a signed adjustment and add the base themselves.
-        return (0, false);
-    }
+        World world, Card card, string field, ICardFacts facts, int players) =>
+        CardValues.Evaluate(world, card, field, facts, players).CurrentValue;
 
     /// <summary>Printed values, filled once the card has registered.</summary>
     private static void FillPrinted(
@@ -247,15 +210,9 @@ public static class StateFields
                 continue;
             }
 
-            long value = EffectiveCards.BaseValue(card, facts, attribute, players);
-            if (world is not null)
-            {
-                value = Characteristics.IsLost(world, card, field)
-                    ? 0
-                    : Math.Max(
-                        0,
-                        value + Adjustments(world, card, field, facts, players));
-            }
+            long value = world is null
+                ? EffectiveCards.BaseValue(card, facts, attribute, players)
+                : Modified(world, card, field, facts, players);
 
             fields[field] = value;
         }
@@ -264,47 +221,6 @@ public static class StateFields
     /// <summary>Remaining hit points: printed, less the damage on the card.</summary>
     private static long Remaining(Card card, ICardFacts facts, int players) =>
         Math.Max(0, EffectiveCards.BaseValue(card, facts, "HP", players) - card.Damage);
-
-    /// <summary>Everything modifying one of a card's printed values.</summary>
-    private static long Adjustments(
-        World world, Card card, string field, ICardFacts facts, int players)
-    {
-        long total = ModifiedBy.TryGetValue(field, out string? plus)
-            ? Modifiers(world, card, plus, facts, players)
-            : 0;
-
-        foreach (var effect in world.Effects.Active())
-        {
-            if (string.Equals(effect.Kind, field, StringComparison.Ordinal)
-                && effect.AppliesTo(world, card))
-            {
-                total += effect.Amount;
-            }
-        }
-
-        return total;
-    }
-
-    /// <summary>What cards attached to this one add to a printed value.</summary>
-    private static long Modifiers(
-        World world, Card host, string attribute, ICardFacts facts, int players)
-    {
-        long total = 0;
-        foreach (var area in world.Areas)
-        {
-            if (area.Host != host.ObjectId || !DeckTypes.IsInPlay(area.Type))
-            {
-                continue;
-            }
-
-            foreach (var attached in area.Cards)
-            {
-                total += facts.PrintedValue(attached.FaceId, attribute, players);
-            }
-        }
-
-        return total;
-    }
 
     private static void FillInPlay(
         Dictionary<string, long> fields, Card card, CardKind kind, string faceId,

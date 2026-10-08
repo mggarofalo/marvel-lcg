@@ -93,10 +93,6 @@ Feature: Core card actions
     When seat 1 initiates card 01043a copy 0's action paying with these cards
       | card  | copy |
       | 01088 | 0    |
-    Then seat 1 is asked to order 1 card for the pending action
-    When seat 1 orders these cards for the pending action
-      | card  | copy |
-      | 01049 | 0    |
     Then card 01094 copy 0 is offered by the pending action
     When seat 1 chooses card 01094 copy 0 for the pending action
     Then card 01040a copy 0 has 0 damage
@@ -121,10 +117,6 @@ Feature: Core card actions
     When seat 1 initiates card 01043a copy 0's action paying with these cards
       | card  | copy |
       | 01088 | 0    |
-    Then seat 1 is asked to order 1 card for the pending action
-    When seat 1 orders these cards for the pending action
-      | card  | copy |
-      | 01049 | 0    |
     Then card 01094 copy 0 is offered by the pending action
     When seat 1 chooses card 01094 copy 0 for the pending action
     Then card 01040a copy 0 has 0 damage
@@ -151,11 +143,9 @@ Feature: Core card actions
     When seat 1 initiates card 01043a copy 0's action paying with these cards
       | card  | copy |
       | 01088 | 0    |
-    Then seat 1 is asked to order 2 cards for the pending action
-    When seat 1 orders these cards for the pending action
-      | card  | copy |
-      | 01049 | 0    |
-      | 01048 | 0    |
+    Then card 01049 copy 0 is offered by the pending action
+    And card 01048 copy 0 is offered by the pending action
+    When seat 1 chooses card 01049 copy 0 for the pending action
     Then card 01097b copy 0 is offered by the pending action
     When seat 1 chooses card 01097b copy 0 for the pending action
     Then card 01040a copy 0 has 0 damage
@@ -185,10 +175,6 @@ Feature: Core card actions
     When seat 1 initiates card 01043a copy 0's action paying with these cards
       | card  | copy |
       | 01088 | 0    |
-    Then seat 1 is asked to order 1 card for the pending action
-    When seat 1 orders these cards for the pending action
-      | card  | copy |
-      | 01046 | 0    |
     Then card 01040a copy 0 is offered by the pending action
     When seat 1 chooses card 01040a copy 0 for the pending action
     Then card 01094 copy 0 has 2 damage
@@ -215,11 +201,9 @@ Feature: Core card actions
     When seat 1 initiates card 01043a copy 0's action paying with these cards
       | card  | copy |
       | 01088 | 0    |
-    Then seat 1 is asked to order 2 cards for the pending action
-    When seat 1 orders these cards for the pending action
-      | card  | copy |
-      | 01046 | 0    |
-      | 01048 | 0    |
+    Then card 01046 copy 0 is offered by the pending action
+    And card 01048 copy 0 is offered by the pending action
+    When seat 1 chooses card 01046 copy 0 for the pending action
     Then card 01040a copy 0 is offered by the pending action
     When seat 1 chooses card 01040a copy 0 for the pending action
     Then card 01094 copy 0 has 1 damage
@@ -249,10 +233,6 @@ Feature: Core card actions
     When seat 1 initiates card 01043b copy 0's action paying with these cards
       | card  | copy |
       | 01088 | 0    |
-    Then seat 1 is asked to order 1 card for the pending action
-    When seat 1 orders these cards for the pending action
-      | card  | copy |
-      | 01047 | 0    |
     Then card 01094 copy 0 is offered by the pending action
     When seat 1 chooses card 01094 copy 0 for the pending action
     Then card 01094 copy 0 has 4 damage
@@ -281,11 +261,9 @@ Feature: Core card actions
     When seat 1 initiates card 01043c copy 0's action paying with these cards
       | card  | copy |
       | 01088 | 0    |
-    Then seat 1 is asked to order 2 cards for the pending action
-    When seat 1 orders these cards for the pending action
-      | card  | copy |
-      | 01047 | 0    |
-      | 01048 | 0    |
+    Then card 01047 copy 0 is offered by the pending action
+    And card 01048 copy 0 is offered by the pending action
+    When seat 1 chooses card 01047 copy 0 for the pending action
     Then card 01094 copy 0 is offered by the pending action
     When seat 1 chooses card 01094 copy 0 for the pending action
     Then card 01094 copy 0 has 2 damage
@@ -315,11 +293,9 @@ Feature: Core card actions
     When seat 1 initiates card 01043d copy 0's action paying with these cards
       | card  | copy |
       | 01088 | 0    |
-    Then seat 1 is asked to order 2 cards for the pending action
-    When seat 1 orders these cards for the pending action
-      | card  | copy |
-      | 01048 | 0    |
-      | 01047 | 0    |
+    Then card 01048 copy 0 is offered by the pending action
+    And card 01047 copy 0 is offered by the pending action
+    When seat 1 chooses card 01048 copy 0 for the pending action
     Then card 01097b copy 0 is offered by the pending action
     When seat 1 chooses card 01097b copy 0 for the pending action
     Then card 01097b copy 0 has 1 threat counter

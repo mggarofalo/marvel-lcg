@@ -45,6 +45,7 @@ internal static class AbilityEffectBindingAnalysis
         typeof(AbilityEffect.PlaceThreat), typeof(AbilityEffect.RemoveThreat),
         typeof(AbilityEffect.PreventThreat), typeof(AbilityEffect.PreventDamage),
         typeof(AbilityEffect.GrantTrait), typeof(AbilityEffect.GrantField),
+        typeof(AbilityEffect.DefineBaseValue),
         typeof(AbilityEffect.PreventDamageWhile),
     ];
     private static readonly HashSet<Type> PlayerTypes =
@@ -147,6 +148,7 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.PreventDamage damage => BindingCanChange(damage.Amount),
         AbilityEffect.GrantTrait grant => BindingCanChange(grant.Cards),
         AbilityEffect.GrantField grant => BindingCanChange(grant.Cards) || BindingCanChange(grant.Amount),
+        AbilityEffect.DefineBaseValue definition => BindingCanChange(definition.Value),
         AbilityEffect.PreventDamageWhile prevention => BindingCanChange(prevention.Condition),
         _ => throw new InvalidOperationException("Unknown threat binding effect"),
     };

@@ -8,6 +8,15 @@ namespace Marvel.Godot.Tests;
 
 public sealed class CardPaymentDraftTests
 {
+    [Theory]
+    [InlineData(PublicDecisionKind.PlayerAction, false, false)]
+    [InlineData(PublicDecisionKind.PlayerAction, true, true)]
+    [InlineData(PublicDecisionKind.Interrupt, false, true)]
+    [InlineData(PublicDecisionKind.Response, false, true)]
+    public void PaymentPreservesCausalAndWindowContextWithoutRepeatingOrdinaryTurnInstructions(
+        PublicDecisionKind kind, bool hasCause, bool expected) =>
+        Assert.Equal(expected, CardPaymentWorkspaceHeader.ShowsResolution(kind, hasCause));
+
     [Fact]
     public void VariableTypedCostRetainsItsResourceMeaningInAccessiblePresentation()
     {

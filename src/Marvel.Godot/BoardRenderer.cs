@@ -32,7 +32,7 @@ public static class BoardRenderer
             child.QueueFree();
         }
 
-        var result = new BoardRenderResult();
+        var result = new BoardRenderResult(board);
         IReadOnlyList<BoardLanePresentation> lanes = board.Lanes.Count > 0
             ? board.Lanes
             : BoardLayout.Arrange(board.Areas, []);

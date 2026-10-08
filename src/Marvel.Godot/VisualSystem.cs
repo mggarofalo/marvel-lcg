@@ -210,7 +210,7 @@ public static class VisualSystem
             Scale(400, scale), Scale(560, scale),
             ShowSubtitle: true, ShowTraits: true, ShowPrintedStats: true),
         CardDisplaySize.Board => new(
-            Scale(176, scale), Scale(246, scale),
+            Scale(172, scale), Scale(240, scale),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: true),
         CardDisplaySize.Hand => new(
             Scale(156, scale), Scale(218, scale),

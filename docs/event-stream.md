@@ -33,9 +33,11 @@ The current public events are:
 | `PlayAreaDetached` | A play area left a game area |
 | `FieldSet` | One named gameplay field changed |
 | `AttackCompleted` | An enemy attack ended with its established target and defender |
+| `CardsShuffledIntoDeck` | A completed shuffle of returned cards, with public names and no hidden identities |
 
-Events use card object ids and `AreaRef` values. They never contain references to
-engine objects.
+Most events use card object ids and `AreaRef` values. A public shuffle receipt
+uses only a seat, count and already public names. Events never contain references
+to engine objects.
 
 ### Derivable events
 
@@ -64,6 +66,18 @@ emits these facts directly:
 | `PlayAreaDetached` | `play_area`, `game_area` |
 | `AttackCompleted` | `enemy`, `target`, `defender`, `damage_dealt` |
 | `WhenRevealedCanceled` | `card`, `source` |
+| `CardsShuffledIntoDeck` | `player`, `count`, `public_titles` |
+
+`CardsShuffledIntoDeck` is emitted after the selected cards have moved and the
+deck has been shuffled. `count` records the returned quantity. `public_titles`
+contains only names readable in the public source before the move, sorted by
+title independently of deck order. Unreadable names are omitted. The receipt
+contains no physical card ids, landing indices or links into the hidden deck.
+Its engine-chosen verb is `Shuffle_Into`. Visibility retains this public fact
+while stripping inherited `subjects`; it does not make hidden deck cards
+addressable. Protocol 25 introduces the event. Replay v9 is required because
+replay verification compares each decision's exact semantic event list, even
+though this addition does not change decisions, state, or RNG consumption.
 
 `AttackCompleted` identifies the attacker, final attacked character, and defender
 (`-1` when undefended). It asserts that the attack ended, including an attack

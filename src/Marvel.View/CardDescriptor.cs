@@ -29,6 +29,9 @@ public sealed record CardDescriptor(
     /// <summary>Public live values, or null when the card face is concealed.</summary>
     public CardStateDescriptor? State { get; init; }
 
+    /// <summary>Authorized live relationship and persistent-effect meaning, or null when unavailable.</summary>
+    public CardPersistentDescriptor? Persistent { get; init; }
+
     /// <summary>The private audience used by the server-side filter.</summary>
     /// <remarks>Policy metadata is never serialized to the client.</remarks>
     internal CardAudience Audience { get; init; } = CardAudience.Nobody;

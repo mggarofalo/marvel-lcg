@@ -85,24 +85,40 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
             host!.AddChild(choices);
         }
         foreach (AffordancePresentation offer in offers)
+            AddAction(choices, offer, prompt, kind);
+    }
+
+    private void AddAction(Container choices, AffordancePresentation offer,
+        PromptPresentation prompt, PublicDecisionKind kind)
+    {
+        int id = offer.Id;
+        string label = kind == PublicDecisionKind.Choice
+            ? offer.DisplayLabel ?? DecisionCopy.Choice(offer) : DecisionCopy.Choice(offer);
+        string? description = kind is not (PublicDecisionKind.Choice or PublicDecisionKind.PlayerAction)
+            && ContextualOfferDescription.SingleResponse(prompt, kind) is null ? offer.Description : null;
+        Container row = ActionRow(choices, description);
+        Button choice = Add($"ContextAction{id}", label,
+            () => activate?.Invoke(id), offer.Description ?? offer.Label, parent: row);
+        DecisionCostLabel.AttachTo(choice, offer);
+        if (!string.IsNullOrEmpty(description)) row.AddChild(new Label
         {
-            int id = offer.Id;
-            string label = kind == PublicDecisionKind.Choice
-                ? offer.DisplayLabel ?? DecisionCopy.Choice(offer) : DecisionCopy.Choice(offer);
-            Button choice = Add($"ContextAction{id}", label,
-                () => activate?.Invoke(id), offer.Description ?? offer.Label, parent: choices);
-            DecisionCostLabel.AttachTo(choice, offer);
-            if (kind is not (PublicDecisionKind.Choice or PublicDecisionKind.PlayerAction)
-                && ContextualOfferDescription.SingleResponse(prompt, kind) is null
-                && offer.Description is { Length: > 0 } description)
-                host!.AddChild(new Label
-                {
-                    Text = description, AutowrapMode = TextServer.AutowrapMode.WordSmart,
-                    SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-                    ThemeTypeVariation = GodotThemeVariations.Caption,
-                    MouseFilter = Control.MouseFilterEnum.Ignore,
-                });
-        }
+            Text = description, AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            ThemeTypeVariation = GodotThemeVariations.Caption,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        });
+    }
+
+    private static Container ActionRow(Container choices, string? description)
+    {
+        if (string.IsNullOrEmpty(description)) return choices;
+        var row = new VBoxContainer
+        {
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        choices.AddChild(row);
+        return row;
     }
 
     private void AddDraft(DecisionComposer composer)

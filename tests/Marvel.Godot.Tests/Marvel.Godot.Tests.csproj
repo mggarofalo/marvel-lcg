@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Marvel.Client/Marvel.Client.csproj" />
+    <ProjectReference Include="../../src/Marvel.Content/Marvel.Content.csproj" />
     <ProjectReference Include="../../src/Marvel.Decisions/Marvel.Decisions.csproj" />
     <ProjectReference Include="../../src/Marvel.Godot/Marvel.Godot.csproj" />
     <ProjectReference Include="../../src/Marvel.View/Marvel.View.csproj" />

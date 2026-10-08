@@ -6,6 +6,18 @@ namespace Marvel.Godot.Tests;
 public sealed class AstraTableGeometryTests
 {
     [Theory]
+    [InlineData(80)]
+    [InlineData(100)]
+    public void EngagedCardsReserveTheirFaceAndUprightStateBeforeSupports(int percent)
+    {
+        CardLayoutMetrics face = VisualSystem.Card(CardDisplaySize.Board, (InterfaceScale)percent);
+        var size = new Vector2(face.Width, face.MinimumHeight);
+        var table = new AstraTableGeometry(1320, 962, false, PhysicalCardSize: size);
+        Assert.True(table.EngagedEnemies.Size.X >= SpatialCardFootprint.OccupiedSize(size).X);
+        Assert.True(table.Assets.Position.X > table.EngagedEnemies.End.X);
+    }
+
+    [Theory]
     [InlineData(1320, 962, 224)]
     [InlineData(1100, 820, 240)]
     public void PhysicalInstalledFacesLeaveSpaceAboveTheRotatedHand(float width, float height, float faceHeight)
@@ -15,6 +27,32 @@ public sealed class AstraTableGeometryTests
 
         Assert.True(table.Hand.Position.Y - 12 > table.Identity.Position.Y + faceHeight);
         Assert.True(table.Hand.End.Y < table.Context.Position.Y);
+    }
+
+    [Theory]
+    [InlineData(50)]
+    [InlineData(80)]
+    [InlineData(100)]
+    [InlineData(150)]
+    public void ControlledSourcePickerClearsFocusedPlayerCardsAndLeavesRoomForItsSource(int percent)
+    {
+        foreach (float height in new[] { 820f, 900f, 962f })
+        {
+            InterfaceScale scale = SpatialCardMetrics.TableScale((InterfaceScale)percent, height);
+            CardLayoutMetrics face = VisualSystem.Card(CardDisplaySize.Board, scale);
+            var size = new Vector2(face.Width, face.MinimumHeight);
+            var table = new AstraTableGeometry(1670, height, percent >= 130, PhysicalCardSize: size);
+            var picker = new Rect2(table.Upgrades.Position, new Vector2(CardSourceStrip.LedgerWidth, 44));
+            // Presentation choice: six pixels enclose the card's outer focus stroke.
+            var focusedAlly = new Rect2(table.Allies.Position, size).Grow(6);
+
+            Assert.True(picker.Position.Y >= focusedAlly.End.Y + 8,
+                $"The source picker intrudes into the focused player row at {percent}% / {height}px.");
+            Assert.False(picker.Intersects(table.Hand));
+            Assert.True(picker.End.X <= table.Width);
+            // The visible strip and its action remain above the current decision.
+            Assert.True(picker.End.Y + 160 < table.Context.Position.Y);
+        }
     }
 
     [Fact]
@@ -36,16 +74,42 @@ public sealed class AstraTableGeometryTests
     [Theory]
     [InlineData(1320, 962)]
     [InlineData(1670, 962)]
-    public void RevealingCardHasItsOwnRegionBesideSupportsAndIdentity(float width, float height)
+    public void RevealingCardKeepsItsOwnIdentitySpaceAndUsesTheDenseSupportFallback(float width, float height)
     {
         var table = new AstraTableGeometry(width, height, LargeText: true, HasRevealingCard: true);
 
-        Assert.False(table.Revealing.Intersects(table.Assets));
+        if (table.HasSeparateRevealSlot) Assert.False(table.Revealing.Intersects(table.Assets));
+        else Assert.Equal(table.Assets, table.Revealing);
         Assert.False(table.Revealing.Intersects(table.Identity));
         Assert.False(table.Revealing.Intersects(table.Allies));
         Assert.False(table.Revealing.Intersects(table.Hand));
         Assert.True(table.Revealing.End.X < table.Identity.Position.X);
         Assert.True(table.Allies.Position.X > table.Identity.End.X);
+    }
+
+    [Theory]
+    [InlineData(1670, 962, 150)]
+    [InlineData(1670, 900, 150)]
+    [InlineData(1670, 820, 80)]
+    [InlineData(1720, 962, 100)]
+    [InlineData(1920, 962, 150)]
+    public void BoostBesideAnExhaustedIdentityPreservesTheEntireAlliesCollectionHitArea(
+        float width, float height, int percent)
+    {
+        InterfaceScale scale = SpatialCardMetrics.TableScale((InterfaceScale)percent, height);
+        CardLayoutMetrics face = VisualSystem.Card(CardDisplaySize.Board, scale);
+        var table = new AstraTableGeometry(width, height, percent >= 130, HasRevealingCard: true,
+            PhysicalCardSize: new Vector2(face.Width, face.MinimumHeight));
+        Rect2 drawer = SpatialRegionDrawerLayout.Bounds(table.Allies);
+
+        // A dense ally row still requires its collection control when no face fits.
+        Assert.True(table.Allies.Size.X >= SpatialRegionDrawerLayout.MinimumWidth);
+        Assert.True(drawer.End.X <= table.Width - 20);
+        Assert.True(drawer.Size.Y >= 44);
+        Assert.True(drawer.Position.X >= table.Identity.End.X + 16);
+        Assert.False(drawer.Intersects(table.Revealing));
+        Assert.False(drawer.Intersects(table.Hand));
+        Assert.False(drawer.Intersects(table.Context));
     }
 
     [Fact]

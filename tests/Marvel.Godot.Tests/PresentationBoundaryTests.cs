@@ -21,6 +21,10 @@ public sealed class PresentationBoundaryTests
             "Marvel.Rules.Play.Outcome",
             "Marvel.Rules.Play.Resources",
             "Marvel.Rules.Prompts.Affordance",
+            // Synthetic native selector specimens construct public prompt contracts only.
+            "Marvel.Rules.Prompts.AffordanceAnchorKind",
+            "Marvel.Rules.Prompts.Question",
+            "Marvel.Rules.Timing.TimingPriority",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
             // Public prompt purpose selects a presentation surface, not game legality.
@@ -83,6 +87,21 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.BoardStageRole",
             // Passive authorized state summaries; no outcome calculation.
             "Marvel.View.CardStatePresentation",
+            // Engine-evaluated quantity and modification flag; the renderer does not evaluate sources.
+            "Marvel.View.CardEffectiveValue",
+            // Disclosed source text and duration are read-only inspection facts.
+            "Marvel.View.CardValueCalculation",
+            "Marvel.View.CardValueSourceDescriptor",
+            "Marvel.View.CardValueDuration",
+            // Authorized persistent source relations and complete checked ability meanings.
+            "Marvel.View.CardPersistentDescriptor",
+            "Marvel.View.CardRelationDescriptor",
+            "Marvel.View.CardContributionDescriptor",
+            "Marvel.View.CardPersistentAbilityDescriptor",
+            "Marvel.View.CardPersistentTriggerDescriptor",
+            "Marvel.View.CardPersistentCostDescriptor",
+            "Marvel.View.CardPersistentEffectDescriptor",
+            "Marvel.View.CardPersistentThresholdDescriptor",
             "Marvel.View.DecisionReceiptContext",
             "Marvel.View.ResponseReceiptPresenter",
             "Marvel.View.EventBatchPresentation",

@@ -48,6 +48,7 @@ namespace Marvel.Rules.Events;
 [JsonDerivedType(typeof(PlayAreaDetached), nameof(PlayAreaDetached))]
 [JsonDerivedType(typeof(AttackCompleted), nameof(AttackCompleted))]
 [JsonDerivedType(typeof(WhenRevealedCanceled), nameof(WhenRevealedCanceled))]
+[JsonDerivedType(typeof(CardsShuffledIntoDeck), nameof(CardsShuffledIntoDeck))]
 public abstract record GameEvent
 {
     /// <summary>Occurrence-time public names for card subjects, keyed by object id.</summary>

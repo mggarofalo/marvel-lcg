@@ -29,6 +29,10 @@ public sealed record CardFaceDescriptor(
     public IReadOnlyDictionary<string, string> PrintedStats { get; init; } =
         new Dictionary<string, string>(StringComparer.Ordinal);
 
+    /// <summary>Source-supported printed symbols and marks, without evaluating live values.</summary>
+    public IReadOnlyDictionary<string, CardPrintedValue> PrintedValues { get; init; } =
+        new Dictionary<string, CardPrintedValue>();
+
     /// <summary>The printed keyword labels, in catalog order.</summary>
     public IReadOnlyList<string> Keywords { get; init; } = [];
 
@@ -55,4 +59,8 @@ public sealed record CardFaceDescriptor(
     /// <summary>Live counters currently on the card, by semantic counter name.</summary>
     public IReadOnlyDictionary<string, long> Counters { get; init; } =
         new Dictionary<string, long>(StringComparer.Ordinal);
+
+    /// <summary>Current in-play stats keyed by printed attribute; HP is maximum HP.</summary>
+    public IReadOnlyDictionary<string, CardEffectiveValue> EffectiveValues { get; init; } =
+        new Dictionary<string, CardEffectiveValue>(StringComparer.Ordinal);
 }

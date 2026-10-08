@@ -95,6 +95,13 @@ internal sealed class AbilityConstantQueries
     {
         switch (effect)
         {
+            case AbilityEffect.DefineBaseValue definition:
+                found.Add(new ContinuousEffect(
+                    EffectSource.ConstantAbility, Kind: definition.Field,
+                    Amount: expressions.Amount(definition.Value), Card: bindings.Source.ObjectId,
+                    Affects: bindings.Source.ObjectId, Lasts: Duration.WhileInPlay)
+                { ValueRole = ContinuousValueRole.BaseDefinition });
+                return true;
             case AbilityEffect.GrantField { Until: null } grant:
                 foreach (var target in ConstantTargets(grant.Cards, grant.EachCard, bindings, selectors))
                 {

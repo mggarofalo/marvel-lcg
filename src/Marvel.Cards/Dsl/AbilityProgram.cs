@@ -24,6 +24,7 @@ public sealed class AbilityProgram
         CounterPools = counterPools;
         Effects = effects;
         Profiles = AbilityProfileDefinitions.Compile(abilities, effects);
+        AbilityBaseDefinitions.Validate(abilities, effects);
         byCard = abilities.GroupBy(ability => ability.Card, StringComparer.Ordinal)
             .ToImmutableDictionary(group => group.Key, group => group.ToImmutableArray(), StringComparer.Ordinal);
     }

@@ -23,18 +23,19 @@ internal sealed record AstraTableGeometry(
     internal Rect2 SideSchemes => new(Villain.End.X + 16, ScaleY(76),
         Math.Max(0, (HasSeatSummaries ? SeatStrip.Position.X - 16 : Width - 20) - Villain.End.X - 16), ScaleY(176));
     internal Rect2 SeatStrip => Scale(new Rect2(1060, 46, 224, 212));
-    internal Rect2 EngagedEnemies => Scale(new Rect2(36, 280, 246, 160));
+    internal Rect2 EngagedEnemies => new(ScaleX(36), ScaleY(280), FootprintWidth, ScaleY(160));
     internal Rect2 PlayerDiscard => Scale(new Rect2(36, 496, 108, 142));
     internal Rect2 PlayerDeck => Scale(new Rect2(164, 496, 108, 142));
     internal Rect2 Context => Scale(new Rect2(20, 800, 1280, 156));
     internal bool HasSeparateRevealSlot => HasRevealingCard
-        && Assets.End.X + 2 * (FootprintWidth + 16) <= Width - 20;
+        && Assets.End.X + 2 * (FootprintWidth + 16) + 16 + SpatialRegionDrawerLayout.MinimumWidth <= Width - 20;
     internal Rect2 Identity => new((HasSeparateRevealSlot ? Revealing.End.X : Assets.End.X) + 16,
         ScaleY(310), FootprintWidth, ScaleY(189));
     internal Rect2 Allies => new(Identity.End.X + 16, ScaleY(310),
         Math.Max(0, Width - Identity.End.X - 36), ScaleY(180));
-    internal Rect2 Assets => new(ScaleX(302), ScaleY(310), FootprintWidth, ScaleY(180));
-    internal Rect2 Upgrades => new(Width - FootprintWidth - 20, ScaleY(530), FootprintWidth, ScaleY(230));
+    internal Rect2 Assets => new(Math.Max(ScaleX(302), EngagedEnemies.End.X + 16), ScaleY(310), FootprintWidth, ScaleY(180));
+    internal Rect2 Upgrades => new(Width - FootprintWidth - 20,
+        Math.Max(ScaleY(530), PlayerRowBottom + ScaleY(24)), FootprintWidth, ScaleY(230));
     internal Rect2 Revealing => new(HasSeparateRevealSlot ? Assets.End.X + 16 : Assets.Position.X,
         ScaleY(310), FootprintWidth, ScaleY(180));
     internal Rect2 Hand => new(Assets.Position.X, HandTop,
@@ -87,8 +88,9 @@ internal sealed record AstraTableGeometry(
 
     private float ScaleX(float value) => value * Width / ReferenceWidth;
     private float ScaleY(float value) => value * Height / ReferenceHeight;
-    private float HandTop => Math.Max(ScaleY(510), Identity.Position.Y
-        + SpatialCardFootprint.OccupiedSize(PhysicalCardSize ?? new Vector2(176, 190)).Y + ScaleY(24));
-    private float FootprintWidth => SpatialCardFootprint.OccupiedSize(
-        PhysicalCardSize ?? new Vector2(176, 190)).X;
+    private float HandTop => Math.Max(ScaleY(510), PlayerRowBottom + ScaleY(24));
+    private float PlayerRowBottom => Identity.Position.Y + OccupiedCardSize.Y;
+    private Vector2 OccupiedCardSize => SpatialCardFootprint.OccupiedSize(
+        PhysicalCardSize ?? new Vector2(176, 190));
+    private float FootprintWidth => OccupiedCardSize.X;
 }

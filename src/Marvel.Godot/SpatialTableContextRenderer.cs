@@ -72,18 +72,7 @@ internal static class SpatialTableContextRenderer
         summary.Name = "DraftProgress";
         cause.AddChild(summary);
         result.RegisterContextualSummary(summary, string.Empty, resolution);
-        var actionScroll = TableScrollNavigation.Create(columns, "ContextualActionScroll", "choices");
-        var actionFrame = (Control)actionScroll.GetParent();
-        actionFrame.SizeFlagsHorizontal = Control.SizeFlags.Fill;
-        actionFrame.CustomMinimumSize = new Vector2(actionsWidth, 0);
-        var actions = new VBoxContainer
-        {
-            Name = "ContextualActionObjects",
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-            MouseFilter = Control.MouseFilterEnum.Pass,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-        };
-        actionScroll.AddChild(actions);
+        VBoxContainer actions = TableActionPages.Create(columns, actionsWidth, result.OpenCompleteChoices);
         result.RegisterContextualActions(actions);
     }
 

@@ -28,7 +28,7 @@ public static class PendingSituationPresentation
     {
         string[] sources = ReadableTitles(world, pending?.SourceCardIds ?? []);
         string relation = pending?.Kind == PublicDecisionKind.MinionActivationOrder
-            ? "Choosing activation order for" : "Resolving";
+            ? "Choosing the next activation among" : "Resolving";
         string[] causes = ReadableTitles(world, pending?.CauseCardIds ?? []);
         string cause = causes.Length == 0 ? string.Empty : $"Cause: {string.Join(", ", causes)}. ";
         return cause + (sources.Length == 0 ? "" : $"{relation} {string.Join(" · ", sources)}. ")
@@ -54,7 +54,9 @@ public static class PendingSituationPresentation
         PublicDecisionKind.Ability => "ability opportunity",
         PublicDecisionKind.Defense => "defense choice",
         PublicDecisionKind.Order => "ordering choice",
-        PublicDecisionKind.MinionActivationOrder => "minion activation order",
+        PublicDecisionKind.MinionActivationOrder => "next minion activation",
+        PublicDecisionKind.SpecialAbilityNext => "next Special ability",
+        PublicDecisionKind.VisibleCardSelection => "card selection",
         PublicDecisionKind.CardSearch => "card search",
         PublicDecisionKind.CardLook => "card selection",
         _ => "current choice",

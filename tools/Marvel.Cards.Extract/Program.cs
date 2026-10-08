@@ -137,17 +137,21 @@ internal static class Program
                 continue;
             }
 
+            var attributes = Printed.Attributes(card, kind, nemeses);
             written.Add(supplement.Apply(new Card(
                 Id: code,
                 Name: card.Text("name") ?? "",
                 Subname: card.Text("subname") ?? "",
                 Kind: kind,
                 Traits: Printed.Traits(card.Text("traits")),
-                Attributes: Printed.Attributes(card, kind, nemeses),
+                Attributes: attributes,
                 LinkedTo: [],
                 Text: card.Text("text") ?? "",
                 Pack: card.Text("pack_code") ?? "",
-                Set: card.Text("set_code") ?? "")));
+                Set: card.Text("set_code") ?? "")
+            {
+                StatAnnotations = StatAnnotations.From(card, kind, attributes),
+            }));
         }
 
         written.AddRange(supplement.Only);

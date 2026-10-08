@@ -28,4 +28,8 @@ public enum PublicDecisionKind
     CardSearch,
     /// <summary>A choice among cards an ability allows its player to look at.</summary>
     CardLook,
+    /// <summary>The next Special ability in a currently resolving sequence.</summary>
+    SpecialAbilityNext,
+    /// <summary>A choice among visible cards carried by one target request.</summary>
+    VisibleCardSelection,
 }

@@ -8,7 +8,7 @@ namespace Marvel.Godot;
 public sealed class BoardRenderResult
 {
     private readonly Dictionary<int, List<CardControl>> controls = [];
-    internal readonly BoardInspectorSequences Inspector = new();
+    internal readonly BoardInspectorSequences Inspector;
     private readonly Dictionary<Control, Action> areaExpanders = [];
     private readonly Dictionary<int, Button> mulliganToggles = [];
     private readonly BoardCardInteractionControls interactionControls;
@@ -21,8 +21,10 @@ public sealed class BoardRenderResult
     private Button? completeChoicesEntry;
     private Container? contextualActions;
     private bool completeChoicesOpen;
-    public BoardRenderResult()
+    /// <summary>Owns controls and source lookup for one authorized board snapshot.</summary>
+    public BoardRenderResult(BoardPresentation? board = null)
     {
+        Inspector = new(board);
         reveal = new BoardControlReveal(this);
         interactionControls = new BoardCardInteractionControls(IsCurrentRender);
         pointer = new BoardPointerInteractions(
@@ -70,13 +72,13 @@ public sealed class BoardRenderResult
     internal void RegisterCompleteChoices(Button entry)
     {
         completeChoicesEntry = entry;
-        entry.Pressed += () =>
-        {
-            if (IsCurrentRender() && InteractionControl.IsUsable(entry))
-            {
-                openCompleteChoices?.Invoke(entry);
-            }
-        };
+        entry.Pressed += () => OpenCompleteChoices(entry);
+    }
+
+    internal void OpenCompleteChoices(Control source)
+    {
+        if (IsCurrentRender() && InteractionControl.IsUsable(source))
+            openCompleteChoices?.Invoke(source);
     }
 
     internal void BindCompleteChoices(Action<Control> open) => openCompleteChoices = open;
@@ -106,6 +108,9 @@ public sealed class BoardRenderResult
         if (control is CardControl rendered) interactionControls.Track(rendered, card, isHandCard);
         pointer.Track(control, card, isHandCard);
     }
+
+    internal void TrackInspection(CardControl control, BoardCardPresentation card) =>
+        interactionControls.Track(control, card, isHand: false);
 
     /// <summary>Records the authored table pose after spatial placement is complete.</summary>
     internal void UpdateRestingPose(Control control) =>

@@ -28,6 +28,7 @@ internal sealed class MainBoardController : IDisposable
 
     internal void ResetForSession()
     {
+        cardInspector.Reset();
         renderLifetime.Advance();
         main.SkipEventPresentation();
         displayedResponse = null;
@@ -48,6 +49,7 @@ internal sealed class MainBoardController : IDisposable
             .ToHashSet() ?? [];
         if (!string.Equals(displayedResponse?.GameId, response.GameId, StringComparison.Ordinal))
         {
+            cardInspector.Reset();
             tabletop.ResetForGame();
         }
         displayedResponse = response;
@@ -123,6 +125,7 @@ internal sealed class MainBoardController : IDisposable
         BoardRenderResult rendered = tabletop.Render(prompt, viewport)
             ?? RenderCompactBoard();
         main.boardRender = rendered;
+        TableSidebarContent.Render(main, rendered, prompt, tabletop.InspectedSeat);
         rendered.BindMotion(() => main.eventMotion.ButtonPressed);
         rendered.RegisterContextualWorld(world);
         rendered.PresentLastResult(main.lastResultSummary.Text);
@@ -133,12 +136,7 @@ internal sealed class MainBoardController : IDisposable
             && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
         relationships.Bind(rendered);
         main.decisions.BindMulliganTargets(rendered);
-        if (!main.cardInspectorPinned
-            || main.inspectedCardId is not { } inspected
-            || rendered.ControlFor(inspected) is null)
-        {
-            cardInspector.Hide();
-        }
+        cardInspector.Refresh(main.boardPresentation!, rendered);
     }
     private BoardRenderResult RenderCompactBoard()
     {

@@ -3,76 +3,72 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Owns bounded card identity and distinct cost/stage corner treatments.</summary>
+/// <summary>Owns left-aligned identity and distinct cost/stage corner treatments.</summary>
 internal static class PrintedCardHeader
 {
+    internal static float MeasureTitle(BoardCardPresentation card, CardFaceRegions r, Control owner)
+    {
+        Label measure = PrintedCardFace.Text(card.Title.ToUpperInvariant(), "TitleMeasurement",
+            new Rect2(0, 0, r.Title.Size.X - UniqueWidth(card, r), 4096), r.TitleFontSize);
+        owner.AddChild(measure);
+        float height = measure.GetLineCount() * measure.GetLineHeight();
+        owner.RemoveChild(measure);
+        measure.Free();
+        return height;
+    }
+
     internal static void Add(Control face, BoardCardPresentation card, CardFaceRegions r)
     {
-        var masthead = PrintedCardFace.Panel("Masthead", r.Title, CardFaceStyle.Paper);
-        face.AddChild(masthead);
-        var row = new HBoxContainer { Name = "TitleLayout", MouseFilter = Control.MouseFilterEnum.Ignore };
-        row.AddThemeConstantOverride("separation", 0);
-        masthead.AddChild(row);
-        row.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        if (card.PrintedStats.Any(value => value.Name == "Unique" && value.Value == "1"))
-        {
-            Label mark = PrintedCardStats.Symbol("U", "Unique",
-                new Rect2(0, 0, 28 * r.Unit, r.Title.Size.Y), 22 * r.Unit);
-            mark.CustomMinimumSize = new Vector2(28 * r.Unit, 0);
-            mark.VerticalAlignment = VerticalAlignment.Center;
-            mark.AddThemeColorOverride("font_color", CardFaceStyle.Ink);
-            row.AddChild(mark);
-        }
-        Label title = PrintedCardFace.Text(card.Title, "Title", new Rect2(Vector2.Zero, r.Title.Size),
-            (r.Full ? 29 : 31) * r.Unit);
-        title.HorizontalAlignment = HorizontalAlignment.Center;
-        title.VerticalAlignment = VerticalAlignment.Center;
-        title.MaxLinesVisible = 2;
+        float unique = UniqueWidth(card, r);
+        if (unique > 0)
+            face.AddChild(CardGlyphRendering.Create("U", "Unique",
+                new Rect2(r.Title.Position + new Vector2(0, 4 * r.Density),
+                    Vector2.One * (unique - 3 * r.Density)), Colors.White));
+        Label title = PrintedCardFace.Text(card.Title, "Title",
+            new Rect2(r.Title.Position + new Vector2(unique, 0),
+                r.Title.Size - new Vector2(unique, 0)), r.TitleFontSize);
+        title.Uppercase = true;
+        title.HorizontalAlignment = HorizontalAlignment.Left;
+        title.VerticalAlignment = VerticalAlignment.Top;
+        title.MaxLinesVisible = r.Full ? -1 : 2;
         title.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
-        title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        title.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        row.AddChild(title);
+        title.AddThemeColorOverride("font_color", Colors.White);
+        face.AddChild(title);
         AddPrimary(face, card, r);
-        string identity = string.Join(" · ", new[] { card.Kind,
-            r.Full && !card.Kind.Equals(card.Classification, StringComparison.OrdinalIgnoreCase) ? card.Classification : "",
-            card.Subtitle }.Where(value => !string.IsNullOrWhiteSpace(value)));
-        Label kind = PrintedCardFace.Text(identity, "Kind", r.Kind, 18 * r.Unit);
+        string identity = string.Join(" · ", new[] { CardTypeCaption.From(card.Kind), card.Subtitle }
+            .Where(value => !string.IsNullOrWhiteSpace(value))).ToUpperInvariant();
+        Label kind = PrintedCardFace.Text(identity, "Kind", r.Kind, (r.Full ? 12 : 8) * r.Density);
+        kind.AddThemeFontOverride("font", CardTypography.Bold);
         kind.AddThemeColorOverride("font_color", Colors.White);
         face.AddChild(kind);
     }
+
+    private static float UniqueWidth(BoardCardPresentation card, CardFaceRegions r) =>
+        card.PrintedStats.Any(value => value.Name == "Unique" && value.Value == "1")
+            ? (r.Full ? 19 : 11) * r.Density : 0;
 
     private static void AddPrimary(Control face, BoardCardPresentation card, CardFaceRegions r)
     {
         string? primary = card.Cost ?? card.PrintedStats.FirstOrDefault(value => value.Name == "Stage")?.Value;
         if (primary is null) return;
         bool stage = card.Cost is null;
-        Rect2 bounds = new(r.Cost.Position, new Vector2(r.Cost.Size.X, (stage ? 72 : 62) * r.Unit));
-        var badge = PrintedCardFace.Panel("PrimaryValue", bounds, stage ? CardFaceStyle.Ink : CardFaceStyle.Paper);
-        AddPrimaryNumber(badge, primary, bounds, stage, r);
-        if (stage) AddStageCaption(badge, bounds, r);
-        face.AddChild(badge);
-    }
-
-    private static void AddPrimaryNumber(Control badge, string primary, Rect2 bounds, bool stage, CardFaceRegions r)
-    {
-        Label number = PrintedCardFace.Text(stage ? Roman(primary) : primary, "PrimaryValueValue",
-            new Rect2(0, 0, bounds.Size.X, (stage ? 46 : 62) * r.Unit), (stage ? 36 : 44) * r.Unit);
+        var badge = new Control { Name = "PrimaryValue", Position = r.Cost.Position,
+            Size = r.Cost.Size, MouseFilter = Control.MouseFilterEnum.Ignore };
+        float edge = r.Cost.Size.X;
+        float cut = (r.Full ? 8 : 5) * r.Density;
+        badge.AddChild(new Polygon2D { Name = "PrimaryField", Color = CardFaceStyle.Accent(card),
+            Polygon = [Vector2.Zero, new(edge, 0), new(edge, edge - cut),
+                new(edge - cut, edge), new(0, edge)] });
+        Label number = PrintedCardFace.Text(stage ? Roman(primary) : primary, stage ? "StageValue" : "PrimaryValueValue",
+            new Rect2(Vector2.Zero, r.Cost.Size), (r.Full ? 36 : 22) * r.Density);
         number.AutowrapMode = TextServer.AutowrapMode.Off;
         number.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         number.HorizontalAlignment = HorizontalAlignment.Center;
         number.VerticalAlignment = VerticalAlignment.Center;
+        number.AddThemeColorOverride("font_color", Colors.White);
         number.TooltipText = stage ? $"Stage {primary}" : $"Cost {primary}";
-        if (stage) number.AddThemeColorOverride("font_color", Colors.White);
         badge.AddChild(number);
-    }
-
-    private static void AddStageCaption(Control badge, Rect2 bounds, CardFaceRegions r)
-    {
-        Label label = PrintedCardFace.Text("Stage", "StageCaption",
-            new Rect2(0, 46 * r.Unit, bounds.Size.X, 26 * r.Unit), 16 * r.Unit);
-        label.HorizontalAlignment = HorizontalAlignment.Center;
-        label.AddThemeColorOverride("font_color", Colors.White);
-        badge.AddChild(label);
+        face.AddChild(badge);
     }
 
     private static string Roman(string value) => value switch

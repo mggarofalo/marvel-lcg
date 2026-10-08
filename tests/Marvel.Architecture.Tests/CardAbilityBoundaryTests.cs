@@ -23,6 +23,7 @@ public sealed class CardAbilityBoundaryTests
         typeof(ICardPlacementAbilities),
         typeof(ICardSetupAbilities),
         typeof(ICardConstantAbilities),
+        typeof(ICardPersistentAbilities),
         typeof(ICardActionAbilities),
         typeof(IAttackCardAbilities),
         typeof(ICardPlayAbilities),

@@ -96,6 +96,7 @@ public sealed class AbilityRunner : ICardAbilities
     public IReadOnlyList<GameEvent> Chose(World world, Card source, int player, int stoppedAt, Decision input, AbilityType? tier, bool finalStep) => resolution.Chose(world, source, player, stoppedAt, input, tier, finalStep);
     public IReadOnlyList<GameEvent> Chose(World world, Card source, int player, int stoppedAt, Decision input, AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) => resolution.Chose(world, source, player, stoppedAt, input, tier, finalStep, eachPlayerFrame, finalPlayer);
     public IReadOnlyList<GameEvent> Chose(World world, Card source, int player, int stoppedAt, Decision input, AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer, string trigger) => resolution.Chose(world, source, player, stoppedAt, input, tier, finalStep, eachPlayerFrame, finalPlayer, trigger);
+    public PersistentAbilityDescription DescribePersistent(Card card) => AbilityPersistentQueries.Describe(program, card);
 }
 
 #pragma warning restore CS1591

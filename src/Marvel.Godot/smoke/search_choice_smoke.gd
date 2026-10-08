@@ -7,7 +7,7 @@ func _run() -> void:
 	await process_frame
 	if not _search_fits(): return
 	if not await _automatic_search_restores_focus(): return
-	if not await _stage_search_choice(): return
+	if not await _compare_and_stage_search(): return
 	if not await _paging_preserves_selection(): return
 	if not await _dismissal_preserves_selection(): return
 	if not _search_fits(): return
@@ -17,6 +17,12 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	quit(0)
+
+
+func _compare_and_stage_search() -> bool:
+	if not await preload("res://smoke/search_inspection_checks.gd").perform(self): return false
+	if not await _stage_search_choice(): return false
+	return await preload("res://smoke/search_inspection_checks.gd").perform(self)
 
 
 func _open_required_search() -> bool:
@@ -44,7 +50,8 @@ func _stage_search_choice() -> bool:
 		_fail("search has no card selection")
 		return false
 	var expected_focus := "Affordance" + str(choices[0].name).trim_prefix("SearchResult")
-	if not await _keyboard_activate(choices[0] as Control): return false
+	var select := _search_frame().find_child(expected_focus, true, false) as Button
+	if not await _keyboard_activate(select): return false
 	if not await _has_focus(expected_focus): return false
 	await process_frame
 	var submit := _button_named("Add Tactical Genius to your hand")
@@ -92,7 +99,7 @@ func _search_fits() -> bool:
 
 func _paging_preserves_selection() -> bool:
 	var original_size: Vector2i = render_viewport.size
-	render_viewport.size = Vector2i(1280, 900)
+	if not await preload("res://smoke/search_inspection_checks.gd").replace_surface(self, Vector2i(1280, 900)): return false
 	await process_frame
 	await process_frame
 	await process_frame

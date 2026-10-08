@@ -16,6 +16,7 @@ func _direct_table_journey_is_operable() -> bool:
 	# direct controls through the generic visible-decision journey below.
 	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
 		return true
+	if not await preload("res://smoke/local_game_smoke_action_pages.gd").traverse(self): return false
 	if not await ReceiptNavigation.read_previous_receipt(self):
 		return false
 	if not await _direct_web_shooter_is_played():
@@ -237,7 +238,7 @@ func _visible_exhausted_caption(anchor: int) -> Label:
 	var card := _card_for_anchor(anchor)
 	if card == null:
 		return null
-	var caption := card.get_node_or_null("SpatialOverlay/SpatialControls/Contents/PhysicalCardCaption") as Label
+	var caption := card.get_node_or_null("SpatialOverlay/LiveState/UprightIdentity") as Label
 	return caption if caption != null and caption.is_visible_in_tree() else null
 
 

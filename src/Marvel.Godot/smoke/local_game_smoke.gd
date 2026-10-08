@@ -36,14 +36,23 @@ func _run() -> void:
 		return
 	if not await _terminal_table_is_safe(journey):
 		return
+	if not await _release_table_resources():
+		return
 	print("LOCAL_GAME_SMOKE_OK decisions=%d motion=%s" % [
 		journey.decisions,
 		"enabled" if motion_enabled else "disabled",
 	])
-	main.queue_free()
-	await process_frame
-	await process_frame
 	quit(0)
+
+
+func _release_table_resources() -> bool:
+	var lifetime = preload("res://smoke/local_game_smoke_style_lifetime.gd")
+	var problems: Array[String] = await lifetime.release(main)
+	main = null
+	for problem in problems:
+		_fail(problem)
+		return false
+	return true
 
 
 func _open_setup(packed: PackedScene) -> bool:
@@ -224,6 +233,11 @@ func _observe_decision(state: Dictionary) -> bool:
 
 
 func _advance_visible_decision(state: Dictionary) -> bool:
+	var pages = preload("res://smoke/local_game_smoke_action_pages.gd")
+	var complete: Button = pages.complete_entry(main)
+	if complete != null:
+		if not await pages.open_complete_choices(self, complete): return false
+		return await _advance_fallback_decision(state)
 	if main.find_child("AstraTableSurface", true, false) != null:
 		return await _advance_table_decision(state)
 	return await _advance_fallback_decision(state)
@@ -242,7 +256,7 @@ func _advance_table_decision(state: Dictionary) -> bool:
 		state.changed_form = true
 		return true
 	var decline := main.find_child("ContextualDecline", true, false) as Button
-	if decline != null and not decline.disabled:
+	if decline != null and decline.is_visible_in_tree() and not decline.disabled:
 		if decline.get_parent().name != "ContextualActionObjects":
 			_fail("Pass is not in the shared decision area")
 			return false

@@ -1,0 +1,219 @@
+{
+  "studio": "Attachment A",
+  "language": "B1 Impact Editions",
+  "index_html": "index.html",
+  "changes": "changes.txt",
+  "rows": "attachment-data.json",
+  "source_cards": "source-cards.json",
+  "preferred": "ledger",
+  "concepts": [
+    {
+      "id": "tabs",
+      "name": "Edge tabs",
+      "pitch": "Dark title-bearing miniatures cascade below the host. Strong physical-card continuity; narrow width and growing height.",
+      "contact_svg": "tabs-host-scenes.svg",
+      "contact_png": "tabs-host-scenes.png",
+      "detail_svg": "tabs-rhino-detail.svg",
+      "detail_png": "tabs-rhino-detail.png",
+      "native_bounds": {
+        "host": [
+          172,
+          240
+        ],
+        "row_width": 172,
+        "height": "content measured"
+      }
+    },
+    {
+      "id": "ledger",
+      "name": "Host ledger",
+      "pitch": "An upright, ruled sidecar keeps modifiers and triggers close to the host within its height. Less frame repetition; more width.",
+      "contact_svg": "ledger-host-scenes.svg",
+      "contact_png": "ledger-host-scenes.png",
+      "detail_svg": "ledger-rhino-detail.svg",
+      "detail_png": "ledger-rhino-detail.png",
+      "native_bounds": {
+        "host": [
+          172,
+          240
+        ],
+        "row_width": 250,
+        "single_line_row_height": 44,
+        "double_line_row_height": 60
+      }
+    }
+  ],
+  "hosts": [
+    {
+      "id": "ally",
+      "card_id": "01084",
+      "name": "Nick Fury",
+      "attachments": [
+        "01074"
+      ],
+      "controlled_upgrades": [],
+      "synthetic_state": {
+        "printed_ATK": 2,
+        "ATK_sources": {
+          "01074": 1
+        },
+        "current_ATK": 3,
+        "printed_THW": 2,
+        "THW_sources": {
+          "01074": 1
+        },
+        "current_THW": 3,
+        "remaining_HP": 3,
+        "max_HP": 3
+      },
+      "standalone_svg": "host-ally.svg",
+      "standalone_png": "host-ally.png",
+      "standalone_width": 172,
+      "standalone_height": 240,
+      "views": {
+        "tabs": {
+          "svg": "tabs-ally.svg",
+          "png": "tabs-ally.png",
+          "width": 700,
+          "height": 600
+        },
+        "ledger": {
+          "svg": "ledger-ally.svg",
+          "png": "ledger-ally.png",
+          "width": 700,
+          "height": 600
+        }
+      }
+    },
+    {
+      "id": "minion",
+      "card_id": "01143",
+      "name": "Advanced Ultron Drone",
+      "attachments": [
+        "01163",
+        "01007"
+      ],
+      "controlled_upgrades": [],
+      "synthetic_state": {
+        "printed_HP": 4,
+        "HP_sources": {
+          "01163": 3
+        },
+        "max_HP": 7,
+        "damage": 2,
+        "remaining_HP": 5
+      },
+      "standalone_svg": "host-minion.svg",
+      "standalone_png": "host-minion.png",
+      "standalone_width": 172,
+      "standalone_height": 240,
+      "views": {
+        "tabs": {
+          "svg": "tabs-minion.svg",
+          "png": "tabs-minion.png",
+          "width": 700,
+          "height": 600
+        },
+        "ledger": {
+          "svg": "ledger-minion.svg",
+          "png": "ledger-minion.png",
+          "width": 700,
+          "height": 600
+        }
+      }
+    },
+    {
+      "id": "villain",
+      "card_id": "01094",
+      "name": "Rhino I",
+      "attachments": [
+        "01153",
+        "01099",
+        "01098"
+      ],
+      "controlled_upgrades": [],
+      "synthetic_state": {
+        "printed_ATK": 2,
+        "ATK_sources": {
+          "01153": 1,
+          "01099": 3
+        },
+        "current_ATK": 6,
+        "remaining_HP": 10,
+        "max_HP": 14,
+        "damage_on_Armored_Rhino_Suit": 2
+      },
+      "standalone_svg": "host-villain.svg",
+      "standalone_png": "host-villain.png",
+      "standalone_width": 172,
+      "standalone_height": 240,
+      "views": {
+        "tabs": {
+          "svg": "tabs-villain.svg",
+          "png": "tabs-villain.png",
+          "width": 700,
+          "height": 600
+        },
+        "ledger": {
+          "svg": "ledger-villain.svg",
+          "png": "ledger-villain.png",
+          "width": 700,
+          "height": 600
+        }
+      }
+    },
+    {
+      "id": "hero",
+      "card_id": "01029a",
+      "name": "Iron Man",
+      "attachments": [],
+      "controlled_upgrades": [
+        "01036",
+        "01035"
+      ],
+      "synthetic_state": {
+        "printed_HP": 9,
+        "HP_sources": {
+          "01036": 6
+        },
+        "max_HP": 15,
+        "damage": 4,
+        "remaining_HP": 11,
+        "exhausted": true,
+        "printed_hand_size": 1,
+        "current_hand_size": 3
+      },
+      "standalone_svg": "host-hero.svg",
+      "standalone_png": "host-hero.png",
+      "standalone_width": 245,
+      "standalone_height": 198,
+      "views": {
+        "tabs": {
+          "svg": "tabs-hero.svg",
+          "png": "tabs-hero.png",
+          "width": 700,
+          "height": 600
+        },
+        "ledger": {
+          "svg": "ledger-hero.svg",
+          "png": "ledger-hero.png",
+          "width": 700,
+          "height": 600
+        }
+      }
+    }
+  ],
+  "semantics_svg": "semantics-and-disclosure.svg",
+  "semantics_png": "semantics-and-disclosure.png",
+  "resource_colors": {
+    "physical": "#C13547",
+    "energy": "#D8AC1A",
+    "mental": "#2675B8",
+    "wild": "#278554"
+  },
+  "authority": {
+    "hit_points": "datasets/rules-reference/entries/hit-points.md#hit-points-2-3",
+    "card_text": "datasets/cards/cards.json"
+  },
+  "status": "Static proposals, synthetic stress state; no production changes or gameplay certification"
+}

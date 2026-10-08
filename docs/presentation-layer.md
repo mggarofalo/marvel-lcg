@@ -74,15 +74,67 @@ the server-owned setup and accepted decision trace authoritative for save,
 restore, undo, redo and legal action reordering. Clients continue to submit
 decisions rather than state. See [session-ledger.md](session-ledger.md).
 
-Protocol 21 identifies authorized card search and look choices in the public
-prompt and table context. Internal concealed-candidate exposure metadata stays
-out of the wire contract. These presentation facts do not change the saved
-prompt record or replay identity. Quantity-dependent typed payments retain
+Protocol 25 adds completed deck-shuffle receipts containing only destination
+seat, count and previously public titles. No returned card's hidden identity or
+position crosses the wire. Replay v9 records this additional semantic event;
+the RNG and state-digest contracts remain unchanged.
+
+Protocol 24 adds the passive `SpecialAbilityNext` and `VisibleCardSelection`
+purposes. Visible target requests carry `exclusive_sets`: engine-authored sets
+of card ids from which at most one distinct card may be selected. The composer
+asks the engine assessment about combinations; card galleries do not compare
+printed titles. Complete `groups` remain exact answers, never candidate pools.
+Minion and Special sequences offer only the next participant and
+re-read current eligibility after its complete resolution. The existing
+`MinionActivationOrder` purpose and `Question.Order` family retain their names
+and numeric values; each offered card now commits only its next activation.
+A sole remaining participant advances in the engine without a redundant choice.
+Required targets, payments and optional timing opportunities remain separate
+prompts. An unresolved Special with no possible effect still occupies its
+sequence step; it does not move the final-step bonus to an earlier upgrade. Protocol 23 endpoints
+are rejected before gameplay. Replay contract v8 rejects prior traces because
+the choices and continuation boundaries differ; the save schema, RNG and state
+digest formats are unchanged.
+
+Protocol 23 distinguishes printed stat annotations from effective values and
+their authorized explanations. It retains protocol 21's authorized card search
+and look choices and protocol 22's latest-action undo status. Internal
+concealed-candidate exposure metadata stays out of the wire contract. These
+presentation facts do not change the saved prompt record or replay identity.
+Quantity-dependent typed payments retain
 the protocol 20 resource contract. The engine resolves the
 required resource slots from the offered component and chosen variable; the
 composer uses that same function for readiness and icon declarations. Saves
-use schema 5 and replay contract v7; prior replay contracts fail compatibility
+use schema 5 and replay contract v8; prior replay contracts fail compatibility
 before migration.
+
+Readable faces carry `printed_values` separately from `effective_values`.
+Printed values preserve the numeral or symbol, the special-rule star, the
+per-player mark and the consequential-damage count as independent facts. Zero,
+X, dash and a standalone star remain distinct; a standalone star is drawn once.
+Effective quantities come from the engine's evaluation. HP means maximum HP;
+remaining health and damage retain their existing state contracts. A renderer
+must not add attachment values or reconstruct effective quantities itself.
+
+Effective-value source rows contain only explanations authorized for the viewer.
+They are not a complete arithmetic equation: private contributions are omitted
+without placeholders, counts or cumulative totals. Historical sources have no
+live card link, even if the same physical card has since returned to play.
+Client admission rejects incomplete nested facts before replacing usable state.
+Both transports preserve these facts with the same visibility boundary.
+
+The generated printed annotations change the card dataset fingerprint. Existing
+sessions pinned to another dataset identity remain incompatible even though the
+save schema, replay contract and state-digest format are unchanged.
+The typed base definition for Titania also changes the ability-book fingerprint;
+the existing ability compatibility check rejects saves pinned to the other book.
+
+Live persistent sources also carry explicit relationships, already-applied
+contributions and complete supported ability descriptions. These descriptions
+are not executable offers. Source and acting-identity costs remain distinct;
+unsupported abilities retain inspection access rather than a partial guessed
+summary. The client validates nested collections and required fields while
+retaining signed numeric values supplied by the engine.
 
 ## Build boundary
 
@@ -225,8 +277,9 @@ frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Protocol 19 adds
 engine-authored decline commitments to prompts (ending a turn, passing an
 opportunity, or leaving an attack undefended), readable card-choice names, and
-an explicit visibility-safe attack completion event. Both endpoints must use version
-19; replay and digest formats are unchanged. Protocol 13 adds
+an explicit visibility-safe attack completion event. Both endpoints must use the
+current protocol version (24). Protocol 19 kept replay and digest formats
+unchanged. Protocol 13 adds
 display-only card markup and a separate art-safe face id so full card frames
 can preserve printed emphasis and symbols without requesting concealed art.
 Protocol 12 adds

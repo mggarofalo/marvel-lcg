@@ -53,4 +53,29 @@ Barlow Regular, Bold and Italic provide printed rules; Barlow Condensed Bold pro
 
 Pinned source: https://github.com/google/fonts/tree/7085eb89a950e85db5b166b7a58d414544b4140c/ofl/barlow
 
-The canonical symbol character assignments are pinned with the font in [icons.css](https://github.com/zzorba/marvelsdb/blob/991193c11f9d4e2057253f427c65d9055da9a3b1/src/AppBundle/Resources/public/css/icons.css): P physical, E energy, M mental, W wild, G per hero, U unique, S star, B boost, A acceleration, F amplify, C crisis, H hazard. These are display assignments, not gameplay rules.
+The canonical symbol character assignments are pinned with the font in [icons.css](https://github.com/zzorba/marvelsdb/blob/991193c11f9d4e2057253f427c65d9055da9a3b1/src/AppBundle/Resources/public/css/icons.css): P physical, E energy, M mental, W wild, G per hero, U unique, S special star, D consequential damage (the `[cost]` token), B boost, A acceleration, F amplify, C crisis, H hazard. These are display assignments, not gameplay rules.
+
+# Portable UI symbols
+
+DejaVu Sans 2.37 is the embedded fallback for symbols absent from Barlow: arrows,
+pile shapes, playback, selection, and status markers. Both the primary fonts
+and this fallback disable system-font fallback. Text remains Barlow; canonical
+card/resource icons retain their separate existing assets.
+
+The unmodified `DejaVuSans.ttf` comes from the official release archive:
+https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2
+
+Archive SHA-256 (also published at https://dejavu-fonts.github.io/Download.html):
+`fa9ca4d13871dd122f61258a80d01751d603b4d3ee14095d65453b4e846e17d7`.
+Font SHA-256:
+`7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954`.
+
+The accompanying [license](DejaVu-LICENSE.txt) preserves the Bitstream copyright
+and permission notice; DejaVu's changes are public domain. The font may be
+redistributed with the application under those terms. Runtime loading uses
+embedded bytes, with no platform font, import scan, or network dependency.
+
+The fallback also participates in native line metrics. Compact progress labels
+are checked for a visible line and nonempty character bounds on canonical
+specimens and actual engine-backed boards. A native shaping/raster probe covers
+all non-ASCII UI symbols in each typography role without system fallback.

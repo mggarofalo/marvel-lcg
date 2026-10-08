@@ -23,7 +23,8 @@ public static class WorldProjection
         var promptVisible = prompt is not null && scope.Includes(prompt.Player);
         var searchVisible = promptVisible ? SearchResults(prompt!) : [];
         WorldDescriptor complete = Describe(world, prompt, searchVisible);
-        WorldDescriptor visible = Filter(complete, scope);
+        WorldDescriptor visible = CardValueProjection.WithValues(world, Filter(complete, scope), scope);
+        visible = CardPersistentProjection.WithFacts(world, visible, scope);
         var addressableIds = visible.Areas
             .SelectMany(area => area.Cards.Concat(area.Removed))
             .Where(card => card.Id.HasValue)
@@ -125,6 +126,9 @@ public static class WorldProjection
             Traits = DisplayTraits(world, card),
             Cost = attributes.TryGetValue("Cost", out string? cost) ? cost : null,
             PrintedStats = PrintedStats(attributes),
+            PrintedValues = CardPrintedValues.From(assigned
+                ? PrintedStatFacts.From(kind, attributes)
+                : world.Facts.PrintedStats(card.FaceId)),
             Keywords = assigned ? [] : [.. world.Facts.Keywords(card.FaceId)],
             RulesText = assigned ? string.Empty : world.Facts.Text(card.FaceId),
             RulesMarkup = assigned ? string.Empty : world.Facts.FormattedText(card.FaceId),
@@ -144,17 +148,14 @@ public static class WorldProjection
         IReadOnlyDictionary<string, long> fields = StateFields.For(
             card, world.Facts, world.Players, inPlay, card.HasRegisteredTokens,
             card.Owner == world.FirstPlayer && card.Area.Type == DeckType.HeroArea, world);
-        if (!inPlay || kind is not (CardKind.Ally or CardKind.Minion))
+        if (!inPlay || (kind is not (CardKind.Hero or CardKind.AlterEgo or CardKind.Ally or CardKind.Minion)
+            && !CardKinds.IsVillain(kind)))
         {
             return fields;
         }
         return new Dictionary<string, long>(fields, StringComparer.Ordinal)
         {
-            ["health"] = Math.Max(
-                0,
-                EffectiveCards.BaseValue(card, world.Facts, "HP", world.Players)
-                + StateFields.Modified(world, card, "health", world.Facts, world.Players)
-                - card.Damage),
+            ["health"] = CardValues.RemainingHealth(world, card, world.Facts),
         };
     }
 

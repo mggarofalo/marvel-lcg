@@ -75,6 +75,17 @@ public sealed record TargetRequest(
     /// <summary>Engine-authored consequence details keyed by legal target id.</summary>
     public IReadOnlyDictionary<int, string>? Details { get; init; }
 
+    /// <summary>Engine-authored candidate sets from which at most one distinct object may be selected.</summary>
+    /// <remarks>These sets constrain combinations; they are not complete ordered answers like Groups.</remarks>
+    public IReadOnlyList<IReadOnlyList<int>>? ExclusiveSets { get; init; }
+
+    /// <summary>Whether the proposed candidates satisfy the engine's combination exclusions, independently of count.</summary>
+    public bool AllowsCombination(IReadOnlyList<int> selection)
+    {
+        ArgumentNullException.ThrowIfNull(selection);
+        return ExclusiveSets is null || ExclusiveSets.All(set => selection.Distinct().Count(set.Contains) <= 1);
+    }
+
     /// <summary>Whether the selection rule constrains it beyond a count.</summary>
     public bool IsGrouped => Groups is { Count: > 0 };
 
@@ -90,6 +101,8 @@ public sealed record TargetRequest(
     public bool Allows(IReadOnlyList<int> selection)
     {
         ArgumentNullException.ThrowIfNull(selection);
+
+        if (!AllowsCombination(selection)) return false;
 
         // `rr:choose-game-element.3.1`: "The same target cannot be chosen
         // multiple times this way." This applies before either representation

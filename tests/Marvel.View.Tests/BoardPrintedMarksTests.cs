@@ -18,6 +18,10 @@ public sealed class BoardPrintedMarksTests
             new Dictionary<string, long>())
         {
             PrintedStats = new Dictionary<string, string> { [attribute] = printed, ["RES"] = "P" },
+            PrintedValues = new Dictionary<string, CardPrintedValue>
+            {
+                [attribute] = new(printed.TrimEnd('*'), false, perPlayer, consequential),
+            },
         };
         BoardCardPresentation card = Present(new CardDescriptor(1, CardBack.Player, true, true, -1, face));
 

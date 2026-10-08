@@ -14,8 +14,8 @@ public static class ClientTheme
     private static readonly Color Hero = C(VisualSystem.Palette.Legal);
     private static readonly Color Encounter = C(VisualSystem.Palette.Danger);
     private static readonly Color Outline = C(VisualSystem.Palette.Outline);
-    /// <summary>Creates one theme shared by authored and procedural controls.</summary>
-    public static Theme Create(InterfaceScale scale = InterfaceScale.Standard)
+    /// <summary>Builds a fresh theme for scoped installation on a native owner.</summary>
+    internal static Theme Create(InterfaceScale scale = InterfaceScale.Standard)
     {
         TypeMetrics type = VisualSystem.Type(scale);
         ControlMetrics controls = VisualSystem.Controls(scale);

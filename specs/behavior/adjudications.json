@@ -30963,7 +30963,7 @@
     },
     {
       "id": "card:01050",
-      "fingerprint": "sha256:e12306995d798920bfd0e8249ac7014c2ce15cb0d6d1cd53028d0e761857b1f9",
+      "fingerprint": "sha256:86298cca39ee9706dbd7edbc64d37c188be45c5509d8945e9975804c178f0330",
       "obligations": [
         {
           "key": "printed-name",
@@ -37805,7 +37805,7 @@
     },
     {
       "id": "card:01099",
-      "fingerprint": "sha256:d38aa7385ed5d415d8a6f41d32c3ac7e5bac47cad4b7c5d94b58b2decf7b9f45",
+      "fingerprint": "sha256:cb58a2f689c0668be6ac5cc5d4e00207004037716d3008a2a8c6aac3a055631f",
       "obligations": [
         {
           "key": "printed-name",
@@ -39331,7 +39331,7 @@
     },
     {
       "id": "card:01113",
-      "fingerprint": "sha256:a6ad8bfc46ca74cc2391c3264bcb7811d805247fd0208589a8581450cd0eb98d",
+      "fingerprint": "sha256:4504d871c05fd24539968428a8d06bd6fad116c98d18fb1e0f9dd1c2bbdc2b2a",
       "obligations": [
         {
           "key": "printed-name",
@@ -39463,7 +39463,7 @@
     },
     {
       "id": "card:01114",
-      "fingerprint": "sha256:c5a14ccd26b5271ed68cde6f3afc8a7f00e851a9ae04648ad183cbd431d77c89",
+      "fingerprint": "sha256:625b8e02d30509b631c3f892f4126cf8cc8a1cdca23f54c1d84778e24cfae270",
       "obligations": [
         {
           "key": "printed-name",
@@ -39623,7 +39623,7 @@
     },
     {
       "id": "card:01115",
-      "fingerprint": "sha256:6899832675c65990c6a5d5de09aa7cefbbfda36239947d82e12f4b440cfa19fa",
+      "fingerprint": "sha256:51e8beba4b79ea316a4eef49488e7bc2c398f4524dedc819039a6506a36ee2b6",
       "obligations": [
         {
           "key": "printed-name",
@@ -40255,7 +40255,7 @@
     },
     {
       "id": "card:01118",
-      "fingerprint": "sha256:297978d5b896c8b1893a7d851b4b422ca9e158f029250a569328f6b07095148f",
+      "fingerprint": "sha256:38be0cb2610f91d434fb8d2179de7dbc70118e65c9654409ecaf47fdd663a9a5",
       "obligations": [
         {
           "key": "printed-name",
@@ -40693,7 +40693,7 @@
     },
     {
       "id": "card:01121",
-      "fingerprint": "sha256:df7c588b8067c85042476b8d119adba8caed621f78ec9e4dc3ab801a052b11b5",
+      "fingerprint": "sha256:4f664c1e924b6762ebc8c8bceb99f53988f59c45d3737d151ca95dcf51bbab57",
       "obligations": [
         {
           "key": "printed-name",
@@ -40943,7 +40943,7 @@
     },
     {
       "id": "card:01123",
-      "fingerprint": "sha256:030e358c009f4112aa97ab89caf59aa3f77a26d1f7af48e5acf6783c0415e4c0",
+      "fingerprint": "sha256:5a4191f63df2d5c12f8bfecd22a5859188d5ac9eff3f020f644050103b2ab11d",
       "obligations": [
         {
           "key": "printed-name",
@@ -41525,7 +41525,7 @@
     },
     {
       "id": "card:01129",
-      "fingerprint": "sha256:1dbe0486a7b44d28ba662789c44f09281ad2ecf90a454b4e61437491ae9a3c5b",
+      "fingerprint": "sha256:5276f0eafa463a88a67a6ec1e66e77066d99ed4e5dc4cee4448bf9f65dcfddb9",
       "obligations": [
         {
           "key": "printed-name",
@@ -41657,7 +41657,7 @@
     },
     {
       "id": "card:01130",
-      "fingerprint": "sha256:2de263dfddd9261628ead45a403e7c9959bda60da53f51067045e6390c6953d1",
+      "fingerprint": "sha256:8f3b5e77fdb80d4222968c39864817c79fdf8d346196eeb7b537a7a88f0d3169",
       "obligations": [
         {
           "key": "printed-name",
@@ -41789,7 +41789,7 @@
     },
     {
       "id": "card:01131",
-      "fingerprint": "sha256:3d3b3101352719bdf1c835ff504913dc9518f2a984fc3f7ecab29020078fc3ad",
+      "fingerprint": "sha256:c32ce3c9127cfe89f09fd1449dce67609f037016d6ce84b299cae925ee5547f9",
       "obligations": [
         {
           "key": "printed-name",
@@ -41921,7 +41921,7 @@
     },
     {
       "id": "card:01132",
-      "fingerprint": "sha256:8dfe98bd79c9d90fc8b750e6bf0f35dd61d248faa7abde8fe4ad81982a92d283",
+      "fingerprint": "sha256:7b057856efd350ea4c88600c81bb4d28b74892e9a551ee2dde7e5ab53727fe12",
       "obligations": [
         {
           "key": "printed-name",
@@ -42157,7 +42157,7 @@
     },
     {
       "id": "card:01134",
-      "fingerprint": "sha256:6bc8fdca4484f2b40064968100787cff4b25de787db183144aac01acfaf5fc35",
+      "fingerprint": "sha256:1572f77b4d774f4cfa9cecb33857fe4f2bef35f194a8fdda5d0f0c89f6033eb8",
       "obligations": [
         {
           "key": "printed-name",
@@ -42303,7 +42303,7 @@
     },
     {
       "id": "card:01135",
-      "fingerprint": "sha256:c7d7de7c816397c3e46f24922404e855f036d4218a53678b781e94501fbe9acb",
+      "fingerprint": "sha256:654af698f0c75c38563ff8b43da6e6bfa0eb9fefa8382220e7ff9e1e2f3bc03c",
       "obligations": [
         {
           "key": "printed-name",
@@ -43419,7 +43419,7 @@
     },
     {
       "id": "card:01141",
-      "fingerprint": "sha256:c37abef12063c8e45feffb038aba37172c1722767383c34569ebc5f54cb129aa",
+      "fingerprint": "sha256:5d3c78c6a152e129e61e08336845390d0327390f4ccfec7419ce90e6eb93b0db",
       "obligations": [
         {
           "key": "printed-name",
@@ -43773,7 +43773,7 @@
     },
     {
       "id": "card:01144a",
-      "fingerprint": "sha256:94ef26dac155b7ab107c367f995af68a99ee2fe292ea4db0fb311743bacb13f5",
+      "fingerprint": "sha256:7ee23ce695600b9805b87e34a21a42c98567e1e905ccabfc76afde7d318fd38d",
       "obligations": [
         {
           "key": "printed-name",
@@ -43863,7 +43863,7 @@
     },
     {
       "id": "card:01144b",
-      "fingerprint": "sha256:3c1f7aab137ede49258f4e53e8fcedbd72f1023eab34eb8d377c8279464fcbd7",
+      "fingerprint": "sha256:fda3d1841807d0042a28fb1f1060ecece59ea1c4ebb249aa3b09f184e8bae4ff",
       "obligations": [
         {
           "key": "printed-name",
@@ -43953,7 +43953,7 @@
     },
     {
       "id": "card:01144c",
-      "fingerprint": "sha256:35f5dc2a003ebb44dcbab0963d930879d0ee0e397a4bf7ea512f8efdb7a8eb32",
+      "fingerprint": "sha256:ce94851bf2f3bf930cca0fd193b5eac17e10c06242019e28f8ebd0f4636017c1",
       "obligations": [
         {
           "key": "printed-name",
@@ -44203,7 +44203,7 @@
     },
     {
       "id": "card:01146",
-      "fingerprint": "sha256:e3542812f8bd4a23c33d14844a94bf0629faf90eb50fcd87614384245a404475",
+      "fingerprint": "sha256:f0c9ab6f77644a099239506c9473609c1a07897b9e4cac1dcd401d6b50ddc6e4",
       "obligations": [
         {
           "key": "printed-name",
@@ -45145,7 +45145,7 @@
     },
     {
       "id": "card:01154",
-      "fingerprint": "sha256:dc07a2f1be4a3d009e9cf4242db5c93386f8e21933151c23c14ce8e0e1d5ed24",
+      "fingerprint": "sha256:2b4156bc9d95ea55cad16024961c67a8145f2ee957f49a5b7acaf4a6a47fd930",
       "obligations": [
         {
           "key": "printed-name",
@@ -45603,7 +45603,7 @@
     },
     {
       "id": "card:01158",
-      "fingerprint": "sha256:06d3066959843825f2ab617e2017a2f1e8d13af6155cb54b6d683afa25cbd513",
+      "fingerprint": "sha256:0e312caf5f18139495a9fa29d5838577f2bfef1f3bfd856041e27b1f350abd58",
       "obligations": [
         {
           "key": "printed-name",
@@ -46103,7 +46103,7 @@
     },
     {
       "id": "card:01162",
-      "fingerprint": "sha256:a8f9a50929d7036a2cc5c5e85bf2ca2033e9c484136b0d9e2e80456458bbd1eb",
+      "fingerprint": "sha256:8f1f8b594b49e1bbcbae6adb1cab420467b42027acf37fa82e796114310fd848",
       "obligations": [
         {
           "key": "printed-name",
@@ -46381,7 +46381,7 @@
     },
     {
       "id": "card:01164",
-      "fingerprint": "sha256:d46f83687b883f086ffced954907def029a1883eb31abfdb74bac909f1a69313",
+      "fingerprint": "sha256:0775950bbf3a335ec58b2ddbd07d2adbb7beebfa9811a6f4d50d0e027f851e6d",
       "obligations": [
         {
           "key": "printed-name",
@@ -46979,7 +46979,7 @@
     },
     {
       "id": "card:01168",
-      "fingerprint": "sha256:73aa7730773131d3c76dd53ce8c0740f879fe373d36e98378724f10d6b16889f",
+      "fingerprint": "sha256:d82ea3df6d8f360ba2a6b4b17cc4a820df1490988a113d7b54b266999b14f459",
       "obligations": [
         {
           "key": "printed-name",
@@ -47653,7 +47653,7 @@
     },
     {
       "id": "card:01173",
-      "fingerprint": "sha256:a3e4314f3a1a577e6319112f64c5f33ebe63c7431fa8fdadf052d247f2170dc9",
+      "fingerprint": "sha256:df6f722c35852d1b2b60fc16863d75d239ea61527e6db72515e62eab2063fd1b",
       "obligations": [
         {
           "key": "printed-name",
@@ -48209,7 +48209,7 @@
     },
     {
       "id": "card:01177",
-      "fingerprint": "sha256:5d4eed1d0b2820099808a2f65a44a1eb08ca136f53d724ba4d0b38b3aad3f794",
+      "fingerprint": "sha256:868b50954deb7038eaafcdcb214e4f493e81dc94a437fb2677d7f95cdde1fdeb",
       "obligations": [
         {
           "key": "printed-name",
@@ -48355,7 +48355,7 @@
     },
     {
       "id": "card:01178",
-      "fingerprint": "sha256:f1e0154ee476cb0881733ccfae656915144ed1a5069d674c2bf55dcaa732869f",
+      "fingerprint": "sha256:5ed6383254859ff8bd08a9259ac8181afad8a308d03451a11198fda1fa04509c",
       "obligations": [
         {
           "key": "printed-name",
@@ -48735,7 +48735,7 @@
     },
     {
       "id": "card:01181",
-      "fingerprint": "sha256:592dcbfa10785eafeaa1c7ac199db6be297fb158f987d1197619c90c31fd8eea",
+      "fingerprint": "sha256:1ba4472ee0cf196ceaa36b602a38de364c5e9718b37e3f669892e3ca40326b52",
       "obligations": [
         {
           "key": "printed-name",

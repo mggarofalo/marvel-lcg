@@ -1,0 +1,89 @@
+{
+  "01040a": {
+    "stats": {
+      "ATK": 3
+    },
+    "printed": {
+      "ATK": 2
+    },
+    "sources": [
+      {
+        "card_id": "01057",
+        "effect": "+1 ATK"
+      }
+    ]
+  },
+  "01029a": {
+    "stats": {
+      "HS": 3
+    },
+    "printed": {
+      "HS": 1
+    },
+    "sources": [
+      {
+        "card_id": "01036",
+        "effect": "Tech upgrade"
+      },
+      {
+        "card_id": "01035",
+        "effect": "Tech upgrade"
+      }
+    ],
+    "rule": "Printed 1 + 1 per controlled Tech = 3; maximum 7."
+  },
+  "01084": {
+    "stats": {
+      "THW": 3,
+      "ATK": 3
+    },
+    "printed": {
+      "THW": 2,
+      "ATK": 2
+    },
+    "sources": [
+      {
+        "card_id": "01074",
+        "effect": "+1 THW and +1 ATK"
+      }
+    ]
+  },
+  "01143": {
+    "stats": {
+      "ATK": 2
+    },
+    "printed": {
+      "ATK": 1,
+      "HP": 4
+    },
+    "sources": [
+      {
+        "card_id": "01136",
+        "effect": "+1 ATK and +1 HP per Drone"
+      },
+      {
+        "card_id": "01163",
+        "effect": "+3 HP"
+      }
+    ],
+    "hp": {
+      "current": 5,
+      "maximum": 8,
+      "damage": 3
+    }
+  },
+  "01094": {
+    "stats": {
+      "ATK": 5
+    },
+    "printed": {
+      "ATK": 2
+    },
+    "sources": [
+      {
+        "card_id": "01099",
+        "effect": "+3 ATK; next attack gains overkill, then discard"
+      }
+    ]
+  }
+}
