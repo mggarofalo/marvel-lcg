@@ -43,7 +43,7 @@ internal static class AbilityStructuralExecution
             AbilityEffect.ChooseCard choose => ChooseCard(context, choose),
             AbilityEffect.EachPlayer each => EachPlayer(context, each),
             AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ResolveSpecials } specials =>
-                ResolveSpecials(context, specials),
+                AbilitySpecialSequence.Start(context, specials),
             AbilityEffect.PayOrEffect payment => AskFor(context, payment),
             AbilityEffect.ChooseTopForHand top => ChooseTopForHand(context, top),
             AbilityEffect.ChooseDiscardToShuffle discard => AskFor(context, discard),
@@ -121,7 +121,7 @@ internal static class AbilityStructuralExecution
         AbilityStructuralContext context, AbilityEffect choice) => choice switch
         {
             AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ResolveSpecials } specials =>
-                DescribeSpecials(context, specials),
+                AbilitySpecialSequence.Describe(context, specials),
             AbilityEffect.ChooseTopForHand top => DescribeTopForHand(context, top),
             AbilityEffect.ChooseDiscardToShuffle discard => DescribeDiscardShuffle(context, discard),
             _ => throw new InvalidOperationException($"'{context.SourceFace}' has no special prompt for '{choice.OperationName()}'"),
@@ -131,7 +131,7 @@ internal static class AbilityStructuralExecution
         AbilityStructuralContext context, AbilityEffect choice, Decision answer) => choice switch
         {
             AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ResolveSpecials } specials =>
-                AnswerSpecials(context, specials, answer),
+                AbilitySpecialSequence.Answer(context, specials, answer),
             AbilityEffect.ChooseTopForHand top => AnswerTopForHand(context, top, answer),
             AbilityEffect.ChooseDiscardToShuffle discard => AnswerDiscardShuffle(context, discard, answer),
             _ => new Unsupported($"'{context.SourceFace}' has no special answer for '{choice.OperationName()}'"),

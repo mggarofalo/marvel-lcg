@@ -125,6 +125,7 @@ internal sealed class MainBoardController : IDisposable
         BoardRenderResult rendered = tabletop.Render(prompt, viewport)
             ?? RenderCompactBoard();
         main.boardRender = rendered;
+        TableSidebarContent.Render(main, rendered, prompt, tabletop.InspectedSeat);
         rendered.BindMotion(() => main.eventMotion.ButtonPressed);
         rendered.RegisterContextualWorld(world);
         rendered.PresentLastResult(main.lastResultSummary.Text);

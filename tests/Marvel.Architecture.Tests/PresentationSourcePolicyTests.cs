@@ -142,6 +142,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Prompts.PublicDecisionKind.Order",
             "Marvel.Rules.Prompts.PublicDecisionKind.PlayerAction",
             "Marvel.Rules.Prompts.PublicDecisionKind.Response",
+            "Marvel.Rules.Prompts.PublicDecisionKind.SpecialAbilityNext",
+            "Marvel.Rules.Prompts.PublicDecisionKind.VisibleCardSelection",
             // Equality compares passive public purpose, never legality.
             "Marvel.Rules.Prompts.PublicDecisionKind.operator ==(Marvel.Rules.Prompts.PublicDecisionKind, Marvel.Rules.Prompts.PublicDecisionKind)",
             "Marvel.Rules.Prompts.Question.Defender",

@@ -72,13 +72,13 @@ public sealed class BoardRenderResult
     internal void RegisterCompleteChoices(Button entry)
     {
         completeChoicesEntry = entry;
-        entry.Pressed += () =>
-        {
-            if (IsCurrentRender() && InteractionControl.IsUsable(entry))
-            {
-                openCompleteChoices?.Invoke(entry);
-            }
-        };
+        entry.Pressed += () => OpenCompleteChoices(entry);
+    }
+
+    internal void OpenCompleteChoices(Control source)
+    {
+        if (IsCurrentRender() && InteractionControl.IsUsable(source))
+            openCompleteChoices?.Invoke(source);
     }
 
     internal void BindCompleteChoices(Action<Control> open) => openCompleteChoices = open;

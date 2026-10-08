@@ -156,14 +156,15 @@ public sealed class ActionAbilityTypedChoiceOperandsSimultaneousChoiceAdvertises
         runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, source, 0, choice.Index, choice.Tier)!;
-        var order = Assert.Single(prompt.Affordances);
-        Assert.Equal([first.ObjectId, second.ObjectId], order.Targets!.Legal);
-        Assert.Equal(2, order.Targets.Min);
-        Assert.Equal(2, order.Targets.Max);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, source, 0, choice.Index, Decision.Take(order.Id, [world.Seats[0].IdentityCard.ObjectId], []), choice.Tier));
+        Assert.Equal([first.ObjectId, second.ObjectId], prompt.Affordances.Select(offer => offer.Id));
+        Assert.All(prompt.Affordances, offer => Assert.Null(offer.Targets));
+        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, source, 0, choice.Index,
+            Decision.Take(world.Seats[0].IdentityCard.ObjectId), choice.Tier));
         Assert.DoesNotContain(world.Agenda.Outstanding, step => step.What == Steps.ResolveSpecial);
-        runner.Chose(world, source, 0, choice.Index, Decision.Take(order.Id, [second.ObjectId, first.ObjectId], []), choice.Tier);
-        Assert.Equal([second.ObjectId, first.ObjectId], world.Agenda.Outstanding.Where(step => step.What == Steps.ResolveSpecial).Select(step => step.Subject));
+        runner.Chose(world, source, 0, choice.Index, Decision.Take(second.ObjectId), choice.Tier);
+        var selected = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.ResolveSpecial);
+        Assert.Equal(second.ObjectId, selected.Subject);
+        Assert.False(selected.FinalStep);
         Assert.False(source.Ready);
     }
 

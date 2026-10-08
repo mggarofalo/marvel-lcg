@@ -187,17 +187,7 @@ public sealed partial class CardControl : PanelContainer
         RefreshTreatment();
     }
 
-    /// <summary>Keeps the local highlight while an adjacent control carries the same text.</summary>
-    internal void HideRedundantActionCueLabel()
-    {
-        if (interactionCue == CardInteractionCue.OfferedAction
-            && InteractionControl.IsUsable(interactionLabel))
-        {
-            interactionLabel!.Text = string.Empty;
-        }
-    }
-
-    /// <summary>Reserves the cue strip for its explicit hand control.</summary>
+    /// <summary>Keeps the card highlight while its explicit control carries the interaction symbol.</summary>
     internal void HideInteractionCue()
     {
         if (interactionLabel is not null) interactionLabel.Visible = false;
@@ -223,7 +213,7 @@ public sealed partial class CardControl : PanelContainer
         cue.Text = CueText(interactionCue);
         cue.Visible = false;
 
-        CardSymbolButtonStyle.Apply(control);
+        CardSymbolButtonStyle.Apply(control, onPaper: HasMeta("source_strip"));
         if (GetParent() is Container parent)
         {
             parent.QueueSort();

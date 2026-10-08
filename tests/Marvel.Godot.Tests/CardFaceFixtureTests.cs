@@ -53,6 +53,13 @@ public sealed class CardFaceFixtureTests
             { ["ATK"] = new(6, 6, "Defined", false, []) },
             RulesMarkup = "<b>Native geometry specimen.</b> Resolving a printed X does not imply an external modifier.",
         }];
+        // Cost notation is a renderer specimen, not an offered expansion card or payable action.
+        foreach (string? cost in new string?[] { null, "0", "X" })
+            faces = [.. faces, new BoardCardPresentation(null, 1, false, "Cost notation", "", "EVENT", "", [])
+            {
+                FaceId = "synthetic-cost-" + (cost ?? "absent"), Classification = "BASIC", Cost = cost,
+                RulesMarkup = "<b>Native geometry specimen.</b> Absent, zero and variable costs retain their distinct printed meaning.",
+            }];
         string? output = Environment.GetEnvironmentVariable("MARVEL_B1_FACE_FIXTURE");
         if (output is null) return;
         string root = Path.GetFullPath(Path.Combine(RepositoryPaths.Dataset("cards", "cards.json"), "../../.."));

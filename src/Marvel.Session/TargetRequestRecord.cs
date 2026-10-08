@@ -19,6 +19,10 @@ public sealed record TargetRequestRecord(
     [property: JsonRequired] IReadOnlyDictionary<int, int>? MaximumOccurrences,
     [property: JsonRequired] IReadOnlyDictionary<int, string>? Details)
 {
+    /// <summary>Recorded engine-authored exclusions between otherwise legal candidates.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<IReadOnlyList<int>>? ExclusiveSets { get; init; }
+
     [JsonIgnore]
     internal bool LegacyAllowRepeatedRecorded { get; init; } = true;
 
@@ -42,6 +46,6 @@ public sealed record TargetRequestRecord(
             request.IsSearch,
             request.AllowRepeated,
             request.MaximumOccurrences,
-            request.Details);
+            request.Details) { ExclusiveSets = request.ExclusiveSets };
     }
 }

@@ -11,14 +11,6 @@ internal static class CardChoiceLayout
         return new Rect2((viewport - size) / 2, size);
     }
 
-    internal static Rect2 OrderFrame(Vector2 viewport)
-    {
-        Rect2 frame = Frame(viewport);
-        frame.Size = new Vector2(frame.Size.X, Math.Min(1050, viewport.Y - 48));
-        frame.Position = (viewport - frame.Size) / 2;
-        return frame;
-    }
-
     internal static InterfaceScale CardScale(Vector2 viewport) =>
         Frame(viewport).Size.Y >= 900 ? InterfaceScale.Standard : InterfaceScale.Percent80;
 

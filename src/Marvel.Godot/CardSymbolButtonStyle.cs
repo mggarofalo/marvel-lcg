@@ -7,7 +7,7 @@ internal static class CardSymbolButtonStyle
 {
     internal const float HitSize = 44;
 
-    internal static void Apply(Button button)
+    internal static void Apply(Button button, bool onPaper = false)
     {
         button.CustomMinimumSize = new Vector2(HitSize, HitSize);
         button.Size = button.CustomMinimumSize;
@@ -15,6 +15,13 @@ internal static class CardSymbolButtonStyle
         button.AutowrapMode = TextServer.AutowrapMode.Off;
         button.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         button.AddThemeFontSizeOverride("font_size", 22);
+        if (onPaper)
+        {
+            button.AddThemeColorOverride("font_color", CardFaceStyle.Ink);
+            button.AddThemeColorOverride("font_disabled_color", CardFaceStyle.Ink with { A = 0.5f });
+            foreach (string state in new[] { "hover", "pressed", "hover_pressed", "focus" })
+                button.AddThemeColorOverride($"font_{state}_color", CardFaceStyle.Paper);
+        }
         using var empty = new StyleBoxEmpty();
         button.AddThemeStyleboxOverride("normal", empty);
         button.AddThemeStyleboxOverride("disabled", empty);

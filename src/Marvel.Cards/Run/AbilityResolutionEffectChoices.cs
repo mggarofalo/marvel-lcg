@@ -66,7 +66,7 @@ internal static class AbilityResolutionEffectChoices
         var continuationChosen = cast.CaptureCurrentSelection();
         cast.Choose(command.Target);
         var capture = execution.Capture(cast, command.AbilityIndex, continuationChosen);
-        var continuation = AbilityContinuationCodec.Power(
+        var continuation = AbilityContinuationScheduling.Power(
             capture, command.PowerOrdinal, cast.HasContinuation);
         bool scheduled = command.Verb == BasicPowers.AttackVerb
             ? BasicPowers.CardAttack(
@@ -174,7 +174,7 @@ internal static class AbilityResolutionEffectChoices
         if (activationIds.Count > 0)
         {
             int abilityOrdinal = execution.AbilityOrdinal(command.Effect, cast);
-            var capture = AbilityContinuationCodec.ForActivations(
+            var capture = AbilityContinuationScheduling.ForActivations(
                 execution.Capture(cast, abilityOrdinal), command.Dynamic);
             cast.World.Agenda.AfterActivations(activationIds, AbilityContinuationCodec.Step(
                 capture, Steps.ResumeAbility, round, plan: true, activationIds: activationIds));
@@ -193,7 +193,7 @@ internal static class AbilityResolutionEffectChoices
         Occurrence? agendaOccurrence = null)
     {
         int abilityOrdinal = execution.AbilityOrdinal(node, cast);
-        var capture = AbilityContinuationCodec.ForEffectProcedure(
+        var capture = AbilityContinuationScheduling.ForEffectProcedure(
             execution.Capture(cast, abilityOrdinal));
         var continuation = AbilityContinuationCodec.Step(
             capture, Steps.ResumeAbility, cast.World.Agenda.Current?.Round ?? 0, plan: true);
@@ -217,7 +217,7 @@ internal static class AbilityResolutionEffectChoices
     internal static void SuspendAfterCost(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, int abilityOrdinal, PhaseStep? owner, Occurrence? occurrence)
     {
-        var capture = AbilityContinuationCodec.ForCostProcedure(
+        var capture = AbilityContinuationScheduling.ForCostProcedure(
             execution.Capture(cast, abilityOrdinal));
         var continuation = AbilityContinuationCodec.Step(
             capture, Steps.ResumeAbility, cast.World.Agenda.Current?.Round ?? 0, plan: true);

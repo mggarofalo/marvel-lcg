@@ -121,7 +121,7 @@ public sealed record PromptPresentation(
         string player = world.Players.FirstOrDefault(candidate => candidate.Seat == prompt.Player)
             ?.Name ?? $"Player {prompt.Player + 1}";
         string subject = prompt.PublicKind == PublicDecisionKind.MinionActivationOrder
-            ? " · Choosing minion activation order"
+            ? " · Choosing the next minion activation"
             : contextCards.Count > 0
             ? $" · Resolving {contextCards[0].Title}"
             : string.Empty;

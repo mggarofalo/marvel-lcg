@@ -5,6 +5,7 @@ static func perform(driver: SceneTree) -> bool:
 	if cards.size() < 2:
 		driver._fail("search comparison needs two authorized candidates")
 		return false
+	if not _selection_contrast(driver, cards): return false
 	for index in range(2):
 		if not await _inspect(driver, cards[index], index == 0): return false
 	return true
@@ -107,5 +108,38 @@ static func replace_surface(driver: SceneTree, size: Vector2i) -> bool:
 	if not await driver._wait_for(func() -> bool:
 		return popup_lifetime.get_ref() == null and card_lifetime.get_ref() == null):
 		driver._fail("replaced choice surface left its stale inspection open")
+		return false
+	return true
+
+
+static func _selection_contrast(driver: SceneTree, cards: Array[Node]) -> bool:
+	var unselected := 0
+	for card in cards:
+		var selector := card.find_child("Affordance*", true, false) as Button
+		if selector == null: selector = card.find_child("Target*", true, false) as Button
+		if selector == null or not selector.is_visible_in_tree():
+			driver._fail("candidate has no visible selection glyph")
+			return false
+		if selector.text != "◎": continue
+		unselected += 1
+		if not _normal_selector_contrast(driver, card, selector): return false
+	if unselected == 0:
+		driver._fail("candidate contrast probe has no unselected selection glyph")
+		return false
+	return true
+
+
+static func _normal_selector_contrast(driver: SceneTree, card: Control, selector: Button) -> bool:
+	var header := card.find_child("InkPlane", true, false) as Polygon2D
+	if header == null:
+		driver._fail("selection glyph has no rendered header surface")
+		return false
+	var surface := header.color
+	var ink := selector.get_theme_color("font_color")
+	ink = surface.lerp(ink, ink.a * selector.self_modulate.a)
+	var light := maxf(surface.srgb_to_linear().get_luminance(), ink.srgb_to_linear().get_luminance())
+	var dark := minf(surface.srgb_to_linear().get_luminance(), ink.srgb_to_linear().get_luminance())
+	if (light + 0.05) / (dark + 0.05) < 4.5:
+		driver._fail("unselected selection glyph has insufficient normal-state contrast against its card header")
 		return false
 	return true

@@ -40,15 +40,21 @@ func _check_text(card: Control, identity: String, failures: Array[String]) -> vo
 		failures.append(identity + " rules overflow")
 	if title == null or title.get_line_count() > 2:
 		failures.append(identity + " title overflow")
+	_check_cost(card, identity, failures)
+	for number in card.find_children("SummaryValues*", "Label", true, false):
+		if number.text.is_empty() or number.size.y < number.get_theme_font_size("font_size"):
+			failures.append(identity + " number clipped " + number.name)
+
+
+func _check_cost(card: Control, identity: String, failures: Array[String]) -> void:
 	var cost := str(card.get_meta("expected_cost"))
 	if not cost.is_empty():
 		var value := card.find_child("PrimaryValueValue", true, false) as Label
 		if value == null or value.text != cost:
 			failures.append(identity + " missing printed cost including zero")
-	for number in card.find_children("SummaryValues*", "Label", true, false):
-		if number.text.is_empty() or number.size.y < number.get_theme_font_size("font_size"):
-			failures.append(identity + " number clipped " + number.name)
-
+	if str(card.get_meta("fixture_id")) == "synthetic-cost-absent" \
+			and card.find_child("PrimaryValueValue", true, false) != null:
+		failures.append(identity + " absent cost acquired a number")
 
 func _check_marks(card: Control, identity: String, failures: Array[String]) -> void:
 	var effective: Dictionary = JSON.parse_string(str(card.get_meta("expected_effective")))

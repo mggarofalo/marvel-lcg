@@ -20,10 +20,7 @@ if ($LASTEXITCODE -ne 0 -or -not $version.StartsWith("4.7.")) {
 dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& "$PSScriptRoot/godot-smoke-card-faces.ps1" -GodotBin $GodotBin
-& "$PSScriptRoot/godot-smoke-live-state.ps1" -GodotBin $GodotBin
-& "$PSScriptRoot/godot-smoke-sources.ps1" -GodotBin $GodotBin
-& "$PSScriptRoot/godot-smoke-inspection.ps1" -GodotBin $GodotBin
+& "$PSScriptRoot/godot-smoke-b1.ps1" -GodotBin $GodotBin
 
 function Invoke-LocalSmoke {
     param([string]$Script = "res://smoke/local_game_smoke.gd")
@@ -79,6 +76,7 @@ foreach ($scale in @("50", "80", "100", "150")) {
     $env:MARVEL_SMOKE_MOTION = "enabled"
     Invoke-LocalSmoke "res://smoke/search_choice_smoke.gd"
     Invoke-LocalSmoke "res://smoke/shuri_search_smoke.gd"
+    Invoke-LocalSmoke "res://smoke/ancestral_knowledge_smoke.gd"
 }
 $env:MARVEL_UI_SCALE = "150"
 $env:MARVEL_SMOKE_MOTION = "disabled"

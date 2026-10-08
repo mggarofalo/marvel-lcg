@@ -9,7 +9,8 @@ namespace Marvel.Godot;
 internal sealed class SearchChoiceGallery(DecisionPanel panel)
 {
     internal static bool IsChoice(Prompt? prompt) =>
-        prompt?.PublicKind is PublicDecisionKind.CardSearch or PublicDecisionKind.CardLook;
+        prompt?.PublicKind is PublicDecisionKind.CardSearch or PublicDecisionKind.CardLook
+            or PublicDecisionKind.MinionActivationOrder or PublicDecisionKind.SpecialAbilityNext;
 
     private DecisionComposer? draft;
     private int page;

@@ -18,12 +18,10 @@ internal static class TableDraftSummary
         }
 
         DecisionProgressPresentation progress = composer.Progress();
-        if (composer.Prompt.PublicKind == PublicDecisionKind.MinionActivationOrder && selected.Targets is { } order)
-            return $"{progress.Targets.Selected}/{progress.Targets.Maximum} · "
-                + OrderedCardLabels.Sequence(order.Legal, composer.Targets);
         AffordancePresentation? visible = prompt?.Affordances.FirstOrDefault(
             affordance => affordance.Id == selected.Id);
         var state = new List<string>();
+        AddSelectedDefender(state, composer, visible, compact);
         if (selected.Verb is not (Game.ResolveMulligans or Game.EndPhaseVerb))
         {
             state.Add(visible is null ? selected.Label : compact
@@ -34,6 +32,18 @@ internal static class TableDraftSummary
         TablePaymentSummary.Add(state, progress.Payment, compact);
         AddOutstandingChoice(state, progress, compact);
         return string.Join("  ·  ", state.Where(value => !string.IsNullOrWhiteSpace(value)));
+    }
+
+    private static void AddSelectedDefender(
+        List<string> state, DecisionComposer composer, AffordancePresentation? visible, bool compact)
+    {
+        if (compact && composer.Prompt.PublicKind == PublicDecisionKind.Defense
+            && visible?.SourceState is { Length: > 0 } sourceState)
+        {
+            // A selected defender can be outside the collection's inspected card.
+            state.Add(string.Join(" · ", new[] { visible.SourceName, sourceState }
+                .Where(value => !string.IsNullOrWhiteSpace(value))));
+        }
     }
 
     private static void AddOutstandingChoice(

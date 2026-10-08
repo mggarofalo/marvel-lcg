@@ -28,7 +28,7 @@ internal sealed record AstraTableGeometry(
     internal Rect2 PlayerDeck => Scale(new Rect2(164, 496, 108, 142));
     internal Rect2 Context => Scale(new Rect2(20, 800, 1280, 156));
     internal bool HasSeparateRevealSlot => HasRevealingCard
-        && Assets.End.X + 2 * (FootprintWidth + 16) <= Width - 20;
+        && Assets.End.X + 2 * (FootprintWidth + 16) + 16 + SpatialRegionDrawerLayout.MinimumWidth <= Width - 20;
     internal Rect2 Identity => new((HasSeparateRevealSlot ? Revealing.End.X : Assets.End.X) + 16,
         ScaleY(310), FootprintWidth, ScaleY(189));
     internal Rect2 Allies => new(Identity.End.X + 16, ScaleY(310),

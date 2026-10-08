@@ -16,6 +16,7 @@ func _direct_table_journey_is_operable() -> bool:
 	# direct controls through the generic visible-decision journey below.
 	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
 		return true
+	if not await preload("res://smoke/local_game_smoke_action_pages.gd").traverse(self): return false
 	if not await ReceiptNavigation.read_previous_receipt(self):
 		return false
 	if not await _direct_web_shooter_is_played():

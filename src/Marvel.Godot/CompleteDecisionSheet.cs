@@ -73,6 +73,9 @@ internal sealed class CompleteDecisionSheet : IDisposable
         };
         overlay.AddChild(frame);
         frame.MinimumSizeChanged += () => Callable.From(Fit).CallDeferred();
+        // Container layout can clamp a resize against a transient child minimum.
+        // Refit after its actual size settles as well as when the minimum changes.
+        frame.Resized += () => Callable.From(Fit).CallDeferred();
         var content = new VBoxContainer
         {
             Name = "CompleteChoicesContent", ThemeTypeVariation = GodotThemeVariations.TightStack,
@@ -98,8 +101,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
         {
             Marvel.View.PromptPresentation prompt = Marvel.View.PromptPresentation.From(composer.Prompt, world);
             content.AddChild(DecisionPanel.Text(
-                composer.Prompt.PublicKind == Marvel.Rules.Prompts.PublicDecisionKind.MinionActivationOrder
-                    ? prompt.Resolution : $"{prompt.Heading}\n{prompt.Context}",
+                $"{prompt.Heading}\n{prompt.Context}\n{prompt.Resolution}",
                 GodotThemeVariations.Caption, wrap: true));
         }
         panel.Reparent(content);
@@ -148,8 +150,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
         Vector2 viewport = overlay.GetViewportRect().Size;
         if (DecisionCardChoices.IsChoice(panel.composer?.Prompt))
         {
-            Rect2 bounds = panel.composer?.Prompt.PublicKind == Marvel.Rules.Prompts.PublicDecisionKind.MinionActivationOrder
-                ? CardChoiceLayout.OrderFrame(viewport) : CardChoiceLayout.Frame(viewport);
+            Rect2 bounds = CardChoiceLayout.Frame(viewport);
             frame.Size = bounds.Size;
             frame.Position = bounds.Position;
             panel.CardChoices.RefreshLayout();

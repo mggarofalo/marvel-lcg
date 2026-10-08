@@ -87,6 +87,31 @@ public sealed class AstraTableGeometryTests
         Assert.True(table.Allies.Position.X > table.Identity.End.X);
     }
 
+    [Theory]
+    [InlineData(1670, 962, 150)]
+    [InlineData(1670, 900, 150)]
+    [InlineData(1670, 820, 80)]
+    [InlineData(1720, 962, 100)]
+    [InlineData(1920, 962, 150)]
+    public void BoostBesideAnExhaustedIdentityPreservesTheEntireAlliesCollectionHitArea(
+        float width, float height, int percent)
+    {
+        InterfaceScale scale = SpatialCardMetrics.TableScale((InterfaceScale)percent, height);
+        CardLayoutMetrics face = VisualSystem.Card(CardDisplaySize.Board, scale);
+        var table = new AstraTableGeometry(width, height, percent >= 130, HasRevealingCard: true,
+            PhysicalCardSize: new Vector2(face.Width, face.MinimumHeight));
+        Rect2 drawer = SpatialRegionDrawerLayout.Bounds(table.Allies);
+
+        // A dense ally row still requires its collection control when no face fits.
+        Assert.True(table.Allies.Size.X >= SpatialRegionDrawerLayout.MinimumWidth);
+        Assert.True(drawer.End.X <= table.Width - 20);
+        Assert.True(drawer.Size.Y >= 44);
+        Assert.True(drawer.Position.X >= table.Identity.End.X + 16);
+        Assert.False(drawer.Intersects(table.Revealing));
+        Assert.False(drawer.Intersects(table.Hand));
+        Assert.False(drawer.Intersects(table.Context));
+    }
+
     [Fact]
     public void SixCardHandOverlapsFansAndRaisesInStableZOrder()
     {

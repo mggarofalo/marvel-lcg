@@ -32,6 +32,7 @@ if [[ "$version" != 4.7.* ]]; then
 fi
 
 dotnet build "$repo_root/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
+pwsh -NoProfile -File "$repo_root/tools/godot-smoke-b1.ps1" -GodotBin "$godot_bin"
 smoke_log=$(mktemp)
 cleanup() { rm -f "$smoke_log"; }
 trap cleanup EXIT
@@ -58,6 +59,10 @@ fi
 
 unset MARVEL_SMOKE_TWO_PLAYER
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+  run_local_smoke res://smoke/ultron_inspection_smoke.gd
+MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
+  run_local_smoke res://smoke/ultron_inspection_smoke.gd
+MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/minion_order_smoke.gd
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/minion_order_smoke.gd
@@ -77,10 +82,14 @@ MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled 
   run_local_smoke res://smoke/repeated_commit_smoke.gd
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/repeated_commit_smoke.gd
-MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
-  run_local_smoke res://smoke/search_choice_smoke.gd
-MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
-  run_local_smoke res://smoke/search_choice_smoke.gd
+for scale in 50 80 100 150; do
+  MARVEL_UI_SCALE="$scale" MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+    run_local_smoke res://smoke/search_choice_smoke.gd
+  MARVEL_UI_SCALE="$scale" MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+    run_local_smoke res://smoke/shuri_search_smoke.gd
+  MARVEL_UI_SCALE="$scale" MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+    run_local_smoke res://smoke/ancestral_knowledge_smoke.gd
+done
 
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/result_playback_smoke.gd

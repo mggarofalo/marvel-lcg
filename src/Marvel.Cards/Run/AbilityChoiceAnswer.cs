@@ -62,17 +62,7 @@ internal sealed class AbilityChoiceAnswer(
         var answer = AbilityStructuralExecution.AnswerSpecialChoice(
             execution.StructuralContext(cast), choice, input);
         ThrowIfUnsupported(answer);
-        var command = answer as ResolveSpecialsCommand
-            ?? throw new InvalidOperationException(
-                "Structural owner did not return Special ordering");
-        int round = world.Agenda.Current?.Round ?? 0;
-        foreach (var (id, index) in command.Targets.Select((id, index) => (id, index)))
-        {
-            world.Agenda.Then(new PhaseStep(
-                Steps.ResolveSpecial, round, index + 1, Subject: id, Seat: player,
-                Plan: true, FinalStep: index == input.Targets.Count - 1));
-        }
-        if (command.Targets.Length > 0) cast.ResolveEffect();
+        execution.ApplyStructuralDecision(answer, cast);
         return Continue();
     }
 

@@ -274,6 +274,8 @@ internal static class ClientResponseValidation
     private static bool CompleteTargets(TargetRequest? targets) => targets is null
         || targets.Legal is not null
         && (targets.Groups is null || targets.Groups.All(group => group is not null))
+        && (targets.ExclusiveSets is null || targets.ExclusiveSets.All(set => set is not null
+            && set.All(targets.Legal.Contains)))
         && (targets.MustIncludeTraits is null
             || targets.MustIncludeTraits.All(trait => trait is not null));
 

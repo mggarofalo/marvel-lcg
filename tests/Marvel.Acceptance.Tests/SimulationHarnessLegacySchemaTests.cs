@@ -71,23 +71,21 @@ public sealed class SimulationHarnessLegacySchemaTests : SimulationHarnessTestBa
     [Theory]
     [InlineData(2)]
     [InlineData(3)]
-    public void HistoricalSchemasCannotReplayANewAreaAnchoredMinionOrder(int schema)
+    public void HistoricalSchemasRepresentCardAnchoredNextMinionChoices(int schema)
     {
         List<string> current = SuccessfulLines();
         JsonElement order = current.Select(line => JsonSerializer.Deserialize<JsonElement>(line))
             .First(record => record.GetProperty("type").GetString() == "step"
                 && record.GetProperty("prompt").GetProperty("asking").GetString() == "Order");
-        Assert.Contains(order.GetProperty("prompt").GetProperty("affordances").EnumerateArray(),
-            offer => offer.GetProperty("anchor_kind").GetInt32() == (int)AffordanceAnchorKind.Area);
+        Assert.All(order.GetProperty("prompt").GetProperty("affordances").EnumerateArray(),
+            offer => Assert.Equal((int)AffordanceAnchorKind.Card, offer.GetProperty("anchor_kind").GetInt32()));
         List<string> downgraded = schema == 2 ? SchemaTwoLines(current) : SchemaThreeLines(current);
         string path = Path.Combine(Path.GetTempPath(), $"marvel-sim-area-downgrade-{Guid.NewGuid():N}.jsonl");
         try
         {
             File.WriteAllLines(path, downgraded);
-            ReplayDivergenceException error = Assert.Throws<ReplayDivergenceException>(() =>
-                SimulationReplayHarness.Replay(new ReplayConfig(path, RepositoryRoot()), TextWriter.Null));
-            Assert.Contains($"step {order.GetProperty("step").GetInt32()} prompt diverged", error.Message);
-            Assert.Contains("anchor_kind", error.Message);
+            Assert.Equal(1, SimulationReplayHarness.Replay(
+                new ReplayConfig(path, RepositoryRoot()), TextWriter.Null).Games);
         }
         finally
         {

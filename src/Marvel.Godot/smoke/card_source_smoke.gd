@@ -85,10 +85,20 @@ func _check_readability(sample: Control, failures: Array[String]) -> void:
 	for meaning in sample.find_children("SourceMeaning*", "RichTextLabel", true, false):
 		if meaning.get_content_height() > meaning.size.y + 1: failures.append("source meaning clipped")
 	for action in sample.find_children("SourceAction", "Button", true, false):
-		var body := action.get_parent().get_parent()
-		var strip := body.get_node("SourceStrip") as Control
-		if action.size.y < 44 or action.global_position.y < strip.get_global_rect().end.y:
-			failures.append("source action obscures its meaning or loses hit area")
+		_check_action_readability(action, failures)
+
+func _check_action_readability(action: Button, failures: Array[String]) -> void:
+	var body := action.get_parent().get_parent()
+	var strip := body.get_node("SourceStrip") as Control
+	var paper := (body.get_parent().get_theme_stylebox("panel") as StyleBoxFlat).bg_color
+	var ink: Color = action.get_theme_color("font_color")
+	ink = paper.lerp(ink, ink.a * action.self_modulate.a)
+	var light := maxf(paper.srgb_to_linear().get_luminance(), ink.srgb_to_linear().get_luminance())
+	var dark := minf(paper.srgb_to_linear().get_luminance(), ink.srgb_to_linear().get_luminance())
+	if (light + 0.05) / (dark + 0.05) < 4.5:
+		failures.append("source action has insufficient contrast against its paper surface")
+	if action.size.y < 44 or action.global_position.y < strip.get_global_rect().end.y:
+		failures.append("source action obscures its meaning or loses hit area")
 
 func _bounds(control: Control) -> Rect2:
 	var pose := control.get_global_transform()

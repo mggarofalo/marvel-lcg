@@ -109,9 +109,8 @@ namespace Marvel.Rules.Play;
 /// through nested scheduling and deterministic decision replay.
 /// </para>
 /// <para><c>ActivationOrder</c> —
-/// The engaged player's chosen order for the remaining minion activations.
-/// A minion that engages later is deliberately absent and starts a new ordering
-/// question once this list has been exhausted.
+/// The engaged player's chosen next minion, as a single-element list.
+/// The procedure consumes it before re-reading the current engaged minions.
 /// </para>
 /// <para><c>ProcedureAbilities</c> —
 /// The stable addresses of simultaneous or optional abilities offered by a

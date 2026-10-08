@@ -59,7 +59,7 @@ Native checks found two measurement defects during implementation: glyph bounds
 underestimated Label line height at 50%, and narrow state stacks could consume
 the action region. Title measurement now uses the actual native Label; caption
 and footer bounds account for font height. Two-column state labels retain room
-for the production action control. The full 430-face gallery remains a separate
+for the production action control. The full 436-face gallery remains a separate
 regression gate. Five behavioral mutants are rejected: concealed-state exposure,
 lost repeated-status count, historical-source relinking, reversed maximum
 modification flags, and stale removed-copy selection. Pinned inspection rebuilds

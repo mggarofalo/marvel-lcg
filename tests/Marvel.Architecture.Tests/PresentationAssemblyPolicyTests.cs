@@ -97,6 +97,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
+            "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.ResourceCost",
             "Marvel.Rules.Prompts.ResourcePayment",
             "Marvel.Rules.Prompts.ResourceSource",

@@ -35,7 +35,6 @@ internal static class SearchChoiceCard
         choice.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight);
         choice.Position = new Vector2(face.Size.X - 48, 4);
         CardSymbolButtonStyle.Apply(choice);
-        choice.AddThemeColorOverride("font_color", CardFaceStyle.Ink);
     }
 
 }

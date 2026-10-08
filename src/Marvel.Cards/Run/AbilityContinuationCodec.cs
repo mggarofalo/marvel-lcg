@@ -190,67 +190,9 @@ internal static class AbilityContinuationCodec
             AbilityFace: capture.Address.Face, AbilityPlayer: capture.AbilityPlayer,
             AbilityActor: capture.AbilityActor, AbilityHasContinuation: capture.HasContinuation);
 
-    internal static AbilityContinuationCapture ForCostProcedure(
-        AbilityContinuationCapture capture) => capture with
-        {
-            Frames = [],
-            Results = capture.Results.SetItem("costProcedurePending", 1),
-        };
-
-    internal static AbilityContinuationCapture ForEffectProcedure(
-        AbilityContinuationCapture capture) => capture with
-        { Results = capture.Results.SetItem("procedureApplied", 1) };
-
-    internal static AbilityContinuationCapture ForActivations(
-        AbilityContinuationCapture capture, bool dynamic)
-    {
-        var results = capture.Results
-            .Remove("activationMade")
-            .Remove("activationDamage")
-            .Remove("activationThreat");
-        if (dynamic)
-            results = results.SetItem("repeatDynamicActivation", 1);
-        return capture with { Results = results };
-    }
-
-    internal static CardPowerContinuation Power(
-        AbilityContinuationCapture capture, int powerOrdinal, bool hasContinuation) => new(
-            capture.Address.Ordinal, powerOrdinal,
-            hasContinuation ? capture.Position + 1 : -1, capture.FinalStep,
-            [], capture.SurgeGained, [.. capture.Frames.Select(EncodeFrame)], capture.Address.Face,
-            capture.Results, capture.Occurrence, capture.Discarded,
-            capture.EachPlayerFrame, capture.FinalPlayer, capture.AbilityPlayer,
-            hasContinuation);
-
-    /// <summary>
-    /// Consumes one-shot wire markers before the executor can execute a node that
-    /// might suspend again. The returned state is the only state a later capture
-    /// may persist.
-    /// </summary>
     internal static AbilityContinuationTransition BeginResume(
-        AbilityProgram program, Card source, PhaseStep step)
-    {
-        var decoded = Decode(program, source, step, step.Tier);
-        var state = decoded.State;
-        if (state.Results.TryGetValue("costProcedurePending", out _))
-            return new RestartAfterPaidCost(decoded.Ability, state with
-            { Results = state.Results.Remove("costProcedurePending") });
-        if (state.Results.TryGetValue("repeatDynamicActivation", out _))
-        {
-            var results = state.Results.Remove("repeatDynamicActivation");
-            if (results.GetValueOrDefault("activationMade") > 0)
-                results = results.SetItem("dynamicActivationMade", 1);
-            return new RunResumedNode(
-                decoded.Ability, decoded.Node, state with { Results = results },
-                EffectApplied: results.GetValueOrDefault("activationMade") > 0);
-        }
-        bool effectApplied = state.Results.GetValueOrDefault("activationMade") > 0
-            || state.Results.ContainsKey("procedureApplied");
-        return new ContinueAfterResumedNode(
-            decoded.Ability,
-            state with { Results = state.Results.Remove("procedureApplied") },
-            effectApplied);
-    }
+        AbilityProgram program, Card source, PhaseStep step) =>
+        AbilityContinuationResumption.Begin(program, source, step);
 
     internal static AbilityContinuationTransition BeginLegacyChoiceResume(
         AbilityProgram program, Card source, PhaseStep? step, AbilityType? tier,

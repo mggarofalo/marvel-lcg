@@ -15,7 +15,7 @@ public sealed class CoreBlackPantherSpecialTests
 
     [Rule("rr:special")]
     [Fact]
-    public void WakandaForeverQueuesTheChosenPermutationAndMarksOnlyItsLastStepFinal()
+    public void WakandaForeverSchedulesOnlyTheChosenNextSpecial()
     {
         var world = Board();
         var eventCard = world.CreateCard("01043a", world.Seats[0].Hand);
@@ -34,16 +34,15 @@ public sealed class CoreBlackPantherSpecialTests
 
         runner.Chose(
             world, eventCard, 0, choice.Index,
-            Decision.Take(eventCard.ObjectId, [claws.ObjectId, daggers.ObjectId], []),
+            Decision.Take(claws.ObjectId),
             choice.Tier,
             choice.FinalStep);
 
         var specials = world.Agenda.Outstanding
             .Where(step => step.What == Steps.ResolveSpecial)
             .ToList();
-        Assert.Equal([claws.ObjectId, daggers.ObjectId], specials.Select(step => step.Subject));
+        Assert.Equal(claws.ObjectId, Assert.Single(specials).Subject);
         Assert.False(specials[0].FinalStep);
-        Assert.True(specials[1].FinalStep);
     }
 
     [Rule("rr:special")]
@@ -192,8 +191,8 @@ public sealed class CoreBlackPantherSpecialTests
     public void SkippingAnUnresolvableSuitPreservesTheChosenFinalStep(bool suitLast, int clawsDamage)
     {
         // rr:special: a Special resolves only when another ability instructs it.
-        // Wakanda Forever's printed text marks the final ability in the chosen
-        // sequence; an unresolvable member does not promote an earlier member.
+        // 01043a resolves each upgrade in sequence. An unresolvable remaining
+        // member does not make the currently resolving ability the final step.
         var world = Board();
         var suit = Upgrade(world, "01049");
         var claws = Upgrade(world, "01047");
@@ -206,8 +205,8 @@ public sealed class CoreBlackPantherSpecialTests
             [resource.ObjectId], []);
         var events = new List<Marvel.Rules.Events.GameEvent>();
         var ordering = Sequence.Work(world, Cards, runner, events)!;
-        int[] order = suitLast ? [claws.ObjectId, suit.ObjectId] : [suit.ObjectId, claws.ObjectId];
-        Sequence.Answer(world, Cards, runner, ordering, Decision.Take(played.ObjectId, order, []), events);
+        Sequence.Answer(world, Cards, runner, ordering,
+            Decision.Take(suitLast ? claws.ObjectId : suit.ObjectId), events);
         var prompt = Sequence.Work(world, Cards, runner, events)!;
         Sequence.Answer(world, Cards, runner, prompt, Decision.Take(enemy.ObjectId), events);
         Assert.Null(Sequence.Work(world, Cards, runner, events));
@@ -250,6 +249,9 @@ public sealed class CoreBlackPantherSpecialTests
         var seat = world.CreateSeat("p0");
         seat.IdentityCard = world.CreateCard("01040a", seat.Hero);
         world.CreateCard("01134", world.AreaOf(DeckType.VillainArea));
+        world.CreateCard("01137b", world.AreaOf(DeckType.MainSchemesArea));
+        world.CreateCard("01088", seat.Deck);
+        world.CreateCard("01154", world.AreaOf(DeckType.EncounterDeck));
         return world;
     }
 

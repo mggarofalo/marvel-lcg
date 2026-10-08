@@ -19,7 +19,7 @@ internal static class DecisionPanelSurface
         int generation = panel.GetRenderGeneration();
         if (selected.Targets is not null && !composer.UsesAutomaticTargetSelection)
         {
-            if (!panel.CardChoices.AddOrderedTargets(generation))
+            if (!panel.CardChoices.AddVisibleTargets(generation))
                 new DecisionDraftRenderer(panel, composer, panel.world!, panel.submitting, generation)
                     .AddTargets(selected, progress.Targets);
         }

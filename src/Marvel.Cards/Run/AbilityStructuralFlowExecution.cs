@@ -50,10 +50,6 @@ internal static class AbilityStructuralFlowExecution
         return new ScheduleEachPlayer(each, new EachPlayerFrame(context.Player, false));
     }
 
-    internal static AbilityStructuralTransition ResolveSpecials(
-        AbilityStructuralContext context, AbilityEffect.CardAction specials) =>
-        Every(specials.Selection, context).Count == 0 ? new Complete(context.Frames) : AskFor(context, specials);
-
     internal static AbilityStructuralTransition ChooseTopForHand(
         AbilityStructuralContext context, AbilityEffect.ChooseTopForHand top) =>
         TopCards(context.Expressions.World.Seats[context.Player].Deck, top.Count).Count == 0
@@ -288,43 +284,11 @@ internal static class AbilityStructuralFlowExecution
             context.Position, hasContinuation);
     }
 
-    internal static long Amount(AbilityNumber number, AbilityStructuralContext context)
-    {
-        var evaluation = Evaluation(context);
-        return Publish(evaluation.Result(evaluation.Amount(number)), context.Expressions.World);
-    }
-
-    internal static bool Test(AbilityCondition condition, AbilityStructuralContext context)
-    {
-        var evaluation = Evaluation(context);
-        return Publish(evaluation.Result(evaluation.Test(condition)), context.Expressions.World);
-    }
-
-    internal static AbilityExpressionEvaluation Evaluation(AbilityStructuralContext context) =>
-        new(context.Expressions, new AbilitySelectorEvaluation(context.Expressions.Bindings));
-
-    internal static IReadOnlyList<Card> Every(AbilityCardSelection selection, AbilityStructuralContext context)
-    {
-        var evaluation = new AbilitySelectorEvaluation(
-            context.Expressions.Bindings, program: context.Program);
-        return Publish(evaluation.Result(evaluation.Every(selection)), context.Expressions.World);
-    }
-
-    internal static Card? Find(
-        AbilityCardSelection selection, AbilityStructuralContext context)
-    {
-        var evaluation = new AbilitySelectorEvaluation(
-            context.Expressions.Bindings, program: context.Program);
-        return Publish(evaluation.Result(evaluation.Find(selection)), context.Expressions.World);
-    }
-
-    internal static List<Card> TopCards(Area deck, long count) =>
-        [.. deck.Cards.TakeLast(checked((int)Math.Max(0, count))).Reverse()];
-
-    internal static T Publish<T>(AbilityQueryResult<T> result, World world)
-    {
-        foreach (var observation in result.Information)
-            world.RecordInformation(observation);
-        return result.Value;
-    }
+    internal static long Amount(AbilityNumber number, AbilityStructuralContext context) => AbilityStructuralEvaluation.Amount(number, context);
+    internal static bool Test(AbilityCondition condition, AbilityStructuralContext context) => AbilityStructuralEvaluation.Test(condition, context);
+    internal static AbilityExpressionEvaluation Evaluation(AbilityStructuralContext context) => AbilityStructuralEvaluation.Evaluation(context);
+    internal static IReadOnlyList<Card> Every(AbilityCardSelection selection, AbilityStructuralContext context) => AbilityStructuralEvaluation.Every(selection, context);
+    internal static Card? Find(AbilityCardSelection selection, AbilityStructuralContext context) => AbilityStructuralEvaluation.Find(selection, context);
+    internal static List<Card> TopCards(Area deck, long count) => AbilityStructuralEvaluation.TopCards(deck, count);
+    internal static T Publish<T>(AbilityQueryResult<T> result, World world) => AbilityStructuralEvaluation.Publish(result, world);
 }

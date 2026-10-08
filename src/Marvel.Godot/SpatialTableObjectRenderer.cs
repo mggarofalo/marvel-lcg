@@ -153,8 +153,7 @@ internal sealed class SpatialTableObjectRenderer
 
         if (hasDrawer)
         {
-            piles.RenderRegion(matching, zone, new Rect2(region.Position,
-                new Vector2(Math.Max(80, Math.Min(220, region.Size.X)), 44)), drawerHost);
+            piles.RenderRegion(matching, zone, SpatialRegionDrawerLayout.Bounds(region), drawerHost);
         }
     }
 

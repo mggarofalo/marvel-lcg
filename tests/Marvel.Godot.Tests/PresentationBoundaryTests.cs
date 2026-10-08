@@ -21,6 +21,10 @@ public sealed class PresentationBoundaryTests
             "Marvel.Rules.Play.Outcome",
             "Marvel.Rules.Play.Resources",
             "Marvel.Rules.Prompts.Affordance",
+            // Synthetic native selector specimens construct public prompt contracts only.
+            "Marvel.Rules.Prompts.AffordanceAnchorKind",
+            "Marvel.Rules.Prompts.Question",
+            "Marvel.Rules.Timing.TimingPriority",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
             // Public prompt purpose selects a presentation surface, not game legality.

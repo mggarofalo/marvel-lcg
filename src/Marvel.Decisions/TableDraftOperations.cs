@@ -61,6 +61,14 @@ public sealed class TableDraftOperations
             : TryAddTarget(id);
     }
 
+    /// <summary>Assesses an ordinary target toggle without changing the current draft.</summary>
+    public bool CanToggleTarget(int id)
+    {
+        TargetRequest? request = OrdinaryRequest(id);
+        return request is { AllowRepeated: false }
+            && (composer.Targets.Contains(id) || CanAddDistinct(request, id));
+    }
+
     /// <summary>Adds one offered target while retaining order and allocation bounds.</summary>
     public bool TryAddTarget(int id)
     {
@@ -150,6 +158,7 @@ public sealed class TableDraftOperations
 
     private bool CanAddDistinct(TargetRequest request, int id) =>
         !composer.Targets.Contains(id)
+        && request.AllowsCombination(request.Max == 1 ? [id] : [.. composer.Targets, id])
         && (composer.Targets.Count < request.Max || request.Max == 1);
 
     private bool CanAddRepeated(TargetRequest request, int id)

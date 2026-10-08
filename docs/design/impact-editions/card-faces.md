@@ -34,10 +34,11 @@ name branches or external art downloads are part of face rendering.
 managed fixture projects every Core face and four research-only symbol examples
 through the production visibility boundary. Separate synthetic specimens cover
 a modified two-digit value with a special star and two consequences, zero cost,
-zero thwart, four resources, and an unmodified resolved X.
+zero thwart, four resources, and an unmodified resolved X. Three cost specimens
+separately exercise absent, zero, and X costs.
 It executes no expansion mechanics and does not expand playable content.
 
-The native probe renders 215 specimens in both sizes (430 faces) at the 50%,
+The native probe renders 218 specimens in both sizes (436 faces) at the 50%,
 80%, 100%, and 150% interface profiles. It checks complete unscrolled rules, two-line titles, visible zero cost,
 measured star adjacency, bare-star uniqueness, consequence count and centering,
 the zero-boost special star, the ink contrast field beneath consequences,

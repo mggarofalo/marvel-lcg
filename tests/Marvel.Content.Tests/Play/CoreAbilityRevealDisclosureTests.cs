@@ -44,6 +44,11 @@ public sealed class CoreAbilityRevealDisclosureTests
         events.Clear();
 
         var interrupt = Assert.Single(first.Affordances, offer => offer.AnchorId == widow.ObjectId);
+        Assert.Equal("Cancel the revealed encounter card's effects and discard it, then reveal the next encounter card. "
+            + "The replacement card's effects remain unresolved.", interrupt.Description);
+        Assert.Equal("Exhaust Black Widow", interrupt.CostDescription);
+        Assert.DoesNotContain(Cards.Title(replacement.FaceId), interrupt.Description);
+        Assert.DoesNotContain(Cards.Title(concealed.FaceId), interrupt.Description);
         Sequence.Answer(world, Cards, runner, first,
             Decision.Take(interrupt.Id, [], [payment.ObjectId]), events);
 

@@ -113,6 +113,10 @@ static func drawer_problems(surface: Control) -> Array[String]:
 		var drawer := node as Control
 		if not drawer.is_visible_in_tree():
 			continue
+		if not bounds(surface).encloses(bounds(drawer)):
+			failures.append("%s region drawer escapes the table: %s / %s" % [drawer.name, bounds(drawer), bounds(surface)])
+		if drawer.size.x < 80 or drawer.size.y < 44:
+			failures.append("%s region drawer loses its full hit area" % drawer.name)
 		var parent := drawer.get_parent()
 		if parent is VBoxContainer:
 			var scroll := parent.get_parent() as Control

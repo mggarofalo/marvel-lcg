@@ -9,8 +9,7 @@ namespace Marvel.Decisions;
 /// </summary>
 public sealed class DecisionComposer
 {
-    private readonly List<int> resources = [];
-    private readonly List<ResourceIconAssignment> assignments = [];
+    private readonly ResourceAssignmentDraft allocation = new();
     private readonly List<int> targets = [];
     private readonly Dictionary<string, long> values = new(StringComparer.Ordinal);
     private int selectedCost = -1;
@@ -28,10 +27,10 @@ public sealed class DecisionComposer
     public IReadOnlyList<int> Targets => targets;
 
     /// <summary>Selected generator effects in player-selected order.</summary>
-    public IReadOnlyList<int> Resources => resources;
+    public IReadOnlyList<int> Resources => allocation.Resources;
 
     /// <summary>Individual generated icons assigned to cost components.</summary>
-    public IReadOnlyList<ResourceIconAssignment> Assignments => assignments;
+    public IReadOnlyList<ResourceIconAssignment> Assignments => allocation.Assignments;
 
     /// <summary>Current variable definitions.</summary>
     public IReadOnlyDictionary<string, long> Values => values;
@@ -41,6 +40,7 @@ public sealed class DecisionComposer
 
     /// <summary>Whether the only legal required target was selected without asking.</summary>
     public bool UsesAutomaticTargetSelection => Selected?.Targets is { } request
+        && Prompt.PublicKind != PublicDecisionKind.VisibleCardSelection
         && targets.Count > 0
         && (request.IsGrouped
             ? request.Groups is { Count: 1 } && targets.SequenceEqual(request.Groups[0])
@@ -58,33 +58,7 @@ public sealed class DecisionComposer
     /// declaration is automatic only when the prompt says no later effect observes it;
     /// simultaneous cost components retain their explicit player choice.
     /// </remarks>
-    public bool UsesAutomaticResourceAllocation
-    {
-        get
-        {
-            CostOption? cost = SelectedCostOption();
-            if (cost is null || cost.ResourceCosts.Count != 1 || resources.Count == 0)
-            {
-                return false;
-            }
-
-            bool hasWild = false;
-            bool valid = resources.All(effect =>
-            {
-                ResourceSource[] matches =
-                    [.. cost.Generators.Where(source => source.Effect == effect)];
-                if (matches.Length != 1)
-                {
-                    return false;
-                }
-
-                hasWild |= matches[0].Generates.Contains(
-                    Marvel.Rules.Play.Resources.Wild);
-                return true;
-            });
-            return valid && (!hasWild || !cost.DeclarationSensitive);
-        }
-    }
+    public bool UsesAutomaticResourceAllocation => allocation.UsesAutomaticAllocation(SelectedCostOption());
 
     /// <summary>
     /// Summarizes the current draft without interpreting card text or board state.
@@ -98,8 +72,7 @@ public sealed class DecisionComposer
         Selected = Prompt.Affordances.FirstOrDefault(option => option.Id == id)
             ?? throw new ArgumentOutOfRangeException(nameof(id), id, "affordance is not offered");
         targets.Clear();
-        resources.Clear();
-        assignments.Clear();
+        allocation.Clear();
         values.Clear();
         selectedCost = Selected.CostOptions.Count == 1 ? 0 : -1;
         SelectOnlyRequiredTarget();
@@ -107,6 +80,7 @@ public sealed class DecisionComposer
 
     private void SelectOnlyRequiredTarget()
     {
+        if (Prompt.PublicKind == PublicDecisionKind.VisibleCardSelection) return;
         TargetRequest? request = Selected?.Targets;
         if (HasOnlyGroupedTarget(request))
         {
@@ -170,8 +144,7 @@ public sealed class DecisionComposer
         }
 
         selectedCost = index;
-        resources.Clear();
-        assignments.Clear();
+        allocation.Clear();
         values.Clear();
     }
 
@@ -185,102 +158,17 @@ public sealed class DecisionComposer
     }
 
     /// <summary>Toggles one generator offered by the selected cost.</summary>
-    public void ToggleResource(int effect)
-    {
-        bool wasAutomatic = UsesAutomaticResourceAllocation;
-        int index = resources.IndexOf(effect);
-        if (index >= 0)
-        {
-            resources.RemoveAt(index);
-            assignments.RemoveAll(assignment => assignment.Source == effect);
-        }
-        else
-        {
-            resources.Add(effect);
-        }
-
-        bool isAutomatic = UsesAutomaticResourceAllocation;
-        bool usesSuggestion = ResourcePaymentDraft.CanSuggest(SelectedCostOption(), resources);
-        if (wasAutomatic || isAutomatic || usesSuggestion)
-        {
-            assignments.Clear();
-        }
-
-        if (isAutomatic || usesSuggestion)
-        {
-            ApplyAutomaticResourceAllocation();
-        }
-    }
+    public void ToggleResource(int effect) => allocation.Toggle(effect, SelectedCostOption(), values);
 
     /// <summary>Assigns or clears one icon from a selected generator.</summary>
-    public void AssignResource(
-        int source,
-        int icon,
-        int? cost,
-        char? paidAs)
-    {
-        if ((cost is null) != (paidAs is null))
-        {
-            throw new ArgumentException("A resource assignment needs both a cost and a type.");
-        }
-
-        CostOption? selected = SelectedCostOption();
-        ResourceSource generator = selected?.Generators.SingleOrDefault(candidate =>
-            candidate.Effect == source) ?? default;
-        if (!AssignmentIsOffered(selected, generator, source, icon, cost, paidAs))
-        {
-            throw new ArgumentOutOfRangeException(nameof(source), source,
-                "resource assignment is not offered by the selected cost");
-        }
-
-        assignments.RemoveAll(assignment =>
-            assignment.Source == source && assignment.Icon == icon);
-        if (cost is not null && paidAs is not null)
-        {
-            assignments.Add(new ResourceIconAssignment(
-                source, icon, cost.Value, paidAs.Value));
-        }
-    }
-
-    private bool AssignmentIsOffered(
-        CostOption? costOption,
-        ResourceSource generator,
-        int source,
-        int icon,
-        int? cost,
-        char? paidAs)
-    {
-        if (costOption is null || !resources.Contains(source) || generator.Generates is null)
-        {
-            return false;
-        }
-        return IconIsOffered(generator, icon)
-            && CostIsOffered(costOption, cost)
-            && PaidTypeIsOffered(generator, icon, paidAs);
-    }
-
-    private static bool IconIsOffered(ResourceSource generator, int icon) =>
-        icon >= 0 && icon < generator.Generates.Length;
-
-    private static bool CostIsOffered(CostOption option, int? cost) =>
-        cost is null || cost >= 0 && cost < option.ResourceCosts.Count;
-
-    private static bool PaidTypeIsOffered(
-        ResourceSource generator, int icon, char? paidAs) =>
-        paidAs is null
-        || Marvel.Rules.Play.Resources.Types.Contains(paidAs.Value)
-            && (generator.Generates[icon] == Marvel.Rules.Play.Resources.Wild
-                || generator.Generates[icon] == paidAs);
+    public void AssignResource(int source, int icon, int? cost, char? paidAs) =>
+        allocation.Assign(SelectedCostOption(), source, icon, cost, paidAs);
 
     /// <summary>Defines one value requested by the selected cost.</summary>
     public void Define(string name, long value)
     {
         values[name] = value;
-        if (UsesAutomaticResourceAllocation || ResourcePaymentDraft.CanSuggest(SelectedCostOption(), resources))
-        {
-            assignments.Clear();
-            ApplyAutomaticResourceAllocation();
-        }
+        allocation.Refresh(SelectedCostOption(), values);
     }
 
     /// <summary>Builds the wire decline only when this prompt permits it.</summary>
@@ -332,7 +220,7 @@ public sealed class DecisionComposer
 
     private bool TryBuildFree(out EngineDecision? decision, out string? error)
     {
-        if (resources.Count > 0 || values.Count > 0)
+        if (allocation.Resources.Count > 0 || values.Count > 0)
         {
             decision = null;
             error = "This action has no payment.";
@@ -367,7 +255,7 @@ public sealed class DecisionComposer
         }
 
         IReadOnlyList<ResourceAllocation> allocated = CollapseAssignments();
-        if (!ResourcePayment.Allows(cost, resources, values, allocated))
+        if (!ResourcePayment.Allows(cost, allocation.Resources, values, allocated))
         {
             error = "Assign generated icons to satisfy every offered cost component.";
             return false;
@@ -376,7 +264,7 @@ public sealed class DecisionComposer
         decision = new EngineDecision(
             selected.Id,
             [.. targets],
-            [.. resources],
+            [.. allocation.Resources],
             new Dictionary<string, long>(values, StringComparer.Ordinal),
             [.. allocated]);
         error = null;
@@ -396,63 +284,12 @@ public sealed class DecisionComposer
         if (Selected?.CostOptions.Count > 0)
         {
             selectedCost = Selected.CostOptions.Count == 1 ? 0 : -1;
-            resources.Clear();
-            assignments.Clear();
+            allocation.Clear();
             values.Clear();
         }
     }
 
-    internal IReadOnlyList<ResourceAllocation> CollapseAssignments()
-    {
-        var order = new List<(int Source, int Cost)>();
-        var paid = new Dictionary<(int Source, int Cost), System.Text.StringBuilder>();
-        foreach (ResourceIconAssignment assignment in assignments
-                     .OrderBy(assignment => resources.IndexOf(assignment.Source))
-                     .ThenBy(assignment => assignment.Icon))
-        {
-            var key = (assignment.Source, assignment.Cost);
-            if (!paid.TryGetValue(key, out System.Text.StringBuilder? declared))
-            {
-                declared = new System.Text.StringBuilder();
-                paid.Add(key, declared);
-                order.Add(key);
-            }
-
-            declared.Append(assignment.PaidAs);
-        }
-
-        return [.. order.Select(key =>
-            new ResourceAllocation(key.Source, key.Cost, paid[key].ToString()))];
-    }
-
-    private void ApplyAutomaticResourceAllocation()
-    {
-        CostOption cost = SelectedCostOption()!;
-        IReadOnlyList<ResourceAllocation>? allocation =
-            ResourcePaymentDraft.Allocate(cost, resources, values);
-        if (allocation is null)
-        {
-            return;
-        }
-
-        foreach (ResourceAllocation payment in allocation)
-        {
-            ResourceSource source = cost.Generators.Single(candidate =>
-                candidate.Effect == payment.Source);
-            var used = new HashSet<int>();
-            foreach (char paidAs in payment.PaidAs)
-            {
-                int icon = Enumerable.Range(0, source.Generates.Length)
-                    .Where(index => !used.Contains(index))
-                    .OrderBy(index => source.Generates[index] == paidAs ? 0 : 1)
-                    .First(index => source.Generates[index] == paidAs
-                        || source.Generates[index] == Marvel.Rules.Play.Resources.Wild);
-                used.Add(icon);
-                assignments.Add(new ResourceIconAssignment(
-                    source.Effect, icon, payment.Cost, paidAs));
-            }
-        }
-    }
+    internal IReadOnlyList<ResourceAllocation> CollapseAssignments() => allocation.CollapseAssignments();
 
     internal CostOption? SelectedCostOption() =>
         Selected is not null

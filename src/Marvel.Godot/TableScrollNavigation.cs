@@ -33,8 +33,8 @@ internal static class TableScrollNavigation
             Name = "OverflowNavigation", ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
         frame.AddChild(navigation);
-        Button earlier = Button(navigation, "Earlier", $"↑ Earlier {purpose}");
-        Button more = Button(navigation, "More", $"More {purpose} ↓");
+        Button earlier = TableNavigationButton.Create(navigation, "Earlier", $"↑ Earlier {purpose}");
+        Button more = TableNavigationButton.Create(navigation, "More", $"More {purpose} ↓");
         VScrollBar range = scroll.GetVScrollBar();
         void Refresh()
         {
@@ -68,18 +68,4 @@ internal static class TableScrollNavigation
         return scroll;
     }
 
-    private static Button Button(Container parent, string name, string text)
-    {
-        var button = new Button
-        {
-            Name = name, Text = name, AccessibilityName = text, TooltipText = text,
-            CustomMinimumSize = new Vector2(0, 44),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            AutowrapMode = TextServer.AutowrapMode.Off,
-            ThemeTypeVariation = GodotThemeVariations.ChoiceButton,
-        };
-        parent.AddChild(button);
-        TableCompactButtonStyle.Apply(button);
-        return button;
-    }
 }

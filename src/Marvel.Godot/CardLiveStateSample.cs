@@ -47,9 +47,7 @@ internal static class CardLiveStateSample
         face.Size = face.CustomMinimumSize;
         if (SpatialTableZones.IsExhausted(card)) { face.PivotOffset = face.Size / 2; face.Rotation = Mathf.Pi / 2; }
         SpatialCardSidecar.State(face, card);
-        var action = new Button { Name = "StateAction", Text = "Action", CustomMinimumSize = new Vector2(36, 36) };
-        CardSymbolButtonStyle.Apply(action);
-        SpatialCardSidecar.For(face).AddChild(action);
+        CardTargetControlSample.Add(fixture, face, card);
         Control detail = CardStateDetails.Wrap(CardControl.Create(card, CardDisplaySize.Full,
             ClientTheme.ConfiguredScale()), card, beside: true, inspect: source =>
             {

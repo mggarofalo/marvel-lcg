@@ -125,7 +125,6 @@ internal static class SpatialTableSurfaceRenderer
 
         AddHandCaption(surface, geometry, board, handSeat, prompt);
         SpatialTableContextRenderer.Add(surface, result, geometry, main.CurrentGame?.World, prompt);
-        TableSidebarContent.Render(main, result, prompt, selection);
     }
 
     private static PanelContainer AddMat(
