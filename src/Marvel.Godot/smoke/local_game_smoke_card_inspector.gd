@@ -233,10 +233,6 @@ func _web_shooter_action() -> Button:
 
 
 func _open_card_play_menu() -> bool:
-	var menu := _decision().find_child("CardPlayMenu", true, false) as Button
-	if menu == null or not menu.is_visible_in_tree() or not await _pointer_activate(menu):
-		_fail("the action dock has no operable card-play menu")
-		return false
 	return await _wait_for(func() -> bool: return _web_shooter_action() != null)
 
 
@@ -254,7 +250,7 @@ func _restore_unselected_action_prompt() -> bool:
 		return false
 	if not await _wait_for(func() -> bool:
 		return not _web_shooter_draft_is_prepared() \
-			and _decision().find_child("CardPlayMenu", true, false) != null):
+			and _decision().find_child("ChoiceGroup3", true, false) != null):
 		_fail("synchronizing after the preview probe retained its Web-Shooter draft")
 		return false
 	if await _open_card_play_menu():

@@ -130,16 +130,16 @@ static func drawer_problems(surface: Control) -> Array[String]:
 
 static func controlled_source_problems(surface: Control, context: Control) -> Array[String]:
 	var failures: Array[String] = []
-	var ledger := surface.get_node_or_null("ControlledSourceLedger") as Control
+	var ledger := surface.get_node_or_null("SourceTableau") as Control
 	if ledger == null or not ledger.is_visible_in_tree(): return failures
-	var picker := ledger.get_node("SourcePicker") as Control
 	var occupied := bounds(ledger)
 	if not bounds(surface).encloses(occupied):
 		failures.append("controlled source ledger escapes the table")
 	if context != null and occupied.intersects(bounds(context)):
 		failures.append("controlled source ledger covers the current decision")
-	if picker.size.y < 44:
-		failures.append("controlled source picker loses its full hit area")
+	for action in ledger.find_children("*", "Button", true, false):
+		if action.is_visible_in_tree() and action.size.y < 44:
+			failures.append("installed source action loses its full hit area")
 	for other in surface.find_children("ProceduralCard*", "PanelContainer", true, false):
 		if not other.is_visible_in_tree() or ledger.is_ancestor_of(other): continue
 		# Six pixels include the outer focus stroke, even before this card gains focus.

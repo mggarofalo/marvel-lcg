@@ -15,7 +15,7 @@ internal static class SpatialTableSurfaceRenderer
         Prompt? prompt)
     {
         Prepare(main);
-        AstraTableGeometry geometry = Geometry(main);
+        AstraTableGeometry geometry = Geometry(main, selection, prompt);
         Control surface = CreateSurface(main, geometry);
         var result = new BoardRenderResult(main.boardPresentation);
         AddMats(surface, result, geometry, selection);
@@ -35,7 +35,7 @@ internal static class SpatialTableSurfaceRenderer
         main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").Visible = false;
     }
 
-    private static AstraTableGeometry Geometry(Main main)
+    private static AstraTableGeometry Geometry(Main main, DisplayedSeatSelection selection, Prompt? prompt)
     {
         Vector2 viewport = main.GetViewportRect().Size;
         bool expanded = TableHistoryDrawer.IsExpanded(main);
@@ -48,12 +48,22 @@ internal static class SpatialTableSurfaceRenderer
         return new AstraTableGeometry(
             width, height, main.interfaceScale >= InterfaceScale.Percent130,
             HasRevealingCard: main.boardPresentation!.Areas.Any(area =>
-                SpatialTableZones.IsResolving(area) && SpatialTableZones.Current(area).Length > 0),
-            PhysicalCardSize: PhysicalCardSize(main.boardPresentation!, main.interfaceScale, height),
-            HasSeatSummaries: main.boardPresentation.PlayerSummaries.Count > 1);
+                SpatialTableZones.IsResolving(area) && SpatialTableZones.Current(area).Length > 0)
+                || Context(main, prompt).Count > 0,
+            PhysicalCardSize: PhysicalCardSize(main.boardPresentation!, main.interfaceScale, height, Context(main, prompt)),
+            HasSeatSummaries: main.boardPresentation.PlayerSummaries.Count > 1,
+            HasSourceTableau: CardSourceGroups.Controlled(main.boardPresentation.Areas, selection.ExpandedSeat).Length > 0)
+        {
+            HasAllies = main.boardPresentation.Areas.Any(area => area.Zone == "AlliesArea"
+                && area.Seat == selection.ExpandedSeat && area.Cards.Count > 0),
+        };
     }
 
-    private static Vector2 PhysicalCardSize(BoardPresentation board, InterfaceScale scale, float height)
+    private static IReadOnlyList<BoardCardPresentation> Context(Main main, Prompt? prompt) =>
+        DecisionContextCards.MissingFromTable(prompt is null || main.CurrentGame?.World is null ? null
+            : PromptPresentation.From(prompt, main.CurrentGame.World), main.boardPresentation!);
+
+    private static Vector2 PhysicalCardSize(BoardPresentation board, InterfaceScale scale, float height, IReadOnlyList<BoardCardPresentation> context)
     {
         IEnumerable<BoardCardPresentation> cards = board.Areas
             .Where(area => area.Zone != "HandsArea")
@@ -61,9 +71,9 @@ internal static class SpatialTableSurfaceRenderer
         InterfaceScale cardScale = SpatialCardMetrics.TableScale(scale, height);
         Vector2 installed = SpatialCardMetrics.Envelope(cards, CardDisplaySize.Board, cardScale);
         Vector2 revealing = SpatialCardMetrics.Envelope(board.Areas
-            .Where(SpatialTableZones.IsResolving).SelectMany(SpatialTableZones.Current),
+            .Where(SpatialTableZones.IsResolving).SelectMany(SpatialTableZones.Current).Concat(context),
             CardDisplaySize.Hand, cardScale);
-        return board.Areas.Any(area => SpatialTableZones.IsResolving(area) && SpatialTableZones.Current(area).Length > 0)
+        return context.Count > 0 || board.Areas.Any(area => SpatialTableZones.IsResolving(area) && SpatialTableZones.Current(area).Length > 0)
             ? new Vector2(Math.Max(installed.X, revealing.X), Math.Max(installed.Y, revealing.Y)) : installed;
     }
 
@@ -113,7 +123,7 @@ internal static class SpatialTableSurfaceRenderer
         var objects = new SpatialTableObjectRenderer(
             surface, result, geometry, cardScale, main.art, MulliganPrompt.IsOpening(prompt));
         objects.RenderScenario(scenario);
-        objects.RenderRevealing(board.Areas);
+        objects.RenderRevealing(board.Areas, Context(main, prompt));
         objects.RenderPlayer(player);
         PendingEncounterIndicator.Add(surface, geometry.PendingEncounters,
             board.PendingEncounterCount(selection.ExpandedSeat), selection.ExpandedSeat);

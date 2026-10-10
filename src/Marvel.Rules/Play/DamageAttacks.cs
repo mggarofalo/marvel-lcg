@@ -125,6 +125,7 @@ public static class DamageAttacks
             && !Keywords.Has(world, attacker, Keywords.Ranged, facts);
         var placed = Place(
             world, facts, source, target, amount, trigger, verb, events);
+        AttackDamageAccounting.RecordRecipient(world, source, target, placed.Dealt);
         long dealtAmount = placed.Dealt;
         long takenAmount = placed.Taken;
 
@@ -142,9 +143,9 @@ public static class DamageAttacks
         // spill is therefore the taken amount beyond the former hit points.
         long beyond = Math.Max(0, takenAmount - remaining);
         bool overkill = beyond > 0 && hasOverkill;
-        ResolveOverkill(
-            world, facts, source, attackedKind, spillPlayer, beyond, trigger, events,
-            outcome, overkill);
+        var aftermath = new AttackDamageAftermath(attacker, source, target, attackedKind,
+            spillPlayer, beyond, overkill, canRetaliate, trigger);
+        aftermath.ResolveOverkill(world, facts, outcome, events);
 
         long dealt = MeasuredDamage(events, firstDamageEvent);
 
@@ -153,9 +154,7 @@ public static class DamageAttacks
         if (placed.Landed) damaged.Add(target);
 
         // `rr:ranged.1` -- "this attack ignores the retaliate keyword".
-        FinishOrSuspendAttack(
-            world, facts, attacker, source, target, trigger, events, attackedKind,
-            spillPlayer, beyond, overkill, canRetaliate, outcome);
+        aftermath.FinishOrSuspend(world, facts, outcome, events);
 
         // `rr:overkill.3`: a card ability that counts excess damage uses the
         // same value the overkill keyword calculated. Expose that calculation
@@ -190,17 +189,6 @@ public static class DamageAttacks
         }
     }
 
-    private static void ResolveOverkill(
-        World world, ICardFacts facts, Card source, CardKind attackedKind,
-        int spillPlayer, long beyond, string trigger, List<GameEvent> events,
-        Damage.Outcome outcome, bool overkill)
-    {
-        if (outcome == Damage.Outcome.Defeated && overkill)
-        {
-            Spill(world, facts, source, attackedKind, spillPlayer, beyond, trigger, events);
-        }
-    }
-
     private static long MeasuredDamage(List<GameEvent> events, int firstDamageEvent) =>
         events.Skip(firstDamageEvent)
             .OfType<FieldSet>()
@@ -208,87 +196,10 @@ public static class DamageAttacks
                 && change.From is { } from && change.To is { } to && from > to)
             .Sum(change => change.From!.Value - change.To!.Value);
 
-    private static void FinishOrSuspendAttack(
-        World world, ICardFacts facts, Card attacker, Card source, Card target,
-        string trigger, List<GameEvent> events, CardKind attackedKind, int spillPlayer,
-        long beyond, bool overkill, bool canRetaliate, Damage.Outcome outcome)
-    {
-        if (outcome == Damage.Outcome.Suspended)
-        {
-            world.Agenda.Then(new PhaseStep(
-                Steps.FinishAttackDamage,
-                world.Agenda.Current?.Round ?? 0,
-                5,
-                Subject: target.ObjectId,
-                Seat: spillPlayer,
-                Plan: true,
-                Character: attacker.ObjectId,
-                ProcedureSource: source.ObjectId,
-                ProcedureTrigger: trigger,
-                ProcedureVerb: attackedKind.ToString(),
-                ProcedureAmount: beyond,
-                ProcedureFlag: overkill,
-                FinalStep: canRetaliate));
-        }
-        else if (canRetaliate)
-        {
-            Retaliate(world, facts, target, attacker, trigger, events);
-        }
-    }
-
     /// <summary>Resolve overkill and retaliate after a suspended defeat decision.</summary>
     public static void FinishAttack(
-        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
-    {
-        var target = world.Cards[step.Subject];
-        var attacker = world.Cards[step.Character];
-        var source = world.Cards[step.ProcedureSource];
-        bool defeated = !DeckTypes.IsInPlay(target.Area.Type);
-        if (defeated && step.ProcedureFlag && step.ProcedureAmount > 0)
-        {
-            Spill(
-                world, facts, source,
-                Enum.Parse<CardKind>(step.ProcedureVerb, ignoreCase: false),
-                step.Seat, step.ProcedureAmount, step.ProcedureTrigger, events);
-        }
-        if (step.FinalStep)
-        {
-            Retaliate(world, facts, target, attacker, step.ProcedureTrigger, events);
-        }
-    }
-
-    /// <summary>
-    /// Excess damage from an attack with overkill — <c>rr:overkill</c>.
-    /// </summary>
-    /// <remarks>
-    /// "If an ally is defeated [...] deal any damage on that ally beyond its hit
-    /// points to <b>the identity of the player who controls the ally</b>. If a
-    /// minion is defeated [...] to <b>the villain</b>." Two different
-    /// destinations, decided by what was defeated rather than by who attacked.
-    /// </remarks>
-    internal static void Spill(
-        World world, ICardFacts facts, Card source, CardKind defeatedKind,
-        int controllingPlayer, long beyond,
-        string trigger, List<GameEvent> events)
-    {
-        var onto = defeatedKind switch
-        {
-            CardKind.Ally when controllingPlayer >= 0 =>
-                world.Seats[controllingPlayer].IdentityCard,
-            CardKind.Minion => world.TheCardIn(DeckType.VillainArea),
-            _ => null,
-        };
-
-        if (onto is not null)
-        {
-            // `rr:overkill.2`: "damage dealt by overkill to an identity or
-            // villain is considered damage from an attack, but **does not
-            // constitute an attack against that character**" -- so this deals
-            // damage and does not retaliate.
-            DamagePlacement.Deal(
-                world, facts, source, onto, beyond, trigger, Keywords.Overkill, events);
-        }
-    }
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events) =>
+        AttackDamageAftermath.Resume(world, facts, step, events);
 
     /// <summary>
     /// A character that was attacked hits back — <c>rr:retaliate-x</c>.

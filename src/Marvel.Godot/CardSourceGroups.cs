@@ -14,10 +14,10 @@ internal static class CardSourceGroups
         [.. Current(areas).Where(card => card.Persistent!.Relation is { Kind: "Attached" } relation && relation.HostId == host)];
 
     internal static BoardCardPresentation[] Controlled(IEnumerable<BoardAreaPresentation> areas, int seat) =>
-        [.. Current(areas).Where(card => card.Kind == "UPGRADE"
-            && card.Persistent!.Relation is { Kind: "Controlled" } relation && relation.Controller == seat)];
+        [.. Current(areas).Where(card => card.Kind is "UPGRADE" or "SUPPORT"
+            && card.Persistent!.Relation is { Kind: "Controlled" } relation && relation.Controller == seat).OrderBy(card => card.TargetId)];
 
     internal static bool IsLocalSource(BoardCardPresentation card) =>
         !card.Concealed && (card.Persistent?.Relation.Kind == "Attached"
-            || card.Kind == "UPGRADE" && card.Persistent?.Relation.Kind == "Controlled");
+            || (card.Kind is "UPGRADE" or "SUPPORT") && card.Persistent?.Relation.Kind == "Controlled");
 }

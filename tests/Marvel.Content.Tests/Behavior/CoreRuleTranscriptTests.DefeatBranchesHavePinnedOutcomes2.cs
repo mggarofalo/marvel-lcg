@@ -86,7 +86,8 @@ public sealed class CoreRuleTranscriptDefeatBranchesHavePinnedOutcomesTests
         Assert.Equal("17e0cd6e760f3f0201bdfbadf27e22cd7202002092bc9c4f9d446aa5cc26a6b3", results["behavior:card:01040b:search-your-deck-for-black-panther-upgrade"].Digest);
         Assert.Equal("d053f1672b3b860fdc70b0a46dc08712a203d0c73810e5e0f241d57045139108", results["behavior:card:01116a:search-encounter-deck-for-defense-network-side"].Digest);
         Assert.Equal("66a27ed1b7d8f5692280431175aa43583ccf21dd52ffb8a899e2dcacd6adf346", results["behavior:card:01137a:put-ultron-drones-environment-into-play"].Digest);
-        Assert.Equal("9ff6e11a5e9807275f68698c1d8e654f81af27cff479b8814e3179cbf15861f4", results["behavior:card:01116a:klaw-ii-and-klaw-iii-instead-for"].Digest);
+        // Expert setup reveals The Immortal Klaw through Klaw II's ability.
+        Assert.Equal("2a7dafc307d995d77324ee2613c8a791c92f00d8be40f69658497547abe214dc", results["behavior:card:01116a:klaw-ii-and-klaw-iii-instead-for"].Digest);
         Assert.Equal("a588af4775e8d1c032e61e24d1218e421836dc01edf0dfef4fa573c6009374e7", results["behavior:card:01137a:ultron-ii-and-ultron-iii-instead-for"].Digest);
     }
 

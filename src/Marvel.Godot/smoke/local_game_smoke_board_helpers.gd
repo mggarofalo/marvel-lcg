@@ -11,9 +11,13 @@ static func fully_contained(smoke: SceneTree, control: Control) -> bool:
 static func tabletop_card_named(main: Control, title: String) -> Control:
 	for candidate in main.find_children("ProceduralCard*", "", true, false):
 		var card := candidate as Control
+		if card == null or not card.is_visible_in_tree(): continue
 		var card_title := card.find_child("Title", true, false) as Label
 		if card_title != null and card_title.text == title:
 			return card
+	for candidate in main.find_children("*", "Control", true, false):
+		if candidate.is_visible_in_tree() and candidate.get_meta("source_title", "") == title:
+			return candidate as Control
 	return null
 
 

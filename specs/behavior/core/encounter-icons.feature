@@ -58,7 +58,8 @@ Feature: Core encounter icons
     Then card 01160 copy 0 is in seat 1's play area
     When seat 1 chooses option 2 for the pending encounter-card decision
     Then seat 1 is in hero form
-    When seat 1 chooses option 2 for the pending encounter-card decision
+    # Exhausting Jennifer Walters is unavailable while in hero form.
+    When seat 1 chooses option 1 for the pending encounter-card decision
     Then the main scheme has 1 acceleration token
     When seat 1 uses their basic thwart against card 01109 copy 0
     Then card 01109 copy 0 is faceup on top of the encounter discard pile

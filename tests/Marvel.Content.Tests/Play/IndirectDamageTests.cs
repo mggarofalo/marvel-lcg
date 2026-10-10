@@ -35,6 +35,7 @@ public abstract class IndirectDamageTestBase
     protected static World Deal()
     {
         var world = WorldSetup.DealWithoutCardAbilities(Cards, Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards), ["Spider-Man"], 12345);
+        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
         world.Abilities = AuthoredCards.Runner();
         return world;
     }

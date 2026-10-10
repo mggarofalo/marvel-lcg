@@ -88,6 +88,8 @@ internal static class AbilityResolutionLifecycle
             };
             AbilityContinuationCodec.RecordImmediateActivationResult(
                 delayedCast.Results, result);
+            delayedCast.Results["activationDamageToYou"] = result.DamageRecipients.Contains(
+                world.Seats[effect.Player].IdentityCard.ObjectId) ? 1 : 0;
             if (effect.Altered >= 0)
             {
                 delayedCast.BindAlteration(world.Cards[effect.Altered]);

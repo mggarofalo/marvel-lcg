@@ -37,10 +37,22 @@ tests mirroring implementation details, or a full-game run for every copy edit.
 Run the required existing repository gates. A successful complete-game smoke
 remains regression evidence, not a substitute for the checks above.
 
-## Independent comprehension review
+## Product acceptance
 
-For material changes to interaction, information hierarchy or table layout,
-arrange an independent review of the real engine-backed client. Give the
+The current audience is experienced Marvel Champions players. The product owner
+accepts the tableau and decision area by affirming the working implementation.
+Do not substitute an agent's verdict for that affirmation or require independent
+new-player testing for this increment. New-player comprehension testing is a
+future product concern. Automated correctness, visibility, interaction and
+platform checks remain required and are separate from product acceptance.
+
+Record the build and scenarios the owner reviewed, feedback and any follow-up
+changes. Approval of a design direction is not acceptance of its implementation.
+
+## Independent comprehension review when requested
+
+When the owner requests independent comprehension testing,
+review the real engine-backed client. Give the
 reviewer game goals and relevant scenarios, not locations to click or a script
 that reveals the intended interaction. Compare against any approved reference,
 but evaluate understanding in the working app rather than screenshots alone.

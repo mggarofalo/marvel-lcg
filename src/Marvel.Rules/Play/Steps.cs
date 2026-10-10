@@ -315,6 +315,9 @@ public static class Steps
     /// <summary>"When an attack ends" — <c>rr:attack-enemy-activation.step.6</c>.</summary>
     public const string AttackEnds = "WhenAttackEnds";
 
+    /// <summary>A completed basic attack, excluding card ability attacks.</summary>
+    public const string BasicAttackEnds = "WhenBasicAttackEnds";
+
     /// <summary>"When a card is revealed" — <c>rr:reveal</c>.</summary>
     public const string CardRevealed = "WhenCardRevealed";
 

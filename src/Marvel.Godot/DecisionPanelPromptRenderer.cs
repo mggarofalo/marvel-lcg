@@ -104,51 +104,54 @@ internal static class DecisionPanelPromptRenderer
         {
             return;
         }
-        AffordancePresentation[] plays = [.. prompt.Affordances
-            .Where(view => panel.composer!.Prompt.Affordances.Single(option => option.Id == view.Id).PlaysCard)];
-        foreach (AffordancePresentation view in prompt.Affordances.Except(plays))
-        {
-            Add(panel, view, generation);
-        }
-        AddCardPlayMenu(panel, plays, generation);
+        AddCategories(panel, prompt, generation);
     }
 
-    private static void AddCardPlayMenu(
-        DecisionPanel panel,
-        AffordancePresentation[] plays,
-        int generation)
+    private static void AddCategories(DecisionPanel panel, PromptPresentation prompt, int generation)
     {
-        if (plays.Length == 0)
+        foreach (var category in prompt.Affordances.GroupBy(view => CompleteChoiceGroups.Category(view, panel))
+            .OrderBy(group => group.Key))
         {
-            return;
+            var section = new VBoxContainer
+            {
+                Name = $"ChoiceGroup{category.Key}",
+                ThemeTypeVariation = GodotThemeVariations.TightStack,
+            };
+            section.AddChild(DecisionPanel.Text(CompleteChoiceGroups.Headings[category.Key],
+                GodotThemeVariations.Body));
+            panel.AddContent(section);
+            AddSources(panel, category.Where(view => view.Illegal is null), generation, section);
+            AffordancePresentation[] unavailable = [.. category.Where(view => view.Illegal is not null)];
+            if (unavailable.Length > 0) AddUnavailable(panel, unavailable, generation, section);
         }
+    }
 
-        var choices = new VBoxContainer
+    private static void AddSources(DecisionPanel panel, IEnumerable<AffordancePresentation> offers,
+        int generation, Container section)
+    {
+        foreach (var source in offers.GroupBy(CompleteChoiceGroups.SourceKey))
         {
-            Name = "CardPlayChoices",
-            Visible = false,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        var disclosure = new Button
-        {
-            Name = "CardPlayMenu",
-            Text = $"▸ Play a card  ·  {plays.Length}",
-            Alignment = HorizontalAlignment.Left,
-            ToggleMode = true,
-            TooltipText = "Show keyboard-accessible card-play choices. Cards can also be dragged from hand.",
-        };
-        panel.StyleButton(disclosure, InteractiveVisualState.Resting);
-        disclosure.Pressed += () =>
-        {
-            choices.Visible = disclosure.ButtonPressed;
-            disclosure.Text = $"{(disclosure.ButtonPressed ? "▾" : "▸")} Play a card  ·  {plays.Length}";
-        };
-        panel.AddContent(disclosure);
-        panel.AddContent(choices);
-        foreach (AffordancePresentation play in plays)
-        {
-            Add(panel, play, generation, choices);
+            if (source.Count() > 1)
+                section.AddChild(DecisionPanel.Text(source.First().SourceName ?? source.First().Anchor,
+                    GodotThemeVariations.Caption, wrap: true));
+            foreach (AffordancePresentation view in source) Add(panel, view, generation, section);
         }
+    }
+
+    private static void AddUnavailable(DecisionPanel panel, AffordancePresentation[] offers,
+        int generation, Container section)
+    {
+        var details = new VBoxContainer { Visible = false };
+        var toggle = new Button
+        {
+            Text = $"Unavailable ({offers.Length})", ToggleMode = true,
+            Alignment = HorizontalAlignment.Left,
+        };
+        panel.StyleButton(toggle, InteractiveVisualState.Resting, compact: true);
+        toggle.Toggled += open => details.Visible = open;
+        section.AddChild(toggle);
+        section.AddChild(details);
+        AddSources(panel, offers, generation, details);
     }
 
     private static void Add(
@@ -166,20 +169,8 @@ internal static class DecisionPanelPromptRenderer
         choose.Pressed += () => panel.SelectAffordance(option.Id, generation);
         panel.BindAnchors(choose, option.AnchorId);
         Add(destination, panel, choose);
-        AddExplanation(panel, view, option.Illegal, destination);
-    }
-
-    private static void AddExplanation(DecisionPanel panel, AffordancePresentation view,
-        string? illegal, Container? destination)
-    {
-        if (view.SourceState is { Length: > 0 } state)
-            Add(destination, panel, DecisionPanel.Text(state, GodotThemeVariations.Caption, wrap: true));
-        if (view.CostDescription is { Length: > 0 } cost)
-            Add(destination, panel, DecisionPanel.Text($"Costs: {cost}.", GodotThemeVariations.Caption, wrap: true));
-        if (view.Description is { Length: > 0 } effect)
-            Add(destination, panel, DecisionPanel.Text(effect, GodotThemeVariations.Caption, wrap: true));
-        if (illegal is not null)
-            Add(destination, panel, DecisionPanel.Text($"! {illegal}", GodotThemeVariations.DangerText, wrap: true));
+        if (option.Illegal is not null)
+            Add(destination, panel, DecisionPanel.Text(option.Illegal, GodotThemeVariations.Caption, wrap: true));
     }
 
     private static void Add(Container? destination, DecisionPanel panel, Control control)

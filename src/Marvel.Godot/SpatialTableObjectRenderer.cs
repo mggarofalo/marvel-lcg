@@ -47,9 +47,14 @@ internal sealed class SpatialTableObjectRenderer
             geometry.LargeText ? 1 : 2);
     }
 
-    internal void RenderRevealing(IReadOnlyList<BoardAreaPresentation> areas) =>
-        RenderCardRegion(SpatialTableZones.Resolving(areas), "RevealingArea",
-            geometry.Revealing, CardDisplaySize.Hand, int.MaxValue);
+    internal void RenderRevealing(IReadOnlyList<BoardAreaPresentation> areas,
+        IReadOnlyList<BoardCardPresentation>? context = null)
+    {
+        BoardAreaPresentation[] resolving = SpatialTableZones.Resolving(areas);
+        if (context is { Count: > 0 })
+            resolving = [new BoardAreaPresentation(-1, "Current decision", "", context, []), .. resolving];
+        RenderCardRegion(resolving, "RevealingArea", geometry.Revealing, CardDisplaySize.Hand, int.MaxValue);
+    }
 
     internal void RenderPlayer(IReadOnlyList<BoardAreaPresentation> areas)
     {
@@ -79,10 +84,7 @@ internal sealed class SpatialTableObjectRenderer
         int seat = areas.FirstOrDefault(area => area.Zone == "HeroArea")?.Seat ?? -1;
         BoardCardPresentation[] controlled = CardSourceGroups.Controlled(areas, seat);
         if (controlled.Length == 0) return;
-        VBoxContainer ledger = CardSourceCollection.Create(controlled, CardSourceStrip.LedgerWidth, result, scale, "Controlled upgrades");
-        ledger.Name = "ControlledSourceLedger";
-        ledger.Position = geometry.Upgrades.Position;
-        surface.AddChild(ledger);
+        surface.AddChild(SourceTableauRenderer.Create(controlled, geometry.SourceTableau, result, scale));
     }
 
     internal void RenderHand(BoardAreaPresentation? hand)
@@ -133,7 +135,7 @@ internal sealed class SpatialTableObjectRenderer
     private void RenderCardRegion(BoardAreaPresentation[] matching, string zone,
         Rect2 region, CardDisplaySize size, int maximumVisible)
     {
-        matching = [.. matching.Select(area => area with
+        if (zone != "RevealingArea") matching = [.. matching.Select(area => area with
         { Cards = [.. area.Cards.Where(card => !CardSourceGroups.IsLocalSource(card))] })];
         BoardCardPresentation[] cards = [.. matching.SelectMany(SpatialTableZones.Current)];
         if (cards.Length == 0)

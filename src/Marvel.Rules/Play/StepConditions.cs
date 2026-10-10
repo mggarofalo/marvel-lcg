@@ -77,6 +77,6 @@ internal static class StepConditions
             Conditions.Values.SelectMany(each => each).Concat(
                 // These are discovered while their occurrence applies rather
                 // than promised when its step is scheduled.
-                [DamageDealt, ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds]),
+                [DamageDealt, ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds, BasicAttackEnds]),
             StringComparer.Ordinal);
 }

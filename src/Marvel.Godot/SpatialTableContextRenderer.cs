@@ -49,9 +49,7 @@ internal static class SpatialTableContextRenderer
         };
         body.AddChild(columns);
         PromptPresentation? presentation = prompt is null ? null : PromptPresentation.From(prompt, world);
-        string heading = presentation?.Heading ?? PendingSituationPresentation.Heading(world);
-        if (presentation is not null) heading += $" · {presentation.Context}";
-        Label headingLabel = Copy(heading, GodotThemeVariations.Body);
+        Label headingLabel = Copy(Heading(presentation, prompt, world), GodotThemeVariations.Body);
         headingLabel.Name = "ContextualHeading";
         body.AddChild(headingLabel);
         body.MoveChild(headingLabel, 0);
@@ -74,6 +72,18 @@ internal static class SpatialTableContextRenderer
         result.RegisterContextualSummary(summary, string.Empty, resolution);
         VBoxContainer actions = TableActionPages.Create(columns, actionsWidth, result.OpenCompleteChoices);
         result.RegisterContextualActions(actions);
+    }
+
+    private static string Heading(PromptPresentation? presentation, Prompt? prompt, WorldDescriptor world)
+    {
+        string heading = presentation?.Heading ?? PendingSituationPresentation.Heading(world);
+        if (presentation is not null && prompt is not null)
+        {
+            string player = world.Players.FirstOrDefault(candidate => candidate.Seat == prompt.Player)?.Name
+                ?? $"Player {prompt.Player + 1}";
+            heading += $" / {player} decides";
+        }
+        return heading;
     }
 
     private static Label Copy(string text, string variation) => new()

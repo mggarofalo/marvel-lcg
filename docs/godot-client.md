@@ -18,6 +18,18 @@ The project and its managed dependencies build from the repository root:
 dotnet build src/Marvel.Godot/Marvel.Godot.csproj
 ```
 
+For local play on Windows, run `pwsh ./tools/run-game.ps1` from the repository
+root. It discovers the installed .NET Godot editor and builds before launching.
+Use `-NoBuild` only when the current source has already been built.
+
+For a short current-decision check, start Iron Man against Rhino on Standard
+with seed `7`. Keep the opening hand, end the turn and finish the player phase.
+Business Problems should remain visible through its form and consequence
+choices without opening Complete Choices. Choosing to remain in the current
+form exposes the second decision. This is a reproducible gameplay check, not
+product acceptance: the owner affirms the tableau and decision area after
+trying the working build.
+
 ### Visual Studio Code
 
 The checked-in VS Code launch configuration builds the managed project, starts

@@ -407,7 +407,8 @@ public sealed class CoreActivationAbilityTests
         runner.ActivationCompleted(
             world, new EnemyActivation(
                 villain.ObjectId, 0, Attacking: true, Id: 12,
-                Made: true, DamageDealt: 1));
+                Made: true, DamageDealt: 1)
+                { DamageRecipients = [world.Seats[0].IdentityCard.ObjectId] });
 
         Assert.False(world.Seats[0].IdentityCard.Ready);
     }

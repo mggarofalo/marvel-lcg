@@ -83,7 +83,10 @@ internal static class AbilityStructuralQueries
         bool local = AbilityAdmission.IsOptionLegal(option, admission)
             && (!requireStateChange || IsExplicitDecline(option)
                 || AbilityResolutionAdmission.CanPartiallyResolve(option, admission));
-        if (!local || !continuation.HasPath)
+        // Mandatory encounter instructions resolve as much as possible. A later
+        // choice without targets cannot invalidate this option, including an
+        // optional form change that supplies the later alter-ego target.
+        if (!local || !continuation.HasPath || context.IsMandatoryEncounter)
             return local;
 
         var prior = admission.Query.ChosenBinding;

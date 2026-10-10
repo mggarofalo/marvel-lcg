@@ -84,7 +84,7 @@ public sealed class AbilityRunner : ICardAbilities
     public void WouldBeDefeated(World world, Card target, List<GameEvent> events) => resolution.WouldBeDefeated(world, target, events);
     public bool WouldBeDefeated(World world, Card target, Card source, string trigger, string verb, int by, List<GameEvent> events, Occurrence? recordDefeatOn = null) => resolution.WouldBeDefeated(world, target, source, trigger, verb, by, events, recordDefeatOn);
     public IReadOnlyList<GameEvent> Setup(World world, Card card) => resolution.Setup(world, card);
-    public IReadOnlyList<GameEvent> ResolveEachPlayer(World world, Card source, int player, int stoppedAt, AbilityType? tier, bool finalStep, bool finalPlayer) => resolution.ResolveEachPlayer(world, source, player, stoppedAt, tier, finalStep, finalPlayer);
+    public IReadOnlyList<GameEvent> ResolveEachPlayer(World world, Card source, int player, int stoppedAt, AbilityType? tier, bool finalStep, bool finalPlayer) => new EachPlayerAbilityResolution(resolution).Resolve(world, source, player, stoppedAt, tier, finalStep, finalPlayer);
     public IReadOnlyList<GameEvent> WhenCardDefeated(World world, Card card, Defeated defeated) => resolution.WhenCardDefeated(world, card, defeated);
     public bool WhenCardDefeated(World world, Card card, Defeated defeated, string trigger, List<GameEvent> events) => resolution.WhenCardDefeated(world, card, defeated, trigger, events);
     public IReadOnlyList<GameEvent> Act(World world, PendingAbility ability, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, IReadOnlyDictionary<string, long>? values = null, IReadOnlyList<ResourceAllocation>? allocations = null) => resolution.Act(world, ability, paying, chosen, values, allocations);

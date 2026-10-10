@@ -156,7 +156,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
             panel.CardChoices.RefreshLayout();
             return;
         }
-        frame.Size = new Vector2(Math.Min(560, viewport.X - 32), Math.Min(520, Math.Max(220, viewport.Y * 0.44f)));
+        frame.Size = new Vector2(Math.Min(560, viewport.X - 32), Math.Min(560, Math.Max(220, viewport.Y * 0.52f)));
         frame.Position = new Vector2(viewport.X - frame.Size.X - 16, 72);
     }
 

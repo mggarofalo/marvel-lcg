@@ -13,7 +13,7 @@ public sealed class EngineBuildIdentityTests
 
         Assert.Equal("0.1.0-dev.0", EngineBuildIdentity.ProductVersion);
         Assert.Equal("local", EngineBuildIdentity.Commit);
-        Assert.Equal("engine-replay-v10", EngineBuildIdentity.ReplayContract);
+        Assert.Equal("engine-replay-v11", EngineBuildIdentity.ReplayContract);
         Assert.Equal("mt19937-iso-cxx", EngineBuildIdentity.RngContract);
         Assert.Equal("state-digest-v3", EngineBuildIdentity.StateDigest);
         Assert.Equal(SessionSave.CurrentSchema, EngineBuildIdentity.SaveSchema);
@@ -30,7 +30,7 @@ public sealed class EngineBuildIdentityTests
 
         Assert.Equal(new Version(0, 1, 0, 0), assembly);
         Assert.Equal(
-            "v0.1.0-dev.0 · engine engine-replay-v10 · protocol 26 · save 5",
+            "v0.1.0-dev.0 · engine engine-replay-v11 · protocol 26 · save 5",
             EngineBuildIdentity.Display);
     }
 }

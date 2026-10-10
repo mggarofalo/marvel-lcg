@@ -167,7 +167,7 @@ public static class AbilityLowering
     {
         string name = Text(value, location);
         return name is "healed" or "discarded" or "found" or "energy" or "resourceTypes"
-            or "activationDamage" or "activationThreat" or "activationMade"
+            or "activationDamage" or "activationDamageToYou" or "activationThreat" or "activationMade"
             ? name : throw location.Error($"'{name}' is not an authored resolution result");
     }
 }
