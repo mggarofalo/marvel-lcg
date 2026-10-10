@@ -37,9 +37,8 @@ func _check_cards(tableau: Control, viewport: ScrollContainer, narrow: bool, fai
 	if cards.size() != 16: failures.append("lost physical sources")
 	var copies: Array[Control] = []
 	for card in cards:
-		if narrow:
-			viewport.ensure_control_visible(card)
-			for frame in range(3): await process_frame
+		viewport.ensure_control_visible(card)
+		for frame in range(3): await process_frame
 		if not viewport.get_global_rect().encloses(card.get_global_rect()):
 			failures.append("source hidden by scrolling: " + str(card.name) + " " + str(card.get_global_rect()))
 		_check_overlap(card, cards, failures)
@@ -60,6 +59,28 @@ func _check_card_readability(card: Control, failures: Array[String]) -> void:
 	if button != null and (button.size.y < 44 or not card.get_global_rect().encloses(button.get_global_rect())):
 		failures.append("source action exceeds tile")
 	if card.find_child("SourceState", true, false) == null: failures.append("missing readiness")
+	var body := card.find_child("SourceTileBody", true, false) as Control
+	var type := card.find_child("SourceType", true, false) as Label
+	if type == null or type.text.is_empty(): failures.append("missing card type")
+	if title.get_global_rect().position.x < body.global_position.x + 19:
+		failures.append("title enters the B1 angled rail")
+	_check_excerpt(card, failures)
+	if not card.get_global_rect().encloses(body.get_global_rect()):
+		failures.append("B1 source body exceeds its tile")
+
+func _check_excerpt(card: Control, failures: Array[String]) -> void:
+	var rules := card.find_child("SourceMeaning", true, false) as RichTextLabel
+	if rules == null: return
+	var hint := rules.find_child("SourceRulesDisclosure", false, false) as Label
+	var overflow := rules.get_content_height() > rules.size.y
+	if hint.visible != overflow: failures.append("abbreviated rules lack explicit disclosure")
+	if not overflow: return
+	if hint.get_line_count() != 1 or not rules.get_global_rect().encloses(hint.get_global_rect()):
+		failures.append("rules disclosure is clipped")
+	for line in range(rules.get_line_count()):
+		if rules.get_line_range(line).x >= rules.visible_characters and rules.visible_characters >= 0: break
+		if rules.get_line_offset(line) + rules.get_line_height(line) > hint.position.y:
+			failures.append("partial rule line overlaps disclosure")
 
 func _check_copy_input(copies: Array[Control], viewport: ScrollContainer, fixture: Control, failures: Array[String]) -> void:
 	if copies.size() != 2:

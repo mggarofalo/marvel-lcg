@@ -86,7 +86,7 @@ public sealed class SourceTableauTests
     [Theory]
     [InlineData(100)]
     [InlineData(150)]
-    public void DenseDesktopSourcesFitWithoutCoveringHandCharactersOrDecision(int percent)
+    public void DenseDesktopSourceViewportPreservesHandCharactersAndDecision(int percent)
     {
         var table = new AstraTableGeometry(1670, 962, percent >= 130, PhysicalCardSize: new Vector2(240, 240), HasSourceTableau: true);
         var layout = new SourceTableauLayout(table.SourceTableau.Size.X - 12);
@@ -95,7 +95,9 @@ public sealed class SourceTableauTests
         {
             var tile = new Rect2(table.SourceTableau.Position + new Vector2(0, 24) + layout.Position(index),
                 new Vector2(layout.TileWidth, SourceTableauLayout.TileHeight));
-            Assert.True(table.SourceTableau.Encloses(tile));
+            Assert.True(tile.Position.X >= table.SourceTableau.Position.X);
+            Assert.True(tile.End.X <= table.SourceTableau.End.X);
+            if (tile.End.Y > table.SourceTableau.End.Y) continue;
             Assert.False(tile.Intersects(table.Hand));
             Assert.False(tile.Intersects(table.Identity));
             Assert.False(tile.Intersects(table.Allies));

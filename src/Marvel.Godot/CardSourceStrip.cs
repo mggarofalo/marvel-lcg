@@ -12,15 +12,7 @@ internal static class CardSourceStrip
 
     internal static Control Create(BoardCardPresentation card, float width)
     {
-        var margin = new MarginContainer { Name = "SourceStrip", MouseFilter = Control.MouseFilterEnum.Ignore,
-            CustomMinimumSize = new Vector2(width - 8, 0) };
-        margin.AddThemeConstantOverride("margin_left", (int)BodyInset - 4);
-        margin.AddThemeConstantOverride("margin_right", 9);
-        margin.AddThemeConstantOverride("margin_top", 4);
-        margin.AddThemeConstantOverride("margin_bottom", 7);
-        var stack = new VBoxContainer { Name = "SourceContents", MouseFilter = Control.MouseFilterEnum.Ignore };
-        stack.AddThemeConstantOverride("separation", 2);
-        margin.AddChild(stack);
+        MarginContainer margin = Frame(card, width, out VBoxContainer stack);
         AddTitle(stack, card.Title);
         Label type = Label(card.Kind, "SourceType", 9, CardTypography.Body);
         type.AddThemeColorOverride("font_color", ClientTheme.ToGodot(CardVisualTokens.Secondary));
@@ -34,19 +26,33 @@ internal static class CardSourceStrip
             text.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             stack.AddChild(text);
         }
+        return margin;
+    }
+
+    internal static MarginContainer Frame(BoardCardPresentation card, float width, out VBoxContainer stack)
+    {
+        var margin = new MarginContainer { Name = "SourceStrip", MouseFilter = Control.MouseFilterEnum.Ignore,
+            CustomMinimumSize = new Vector2(width - 8, 0) };
+        margin.AddThemeConstantOverride("margin_left", (int)BodyInset - 4);
+        margin.AddThemeConstantOverride("margin_right", 9);
+        margin.AddThemeConstantOverride("margin_top", 4);
+        margin.AddThemeConstantOverride("margin_bottom", 7);
+        stack = new VBoxContainer { Name = "SourceContents", MouseFilter = Control.MouseFilterEnum.Ignore };
+        stack.AddThemeConstantOverride("separation", 2);
+        margin.AddChild(stack);
         margin.Draw += () => DrawRail(margin, card);
         margin.Resized += margin.QueueRedraw;
         return margin;
     }
 
-    private static void AddTitle(VBoxContainer stack, string title)
+    internal static void AddTitle(VBoxContainer stack, string title)
     {
         Label label = Label(title, "SourceTitle", 14, CardTypography.Title);
         label.Uppercase = true;
         stack.AddChild(label);
     }
 
-    private static void AddContributions(VBoxContainer stack, BoardCardPresentation card)
+    internal static void AddContributions(VBoxContainer stack, BoardCardPresentation card, bool showRecipients = true)
     {
         if (card.Persistent is not { } source || source.Contributions.Count == 0) return;
         var flow = new HFlowContainer { Name = "SourceContributions", MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -70,11 +76,11 @@ internal static class CardSourceStrip
             unit.AddChild(contribution);
         }
         int recipients = source.Contributions.Select(value => value.TargetId).Distinct().Count();
-        if (source.Relation.Kind != "Attached" || source.Contributions.Any(value => value.TargetId != source.Relation.HostId))
+        if (showRecipients && (source.Relation.Kind != "Attached" || source.Contributions.Any(value => value.TargetId != source.Relation.HostId)))
             stack.AddChild(Label($"Applied to {recipients} {(recipients == 1 ? "card" : "cards")}", "SourceRecipients", 10, CardTypography.Body));
     }
 
-    private static Label Label(string text, string name, int size, Font font)
+    internal static Label Label(string text, string name, int size, Font font)
     {
         var label = new Label { Name = name, Text = text, MouseFilter = Control.MouseFilterEnum.Ignore,
             AutowrapMode = TextServer.AutowrapMode.WordSmart };
