@@ -94,7 +94,13 @@ internal static class CardSourceStrip
     private static void DrawRail(Control surface, BoardCardPresentation card)
     {
         float height = surface.Size.Y;
-        surface.DrawColoredPolygon([new(0, 0), new(RailWidth, 0), new(7, height), new(0, height)], CardFaceStyle.Accent(card));
-        surface.DrawColoredPolygon([new(0, 0), new(RailWidth - 5, 0), new(2, height), new(0, height)], CardFaceStyle.Ink);
+        DrawRailPolygon(surface, [new(0, 0), new(RailWidth, 0), new(7, height), new(0, height)], CardFaceStyle.Accent(card));
+        DrawRailPolygon(surface, [new(0, 0), new(RailWidth - 5, 0), new(2, height), new(0, height)], CardFaceStyle.Ink);
+    }
+
+    private static void DrawRailPolygon(Control surface, Vector2[] points, Color color)
+    {
+        surface.DrawColoredPolygon(points, color);
+        CardEdgeSmoothing.Draw(surface, points, color);
     }
 }

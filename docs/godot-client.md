@@ -30,6 +30,22 @@ form exposes the second decision. This is a reproducible gameplay check, not
 product acceptance: the owner affirms the tableau and decision area after
 trying the working build.
 
+### Card rendering
+
+The Compatibility renderer draws text at the active canvas resolution. Card art
+and icon textures carry mipmaps and use linear mipmap filtering when reduced;
+resource icons use Lanczos resampling before their mipmaps are generated.
+Transparent edge colors are extended before filtering to avoid dark fringes.
+B1 polygons have a one-pixel transparent coverage fringe, including the compact
+source rails. This smooths their diagonals without a full-screen blur or a change
+of renderer.
+
+The rendered redesign gate samples pixels along an isolated production card
+edge. It requires intermediate coverage between the ink and paper, rather than
+trusting a renderer setting. Removing the fringe fails this check. Native card
+layout and interaction checks run separately; the pixel check requires a real
+rendering device (Xvfb on Linux), not the headless dummy renderer.
+
 ### Visual Studio Code
 
 The checked-in VS Code launch configuration builds the managed project, starts

@@ -56,6 +56,7 @@ internal static class PrintedCardFace
             Size = r.Illustration.Size, ClipContents = true, MouseFilter = Control.MouseFilterEnum.Ignore };
         face.AddChild(well);
         var image = new TextureRect { Name = "Illustration", Texture = texture,
+            TextureFilter = CanvasItem.TextureFilterEnum.LinearWithMipmaps,
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
             MouseFilter = Control.MouseFilterEnum.Ignore };

@@ -24,6 +24,8 @@ internal sealed class BuiltInCardArt : ICardArtProvider
             .Replace("#ffffff", "#" + ClientTheme.ToGodot(CardVisualTokens.Paper).ToHtml(false), StringComparison.Ordinal);
         if (image.LoadSvgFromString(svg) != Error.Ok)
             throw new InvalidOperationException("The packaged silhouette could not be decoded.");
+        image.FixAlphaEdges();
+        image.GenerateMipmaps();
         Texture2D texture = ImageTexture.CreateFromImage(image);
         textures.Add(resource, texture);
         return texture;
