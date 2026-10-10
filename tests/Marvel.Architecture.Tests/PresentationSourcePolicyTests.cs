@@ -41,6 +41,12 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Events.AttackCompleted.Defender",
             "Marvel.Rules.Events.AttackCompleted.Enemy",
             "Marvel.Rules.Events.AttackCompleted.Target",
+            // View formats authorized applied quantities without recalculating them.
+            "Marvel.Rules.Events.BoostResolved.Attacking",
+            "Marvel.Rules.Events.BoostResolved.Card",
+            "Marvel.Rules.Events.BoostResolved.Enemy",
+            "Marvel.Rules.Events.BoostResolved.Icons",
+            "Marvel.Rules.Events.BoostResolved.Strength",
             "Marvel.Rules.Events.CardAttached.Card",
             "Marvel.Rules.Events.CardAttached.Host",
             "Marvel.Rules.Events.CardDetached.Card",

@@ -143,6 +143,10 @@ public static class EventPresenter
                 EventFieldPresentation.Summary(set, world),
                 [set.Card],
                 EventFieldPresentation.Motion(set)),
+            BoostResolved boost => (
+                $"{Card(boost.Card, world, boost)} added {boost.Icons} boost icon{(boost.Icons == 1 ? "" : "s")}; "
+                + $"{Card(boost.Enemy, world, boost)}'s {(boost.Attacking ? "ATK" : "SCH")} is now {boost.Strength}.",
+                [boost.Card, boost.Enemy], EventMotionKind.State),
             AttackCompleted completed => (
                 AttackCompletionPresentation.Summary(completed, world),
                 AttackCompletionPresentation.Anchors(completed),

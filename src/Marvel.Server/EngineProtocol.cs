@@ -33,10 +33,11 @@ public static class EngineProtocol
     /// Version 21 identifies authorized card search and look choices publicly.
     /// Version 22 adds a visibility-safe latest-action undo status.
     /// Version 23 separates printed stat marks from effective-value explanations.
+    /// Version 26 adds resolved boost contributions and current activation strength.
     /// Version 25 adds public, identity-free completed deck-shuffle receipts.
     /// Version 24 adds next-Special and visible-card selection purposes with target exclusions.
     /// </summary>
-    public const int Version = 25;
+    public const int Version = 26;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;

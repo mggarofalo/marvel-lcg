@@ -25,7 +25,11 @@ public sealed class VillainPhaseBoostIconsAddToTheSchemeValueTests : VillainPhas
         // whenever the boost card happened to be worth nothing.
         var printed = new Printed().With("villain", ("SCH", "1")).With("scheme", ("EscalationThreat", "0")).With("boost", ("Boost", boost.ToString()));
         var world = Board(printed, players: 1);
-        Run(world, printed);
+        var events = Run(world, printed);
+        BoostResolved contribution = Assert.Single(events.OfType<BoostResolved>());
+        Assert.False(contribution.Attacking);
+        Assert.Equal(boost, contribution.Icons);
+        Assert.Equal(expected, contribution.Strength);
         Assert.Equal(expected, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
     }
 

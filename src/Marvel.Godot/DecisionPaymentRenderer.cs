@@ -178,13 +178,14 @@ internal sealed class DecisionPaymentRenderer
     private void AddPaymentProgress()
     {
         PaymentProgress progress = composer.Progress().Payment;
-        string summary = $"{progress.GeneratedIcons} resource{(progress.GeneratedIcons == 1 ? "" : "s")} selected";
+        string summary = CardPaymentPresentation.Progress(progress);
         if (progress.AssignedIcons != progress.GeneratedIcons)
             summary += $" · {progress.AssignedIcons} assigned to payment";
         if (progress.ExcessIcons > 0) summary += $" · {progress.ExcessIcons} excess";
         Label label = DecisionPanel.Text(summary,
             progress.ExcessIcons > 0 ? GodotThemeVariations.DangerText : GodotThemeVariations.Caption,
             wrap: true);
+        label.Name = "PaymentProgress";
         if (panel.PaymentModalOpen) panel.AddCommit(label);
         else panel.AddContent(label);
     }

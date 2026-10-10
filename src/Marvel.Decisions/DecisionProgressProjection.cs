@@ -65,6 +65,7 @@ internal static class DecisionProgressProjection
             requested.Length,
             paymentSatisfied)
         {
+            RemainingRequired = ResourcePaymentProgress.RemainingRequired(cost, composer.Resources),
             CanCoverCost = ResourcePayment.Allocate(cost, composer.Resources, composer.Values) is not null,
         };
     }

@@ -208,6 +208,21 @@ internal static class AttackBoost
                     : TimingPoints.EndOfActivation)));
         }
 
+        // Our event contract records the applied contribution and current stat,
+        // not final damage or threat through later prevention and responses.
+        events.Add(new BoostResolved(boost.ObjectId, activation.Enemy, Math.Max(0, icons),
+            activation.Attacking, StateFields.Modified(world, world.Cards[activation.Enemy],
+                activation.Attacking ? "attack" : "scheme", facts, world.Players))
+        {
+            Subjects = new Dictionary<int, string>
+            {
+                [boost.ObjectId] = AttackCompletion.SubjectTitle(world, facts, boost.ObjectId),
+                [activation.Enemy] = AttackCompletion.SubjectTitle(world, facts, activation.Enemy),
+            },
+            Trigger = trigger,
+            Verb = "Boost_Resolved",
+        });
+
         // A Boost ability can move itself into play. Step 3d discards the card
         // only while it remains the boost card being applied.
         DiscardBoostCard(world, boost, trigger, events);

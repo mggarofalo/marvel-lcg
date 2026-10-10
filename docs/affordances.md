@@ -241,3 +241,12 @@ the current activation. It is passive provenance, not an action or legality inpu
 The view filters it to readable faces for the authorized prompt and public faces
 for the public pending situation. The view names those causes from the filtered
 snapshot; engine prose does not embed their titles.
+
+## Simple payment shortfall
+
+`ResourcePaymentProgress` assesses the additional icons for one unrestricted
+numeric cost. Decisions exposes the result as `PaymentProgress.RemainingRequired`;
+Godot displays it while the draft is incomplete. Typed, printed, alternative,
+variable and simultaneous costs return no simple count. Zero does not authorize
+submission: normal allocation, declarations and answer validation still apply.
+The progress is calculated locally from the authorized offer, with no new wire field.

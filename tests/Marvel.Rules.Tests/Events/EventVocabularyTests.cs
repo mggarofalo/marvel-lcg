@@ -57,6 +57,7 @@ public sealed partial class EventVocabularyTests
     [
         new PlayAreaJoined(1, 4),
         new PlayAreaDetached(2, 5),
+        new BoostResolved(7, 9, 2, true, 5),
         new AttackCompleted(9, 7, 7),
         new WhenRevealedCanceled(9, 7),
         new CardsShuffledIntoDeck(0, 2, ["Energy", "Vibranium"]),
@@ -87,7 +88,7 @@ public sealed partial class EventVocabularyTests
         var documented = Documented(EmittedOnlyHeading).Keys.ToHashSet(StringComparer.Ordinal);
         var tested = EmittedOnly.Select(Kind).ToHashSet(StringComparer.Ordinal);
 
-        Assert.Equal(5, tested.Count);
+        Assert.Equal(6, tested.Count);
         Assert.Equal(tested, documented);
     }
 

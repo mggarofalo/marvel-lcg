@@ -33,6 +33,10 @@ func _payment_modal_is_safe() -> bool:
 	if modal == null:
 		_fail("card play did not open its payment modal")
 		return false
+	var progress := modal.find_child("PaymentProgress", true, false) as Label
+	if progress == null or ("more resource" not in progress.text or "needed" not in progress.text):
+		_fail("unpaid card does not explain the remaining resource cost")
+		return false
 	if not _payment_symbols_are_readable(modal): return false
 	if not _payment_choices_are_comparable(modal): return false
 	var copy := _visible_text(modal)

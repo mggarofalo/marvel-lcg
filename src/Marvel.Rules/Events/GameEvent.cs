@@ -46,6 +46,7 @@ namespace Marvel.Rules.Events;
 [JsonDerivedType(typeof(FieldSet), nameof(FieldSet))]
 [JsonDerivedType(typeof(PlayAreaJoined), nameof(PlayAreaJoined))]
 [JsonDerivedType(typeof(PlayAreaDetached), nameof(PlayAreaDetached))]
+[JsonDerivedType(typeof(BoostResolved), nameof(BoostResolved))]
 [JsonDerivedType(typeof(AttackCompleted), nameof(AttackCompleted))]
 [JsonDerivedType(typeof(WhenRevealedCanceled), nameof(WhenRevealedCanceled))]
 [JsonDerivedType(typeof(CardsShuffledIntoDeck), nameof(CardsShuffledIntoDeck))]

@@ -28,6 +28,7 @@ internal static class ClientEventValidation
                 PlayAreaJoined => true,
                 PlayAreaDetached => true,
                 FieldSet set => set.Field is not null,
+                BoostResolved boost => boost.Card >= 0 && boost.Enemy >= 0 && boost.Icons >= 0,
                 AttackCompleted => true,
                 CardsShuffledIntoDeck shuffled => CompleteShuffleReceipt(shuffled),
                 WhenRevealedCanceled canceled => canceled.Card >= 0

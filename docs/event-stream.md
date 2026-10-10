@@ -32,6 +32,7 @@ The current public events are:
 | `PlayAreaJoined` | A play area joined a game area |
 | `PlayAreaDetached` | A play area left a game area |
 | `FieldSet` | One named gameplay field changed |
+| `BoostResolved` | Applied boost icons and the current activation stat |
 | `AttackCompleted` | An enemy attack ended with its established target and defender |
 | `CardsShuffledIntoDeck` | A completed shuffle of returned cards, with public names and no hidden identities |
 
@@ -64,6 +65,7 @@ emits these facts directly:
 |---|---|
 | `PlayAreaJoined` | `play_area`, `game_area` |
 | `PlayAreaDetached` | `play_area`, `game_area` |
+| `BoostResolved` | `card`, `enemy`, `icons`, `attacking`, `strength` |
 | `AttackCompleted` | `enemy`, `target`, `defender`, `damage_dealt` |
 | `WhenRevealedCanceled` | `card`, `source` |
 | `CardsShuffledIntoDeck` | `player`, `count`, `public_titles` |
@@ -78,6 +80,15 @@ while stripping inherited `subjects`; it does not make hidden deck cards
 addressable. Protocol 25 introduces the event. Replay v9 is required because
 replay verification compares each decision's exact semantic event list, even
 though this addition does not change decisions, state, or RNG consumption.
+
+`BoostResolved` records each boost after its ability and icon application, before
+its discard and the next boost. `icons` is the nonnegative applied contribution;
+`strength` is the engine's current modified ATK or SCH, not final damage or threat.
+Its engine-chosen verb is `Boost_Resolved`, distinct from dealing, flipping and
+discarding a boost card. Both card and enemy must be readable; only their
+occurrence-time names survive visibility filtering. An activation that ended before icon application emits no
+contribution. Protocol 26 and replay v10 version this added semantic event; save
+schema 5, state digest v3, decisions and RNG consumption are unchanged.
 
 `AttackCompleted` identifies the attacker, final attacked character, and defender
 (`-1` when undefended). It asserts that the attack ended, including an attack
