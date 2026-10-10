@@ -24,6 +24,15 @@ dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 New-Item -ItemType Directory -Force -Path $CaptureDir | Out-Null
 
+$edgeOutput = & $GodotBin --audio-driver Dummy --rendering-method gl_compatibility `
+    --path "$repoRoot/src/Marvel.Godot" --script res://smoke/card_edge_render_smoke.gd `
+    -- --marvel-b1-sample 2>&1
+$edgeOutput | Write-Output
+if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $edgeOutput) `
+    -or -not ($edgeOutput -match "CARD_EDGE_RENDER_OK")) {
+    throw "Rendered card edges have no anti-aliased coverage."
+}
+
 function Invoke-RedesignSmoke {
     param([string]$Scale, [bool]$TwoPlayer)
 

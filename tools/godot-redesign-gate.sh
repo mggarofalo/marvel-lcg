@@ -19,6 +19,17 @@ fi
 dotnet build "$repo_root/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 mkdir -p "$capture_root"
 
+edge_log=$(mktemp)
+"$godot_bin" --audio-driver Dummy --rendering-method gl_compatibility \
+  --path "$repo_root/src/Marvel.Godot" --script res://smoke/card_edge_render_smoke.gd \
+  -- --marvel-b1-sample 2>&1 | tee "$edge_log"
+if godot_smoke_has_error "$edge_log" || ! grep -q CARD_EDGE_RENDER_OK "$edge_log"; then
+  rm -f "$edge_log"
+  echo "Rendered card edges have no anti-aliased coverage." >&2
+  exit 1
+fi
+rm -f "$edge_log"
+
 run_redesign_smoke() {
   local scale=$1
   local seats=$2

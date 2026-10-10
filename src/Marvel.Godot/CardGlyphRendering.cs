@@ -14,6 +14,7 @@ internal static class CardGlyphRendering
             Name = name, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             Texture = Texture(glyph), Position = bounds.Position, Size = bounds.Size,
+            TextureFilter = CanvasItem.TextureFilterEnum.LinearWithMipmaps,
             MouseFilter = Control.MouseFilterEnum.Ignore, Modulate = color,
         };
     }
@@ -28,6 +29,8 @@ internal static class CardGlyphRendering
         using var image = new Image();
         if (image.LoadSvgFromString(reader.ReadToEnd()) != Error.Ok)
             throw new InvalidOperationException($"Invalid card glyph {glyph}");
+        image.FixAlphaEdges();
+        image.GenerateMipmaps();
         Texture2D texture = ImageTexture.CreateFromImage(image);
         Textures.Add(glyph, texture);
         return texture;
