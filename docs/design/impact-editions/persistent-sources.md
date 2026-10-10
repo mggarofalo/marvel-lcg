@@ -47,6 +47,25 @@ rule inspection rather than a guessed modifier.
 
 ## Automated evidence
 
+### Controlled-source tableau
+
+The controlled upgrade/support tableau uses one stable tile per physical source
+instead of a single selected source. Its compact faces share `CardSourceStrip`'s
+B1 angled rail, protected inset, condensed title font and symbolic contribution
+units. Type and readiness occupy a secondary row. Engine-offered actions have a
+separate 44-pixel row with paper/ink contrast and a gold keyboard-focus outline.
+Full inspection retains the same complete B1 card face.
+
+Tiles are 144 pixels tall. Dense collections scroll inside the source region;
+all sixteen stress-fixture sources remain independently reachable, but are not
+promised to fit simultaneously. Shaped rule previews stop before an incomplete
+line and show an explicit inspection cue when abbreviated. No card rules are
+inferred to shorten the supplied text.
+
+Owner feedback on `ee58335c` called the tableau an improvement but rejected its
+generic compact styling. This B1 correction addresses that feedback; product
+acceptance remains the owner's affirmation of the working build.
+
 The initial interaction-shell refactor passed 26 focused face/state checks
 before source behavior changed. The source work adds typed relationship and
 meaning tests and a native input gate at 1920x1080, at 50%, 80%, 100%, and 150%.

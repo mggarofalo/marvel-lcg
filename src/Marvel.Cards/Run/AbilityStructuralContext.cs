@@ -29,6 +29,10 @@ internal sealed record AbilityStructuralContext(
     ImmutableHashSet<int> PersistedCrisisIgnoringThwarts,
     ImmutableArray<AbilityStructuralFrame> Frames)
 {
+    internal bool IsMandatoryEncounter =>
+        !AbilityCardQueries.IsPlayerCard(Expressions.World.Facts, Expressions.Source)
+        && Tier is { } tier && AbilityTypes.IsMandatory(tier);
+
     internal AbilityAdmissionContext Admission() => new(
         Program, ResourceAbilities, Expressions, Reachability, Power, HasContinuation);
 }

@@ -190,6 +190,7 @@ internal static class AbilityWindowAdmission
         World world, CompiledCardAbility ability, Card card,
         Occurrence occurrence, int? restricted) =>
         Subject(world, ability.Trigger.Subject, card, occurrence, restricted)
+            && (ability.Trigger.Actor != AbilityRoles.You || occurrence.ActorFacts?.Kind is CardKind.Hero or CardKind.AlterEgo)
             && Role(world, ability.Trigger.Actor, card, occurrence.ActorFacts, restricted)
             && Role(world, ability.Trigger.Target, card, occurrence.TargetFacts, restricted)
             && Player(world, ability.Trigger.Player, card, occurrence, restricted);

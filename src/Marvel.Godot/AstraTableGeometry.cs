@@ -9,8 +9,9 @@ namespace Marvel.Godot;
 /// </remarks>
 internal sealed record AstraTableGeometry(
     float Width, float Height, bool LargeText, bool HasRevealingCard = false,
-    Vector2? PhysicalCardSize = null, bool HasSeatSummaries = false)
+    Vector2? PhysicalCardSize = null, bool HasSeatSummaries = false, bool HasSourceTableau = false)
 {
+    internal bool HasAllies { get; init; }
     internal const float ReferenceWidth = 1320;
     internal const float ReferenceHeight = 962;
 
@@ -27,19 +28,26 @@ internal sealed record AstraTableGeometry(
     internal Rect2 PlayerDiscard => Scale(new Rect2(36, 496, 108, 142));
     internal Rect2 PlayerDeck => Scale(new Rect2(164, 496, 108, 142));
     internal Rect2 Context => Scale(new Rect2(20, 800, 1280, 156));
-    internal bool HasSeparateRevealSlot => HasRevealingCard
+    internal bool HasSeparateRevealSlot => HasRevealingCard && !HasSourceTableau
         && Assets.End.X + 2 * (FootprintWidth + 16) + 16 + SpatialRegionDrawerLayout.MinimumWidth <= Width - 20;
-    internal Rect2 Identity => new((HasSeparateRevealSlot ? Revealing.End.X : Assets.End.X) + 16,
+    internal Rect2 Identity => new(HasSourceTableau ? (HasRevealingCard ? Assets.End.X + 16 : Assets.Position.X) : (HasSeparateRevealSlot ? Revealing.End.X : Assets.End.X) + 16,
         ScaleY(310), FootprintWidth, ScaleY(189));
     internal Rect2 Allies => new(Identity.End.X + 16, ScaleY(310),
-        Math.Max(0, Width - Identity.End.X - 36), ScaleY(180));
+        Math.Max(0, (HasSourceTableau && !CompactSourceTableau ? SourceTableau.Position.X - 16 : Width - 20) - Identity.End.X - 16), ScaleY(180));
     internal Rect2 Assets => new(Math.Max(ScaleX(302), EngagedEnemies.End.X + 16), ScaleY(310), FootprintWidth, ScaleY(180));
     internal Rect2 Upgrades => new(Width - FootprintWidth - 20,
         Math.Max(ScaleY(530), PlayerRowBottom + ScaleY(24)), FootprintWidth, ScaleY(230));
     internal Rect2 Revealing => new(HasSeparateRevealSlot ? Assets.End.X + 16 : Assets.Position.X,
         ScaleY(310), FootprintWidth, ScaleY(180));
+    private bool CompactSourceTableau => HasRevealingCard || HasAllies || Width < 1500;
+    private float SourceWidth => Math.Min(744, Width * 0.45f);
+    private float SourceLeft => CompactSourceTableau ? Math.Max(Width - SourceWidth - 20, Assets.Position.X + 220)
+        : Math.Max(Width - SourceWidth - 20, Identity.End.X + 170);
+    private float SourceTop => CompactSourceTableau ? Math.Max(ScaleY(530), PlayerRowBottom + ScaleY(24)) : ScaleY(300);
+    internal Rect2 SourceTableau => new(SourceLeft, SourceTop,
+        Width - SourceLeft - 20, Math.Max(44, ScaleY(790) - SourceTop));
     internal Rect2 Hand => new(Assets.Position.X, HandTop,
-        Math.Max(0, Upgrades.Position.X - Assets.Position.X - 20),
+        Math.Max(0, (HasSourceTableau ? SourceTableau.Position.X : Upgrades.Position.X) - Assets.Position.X - 20),
         Math.Max(0, Context.Position.Y - HandTop - ScaleY(40)));
     internal Rect2 Overflow => Scale(new Rect2(36, 660, 164, 44));
     internal Rect2 PendingEncounters => Scale(new Rect2(36, 718, 236, 70));
@@ -69,7 +77,7 @@ internal sealed record AstraTableGeometry(
         index == count - 1 ? cardWidth : Math.Min(cardWidth, HandStep(count, cardWidth));
 
     private float HandStep(int count, float cardWidth) => count == 1 ? 0
-        : Math.Min(cardWidth + ScaleX(8), Math.Max(cardWidth, Hand.Size.X - cardWidth) / (count - 1));
+        : Math.Min(cardWidth + ScaleX(8), Math.Max(0, Hand.Size.X - cardWidth) / (count - 1));
 
     internal Vector2 Slot(Rect2 region, int index, int count, Vector2 objectSize)
     {

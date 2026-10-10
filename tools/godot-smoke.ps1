@@ -21,6 +21,7 @@ dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 & "$PSScriptRoot/godot-smoke-b1.ps1" -GodotBin $GodotBin
+& "$PSScriptRoot/godot-smoke-tableau.ps1" -GodotBin $GodotBin
 
 function Invoke-LocalSmoke {
     param([string]$Script = "res://smoke/local_game_smoke.gd")
@@ -46,10 +47,12 @@ $env:MARVEL_SMOKE_VIEWPORT = "1920x1080"
 $env:MARVEL_SMOKE_MOTION = "enabled"
 Invoke-LocalSmoke "res://smoke/ultron_inspection_smoke.gd"
 Invoke-LocalSmoke "res://smoke/boost_choice_smoke.gd"
+Invoke-LocalSmoke "res://smoke/decision_catalogue_smoke.gd"
 $env:MARVEL_UI_SCALE = "150"
 $env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke "res://smoke/ultron_inspection_smoke.gd"
 Invoke-LocalSmoke "res://smoke/boost_choice_smoke.gd"
+Invoke-LocalSmoke "res://smoke/decision_catalogue_smoke.gd"
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
 Invoke-LocalSmoke "res://smoke/minion_order_smoke.gd"
@@ -71,6 +74,7 @@ Invoke-LocalSmoke "res://smoke/deferred_event_smoke.gd"
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
 Invoke-LocalSmoke "res://smoke/repeated_commit_smoke.gd"
+Invoke-LocalSmoke "res://smoke/resource_finalizer_smoke.gd"
 foreach ($scale in @("50", "80", "100", "150")) {
     $env:MARVEL_UI_SCALE = $scale
     $env:MARVEL_SMOKE_MOTION = "enabled"

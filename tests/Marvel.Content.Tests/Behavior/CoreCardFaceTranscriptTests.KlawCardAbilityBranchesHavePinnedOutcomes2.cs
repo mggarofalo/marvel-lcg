@@ -11,10 +11,12 @@ public sealed class CoreCardFaceTranscriptKlawCardAbilityBranchesHavePinnedOutco
     {
         var results = CoreTranscriptCorpus.All.Where(candidate => candidate.Scenario.StartsWith("specs/behavior/core/klaw-card-abilities.feature::", StringComparison.Ordinal)).ToDictionary(result => result.Obligation, StringComparer.Ordinal);
         Assert.Equal(33, results.Count);
-        Assert.Equal("567fe0ce17c160f45fb88f771cb08906742f7df9ff0198d934e7e663f9a315d4", results["behavior:card:01114:search-encounter-deck-and-discard-pile-for"].Digest);
-        Assert.Equal("4c43ee9d92bc96561912d68918ae03b6e7ea64e78e44d45ab393ec40d5bfea85", results["behavior:card:01114:when-klaw-attacks-give-him-1-additional"].Digest);
-        Assert.Equal("789c7a01fdd70ef7296a980a5125acf1a970a03ca722d0d81c50f9d6a39d1187", results["behavior:card:01115:toughness"].Digest);
-        Assert.Equal("69dd1be8c9665308ce1a715c8483afcbcdc081dd610622061b599eb65902d392", results["behavior:card:01115:when-klaw-attacks-give-him-1-additional"].Digest);
+        // Klaw II reveals The Immortal Klaw, including during expert setup.
+        // The side scheme's threat, +10 hit points and search shuffle are retained.
+        Assert.Equal("3a0099c7c10a9ae854aea16dcd490307a8659a728e105bbf2770641c60e7f7f9", results["behavior:card:01114:search-encounter-deck-and-discard-pile-for"].Digest);
+        Assert.Equal("6259cf5ed57823bdc4af2259fbb44afa67a732c02fe52f333970c9a408bb8cbd", results["behavior:card:01114:when-klaw-attacks-give-him-1-additional"].Digest);
+        Assert.Equal("08ee33827061cfac76aa306abfdc45323b1a665ea93521ee88d9e10b5c7483cb", results["behavior:card:01115:toughness"].Digest);
+        Assert.Equal("4aefe11c299dcdf29e1136ad8c72bf90e94c36a4725b3509bad53fd654165a28", results["behavior:card:01115:when-klaw-attacks-give-him-1-additional"].Digest);
         Assert.Equal("8c3c17dbf19992140e4febb0a15b2200d90a581cf9f2d2d074361cb08b7a7a5a", results["behavior:card:01118:attach-klaw"].Digest);
         Assert.Equal("42043848794610be70ba9567ccf25bb592716c81240687ae997159e5dbb3e643", results["behavior:card:01119:attach-klaw"].Digest);
         Assert.Equal("d2b69f426e8cbdf3af1d5ebd10301c94012d8100ff59e23c089fa3f252ef64e2", results["behavior:card:01125:place-additional-1-per-hero-threat-here"].Digest);

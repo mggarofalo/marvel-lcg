@@ -25,6 +25,7 @@ public sealed class CoreObligationChoiceMeaningTests : ChoosingCardsTestBase
         Card identity = world.Seats[0].IdentityCard;
         string heroFace = identity.Faces.Single(face => Cards.Kind(face) == CardKind.Hero);
         identity.TurnTo(heroFace);
+        world.CreateCard("01046", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         var (source, _) = Reveal(world, obligation);
         var runner = AuthoredCards.Runner();
         string before = world.Digest().Fingerprint();
@@ -68,7 +69,7 @@ public sealed class CoreObligationChoiceMeaningTests : ChoosingCardsTestBase
         string title = Cards.Title(source.FaceId);
         string identity = Cards.Title(world.Seats[0].IdentityCard.FaceId);
         Assert.Equal([0, 1], prompt.Affordances.Select(offer => offer.Id));
-        Assert.Equal($"Exhaust {identity}; then remove {title} from the game", prompt.Affordances[0].DisplayLabel);
+        Assert.Equal($"Exhaust {identity}; if completed, remove {title} from the game", prompt.Affordances[0].DisplayLabel);
         Assert.Equal(alternative, prompt.Affordances[1].DisplayLabel);
         Assert.All(prompt.Affordances, offer =>
         {

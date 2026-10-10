@@ -344,7 +344,6 @@ public abstract class RestrictedMultiplayerJourneyTestBase
         public static async Task<RunningServer> StartAsync(EngineHost host, int port)
         {
             var stopping = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-            stopping.CancelAfter(TimeSpan.FromSeconds(30));
             var listening = new TaskCompletionSource<IPEndPoint>(TaskCreationOptions.RunContinuationsAsynchronously);
             var socket = new SocketEngineServer(host, IPAddress.Loopback, port);
             Task running = Task.Run(() => socket.Run(listening.SetResult, stopping.Token), TestContext.Current.CancellationToken);

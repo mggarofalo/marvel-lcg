@@ -67,6 +67,19 @@ internal static class AttackDamageAccounting
         }
     }
 
+    internal static void RecordRecipient(World world, Card source, Card target, long dealt)
+    {
+        if (dealt <= 0 || !world.Seats.Any(seat => seat.IdentityCard == target)) return;
+        if (world.Activation is { } active && active.Enemy == source.ObjectId)
+            world.Activation = AddRecipient(active, target.ObjectId);
+        else if (world.FinishedActivation is { } finished && finished.Enemy == source.ObjectId)
+            world.FinishedActivation = AddRecipient(finished, target.ObjectId);
+    }
+
+    private static EnemyActivation AddRecipient(EnemyActivation activation, int target) =>
+        activation.DamageRecipients.Contains(target) ? activation
+            : activation with { DamageRecipients = [.. activation.DamageRecipients, target] };
+
     internal static void RecordIndirectDamage(
         World world, Occurrence occurrence, IReadOnlyList<Damage.PlacedDamage> placed)
     {
@@ -82,6 +95,9 @@ internal static class AttackDamageAccounting
             }
             occurrence.Also(Steps.DamageDealt);
         }
+        if ((world.Activation ?? world.FinishedActivation) is { } activation)
+            foreach (var damage in placed)
+                RecordRecipient(world, world.Cards[activation.Enemy], damage.Target, damage.Dealt);
         AddActivationDamage(world, placed.Sum(damage => damage.Dealt));
     }
 

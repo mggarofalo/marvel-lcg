@@ -153,6 +153,7 @@ public static class BasicPowerResolution
         }
 
         occurrence.Also(Steps.AttackEnds);
+        occurrence.Also(Steps.BasicAttackEnds);
         if (damaged.Characters.Count > 0)
         {
             occurrence.Also(Steps.DamageDealt);

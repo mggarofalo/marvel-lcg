@@ -70,6 +70,7 @@ internal static class AbilitySelectorLowering
         "identitiesWithinPerPlayerLimit" => AbilityCardQuery.IdentitiesWithinPerPlayerLimit,
         "attachedToThis" => AbilityCardQuery.AttachedToThis,
         "heroesAndAllies" => AbilityCardQuery.HeroesAndAllies,
+        "heroAndAllyTargets" => AbilityCardQuery.HeroAndAllyTargets,
         "sideSchemes" => AbilityCardQuery.SideSchemes,
         "minions" => AbilityCardQuery.Minions,
         "enemies" => AbilityCardQuery.Enemies,

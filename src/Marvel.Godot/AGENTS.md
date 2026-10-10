@@ -190,9 +190,9 @@ visible keyboard focus and reduced-motion behavior.
 
 ## Acceptance
 
-Follow [tests/AGENTS.md](../../tests/AGENTS.md). Automated traversal demonstrates
-operability, not comprehension. For material interaction changes, require an
-independent reviewer to use the real client without a click-by-click script and
-explain the situation, options, commitment and result from the screen alone.
-Record confusion and missing information as product failures, even if the game
-can be completed and all mechanical tests pass.
+Follow [tests/AGENTS.md](../../tests/AGENTS.md). Target experienced Marvel
+Champions players. The product owner accepts the tableau and decision area by
+affirming the working implementation; a proposed design or passing automated
+traversal is not that acceptance. New-player comprehension testing is future
+work, not a gate for this increment. Record the owner's feedback and build under
+review. Correctness, visibility and native interaction checks remain required.

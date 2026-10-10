@@ -22,6 +22,8 @@ public enum AbilityCardQuery
     AttachedToThis,
     /// <summary>The authored heroesAndAllies relation.</summary>
     HeroesAndAllies,
+    /// <summary>Hero-form identities and allies; alter-egos are excluded.</summary>
+    HeroAndAllyTargets,
     /// <summary>The authored sideSchemes relation.</summary>
     SideSchemes,
     /// <summary>The authored minions relation.</summary>

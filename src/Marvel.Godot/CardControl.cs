@@ -201,9 +201,7 @@ public sealed partial class CardControl : PanelContainer
         GridContainer? directControls = interactionControls;
         if (cue is null
             || directControls is null
-            || !InteractionControl.IsUsable(this)
-            || !InteractionControl.IsUsable(cue)
-            || !InteractionControl.IsUsable(directControls))
+            || !HasUsableInteractionChrome(cue, directControls))
         {
             control.QueueFree();
             return false;
@@ -214,6 +212,8 @@ public sealed partial class CardControl : PanelContainer
         cue.Visible = false;
 
         CardSymbolButtonStyle.Apply(control, onPaper: HasMeta("source_strip"));
+        if (HasMeta("source_tableau_tile"))
+            SourceTableauTile.StyleAction(control, GetMeta("source_title").AsString());
         if (GetParent() is Container parent)
         {
             parent.QueueSort();
@@ -223,6 +223,10 @@ public sealed partial class CardControl : PanelContainer
         directControls.AddChild(control);
         return true;
     }
+
+    private bool HasUsableInteractionChrome(Label cue, GridContainer directControls) =>
+        InteractionControl.IsUsable(this) && InteractionControl.IsUsable(cue)
+            && InteractionControl.IsUsable(directControls);
 
     /// <summary>Removes a prior prompt's controls and restores this card's base surface height.</summary>
     internal void ClearInteractionControls()

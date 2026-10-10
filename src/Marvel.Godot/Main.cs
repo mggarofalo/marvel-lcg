@@ -121,7 +121,7 @@ public sealed partial class Main : Control
     /// <inheritdoc />
     public override void _Ready()
     {
-        if (ClientDiagnosticEntry.TryStart(this)) return;
+        if (ClientStartup.Initialize(this)) return;
         InterfaceScale scale = ClientTheme.ConfiguredScale();
         interfaceScale = scale;
         ClientThemeInstallation.Apply(this, scale);

@@ -257,7 +257,7 @@ eachPlayer else encounterDeck encounterDiscardPile enemies
 enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
 finalStep generate generateTopDiscard giveAdditionalBoost
 grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroDefended
-heroes heroesAndAllies identities
+heroes heroesAndAllies heroAndAllyTargets identities
 identitiesWithinPerPlayerLimit inForm indirectDamage isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou modified moveAttackDamage mul onto options overkill
@@ -277,6 +277,12 @@ yourAsideMinion yourAsidePile yourAsideSideScheme
 ```
 
 ## Generic selection and temporary identities
+
+`heroAndAllyTargets` selects hero-form identities and allies. The existing
+`heroesAndAllies` selector includes identities in either form for effects that
+name friendly characters; it is not appropriate when printed text names heroes.
+`allies` includes other players' allies, while `alliesYouControl` restricts
+selection to the resolving player's control.
 
 `withTrait` filters by current engine traits. Black Panther's upgrades are data:
 `{"withTrait":{"cards":{"query":"upgradesYouControl"},"trait":"BLACK_PANTHER"}}`.
@@ -343,6 +349,17 @@ Delayed activation effects live in `AbilityGameRuntime`, separately from the
 compiled program. Completing an activation consumes its ordered list before
 running the effects. Continuation result maps and card bindings remain local to
 their resolution; agenda continuations capture the data needed to resume them.
+
+An `afterActivation` effect receives `activationDamageToYou`: `1` when that
+activation dealt damage to the resolving player's identity, otherwise `0`.
+This is recipient evidence, not a damage quantity. Ally-only damage does not
+qualify; overkill dealt to the identity does. Damage dealt remains distinct from
+damage taken or prevented under `rr:damage.3.2`. `activationDamage` retains the
+activation's aggregate damage result.
+
+An actor role of `you` requires the player's identity, rather than an ally they
+control. `WhenBasicAttackEnds` distinguishes completed basic attacks from card
+ability attacks within `WhenAttackEnds`, as required by One-Two Punch.
 
 Card and selector evaluation uses `AbilityQueryContext`, which captures binding
 incarnations and ordered power targets while reading the board in place. The

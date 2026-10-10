@@ -61,9 +61,7 @@ func _play_helicarrier() -> bool:
 
 
 func _activate_helicarrier() -> bool:
-	var card := _tabletop_card_named("Helicarrier")
-	var identity := _tabletop_card_named("Peter Parker")
-	if not await _drag(card, identity.get_global_rect().get_center()): return false
+	if not await _use_installed_helicarrier(false): return false
 	await process_frame
 	await process_frame
 	if not _draft_meaning_fits(): return false
@@ -72,13 +70,28 @@ func _activate_helicarrier() -> bool:
 	if (_node("Toolbar/SyncStatus") as Label).text != revision:
 		_fail("cancelling Helicarrier changed the game")
 		return false
-	card = _tabletop_card_named("Helicarrier")
-	identity = _tabletop_card_named("Peter Parker")
-	if not await _drag(card, identity.get_global_rect().get_center()): return false
+	if not await _use_installed_helicarrier(true): return false
 	if not _draft_meaning_fits(): return false
 	if not await _commit_once("Use Helicarrier"): return false
 	if not await _wait_for(func() -> bool: return _button_named("Spider-Man: next card −1") != null):
 		_fail("activation did not expose the named player discount")
+		return false
+	return true
+
+
+func _use_installed_helicarrier(keyboard: bool) -> bool:
+	var tableau := main.find_child("SourceTableau", true, false)
+	var action := _visible_button(tableau, "Use Helicarrier") if tableau != null else null
+	if action == null or action.disabled or not _control_is_fully_visible(action):
+		_fail("installed Helicarrier has no visible, enabled tableau action")
+		return false
+	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var activated := await _keyboard_activate(action) if keyboard else await _pointer_activate(action)
+	if not activated: return false
+	await process_frame
+	await process_frame
+	if (_node("Toolbar/SyncStatus") as Label).text != revision:
+		_fail("selecting Helicarrier's offered action committed before confirmation")
 		return false
 	return true
 

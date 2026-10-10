@@ -49,4 +49,8 @@ public sealed record EnemyActivation(
     int Id = -1,
     bool Made = true,
     long DamageDealt = 0,
-    long ThreatPlaced = 0);
+    long ThreatPlaced = 0)
+{
+    /// <summary>Identity object ids dealt damage by this activation, in placement order.</summary>
+    public IReadOnlyList<int> DamageRecipients { get; init; } = [];
+}

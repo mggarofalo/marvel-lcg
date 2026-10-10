@@ -5,7 +5,7 @@ Feature: Core Klaw card abilities
 
   @behavior:card:01114:search-encounter-deck-and-discard-pile-for
   @covers:behavior:card:01114:shuffle-encounter-deck
-  @card:01114
+  @card:01114 @card:01127
   Scenario: Klaw II reveals The Immortal Klaw and shuffles the encounter deck
     # Defeating Klaw I reveals Klaw II. His When Revealed search reveals The
     # "Immortal" Klaw, then shuffles the searched encounter deck.
@@ -17,6 +17,7 @@ Feature: Core Klaw card abilities
     When seat 1 uses their basic attack against card 01113 copy 0
     Then card 01114 copy 0 is the faceup villain
     And card 01127 copy 0 is in the villain's play area
+    And card 01114 copy 0 has 28 remaining hit points
 
   @behavior:card:01114:when-klaw-attacks-give-him-1-additional
   @card:01114
@@ -46,7 +47,8 @@ Feature: Core Klaw card abilities
       | campaign    | heroes     | seed |
       | klaw_expert | spider_man | 953  |
     And seat 1 shows identity face 01001a
-    And card 01114 copy 0 has 17 damage
+    # The Immortal Klaw in expert setup adds 10 hit points to Klaw II.
+    And card 01114 copy 0 has 27 damage
     When seat 1 uses their basic attack against card 01114 copy 0
     Then card 01115 copy 0 is the faceup villain
     And card 01115 copy 0 has 1 tough status card
@@ -60,7 +62,8 @@ Feature: Core Klaw card abilities
       | campaign    | heroes     | seed |
       | klaw_expert | spider_man | 954  |
     And seat 1 shows identity face 01001a
-    And card 01114 copy 0 has 17 damage
+    # The Immortal Klaw in expert setup adds 10 hit points to Klaw II.
+    And card 01114 copy 0 has 27 damage
     And seat 1's hand is empty
     When seat 1 uses their basic attack against card 01114 copy 0
     Then card 01115 copy 0 is the faceup villain

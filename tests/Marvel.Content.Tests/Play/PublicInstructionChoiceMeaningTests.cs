@@ -21,7 +21,7 @@ public sealed class PublicInstructionChoiceMeaningTests : ChoosingCardsTestBase
 
         Prompt prompt = runner.Choosing(world, source, 1, 2)!;
 
-        Assert.Equal("Exhaust T'Challa; then remove Affairs of State from the game",
+        Assert.Equal("Exhaust T'Challa; if completed, remove Affairs of State from the game",
             prompt.Affordances[0].DisplayLabel);
         Assert.DoesNotContain("Peter Parker", prompt.Affordances[0].Description);
     }

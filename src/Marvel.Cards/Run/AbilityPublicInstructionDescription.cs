@@ -10,12 +10,22 @@ internal static class AbilityPublicInstructionDescription
     internal static string? From(AbilityStructuralContext context, AbilityEffect effect, string? chosenTitle = null) => effect switch
     {
         AbilityEffect.Sequence sequence => Sequence(context, sequence, chosenTitle),
+        AbilityEffect.Dependent { OnFull: true } dependent => Dependent(context, dependent, chosenTitle),
         AbilityEffect.ChooseCard choice => Choice(context, choice),
         AbilityEffect.CardAction action => CardAction(context, action, chosenTitle),
         AbilityEffect.ChangeForm { Player: AbilityPlayer.You, Form: Forms.AlterEgo } => "Change to alter-ego form",
         AbilityEffect.ChangeForm { Player: AbilityPlayer.You, Form: Forms.Hero } => "Change to hero form",
         _ => StateInstruction(context, effect),
     };
+
+    private static string? Dependent(AbilityStructuralContext context,
+        AbilityEffect.Dependent dependent, string? chosenTitle)
+    {
+        string? prerequisite = From(context, dependent.Effect, chosenTitle);
+        string? consequence = From(context, dependent.Continuation, chosenTitle);
+        return prerequisite is null || consequence is null ? null
+            : $"{prerequisite}; if completed, {LowercaseFirst(consequence)}";
+    }
 
     private static string? Sequence(AbilityStructuralContext context, AbilityEffect.Sequence sequence, string? chosenTitle)
     {
@@ -64,7 +74,7 @@ internal static class AbilityPublicInstructionDescription
     {
         AbilityCardSelection.Bound { Binding: AbilityCardBinding.This } =>
             EffectiveCards.Title(context.Expressions.Source, context.Expressions.World.Facts),
-        AbilityCardSelection.Bound { Binding: AbilityCardBinding.You } =>
+        AbilityCardSelection.Bound { Binding: AbilityCardBinding.You or AbilityCardBinding.YourAlterEgo or AbilityCardBinding.YourHero } =>
             EffectiveCards.Title(context.Expressions.World.Seats[AbilityCardQueries.Resolver(
                 context.Expressions.Bindings)].IdentityCard, context.Expressions.World.Facts),
         AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen } => chosenTitle ?? "the chosen card",

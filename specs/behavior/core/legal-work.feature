@@ -35,7 +35,8 @@ Feature: Legal Work
     Then card 01160 copy 0 is in seat 2's play area
     When seat 2 chooses option 2 for the pending encounter-card decision
     Then seat 2 is in hero form
-    When seat 2 chooses option 2 for the pending encounter-card decision
+    # The named alter-ego cannot exhaust while this identity is in hero form.
+    When seat 2 chooses option 1 for the pending encounter-card decision
     Then the main scheme has 1 acceleration token
     And card 01160 copy 0 is faceup on top of the encounter discard pile
 
@@ -99,7 +100,8 @@ Feature: Legal Work
     And option 2 is offered by the pending decision
     When seat 1 chooses option 2 for the pending encounter-card decision
     Then seat 1 is in hero form
-    When seat 1 chooses option 2 for the pending encounter-card decision
+    # The named alter-ego cannot exhaust while this identity is in hero form.
+    When seat 1 chooses option 1 for the pending encounter-card decision
     Then card 01046 copy 0 is offered by the pending action
     When seat 1 chooses card 01046 copy 0 for the pending action
     Then card 01046 copy 0 is in seat 1's discard pile
@@ -150,7 +152,8 @@ Feature: Legal Work
     And option 2 is offered by the pending decision
     When seat 1 chooses option 2 for the pending encounter-card decision
     Then seat 1 is in hero form
-    When seat 1 chooses option 2 for the pending encounter-card decision
+    # The named alter-ego cannot exhaust while this identity is in hero form.
+    When seat 1 chooses option 1 for the pending encounter-card decision
     Then card 01002 copy 0 is in seat 1's discard pile
     And card 01101 copy 0 is facedown in seat 1's encounter queue
     And card 01165 copy 0 is faceup on top of the encounter discard pile
@@ -197,7 +200,8 @@ Feature: Legal Work
     And option 2 is offered by the pending decision
     When seat 1 chooses option 2 for the pending encounter-card decision
     Then seat 1 is in hero form
-    When seat 1 chooses option 2 for the pending encounter-card decision
+    # The named alter-ego cannot exhaust while this identity is in hero form.
+    When seat 1 chooses option 1 for the pending encounter-card decision
     Then card 01035 copy 0 is exhausted
     And card 01036 copy 0 is exhausted
     And card 01170 copy 0 is faceup on top of the encounter discard pile
@@ -244,7 +248,8 @@ Feature: Legal Work
     And option 2 is offered by the pending decision
     When seat 1 chooses option 2 for the pending encounter-card decision
     Then seat 1 is in hero form
-    When seat 1 chooses option 2 for the pending encounter-card decision
+    # The named alter-ego cannot exhaust while this identity is in hero form.
+    When seat 1 chooses option 1 for the pending encounter-card decision
     Then card 01010a copy 0 has 1 stunned status card
     And card 01101 copy 0 is facedown in seat 1's encounter queue
     And card 01175 copy 0 is faceup on top of the encounter discard pile

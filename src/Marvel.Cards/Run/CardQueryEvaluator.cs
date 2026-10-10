@@ -35,7 +35,7 @@ internal sealed class CardQueryEvaluator(
     private static readonly HashSet<AbilityCardQuery> IdentityQueries =
     [
         AbilityCardQuery.IdentitiesWithinPerPlayerLimit,
-        AbilityCardQuery.HeroesAndAllies, AbilityCardQuery.Allies,
+        AbilityCardQuery.HeroesAndAllies, AbilityCardQuery.HeroAndAllyTargets, AbilityCardQuery.Allies,
         AbilityCardQuery.Heroes, AbilityCardQuery.Identities,
         AbilityCardQuery.Characters,
     ];
@@ -152,6 +152,10 @@ internal sealed class CardQueryEvaluator(
             [.. Identities(),
              .. cast.World.Areas.Where(area => area.Type == DeckType.AlliesArea)
                 .SelectMany(area => area.Cards)],
+        // rr:form-change-form.5 excludes alter-egos when printed text names heroes.
+        AbilityCardQuery.HeroAndAllyTargets =>
+            [.. EvaluateIdentities(AbilityCardQuery.Heroes),
+             .. EvaluateIdentities(AbilityCardQuery.Allies)],
         // rr:friendly and rr:upgrade.3.1 reach allies controlled by any player.
         AbilityCardQuery.Allies =>
             [.. cast.World.Areas.Where(area => area.Type == DeckType.AlliesArea)

@@ -38,6 +38,13 @@ the baseline shrinks as existing classes are decomposed. A reviewed exception
 must name the cohesive reason the type is clearer whole and remains subject to
 the 500-line ceiling.
 
+`Marvel.Rules.Play.Steps` is a reviewed vocabulary exception: its constants name
+the engine's timing steps, with the meaning documented beside each name. Keeping
+that single vocabulary together makes timing references discoverable without
+introducing competing step namespaces. It owns no behavioral rule logic:
+`ConditionsOf` and `EveryCondition` delegate to `StepConditions`. It remains
+subject to the 500-line ceiling; its exact baseline is 484 lines.
+
 Approaching the boundary is evidence that the type may own several decisions,
 state machines or infrastructure concerns. Prefer extracting collaborators
 with names that state those responsibilities. Moving methods into a partial
