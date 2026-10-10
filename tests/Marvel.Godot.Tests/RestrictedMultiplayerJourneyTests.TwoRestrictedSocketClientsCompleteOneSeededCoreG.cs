@@ -13,7 +13,7 @@ using Xunit;
 namespace Marvel.Godot.Tests;
 public sealed class RestrictedMultiplayerJourneyTwoRestrictedSocketClientsCompleteOneSeededCoreGTests : RestrictedMultiplayerJourneyTestBase
 {
-    [Fact]
+    [Fact(Timeout = 120_000)]
     public async Task TwoRestrictedSocketClientsCompleteOneSeededCoreGame()
     {
         string saveRoot = Path.Combine(Path.GetTempPath(), $"marvel-restricted-journey-{Guid.NewGuid():N}");
