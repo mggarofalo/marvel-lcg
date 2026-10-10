@@ -15,13 +15,16 @@ internal static class AbilityPlayerChoiceDescription
         DrawCount(choice) is { } count ? $"choose a player to draw {Cards(count)}"
         : Discount(choice) is { } amount
             ? $"choose a player whose next card this phase costs {amount} fewer resources"
-            : AbilityPlayerDamageDescription.Selection(choice);
+            : AbilityPlayerModifierDescription.Selection(choice)
+                ?? AbilityPlayerDamageDescription.Selection(choice);
 
     internal static string? Commitment(
         AbilityStructuralContext context, AbilityEffect.ChooseCard choice, Card candidate)
     {
         if (AbilityPlayerDamageDescription.Commitment(context, choice, candidate) is { } damage)
             return damage;
+        if (AbilityPlayerModifierDescription.Commitment(context, choice, candidate) is { } modifier)
+            return modifier;
         if (Selection(choice) is null) return null;
         string player = Recipient(context, candidate);
         return DrawCount(choice) is { } count ? $"{player} draws {Cards(count)}"
@@ -30,7 +33,8 @@ internal static class AbilityPlayerChoiceDescription
 
     internal static string? Description(
         AbilityStructuralContext context, AbilityEffect.ChooseCard choice, Card candidate) =>
-        AbilityPlayerDamageDescription.Description(context, choice, candidate)
+        AbilityPlayerModifierDescription.Description(context, choice, candidate)
+        ?? AbilityPlayerDamageDescription.Description(context, choice, candidate)
         ?? (Commitment(context, choice, candidate) is { } commitment
             ? DrawCount(choice) is not null
                 ? $"{commitment}. The drawn card's identity is not known before the draw."

@@ -7,6 +7,10 @@ func _run() -> void:
 	if not await _reach_android_boost(): return
 	if not await _choose_android_consequence(): return
 	if not await _select_ultron_threat(): return
+	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
+	if "boost icon" not in history.get_parsed_text() or "is now" not in history.get_parsed_text():
+		_fail("resolved boost contribution is missing from result history")
+		return
 	print("BOOST_CHOICE_SMOKE_OK scale=%d" % _scale_percentage())
 	main.queue_free()
 	await process_frame

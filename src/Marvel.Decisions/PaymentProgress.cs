@@ -15,6 +15,9 @@ public sealed record PaymentProgress(
     int RequestedVariables,
     bool IsSatisfied)
 {
+    /// <summary>Additional generic resources needed, or null when a simple count is insufficient.</summary>
+    public int? RemainingRequired { get; init; }
+
     /// <summary>Whether selected generators could cover the cost with a legal allocation.</summary>
     public bool CanCoverCost { get; init; }
 

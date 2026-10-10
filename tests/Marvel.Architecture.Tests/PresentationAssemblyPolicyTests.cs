@@ -19,6 +19,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Events.AreaRef",
             "Marvel.Rules.Events.AreaReordered",
             "Marvel.Rules.Events.AttackCompleted",
+            // Passive applied boost facts, with no rules recalculation.
+            "Marvel.Rules.Events.BoostResolved",
             "Marvel.Rules.Events.CardAttached",
             "Marvel.Rules.Events.CardDetached",
             "Marvel.Rules.Events.CardFormChanged",
@@ -101,6 +103,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.ResourceCost",
             "Marvel.Rules.Prompts.ResourcePayment",
+            // Engine-owned assessment of the current payment draft.
+            "Marvel.Rules.Prompts.ResourcePaymentProgress",
             "Marvel.Rules.Prompts.ResourceSource",
             "Marvel.Rules.Prompts.TargetRequest",
             "Marvel.Rules.Prompts.VariableRequest");
@@ -121,6 +125,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Events.AreaReordered",
             // Closed event-payload validation accepts the engine's passive completion receipt.
             "Marvel.Rules.Events.AttackCompleted",
+            // Passive applied boost facts, with no rules recalculation.
+            "Marvel.Rules.Events.BoostResolved",
             "Marvel.Rules.Events.CardAttached",
             "Marvel.Rules.Events.CardDetached",
             "Marvel.Rules.Events.CardFormChanged",

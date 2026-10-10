@@ -64,7 +64,11 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         world.Agenda.Abandon();
         Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
         Attack.GiveAdditionalBoostCard(world, villain, "test", []);
-        Attack.FlipBoostCards(world, printed, new IconChangingBoost(), []);
+        var boostEvents = new List<GameEvent>();
+        Attack.FlipBoostCards(world, printed, new IconChangingBoost(), boostEvents);
+        BoostResolved contribution = Assert.Single(boostEvents.OfType<BoostResolved>());
+        Assert.Equal(2, contribution.Icons);
+        Assert.Equal(4, contribution.Strength);
         Attack.CalculateDamage(world, printed);
         Attack.DealDamage(world, printed, []);
         Assert.Equal(4, world.Seats[0].IdentityCard.Damage);
@@ -82,7 +86,9 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         world.Agenda.Abandon();
         Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
         Attack.GiveAdditionalBoostCard(world, villain, "test", []);
-        Attack.FlipBoostCards(world, printed, new DamagingBoost(), []);
+        var boostEvents = new List<GameEvent>();
+        Attack.FlipBoostCards(world, printed, new DamagingBoost(), boostEvents);
+        Assert.Empty(boostEvents.OfType<BoostResolved>());
         Assert.True(world.Seats[0].Eliminated);
         Assert.False(world.Seats[1].Eliminated);
         Assert.Null(world.Attack);

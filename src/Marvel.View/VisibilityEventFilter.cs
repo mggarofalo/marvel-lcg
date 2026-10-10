@@ -33,6 +33,7 @@ internal static class VisibilityEventFilter
             CardDetached detached => KeepDetached(detached, addressable),
             ControlChanged changed => addressable.Contains(changed.Card) ? changed : null,
             FieldSet set => readable.Contains(set.Card) ? set : null,
+            BoostResolved boost => KeepBoost(boost, readable),
             AttackCompleted completed => KeepAttack(completed, readable),
             CardsShuffledIntoDeck shuffled => shuffled with { Subjects = null },
             WhenRevealedCanceled canceled =>
@@ -45,6 +46,11 @@ internal static class VisibilityEventFilter
             _ => throw new InvalidOperationException(
                 $"event kind {happened.GetType().Name} has no visibility decision"),
         };
+
+    private static BoostResolved? KeepBoost(BoostResolved boost, HashSet<int> readable) =>
+        readable.Contains(boost.Card) && readable.Contains(boost.Enemy)
+            ? boost with { Subjects = KeepSubjects(boost.Subjects, [boost.Card, boost.Enemy]) }
+            : null;
 
     private static AttackCompleted? KeepAttack(AttackCompleted completed, HashSet<int> readable)
     {

@@ -73,6 +73,9 @@ public sealed class CoreDecisionMeaningTransportTests : EngineHostTestBase
         EngineResponse transported = EngineJson.ReadResponse(EngineJson.Write(current));
 
         Assert.Null(transported.Error);
+        BoostResolved boost = Assert.Single(transported.Events.OfType<BoostResolved>());
+        Assert.True(boost.Attacking);
+        Assert.Contains("boost icons", Assert.Single(EventPresenter.Present([boost], transported.World!)).Summary);
         AttackCompleted completion = Assert.Single(transported.Events.OfType<AttackCompleted>());
         Assert.Equal(defender.AnchorId, completion.Target);
         Assert.Equal(defender.AnchorId, completion.Defender);
