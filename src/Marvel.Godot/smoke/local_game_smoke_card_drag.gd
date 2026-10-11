@@ -1,7 +1,7 @@
 extends RefCounted
 
 # Delivers real viewport pointer events and checks lifted intermediate geometry.
-static func perform(driver, card: Control, finish: Vector2) -> bool:
+static func perform(driver, card: Control, finish: Vector2, expected_drop_surface: Control = null) -> bool:
 	var start: Vector2 = driver._card_body_point(card)
 	if not await driver._control_owns_point(card, start):
 		driver._fail("card '%s' has no exposed body from which to begin its drag" % card.name)
@@ -32,6 +32,9 @@ static func perform(driver, card: Control, finish: Vector2) -> bool:
 	move.global_position = finish
 	driver.render_viewport.push_input(move, true)
 	await driver.process_frame
+	if expected_drop_surface != null and not expected_drop_surface.get_meta("spatial_drop_active", false):
+		driver._fail("the occupied player region did not expose its active play drop affordance")
+		return false
 	if collection != null and not await driver._capture_checkpoint("ally-lift-outside-collection"):
 		return false
 	if not driver._drag_preview_is_meaningful(card): return false

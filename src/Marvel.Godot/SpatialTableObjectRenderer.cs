@@ -83,9 +83,11 @@ internal sealed class SpatialTableObjectRenderer
             if (hosts.TryGetValue(area.Host, out var host))
                 SpatialTableHostAttachments.AddOther(host.Control, area, result, scale, art);
         if (controlled.Length == 0) return;
-        surface.AddChild(SourceTableauRenderer.Create(controlled, geometry.SourceTableau, result, scale,
+        Control sources = SourceTableauRenderer.Create(controlled, geometry.SourceTableau, result, scale,
             areas.SelectMany(area => area.Cards).Where(card => card.TargetId.HasValue && !card.Concealed)
-                .DistinctBy(card => card.TargetId).ToDictionary(card => card.TargetId!.Value, card => card.Title)));
+                .DistinctBy(card => card.TargetId).ToDictionary(card => card.TargetId!.Value, card => card.Title));
+        surface.AddChild(sources);
+        result.RegisterDropTarget(seat, sources);
     }
 
     internal void RenderHand(BoardAreaPresentation? hand)

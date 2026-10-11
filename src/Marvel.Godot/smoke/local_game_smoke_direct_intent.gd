@@ -37,6 +37,7 @@ func _hero_target_drag_preserves_commitment() -> bool:
 
 
 func _direct_black_cat_is_played() -> bool:
+	if not await _source_tableau_receives_fresh_play(): return false
 	if not await super._direct_black_cat_is_played():
 		return false
 	if not await _collection_actor_drag_stages_and_returns(): return false
@@ -45,6 +46,36 @@ func _direct_black_cat_is_played() -> bool:
 		print("SOURCE_CHOOSER_FOCUS_PENDING: no ambiguous ally action in this legal state")
 		return true
 	return await _source_chooser_restores_keyboard_focus()
+
+
+func _source_tableau_receives_fresh_play() -> bool:
+	var tableau := main.find_child("SourceTableau", true, false) as Control
+	var occupied := tableau.find_child("ProceduralCard*", true, false) as Control if tableau != null else null
+	if tableau == null or occupied == null:
+		_fail("the source drop regression needs an installed Web-Shooter")
+		return false
+	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var points: Array[Vector2] = [tableau.global_position + Vector2(12, 8),
+		occupied.global_position + Vector2(12, 8)]
+	for point in points:
+		if not await _compose_source_tableau_drop(point): return false
+		if (_node("Toolbar/SyncStatus") as Label).text != revision:
+			_fail("source tableau drop or cancellation committed engine state")
+			return false
+	return true
+
+
+func _compose_source_tableau_drop(point: Vector2) -> bool:
+	var tableau := main.find_child("SourceTableau", true, false) as Control
+	var card := _tabletop_card_named("Black Cat")
+	if card == null or not await CardDrag.perform(self, card, point, tableau): return false
+	if not await _wait_for(func() -> bool: return _payment_modal() != null):
+		_fail("fresh play onto the source tableau did not open composition")
+		return false
+	if "Black Cat" not in _visible_text(_payment_modal()):
+		_fail("occupied source drop composed a different card")
+		return false
+	return await _payment_cancel_is_safe()
 
 
 func _collection_actor_drag_stages_and_returns() -> bool:
