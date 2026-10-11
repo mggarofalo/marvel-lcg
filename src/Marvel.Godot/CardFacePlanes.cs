@@ -34,6 +34,10 @@ internal static class CardFacePlanes
                 r.Kind.Position.Y, iconSize, iconSize), Colors.White));
     }
 
-    private static void AddPolygon(Control face, string name, Vector2[] points, Color color) =>
-        face.AddChild(new Polygon2D { Name = name, Polygon = points, Color = color });
+    private static void AddPolygon(Control face, string name, Vector2[] points, Color color)
+    {
+        var polygon = new Polygon2D { Name = name, Polygon = points, Color = color };
+        CardEdgeSmoothing.Add(polygon);
+        face.AddChild(polygon);
+    }
 }

@@ -25,9 +25,12 @@ internal static class ResourceIconRendering
             using var icon = new Image();
             if (icon.LoadSvgFromString(ColoredOutline(reader.ReadToEnd(), glyphs[index])) != Error.Ok)
                 throw new InvalidOperationException("The canonical resource icon could not be decoded.");
-            icon.Resize(Size, Size);
+            icon.FixAlphaEdges();
+            icon.Resize(Size, Size, Image.Interpolation.Lanczos);
             image.BlitRect(icon, new Rect2I(0, 0, Size, Size), new Vector2I(index * Size, 0));
         }
+        image.FixAlphaEdges();
+        image.GenerateMipmaps();
         Texture2D texture = ImageTexture.CreateFromImage(image);
         textures.Add(glyphs, texture);
         return texture;
@@ -61,6 +64,7 @@ internal static class ResourceIconRendering
     internal static void Apply(Button button, string resources)
     {
         button.Icon = Texture(resources);
+        button.TextureFilter = CanvasItem.TextureFilterEnum.LinearWithMipmaps;
         button.IconAlignment = HorizontalAlignment.Right;
         button.TooltipText = string.Join(" · ", new[]
         {
@@ -88,6 +92,7 @@ internal static class ResourceIconRendering
         row.AddChild(new TextureRect
         {
             Name = "ResourceSymbols", Texture = Texture(resources),
+            TextureFilter = CanvasItem.TextureFilterEnum.LinearWithMipmaps,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
             MouseFilter = Control.MouseFilterEnum.Ignore,

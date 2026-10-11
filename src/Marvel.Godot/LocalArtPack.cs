@@ -47,12 +47,13 @@ public sealed class LocalArtPack : ICardArtProvider
             return null;
         }
 
-        var image = new Image();
+        using var image = new Image();
         if (image.LoadPngFromBuffer(asset) != Error.Ok)
         {
             return null;
         }
 
+        image.FixAlphaEdges();
         if (Math.Max(image.GetWidth(), image.GetHeight()) > MaximumTextureDimension)
         {
             float scale = MaximumTextureDimension
@@ -63,6 +64,7 @@ public sealed class LocalArtPack : ICardArtProvider
                 Image.Interpolation.Lanczos);
         }
 
+        image.GenerateMipmaps();
         return ImageTexture.CreateFromImage(image);
     }
 }
