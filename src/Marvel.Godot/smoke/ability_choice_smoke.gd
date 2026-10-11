@@ -30,7 +30,8 @@ func _open_helicarrier_game() -> bool:
 
 func _draft_meaning_fits() -> bool:
 	var summary := main.find_child("DraftProgress", true, false) as Label
-	if summary == null or not _control_is_fully_visible(summary):
+	var viewport := main.find_child("DraftSummaryViewport", true, false) as ScrollContainer
+	if summary == null or viewport == null or not _control_is_fully_visible(viewport):
 		_fail("Helicarrier's activation meaning is clipped")
 		return false
 	for meaning in ["Exhaust Helicarrier", "Choose a player", "next card", "1 fewer"]:
@@ -81,7 +82,11 @@ func _activate_helicarrier() -> bool:
 
 func _use_installed_helicarrier(keyboard: bool) -> bool:
 	var tableau := main.find_child("SourceTableau", true, false)
-	var action := _visible_button(tableau, "Use Helicarrier") if tableau != null else null
+	var action: Button = null
+	if tableau != null:
+		for tile in tableau.find_children("*", "PanelContainer", true, false):
+			if tile.get_meta("source_title", "") == "Helicarrier":
+				action = tile.find_child("Card*Action", true, false) as Button
 	if action == null or action.disabled or not _control_is_fully_visible(action):
 		_fail("installed Helicarrier has no visible, enabled tableau action")
 		return false

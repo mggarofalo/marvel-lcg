@@ -22,15 +22,16 @@ internal static class CardLiveStateRendering
 
     private static void AddStatuses(VBoxContainer stack, BoardCardPresentation card, float width, bool compact)
     {
-        var grid = new GridContainer { Name = "LiveStatuses", Columns = 2,
+        var grid = new HFlowContainer { Name = "LiveStatuses", CustomMinimumSize = new Vector2(width, 0),
             MouseFilter = Control.MouseFilterEnum.Ignore };
         grid.AddThemeConstantOverride("h_separation", 4);
         grid.AddThemeConstantOverride("v_separation", 2);
         foreach (var entry in CardStatusEntries.From(card))
         {
-            var cell = new VBoxContainer { CustomMinimumSize = new Vector2((width - 4) / 2, 0),
+            var cell = new VBoxContainer {
                 MouseFilter = Control.MouseFilterEnum.Ignore };
-            AddLabel(cell, entry.Text, $"LiveStatus{grid.GetChildCount()}", compact ? 12 : 16);
+            if (StatusCardBadge.Supports(entry.Name)) cell.AddChild(StatusCardBadge.Create(entry.Name, entry.Text, compact));
+            else AddLabel(cell, entry.Text, $"LiveStatus{grid.GetChildCount()}", compact ? 12 : 16).AutowrapMode = TextServer.AutowrapMode.Off;
             grid.AddChild(cell);
         }
         if (grid.GetChildCount() > 0) stack.AddChild(grid);
@@ -50,31 +51,28 @@ internal static class CardLiveStateRendering
 
     private static void AddProgress(VBoxContainer stack, BoardCardPresentation card, CardProgressValue progress, bool compact)
     {
-        Label value = AddLabel(stack, progress.Value, "LiveProgressValue", compact ? 17 : 30);
-        string meaning = progress.IsThreat ? "Threat / threshold" : "HP remaining / max";
-        if (!progress.Value.Contains('/')) meaning = progress.IsThreat ? "Threat" : "Hit points";
-        AddLabel(stack, meaning, "LiveProgressMeaning", compact ? 10 : 14);
+        var row = new HBoxContainer { Name = "LiveProgress", MouseFilter = Control.MouseFilterEnum.Ignore };
+        var meaningCell = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
+        var valueCell = new VBoxContainer();
+        string meaning = progress.IsThreat ? "Threat" : "HP";
+        Label caption = AddLabel(meaningCell, meaning, "LiveProgressMeaning", compact ? 10 : 14);
+        caption.AutowrapMode = TextServer.AutowrapMode.Off;
+        Label value = AddLabel(valueCell, progress.Value, "LiveProgressValue", compact ? 17 : 30);
+        value.AutowrapMode = TextServer.AutowrapMode.Off;
+        row.AddThemeConstantOverride("separation", 5);
+        row.AddChild(meaningCell);
+        row.AddChild(valueCell);
+        stack.AddChild(row);
         value.AccessibilityName = $"{meaning}: {progress.Value}";
-        if (card.Damage > 0)
-            AddLabel(stack, $"{card.Damage.ToString(CultureInfo.InvariantCulture)} damage", "LiveDamage", compact ? 10 : 16);
-        AddMaximum(stack, card, progress, compact);
-    }
-
-    private static void AddMaximum(VBoxContainer stack, BoardCardPresentation card, CardProgressValue progress, bool compact)
-    {
-        if (progress.MaximumModified && card.EffectiveValues.TryGetValue("HP", out CardEffectiveValue? maximum))
-        {
-            var line = new ColorRect { Name = "ModifiedMaximum", CustomMinimumSize = new Vector2(0, 2),
-                Color = ClientTheme.ToGodot(CardVisualTokens.Modified), MouseFilter = Control.MouseFilterEnum.Ignore };
-            stack.AddChild(line);
-            AddLabel(stack, $"Max {maximum.CurrentValue.ToString(CultureInfo.InvariantCulture)} modified", "LiveMaximum", compact ? 11 : 14);
-        }
+        if (progress.MaximumModified)
+            valueCell.AddChild(new ColorRect { Name = "ModifiedMaximum", Color = ClientTheme.ToGodot(CardVisualTokens.Modified),
+                CustomMinimumSize = new Vector2(0, 2), MouseFilter = Control.MouseFilterEnum.Ignore });
     }
 
     internal static Label AddLabel(VBoxContainer stack, string text, string name, int fontSize)
     {
         var label = new Label { Name = name, Text = text, AccessibilityName = text,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart, MouseFilter = Control.MouseFilterEnum.Ignore,
+            AutowrapMode = TextServer.AutowrapMode.Word, MouseFilter = Control.MouseFilterEnum.Ignore,
             SizeFlagsHorizontal = Control.SizeFlags.Fill };
         label.AddThemeConstantOverride("line_spacing", 0);
         label.AddThemeFontOverride("font", CardTypography.Bold);

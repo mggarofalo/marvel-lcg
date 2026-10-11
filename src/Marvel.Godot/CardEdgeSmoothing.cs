@@ -5,6 +5,19 @@ namespace Marvel.Godot;
 /// <summary>Adds a one-pixel coverage fringe to clockwise B1 polygons in Compatibility rendering.</summary>
 internal static class CardEdgeSmoothing
 {
+    internal static void DrawFrame(Control surface)
+    {
+        float radius = CardVisualTokens.FrameRadius;
+        Vector2 size = surface.Size;
+        Vector2[] centers = [new(size.X - radius, radius), size - Vector2.One * radius,
+            new(radius, size.Y - radius), Vector2.One * radius];
+        var points = new List<Vector2>();
+        for (int corner = 0; corner < 4; corner++)
+            for (int step = 0; step <= 8; step++)
+                points.Add(centers[corner] + Vector2.FromAngle((corner - 1) * Mathf.Pi / 2 + step * Mathf.Pi / 16) * radius);
+        Draw(surface, [.. points], CardFaceStyle.Ink);
+    }
+
     internal static void Add(Polygon2D polygon)
     {
         Vector2[] points = polygon.Polygon;

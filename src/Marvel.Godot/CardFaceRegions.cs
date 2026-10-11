@@ -48,14 +48,16 @@ internal sealed class CardFaceRegions
     private void ArrangeInk(Vector2 size, CardFaceFeatures features)
     {
         float rail = features.HasStats ? metrics.Rail(features.Landscape, features.HasConsequences) : 0;
+        if (features.HasArt && features.StatCount > 2) rail *= (features.StatCount + 1) / 2;
         if (features.Landscape) rail = Math.Max(rail, features.PrintedIconRows * metrics.RowHeight);
         float minimum = Kind.End.Y + rail + metrics.Gap;
         float desired = features.HasArt ? size.Y * metrics.ArtFraction : minimum;
         InkEnd = Math.Max(minimum, Math.Min(desired, AvailableInk(size.Y, features)));
         float tokenWidth = features.Landscape && features.PrintedIconRows > 0 ? metrics.TokenWidth : 0;
-        Stats = new Rect2(metrics.Padding, InkEnd - rail, size.X - 2 * metrics.Padding - tokenWidth, rail);
+        float statWidth = features.HasArt ? size.X * 0.54f - metrics.Padding : size.X - 2 * metrics.Padding;
+        Stats = new Rect2(metrics.Padding, InkEnd - rail, statWidth - tokenWidth, rail);
         Illustration = features.HasArt
-            ? new Rect2(size.X * 0.56f, Kind.End.Y, size.X * 0.44f, Math.Max(0, Stats.Position.Y - Kind.End.Y))
+            ? new Rect2(size.X * 0.56f, Kind.End.Y, size.X * 0.44f, Math.Max(0, InkEnd - Kind.End.Y))
             : new Rect2(metrics.Padding, Kind.End.Y, 0, 0);
     }
 

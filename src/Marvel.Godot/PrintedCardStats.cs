@@ -2,19 +2,22 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Renders a horizontal stat rail with independent marks around shaped numerals.</summary>
+/// <summary>Renders a compact stat grid beside artwork with independent marks around shaped numerals.</summary>
 internal static class PrintedCardStats
 {
     internal static void Add(Control face, IReadOnlyList<CardStatValue> stats, CardFaceRegions r)
     {
         if (stats.Count == 0) return;
-        float width = r.Stats.Size.X / stats.Count;
+        int columns = r.Illustration.HasArea() ? Math.Min(2, stats.Count) : stats.Count;
+        int rows = (stats.Count + columns - 1) / columns;
+        float width = r.Stats.Size.X / columns;
+        float height = r.Stats.Size.Y / rows;
         for (int index = 0; index < stats.Count; index++)
         {
             CardStatValue stat = stats[index];
             var cell = new Control { Name = $"Stat{stat.Name}",
-                Position = r.Stats.Position + new Vector2(width * index, 0),
-                Size = new Vector2(width, r.Stats.Size.Y), MouseFilter = Control.MouseFilterEnum.Ignore };
+                Position = r.Stats.Position + new Vector2(width * (index % columns), height * (index / columns)),
+                Size = new Vector2(width, height), MouseFilter = Control.MouseFilterEnum.Ignore };
             face.AddChild(cell);
             AddValue(cell, stat, r);
         }

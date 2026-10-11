@@ -2,7 +2,7 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Turns the former decision dock into an independent, collapsible history drawer.</summary>
+/// <summary>Owns the independent, collapsible history drawer.</summary>
 internal static class TableHistoryDrawer
 {
     private const string ExpandedMeta = "history_drawer_expanded";
@@ -61,13 +61,15 @@ internal static class TableHistoryDrawer
         latest.TooltipText = latest.Text;
         Button dismiss = EnsureDismiss(main, history, latest);
         HFlowContainer actions = EnsureActionFlow(history, dismiss);
+        history.MoveChild(history.GetNode<Control>("EventHeader"), 0);
         bool expanded = IsExpanded(main);
         HistoryUndoControl.RefreshReason(main, expanded);
         bool payment = CardPaymentWorkspaceLayout.Active(main);
         if (history.GetNodeOrNull<Control>("TableSidebar") is { } sidebar) sidebar.Visible = !payment;
         TableHistoryViewport.Configure(main, payment);
         ConfigureCueSummary(main, expanded);
-        toggle.Text = expanded ? "Collapse history" : "History";
+        toggle.Text = expanded ? "< History" : "> History";
+        toggle.TooltipText = expanded ? "Collapse history details" : "Expand history details";
         history.GetNode<Control>("EventHeader/Heading").Visible = false;
         foreach (Control control in new Control[]
                  {
@@ -82,6 +84,7 @@ internal static class TableHistoryDrawer
         TableLatestResult.Configure(latest, expanded);
         if (payment) ((Control)latest.GetParent().GetParent()).Visible = false;
         main.eventController.RefreshEventCueVisibility();
+        main.eventSkip.Visible = false;
         main.promptDiagnostic.Visible = false;
         if (history.FindChild("Skip", recursive: true, owned: false) is Button skip)
             skip.Text = "Finish animation";
@@ -89,7 +92,7 @@ internal static class TableHistoryDrawer
         {
             if (history.FindChild(name, recursive: true, owned: false) is Control control)
             {
-                control.Visible = expanded;
+                control.Visible = expanded && name != "Skip";
             }
         }
     }

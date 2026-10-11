@@ -15,7 +15,7 @@ internal static class CardSourceGroups
 
     internal static BoardCardPresentation[] Controlled(IEnumerable<BoardAreaPresentation> areas, int seat) =>
         [.. Current(areas).Where(card => card.Kind is "UPGRADE" or "SUPPORT"
-            && card.Persistent!.Relation is { Kind: "Controlled" } relation && relation.Controller == seat).OrderBy(card => card.TargetId)];
+            && card.Persistent!.Relation is { Kind: "Controlled" or "Attached" } relation && relation.Controller == seat).OrderBy(card => card.TargetId)];
 
     internal static bool IsLocalSource(BoardCardPresentation card) =>
         !card.Concealed && (card.Persistent?.Relation.Kind == "Attached"

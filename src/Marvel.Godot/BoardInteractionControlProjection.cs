@@ -18,7 +18,7 @@ internal static class BoardInteractionControlProjection
         var controls = new List<CardInteractionControlDescriptor>();
         if (composer.Selected is null)
         {
-            AddActionControls(controls, prompt);
+            AddActionControls(controls, prompt, composer.Prompt);
         }
         AddTargetControls(controls, composer);
         AddGeneratorControls(controls, composer);
@@ -54,7 +54,7 @@ internal static class BoardInteractionControlProjection
             : selected ? "✓ Chosen" : "Select target";
 
     private static void AddActionControls(
-        List<CardInteractionControlDescriptor> controls, PromptPresentation prompt)
+        List<CardInteractionControlDescriptor> controls, PromptPresentation prompt, Prompt enginePrompt)
     {
         foreach (IGrouping<int, AffordancePresentation> actions in prompt.Affordances
                      .Where(affordance => affordance.CardAnchorId is not null
@@ -69,7 +69,12 @@ internal static class BoardInteractionControlProjection
                     ? ActionEntry(actions.Single())
                     : $"Actions · {actions.Count()}",
                 CardInteractionCue.OfferedAction,
-                Description: actions.Count() == 1 ? DecisionCopy.ActionSummary(actions.Single()) : null));
+                Description: actions.Count() == 1 ? DecisionCopy.ActionSummary(actions.Single()) : null)
+            {
+                IsDefender = enginePrompt.PublicKind == PublicDecisionKind.Defense,
+                RequiredDefense = enginePrompt.PublicKind == PublicDecisionKind.Defense && !enginePrompt.Cancellable,
+                DirectActivation = enginePrompt.PublicKind == PublicDecisionKind.MinionActivationOrder,
+            });
         }
     }
 

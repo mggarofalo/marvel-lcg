@@ -15,7 +15,7 @@ public sealed class MinionOrderPresentationTests
     {
         Prompt prompt = NextPrompt(kind);
         DecisionComposer composer = InitialTableDraft.Create(prompt);
-        Assert.True(DecisionCardChoices.IsChoice(prompt));
+        Assert.Equal(kind != PublicDecisionKind.MinionActivationOrder, DecisionCardChoices.IsChoice(prompt));
         Assert.Null(composer.Selected);
         Assert.Empty(composer.Targets);
         Assert.False(composer.TryBuild(out _, out _));
@@ -54,7 +54,7 @@ public sealed class MinionOrderPresentationTests
     [Theory]
     [InlineData(PublicDecisionKind.Choice, false)]
     [InlineData(PublicDecisionKind.Order, false)]
-    [InlineData(PublicDecisionKind.MinionActivationOrder, true)]
+    [InlineData(PublicDecisionKind.MinionActivationOrder, false)]
     [InlineData(PublicDecisionKind.SpecialAbilityNext, true)]
     public void CardChoicesUseTheEnginePurposeRatherThanLabelText(PublicDecisionKind kind, bool gallery)
     {

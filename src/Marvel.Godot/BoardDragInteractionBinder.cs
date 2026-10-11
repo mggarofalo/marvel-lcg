@@ -17,7 +17,7 @@ internal static class BoardDragInteractionBinder
         var targeting = new BoardSourceTargetInteraction(composer,
             CurrentOperations(panel, composer), Affordances(panel, composer));
         if (destination is { } target && targeting.Matches(source, target).Count > 0)
-            return DragOnCard(panel, composer, gesture, source, target);
+            return DragOnCard(panel, composer, board, gesture, source, target);
         return DragPlay(panel, composer, board, gesture, source, destination);
     }
 
@@ -79,7 +79,7 @@ internal static class BoardDragInteractionBinder
     }
 
     private static bool DragOnCard(DecisionPanel panel, DecisionComposer composer,
-        CardPointerGesture gesture, int source, int destination)
+        BoardRenderResult board, CardPointerGesture gesture, int source, int destination)
     {
         var interaction = new BoardSourceTargetInteraction(composer,
             CurrentOperations(panel, composer), Affordances(panel, composer));
@@ -88,6 +88,7 @@ internal static class BoardDragInteractionBinder
         void Select(int id)
         {
             if (!interaction.TrySelect(id, source, destination)) return;
+            board.AnchorDraft(gesture.Position, id);
             panel.RaiseDraftStarted();
             BoardInteractionBinder.RefreshDraft(panel, composer, generation, source);
         }

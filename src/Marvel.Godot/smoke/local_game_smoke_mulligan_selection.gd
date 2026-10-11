@@ -1,24 +1,20 @@
 extends "res://smoke/local_game_smoke_direct_intent.gd"
 
 func _clearing_mulligan_replacements_preserves_task() -> bool:
-	var toggles := _hand_surface().find_children("MulliganDiscard*", "Button", true, false)
-	if toggles.is_empty(): return false
+	var card := _mulligan_card("Avengers Mansion")
+	if card == null: return false
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
-	if not await _pointer_activate(toggles[0] as Button): return false
+	if not await _keyboard_stage_card(card): return false
 	var clear := main.find_child("ContextualCancelDraft", true, false) as Button
-	if clear == null or clear.text != "Clear replacements" or not await _pointer_activate(clear):
+	if clear == null or not await _pointer_activate(clear):
 		_fail("opening-hand replacements cannot be cleared without abandoning the task")
 		return false
 	var submit := _task_commit()
 	if submit == null or submit.disabled or submit.text != "Keep hand" \
-			or (_node("Toolbar/SyncStatus") as Label).text != revision:
-		_fail("clearing staged replacements changed the game or hid the required Keep hand commitment")
+		or (_node("Toolbar/SyncStatus") as Label).text != revision:
+		_fail("clearing replacements changed the game or hid Keep hand")
 		return false
-	for candidate in _hand_surface().find_children("MulliganDiscard*", "Button", true, false):
-		if (candidate as Button).button_pressed:
-			_fail("clearing replacements left a hand card staged")
-			return false
-	return true
+	return not bool(card.get_meta("mulligan_staged", false))
 
 
 func _fallback_mulligan_sheet_is_focus_safe() -> bool:
@@ -76,47 +72,53 @@ func _select_mulligan_cards() -> bool:
 	if not _active_cues_leave_printed_values_readable(): return false
 	if main.find_child("VillainTable", true, false) == null:
 		return await _select_mulligan_cards_from_fallback()
-	var mansion := _mulligan_discard("Avengers Mansion")
-	var aunt := _mulligan_card("Aunt May")
-	var kick := _mulligan_card("Swinging Web Kick")
-	if mansion == null or aunt == null or kick == null:
-		_fail("the opening hand has no explicit discard controls for the seeded cards")
-		return false
-	if not await _keyboard_activate(mansion):
-		return false
-	if not await _keyboard_activate(_mulligan_discard("Aunt May")):
-		return false
-	if not await _drag_capture_is_safe():
-		return false
-	if not await _keyboard_activate(_mulligan_discard("Swinging Web Kick")):
-		return false
-	return _mulligan_discard("Avengers Mansion").text == "✓" \
-		and _mulligan_discard("Swinging Web Kick").text == "✓"
+	for title in ["Avengers Mansion", "Aunt May"]:
+		if not await _keyboard_stage_card(_mulligan_card(title)): return false
+	if not await _drag_capture_is_safe(): return false
+	return await _keyboard_stage_card(_mulligan_card("Swinging Web Kick"))
+
+
+func _keyboard_stage_card(card: Control) -> bool:
+	if card == null: return false
+	card.grab_focus()
+	await process_frame
+	var press := InputEventKey.new()
+	press.keycode = KEY_SPACE
+	press.pressed = true
+	render_viewport.push_input(press)
+	press = InputEventKey.new()
+	press.keycode = KEY_SPACE
+	press.pressed = false
+	render_viewport.push_input(press)
+	await process_frame
+	await process_frame
+	return true
 
 
 func _drag_capture_is_safe() -> bool:
 	var card := _mulligan_card("Swinging Web Kick")
-	if card == null:
-		_fail("the opening hand lost Swinging Web Kick before its drag probe")
+	if card == null: return false
+	var original := card.global_position
+	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	if not await _drag_mulligan_to_discard(card): return false
+	await create_timer(0.22).timeout
+	if not bool(card.get_meta("mulligan_staged", false)) or card.global_position.distance_to(original) < 40:
+		_fail("mulligan drop did not physically move the selected card out of the hand")
 		return false
-	if not await _drag_mulligan_to_discard(card):
+	if not await _drag_mulligan_to_discard(card): return false
+	if not bool(card.get_meta("mulligan_staged", false)):
+		_fail("repeat discard drop toggled the staged card back")
 		return false
-	# The source card owns this press while the pointer enters the destination.
-	# One callback changes the unchecked toggle once; two callbacks would return
-	# it to unchecked.
-	if not _mulligan_discard("Swinging Web Kick").button_pressed:
-		_fail("a source-card drag released over discard did not select exactly once")
+	await create_timer(0.22).timeout
+	var hand := main.find_child("HandDropArea", true, false) as Control
+	if hand == null: hand = main.find_child("SpatialHandArea", true, false) as Control
+	if hand == null:
+		_fail("the hand has no reversible staging destination")
 		return false
-	if not await _keyboard_activate(_mulligan_discard("Swinging Web Kick")):
-		return false
-	card = _mulligan_card("Swinging Web Kick")
-	if card == null:
-		_fail("the opening hand lost Swinging Web Kick after its choice-sheet probe")
-		return false
-	if not await _drag_mulligan_outside_discard(card):
-		return false
-	if _mulligan_discard("Swinging Web Kick").button_pressed:
-		_fail("a source-card drag released outside discard changed the opening-hand draft")
+	if not await _drag_mulligan(card, hand.get_global_rect().get_center()): return false
+	await create_timer(0.22).timeout
+	if bool(card.get_meta("mulligan_staged", false)) or (_node("Toolbar/SyncStatus") as Label).text != revision:
+		_fail("moving a staged card back failed to preserve the uncommitted game")
 		return false
 	return true
 
@@ -134,8 +136,8 @@ func _sheet_selection_stays_bound(title: String, select: bool) -> bool:
 	if close == null or not await _pointer_activate(close):
 		_fail("the complete opening-choice sheet cannot return to the table")
 		return false
-	var tabletop := _mulligan_discard(title)
-	if tabletop == null or tabletop.button_pressed != select:
+	var tabletop := _mulligan_card(title)
+	if tabletop == null or bool(tabletop.get_meta("mulligan_staged", false)) != select:
 		_fail("the complete opening-choice sheet and tabletop toggles diverged for %s" % title)
 		return false
 	return true
@@ -163,11 +165,6 @@ func _select_mulligan_cards_from_fallback() -> bool:
 			return false
 		await process_frame
 	return true
-
-
-func _mulligan_discard(title: String) -> Button:
-	var card := _mulligan_card(title)
-	return card.find_child("MulliganDiscard*", true, false) as Button if card != null else null
 
 
 func _mulligan_card(title: String) -> Control:

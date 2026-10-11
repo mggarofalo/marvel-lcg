@@ -46,7 +46,7 @@ func _reach_obligation() -> bool:
 			_fail("seed 7 ended before its expected obligation")
 			return false
 		await process_frame
-		var context := main.find_child("ContextualDecision", true, false) as Control
+		var context := main.find_child("CausalSituation", true, false) as Control
 		if "Business Problems" in _visible_text(context): return true
 		if not await _advance_to_obligation(): return false
 		await create_timer(0.1).timeout
@@ -62,7 +62,7 @@ func _advance_to_obligation() -> bool:
 
 
 func _check_obligation_context() -> bool:
-	if not _obligation_face_visible():
+	if not await _obligation_face_visible():
 		_fail("Business Problems has no visible contextual face")
 		return false
 	await _capture_checkpoint("business-problems-context")
@@ -71,15 +71,34 @@ func _check_obligation_context() -> bool:
 		_fail("the obligation consequences did not arrive")
 		return false
 	await _capture_checkpoint("business-problems-consequences")
-	if not _obligation_face_visible():
+	if not await _obligation_face_visible():
 		_fail("the obligation disappeared during its next choice")
 		return false
 	return true
 
 
 func _obligation_face_visible() -> bool:
-	var visible_cause := false
-	for card in main.find_children("ProceduralCard*", "Control", true, false):
-		if card.is_visible_in_tree() and "Business Problems" in _visible_text(card):
-			visible_cause = _control_is_fully_visible(card)
-	return visible_cause
+	var references: Array[Control] = []
+	for card in main.find_children("CausalReference*", "Control", true, false):
+		if card.has_meta("causal_reference") and "Business Problems" in _visible_text(card):
+			references.append(card)
+	if references.size() != 1: return false
+	var reference := references[0]
+	if not _control_is_fully_visible(reference): return false
+	# The causal copy belongs to its seam, never another physical player slot.
+	for physical in main.find_children("ProceduralCard*", "Control", true, false):
+		if "Business Problems" in _visible_text(physical): return false
+	var inspector := main.get_node("CardInspector") as Control
+	var hover := InputEventMouseMotion.new()
+	hover.position = reference.get_global_rect().get_center()
+	hover.global_position = hover.position
+	render_viewport.push_input(hover, true)
+	await process_frame
+	if not inspector.visible: return false
+	if "Business Problems" not in _visible_text(inspector): return false
+	var leave := InputEventMouseMotion.new()
+	leave.position = Vector2(4, 4)
+	leave.global_position = leave.position
+	render_viewport.push_input(leave, true)
+	await process_frame
+	return true

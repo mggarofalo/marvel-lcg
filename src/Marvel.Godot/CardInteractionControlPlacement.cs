@@ -10,6 +10,7 @@ internal static class CardInteractionControlPlacement
         Button button)
     {
         if (card.GetParent() is not Control) return false;
+        if (card.HasMeta("source_tableau_tile")) return card.AddInteractionControl(button);
         if (card.HasMeta("spatial_hand_index"))
             return SpatialHandActionStrip.Place(card, button);
         if (!card.HasMeta("spatial_resting_z"))

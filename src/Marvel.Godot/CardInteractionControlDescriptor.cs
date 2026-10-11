@@ -7,4 +7,9 @@ internal sealed record CardInteractionControlDescriptor(
     string Text,
     CardInteractionCue Cue,
     int? Option = null,
-    string? Description = null);
+    string? Description = null)
+{
+    internal bool IsDefender { get; init; }
+    internal bool RequiredDefense { get; init; }
+    internal bool DirectActivation { get; init; }
+}

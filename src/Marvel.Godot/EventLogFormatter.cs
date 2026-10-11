@@ -11,12 +11,14 @@ internal static class EventLogFormatter
     internal static string FormatActions(
         IReadOnlyList<HistoryEntryDescriptor> actions,
         IReadOnlyList<int> undo,
-        string accent)
+        string accent,
+        IReadOnlySet<int>? expanded = null)
     {
         var text = new StringBuilder();
         foreach (HistoryEntryDescriptor entry in actions)
         {
-            AppendAction(text, entry, accent, undo.Contains(entry.Cursor));
+            AppendAction(text, entry, accent, undo.Contains(entry.Cursor),
+                expanded is null || expanded.Contains(entry.Cursor), expanded is not null);
         }
 
         return text.Length == 0 ? "Action in progress." : text.ToString();
@@ -50,12 +52,20 @@ internal static class EventLogFormatter
         StringBuilder text,
         HistoryEntryDescriptor entry,
         string accent,
-        bool canUndo)
+        bool canUndo,
+        bool expanded,
+        bool disclosure)
     {
         text.Append("[color=#").Append(accent).Append(']')
             .Append((entry.Cursor + 1).ToString("000", CultureInfo.InvariantCulture))
             .Append("[/color]  ").AppendLine(entry.Summary);
-        foreach (string detail in entry.Details)
+        if (disclosure && entry.Details.Count > 0)
+        {
+            text.Append("     [url=details:").Append(entry.Cursor.ToString(CultureInfo.InvariantCulture))
+                .Append(expanded ? "]< Collapse details[/url]" : "]> Expand details[/url]")
+                .AppendLine();
+        }
+        foreach (string detail in expanded ? entry.Details : [])
         {
             text.Append("     ").AppendLine(detail);
         }

@@ -458,17 +458,15 @@ func _navigate_workbench_tab(workbench: TabContainer, key: Key, expected: int) -
 
 func _motion_state_is_safe(state: Dictionary) -> bool:
 	var skip := main.find_child("Skip", true, false) as Button
-	if motion_enabled and not skip.disabled \
-			and not _is_complete() and _current_table_prompt_is_operable():
+	if not skip.disabled:
+		_fail("the chronological account unexpectedly requires timed playback")
+		return false
+	if motion_enabled and not _is_complete() and _current_table_prompt_is_operable():
 		state.saw_nonblocking_motion = true
 		if not state.tested_active_motion_toggle:
-			if not await _toggle_active_motion(skip):
-				return false
+			if not await _toggle_active_motion(skip): return false
 			state.tested_active_motion_toggle = true
-	if not motion_enabled and not _disabled_motion_is_settled(skip):
-		return false
 	return true
-
 
 func _current_table_prompt_is_operable() -> bool:
 	for pattern in ["ContextualCommit", "ContextualDecline", "Card*Action", "Card*Target", "Card*Generator", "CompleteChoiceSheet"]:

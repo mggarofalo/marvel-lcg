@@ -7,6 +7,7 @@ static func perform(driver, card: Control, finish: Vector2) -> bool:
 		driver._fail("card '%s' has no exposed body from which to begin its drag" % card.name)
 		return false
 	var origin := card.global_position
+	var collection := card.find_parent("Continuous*")
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
@@ -23,11 +24,16 @@ static func perform(driver, card: Control, finish: Vector2) -> bool:
 	if card.get_global_rect().get_center().distance_to(midpoint) > 4.0 or card.z_index < 120:
 		driver._fail("dragging '%s' produced no lifted intermediate frame" % card.name)
 		return false
+	if not card.is_set_as_top_level():
+		driver._fail("lifted card still inherits collection clipping")
+		return false
 	move = InputEventMouseMotion.new()
 	move.position = finish
 	move.global_position = finish
 	driver.render_viewport.push_input(move, true)
 	await driver.process_frame
+	if collection != null and not await driver._capture_checkpoint("ally-lift-outside-collection"):
+		return false
 	if not driver._drag_preview_is_meaningful(card): return false
 	var release := InputEventMouseButton.new()
 	release.button_index = MOUSE_BUTTON_LEFT

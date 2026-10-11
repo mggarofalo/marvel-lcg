@@ -21,12 +21,25 @@ internal static class BoardInteractionBinder
         board.BindCompleteChoices(source => panel.ShowCompleteChoices(source));
         board.BindExplicitInteraction(gesture => Activate(panel, composer, gesture));
         board.BindContextualInteraction(
-            id => { if (!panel.PaymentModalOpen) panel.SelectAffordance(id, panel.GetRenderGeneration()); },
+            id => SelectContextAction(panel, composer, id),
             () => Decline(panel, composer, panel.GetRenderGeneration()),
             () => Submit(panel, composer, panel.GetRenderGeneration()),
             () => CancelDraft(panel, composer),
             index => SelectCost(panel, composer, index),
             () => DecisionPanelCopy.SubmitAction(composer, panel.world!));
+    }
+
+    private static void SelectContextAction(DecisionPanel panel, DecisionComposer composer, int id)
+    {
+        int generation = panel.GetRenderGeneration();
+        if (panel.PaymentModalOpen || !CurrentOperations(panel, composer).TrySelectAffordance(id)) return;
+        panel.RaiseDraftStarted();
+        if (DirectCommitment.IsReady(composer))
+        {
+            Submit(panel, composer, generation);
+            return;
+        }
+        panel.Rebuild();
     }
 
     private static void SelectCost(DecisionPanel panel, DecisionComposer composer, int index)
@@ -123,7 +136,10 @@ internal static class BoardInteractionBinder
         IReadOnlyList<Marvel.View.AffordancePresentation> actions = interaction.VisibleActions(cardId);
         if (actions.Count == 1)
         {
-            return interaction.TrySelectAction(actions[0].Id, cardId);
+            BoardDraftMutation mutation = interaction.TrySelectAction(actions[0].Id, cardId);
+            return mutation == BoardDraftMutation.Affordance
+                && DirectCommitment.IsReady(composer)
+                ? Submit(panel, composer, generation) : mutation;
         }
         if (actions.Count > 1)
         {

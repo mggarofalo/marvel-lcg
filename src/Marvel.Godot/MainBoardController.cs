@@ -28,6 +28,7 @@ internal sealed class MainBoardController : IDisposable
 
     internal void ResetForSession()
     {
+        HandPresentationOrder.Clear();
         cardInspector.Reset();
         renderLifetime.Advance();
         main.SkipEventPresentation();
@@ -49,6 +50,7 @@ internal sealed class MainBoardController : IDisposable
             .ToHashSet() ?? [];
         if (!string.Equals(displayedResponse?.GameId, response.GameId, StringComparison.Ordinal))
         {
+            HandPresentationOrder.Clear();
             cardInspector.Reset();
             tabletop.ResetForGame();
         }
@@ -147,9 +149,19 @@ internal sealed class MainBoardController : IDisposable
         {
             Name = "ContextualActionObjects", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        main.boardAreas.AddChild(actions);
-        main.boardAreas.MoveChild(actions, 0);
+        var dock = new VBoxContainer { Name = "CompactDecisionDock",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        dock.AddChild(actions);
+        var complete = new Button { Name = "CompleteChoiceSheet", Text = "Complete Choices",
+            CustomMinimumSize = new Vector2(148, 44),
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
+            Visible = main.CurrentGame?.Prompt is not null };
+        dock.AddChild(complete);
+        TableCompactButtonStyle.Apply(complete);
+        main.boardAreas.AddChild(dock);
+        main.boardAreas.MoveChild(dock, 0);
         rendered.RegisterContextualActions(actions);
+        rendered.RegisterCompleteChoices(complete);
         return rendered;
     }
 
@@ -165,7 +177,7 @@ internal sealed class MainBoardController : IDisposable
         cardInspector.Show(card, source, pinned);
     internal void Input(InputEvent input)
     {
-        if (main.CurrentGame is not null && inputBoundary.Consume(input))
+        if (main.CurrentGame is not null && inputBoundary.Consume(input, main.GetViewport().GuiGetHoveredControl()))
         {
             main.GetViewport().SetInputAsHandled();
             return;

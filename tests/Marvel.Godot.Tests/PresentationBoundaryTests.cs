@@ -118,7 +118,6 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.PromptPresentation",
             "Marvel.View.PlayerSummaryDescriptor",
             // The decision heading identifies the acting seat from public player information.
-            "Marvel.View.PlayerDescriptor",
             "Marvel.View.PaymentSourcePresentation",
             "Marvel.View.RelationshipKind",
             "Marvel.View.TableContextDescriptor",

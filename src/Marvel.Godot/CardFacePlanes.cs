@@ -25,7 +25,7 @@ internal static class CardFacePlanes
         }
         if (r.Stats.Size.Y > 0)
             AddPolygon(planes, "ProtectedStatsBand", [new(0, r.Stats.Position.Y),
-                new(size.X, r.Stats.Position.Y), new(size.X, r.InkEnd - cut / 2),
+                new(r.Stats.End.X, r.Stats.Position.Y), new(r.Stats.End.X, r.InkEnd - cut / 2),
                 new(0, r.InkEnd + cut / 2)], CardFaceStyle.Ink);
         float iconSize = (r.Full ? 20 : 10) * r.Density;
         planes.AddChild(CardGlyphRendering.Create(CardGlyphRendering.Aspect(card.Classification,

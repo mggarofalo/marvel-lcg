@@ -87,7 +87,7 @@ func _terminal_decision_is_safe() -> bool:
 
 
 func _terminal_table_outcome_is_visible() -> bool:
-	var context := main.find_child("ContextualDecision", true, false) as Control
+	var context := main.find_child("CausalSituationViewport", true, false) as Control
 	var outcome := _visible_text(context).to_lower() if context != null else ""
 	if "defeat" in outcome and ("villain won" in outcome or "players lost" in outcome):
 		return true
@@ -153,7 +153,7 @@ func _terminal_result_is_safe() -> bool:
 		return false
 	var latest := main.find_child("LatestResult", true, false) as Label
 	if latest != null:
-		var context := main.find_child("ContextualDecision", true, false) as Control
+		var context := main.find_child("CausalSituationViewport", true, false) as Control
 		var outcome := _visible_text(context).to_lower() if context != null else ""
 		if not latest.text.is_empty() and ("villain won" in outcome or "players lost" in outcome):
 			return true

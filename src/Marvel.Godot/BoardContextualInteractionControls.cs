@@ -16,6 +16,15 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
     private Action<int>? selectCost;
     private Func<string>? commitmentLabel;
     private int generation;
+    private Vector2? releaseAnchor;
+    private int? releaseOffer;
+    private bool local;
+
+    internal void AnchorDraft(Vector2 position, int offer) { releaseAnchor = position; releaseOffer = offer; }
+    internal void SetVisible(bool visible)
+    {
+        if (host?.GetNodeOrNull<CanvasLayer>("TargetCommitmentLayer") is { } layer) layer.Visible = visible;
+    }
 
     internal void Register(Container container) => host = container;
 
@@ -48,17 +57,43 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
         if (!InteractionControl.IsUsable(host)) return;
         if (composer.Selected is null)
         {
+            releaseAnchor = null;
             if (composer.Prompt.PublicKind == PublicDecisionKind.PlayerAction && composer.Prompt.Cancellable)
                 AddDecline(prompt);
             AddActions(prompt, installedActions, composer.Prompt.PublicKind);
         }
         else
         {
-            AddDraft(composer);
+            PresentDraft(composer);
         }
         if (composer.Selected is null && composer.Prompt.Cancellable
             && composer.Prompt.PublicKind != PublicDecisionKind.PlayerAction)
             AddDecline(prompt);
+    }
+
+    private void PresentDraft(DecisionComposer composer)
+    {
+        if (composer.Selected?.Id != releaseOffer) releaseAnchor = null;
+        if (releaseAnchor is not { } point) { AddDraft(composer); return; }
+        Container dock = host!;
+        var localLayer = new CanvasLayer { Name = "TargetCommitmentLayer", Layer = 80 };
+        dock.AddChild(localLayer);
+        var panel = new PanelContainer { Name = "TargetCommitment", CustomMinimumSize = new Vector2(290, 0) };
+        localLayer.AddChild(panel);
+        var column = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
+        panel.AddChild(column);
+        host = column;
+        local = true;
+        AddDraft(composer);
+        local = false;
+        host = dock;
+        Callable.From(() =>
+        {
+            if (!InteractionControl.IsUsable(panel)) return;
+            Vector2 viewport = panel.GetViewportRect().Size;
+            panel.Position = new Vector2(Math.Clamp(point.X + 14, 8, Math.Max(8, viewport.X - panel.Size.X - 8)),
+                Math.Clamp(point.Y + 14, 8, Math.Max(8, viewport.Y - panel.Size.Y - 8)));
+        }).CallDeferred();
     }
 
     private void AddDecline(PromptPresentation prompt) =>
@@ -99,7 +134,7 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
         Container row = ActionRow(choices, description);
         Button choice = Add($"ContextAction{id}", label,
             () => activate?.Invoke(id), offer.Description ?? offer.Label, parent: row);
-        DecisionCostLabel.AttachTo(choice, offer);
+        DecisionCostLabel.AttachTo(choice, offer, compact: true);
         if (!string.IsNullOrEmpty(description)) row.AddChild(new Label
         {
             Text = description, AutowrapMode = TextServer.AutowrapMode.WordSmart,
@@ -123,6 +158,17 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
 
     private void AddDraft(DecisionComposer composer)
     {
+        Container dock = host!;
+        if (!local && composer.Selected?.CostOptions.Count == 1)
+        {
+            var inline = new HBoxContainer
+            {
+                Name = "InlineCostCommitment", ThemeTypeVariation = GodotThemeVariations.TightStack,
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            };
+            dock.AddChild(inline);
+            host = inline;
+        }
         AddCostChoices(composer);
         DecisionProgressPresentation progress = composer.Progress();
         string label = DecisionCopy.WithPaymentConsequence(
@@ -130,12 +176,15 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
         var commitments = new HBoxContainer
         {
             Name = "DraftCommitments", ThemeTypeVariation = GodotThemeVariations.TightStack,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(280, 44),
         };
         host!.AddChild(commitments);
         Add("ContextualCommit", label, () => submit?.Invoke(), label, !progress.IsReady, commitments);
         if (CanClearDraft(composer))
-            Add("ContextualCancelDraft", CancelLabel(composer.Prompt), () => cancel?.Invoke(),
+            Add("ContextualCancelDraft", local ? "× Cancel" : CancelLabel(composer.Prompt), () => cancel?.Invoke(),
                 "Clear these uncommitted choices. Accepted actions remain in play.", parent: commitments);
+        host = dock;
     }
 
     internal static bool CanClearDraft(DecisionComposer composer) =>
@@ -183,6 +232,7 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
             ThemeTypeVariation = GodotThemeVariations.LegalTargetButton,
         };
         int current = generation;
+        button.SetMeta("table_mutation", true);
         button.Pressed += () =>
         {
             if (isCurrent() && current == generation && !button.Disabled) action();

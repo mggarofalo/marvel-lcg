@@ -74,6 +74,10 @@ Invoke-LocalSmoke "res://smoke/deferred_event_smoke.gd"
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
 Invoke-LocalSmoke "res://smoke/repeated_commit_smoke.gd"
+Invoke-LocalSmoke "res://smoke/hand_intent_smoke.gd"
+$env:MARVEL_SMOKE_TWO_PLAYER = "true"
+Invoke-LocalSmoke "res://smoke/layout_continuity_smoke.gd"
+Remove-Item Env:MARVEL_SMOKE_TWO_PLAYER
 Invoke-LocalSmoke "res://smoke/resource_finalizer_smoke.gd"
 foreach ($scale in @("50", "80", "100", "150")) {
     $env:MARVEL_UI_SCALE = $scale
@@ -85,6 +89,10 @@ foreach ($scale in @("50", "80", "100", "150")) {
 $env:MARVEL_UI_SCALE = "150"
 $env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke "res://smoke/repeated_commit_smoke.gd"
+Invoke-LocalSmoke "res://smoke/hand_intent_smoke.gd"
+$env:MARVEL_SMOKE_TWO_PLAYER = "true"
+Invoke-LocalSmoke "res://smoke/layout_continuity_smoke.gd"
+Remove-Item Env:MARVEL_SMOKE_TWO_PLAYER
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
 Invoke-LocalSmoke "res://smoke/result_playback_smoke.gd"

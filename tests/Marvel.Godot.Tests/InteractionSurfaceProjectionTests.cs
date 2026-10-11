@@ -252,7 +252,7 @@ public sealed class InteractionSurfaceProjectionTests
     }
 
     [Fact]
-    public void SelectedPromptDrawsOnlyActionableTargetAndGeneratorLinks()
+    public void SelectedPromptDrawsOnlySelectedTargetAndGeneratorLinksOnce()
     {
         var cost = new CostOption(19, "1", Rule: ["R"], Sources:
             [new ResourceSource(23, "R"), new ResourceSource(24, "B")]);
@@ -268,12 +268,16 @@ public sealed class InteractionSurfaceProjectionTests
                     new TableRelationshipDescriptor(RelationshipKind.Result, 19, 21),
                     new TableRelationshipDescriptor(RelationshipKind.OfferedTarget, 19, 22),
                     new TableRelationshipDescriptor(RelationshipKind.OfferedGenerator, 19, 23),
+                    new TableRelationshipDescriptor(RelationshipKind.OfferedGenerator, 19, 23),
                     new TableRelationshipDescriptor(RelationshipKind.OfferedGenerator, 19, 24),
                     new TableRelationshipDescriptor(RelationshipKind.Engagement, 19, null, 0),
                 ],
             },
         ]);
 
+        Assert.Empty(BoardInteractionRelationshipProjection.From(composer, prompt));
+        composer.AddTarget(22);
+        composer.ToggleResource(23);
         Assert.Equal(
         [
             new TableRelationshipDescriptor(RelationshipKind.OfferedTarget, 19, 22),

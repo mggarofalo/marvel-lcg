@@ -58,8 +58,11 @@ func _accept_search() -> bool:
 	if pass_option == null:
 		_fail("Shuri's optional response lost its pass choice")
 		return false
+	var revision := _search_revision()
 	if not await _pointer_activate(_visible_button_beginning(_play(), SEARCH)): return false
-	if not await _commit_once(SEARCH): return false
+	if not await _wait_for(func() -> bool: return _search_revision() == revision + 1):
+		_fail("Shuri's deliberate search action did not commit exactly one opportunity")
+		return false
 	if not await _wait_for(func() -> bool: return _search_frame() != null):
 		_fail("committed Shuri search did not reveal authorized upgrade choices")
 		return false
@@ -67,6 +70,9 @@ func _accept_search() -> bool:
 		_fail("committed search acquired a refunding cancel")
 		return false
 	return _search_fits()
+
+func _search_revision() -> int:
+	return (_node("Toolbar/SyncStatus") as Label).text.get_slice("· r", 1).to_int()
 
 func _select_and_finish() -> bool:
 	var face := _search_frame().find_child("SearchResult*", true, false) as Control

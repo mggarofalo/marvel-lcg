@@ -14,6 +14,7 @@ internal static class CardFaceStyle
     internal static StyleBoxFlat Frame(BoardCardPresentation card) => new()
     {
         BgColor = card.Concealed ? Ink : Accent(card), BorderColor = Ink,
+        AntiAliasing = true, AntiAliasingSize = 1.5f, CornerDetail = 12,
         BorderWidthLeft = CardVisualTokens.FrameStroke,
         BorderWidthRight = CardVisualTokens.FrameStroke,
         BorderWidthTop = CardVisualTokens.FrameStroke,

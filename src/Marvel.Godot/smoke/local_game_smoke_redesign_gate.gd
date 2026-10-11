@@ -154,14 +154,15 @@ func _redesign_gate_shell_uses_desktop_width(checkpoint: String) -> bool:
 
 func _redesign_gate_required_mulligan_controls_are_visible() -> bool:
 	var submit := _task_commit()
-	var toggles := _hand_surface().find_children(
-		"MulliganDiscard*", "Button", true, false)
-	if submit == null or submit.disabled or toggles.size() != 6:
-		_fail("the opening tabletop does not expose all six mulligan choices and its commit action")
+	var cards: Array[Control] = []
+	for candidate in _hand_surface().find_children("ProceduralCard*", "", true, false):
+		if candidate.has_meta("spatial_hand_index"): cards.append(candidate as Control)
+	if submit == null or submit.disabled or cards.size() != 6:
+		_fail("opening tabletop must expose six physical mulligan cards and its single commitment")
 		return false
-	for toggle in toggles:
-		if not _control_is_fully_visible(toggle as Control):
-			_fail("a mulligan choice is outside the fixed desktop viewport: %s" % toggle.name)
+	for card in cards:
+		if card.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size())).size.x < 44:
+			_fail("a mulligan card has no exposed drag/keyboard surface")
 			return false
 	if not _control_is_fully_visible(submit):
 		_fail("the opening-hand card-local execute action is outside the fixed desktop viewport")

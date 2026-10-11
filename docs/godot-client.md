@@ -30,6 +30,29 @@ form exposes the second decision. This is a reproducible gameplay check, not
 product acceptance: the owner affirms the tableau and decision area after
 trying the working build.
 
+### Table interactions
+
+Minions and allies use continuous collections; side schemes expose landscape
+faces and named headers in a scrollable stack. Upgrades and supports share
+compact named source strips, including controlled upgrades attached to another
+character. Hover or keyboard focus previews a card; pinning expands bounded
+detail. Related faces and modifier sources are directly visible choices.
+
+Drag an opening-hand card to the discard to stage it physically, or drag it back
+to keep it. Space is the keyboard equivalent. Redraw commits the staged set.
+Dragging within the hand previews a local insertion order without changing game
+state. Playing a hand card opens the current engine-offered composition;
+authorized attachment targets can be outside the player area.
+
+History is a vertical account with expandable details. Complete Choices is next
+to the current decision. Temporary causal references have a reserved location
+and do not create another physical action target. Status cards use shape and
+letter badges: octagonal T for tough, jagged S for stunned, ring C for confused;
+defense uses a separate shield.
+
+The MARVEL-492 SVG direction is approved. Acceptance of this implementation
+remains the owner's affirmation of the working build.
+
 ### Card rendering
 
 The Compatibility renderer draws text at the active canvas resolution. Card art
@@ -37,11 +60,12 @@ and icon textures carry mipmaps and use linear mipmap filtering when reduced;
 resource icons use Lanczos resampling before their mipmaps are generated.
 Transparent edge colors are extended before filtering to avoid dark fringes.
 B1 polygons have a one-pixel transparent coverage fringe, including the compact
-source rails. This smooths their diagonals without a full-screen blur or a change
+source rails, rotated outer frames and interaction outlines. Relationship
+connectors use explicit coverage on both sides of each segment. This smooths their diagonals without a full-screen blur or a change
 of renderer.
 
 The rendered redesign gate samples pixels along an isolated production card
-edge. It requires intermediate coverage between the ink and paper, rather than
+edge, a rotated production frame, and a production connector. It requires intermediate coverage between the ink and paper, rather than
 trusting a renderer setting. Removing the fringe fails this check. Native card
 layout and interaction checks run separately; the pixel check requires a real
 rendering device (Xvfb on Linux), not the headless dummy renderer.

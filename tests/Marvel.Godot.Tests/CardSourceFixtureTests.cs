@@ -58,7 +58,7 @@ public sealed class CardSourceFixtureTests
         Assert.Contains("0 damage here", CardSourceSummary.Lines(Source("01098") with { Damage = 0 }));
         Assert.Single(CardSourceGroups.Attached(areas, environment.ObjectId));
         Assert.DoesNotContain(CardSourceGroups.Attached(areas, drone.ObjectId), card => card.FaceId == "01142");
-        Assert.Equal(2, CardSourceGroups.Controlled(areas, 0).Length);
+        Assert.Equal(3, CardSourceGroups.Controlled(areas, 0).Length);
         // These assembled layouts are synthetic snapshots, not transcripts of legal play.
         areas = [.. areas.Select(area => area with { Cards = [.. area.Cards.Select(card => card.TargetId == hero.ObjectId
             ? card with { Status = "EXHAUSTED" } : card)] })];

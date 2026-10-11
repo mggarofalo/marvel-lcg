@@ -16,6 +16,7 @@ internal sealed class BoardCardInspectorController
     internal BoardCardInspectorController(Main main, MainTabletopController tabletop)
     {
         this.main = main;
+        main.AddChild(new CardInspectorTransition { Name = "InspectorExpansion" });
         layout = new CardInspectorLayout(main);
         this.tabletop = tabletop;
         inspector = new CardInspectorFocus(main);
@@ -106,7 +107,7 @@ internal sealed class BoardCardInspectorController
             : []);
         HBoxContainer inspectorHeader = main.cardInspectorTitle.GetParent<HBoxContainer>();
         inspectorHeader.Visible = pinned;
-        main.cardInspectorTitle.Visible = pinned && cardNavigation.IsVisible;
+        main.cardInspectorTitle.Visible = false;
         main.cardInspectorClose.Visible = pinned;
         ConfigureFrame();
         layout.BindMeasurement(detail, card, source, pinned);
@@ -123,7 +124,7 @@ internal sealed class BoardCardInspectorController
     }
 
     internal void Input(InputEvent input) =>
-        MainBoardInputRouter.Route(main, inspector, cardNavigation, input);
+        MainBoardInputRouter.Route(main, inspector, input);
 
     internal void ScheduleHide() => inspector.ScheduleHide();
     internal void BindFocus(Control control) => inspector.BindFocus(control);
@@ -161,7 +162,7 @@ internal sealed class BoardCardInspectorController
     private void ConfigureFrame()
     {
         main.cardInspectorScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever;
-        main.cardInspectorScroll.VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever;
+        main.cardInspectorScroll.VerticalScrollMode = ScrollContainer.ScrollMode.Auto;
         using var empty = new StyleBoxEmpty();
         main.cardInspectorFrame.AddThemeStyleboxOverride("panel", empty);
     }
@@ -181,17 +182,15 @@ internal sealed class BoardCardInspectorController
             CardInspectorFocus.IgnoreMouseRecursively(main.cardInspectorFrame, interactiveRules: false);
         }
 
-        main.cardInspector.MouseFilter = pinned
-            ? Control.MouseFilterEnum.Stop
-            : Control.MouseFilterEnum.Ignore;
-        // The backdrop shares the inspector's full viewport bounds. Keep it
-        // transparent while previewing so a hover cannot replace the decision
-        // control that opened the preview as the pointer's GUI owner.
-        main.cardInspectorBackdrop.MouseFilter = pinned
-            ? Control.MouseFilterEnum.Stop
-            : Control.MouseFilterEnum.Ignore;
-        main.cardInspectorBackdrop.Visible = pinned && !main.decisions.PaymentModalOpen;
+        main.cardInspector.MouseFilter = Control.MouseFilterEnum.Ignore;
+        // Only the bounded detail owns pointer input. An outside press is consumed
+        // by the focus owner while dismissing, so it cannot commit the card below.
+        main.cardInspectorBackdrop.MouseFilter = Control.MouseFilterEnum.Ignore;
+        main.cardInspectorBackdrop.Visible = false;
         main.cardInspector.Visible = true;
+        main.GetNode<CardInspectorTransition>("InspectorExpansion").Expand(
+            main.cardInspectorFrame, source, pinned && main.eventMotion.ButtonPressed,
+            () => main.eventMotion.ButtonPressed);
         if (pinned)
         {
             inspector.RememberSource(sourceId, source);

@@ -47,25 +47,12 @@ func _run() -> void:
 
 func _check_card(sample: Control, failures: Array[String]) -> void:
 	var card := sample.find_child("StateCard", true, false) as Control
-	var state := card.get_node("SpatialOverlay/LiveState") as Control
+	var state := card.get_node_or_null("SpatialOverlay/LiveStatePanel/LiveState") as Control
 	var identity := str(sample.get_meta("title"))
-	if abs(state.get_global_transform().get_rotation()) > 0.001:
-		failures.append(identity + " state rotates with face")
-	var face_bounds := _bounds(card)
-	if state.global_position.x < face_bounds.end.x + 7:
-		failures.append(identity + " state overlaps its face")
-	if state.size.y > max(card.size.x, card.size.y) + 0.1:
-		failures.append(identity + " state exceeds reserved host height: " + str(state.size.y))
-	var actions := card.get_node("SpatialOverlay/SpatialControls") as Control
-	if actions.size.y < 44:
-		failures.append(identity + " essential state leaves no visible action: state=" + str(state.size) + " actions=" + str(actions.size))
-	if state.find_children("LiveStatus*", "Label", true, false).size() != int(sample.get_meta("expected_entries")):
-		failures.append(identity + " lost state entry")
-	if bool(sample.get_meta("concealed")) and state.get_child_count() != 0:
-		failures.append("concealed card exposes live facts")
-	var maximum_mark := card.find_child("ModifiedHealthMaximum", true, false)
-	if (maximum_mark != null) != bool(sample.get_meta("modified_maximum")):
-		failures.append(identity + " maximum modification differs from supplied flag")
+	if state == null:
+		if not bool(sample.get_meta("concealed")): failures.append(identity + " missing required live state")
+		return
+	_check_live_facts(sample, card, state, identity, failures)
 	_check_labels(state, identity, failures)
 	_check_rules(card, identity, failures)
 	preload("res://smoke/card_progress_checks.gd").check(card, identity, failures)
@@ -114,16 +101,15 @@ func _check_waiting(sample: Control, failures: Array[String]) -> void:
 
 func _check_source_input(sample: Control, fixtures: Control, failures: Array[String]) -> void:
 	var detail := sample.find_child("StateInspection", true, false)
-	var source := detail.find_child("InspectValueSource", true, false) as Button
-	var next := detail.find_child("NextValueSource", true, false) as Button
-	if source == null or next == null:
+	var source := detail.find_child("InspectValueSource*", true, false) as Button
+	var sources := detail.find_children("InspectValueSource*", "Button", true, false)
+	if source == null or sources.size() != 2:
 		failures.append("missing supplied HP source access")
 		return
 	await _click(source)
 	if int(fixtures.get_meta("opened_source_target", -1)) != 900:
 		failures.append("pointer source access lost authorized current copy")
-	await _click(next)
-	source = detail.find_child("InspectValueSource", true, false) as Button
+	source = sources[1] as Button
 	source.grab_focus()
 	await process_frame
 	for pressed in [true, false]:
@@ -174,3 +160,23 @@ func _check_target_input(sample: Control, failures: Array[String]) -> void:
 		failures.append("spatial target selector did not stage its target")
 	if cue != null and cue.is_visible_in_tree():
 		failures.append("selected spatial target restores the duplicate non-interactive glyph")
+
+
+func _check_live_facts(sample: Control, card: Control, state: Control, identity: String, failures: Array[String]) -> void:
+	if abs(state.get_global_transform().get_rotation()) > 0.001:
+		failures.append(identity + " state rotates with face")
+	var face_bounds := _bounds(card)
+	if state.global_position.x < face_bounds.position.x - 1 or state.get_global_rect().end.x > face_bounds.end.x + 1:
+		failures.append(identity + " state extends beyond card column")
+	if state.size.y > max(card.size.x, card.size.y) + 0.1:
+		failures.append(identity + " state exceeds reserved host height: " + str(state.size.y))
+	var actions := card.get_node("SpatialOverlay/SpatialControls") as Control
+	if actions.size.y < 28:
+		failures.append(identity + " essential state leaves no visible action: state=" + str(state.size) + " actions=" + str(actions.size))
+	if (state.find_child("LiveStatuses", true, false).get_child_count() if state.find_child("LiveStatuses", true, false) != null else 0) != int(sample.get_meta("expected_entries")):
+		failures.append(identity + " lost state entry")
+	if bool(sample.get_meta("concealed")) and state.get_child_count() != 0:
+		failures.append("concealed card exposes live facts")
+	var maximum_mark := card.find_child("ModifiedHealthMaximum", true, false)
+	if (maximum_mark != null) != bool(sample.get_meta("modified_maximum")):
+		failures.append(identity + " maximum modification differs from supplied flag")

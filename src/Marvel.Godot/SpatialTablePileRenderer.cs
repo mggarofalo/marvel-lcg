@@ -23,11 +23,11 @@ internal sealed class SpatialTablePileRenderer(
         var inspect = new Button
         {
             Name = $"InspectPile{area.Id}",
-            Text = $"{PileGlyph(area.Zone)}\n{pile.Count}\n{(area.Zone.Contains("Discard", StringComparison.Ordinal) ? "Discard" : "Deck")}",
+            Text = pile.Count == 0 ? $"{(area.Zone.Contains("Discard", StringComparison.Ordinal) ? "Discard" : "Deck")}\nEmpty" : $"{PileGlyph(area.Zone)}\n{pile.Count}\n{(area.Zone.Contains("Discard", StringComparison.Ordinal) ? "Discard" : "Deck")}",
             ClipText = true,
             AccessibilityName = TabletopAreaNames.Title(area.Title),
             Disabled = pile.InspectionOrder.Count == 0,
-            TooltipText = pile.InspectionOrder.Count == 0
+            TooltipText = pile.Count == 0 ? "Empty pile." : pile.InspectionOrder.Count == 0
                 ? $"{pile.Count} concealed cards"
                 : $"Inspect {area.Title.ToLowerInvariant()}, top card first.",
         };

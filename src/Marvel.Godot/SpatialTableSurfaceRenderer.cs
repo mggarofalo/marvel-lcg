@@ -122,6 +122,19 @@ internal static class SpatialTableSurfaceRenderer
         InterfaceScale cardScale = SpatialCardMetrics.TableScale(main.interfaceScale, geometry.Height);
         var objects = new SpatialTableObjectRenderer(
             surface, result, geometry, cardScale, main.art, MulliganPrompt.IsOpening(prompt));
+        var handArea = new Control { Name = "HandDropArea", Position = geometry.Hand.Position,
+            Size = geometry.Hand.Size, MouseFilter = Control.MouseFilterEnum.Ignore };
+        surface.AddChild(handArea);
+        result.RegisterHandArea(handArea, prompt?.Player ?? selection.ExpandedSeat);
+        if (MulliganPrompt.IsOpening(prompt))
+        {
+            var stage = new Control { Name = "MulliganStage", Position = new Vector2(22, geometry.Hand.Position.Y),
+                Size = new Vector2(geometry.Hand.Position.X - 36, geometry.Hand.Size.Y), MouseFilter = Control.MouseFilterEnum.Ignore };
+            stage.AddChild(new Label { Text = "Staged for redraw", ThemeTypeVariation = GodotThemeVariations.Caption,
+                MouseFilter = Control.MouseFilterEnum.Ignore });
+            surface.AddChild(stage);
+            result.RegisterMulliganStage(stage);
+        }
         objects.RenderScenario(scenario);
         objects.RenderRevealing(board.Areas, Context(main, prompt));
         objects.RenderPlayer(player);
@@ -198,7 +211,7 @@ internal static class SpatialTableSurfaceRenderer
             ? $"Player {seat + 1} opening hand"
             : $"Player {seat + 1} hand";
         float left = geometry.PlayerMat.Position.X + 22;
-        float top = geometry.PlayerDiscard.End.Y + 12;
+        float top = geometry.Hand.Position.Y + 12;
         surface.AddChild(new Label
         {
             Name = "SpatialHandHeading",
@@ -224,11 +237,12 @@ internal static class SpatialTableSurfaceRenderer
         }
         Control seats = MulliganSeatStripRenderer.CreateCompact(board, selection, switchSeat);
         seats.Name = "SpatialSeatSummaries";
-        seats.Position = geometry.SeatStrip.Position;
-        seats.Size = geometry.SeatStrip.Size;
-        seats.CustomMinimumSize = geometry.SeatStrip.Size;
-        seats.ZIndex = 24;
-        surface.AddChild(seats);
+        seats.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        var viewport = new ScrollContainer { Name = "SeatSummaryViewport", Position = geometry.SeatStrip.Position,
+            Size = geometry.SeatStrip.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            VerticalScrollMode = ScrollContainer.ScrollMode.Auto, FollowFocus = true, ZIndex = 24 };
+        viewport.AddChild(seats);
+        surface.AddChild(viewport);
     }
 
     private static BoardAreaPresentation[] Lane(BoardPresentation board, string key) => [.. board.Lanes

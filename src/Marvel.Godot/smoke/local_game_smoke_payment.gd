@@ -197,8 +197,7 @@ func _inspect_payment_source_and_return(resource_name: String) -> bool:
 	if int(inspector.get_meta("inspected_card_anchor", -1)) != int(str(resource_name).trim_prefix("Resource")):
 		_fail("payment inspection opened a different physical card")
 		return false
-	var close := inspector.get_node("Frame/Stack/Header/Close") as Button
-	if not await _pointer_activate(close): return false
+	if not await _close_settled_payment_inspector(inspector): return false
 	if not await _wait_for(func() -> bool:
 		return not inspector.visible and render_viewport.gui_get_focus_owner() == _payment_button(inspect_name)):
 		_fail("inspection did not restore the same payment source focus: visible=%s focus=%s expected=%s" % [inspector.visible, render_viewport.gui_get_focus_owner(), _payment_button(inspect_name)])
@@ -217,7 +216,7 @@ func _payment_history_preserves_draft(resource_name: String, revision: String) -
 		_fail("history obscured commitment or changed the unpaid payment")
 		return false
 	history = main.find_child("ToggleHistory", true, false) as Button
-	if history == null or history.text != "Collapse history" or not await _pointer_activate(history):
+	if history == null or history.text != "< History" or not await _pointer_activate(history):
 		_fail("history could not close while retaining the payment")
 		return false
 	return true
@@ -274,3 +273,11 @@ func _close_payment_pile(popup: PopupPanel) -> bool:
 		_fail("the closed pile inspector retained its owned theme")
 		return false
 	return true
+
+
+func _close_settled_payment_inspector(inspector: Control) -> bool:
+	var frame := inspector.get_node("Frame") as Control
+	if not await _wait_for(func() -> bool: return frame.scale.is_equal_approx(Vector2.ONE)):
+		_fail("payment inspector expansion did not settle")
+		return false
+	return await _pointer_activate(inspector.get_node("Frame/Stack/Header/Close") as Button)

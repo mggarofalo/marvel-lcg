@@ -8,7 +8,6 @@ internal static class MainBoardInputRouter
     internal static void Route(
         Main main,
         CardInspectorFocus inspector,
-        CardInspectorCardNavigation cards,
         InputEvent input)
     {
         inspector.ObservePreviewPointer(input);
@@ -19,7 +18,7 @@ internal static class MainBoardInputRouter
         }
         if (main.cardInspector.Visible && main.cardInspectorPinned)
         {
-            RouteInspector(main, inspector, cards, input);
+            inspector.Input(input);
             return;
         }
 
@@ -36,12 +35,6 @@ internal static class MainBoardInputRouter
 
         if (RouteBoardPointer(main, inspector, input)) return;
 
-        if (cards.Route(input))
-        {
-            main.GetViewport().SetInputAsHandled();
-            return;
-        }
-
         inspector.Input(input);
     }
 
@@ -51,20 +44,6 @@ internal static class MainBoardInputRouter
         if (input is InputEventMouseMotion) inspector.Hide();
         main.GetViewport().SetInputAsHandled();
         return true;
-    }
-
-    private static void RouteInspector(
-        Main main,
-        CardInspectorFocus inspector,
-        CardInspectorCardNavigation cards,
-        InputEvent input)
-    {
-        if (cards.Route(input))
-        {
-            main.GetViewport().SetInputAsHandled();
-            return;
-        }
-        inspector.Input(input);
     }
 
 }

@@ -99,7 +99,8 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         Rect2 viewport = overlay.GetGlobalRect();
         BoardRenderResult current = board ?? throw new InvalidOperationException(
             "a relationship path requires a rendered board");
-        foreach (TableRelationshipDescriptor relationship in promptRelationships)
+        foreach (TableRelationshipDescriptor relationship in promptRelationships.DistinctBy(
+            relationship => (relationship.Kind, relationship.Subject, relationship.Related)))
         {
             if (PathFor(relationship, current.VisibleCardControls(), viewport) is { } path)
             {
@@ -164,12 +165,13 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         }
         foreach (RelationshipPath path in paths)
         {
-            var line = new Line2D
+            var line = new SmoothRelationshipLine
             {
                 Name = $"{path.Kind}Connector",
                 Points = path.Points,
                 Width = path.Kind == RelationshipKind.OfferedTarget ? 3 : 2,
                 DefaultColor = ConnectorColor(path.Kind),
+                Antialiased = true,
             };
             line.SetMeta("relationship_kind", path.Kind.ToString());
             overlay.AddChild(line);

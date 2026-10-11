@@ -38,6 +38,7 @@ internal static class DecisionPanelSurface
             Name = "Decline", Text = composer.Prompt.DeclineLabel, Disabled = panel.submitting,
         };
         panel.StyleButton(pass, panel.submitting ? InteractiveVisualState.Unavailable : InteractiveVisualState.Resting);
+        pass.SetMeta("table_mutation", true);
         pass.Pressed += () =>
         {
             if (panel.IsCurrentDraft(composer, generation) && composer.TryDecline(out EngineDecision? decision, out _))

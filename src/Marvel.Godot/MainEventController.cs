@@ -12,12 +12,14 @@ namespace Marvel.Godot;
 internal sealed class MainEventController : IDisposable
 {
     private readonly Main main;
+    private readonly HistoryAccountController history;
     private readonly MainEventMotionController motion;
     private readonly MainResolutionStageController resolutionStage;
 
     internal MainEventController(Main main)
     {
         this.main = main;
+        history = new HistoryAccountController(main);
         motion = new MainEventMotionController(main);
         resolutionStage = new MainResolutionStageController(main);
     }
@@ -114,6 +116,7 @@ internal sealed class MainEventController : IDisposable
 
     internal void DismissLastResult()
     {
+        motion.Skip();
         main.lastResultGeneration++;
         main.lastResultExpanded = false;
         main.lastResult.Visible = false;
@@ -167,42 +170,7 @@ internal sealed class MainEventController : IDisposable
             : GodotThemeVariations.Caption;
     }
 
-    internal void RenderEvents()
-    {
-        IReadOnlyList<HistoryEntryDescriptor> actions =
-            main.CurrentGame?.History?.Entries ?? [];
-        if (actions.Count > 0 || main.CurrentGame?.History?.ActionOpen == true)
-        {
-            RenderActionHistory(actions);
-            return;
-        }
-        if (main.events.Entries.Count == 0)
-        {
-            main.eventLog.Text = "No events yet.";
-            return;
-        }
-        RenderEventChronology();
-    }
-
-    private void RenderActionHistory(IReadOnlyList<HistoryEntryDescriptor> actions)
-    {
-        string accent = ClientTheme.ToGodot(VisualSystem.Palette.Accent).ToHtml(false);
-        IReadOnlyList<int> undo = main.CurrentGame!.History!.Undo;
-        main.eventLog.Text = EventLogFormatter.FormatActions(actions, undo, accent);
-        if (main.events.Entries.Count > 0)
-        {
-            main.eventLog.Text += EventLogFormatter.FormatChronologySection(
-                main.events.Entries, accent);
-        }
-        main.eventLog.ScrollToLine(main.eventLog.GetLineCount());
-    }
-
-    private void RenderEventChronology()
-    {
-        string accent = ClientTheme.ToGodot(VisualSystem.Palette.Accent).ToHtml(false);
-        main.eventLog.Text = EventLogFormatter.FormatChronology(main.events.Entries, accent);
-        main.eventLog.ScrollToLine(main.eventLog.GetLineCount());
-    }
+    internal void RenderEvents() => history.Render();
 
     internal void PresentEvents(IReadOnlyList<EventPresentation> presented)
         => motion.Present(presented);

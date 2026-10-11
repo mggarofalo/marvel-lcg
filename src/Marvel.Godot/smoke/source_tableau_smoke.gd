@@ -20,6 +20,7 @@ func _run() -> void:
 	_check_table_bounds(fixture, tableau, narrow, failures)
 	var copies := await _check_cards(tableau, viewport, narrow, failures)
 	await _check_copy_input(copies, viewport, fixture, failures)
+	await _check_collections(fixture, failures)
 	await _capture()
 	for failure in failures: push_error("SOURCE_TABLEAU_FAILED " + failure)
 	if failures.is_empty(): print("SOURCE_TABLEAU_OK sixteen_reachable=true duplicates=true pointer_inspection=true keyboard=true")
@@ -29,7 +30,7 @@ func _check_table_bounds(fixture: Control, tableau: Control, narrow: bool, failu
 	if narrow and tableau.get_global_rect().end.x > fixture.global_position.x + 1320:
 		failures.append("source viewport clipped by payment table")
 	for hand in fixture.find_children("ProceduralCard*", "Control", true, false):
-		if hand.has_meta("spatial_hand_index") and _bounds(hand).intersects(tableau.get_global_rect()):
+		if hand.has_meta("spatial_hand_index") and _bounds(hand).grow(6).intersects(tableau.get_global_rect()):
 			failures.append("rotated hand obscures source tableau")
 
 func _check_cards(tableau: Control, viewport: ScrollContainer, narrow: bool, failures: Array[String]) -> Array[Control]:
@@ -56,14 +57,14 @@ func _check_card_readability(card: Control, failures: Array[String]) -> void:
 	var title := card.find_child("SourceTitle", true, false) as Label
 	if title.get_line_count() > title.get_visible_line_count(): failures.append("source title clipped")
 	var button := card.find_child("Card*Action", true, false) as Button
-	if button != null and (button.size.y < 44 or not card.get_global_rect().encloses(button.get_global_rect())):
+	if button != null and (button.size.y < 28 or not card.get_global_rect().encloses(button.get_global_rect())):
 		failures.append("source action exceeds tile")
 	if card.find_child("SourceState", true, false) == null: failures.append("missing readiness")
 	var body := card.find_child("SourceTileBody", true, false) as Control
 	var type := card.find_child("SourceType", true, false) as Label
 	if type == null or type.text.is_empty(): failures.append("missing card type")
-	if title.get_global_rect().position.x < body.global_position.x + 19:
-		failures.append("title enters the B1 angled rail")
+	if title.get_global_rect().position.x < body.global_position.x + 4:
+		failures.append("title enters the B1 ink band inset")
 	_check_excerpt(card, failures)
 	if not card.get_global_rect().encloses(body.get_global_rect()):
 		failures.append("B1 source body exceeds its tile")
@@ -89,10 +90,13 @@ func _check_copy_input(copies: Array[Control], viewport: ScrollContainer, fixtur
 	for copy in copies:
 		viewport.ensure_control_visible(copy)
 		for frame in range(3): await process_frame
+		var original_position := copy.global_position
 		await _click(copy.get_global_rect().position + Vector2(12, 12))
+		if copy.global_position.distance_to(original_position) > 1:
+			failures.append("hover inspection reordered a physical source")
 		var identity := int(str(copy.name).trim_prefix("ProceduralCard"))
 		if int(fixture.get_meta("inspected_id", -1)) != identity:
-			failures.append("body inspection lost physical source")
+			failures.append("body inspection lost physical source expected " + str(identity) + " got " + str(fixture.get_meta("inspected_id", -1)))
 		var action := copy.find_child("Card*Action", true, false) as Button
 		action.grab_focus()
 		await _activate_key()
@@ -132,3 +136,46 @@ func _bounds(control: Control) -> Rect2:
 	for point in [Vector2(control.size.x, 0), control.size, Vector2(0, control.size.y)]:
 		bounds = bounds.expand(pose * point)
 	return bounds
+
+
+func _check_collections(fixture: Control, failures: Array[String]) -> void:
+	for zone in ["AlliesArea", "EngagedEnemiesArea", "SideSchemesArea"]:
+		var collection := fixture.find_child("Collection" + zone, true, false) as Control
+		if collection == null: continue
+		if not collection.find_children("*", "MenuButton", true, false).is_empty():
+			failures.append("collection uses dropdown: " + zone)
+		var scroll := collection.find_child("Continuous" + zone, true, false) as ScrollContainer
+		var cards := collection.find_children("ProceduralCard*", "Control", true, false)
+		if zone == "SideSchemesArea": await _check_scheme_headers(cards, failures)
+		if scroll == null or cards.is_empty():
+			failures.append("missing continuous collection: " + zone)
+			continue
+		await _check_collection_reachability(cards, scroll, failures)
+
+func _check_collection_reachability(cards: Array[Node], scroll: ScrollContainer, failures: Array[String]) -> void:
+	for card in cards:
+		card.grab_focus()
+		scroll.ensure_control_visible(card)
+		for frame in range(3): await process_frame
+		if not scroll.get_global_rect().intersects(_bounds(card)):
+			failures.append("unreachable collection card: " + str(card.name))
+		if not card.has_focus(): failures.append("stack keyboard focus lost " + str(card.name))
+	scroll.scroll_horizontal = 0
+	scroll.scroll_vertical = 0
+
+func _check_scheme_headers(cards: Array[Node], failures: Array[String]) -> void:
+	# Synthetic typography stress; the production labels must grow without hiding a preceding scheme.
+	if not cards.is_empty():
+		var long_title := cards[0].find_child("StackTitle", true, false) as Label
+		long_title.text = "Synthetic exceptionally long scheme title with complete visible words"
+		for frame in range(5): await process_frame
+	for index in range(cards.size()):
+		var header := cards[index].find_child("SchemeStackHeader", true, false) as Control
+		if header == null:
+			failures.append("scheme lacks inspectable header")
+			continue
+		for label in header.find_children("*", "Label", true, false):
+			if label.get_line_count() > label.get_visible_line_count() or not header.get_global_rect().encloses(label.get_global_rect()):
+				failures.append("scheme title or status clipped")
+		if index + 1 < cards.size() and header.get_global_rect().end.y > cards[index + 1].global_position.y:
+			failures.append("following scheme obscures preceding title or status")

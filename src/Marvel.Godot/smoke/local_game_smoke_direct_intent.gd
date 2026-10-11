@@ -39,11 +39,33 @@ func _hero_target_drag_preserves_commitment() -> bool:
 func _direct_black_cat_is_played() -> bool:
 	if not await super._direct_black_cat_is_played():
 		return false
+	if not await _collection_actor_drag_stages_and_returns(): return false
 	var entry := _attached(_attached_name(BLACK_CAT, "Action"))
 	if entry == null or not entry.accessibility_name.begins_with("Actions"):
 		print("SOURCE_CHOOSER_FOCUS_PENDING: no ambiguous ally action in this legal state")
 		return true
 	return await _source_chooser_restores_keyboard_focus()
+
+
+func _collection_actor_drag_stages_and_returns() -> bool:
+	var source := _card_for_anchor(BLACK_CAT)
+	var target := _card_for_anchor(RHINO)
+	if source == null or target == null or source.find_parent("Continuous*") == null:
+		_fail("the installed ally has no continuous physical collection")
+		return false
+	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var parent := source.get_parent()
+	if not await _drag(source, target.get_global_rect().get_center()): return false
+	var commit := _task_commit()
+	if commit == null or commit.text != "Attack Rhino" or source.is_set_as_top_level():
+		_fail("collection actor drop lost its exact named composition or temporary lift")
+		return false
+	var cancel := main.find_child("ContextualCancelDraft", true, false) as Button
+	if cancel == null or not await _pointer_activate(cancel): return false
+	if source.get_parent() != parent or (_node("Toolbar/SyncStatus") as Label).text != revision:
+		_fail("canceling the collection actor drag changed physical ownership or engine state")
+		return false
+	return true
 
 
 func _source_chooser_restores_keyboard_focus() -> bool:

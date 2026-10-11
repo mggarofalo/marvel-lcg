@@ -74,7 +74,7 @@ func _cooperative_seat_switch_is_safe() -> bool:
 
 func _submit_mulligan() -> bool:
 	var submit := _task_commit()
-	if submit == null or submit.disabled or not ("replace" in submit.text.to_lower() or "keep hand" in submit.text.to_lower()):
+	if submit == null or submit.disabled or not ("redraw" in submit.text.to_lower() or "keep hand" in submit.text.to_lower()):
 		_fail("the three-card mulligan cannot be submitted")
 		return false
 	if not await _pointer_activate(submit):
@@ -83,8 +83,7 @@ func _submit_mulligan() -> bool:
 		if not await _wait_for(func() -> bool:
 			var heading := _hand_heading()
 			return heading != null and heading.text.to_lower().begins_with("player 2 opening hand") \
-				and not _hand_surface().find_children(
-					"MulliganDiscard*", "Button", true, false).is_empty()):
+				and main.find_child("MulliganStage", true, false) != null):
 			_fail("the first player's submission did not hand the opening decision to player 2")
 			return false
 		return true
@@ -111,19 +110,25 @@ func _protected_mulligan_undo_is_explained() -> bool:
 
 func _complete_second_opening_hand() -> bool:
 	if not await _wait_for_result_motion(): return false
-	var toggles := _hand_surface().find_children(
-		"MulliganDiscard*", "Button", true, false)
-	var second_toggle := toggles[0] as Button if not toggles.is_empty() else null
-	if second_toggle == null or not await _activate_exposed_control_point(second_toggle):
-		_fail("the second player's opening hand has no operable discard target")
+	var second_card: Control = null
+	for candidate in _hand_surface().find_children("ProceduralCard*", "", true, false):
+		if candidate.has_meta("spatial_hand_index"):
+			second_card = candidate as Control
+			break
+	if second_card == null or not await _keyboard_stage_card(second_card):
+		_fail("second player's opening hand has no keyboard staging card")
 		return false
 	var submit := _task_commit()
-	if submit == null or submit.disabled or not ("replace" in submit.text.to_lower() or "keep hand" in submit.text.to_lower()):
+	if submit == null or submit.disabled or not ("redraw" in submit.text.to_lower() or "keep hand" in submit.text.to_lower()):
 		_fail("the second player's selected mulligan cannot be submitted once")
 		return false
 	if not await _pointer_activate(submit):
 		return false
 	if not await _wait_for_result_motion(): return false
+	return await _restore_player_one_after_mulligan()
+
+
+func _restore_player_one_after_mulligan() -> bool:
 	var player_one := _visible_seat_switch(0)
 	if player_one != null and not player_one.disabled and not await _pointer_activate(player_one):
 		_fail("the completed cooperative mulligan could not restore player one's tableau")
@@ -249,7 +254,7 @@ func _mulligan_history_matches(expanded: bool) -> bool:
 	var drawer := main.find_child("ToggleHistory", true, false) as Button
 	var dismiss := main.find_child("DismissHistoryResult", true, false) as Button
 	return drawer != null and dismiss != null \
-		and drawer.text == ("Collapse history" if expanded else "History") \
+		and drawer.text == ("< History" if expanded else "> History") \
 		and dismiss.is_visible_in_tree() == expanded
 
 

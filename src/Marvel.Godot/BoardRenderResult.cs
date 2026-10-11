@@ -63,6 +63,9 @@ public sealed class BoardRenderResult
     internal void RegisterDropTarget(int seat, Control control) =>
         pointer.RegisterDropTarget(seat, control);
 
+    internal void RegisterHandArea(Control control, int seat) => pointer.RegisterHandArea(control, seat);
+    internal void RegisterMulliganStage(Control control) => pointer.RegisterMulliganStage(control);
+
     internal void RegisterContextualActions(Container host)
     {
         contextualActions = host;
@@ -86,6 +89,7 @@ public sealed class BoardRenderResult
     internal void SetCompleteChoicesOpen(bool open)
     {
         completeChoicesOpen = open;
+        interactionControls.SetContextualVisible(!open);
         if (InteractionControl.IsUsable(contextualActions))
         {
             contextualActions!.Visible = !open;
@@ -108,6 +112,8 @@ public sealed class BoardRenderResult
         if (control is CardControl rendered) interactionControls.Track(rendered, card, isHandCard);
         pointer.Track(control, card, isHandCard);
     }
+
+    internal void TrackPreviewOnly(CardControl control, BoardCardPresentation card) => pointer.TrackPreviewOnly(control, card);
 
     internal void TrackInspection(CardControl control, BoardCardPresentation card) =>
         interactionControls.Track(control, card, isHand: false);
@@ -156,6 +162,7 @@ public sealed class BoardRenderResult
     }
 
     internal void PresentGestureFeedback(string text) => copy.PresentFeedback(text);
+    internal void AnchorDraft(Vector2 position, int offer) => interactionControls.AnchorDraft(position, offer);
 
     internal void PresentDestinations(IEnumerable<int> destinations)
     {
@@ -187,7 +194,7 @@ public sealed class BoardRenderResult
     internal void BindMulliganTargets(
         IReadOnlyCollection<int> legal, IReadOnlyCollection<int> selected, Action<int> choose)
     {
-        pointer.BindMulliganTargets(legal, choose);
+        pointer.BindMulliganTargets(legal, selected, choose);
         foreach ((int id, Button toggle) in mulliganToggles)
         {
             bool available = legal.Contains(id);
@@ -204,6 +211,7 @@ public sealed class BoardRenderResult
 
     internal void SetMulliganTargets(IReadOnlyCollection<int> selected)
     {
+        pointer.SetMulliganTargets(selected);
         foreach ((int id, Button toggle) in mulliganToggles)
         {
             SetMulliganToggle(toggle, selected.Contains(id));
@@ -229,8 +237,7 @@ public sealed class BoardRenderResult
 
     internal int? CardAt(Vector2 position, Control source) => controls
         .Where(entry => entry.Value.Any(control => control != source
-            && InteractionControl.IsUsable(control) && control.IsVisibleInTree()
-            && control.GetGlobalRect().HasPoint(position)))
+            && CardPointerHitTest.Contains(control, position)))
         .OrderByDescending(entry => entry.Value.Max(control => control.ZIndex))
         .Select(entry => (int?)entry.Key).FirstOrDefault();
 

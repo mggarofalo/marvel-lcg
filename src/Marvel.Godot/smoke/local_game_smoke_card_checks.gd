@@ -68,24 +68,12 @@ func _mulligan_cards_are_safe() -> bool:
 	for candidate in all_cards:
 		if candidate.has_meta("spatial_hand_index"):
 			cards.append(candidate)
-	var toggles := hand.find_children("MulliganDiscard*", "Button", true, false)
-	if cards.size() != 6 or toggles.size() != 6:
-		_fail("the opening hand does not expose six readable cards and six discard checkboxes (%d cards, %d controls, %d procedural)" % [cards.size(), toggles.size(), all_cards.size()])
+	if cards.size() != 6 or not hand.find_children("MulliganDiscard*", "Button", true, false).is_empty():
+		_fail("opening hand must show six readable cards without per-card cycle controls")
 		return false
-	for toggle_node in toggles:
-		var toggle := toggle_node as Button
-		var desktop_minimum := 44 if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080" \
-			else _scaled_metric(44)
-		if not toggle.toggle_mode or toggle.text != "↻" or toggle.accessibility_name != "Select for replacement" \
-				or toggle.custom_minimum_size.y < desktop_minimum:
-			_fail("a mulligan checkbox is not explicit, keyboard-operable, and generously sized" \
-				+ " toggle=%s text=%s minimum=%s expected=%s pressed=%s" % [
-					toggle.toggle_mode,
-					toggle.text,
-					toggle.custom_minimum_size,
-					desktop_minimum,
-					toggle.button_pressed,
-				])
+	for candidate in cards:
+		if (candidate as Control).focus_mode != Control.FOCUS_ALL:
+			_fail("mulligan card cannot receive keyboard staging focus")
 			return false
 	return _tabletop_essentials_are_safe()
 
@@ -160,7 +148,7 @@ func _upcoming_stages_are_safe() -> bool:
 		return false
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
-	var next := inspector.find_child("NextCard", true, false) as Button
+	var next := inspector.find_child("InspectRelatedFace1", true, false) as Button
 	var heading := inspector.find_child("Title", true, false) as Label
 	if not _villain_stage_inspector_is_ready(inspector, next, heading):
 		_fail("the current villain inspector does not expose bounded stage navigation")
@@ -169,12 +157,12 @@ func _upcoming_stages_are_safe() -> bool:
 		return false
 	if not await _wait_for(func() -> bool:
 		var current := inspector.find_child("Title", true, false) as Label
-		return current != null and current.text == "Card 2 of 2"):
+		return current != null and (inspector.find_child("InspectRelatedFace1", true, false) as Button).disabled):
 		_fail("the villain inspector did not finish navigating to the upcoming stage")
 		return false
 	heading = inspector.find_child("Title", true, false) as Label
-	var previous := inspector.find_child("PreviousCard", true, false) as Button
-	if heading == null or heading.text != "Card 2 of 2" \
+	var previous := inspector.find_child("InspectRelatedFace0", true, false) as Button
+	if heading == null or not (inspector.find_child("InspectRelatedFace1", true, false) as Button).disabled \
 			or previous == null or previous.disabled:
 		_fail("the villain inspector did not navigate to the upcoming stage")
 		return false
@@ -207,7 +195,9 @@ func _active_villain_stage() -> Control:
 func _villain_stage_inspector_is_ready(
 		inspector: Control, next: Button, heading: Label) -> bool:
 	return inspector.visible and next != null and heading != null \
-		and heading.text == "Card 1 of 2" and not next.disabled
+		and "Stage 2" in next.text and not next.disabled \
+		and inspector.find_children("InspectRelatedFace*", "Button", true, false).size() == 2 \
+		and inspector.find_children("*", "OptionButton", true, false).is_empty()
 
 
 func _secondary_areas_are_safe() -> bool:

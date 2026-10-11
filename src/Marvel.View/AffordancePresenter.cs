@@ -86,7 +86,7 @@ internal static class AffordancePresenter
                     RelationshipKind.OfferedGenerator, sourceId, generator.Effect));
             }
         }
-        return relationships;
+        return [.. relationships.DistinctBy(relationship => (relationship.Kind, relationship.Subject, relationship.Related))];
     }
 
     private static string DescribeAnchor(Affordance option, WorldDescriptor world) =>

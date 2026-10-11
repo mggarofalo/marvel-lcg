@@ -46,10 +46,23 @@ public sealed class CardFaceRegionsTests
             new CardFaceFeatures(false, false, true, true, true, true, 2));
 
         Assert.True(regions.Illustration.Size.Y > 0);
+        Assert.False(regions.Stats.Intersects(regions.Illustration));
+        Assert.Equal(regions.InkEnd, regions.Illustration.End.Y);
         Assert.False(regions.Stats.Intersects(regions.Rules));
         Assert.False(regions.Stats.Intersects(regions.Tokens));
         Assert.False(regions.Stats.Intersects(regions.Traits));
         Assert.True(regions.Rules.Size.Y > 0);
+    }
+
+    [Theory]
+    [InlineData(CardDisplaySize.Board)]
+    [InlineData(CardDisplaySize.Hand)]
+    [InlineData(CardDisplaySize.Full)]
+    public void SchemeKeepsLandscapeInEveryContext(CardDisplaySize size)
+    {
+        var card = new BoardCardPresentation(1, 1, false, "Scheme", "", "ENCOUNTER SIDE SCHEME", "", []);
+        CardLayoutMetrics layout = CardControl.LayoutFor(card, size, InterfaceScale.Percent100);
+        Assert.True(layout.Width > layout.MinimumHeight);
     }
 
     [Theory]

@@ -124,9 +124,10 @@ public sealed partial class CardControl : PanelContainer
     /// <summary>Keeps keyboard focus distinct from prompt selection on the same face.</summary>
     public override void _Draw()
     {
+        if (!HasMeta("source_strip")) CardEdgeSmoothing.DrawFrame(this);
         CardInteractionDrawing.Draw(this, interactionCue, highlighted || presented);
-        if (HasFocus()) DrawRect(new Rect2(new Vector2(-4, -4), Size + Vector2.One * (2 * CardVisualTokens.FrameInset)),
-            Colors.White, filled: false, width: 1.5f);
+        if (HasFocus()) CardInteractionDrawing.StrokeRect(this,
+            new Rect2(new Vector2(-4, -4), Size + Vector2.One * (2 * CardVisualTokens.FrameInset)), Colors.White, 1.5f);
     }
 
     internal static CardLayoutMetrics LayoutFor(
@@ -135,8 +136,7 @@ public sealed partial class CardControl : PanelContainer
         InterfaceScale scale)
     {
         CardLayoutMetrics layout = VisualSystem.Card(size, scale);
-        return size is CardDisplaySize.Full or CardDisplaySize.Board
-            && VisualSystem.CardFrame(card.Kind).Family == CardFrameFamily.Scheme
+        return VisualSystem.CardFrame(card.Kind).Family == CardFrameFamily.Scheme
                 ? layout with
                 {
                     Width = layout.MinimumHeight,

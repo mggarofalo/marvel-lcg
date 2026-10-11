@@ -14,28 +14,29 @@ public sealed class HandPlayDropTests
     public void InvalidAttachmentTargetInsideThePlayerAreaPreservesThePriorDraft()
     {
         var composer = Composer(new Affordance(1, "Play", 10, 0, "Attach",
-            new TargetRequest([20], 1, 1)), new Affordance(2, "Play", 11, 0, "Other"));
+            new TargetRequest([20], 1, 1)), new Affordance(2, "Play", 11, 0, "Other", new TargetRequest([30, 31], 1, 1)));
         composer.SelectAffordance(2);
+        composer.SelectTargets([31]);
         var play = Interaction(composer);
         Assert.Empty(play.Matches(10, 21, true, true));
         Assert.False(play.TrySelect(1, 10, 21, true, true));
         Assert.Equal(2, composer.Selected!.Id);
-        Assert.Empty(composer.Targets);
-        Assert.Single(play.Matches(10, null, true, true));
+        Assert.Equal([31], composer.Targets);
+        Assert.Empty(play.Matches(10, null, true, true));
     }
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void OnlyExplicitDeferredTargetingCanBeginAPlayOnAnObject(bool deferred)
+    public void FreshPlayOnAnObjectStartsCompositionWithoutClaimingItAsTarget(bool deferred)
     {
         var composer = Composer(new Affordance(1, "Action", 10, 0, "Effect")
         {
             PlaysCard = true, DeferredTargetSelection = deferred,
         });
         var play = Interaction(composer);
-        Assert.Equal(deferred, play.TrySelect(1, 10, 20, true, false));
-        Assert.Equal(deferred, composer.Selected is not null);
+        Assert.True(play.TrySelect(1, 10, 20, true, false));
+        Assert.NotNull(composer.Selected);
         Assert.Empty(composer.Targets);
     }
 
@@ -44,8 +45,19 @@ public sealed class HandPlayDropTests
     {
         var composer = Composer(new Affordance(1, "Play", 10, 0, "Effect",
             new TargetRequest([20], 1, 1)) { DeferredTargetSelection = true });
+        composer.SelectAffordance(1);
+        composer.SelectTargets([20]);
         Assert.Empty(Interaction(composer).Matches(10, 21, true, true));
-        Assert.Null(composer.Selected);
+        Assert.Equal([20], composer.Targets);
+    }
+
+    [Fact]
+    public void OccupiedPlayerAreaBeginsSupportPlayWithoutSelectingTheOccupiedCard()
+    {
+        var composer = Composer(new Affordance(1, "Play", 10, 0, "Support"));
+        Assert.True(Interaction(composer).TrySelect(1, 10, 99, true, true));
+        Assert.Equal(1, composer.Selected!.Id);
+        Assert.Empty(composer.Targets);
     }
 
     [Fact]

@@ -25,11 +25,13 @@ internal sealed class CardInspectorLayout(Main main)
         Vector2 detailSize = detail.GetCombinedMinimumSize();
         HBoxContainer header = main.cardInspectorTitle.GetParent<HBoxContainer>();
         float headerHeight = pinned ? header.GetCombinedMinimumSize().Y + 12 : 0;
+        float contentWidth = Math.Max(detailSize.X + 20,
+            pinned ? header.GetCombinedMinimumSize().X : 0);
         Control? currentSource = CurrentSource(source, card.TargetId);
         Rect2 sourceRect = currentSource is not null ? SpatialCardFootprint.Face(currentSource)
             : new Rect2(main.GetViewport().GetMousePosition(), Vector2.Zero);
         Rect2 frame = CardInspectorPlacement.Fit(main.Size, sourceRect,
-            detailSize + new Vector2(20, headerHeight),
+            new Vector2(contentWidth, detailSize.Y + headerHeight),
             OccupiedCards(pinned, currentSource), VisibleActions(pinned));
         main.cardInspectorFrame.CustomMinimumSize = Vector2.Zero;
         main.cardInspectorFrame.Size = frame.Size;

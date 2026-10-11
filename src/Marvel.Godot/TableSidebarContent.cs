@@ -6,7 +6,7 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Owns passive seat context, recovery notices and the complete-choice entry.</summary>
+/// <summary>Owns passive seat context and recovery notices.</summary>
 internal static class TableSidebarContent
 {
     private const string HistoryPath = "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History";
@@ -21,19 +21,6 @@ internal static class TableSidebarContent
             child.QueueFree();
         }
         WorldDescriptor world = main.CurrentGame!.World!;
-        var entry = new Button
-        {
-            Name = "CompleteChoiceSheet", Text = "Complete choices",
-            Disabled = prompt is null, TooltipText = "See all available choices.",
-            Visible = world.Outcome == Outcome.Unfinished,
-            ThemeTypeVariation = GodotThemeVariations.ChoiceButton,
-            CustomMinimumSize = new Vector2(0, 44),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-        };
-        content.AddChild(entry);
-        TableCompactButtonStyle.Apply(entry);
-        result.RegisterCompleteChoices(entry);
         TableContextDescriptor? table = world.Table;
         string own = table?.ViewedPrivateSeat is { } seat
             ? $"You control {PendingSituationPresentation.SeatName(world, seat)}."
@@ -64,7 +51,8 @@ internal static class TableSidebarContent
         GameProgressPresentation? progress = main.currentProgress;
         bool ordinary = progress?.Kind is null or GameProgressKind.AwaitingDecision
             or GameProgressKind.WaitingForOtherPlayer;
-        notice.Text = ordinary ? "Refresh to receive other players' latest actions."
+        notice.Visible = !ordinary;
+        notice.Text = ordinary ? ""
             : $"{progress!.Title}\n{progress.Description}";
         notice.TooltipText = notice.Text;
     }
