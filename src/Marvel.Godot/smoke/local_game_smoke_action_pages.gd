@@ -13,15 +13,25 @@ static func problems(main: Control) -> Array[String]:
 		return failures
 	if not rows.is_visible_in_tree(): return failures
 	var navigation := frame.get_node_or_null("OverflowNavigation") as Control
+	var continuous: bool = navigation == null and viewport is ScrollContainer \
+		and viewport.get_v_scroll_bar().is_visible_in_tree()
 	for row in rows.get_children():
 		if not row is Control or not row.is_visible_in_tree(): continue
-		if not viewport.get_global_rect().grow(0.5).encloses(row.get_global_rect()):
+		if not _row_fits(viewport, row, continuous):
 			failures.append("%s action row is only partly visible in its page" % row.name)
 		if navigation != null and navigation.is_visible_in_tree() and row.get_global_rect().intersects(navigation.get_global_rect()):
 			failures.append("%s action row overlaps page navigation" % row.name)
 	if navigation != null and navigation.is_visible_in_tree() and not frame.get_global_rect().grow(0.5).encloses(navigation.get_global_rect()):
 		failures.append("action page navigation exceeds its frame")
 	return failures
+
+
+static func _row_fits(viewport: Control, row: Control, continuous: bool) -> bool:
+	var available := viewport.get_global_rect().grow(0.5)
+	var occupied := row.get_global_rect()
+	if not continuous: return available.encloses(occupied)
+	return occupied.size.y <= available.size.y and occupied.position.x >= available.position.x \
+		and occupied.end.x <= available.end.x
 
 
 static func traverse(driver) -> bool:
