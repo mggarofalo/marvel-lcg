@@ -164,6 +164,7 @@ public static class EventPresenter
 
         return EventRelationshipProjection.WithSubjects(new EventPresentation(summary, Cause(happened), anchors, motion)
         {
+            Activity = EventActivityProjection.From(happened, world, anchors),
             CueSummary = happened switch
             {
                 FieldSet set => EventFieldPresentation.CueSummary(set, world),

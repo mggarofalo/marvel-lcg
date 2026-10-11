@@ -29,7 +29,8 @@ internal static class TableLatestResult
     {
         Control frame = Frame(label);
         frame.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
-        frame.Visible = !string.IsNullOrEmpty(label.Text);
+        frame.SetMeta("history_result_expanded", historyExpanded);
+        frame.Visible = historyExpanded && !string.IsNullOrEmpty(label.Text);
         Fit(label);
     }
 
@@ -39,7 +40,9 @@ internal static class TableLatestResult
         var scroll = (ScrollContainer)label.GetParent();
         scroll.ScrollVertical = 0;
         scroll.SetDeferred("scroll_vertical", 0);
-        Frame(label).Visible = !string.IsNullOrEmpty(text);
+        Control frame = Frame(label);
+        frame.Visible = frame.HasMeta("history_result_expanded")
+            && frame.GetMeta("history_result_expanded").AsBool() && !string.IsNullOrEmpty(text);
         Callable.From(() => Fit(label)).CallDeferred();
     }
 

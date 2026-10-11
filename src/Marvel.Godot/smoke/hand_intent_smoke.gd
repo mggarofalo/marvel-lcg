@@ -2,6 +2,9 @@ extends "res://smoke/local_game_smoke.gd"
 
 func _run() -> void:
 	if not await _open_setup(load("res://Main.tscn") as PackedScene): return
+	if not await _pointer_ownership_probe_is_strict():
+		_fail("pointer ownership did not preserve transformed shape, occlusion and clipping")
+		return
 	await _configure_seeded_game()
 	if not await _pointer_activate(_button_named("Start game")): return
 	if not await _wait_for(func() -> bool: return _task_commit() != null): return
@@ -18,6 +21,7 @@ func _run() -> void:
 func _local_hand_gestures() -> bool:
 	if not await _hand_insertion_is_local(): return false
 	if not await _middle_mulligan_closes_gap(): return false
+	if not await preload("res://smoke/mulligan_order_checks.gd").perform(self): return false
 	return await _drag_capture_is_safe()
 
 

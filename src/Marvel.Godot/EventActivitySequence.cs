@@ -42,5 +42,5 @@ internal sealed class EventActivitySequence
     internal void Clear() => Start([], animate: false);
 
     private static double Duration(EventPresentation entry) =>
-        Math.Clamp((entry.CueSummary ?? entry.Summary).Length * 0.018, 0.85, 2.4);
+        entry.Motion is EventMotionKind.Attack or EventMotionKind.Flip or EventMotionKind.Status ? 1.8 : 1.2;
 }

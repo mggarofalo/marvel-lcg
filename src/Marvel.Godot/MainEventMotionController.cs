@@ -7,14 +7,12 @@ namespace Marvel.Godot;
 internal sealed class MainEventMotionController : IDisposable
 {
     private readonly Main main;
-    private readonly EventCueSurface surface;
     private readonly EventActivityPresenter activity;
-    private bool hasResults;
+    private DecisionPanel? draftOwner;
 
     internal MainEventMotionController(Main main)
     {
         this.main = main;
-        surface = new EventCueSurface(main);
         activity = new EventActivityPresenter { Name = "AcceptedEventActivity" };
         main.AddChild(activity);
         activity.Configure(main);
@@ -22,10 +20,13 @@ internal sealed class MainEventMotionController : IDisposable
 
     internal void Present(IReadOnlyList<EventPresentation> presented)
     {
+        if (draftOwner is null)
+        {
+            draftOwner = main.decisions;
+            draftOwner.DraftStarted += SettleForDraft;
+        }
         ReleaseTween();
         main.eventGeneration++;
-        hasResults = presented.Count > 0;
-        surface.Present(presented);
         activity.Present(presented);
         main.eventSkip.Disabled = true;
         main.eventSkip.Visible = false;
@@ -40,13 +41,12 @@ internal sealed class MainEventMotionController : IDisposable
 
     internal void Pause() => SetSettled();
     internal void Complete() => SetSettled();
+    private void SettleForDraft() => activity.SettleForDraft();
 
     internal void Skip()
     {
         main.eventGeneration++;
         ReleaseTween();
-        hasResults = false;
-        surface.Clear();
         activity.Clear();
         main.eventSkip.Disabled = true;
         main.boardRender?.Present([]);
@@ -74,13 +74,18 @@ internal sealed class MainEventMotionController : IDisposable
         main.boardRender?.Present([]);
     }
 
-    internal void RefreshVisibility() => surface.RefreshVisibility(hasResults);
+    internal void RefreshVisibility()
+    {
+        main.eventCue.Visible = false;
+        main.eventCueSummary.Text = string.Empty;
+        main.GetNode<Control>("StatusBar/Spacer").CustomMinimumSize = Vector2.Zero;
+    }
 
     public void Dispose()
     {
+        if (InteractionControl.IsUsable(draftOwner)) draftOwner!.DraftStarted -= SettleForDraft;
         main.eventGeneration++;
         ReleaseTween();
-        surface.Dispose();
         activity.Clear();
         activity.QueueFree();
     }

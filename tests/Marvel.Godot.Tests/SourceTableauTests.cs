@@ -39,7 +39,7 @@ public sealed class SourceTableauTests
                 world.CreateCard("01107", world.AreaOf(DeckType.SideSchemesArea));
             }
         }
-        foreach (string id in new[] { "01031", "01032", "01088", "01089", "01090" }) world.CreateCard(id, seat.Hand);
+        foreach (string id in new[] { "01031", "01032", "01088", "01089", "01090", "01031", "01032" }) world.CreateCard(id, seat.Hand);
         world.Cards.First(card => card.FaceId == "01039").Exhaust();
         BoardAreaPresentation[] areas = [.. BoardPresentation.From(WorldProjection.For(world, null, [],
             new RestrictedVisibilityPolicy(0).Authorize(null, world.Players)).World).Areas];

@@ -14,6 +14,9 @@ public sealed record EventPresentation(
     IReadOnlyList<int> Anchors,
     EventMotionKind Motion)
 {
+    /// <summary>Local typed activity facts; the server wire continues to carry filtered GameEvents.</summary>
+    public EventActivityDescriptor? Activity { get; init; }
+
     /// <summary>Compact occurrence copy for a table cue; the full chronology remains in Summary.</summary>
     public string? CueSummary { get; init; }
 

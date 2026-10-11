@@ -38,16 +38,20 @@ compact named source strips, including controlled upgrades attached to another
 character. Hover or keyboard focus previews a card; pinning expands bounded
 detail. Related faces and modifier sources are directly visible choices.
 
-Use the grip on an upgrade or support to swap it with another grid slot. The
-preview is reversible; Escape or dropping outside the grid restores the order.
-For keyboard use, focus its grip, press Space, move with arrows, then Enter to
+Drag the title band of an upgrade or support to swap it with another grid slot.
+The destination outline and caption identify the exchange, including duplicate
+copies. Escape or dropping outside the grid restores the order.
+For keyboard use, focus its title grip, press Space, move with arrows, then Enter to
 place or Escape to cancel. Ordering follows physical card identities locally
 through board updates and resets with the session. The grid uses a fourth column
 when that keeps twelve sources visible without reducing the hand area.
+Compact headers use distinct support/upgrade and ready/exhausted symbols, with
+countable counter pips and an explicit numeric treatment for large counts.
 
 Drag an opening-hand card to the discard to stage it physically, or drag it back
 to keep it. Space is the keyboard equivalent. Redraw commits the staged set.
-Kept cards close the gaps while redraw cards are staged. Hovering a nonempty
+Kept cards close the gaps while redraw cards are staged. Reordering the kept
+hand preserves the staged cards' local return slots. Hovering a nonempty
 discard previews its visible top card.
 Dragging within the hand previews a local insertion order without changing game
 state. Playing a hand card opens the current engine-offered composition;
@@ -59,11 +63,18 @@ and do not create another physical action target. Status cards use shape and
 letter badges: octagonal T for tough, jagged S for stunned, ring C for confused;
 defense uses a separate shield.
 
-Accepted activity is paced through a reserved table account and pulses on its
-visible affected objects. The board remains authoritative and the current choice
-stays usable; animation does not simulate earlier world states or answer prompts.
-Reduced motion presents the complete account immediately. History retains the
-ordered details.
+Accepted activity uses native effect glyphs, source/target impulses and local
+quantity or status marks on visible affected objects. A reserved table seam shows
+up to two selected latest results; History retains the complete ordered account.
+Reduced motion immediately shows these latest results and distinct visible-object
+result categories, rather than replaying every intermediate change. The board
+remains authoritative and the current choice stays usable; animation does not
+simulate earlier world states or answer prompts. Starting a new decision draft
+clears the local result emphasis so it cannot be mistaken for target selection.
+
+Phase-wide ready/draw batches and direct interrupt/response modals with optional
+Pass and forced acknowledgements are additional work tracked in MARVEL-522/523,
+under MARVEL-492; this activity presentation does not implement them.
 
 The MARVEL-492 SVG direction is approved. Acceptance of this implementation
 remains the owner's affirmation of the working build.

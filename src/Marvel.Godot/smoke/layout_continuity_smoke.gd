@@ -4,9 +4,9 @@ func _run() -> void:
 	if not await _open_setup(load("res://Main.tscn") as PackedScene): return
 	await _configure_seeded_game()
 	if not await _pointer_activate(_button_named("Start game")): return
-	if not await _wait_for(func() -> bool: return main.find_child("CausalSituationViewport", true, false) != null): return
+	if not await _wait_for(func() -> bool: return main.find_child("CausalSituation", true, false) != null): return
 	for frame in range(8): await process_frame
-	var cause := main.find_child("CausalSituationViewport", true, false) as ScrollContainer
+	var cause := main.find_child("CausalSituation", true, false) as Control
 	var hand := main.find_child("HandDropArea", true, false) as Control
 	if cause.get_global_rect().intersects(hand.get_global_rect()):
 		_fail("causal context overlaps hand")

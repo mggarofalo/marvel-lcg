@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Marvel.Godot.Tests;
 
+[Collection("Source presentation state")]
 public sealed class SourcePresentationOrderTests
 {
     [Fact]

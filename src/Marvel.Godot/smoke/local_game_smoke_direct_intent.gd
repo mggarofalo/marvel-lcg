@@ -33,6 +33,7 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 	if not card.get_global_transform().is_equal_approx(original):
 		_fail("cancelled exhausted drag did not restore the exact physical pose")
 		return false
+	if not await preload("res://smoke/exhausted_pointer_checks.gd").perform(self, card, anchor): return false
 	if anchor == IDENTITY and not _hero_clears_player_piles(card): return false
 	if not await _capture_checkpoint("exhausted-" + str(anchor)): return false
 	return (_node("Toolbar/SyncStatus") as Label).text == revision

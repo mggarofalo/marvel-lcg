@@ -15,23 +15,29 @@ func _run() -> void:
 
 func _review_attack_results() -> bool:
 	if not _unpaged_result_account(): return false
+	if not await _set_history_drawer(false): return false
 	var latest := main.find_child("LatestResult", true, false) as Label
-	var toggle := main.find_child("ToggleResultDetails", true, false) as Button
-	var rows := main.find_child("ResultSteps", true, false) as Control
+	var toggle := main.find_child("ToggleHistory", true, false) as Button
+	var rows := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as Control
 	if latest == null or toggle == null or not toggle.is_visible_in_tree():
 		_fail("the completed attack has no durable result or detail disclosure")
 		return false
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	if not await _review_attack_disclosure(toggle, rows, latest): return false
+	if not await _rapid_details_work(toggle, rows): return false
+	if (_node("Toolbar/SyncStatus") as Label).text != revision:
+		_fail("read-only chronology changed the game revision")
+		return false
+	return true
+
+
+func _review_attack_disclosure(toggle: Button, rows: Control, latest: Label) -> bool:
 	if not await _pointer_activate(toggle): return false
 	if not _attack_consequences_visible(rows): return false
 	if not await _capture_checkpoint("history-attack-expanded"): return false
 	if not await _pointer_activate(toggle): return false
 	if rows.is_visible_in_tree() or latest.text.is_empty():
 		_fail("collapsing details erased the latest result or left details open")
-		return false
-	if not await _rapid_details_work(toggle, rows): return false
-	if (_node("Toolbar/SyncStatus") as Label).text != revision:
-		_fail("read-only chronology changed the game revision")
 		return false
 	return true
 
@@ -45,7 +51,7 @@ func _undo_clears_results() -> bool:
 	if undo == null or undo.disabled or not await _pointer_activate(undo): return false
 	if not await _wait_for(func() -> bool:
 		return (_node("Toolbar/SyncStatus") as Label).text != revision): return false
-	var account := main.find_child("ResultAccount", true, false) as Control
+	var account := main.find_child("EventActivity", true, false) as Control
 	if account != null and account.is_visible_in_tree():
 		_fail("undo retained reverted attack details")
 		return false
@@ -61,11 +67,16 @@ func _unpaged_result_account() -> bool:
 
 
 func _attack_consequences_visible(rows: Control) -> bool:
-	if not rows.is_visible_in_tree() or rows.get_child_count() != 2:
-		_fail("one click did not expose both attack consequences together")
+	if not rows.is_visible_in_tree():
+		_fail("one click did not expose the complete history")
 		return false
-	if "exhaust" not in rows.get_child(0).text.to_lower() or "14 to 12" not in rows.get_child(1).text:
-		_fail("the attack account lost authoritative exhaustion/damage order")
+	var latest := main.find_child("LatestResult", true, false) as Label
+	var text := latest.text.to_lower()
+	if "exhaust" not in text or "14 to 12" not in text:
+		_fail("the attack account lost authoritative exhaustion/damage")
+		return false
+	if text.find("exhaust") > text.find("14 to 12"):
+		_fail("the attack account lost authoritative order")
 		return false
 	return true
 

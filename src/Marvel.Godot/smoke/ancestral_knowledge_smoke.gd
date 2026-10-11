@@ -76,6 +76,7 @@ func _play_ancestral_knowledge() -> bool:
 
 func _finish_shuffle() -> bool:
 	if not await _confirm_shuffle(): return false
+	if not await _set_history_drawer(true): return false
 	if not await _wait_for(_shuffle_receipt_visible):
 		_fail("completed shuffle lost its named, counted result receipt")
 		return false

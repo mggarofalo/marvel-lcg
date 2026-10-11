@@ -10,10 +10,11 @@ internal static class SourceTableauRenderer
         BoardRenderResult result, InterfaceScale scale, int seat, IReadOnlyDictionary<int, string>? names = null)
     {
         cards = SourcePresentationOrder.Arrange(seat, cards);
+        IReadOnlyDictionary<int, string> copies = SourceCopyIdentity.Describe(seat, cards);
         var panel = new VBoxContainer { Name = "SourceTableau", Position = bounds.Position,
             Size = bounds.Size, CustomMinimumSize = bounds.Size, MouseFilter = Control.MouseFilterEnum.Ignore };
         panel.AddThemeConstantOverride("separation", 4);
-        panel.AddChild(new Label { Name = "SourceTableauTitle", Text = $"UPGRADES & SUPPORTS · {cards.Length}",
+        panel.AddChild(new Label { Name = "SourceTableauTitle", Text = $"UPGRADES & SUPPORTS · {cards.Length} · Drag a title to arrange",
             ThemeTypeVariation = GodotThemeVariations.Caption, MouseFilter = Control.MouseFilterEnum.Ignore });
         var scroll = new ScrollContainer { Name = "SourceTableauViewport",
             SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
@@ -34,33 +35,36 @@ internal static class SourceTableauRenderer
         for (int index = 0; index < cards.Length; index++)
         {
             BoardCardPresentation card = cards[index];
-            CardControl control = SourceTableauTile.CreateCard(card, layout.TileWidth, scale);
+            CardControl control = SourceTableauTile.CreateCard(card, layout.TileWidth, scale,
+                card.TargetId is { } copyId ? copies[copyId] : "");
             control.Name = $"ProceduralCard{card.TargetId}";
             control.Position = layout.Position(index);
-            if (card.Persistent?.Relation.HostId is { } host && names?.TryGetValue(host, out string? hostName) == true)
-            {
-                var relation = CardSourceStrip.Label($"On {hostName}", "SourceHost", 9, CardTypography.Body);
-                relation.ClipText = true;
-                relation.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-                relation.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-                relation.TooltipText = $"Attached to {hostName}";
-                var row = control.FindChild("SourceType", true, false).GetParent();
-                row.AddChild(relation);
-                control.TooltipText += $" · Attached to {hostName}";
-            }
+            AddHostRelation(control, card, names);
             var slot = new Control { Name = $"SourceSlot{card.TargetId}", CustomMinimumSize = control.CustomMinimumSize,
                 MouseFilter = Control.MouseFilterEnum.Ignore };
             grid.AddChild(slot);
             control.Position = Vector2.Zero;
             slot.AddChild(control);
             BindSlot(control, slot);
-            gestures.Track(control, slot, card.Title);
+            gestures.Track(control, slot);
             grid.SortChildren += () => Callable.From(() =>
             { if (InteractionControl.IsUsable(control) && !control.TopLevel) result.UpdateRestingPose(control); }).CallDeferred();
             if (card.TargetId is { } id) result.Register(id, control);
             result.TrackCard(control, card);
         }
         return panel;
+    }
+
+    private static void AddHostRelation(CardControl control, BoardCardPresentation card,
+        IReadOnlyDictionary<int, string>? names)
+    {
+        if (card.Persistent?.Relation.HostId is not { } host || names?.TryGetValue(host, out string? hostName) != true) return;
+        var relation = CardSourceStrip.Label($"On {hostName}", "SourceHost", 9, CardTypography.Body);
+        relation.AutowrapMode = TextServer.AutowrapMode.Off;
+        relation.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
+        relation.TooltipText = $"Attached to {hostName}";
+        control.FindChild("SourceSymbols", true, false).AddChild(relation);
+        control.TooltipText += $" · Attached to {hostName}";
     }
 
     private static void BindSlot(CardControl card, Control slot)

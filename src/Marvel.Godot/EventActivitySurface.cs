@@ -1,32 +1,22 @@
 using Godot;
+using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>A bounded response account beside, rather than replacing, the current choice.</summary>
+/// <summary>A passive native result stage in the table seam. History owns the complete chronology.</summary>
 internal static class EventActivitySurface
 {
     internal static void Add(Control table, Rect2 bounds)
     {
         var activity = new VBoxContainer { Name = "EventActivity", Position = bounds.Position,
             Size = bounds.Size, CustomMinimumSize = bounds.Size, Visible = false,
-            MouseFilter = Control.MouseFilterEnum.Ignore };
-        activity.AddThemeConstantOverride("separation", 1);
+            MouseFilter = Control.MouseFilterEnum.Ignore, ZIndex = 65 };
+        activity.AddThemeConstantOverride("separation", 2);
         table.AddChild(activity);
-        var heading = new Label { Name = "ActivityHeading", ThemeTypeVariation = GodotThemeVariations.Caption,
-            MouseFilter = Control.MouseFilterEnum.Ignore };
-        heading.AddThemeFontSizeOverride("font_size", 11);
-        activity.AddChild(heading);
-        var scroll = new ScrollContainer { Name = "ActivityAccount", SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            VerticalScrollMode = ScrollContainer.ScrollMode.Reserve, FollowFocus = true,
-            FocusMode = Control.FocusModeEnum.All };
-        activity.AddChild(scroll);
-        var text = new Label { Name = "ActivityText", AutowrapMode = TextServer.AutowrapMode.Word,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            MouseFilter = Control.MouseFilterEnum.Ignore };
-        text.AddThemeFontSizeOverride("font_size", 13);
-        scroll.AddChild(text);
-        scroll.CustomMinimumSize = new Vector2(0, text.GetThemeFont("font").GetHeight(13));
+        var tiles = new HBoxContainer { Name = "ActivityTiles", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill, MouseFilter = Control.MouseFilterEnum.Ignore };
+        tiles.AddThemeConstantOverride("separation", 6);
+        activity.AddChild(tiles);
     }
 
     internal static void Present(Control host, EventActivitySequence sequence)
@@ -35,15 +25,41 @@ internal static class EventActivitySurface
         host.SetMeta("activity_running", sequence.Active);
         host.SetMeta("activity_index", sequence.Index);
         host.SetMeta("activity_count", sequence.Entries.Count);
-        if (sequence.Current is null) return;
-        host.GetNode<Label>("ActivityHeading").Text = sequence.Active
-            ? $"JUST RESOLVED · {sequence.Index + 1} of {sequence.Entries.Count}"
-            : $"RESOLVED · {sequence.Entries.Count} updates · Scroll to review";
-        Label text = host.GetNode<Label>("ActivityAccount/ActivityText");
-        text.Text = sequence.Active
-            ? $"{sequence.Index + 1}. {sequence.Current.CueSummary ?? sequence.Current.Summary}"
-            : string.Join("\n", sequence.Entries.Select((entry, index) => $"{index + 1}. {entry.Summary}"));
-        text.TooltipText = text.Text;
-        host.GetNode<ScrollContainer>("ActivityAccount").ScrollVertical = 0;
+        host.AccessibilityName = "Latest accepted results. Open History for complete resolution order.";
+        HBoxContainer tiles = host.GetNode<HBoxContainer>("ActivityTiles");
+        foreach (Node child in tiles.GetChildren()) { tiles.RemoveChild(child); child.QueueFree(); }
+        IReadOnlyList<EventPresentation> entries = sequence.Active && sequence.Current is { } current
+            ? [current] : ActivityVisualMeaning.Settled(sequence.Entries);
+        host.SetMeta("activity_tile_count", entries.Count);
+        for (int index = 0; index < entries.Count; index++) AddTile(tiles, entries[index], index);
+    }
+
+    private static void AddTile(HBoxContainer tiles, EventPresentation entry, int index)
+    {
+        var tile = new HBoxContainer { Name = $"ActivityTile{index}", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            MouseFilter = Control.MouseFilterEnum.Ignore, TooltipText = entry.Summary,
+            AccessibilityName = entry.Summary };
+        tiles.AddChild(tile);
+        var glyph = new Control { Name = "ActivityGlyph", CustomMinimumSize = new Vector2(36, 40),
+            MouseFilter = Control.MouseFilterEnum.Ignore };
+        tile.AddChild(glyph);
+        if (entry.Activity?.Subjects.Count > 0)
+            tile.AddChild(new Control { Name = "OccurrenceReference", CustomMinimumSize = new Vector2(40, 40),
+                MouseFilter = Control.MouseFilterEnum.Ignore });
+        var facts = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            MouseFilter = Control.MouseFilterEnum.Ignore };
+        facts.AddThemeConstantOverride("separation", 0);
+        tile.AddChild(facts);
+        AddCopy(facts, "Kind", ActivityVisualMeaning.Title(entry), 10);
+        AddCopy(facts, "Participants", ActivityVisualMeaning.Participants(entry), 12);
+        AddCopy(facts, "Result", ActivityVisualMeaning.Result(entry), 18);
+    }
+
+    private static void AddCopy(VBoxContainer host, string name, string text, int size)
+    {
+        var label = new Label { Name = name, Text = text, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            MouseFilter = Control.MouseFilterEnum.Ignore, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
+        label.AddThemeFontSizeOverride("font_size", size);
+        host.AddChild(label);
     }
 }

@@ -30,22 +30,7 @@ public static class EventCuePlanner
         var cues = new List<EventPresentation>(presented.Count + 1);
         for (int index = 0; index < presented.Count; index++)
         {
-            EventPresentation current = presented[index];
-            if (current.Motion == EventMotionKind.Status
-                && StatusCardIds(happened[index]) is { Count: > 0 } statusCards)
-            {
-                var anchors = current.Anchors.ToList();
-                while (index + 1 < presented.Count
-                    && CompanionCard(happened[index + 1]) is { } companionCard
-                    && statusCards.Contains(companionCard))
-                {
-                    anchors.AddRange(presented[++index].Anchors);
-                }
-
-                current = current with { Anchors = anchors.Distinct().ToArray() };
-            }
-
-            cues.Add(current);
+            cues.Add(FoldStatusCompanions(happened, presented, ref index));
         }
 
         if (previousOutcome == Outcome.Unfinished && world.Outcome != Outcome.Unfinished)
@@ -57,6 +42,32 @@ public static class EventCuePlanner
 
         var highlights = Highlight(history);
         return new EventBatchPresentation(history, cues, highlights);
+    }
+
+    private static EventPresentation FoldStatusCompanions(
+        IReadOnlyList<GameEvent> happened, IReadOnlyList<EventPresentation> presented, ref int index)
+    {
+        EventPresentation current = presented[index];
+        if (current.Motion != EventMotionKind.Status
+            || StatusCardIds(happened[index]) is not { Count: > 0 } statusCards) return current;
+        var anchors = current.Anchors.ToList();
+        while (index + 1 < presented.Count
+            && CompanionCard(happened[index + 1]) is { } companionCard
+            && statusCards.Contains(companionCard))
+        {
+            EventPresentation companion = presented[++index];
+            anchors.AddRange(companion.Anchors);
+            current = WithStatusHost(current, companion);
+        }
+        return current with { Anchors = anchors.Distinct().ToArray() };
+    }
+
+    private static EventPresentation WithStatusHost(EventPresentation current, EventPresentation companion)
+    {
+        if (current.Activity is not { } status || companion.Activity is not { } attached) return current;
+        return current with { Activity = status with
+        { Subjects = status.Subjects.Concat(attached.Subjects.Where(subject =>
+            subject.Role == ActivitySubjectRole.Target)).Distinct().ToArray() } };
     }
 
     /// <summary>Chooses a durable result using the same consequence priorities as the receipt.</summary>

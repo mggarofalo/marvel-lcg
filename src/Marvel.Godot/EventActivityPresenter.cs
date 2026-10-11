@@ -11,6 +11,7 @@ internal sealed partial class EventActivityPresenter : Node
     private Control? host;
     private EventActivityPulse? pulse;
     private double elapsed;
+    private bool suppressObjects;
 
     internal void Configure(Main owner)
     {
@@ -18,11 +19,13 @@ internal sealed partial class EventActivityPresenter : Node
         pulse = new EventActivityPulse { Name = "EventActivityPulse", MouseFilter = Control.MouseFilterEnum.Ignore,
             TopLevel = true, ZAsRelative = false, ZIndex = 2000 };
         AddChild(pulse);
+        SetProcess(false);
     }
 
     internal void Present(IReadOnlyList<EventPresentation> entries)
     {
         sequence.Start(entries, main!.eventMotion.ButtonPressed);
+        suppressObjects = false;
         elapsed = 0;
         host = null;
         RefreshHost();
@@ -36,6 +39,7 @@ internal sealed partial class EventActivityPresenter : Node
         elapsed += delta;
         if (!main!.eventMotion.ButtonPressed && sequence.Active) Complete();
         bool changed = sequence.Advance(delta);
+        if (changed) elapsed = 0;
         if (RefreshHost() || changed) UpdateText();
         RefreshPulse();
     }
@@ -45,6 +49,12 @@ internal sealed partial class EventActivityPresenter : Node
         sequence.Complete();
         UpdateText();
         RefreshPulse();
+    }
+
+    internal void SettleForDraft()
+    {
+        suppressObjects = true;
+        Complete();
     }
 
     internal void Clear()
@@ -71,13 +81,35 @@ internal sealed partial class EventActivityPresenter : Node
     private void RefreshPulse()
     {
         if (!InteractionControl.IsUsable(pulse)) return;
-        List<Rect2> visible = [];
-        if (sequence.Active && sequence.Current is { } entry && main!.boardRender is { } board)
-            foreach (int id in entry.Anchors.Distinct())
-                if (board.ControlFor(id) is { } card && VisibleBounds(card) is { } bounds)
-                    visible.Add(bounds);
-        pulse!.Present(visible, sequence.Index, elapsed);
+        var visible = VisibleSubjects(CurrentEntries());
+        if (!sequence.Active) visible = SettledSubjects(visible);
+        pulse!.Present(visible, elapsed, sequence.Active, host, StageEntries());
     }
+
+    private IReadOnlyList<EventPresentation> CurrentEntries() =>
+        sequence.Active && sequence.Current is { } current ? [current] : sequence.Entries;
+
+    private IReadOnlyList<EventPresentation> StageEntries() =>
+        sequence.Active && sequence.Current is { } current ? [current] : ActivityVisualMeaning.Settled(sequence.Entries);
+
+    private List<(EventPresentation, ActivitySubject, Rect2)> VisibleSubjects(IReadOnlyList<EventPresentation> entries)
+    {
+        List<(EventPresentation, ActivitySubject, Rect2)> visible = [];
+        if (suppressObjects || main!.boardRender is not { } board) return visible;
+        foreach (EventPresentation entry in entries)
+            foreach (ActivitySubject subject in entry.Activity?.Subjects ?? [])
+                if (board.ControlFor(subject.Card) is { } card && VisibleBounds(card) is { } bounds)
+                    visible.Add((entry, subject, bounds));
+        return visible;
+    }
+
+    private static List<(EventPresentation, ActivitySubject, Rect2)> SettledSubjects(
+        List<(EventPresentation, ActivitySubject, Rect2)> visible) =>
+        visible.Where(reference => reference.Item1.Activity!.Quantities.Count > 0
+                || reference.Item1.Motion is EventMotionKind.Status or EventMotionKind.Attack or EventMotionKind.Defeat)
+            .GroupBy(reference => (reference.Item2.Card, reference.Item2.Role, reference.Item1.Motion, reference.Item1.Activity!.StatusChange,
+                string.Join(",", reference.Item1.Activity!.Quantities.Select(quantity => quantity.Field))))
+            .Select(group => group.Last()).ToList();
 
     private static Rect2? VisibleBounds(Control card)
     {

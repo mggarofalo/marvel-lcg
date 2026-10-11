@@ -19,6 +19,7 @@ func _run() -> void:
 	var narrow := bool(fixture.get_meta("narrow", false))
 	_check_table_bounds(fixture, tableau, narrow, failures)
 	var copies := await _check_cards(tableau, viewport, narrow, failures)
+	await _check_measured_title(tableau, viewport, failures)
 	await _check_copy_input(copies, viewport, fixture, failures)
 	await _check_source_slot_swaps(tableau, viewport, fixture, failures)
 	await _check_collections(fixture, failures)
@@ -35,10 +36,12 @@ func _check_table_bounds(fixture: Control, tableau: Control, narrow: bool, failu
 			failures.append("rotated hand obscures source tableau")
 
 func _check_cards(tableau: Control, viewport: ScrollContainer, narrow: bool, failures: Array[String]) -> Array[Control]:
+	viewport.scroll_vertical = 0
+	for frame in range(3): await process_frame
 	var cards := tableau.find_children("ProceduralCard*", "Control", true, false)
 	if cards.size() != 16: failures.append("lost physical sources")
 	var copies: Array[Control] = []
-	if not narrow:
+	if not narrow and not OS.get_cmdline_user_args().has("--marvel-tableau-symbols"):
 		for card in cards.slice(0, 12):
 			if not viewport.get_global_rect().encloses((card as Control).get_global_rect()):
 				failures.append("dense source viewport does not expose its first twelve physical cards: " + str(card.name) + " " + str((card as Control).get_global_rect()) + " viewport=" + str(viewport.get_global_rect()))
@@ -59,23 +62,65 @@ func _check_overlap(card: Control, cards: Array[Node], failures: Array[String]) 
 			failures.append("source tiles overlap")
 
 func _check_card_readability(card: Control, failures: Array[String]) -> void:
-	var grip := card.find_child("SourceReorderGrip", true, false) as Button
-	if grip == null or not card.get_global_rect().encloses(grip.get_global_rect()):
-		failures.append("source reorder grip exceeds its physical tile")
 	var title := card.find_child("SourceTitle", true, false) as Label
-	if title.get_line_count() > title.get_visible_line_count(): failures.append("source title clipped")
-	var button := card.find_child("Card*Action", true, false) as Button
-	if button != null and (button.size.y < 28 or not card.get_global_rect().encloses(button.get_global_rect())):
-		failures.append("source action exceeds tile")
-	if card.find_child("SourceState", true, false) == null: failures.append("missing readiness")
-	var body := card.find_child("SourceTileBody", true, false) as Control
-	var type := card.find_child("SourceType", true, false) as Label
-	if type == null or type.text.is_empty(): failures.append("missing card type")
+	var body := card.find_child("SourceTitleBand", true, false) as Control
+	_check_source_grip(card, title, failures)
+	_check_source_title(title, failures)
+	_check_source_action(card, failures)
+	_check_source_symbols(card, failures)
 	if title.get_global_rect().position.x < body.global_position.x + 4:
 		failures.append("title enters the B1 ink band inset")
 	_check_excerpt(card, failures)
 	if not card.get_global_rect().encloses(body.get_global_rect()):
 		failures.append("B1 source body exceeds its tile")
+	_check_counter_groups(card, body, failures)
+
+func _check_source_grip(card: Control, title: Label, failures: Array[String]) -> void:
+	var grip := card.find_child("SourceReorderGrip", true, false) as Button
+	if grip == null or not card.get_global_rect().encloses(grip.get_global_rect()):
+		failures.append("source reorder grip exceeds its physical tile")
+	if grip != null and (grip.size.x < title.size.x or grip.size.y < 36 or grip.mouse_default_cursor_shape != Control.CURSOR_DRAG):
+		failures.append("title does not expose a generous arrangement hit target / grab cursor")
+
+func _check_source_title(title: Label, failures: Array[String]) -> void:
+	if title.get_line_count() > title.get_visible_line_count(): failures.append("source title clipped")
+	if title.get_theme_font_size("font_size") != 16 or title.text_overrun_behavior != TextServer.OVERRUN_NO_TRIMMING:
+		failures.append("source identity is reduced or ellipsized")
+	if title.autowrap_mode == TextServer.AUTOWRAP_OFF: failures.append("source title cannot reflow")
+
+func _check_source_action(card: Control, failures: Array[String]) -> void:
+	var button := card.find_child("Card*Action", true, false) as Button
+	if button != null and (button.size.y < 28 or not card.get_global_rect().encloses(button.get_global_rect())):
+		failures.append("source action exceeds tile")
+	if card.find_child("SourceState", true, false) == null: failures.append("missing readiness")
+
+func _check_source_symbols(card: Control, failures: Array[String]) -> void:
+	var type := card.find_child("SourceType", true, false) as Control
+	if type == null or type.accessibility_name.is_empty() or type.find_child("SourceSymbol", true, false) == null:
+		failures.append("missing named vector card type")
+	var state := card.find_child("SourceState", true, false) as Control
+	if state == null or state.find_child("SourceSymbol", true, false) == null:
+		failures.append("missing readiness symbol")
+
+func _check_counter_groups(card: Control, body: Control, failures: Array[String]) -> void:
+	for counter in card.find_children("SourceCounter*", "HBoxContainer", true, false):
+		if not counter.has_meta("counter_value"): continue
+		if not body.get_global_rect().encloses(counter.get_global_rect()): failures.append("counter obscures title or action")
+		if not counter.accessibility_name.contains(str(counter.get_meta("counter_name"))): failures.append("counter lost supplied semantic name")
+		var count := int(counter.get_meta("pip_count"))
+		var value := counter.find_child("SourceCounterValue", false, false) as Label
+		_check_counter_value(value, failures)
+		_check_counter_pips(counter, count, failures)
+
+func _check_counter_value(value: Label, failures: Array[String]) -> void:
+	if not value.text.is_empty() and (value.get_line_count() != 1 or value.get_theme_font("font").get_string_size(value.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x > value.size.x):
+		failures.append("counter kind or explicit value is not readable on one line")
+
+func _check_counter_pips(counter: Control, count: int, failures: Array[String]) -> void:
+	if count == 0 and counter.find_child("SourceCounterPips", false, false) != null: failures.append("zero counter displays a filled pip")
+	if count > 0 and count <= 6 and counter.find_child("SourceCounterPips", false, false) == null: failures.append("ordinary counter is not countable")
+	if count < 0 and not str(counter.find_child("SourceCounterValue", false, false).text).contains(str(counter.get_meta("counter_value"))):
+		failures.append("large counter loses its explicit value")
 
 func _check_excerpt(card: Control, failures: Array[String]) -> void:
 	var rules := card.find_child("SourceMeaning", true, false) as RichTextLabel
@@ -99,7 +144,7 @@ func _check_copy_input(copies: Array[Control], viewport: ScrollContainer, fixtur
 		viewport.ensure_control_visible(copy)
 		for frame in range(3): await process_frame
 		var original_position := copy.global_position
-		await _click(copy.get_global_rect().position + Vector2(12, 12))
+		await _click(copy.get_global_rect().position + Vector2(100, 46))
 		if copy.global_position.distance_to(original_position) > 1:
 			failures.append("hover inspection reordered a physical source")
 		var identity := int(str(copy.name).trim_prefix("ProceduralCard"))
@@ -128,6 +173,7 @@ func _check_source_slot_swaps(tableau: Control, viewport: ScrollContainer, fixtu
 	var destination := original[1] as Control
 	var selected_before: int = fixture.get_meta("selected_id", -1)
 	var inspected_before: int = fixture.get_meta("inspected_id", -1)
+	await _check_intermediate_swap(tableau, source, destination, failures)
 	await _source_grip_drag(source, destination.get_global_rect().get_center(), true)
 	if grid.get_children() != original:
 		failures.append("cancelled source reorder changed physical slot identities")
@@ -142,12 +188,93 @@ func _check_source_slot_swaps(tableau: Control, viewport: ScrollContainer, fixtu
 	if source.is_set_as_top_level() or not source.position.is_equal_approx(Vector2.ZERO):
 		failures.append("source reorder did not settle inside its destination slot")
 	await _check_source_keyboard_swap(grid, source, failures)
+	await _check_every_grip(tableau, viewport, fixture, failures)
+
+func _check_measured_title(tableau: Control, viewport: ScrollContainer, failures: Array[String]) -> void:
+	var card := tableau.find_child("ProceduralCard*", true, false) as Control
+	var title := card.find_child("SourceTitle", true, false) as Label
+	var original := title.text
+	title.text = "Synthetic extended source title"
+	for frame in range(6): await process_frame
+	viewport.ensure_control_visible(card)
+	for frame in range(3): await process_frame
+	if title.get_line_count() < 2 or title.get_line_count() > title.get_visible_line_count():
+		failures.append("measured source title does not show every wrapped line")
+	if not card.get_global_rect().encloses(title.get_global_rect()): failures.append("measured source title grows outside its tile")
+	var font := title.get_theme_font("font")
+	for word in title.text.to_upper().split(" "):
+		if font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x > title.size.x:
+			failures.append("complete source word cannot fit at native 16px")
+	title.text = original
+	for frame in range(6): await process_frame
+	viewport.scroll_vertical = 0
+	for frame in range(3): await process_frame
+
+func _check_intermediate_swap(tableau: Control, source: Control, destination: Control, failures: Array[String]) -> void:
+	var grip := source.find_child("SourceReorderGrip", true, false) as Button
+	var start := grip.get_global_rect().position + Vector2(16, 16)
+	var finish := destination.get_global_rect().get_center()
+	await _pointer(start, true)
+	await _motion(finish)
+	var feedback := tableau.find_child("SourceSwapFeedback", true, false) as Label
+	if not source.is_set_as_top_level(): failures.append("source did not lift out of its slot")
+	if source.get_global_rect().has_point(finish): failures.append("lifted source obscures destination pointer")
+	if feedback == null or not feedback.is_visible_in_tree() or not feedback.text.begins_with("Swap with "):
+		failures.append("source exchange lacks explicit destination feedback")
+	elif not feedback.text.contains("row ") or not feedback.text.contains("column "):
+		failures.append("source exchange does not explain both positions")
+	if source.get_parent().find_child("SourceSwapOutline", false, false).visible != true:
+		failures.append("source exchange has no vacant destination outline")
+	var capture := OS.get_environment("MARVEL_TABLEAU_CAPTURE")
+	if not capture.is_empty():
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png(capture.trim_suffix(".png") + "-swap.png")
+	# Window focus notification exercises the application's native capture-loss cleanup.
+	tableau.find_child("SourceGridGesture", true, false).notification(Node.NOTIFICATION_WM_WINDOW_FOCUS_OUT)
+	await process_frame
+	await _pointer(finish, false)
+	if source.is_set_as_top_level() or feedback.is_visible_in_tree(): failures.append("focus loss retained a source arrangement preview")
+
+func _check_every_grip(tableau: Control, viewport: ScrollContainer, fixture: Control, failures: Array[String]) -> void:
+	var grid := tableau.find_child("SourceTableauGrid", true, false) as GridContainer
+	var original := grid.get_children()
+	for slot in original:
+		var card := slot.find_child("ProceduralCard*", true, false) as Control
+		viewport.ensure_control_visible(card)
+		for frame in range(3): await process_frame
+		await _source_grip_drag(card, card.get_global_rect().get_center() + Vector2(4, 4), true)
+		if grid.get_children() != original: failures.append("cancelling a displayed source grip changed order")
+		if not str(card.get_meta("source_copy", "")).is_empty():
+			var marker := card.find_child("SourceCopy", true, false) as Label
+			var grip := card.find_child("SourceReorderGrip", true, false) as Button
+			if marker == null or not grip.accessibility_name.contains(marker.text): failures.append("duplicate source lacks visible / accessible copy marker")
+	viewport.scroll_vertical = 0
+	for frame in range(3): await process_frame
+
+func _pointer(point: Vector2, pressed: bool) -> void:
+	var event := InputEventMouseButton.new()
+	event.position = point
+	event.global_position = point
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.pressed = pressed
+	Input.parse_input_event(event)
+	for frame in range(3): await process_frame
+
+func _motion(point: Vector2) -> void:
+	var event := InputEventMouseMotion.new()
+	event.position = point
+	event.global_position = point
+	Input.parse_input_event(event)
+	for frame in range(3): await process_frame
 
 func _check_source_keyboard_swap(grid: GridContainer, source: Control, failures: Array[String]) -> void:
 	var original := grid.get_children()
 	var grip := source.find_child("SourceReorderGrip", true, false) as Button
 	grip.grab_focus()
 	await _source_key(KEY_SPACE)
+	var feedback := grid.get_parent().get_parent().find_child("SourceSwapFeedback", true, false) as Label
+	if not feedback.is_visible_in_tree() or not feedback.text.contains(str(source.get_meta("source_identity"))):
+		failures.append("keyboard pickup does not announce physical identity")
 	await _source_key(KEY_LEFT)
 	if grid.get_child(0) != original[1]: failures.append("keyboard source swap has no slot preview")
 	await _source_key(KEY_RIGHT)
@@ -159,6 +286,7 @@ func _check_source_keyboard_swap(grid: GridContainer, source: Control, failures:
 	await _source_key(KEY_LEFT)
 	await _source_key(KEY_ENTER)
 	if grid.get_child(0) != original[1]: failures.append("keyboard source placement lost the chosen physical copy")
+	if not grip.has_focus(): failures.append("keyboard placement lost the source grip focus")
 
 func _source_key(code: Key) -> void:
 	for pressed in [true, false]:

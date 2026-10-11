@@ -25,10 +25,8 @@ internal static class SpatialTableContextRenderer
         var summaryViewport = new ScrollContainer { Name = "DraftSummaryViewport",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            // Keep wrapping width stable when a longer drag explanation needs scrolling.
             VerticalScrollMode = ScrollContainer.ScrollMode.Reserve,
-            FocusMode = Control.FocusModeEnum.All, FollowFocus = true,
-            TooltipText = "Current draft and known consequences. Scroll for more when needed." };
+            FocusMode = Control.FocusModeEnum.All, FollowFocus = true };
         summaryViewport.AddChild(copy);
         panel.AddChild(summaryViewport);
         Label resolution = AddSituation(surface, geometry, world, prompt);
@@ -60,13 +58,8 @@ internal static class SpatialTableContextRenderer
         var cause = new VBoxContainer { Name = "CausalSituation", Position = geometry.Revealing.Position + new Vector2(referenceWidth, 0),
             Size = new Vector2(Math.Max(150, geometry.Revealing.Size.X - referenceWidth), geometry.Revealing.Size.Y),
             MouseFilter = Control.MouseFilterEnum.Ignore };
-        var causeViewport = new ScrollContainer { Name = "CausalSituationViewport", Position = cause.Position,
-            Size = cause.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            VerticalScrollMode = ScrollContainer.ScrollMode.Auto, FollowFocus = true };
-        cause.Position = Vector2.Zero;
         cause.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        causeViewport.AddChild(cause);
-        surface.AddChild(causeViewport);
+        surface.AddChild(cause);
         Label heading = Copy(presentation?.Heading ?? PendingSituationPresentation.Heading(world));
         heading.AutowrapMode = TextServer.AutowrapMode.Word;
         heading.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;

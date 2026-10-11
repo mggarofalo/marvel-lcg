@@ -104,9 +104,10 @@ func _exposed_card_body_point(card: Control) -> Vector2:
 				card = main.find_child(card_name, true, false) as Control
 				if card == null or card.is_queued_for_deletion():
 					return Vector2.INF
-			var rect := _visible_control_rect(card)
-			var point := rect.position + Vector2(
-				rect.size.x * x_fraction, rect.size.y * y_fraction)
+			var exposed := float(card.get_meta("spatial_hand_exposed_width", card.size.x)) \
+				if not card.get_meta("mulligan_staged", false) else card.size.x
+			var point := card.get_global_transform() * Vector2(
+				exposed * x_fraction, card.size.y * y_fraction)
 			if await _control_owns_point(card, point) \
 					and not render_viewport.gui_get_hovered_control() is BaseButton:
 				return point

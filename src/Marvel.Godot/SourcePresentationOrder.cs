@@ -19,6 +19,6 @@ internal static class SourcePresentationOrder
     }
 
     internal static void Store(int seat, IEnumerable<int> ids) => seats[seat] = [.. ids.Distinct()];
-    internal static void Clear() => seats.Clear();
+    internal static void Clear() { seats.Clear(); SourceCopyIdentity.Clear(); }
 }
 

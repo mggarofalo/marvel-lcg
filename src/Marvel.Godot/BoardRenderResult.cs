@@ -21,6 +21,7 @@ public sealed class BoardRenderResult
     private Button? completeChoicesEntry;
     private Container? contextualActions;
     private bool completeChoicesOpen;
+    private bool sourceArrangementActive;
     /// <summary>Owns controls and source lookup for one authorized board snapshot.</summary>
     public BoardRenderResult(BoardPresentation? board = null)
     {
@@ -30,7 +31,7 @@ public sealed class BoardRenderResult
         pointer = new BoardPointerInteractions(
             IsCurrentRender,
             (card, control) => CardActivated?.Invoke(card, control),
-            (card, control) => CardPreviewEntered?.Invoke(card, control),
+            (card, control) => { if (!sourceArrangementActive) CardPreviewEntered?.Invoke(card, control); },
             control => CardPreviewExited?.Invoke(control));
     }
 
@@ -45,6 +46,13 @@ public sealed class BoardRenderResult
 
     /// <summary>Raised when the pointer leaves a readable card body.</summary>
     internal event Action<Control>? CardPreviewExited;
+    internal event Action? SourceArrangementStarted;
+
+    internal void SetSourceArrangement(bool active)
+    {
+        sourceArrangementActive = active;
+        if (active) SourceArrangementStarted?.Invoke();
+    }
 
     internal void Register(int id, CardControl control)
     {

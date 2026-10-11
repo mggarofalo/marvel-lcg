@@ -79,8 +79,10 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
             || !preview.Contains(card)) return false;
         var order = preview;
         var orderedSlots = cards.Where(candidate => !Staged(candidate)).Select(candidate => slots[candidate]).ToArray();
-        cards.RemoveAll(candidate => !Staged(candidate));
-        cards.InsertRange(0, order);
+        // Presentation chooses a stable master order: staged cards reserve their slots.
+        int keptIndex = 0;
+        for (int index = 0; index < cards.Count; index++)
+            if (!Staged(cards[index])) cards[index] = order[keptIndex++];
         for (int index = 0; index < order.Count; index++)
         {
             slots[order[index]] = orderedSlots[index];

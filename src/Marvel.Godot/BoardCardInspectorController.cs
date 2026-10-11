@@ -130,6 +130,7 @@ internal sealed class BoardCardInspectorController
     internal void BindFocus(Control control) => inspector.BindFocus(control);
     internal bool HasFocus() => inspector.HasFocus();
     internal void Hide() => inspector.Hide();
+    internal void HidePreview() { if (!main.cardInspectorPinned) inspector.Hide(restoreFocus: false); }
     internal void Reset() { previewSource = null; inspector.Hide(restoreFocus: false); }
 
     private void OpenValueSource(BoardCardPresentation source, BoardCardPresentation host, Control? opener)

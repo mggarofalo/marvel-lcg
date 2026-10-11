@@ -113,6 +113,12 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.EventCuePlanner",
             "Marvel.View.EventMotionKind",
             "Marvel.View.EventPresentation",
+            // Typed facts derived locally from visibility-filtered events.
+            "Marvel.View.EventActivityDescriptor",
+            "Marvel.View.ActivitySubject",
+            "Marvel.View.ActivitySubjectRole",
+            "Marvel.View.ActivityQuantity",
+            "Marvel.View.ActivityStatusChange",
             // Public waiting copy contains no actionable private prompt.
             "Marvel.View.PendingSituationPresentation",
             "Marvel.View.PromptPresentation",

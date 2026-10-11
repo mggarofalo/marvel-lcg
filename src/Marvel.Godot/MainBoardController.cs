@@ -136,6 +136,7 @@ internal sealed class MainBoardController : IDisposable
         rendered.CardActivated += cardInspector.Toggle;
         rendered.CardPreviewEntered += cardInspector.PreviewCard;
         rendered.CardPreviewExited += cardInspector.LeaveCardPreview;
+        rendered.SourceArrangementStarted += cardInspector.HidePreview;
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
             && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
         relationships.Bind(rendered);

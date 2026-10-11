@@ -17,6 +17,8 @@ internal sealed partial class SourceGridGesture : Node
     private Vector2 start;
     private bool moving;
     private bool keyboard;
+    private Button? handle;
+    private SourceArrangementFeedback feedback = null!;
 
     internal void Configure(GridContainer container, ScrollContainer scroll, int player, BoardRenderResult board)
     {
@@ -24,14 +26,19 @@ internal sealed partial class SourceGridGesture : Node
         viewport = scroll;
         seat = player;
         result = board;
+        feedback = new SourceArrangementFeedback(scroll.GetParent<Control>());
     }
 
-    internal void Track(CardControl card, Control slot, string title)
+    internal void Track(CardControl card, Control slot)
     {
         cards.Add(slot, card);
+        feedback.Track(slot);
+        string identity = card.GetMeta("source_identity").AsString();
+        Control header = card.FindChild("SourceTitleBand", true, false) as Control ?? card;
+        Label title = (Label)card.FindChild("SourceTitle", true, false);
         var grip = new Button { Name = "SourceReorderGrip", Text = "⠿", Flat = true,
-            Position = new Vector2(card.Size.X - 24, 0), Size = new Vector2(24, 28),
-            AccessibilityName = $"Reorder {title}", TooltipText = "Drag to swap table slots. Space picks up; arrows move; Enter places; Escape cancels.",
+            AccessibilityName = $"Arrange {identity}", TooltipText = "Drag this title to swap table slots. Space picks up; arrows move; Enter places; Escape cancels.",
+            Alignment = HorizontalAlignment.Right, MouseDefaultCursorShape = Control.CursorShape.Drag,
             MouseFilter = Control.MouseFilterEnum.Stop, ZIndex = 20 };
         grip.AddThemeFontSizeOverride("font_size", 16);
         using var empty = new StyleBoxEmpty();
@@ -41,33 +48,42 @@ internal sealed partial class SourceGridGesture : Node
             BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderWidthBottom = 1 };
         grip.AddThemeStyleboxOverride("focus", focus);
         grip.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
+        grip.AddThemeColorOverride("font_hover_color", CardFaceStyle.Paper);
+        grip.AddThemeColorOverride("font_pressed_color", CardFaceStyle.Paper);
         var overlay = new Control { Name = "SourceReorderOverlay", MouseFilter = Control.MouseFilterEnum.Ignore };
         card.AddChild(overlay);
         overlay.AddChild(grip);
-        grip.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight);
-        grip.OffsetLeft = -24;
-        grip.OffsetRight = 0;
-        grip.OffsetTop = 0;
-        grip.OffsetBottom = 28;
+        void Fit()
+        {
+            grip.Position = header.Position;
+            grip.Size = new Vector2(header.Size.X, Math.Clamp(title.Size.Y, 38, Math.Max(38, header.Size.Y - 16)));
+        }
+        header.Resized += Fit;
+        title.Resized += Fit;
+        card.Ready += Fit;
+        grip.FocusExited += () => { if (keyboard && handle == grip) Cancel(); };
         grip.GuiInput += input =>
         {
             if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } press)
-                Begin(card, slot, press.GlobalPosition, false);
+                Begin(card, slot, grip, press.GlobalPosition, false);
             else if (input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Space })
-                Begin(card, slot, Vector2.Zero, true);
+                Begin(card, slot, grip, Vector2.Zero, true);
             else return;
             grip.AcceptEvent();
         };
     }
 
-    private void Begin(CardControl card, Control slot, Vector2 point, bool usingKeyboard)
+    private void Begin(CardControl card, Control slot, Button grip, Vector2 point, bool usingKeyboard)
     {
         Cancel();
         dragged = card;
         origin = slot;
+        handle = grip;
         start = point;
         keyboard = usingKeyboard;
         original = [.. grid.GetChildren().OfType<Control>()];
+        result.SetSourceArrangement(true);
+        feedback.Show(slot, $"Picked up {Identity(slot)} · {Place(slot)}. Arrows move; Enter places; Escape cancels.");
     }
 
     public override void _Input(InputEvent input)
@@ -75,8 +91,8 @@ internal sealed partial class SourceGridGesture : Node
         if (dragged is null) return;
         if (input is InputEventKey { Pressed: true, Keycode: Key.Escape }) Cancel();
         else if (keyboard && input is InputEventKey { Pressed: true, Echo: false } key) MoveByKey(key.Keycode);
-        else if (input is InputEventMouseMotion motion) Preview(motion.GlobalPosition);
-        else if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } release)
+        else if (!keyboard && input is InputEventMouseMotion motion) Preview(motion.GlobalPosition);
+        else if (!keyboard && input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } release)
             Complete(release.GlobalPosition);
         else return;
         GetViewport().SetInputAsHandled();
@@ -98,19 +114,30 @@ internal sealed partial class SourceGridGesture : Node
         if (dragged is null || !CardPointerGestureRouter.IsDrag(start, pointer)) return;
         if (!moving) { lift.Begin(dragged); moving = true; }
         CardPointerLift.Move(dragged, pointer);
+        dragged.GlobalPosition -= new Vector2(dragged.Size.X / 2 + 16, 0);
         Control? target = SlotAt(pointer);
-        if (target is null) return;
+        if (target is null)
+        {
+            feedback.Show(origin!, "Outside the source grid · release to cancel. Your table order is unchanged.");
+            return;
+        }
         SwapWith(target);
     }
 
     private void SwapWith(Control target)
     {
-        if (target == origin) { RestoreOrder(); return; }
+        if (target == origin)
+        {
+            RestoreOrder();
+            feedback.Show(origin!, $"Return {Identity(origin!)} to {Place(origin!)} · Escape cancels.");
+            return;
+        }
         int sourceIndex = original.ToList().IndexOf(origin!);
         int targetIndex = Array.IndexOf(original, target);
         RestoreOrder();
         grid.MoveChild(origin!, targetIndex);
         grid.MoveChild(target, sourceIndex);
+        feedback.Show(origin!, $"Swap with {Identity(target)} · {Place(target)} ↔ {Place(origin!)}. Release / Enter places; Escape cancels.");
     }
 
     private Control? SlotAt(Vector2 pointer)
@@ -125,6 +152,7 @@ internal sealed partial class SourceGridGesture : Node
         if (!moving || SlotAt(pointer) is null) { Cancel(); return; }
         SourcePresentationOrder.Store(seat, grid.GetChildren().OfType<Control>()
             .Select(slot => cards[slot].TargetId).OfType<int>());
+        result.PresentGestureFeedback($"Arranged {Identity(origin!)} in {Place(origin!)}. Game choices are unchanged.");
         Finish();
     }
 
@@ -132,6 +160,7 @@ internal sealed partial class SourceGridGesture : Node
     {
         if (dragged is null) return;
         RestoreOrder();
+        result.PresentGestureFeedback("Arrangement cancelled. Source positions and game choices are unchanged.");
         Finish();
     }
 
@@ -142,6 +171,8 @@ internal sealed partial class SourceGridGesture : Node
 
     private void Finish()
     {
+        feedback.Hide();
+        result.SetSourceArrangement(false);
         lift.Restore();
         if (InteractionControl.IsUsable(dragged))
         {
@@ -153,7 +184,22 @@ internal sealed partial class SourceGridGesture : Node
         origin = null;
         moving = false;
         original = [];
+        if (keyboard && InteractionControl.IsUsable(handle)) CardFocusPreview.Restore(handle!);
+        handle = null;
     }
 
-    public override void _ExitTree() => lift.Restore();
+    private string Identity(Control slot) => cards[slot].GetMeta("source_identity").AsString();
+    private string Place(Control slot) => $"row {slot.GetIndex() / grid.Columns + 1}, column {slot.GetIndex() % grid.Columns + 1}";
+
+    public override void _Ready() => GetWindow().FocusExited += Cancel;
+    public override void _Notification(int what)
+    {
+        if (what == NotificationWMWindowFocusOut) Cancel();
+    }
+    public override void _ExitTree()
+    {
+        GetWindow().FocusExited -= Cancel;
+        if (dragged is not null) Cancel();
+        lift.Restore();
+    }
 }
