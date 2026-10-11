@@ -15,25 +15,34 @@ internal static class ResourceIconRendering
         string glyphs = string.Concat(CardRulesMarkup.ResourceGlyphs(resources));
         if (glyphs.Length == 0) return null;
         if (textures.TryGetValue(glyphs, out Texture2D? cached)) return cached;
-        using var image = Image.CreateEmpty(Size * glyphs.Length, Size, false, Image.Format.Rgba8);
+        XNamespace ns = "http://www.w3.org/2000/svg";
+        var image = new XElement(ns + "svg", new XAttribute("width", Size * glyphs.Length),
+            new XAttribute("height", Size), new XAttribute("viewBox", $"0 0 {Size * glyphs.Length} {Size}"));
         for (int index = 0; index < glyphs.Length; index++)
         {
             using Stream source = typeof(ResourceIconRendering).Assembly.GetManifestResourceStream(
                 $"Marvel.Godot.Assets.Resources.{glyphs[index]}.svg")
                 ?? throw new InvalidOperationException("The canonical resource icon is unavailable.");
             using var reader = new StreamReader(source);
-            using var icon = new Image();
-            if (icon.LoadSvgFromString(ColoredOutline(reader.ReadToEnd(), glyphs[index])) != Error.Ok)
-                throw new InvalidOperationException("The canonical resource icon could not be decoded.");
-            icon.FixAlphaEdges();
-            icon.Resize(Size, Size, Image.Interpolation.Lanczos);
-            image.BlitRect(icon, new Rect2I(0, 0, Size, Size), new Vector2I(index * Size, 0));
+            XElement icon = XElement.Parse(ColoredOutline(reader.ReadToEnd(), glyphs[index]));
+            image.Add(Position(icon, index));
         }
-        image.FixAlphaEdges();
-        image.GenerateMipmaps();
-        Texture2D texture = ImageTexture.CreateFromImage(image);
+        DpiTexture texture = DpiTexture.CreateFromString(image.ToString(SaveOptions.DisableFormatting));
+        texture.FixAlphaBorder = true;
         textures.Add(glyphs, texture);
         return texture;
+    }
+
+    private static XElement Position(XElement icon, int index)
+    {
+        float[] box = icon.Attribute("viewBox")!.Value.Split(' ')
+            .Select(value => float.Parse(value, CultureInfo.InvariantCulture)).ToArray();
+        float factor = Size / Math.Max(box[2], box[3]);
+        float left = index * Size + (Size - box[2] * factor) / 2;
+        float top = (Size - box[3] * factor) / 2;
+        string transform = FormattableString.Invariant(
+            $"translate({left} {top}) scale({factor}) translate({-box[0]} {-box[1]})");
+        return new XElement(icon.Name.Namespace + "g", new XAttribute("transform", transform), icon.Elements());
     }
 
     internal static void Style(Label label, char glyph)
@@ -64,7 +73,7 @@ internal static class ResourceIconRendering
     internal static void Apply(Button button, string resources)
     {
         button.Icon = Texture(resources);
-        button.TextureFilter = CanvasItem.TextureFilterEnum.LinearWithMipmaps;
+        button.TextureFilter = CanvasItem.TextureFilterEnum.Linear;
         button.IconAlignment = HorizontalAlignment.Right;
         button.TooltipText = string.Join(" · ", new[]
         {
@@ -92,7 +101,7 @@ internal static class ResourceIconRendering
         row.AddChild(new TextureRect
         {
             Name = "ResourceSymbols", Texture = Texture(resources),
-            TextureFilter = CanvasItem.TextureFilterEnum.LinearWithMipmaps,
+            TextureFilter = CanvasItem.TextureFilterEnum.Linear,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
             MouseFilter = Control.MouseFilterEnum.Ignore,

@@ -48,6 +48,9 @@ public sealed record AffordancePresentation(
     /// <summary>The engine establishes a separate target choice after costs, if the effect reaches resolution.</summary>
     public bool DeferredTargetSelection { get; init; }
 
+    /// <summary>The engine admits one current recipient as a complete explicit activation.</summary>
+    public bool DirectRecipientCommit { get; init; }
+
     /// <summary>The offered costs without flattening alternatives, components, variables, or generators.</summary>
     public IReadOnlyList<CostOption> CostOptions { get; init; } = [];
 

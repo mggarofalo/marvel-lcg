@@ -125,7 +125,7 @@ internal static class SpatialTableSurfaceRenderer
         var handArea = new Control { Name = "HandDropArea", Position = geometry.Hand.Position,
             Size = geometry.Hand.Size, MouseFilter = Control.MouseFilterEnum.Ignore };
         surface.AddChild(handArea);
-        result.RegisterHandArea(handArea, prompt?.Player ?? selection.ExpandedSeat);
+        result.RegisterHandArea(handArea, prompt?.Player ?? selection.ExpandedSeat, geometry.HandCard);
         if (MulliganPrompt.IsOpening(prompt))
         {
             var stage = new Control { Name = "MulliganStage", Position = new Vector2(22, geometry.Hand.Position.Y),

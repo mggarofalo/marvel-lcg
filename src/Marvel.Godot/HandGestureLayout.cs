@@ -15,6 +15,7 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
     private int seat;
     private List<CardControl>? preview;
     private bool opening;
+    internal Func<int, int, float, SpatialCardPlacement>? Placement { get; set; }
     internal Func<bool>? MotionEnabled { get; set; }
 
     internal void RegisterArea(Control control, int player) { area = control; seat = player; }
@@ -102,6 +103,7 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
 
     private void ApplyStaging()
     {
+        ReflowKeptCards();
         int index = 0;
         foreach (CardControl card in cards.Where(InteractionControl.IsUsable))
         {
@@ -121,6 +123,22 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
             if (opening) card.TooltipText = descriptions[card] + " · " + (Staged(card)
                 ? "Staged for redraw. Drag back to hand or press Space to keep. Not discarded until Redraw."
                 : "Drag to discard to stage a redraw, or press Space. Changes remain uncommitted.");
+        }
+    }
+
+    private void ReflowKeptCards()
+    {
+        if (!opening || Placement is null) return;
+        CardControl[] kept = [.. cards.Where(card => !Staged(card))];
+        for (int index = 0; index < kept.Length; index++)
+        {
+            CardControl card = kept[index];
+            SpatialCardPlacement pose = Placement(index, kept.Length, card.Size.X);
+            slots[card] = (pose.Position, pose.Rotation, pose.ZIndex);
+            float exposed = index + 1 == kept.Length ? card.Size.X
+                : Math.Min(card.Size.X, Placement(index + 1, kept.Length, card.Size.X).Position.X - pose.Position.X);
+            card.SetMeta("spatial_hand_exposed_width", exposed);
+            card.SetMeta("spatial_hand_overlap", pose.Overlaps);
         }
     }
 

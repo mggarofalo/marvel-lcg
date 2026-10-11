@@ -28,15 +28,15 @@ internal static class SchemeStackCollection
         for (int index = 0; index < cards.Length; index++)
         {
             BoardCardPresentation card = cards[index];
-            CardControl control = CardControl.Create(card, CardDisplaySize.Board, scale, art);
-            float factor = Math.Min(1, (bounds.Size.X - 18) / control.CustomMinimumSize.X);
+            CardLayoutMetrics layout = CardControl.LayoutFor(card, CardDisplaySize.Board, scale);
+            float factor = Math.Min(1, (bounds.Size.X - 18) / layout.Width);
+            CardControl control = CardControl.CreateFitted(card, scale, art, factor);
             control.Name = $"ProceduralCard{card.TargetId}";
             control.Position = new Vector2(0, index * 64);
-            control.Scale = Vector2.One * factor;
             control.ZIndex = index;
             stack.AddChild(control);
             var header = new PanelContainer { Name = "SchemeStackHeader", Position = Vector2.Zero,
-                Size = new Vector2(control.CustomMinimumSize.X, 60 / factor),
+                Size = new Vector2(control.CustomMinimumSize.X, 60),
                 MouseFilter = Control.MouseFilterEnum.Ignore };
             using var ink = new StyleBoxFlat { BgColor = CardFaceStyle.Ink,
                 ContentMarginLeft = 7, ContentMarginRight = 7, ContentMarginTop = 3, ContentMarginBottom = 3 };
@@ -68,7 +68,7 @@ internal static class SchemeStackCollection
             result.TrackCard(control, card);
             result.UpdateRestingPose(control);
             controls.Add(control);
-            bottom = control.Position.Y + control.CustomMinimumSize.Y * factor;
+            bottom = control.Position.Y + control.CustomMinimumSize.Y;
         }
         stack.CustomMinimumSize = new Vector2(bounds.Size.X - 18, bottom);
         void Arrange()

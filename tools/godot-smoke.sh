@@ -82,6 +82,8 @@ MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled 
   run_local_smoke res://smoke/repeated_commit_smoke.gd
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/hand_intent_smoke.gd
+MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled MARVEL_RECIPIENT_FACE=01091 MARVEL_RECIPIENT_SEED=1 \
+  run_local_smoke res://smoke/recipient_commitment_smoke.gd
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled MARVEL_SMOKE_TWO_PLAYER=true \
   run_local_smoke res://smoke/layout_continuity_smoke.gd
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
@@ -90,6 +92,8 @@ MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled
   run_local_smoke res://smoke/repeated_commit_smoke.gd
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/hand_intent_smoke.gd
+MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled MARVEL_SMOKE_TWO_PLAYER=true MARVEL_RECIPIENT_FACE=01092 MARVEL_RECIPIENT_SEED=9 \
+  run_local_smoke res://smoke/recipient_commitment_smoke.gd
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled MARVEL_SMOKE_TWO_PLAYER=true \
   run_local_smoke res://smoke/layout_continuity_smoke.gd
 for scale in 50 80 100 150; do
@@ -103,8 +107,12 @@ done
 
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/result_playback_smoke.gd
+MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+  run_local_smoke res://smoke/event_activity_smoke.gd
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/result_playback_smoke.gd
+MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
+  run_local_smoke res://smoke/event_activity_smoke.gd
 
 for viewport in "${viewports[@]}"; do
   for scale in "${scales[@]}"; do

@@ -12,6 +12,9 @@ internal static class SpatialTableContextRenderer
     {
         if (world is null) return;
         result.RegisterContextualWorld(world);
+        EventActivitySurface.Add(surface, new Rect2(geometry.SourceTableau.Position.X,
+            geometry.Revealing.Position.Y, geometry.SourceTableau.Size.X,
+            geometry.SourceTableau.Position.Y - geometry.Revealing.Position.Y - 4));
         Rect2 bounds = geometry.Context;
         var panel = new HBoxContainer { Name = "ContextualDecision", Position = bounds.Position,
             Size = bounds.Size, CustomMinimumSize = bounds.Size, MouseFilter = Control.MouseFilterEnum.Ignore,

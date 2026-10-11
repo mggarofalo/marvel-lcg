@@ -83,7 +83,7 @@ internal sealed class SpatialTableObjectRenderer
             if (hosts.TryGetValue(area.Host, out var host))
                 SpatialTableHostAttachments.AddOther(host.Control, area, result, scale, art);
         if (controlled.Length == 0) return;
-        Control sources = SourceTableauRenderer.Create(controlled, geometry.SourceTableau, result, scale,
+        Control sources = SourceTableauRenderer.Create(controlled, geometry.SourceTableau, result, scale, seat,
             areas.SelectMany(area => area.Cards).Where(card => card.TargetId.HasValue && !card.Concealed)
                 .DistinctBy(card => card.TargetId).ToDictionary(card => card.TargetId!.Value, card => card.Title));
         surface.AddChild(sources);
@@ -207,8 +207,9 @@ internal sealed class SpatialTableObjectRenderer
 
     private static void Exhaust(CardControl control, BoardCardPresentation card, Vector2 position)
     {
-        control.PivotOffset = control.CustomMinimumSize / 2;
+        control.PivotOffset = Vector2.Zero;
         control.Rotation = Mathf.Pi / 2;
+        control.Position = position + new Vector2(control.Size.Y, 0);
         control.SetMeta("spatial_exhausted", true);
         SpatialCardSidecar.Place(control);
     }

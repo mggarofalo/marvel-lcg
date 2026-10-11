@@ -29,12 +29,19 @@ internal static class CardInteractionDrawing
 
     internal static void StrokeRect(Control card, Rect2 rect, Color color, float width)
     {
-        card.DrawPolyline([rect.Position, new(rect.End.X, rect.Position.Y), rect.End,
-            new(rect.Position.X, rect.End.Y), rect.Position], color, width, antialiased: true);
         Rect2 outer = rect.Grow(width / 2), inner = rect.Grow(-width / 2);
-        CardEdgeSmoothing.Draw(card, [outer.Position, new(outer.End.X, outer.Position.Y), outer.End,
-            new(outer.Position.X, outer.End.Y)], color);
-        CardEdgeSmoothing.Draw(card, [inner.Position, new(inner.Position.X, inner.End.Y), inner.End,
-            new(inner.End.X, inner.Position.Y)], color);
+        Vector2[] outside = [outer.Position, new(outer.End.X, outer.Position.Y), outer.End,
+            new(outer.Position.X, outer.End.Y)];
+        Vector2[] inside = [inner.Position, new(inner.End.X, inner.Position.Y), inner.End,
+            new(inner.Position.X, inner.End.Y)];
+        // One solid ring and one coverage fringe per boundary keep diagonal coverage uniform.
+        for (int edge = 0; edge < outside.Length; edge++)
+        {
+            int next = (edge + 1) % outside.Length;
+            card.DrawColoredPolygon([outside[edge], outside[next], inside[next], inside[edge]], color);
+        }
+        CardEdgeSmoothing.Draw(card, outside, color);
+        Array.Reverse(inside);
+        CardEdgeSmoothing.Draw(card, inside, color);
     }
 }

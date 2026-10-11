@@ -14,10 +14,11 @@ internal static class BoardActionChoiceSurface
         Control source,
         IReadOnlyList<AffordancePresentation> actions,
         Func<bool> isCurrent,
-        Action<int> choose)
+        Action<int> choose,
+        bool recipientCommitments = false)
     {
         Close();
-        if (actions.Count < 2 || !InteractionControl.IsUsable(source))
+        if (actions.Count < (recipientCommitments ? 1 : 2) || !InteractionControl.IsUsable(source))
         {
             return;
         }
@@ -34,7 +35,7 @@ internal static class BoardActionChoiceSurface
         AddBackdrop(overlay, source);
         var popup = new PanelContainer
         {
-            Name = "CardActionChoices", Theme = source.Theme,
+            Name = recipientCommitments ? "RecipientCommitments" : "CardActionChoices", Theme = source.Theme,
             ThemeTypeVariation = GodotThemeVariations.SurfacePanel,
         };
         overlay.AddChild(popup);
@@ -47,23 +48,48 @@ internal static class BoardActionChoiceSurface
         Button? first = null;
         foreach (AffordancePresentation action in actions)
         {
-            var button = new Button
-            {
-                Name = $"Affordance{action.Id}",
-                Text = PromptPresentation.Words(action.DisplayLabel ?? action.Label),
-                TooltipText = PromptPresentation.Words(action.DisplayLabel ?? action.Label),
-                CustomMinimumSize = new Vector2(250, 44),
-                Alignment = HorizontalAlignment.Left,
-                TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
-            };
-            button.SetMeta("offered_verb", action.Verb);
-            button.Pressed += () =>
-            {
-                if (isCurrent()) choose(action.Id);
-                Close();
-            };
-            stack.AddChild(button);
-            DecisionCostLabel.AttachTo(button, action);
+            Button button = AddActionButton(stack, action, isCurrent, choose, recipientCommitments);
+            first ??= button;
+        }
+        popup.AddChild(stack);
+        PlaceWhenSettled(source, popup, stack);
+        ContainFocus(source, stack);
+        FocusFirst(first, isCurrent);
+    }
+
+    private static void PlaceWhenSettled(Control source, PanelContainer popup, VBoxContainer stack)
+    {
+        PlacePopup(source, popup, stack);
+        Callable.From(() =>
+        {
+            if (InteractionControl.IsUsable(source) && InteractionControl.IsUsable(popup))
+                PlacePopup(source, popup, stack);
+        }).CallDeferred();
+    }
+
+    private static Button AddActionButton(VBoxContainer stack, AffordancePresentation action,
+        Func<bool> isCurrent, Action<int> choose, bool recipientCommitments)
+    {
+        var button = new Button
+        {
+            Name = $"Affordance{action.Id}",
+            Text = PromptPresentation.Words(action.DisplayLabel ?? action.Label),
+            TooltipText = PromptPresentation.Words(action.DisplayLabel ?? action.Label),
+            CustomMinimumSize = new Vector2(250, 44),
+            Alignment = HorizontalAlignment.Left,
+            TextOverrunBehavior = recipientCommitments ? TextServer.OverrunBehavior.NoTrimming : TextServer.OverrunBehavior.TrimEllipsis,
+            AutowrapMode = recipientCommitments ? TextServer.AutowrapMode.Word : TextServer.AutowrapMode.Off,
+        };
+        button.SetMeta("offered_verb", action.Verb);
+        button.Pressed += () =>
+        {
+            if (isCurrent()) choose(action.Id);
+            Close();
+        };
+        stack.AddChild(button);
+        DecisionCostLabel.AttachTo(button, action);
+        if (!recipientCommitments)
+        {
             stack.AddChild(new Label
             {
                 Text = DecisionCopy.ActionSummary(action),
@@ -72,12 +98,8 @@ internal static class BoardActionChoiceSurface
                 CustomMinimumSize = new Vector2(250, 0),
                 MouseFilter = Control.MouseFilterEnum.Ignore,
             });
-            first ??= button;
         }
-        popup.AddChild(stack);
-        PlacePopup(source, popup, stack);
-        ContainFocus(source, stack);
-        FocusFirst(first, isCurrent);
+        return button;
     }
 
     private static void FocusFirst(Button? first, Func<bool> isCurrent)

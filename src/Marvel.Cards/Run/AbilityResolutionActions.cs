@@ -98,8 +98,9 @@ internal static class AbilityResolutionActions
         // before step 6 resolves.
         var costOwner = world.Agenda.Current;
         var costOccurrence = world.Agenda.Occurrence;
+        var recipientChoice = AbilityRecipientCommitment.Validate(execution, cast, found, chosen);
         var arrowPayment = AbilityCostPayment.Prepare(
-            world, card, cast.Player, found.Cost, paying, chosen,
+            world, card, cast.Player, found.Cost, paying, recipientChoice is null ? chosen : [],
             execution.program, execution.resourceAbilities, values,
             resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
                 && ResourceRequirement(found.Cost, card).Length > 0);
@@ -113,6 +114,8 @@ internal static class AbilityResolutionActions
         execution.ApplyPayment(arrowPayment.Commit(execution.cardPlayAbilities, cast.Trigger, events), cast);
         if (cast.Suspended)
         {
+            if (recipientChoice is not null)
+                cast.Results[AbilityRecipientCommitment.PendingRecipient] = chosen[0];
             execution.SuspendAfterCost(cast, ability.Ordinal, costOwner, costOccurrence);
             return events;
         }
@@ -123,7 +126,9 @@ internal static class AbilityResolutionActions
         }
         cast.RestoreAbility(ability.Ordinal, []);
         cast.TrackResolution(ability.Ordinal);
-        execution.Run(found, cast);
+        if (recipientChoice is not null)
+            AbilityRecipientCommitment.Resolve(execution, cast, recipientChoice, chosen[0]);
+        else execution.Run(found, cast);
         cast.CompleteResolution();
         execution.DiscardEvent(card, cast);
         return events;

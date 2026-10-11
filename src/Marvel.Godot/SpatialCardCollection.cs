@@ -27,19 +27,19 @@ internal static class SpatialCardCollection
         var controls = new List<CardControl>();
         foreach (BoardCardPresentation card in cards)
         {
-            CardControl control = CardControl.Create(card, CardDisplaySize.Board, scale, art);
+            CardLayoutMetrics layout = CardControl.LayoutFor(card, CardDisplaySize.Board, scale);
+            float factor = Math.Min(1, (bounds.Size.Y - 40 - 48) / (layout.MinimumHeight + 32));
+            CardControl control = CardControl.CreateFitted(card, scale, art, factor);
             control.Name = $"ProceduralCard{card.TargetId}";
             SpatialCardSidecar.State(control, card);
             controls.Add(control);
-            float factor = Math.Min(1, (bounds.Size.Y - 40 - 48) / (control.CustomMinimumSize.Y + 32));
             bool exhausted = SpatialTableZones.IsExhausted(card);
-            Vector2 face = control.CustomMinimumSize * factor;
+            Vector2 face = control.CustomMinimumSize;
             Vector2 occupied = exhausted ? new Vector2(face.Y, face.X) : face;
             var slot = new Control { CustomMinimumSize = occupied + new Vector2(0, 32 * factor + 48),
                 MouseFilter = Control.MouseFilterEnum.Ignore };
             row.AddChild(slot);
             slot.AddChild(control);
-            control.Scale = Vector2.One * factor;
             control.Position = new Vector2(0, 32 * factor);
             if (exhausted)
             {

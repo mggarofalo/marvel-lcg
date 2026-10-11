@@ -136,6 +136,12 @@ internal static class BoardInteractionBinder
         IReadOnlyList<Marvel.View.AffordancePresentation> actions = interaction.VisibleActions(cardId);
         if (actions.Count == 1)
         {
+            if (RecipientCommitmentChoices.Show(gesture.Source, actions[0],
+                () => panel.IsCurrentDraft(composer, generation), recipient =>
+                {
+                    if (RecipientCommitmentChoices.Select(composer, CurrentOperations(panel, composer), actions[0].Id, recipient))
+                        Submit(panel, composer, generation);
+                })) return BoardDraftMutation.None;
             BoardDraftMutation mutation = interaction.TrySelectAction(actions[0].Id, cardId);
             return mutation == BoardDraftMutation.Affordance
                 && DirectCommitment.IsReady(composer)

@@ -32,6 +32,7 @@ internal static class AffordancePresenter
             TargetRequest = option.Targets,
             PlaysCard = option.PlaysCard,
             DeferredTargetSelection = option.DeferredTargetSelection,
+            DirectRecipientCommit = option.DirectRecipientCommit,
             CostOptions = option.CostOptions,
             Relationships = Relationships(option, source, world),
         };

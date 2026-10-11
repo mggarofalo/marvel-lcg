@@ -149,7 +149,7 @@ func _upcoming_stages_are_safe() -> bool:
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
 	if not await _wait_for(func() -> bool:
-		return inspector.get_node("Frame").scale == Vector2.ONE):
+		return is_equal_approx(inspector.get_node("Frame").modulate.a, 1.0)):
 		_fail("the villain inspector expansion did not settle")
 		return false
 	var next := inspector.find_child("InspectRelatedFace1", true, false) as Button

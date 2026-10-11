@@ -137,7 +137,12 @@ internal sealed class BoardPointerInteractions
 
     internal void RegisterMulliganCard(int id, CardControl card) => hand.Track(card);
 
-    internal void RegisterHandArea(Control control, int seat) => hand.RegisterArea(control, seat);
+    internal void RegisterHandArea(Control control, int seat,
+        Func<int, int, float, SpatialCardPlacement> placement)
+    {
+        hand.RegisterArea(control, seat);
+        hand.Placement = placement;
+    }
     internal void RegisterMulliganStage(Control control) { hand.RegisterStage(control); drops.RegisterStage(control); }
 
     internal void RegisterMulliganDiscard(Control discard) => drops.RegisterMulligan(discard);

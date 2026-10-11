@@ -63,7 +63,8 @@ public sealed class BoardRenderResult
     internal void RegisterDropTarget(int seat, Control control) =>
         pointer.RegisterDropTarget(seat, control);
 
-    internal void RegisterHandArea(Control control, int seat) => pointer.RegisterHandArea(control, seat);
+    internal void RegisterHandArea(Control control, int seat,
+        Func<int, int, float, SpatialCardPlacement> placement) => pointer.RegisterHandArea(control, seat, placement);
     internal void RegisterMulliganStage(Control control) => pointer.RegisterMulliganStage(control);
 
     internal void RegisterContextualActions(Container host)
@@ -113,7 +114,7 @@ public sealed class BoardRenderResult
         pointer.Track(control, card, isHandCard);
     }
 
-    internal void TrackPreviewOnly(CardControl control, BoardCardPresentation card) => pointer.TrackPreviewOnly(control, card);
+    internal void TrackPreviewOnly(Control control, BoardCardPresentation card) => pointer.TrackPreviewOnly(control, card);
 
     internal void TrackInspection(CardControl control, BoardCardPresentation card) =>
         interactionControls.Track(control, card, isHand: false);

@@ -5,8 +5,7 @@ func _run() -> void:
 	await _configure_seeded_game()
 	if not await _pointer_activate(_button_named("Start game")): return
 	if not await _wait_for(func() -> bool: return _task_commit() != null): return
-	if not await _hand_insertion_is_local(): return
-	if not await _drag_capture_is_safe(): return
+	if not await _local_hand_gestures(): return
 	if not await _clearing_mulligan_replacements_preserves_task(): return
 	if not await _select_mulligan_cards(): return
 	if _task_commit().text != "Redraw 3 cards":
@@ -15,6 +14,11 @@ func _run() -> void:
 	if not await _release_table_resources(): return
 	print("HAND_INTENT_SMOKE_OK")
 	quit(0)
+
+func _local_hand_gestures() -> bool:
+	if not await _hand_insertion_is_local(): return false
+	if not await _middle_mulligan_closes_gap(): return false
+	return await _drag_capture_is_safe()
 
 
 func _hand_insertion_is_local() -> bool:
@@ -58,3 +62,40 @@ func _hand_insertion_is_local() -> bool:
 		_fail("hand reorder did not remain a local presentation change")
 		return false
 	return true
+
+func _middle_mulligan_closes_gap() -> bool:
+	var cards: Array[Control] = []
+	for candidate in _hand_surface().find_children("ProceduralCard*", "", true, false):
+		if candidate.has_meta("spatial_hand_index"): cards.append(candidate as Control)
+	cards.sort_custom(func(a: Control, b: Control) -> bool: return a.position.x < b.position.x)
+	var middle := cards[2]
+	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var original := cards.map(func(card: Control) -> Vector2: return card.position)
+	middle.grab_focus()
+	await _press_key(KEY_SPACE)
+	await process_frame
+	if not middle.get_meta("mulligan_staged", false):
+		_fail("middle mulligan card did not stage")
+		return false
+	var kept := cards.filter(func(card: Control) -> bool: return card != middle)
+	var step: float = kept[1].position.x - kept[0].position.x
+	for index in range(1, kept.size()):
+		if abs(kept[index].position.x - kept[index - 1].position.x - step) > 1:
+			_fail("staging the middle card left a gap in the kept hand")
+			return false
+	middle.grab_focus()
+	await _press_key(KEY_SPACE)
+	await process_frame
+	for index in range(cards.size()):
+		if cards[index].position.distance_to(original[index]) > 1:
+			_fail("unstaging did not restore local hand order and spacing")
+			return false
+	return (_node("Toolbar/SyncStatus") as Label).text == revision
+
+func _press_key(code: Key) -> void:
+	for pressed in [true, false]:
+		var event := InputEventKey.new()
+		event.keycode = code
+		event.pressed = pressed
+		render_viewport.push_input(event, true)
+		await process_frame

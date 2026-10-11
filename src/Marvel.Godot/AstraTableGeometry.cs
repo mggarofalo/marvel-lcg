@@ -24,7 +24,16 @@ internal sealed record AstraTableGeometry(
     internal Rect2 PlayerDiscard => Scale(new Rect2(22, 408, 70, 112));
     internal Rect2 PlayerDeck => Scale(new Rect2(104, 408, 70, 112));
     internal Rect2 Identity => Scale(new Rect2(194, 408, 196, 248));
-    internal Rect2 Allies => Scale(new Rect2(406, 408, 258, 248));
+    internal Rect2 Allies
+    {
+        get
+        {
+            Rect2 baseline = Scale(new Rect2(406, 408, 258, 248));
+            Vector2 face = Identity.Size;
+            float left = Math.Max(baseline.Position.X, Identity.Position.X + Math.Max(face.X, face.Y) + ScaleX(12));
+            return new Rect2(left, baseline.Position.Y, baseline.End.X - left, baseline.Size.Y);
+        }
+    }
     internal Rect2 Assets => SourceTableau;
     internal Rect2 Upgrades => SourceTableau;
     internal Rect2 SourceTableau => new(ScaleX(688), ScaleY(350), ScaleX(610), HandTop - ScaleY(350) - 24);

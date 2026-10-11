@@ -99,9 +99,9 @@ public sealed class SourceTableauTests
     public void DenseDesktopSourceViewportPreservesHandCharactersAndDecision(int percent)
     {
         var table = new AstraTableGeometry(1670, 962, percent >= 130, PhysicalCardSize: new Vector2(240, 240), HasSourceTableau: true);
-        var layout = new SourceTableauLayout(table.SourceTableau.Size.X - 12);
+        var layout = new SourceTableauLayout(table.SourceTableau.Size.X - 12, table.SourceTableau.Size.Y - 28, 16);
         Assert.Equal(4, layout.Columns);
-        for (int index = 0; index < 16; index++)
+        for (int index = 0; index < 12; index++)
         {
             var tile = new Rect2(table.SourceTableau.Position + new Vector2(0, 24) + layout.Position(index),
                 new Vector2(layout.TileWidth, SourceTableauLayout.TileHeight));

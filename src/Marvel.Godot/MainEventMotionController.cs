@@ -8,12 +8,16 @@ internal sealed class MainEventMotionController : IDisposable
 {
     private readonly Main main;
     private readonly EventCueSurface surface;
+    private readonly EventActivityPresenter activity;
     private bool hasResults;
 
     internal MainEventMotionController(Main main)
     {
         this.main = main;
         surface = new EventCueSurface(main);
+        activity = new EventActivityPresenter { Name = "AcceptedEventActivity" };
+        main.AddChild(activity);
+        activity.Configure(main);
     }
 
     internal void Present(IReadOnlyList<EventPresentation> presented)
@@ -22,6 +26,7 @@ internal sealed class MainEventMotionController : IDisposable
         main.eventGeneration++;
         hasResults = presented.Count > 0;
         surface.Present(presented);
+        activity.Present(presented);
         main.eventSkip.Disabled = true;
         main.eventSkip.Visible = false;
         main.boardRender?.Present([]);
@@ -42,6 +47,7 @@ internal sealed class MainEventMotionController : IDisposable
         ReleaseTween();
         hasResults = false;
         surface.Clear();
+        activity.Clear();
         main.eventSkip.Disabled = true;
         main.boardRender?.Present([]);
     }
@@ -63,6 +69,7 @@ internal sealed class MainEventMotionController : IDisposable
     internal void SetSettled()
     {
         ReleaseTween();
+        activity.Complete();
         main.eventSkip.Disabled = true;
         main.boardRender?.Present([]);
     }
@@ -74,5 +81,7 @@ internal sealed class MainEventMotionController : IDisposable
         main.eventGeneration++;
         ReleaseTween();
         surface.Dispose();
+        activity.Clear();
+        activity.QueueFree();
     }
 }

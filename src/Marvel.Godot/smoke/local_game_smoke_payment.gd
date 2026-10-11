@@ -277,7 +277,7 @@ func _close_payment_pile(popup: PopupPanel) -> bool:
 
 func _close_settled_payment_inspector(inspector: Control) -> bool:
 	var frame := inspector.get_node("Frame") as Control
-	if not await _wait_for(func() -> bool: return frame.scale.is_equal_approx(Vector2.ONE)):
+	if not await _wait_for(func() -> bool: return is_equal_approx(frame.modulate.a, 1.0)):
 		_fail("payment inspector expansion did not settle")
 		return false
 	return await _pointer_activate(inspector.get_node("Frame/Stack/Header/Close") as Button)

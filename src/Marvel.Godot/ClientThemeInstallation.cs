@@ -10,6 +10,7 @@ internal static class ClientThemeInstallation
         // The native owner retains the theme after this temporary wrapper is released.
         using var theme = ClientTheme.Create(scale);
         control.Theme = theme;
+        control.OversamplingWithScale = CanvasItem.OversamplingWithScaleEnum.Enabled;
     }
 
     internal static void Apply(Window window, InterfaceScale scale = InterfaceScale.Standard)

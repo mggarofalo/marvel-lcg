@@ -21,7 +21,7 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 	move.global_position = midpoint
 	driver.render_viewport.push_input(move, true)
 	await driver.process_frame
-	if card.get_global_rect().get_center().distance_to(midpoint) > 4.0 or card.z_index < 120:
+	if bounds(card).get_center().distance_to(midpoint) > 4.0 or card.z_index < 120:
 		driver._fail("dragging '%s' produced no lifted intermediate frame" % card.name)
 		return false
 	if not card.is_set_as_top_level():
@@ -47,5 +47,12 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 	if is_instance_valid(card) and card.is_inside_tree() and card.global_position.distance_to(origin) > 2.0:
 		await driver.main.get_tree().create_timer(0.25).timeout
 	return true
+
+static func bounds(card: Control) -> Rect2:
+	var pose := card.get_global_transform()
+	var result := Rect2(pose * Vector2.ZERO, Vector2.ZERO)
+	for point in [Vector2(card.size.x, 0), card.size, Vector2(0, card.size.y)]:
+		result = result.expand(pose * point)
+	return result
 
 

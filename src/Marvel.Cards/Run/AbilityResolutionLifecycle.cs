@@ -165,7 +165,8 @@ internal static class AbilityResolutionLifecycle
                         continuation.Seat,
                         continuation.AbilityOrdinal)]);
             }
-            execution.Run(ability, cast);
+            if (!AbilityRecipientCommitment.Resume(execution, cast, ability))
+                execution.Run(ability, cast);
             cast.CompleteResolution();
             execution.DiscardEvent(source, cast);
             return cast.Events;

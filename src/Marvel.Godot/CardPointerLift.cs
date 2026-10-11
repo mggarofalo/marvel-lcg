@@ -14,13 +14,12 @@ internal sealed class CardPointerLift
         Vector2 scale = card.GetGlobalTransform().Scale;
         card.TopLevel = true;
         card.Scale = scale;
-        card.Rotation = 0;
         card.ZIndex = 240;
         card.Modulate = Colors.White;
     }
 
     internal static void Move(Control card, Vector2 pointer) =>
-        card.GlobalPosition = pointer - card.Size * card.Scale / 2;
+        card.GlobalPosition += pointer - SpatialCardFootprint.Face(card).GetCenter();
 
     internal void Restore()
     {

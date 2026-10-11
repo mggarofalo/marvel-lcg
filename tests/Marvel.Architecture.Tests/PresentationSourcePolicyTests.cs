@@ -106,6 +106,8 @@ public sealed class PresentationSourcePolicyTests
             // Engine-owned future-choice fact, copied without inspecting or interpreting effects.
             "Marvel.Rules.Prompts.Affordance.DeferredTargetSelection",
             "Marvel.Rules.Prompts.Affordance.Description",
+            // Engine-authorized complete recipient commitment; View only copies this fact.
+            "Marvel.Rules.Prompts.Affordance.DirectRecipientCommit",
             "Marvel.Rules.Prompts.Affordance.DisplayLabel",
             "Marvel.Rules.Prompts.Affordance.Id",
             "Marvel.Rules.Prompts.Affordance.Illegal",

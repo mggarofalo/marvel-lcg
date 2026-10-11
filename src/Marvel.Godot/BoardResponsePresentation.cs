@@ -16,6 +16,7 @@ internal static class BoardResponsePresentation
     {
         if (options.PreserveEvents)
         {
+            main.SkipEventPresentation();
             main.RenderEvents();
             return [];
         }
@@ -26,7 +27,8 @@ internal static class BoardResponsePresentation
         main.RenderEvents();
         HistoryEntryDescriptor[] completed = Completed(response, priorHistory, options.Operation);
         main.RenderLastResult(Highlights(response, presented, options.Receipt), options.ResetEvents);
-        main.PresentEvents(presented.Cues);
+        main.PresentEvents(options.Operation == EngineProtocol.Resolve && !options.ResetEvents
+            ? presented.Cues : []);
         return Narrative(response, presented, completed);
     }
 

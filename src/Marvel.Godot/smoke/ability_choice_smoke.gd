@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke.gd"
+extends "res://smoke/recipient_commitment_smoke.gd"
 
 
 func _run() -> void:
@@ -29,17 +29,20 @@ func _open_helicarrier_game() -> bool:
 
 
 func _draft_meaning_fits() -> bool:
-	var summary := main.find_child("DraftProgress", true, false) as Label
-	var viewport := main.find_child("DraftSummaryViewport", true, false) as ScrollContainer
-	if summary == null or viewport == null or not _control_is_fully_visible(viewport):
-		_fail("Helicarrier's activation meaning is clipped")
+	var popup := _recipient_popup()
+	if popup == null or not _control_is_fully_visible(popup):
+		_fail("Helicarrier's recipient commitment is clipped")
 		return false
-	for meaning in ["Exhaust Helicarrier", "Choose a player", "next card", "1 fewer"]:
-		if meaning not in summary.text:
+	var buttons := popup.find_children("Affordance*", "Button", true, false)
+	if buttons.size() != 1:
+		_fail("Helicarrier omitted its sole legal recipient")
+		return false
+	var commit := buttons[0] as Button
+	for meaning in ["Exhaust Helicarrier", "Spider-Man", "next card −1", "this phase", "Applies once"]:
+		if meaning not in commit.text:
 			_fail("activation omitted " + meaning)
 			return false
-	var commit := _button_named("Use Helicarrier")
-	if commit == null or not _control_is_fully_visible(commit):
+	if not _control_is_fully_visible(commit) or commit.get_global_rect().size.y < 44:
 		_fail("activation commitment is clipped")
 		return false
 	return true
@@ -66,18 +69,22 @@ func _activate_helicarrier() -> bool:
 	await process_frame
 	await process_frame
 	if not _draft_meaning_fits(): return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
-	if not await _pointer_activate(_button_named("Cancel draft")): return false
-	if (_node("Toolbar/SyncStatus") as Label).text != revision:
+	var revision := _recipient_revision()
+	var escape := InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	escape.pressed = true
+	render_viewport.push_input(escape)
+	var release := InputEventKey.new()
+	release.keycode = KEY_ESCAPE
+	render_viewport.push_input(release)
+	if not await _wait_for(func() -> bool: return _recipient_popup() == null):
+		_fail("Escape did not dismiss the recipient commitment")
+		return false
+	if _recipient_revision() != revision:
 		_fail("cancelling Helicarrier changed the game")
 		return false
 	if not await _use_installed_helicarrier(true): return false
-	if not _draft_meaning_fits(): return false
-	if not await _commit_once("Use Helicarrier"): return false
-	if not await _wait_for(func() -> bool: return _button_named("Spider-Man: next card −1") != null):
-		_fail("activation did not expose the named player discount")
-		return false
-	return true
+	return _draft_meaning_fits()
 
 
 func _use_installed_helicarrier(keyboard: bool) -> bool:
@@ -102,16 +109,16 @@ func _use_installed_helicarrier(keyboard: bool) -> bool:
 
 
 func _choose_discount_recipient() -> bool:
-	var recipient := _button_named("Spider-Man: next card −1")
-	if not _control_is_fully_visible(recipient):
-		_fail("the recipient choice is clipped")
-		return false
+	var recipient := _recipient_popup().find_child("Affordance*", true, false) as Button
+	var revision := _recipient_revision()
 	if not await _pointer_activate(recipient): return false
-	await process_frame
-	await process_frame
-	var description := main.find_child("DraftProgress", true, false) as Label
-	if description == null or not _control_is_fully_visible(description) \
-			or "Applies once" not in description.text:
-		_fail("the selected recipient's once-only discount is clipped or missing")
+	if not await _wait_for(func() -> bool: return _recipient_revision() > revision):
+		_fail("named recipient did not commit the support activation")
+		return false
+	if _recipient_revision() != revision + 1 or _recipient_popup() != null:
+		_fail("recipient activation did not finish in one revision")
+		return false
+	if _button_named("End turn") == null or _payment_modal() != null:
+		_fail("recipient activation left an extra decision instead of continuing the turn")
 		return false
 	return true

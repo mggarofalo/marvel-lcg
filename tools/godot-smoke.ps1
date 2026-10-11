@@ -75,6 +75,10 @@ $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
 Invoke-LocalSmoke "res://smoke/repeated_commit_smoke.gd"
 Invoke-LocalSmoke "res://smoke/hand_intent_smoke.gd"
+$env:MARVEL_RECIPIENT_FACE = "01091"
+$env:MARVEL_RECIPIENT_SEED = "1"
+try { Invoke-LocalSmoke "res://smoke/recipient_commitment_smoke.gd" }
+finally { Remove-Item Env:MARVEL_RECIPIENT_FACE,Env:MARVEL_RECIPIENT_SEED }
 $env:MARVEL_SMOKE_TWO_PLAYER = "true"
 Invoke-LocalSmoke "res://smoke/layout_continuity_smoke.gd"
 Remove-Item Env:MARVEL_SMOKE_TWO_PLAYER
@@ -91,14 +95,20 @@ $env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke "res://smoke/repeated_commit_smoke.gd"
 Invoke-LocalSmoke "res://smoke/hand_intent_smoke.gd"
 $env:MARVEL_SMOKE_TWO_PLAYER = "true"
+$env:MARVEL_RECIPIENT_FACE = "01092"
+$env:MARVEL_RECIPIENT_SEED = "9"
+try { Invoke-LocalSmoke "res://smoke/recipient_commitment_smoke.gd" }
+finally { Remove-Item Env:MARVEL_RECIPIENT_FACE,Env:MARVEL_RECIPIENT_SEED }
 Invoke-LocalSmoke "res://smoke/layout_continuity_smoke.gd"
 Remove-Item Env:MARVEL_SMOKE_TWO_PLAYER
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
 Invoke-LocalSmoke "res://smoke/result_playback_smoke.gd"
+Invoke-LocalSmoke "res://smoke/event_activity_smoke.gd"
 $env:MARVEL_UI_SCALE = "150"
 $env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke "res://smoke/result_playback_smoke.gd"
+Invoke-LocalSmoke "res://smoke/event_activity_smoke.gd"
 foreach ($viewport in $viewports) {
     foreach ($scale in $scales) {
         $env:MARVEL_UI_SCALE = $scale

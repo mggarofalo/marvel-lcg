@@ -9,6 +9,7 @@ internal static class SourceRuleExcerpt
     {
         rules.VisibleCharactersBehavior = TextServer.VisibleCharactersBehavior.CharsAfterShaping;
         Label hint = CardSourceStrip.Label("… Inspect card", "SourceRulesDisclosure", 10, CardTypography.Body);
+        hint.AutowrapMode = TextServer.AutowrapMode.Off;
         hint.AddThemeColorOverride("font_color", ClientTheme.ToGodot(CardVisualTokens.Secondary));
         rules.AddChild(hint);
         void Refresh() => Callable.From(() =>
@@ -23,8 +24,9 @@ internal static class SourceRuleExcerpt
     {
         bool abbreviated = rules.GetContentHeight() > rules.Size.Y;
         hint.Visible = abbreviated;
-        hint.Position = new Vector2(0, Math.Max(0, rules.Size.Y - 13));
-        hint.Size = new Vector2(rules.Size.X, 13);
+        float hintHeight = Mathf.Ceil(hint.GetCombinedMinimumSize().Y);
+        hint.Position = new Vector2(0, Math.Max(0, rules.Size.Y - hintHeight));
+        hint.Size = new Vector2(rules.Size.X, hintHeight);
         float available = abbreviated ? hint.Position.Y : rules.Size.Y;
         int characters = -1;
         for (int line = 0; line < rules.GetLineCount(); line++)

@@ -1,4 +1,5 @@
 using Godot;
+using System.Xml.Linq;
 
 namespace Marvel.Godot;
 
@@ -9,30 +10,33 @@ internal static class CardGlyphRendering
 
     internal static TextureRect Create(string glyph, string name, Rect2 bounds, Color color)
     {
+        Vector2 size = new(Math.Max(1, Mathf.FloorToInt(bounds.Size.X)),
+            Math.Max(1, Mathf.FloorToInt(bounds.Size.Y)));
+        int pixels = (int)Math.Min(size.X, size.Y);
         return new TextureRect
         {
             Name = name, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            Texture = Texture(glyph), Position = bounds.Position, Size = bounds.Size,
-            TextureFilter = CanvasItem.TextureFilterEnum.LinearWithMipmaps,
+            Texture = Texture(glyph, pixels), Position = bounds.GetCenter() - size / 2, Size = size,
+            TextureFilter = CanvasItem.TextureFilterEnum.Linear,
             MouseFilter = Control.MouseFilterEnum.Ignore, Modulate = color,
         };
     }
 
-    private static Texture2D Texture(string glyph)
+    private static Texture2D Texture(string glyph, int pixels)
     {
-        if (Textures.TryGetValue(glyph, out Texture2D? cached)) return cached;
+        string key = $"{glyph}:{pixels}";
+        if (Textures.TryGetValue(key, out Texture2D? cached)) return cached;
         using Stream source = typeof(CardGlyphRendering).Assembly.GetManifestResourceStream(
             $"Marvel.Godot.Assets.CardIcons.{glyph}.svg")
             ?? throw new InvalidOperationException($"Missing card glyph {glyph}");
         using var reader = new StreamReader(source);
-        using var image = new Image();
-        if (image.LoadSvgFromString(reader.ReadToEnd()) != Error.Ok)
-            throw new InvalidOperationException($"Invalid card glyph {glyph}");
-        image.FixAlphaEdges();
-        image.GenerateMipmaps();
-        Texture2D texture = ImageTexture.CreateFromImage(image);
-        Textures.Add(glyph, texture);
+        XElement svg = XElement.Parse(reader.ReadToEnd());
+        svg.SetAttributeValue("width", pixels);
+        svg.SetAttributeValue("height", pixels);
+        DpiTexture texture = DpiTexture.CreateFromString(svg.ToString(SaveOptions.DisableFormatting));
+        texture.FixAlphaBorder = true;
+        Textures.Add(key, texture);
         return texture;
     }
 

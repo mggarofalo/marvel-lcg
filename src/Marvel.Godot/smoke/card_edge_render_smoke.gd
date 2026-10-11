@@ -55,12 +55,16 @@ func _run() -> void:
 	var line_coverage := _coverage(rendered, Vector2(860, 100.74), Vector2(1090, 153.18), connector.default_color)
 	passed = passed and frame_coverage > 0.5 and line_coverage > 0.5
 	print("ROTATED_FRAME_COVERAGE ", frame_coverage, " CONNECTOR_COVERAGE ", line_coverage)
+	var highlight_spread := await _highlight_spread(card, paper)
+	print("HIGHLIGHT_COVERAGE_SPREAD ", highlight_spread)
+	passed = passed and highlight_spread < 0.35
 	card.queue_free()
 	connector.queue_free()
 	if passed:
 		print("CARD_EDGE_RENDER_OK coverage_columns=", covered_columns, "/", columns)
 	else:
-		push_error("CARD_EDGE_RENDER_FAILED hard staircase edge: %s/%s" % [covered_columns, columns])
+		push_error("CARD_EDGE_RENDER_FAILED coverage=%s/%s frame=%s line=%s highlight_spread=%s" % [
+			covered_columns, columns, frame_coverage, line_coverage, highlight_spread])
 	var capture := OS.get_environment("MARVEL_SMOKE_CAPTURE_DIR")
 	if not capture.is_empty(): rendered.save_png(capture.path_join("card-edge-coverage.png"))
 	plane.queue_free()
@@ -69,6 +73,34 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	quit(0 if passed else 1)
+
+
+func _highlight_spread(card: Control, paper: ColorRect) -> float:
+	# The actual hand interaction stroke should retain uniform brightness along a diagonal.
+	# Text/art are hidden, and the frame matches its background, isolating stroke coverage.
+	paper.color = Color("132532")
+	var frame := StyleBoxFlat.new()
+	frame.bg_color = paper.color
+	card.add_theme_stylebox_override("panel", frame)
+	card.scale = Vector2(0.75, 0.75)
+	card.rotation = 0.07
+	card.call("SetHighlighted", true)
+	await process_frame
+	await RenderingServer.frame_post_draw
+	var image := root.get_texture().get_image()
+	var pose := card.get_global_transform()
+	var left := pose * Vector2(20, 0)
+	var right := pose * Vector2(card.size.x - 20, 0)
+	var minimum := INF
+	var maximum := 0.0
+	for x in range(ceili(left.x), floori(right.x)):
+		var edge_y := lerpf(left.y, right.y, (x - left.x) / (right.x - left.x))
+		var energy := 0.0
+		for y in range(floori(edge_y) - 4, ceili(edge_y) + 5):
+			energy += maxf(0, image.get_pixel(x, y).r - paper.color.r)
+		minimum = minf(minimum, energy)
+		maximum = maxf(maximum, energy)
+	return maximum - minimum
 
 
 func _coverage(rendered: Image, left: Vector2, right: Vector2, ink: Color) -> float:

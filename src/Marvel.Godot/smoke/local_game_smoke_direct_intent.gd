@@ -1,5 +1,50 @@
 extends "res://smoke/local_game_smoke_direct_journey.gd"
 
+func _exhausted_card_is_spatial(anchor: int) -> bool:
+	if not await super._exhausted_card_is_spatial(anchor): return false
+	var card := _card_for_anchor(anchor)
+	var original := card.get_global_transform()
+	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var start := _card_body_point(card)
+	var finish := start + Vector2(80, -90)
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	press.position = start
+	press.global_position = start
+	render_viewport.push_input(press, true)
+	await process_frame
+	var motion := InputEventMouseMotion.new()
+	motion.position = finish
+	motion.global_position = finish
+	render_viewport.push_input(motion, true)
+	await process_frame
+	if not card.is_set_as_top_level() or CardDrag.bounds(card).get_center().distance_to(finish) > 1:
+		_fail("exhausted card drag did not lift beneath the pointer")
+		return false
+	if abs(card.get_global_transform().get_rotation() - original.get_rotation()) > 0.01:
+		_fail("dragging an exhausted card changed its orientation")
+		return false
+	var escape := InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	escape.pressed = true
+	render_viewport.push_input(escape, true)
+	await create_timer(0.25).timeout
+	if not card.get_global_transform().is_equal_approx(original):
+		_fail("cancelled exhausted drag did not restore the exact physical pose")
+		return false
+	if anchor == IDENTITY and not _hero_clears_player_piles(card): return false
+	if not await _capture_checkpoint("exhausted-" + str(anchor)): return false
+	return (_node("Toolbar/SyncStatus") as Label).text == revision
+
+func _hero_clears_player_piles(card: Control) -> bool:
+	var face := CardDrag.bounds(card)
+	for pile in _hand_surface().find_children("Pile*", "PanelContainer", true, false):
+		if face.intersects((pile as Control).get_global_rect()):
+			_fail("exhausted hero overlaps a player pile")
+			return false
+	return true
+
 
 func _direct_change_form_is_played() -> bool:
 	if not await super._direct_change_form_is_played():
@@ -37,6 +82,7 @@ func _hero_target_drag_preserves_commitment() -> bool:
 
 
 func _direct_black_cat_is_played() -> bool:
+	if not await _discard_hover_is_passive(): return false
 	if not await _source_tableau_receives_fresh_play(): return false
 	if not await super._direct_black_cat_is_played():
 		return false
@@ -47,6 +93,30 @@ func _direct_black_cat_is_played() -> bool:
 		return true
 	return await _source_chooser_restores_keyboard_focus()
 
+func _discard_hover_is_passive() -> bool:
+	var discard: Button = null
+	for candidate in _hand_surface().find_children("InspectPile*", "Button", true, false):
+		if "Discard" in candidate.text and not candidate.disabled:
+			discard = candidate as Button
+			break
+	if discard == null:
+		_fail("paid card left no visible player discard to inspect")
+		return false
+	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	_position_pointer_without_settle(Vector2(4, 4))
+	await create_timer(0.2).timeout
+	_position_pointer_without_settle(discard.get_global_rect().get_center())
+	var inspector := main.get_node("CardInspector") as Control
+	if not await _wait_for(func() -> bool: return inspector.visible):
+		_fail("hovering a nonempty discard concealed its top card")
+		return false
+	if int(inspector.get_meta("inspected_card_anchor", -1)) < 0:
+		_fail("discard hover showed no authorized card instance")
+		return false
+	_position_pointer_without_settle(Vector2(4, 4))
+	await create_timer(0.2).timeout
+	return (_node("Toolbar/SyncStatus") as Label).text == revision
+
 
 func _source_tableau_receives_fresh_play() -> bool:
 	var tableau := main.find_child("SourceTableau", true, false) as Control
@@ -54,6 +124,7 @@ func _source_tableau_receives_fresh_play() -> bool:
 	if tableau == null or occupied == null:
 		_fail("the source drop regression needs an installed Web-Shooter")
 		return false
+	if not await preload("res://smoke/local_game_smoke_source_order.gd").perform(self, occupied): return false
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
 	var points: Array[Vector2] = [tableau.global_position + Vector2(12, 8),
 		occupied.global_position + Vector2(12, 8)]

@@ -116,6 +116,11 @@ public sealed record Affordance(
     /// </remarks>
     public bool DeferredTargetSelection { get; init; }
 
+    /// <summary>A single currently offered recipient completes this support's explicit activation.</summary>
+    /// <remarks>Target details disclose the complete mandatory cost and effect. Empty selection
+    /// retains the separately prompted route; clients never pre-answer that future prompt.</remarks>
+    public bool DirectRecipientCommit { get; init; }
+
     /// <summary>Whether the player can actually take this.</summary>
     /// <remarks>
     /// <para>

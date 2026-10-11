@@ -5,7 +5,7 @@ namespace Marvel.Godot;
 /// <summary>Exercises the shipped typography with the nonverbal symbols used by native controls.</summary>
 internal static class UiTypographySample
 {
-    internal const string Characters = "·×–—…‹›Ⅱ↑→↓↗↳↻−≥─▧▰▱▶▸▾◇◎★⚠✓";
+    internal const string Characters = "·×–—…‹›Ⅱ↑→↓↗↳↻−≥─▧▰▱▶▸▾◇◎★⚠✓⠿";
 
     internal static void Add(VBoxContainer parent)
     {

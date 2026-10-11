@@ -22,19 +22,21 @@ internal static class AbilityAffordanceDescription
         // because the engine carries one -- see the remarks on `Affordance.Id`.
         var price = AbilityPaymentPricing.CombinedPrice(
             world, card, ability.Player, found, execution.resourceAbilities);
+        TargetRequest? recipients = AbilityRecipientCommitment.Targets(execution, world, card, found, ability.Player);
         return new Affordance(
             Id: ability.Card,
             Verb: found.Name,
             AnchorId: ability.Card,
             AnchorPlayer: ability.Player,
             Label: found.Name,
-            Targets: AbilityCostSelection.Ask(world, ability.Player, found.Cost),
+            Targets: recipients ?? AbilityCostSelection.Ask(world, ability.Player, found.Cost),
             Costs: price is null ? null : [price], Description: AbilityEffectDescription.Summary(found.Effect))
         {
             DisplayLabel = AbilitySearchDescription.Action(found.Effect),
             CommitLabel = AbilitySearchDescription.Action(found.Effect),
             PlaysCard = EffectiveCards.Kind(card, world.Facts) == CardKind.Event,
             DeferredTargetSelection = StartsWithTargetSelection(found.Effect),
+            DirectRecipientCommit = recipients is not null,
             CostDescription = AbilityCostDescription.Summary(world, card, ability.Player, found.Cost),
         };
     }

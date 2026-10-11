@@ -35,6 +35,8 @@ internal sealed class SpatialTablePileRenderer(
         panel.AddChild(inspect);
         surface.AddChild(panel);
         TableCompactButtonStyle.Apply(inspect);
+        if (area.Zone.Contains("Discard", StringComparison.Ordinal) && pile.Top is { } top)
+            result.TrackPreviewOnly(inspect, top);
         if (openingMulligan && area.Zone == "DiscardPile")
         {
             result.RegisterMulliganDiscard(panel);

@@ -47,10 +47,13 @@ func _bounded_expansion(card: Control, inspector: Control) -> bool:
 		if (inspector.get_node("Backdrop") as Control).visible:
 			_fail("bounded inspection dims the entire table")
 			return false
-		if not enabled and not frame.scale.is_equal_approx(Vector2.ONE):
+		if not frame.scale.is_equal_approx(Vector2.ONE):
+			_fail("inspector resizes already rasterized text during reveal")
+			return false
+		if not enabled and not is_equal_approx(frame.modulate.a, 1.0):
 			_fail("reduced motion retained an inspector transition")
 			return false
-		if not await _wait_for(func() -> bool: return frame.scale.is_equal_approx(Vector2.ONE)):
+		if not await _wait_for(func() -> bool: return is_equal_approx(frame.modulate.a, 1.0)):
 			_fail("pinned inspection did not settle at its measured size")
 			return false
 		if card.get_global_rect() != physical:

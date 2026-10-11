@@ -29,6 +29,23 @@ public sealed partial class CardControl : PanelContainer
     {
         ArgumentNullException.ThrowIfNull(card);
         CardLayoutMetrics layout = LayoutFor(card, size, scale);
+        return CreateAtLayout(card, size, scale, art, layout);
+    }
+
+    internal static CardControl CreateFitted(BoardCardPresentation card, InterfaceScale scale,
+        ICardArtProvider? art, float factor)
+    {
+        CardLayoutMetrics layout = LayoutFor(card, CardDisplaySize.Board, scale);
+        return CreateAtLayout(card, CardDisplaySize.Board, scale, art, layout with
+        {
+            Width = Math.Max(1, Mathf.RoundToInt(layout.Width * factor)),
+            MinimumHeight = Math.Max(1, Mathf.RoundToInt(layout.MinimumHeight * factor)),
+        });
+    }
+
+    private static CardControl CreateAtLayout(BoardCardPresentation card, CardDisplaySize size,
+        InterfaceScale scale, ICardArtProvider? art, CardLayoutMetrics layout)
+    {
         CardControl control = CreateShell(card, SpatialCardMetrics.FaceSize(card, size, layout, scale), scale);
         var surface = new Control
         {
@@ -220,6 +237,7 @@ public sealed partial class CardControl : PanelContainer
         }
         directControls.Columns = directControls.GetChildCount() == 0 ? 1 : 2;
         directControls.Visible = true;
+        SourceTileMeaning.ShowIdle(this, false);
         directControls.AddChild(control);
         return true;
     }
@@ -231,6 +249,7 @@ public sealed partial class CardControl : PanelContainer
     /// <summary>Removes a prior prompt's controls and restores this card's base surface height.</summary>
     internal void ClearInteractionControls()
     {
+        SourceTileMeaning.ShowIdle(this, true);
         if (interactionControls is not null)
         {
             interactionControls.Visible = false;

@@ -29,6 +29,7 @@ internal sealed class MainBoardController : IDisposable
     internal void ResetForSession()
     {
         HandPresentationOrder.Clear();
+        SourcePresentationOrder.Clear();
         cardInspector.Reset();
         renderLifetime.Advance();
         main.SkipEventPresentation();
@@ -51,6 +52,7 @@ internal sealed class MainBoardController : IDisposable
         if (!string.Equals(displayedResponse?.GameId, response.GameId, StringComparison.Ordinal))
         {
             HandPresentationOrder.Clear();
+            SourcePresentationOrder.Clear();
             cardInspector.Reset();
             tabletop.ResetForGame();
         }

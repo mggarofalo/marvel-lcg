@@ -38,8 +38,17 @@ compact named source strips, including controlled upgrades attached to another
 character. Hover or keyboard focus previews a card; pinning expands bounded
 detail. Related faces and modifier sources are directly visible choices.
 
+Use the grip on an upgrade or support to swap it with another grid slot. The
+preview is reversible; Escape or dropping outside the grid restores the order.
+For keyboard use, focus its grip, press Space, move with arrows, then Enter to
+place or Escape to cancel. Ordering follows physical card identities locally
+through board updates and resets with the session. The grid uses a fourth column
+when that keeps twelve sources visible without reducing the hand area.
+
 Drag an opening-hand card to the discard to stage it physically, or drag it back
 to keep it. Space is the keyboard equivalent. Redraw commits the staged set.
+Kept cards close the gaps while redraw cards are staged. Hovering a nonempty
+discard previews its visible top card.
 Dragging within the hand previews a local insertion order without changing game
 state. Playing a hand card opens the current engine-offered composition;
 authorized attachment targets can be outside the player area.
@@ -50,15 +59,28 @@ and do not create another physical action target. Status cards use shape and
 letter badges: octagonal T for tough, jagged S for stunned, ring C for confused;
 defense uses a separate shield.
 
+Accepted activity is paced through a reserved table account and pulses on its
+visible affected objects. The board remains authoritative and the current choice
+stays usable; animation does not simulate earlier world states or answer prompts.
+Reduced motion presents the complete account immediately. History retains the
+ordered details.
+
 The MARVEL-492 SVG direction is approved. Acceptance of this implementation
 remains the owner's affirmation of the working build.
 
 ### Card rendering
 
-The Compatibility renderer draws text at the active canvas resolution. Card art
-and icon textures carry mipmaps and use linear mipmap filtering when reduced;
-resource icons use Lanczos resampling before their mipmaps are generated.
-Transparent edge colors are extended before filtering to avoid dark fringes.
+The Compatibility renderer uses `canvas_items`, so the canvas is rendered at the
+window resolution. Fitted collection cards allocate their actual face dimensions
+and integer font sizes instead of shrinking a prebuilt control. Theme roots enable
+scale-aware font oversampling for ancestor/DPI transforms. Pinned inspection
+reveals at its final size, without scaling already-shaped text during animation.
+
+Canonical SVG symbols use `DpiTexture`: their vector source is rasterized at the
+requested icon size and rerasterized for canvas oversampling. Resource rows are
+composed as vector geometry before rasterization. Card illustrations remain
+filtered image textures with mipmaps; they are not fonts or vector symbols.
+Transparent edge colors are extended to avoid dark fringes.
 B1 polygons have a one-pixel transparent coverage fringe, including the compact
 source rails, rotated outer frames and interaction outlines. Relationship
 connectors use explicit coverage on both sides of each segment. This smooths their diagonals without a full-screen blur or a change
@@ -69,6 +91,14 @@ edge, a rotated production frame, and a production connector. It requires interm
 trusting a renderer setting. Removing the fringe fails this check. Native card
 layout and interaction checks run separately; the pixel check requires a real
 rendering device (Xvfb on Linux), not the headless dummy renderer.
+
+These choices follow Godot's [multiple-resolution guidance](https://docs.godotengine.org/en/stable/tutorials/rendering/multiple_resolutions.html),
+[DPI texture contract](https://docs.godotengine.org/en/stable/classes/class_dpitexture.html),
+and [font guidance](https://docs.godotengine.org/en/stable/tutorials/ui/gui_using_fonts.html).
+Native-size hinted raster fonts suit the small table copy; MSDF loses hinting and
+can be less clear at small sizes. Geometry antialiasing is a separate concern:
+[2D MSAA is unavailable in Compatibility](https://docs.godotengine.org/en/stable/tutorials/2d/2d_antialiasing.html),
+so the renderer retains explicit edge coverage for rotated card frames and lines.
 
 ### Visual Studio Code
 

@@ -2,7 +2,7 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Expands bounded pinned detail without moving its physical table source.</summary>
+/// <summary>Reveals bounded pinned detail at its final raster size.</summary>
 internal sealed partial class CardInspectorTransition : Node
 {
     private Control? frame;
@@ -16,10 +16,8 @@ internal sealed partial class CardInspectorTransition : Node
         frame = detail;
         motionEnabled = enabled;
         if (!animate) return;
-        Vector2 origin = InteractionControl.IsUsable(source)
-            ? source!.GetGlobalRect().GetCenter() - detail.GlobalPosition : detail.Size / 2;
-        detail.PivotOffset = origin.Clamp(Vector2.Zero, detail.Size);
-        detail.Scale = new Vector2(0.96f, 0.96f);
+        // Keep glyphs at their final raster size throughout the reveal.
+        detail.Modulate = new Color(1, 1, 1, 0);
         elapsed = 0;
         SetProcess(true);
     }
@@ -35,13 +33,13 @@ internal sealed partial class CardInspectorTransition : Node
         elapsed += delta;
         float fraction = (float)Math.Clamp(elapsed / Duration, 0, 1);
         float eased = 1 - (1 - fraction) * (1 - fraction);
-        frame.Scale = Vector2.One * (0.96f + 0.04f * eased);
+        frame.Modulate = new Color(1, 1, 1, eased);
         if (fraction >= 1) Settle();
     }
 
     private void Settle()
     {
-        if (InteractionControl.IsUsable(frame)) frame!.Scale = Vector2.One;
+        if (InteractionControl.IsUsable(frame)) frame!.Modulate = Colors.White;
         SetProcess(false);
     }
 }

@@ -171,6 +171,29 @@ legality or an outcome from the board.
 
 ## Persistence and replay
 
+Protocol 27 carries `DirectRecipientCommit` for an engine-admitted support
+activation whose only choice is one currently legal recipient. Its target details
+state the mandatory exhaustion cost and complete effect. A deliberately named
+recipient button may select exactly one target and submit that same prompt-bound
+draft. Opening or dismissing the source-local chooser does not pay the cost.
+
+The admitted structural boundary is an in-play support Action with only its own
+exhaustion cost, an immediate identities choice, and a draw or constant next-card
+discount leaf. It excludes resource costs, labeled abilities, conditional or
+nested choices, and other targets. The interpreter validates the recipient before
+payment and again when the effect resolves through the existing structural choice
+execution; cost events and the Action occurrence retain their order.
+
+An empty target list retains the ordinary separately prompted choice. New traces
+can use either form and replay strictly. A suspended exhaustion cost retains the
+explicit recipient in the existing continuation results map and revalidates that
+recipient when the effect resumes. No future client answer is queued.
+
+The optional target changes recorded prompt shape, so the replay identity is
+`engine-replay-v12`. Earlier replay contracts are incompatible; their saved files
+remain preserved. Save schema 5, RNG and state-digest formats remain unchanged.
+Protocol 27 rejects older endpoints that cannot interpret the commitment marker.
+
 A simulation record stores the chosen affordance’s stable public identity and
 the selected targets, resources and variables. Replay resolves that identity
 against the newly produced prompt before submitting the answer.
