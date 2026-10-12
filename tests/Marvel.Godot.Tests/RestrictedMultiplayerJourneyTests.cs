@@ -346,7 +346,11 @@ public abstract class RestrictedMultiplayerJourneyTestBase
             var stopping = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
             var listening = new TaskCompletionSource<IPEndPoint>(TaskCreationOptions.RunContinuationsAsynchronously);
             var socket = new SocketEngineServer(host, IPAddress.Loopback, port);
-            Task running = Task.Run(() => socket.Run(listening.SetResult, stopping.Token), TestContext.Current.CancellationToken);
+            // The server blocks in AcceptTcpClient for its lifetime. Give it a
+            // dedicated thread so parallel async tests retain their worker pool.
+            Task running = Task.Factory.StartNew(
+                () => socket.Run(listening.SetResult, stopping.Token),
+                TestContext.Current.CancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             try
             {
                 Task completed = await Task.WhenAny(listening.Task, running).WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
