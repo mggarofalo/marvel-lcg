@@ -84,6 +84,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.Server.SeatInvitation",
             "Marvel.Server.SetupChoices",
             "Marvel.View.AffordancePresentation",
+            // Authorized attack participants; the engine owns their resolution lifetime.
+            "Marvel.View.ActiveAttackDescriptor",
             "Marvel.View.AffordanceSourceDescriptor",
             // Catalogue grouping reads only authorized source zones and visible card identity.
             "Marvel.View.AreaDescriptor",

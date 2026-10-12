@@ -10,6 +10,8 @@ internal sealed partial class EventActivityPresenter : Node
     private Main? main;
     private Control? host;
     private EventActivityPulse? pulse;
+    private EventActivityPulse? attackPulse;
+    private EventPresentation? attack;
     private double elapsed;
     private bool suppressObjects;
     internal event Action? Settled;
@@ -20,7 +22,17 @@ internal sealed partial class EventActivityPresenter : Node
         pulse = new EventActivityPulse { Name = "EventActivityPulse", MouseFilter = Control.MouseFilterEnum.Ignore,
             TopLevel = true, ZAsRelative = false, ZIndex = 2000 };
         AddChild(pulse);
+        attackPulse = new EventActivityPulse { Name = "AttackActivityPulse", MouseFilter = Control.MouseFilterEnum.Ignore,
+            TopLevel = true, ZAsRelative = false, ZIndex = 1999 };
+        AddChild(attackPulse);
         SetProcess(false);
+    }
+
+    internal void PresentAttack(EventPresentation? active)
+    {
+        attack = active;
+        RefreshPulse();
+        SetProcess(sequence.Active || attack is not null);
     }
 
     internal void Present(IReadOnlyList<EventPresentation> entries)
@@ -30,7 +42,7 @@ internal sealed partial class EventActivityPresenter : Node
         elapsed = 0;
         host = null;
         RefreshHost();
-        SetProcess(entries.Count > 0);
+        SetProcess(entries.Count > 0 || attack is not null);
         RefreshPulse();
     }
 
@@ -43,7 +55,7 @@ internal sealed partial class EventActivityPresenter : Node
         if (changed) BeatAdvanced();
         if (RefreshHost() || changed) UpdateText();
         RefreshPulse();
-        if (!sequence.Active) SetProcess(false);
+        if (!sequence.Active && attack is null) SetProcess(false);
     }
 
     private void BeatAdvanced()
@@ -72,7 +84,7 @@ internal sealed partial class EventActivityPresenter : Node
         sequence.Clear();
         UpdateText();
         RefreshPulse();
-        SetProcess(false);
+        SetProcess(attack is not null);
     }
 
     private bool RefreshHost()
@@ -92,15 +104,18 @@ internal sealed partial class EventActivityPresenter : Node
     private void RefreshPulse()
     {
         if (!InteractionControl.IsUsable(pulse)) return;
-        var visible = sequence.Attention is { } current
+        var visible = sequence.Attention is { } current && !(attack is not null && current.Motion == EventMotionKind.Attack)
             ? VisibleSubjects([current]) : [];
         pulse!.Present(visible, elapsed, sequence.Active);
+        attackPulse!.Present(attack is null ? [] : VisibleSubjects([attack], duringDraft: true),
+            elapsed, main!.eventMotion.ButtonPressed);
     }
 
-    private List<(EventPresentation, ActivitySubject, Rect2)> VisibleSubjects(IReadOnlyList<EventPresentation> entries)
+    private List<(EventPresentation, ActivitySubject, Rect2)> VisibleSubjects(IReadOnlyList<EventPresentation> entries,
+        bool duringDraft = false)
     {
         List<(EventPresentation, ActivitySubject, Rect2)> visible = [];
-        if (suppressObjects || main!.boardRender is not { } board) return visible;
+        if ((!duringDraft && suppressObjects) || main!.boardRender is not { } board) return visible;
         foreach (EventPresentation entry in entries)
             foreach (ActivitySubject subject in entry.Activity?.Subjects ?? [])
                 if (board.ControlFor(subject.Card) is { } card && VisibleBounds(card) is { } bounds)

@@ -43,6 +43,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Events.PlayAreaJoined",
             // Passive successful-cancellation fact; no rules are reconstructed.
             "Marvel.Rules.Events.WhenRevealedCanceled",
+            // Passive engine-owned attack lifetime and participants; no timing reconstruction.
+            "Marvel.Rules.Play.ActiveAttack",
             "Marvel.Rules.Play.Outcome",
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.AffordanceAnchorKind",

@@ -35,6 +35,8 @@ internal sealed class MainEventMotionController : IDisposable
         main.boardRender?.Present([]);
     }
 
+    internal void PresentAttack(EventPresentation? attack) => activity.PresentAttack(attack);
+
     internal void BeginCue(EventPresentation entry, int generation)
     {
         if (generation != main.eventGeneration) return;
@@ -88,6 +90,7 @@ internal sealed class MainEventMotionController : IDisposable
         if (InteractionControl.IsUsable(draftOwner)) draftOwner!.DraftStarted -= SettleForDraft;
         main.eventGeneration++;
         ReleaseTween();
+        activity.PresentAttack(null);
         activity.Clear();
         activity.QueueFree();
     }

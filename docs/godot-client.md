@@ -75,6 +75,11 @@ authorized table and blocks table actions before exposing the new board and
 decision. It does not synthesize intermediate game states or answer prompts.
 Reduced motion presents the accepted snapshot immediately. Sync and Undo cancel
 superseded playback. Starting a new draft clears transient object emphasis.
+The active attack has a separate source-to-target cue from initiation through
+interrupts, defense, boosts, damage and the final resolution window. Drafting,
+inspection and reduced motion preserve it; the accepted defender becomes its
+target. The cue clears when the attack's final consequences finish presenting,
+or immediately when a synchronized snapshot has no active attack.
 
 Interrupts and responses use a contextual modal with engine-offered effect and
 recipient choices. Optional windows include Pass; choosing a complete effect

@@ -48,8 +48,12 @@ public sealed class CoreAttackCompletionClientTests : RestrictedMultiplayerJourn
                 discards.Targets!.Legal.Take(discards.Targets.Min).ToArray()));
 
             Assert.Equal(Question.Opportunity, current.Prompt!.Asking);
+            ActiveAttackDescriptor initiated = Assert.IsType<ActiveAttackDescriptor>(current.World!.ActiveAttack);
+            Assert.Equal("Rhino", initiated.Source.Name);
+            Assert.Equal("Spider-Man", initiated.Target.Name);
             current = await Resolve(client, session, EngineDecision.Decline);
             Assert.Equal(Question.Defender, current.Prompt!.Asking);
+            Assert.Equal(initiated, current.World!.ActiveAttack);
             Affordance defender = Assert.Single(current.Prompt.Affordances);
             long beforeDefense = current.Revision;
             current = await Resolve(client, session, new EngineDecision(defender.Id, []));
@@ -64,6 +68,15 @@ public sealed class CoreAttackCompletionClientTests : RestrictedMultiplayerJourn
                 current.World!, Outcome.Unfinished);
             Assert.Contains(presented.Highlights, cue => cue.Motion == EventMotionKind.Attack
                 && cue.Summary.Contains("Spider-Man defended", StringComparison.Ordinal));
+            // This seed immediately reveals another attack. Each live descriptor
+            // belongs to that new attack; decline its actual offered windows.
+            for (int windows = 0; current.World!.ActiveAttack is not null; windows++)
+            {
+                Assert.True(windows < 8);
+                Assert.True(current.Prompt!.Cancellable);
+                current = await Resolve(client, session, EngineDecision.Decline);
+            }
+            Assert.Null(current.World!.ActiveAttack);
         }
         finally
         {

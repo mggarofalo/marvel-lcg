@@ -133,6 +133,8 @@ MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/attack_activity_lifecycle_smoke.gd ATTACK_ACTIVITY_LIFECYCLE_OK
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
+  run_local_smoke res://smoke/attack_activity_lifecycle_smoke.gd ATTACK_ACTIVITY_LIFECYCLE_OK
+MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/timeline_navigation_smoke.gd
 
 for viewport in "${viewports[@]}"; do

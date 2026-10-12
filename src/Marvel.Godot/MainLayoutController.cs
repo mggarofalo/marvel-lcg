@@ -59,10 +59,10 @@ internal sealed class MainLayoutController
         main.eventSkip.CustomMinimumSize = new Vector2(
             main.eventSkip.CustomMinimumSize.X,
             minimumHeight);
-        if (main.CurrentGame?.World is { } world)
+        if (main.boardController.PresentedGame is { World: { } world } presented)
         {
             main.RenderBoard(world);
-            main.RenderPromptSummary(main.CurrentGame.Prompt, world);
+            main.RenderPromptSummary(presented.Prompt, world);
         }
         ApplyResponsivePlayLayout();
     }

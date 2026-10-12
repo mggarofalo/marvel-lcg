@@ -53,7 +53,11 @@ public static class WorldProjection
             visible, authorizedPrompt, scope, active, world.FirstPlayer,
             publicPrompt ?? prompt, PublicReadableIds(complete, readableIds));
         List<GameEvent> safeEvents = VisibilityEventFilter.Filter(events, addressableIds, readableIds);
-        visible = visible with { EventFaces = EventFaceProjection.From(safeEvents, world.Facts) };
+        visible = visible with
+        {
+            EventFaces = EventFaceProjection.From(safeEvents, world.Facts),
+            ActiveAttack = ActiveAttackProjection.From(world, visible),
+        };
         return new VisibleResult(visible, authorizedPrompt, safeEvents);
     }
 

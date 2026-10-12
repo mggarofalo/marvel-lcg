@@ -263,6 +263,14 @@ window changes intermediate events/information and uses engine replay v3.
 See [affordances.md](affordances.md) for input and
 [presentation-layer.md](presentation-layer.md) for transport and visibility.
 
+Protocol 30's `WorldDescriptor.ActiveAttack` is current resolution context,
+separate from the completed-attack event. The engine owns its lifetime through
+initiation, defense, boosts, damage and the final response window, including
+nested choices. Its current target follows a committed defender. View exposes
+the source and target only when both identities are authorized. Retained
+last-attack facts do not keep this context alive after the owning occurrence
+finishes. This read-only projection changes neither replay nor state digest.
+
 `AbilityWindowResult` records the initial resolution of a Forced Interrupt or Forced
 Response once per occurrence/source/timing/ordinal. `completed=false` means a required decision
 suspended resolution; answering that decision does not emit another initial receipt.

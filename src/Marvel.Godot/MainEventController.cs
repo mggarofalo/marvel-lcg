@@ -28,6 +28,8 @@ internal sealed class MainEventController : IDisposable
     }
     internal void RenderPromptSummary(Prompt? prompt, WorldDescriptor world)
     {
+        if (!main.boardController.ResponseStaged)
+            PresentAttack(AttackActivityPresentation.From(world.ActiveAttack));
         if (prompt is null)
         {
             resolutionStage.Clear();
@@ -187,6 +189,8 @@ internal sealed class MainEventController : IDisposable
 
     internal void PresentEvents(IReadOnlyList<EventPresentation> presented)
         => motion.Present(presented);
+
+    internal void PresentAttack(EventPresentation? attack) => motion.PresentAttack(attack);
 
     internal void BeginEventCue(EventPresentation entry, int generation)
         => motion.BeginCue(entry, generation);

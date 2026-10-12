@@ -106,6 +106,10 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Events.PlayAreaJoined.PlayArea",
             "Marvel.Rules.Events.WhenRevealedCanceled.Card",
             "Marvel.Rules.Events.WhenRevealedCanceled.Source",
+            // Read-only engine-owned attack lifetime, copied only after face authorization.
+            "Marvel.Rules.Play.ActiveAttack.From(Marvel.Rules.State.World)",
+            "Marvel.Rules.Play.ActiveAttack.Source",
+            "Marvel.Rules.Play.ActiveAttack.Target",
             "Marvel.Rules.Play.Attack.DefenseVerb",
             "Marvel.Rules.Play.BasicPowers.AttackVerb",
             "Marvel.Rules.Play.BasicPowers.RecoverVerb",

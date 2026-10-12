@@ -46,7 +46,7 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `29` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `30` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `5` | The strict persisted JSON shape changes. |
 | Engine replay contract | `engine-replay-v14` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
@@ -57,6 +57,8 @@ Replay v14 includes direct, explicitly selected optional-window recipients and
 typed forced-ability/event-face receipts. Protocol 29 carries these choices and
 visibility-filtered descriptions. Older replay contracts require their matching
 runtime. The session schema remains 5; the persisted decision envelope is unchanged.
+Protocol 30 adds current, visibility-safe attack participants through the owning
+resolution's final window; it retains replay v14 and the same save and digest formats.
 
 The product version belongs in desktop and server metadata. The protocol
 version belongs on every request and response. Save schema and replay identities

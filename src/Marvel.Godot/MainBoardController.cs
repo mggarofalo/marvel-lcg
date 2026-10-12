@@ -35,6 +35,7 @@ internal sealed class MainBoardController : IDisposable
     internal void ResetForSession()
     {
         transition.Cancel();
+        main.eventController.PresentAttack(null);
         forcedAbilities.Clear();
         main.eventController.ClearTimeline();
         HandPresentationOrder.Clear();

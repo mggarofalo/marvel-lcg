@@ -124,6 +124,7 @@ Invoke-LocalSmoke "res://smoke/event_activity_smoke.gd"
 $env:MARVEL_SMOKE_MOTION = "enabled"
 Invoke-LocalSmoke "res://smoke/attack_activity_lifecycle_smoke.gd" "ATTACK_ACTIVITY_LIFECYCLE_OK"
 $env:MARVEL_SMOKE_MOTION = "disabled"
+Invoke-LocalSmoke "res://smoke/attack_activity_lifecycle_smoke.gd" "ATTACK_ACTIVITY_LIFECYCLE_OK"
 Invoke-LocalSmoke "res://smoke/timeline_navigation_smoke.gd"
 foreach ($viewport in $viewports) {
     foreach ($scale in $scales) {

@@ -14,6 +14,9 @@ public sealed record WorldDescriptor(
     IReadOnlyList<GameAreaDescriptor> GameAreas,
     Outcome Outcome)
 {
+    /// <summary>The authorized attack whose resolution is still open, independently of the current prompt.</summary>
+    public ActiveAttackDescriptor? ActiveAttack { get; init; }
+
     /// <summary>Distinct seat roles for this response, selected by the authoritative host.</summary>
     public TableContextDescriptor? Table { get; init; }
 
