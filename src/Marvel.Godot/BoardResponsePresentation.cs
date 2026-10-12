@@ -8,7 +8,7 @@ namespace Marvel.Godot;
 internal static class BoardResponsePresentation
 {
     internal sealed record Options(bool ResetEvents, bool PreserveEvents, string Operation,
-        DecisionReceiptContext? Receipt = null);
+        DecisionReceiptContext? Receipt = null, bool AlreadyPresented = false);
 
     internal static IReadOnlyList<EventPresentation> Update(
         Main main, EngineResponse response, Outcome previousOutcome,
@@ -16,6 +16,7 @@ internal static class BoardResponsePresentation
     {
         if (options.PreserveEvents)
         {
+            main.boardController.RecordAbilityNotifications(response, [], accepted: false, options.ResetEvents);
             main.eventController.RecordTimeline(response, [], reset: true);
             main.SkipEventPresentation();
             main.RenderEvents();
@@ -23,18 +24,27 @@ internal static class BoardResponsePresentation
         }
         WorldDescriptor world = response.World!;
         EventBatchPresentation presented = EventCuePlanner.Plan(response.Events, world, previousOutcome);
-        string? intention = options.Receipt?.ActionVerb is null or Game.EndPhaseVerb
-            ? null : options.Receipt.Commitment;
-        EventPresentation[] cues = [.. presented.Cues.Select(entry => entry with { Intention = intention })];
-        main.eventController.RecordTimeline(response, cues, options.ResetEvents);
+        EventPresentation[] cues = Cues(presented, options.Receipt);
+        main.boardController.RecordAbilityNotifications(response, cues,
+            options.Operation == EngineProtocol.Resolve && response.Error is null && !options.ResetEvents,
+            options.ResetEvents);
+        main.eventController.RecordTimeline(response,
+            AcceptedActivityOccurrence.From(cues, options.Receipt), options.ResetEvents);
         if (options.ResetEvents) main.events.Reset(presented.History);
         else main.events.Append(presented.History);
         main.RenderEvents();
         HistoryEntryDescriptor[] completed = Completed(response, priorHistory, options.Operation);
         main.RenderLastResult(Highlights(response, presented, options.Receipt), options.ResetEvents);
-        main.PresentEvents(options.Operation == EngineProtocol.Resolve && !options.ResetEvents
+        if (!options.AlreadyPresented) main.PresentEvents(options.Operation == EngineProtocol.Resolve && !options.ResetEvents
             ? cues : []);
         return Narrative(response, presented, completed);
+    }
+
+    internal static EventPresentation[] Cues(EventBatchPresentation presented, DecisionReceiptContext? receipt)
+    {
+        string? intention = receipt?.ActionVerb is null or Game.EndPhaseVerb
+            ? null : receipt.OccurrenceTitle ?? receipt.Commitment;
+        return [.. presented.Cues.Select(entry => entry with { Intention = intention })];
     }
 
     private static HistoryEntryDescriptor[] Completed(

@@ -29,6 +29,14 @@ public sealed class PresentationSourcePolicyTests
 
         string[] reviewed =
         [
+            // Authorized passive forced ability receipts and complete current intention tuples.
+            "Marvel.Rules.Events.AbilityWindowResult.Completed",
+            "Marvel.Rules.Events.AbilityWindowResult.Description",
+            "Marvel.Rules.Events.AbilityWindowResult.Occurrence",
+            "Marvel.Rules.Events.AbilityWindowResult.Ordinal",
+            "Marvel.Rules.Events.AbilityWindowResult.Player",
+            "Marvel.Rules.Events.AbilityWindowResult.Source",
+            "Marvel.Rules.Events.AbilityWindowResult.Type",
             "Marvel.Rules.Events.ActivityCompleted.Batch",
             "Marvel.Rules.Events.ActivityCompleted.Participants",
             "Marvel.Rules.Events.ActivityCompleted.PhaseStep",
@@ -79,8 +87,14 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Events.FieldSet.Field",
             "Marvel.Rules.Events.FieldSet.From",
             "Marvel.Rules.Events.FieldSet.To",
+            "Marvel.Rules.Events.GameEvent.AbilityOccurrence",
+            "Marvel.Rules.Events.GameEvent.AbilityOrdinal",
+            "Marvel.Rules.Events.GameEvent.AbilitySource",
+            "Marvel.Rules.Events.GameEvent.AbilityTiming",
             "Marvel.Rules.Events.GameEvent.ActivityBatch",
             "Marvel.Rules.Events.GameEvent.Round",
+            // Exact printed-face grants are visibility filtered before projection.
+            "Marvel.Rules.Events.GameEvent.SubjectFaces",
             "Marvel.Rules.Events.GameEvent.Subjects",
             "Marvel.Rules.Events.GameEvent.Trigger",
             "Marvel.Rules.Events.GameEvent.Verb",
@@ -126,7 +140,9 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Prompts.Affordance.Label",
             "Marvel.Rules.Prompts.Affordance.PlaysCard",
             "Marvel.Rules.Prompts.Affordance.Targets",
+            "Marvel.Rules.Prompts.Affordance.Timing",
             "Marvel.Rules.Prompts.Affordance.Verb",
+            "Marvel.Rules.Prompts.Affordance.WindowChoices",
             "Marvel.Rules.Prompts.AffordanceAnchorKind.Area",
             "Marvel.Rules.Prompts.AffordanceAnchorKind.Card",
             "Marvel.Rules.Prompts.AffordanceAnchorKind.Unspecified",
@@ -184,6 +200,7 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Prompts.TargetRequest.Legal",
             "Marvel.Rules.Prompts.TargetRequest.Max",
             "Marvel.Rules.Prompts.TargetRequest.Min",
+            "Marvel.Rules.Prompts.WindowChoice.RecipientIds",
             "Marvel.Rules.State.Area.Cards",
             "Marvel.Rules.State.Area.Host",
             "Marvel.Rules.State.Area.Id",
@@ -255,6 +272,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.EffectiveCards.Title(Marvel.Rules.State.Card, Marvel.Rules.State.ICardFacts)",
             "Marvel.Rules.State.GameArea.Id",
             "Marvel.Rules.State.GameArea.PlayAreas",
+            // Printed attributes are read only for an explicitly granted occurrence face.
+            "Marvel.Rules.State.ICardFacts.Attributes(string)",
             "Marvel.Rules.State.ICardFacts.FormattedText(string)",
             "Marvel.Rules.State.ICardFacts.Keywords(string)",
             "Marvel.Rules.State.ICardFacts.Kind(string)",

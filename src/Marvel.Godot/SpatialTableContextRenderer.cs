@@ -59,7 +59,8 @@ internal static class SpatialTableContextRenderer
         PromptPresentation? presentation = prompt is null ? null : PromptPresentation.From(prompt, world);
         float referenceWidth = surface.HasNode("CausalReferenceStack") ? 180 : 0;
         var cause = new VBoxContainer { Name = "CausalSituation", Position = geometry.Revealing.Position + new Vector2(referenceWidth, 0),
-            Size = new Vector2(Math.Max(150, geometry.Revealing.Size.X - referenceWidth), geometry.Revealing.Size.Y),
+            Size = new Vector2(Math.Max(150, geometry.SourceTableau.Position.X
+                - geometry.Revealing.Position.X - referenceWidth - 12), geometry.Revealing.Size.Y),
             MouseFilter = Control.MouseFilterEnum.Ignore };
         cause.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         surface.AddChild(cause);

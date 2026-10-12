@@ -67,6 +67,13 @@ $env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke "res://smoke/ability_choice_smoke.gd"
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
+foreach ($windowScale in @("100", "150")) {
+    $env:MARVEL_UI_SCALE = $windowScale
+    foreach ($windowScript in @("ability_window", "ability_window_pass", "forced_ability", "ability_window_long_cause_layout", "staged_response")) {
+        Invoke-LocalSmoke "res://smoke/${windowScript}_smoke.gd"
+    }
+}
+$env:MARVEL_UI_SCALE = "100"
 Invoke-LocalSmoke "res://smoke/deferred_event_smoke.gd"
 $env:MARVEL_UI_SCALE = "150"
 $env:MARVEL_SMOKE_MOTION = "disabled"

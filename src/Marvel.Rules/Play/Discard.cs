@@ -116,6 +116,7 @@ public static class Discard
         {
             Trigger = trigger,
             Verb = verb,
+            SubjectFaces = OccurrenceFaces.For(card),
             Subjects = subject is null
                 ? null
                 : new Dictionary<int, string> { [card.ObjectId] = subject },

@@ -33,6 +33,7 @@ fi
 
 dotnet build "$repo_root/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 pwsh -NoProfile -File "$repo_root/tools/godot-smoke-b1.ps1" -GodotBin "$godot_bin"
+pwsh -NoProfile -File "$repo_root/tools/godot-smoke-tableau.ps1" -GodotBin "$godot_bin"
 smoke_log=$(mktemp)
 cleanup() { rm -f "$smoke_log"; }
 trap cleanup EXIT
@@ -72,6 +73,12 @@ MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled
   run_local_smoke res://smoke/boost_choice_smoke.gd
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/ability_choice_smoke.gd
+for window_scale in 100 150; do
+  for window_script in ability_window ability_window_pass forced_ability ability_window_long_cause_layout staged_response; do
+    MARVEL_UI_SCALE=$window_scale MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+      run_local_smoke "res://smoke/${window_script}_smoke.gd"
+  done
+done
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/ability_choice_smoke.gd
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
@@ -113,11 +120,13 @@ MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled 
   run_local_smoke res://smoke/result_playback_smoke.gd
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/event_activity_smoke.gd
+MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/timeline_navigation_smoke.gd
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/result_playback_smoke.gd
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/event_activity_smoke.gd
+MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/timeline_navigation_smoke.gd
 
 for viewport in "${viewports[@]}"; do

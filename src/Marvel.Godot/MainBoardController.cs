@@ -12,15 +12,21 @@ internal sealed class MainBoardController : IDisposable
 {
     private readonly Main main;
     private EngineResponse? displayedResponse;
+    private readonly BoardResponseTransition transition;
+    internal bool ResponseStaged => transition.Pending;
+    internal EngineResponse? PresentedGame => displayedResponse ?? main.CurrentGame;
     private readonly BoardCardInspectorController cardInspector;
     private readonly BoardRelationshipOverlayController relationships;
     private readonly BoardRenderLifetime renderLifetime = new();
     private readonly MainTabletopController tabletop;
     private readonly TableInputGestureBoundary inputBoundary = new();
+    private readonly ForcedAbilityController forcedAbilities;
 
     internal MainBoardController(Main main)
     {
         this.main = main;
+        transition = new BoardResponseTransition(main);
+        forcedAbilities = new ForcedAbilityController(main);
         relationships = new BoardRelationshipOverlayController(main);
         tabletop = new MainTabletopController(main);
         cardInspector = new BoardCardInspectorController(main, tabletop);
@@ -28,6 +34,8 @@ internal sealed class MainBoardController : IDisposable
 
     internal void ResetForSession()
     {
+        transition.Cancel();
+        forcedAbilities.Clear();
         main.eventController.ClearTimeline();
         HandPresentationOrder.Clear();
         SourcePresentationOrder.Clear();
@@ -38,12 +46,28 @@ internal sealed class MainBoardController : IDisposable
         tabletop.ResetForGame();
     }
 
+    internal void CancelPendingPresentation()
+    {
+        transition.Cancel();
+        main.SkipEventPresentation();
+    }
+
     internal void RenderGame(
         EngineResponse response,
         bool resetEvents = false,
         bool preserveEvents = false,
         string operation = EngineProtocol.Resolve,
         DecisionReceiptContext? acceptedReceipt = null)
+    {
+        transition.Cancel();
+        main.SkipEventPresentation();
+        var options = new BoardResponsePresentation.Options(resetEvents, preserveEvents, operation, acceptedReceipt);
+        if (transition.TryBegin(response, displayedResponse, options,
+            () => ApplyResponse(response, options with { AlreadyPresented = true }))) return;
+        ApplyResponse(response, options);
+    }
+
+    private void ApplyResponse(EngineResponse response, BoardResponsePresentation.Options options)
     {
         int renderGeneration = renderLifetime.Advance();
         Outcome previousOutcome = displayedResponse?.World?.Outcome ?? Outcome.Unfinished;
@@ -63,9 +87,9 @@ internal sealed class MainBoardController : IDisposable
         IReadOnlyList<EventPresentation> reportNarrative = BoardResponsePresentation.Update(
             main,
             response, previousOutcome, priorHistory,
-            new BoardResponsePresentation.Options(resetEvents, preserveEvents, operation, acceptedReceipt));
+            options);
         main.layoutController.ApplyResponsivePlayLayout();
-        FinishRender(response, world, operation, reportNarrative, renderGeneration);
+        FinishRender(response, world, options.Operation, reportNarrative, renderGeneration);
     }
     private void RenderCurrentResponse(
         EngineResponse response,
@@ -119,7 +143,12 @@ internal sealed class MainBoardController : IDisposable
     internal void RenderBoard(
         WorldDescriptor world, Prompt? prompt = null, int? renderGeneration = null)
     {
-        prompt ??= main.CurrentGame?.Prompt;
+        if (ResponseStaged && displayedResponse is { World: { } prior })
+        {
+            world = prior;
+            prompt = displayedResponse.Prompt;
+        }
+        else prompt ??= main.CurrentGame?.Prompt;
         main.boardPresentation = BoardPresentation.From(world);
         // The render target is already sized when a response arrives, while a
         // newly shown Control can still be waiting for its container layout.
@@ -139,7 +168,7 @@ internal sealed class MainBoardController : IDisposable
         rendered.CardPreviewExited += cardInspector.LeaveCardPreview;
         rendered.SourceArrangementStarted += cardInspector.HidePreview;
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
-            && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
+            && !ResponseStaged && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
         relationships.Bind(rendered);
         main.decisions.BindMulliganTargets(rendered);
         cardInspector.Refresh(main.boardPresentation!, rendered);
@@ -181,6 +210,7 @@ internal sealed class MainBoardController : IDisposable
         cardInspector.Show(card, source, pinned);
     internal void Input(InputEvent input)
     {
+        if (ResponseStaged && StagedResponseInput.Consume(main, input)) return;
         if (main.CurrentGame is not null && inputBoundary.Consume(input, main.GetViewport().GuiGetHoveredControl()))
         {
             main.GetViewport().SetInputAsHandled();
@@ -188,12 +218,17 @@ internal sealed class MainBoardController : IDisposable
         }
         cardInspector.Input(input);
     }
+    internal void RouteAbilityNotificationInput(InputEvent input) => forcedAbilities.Input(input);
+    internal void RecordAbilityNotifications(EngineResponse response, IReadOnlyList<EventPresentation> cues,
+        bool accepted, bool reset) => forcedAbilities.Record(response, cues, accepted, reset);
     internal void ScheduleCardInspectorHide() => cardInspector.ScheduleHide();
     internal void BindCardInspectorFocus(Control control) => cardInspector.BindFocus(control);
     internal bool CardInspectorHasFocus() => cardInspector.HasFocus();
     internal void HideCardInspector() => cardInspector.Hide();
     public void Dispose()
     {
+        transition.Dispose();
+        forcedAbilities.Dispose();
         renderLifetime.Dispose(main.boardRender);
         relationships.Dispose();
     }

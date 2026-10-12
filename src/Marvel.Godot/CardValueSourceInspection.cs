@@ -7,23 +7,25 @@ namespace Marvel.Godot;
 /// <summary>Lists disclosed value calculations together beside the inspected card.</summary>
 internal static class CardValueSourceInspection
 {
-    internal static void Add(VBoxContainer parent, BoardCardPresentation card, Action<BoardCardPresentation> inspect)
+    internal static void Add(VBoxContainer parent, BoardCardPresentation card, Action<BoardCardPresentation> inspect,
+        CardControl face)
     {
         if (card.Concealed) return;
-        var content = new VBoxContainer { Name = "ValueSourceDetail" };
+        var content = new VBoxContainer { Name = "ValueSourceDetail", Visible = false };
         content.AddThemeConstantOverride("separation", 8);
         foreach (string key in card.EffectiveValues.Keys.OrderBy(key => key == "HP" ? "" : key, StringComparer.Ordinal))
         {
             CardEffectiveValue value = card.EffectiveValues[key];
             if (!value.IsModified) continue;
-            var section = new VBoxContainer { Name = "Value" + key };
+            var section = new VBoxContainer { Name = "Value" + key, Visible = false };
             string name = key == "HP" ? "Maximum HP" : key == "HS" ? "Hand size" : key;
-            CardLiveStateRendering.AddLabel(section, $"{name} {value.CurrentValue.ToString(CultureInfo.InvariantCulture)}",
+            CardLiveStateRendering.AddLabel(section, name,
                 "InspectedCurrentValue", 18);
             CardLiveStateRendering.AddLabel(section, BaseDescription(value), "InspectedBaseValue", 14);
             foreach (CardValueCalculation row in value.Calculation.Where(row => row.Source is not null))
                 AddSource(section, row, inspect);
             content.AddChild(section);
+            ModifiedValueDisclosure.Bind(face, key, content, section);
         }
         if (content.GetChildCount() > 0) parent.AddChild(content);
         else content.Free();

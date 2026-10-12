@@ -45,8 +45,8 @@ internal static class EventMovementPresentation
 
         if (string.Equals(moved.Verb, "Discard", StringComparison.Ordinal))
         {
-            return $"{Player(moved.From.Owner, world)} discarded {cards} from "
-                + $"{Area(moved.From, world)}.";
+            string origin = DiscardOrigin(moved, world);
+            return $"{Player(moved.From.Owner, world)} discarded {cards}{origin}.";
         }
 
         if (IsPlay(moved))
@@ -56,6 +56,9 @@ internal static class EventMovementPresentation
 
         return $"Moved {cards} from {Area(moved.From, world)} to {Area(moved.To, world)}.";
     }
+
+    private static string DiscardOrigin(CardsMoved moved, WorldDescriptor world) =>
+        moved.From.Zone == "RevealingArea" ? string.Empty : $" from {Area(moved.From, world)}";
 
     private static string ReturnedToDiscard(CardsMoved moved, string cards, WorldDescriptor world) =>
         moved.From == moved.To

@@ -83,4 +83,37 @@ func _history_edge() -> bool:
 	if toggle.text != ">>" or not drawer.is_visible_in_tree():
 		_fail("History edge cannot reveal its details")
 		return false
+	if not await _history_details_keep_selected(): return false
 	return await _set_history_drawer(false)
+
+
+func _history_details_keep_selected() -> bool:
+	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
+	var scroll := history.find_child("OccurrenceScroll", true, false) as ScrollContainer
+	var selected := int(_timeline().get_meta("timeline_selected"))
+	var expanded := _button_named("▾ Details")
+	if expanded != null:
+		if not await _pointer_activate(expanded): return false
+		for _frame in 4: await process_frame
+	var toggle := _button_named("▸ Details")
+	if toggle == null or not await _pointer_activate(toggle):
+		_fail("the selected occurrence has no inspectable Details commitment")
+		return false
+	for _frame in 4: await process_frame
+	if not _control_is_fully_visible(history) or not _selected_history_row_is_visible(history, selected):
+		_fail("expanding Details clips the history viewport or hides its selected occurrence")
+		return false
+	if not await _capture_checkpoint("history-details-selected-row"): return false
+	scroll.scroll_vertical = 0
+	for _frame in 4: await process_frame
+	if scroll.scroll_vertical != 0:
+		_fail("manual history scrolling was overridden by selected-row pinning")
+		return false
+	return true
+
+
+func _selected_history_row_is_visible(history: Control, selected: int) -> bool:
+	for row in history.find_children("*", "Button", true, false):
+		if row.get_meta("occurrence_index", -1) == selected and row.get_meta("selected_occurrence", false):
+			return _control_is_fully_visible(row)
+	return false

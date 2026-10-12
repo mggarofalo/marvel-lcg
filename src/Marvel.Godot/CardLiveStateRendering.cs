@@ -7,14 +7,14 @@ namespace Marvel.Godot;
 /// <summary>Renders an authorized snapshot as upright readable state, outside printed rules.</summary>
 internal static class CardLiveStateRendering
 {
-    internal static VBoxContainer Create(BoardCardPresentation card, float width, bool compact)
+    internal static VBoxContainer Create(BoardCardPresentation card, float width, bool compact, bool showProgress = true)
     {
         var stack = new VBoxContainer { Name = "LiveState", CustomMinimumSize = new Vector2(width, 0),
             MouseFilter = Control.MouseFilterEnum.Ignore, SizeFlagsHorizontal = Control.SizeFlags.Fill };
         stack.AddThemeConstantOverride("separation", compact ? 1 : 6);
         if (card.Concealed) return stack;
         CardProgressValue? progress = CardProgressValue.From(card);
-        if (progress is not null && card.Fields.Any(field => field.Name == progress.FieldName))
+        if (showProgress && progress is not null && card.Fields.Any(field => field.Name == progress.FieldName))
             AddProgress(stack, card, progress, compact);
         AddStatuses(stack, card, width, compact);
         return stack;

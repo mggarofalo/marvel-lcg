@@ -18,7 +18,7 @@ func _review_attack_results() -> bool:
 	if not await _set_history_drawer(false): return false
 	var latest := main.find_child("LatestResult", true, false) as Label
 	var toggle := main.find_child("ToggleHistory", true, false) as Button
-	var rows := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as Control
+	var rows := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
 	if latest == null or toggle == null or not toggle.is_visible_in_tree():
 		_fail("the completed attack has no durable result or detail disclosure")
 		return false
@@ -34,6 +34,7 @@ func _review_attack_results() -> bool:
 func _review_attack_disclosure(toggle: Button, rows: Control, latest: Label) -> bool:
 	if not await _pointer_activate(toggle): return false
 	if not _attack_consequences_visible(rows): return false
+	if not await _native_occurrence_details(rows): return false
 	if not await _capture_checkpoint("history-attack-expanded"): return false
 	if not await _pointer_activate(toggle): return false
 	if rows.is_visible_in_tree() or latest.text.is_empty():
@@ -44,7 +45,7 @@ func _review_attack_disclosure(toggle: Button, rows: Control, latest: Label) -> 
 
 func _undo_clears_results() -> bool:
 	var history := main.find_child("ToggleHistory", true, false) as Button
-	if not (_node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as Control).is_visible_in_tree():
+	if not (_node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control).is_visible_in_tree():
 		if history == null or not await _pointer_activate(history): return false
 	var undo := main.find_child("UndoLast", true, false) as Button
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
@@ -88,4 +89,26 @@ func _rapid_details_work(toggle: Button, rows: Control) -> bool:
 		_fail("rapid read-only detail expansion was suppressed as a game commitment")
 		return false
 	if not await _pointer_activate(toggle): return false
+	return true
+
+
+func _native_occurrence_details(rows: Control) -> bool:
+	var cards := rows.find_child("Occurrences", true, false) as Control
+	if cards == null or cards.get_child_count() == 0 or cards.get_child_count() > 16:
+		_fail("history has no bounded pool of native occurrence cards")
+		return false
+	var selected: Button = null
+	for card in cards.get_children():
+		if card is Button and card.is_visible_in_tree() and _control_is_fully_visible(card):
+			selected = card
+	if selected == null or not await _pointer_activate(selected): return false
+	var details := rows.find_child("OccurrenceDetails", true, false)
+	var toggle := details.get_child(0) as Button
+	if not (details.get_child(1) as Control).visible and not await _pointer_activate(toggle): return false
+	if not (details.get_child(1) as Control).is_visible_in_tree():
+		_fail("native occurrence details did not expand")
+		return false
+	if main.find_child("EventLog", true, false).is_visible_in_tree():
+		_fail("native chronology is duplicated by a text account")
+		return false
 	return true

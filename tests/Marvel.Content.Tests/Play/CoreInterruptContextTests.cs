@@ -93,6 +93,10 @@ public sealed class CoreInterruptContextTests
         Assert.Contains("Step 1 of the villain phase would place 1 threat on The Break-In!", prompt.Description);
         Assert.Contains("currently has 0 threat", prompt.Description);
         Assert.Equal([scheme.ObjectId], prompt.ContextCardIds);
+        var option = Assert.Single(prompt.Affordances);
+        Assert.Equal("Spider-Man takes 1 damage instead of 1 threat", option.CommitLabel);
+        Assert.Equal(option.CommitLabel, option.DisplayLabel);
+        Assert.Contains("Damage prevention and interrupts can change the result", option.Description);
         Assert.False(scheme.Tokens.ContainsKey("k_threat"));
         Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, []);
         Assert.Null(Sequence.Work(world, Cards, runner, []));
@@ -124,6 +128,16 @@ public sealed class CoreInterruptContextTests
         Assert.Contains($"{meaning} would place 2 threat", prompt.Description);
         Assert.Contains("currently has 3 threat", prompt.Description);
         Assert.Contains("4 threat was assigned; 2 remains after prevention", prompt.Description);
+        var option = Assert.Single(prompt.Affordances);
+        Assert.Equal("Spider-Man takes 2 damage instead of 2 threat", option.CommitLabel);
+        Assert.Equal(option.CommitLabel, option.DisplayLabel);
+        Assert.True(option.PlaysCard);
+        Assert.Empty(option.WindowChoices);
+        var ability = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Interrupt));
+        runner.Resolve(world, occurrence, ability, [], []);
+        Assert.True(placement.Replaced);
+        Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(3, scheme.Tokens["k_threat"]);
     }
 
     [Rule("rr:reveal.4.1")]

@@ -40,7 +40,7 @@ public static class EngineProtocol
     /// Version 25 adds public, identity-free completed deck-shuffle receipts.
     /// Version 24 adds next-Special and visible-card selection purposes with target exclusions.
     /// </summary>
-    public const int Version = 28;
+    public const int Version = 29;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;

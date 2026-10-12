@@ -42,6 +42,7 @@ func _inspect_complete_catalogue() -> bool:
 
 func _reach_obligation() -> bool:
 	for index in range(120):
+		if not await _wait_for_table_response(): return false
 		if _is_complete():
 			_fail("seed 7 ended before its expected obligation")
 			return false

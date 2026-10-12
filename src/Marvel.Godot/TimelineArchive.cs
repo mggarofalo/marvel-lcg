@@ -69,7 +69,8 @@ internal sealed class TimelineArchive
             int end = index + 1 < summaries.Count ? summaries[index + 1].Cursor : history!.Cursor;
             if (end <= recorded) continue;
             entries.Add(new TimelineOccurrence(end,
-                new EventPresentation(entry.Summary, "Earlier action summary", [], EventMotionKind.State)));
+                new EventPresentation(entry.Summary, "Earlier action summary", [], EventMotionKind.State)
+                { Details = entry.Details.Select(detail => new EventPresentation(detail, "", [], EventMotionKind.State)).ToArray() }));
         }
     }
 }

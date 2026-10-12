@@ -7,6 +7,8 @@ public sealed record DecisionReceiptContext(string Commitment, IReadOnlyList<int
 {
     /// <summary>The submitted engine command, distinct from the player-facing wording.</summary>
     public string? ActionVerb { get; init; }
+    /// <summary>Concise accepted action wording from the offered command and authorized participants.</summary>
+    public string? OccurrenceTitle { get; init; }
     /// <summary>Captures offered meaning and chosen resource sources without claiming acceptance.</summary>
     public static DecisionReceiptContext? From(
         Prompt prompt, WorldDescriptor world, int affordance,
@@ -25,9 +27,16 @@ public sealed record DecisionReceiptContext(string Commitment, IReadOnlyList<int
             .Select(id => PaymentSourcePresentation.From(available[id], world))];
         string paid = payment.Length == 0 ? string.Empty
             : $" Payment sources: {string.Join(", ", payment.Select(item => item.Name))}.";
-        return new($"{actor}: {label.TrimEnd('.')}.{paid}",
+        string cause = chosen.PlaysCard && prompt.PublicKind is
+            PublicDecisionKind.Interrupt or PublicDecisionKind.Response
+                ? offered.SourceName ?? offered.Anchor : actor;
+        return new($"{cause}: {label.TrimEnd('.')}.{paid}",
             [.. new[] { offered.CardAnchorId }.OfType<int>().Concat(targets)
-                .Concat(payment.Select(item => item.Id)).Distinct()]) { ActionVerb = chosen.Verb };
+                .Concat(payment.Select(item => item.Id)).Distinct()])
+        {
+            ActionVerb = chosen.Verb,
+            OccurrenceTitle = DecisionOccurrenceTitle.From(offered, targets, world),
+        };
     }
     private static string CommitmentLabel(AffordancePresentation offered, Affordance chosen,
         IReadOnlyList<int> targets, WorldDescriptor world)

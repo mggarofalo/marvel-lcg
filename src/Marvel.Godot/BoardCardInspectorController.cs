@@ -94,14 +94,6 @@ internal sealed class BoardCardInspectorController
         int? sourceId = source is CardControl sourceCard
             ? sourceCard.TargetId
             : card.TargetId;
-        ClearContent();
-        InterfaceScale inspectionScale = CardInspectorFocus.FittedScale(
-            card, main.interfaceScale, main.Size.Y);
-        Control detail = CardInspectionContent.Create(card, inspectionScale, main.art, beside: true,
-            inspect: valueSource => OpenValueSource(valueSource, card, source)).Body;
-        detail.FocusMode = Control.FocusModeEnum.All;
-        CardInspectorFocus.IgnoreMouseRecursively(detail);
-        main.cardInspectorContent.AddChild(detail);
         cardNavigation.Configure(card, source, pinned
             ? stages ?? main.boardRender?.Inspector.For(card.TargetId) ?? []
             : []);
@@ -110,9 +102,28 @@ internal sealed class BoardCardInspectorController
         main.cardInspectorTitle.Visible = false;
         main.cardInspectorClose.Visible = pinned;
         ConfigureFrame();
+        Control detail = CreateFittedDetail(card, source, pinned);
+        detail.FocusMode = Control.FocusModeEnum.All;
+        CardInspectorFocus.IgnoreMouseRecursively(detail);
         layout.BindMeasurement(detail, card, source, pinned);
         layout.Position(card, source, pinned);
         Present(detail, sourceId, source, pinned, inspectorGeneration);
+    }
+
+    private Control CreateFittedDetail(BoardCardPresentation card, Control? source, bool pinned)
+    {
+        InterfaceScale scale = CardInspectorFocus.FittedScale(card, main.interfaceScale, main.Size.Y);
+        while (true)
+        {
+            ClearContent();
+            Control detail = CardInspectionContent.Create(card, scale, main.art, beside: false,
+                inspect: valueSource => OpenValueSource(valueSource, card, source)).Body;
+            main.cardInspectorContent.AddChild(detail);
+            layout.Position(card, source, pinned);
+            if (layout.PreservesSituation() || (int)scale <= 50) return detail;
+            // Recreate native controls at the next fitted size; never resample rendered text or icons.
+            scale = (InterfaceScale)((int)scale - 10);
+        }
     }
 
     internal void Refresh(BoardPresentation board, BoardRenderResult rendered)

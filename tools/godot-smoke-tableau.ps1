@@ -25,6 +25,13 @@ try {
                 throw "Native tableau fixture failed at $scale% / $layout. Diagnostics retained in $temporary."
             }
         }
+        $output = & $GodotBin --headless --audio-driver Dummy --path "$repoRoot/src/Marvel.Godot" `
+            --script res://smoke/source_vacancy_smoke.gd -- "--marvel-tableau=$fixture" 2>&1
+        $output | Write-Output
+        if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output) `
+            -or -not ($output -match "SOURCE_VACANCY_OK")) {
+            throw "Native vacant source slots failed at $scale%. Diagnostics retained in $temporary."
+        }
     }
 }
 finally {

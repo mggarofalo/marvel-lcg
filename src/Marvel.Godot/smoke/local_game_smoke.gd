@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_resolution_checks.gd"
+extends "res://smoke/local_game_smoke_motion_checks.gd"
 
 func _initialize() -> void:
 	_prepare_art_pack()
@@ -161,7 +161,7 @@ func _play_seeded_journey() -> Dictionary:
 		"saw_mulligan": true,
 		"saw_pass": false,
 		"saw_end_phase": false,
-		"saw_nonblocking_motion": false,
+		"saw_staged_motion": false,
 		"tested_active_motion_toggle": false,
 		"captured_villain_phase": false,
 		# The deterministic one-player journey owns the exact form/undo action.
@@ -193,7 +193,7 @@ func _play_one_decision(state: Dictionary) -> bool:
 		return false
 	state.decisions += 1
 	await process_frame
-	if not await _settle_decision(state.decisions):
+	if not await _settle_decision(state.decisions, state):
 		return false
 	var had_tested_undo: bool = state.tested_undo
 	if not await _undo_first_form_change(state):
@@ -296,6 +296,9 @@ func _advance_fallback_decision(state: Dictionary) -> bool:
 func _compose_table_decision() -> bool:
 	var trace: Array[String] = []
 	for selection in 8:
+		if not await _wait_for_table_response(): return false
+		var window_commit := preload("res://smoke/ability_window_smoke_support.gd").commitment(main)
+		if window_commit != null: return await _pointer_activate(window_commit)
 		if _payment_modal() != null: return await _compose_payment()
 		var submit := _task_commit()
 		if submit != null and not submit.disabled:
@@ -306,19 +309,7 @@ func _compose_table_decision() -> bool:
 			if not await _pointer_activate(choice): return false
 			await process_frame
 			continue
-		var contextual := main.find_child("ContextAction*", true, false) as Button
-		if contextual != null and contextual.is_visible_in_tree() and not contextual.disabled:
-			trace.append("context:%s" % contextual.text)
-			if not await _pointer_activate(contextual):
-				return false
-			await process_frame
-			continue
-		var control := _first_unselected_table_control()
-		if control != null:
-			trace.append("control:%s:%s" % [control.name, control.text])
-		if control == null or not await _pointer_activate_attached(control):
-			_fail("no card-local control can advance the current decision (%s)" % ", ".join(trace))
-			return false
+		if not await _choose_table_draft_control(trace): return false
 		await process_frame
 	_fail("the card-local draft did not become executable")
 	return false
@@ -367,28 +358,20 @@ func _compose_visible_decision() -> bool:
 	return await _pointer_activate(submit)
 
 
-func _settle_decision(decisions: int) -> bool:
-	if await _wait_for(func() -> bool:
-		return _is_complete() or not _status().text.begins_with("DECISION SENT")):
-		return true
-	_fail("the engine did not reconcile decision %d" % decisions)
-	return false
-
-
 func _undo_first_form_change(state: Dictionary) -> bool:
 	if not state.changed_form or state.tested_undo:
 		return true
 	if not await _show_history_tab():
 		return false
-	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
+	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
 	var undo := main.find_child("UndoLast", true, false) as Button
-	if undo.disabled or "Spider-Man changed form." not in history.get_parsed_text():
+	if undo.disabled or "Spider-Man changed form." not in str(history.get_meta("chronology", "")):
 		_fail("the reversible form change has no authoritative undo action: disabled=%s history=%s" % [
 			undo.disabled,
-			history.get_parsed_text(),
+			str(history.get_meta("chronology", "")),
 		])
 		return false
-	if "Undo to before this action" not in history.get_parsed_text():
+	if undo.tooltip_text.is_empty():
 		_fail("the reversible form change has no authoritative undo description")
 		return false
 	if not await _pointer_activate(undo):
@@ -411,7 +394,7 @@ func _undo_first_form_change(state: Dictionary) -> bool:
 func _show_history_tab() -> bool:
 	var toggle := main.find_child("ToggleHistory", true, false) as Button
 	if toggle != null:
-		var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as Control
+		var log := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
 		if log.visible:
 			return true
 		if not await _activate_exposed_control_point(toggle):
@@ -426,7 +409,7 @@ func _show_history_tab() -> bool:
 func _show_action_tab() -> bool:
 	var toggle := main.find_child("ToggleHistory", true, false) as Button
 	if toggle != null:
-		var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as Control
+		var log := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
 		if not log.visible:
 			return true
 		if not await _activate_exposed_control_point(toggle):
@@ -456,40 +439,15 @@ func _navigate_workbench_tab(workbench: TabContainer, key: Key, expected: int) -
 	return false
 
 
-func _motion_state_is_safe(state: Dictionary) -> bool:
-	var skip := main.find_child("Skip", true, false) as Button
-	if not skip.disabled:
-		_fail("the chronological account unexpectedly requires timed playback")
+func _choose_table_draft_control(trace: Array[String]) -> bool:
+	var contextual := main.find_child("ContextAction*", true, false) as Button
+	if contextual != null and contextual.is_visible_in_tree() and not contextual.disabled:
+		trace.append("context:%s" % contextual.text)
+		return await _pointer_activate(contextual)
+	var control := _first_unselected_table_control()
+	if control != null:
+		trace.append("control:%s:%s" % [control.name, control.text])
+	if control == null or not await _pointer_activate_attached(control):
+		_fail("no card-local control can advance the current decision (%s)" % ", ".join(trace))
 		return false
-	if motion_enabled and not _is_complete() and _current_table_prompt_is_operable():
-		state.saw_nonblocking_motion = true
-		if not state.tested_active_motion_toggle:
-			if not await _toggle_active_motion(skip): return false
-			state.tested_active_motion_toggle = true
-	return true
-
-func _current_table_prompt_is_operable() -> bool:
-	for pattern in ["ContextualCommit", "ContextualDecline", "Card*Action", "Card*Target", "Card*Generator", "CompleteChoiceSheet"]:
-		for candidate in main.find_children(pattern, "Button", true, false):
-			if candidate.is_visible_in_tree() and not candidate.disabled:
-				return true
-	return _first_enabled_choice() != null
-
-
-func _toggle_active_motion(skip: Button) -> bool:
-	var history := (_node(
-		"Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel).text
-	var motion := _node("Toolbar/Motion") as CheckButton
-	motion.button_pressed = false
-	motion.toggled.emit(false)
-	await process_frame
-	if not skip.disabled:
-		_fail("disabling active motion did not settle playback")
-		return false
-	if history != (_node(
-			"Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel).text:
-		_fail("disabling active motion changed history")
-		return false
-	motion.button_pressed = true
-	motion.toggled.emit(true)
 	return true

@@ -15,6 +15,9 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal ControlMetrics ControlMetrics => VisualSystem.Controls(interfaceScale);
     internal DecisionComposer? composer;
     private CardPaymentWorkspace? paymentModal;
+    internal readonly AbilityWindowController AbilityWindows;
+    internal bool AbilityWindowOpen => AbilityWindows.IsOpen;
+    internal bool AcknowledgementPending => AbilityWindows.Paused;
     private readonly CompleteDecisionSheetController choices;
     internal readonly DecisionCardChoices CardChoices;
     internal bool CompleteChoicesOpen => choices.IsOpen;
@@ -25,13 +28,20 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal void SetCompleteChoicesVisibility(bool open) => mulliganBoard?.SetCompleteChoicesOpen(open);
     internal bool PaymentPreviewExpanded = true;
     internal bool PaymentModalOpen => paymentModal is not null;
+    internal CardPaymentWorkspace? PaymentModal => paymentModal;
+    internal void OpenPayment(PromptPresentation prompt)
+    {
+        choices.Close();
+        paymentModal = new CardPaymentWorkspace(this, prompt);
+    }
     internal void PreviewPaymentCard(int? id) => paymentModal?.Preview(id);
-    internal Node LayoutHost => paymentModal?.Content ?? (Node)this;
-    internal Control FocusHost => paymentModal?.Content ?? (Control)this;
+    internal Node LayoutHost => paymentModal?.Content ?? AbilityWindows.Content ?? (Node)this;
+    internal Control FocusHost => paymentModal?.Content ?? AbilityWindows.Content ?? (Control)this;
     internal void RouteDecisionSurfaceInput(InputEvent input)
     {
         paymentModal?.Input(input);
         choices.Input(input);
+        AbilityWindows.Input(input);
     }
     internal void ClearDecision()
     {
@@ -53,6 +63,8 @@ public sealed partial class DecisionPanel : VBoxContainer
     public DecisionPanel()
     {
         lifecycle = new DecisionPanelLifecycle(this);
+        AbilityWindows = new AbilityWindowController(this);
+        TreeExiting += AbilityWindows.Dispose;
         choices = new CompleteDecisionSheetController(this);
         CardChoices = new DecisionCardChoices(this);
         cardPreview.Changed += id => CardHovered?.Invoke(id);
@@ -144,8 +156,9 @@ public sealed partial class DecisionPanel : VBoxContainer
         mulliganBoard = board;
         MulliganBinding.Bind(this, board);
         BoardInteractionBinder.Bind(this, board);
-        board?.PresentInteraction(composer,
-            composer is null || world is null ? null : PromptPresentation.From(composer.Prompt, world));
+        bool modal = AbilityWindowOpen || AcknowledgementPending;
+        board?.PresentInteraction(modal ? null : composer,
+            modal || composer is null || world is null ? null : PromptPresentation.From(composer.Prompt, world));
     }
 
     internal TableDraftBinding BindTableDraft(DecisionComposer draft, int generation) =>
@@ -192,18 +205,15 @@ public sealed partial class DecisionPanel : VBoxContainer
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
         MulliganBinding.Bind(this, mulliganBoard);
         BoardInteractionBinder.Bind(this, mulliganBoard);
-        DraftChanged?.Invoke(composer, prompt);
-        if (CardPaymentPresentation.UsesModal(composer, submitting))
+        bool completeWindow = AbilityWindows.Open(prompt);
+        bool modal = AbilityWindowOpen || AcknowledgementPending;
+        DraftChanged?.Invoke(modal ? null : composer, modal ? null : prompt);
+        if (completeWindow)
         {
-            choices.Close();
-            paymentModal = new CardPaymentWorkspace(this, prompt);
+            ProgressChanged?.Invoke(composer.Progress());
+            return true;
         }
-        DecisionPanelPromptRenderer.CreateLayout(this, composer, prompt);
-        if (paymentModal is null)
-            DecisionPanelPromptRenderer.AddAffordances(this, prompt, lifecycle.RenderGeneration);
-        DecisionPanelSurface.AddSelectedDraft(this);
-        if (paymentModal is not null) paymentModal.AddCancel();
-        else DecisionPanelSurface.AddDecline(this);
+        DecisionPanelPromptRenderer.RenderEditor(this, composer, prompt);
         ProgressChanged?.Invoke(composer.Progress());
         return true;
     }
@@ -218,6 +228,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     private void ClearPanel()
     {
         cardPreview.Clear();
+        AbilityWindows.ClearFrame();
         paymentModal?.Dispose();
         paymentModal = null;
 
@@ -269,33 +280,13 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal static string NodeKey(string value) => new(
         value.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());
 
-    internal static Label Text(string text, string variation, bool wrap = false)
-    {
-        return new Label
-        {
-            Text = text,
-            AutowrapMode = wrap
-                ? TextServer.AutowrapMode.WordSmart
-                : TextServer.AutowrapMode.Off,
-            ThemeTypeVariation = variation,
-        };
-    }
+    internal static Label Text(string text, string variation, bool wrap = false) =>
+        DecisionControlStyle.Text(text, variation, wrap);
 
     internal void StyleButton(
         Button button,
         InteractiveVisualState state,
         bool compact = false)
-    {
-        InteractiveStyle style = VisualSystem.For(state);
-        button.ThemeTypeVariation = style.ThemeVariation;
-        button.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        button.CustomMinimumSize = new Vector2(
-            Math.Max(
-                button.CustomMinimumSize.X,
-                compact
-                    ? ControlMetrics.MinimumPointerTarget
-                    : ControlMetrics.MinimumButtonWidth),
-            ControlMetrics.MinimumHeight);
-    }
+        => DecisionControlStyle.Button(button, state, ControlMetrics, compact);
 
 }

@@ -19,9 +19,10 @@ internal static class SourceTableauRenderer
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto, FollowFocus = true };
         panel.AddChild(scroll);
         var layout = new SourceTableauLayout(bounds.Size.X - 12, bounds.Size.Y, cards.Length);
+        BoardCardPresentation?[] slots = SourcePresentationOrder.Slots(seat, cards, layout.Capacity);
         var grid = new GridContainer { Name = "SourceTableauGrid", Columns = layout.Columns,
             CustomMinimumSize = new Vector2(bounds.Size.X - 12,
-                (int)Math.Ceiling((double)cards.Length / layout.Columns) * (SourceTableauLayout.TileHeight + SourceTableauLayout.Gap)),
+                (int)Math.Ceiling((double)slots.Length / layout.Columns) * (SourceTableauLayout.TileHeight + SourceTableauLayout.Gap)),
             MouseFilter = Control.MouseFilterEnum.Ignore };
         grid.AddThemeConstantOverride("h_separation", (int)SourceTableauLayout.Gap);
         grid.AddThemeConstantOverride("v_separation", (int)SourceTableauLayout.Gap);
@@ -30,9 +31,17 @@ internal static class SourceTableauRenderer
         panel.AddChild(gestures);
         gestures.Configure(grid, scroll, seat, result);
         result.Inspector.Register(cards);
-        for (int index = 0; index < cards.Length; index++)
+        for (int index = 0; index < slots.Length; index++)
         {
-            BoardCardPresentation card = cards[index];
+            if (slots[index] is not { } card)
+            {
+                var vacancy = new Control { Name = $"EmptySourceSlot{index}",
+                    CustomMinimumSize = new Vector2(layout.TileWidth, SourceTableauLayout.TileHeight),
+                    MouseFilter = Control.MouseFilterEnum.Ignore };
+                grid.AddChild(vacancy);
+                gestures.TrackEmpty(vacancy);
+                continue;
+            }
             CardControl control = SourceTableauTile.CreateCard(card, layout.TileWidth, scale,
                 card.TargetId is { } copyId ? copies[copyId] : "");
             control.Name = $"ProceduralCard{card.TargetId}";

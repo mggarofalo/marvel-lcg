@@ -12,6 +12,7 @@ internal static class ClientEventValidation
     private static bool CompleteEventPayload(GameEvent happened) => happened switch
             {
                 ActivityCompleted activity => CompleteActivity(activity),
+                AbilityWindowResult result => CompleteWindow(result),
                 PhaseStarted phase => CompletePhase(phase),
                 CardsCreated created => Complete(created.Area)
                     && created.Cards is not null
@@ -37,6 +38,11 @@ internal static class ClientEventValidation
                     && (canceled.Source is null or >= 0),
                 _ => false,
             };
+
+    private static bool CompleteWindow(AbilityWindowResult result) =>
+        result.Source >= 0 && result.Player >= -1 && result.Occurrence >= 0
+        && Marvel.Rules.Timing.AbilityTypes.IsMandatory(result.Type)
+        && !string.IsNullOrWhiteSpace(result.Description);
 
     private static bool CompleteActivity(ActivityCompleted activity) =>
         activity.Batch >= 0 && activity.Participants is { Count: > 0 }

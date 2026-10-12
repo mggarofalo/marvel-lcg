@@ -22,4 +22,8 @@ public sealed record WorldDescriptor(
 
     /// <summary>Explicit, visibility-reviewed card and prompt relationships.</summary>
     public IReadOnlyList<TableRelationshipDescriptor> Relationships { get; init; } = [];
+
+    /// <summary>Printed references granted by authorized occurrences in this response, keyed by exact face identity.</summary>
+    public IReadOnlyDictionary<string, BoardCardPresentation> EventFaces { get; init; } =
+        new Dictionary<string, BoardCardPresentation>();
 }

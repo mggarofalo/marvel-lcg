@@ -63,6 +63,7 @@ public sealed partial class EventVocabularyTests
         new CardsShuffledIntoDeck(0, 2, ["Energy", "Vibranium"]),
         new ActivityCompleted(0, [new ActivityParticipant(0, 2, [7, 9])]),
         new PhaseStarted("Player") { Round = 1 },
+        new AbilityWindowResult(7, Marvel.Rules.Timing.AbilityType.ForcedInterrupt, 0, 3, "Stun an enemy", false),
     ];
 
     /// <summary>Every serialisable kind, with distinguishable payload values.</summary>
@@ -90,7 +91,7 @@ public sealed partial class EventVocabularyTests
         var documented = Documented(EmittedOnlyHeading).Keys.ToHashSet(StringComparer.Ordinal);
         var tested = EmittedOnly.Select(Kind).ToHashSet(StringComparer.Ordinal);
 
-        Assert.Equal(8, tested.Count);
+        Assert.Equal(9, tested.Count);
         Assert.Equal(tested, documented);
     }
 

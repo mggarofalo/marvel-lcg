@@ -304,7 +304,7 @@ func _event_presentation_is_nonblocking() -> bool:
 	var cue := _node("Play/Prompt/Margin/Stack/Workbench/History/EventCue") as Control
 	var motion := _node("Toolbar/Motion") as CheckButton
 	var skip := main.find_child("Skip", true, false) as Button
-	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
+	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
 	var expected_height := _scaled_metric(44)
 	if cue == null:
 		_fail("event presentation has no cue region")
@@ -322,11 +322,11 @@ func _event_presentation_is_nonblocking() -> bool:
 		_fail("event presentation blocked the current engine decision")
 		return false
 
-	var history := log.text
+	var history := str(log.get_meta("chronology", ""))
 	if motion_enabled and not skip.disabled:
 		if not await _pointer_activate(skip):
 			return false
-	if not skip.disabled or log.text != history:
+	if not skip.disabled or str(log.get_meta("chronology", "")) != history:
 		_fail("skipping motion changed or cleared event history")
 		return false
 	var sync_status := _node("Toolbar/SyncStatus") as Label
@@ -413,8 +413,13 @@ func _save_checkpoint_image(checkpoint: String, capture_dir: String, image: Imag
 	return true
 
 
+func _active_decision_surface() -> Control:
+	var window := preload("res://smoke/ability_window_smoke_support.gd").surface(main)
+	return window if window != null else _decision()
+
+
 func _first_enabled_choice() -> Button:
-	for button in _visible_buttons(_decision()):
+	for button in _visible_buttons(_active_decision_surface()):
 		if not button.disabled and button.name != "Submit" \
 				and button.name != &"Decline" and button.text not in ["+", "−"]:
 			return button
@@ -422,21 +427,21 @@ func _first_enabled_choice() -> Button:
 
 
 func _first_enabled_target() -> Button:
-	for button in _visible_buttons(_decision()):
+	for button in _visible_buttons(_active_decision_surface()):
 		if not button.disabled and button.text.begins_with("◇"):
 			return button
 	return null
 
 
 func _submit_button() -> Button:
-	var submit := _decision().find_child("Submit", true, false) as Button
+	var submit := _active_decision_surface().find_child("Submit", true, false) as Button
 	return submit if submit != null and submit.is_visible_in_tree() else null
 
 
 func _visible_buttons_meet_pointer_floor() -> bool:
 	var expected: float = 44.0 if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080" \
 		else _scaled_metric(44)
-	for button in _visible_buttons(_decision()):
+	for button in _visible_buttons(_active_decision_surface()):
 		if button.size.x < expected or button.size.y < expected:
 			_fail("visible decision control '%s' misses the pointer-target floor" % button.text)
 			return false

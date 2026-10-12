@@ -24,6 +24,8 @@ internal static class AbilityRecipientCommitment
 
     internal static AbilityEffect.ChooseCard? Choice(World world, Card source, CompiledCardAbility ability)
     {
+        if (ability.Trigger.Timing is AbilityType.Interrupt or AbilityType.Response)
+            return WindowChoice(world, source, ability);
         if (EffectiveCards.Kind(source, world.Facts) == CardKind.Event)
             return EventChoice(world, source, ability);
         if (EffectiveCards.Kind(source, world.Facts) != CardKind.Support
@@ -42,6 +44,11 @@ internal static class AbilityRecipientCommitment
         };
     }
 
+    private static AbilityEffect.ChooseCard? WindowChoice(World world, Card source,
+        CompiledCardAbility ability) => ability.Labels.Length == 0
+            && AbilityCostSelection.Ask(world, source.Owner, ability.Cost) is null
+            && ability.Effect is AbilityEffect.ChooseCard choice ? choice : null;
+
     private static AbilityEffect.ChooseCard? EventChoice(World world, Card source,
         CompiledCardAbility ability) =>
         ability.Trigger.Timing == AbilityType.Action && ability.Labels.Length == 0
@@ -54,8 +61,9 @@ internal static class AbilityRecipientCommitment
         if (Choice(world, source, ability) is not { } choice
             || execution.InspectsConcealedPile(choice.From)) return null;
         var cast = new AbilityResolutionState(world, source,
-            new Occurrence(0, [Steps.TurnAction], Subject: source.ObjectId, Player: player), player, [])
-            { Tier = AbilityType.Action };
+            world.Windows.Current?.Occurrence
+                ?? new Occurrence(0, [Steps.TurnAction], Subject: source.ObjectId, Player: player), player, [])
+            { Tier = ability.Trigger.Timing };
         var context = execution.StructuralContext(cast);
         var cards = AbilityAdmission.LegalCardChoices(choice, context.Admission());
         string cost = AbilityCostDescription.Summary(world, source, player, ability.Cost) ?? "";

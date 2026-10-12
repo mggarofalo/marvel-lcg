@@ -10,6 +10,45 @@ namespace Marvel.View.Tests;
 public sealed class ResponseReceiptPresentationTests : EventPresentationTestBase
 {
     [Fact]
+    public void WindowEventReceiptNamesItsSourceAndCleanupDoesNotExposeInternalArea()
+    {
+        WorldDescriptor world = World() with { Areas =
+        [new AreaDescriptor(1, "DiscardPile", 0, -1, [Readable(8, "Great Responsibility")], [])] };
+        var offer = new Affordance(3, "Replace", 8, 0, "Great Responsibility")
+        {
+            PlaysCard = true, AnchorKind = AffordanceAnchorKind.Card,
+            CommitLabel = "Spider-Man takes 1 damage instead of 1 threat",
+        };
+        var prompt = new Prompt(0, Question.TurnOption, TimingPriority.Untimed,
+            "test", "test", true, [offer]) { PublicKind = PublicDecisionKind.Interrupt };
+        DecisionReceiptContext accepted = DecisionReceiptContext.From(prompt, world, 3, [], [])!;
+        Assert.Equal("Great Responsibility: Spider-Man takes 1 damage instead of 1 threat.", accepted.Commitment);
+        GameEvent[] events = [Move(8, "RevealingArea", "DiscardPile", "Discard")];
+        var batch = EventCuePlanner.Plan(events, world, Outcome.Unfinished);
+        Assert.Contains(batch.History, entry => entry.Summary == "Peter Parker discarded Great Responsibility.");
+        Assert.DoesNotContain(batch.History, entry => entry.Summary.Contains("revealing", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData(BasicPowers.AttackVerb, "attacked")]
+    [InlineData(BasicPowers.ThwartVerb, "thwarted")]
+    public void BasicOccurrenceHeadlineNamesItsSourceAndTargetOnce(string verb, string wording)
+    {
+        WorldDescriptor world = World() with { Areas =
+        [new AreaDescriptor(1, "HeroArea", 0, -1,
+            [Readable(7, "Spider-Man"), Readable(9, "Rhino")], [])] };
+        var offer = new Affordance(3, verb, 7, 0, verb)
+        { AnchorKind = AffordanceAnchorKind.Card };
+        var prompt = new Prompt(0, Question.TurnOption, TimingPriority.Untimed,
+            "test", "test", true, [offer]);
+
+        DecisionReceiptContext context = DecisionReceiptContext.From(prompt, world, 3, [9], [])!;
+
+        Assert.Equal($"Spider-Man {wording} Rhino", context.OccurrenceTitle);
+        Assert.Null(DecisionReceiptContext.From(prompt, world, 3, [], [])!.OccurrenceTitle);
+    }
+
+    [Fact]
     public void ACurrentNestedCancellationNamesItsPlayPaymentAndScopeWithoutAnEarlierDiscard()
     {
         // Synthetic authorized response, isolated from the enclosing phase's

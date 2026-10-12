@@ -258,6 +258,9 @@ func _configure_connection(main: Control) -> void:
 
 
 func _answer_visible_decision(main: Control) -> bool:
+	var window := preload("res://smoke/ability_window_smoke_support.gd").surface(main)
+	var acknowledge := window.find_child("AcknowledgeForcedAbility", true, false) as Button if window != null else null
+	if acknowledge != null: return await _pointer_activate(acknowledge)
 	if not await _wait_for_hosted_motion(main): return false
 	var prior_revision := _hosted_response_revision(main)
 	if prior_revision < 0:
@@ -304,6 +307,8 @@ func _answer_fallback_decision(main: Control, prior_revision: int) -> bool:
 
 func _compose_table_decision(main: Control) -> bool:
 	for selection in 10:
+		var window_commit := preload("res://smoke/ability_window_smoke_support.gd").commitment(main)
+		if window_commit != null: return await _pointer_activate(window_commit)
 		var payment := main.find_child("PaymentWorkspace", true, false) as Control
 		if payment != null and payment.is_visible_in_tree():
 			return await _compose_hosted_payment(main)
@@ -365,6 +370,7 @@ func _contextual_decline(main: Control) -> Button:
 
 
 func _has_table_decision(main: Control) -> bool:
+	if preload("res://smoke/ability_window_smoke_support.gd").surface(main) != null: return true
 	if _contextual_decline(main) != null or _task_commit(main) != null: return true
 	for pattern in ["Card*Target", "Card*Cost", \
 			"Card*Generator", "Card*Action"]:

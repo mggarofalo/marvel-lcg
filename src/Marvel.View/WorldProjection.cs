@@ -39,6 +39,11 @@ public static class WorldProjection
         Prompt? authorizedPrompt = promptVisible
             ? prompt! with
             {
+                Affordances = prompt!.Affordances.Select(option => option with
+                {
+                    WindowChoices = readableIds.Contains(option.AnchorId)
+                        ? option.WindowChoices.Where(choice => choice.RecipientIds.All(readableIds.Contains)).ToArray() : [],
+                }).ToArray(),
                 ContextCardIds = [.. prompt!.ContextCardIds.Where(readableIds.Contains)],
                 CauseCardIds = [.. prompt.CauseCardIds.Where(readableIds.Contains)],
             }
@@ -47,7 +52,9 @@ public static class WorldProjection
         visible = TableDescriptorProjection.WithContext(
             visible, authorizedPrompt, scope, active, world.FirstPlayer,
             publicPrompt ?? prompt, PublicReadableIds(complete, readableIds));
-        return new VisibleResult(visible, authorizedPrompt, VisibilityEventFilter.Filter(events, addressableIds, readableIds));
+        List<GameEvent> safeEvents = VisibilityEventFilter.Filter(events, addressableIds, readableIds);
+        visible = visible with { EventFaces = EventFaceProjection.From(safeEvents, world.Facts) };
+        return new VisibleResult(visible, authorizedPrompt, safeEvents);
     }
 
     private static HashSet<int> PublicReadableIds(WorldDescriptor complete, HashSet<int> readableIds) =>
@@ -116,26 +123,21 @@ public static class WorldProjection
         IReadOnlyDictionary<string, string> attributes,
         bool assigned)
     {
-        var face = new CardFaceDescriptor(
-            EffectiveCards.FaceId(card),
-            EffectiveCards.Title(card, world.Facts),
-            assigned ? string.Empty : world.Facts.Subtitle(card.FaceId),
-            kind,
-            ProjectedFields(world, card, kind))
+        CardFaceDescriptor printed = assigned
+            ? new CardFaceDescriptor(EffectiveCards.FaceId(card), EffectiveCards.Title(card, world.Facts),
+                string.Empty, kind, new Dictionary<string, long>())
+            {
+                Cost = attributes.GetValueOrDefault("Cost"),
+                PrintedStats = PrintedFaceAttributes.PrintedStats(attributes),
+                PrintedValues = CardPrintedValues.From(PrintedStatFacts.From(kind, attributes)),
+            }
+            : PrintedCardFaceProjection.From(world.Facts, card.FaceId);
+        CardFaceDescriptor face = printed with
         {
+            Fields = ProjectedFields(world, card, kind),
             Traits = DisplayTraits(world, card),
-            Cost = attributes.TryGetValue("Cost", out string? cost) ? cost : null,
-            PrintedStats = PrintedStats(attributes),
-            PrintedValues = CardPrintedValues.From(assigned
-                ? PrintedStatFacts.From(kind, attributes)
-                : world.Facts.PrintedStats(card.FaceId)),
-            Keywords = assigned ? [] : [.. world.Facts.Keywords(card.FaceId)],
-            RulesText = assigned ? string.Empty : world.Facts.Text(card.FaceId),
-            RulesMarkup = assigned ? string.Empty : world.Facts.FormattedText(card.FaceId),
-            ArtFaceId = assigned ? null : card.FaceId,
             Damage = card.Damage,
-            Counters = card.Tokens
-                .Where(token => token.Key.StartsWith("c_", StringComparison.Ordinal))
+            Counters = card.Tokens.Where(token => token.Key.StartsWith("c_", StringComparison.Ordinal))
                 .ToDictionary(token => token.Key[2..], token => token.Value, StringComparer.Ordinal),
         };
         return face;
@@ -175,21 +177,6 @@ public static class WorldProjection
             .. Traits.Of(world, card, world.Facts)
                 .Select(trait => labels.GetValueOrDefault(trait, trait.Replace('_', ' '))),
         ];
-    }
-
-    private static Dictionary<string, string> PrintedStats(
-        IReadOnlyDictionary<string, string> attributes)
-    {
-        string[] names =
-        [
-            "REC", "THW", "ATK", "DEF", "SCH", "HP", "HS", "Stage",
-            "REC+", "THW+", "ATK+", "DEF+", "SCH+", "HP+",
-            "StartingThreat", "TargetThreat", "EscalationThreat", "Boost", "RES", "Class",
-            "Unique", "Acceleration", "Amplify", "Crisis", "Hazard",
-        ];
-        return names
-            .Where(attributes.ContainsKey)
-            .ToDictionary(name => name, name => attributes[name], StringComparer.Ordinal);
     }
 
     private static CardBack Back(CardKind kind) => kind is

@@ -16,6 +16,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules");
         PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(WorldDescriptor).Assembly,
+            // Passive forced-window resolution evidence, with no decision authority.
+            "Marvel.Rules.Events.AbilityWindowResult",
             "Marvel.Rules.Events.ActivityCompleted",
             "Marvel.Rules.Events.ActivityParticipant",
             "Marvel.Rules.Events.ActivityPhaseStep",
@@ -51,6 +53,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.Question",
             "Marvel.Rules.Prompts.ResourceSource",
             "Marvel.Rules.Prompts.TargetRequest",
+            "Marvel.Rules.Prompts.WindowChoice",
             "Marvel.Rules.State.Area",
             "Marvel.Rules.State.Card",
             "Marvel.Rules.State.CardControl",
@@ -86,6 +89,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.State.StateFields",
             "Marvel.Rules.State.Traits",
             "Marvel.Rules.State.World",
+            "Marvel.Rules.Timing.AbilityType",
             "Marvel.Rules.Timing.Duration",
             "Marvel.Rules.Timing.TimingPriority");
     }
@@ -104,6 +108,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
+            "Marvel.Rules.Prompts.Question",
             "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.ResourceCost",
             "Marvel.Rules.Prompts.ResourcePayment",
@@ -111,6 +116,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.ResourcePaymentProgress",
             "Marvel.Rules.Prompts.ResourceSource",
             "Marvel.Rules.Prompts.TargetRequest",
+            "Marvel.Rules.Prompts.WindowChoice",
             "Marvel.Rules.Prompts.VariableRequest");
     }
 
@@ -125,6 +131,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View");
         PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(LocalGameClient).Assembly,
+            // Passive forced-window resolution evidence, with no decision authority.
+            "Marvel.Rules.Events.AbilityWindowResult",
             "Marvel.Rules.Events.ActivityCompleted",
             "Marvel.Rules.Events.ActivityParticipant",
             "Marvel.Rules.Events.PhaseStarted",
@@ -150,6 +158,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Events.PlayAreaJoined",
             // Passive successful-cancellation fact; no rules are reconstructed.
             "Marvel.Rules.Events.WhenRevealedCanceled",
+            "Marvel.Rules.Timing.AbilityType",
+            "Marvel.Rules.Timing.AbilityTypes",
             "Marvel.Rules.Play.Outcome",
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.CostOption",

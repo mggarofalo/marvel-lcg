@@ -18,6 +18,12 @@ public sealed record AffordancePresentation(
     IReadOnlyList<string> Costs,
     string? Consequence = null)
 {
+    /// <summary>Timing of this current engine-offered ability.</summary>
+    public Marvel.Rules.Timing.AbilityType? Timing { get; init; }
+
+    /// <summary>Complete current intentions; an empty list retains explicit composition.</summary>
+    public IReadOnlyList<WindowChoice> WindowChoices { get; init; } = [];
+
     /// <summary>Readable engine-authored choice name, without changing command identity.</summary>
     public string? DisplayLabel { get; init; }
 

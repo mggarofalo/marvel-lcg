@@ -45,7 +45,7 @@ func _play_shuri() -> bool:
 	var resource := _visible_button_beginning(_payment_modal(), "Discard Vibranium")
 	if resource == null or not await _keyboard_activate(resource): return false
 	if not await _commit_once("Play Shuri"): return false
-	if not await _wait_for(func() -> bool: return _visible_button_beginning(_play(), SEARCH) != null):
+	if not await _wait_for(func() -> bool: return _visible_button_beginning(main, SEARCH) != null):
 		_fail("Shuri response did not arrive: " + _visible_text(_play()))
 		return false
 	return true
@@ -59,7 +59,7 @@ func _accept_search() -> bool:
 		_fail("Shuri's optional response lost its pass choice")
 		return false
 	var revision := _search_revision()
-	if not await _pointer_activate(_visible_button_beginning(_play(), SEARCH)): return false
+	if not await _pointer_activate(_visible_button_beginning(main, SEARCH)): return false
 	if not await _wait_for(func() -> bool: return _search_revision() == revision + 1):
 		_fail("Shuri's deliberate search action did not commit exactly one opportunity")
 		return false

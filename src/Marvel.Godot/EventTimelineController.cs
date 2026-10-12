@@ -12,9 +12,23 @@ internal sealed class EventTimelineController(Main main) : IDisposable
     private PanelContainer? panel;
     private Control? rail;
     private Label? caption;
+    private HBoxContainer? references;
+    private EventPresentation? referenceEntry;
     private PanelContainer? popup;
     private Label? detail;
     private EventPresentation? active;
+    private int lastSelection = -1;
+    internal IReadOnlyList<TimelineOccurrence> Entries => archive.Entries;
+    internal int Selected => viewport.Selected;
+    internal event Action<int>? SelectionChanged;
+    internal event Action? DetailRequested;
+
+    internal void SelectOccurrence(int index)
+    {
+        viewport.Select(index);
+        Refresh();
+        DetailRequested?.Invoke();
+    }
 
     internal void PresentBeat(EventActivitySequence sequence)
     {
@@ -66,21 +80,26 @@ internal sealed class EventTimelineController(Main main) : IDisposable
         main.AddChild(panel);
         var row = new HBoxContainer();
         panel.AddChild(row);
-        AddButton(row, "<", "Previous event", () => viewport.Select(viewport.Selected - 1));
-        AddButton(row, ">", "Next event", () => viewport.Select(viewport.Selected + 1));
+        AddButton(row, "<", "Previous event", () => SelectOccurrence(viewport.Selected - 1));
+        AddButton(row, ">", "Next event", () => SelectOccurrence(viewport.Selected + 1));
         var body = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         body.AddThemeConstantOverride("separation", 0);
         row.AddChild(body);
         caption = new Label { Name = "TimelineCaption", TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
             MouseFilter = Control.MouseFilterEnum.Ignore };
         caption.AddThemeFontSizeOverride("font_size", 12);
-        body.AddChild(caption);
+        var headline = new HBoxContainer();
+        body.AddChild(headline);
+        caption.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        headline.AddChild(caption);
+        references = new HBoxContainer { Name = "ActivityReference" };
+        headline.AddChild(references);
         rail = new Control { Name = "TimelineRail", CustomMinimumSize = new Vector2(120, 24),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, FocusMode = Control.FocusModeEnum.All,
             MouseDefaultCursorShape = Control.CursorShape.PointingHand };
         body.AddChild(rail);
         rail.Draw += () => TimelineRailDrawing.Paint(rail, viewport, archive.Entries);
-        var input = new TimelineRailInput(rail, viewport, Refresh, Preview);
+        var input = new TimelineRailInput(rail, viewport, Refresh, Preview, () => DetailRequested?.Invoke());
         rail.GuiInput += input.Handle;
         rail.MouseExited += HidePreview;
         rail.FocusExited += HidePreview;
@@ -117,11 +136,28 @@ internal sealed class EventTimelineController(Main main) : IDisposable
         string text = selected < 0 ? "" : Copy(archive.Entries[selected].Event);
         if (viewport.Following && active is not null) text = Copy(active);
         caption.Text = text;
+        RefreshReferences(selected);
         rail.AccessibilityName = text;
         panel.SetMeta("timeline_selected", selected);
         panel.SetMeta("timeline_span", viewport.Span);
         panel.SetMeta("timeline_following", viewport.Following);
         rail.QueueRedraw();
+        if (lastSelection != selected)
+        {
+            lastSelection = selected;
+            SelectionChanged?.Invoke(selected);
+        }
+    }
+
+    private void RefreshReferences(int selected)
+    {
+        EventPresentation? shown = viewport.Following && active is not null ? active
+            : selected >= 0 ? archive.Entries[selected].Event : null;
+        if (references is not null && !ReferenceEquals(referenceEntry, shown))
+        {
+            referenceEntry = shown;
+            ActivityReferenceChips.Present(references, main, shown, compact: true);
+        }
     }
 
     private void Preview(int index)
@@ -137,7 +173,9 @@ internal sealed class EventTimelineController(Main main) : IDisposable
             Math.Max(8, panel.GlobalPosition.Y - popup.Size.Y - 8));
     }
 
-    private static string Copy(EventPresentation entry) => string.IsNullOrWhiteSpace(entry.Intention)
+    private static string Copy(EventPresentation entry) => entry.ResultSummary is { } result
+        ? $"{entry.CueSummary ?? entry.Summary} · {result}"
+        : string.IsNullOrWhiteSpace(entry.Intention)
         || entry.Motion is not (EventMotionKind.Damage or EventMotionKind.Threat or EventMotionKind.Heal)
         ? entry.Summary : entry.Intention.TrimEnd('.') + " · " + entry.Summary;
 

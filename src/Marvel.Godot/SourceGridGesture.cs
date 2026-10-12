@@ -2,10 +2,11 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Reversible presentation-only swaps between installed-source slots.</summary>
+/// <summary>Reversible presentation-only placement into occupied or vacant installed-source slots.</summary>
 internal sealed partial class SourceGridGesture : Node
 {
     private readonly Dictionary<Control, CardControl> cards = [];
+    private readonly List<Control> vacancies = [];
     private readonly CardPointerLift lift = new();
     private GridContainer grid = null!;
     private ScrollContainer viewport = null!;
@@ -27,6 +28,18 @@ internal sealed partial class SourceGridGesture : Node
         seat = player;
         result = board;
         feedback = new SourceArrangementFeedback(scroll.GetParent<Control>());
+    }
+
+    internal void TrackEmpty(Control slot)
+    {
+        vacancies.Add(slot);
+        feedback.Track(slot);
+        slot.Draw += () =>
+        {
+            if (dragged is null) return;
+            slot.DrawRect(new Rect2(Vector2.One * 2, slot.Size - Vector2.One * 4),
+                CardFaceStyle.Paper with { A = 0.3f }, false, 1);
+        };
     }
 
     internal void Track(CardControl card, Control slot)
@@ -90,6 +103,7 @@ internal sealed partial class SourceGridGesture : Node
         keyboard = usingKeyboard;
         original = [.. grid.GetChildren().OfType<Control>()];
         result.SetSourceArrangement(true);
+        foreach (Control vacancy in vacancies) vacancy.QueueRedraw();
         feedback.Show(slot, $"Picked up {Identity(slot)} · {Place(slot)}. Arrows move; Enter places; Escape cancels.");
     }
 
@@ -144,7 +158,8 @@ internal sealed partial class SourceGridGesture : Node
         RestoreOrder();
         grid.MoveChild(origin!, targetIndex);
         grid.MoveChild(target, sourceIndex);
-        feedback.Show(origin!, $"Place in {Place(origin!)}. Release / Enter places; Escape cancels.");
+        string destination = cards.ContainsKey(target) ? "Exchange at" : "Move into empty slot at";
+        feedback.Show(origin!, $"{destination} {Place(origin!)}. Release / Enter places; Escape cancels.");
     }
 
     private Control? SlotAt(Vector2 pointer)
@@ -158,7 +173,7 @@ internal sealed partial class SourceGridGesture : Node
     {
         if (!moving || SlotAt(pointer) is null) { Cancel(); return; }
         SourcePresentationOrder.Store(seat, grid.GetChildren().OfType<Control>()
-            .Select(slot => cards[slot].TargetId).OfType<int>());
+            .Select(slot => cards.TryGetValue(slot, out CardControl? card) ? card.TargetId : null));
         result.PresentGestureFeedback("");
         Finish();
     }
@@ -188,6 +203,7 @@ internal sealed partial class SourceGridGesture : Node
             result.UpdateRestingPose(dragged);
         }
         dragged = null;
+        foreach (Control vacancy in vacancies) vacancy.QueueRedraw();
         origin = null;
         moving = false;
         original = [];

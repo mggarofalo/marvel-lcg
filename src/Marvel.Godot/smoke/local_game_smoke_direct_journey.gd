@@ -121,10 +121,10 @@ func _direct_change_form_is_played() -> bool:
 func _undo_and_replay_change_form() -> bool:
 	if not await _set_history_drawer(true):
 		return false
-	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
+	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
 	var undo := main.find_child("UndoLast", true, false) as Button
 	if undo.disabled or undo.tooltip_text != "Undo the latest completed action." \
-			or "Spider-Man changed form." not in history.get_parsed_text():
+			or "Spider-Man changed form." not in str(history.get_meta("chronology", "")):
 		_fail("the direct form change has no authoritative history undo")
 		return false
 	if not _available_undo_has_no_restriction(): return false
@@ -158,7 +158,7 @@ func _replay_restored_change_form() -> bool:
 
 func _set_history_drawer(expanded: bool) -> bool:
 	var toggle := main.find_child("ToggleHistory", true, false) as Button
-	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as Control
+	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
 	if toggle == null:
 		return false
 	if log.visible != expanded and not await _activate_exposed_control_point(toggle):
@@ -182,6 +182,10 @@ func _direct_black_cat_is_played() -> bool:
 		_fail("Black Cat payment did not expose its offered hand discard and Web-Shooter ability")
 		return false
 	if not await _commit_once("Black Cat"):
+		return false
+	var acknowledgment := main.find_child("AcknowledgeForcedAbility", true, false) as Button
+	if acknowledgment == null or not await _pointer_activate(acknowledgment):
+		_fail("Black Cat must acknowledge its resolved forced response before acting")
 		return false
 	return _attached(_attached_name(BLACK_CAT, "Action")) != null
 

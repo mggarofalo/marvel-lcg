@@ -103,8 +103,12 @@ func _check_source_grip(card: Control, title: Label, failures: Array[String]) ->
 
 func _check_source_title(title: Label, failures: Array[String]) -> void:
 	if title.get_line_count() > title.get_visible_line_count(): failures.append("source title clipped")
-	if title.get_theme_font_size("font_size") != 14 or title.autowrap_mode != TextServer.AUTOWRAP_OFF:
+	var font_size := title.get_theme_font_size("font_size")
+	if font_size < 11 or font_size > 14 or title.autowrap_mode != TextServer.AUTOWRAP_OFF:
 		failures.append("source title does not retain compact native typography")
+	var measured := title.get_theme_font("font").get_string_size(title.text.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+	if measured.x > title.size.x + 0.1:
+		failures.append("source title truncates its visible name: " + title.text)
 	if title.accessibility_name != title.text or title.tooltip_text != title.text:
 		failures.append("source title loses full accessible identity")
 
@@ -259,6 +263,7 @@ func _check_every_grip(tableau: Control, viewport: ScrollContainer, fixture: Con
 	var original := grid.get_children()
 	for slot in original:
 		var card := slot.find_child("ProceduralCard*", true, false) as Control
+		if card == null: continue
 		viewport.ensure_control_visible(card)
 		for frame in range(3): await process_frame
 		await _source_grip_drag(card, card.get_global_rect().get_center() + Vector2(4, 4), true)

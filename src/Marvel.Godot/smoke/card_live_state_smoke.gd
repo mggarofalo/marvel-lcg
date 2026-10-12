@@ -106,6 +106,7 @@ func _check_source_input(sample: Control, fixtures: Control, failures: Array[Str
 	if source == null or sources.size() != 2:
 		failures.append("missing supplied HP source access")
 		return
+	if not await _open_value_source_disclosure(detail, sources, failures): return
 	await _click(source)
 	if int(fixtures.get_meta("opened_source_target", -1)) != 900:
 		failures.append("pointer source access lost authorized current copy")
@@ -122,7 +123,24 @@ func _check_source_input(sample: Control, fixtures: Control, failures: Array[Str
 		failures.append("historical source keyboard access retained live target or wrong title")
 
 
-func _click(button: Button) -> void:
+func _open_value_source_disclosure(detail: Control, sources: Array[Node], failures: Array[String]) -> bool:
+	var mark := detail.find_child("ModifiedHealthMaximum", true, false) as Control
+	if mark == null:
+		failures.append("modified HP has no underlined disclosure")
+		return false
+	for source in sources:
+		if source.is_visible_in_tree():
+			failures.append("modified HP exposes source details before disclosure intent")
+			return false
+	var value := mark.get_parent() as Control
+	await _click(value)
+	for source in sources:
+		if not source.is_visible_in_tree():
+			failures.append("opening modified HP did not expose its supplied source")
+			return false
+	return true
+
+func _click(button: Control) -> void:
 	var point := button.get_global_rect().get_center()
 	var motion := InputEventMouseMotion.new()
 	motion.position = point

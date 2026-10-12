@@ -48,7 +48,7 @@ public sealed class EventActivityProjectionTests : EventPresentationTestBase
         Assert.Contains("hand", activity.From);
         Assert.Contains("discard", activity.To);
         Assert.Empty(activity.Quantities);
-        Assert.Equal(["Card", "Name", "Role", "Landscape"], typeof(ActivitySubject).GetProperties().Select(property => property.Name));
+        Assert.Null(Assert.Single(activity.Subjects).Reference);
     }
 
     [Fact]

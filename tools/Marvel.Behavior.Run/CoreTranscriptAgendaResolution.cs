@@ -169,6 +169,7 @@ internal static class CoreTranscriptAgendaResolution
         if (opportunity is not null)
         {
             accepted = true;
+            if (CommitsRecipient(opportunity, payment, target)) targetChosen = true;
             return payment is null
                 ? Decision.Take(opportunity.Id)
                 : Decision.Take(
@@ -187,6 +188,10 @@ internal static class CoreTranscriptAgendaResolution
         }
         return Decision.Decline;
     }
+
+    private static bool CommitsRecipient(Affordance opportunity, int? payment, int? target) =>
+        payment is not null && target is { } recipient && opportunity.DirectRecipientCommit
+        && opportunity.Targets?.Legal.Contains(recipient) == true;
 
     internal static void FinishAgendaAccepting(
         TranscriptContext context, TranscriptStep step, IReadOnlyList<string> acceptedLabels)

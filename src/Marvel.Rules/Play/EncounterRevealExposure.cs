@@ -40,6 +40,7 @@ public static class EncounterRevealExposure
         {
             Trigger = trigger,
             Verb = "Reveal",
+            SubjectFaces = OccurrenceFaces.For(card),
         });
     }
 }

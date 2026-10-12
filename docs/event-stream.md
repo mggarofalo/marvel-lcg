@@ -71,6 +71,7 @@ emits these facts directly:
 | `CardsShuffledIntoDeck` | `player`, `count`, `public_titles` |
 | `ActivityCompleted` | `batch`, `participants`, `phase_step` |
 | `PhaseStarted` | `phase`, `round` |
+| `AbilityWindowResult` | `source`, `type`, `player`, `occurrence`, `ordinal`, `description`, `completed` |
 
 `CardsShuffledIntoDeck` is emitted after the selected cards have moved and the
 deck has been shuffled. `count` records the returned quantity. `public_titles`
@@ -261,3 +262,26 @@ window changes intermediate events/information and uses engine replay v3.
 
 See [affordances.md](affordances.md) for input and
 [presentation-layer.md](presentation-layer.md) for transport and visibility.
+
+`AbilityWindowResult` records the initial resolution of a Forced Interrupt or Forced
+Response once per occurrence/source/timing/ordinal. `completed=false` means a required decision
+suspended resolution; answering that decision does not emit another initial receipt.
+Public presentation drops receipts whose source is unreadable. A local acknowledgment
+changes presentation only and never initiates another ability or passes a window.
+
+
+A forced ability's initial execution tags its own emitted results with
+`ability_source`, `ability_occurrence`, `ability_timing` and `ability_ordinal`.
+These engine-chosen association fields match the receipt's source, occurrence,
+type and ordinal; they are not inferred from adjacency, labels or printed text.
+The ability executor owns a fresh local event list, so a receipt does not claim
+unrelated payment, attack or later-window events from the enclosing response.
+Visibility filtering removes the association whenever its source is unreadable,
+and filters each result through the normal event policy before any summary.
+
+The native chronology groups those authorized results under the forced receipt,
+with ordered component details retained. Its notification describes actual
+outcomes (for example, cards discarded and cards returned), while its separately
+authorized source-face reference retains the printed rules for inspection. When
+no associated visible result exists, the engine's existing explanation remains;
+absence of a visible result does not assert that hidden state stayed unchanged.

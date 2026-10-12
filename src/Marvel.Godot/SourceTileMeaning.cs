@@ -13,8 +13,9 @@ internal static class SourceTileMeaning
         body.AddChild(footer);
         CardSourceStrip.AddContributions(footer, card, showRecipients: false);
         if (footer.GetChildCount() > 0) return;
-        IReadOnlyList<string> lines = CardSourceSummary.Lines(card);
-        string meaning = lines.Count > 0 ? lines[0] : "";
+        IReadOnlyList<string> lines = CardSourceSummary.AbilityLines(card);
+        if (lines.Count == 0) return;
+        string meaning = lines[0];
         RichTextLabel label = CardRulesRendering.Create(
             card with { RulesText = meaning, RulesMarkup = "" }, InterfaceScale.Standard, 11);
         label.Name = "SourceMeaning";

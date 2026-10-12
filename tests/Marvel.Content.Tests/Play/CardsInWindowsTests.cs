@@ -73,6 +73,16 @@ public sealed class CardsInWindowsTests
         Assert.Contains("Target: Spider-Man", asked.Description);
         Assert.Equal(["Spider-Sense"], asked.Affordances.Select(a => a.Label));
         Assert.Equal(["Spider-Sense"], asked.Affordances.Select(a => a.Verb));
+        var receipt = Assert.Single(events.OfType<AbilityWindowResult>());
+        Assert.True(receipt.Completed);
+        Assert.Equal(AbilityType.ForcedInterrupt, receipt.Type);
+        Assert.Equal("01099", Assert.Single(receipt.SubjectFaces!).Value);
+        Assert.Contains("attacking enemy gains overkill", receipt.Description);
+        Assert.Contains("Discard this card at the end", receipt.Description);
+        Assert.Equal("Spider-Man draws 1 card", Assert.Single(asked.Affordances[0].WindowChoices).Label);
+        var repeated = new List<GameEvent>();
+        Assert.NotNull(Sequence.Work(world, Cards, abilities, repeated));
+        Assert.Empty(repeated.OfType<AbilityWindowResult>());
 
         // Charge fired on the way past, and what it did is a lasting effect
         // rather than anything the board shows at this moment.

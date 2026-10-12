@@ -46,18 +46,17 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `28` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `29` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `5` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v13` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v14` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
 
-Replay v11 includes corrected Core card targets, prerequisites and response
-eligibility. These can change decisions and outcomes from the same initial
-setup. Older replay contracts require their matching runtime; changed ability
-data also changes its runtime dataset hash. The protocol is 28 and the
-session schema remains 5 because these corrections do not change their shapes.
+Replay v14 includes direct, explicitly selected optional-window recipients and
+typed forced-ability/event-face receipts. Protocol 29 carries these choices and
+visibility-filtered descriptions. Older replay contracts require their matching
+runtime. The session schema remains 5; the persisted decision envelope is unchanged.
 
 The product version belongs in desktop and server metadata. The protocol
 version belongs on every request and response. Save schema and replay identities

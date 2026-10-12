@@ -48,9 +48,7 @@ src/Marvel.Cards/Run/AbilityResolutionChoices.cs:161: SL005: AnswerResolutionSta
 src/Marvel.Cards/Run/AbilityResolutionChoices.cs:99: SL005: Choosing=9
 src/Marvel.Cards/Run/AbilityResolutionExecution.cs:44: SL005: AbilityResolutionExecution=8
 src/Marvel.Cards/Run/AbilityResolutionPowers.cs:100: SL005: CreatePowerState=18
-src/Marvel.Cards/Run/AbilityResolutionPowers.cs:13: SL003: AbilityResolutionPowers=325
 src/Marvel.Cards/Run/AbilityResolutionPowers.cs:187: SL005: Resolve=8
-src/Marvel.Cards/Run/AbilityResolutionPowers.cs:296: SL005: PayAbility=12
 src/Marvel.Cards/Run/AbilityResolutionPowers.cs:40: SL005: ResolvePower=27
 src/Marvel.Cards/Run/AbilityResolutionPreventionAndDefeat.cs:126: SL005: WouldBeDefeated=9
 src/Marvel.Cards/Run/AbilityResolutionPreventionAndDefeat.cs:176: SL005: SuspendWouldBeDefeated=10

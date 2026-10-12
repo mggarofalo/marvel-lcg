@@ -38,7 +38,7 @@ internal static class SpatialTableSurfaceRenderer
     private static AstraTableGeometry Geometry(Main main, DisplayedSeatSelection selection, Prompt? prompt)
     {
         Vector2 viewport = main.GetViewportRect().Size;
-        bool expanded = TableHistoryDrawer.IsExpanded(main);
+        bool expanded = TableHistoryDrawer.IsExpanded(main) || main.invitationOffer.Visible;
         float reserved = CardPaymentWorkspaceLayout.Active(main)
             ? Math.Max(CardPaymentWorkspaceLayout.Width(viewport),
                 expanded ? TableHistoryDrawer.ExpandedWidth(main) : 0) + 40
@@ -60,8 +60,8 @@ internal static class SpatialTableSurfaceRenderer
     }
 
     private static IReadOnlyList<BoardCardPresentation> Context(Main main, Prompt? prompt) =>
-        DecisionContextCards.MissingFromTable(prompt is null || main.CurrentGame?.World is null ? null
-            : PromptPresentation.From(prompt, main.CurrentGame.World), main.boardPresentation!);
+        DecisionContextCards.MissingFromTable(prompt is null || main.boardController.PresentedGame?.World is null ? null
+            : PromptPresentation.From(prompt, main.boardController.PresentedGame.World), main.boardPresentation!);
 
     private static Vector2 PhysicalCardSize(BoardPresentation board, InterfaceScale scale, float height, IReadOnlyList<BoardCardPresentation> context)
     {
@@ -147,7 +147,7 @@ internal static class SpatialTableSurfaceRenderer
         objects.RenderOverflow([.. scenario.Concat(player).Concat(Lane(board, "other"))]);
 
         AddHandCaption(surface, geometry, board, handSeat, prompt);
-        SpatialTableContextRenderer.Add(surface, result, geometry, main.CurrentGame?.World, prompt);
+        SpatialTableContextRenderer.Add(surface, result, geometry, main.boardController.PresentedGame?.World, prompt);
     }
 
     private static PanelContainer AddMat(

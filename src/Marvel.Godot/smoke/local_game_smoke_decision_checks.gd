@@ -7,15 +7,15 @@ func _synchronization_preserves_history(expect_terminal: bool) -> bool:
 	if synchronize.custom_minimum_size.y < 32:
 		_fail("the compact synchronization control is too small to operate")
 		return false
-	var event_log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
-	var history_before := event_log.text
+	var event_log := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
+	var history_before := str(event_log.get_meta("chronology", ""))
 	if not await _pointer_activate(synchronize):
 		return false
 	if not await _wait_for(func() -> bool:
 		return not _status().text.begins_with("SYNCHRONIZING")):
 		_fail("the explicit table synchronization did not settle")
 		return false
-	if history_before != event_log.text:
+	if history_before != str(event_log.get_meta("chronology", "")):
 		_fail("synchronization replayed or cleared the visible event history")
 		return false
 	if expect_terminal:

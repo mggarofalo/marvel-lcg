@@ -23,7 +23,7 @@ internal static class CausalCardReferences
         result.Inspector.Register(cards);
         foreach (BoardCardPresentation card in cards)
         {
-            CardControl reference = SourceTableauTile.CreateCard(card, 168, scale);
+            CardControl reference = CausalReferenceTile.Create(card, 168, scale);
             reference.Name = $"CausalReference{card.TargetId}";
             reference.SetMeta("causal_reference", true);
             row.AddChild(reference);

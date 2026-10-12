@@ -11,6 +11,7 @@ func _run() -> void:
 		if not await _open_phase_activity(animated): return
 		if not await _verify_phase_activity(animated): return
 		if not await _complete_history_is_reachable(): return
+		if not await _historical_encounter_face_is_inspectable(): return
 		if not await _sync_clears_activity(): return
 		main.queue_free()
 		await process_frame
@@ -29,15 +30,19 @@ func _open_phase_activity(animated: bool) -> bool:
 	if not await _pointer_activate(_button_named("Start game")): return false
 	if not await _wait_for(func() -> bool: return _task_commit() != null): return false
 	if not await _commit_once("Keep hand"): return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
 	if not await _pointer_activate(_button_named("End turn")): return false
-	if not await _wait_for(func() -> bool:
-		return (_node("Toolbar/SyncStatus") as Label).text != revision): return false
-	if _button_named("Keep hand") != null:
-		if not await _commit_once("Keep hand"): return false
-	return await _wait_for(func() -> bool:
-		var activity := _activity()
-		return activity != null and int(activity.get_meta("activity_count", 0)) > 1 and _timeline().is_visible_in_tree())
+	if not await _wait_for(func(): return _button_named("Keep hand") != null):
+		_fail("End turn did not offer its required end-of-phase discard commitment")
+		return false
+	var prior := (_node("Toolbar/SyncStatus") as Label).text
+	main.set_meta("phase_prior_revision", prior)
+	main.set_meta("phase_expected_revision", int(prior.split("r")[-1]) + 1)
+	if not await _pointer_activate(_button_named("Keep hand")): return false
+	if await _wait_for(func() -> bool:
+		var activity := _timeline()
+		return activity != null and int(activity.get_meta("timeline_count", 0)) > 1 and activity.is_visible_in_tree()): return true
+	_fail("accepted villain-phase response has no visible chronological playback")
+	return false
 
 
 func _activity() -> Control:
@@ -45,9 +50,8 @@ func _activity() -> Control:
 
 
 func _verify_phase_activity(animated: bool) -> bool:
-	var activity := _activity()
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
-	var prompt := _logical_prompt_identity()
+	var activity := _timeline()
+	var settled_revision := int(main.get_meta("phase_expected_revision", -1))
 	var account := _timeline().find_child("TimelineCaption", true, false) as Label
 	if not _control_is_fully_visible(_timeline()) or account.text.is_empty():
 		_fail("the villain phase has no readable bounded activity account")
@@ -57,8 +61,11 @@ func _verify_phase_activity(animated: bool) -> bool:
 		if not await _ordered_beats_remain_interactive(activity): return false
 	else:
 		if not _static_results_are_visible(activity): return false
-	if (_node("Toolbar/SyncStatus") as Label).text != revision or _logical_prompt_identity() != prompt:
-		_fail("presentation advanced or replaced the engine decision")
+	if not await _wait_for(func(): return not bool(main.get_meta("response_staged", false))):
+		_fail("accepted phase consequences never settled")
+		return false
+	if (_node("Toolbar/SyncStatus") as Label).text != "Last synced · r%d" % settled_revision:
+		_fail("presentation did not settle on exactly the accepted revision")
 		return false
 	return await _capture_checkpoint("phase-activity-%s" % ("animated" if animated else "reduced"))
 
@@ -67,12 +74,11 @@ func _ordered_beats_remain_interactive(activity: Control) -> bool:
 	if not bool(activity.get_meta("activity_running", false)):
 		_fail("the accepted phase batch skipped directly to its final result")
 		return false
-	var heading := main.find_child("ContextualHeading", true, false) as Label
-	if (heading == null or not heading.is_visible_in_tree() or heading.text.is_empty()) and _button_named("End turn") == null:
-		_fail("activity concealed the current decision")
+	if not bool(main.get_meta("response_staged", false)) or _button_named("End turn") != null:
+		_fail("activity exposed the next decision before its consequences finished")
 		return false
-	if not await _body_click_inspects_without_drafting(_card_for_anchor(RHINO)): return false
 	while bool(activity.get_meta("activity_running", false)):
+		if not _prior_phase_is_retained(): return false
 		var index := int(activity.get_meta("activity_index"))
 		var result := _timeline().find_child("TimelineCaption", true, false) as Label
 		if result == null or result.text.is_empty() or not _control_is_fully_visible(result):
@@ -88,6 +94,16 @@ func _ordered_beats_remain_interactive(activity: Control) -> bool:
 	var pulse := main.find_child("EventActivityPulse", true, false) as Control
 	if pulse == null or pulse.mouse_filter != Control.MOUSE_FILTER_IGNORE:
 		_fail("activity cues intercept table input")
+		return false
+	return true
+
+
+func _prior_phase_is_retained() -> bool:
+	if not bool(main.get_meta("response_staged", false)) or _button_named("End turn") != null:
+		_fail("the next phase decision appeared during prior consequences")
+		return false
+	if (_node("Toolbar/SyncStatus") as Label).text != str(main.get_meta("phase_prior_revision")):
+		_fail("the prior authorized table revision changed during a phase beat")
 		return false
 	return true
 
@@ -128,8 +144,8 @@ func _complete_history_is_reachable() -> bool:
 		_fail("collapsed history duplicates the live activity feed")
 		return false
 	if not await _set_history_drawer(true): return false
-	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
-	var account := log.get_parsed_text()
+	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
+	var account := str(log.get_meta("chronology", ""))
 	if not log.is_visible_in_tree() or "Bomb Scare" not in account or "Hard to Keep Down" not in account or "threat" not in account:
 		_fail("history lost the ordered encounter/boost/consequence account")
 		return false
@@ -161,20 +177,48 @@ func _open_hero_attack_probe() -> bool:
 	if not await _pointer_activate(_button_named("Start game")): return false
 	if not await _wait_for(func() -> bool: return _task_commit() != null): return false
 	if not await _commit_once("Keep hand"): return false
+	if not await _wait_for(func(): return (_node("Toolbar/SyncStatus") as Label).text == "Last synced · r1" and not bool(main.get_meta("response_staged", false))):
+		_fail("initial Keep hand did not settle before form-change drafting")
+		return false
 	if not await _select_attached_action(IDENTITY, "Change Form"): return false
+	await process_frame
+	await process_frame
 	if not await _commit_once("Change Form"): return false
+	if not await _wait_for(func(): return not bool(main.get_meta("response_staged", false)) and _button_named("End turn") != null):
+		_fail("the exact offered form-change commitment did not settle")
+		return false
 	return true
 
 
 func _end_hero_turn_for_attack() -> bool:
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	if not await _wait_for(func(): return _button_named("End turn") != null and not bool(main.get_meta("response_staged", false))):
+		_fail("hero form did not settle into its next ordinary action prompt")
+		return false
 	if not await _pointer_activate(_button_named("End turn")): return false
-	if not await _wait_for(func() -> bool: return (_node("Toolbar/SyncStatus") as Label).text != revision): return false
-	revision = (_node("Toolbar/SyncStatus") as Label).text
-	if not await _compose_table_decision(): return false
-	if not await _wait_for(func() -> bool: return (_node("Toolbar/SyncStatus") as Label).text != revision): return false
-	return true
+	if not await _wait_for(func(): return _button_named("Keep hand") != null):
+		_fail("the hero attack journey lacks its required end-phase choice")
+		return false
+	if not await _stage_required_hero_discard(): return false
+	return await _wait_for(func(): return not bool(main.get_meta("response_staged", false)) and not _status().text.begins_with("DECISION SENT"))
 
+func _stage_required_hero_discard() -> bool:
+	var before := (_node("Toolbar/SyncStatus") as Label).text
+	var card := _mulligan_card("Avengers Mansion")
+	if card == null:
+		_fail("the seeded hero end-phase choice lacks Avengers Mansion")
+		return false
+	var anchor := int(str(card.name).trim_prefix("ProceduralCard"))
+	if not await _choose_target(anchor):
+		_fail("the seeded hero end-phase choice lacks offered Avengers Mansion")
+		return false
+	var submit := _task_commit()
+	if submit == null or submit.disabled or submit.text != "Discard 1":
+		_fail("the required hero discard did not stage exactly one offered card")
+		return false
+	if (_node("Toolbar/SyncStatus") as Label).text != before:
+		_fail("staging the required discard changed the authoritative revision")
+		return false
+	return await _pointer_activate(submit)
 
 func _attack_defense_prompt_is_visible() -> bool:
 	var heading := main.find_child("ContextualHeading", true, false) as Label
@@ -188,6 +232,7 @@ func _declare_probe_defender() -> bool:
 		_fail("defense lost source, target or unresolved boost")
 		return false
 	if not await _capture_checkpoint("activity-defense-context"): return false
+	if not await preload("res://smoke/inspection_context_checks.gd").defend(self): return false
 	if not await _select_attached_action(IDENTITY, "Defend"): return false
 	if not await _commit_once("Defend"): return false
 	return true
@@ -252,7 +297,8 @@ func _completed_probe_attack_roles_are_valid(caption: Control, defended: bool) -
 
 
 func _decline_probe_attack_opportunity() -> bool:
-	var decline := main.find_child("ContextualDecline", true, false) as Button
+	var decline := main.find_child("WindowPass", true, false) as Button
+	if decline == null: decline = main.find_child("ContextualDecline", true, false) as Button
 	if decline == null or not decline.is_visible_in_tree():
 		await _capture_checkpoint("activity-enemy-pending")
 		print("ATTACK_PROBE_CONTEXT ", _visible_text(main.find_child("CausalSituation", true, false)), " choices=", _visible_buttons(main).map(func(button): return button.text))
@@ -262,3 +308,24 @@ func _decline_probe_attack_opportunity() -> bool:
 	if not await _pointer_activate(decline): return false
 	if not await _wait_for(func() -> bool: return (_node("Toolbar/SyncStatus") as Label).text != revision): return false
 	return true
+
+
+func _historical_encounter_face_is_inspectable() -> bool:
+	if not await _pointer_activate(_timeline_button("Latest event")): return false
+	for index in range(int(_timeline().get_meta("timeline_count", 0))):
+		var references := _timeline().find_child("ActivityReference", true, false)
+		for chip in references.get_children():
+			if chip is Button and "Hard to Keep Down" in chip.text:
+				chip.grab_focus()
+				await process_frame
+				await process_frame
+				var inspector := main.get_node("CardInspector") as Control
+				if not inspector.is_visible_in_tree() or "Hard to Keep Down" not in _visible_text(inspector):
+					_fail("discarded boost face cannot be inspected from its occurrence")
+					return false
+				if not await _capture_checkpoint("historical-boost-reference"): return false
+				chip.release_focus()
+				return await _set_history_drawer(false)
+		if not await _pointer_activate(_timeline_button("Previous event")): return false
+	_fail("chronology has no authorized reference for the resolved boost")
+	return false

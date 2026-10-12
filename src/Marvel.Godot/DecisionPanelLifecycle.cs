@@ -61,6 +61,7 @@ internal sealed class DecisionPanelLifecycle
 
     internal bool CanMutate(int generation, long expectedRevision) => expectedRevision == revision
         && generation == renderGeneration
+        && !panel.AcknowledgementPending
         && !panel.submitting && !submission.IsSubmitted && panel.composer is not null;
 
     internal TableDraftBinding Bind(DecisionComposer composer, int generation) =>

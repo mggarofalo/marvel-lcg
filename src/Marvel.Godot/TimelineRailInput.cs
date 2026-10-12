@@ -3,7 +3,8 @@ using Godot;
 namespace Marvel.Godot;
 
 /// <summary>Consumes timeline navigation without sending table gestures or game decisions.</summary>
-internal sealed class TimelineRailInput(Control rail, TimelineViewport viewport, Action refresh, Action<int> preview)
+internal sealed class TimelineRailInput(Control rail, TimelineViewport viewport, Action refresh, Action<int> preview,
+    Action requestDetail)
 {
     private bool dragging;
     private bool moved;
@@ -30,7 +31,7 @@ internal sealed class TimelineRailInput(Control rail, TimelineViewport viewport,
         {
             dragging = button.Pressed;
             if (dragging) { start = button.Position; moved = false; rail.GrabFocus(); }
-            else if (!moved) viewport.Select(viewport.At(anchor));
+            else if (!moved) { viewport.Select(viewport.At(anchor)); requestDetail(); }
         }
         else return;
         rail.AcceptEvent();
@@ -55,6 +56,7 @@ internal sealed class TimelineRailInput(Control rail, TimelineViewport viewport,
     private void Key(InputEventKey key)
     {
         if (key.Keycode == global::Godot.Key.Escape) { preview(-1); rail.AcceptEvent(); return; }
+        int previous = viewport.Selected;
         switch (CanonicalKey(key.Keycode))
         {
             case global::Godot.Key.Left: viewport.Select(viewport.Selected - 1); break;
@@ -69,6 +71,12 @@ internal sealed class TimelineRailInput(Control rail, TimelineViewport viewport,
         }
         rail.AcceptEvent();
         refresh();
+        NotifySelection(previous);
         preview(viewport.Selected);
     }
+    private void NotifySelection(int previous)
+    {
+        if (viewport.Selected != previous) requestDetail();
+    }
+
 }

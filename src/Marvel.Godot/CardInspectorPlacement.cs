@@ -9,15 +9,17 @@ internal static class CardInspectorPlacement
     private const float Gap = 12;
 
     internal static Rect2 Fit(Vector2 viewport, Rect2 source, Vector2 content,
-        IReadOnlyList<Rect2>? occupied = null, IReadOnlyList<Rect2>? actions = null)
+        IReadOnlyList<Rect2>? occupied = null, IReadOnlyList<Rect2>? actions = null,
+        IReadOnlyList<Rect2>? situation = null)
     {
         Vector2 available = new(Math.Max(1, viewport.X - Margin * 2),
             Math.Max(1, viewport.Y - Margin * 2));
         Vector2 size = new(Math.Min(content.X, available.X), Math.Min(content.Y, available.Y));
-        Rect2[] obstacles = [.. actions ?? [], .. occupied ?? []];
+        Rect2[] obstacles = [.. situation ?? [], .. actions ?? [], .. occupied ?? []];
         IEnumerable<Rect2> fitted = Candidates(viewport, source, size, obstacles);
         // Preserve a complete face while keeping its source and current controls exposed.
-        return fitted.OrderBy(candidate => Overlap(candidate, source.Grow(Gap / 2)))
+        return fitted.OrderBy(candidate => situation?.Sum(region => Overlap(candidate, region)) ?? 0)
+            .ThenBy(candidate => Overlap(candidate, source.Grow(Gap / 2)))
             .ThenBy(candidate => actions?.Sum(action => Overlap(candidate, action)) ?? 0)
             .ThenBy(candidate => occupied?.Sum(card => Overlap(candidate, card)) ?? 0)
             .ThenByDescending(candidate => candidate.Size.Y)
@@ -34,7 +36,9 @@ internal static class CardInspectorPlacement
             .. obstacles.SelectMany(obstacle => new[]
                 { obstacle.End.X + Gap, obstacle.Position.X - size.X - Gap })];
         float[] vertical = [center.Y - size.Y / 2, source.Position.Y - size.Y - Gap,
-            source.End.Y + Gap, Margin, viewport.Y - size.Y - Margin];
+            source.End.Y + Gap, Margin, viewport.Y - size.Y - Margin,
+            .. obstacles.SelectMany(obstacle => new[]
+                { obstacle.End.Y + Gap, obstacle.Position.Y - size.Y - Gap })];
         return horizontal.Distinct().SelectMany(x => vertical.Select(y => new Rect2(new Vector2(
             Math.Clamp(x, Margin, Math.Max(Margin, viewport.X - size.X - Margin)),
             Math.Clamp(y, Margin, Math.Max(Margin, viewport.Y - size.Y - Margin))), size)));

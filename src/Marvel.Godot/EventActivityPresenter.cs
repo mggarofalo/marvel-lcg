@@ -12,6 +12,7 @@ internal sealed partial class EventActivityPresenter : Node
     private EventActivityPulse? pulse;
     private double elapsed;
     private bool suppressObjects;
+    internal event Action? Settled;
 
     internal void Configure(Main owner)
     {
@@ -39,16 +40,25 @@ internal sealed partial class EventActivityPresenter : Node
         elapsed += delta;
         if (!main!.eventMotion.ButtonPressed && sequence.Active) Complete();
         bool changed = sequence.Advance(delta);
-        if (changed) elapsed = 0;
+        if (changed) BeatAdvanced();
         if (RefreshHost() || changed) UpdateText();
         RefreshPulse();
+        if (!sequence.Active && elapsed >= 3) SetProcess(false);
+    }
+
+    private void BeatAdvanced()
+    {
+        elapsed = 0;
+        if (!sequence.Active) Settled?.Invoke();
     }
 
     internal void Complete()
     {
+        bool wasActive = sequence.Active;
         sequence.Complete();
         UpdateText();
         RefreshPulse();
+        if (wasActive) Settled?.Invoke();
     }
 
     internal void SettleForDraft()
@@ -82,6 +92,11 @@ internal sealed partial class EventActivityPresenter : Node
     private void RefreshPulse()
     {
         if (!InteractionControl.IsUsable(pulse)) return;
+        if (!sequence.Active && elapsed >= 3)
+        {
+            pulse!.Present([], elapsed, false);
+            return;
+        }
         var visible = VisibleSubjects(CurrentEntries());
         if (!sequence.Active) visible = SettledSubjects(visible);
         pulse!.Present(visible, elapsed, sequence.Active);

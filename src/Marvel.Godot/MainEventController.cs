@@ -20,10 +20,11 @@ internal sealed class MainEventController : IDisposable
     internal MainEventController(Main main)
     {
         this.main = main;
-        history = new HistoryAccountController(main);
+
         motion = new MainEventMotionController(main);
         resolutionStage = new MainResolutionStageController(main);
         timeline = new EventTimelineController(main);
+        history = new HistoryAccountController(main, timeline);
     }
     internal void RenderPromptSummary(Prompt? prompt, WorldDescriptor world)
     {
@@ -172,10 +173,13 @@ internal sealed class MainEventController : IDisposable
             : GodotThemeVariations.Caption;
     }
 
+    internal event Action? PlaybackSettled
+    { add => motion.Settled += value; remove => motion.Settled -= value; }
+
     internal void RenderEvents() => history.Render();
 
     internal void RecordTimeline(EngineResponse response, IReadOnlyList<EventPresentation> entries, bool reset)
-        => timeline.Record(response, entries, reset);
+        { timeline.Record(response, entries, reset); history.Render(); }
 
     internal void FitTimeline() => timeline.Fit();
     internal void ClearTimeline() => timeline.Clear();
@@ -211,7 +215,7 @@ internal sealed class MainEventController : IDisposable
         main.decisions.PresentOperationalNotice(progress);
         main.title.Text = progress.Title;
         main.description.Text = progress.Description;
-        main.status.Text = progress.Status;
+        main.status.Text = main.boardController.ResponseStaged ? "RESOLVING" : progress.Status;
         bool danger = progress.Kind is GameProgressKind.VillainWins
             or GameProgressKind.PlayersLose
             or GameProgressKind.DecisionRejected
@@ -228,7 +232,7 @@ internal sealed class MainEventController : IDisposable
         main.status.ThemeTypeVariation = danger
             ? GodotThemeVariations.DangerText
             : GodotThemeVariations.StatusText;
-        main.decisions.SetSubmitting(progress.LocksDecisions);
+        main.decisions.SetSubmitting(progress.LocksDecisions || main.boardController.ResponseStaged);
         TableSidebarContent.RefreshProgress(main);
     }
 

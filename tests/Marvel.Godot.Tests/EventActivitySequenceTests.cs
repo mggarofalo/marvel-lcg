@@ -58,5 +58,25 @@ public sealed class EventActivitySequenceTests
         Assert.False(sequence.Advance(100));
     }
 
+    [Theory]
+    [InlineData(1, 0.5)]
+    [InlineData(4, 2.6)]
+    [InlineData(30, 3.0)]
+    public void PlaybackBudgetKeepsDecisionsResponsiveWithoutDroppingBeats(int count, double limit)
+    {
+        var sequence = new EventActivitySequence();
+        sequence.Start(Enumerable.Range(0, count).Select(index => Cue($"Event {index}")).ToArray(), true);
+        var observed = new HashSet<int>();
+        double seconds = 0;
+        while (sequence.Active && seconds < limit)
+        {
+            observed.Add(sequence.Index);
+            sequence.Advance(1.0 / 120);
+            seconds += 1.0 / 120;
+        }
+        Assert.False(sequence.Active);
+        Assert.Equal(count, observed.Count);
+    }
+
     private static EventPresentation Cue(string summary) => new(summary, "Result", [], EventMotionKind.Threat);
 }

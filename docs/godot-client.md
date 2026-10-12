@@ -38,13 +38,14 @@ compact named source strips, including controlled upgrades attached to another
 character. Hover or keyboard focus previews a card; pinning expands bounded
 detail. Related faces and modifier sources are directly visible choices.
 
-Drag the title band of an upgrade or support to swap it with another grid slot.
-The destination outline and caption identify the exchange, including duplicate
-copies. Escape or dropping outside the grid restores the order.
+Drag the title band of an upgrade or support into an empty grid slot or swap it
+with an occupied slot. The destination outline previews the placement, including
+duplicate copies. Escape or dropping outside the grid restores the order.
 For keyboard use, focus its title grip, press Space, move with arrows, then Enter to
 place or Escape to cancel. Ordering follows physical card identities locally
-through board updates and resets with the session. The grid uses a fourth column
-when that keeps twelve sources visible without reducing the hand area.
+through board updates and resets with the session. Column count depends on the
+available area, so adding cards preserves existing slot coordinates at the same
+window size. Empty slots remain available for arranging cards.
 Compact headers use distinct support/upgrade and ready/exhausted symbols, with
 countable counter pips and an explicit numeric treatment for large counts.
 
@@ -64,17 +65,22 @@ letter badges: octagonal T for tough, jagged S for stunned, ring C for confused;
 defense uses a separate shield.
 
 Accepted activity uses native effect glyphs, source/target impulses and local
-quantity or status marks on visible affected objects. A reserved table seam shows
-up to two selected latest results; History retains the complete ordered account.
-Reduced motion immediately shows these latest results and distinct visible-object
-result categories, rather than replaying every intermediate change. The board
-remains authoritative and the current choice stays usable; animation does not
-simulate earlier world states or answer prompts. Starting a new decision draft
-clears the local result emphasis so it cannot be mistaken for target selection.
+quantity or status marks on visible affected objects. A zoomable chronology in
+the table seam shares occurrences with History's expandable account. Ordinary
+actions group costs and consequences beneath their intention; phase-wide ready,
+draw and discard batches retain their semantic boundaries.
 
-Phase-wide ready/draw batches and direct interrupt/response modals with optional
-Pass and forced acknowledgements are additional work tracked in MARVEL-522/523,
-under MARVEL-492; this activity presentation does not implement them.
+With motion enabled, short consequence playback retains the previously
+authorized table and blocks table actions before exposing the new board and
+decision. It does not synthesize intermediate game states or answer prompts.
+Reduced motion presents the accepted snapshot immediately. Sync and Undo cancel
+superseded playback. Starting a new draft clears transient object emphasis.
+
+Interrupts and responses use a contextual modal with engine-offered effect and
+recipient choices. Optional windows include Pass; choosing a complete effect
+commits it directly. Forced ability notifications require acknowledgement, with
+required decisions kept in the same surface. Complex costs and selections still
+use the prompt-bound composer; the client never answers a future prompt itself.
 
 The MARVEL-492 SVG direction is approved. Acceptance of this implementation
 remains the owner's affirmation of the working build.

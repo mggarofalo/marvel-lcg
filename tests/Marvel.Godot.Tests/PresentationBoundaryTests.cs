@@ -17,6 +17,12 @@ public sealed class PresentationBoundaryTests
             "Marvel.View");
         PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(Main).Assembly,
+            // Current offered tuples and timing select controls; legality remains in Decisions.
+            "Marvel.Decisions.WindowChoiceComposition",
+            "Marvel.Rules.Prompts.WindowChoice",
+            "Marvel.Rules.Timing.AbilityType",
+            // Authorized receipts drive local acknowledgment without inventing an engine prompt.
+            "Marvel.View.ForcedAbilityNotification",
             "Marvel.Rules.Events.GameEvent",
             "Marvel.Rules.Play.Outcome",
             "Marvel.Rules.Play.Resources",
@@ -54,6 +60,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.Client.ModularConfiguration",
             "Marvel.Decisions.CostSelectionState",
             "Marvel.Decisions.DecisionComposer",
+            // Decisions asks engine payment validation whether this draft needs another choice.
+            "Marvel.Decisions.DecisionCommitmentAssessment",
             "Marvel.Decisions.DecisionProgressPresentation",
             "Marvel.Decisions.EngineDecision",
             "Marvel.Decisions.PaymentProgress",
@@ -64,6 +72,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.Decisions.TargetSelectionMode",
             "Marvel.Decisions.TargetSelectionProgress",
             "Marvel.Server.EngineBuildIdentity",
+            // Only an accepted transport response may enqueue semantic receipts.
+            "Marvel.Server.EngineError",
             "Marvel.Server.EngineResponse",
             "Marvel.Server.HeroSetupChoice",
             "Marvel.Server.HistoryDescriptor",
@@ -107,6 +117,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.CardPersistentEffectDescriptor",
             "Marvel.View.CardPersistentThresholdDescriptor",
             "Marvel.View.DecisionReceiptContext",
+            // View groups authorized costs/results around the accepted intention without determining legality.
+            "Marvel.View.AcceptedActivityOccurrence",
             "Marvel.View.ResponseReceiptPresenter",
             "Marvel.View.EventBatchPresentation",
             "Marvel.View.EventChronology",

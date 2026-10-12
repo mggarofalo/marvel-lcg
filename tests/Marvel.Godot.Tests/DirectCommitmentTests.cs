@@ -44,6 +44,57 @@ public sealed class DirectCommitmentTests
         Assert.False(DirectCommitment.IsReady(composer));
     }
 
+    [Fact]
+    public void ZeroResourceEventCommitsOnItsCurrentWindowChoice()
+    {
+        var composer = Composer(PublicDecisionKind.Interrupt, new Affordance(1, "Replace", 10, 0,
+            "Take damage instead of threat", Costs: [new CostOption(10, "0", Sources: [new(41, "Y")])])
+            { PlaysCard = true });
+        Assert.False(DirectCommitment.IsReady(composer));
+        composer.SelectAffordance(1);
+        Assert.True(composer.TryBuild(out _, out _));
+        Assert.True(DirectCommitment.IsReady(composer));
+        Assert.Empty(composer.Resources);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FreeEventDoesNotChooseCostAlternatives(bool separateOptions)
+    {
+        CostOption[] costs = separateOptions ? [new(10, "0"), new(10, "1")]
+            : [new(10, "0", OrCost: "1")];
+        var composer = Composer(PublicDecisionKind.Interrupt,
+            new Affordance(1, "Replace", 10, 0, "Replace", Costs: costs) { PlaysCard = true });
+        composer.SelectAffordance(1);
+        Assert.False(DirectCommitment.IsReady(composer));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void FreeEventDoesNotChooseAmongTargets(int minimum)
+    {
+        var composer = Composer(PublicDecisionKind.Interrupt,
+            new Affordance(1, "Replace", 10, 0, "Replace", new TargetRequest([20, 21], minimum, 1),
+                Costs: [new CostOption(10, "0")]) { PlaysCard = true });
+        composer.SelectAffordance(1);
+        Assert.False(DirectCommitment.IsReady(composer));
+    }
+
+    [Fact]
+    public void FreeEventDoesNotChooseAnObservedVariableOrPaymentDeclaration()
+    {
+        foreach (CostOption cost in new CostOption[]
+            { new(10, "X", Variables: [new("X", 0, 3)]), new(10, "0", DeclarationSensitive: true) })
+        {
+            var composer = Composer(PublicDecisionKind.Interrupt,
+                new Affordance(1, "Replace", 10, 0, "Replace", Costs: [cost]) { PlaysCard = true });
+            composer.SelectAffordance(1);
+            Assert.False(DirectCommitment.IsReady(composer));
+        }
+    }
+
     private static DecisionComposer Composer(PublicDecisionKind kind, Affordance offer) => new(new Prompt(
         0, Question.TurnOption, TimingPriority.Untimed, "test", "Choose", true, [offer]) { PublicKind = kind });
 }

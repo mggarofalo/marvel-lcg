@@ -3,12 +3,14 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Keeps accepted consequences readable without delaying the current decision.</summary>
+/// <summary>Presents accepted consequences and reports when their ordered cues have settled.</summary>
 internal sealed class MainEventMotionController : IDisposable
 {
     private readonly Main main;
     private readonly EventActivityPresenter activity;
     private DecisionPanel? draftOwner;
+    internal event Action? Settled
+    { add => activity.Settled += value; remove => activity.Settled -= value; }
 
     internal MainEventMotionController(Main main)
     {

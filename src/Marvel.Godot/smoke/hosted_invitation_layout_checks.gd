@@ -32,7 +32,7 @@ static func check(driver: Node) -> bool:
 
 
 static func _history(driver: Node, expanded: bool) -> bool:
-	var log := driver.host.find_child("EventLog", true, false) as Control
+	var log := driver.host.find_child("HistoryOccurrences", true, false) as Control
 	var toggle := driver.host.find_child("ToggleHistory", true, false) as Button
 	if log == null or toggle == null:
 		driver._fail("unused invitation table has no history controls")

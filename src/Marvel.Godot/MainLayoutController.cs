@@ -159,7 +159,7 @@ internal sealed class MainLayoutController
                 ? (CardPaymentWorkspaceLayout.Active(main)
                     ? Math.Max(CardPaymentWorkspaceLayout.Width(main.GetViewportRect().Size),
                         historyExpanded ? TableHistoryDrawer.ExpandedWidth(main) : 0)
-                    : historyExpanded ? TableHistoryDrawer.ExpandedWidth(main) : 0)
+                    : historyExpanded || main.invitationOffer.Visible ? TableHistoryDrawer.ExpandedWidth(main) : 0)
                 : 0,
             decisionHeight);
         main.decisions.CustomMinimumSize = new Vector2(

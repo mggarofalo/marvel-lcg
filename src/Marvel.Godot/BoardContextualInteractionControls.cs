@@ -115,8 +115,12 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
         return null;
     }
 
-    private void AddDecline(PromptPresentation prompt) =>
-        Add("ContextualDecline", prompt.DeclineLabel, () => decline?.Invoke(), prompt.DeclineLabel);
+    private void AddDecline(PromptPresentation prompt)
+    {
+        Button button = Add("ContextualDecline", prompt.DeclineLabel, () => decline?.Invoke(), prompt.DeclineLabel);
+        button.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
+        button.CustomMinimumSize = new Vector2(160, 44);
+    }
 
     internal static IReadOnlyList<AffordancePresentation> FallbackActions(
         PromptPresentation prompt, IReadOnlySet<int> installedActions,

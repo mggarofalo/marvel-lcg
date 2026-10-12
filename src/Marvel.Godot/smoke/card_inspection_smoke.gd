@@ -1,5 +1,7 @@
 extends SceneTree
 
+var modified_checks := 0
+
 func _initialize() -> void:
 	_run.call_deferred()
 
@@ -20,6 +22,7 @@ func _run() -> void:
 		if sample.get_meta("navigation", false): await _navigation(sample, failures)
 		else: await _inspect(sample, failures)
 		sample.hide()
+	if modified_checks == 0: failures.append("no modified-value disclosure was exercised")
 	if not failures.is_empty():
 		for failure in failures: push_error("B1_INSPECTION_FAILED " + failure)
 		quit(1)
@@ -41,6 +44,7 @@ func _inspect(sample: Control, failures: Array[String]) -> void:
 		failures.append("pointer did not open inspection")
 		return
 	_check(popup, sample, failures)
+	await _modified_value(popup, failures)
 	await _close(popup, source, failures)
 	if source.get_global_transform() != original: failures.append("inspection moved its source")
 	source.grab_focus()
@@ -121,11 +125,31 @@ func _check(popup: PopupPanel, sample: Control, failures: Array[String]) -> void
 
 func _check_text(popup: PopupPanel, face: Control, failures: Array[String]) -> void:
 	for label in popup.find_children("*", "Label", true, false):
+		if not label.is_visible_in_tree(): continue
 		if label.name == "InteractionCue": continue
 		if label.get_line_count() > label.get_visible_line_count(): failures.append("inspection clips " + str(label.name))
 	var rules := face.find_child("RulesText", true, false) as RichTextLabel
 	if rules.get_content_height() > rules.size.y + 1: failures.append("complete rules are clipped")
 	if rules.get_parsed_text().strip_edges().is_empty(): failures.append("inspection lost rules")
+
+func _modified_value(popup: PopupPanel, failures: Array[String]) -> void:
+	if popup.find_child("LiveProgress", true, false) != null:
+		failures.append("inspection repeats the face's HP or threat value")
+	var detail := popup.find_child("ValueSourceDetail", true, false) as Control
+	if detail == null: return
+	if detail.visible: failures.append("modified-value explanation opens without intent")
+	var mark := popup.find_child("ModifiedHealthMaximum", true, false) as Control
+	if mark == null: return
+	var value := mark.get_parent() as Control
+	modified_checks += 1
+	await _popup_click(Vector2(popup.position) + value.get_global_rect().get_center())
+	await process_frame
+	if not detail.is_visible_in_tree(): failures.append("underlined HP does not disclose its calculation")
+	var source := detail.find_child("InspectValueSource*", true, false) as Button
+	if source == null or not source.is_visible_in_tree(): failures.append("modified HP hides its contributing source")
+	value.grab_focus()
+	await _key(KEY_ENTER)
+	if detail.visible: failures.append("keyboard cannot collapse the modified-value explanation")
 
 func _check_boundaries(popup: PopupPanel, failures: Array[String]) -> void:
 	var count := popup.find_child("PileInspectorPosition", true, false) as Label

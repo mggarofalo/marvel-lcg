@@ -11,6 +11,13 @@ internal static class TableHistoryDrawer
         main.promptPanel.HasMeta(ExpandedMeta)
         && main.promptPanel.GetMeta(ExpandedMeta).AsBool();
 
+    internal static void Open(Main main)
+    {
+        if (IsExpanded(main)) return;
+        main.promptPanel.SetMeta(ExpandedMeta, true);
+        Callable.From(main.layoutController.ApplyResponsivePlayLayout).CallDeferred();
+    }
+
     internal static void SelectHistory(Main main)
     {
         TabContainer workbench = main.GetNode<TabContainer>(
@@ -75,27 +82,35 @@ internal static class TableHistoryDrawer
         toggle.Visible = true;
         history.Visible = expanded;
         workbench.Visible = expanded;
-        main.promptPanel.Visible = expanded || payment || main.decisions.CompleteChoicesOpen;
+        main.promptPanel.Visible = expanded || payment || main.decisions.CompleteChoicesOpen || main.invitationOffer.Visible;
         PositionHandle(main, toggle, expanded);
         history.GetNode<Control>("EventHeader/Heading").Visible = false;
-        foreach (Control control in new Control[]
-                 {
-                     history.GetNode<Control>("Rule"),
-                     main.eventLog,
-                     dismiss,
-                     actions,
-                 })
-        {
-            control.Visible = expanded;
-        }
-        TableLatestResult.Configure(latest, expanded);
-        if (payment) ((Control)latest.GetParent().GetParent()).Visible = false;
+        ConfigureAccount(main, history, dismiss, actions, latest, expanded, payment);
         main.eventController.RefreshEventCueVisibility();
         main.eventSkip.Visible = false;
         main.promptDiagnostic.Visible = false;
         if (history.FindChild("Skip", recursive: true, owned: false) is Button skip)
             skip.Text = "Finish animation";
         ConfigureActions(history, expanded);
+    }
+
+    private static void ConfigureAccount(Main main, Control history, Button dismiss, HFlowContainer actions,
+        Label latest, bool expanded, bool payment)
+    {
+        foreach (Control control in new Control[]
+                 {
+                     history.GetNode<Control>("Rule"),
+                     history.GetNodeOrNull<Control>("HistoryOccurrences") ?? main.eventLog,
+                     dismiss,
+                     actions,
+                 })
+        {
+            control.Visible = expanded;
+        }
+        main.eventLog.Hide();
+        dismiss.Hide();
+        TableLatestResult.Configure(latest, false);
+        if (payment) ((Control)latest.GetParent().GetParent()).Visible = false;
     }
 
     private static void ConfigureActions(Control history, bool expanded)

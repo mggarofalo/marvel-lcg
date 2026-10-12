@@ -22,6 +22,8 @@ internal static class AffordancePresenter
             option.Targets is null ? "No selection" : Describe(option.Targets),
             option.CostOptions.Select(Describe).ToArray())
         {
+            Timing = option.Timing,
+            WindowChoices = option.WindowChoices,
             DisplayLabel = option.DisplayLabel,
             CommitLabel = option.CommitLabel,
             SourceName = sourceCopy.Name,

@@ -77,6 +77,8 @@ func _play_ancestral_knowledge() -> bool:
 func _finish_shuffle() -> bool:
 	if not await _confirm_shuffle(): return false
 	if not await _set_history_drawer(true): return false
+	var details := _button_named("▸ Details")
+	if details != null and not await _pointer_activate(details): return false
 	if not await _wait_for(_shuffle_receipt_visible):
 		_fail("completed shuffle lost its named, counted result receipt")
 		return false
@@ -85,9 +87,12 @@ func _finish_shuffle() -> bool:
 
 
 func _shuffle_receipt_visible() -> bool:
-	var cue := main.find_child("LatestResult", true, false) as Label
-	return cue != null and cue.is_visible_in_tree() \
-		and "Black Panther shuffled 2 cards (Med Team, Vibranium) into their deck." in cue.text
+	var details := main.find_child("OccurrenceComponents", true, false) as Control
+	if details == null or not details.is_visible_in_tree(): return false
+	for row in details.find_children("*", "Button", true, false):
+		if "Black Panther shuffled 2 cards (Med Team, Vibranium) into their deck." in _visible_text(row):
+			return _control_is_fully_visible(row)
+	return false
 
 func _confirm_shuffle() -> bool:
 	var commit := _button_named(SHUFFLE)

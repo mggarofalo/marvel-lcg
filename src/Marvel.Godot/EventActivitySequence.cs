@@ -6,6 +6,7 @@ namespace Marvel.Godot;
 internal sealed class EventActivitySequence
 {
     private double elapsed;
+    private double beatDuration;
     internal IReadOnlyList<EventPresentation> Entries { get; private set; } = [];
     internal int Index { get; private set; } = -1;
     internal bool Active { get; private set; }
@@ -16,6 +17,7 @@ internal sealed class EventActivitySequence
         Entries = entries.ToArray();
         Index = Entries.Count == 0 ? -1 : 0;
         elapsed = 0;
+        beatDuration = Entries.Count <= 1 ? 0.4 : Math.Min(0.6, 2.4 / Entries.Count);
         Active = animate && Entries.Count > 0;
         if (!Active) Complete();
     }
@@ -24,7 +26,7 @@ internal sealed class EventActivitySequence
     {
         if (!Active || Current is null) return false;
         elapsed += Math.Max(0, seconds);
-        if (elapsed < Duration(Current)) return false;
+        if (elapsed < beatDuration) return false;
         // A slow frame must not skip unread beats to catch up with wall time.
         elapsed = 0;
         if (Index + 1 < Entries.Count) Index++;
@@ -41,6 +43,4 @@ internal sealed class EventActivitySequence
 
     internal void Clear() => Start([], animate: false);
 
-    private static double Duration(EventPresentation entry) =>
-        entry.Motion is EventMotionKind.Attack or EventMotionKind.Flip or EventMotionKind.Status ? 1.8 : 1.2;
 }

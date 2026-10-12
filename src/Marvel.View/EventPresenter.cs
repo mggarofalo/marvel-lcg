@@ -18,7 +18,8 @@ public static class EventPresenter
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(world);
-        return events.Select(happened => Present(happened, world)).ToArray();
+        return ForcedAbilityResultPresentation.Attach(events,
+            events.Select(happened => Present(happened, world)).ToArray());
     }
 
     /// <summary>
@@ -43,6 +44,8 @@ public static class EventPresenter
 
         (string summary, IReadOnlyList<int> anchors, EventMotionKind motion) = happened switch
         {
+            AbilityWindowResult result => (result.Description + (result.Completed
+                ? ". Ability resolved." : ". Resolution awaits a decision."), [result.Source], EventMotionKind.State),
             PhaseStarted phase => ($"Round {phase.Round}: {phase.Phase} phase.", [], EventMotionKind.State),
             ActivityCompleted activity => (
                 CompletedActivityPresentation.Summary(activity, world),
@@ -120,9 +123,15 @@ public static class EventPresenter
                 $"event kind {happened.GetType().Name} has no presentation"),
         };
 
+        EventActivityDescriptor activityDescriptor = EventActivityProjection.From(happened, world, anchors);
         return EventRelationshipProjection.WithSubjects(new EventPresentation(summary, Cause(happened), anchors, motion)
         {
-            Activity = EventActivityProjection.From(happened, world, anchors),
+            Activity = activityDescriptor,
+            ForcedAbilityNotification = happened is AbilityWindowResult receipt
+                ? new ForcedAbilityNotification(receipt.Source,
+                    $"{Card(receipt.Source, world, receipt)} — {PromptPresentation.Words(receipt.Type.ToString())}",
+                    summary, receipt.Player, receipt.Occurrence, receipt.Completed)
+                { SourceCard = activityDescriptor.Subjects.FirstOrDefault(subject => subject.Card == receipt.Source)?.Reference } : null,
             CueSummary = happened switch
             {
                 FieldSet set => EventFieldPresentation.CueSummary(set, world),

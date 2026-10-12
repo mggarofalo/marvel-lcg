@@ -46,29 +46,30 @@ internal sealed partial class EventActivityPulse : Control
             Vector2 corner = rect.Position;
             DrawLine(corner, corner + new Vector2(Math.Min(38, rect.Size.X), 0), ink, 3, true);
             DrawLine(corner, corner + new Vector2(0, 22), ink, 3, true);
-            Font font = CardTypography.Bold;
-            float width = Math.Min(300, font.GetStringSize(result, fontSize: 16).X + 44);
+            // Compact sources already expose their updated counters and state inline.
+            // Their transient emphasis stays inside the tile, clear of the chronology.
+            if (rect.Size.Y < 110 || reference.Entry.Motion == EventMotionKind.State) continue;
             int row = rows.GetValueOrDefault(reference.Subject.Card);
             rows[reference.Subject.Card] = row + 1;
-            Rect2 badge = new(rect.Position.X, Math.Max(0, rect.Position.Y - 32 - row * 32), width, 30);
-            DrawRect(badge, CardFaceStyle.Ink);
-            Rect2 glyph = new(badge.Position + new Vector2(2, 1), new Vector2(28, 28));
-            if (roleOnly) DrawRoleGlyph(reference.Subject.Role, glyph);
-            else ActivityGlyphDrawing.Draw(this, reference.Entry, glyph);
-            DrawString(font, badge.Position + new Vector2(34, 21), result,
-                width: width - 40, fontSize: 16, modulate: CardFaceStyle.Paper);
-            DrawCause(reference.Entry, badge, roleOnly);
+            DrawBadge(reference, result, roleOnly, row);
         }
     }
 
-    private void DrawCause(EventPresentation entry, Rect2 badge, bool roleOnly)
+    private void DrawBadge((EventPresentation Entry, ActivitySubject Subject, Rect2 Bounds) reference,
+        string result, bool roleOnly, int row)
     {
-        if (roleOnly || string.IsNullOrWhiteSpace(entry.Intention)
-            || entry.Motion is not (EventMotionKind.Damage or EventMotionKind.Threat)) return;
-        var caption = new Rect2(badge.Position - new Vector2(0, 21), new Vector2(300, 21));
-        DrawRect(caption, CardFaceStyle.Ink);
-        DrawString(CardTypography.Body, caption.Position + new Vector2(5, 15), entry.Intention,
-            width: 290, fontSize: 12, modulate: CardFaceStyle.Paper);
+        Rect2 rect = reference.Bounds;
+        Font font = CardTypography.Bold;
+        float width = font.GetStringSize(result, fontSize: 16).X + 44;
+        bool fits = width <= Math.Min(300, rect.Size.X);
+        if (!fits) width = 30;
+        Rect2 badge = new(rect.Position.X, rect.Position.Y + rect.Size.Y / 2 - 15 + row * 32, width, 30);
+        DrawRect(badge, CardFaceStyle.Ink);
+        Rect2 glyph = new(badge.Position + new Vector2(2, 1), new Vector2(28, 28));
+        if (roleOnly) DrawRoleGlyph(reference.Subject.Role, glyph);
+        else ActivityGlyphDrawing.Draw(this, reference.Entry, glyph);
+        if (fits) DrawString(font, badge.Position + new Vector2(34, 21), result,
+            width: width - 40, fontSize: 16, modulate: CardFaceStyle.Paper);
     }
 
     private void DrawRoleGlyph(ActivitySubjectRole role, Rect2 bounds)

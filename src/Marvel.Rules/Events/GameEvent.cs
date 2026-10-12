@@ -51,6 +51,7 @@ namespace Marvel.Rules.Events;
 [JsonDerivedType(typeof(WhenRevealedCanceled), nameof(WhenRevealedCanceled))]
 [JsonDerivedType(typeof(CardsShuffledIntoDeck), nameof(CardsShuffledIntoDeck))]
 [JsonDerivedType(typeof(ActivityCompleted), nameof(ActivityCompleted))]
+[JsonDerivedType(typeof(AbilityWindowResult), nameof(AbilityWindowResult))]
 [JsonDerivedType(typeof(PhaseStarted), nameof(PhaseStarted))]
 public abstract record GameEvent
 {
@@ -69,6 +70,26 @@ public abstract record GameEvent
     /// </remarks>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<int, string>? Subjects { get; init; }
+
+    /// <summary>Engine-owned source and occurrence of the forced ability that emitted this result.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? AbilitySource { get; init; }
+
+    /// <summary>Pairs with AbilitySource to associate results without inferring adjacency or printed instructions.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? AbilityOccurrence { get; init; }
+
+    /// <summary>The timing kind within the associated ability resolution.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Marvel.Rules.Timing.AbilityType? AbilityTiming { get; init; }
+
+    /// <summary>The printed/data ordinal at that timing within the associated resolution.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? AbilityOrdinal { get; init; }
+
+    /// <summary>Exact exposed printed identities at the occurrence; the view filters these grants before transport.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<int, string>? SubjectFaces { get; init; }
 
     /// <summary>
     /// The timing point that opened the decision this event came out of, e.g.

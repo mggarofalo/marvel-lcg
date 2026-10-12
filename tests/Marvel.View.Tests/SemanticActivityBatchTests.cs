@@ -22,7 +22,10 @@ public sealed class SemanticActivityBatchTests
         for (int index = 0; index < 3; index++) Draw.Cards(separate, 0, 1, "same cause", adjacent);
         Assert.Equal(3, events.OfType<CardsMoved>().Count());
         Assert.Single(events.OfType<ActivityCompleted>());
-        Assert.Single(Present(one, events).Cues);
+        EventPresentation draw = Assert.Single(Present(one, events).Cues);
+        Assert.Equal(3, draw.Details.Count);
+        Assert.Equal(events.OfType<CardsMoved>().Select(move => move.Cards[0].Card),
+            draw.Details.SelectMany(detail => detail.Anchors));
         Assert.Equal(3, Present(separate, adjacent).History.Count);
         Assert.Equal(events.OfType<CardsMoved>().Select(move => move.Cards[0].Card),
             adjacent.OfType<CardsMoved>().Select(move => move.Cards[0].Card));

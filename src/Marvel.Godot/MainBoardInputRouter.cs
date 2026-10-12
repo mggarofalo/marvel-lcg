@@ -22,11 +22,9 @@ internal static class MainBoardInputRouter
             return;
         }
 
-        if (main.decisions.PaymentModalOpen)
-        {
-            main.decisions.RouteDecisionSurfaceInput(input);
-            if (main.GetViewport().IsInputHandled()) return;
-        }
+        main.boardController.RouteAbilityNotificationInput(input);
+        if (main.GetViewport().IsInputHandled()) return;
+        if (RouteDecisionSurface(main, input)) return;
 
         if (BoardActionChoiceSurface.RouteInput(main.GetViewport(), input))
         {
@@ -36,6 +34,13 @@ internal static class MainBoardInputRouter
         if (RouteBoardPointer(main, inspector, input)) return;
 
         inspector.Input(input);
+    }
+
+    private static bool RouteDecisionSurface(Main main, InputEvent input)
+    {
+        if (!main.decisions.AbilityWindowOpen && !main.decisions.PaymentModalOpen) return false;
+        main.decisions.RouteDecisionSurfaceInput(input);
+        return main.GetViewport().IsInputHandled();
     }
 
     private static bool RouteBoardPointer(Main main, CardInspectorFocus inspector, InputEvent input)

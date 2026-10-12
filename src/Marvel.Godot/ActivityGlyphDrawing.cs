@@ -11,6 +11,13 @@ internal static class ActivityGlyphDrawing
         Color ink = CardFaceStyle.Paper;
         Vector2 center = bounds.GetCenter();
         float radius = Math.Min(bounds.Size.X, bounds.Size.Y) * 0.32f;
+        if (entry.Activity is { PhaseBoundary: true } phase)
+        {
+            canvas.DrawCircle(center, radius, ink, filled: false, width: 2, antialiased: true);
+            canvas.DrawString(CardTypography.Bold, center + new Vector2(-5, 5),
+                phase.Phase.StartsWith("Player", StringComparison.Ordinal) ? "P" : "V", fontSize: 14, modulate: ink);
+            return;
+        }
         switch (entry.Motion)
         {
             case EventMotionKind.Heal:
@@ -64,9 +71,21 @@ internal static class ActivityGlyphDrawing
 
     private static void DrawBoostOrReference(Control canvas, EventPresentation entry, Rect2 bounds, Vector2 center, float radius, Color ink)
     {
-        if (entry.Activity?.Quantities.Any(quantity => quantity.Field == "boost_icons") == true)
+        if (entry.Motion == EventMotionKind.Flip)
+        {
+            canvas.DrawArc(center, radius, -.7f, 2.4f, 20, ink, 2, true);
+            canvas.DrawArc(center, radius, 2.5f, 5.6f, 20, ink, 2, true);
+            canvas.DrawLine(center + new Vector2(radius, -4), center + new Vector2(radius - 7, -4), ink, 2, true);
+            canvas.DrawLine(center + new Vector2(-radius, 4), center + new Vector2(-radius + 7, 4), ink, 2, true);
+        }
+        else if (entry.Activity?.Quantities.Any(quantity => quantity.Field == "boost_icons") == true)
             canvas.DrawPolyline([center + new Vector2(-radius, radius * 0.5f), center + new Vector2(0, -radius * 0.5f),
                 center + new Vector2(radius, radius * 0.5f)], ink, 5, true);
+        else if (entry.Motion == EventMotionKind.State)
+        {
+            canvas.DrawCircle(center, radius, ink, filled: false, width: 2, antialiased: true);
+            canvas.DrawCircle(center, 3, ink, antialiased: true);
+        }
         else DrawReference(canvas, bounds, ink);
     }
 

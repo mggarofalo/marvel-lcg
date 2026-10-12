@@ -13,13 +13,19 @@ internal static class BoardInteractionBinder
         }
 
         board.BindDirectInteractions(
-            gesture => BoardDragInteractionBinder.CanDrag(panel, composer, gesture),
-            gesture => Activate(panel, composer, gesture),
-            gesture => BoardDragInteractionBinder.Drag(panel, composer, board, gesture));
+            gesture => CanUseTable(panel)
+                && BoardDragInteractionBinder.CanDrag(panel, composer, gesture),
+            gesture => CanUseTable(panel) && Activate(panel, composer, gesture),
+            gesture => CanUseTable(panel)
+                && BoardDragInteractionBinder.Drag(panel, composer, board, gesture));
         board.BindDragPreview(gesture => BoardDragInteractionBinder.PreviewDrag(panel, composer, board, gesture));
         board.SetCompleteChoicesOpen(panel.CompleteChoicesOpen);
-        board.BindCompleteChoices(source => panel.ShowCompleteChoices(source));
-        board.BindExplicitInteraction(gesture => Activate(panel, composer, gesture));
+        board.BindCompleteChoices(source =>
+        {
+            if (CanUseTable(panel)) panel.ShowCompleteChoices(source);
+        });
+        board.BindExplicitInteraction(gesture => CanUseTable(panel)
+            && Activate(panel, composer, gesture));
         board.BindContextualInteraction(
             id => SelectContextAction(panel, composer, id),
             () => Decline(panel, composer, panel.GetRenderGeneration()),
@@ -29,10 +35,14 @@ internal static class BoardInteractionBinder
             () => DecisionPanelCopy.SubmitAction(composer, panel.world!));
     }
 
+    private static bool CanUseTable(DecisionPanel panel) =>
+        !panel.AbilityWindowOpen && !panel.AcknowledgementPending;
+
     private static void SelectContextAction(DecisionPanel panel, DecisionComposer composer, int id)
     {
         int generation = panel.GetRenderGeneration();
-        if (panel.PaymentModalOpen || !CurrentOperations(panel, composer).TrySelectAffordance(id)) return;
+        if (panel.PaymentModalOpen || panel.AbilityWindowOpen || panel.AcknowledgementPending
+            || !CurrentOperations(panel, composer).TrySelectAffordance(id)) return;
         panel.RaiseDraftStarted();
         if (DirectCommitment.IsReady(composer))
         {

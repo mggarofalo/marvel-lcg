@@ -29,6 +29,7 @@ internal static class SourceTileHeader
         title.TooltipText = card.Title;
         title.VerticalAlignment = VerticalAlignment.Center;
         title.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
+        title.Resized += () => FitTitle(title);
         header.AddChild(title);
         header.AddChild(Symbol(card.Kind == "SUPPORT" ? "support" : "upgrade", "SourceType", card.Kind));
         bool exhausted = SpatialTableZones.IsExhausted(card);
@@ -59,6 +60,15 @@ internal static class SourceTileHeader
         }
         symbols.Visible = symbols.GetChildCount() > 0;
         return panel;
+    }
+
+    private static void FitTitle(Label title)
+    {
+        int size = 14;
+        string text = title.Text.ToUpperInvariant();
+        while (size > 11 && CardTypography.Title.GetStringSize(text, fontSize: size).X > title.Size.X)
+            size--;
+        title.AddThemeFontSizeOverride("font_size", size);
     }
 
     private static Control Symbol(string glyph, string name, string description)
