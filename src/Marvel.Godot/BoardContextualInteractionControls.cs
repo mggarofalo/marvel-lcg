@@ -64,24 +64,35 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
         }
         else
         {
-            PresentDraft(composer);
+            PresentDraft(composer, prompt);
         }
         if (composer.Selected is null && composer.Prompt.Cancellable
             && composer.Prompt.PublicKind != PublicDecisionKind.PlayerAction)
             AddDecline(prompt);
     }
 
-    private void PresentDraft(DecisionComposer composer)
+    private void PresentDraft(DecisionComposer composer, PromptPresentation prompt)
     {
         if (composer.Selected?.Id != releaseOffer) releaseAnchor = null;
         if (releaseAnchor is not { } point) { AddDraft(composer); return; }
         Container dock = host!;
         var localLayer = new CanvasLayer { Name = "TargetCommitmentLayer", Layer = 80 };
         dock.AddChild(localLayer);
-        var panel = new PanelContainer { Name = "TargetCommitment", CustomMinimumSize = new Vector2(290, 0) };
+        var panel = new PanelContainer { Name = "TargetCommitment", Theme = ThemeFor(dock),
+            ThemeTypeVariation = GodotThemeVariations.SurfacePanel,
+            CustomMinimumSize = new Vector2(420, 0), Size = new Vector2(420, 1) };
         localLayer.AddChild(panel);
         var column = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
         panel.AddChild(column);
+        var visible = prompt.Affordances
+            .FirstOrDefault(offer => offer.Id == composer.Selected!.Id);
+        if (visible is not null) column.AddChild(DecisionPanel.Text(DecisionCopy.ActionSummary(visible),
+            GodotThemeVariations.Body, wrap: true));
+        foreach (int target in composer.Targets)
+        {
+            if (visible?.TargetRequest?.Details?.GetValueOrDefault(target) is { Length: > 0 } detail)
+                column.AddChild(DecisionPanel.Text(detail, GodotThemeVariations.Body, wrap: true));
+        }
         host = column;
         local = true;
         AddDraft(composer);
@@ -90,10 +101,18 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
         Callable.From(() =>
         {
             if (!InteractionControl.IsUsable(panel)) return;
+            panel.Size = new Vector2(420, panel.GetCombinedMinimumSize().Y);
             Vector2 viewport = panel.GetViewportRect().Size;
             panel.Position = new Vector2(Math.Clamp(point.X + 14, 8, Math.Max(8, viewport.X - panel.Size.X - 8)),
                 Math.Clamp(point.Y + 14, 8, Math.Max(8, viewport.Y - panel.Size.Y - 8)));
         }).CallDeferred();
+    }
+
+    private static Theme? ThemeFor(Node node)
+    {
+        for (Node? current = node; current is not null; current = current.GetParent())
+            if (current is Control { Theme: { } theme }) return theme;
+        return null;
     }
 
     private void AddDecline(PromptPresentation prompt) =>
@@ -171,8 +190,7 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
         }
         AddCostChoices(composer);
         DecisionProgressPresentation progress = composer.Progress();
-        string label = DecisionCopy.WithPaymentConsequence(
-            commitmentLabel?.Invoke() ?? composer.Selected!.Label, progress.Payment);
+        string label = CommitmentLabel(composer, progress);
         var commitments = new HBoxContainer
         {
             Name = "DraftCommitments", ThemeTypeVariation = GodotThemeVariations.TightStack,
@@ -180,12 +198,16 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
             CustomMinimumSize = new Vector2(280, 44),
         };
         host!.AddChild(commitments);
-        Add("ContextualCommit", label, () => submit?.Invoke(), label, !progress.IsReady, commitments);
+        Add("ContextualCommit", local ? "✓ " + label : label, () => submit?.Invoke(), label, !progress.IsReady, commitments);
         if (CanClearDraft(composer))
             Add("ContextualCancelDraft", local ? "× Cancel" : CancelLabel(composer.Prompt), () => cancel?.Invoke(),
                 "Clear these uncommitted choices. Accepted actions remain in play.", parent: commitments);
         host = dock;
     }
+
+    private string CommitmentLabel(DecisionComposer composer, DecisionProgressPresentation progress) =>
+        DecisionCopy.WithPaymentConsequence(
+            commitmentLabel?.Invoke() ?? composer.Selected!.Label, progress.Payment);
 
     internal static bool CanClearDraft(DecisionComposer composer) =>
         !(MulliganPrompt.IsOpening(composer.Prompt) || InitialTableDraft.IsRequiredEndPhase(composer.Prompt))

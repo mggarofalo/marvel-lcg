@@ -33,6 +33,7 @@ internal static class SpatialCardSidecar
         scroll.AddChild(sidecar);
         overlay.AddChild(scroll);
         card.AddChild(overlay);
+        sidecar.MinimumSizeChanged += () => Callable.From(() => Place(card)).CallDeferred();
         Callable.From(() => Place(card)).CallDeferred();
         return sidecar;
     }
@@ -63,6 +64,11 @@ internal static class SpatialCardSidecar
             && card.GetNodeOrNull<ScrollContainer>("SpatialOverlay/SpatialControls") is { } scroll)
         {
             SpatialCardFootprint.PlaceSidecar(card, scroll);
+            if (scroll.FindChild("SourceCollection", true, false) is Control)
+            {
+                scroll.VerticalScrollMode = ScrollContainer.ScrollMode.Disabled;
+                scroll.Size = new Vector2(scroll.Size.X, scroll.GetChild<Control>(0).GetCombinedMinimumSize().Y);
+            }
             if (card.GetNodeOrNull<PanelContainer>("SpatialOverlay/LiveStatePanel") is { } state)
             {
                 float height = state.GetCombinedMinimumSize().Y;

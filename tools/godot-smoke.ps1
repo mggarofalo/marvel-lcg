@@ -107,10 +107,12 @@ $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
 Invoke-LocalSmoke "res://smoke/result_playback_smoke.gd"
 Invoke-LocalSmoke "res://smoke/event_activity_smoke.gd"
+Invoke-LocalSmoke "res://smoke/timeline_navigation_smoke.gd"
 $env:MARVEL_UI_SCALE = "150"
 $env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke "res://smoke/result_playback_smoke.gd"
 Invoke-LocalSmoke "res://smoke/event_activity_smoke.gd"
+Invoke-LocalSmoke "res://smoke/timeline_navigation_smoke.gd"
 foreach ($viewport in $viewports) {
     foreach ($scale in $scales) {
         $env:MARVEL_UI_SCALE = $scale

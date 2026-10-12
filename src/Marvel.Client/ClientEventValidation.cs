@@ -11,6 +11,8 @@ internal static class ClientEventValidation
 
     private static bool CompleteEventPayload(GameEvent happened) => happened switch
             {
+                ActivityCompleted activity => CompleteActivity(activity),
+                PhaseStarted phase => CompletePhase(phase),
                 CardsCreated created => Complete(created.Area)
                     && created.Cards is not null
                     && created.Cards.All(card => card.Card is not null),
@@ -35,6 +37,16 @@ internal static class ClientEventValidation
                     && (canceled.Source is null or >= 0),
                 _ => false,
             };
+
+    private static bool CompleteActivity(ActivityCompleted activity) =>
+        activity.Batch >= 0 && activity.Participants is { Count: > 0 }
+        && activity.Participants.All(participant => participant is not null && participant.Player >= -1
+            && participant.Count > 0 && participant.Cards is not null
+            && participant.Cards.Count <= participant.Count && participant.Cards.All(card => card >= 0))
+        && activity.Verb is "Draw" or "Discard" or "Ready";
+
+    private static bool CompletePhase(PhaseStarted phase) =>
+        phase.Round is >= 0 && phase.Phase is "Player" or "Villain";
 
     private static bool CompleteShuffleReceipt(CardsShuffledIntoDeck shuffled) =>
         shuffled.Player >= 0 && shuffled.Count >= 0 && shuffled.PublicTitles is not null

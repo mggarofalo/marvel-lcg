@@ -16,6 +16,10 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules");
         PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(WorldDescriptor).Assembly,
+            "Marvel.Rules.Events.ActivityCompleted",
+            "Marvel.Rules.Events.ActivityParticipant",
+            "Marvel.Rules.Events.ActivityPhaseStep",
+            "Marvel.Rules.Events.PhaseStarted",
             "Marvel.Rules.Events.AreaRef",
             "Marvel.Rules.Events.AreaReordered",
             "Marvel.Rules.Events.AttackCompleted",
@@ -121,6 +125,9 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View");
         PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(LocalGameClient).Assembly,
+            "Marvel.Rules.Events.ActivityCompleted",
+            "Marvel.Rules.Events.ActivityParticipant",
+            "Marvel.Rules.Events.PhaseStarted",
             "Marvel.Rules.Events.AreaRef",
             "Marvel.Rules.Events.AreaReordered",
             // Closed event-payload validation accepts the engine's passive completion receipt.

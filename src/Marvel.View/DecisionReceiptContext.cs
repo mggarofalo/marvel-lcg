@@ -5,6 +5,8 @@ namespace Marvel.View;
 /// <summary>Authorized submitted intention, usable only after that exact decision succeeds.</summary>
 public sealed record DecisionReceiptContext(string Commitment, IReadOnlyList<int> Anchors)
 {
+    /// <summary>The submitted engine command, distinct from the player-facing wording.</summary>
+    public string? ActionVerb { get; init; }
     /// <summary>Captures offered meaning and chosen resource sources without claiming acceptance.</summary>
     public static DecisionReceiptContext? From(
         Prompt prompt, WorldDescriptor world, int affordance,
@@ -25,7 +27,7 @@ public sealed record DecisionReceiptContext(string Commitment, IReadOnlyList<int
             : $" Payment sources: {string.Join(", ", payment.Select(item => item.Name))}.";
         return new($"{actor}: {label.TrimEnd('.')}.{paid}",
             [.. new[] { offered.CardAnchorId }.OfType<int>().Concat(targets)
-                .Concat(payment.Select(item => item.Id)).Distinct()]);
+                .Concat(payment.Select(item => item.Id)).Distinct()]) { ActionVerb = chosen.Verb };
     }
     private static string CommitmentLabel(AffordancePresentation offered, Affordance chosen,
         IReadOnlyList<int> targets, WorldDescriptor world)

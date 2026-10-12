@@ -35,10 +35,12 @@ public static class EngineProtocol
     /// Version 23 separates printed stat marks from effective-value explanations.
     /// Version 26 adds resolved boost contributions and current activation strength.
     /// Version 27 adds explicit current-recipient support activation commitments.
+    /// Version 28 carries operation-level activity receipts and round/phase boundaries,
+    /// including visibility-filtered participants and raw-event batch membership.
     /// Version 25 adds public, identity-free completed deck-shuffle receipts.
     /// Version 24 adds next-Special and visible-card selection purposes with target exclusions.
     /// </summary>
-    public const int Version = 27;
+    public const int Version = 28;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;

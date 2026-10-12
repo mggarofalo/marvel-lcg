@@ -134,7 +134,12 @@ public sealed class EngineHostReorderRebuildsCommittedActionUnitsTests : EngineH
         Assert.Equal([0], redone.History?.Undo);
         Assert.Empty(redone.History!.Redo);
         Assert.Equal(1, active.Cursor);
-        Assert.Equal(EngineJson.Write(kept with { RequestId = "same", Revision = 0, History = null, }), EngineJson.Write(redone with { RequestId = "same", Revision = 0, History = null, }));
+        // History navigation publishes a snapshot with no repeated live occurrences.
+        // The committed trace retains the phase fact byte for byte across replay.
+        Assert.Equal(inactive.Units[0].Decisions.SelectMany(step => step.Events).Select(item => item.GetRawText()),
+            active.Units[0].Decisions.SelectMany(step => step.Events).Select(item => item.GetRawText()));
+        Assert.IsType<PhaseStarted>(Assert.Single(kept.Events));
+        Assert.Equal(EngineJson.Write(kept with { RequestId = "same", Events = [], Revision = 0, History = null, }), EngineJson.Write(redone with { RequestId = "same", Revision = 0, History = null, }));
     }
 
     [Fact]
@@ -176,6 +181,6 @@ public sealed class EngineHostReorderRebuildsCommittedActionUnitsTests : EngineH
         Assert.Equal("complete", playedUnit.Status);
         Assert.Empty(playedUnit.Exposures);
         Assert.Null(undone.Error);
-        Assert.Equal(EngineJson.Write(beforePlay with { RequestId = "same", Revision = 0, History = null, }), EngineJson.Write(undone with { RequestId = "same", Revision = 0, History = null, }));
+        Assert.Equal(EngineJson.Write(beforePlay with { RequestId = "same", Events = [], Revision = 0, History = null, }), EngineJson.Write(undone with { RequestId = "same", Revision = 0, History = null, }));
     }
 }

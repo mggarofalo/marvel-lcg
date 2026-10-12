@@ -206,19 +206,21 @@ internal static class CoreTranscriptEventAssertions
         string verb = match.Groups["verb"].Value;
         string trigger = match.Groups["trigger"].Value;
         if (!context.Events.Any(gameEvent =>
-                gameEvent.Verb == verb && gameEvent.Trigger == trigger))
+                gameEvent is not ActivityCompleted && gameEvent.Verb == verb && gameEvent.Trigger == trigger))
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: no {verb} event with trigger {trigger} was emitted");
         }
     }
 
+    // Engine choice: transcript verb assertions observe resolution occurrences;
+    // an ActivityCompleted receipt describes those occurrences without adding one.
     internal static void EventCount(
         TranscriptContext context, TranscriptStep step, Match match) =>
         Equal(
             Number(match, "count", step),
             context.Events.Count(gameEvent =>
-                gameEvent.Verb == match.Groups["verb"].Value),
+                gameEvent is not ActivityCompleted && gameEvent.Verb == match.Groups["verb"].Value),
             $"{match.Groups["verb"].Value} events",
             step);
 
@@ -236,9 +238,9 @@ internal static class CoreTranscriptEventAssertions
         TranscriptContext context, TranscriptStep step, Match match)
     {
         int first = context.Events.FindIndex(gameEvent =>
-            gameEvent.Verb == match.Groups["first"].Value);
+            gameEvent is not ActivityCompleted && gameEvent.Verb == match.Groups["first"].Value);
         int second = context.Events.FindIndex(gameEvent =>
-            gameEvent.Verb == match.Groups["second"].Value);
+            gameEvent is not ActivityCompleted && gameEvent.Verb == match.Groups["second"].Value);
         if (first < 0 || second <= first)
         {
             throw new TranscriptAssertionException(

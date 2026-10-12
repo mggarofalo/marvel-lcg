@@ -6,7 +6,7 @@ namespace Marvel.Godot;
 internal sealed record SourceTableauLayout(float Width, float Height = float.PositiveInfinity, int Count = 0)
 {
     internal const float Gap = 6;
-    internal const float TileHeight = 84;
+    internal const float TileHeight = 66;
     internal int Columns
     {
         get

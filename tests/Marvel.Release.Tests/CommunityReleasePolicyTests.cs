@@ -79,11 +79,11 @@ public sealed class CommunityReleasePolicyTests
             workflow, StringComparison.Ordinal);
         Assert.Contains("needs: [identity, acceptance-record, server-sign]",
             workflow, StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v12 · protocol 27 · save 5", workflow,
+        Assert.Contains("engine-replay-v13 · protocol 28 · save 5", workflow,
             StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v12 · protocol 27 · save 5", serverUpgrade,
+        Assert.Contains("engine-replay-v13 · protocol 28 · save 5", serverUpgrade,
             StringComparison.Ordinal);
-        Assert.Contains("protocol:27,save_schema:5", workflow, StringComparison.Ordinal);
+        Assert.Contains("protocol:28,save_schema:5", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("protocol:14", workflow, StringComparison.Ordinal);
         Assert.Contains("def schema_two_prompt", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("jq --compact-output '", serverUpgrade, StringComparison.Ordinal);
@@ -179,8 +179,8 @@ public sealed class CommunityReleasePolicyTests
             "Linux server interrupted candidate",
             "Linux server downgrade",
             "unsupported_downgrade",
-            "engine-replay-v12",
-            "protocol `27`",
+            "engine-replay-v13",
+            "protocol `28`",
             "TrustedPeople",
         })
         {

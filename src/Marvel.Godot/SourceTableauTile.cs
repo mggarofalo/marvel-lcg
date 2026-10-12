@@ -6,7 +6,7 @@ namespace Marvel.Godot;
 /// <summary>Compact B1 title and state strip; engine-named actions share its lower edge.</summary>
 internal static class SourceTableauTile
 {
-    internal static CardControl CreateCard(BoardCardPresentation card, float width, InterfaceScale scale, string copy = "")
+    internal static CardControl CreateCard(BoardCardPresentation card, float width, InterfaceScale scale, string copy = "", bool compact = false)
     {
         CardControl control = CardControl.CreateSource(card, width, scale);
         using var paper = new StyleBoxFlat { BgColor = CardFaceStyle.Paper, BorderColor = CardFaceStyle.Accent(card),
@@ -21,8 +21,8 @@ internal static class SourceTableauTile
         Control summary = SourceTileHeader.Create(card, copy);
         body.AddChild(summary);
         body.MoveChild(summary, 0);
-        SourceTileMeaning.Add(body, card);
-        control.CustomMinimumSize = new Vector2(width, SourceTableauLayout.TileHeight);
+        if (!compact) SourceTileMeaning.Add(body, card);
+        control.CustomMinimumSize = new Vector2(width, compact ? 32 : SourceTableauLayout.TileHeight);
         control.Size = control.CustomMinimumSize;
         control.SetMeta("source_tableau_tile", true);
         control.SetMeta("source_title", card.Title);

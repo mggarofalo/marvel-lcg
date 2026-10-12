@@ -69,6 +69,8 @@ emits these facts directly:
 | `AttackCompleted` | `enemy`, `target`, `defender`, `damage_dealt` |
 | `WhenRevealedCanceled` | `card`, `source` |
 | `CardsShuffledIntoDeck` | `player`, `count`, `public_titles` |
+| `ActivityCompleted` | `batch`, `participants`, `phase_step` |
+| `PhaseStarted` | `phase`, `round` |
 
 `CardsShuffledIntoDeck` is emitted after the selected cards have moved and the
 deck has been shuffled. `count` records the returned quantity. `public_titles`
@@ -107,6 +109,18 @@ cancellation is consumed successfully, rather than when an interrupt registers
 it. It does not cancel revelation or assert that other card effects were
 canceled. Both named cards must be readable to retain this fact in a response.
 Its engine-chosen verb is `Cancel_When_Revealed`.
+
+`ActivityCompleted` is an engine-authored instruction receipt. Each participant carries
+`player`, actual `count`, and authorized `cards`. Covered low-level events carry
+optional `activity_batch`, a response-local event offset; their order and payloads
+remain intact. Draws still resolve one at a time and deck resets remain separate.
+Only explicit instructions and simultaneous phase procedures create receipts;
+matching adjacent verbs never establishes a batch. Restricted visibility keeps
+public quantities while removing concealed card ids and names. Optional `round`
+captures occurrence context from the game loop. `PhaseStarted` names an actual
+phase entry and its round; consumers need not infer boundaries from a final board.
+These event additions require a protocol and replay compatibility revision; state
+digest v3, decisions and RNG consumption are unchanged.
 
 Every event also carries `kind`, `trigger`, and `verb`. An event may carry a
 `subjects` object mapping card object ids to visibility-safe names captured when

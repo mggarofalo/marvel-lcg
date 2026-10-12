@@ -56,6 +56,7 @@ public sealed class ResponseReceiptPresentationTests : EventPresentationTestBase
         DecisionReceiptContext context = Assert.IsType<DecisionReceiptContext>(
             DecisionReceiptContext.From(prompt, world, 3, [], [9]));
         Assert.Contains("Play Web-Shooter", context.Commitment);
+        Assert.Equal(CardPlay.Verb, context.ActionVerb);
         Assert.Contains("Payment sources: Peter Parker", context.Commitment);
         Assert.Equal([7, 9], context.Anchors);
         Assert.Null(DecisionReceiptContext.From(prompt, world, 99, [], []));

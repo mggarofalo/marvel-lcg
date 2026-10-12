@@ -155,7 +155,8 @@ internal static class BoardInteractionBinder
                 if (interaction.TrySelectAction(id, cardId) == BoardDraftMutation.Affordance)
                 {
                     panel.RaiseDraftStarted();
-                    RefreshDraft(panel, composer, generation, cardId);
+                    if (DirectCommitment.IsReady(composer)) Submit(panel, composer, generation);
+                    else RefreshDraft(panel, composer, generation, cardId);
                 }
             });
         }

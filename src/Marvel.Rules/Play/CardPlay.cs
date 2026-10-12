@@ -181,43 +181,8 @@ public static class CardPlay
     /// </remarks>
     public static void PlayIgnoringResourceCost(
         World world, ICardFacts facts, ICardPlayAbilities abilities, Seat seat, Card card,
-        List<GameEvent> events, IReadOnlyList<int>? targets = null)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(abilities);
-        ArgumentNullException.ThrowIfNull(seat);
-        ArgumentNullException.ThrowIfNull(card);
-        ArgumentNullException.ThrowIfNull(events);
-
-        if (EffectiveCards.Kind(card, facts) == CardKind.Event)
-        {
-            throw new RulesNotImplementedException(
-                $"event '{card.FaceId}' cannot be played ignoring its resource cost "
-                + "until its Action selection can be represented");
-        }
-
-        if (!Permitted(world, facts, seat, card, targets, abilities))
-        {
-            throw new RulesNotImplementedException(
-                $"card {card.ObjectId} ('{card.FaceId}') cannot be played ignoring its cost");
-        }
-
-        // `rr:requirement-resources.2`: ignoring the cost generates and pays
-        // no resources, so a printed requirement makes this permission
-        // unusable. Refuse before the card leaves its hand.
-        if (Resources.Required(world, card, facts).Length > 0)
-        {
-            throw new RulesNotImplementedException(
-                $"card '{card.FaceId}' has a resource requirement and cannot be played "
-                + "ignoring its resource cost");
-        }
-
-        // `rr:ignore.1`: zero resources are considered paid. Cost reductions
-        // are neither applied nor consumed because there is no resource cost
-        // in effect during this play.
-        Enter(world, facts, abilities, seat, card, events, targets ?? []);
-    }
+        List<GameEvent> events, IReadOnlyList<int>? targets = null) =>
+        FreeCardPlay.Play(world, facts, abilities, seat, card, events, targets);
 
     /// <summary>Plays an owned card from an out-of-play zone by permission.</summary>
     /// <remarks>
@@ -286,77 +251,8 @@ public static class CardPlay
     /// </remarks>
     public static void PutAllyIntoPlay(
         World world, ICardFacts facts, ICardPlayAbilities abilities, Card ally,
-        int controller, string trigger, List<GameEvent> events)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(abilities);
-        ArgumentNullException.ThrowIfNull(ally);
-        ArgumentNullException.ThrowIfNull(trigger);
-        ArgumentNullException.ThrowIfNull(events);
-        ArgumentOutOfRangeException.ThrowIfNegative(controller);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(controller, world.Players);
-
-        if (EffectiveCards.Kind(ally, facts) != CardKind.Ally)
-        {
-            throw new RulesNotImplementedException(
-                $"card {ally.ObjectId} is not an ally and cannot enter an allies area");
-        }
-
-        if (DeckTypes.IsInPlay(ally.Area.Type))
-        {
-            throw new RulesNotImplementedException(
-                $"ally {ally.ObjectId} is already in play and cannot be put into play again");
-        }
-
-        if (facts.RequiredForm(ally.FaceId) is { } form
-            && !Forms.In(world, world.Seats[controller], facts, form))
-        {
-            throw new RulesNotImplementedException(
-                $"ally {ally.ObjectId} can only be put into play in {form} form");
-        }
-
-        if (Uniqueness.IsBlocked(world, facts, ally, PlayArea.Of(controller)))
-        {
-            // `rr:unique-icon.4.1`: an attempted put-into-play has no effect.
-            return;
-        }
-
-        var from = ally.Area;
-        int previousController = from.PlayArea.IsPlayers
-            ? from.PlayArea.Player
-            : ally.Owner;
-        var into = world.AreaOf(
-            DeckType.AlliesArea, PlayArea.Of(controller), cardOwner: ally.Owner);
-
-        World.MoveToTop(ally, into);
-        events.Add(new CardsMoved(
-            Places.Reference(from), Places.Reference(into),
-            [new Landing(ally.ObjectId, into.Cards.Count - 1)])
-        {
-            Trigger = trigger,
-            Verb = "Put_Into_Play",
-        });
-
-        if (previousController != controller)
-        {
-            events.Add(new ControlChanged(ally.ObjectId, previousController, controller)
-            {
-                Trigger = trigger,
-                Verb = "Put_Into_Play",
-            });
-        }
-
-        if (AllyLimit(world, facts, world.Seats[controller], ally))
-        {
-            FinalizeAllyEntry(world, ally, controller);
-        }
-        else
-        {
-            Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
-            Entered(world, ally, controller);
-        }
-    }
+        int controller, string trigger, List<GameEvent> events) =>
+        AllyCardEntry.Put(world, facts, abilities, ally, controller, trigger, events);
 
     /// <summary>
     /// Spends resources to pay a cost — <c>rr:initiating-abilities.step.5</c>.
@@ -407,76 +303,10 @@ public static class CardPlay
         World world, ICardFacts facts, IResourceCardAbilities resourceAbilities,
         IReadOnlyList<Area> hands, IReadOnlyList<int> paying,
         long cost, string required, int itself, int payer, List<GameEvent> events,
-        Card? payingFor = null, IReadOnlyDictionary<int, int>? resourcePayers = null)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(resourceAbilities);
-        ArgumentNullException.ThrowIfNull(hands);
-        ArgumentNullException.ThrowIfNull(paying);
-        ArgumentNullException.ThrowIfNull(events);
-
-        var spent = new List<Card>();
-        var generated = new System.Text.StringBuilder();
-
-        // `rr:resource-ability` -- a generator that is not a card in hand is an
-        // ability on a card in play, and using one is not discarding it.
-        // `rr:cost.3` spends resources "by discarding cards from their hand",
-        // which is the *other* way and not the only one.
-        //
-        // Asked as "was this one offered" rather than "is this card in a hand",
-        // so that a payment naming a card that is neither still says the thing
-        // that is wrong with it.
-        var abilityPayers = resourcePayers is null
-            ? resourceAbilities.ResourceAbilities(world, payer)
-                .GroupBy(source => source.Effect)
-                .ToDictionary(group => group.Key, _ => payer)
-            : resourcePayers;
-
-        foreach (int id in paying)
+        Card? payingFor = null, IReadOnlyDictionary<int, int>? resourcePayers = null) =>
+        new CardResourcePayment(world, facts, resourceAbilities, new CardResourcePaymentRequest
         {
-            var source = world.Cards[id];
-            if (abilityPayers.TryGetValue(id, out int abilityPayer)
-                && !hands.Contains(source.Area))
-            {
-                generated.Append(resourceAbilities.UseResource(
-                    world, abilityPayer, id, events));
-                continue;
-            }
-
-            if (!hands.Contains(source.Area))
-            {
-                // Named, because "not in a hand" and "not in *yours*" are
-                // different mistakes and only one of them is about alliance.
-                throw new RulesNotImplementedException(
-                    hands.Count == 1 && hands[0].CardOwner >= 0
-                        ? $"card {id} is not in {world.Seats[hands[0].CardOwner].Name}'s hand "
-                          + "and cannot be spent from it"
-                        : $"card {id} is in no player's hand and cannot be spent from one");
-            }
-
-            if (source.ObjectId == itself)
-            {
-                throw new RulesNotImplementedException(
-                    $"card {id} is being played and cannot also pay for itself");
-            }
-
-            spent.Add(source);
-            generated.Append(resourceAbilities.ResourcesGeneratedBy(world, source, payingFor));
-        }
-
-        if (!Resources.Pays(generated.ToString(), cost, required))
-        {
-            throw new RulesNotImplementedException(
-                $"the cost is {cost}"
-                + (required.Length > 0 ? $" requiring '{required}'" : string.Empty)
-                + $" and the payment generates '{generated}'; "
-                + "rr:initiating-abilities.step.5 aborts without paying");
-        }
-
-        foreach (var source in spent)
-        {
-            Discard.Card(world, source, Verb, events);
-        }
-    }
+            Hands = hands, Paying = paying, Cost = cost, Required = required, Itself = itself,
+            Payer = payer, PayingFor = payingFor, ResourcePayers = resourcePayers,
+        }).Spend(events);
 }

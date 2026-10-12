@@ -1,5 +1,6 @@
 using Marvel.Cards.Dsl;
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -35,9 +36,18 @@ public sealed class CoreSelectionResourceTests
         Assert.True(prompt.ExposesConcealedCandidates);
         Assert.Equal(PublicDecisionKind.CardLook, prompt.PublicKind);
 
-        runner.Chose(
+        var events = runner.Chose(
             world, tony, 0, choice.Index, Decision.Take(second.ObjectId), choice.Tier);
 
+        // Printed Futurist: "Add 1 to your hand and discard the others".
+        // Engine-choice receipt groups only that explicit discard instruction.
+        ActivityCompleted completed = Assert.Single(events.OfType<ActivityCompleted>());
+        Assert.Equal("Discard", completed.Verb);
+        Assert.Equal([top.ObjectId, third.ObjectId], completed.Participants[0].Cards);
+        Assert.Equal(2, completed.Participants[0].Count);
+        CardsMoved added = Assert.Single(events.OfType<CardsMoved>(), item => item.Verb == "Add_To_Hand");
+        Assert.Null(added.ActivityBatch);
+        Assert.Equal(second.ObjectId, Assert.Single(added.Cards).Card);
         Assert.Contains(second, world.Seats[0].Hand.Cards);
         Assert.Single(world.Seats[0].Deck.Cards);
         Assert.Contains(bottom, world.Seats[0].Deck.Cards);

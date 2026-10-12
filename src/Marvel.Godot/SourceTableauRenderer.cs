@@ -14,13 +14,11 @@ internal static class SourceTableauRenderer
         var panel = new VBoxContainer { Name = "SourceTableau", Position = bounds.Position,
             Size = bounds.Size, CustomMinimumSize = bounds.Size, MouseFilter = Control.MouseFilterEnum.Ignore };
         panel.AddThemeConstantOverride("separation", 4);
-        panel.AddChild(new Label { Name = "SourceTableauTitle", Text = $"UPGRADES & SUPPORTS · {cards.Length} · Drag a title to arrange",
-            ThemeTypeVariation = GodotThemeVariations.Caption, MouseFilter = Control.MouseFilterEnum.Ignore });
         var scroll = new ScrollContainer { Name = "SourceTableauViewport",
             SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto, FollowFocus = true };
         panel.AddChild(scroll);
-        var layout = new SourceTableauLayout(bounds.Size.X - 12, bounds.Size.Y - 28, cards.Length);
+        var layout = new SourceTableauLayout(bounds.Size.X - 12, bounds.Size.Y, cards.Length);
         var grid = new GridContainer { Name = "SourceTableauGrid", Columns = layout.Columns,
             CustomMinimumSize = new Vector2(bounds.Size.X - 12,
                 (int)Math.Ceiling((double)cards.Length / layout.Columns) * (SourceTableauLayout.TileHeight + SourceTableauLayout.Gap)),

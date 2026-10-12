@@ -46,9 +46,9 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `27` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `28` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `5` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v12` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v13` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
@@ -56,7 +56,7 @@ independent identities do:
 Replay v11 includes corrected Core card targets, prerequisites and response
 eligibility. These can change decisions and outcomes from the same initial
 setup. Older replay contracts require their matching runtime; changed ability
-data also changes its runtime dataset hash. The protocol is 27 and the
+data also changes its runtime dataset hash. The protocol is 28 and the
 session schema remains 5 because these corrections do not change their shapes.
 
 The product version belongs in desktop and server metadata. The protocol
@@ -378,3 +378,10 @@ unchanged. New traces support both explicit recipients and the separate-choice
 empty-target route, including strict save/reload verification.
 
 The v3 engine exposes the current encounter card before its When Revealed interrupt window. This changes intermediate state, information and event boundaries; older replay contracts are incompatible. Protocol 19 carries engine-authored commitment labels and deferred targeting facts. RNG, state digest and save schema formats remain unchanged.
+
+Replay v13 adds explicit draw/discard/ready operation receipts and round/phase
+boundaries, and permits an engine-authorized early recipient for single public
+event choices. Protocol 28 carries the new event variants and batch/round facts.
+Replay v12 and earlier saves are rejected without overwriting their files;
+there is no migration for their changed event and prompt traces. Save schema 5,
+RNG, state digest and runtime datasets remain unchanged.

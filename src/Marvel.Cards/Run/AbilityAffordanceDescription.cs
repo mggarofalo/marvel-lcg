@@ -35,8 +35,8 @@ internal static class AbilityAffordanceDescription
             DisplayLabel = AbilitySearchDescription.Action(found.Effect),
             CommitLabel = AbilitySearchDescription.Action(found.Effect),
             PlaysCard = EffectiveCards.Kind(card, world.Facts) == CardKind.Event,
-            DeferredTargetSelection = StartsWithTargetSelection(found.Effect),
-            DirectRecipientCommit = recipients is not null,
+            DeferredTargetSelection = recipients is null && StartsWithTargetSelection(found.Effect),
+            DirectRecipientCommit = recipients is not null && EffectiveCards.Kind(card, world.Facts) != CardKind.Event,
             CostDescription = AbilityCostDescription.Summary(world, card, ability.Player, found.Cost),
         };
     }

@@ -227,6 +227,8 @@ func _responsive_layout_is_safe() -> bool:
 	var prompt := _node("Play/Prompt") as Control
 	if not _fixed_header_is_visible():
 		return false
+	if not prompt.is_visible_in_tree():
+		return _collapsed_history_layout_is_safe(board)
 	var minimum_prompt := 140.0 if main.find_child("AstraTableSurface", true, false) != null else 330.0
 	if board.size.x < 480.0 or prompt.size.x < minimum_prompt or prompt.size.x > board.size.x:
 		_fail("the responsive table did not preserve usable board and prompt widths: %s/%s" % [

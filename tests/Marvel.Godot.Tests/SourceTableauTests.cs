@@ -27,7 +27,9 @@ public sealed class SourceTableauTests
         foreach (string id in new[] { "01035", "01036", "01037", "01038", "01038", "01039", "01039", "01081", "01093", "01093", "01093" })
             world.CreateCard(id, upgrades);
         foreach (string id in new[] { "01033", "01034", "01080", "01091", "01092" }) world.CreateCard(id, supports);
-        world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
+        Card rhino = world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
+        Card webbed = world.CreateCard("01009", world.AreaOf(DeckType.UpgradesArea,
+            rhino.Area.PlayArea, cardOwner: 0, host: rhino.ObjectId));
         world.CreateCard("01097b", world.AreaOf(DeckType.MainSchemesArea));
         if (System.Environment.GetEnvironmentVariable("MARVEL_TABLEAU_DENSE_ACTORS") == "1")
         {
@@ -44,6 +46,10 @@ public sealed class SourceTableauTests
         BoardAreaPresentation[] areas = [.. BoardPresentation.From(WorldProjection.For(world, null, [],
             new RestrictedVisibilityPolicy(0).Authorize(null, world.Players)).World).Areas];
         BoardCardPresentation[] sources = CardSourceGroups.Controlled(areas, 0);
+        BoardCardPresentation webbedPresentation = Assert.Single(CardSourceGroups.Attached(areas, rhino.ObjectId));
+        Assert.Equal(webbed.ObjectId, webbedPresentation.TargetId);
+        Assert.Equal(rhino.ObjectId, webbedPresentation.Persistent!.Relation.HostId);
+        Assert.DoesNotContain(sources, card => card.TargetId == webbed.ObjectId);
         Assert.Equal(16, sources.Length);
         Assert.Equal(2, sources.Count(card => card.Title == "Powered Gauntlets"));
         Assert.Contains(sources, card => card.Title == "Pepper Potts");
@@ -99,11 +105,11 @@ public sealed class SourceTableauTests
     public void DenseDesktopSourceViewportPreservesHandCharactersAndDecision(int percent)
     {
         var table = new AstraTableGeometry(1670, 962, percent >= 130, PhysicalCardSize: new Vector2(240, 240), HasSourceTableau: true);
-        var layout = new SourceTableauLayout(table.SourceTableau.Size.X - 12, table.SourceTableau.Size.Y - 28, 16);
-        Assert.Equal(4, layout.Columns);
+        var layout = new SourceTableauLayout(table.SourceTableau.Size.X - 12, table.SourceTableau.Size.Y, 16);
+        Assert.Equal(3, layout.Columns);
         for (int index = 0; index < 12; index++)
         {
-            var tile = new Rect2(table.SourceTableau.Position + new Vector2(0, 24) + layout.Position(index),
+            var tile = new Rect2(table.SourceTableau.Position + layout.Position(index),
                 new Vector2(layout.TileWidth, SourceTableauLayout.TileHeight));
             Assert.True(tile.Position.X >= table.SourceTableau.Position.X);
             Assert.True(tile.End.X <= table.SourceTableau.End.X);

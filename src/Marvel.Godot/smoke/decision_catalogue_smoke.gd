@@ -66,10 +66,21 @@ func _check_obligation_context() -> bool:
 		_fail("Business Problems has no visible contextual face")
 		return false
 	await _capture_checkpoint("business-problems-context")
-	if not await _compose_table_decision(): return false
+	var remain := _button_named("Remain in your current form")
+	if remain == null or not await _pointer_activate(remain):
+		_fail("Business Problems did not offer its current-form choice")
+		return false
 	if not await _wait_for(func() -> bool: return "Exhaust Tony Stark" in _visible_text(main)):
 		_fail("the obligation consequences did not arrive")
 		return false
+	var alternatives := main.find_child("RequiredAlternatives", true, false) as Control
+	if alternatives == null or _visible_buttons(alternatives).size() != 2:
+		_fail("Business Problems did not expose both required alternatives")
+		return false
+	for alternative in _visible_buttons(alternatives):
+		if not _control_is_fully_visible(alternative):
+			_fail("a required obligation alternative is clipped: %s" % alternative.text)
+			return false
 	await _capture_checkpoint("business-problems-consequences")
 	if not await _obligation_face_visible():
 		_fail("the obligation disappeared during its next choice")

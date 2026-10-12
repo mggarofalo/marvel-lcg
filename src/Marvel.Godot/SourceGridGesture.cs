@@ -36,8 +36,8 @@ internal sealed partial class SourceGridGesture : Node
         string identity = card.GetMeta("source_identity").AsString();
         Control header = card.FindChild("SourceTitleBand", true, false) as Control ?? card;
         Label title = (Label)card.FindChild("SourceTitle", true, false);
-        var grip = new Button { Name = "SourceReorderGrip", Text = "⠿", Flat = true,
-            AccessibilityName = $"Arrange {identity}", TooltipText = "Drag this title to swap table slots. Space picks up; arrows move; Enter places; Escape cancels.",
+        var grip = new Button { Name = "SourceReorderGrip", Text = "", Flat = true,
+            AccessibilityName = $"Arrange {identity}", TooltipText = "Drag and drop into any slot. Space picks up; arrows move; Enter places; Escape cancels.",
             Alignment = HorizontalAlignment.Right, MouseDefaultCursorShape = Control.CursorShape.Drag,
             MouseFilter = Control.MouseFilterEnum.Stop, ZIndex = 20 };
         grip.AddThemeFontSizeOverride("font_size", 16);
@@ -53,10 +53,17 @@ internal sealed partial class SourceGridGesture : Node
         var overlay = new Control { Name = "SourceReorderOverlay", MouseFilter = Control.MouseFilterEnum.Ignore };
         card.AddChild(overlay);
         overlay.AddChild(grip);
+        var mark = new Label { Name = "SourceReorderMark", Text = "⠿", MouseFilter = Control.MouseFilterEnum.Ignore,
+            VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
+        mark.AddThemeFontSizeOverride("font_size", 16);
+        mark.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
+        overlay.AddChild(mark);
         void Fit()
         {
             grip.Position = header.Position;
-            grip.Size = new Vector2(header.Size.X, Math.Clamp(title.Size.Y, 38, Math.Max(38, header.Size.Y - 16)));
+            grip.Size = new Vector2(title.Position.X + title.Size.X + 7, title.Size.Y);
+            mark.Position = header.Position + new Vector2(header.Size.X - 24, 0);
+            mark.Size = new Vector2(24, title.Size.Y);
         }
         header.Resized += Fit;
         title.Resized += Fit;
@@ -137,7 +144,7 @@ internal sealed partial class SourceGridGesture : Node
         RestoreOrder();
         grid.MoveChild(origin!, targetIndex);
         grid.MoveChild(target, sourceIndex);
-        feedback.Show(origin!, $"Swap with {Identity(target)} · {Place(target)} ↔ {Place(origin!)}. Release / Enter places; Escape cancels.");
+        feedback.Show(origin!, $"Place in {Place(origin!)}. Release / Enter places; Escape cancels.");
     }
 
     private Control? SlotAt(Vector2 pointer)
@@ -152,7 +159,7 @@ internal sealed partial class SourceGridGesture : Node
         if (!moving || SlotAt(pointer) is null) { Cancel(); return; }
         SourcePresentationOrder.Store(seat, grid.GetChildren().OfType<Control>()
             .Select(slot => cards[slot].TargetId).OfType<int>());
-        result.PresentGestureFeedback($"Arranged {Identity(origin!)} in {Place(origin!)}. Game choices are unchanged.");
+        result.PresentGestureFeedback("");
         Finish();
     }
 
@@ -160,7 +167,7 @@ internal sealed partial class SourceGridGesture : Node
     {
         if (dragged is null) return;
         RestoreOrder();
-        result.PresentGestureFeedback("Arrangement cancelled. Source positions and game choices are unchanged.");
+        result.PresentGestureFeedback("");
         Finish();
     }
 

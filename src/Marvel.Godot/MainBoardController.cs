@@ -28,6 +28,7 @@ internal sealed class MainBoardController : IDisposable
 
     internal void ResetForSession()
     {
+        main.eventController.ClearTimeline();
         HandPresentationOrder.Clear();
         SourcePresentationOrder.Clear();
         cardInspector.Reset();

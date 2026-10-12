@@ -27,6 +27,15 @@ public static class Draw
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
 
+        int start = events.Count;
+        Resolve(world, player, count, trigger, events);
+        ActivityBatches.Complete(events, start, "Draw", player);
+    }
+
+    internal static void Resolve(
+        World world, int player, int count, string trigger, List<GameEvent> events)
+    {
+
         var seat = world.Seats[player];
         for (int drawn = 0; drawn < count; drawn++)
         {

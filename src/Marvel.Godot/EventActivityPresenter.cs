@@ -76,6 +76,7 @@ internal sealed partial class EventActivityPresenter : Node
     private void UpdateText()
     {
         if (InteractionControl.IsUsable(host)) EventActivitySurface.Present(host!, sequence);
+        main?.eventController.PresentTimelineBeat(sequence);
     }
 
     private void RefreshPulse()
@@ -83,14 +84,11 @@ internal sealed partial class EventActivityPresenter : Node
         if (!InteractionControl.IsUsable(pulse)) return;
         var visible = VisibleSubjects(CurrentEntries());
         if (!sequence.Active) visible = SettledSubjects(visible);
-        pulse!.Present(visible, elapsed, sequence.Active, host, StageEntries());
+        pulse!.Present(visible, elapsed, sequence.Active);
     }
 
     private IReadOnlyList<EventPresentation> CurrentEntries() =>
         sequence.Active && sequence.Current is { } current ? [current] : sequence.Entries;
-
-    private IReadOnlyList<EventPresentation> StageEntries() =>
-        sequence.Active && sequence.Current is { } current ? [current] : ActivityVisualMeaning.Settled(sequence.Entries);
 
     private List<(EventPresentation, ActivitySubject, Rect2)> VisibleSubjects(IReadOnlyList<EventPresentation> entries)
     {

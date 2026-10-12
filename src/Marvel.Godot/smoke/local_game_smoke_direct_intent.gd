@@ -63,7 +63,7 @@ func _hero_target_drag_preserves_commitment() -> bool:
 		_fail("the ready hero could not be dragged onto the offered enemy")
 		return false
 	var commit := _task_commit()
-	if commit == null or commit.text != "Attack Rhino" or commit.disabled:
+	if commit == null or commit.text.trim_prefix("✓ ") != "Attack Rhino" or commit.disabled:
 		_fail("the hero drop did not stage its offered attack and exact enemy")
 		return false
 	if (_node("Toolbar/SyncStatus") as Label).text != revision:
@@ -74,6 +74,7 @@ func _hero_target_drag_preserves_commitment() -> bool:
 		_fail("starting an attack draft concealed history")
 		return false
 	if not _active_cues_leave_printed_values_readable(): return false
+	if not await _capture_checkpoint("target-commitment-popup"): return false
 	var cancel := main.find_child("ContextualCancelDraft", true, false) as Button
 	if cancel == null or not await _pointer_activate(cancel):
 		_fail("the attack drag draft cannot be cancelled locally")
@@ -160,7 +161,7 @@ func _collection_actor_drag_stages_and_returns() -> bool:
 	var parent := source.get_parent()
 	if not await _drag(source, target.get_global_rect().get_center()): return false
 	var commit := _task_commit()
-	if commit == null or commit.text != "Attack Rhino" or source.is_set_as_top_level():
+	if commit == null or commit.text.trim_prefix("✓ ") != "Attack Rhino" or source.is_set_as_top_level():
 		_fail("collection actor drop lost its exact named composition or temporary lift")
 		return false
 	var cancel := main.find_child("ContextualCancelDraft", true, false) as Button
@@ -265,9 +266,10 @@ func _deferred_preview_when_offered() -> bool:
 		return false
 	main.remove_meta("checking_deferred_preview")
 	var modal := _payment_modal()
-	if modal == null or "Payment commits now" not in _visible_text(modal):
-		_fail("the deferred drop did not open a payment commitment with later targeting explained")
+	if modal == null or "Target: Rhino" not in _visible_text(modal):
+		_fail("the targeted event drop did not retain Rhino through payment")
 		return false
+	if not await _capture_checkpoint("targeted-event-payment"): return false
 	if not await _payment_cancel_is_safe(): return false
 	if (_node("Toolbar/SyncStatus") as Label).text != revision:
 		_fail("the deferred drag preview or cancelled payment committed an answer")
@@ -281,8 +283,8 @@ func _drag_preview_is_meaningful(card: Control) -> bool:
 		return true
 	var context := main.find_child("ContextualDecision", true, false) as Control
 	var text := _visible_text(context)
-	if "choose a target after payment" not in text or "No offered action" in text:
-		_fail("the accepted deferred event drag preview denied or concealed its later target choice: %s" % text)
+	if "Swinging Web Kick" not in text or "No offered action" in text:
+		_fail("the accepted event drag preview denied or concealed its action: %s" % text)
 		return false
 	return "Swinging Web Kick" in _visible_text(card)
 

@@ -21,6 +21,9 @@ public static class EventCuePlanner
     {
         ArgumentNullException.ThrowIfNull(happened);
         ArgumentNullException.ThrowIfNull(world);
+        HashSet<int> completed = happened.OfType<ActivityCompleted>().Select(activity => activity.Batch).ToHashSet();
+        happened = happened.Where(item => item is ActivityCompleted || item.ActivityBatch is not { } batch
+            || !completed.Contains(batch)).ToArray();
         var presented = EventPresenter.Present(happened, world);
         IReadOnlyList<EventPresentation> narrative =
             EventPresenter.PresentNarrative(happened, world);

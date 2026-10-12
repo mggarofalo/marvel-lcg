@@ -28,7 +28,7 @@ internal sealed record AstraTableGeometry(
     {
         get
         {
-            Rect2 baseline = Scale(new Rect2(406, 408, 258, 248));
+            Rect2 baseline = Scale(new Rect2(406, 408, 378, 248));
             Vector2 face = Identity.Size;
             float left = Math.Max(baseline.Position.X, Identity.Position.X + Math.Max(face.X, face.Y) + ScaleX(12));
             return new Rect2(left, baseline.Position.Y, baseline.End.X - left, baseline.Size.Y);
@@ -36,7 +36,7 @@ internal sealed record AstraTableGeometry(
     }
     internal Rect2 Assets => SourceTableau;
     internal Rect2 Upgrades => SourceTableau;
-    internal Rect2 SourceTableau => new(ScaleX(688), ScaleY(350), ScaleX(610), HandTop - ScaleY(350) - 24);
+    internal Rect2 SourceTableau => new(ScaleX(808), ScaleY(350), ScaleX(490), HandTop - ScaleY(350) - 24);
     internal Rect2 Hand => new(ScaleX(194), HandTop, Width - ScaleX(194) - 22,
         Context.Position.Y - HandTop - 14);
     internal Rect2 Context => new(ScaleX(194), Height - 58, Width - ScaleX(194) - 22, 54);

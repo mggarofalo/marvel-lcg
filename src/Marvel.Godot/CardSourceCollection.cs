@@ -14,16 +14,12 @@ internal static class CardSourceCollection
         stack.AddThemeConstantOverride("separation", 3);
         stack.AddChild(new Label { Text = $"{relationship} · {cards.Length}", ThemeTypeVariation = GodotThemeVariations.Caption,
             MouseFilter = Control.MouseFilterEnum.Ignore });
-        var scroll = new ScrollContainer { Name = "AttachedSourceScroll", CustomMinimumSize = new Vector2(width, Math.Min(156, cards.Length * 68)),
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
-            FollowFocus = true };
-        stack.AddChild(scroll);
         var rows = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        scroll.AddChild(rows);
+        stack.AddChild(rows);
         result.Inspector.Register(cards);
         foreach (BoardCardPresentation card in cards)
         {
-            CardControl control = SourceTableauTile.CreateCard(card, width - 16, scale);
+            CardControl control = SourceTableauTile.CreateCard(card, width, scale, compact: true);
             control.Name = $"ProceduralCard{card.TargetId}";
             rows.AddChild(control);
             if (card.TargetId is { } id) result.Register(id, control);
@@ -31,8 +27,6 @@ internal static class CardSourceCollection
             rows.SortChildren += () => Callable.From(() =>
             { if (InteractionControl.IsUsable(control)) result.UpdateRestingPose(control); }).CallDeferred();
         }
-        if (cards.Length > 2) stack.AddChild(new Label { Text = "Scroll for more ↓",
-            ThemeTypeVariation = GodotThemeVariations.Caption, MouseFilter = Control.MouseFilterEnum.Ignore });
         return stack;
     }
 }

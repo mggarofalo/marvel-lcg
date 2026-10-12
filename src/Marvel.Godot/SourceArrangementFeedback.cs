@@ -10,11 +10,9 @@ internal sealed class SourceArrangementFeedback
     private readonly Dictionary<Control, Control> outlines = [];
     private readonly Label caption;
     private readonly PanelContainer frame;
-    private readonly Control owner;
 
     internal SourceArrangementFeedback(Control owner)
     {
-        this.owner = owner;
         caption = CardSourceStrip.Label("", "SourceSwapFeedback", 12, CardTypography.Bold);
         caption.AccessibilityLive = AccessibilityServer.AccessibilityLiveMode.Polite;
         frame = new PanelContainer { Name = "SourceSwapFeedbackFrame", TopLevel = true, Visible = false,
@@ -41,9 +39,9 @@ internal sealed class SourceArrangementFeedback
     {
         foreach (Control outline in outlines.Values) outline.Hide();
         outlines[origin].Show();
-        frame.GlobalPosition = owner.GlobalPosition - new Vector2(0, 42);
-        frame.Size = new Vector2(owner.Size.X, 40);
-        caption.Text = message;
+        frame.GlobalPosition = origin.GetGlobalRect().End - new Vector2(44, 40);
+        frame.Size = new Vector2(44, 40);
+        caption.Text = "↔";
         caption.AccessibilityName = message;
         frame.Show();
     }

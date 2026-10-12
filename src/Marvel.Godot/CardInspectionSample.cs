@@ -20,16 +20,18 @@ internal static class CardInspectionSample
         foreach (BoardCardPresentation card in cards.Where(card => !card.Concealed))
             foreach (Vector2 corner in new[] { new Vector2(12, 12), new Vector2(1700, 12), new Vector2(12, 790), new Vector2(1700, 790) })
                 Add(root, card, cards, corner);
+        Add(root, cards.First(card => !card.Concealed), cards, new Vector2(12, 12), navigation: true);
         return true;
     }
 
-    private static void Add(Control root, BoardCardPresentation card, BoardCardPresentation[] all, Vector2 position)
+    private static void Add(Control root, BoardCardPresentation card, BoardCardPresentation[] all, Vector2 position, bool navigation = false)
     {
         var fixture = new Control { Name = $"Inspection{root.GetChildCount()}", Visible = false };
         root.AddChild(fixture);
         fixture.SetMeta("title", card.Title);
         fixture.SetMeta("rules", card.RulesText);
         fixture.SetMeta("historical", card.TargetId is null);
+        fixture.SetMeta("navigation", navigation);
         CardControl face = CardControl.Create(card, CardDisplaySize.Board,
             SpatialCardMetrics.TableScale(ClientTheme.ConfiguredScale()));
         face.Name = "InspectionSource";
@@ -40,7 +42,7 @@ internal static class CardInspectionSample
         AddNeighbor(fixture, face);
         var snapshot = new BoardPresentation([new(1, "Authorized cards", "", all, [])]);
         var result = new BoardRenderResult(snapshot) { IsCurrent = () => true };
-        var area = new BoardAreaPresentation(1, "Card details", "", [card, .. all.Where(value => value.Concealed)], []);
+        var area = new BoardAreaPresentation(1, "Card details", "", navigation ? all : [card, .. all.Where(value => value.Concealed)], []);
         result.CardActivated += (selected, source) => TabletopPileInspector.Show(source,
             TabletopAreaObject.From(area), result, ClientTheme.ConfiguredScale(), null, allowActions: false);
         result.TrackCard(face, card);

@@ -15,6 +15,7 @@ internal sealed class MainEventController : IDisposable
     private readonly HistoryAccountController history;
     private readonly MainEventMotionController motion;
     private readonly MainResolutionStageController resolutionStage;
+    private readonly EventTimelineController timeline;
 
     internal MainEventController(Main main)
     {
@@ -22,6 +23,7 @@ internal sealed class MainEventController : IDisposable
         history = new HistoryAccountController(main);
         motion = new MainEventMotionController(main);
         resolutionStage = new MainResolutionStageController(main);
+        timeline = new EventTimelineController(main);
     }
     internal void RenderPromptSummary(Prompt? prompt, WorldDescriptor world)
     {
@@ -172,6 +174,13 @@ internal sealed class MainEventController : IDisposable
 
     internal void RenderEvents() => history.Render();
 
+    internal void RecordTimeline(EngineResponse response, IReadOnlyList<EventPresentation> entries, bool reset)
+        => timeline.Record(response, entries, reset);
+
+    internal void FitTimeline() => timeline.Fit();
+    internal void ClearTimeline() => timeline.Clear();
+    internal void PresentTimelineBeat(EventActivitySequence sequence) => timeline.PresentBeat(sequence);
+
     internal void PresentEvents(IReadOnlyList<EventPresentation> presented)
         => motion.Present(presented);
 
@@ -229,6 +238,10 @@ internal sealed class MainEventController : IDisposable
         HistoryUndoControl.Refresh(main);
     }
 
-    public void Dispose() => motion.Dispose();
+    public void Dispose()
+    {
+        motion.Dispose();
+        timeline.Dispose();
+    }
 
 }

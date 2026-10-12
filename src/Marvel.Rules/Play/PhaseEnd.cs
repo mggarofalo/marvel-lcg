@@ -156,6 +156,7 @@ public static class PhaseEnd
         ArgumentNullException.ThrowIfNull(events);
 
         var player = world.Seats[seat];
+        int start = events.Count;
         foreach (int id in chosen)
         {
             var card = world.Cards[id];
@@ -175,6 +176,7 @@ public static class PhaseEnd
                 $"{player.Name} holds {player.Hand.Cards.Count} cards and must discard down to "
                 + $"{limit}; rr:end-of-player-phase.step.1 does not let this be declined");
         }
+        ActivityBatches.Complete(events, start, "Discard", seat, ActivityPhaseStep.DiscardToHandSize);
     }
 
     /// <summary>
@@ -206,6 +208,7 @@ public static class PhaseEnd
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
+        int start = events.Count;
 
         foreach (int seat in world.PlayerOrder)
         {
@@ -224,7 +227,7 @@ public static class PhaseEnd
                 }
 
                 int before = player.Hand.Cards.Count;
-                Draw.Cards(world, seat, 1, "end of player phase", events);
+                Draw.Resolve(world, seat, 1, "end of player phase", events);
                 if (player.Hand.Cards.Count == before)
                 {
                     // `rr:player-deck.4` -- a deck and a discard pile both
@@ -234,6 +237,7 @@ public static class PhaseEnd
                 }
             }
         }
+        ActivityBatches.Complete(events, start, "Draw", -1, ActivityPhaseStep.DrawToHandSize);
     }
 
     /// <summary>
@@ -251,6 +255,7 @@ public static class PhaseEnd
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
+        int start = events.Count;
 
         foreach (var area in world.Areas)
         {
@@ -276,6 +281,7 @@ public static class PhaseEnd
                 });
             }
         }
+        ActivityBatches.Complete(events, start, "Ready", -1, ActivityPhaseStep.ReadyCards);
     }
 
     /// <summary>

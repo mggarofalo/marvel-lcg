@@ -35,8 +35,11 @@ internal static class SpatialTableContextRenderer
         summary.AutowrapMode = TextServer.AutowrapMode.Word;
         summary.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         copy.AddChild(summary);
+        summary.VisibilityChanged += () => summaryViewport.Visible = summary.Visible;
+        summaryViewport.Visible = summary.Visible;
         result.RegisterContextualSummary(summary, "", resolution);
         var scroll = new ScrollContainer { Name = "ContextualActionScroll", CustomMinimumSize = new Vector2(330, 0),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
             FollowFocus = true };
         panel.AddChild(scroll);
@@ -60,7 +63,8 @@ internal static class SpatialTableContextRenderer
             MouseFilter = Control.MouseFilterEnum.Ignore };
         cause.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         surface.AddChild(cause);
-        Label heading = Copy(presentation?.Heading ?? PendingSituationPresentation.Heading(world));
+        Label heading = Copy(prompt?.PublicKind == PublicDecisionKind.PlayerAction ? ""
+            : presentation?.Heading ?? PendingSituationPresentation.Heading(world));
         heading.AutowrapMode = TextServer.AutowrapMode.Word;
         heading.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         heading.Name = "ContextualHeading";

@@ -57,7 +57,9 @@ public sealed class CoreLastingEffectCardsTests
         var runner = AuthoredCards.Runner();
 
         Affordance action = runner.Describe(world, new PendingAbility(support.ObjectId, AbilityType.Action, 0));
-        Assert.True(action.DeferredTargetSelection);
+        Assert.False(action.DeferredTargetSelection);
+        Assert.True(action.DirectRecipientCommit);
+        Assert.Contains(world.Seats[1].IdentityCard.ObjectId, action.Targets!.Legal);
         Assert.Contains("choose a player", action.Description, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("next card this phase costs 1 fewer resources", action.Description);
         runner.Act(

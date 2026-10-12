@@ -115,19 +115,21 @@ func _choose_android_consequence() -> bool:
 	await process_frame
 	await process_frame
 	if not _boost_choice_fits(): return false
+	var revision := _boost_revision()
 	if not await _pointer_activate(_boost_option("Spend resources")): return false
 	await process_frame
 	await process_frame
 	if not _cause_and_draft_fit(): return false
 	var payment_commit := _button_named("Spend resources")
-	if payment_commit == null or not _control_is_fully_visible(payment_commit):
+	if payment_commit == null or not _control_is_fully_visible(payment_commit) or not payment_commit.disabled:
 		_fail("the typed payment commitment is clipped")
 		return false
 	if not await _pointer_activate(_button_named("Cancel draft")): return false
 	await process_frame
-	if not await _pointer_activate(_boost_option("Engage 1 Drone")): return false
-	if not await _commit_once("Engage 1 Drone"): return false
-	return true
+	if _boost_revision() != revision:
+		_fail("staging or cancelling incomplete resource payment committed a choice")
+		return false
+	return await _direct_choice_once(_boost_option("Engage 1 Drone"))
 
 
 func _select_ultron_threat() -> bool:
@@ -135,15 +137,11 @@ func _select_ultron_threat() -> bool:
 	if not await _wait_for(func() -> bool: return _button_named(threat_label) != null):
 		_fail("Ultron's follow-on choice did not arrive")
 		return false
-	if not await _pointer_activate(_button_named(threat_label)): return false
-	await process_frame
-	await process_frame
-	if not _cause_and_draft_fit(): return false
-	var summary := main.find_child("DraftProgress", true, false) as Label
-	if "1/3" not in summary.text or "Interrupts and prevention" not in summary.text:
-		_fail("the selected threat option lost its quantity or uncertainty")
+	var choice := _button_named(threat_label)
+	if "1/3" not in choice.tooltip_text or "Interrupts and prevention" not in choice.tooltip_text:
+		_fail("the offered threat option lost its quantity or uncertainty before commitment")
 		return false
-	return true
+	return await _direct_choice_once(choice)
 
 
 func _discard_seeded_resources() -> bool:
@@ -184,3 +182,25 @@ func _turn_end_starts_visible() -> bool:
 		_fail("End turn must be visible without paging when the turn resumes")
 		return false
 	return _cause_and_draft_fit()
+
+
+func _direct_choice_once(choice: Button) -> bool:
+	var revision := _boost_revision()
+	if not await _pointer_activate(choice): return false
+	if not await _wait_for(func() -> bool: return _boost_revision() > revision):
+		_fail("a complete consequence choice required another commitment")
+		return false
+	await process_frame
+	await process_frame
+	if _boost_revision() != revision + 1:
+		_fail("a complete consequence choice advanced more than one revision")
+		return false
+	return true
+
+
+func _boost_revision() -> int:
+	var status := _node("Toolbar/SyncStatus") as Label
+	var regex := RegEx.new()
+	regex.compile("r([0-9]+)")
+	var found := regex.search(status.text)
+	return int(found.get_string(1)) if found != null else -1

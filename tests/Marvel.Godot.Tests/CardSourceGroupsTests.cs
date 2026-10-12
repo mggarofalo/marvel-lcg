@@ -15,7 +15,7 @@ public sealed class CardSourceGroupsTests
         Assert.Empty(CardSourceGroups.Attached([area], 10));
         Assert.Empty(CardSourceGroups.Attached([area], 30));
         Assert.Equal(3, Assert.Single(CardSourceGroups.Attached([area], 20)).TargetId);
-        Assert.Equal(new int?[] { 2, 3 }, CardSourceGroups.Controlled([area], 0).Select(card => card.TargetId));
+        Assert.Equal(2, Assert.Single(CardSourceGroups.Controlled([area], 0)).TargetId);
         Assert.Empty(CardSourceGroups.Controlled([area], 1));
     }
 

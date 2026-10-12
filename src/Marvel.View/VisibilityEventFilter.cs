@@ -24,6 +24,8 @@ internal static class VisibilityEventFilter
         GameEvent happened, HashSet<int> addressable, HashSet<int> readable) =>
         happened switch
         {
+            ActivityCompleted activity => KeepActivity(activity, readable),
+            PhaseStarted phase => phase with { Subjects = null },
             CardsCreated created => KeepCreated(created, readable),
             CardsMoved moved => KeepMoved(moved, addressable),
             AreaReordered reordered => reordered.Order.All(addressable.Contains) ? reordered : null,
@@ -46,6 +48,19 @@ internal static class VisibilityEventFilter
             _ => throw new InvalidOperationException(
                 $"event kind {happened.GetType().Name} has no visibility decision"),
         };
+
+    private static ActivityCompleted KeepActivity(ActivityCompleted activity, HashSet<int> readable)
+    {
+        ActivityParticipant[] participants = activity.Participants.Select(participant => participant with
+        {
+            Cards = participant.Cards.Where(readable.Contains).ToArray(),
+        }).ToArray();
+        return activity with
+        {
+            Participants = participants,
+            Subjects = KeepSubjects(activity.Subjects, participants.SelectMany(participant => participant.Cards)),
+        };
+    }
 
     private static BoostResolved? KeepBoost(BoostResolved boost, HashSet<int> readable) =>
         readable.Contains(boost.Card) && readable.Contains(boost.Enemy)

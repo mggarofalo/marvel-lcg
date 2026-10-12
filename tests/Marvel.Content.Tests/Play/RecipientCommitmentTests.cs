@@ -1,4 +1,7 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Marvel.Cards.Run;
+using Marvel.Rules.Events;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -86,7 +89,9 @@ public sealed class RecipientCommitmentTests : ChoosingCardsTestBase
         var waiting = Assert.Single(deferred.Agenda.Outstanding);
         var effect = other.Chose(deferred, sameSource, 0, waiting.Index,
             Decision.Take(deferred.Seats[1].IdentityCard.ObjectId), waiting.Tier);
-        Assert.Equal(expected.Select(entry => entry.ToString()), cost.Concat(effect).Select(entry => entry.ToString()));
+        // Instruction ids are response-local: the direct route includes the cost
+        // in its response; the separate effect begins a new response at offset zero.
+        Assert.Equal(expected.Select(SemanticEvent), cost.Concat(effect).Select(SemanticEvent));
         Assert.Equal(direct.Digest().Canonical(), deferred.Digest().Canonical());
     }
 
@@ -97,6 +102,14 @@ public sealed class RecipientCommitmentTests : ChoosingCardsTestBase
         var runner = AuthoredCards.Runner();
         var action = Assert.Single(runner.Actions(world, 0), item => item.Card == world.Seats[0].IdentityCard.ObjectId);
         Assert.False(runner.Describe(world, action).DirectRecipientCommit);
+    }
+
+    private static string SemanticEvent(GameEvent entry)
+    {
+        JsonObject value = JsonSerializer.SerializeToNode(entry)!.AsObject();
+        value.Remove("ActivityBatch");
+        value.Remove("Batch");
+        return value.ToJsonString();
     }
 
     private static (World World, AbilityRunner Runner, Card Source) Board(int players, string face)

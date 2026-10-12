@@ -254,7 +254,7 @@ func _mulligan_history_matches(expanded: bool) -> bool:
 	var drawer := main.find_child("ToggleHistory", true, false) as Button
 	var dismiss := main.find_child("DismissHistoryResult", true, false) as Button
 	return drawer != null and dismiss != null \
-		and drawer.text == ("< History" if expanded else "> History") \
+		and drawer.text == (">>" if expanded else "<<") \
 		and dismiss.is_visible_in_tree() == expanded
 
 

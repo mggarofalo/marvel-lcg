@@ -19,6 +19,7 @@ internal static class AbilityCardStateExecution
     {
         var deck = context.World.Seats[context.Player].Deck;
         var hand = context.World.Seats[context.Player].Hand;
+        int start = context.Events.Count;
         foreach (var card in top)
         {
             if (ReferenceEquals(card, selected))
@@ -34,6 +35,8 @@ internal static class AbilityCardStateExecution
                 Rules.Play.Discard.Card(context.World, card, context.Trigger, context.Events);
             }
         }
+        ActivityBatches.Complete(context.Events, start, "Discard", context.Player,
+            included: top.Where(card => !ReferenceEquals(card, selected)).Select(card => card.ObjectId).ToArray());
     }
 
     internal static void ShuffleDiscardIntoDeck(
@@ -55,8 +58,11 @@ internal static class AbilityCardStateExecution
 
     internal static void DiscardCards(IReadOnlyList<Card> cards, string verb, AbilityCardStateContext context)
     {
+        int start = context.Events.Count;
         foreach (var card in cards)
             Rules.Play.Discard.Card(context.World, card, verb, context.Events);
+        ActivityBatches.Complete(context.Events, start, "Discard", context.Player,
+            included: cards.Select(card => card.ObjectId).ToArray());
     }
 
     internal static void PutIntoPlay(Card card, int player, AbilityCardStateContext context)
@@ -123,9 +129,9 @@ internal static class AbilityCardStateExecution
         switch (effect)
         {
             case AbilityEffect.PlaceAtRandom placement: PlaceAtRandom(placement, context); return true;
-            case AbilityEffect.DiscardAtRandom discard: DiscardAtRandom(discard, context); return true;
-            case AbilityEffect.DiscardTop discard: DiscardTop(discard, context); return true;
-            case AbilityEffect.DiscardHandWithResource discard: DiscardHandWithResource(discard, context); return true;
+            case AbilityEffect.DiscardAtRandom discard: AbilityCardDiscardExecution.DiscardAtRandom(discard, context); return true;
+            case AbilityEffect.DiscardTop discard: AbilityCardDiscardExecution.DiscardTop(discard, context); return true;
+            case AbilityEffect.DiscardHandWithResource discard: AbilityCardDiscardExecution.DiscardHandWithResource(discard, context); return true;
             default: return false;
         }
     }
@@ -231,62 +237,13 @@ internal static class AbilityCardStateExecution
         }
     }
 
-    private static void DiscardAtRandom(AbilityEffect.DiscardAtRandom discard, AbilityCardStateContext context)
-    {
-        long count = Amount(discard.Count, context); long discarded = 0; var types = new SortedSet<char>();
-        foreach (int player in Players(discard.Players, context))
-        {
-            var hand = context.World.Seats[player].Hand;
-            for (long gone = 0; gone < count && hand.Cards.Count > 0; gone++)
-            {
-                var card = context.World.Random.Choice(hand.Cards);
-                types.UnionWith(Resources.GeneratedBy(card.FaceId, context.World.Facts));
-                Rules.Play.Discard.Card(context.World, card, context.Trigger, context.Events);
-                discarded++;
-            }
-        }
-        context.Result.Values["discarded"] = discarded; context.Result.Values["resourceTypes"] = types.Count;
-    }
 
-    private static void DiscardTop(AbilityEffect.DiscardTop discard, AbilityCardStateContext context)
-    {
-        long count = Amount(discard.Count, context);
-        if (discard.Players is null && discard.From == AbilitySearchArea.EncounterDeck)
-        {
-            context.Result.Discarded.AddRange(EncounterDeck.DiscardTop(
-                context.World, count, context.Trigger, context.Events));
-            return;
-        }
-        IEnumerable<Area> decks = discard.Players is { } players
-            ? Players(players, context).Select(player => context.World.Seats[player].Deck)
-            : [Area(discard.From, context)];
-        foreach (var deck in decks)
-        {
-            if (deck.Type == DeckType.PlayerDeck && deck.PlayArea.IsPlayers)
-            {
-                context.Result.Discarded.AddRange(PlayerDeck.DiscardTop(
-                    context.World, deck.PlayArea.Player, count, context.Trigger, context.Events));
-                continue;
-            }
-            throw new RulesNotImplementedException(
-                $"'{context.Source.FaceId}' discards from unsupported deck {deck.Type}");
-        }
-    }
 
-    private static void DiscardHandWithResource(AbilityEffect.DiscardHandWithResource discard, AbilityCardStateContext context)
-    {
-        foreach (var card in context.World.Seats[context.Player].Hand.Cards.Where(card =>
-                     Resources.GeneratedBy(card.FaceId, context.World.Facts).Contains(discard.Resource)).ToList())
-        { Rules.Play.Discard.Card(context.World, card, context.Trigger, context.Events); context.Result.Discarded.Add(card); }
-        // `result.discarded` is resolution evidence: cards discarded by an
-        // earlier node remain visible to later nodes. The owner sees that
-        // immutable prior evidence through its expression context and adds
-        // only this operation's new discards.
-        context.Result.Values["discarded"] = context.Expressions.Discarded.Length
-            + context.Result.Discarded.Count;
-    }
 
-    private static long Amount(AbilityNumber value, AbilityCardStateContext context)
+
+
+
+    internal static long Amount(AbilityNumber value, AbilityCardStateContext context)
     {
         var evaluation = new AbilityExpressionEvaluation(context.Expressions, new AbilitySelectorEvaluation(context.Expressions.Bindings));
         return Publish(evaluation.Result(evaluation.Amount(value)), context.World);
@@ -297,7 +254,7 @@ internal static class AbilityCardStateExecution
     { var evaluation = new AbilitySelectorEvaluation(context.Expressions.Bindings); return Publish(evaluation.Result(evaluation.Every(selection)), context.World); }
     private static bool CanRemove(AbilityCardSelection selection, Card card, AbilityCardStateContext context) =>
         new AbilitySelectorEvaluation(context.Expressions.Bindings).CanRemove(selection, card);
-    private static Area Area(AbilitySearchArea area, AbilityCardStateContext context) => area switch
+    internal static Area Area(AbilitySearchArea area, AbilityCardStateContext context) => area switch
     {
         AbilitySearchArea.EncounterDeck => context.World.AreaOf(DeckType.EncounterDeck),
         AbilitySearchArea.EncounterDiscardPile => context.World.AreaOf(DeckType.EncounterDiscardPile),
@@ -305,7 +262,7 @@ internal static class AbilityCardStateExecution
         AbilitySearchArea.YourDeck => context.World.Seats[context.Player].Deck,
         _ => throw new InvalidOperationException("Unknown compiled search area"),
     };
-    private static IEnumerable<int> Players(AbilityPlayerSelection players, AbilityCardStateContext context) => players switch
+    internal static IEnumerable<int> Players(AbilityPlayerSelection players, AbilityCardStateContext context) => players switch
     { AbilityPlayerSelection.AllPlayers => context.World.PlayerOrder, AbilityPlayerSelection.OnePlayer one => [new AbilityExpressionEvaluation(context.Expressions, new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(one.Player)], _ => throw new InvalidOperationException("Unknown compiled player selection") };
     private static T Publish<T>(AbilityQueryResult<T> result, World world)
     { foreach (var observation in result.Information) world.RecordInformation(observation); return result.Value; }

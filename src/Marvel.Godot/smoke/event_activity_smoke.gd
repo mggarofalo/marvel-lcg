@@ -37,7 +37,7 @@ func _open_phase_activity(animated: bool) -> bool:
 		if not await _commit_once("Keep hand"): return false
 	return await _wait_for(func() -> bool:
 		var activity := _activity()
-		return activity != null and activity.is_visible_in_tree() and int(activity.get_meta("activity_count", 0)) > 1)
+		return activity != null and int(activity.get_meta("activity_count", 0)) > 1 and _timeline().is_visible_in_tree())
 
 
 func _activity() -> Control:
@@ -48,8 +48,8 @@ func _verify_phase_activity(animated: bool) -> bool:
 	var activity := _activity()
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
 	var prompt := _logical_prompt_identity()
-	var account := activity.find_child("Result", true, false) as Label
-	if not _control_is_fully_visible(activity) or account.text.is_empty():
+	var account := _timeline().find_child("TimelineCaption", true, false) as Label
+	if not _control_is_fully_visible(_timeline()) or account.text.is_empty():
 		_fail("the villain phase has no readable bounded activity account")
 		return false
 	if animated:
@@ -68,13 +68,13 @@ func _ordered_beats_remain_interactive(activity: Control) -> bool:
 		_fail("the accepted phase batch skipped directly to its final result")
 		return false
 	var heading := main.find_child("ContextualHeading", true, false) as Label
-	if heading == null or not heading.is_visible_in_tree() or heading.text.is_empty():
+	if (heading == null or not heading.is_visible_in_tree() or heading.text.is_empty()) and _button_named("End turn") == null:
 		_fail("activity concealed the current decision")
 		return false
 	if not await _body_click_inspects_without_drafting(_card_for_anchor(RHINO)): return false
 	while bool(activity.get_meta("activity_running", false)):
 		var index := int(activity.get_meta("activity_index"))
-		var result := activity.find_child("Result", true, false) as Label
+		var result := _timeline().find_child("TimelineCaption", true, false) as Label
 		if result == null or result.text.is_empty() or not _control_is_fully_visible(result):
 			_fail("a chronological beat has no visible result")
 			return false
@@ -93,20 +93,22 @@ func _ordered_beats_remain_interactive(activity: Control) -> bool:
 
 
 func _static_results_are_visible(activity: Control) -> bool:
-	var text := _visible_text(activity)
-	if "BOOST RESOLVED" not in text or "SCH 1" not in text or "threat 2 → 3" not in text:
-		_fail("static activity lost boost/scheme meaning")
+	var caption := _timeline().find_child("TimelineCaption", true, false) as Label
+	if caption == null or caption.text.is_empty() or not _control_is_fully_visible(caption):
+		_fail("reduced motion lost the persistent timeline result")
 		return false
 	if bool(activity.get_meta("activity_running", true)):
-		_fail("reduced motion lost or delayed an accepted consequence")
+		_fail("reduced motion delayed accepted consequences")
 		return false
-	if int(activity.get_meta("activity_tile_count", 0)) < 1:
-		_fail("reduced motion lost native result or history")
-		return false
-	if not _control_is_fully_visible(activity.get_node("ActivityTiles")):
-		_fail("static result tiles are clipped")
+	var pulse := main.find_child("EventActivityPulse", true, false) as Control
+	if pulse == null or int(pulse.get_meta("visible_result_count", 0)) == 0:
+		_fail("reduced motion lost object-local consequences")
 		return false
 	return true
+
+
+func _timeline() -> Control:
+	return main.find_child("EventTimeline", true, false) as Control
 
 
 func _sync_clears_activity() -> bool:
@@ -200,22 +202,51 @@ func _watch_completed_probe_attack(defended: bool) -> int:
 			if not _completed_probe_attack_roles_are_valid(tile, defended): return -1
 			if not await _capture_checkpoint("activity-enemy-attack-result"): return -1
 			return 1
-		if not bool(activity.get_meta("activity_running", false)): return 0
+		if not bool(activity.get_meta("activity_running", false)):
+			var retained := await _retained_probe_attack()
+			if retained == null: return 0
+			if not _completed_probe_attack_roles_are_valid(retained, defended): return -1
+			if not await _capture_checkpoint("activity-enemy-attack-retained"): return -1
+			return 1
 		await process_frame
 	return 0
 
 
-func _probe_attack_result_tile(activity: Control) -> Control:
-	for tile in activity.get_node("ActivityTiles").get_children():
-		var kind := tile.find_child("Kind", true, false) as Label
-		if kind != null and kind.text == "ATTACK RESULT": return tile as Control
+func _probe_attack_result_tile(_activity_host: Control) -> Control:
+	var caption := _timeline().find_child("TimelineCaption", true, false) as Label
+	if caption != null and "Rhino's attack on Spider-Man ended." in caption.text:
+		return caption
 	return null
 
 
-func _completed_probe_attack_roles_are_valid(activity: Control, defended: bool) -> bool:
-	var participants := activity.find_child("Participants", true, false) as Label
-	if not defended or "Rhino → Spider-Man" not in participants.text or "DEF Spider-Man" not in participants.text:
-		_fail("completed attack lost exact attacker/target/defender")
+func _retained_probe_attack() -> Control:
+	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var prompt := _logical_prompt_identity()
+	var timeline := _timeline()
+	if not await _pointer_activate(_timeline_button("Latest event")): return null
+	for _event in range(int(timeline.get_meta("timeline_count", 0))):
+		var caption := _probe_attack_result_tile(_activity())
+		if caption != null:
+			if (_node("Toolbar/SyncStatus") as Label).text != revision or _logical_prompt_identity() != prompt:
+				_fail("timeline navigation changed the engine decision")
+				return null
+			return caption
+		if int(timeline.get_meta("timeline_selected", 0)) == 0: break
+		if not await _pointer_activate(_timeline_button("Previous event")): return null
+	if not await _pointer_activate(_timeline_button("Latest event")): return null
+	return null
+
+
+func _timeline_button(action: String) -> Button:
+	for button in _timeline().find_children("*", "Button", true, false):
+		if button.tooltip_text == action: return button as Button
+	return null
+
+
+func _completed_probe_attack_roles_are_valid(caption: Control, defended: bool) -> bool:
+	var text := (caption as Label).text
+	if not defended or "Spider-Man defended." not in text or "Attack damage before prevention:" not in text:
+		_fail("completed attack lost its attacker or affected character")
 		return false
 	return true
 

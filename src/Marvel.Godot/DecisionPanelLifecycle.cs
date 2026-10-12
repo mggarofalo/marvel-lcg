@@ -26,6 +26,7 @@ internal sealed class DecisionPanelLifecycle
         panel.world = world ?? throw new ArgumentNullException(nameof(world));
         panel.composer = prompt is null ? null : InitialTableDraft.Create(prompt);
         panel.mulliganChoiceSheetOpen = false;
+        panel.PaymentPreviewExpanded = true;
         revision = currentRevision;
         submission.Render(currentRevision);
         panel.submitting = submission.IsSubmitted;
@@ -84,6 +85,12 @@ internal sealed class DecisionPanelLifecycle
         Affordance option = composer.Selected!;
         panel.RaiseDraftStarted();
         panel.NotifyAnchorFocused([option.AnchorId]);
+        if (DirectCommitment.IsReady(composer)
+            && composer.TryBuild(out EngineDecision? decision, out _))
+        {
+            NotifySubmitted(decision!, generation);
+            return;
+        }
         panel.Rebuild();
     }
 

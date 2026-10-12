@@ -29,6 +29,13 @@ internal static class SpatialCardCollection
         {
             CardLayoutMetrics layout = CardControl.LayoutFor(card, CardDisplaySize.Board, scale);
             float factor = Math.Min(1, (bounds.Size.Y - 40 - 48) / (layout.MinimumHeight + 32));
+            if (zone == "AlliesArea")
+            {
+                int visible = Math.Min(3, cards.Length);
+                float slotWidth = (bounds.Size.X - (visible - 1) * 12) / visible;
+                float widestFace = cards.Any(SpatialTableZones.IsExhausted) ? layout.MinimumHeight : layout.Width;
+                factor = Math.Min(factor, slotWidth / widestFace);
+            }
             CardControl control = CardControl.CreateFitted(card, scale, art, factor);
             control.Name = $"ProceduralCard{card.TargetId}";
             SpatialCardSidecar.State(control, card);

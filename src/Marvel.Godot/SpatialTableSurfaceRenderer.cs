@@ -42,7 +42,7 @@ internal static class SpatialTableSurfaceRenderer
         float reserved = CardPaymentWorkspaceLayout.Active(main)
             ? Math.Max(CardPaymentWorkspaceLayout.Width(viewport),
                 expanded ? TableHistoryDrawer.ExpandedWidth(main) : 0) + 40
-            : expanded ? TableHistoryDrawer.ExpandedWidth(main) + 40 : 250;
+            : expanded ? TableHistoryDrawer.ExpandedWidth(main) + 40 : 56;
         float width = Math.Max(expanded ? 920 : 1060, viewport.X - reserved);
         float height = Math.Min(AstraTableGeometry.ReferenceHeight, Math.Max(820, viewport.Y - 118));
         return new AstraTableGeometry(
@@ -185,15 +185,7 @@ internal static class SpatialTableSurfaceRenderer
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
         surface.AddChild(seam);
-        surface.AddChild(new Label
-        {
-            Name = "EngagementCaption",
-            Text = $"Engaged with player {expandedSeat + 1}",
-            Position = geometry.EngagedEnemies.Position - new Vector2(0, 24),
-            ThemeTypeVariation = GodotThemeVariations.Caption,
-            ZIndex = 3,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        });
+        surface.AccessibilityDescription = $"Expanded player {expandedSeat + 1} tableau; engaged enemies are on the far right.";
     }
 
     private static void AddHandCaption(

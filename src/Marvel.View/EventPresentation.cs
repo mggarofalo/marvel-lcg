@@ -14,6 +14,8 @@ public sealed record EventPresentation(
     IReadOnlyList<int> Anchors,
     EventMotionKind Motion)
 {
+    /// <summary>Accepted player intention surrounding this result, distinct from its immediate trigger.</summary>
+    public string? Intention { get; init; }
     /// <summary>Local typed activity facts; the server wire continues to carry filtered GameEvents.</summary>
     public EventActivityDescriptor? Activity { get; init; }
 

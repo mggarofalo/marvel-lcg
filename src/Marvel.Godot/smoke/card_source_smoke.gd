@@ -45,21 +45,22 @@ func _check_sample(sample: Control, fixtures: Control, failures: Array[String]) 
 func _check_sources(ledger: Control, sample: Control, fixtures: Control, failures: Array[String]) -> void:
 	var cards := ledger.find_children("ProceduralCard*", "Control", true, false)
 	var scroll := ledger.find_child("AttachedSourceScroll", true, false) as ScrollContainer
+	if scroll != null: failures.append("host attachment creates nested scrolling")
 	if cards.size() != int(sample.get_meta("source_count")):
 		failures.append("continuous collection lost a physical source")
 	for card in cards:
 		await _check_copy(card, scroll, fixtures, failures)
 
 func _check_copy(card: Control, scroll: ScrollContainer, fixtures: Control, failures: Array[String]) -> void:
-	scroll.ensure_control_visible(card)
+	if scroll != null: scroll.ensure_control_visible(card)
 	for frame in range(4): await process_frame
 	var title := card.find_child("SourceTitle", true, false) as Label
-	_scroll_ancestors(scroll, title)
+	_scroll_ancestors(card, title)
 	for frame in range(3): await process_frame
 	if title == null or title.text.is_empty() or title.get_line_count() > title.get_visible_line_count():
 		failures.append("source title clipped or missing")
-	if not scroll.get_global_rect().intersects(title.get_global_rect()):
-		failures.append("source title unreachable by continuous scrolling")
+	if not card.get_global_rect().encloses(title.get_global_rect()):
+		failures.append("source title exceeds its compact host-local tile")
 	var action := card.find_child("SourceAction", true, false) as Button
 	_check_action(action, card, failures)
 	await _check_copy_input(card, title, fixtures, failures)

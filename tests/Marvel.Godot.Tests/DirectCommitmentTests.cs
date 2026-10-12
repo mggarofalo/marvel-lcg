@@ -12,6 +12,7 @@ public sealed class DirectCommitmentTests
     [Theory]
     [InlineData(PublicDecisionKind.MinionActivationOrder)]
     [InlineData(PublicDecisionKind.Response)]
+    [InlineData(PublicDecisionKind.Choice)]
     public void NamedReadyOpportunityCanCommitOnlyAfterItsExactActionWasChosen(PublicDecisionKind kind)
     {
         var composer = Composer(kind, new Affordance(1, "Activate", 10, 0, "Activate minion"));

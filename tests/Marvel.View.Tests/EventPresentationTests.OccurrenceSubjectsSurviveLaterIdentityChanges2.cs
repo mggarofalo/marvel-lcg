@@ -37,18 +37,24 @@ public sealed class EventPresentationOccurrenceSubjectsSurviveLaterIdentityChang
         WorldDescriptor after = NarrativeWorld();
         var chronology = new EventChronology();
         chronology.Reset([damage, defeated, secondDefeated], after);
-        Assert.Equal(["Drone changed health from 1 to 0.", "Drone and Drone were defeated."], chronology.Entries.Select(entry => entry.Summary));
+        Assert.Equal(["Drone changed health from 1 to 0.", "Drone was defeated.", "Drone was defeated."], chronology.Entries.Select(entry => entry.Summary));
         Assert.Equal("Spider-Tracer changed health from 0 to 1.", EventPresenter.Present(new FieldSet(7, "health", 0, 1), after).Summary);
     }
 
     [Fact]
     public void MulliganMovementsBecomeTwoNarrativeActions()
     {
-        GameEvent[] happened = [Move(7, "HandsArea", "DiscardPile", "Mulligan"), Move(13, "HandsArea", "DiscardPile", "Mulligan"), Move(14, "HandsArea", "DiscardPile", "Mulligan"), Move(15, "PlayerDeck", "HandsArea", "Draw"), Move(16, "PlayerDeck", "HandsArea", "Draw"), Move(17, "PlayerDeck", "HandsArea", "Draw"), ];
+        var happened = new List<GameEvent> { Move(7, "HandsArea", "DiscardPile", "Discard"), Move(13, "HandsArea", "DiscardPile", "Discard"), Move(14, "HandsArea", "DiscardPile", "Discard"), Move(15, "PlayerDeck", "HandsArea", "Draw"), Move(16, "PlayerDeck", "HandsArea", "Draw"), Move(17, "PlayerDeck", "HandsArea", "Draw"), };
+        var draws = happened.GetRange(3, 3);
+        happened.RemoveRange(3, 3);
+        ActivityBatches.Complete(happened, 0, "Discard", 0);
+        int start = happened.Count;
+        happened.AddRange(draws);
+        ActivityBatches.Complete(happened, start, "Draw", 0);
         EventBatchPresentation batch = EventCuePlanner.Plan(happened, NarrativeWorld(), Outcome.Unfinished);
         Assert.Equal(["Spider-Man discarded Spider-Tracer, Aunt May, and Swinging Web Kick.", "Spider-Man drew Interrogation Room, Nick Fury, and Helicarrier.", ], batch.History.Select(entry => entry.Summary));
-        Assert.Equal(batch.History, batch.Highlights);
-        Assert.Equal(6, batch.Cues.Count);
+        Assert.Equal(batch.History.TakeLast(1), batch.Highlights);
+        Assert.Equal(2, batch.Cues.Count);
     }
 
     [Fact]

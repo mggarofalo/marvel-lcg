@@ -61,6 +61,8 @@ public sealed partial class EventVocabularyTests
         new AttackCompleted(9, 7, 7),
         new WhenRevealedCanceled(9, 7),
         new CardsShuffledIntoDeck(0, 2, ["Energy", "Vibranium"]),
+        new ActivityCompleted(0, [new ActivityParticipant(0, 2, [7, 9])]),
+        new PhaseStarted("Player") { Round = 1 },
     ];
 
     /// <summary>Every serialisable kind, with distinguishable payload values.</summary>
@@ -88,7 +90,7 @@ public sealed partial class EventVocabularyTests
         var documented = Documented(EmittedOnlyHeading).Keys.ToHashSet(StringComparer.Ordinal);
         var tested = EmittedOnly.Select(Kind).ToHashSet(StringComparer.Ordinal);
 
-        Assert.Equal(6, tested.Count);
+        Assert.Equal(8, tested.Count);
         Assert.Equal(tested, documented);
     }
 

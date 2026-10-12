@@ -9,15 +9,11 @@ internal sealed partial class EventActivityPulse : Control
     private IReadOnlyList<(EventPresentation Entry, ActivitySubject Subject, Rect2 Bounds)> subjects = [];
     private float progress;
     private bool animated;
-    private Control? stage;
-    private IReadOnlyList<EventPresentation> tiles = [];
 
     internal void Present(IReadOnlyList<(EventPresentation, ActivitySubject, Rect2)> references,
-        double seconds, bool motion, Control? host, IReadOnlyList<EventPresentation> entries)
+        double seconds, bool motion)
     {
         subjects = references;
-        stage = host;
-        tiles = entries;
         progress = (float)(seconds % 1);
         animated = motion;
         AccessibilityName = string.Join(" · ", references.Select(reference =>
@@ -37,7 +33,6 @@ internal sealed partial class EventActivityPulse : Control
             if (source.Subject is not null && target.Subject is not null && source.Bounds != target.Bounds)
                 DrawImpulse(source.Bounds.GetCenter(), target.Bounds.GetCenter());
         }
-        DrawStageGlyphs();
         var rows = new Dictionary<int, int>();
         foreach (var reference in subjects)
         {
@@ -62,7 +57,18 @@ internal sealed partial class EventActivityPulse : Control
             else ActivityGlyphDrawing.Draw(this, reference.Entry, glyph);
             DrawString(font, badge.Position + new Vector2(34, 21), result,
                 width: width - 40, fontSize: 16, modulate: CardFaceStyle.Paper);
+            DrawCause(reference.Entry, badge, roleOnly);
         }
+    }
+
+    private void DrawCause(EventPresentation entry, Rect2 badge, bool roleOnly)
+    {
+        if (roleOnly || string.IsNullOrWhiteSpace(entry.Intention)
+            || entry.Motion is not (EventMotionKind.Damage or EventMotionKind.Threat)) return;
+        var caption = new Rect2(badge.Position - new Vector2(0, 21), new Vector2(300, 21));
+        DrawRect(caption, CardFaceStyle.Ink);
+        DrawString(CardTypography.Body, caption.Position + new Vector2(5, 15), entry.Intention,
+            width: 290, fontSize: 12, modulate: CardFaceStyle.Paper);
     }
 
     private void DrawRoleGlyph(ActivitySubjectRole role, Rect2 bounds)
@@ -82,20 +88,6 @@ internal sealed partial class EventActivityPulse : Control
             DrawLine(center - new Vector2(10, 0), center + new Vector2(10, 0), CardFaceStyle.Paper, 3, true);
             DrawPolyline([center + new Vector2(3, -6), center + new Vector2(10, 0), center + new Vector2(3, 6)],
                 CardFaceStyle.Paper, 3, true);
-        }
-    }
-
-    private void DrawStageGlyphs()
-    {
-        if (!InteractionControl.IsUsable(stage)) return;
-        HBoxContainer holder = stage!.GetNode<HBoxContainer>("ActivityTiles");
-        for (int index = 0; index < Math.Min(tiles.Count, holder.GetChildCount()); index++)
-        {
-            Control tile = holder.GetChild<Control>(index);
-            ActivityGlyphDrawing.Draw(this, tiles[index], tile.GetNode<Control>("ActivityGlyph").GetGlobalRect());
-            if (tile.HasNode("OccurrenceReference"))
-                ActivityGlyphDrawing.DrawReference(this, tile.GetNode<Control>("OccurrenceReference").GetGlobalRect(), CardFaceStyle.Paper,
-                    tiles[index].Activity is { Subjects.Count: > 0 } activity && activity.Subjects[0].Landscape);
         }
     }
 

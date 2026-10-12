@@ -136,12 +136,19 @@ public sealed class EngineHostCardPlayHistoryNamesThePlayedCardTests : EngineHos
         var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root), new SequenceCapabilities("atomic-owner"), store: new FailingSessionStore(memory, failAtCommit: 3));
         EngineResponse opened = host.Exchange(EngineRequest.OpenGame("open", "atomic-history", new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
         EngineResponse kept = host.Exchange(EngineRequest.ResolveGame("keep", "atomic-history", RequiredCapability(opened), TakeOnly(opened), opened.Revision));
+        string[] committedEvents = Assert.Single(memory.Load()).Save.Units
+            .SelectMany(unit => unit.Decisions).SelectMany(step => step.Events)
+            .Select(item => item.GetRawText()).ToArray();
         EngineResponse failed = host.Exchange(EngineRequest.UndoGame("undo", "atomic-history", RequiredCapability(opened), cursor: 0, expectedRevision: kept.Revision));
         EngineResponse current = host.Exchange(EngineRequest.SyncGame("sync", "atomic-history", RequiredCapability(opened)));
         Assert.Equal("history_failed", failed.Error?.Code);
         Assert.Equal(kept.Revision, current.Revision);
-        Assert.Equal(EngineJson.Write(kept with { RequestId = "same" }), EngineJson.Write(current with { RequestId = "same" }));
+        Assert.Equal(EngineJson.Write(kept with { RequestId = "same", Events = [] }), EngineJson.Write(current with { RequestId = "same" }));
         Assert.Equal(1, Assert.Single(memory.Load()).Save.Cursor);
+        Assert.Equal(committedEvents, Assert.Single(memory.Load()).Save.Units
+            .SelectMany(unit => unit.Decisions).SelectMany(step => step.Events)
+            .Select(item => item.GetRawText()));
+        Assert.IsType<PhaseStarted>(Assert.Single(kept.Events));
     }
 
     [Fact]

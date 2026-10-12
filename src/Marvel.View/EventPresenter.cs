@@ -22,8 +22,7 @@ public static class EventPresenter
     }
 
     /// <summary>
-    /// Presents one response as readable actions, combining adjacent pieces of
-    /// the same card movement without changing the underlying event stream.
+    /// Presents engine-authored instruction receipts, retaining every unrelated event in order.
     /// </summary>
     public static IReadOnlyList<EventPresentation> PresentNarrative(
         IReadOnlyList<GameEvent> events,
@@ -31,55 +30,9 @@ public static class EventPresenter
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(world);
-        var combined = new List<GameEvent>(events.Count);
-        foreach (GameEvent happened in events)
-        {
-            if (happened is CardsMoved moved
-                && combined.LastOrDefault() is CardsMoved prior
-                && SameArea(prior.From, moved.From)
-                && SameArea(prior.To, moved.To)
-                && string.Equals(prior.Verb, moved.Verb, StringComparison.Ordinal)
-                && string.Equals(prior.Trigger, moved.Trigger, StringComparison.Ordinal))
-            {
-                combined[^1] = prior with
-                {
-                    Cards = prior.Cards.Concat(moved.Cards).ToArray(),
-                    Subjects = CombineSubjects(prior.Subjects, moved.Subjects),
-                };
-                continue;
-            }
-
-            combined.Add(happened);
-        }
-
-        return Present(combined, world);
-    }
-
-    private static Dictionary<int, string>? CombineSubjects(
-        IReadOnlyDictionary<int, string>? first,
-        IReadOnlyDictionary<int, string>? second)
-    {
-        if (first is null && second is null)
-        {
-            return null;
-        }
-
-        var combined = new Dictionary<int, string>();
-        if (first is not null)
-        {
-            foreach ((int id, string subject) in first)
-            {
-                combined.Add(id, subject);
-            }
-        }
-        if (second is not null)
-        {
-            foreach ((int id, string subject) in second)
-            {
-                combined[id] = subject;
-            }
-        }
-        return combined;
+        HashSet<int> completed = events.OfType<ActivityCompleted>().Select(activity => activity.Batch).ToHashSet();
+        return Present(events.Where(happened => happened is ActivityCompleted
+            || happened.ActivityBatch is not { } batch || !completed.Contains(batch)).ToArray(), world);
     }
 
     /// <summary>Presents one event using only its authorized response snapshot.</summary>
@@ -90,6 +43,11 @@ public static class EventPresenter
 
         (string summary, IReadOnlyList<int> anchors, EventMotionKind motion) = happened switch
         {
+            PhaseStarted phase => ($"Round {phase.Round}: {phase.Phase} phase.", [], EventMotionKind.State),
+            ActivityCompleted activity => (
+                CompletedActivityPresentation.Summary(activity, world),
+                activity.Participants.SelectMany(participant => participant.Cards).ToArray(),
+                CompletedActivityPresentation.Motion(activity)),
             CardsCreated created => (
                 $"Created {CardList(created.Cards.Select(card => card.Id), world, created)} in {Area(created.Area, world)}.",
                 created.Cards.Select(card => card.Id).ToArray(),
@@ -189,11 +147,6 @@ public static class EventPresenter
 
     private static bool IsStatus(AreaRef area) =>
         string.Equals(area.Zone, "StatusArea", StringComparison.Ordinal);
-
-    private static bool SameArea(AreaRef left, AreaRef right) =>
-        left.Owner == right.Owner
-        && left.Host == right.Host
-        && string.Equals(left.Zone, right.Zone, StringComparison.Ordinal);
 
     private static string DefeatedSummary(CardsMoved moved, WorldDescriptor world)
     {

@@ -19,6 +19,7 @@ func _run() -> void:
 	var narrow := bool(fixture.get_meta("narrow", false))
 	_check_table_bounds(fixture, tableau, narrow, failures)
 	var copies := await _check_cards(tableau, viewport, narrow, failures)
+	_check_host_attachment(fixture, tableau, failures)
 	await _check_measured_title(tableau, viewport, failures)
 	await _check_copy_input(copies, viewport, fixture, failures)
 	await _check_source_slot_swaps(tableau, viewport, fixture, failures)
@@ -34,6 +35,24 @@ func _check_table_bounds(fixture: Control, tableau: Control, narrow: bool, failu
 	for hand in fixture.find_children("ProceduralCard*", "Control", true, false):
 		if hand.has_meta("spatial_hand_index") and _bounds(hand).grow(6).intersects(tableau.get_global_rect()):
 			failures.append("rotated hand obscures source tableau")
+
+func _check_host_attachment(fixture: Control, tableau: Control, failures: Array[String]) -> void:
+	var webbed: Control
+	for card in fixture.find_children("ProceduralCard*", "Control", true, false):
+		if card.get_meta("source_title", "") == "Webbed Up": webbed = card
+	if webbed == null:
+		failures.append("Webbed Up is absent from its Rhino host")
+		return
+	if tableau.is_ancestor_of(webbed): failures.append("Webbed Up appears in owner source grid")
+	var host := webbed.get_parent()
+	while host != null and not str(host.name).begins_with("ProceduralCard"): host = host.get_parent()
+	if host == null:
+		failures.append("attachment lacks physical host-local ancestry")
+	else:
+		var title := host.find_child("Title", true, false) as Label
+		if title == null or title.text != "Rhino": failures.append("Webbed Up is displayed beneath the wrong host")
+	if webbed.get_parent().find_children("*", "ScrollContainer", true, false).size() > 0:
+		failures.append("host attachment creates nested scrollbars")
 
 func _check_cards(tableau: Control, viewport: ScrollContainer, narrow: bool, failures: Array[String]) -> Array[Control]:
 	viewport.scroll_vertical = 0
@@ -79,14 +98,15 @@ func _check_source_grip(card: Control, title: Label, failures: Array[String]) ->
 	var grip := card.find_child("SourceReorderGrip", true, false) as Button
 	if grip == null or not card.get_global_rect().encloses(grip.get_global_rect()):
 		failures.append("source reorder grip exceeds its physical tile")
-	if grip != null and (grip.size.x < title.size.x or grip.size.y < 36 or grip.mouse_default_cursor_shape != Control.CURSOR_DRAG):
+	if grip != null and (grip.size.x < title.size.x or grip.size.y < 28 or grip.mouse_default_cursor_shape != Control.CURSOR_DRAG):
 		failures.append("title does not expose a generous arrangement hit target / grab cursor")
 
 func _check_source_title(title: Label, failures: Array[String]) -> void:
 	if title.get_line_count() > title.get_visible_line_count(): failures.append("source title clipped")
-	if title.get_theme_font_size("font_size") != 16 or title.text_overrun_behavior != TextServer.OVERRUN_NO_TRIMMING:
-		failures.append("source identity is reduced or ellipsized")
-	if title.autowrap_mode == TextServer.AUTOWRAP_OFF: failures.append("source title cannot reflow")
+	if title.get_theme_font_size("font_size") != 14 or title.autowrap_mode != TextServer.AUTOWRAP_OFF:
+		failures.append("source title does not retain compact native typography")
+	if title.accessibility_name != title.text or title.tooltip_text != title.text:
+		failures.append("source title loses full accessible identity")
 
 func _check_source_action(card: Control, failures: Array[String]) -> void:
 	var button := card.find_child("Card*Action", true, false) as Button
@@ -101,6 +121,9 @@ func _check_source_symbols(card: Control, failures: Array[String]) -> void:
 	var state := card.find_child("SourceState", true, false) as Control
 	if state == null or state.find_child("SourceSymbol", true, false) == null:
 		failures.append("missing readiness symbol")
+	var title := card.find_child("SourceTitle", true, false) as Control
+	if type != null and state != null and (type.get_parent() != title.get_parent() or state.get_parent() != title.get_parent()):
+		failures.append("source title and type/readiness do not share one header line")
 
 func _check_counter_groups(card: Control, body: Control, failures: Array[String]) -> void:
 	for counter in card.find_children("SourceCounter*", "HBoxContainer", true, false):
@@ -144,7 +167,7 @@ func _check_copy_input(copies: Array[Control], viewport: ScrollContainer, fixtur
 		viewport.ensure_control_visible(copy)
 		for frame in range(3): await process_frame
 		var original_position := copy.global_position
-		await _click(copy.get_global_rect().position + Vector2(100, 46))
+		await _click((copy.find_child("SourceType", true, false) as Control).get_global_rect().get_center())
 		if copy.global_position.distance_to(original_position) > 1:
 			failures.append("hover inspection reordered a physical source")
 		var identity := int(str(copy.name).trim_prefix("ProceduralCard"))
@@ -198,13 +221,9 @@ func _check_measured_title(tableau: Control, viewport: ScrollContainer, failures
 	for frame in range(6): await process_frame
 	viewport.ensure_control_visible(card)
 	for frame in range(3): await process_frame
-	if title.get_line_count() < 2 or title.get_line_count() > title.get_visible_line_count():
-		failures.append("measured source title does not show every wrapped line")
+	if title.get_line_count() != 1:
+		failures.append("compact source title changed its header height")
 	if not card.get_global_rect().encloses(title.get_global_rect()): failures.append("measured source title grows outside its tile")
-	var font := title.get_theme_font("font")
-	for word in title.text.to_upper().split(" "):
-		if font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x > title.size.x:
-			failures.append("complete source word cannot fit at native 16px")
 	title.text = original
 	for frame in range(6): await process_frame
 	viewport.scroll_vertical = 0
@@ -219,9 +238,9 @@ func _check_intermediate_swap(tableau: Control, source: Control, destination: Co
 	var feedback := tableau.find_child("SourceSwapFeedback", true, false) as Label
 	if not source.is_set_as_top_level(): failures.append("source did not lift out of its slot")
 	if source.get_global_rect().has_point(finish): failures.append("lifted source obscures destination pointer")
-	if feedback == null or not feedback.is_visible_in_tree() or not feedback.text.begins_with("Swap with "):
+	if feedback == null or not feedback.is_visible_in_tree() or feedback.text != "↔":
 		failures.append("source exchange lacks explicit destination feedback")
-	elif not feedback.text.contains("row ") or not feedback.text.contains("column "):
+	elif not feedback.accessibility_name.contains("row ") or not feedback.accessibility_name.contains("column "):
 		failures.append("source exchange does not explain both positions")
 	if source.get_parent().find_child("SourceSwapOutline", false, false).visible != true:
 		failures.append("source exchange has no vacant destination outline")
@@ -273,7 +292,7 @@ func _check_source_keyboard_swap(grid: GridContainer, source: Control, failures:
 	grip.grab_focus()
 	await _source_key(KEY_SPACE)
 	var feedback := grid.get_parent().get_parent().find_child("SourceSwapFeedback", true, false) as Label
-	if not feedback.is_visible_in_tree() or not feedback.text.contains(str(source.get_meta("source_identity"))):
+	if not feedback.is_visible_in_tree() or not feedback.accessibility_name.contains(str(source.get_meta("source_identity"))):
 		failures.append("keyboard pickup does not announce physical identity")
 	await _source_key(KEY_LEFT)
 	if grid.get_child(0) != original[1]: failures.append("keyboard source swap has no slot preview")
@@ -363,6 +382,10 @@ func _check_collections(fixture: Control, failures: Array[String]) -> void:
 		if scroll == null or cards.is_empty():
 			failures.append("missing continuous collection: " + zone)
 			continue
+		if zone == "AlliesArea":
+			for card in cards.slice(0, 3):
+				if not scroll.get_global_rect().encloses(_bounds(card)):
+					failures.append("first three allies are not simultaneously visible")
 		await _check_collection_reachability(cards, scroll, failures)
 
 func _check_collection_reachability(cards: Array[Node], scroll: ScrollContainer, failures: Array[String]) -> void:

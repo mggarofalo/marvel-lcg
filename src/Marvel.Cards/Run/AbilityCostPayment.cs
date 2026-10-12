@@ -89,6 +89,7 @@ internal sealed class AbilityCostPayment
 
     private void CommitDiscardHand(DiscardHand discard, List<GameEvent> events)
     {
+        int start = events.Count;
         foreach (var card in discard.Cards)
         {
             if (card.Area != discard.Hand)
@@ -98,6 +99,8 @@ internal sealed class AbilityCostPayment
             }
             Discard.Card(world, card, CardPlay.Verb, events);
         }
+        ActivityBatches.Complete(events, start, "Discard", player,
+            included: discard.Cards.Select(card => card.ObjectId).ToArray());
     }
 
     private void CommitTakeDamage(

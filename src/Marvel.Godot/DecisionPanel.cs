@@ -23,7 +23,9 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal void PresentOperationalNotice(Marvel.Client.GameProgressPresentation progress) =>
         choices.PresentProgress(progress);
     internal void SetCompleteChoicesVisibility(bool open) => mulliganBoard?.SetCompleteChoicesOpen(open);
+    internal bool PaymentPreviewExpanded = true;
     internal bool PaymentModalOpen => paymentModal is not null;
+    internal void PreviewPaymentCard(int? id) => paymentModal?.Preview(id);
     internal Node LayoutHost => paymentModal?.Content ?? (Node)this;
     internal Control FocusHost => paymentModal?.Content ?? (Control)this;
     internal void RouteDecisionSurfaceInput(InputEvent input)

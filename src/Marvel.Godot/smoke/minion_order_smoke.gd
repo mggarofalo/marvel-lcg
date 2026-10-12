@@ -20,8 +20,7 @@ func _engage_post_attack_drone() -> bool:
 	if not await _wait_for(func() -> bool: return _boost_option("Engage 1 Drone") != null):
 		_fail("Ultron did not offer its post-attack Drone consequence")
 		return false
-	if not await _pointer_activate(_boost_option("Engage 1 Drone")): return false
-	if not await _commit_once("Engage another Drone"): return false
+	if not await _direct_choice_once(_boost_option("Engage 1 Drone")): return false
 	if not await _wait_for(func() -> bool: return _activation_buttons().size() == 3):
 		_fail("next-minion decision did not expose three direct Activate controls")
 		return false

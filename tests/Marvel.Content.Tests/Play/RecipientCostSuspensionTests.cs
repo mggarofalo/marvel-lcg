@@ -42,7 +42,13 @@ public sealed class RecipientCostSuspensionTests : ChoosingCardsTestBase
         if (eliminated)
         {
             world.Seats[recipient].Eliminated = true;
-            Assert.Throws<RulesNotImplementedException>(() => runner.ResumeAbility(world, restored));
+            var resumed = runner.ResumeAbility(world, restored);
+            Assert.DoesNotContain(resumed, entry => entry.Verb is "Exhaust" or "Draw");
+            Assert.False(source.Ready);
+            var waiting = world.Agenda.Outstanding[^1];
+            var prompt = runner.Choosing(world, source, 0, waiting.Index, waiting.Tier)!;
+            Assert.Equal(world.Seats[0].IdentityCard.ObjectId, Assert.Single(prompt.Affordances).Id);
+            Assert.DoesNotContain(prompt.Affordances, option => option.Id == world.Seats[recipient].IdentityCard.ObjectId);
             Assert.Equal(before, world.Seats.Select(seat => seat.Hand.Cards.Count));
             return;
         }

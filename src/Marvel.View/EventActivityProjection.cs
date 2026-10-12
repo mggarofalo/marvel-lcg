@@ -42,7 +42,7 @@ internal static class EventActivityProjection
             AttackCompleted { DamageDealt: { } damage } => [new("attack_damage", null, damage)],
             _ => [],
         };
-        return new EventActivityDescriptor(subjects, quantities)
+        var projected = new EventActivityDescriptor(subjects, quantities)
         {
             Operation = happened.Verb,
             StatusChange = happened switch
@@ -55,5 +55,6 @@ internal static class EventActivityProjection
             From = happened is CardsMoved moved ? Area(moved.From, world) : string.Empty,
             To = happened is CardsMoved arrived ? Area(arrived.To, world) : string.Empty,
         };
+        return ActivityContextProjection.With(projected, happened, world);
     }
 }
