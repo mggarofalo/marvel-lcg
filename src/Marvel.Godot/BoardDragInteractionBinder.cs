@@ -49,10 +49,9 @@ internal static class BoardDragInteractionBinder
     {
         if (panel.PaymentModalOpen || gesture.Card.TargetId is not { } source) return;
         IReadOnlyList<Marvel.View.AffordancePresentation> offers = Affordances(panel, composer);
-        board.PresentDestinations(offers.Where(offer => offer.CardAnchorId == source && offer.Illegal is null)
-            .SelectMany(offer => offer.TargetRequest?.Legal ?? []));
         int? destination = board.CardAt(gesture.Position, gesture.Source);
         var interaction = new BoardSourceTargetInteraction(composer, CurrentOperations(panel, composer), offers);
+        board.PresentDestinations(interaction.Destinations(source));
         IReadOnlyList<Marvel.View.AffordancePresentation> matches = destination is { } target
             ? interaction.Matches(source, target) : [];
         if (matches.Count > 0)

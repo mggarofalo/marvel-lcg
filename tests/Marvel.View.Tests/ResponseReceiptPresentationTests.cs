@@ -45,6 +45,8 @@ public sealed class ResponseReceiptPresentationTests : EventPresentationTestBase
         DecisionReceiptContext context = DecisionReceiptContext.From(prompt, world, 3, [9], [])!;
 
         Assert.Equal($"Spider-Man {wording} Rhino", context.OccurrenceTitle);
+        Assert.Equal(7, context.SourceCardId);
+        Assert.Equal([9], context.TargetCardIds);
         Assert.Null(DecisionReceiptContext.From(prompt, world, 3, [], [])!.OccurrenceTitle);
     }
 

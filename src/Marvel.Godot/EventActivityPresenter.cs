@@ -43,7 +43,7 @@ internal sealed partial class EventActivityPresenter : Node
         if (changed) BeatAdvanced();
         if (RefreshHost() || changed) UpdateText();
         RefreshPulse();
-        if (!sequence.Active && elapsed >= 3) SetProcess(false);
+        if (!sequence.Active) SetProcess(false);
     }
 
     private void BeatAdvanced()
@@ -92,18 +92,10 @@ internal sealed partial class EventActivityPresenter : Node
     private void RefreshPulse()
     {
         if (!InteractionControl.IsUsable(pulse)) return;
-        if (!sequence.Active && elapsed >= 3)
-        {
-            pulse!.Present([], elapsed, false);
-            return;
-        }
-        var visible = VisibleSubjects(CurrentEntries());
-        if (!sequence.Active) visible = SettledSubjects(visible);
+        var visible = sequence.Attention is { } current
+            ? VisibleSubjects([current]) : [];
         pulse!.Present(visible, elapsed, sequence.Active);
     }
-
-    private IReadOnlyList<EventPresentation> CurrentEntries() =>
-        sequence.Active && sequence.Current is { } current ? [current] : sequence.Entries;
 
     private List<(EventPresentation, ActivitySubject, Rect2)> VisibleSubjects(IReadOnlyList<EventPresentation> entries)
     {
@@ -115,14 +107,6 @@ internal sealed partial class EventActivityPresenter : Node
                     visible.Add((entry, subject, bounds));
         return visible;
     }
-
-    private static List<(EventPresentation, ActivitySubject, Rect2)> SettledSubjects(
-        List<(EventPresentation, ActivitySubject, Rect2)> visible) =>
-        visible.Where(reference => reference.Item1.Activity!.Quantities.Count > 0
-                || reference.Item1.Motion is EventMotionKind.Status or EventMotionKind.Attack or EventMotionKind.Defeat)
-            .GroupBy(reference => (reference.Item2.Card, reference.Item2.Role, reference.Item1.Motion, reference.Item1.Activity!.StatusChange,
-                string.Join(",", reference.Item1.Activity!.Quantities.Select(quantity => quantity.Field))))
-            .Select(group => group.Last()).ToList();
 
     private static Rect2? VisibleBounds(Control card)
     {

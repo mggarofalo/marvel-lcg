@@ -6,19 +6,13 @@ namespace Marvel.Godot;
 internal sealed record SourceTableauLayout(float Width, float Height = float.PositiveInfinity, int Count = 0)
 {
     internal const float Gap = 6;
-    internal const float TileHeight = 66;
-    internal int Columns
-    {
-        get
-        {
-            int preferred = Math.Max(1, (int)((Width + Gap) / 244));
-            bool dense = Math.Floor(Height / (TileHeight + Gap)) * preferred < 12;
-            return dense ? Math.Max(preferred, (int)((Width + Gap) / 186)) : preferred;
-        }
-    }
+    internal const float TileHeight = 60;
+    internal int Columns => Math.Clamp((int)((Width + Gap) / 150), 1, 4);
     internal int Capacity => Columns * Math.Max(1, Math.Max(
         (int)Math.Ceiling((double)Count / Columns),
         float.IsFinite(Height) ? (int)Math.Floor((Height + Gap) / (TileHeight + Gap)) : 0));
+    internal float ContentHeight(int slots) =>
+        Math.Max(0, (int)Math.Ceiling((double)slots / Columns) * (TileHeight + Gap) - Gap);
     internal float TileWidth => (Width - (Columns - 1) * Gap) / Columns;
     internal Vector2 Position(int index) => new(index % Columns * (TileWidth + Gap),
         index / Columns * (TileHeight + Gap));

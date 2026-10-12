@@ -5,6 +5,10 @@ namespace Marvel.View;
 /// <summary>Authorized submitted intention, usable only after that exact decision succeeds.</summary>
 public sealed record DecisionReceiptContext(string Commitment, IReadOnlyList<int> Anchors)
 {
+    /// <summary>The authorized offered card source, distinct from payment and target anchors.</summary>
+    public int? SourceCardId { get; init; }
+    /// <summary>The targets explicitly submitted for this decision.</summary>
+    public IReadOnlyList<int> TargetCardIds { get; init; } = [];
     /// <summary>The submitted engine command, distinct from the player-facing wording.</summary>
     public string? ActionVerb { get; init; }
     /// <summary>Concise accepted action wording from the offered command and authorized participants.</summary>
@@ -35,6 +39,8 @@ public sealed record DecisionReceiptContext(string Commitment, IReadOnlyList<int
                 .Concat(payment.Select(item => item.Id)).Distinct()])
         {
             ActionVerb = chosen.Verb,
+            SourceCardId = offered.CardAnchorId,
+            TargetCardIds = targets.ToArray(),
             OccurrenceTitle = DecisionOccurrenceTitle.From(offered, targets, world),
         };
     }

@@ -281,6 +281,11 @@ func _deferred_preview_when_offered() -> bool:
 func _drag_preview_is_meaningful(card: Control) -> bool:
 	if not main.has_meta("checking_deferred_preview"):
 		return true
+	var target := _card_for_anchor(RHINO)
+	var target_cue := target.find_child("InteractionCue", true, false) as Label if target != null else null
+	if target_cue == null or not target_cue.is_visible_in_tree() or target_cue.text != "◎":
+		_fail("the legal enemy destination has no visible target marker during the event drag")
+		return false
 	var context := main.find_child("ContextualDecision", true, false) as Control
 	var text := _visible_text(context)
 	if "Swinging Web Kick" not in text or "No offered action" in text:

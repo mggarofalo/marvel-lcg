@@ -18,11 +18,10 @@ internal static class SourceTableauRenderer
             SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto, FollowFocus = true };
         panel.AddChild(scroll);
-        var layout = new SourceTableauLayout(bounds.Size.X - 12, bounds.Size.Y, cards.Length);
+        var layout = new SourceTableauLayout(bounds.Size.X, bounds.Size.Y, cards.Length);
         BoardCardPresentation?[] slots = SourcePresentationOrder.Slots(seat, cards, layout.Capacity);
         var grid = new GridContainer { Name = "SourceTableauGrid", Columns = layout.Columns,
-            CustomMinimumSize = new Vector2(bounds.Size.X - 12,
-                (int)Math.Ceiling((double)slots.Length / layout.Columns) * (SourceTableauLayout.TileHeight + SourceTableauLayout.Gap)),
+            CustomMinimumSize = new Vector2(bounds.Size.X, layout.ContentHeight(slots.Length)),
             MouseFilter = Control.MouseFilterEnum.Ignore };
         grid.AddThemeConstantOverride("h_separation", (int)SourceTableauLayout.Gap);
         grid.AddThemeConstantOverride("v_separation", (int)SourceTableauLayout.Gap);
@@ -59,6 +58,7 @@ internal static class SourceTableauRenderer
             if (card.TargetId is { } id) result.Register(id, control);
             result.TrackCard(control, card);
         }
+        SourceTableauViewport.Bind(scroll, grid);
         return panel;
     }
 

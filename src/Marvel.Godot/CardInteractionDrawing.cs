@@ -8,12 +8,7 @@ internal static class CardInteractionDrawing
     internal static void Draw(Control card, CardInteractionCue cue, bool presented)
     {
         bool selected = (cue & (CardInteractionCue.SelectedTarget | CardInteractionCue.SelectedDestructiveChoice)) != 0;
-        bool available = (cue & (CardInteractionCue.OfferedAction | CardInteractionCue.LegalTarget
-            | CardInteractionCue.LegalGenerator | CardInteractionCue.DestructiveChoice)) != 0;
-        if ((available || presented) && !selected && !card.HasFocus())
-        {
-            StrokeRect(card, new Rect2(Vector2.Zero, card.Size), new Color(0.95f, 0.98f, 1, 0.85f), 1.5f);
-        }
+        DrawOutline(card, cue, presented, selected);
         if (cue.HasFlag(CardInteractionCue.SelectedGenerator) && card.HasMeta("card_resource_rect"))
             StrokeRect(card, card.GetMeta("card_resource_rect").AsRect2().Grow(2), Colors.White, 2);
         if (!selected) return;
@@ -24,6 +19,22 @@ internal static class CardInteractionDrawing
             Vector2 inward = new(corner.X == 0 ? 1 : -1, corner.Y == 0 ? 1 : -1);
             card.DrawLine(corner, corner + new Vector2(length * inward.X, 0), Colors.White, 4, antialiased: true);
             card.DrawLine(corner, corner + new Vector2(0, length * inward.Y), Colors.White, 4, antialiased: true);
+        }
+    }
+
+    private static void DrawOutline(Control card, CardInteractionCue cue, bool presented, bool selected)
+    {
+        bool available = (cue & (CardInteractionCue.OfferedAction | CardInteractionCue.LegalTarget
+            | CardInteractionCue.LegalGenerator | CardInteractionCue.DestructiveChoice)) != 0;
+        bool target = cue.HasFlag(CardInteractionCue.LegalTarget) || cue.HasFlag(CardInteractionCue.SelectedTarget);
+        if (target)
+        {
+            StrokeRect(card, new Rect2(Vector2.Zero, card.Size),
+                ClientTheme.ToGodot(selected ? VisualSystem.Palette.Selected : VisualSystem.Palette.Legal), 3);
+        }
+        else if ((available || presented) && !selected && !card.HasFocus())
+        {
+            StrokeRect(card, new Rect2(Vector2.Zero, card.Size), new Color(0.95f, 0.98f, 1, 0.85f), 1.5f);
         }
     }
 

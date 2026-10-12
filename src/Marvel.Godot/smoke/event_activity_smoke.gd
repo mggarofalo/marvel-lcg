@@ -117,8 +117,8 @@ func _static_results_are_visible(activity: Control) -> bool:
 		_fail("reduced motion delayed accepted consequences")
 		return false
 	var pulse := main.find_child("EventActivityPulse", true, false) as Control
-	if pulse == null or int(pulse.get_meta("visible_result_count", 0)) == 0:
-		_fail("reduced motion lost object-local consequences")
+	if pulse == null or int(pulse.get_meta("visible_result_count", 0)) != 0:
+		_fail("reduced motion retained old consequences over the next decision")
 		return false
 	return true
 

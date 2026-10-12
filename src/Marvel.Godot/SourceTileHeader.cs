@@ -14,7 +14,7 @@ internal static class SourceTileHeader
         panel.Resized += panel.QueueRedraw;
         var inset = new MarginContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         inset.AddThemeConstantOverride("margin_left", 7);
-        inset.AddThemeConstantOverride("margin_right", 24);
+        inset.AddThemeConstantOverride("margin_right", 3);
         panel.AddChild(inset);
         var header = new HBoxContainer { Name = "SourceHeaderLine", MouseFilter = Control.MouseFilterEnum.Ignore };
         header.AddThemeConstantOverride("separation", 4);
@@ -41,7 +41,8 @@ internal static class SourceTileHeader
         panel.AddChild(symbols);
         if (copy.Length > 0)
         {
-            Label marker = CardSourceStrip.Label(copy, "SourceCopy", 10, CardTypography.Bold);
+            Label marker = CardSourceStrip.Label(copy.Replace("copy ", "", StringComparison.Ordinal), "SourceCopy", 10, CardTypography.Bold);
+            marker.AccessibilityName = marker.TooltipText = copy;
             marker.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
             marker.AutowrapMode = TextServer.AutowrapMode.Off;
             header.AddChild(marker);

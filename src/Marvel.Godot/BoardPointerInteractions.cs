@@ -229,7 +229,7 @@ internal sealed class BoardPointerInteractions
 
     private void ExitCard(Control control)
     {
-        if (pointerCapture is null) RestorePose(control);
+        if (isCurrent() && pointerCapture is null) RestorePose(control);
         BoardHoverPresentation.RestoreControls(control);
         previewExited(control);
     }

@@ -62,8 +62,15 @@ internal static class SpatialCardCollection
         var overflow = new Label { Name = "ContinuousOverflow", Text = "Scroll to see all →",
             ThemeTypeVariation = GodotThemeVariations.Caption, MouseFilter = Control.MouseFilterEnum.Ignore };
         panel.AddChild(overflow);
-        row.MinimumSizeChanged += () => overflow.Visible = row.GetCombinedMinimumSize().X > bounds.Size.X;
-        overflow.Visible = cards.Length > 1;
+        void MeasureOverflow() => Callable.From(() =>
+        {
+            if (InteractionControl.IsUsable(scroll))
+                overflow.Visible = row.GetCombinedMinimumSize().X > scroll.Size.X + 0.5f;
+        }).CallDeferred();
+        row.MinimumSizeChanged += MeasureOverflow;
+        scroll.Resized += MeasureOverflow;
+        overflow.Hide();
+        MeasureOverflow();
         return controls;
     }
 }

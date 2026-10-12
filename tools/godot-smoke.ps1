@@ -24,11 +24,12 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 & "$PSScriptRoot/godot-smoke-tableau.ps1" -GodotBin $GodotBin
 
 function Invoke-LocalSmoke {
-    param([string]$Script = "res://smoke/local_game_smoke.gd")
+    param([string]$Script = "res://smoke/local_game_smoke.gd", [string]$Marker = "")
     $output = & $GodotBin --headless --audio-driver Dummy --path "$repoRoot/src/Marvel.Godot" `
         --script $Script 2>&1
     $output | Write-Output
-    if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output)) {
+    if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output) -or
+        ($Marker -and -not (($output -join "`n").Contains($Marker)))) {
         throw "Godot local smoke reported an unexpected failure diagnostic."
     }
 }
@@ -114,11 +115,15 @@ $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
 Invoke-LocalSmoke "res://smoke/result_playback_smoke.gd"
 Invoke-LocalSmoke "res://smoke/event_activity_smoke.gd"
+Invoke-LocalSmoke "res://smoke/attack_activity_lifecycle_smoke.gd" "ATTACK_ACTIVITY_LIFECYCLE_OK"
 Invoke-LocalSmoke "res://smoke/timeline_navigation_smoke.gd"
 $env:MARVEL_UI_SCALE = "150"
 $env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke "res://smoke/result_playback_smoke.gd"
 Invoke-LocalSmoke "res://smoke/event_activity_smoke.gd"
+$env:MARVEL_SMOKE_MOTION = "enabled"
+Invoke-LocalSmoke "res://smoke/attack_activity_lifecycle_smoke.gd" "ATTACK_ACTIVITY_LIFECYCLE_OK"
+$env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke "res://smoke/timeline_navigation_smoke.gd"
 foreach ($viewport in $viewports) {
     foreach ($scale in $scales) {

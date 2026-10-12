@@ -29,7 +29,7 @@ public sealed class BoardRenderResult
         reveal = new BoardControlReveal(this);
         interactionControls = new BoardCardInteractionControls(IsCurrentRender);
         pointer = new BoardPointerInteractions(
-            IsCurrentRender,
+            () => IsCurrentRender() && !sourceArrangementActive,
             (card, control) => CardActivated?.Invoke(card, control),
             (card, control) => { if (!sourceArrangementActive) CardPreviewEntered?.Invoke(card, control); },
             control => CardPreviewExited?.Invoke(control));
@@ -52,6 +52,12 @@ public sealed class BoardRenderResult
     {
         sourceArrangementActive = active;
         if (active) SourceArrangementStarted?.Invoke();
+    }
+
+    internal void InspectSource(CardControl control)
+    {
+        if (Inspector.For(control.TargetId).FirstOrDefault(candidate => candidate.TargetId == control.TargetId)
+            is { } card) CardActivated?.Invoke(card, control);
     }
 
     internal void Register(int id, CardControl control)
@@ -209,7 +215,7 @@ public sealed class BoardRenderResult
             bool available = legal.Contains(id);
             toggle.Visible = available;
             toggle.Disabled = !available;
-            SetMulliganToggle(toggle, selected.Contains(id));
+            MulliganBinding.PresentToggle(toggle, selected.Contains(id));
         }
     }
 
@@ -223,18 +229,8 @@ public sealed class BoardRenderResult
         pointer.SetMulliganTargets(selected);
         foreach ((int id, Button toggle) in mulliganToggles)
         {
-            SetMulliganToggle(toggle, selected.Contains(id));
+            MulliganBinding.PresentToggle(toggle, selected.Contains(id));
         }
-    }
-
-    private static void SetMulliganToggle(Button toggle, bool selected)
-    {
-        toggle.SetPressedNoSignal(selected);
-        toggle.Text = selected ? "✓" : "↻";
-        toggle.AccessibilityName = selected ? "Selected for replacement" : "Select for replacement";
-        toggle.ThemeTypeVariation = selected
-            ? GodotThemeVariations.SelectedTargetButton
-            : GodotThemeVariations.LegalTargetButton;
     }
 
     /// <summary>Returns the visible control for an engine-provided card id.</summary>

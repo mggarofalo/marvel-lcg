@@ -30,15 +30,24 @@ internal sealed class SourceArrangementFeedback
             Visible = false, ZIndex = 241 };
         slot.AddChild(outline);
         outline.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        outline.Draw += () => outline.DrawRect(new Rect2(Vector2.One, outline.Size - Vector2.One * 2),
-            CardFaceStyle.Paper, false, 2);
+        outline.Draw += () =>
+        {
+            bool selected = outline.GetMeta("source_drop_selected", false).AsBool();
+            outline.DrawRect(new Rect2(Vector2.One, outline.Size - Vector2.One * 2),
+                selected ? ClientTheme.ToGodot(CardVisualTokens.Modified) : CardFaceStyle.Paper with { A = 0.65f },
+                false, selected ? 3 : 1);
+        };
         outlines.Add(slot, outline);
     }
 
     internal void Show(Control origin, string message)
     {
-        foreach (Control outline in outlines.Values) outline.Hide();
-        outlines[origin].Show();
+        foreach ((Control slot, Control outline) in outlines)
+        {
+            outline.SetMeta("source_drop_selected", slot == origin);
+            outline.Show();
+            outline.QueueRedraw();
+        }
         frame.GlobalPosition = origin.GetGlobalRect().End - new Vector2(44, 40);
         frame.Size = new Vector2(44, 40);
         caption.Text = "↔";

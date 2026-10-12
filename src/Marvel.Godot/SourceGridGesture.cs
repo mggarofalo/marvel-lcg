@@ -19,6 +19,7 @@ internal sealed partial class SourceGridGesture : Node
     private bool moving;
     private bool keyboard;
     private Button? handle;
+    private Button? clickedAction;
     private SourceArrangementFeedback feedback = null!;
 
     internal void Configure(GridContainer container, ScrollContainer scroll, int player, BoardRenderResult board)
@@ -66,17 +67,10 @@ internal sealed partial class SourceGridGesture : Node
         var overlay = new Control { Name = "SourceReorderOverlay", MouseFilter = Control.MouseFilterEnum.Ignore };
         card.AddChild(overlay);
         overlay.AddChild(grip);
-        var mark = new Label { Name = "SourceReorderMark", Text = "⠿", MouseFilter = Control.MouseFilterEnum.Ignore,
-            VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
-        mark.AddThemeFontSizeOverride("font_size", 16);
-        mark.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
-        overlay.AddChild(mark);
         void Fit()
         {
             grip.Position = header.Position;
-            grip.Size = new Vector2(title.Position.X + title.Size.X + 7, title.Size.Y);
-            mark.Position = header.Position + new Vector2(header.Size.X - 24, 0);
-            mark.Size = new Vector2(24, title.Size.Y);
+            grip.Size = new Vector2(header.Size.X, title.Size.Y);
         }
         header.Resized += Fit;
         title.Resized += Fit;
@@ -91,6 +85,37 @@ internal sealed partial class SourceGridGesture : Node
             else return;
             grip.AcceptEvent();
         };
+        BindBody(card, card, slot, grip);
+        card.GetNode("SourceBody/DirectControls").ChildEnteredTree += child =>
+        {
+            if (child is Button action) BindAction(action, card, slot, grip);
+        };
+    }
+
+    private void BindAction(Button action, CardControl card, Control slot, Button grip)
+    {
+        action.GuiInput += input =>
+        {
+            if (input is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } press)
+                return;
+            Begin(card, slot, grip, press.GlobalPosition, false);
+            clickedAction = action;
+            action.AcceptEvent();
+        };
+    }
+
+    private void BindBody(Node node, CardControl card, Control slot, Button grip)
+    {
+        if (node is BaseButton || node.Name == "SourceReorderOverlay") return;
+        if (node is Control body)
+            body.GuiInput += input =>
+            {
+                if (input is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } press)
+                    return;
+                Begin(card, slot, grip, press.GlobalPosition, false);
+                body.AcceptEvent();
+            };
+        foreach (Node child in node.GetChildren()) BindBody(child, card, slot, grip);
     }
 
     private void Begin(CardControl card, Control slot, Button grip, Vector2 point, bool usingKeyboard)
@@ -171,11 +196,27 @@ internal sealed partial class SourceGridGesture : Node
 
     private void Complete(Vector2 pointer)
     {
-        if (!moving || SlotAt(pointer) is null) { Cancel(); return; }
+        if (!moving)
+        {
+            CompleteClick(pointer);
+            return;
+        }
+        if (SlotAt(pointer) is null) { Cancel(); return; }
         SourcePresentationOrder.Store(seat, grid.GetChildren().OfType<Control>()
             .Select(slot => cards.TryGetValue(slot, out CardControl? card) ? card.TargetId : null));
         result.PresentGestureFeedback("");
         Finish();
+    }
+
+    private void CompleteClick(Vector2 pointer)
+    {
+        CardControl? inspected = dragged;
+        Button? action = clickedAction;
+        Cancel();
+        if (InteractionControl.IsUsable(action) && action!.GetGlobalRect().HasPoint(pointer))
+            action.EmitSignal(BaseButton.SignalName.Pressed);
+        else if (action is null && inspected is not null && CardPointerHitTest.Contains(inspected, pointer))
+            result.InspectSource(inspected);
     }
 
     private void Cancel()
@@ -193,6 +234,8 @@ internal sealed partial class SourceGridGesture : Node
 
     private void Finish()
     {
+        if (InteractionControl.IsUsable(clickedAction)) clickedAction!.SetPressedNoSignal(false);
+        clickedAction = null;
         feedback.Hide();
         result.SetSourceArrangement(false);
         lift.Restore();

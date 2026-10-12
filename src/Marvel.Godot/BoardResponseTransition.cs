@@ -37,7 +37,8 @@ internal sealed class BoardResponseTransition(Main main) : IDisposable
         main.boardController.HideCardInspector();
         main.eventController.RecordTimeline(response, AcceptedActivityOccurrence.From(cues, options.Receipt), false);
         main.eventController.FitTimeline();
-        main.PresentEvents(AcceptedActivityOccurrence.From(cues, options.Receipt));
+        main.PresentEvents(EventPlaybackPlan.From(
+            AcceptedActivityOccurrence.From(cues, options.Receipt), options.Receipt, previous.World));
         main.status.Text = "RESOLVING";
         return true;
     }

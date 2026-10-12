@@ -12,7 +12,7 @@ try {
     dotnet test "$repoRoot/tests/Marvel.Godot.Tests/Marvel.Godot.Tests.csproj" -c Release --nologo `
         --filter FullyQualifiedName~SourceTableauTests
     if ($LASTEXITCODE -ne 0) { throw "Could not project native tableau fixtures." }
-    foreach ($scale in @("100", "150")) {
+    foreach ($scale in @("80", "100", "150")) {
         $env:MARVEL_UI_SCALE = $scale
         foreach ($layout in @("ordinary", "narrow")) {
             $arguments = @("--headless", "--audio-driver", "Dummy", "--path", "$repoRoot/src/Marvel.Godot",
@@ -31,6 +31,13 @@ try {
         if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output) `
             -or -not ($output -match "SOURCE_VACANCY_OK")) {
             throw "Native vacant source slots failed at $scale%. Diagnostics retained in $temporary."
+        }
+        $output = & $GodotBin --headless --audio-driver Dummy --path "$repoRoot/src/Marvel.Godot" `
+            --script res://smoke/source_drag_hit_smoke.gd -- "--marvel-tableau=$fixture" 2>&1
+        $output | Write-Output
+        if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output) `
+            -or -not ($output -match "SOURCE_DRAG_HIT_OK")) {
+            throw "Native source drag regions failed at $scale%. Diagnostics retained in $temporary."
         }
     }
 }

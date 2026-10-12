@@ -193,6 +193,7 @@ public sealed partial class CardControl : PanelContainer
         }
 
         interactionCue = value;
+        cue.Visible = value != CardInteractionCue.None && baseVariation != GodotThemeVariations.ConcealedCard;
         cue.Text = CueText(value);
         cue.AccessibilityName = CueDescription(value);
         cue.TooltipText = cue.AccessibilityName;

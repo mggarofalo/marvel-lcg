@@ -41,6 +41,12 @@ public sealed class SourceTableauTests
                 world.CreateCard("01107", world.AreaOf(DeckType.SideSchemesArea));
             }
         }
+        else
+        {
+            foreach (string id in new[] { "01066", "01067" })
+                world.CreateCard(id, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            world.CreateCard("01107", world.AreaOf(DeckType.SideSchemesArea));
+        }
         foreach (string id in new[] { "01031", "01032", "01088", "01089", "01090", "01031", "01032" }) world.CreateCard(id, seat.Hand);
         world.Cards.First(card => card.FaceId == "01039").Exhaust();
         BoardAreaPresentation[] areas = [.. BoardPresentation.From(WorldProjection.For(world, null, [],
@@ -105,9 +111,9 @@ public sealed class SourceTableauTests
     public void DenseDesktopSourceViewportPreservesHandCharactersAndDecision(int percent)
     {
         var table = new AstraTableGeometry(1670, 962, percent >= 130, PhysicalCardSize: new Vector2(240, 240), HasSourceTableau: true);
-        var layout = new SourceTableauLayout(table.SourceTableau.Size.X - 12, table.SourceTableau.Size.Y, 16);
-        Assert.Equal(3, layout.Columns);
-        for (int index = 0; index < 12; index++)
+        var layout = new SourceTableauLayout(table.SourceTableau.Size.X, table.SourceTableau.Size.Y, 16);
+        Assert.Equal(4, layout.Columns);
+        for (int index = 0; index < 16; index++)
         {
             var tile = new Rect2(table.SourceTableau.Position + layout.Position(index),
                 new Vector2(layout.TileWidth, SourceTableauLayout.TileHeight));

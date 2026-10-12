@@ -40,12 +40,14 @@ trap cleanup EXIT
 
 run_local_smoke() {
   local script=${1:-res://smoke/local_game_smoke.gd}
+  local marker=${2:-}
   set +e
   "$godot_bin" --headless --audio-driver Dummy --path "$repo_root/src/Marvel.Godot" \
     --script "$script" 2>&1 | tee "$smoke_log"
   local status=${PIPESTATUS[0]}
   set -e
-  if [[ $status -ne 0 ]] || godot_smoke_has_error "$smoke_log"; then
+  if [[ $status -ne 0 ]] || godot_smoke_has_error "$smoke_log" ||
+    { [[ -n "$marker" ]] && ! grep -Fq "$marker" "$smoke_log"; }; then
     echo "Godot local smoke reported an unexpected failure diagnostic." >&2
     exit 1
   fi
@@ -121,11 +123,15 @@ MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled 
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/event_activity_smoke.gd
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+  run_local_smoke res://smoke/attack_activity_lifecycle_smoke.gd ATTACK_ACTIVITY_LIFECYCLE_OK
+MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/timeline_navigation_smoke.gd
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/result_playback_smoke.gd
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/event_activity_smoke.gd
+MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+  run_local_smoke res://smoke/attack_activity_lifecycle_smoke.gd ATTACK_ACTIVITY_LIFECYCLE_OK
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/timeline_navigation_smoke.gd
 

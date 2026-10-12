@@ -12,12 +12,17 @@ internal sealed class EventActivitySequence
     internal bool Active { get; private set; }
     internal EventPresentation? Current => Index >= 0 ? Entries[Index] : null;
 
+    // Completed attacks remain chronology entries, not a second attack animation.
+    internal EventPresentation? Attention => Active && Current?.Activity?.Operation != "Attack_Completed"
+        ? Current : null;
+
     internal void Start(IReadOnlyList<EventPresentation> entries, bool animate)
     {
         Entries = entries.ToArray();
         Index = Entries.Count == 0 ? -1 : 0;
         elapsed = 0;
-        beatDuration = Entries.Count <= 1 ? 0.4 : Math.Min(0.6, 2.4 / Entries.Count);
+        int consequences = Entries.Count - (Entries.Count > 0 && Entries[0].Activity?.Operation == "Attack_Presentation" ? 1 : 0);
+        beatDuration = consequences <= 1 ? 0.4 / Math.Max(1, Entries.Count) : Math.Min(0.6, 2.4 / Entries.Count);
         Active = animate && Entries.Count > 0;
         if (!Active) Complete();
     }

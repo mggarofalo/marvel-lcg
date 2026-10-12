@@ -47,6 +47,18 @@ public sealed class SourceVacancyOrderTests
         Assert.Equal(capacity, layout.Capacity);
     }
 
+    [Fact]
+    public void SixteenSourcesUseFourRowsWithoutInventingATrailingOverflowGap()
+    {
+        var layout = new SourceTableauLayout(620, 258, 16);
+        Assert.Equal(4, layout.Columns);
+        Assert.Equal(16, layout.Capacity);
+        Assert.Equal(258, layout.ContentHeight(layout.Capacity));
+        Assert.Equal(258, layout.Position(15).Y + SourceTableauLayout.TileHeight);
+        var overflow = new SourceTableauLayout(620, 258, 17);
+        Assert.True(overflow.ContentHeight(overflow.Capacity) > overflow.Height);
+    }
+
     private static int?[] Ids(int seat, BoardCardPresentation[] cards, int capacity) =>
         SourcePresentationOrder.Slots(seat, cards, capacity).Select(card => card?.TargetId).ToArray();
 

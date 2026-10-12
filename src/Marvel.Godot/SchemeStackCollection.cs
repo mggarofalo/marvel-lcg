@@ -85,9 +85,14 @@ internal static class SchemeStackCollection
                 top += Math.Max(64, Math.Max(header.Size.Y, header.GetCombinedMinimumSize().Y) * card.Scale.Y + 4);
             }
             stack.CustomMinimumSize = new Vector2(bounds.Size.X - 18, extent);
+            stack.Size = stack.CustomMinimumSize;
+            scroll.QueueSort();
         }
         foreach (CardControl card in controls)
+        {
             ((Control)card.FindChild("SchemeStackHeader", true, false)).Resized += Arrange;
+            card.Resized += Arrange;
+        }
         Callable.From(Arrange).CallDeferred();
         if (bottom > bounds.Size.Y - 26) panel.AddChild(new Label { Name = "ContinuousOverflow", Text = "Scroll to see all ↓",
             ThemeTypeVariation = GodotThemeVariations.Caption, MouseFilter = Control.MouseFilterEnum.Ignore });

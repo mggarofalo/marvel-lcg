@@ -60,10 +60,7 @@ func _check_cards(tableau: Control, viewport: ScrollContainer, narrow: bool, fai
 	var cards := tableau.find_children("ProceduralCard*", "Control", true, false)
 	if cards.size() != 16: failures.append("lost physical sources")
 	var copies: Array[Control] = []
-	if not narrow and not OS.get_cmdline_user_args().has("--marvel-tableau-symbols"):
-		for card in cards.slice(0, 12):
-			if not viewport.get_global_rect().encloses((card as Control).get_global_rect()):
-				failures.append("dense source viewport does not expose its first twelve physical cards: " + str(card.name) + " " + str((card as Control).get_global_rect()) + " viewport=" + str(viewport.get_global_rect()))
+	_check_fitted_source_grid(tableau, viewport, cards, narrow, failures)
 	for card in cards:
 		viewport.ensure_control_visible(card)
 		for frame in range(3): await process_frame
@@ -74,6 +71,15 @@ func _check_cards(tableau: Control, viewport: ScrollContainer, narrow: bool, fai
 		var title := card.find_child("SourceTitle", true, false) as Label
 		if title.text == "Powered Gauntlets": copies.append(card)
 	return copies
+
+func _check_fitted_source_grid(tableau: Control, viewport: ScrollContainer, cards: Array[Node], narrow: bool, failures: Array[String]) -> void:
+	if not narrow and not OS.get_cmdline_user_args().has("--marvel-tableau-symbols"):
+		var grid := tableau.find_child("SourceTableauGrid", true, false) as GridContainer
+		if grid.columns != 4: failures.append("ordinary source grid is not four columns")
+		if viewport.get_v_scroll_bar().visible: failures.append("sixteen fitted sources create a spurious vertical scrollbar")
+		for card in cards.slice(0, 16):
+			if not viewport.get_global_rect().encloses((card as Control).get_global_rect()):
+				failures.append("dense source viewport does not expose all sixteen physical cards: " + str(card.name) + " " + str((card as Control).get_global_rect()) + " viewport=" + str(viewport.get_global_rect()))
 
 func _check_overlap(card: Control, cards: Array[Node], failures: Array[String]) -> void:
 	for other in cards:
@@ -383,15 +389,23 @@ func _check_collections(fixture: Control, failures: Array[String]) -> void:
 			failures.append("collection uses dropdown: " + zone)
 		var scroll := collection.find_child("Continuous" + zone, true, false) as ScrollContainer
 		var cards := collection.find_children("ProceduralCard*", "Control", true, false)
-		if zone == "SideSchemesArea": await _check_scheme_headers(cards, failures)
 		if scroll == null or cards.is_empty():
 			failures.append("missing continuous collection: " + zone)
 			continue
+		if zone == "SideSchemesArea":
+			_check_fitted_scheme_scroll(cards, scroll, failures)
+			await _check_scheme_headers(cards, failures)
 		if zone == "AlliesArea":
 			for card in cards.slice(0, 3):
 				if not scroll.get_global_rect().encloses(_bounds(card)):
 					failures.append("first three allies are not simultaneously visible")
 		await _check_collection_reachability(cards, scroll, failures)
+
+func _check_fitted_scheme_scroll(cards: Array[Node], scroll: ScrollContainer, failures: Array[String]) -> void:
+	if cards.size() != 1: return
+	if scroll.get_child(0).get_combined_minimum_size().y > scroll.size.y: return
+	if scroll.get_v_scroll_bar().visible:
+		failures.append("a fitted single side scheme creates a spurious scrollbar")
 
 func _check_collection_reachability(cards: Array[Node], scroll: ScrollContainer, failures: Array[String]) -> void:
 	for card in cards:
