@@ -30,7 +30,7 @@ public sealed class ActivityTransportTests : TransportTestBase
     {
         // Synthetic authorized contract: a concealed participant contributes only public quantity.
         var request = EngineRequest.SyncGame("activity", "table", "capability");
-        GameEvent[] events =
+        List<GameEvent> events =
         [
             new CardsMoved(AreaRef.Player("PlayerDeck", 0), AreaRef.Player("HandsArea", 0), [new Landing(7, 0)])
                 { ActivityBatch = 0, Round = 2, Verb = "Draw" },
@@ -38,6 +38,12 @@ public sealed class ActivityTransportTests : TransportTestBase
                 ActivityPhaseStep.DrawToHandSize) { Round = 2, Verb = "Draw" },
             new PhaseStarted("Villain") { Round = 2, Verb = "Phase_Started" },
         ];
+        ActivityBatches.Append(events,
+        [
+            new CardsMoved(AreaRef.Player("HandsArea", 0), AreaRef.Player("DiscardPile", 0), [new Landing(9, 0)])
+                { ActivityBatch = 0, Round = 2, Verb = "Discard" },
+            new ActivityCompleted(0, [new ActivityParticipant(0, 1, [9])]) { Round = 2, Verb = "Discard" },
+        ]);
         var response = new EngineResponse(EngineProtocol.Version, request.RequestId,
             request.GameId, Capability: null, Prompt: null, Events: events);
         var endpoint = new EchoEndpoint(request, response);
@@ -55,6 +61,10 @@ public sealed class ActivityTransportTests : TransportTestBase
             PhaseStarted phase = Assert.IsType<PhaseStarted>(restored.Events[2]);
             Assert.Equal(2, phase.Round);
             Assert.Equal("Villain", phase.Phase);
+            ActivityCompleted discard = Assert.IsType<ActivityCompleted>(restored.Events[4]);
+            Assert.NotEqual(receipt.Batch, discard.Batch);
+            Assert.Equal(discard.Batch, restored.Events[3].ActivityBatch);
+            Assert.Equal([9], discard.Participants[0].Cards);
         }
     }
 }

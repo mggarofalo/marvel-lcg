@@ -89,4 +89,8 @@ public sealed record AbilityTrigger(
     string? Target = null,
     string? Form = null,
     string? Also = null,
-    string? Player = null);
+    string? Player = null)
+{
+    /// <summary>Higher-priority forced interrupt to what would happen.</summary>
+    public bool Would { get; init; }
+}

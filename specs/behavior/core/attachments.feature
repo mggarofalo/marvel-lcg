@@ -45,7 +45,8 @@ Feature: Core attachment lifecycle
     Then card 01009 copy 0 is faceup on top of seat 1's discard pile
     And card 01001a copy 0 has 0 damage
     And card 01094 copy 0 has 1 stunned status cards
-    And 3 Give_Status events were emitted
+    # Engine event contract: one status creation and one attachment to Rhino.
+    And 2 Give_Status events were emitted
     And 0 Draw_Cards events were emitted
     And the attack has ended
     When the villain attacks seat 1 with every optional choice declined

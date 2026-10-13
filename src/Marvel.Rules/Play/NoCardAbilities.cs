@@ -119,7 +119,7 @@ public class NoCardAbilities : ICardAbilities
     public virtual bool WhenCardDefeated(
         World world, Card card, Defeated defeated, string trigger, List<GameEvent> events)
     {
-        events.AddRange(WhenCardDefeated(world, card, defeated));
+        ActivityBatches.Append(events, WhenCardDefeated(world, card, defeated));
         return true;
     }
 

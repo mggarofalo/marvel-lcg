@@ -85,9 +85,9 @@ internal static class AttackCompletion
         // so anything bounded by "this activation" ends here too, and there is
         // no longer an activating enemy for a card to name.
         world.Effects.Expire(TimingPoints.EndOfActivation, events);
+        DelayedEffects.Occur(world, Steps.AttackEnds, -1, events, world.Activation?.Id);
         world.FinishedActivation = world.Activation;
         world.Activation = null;
-        DelayedEffects.Occur(world, Steps.AttackEnds, events);
 
         // Kept for the window that follows this step. `.step.6.a`'s abilities
         // are the ones that ask what the attack did, and they run after the

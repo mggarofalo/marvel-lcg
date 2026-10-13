@@ -41,11 +41,8 @@ internal static class AbilityCardMovementExecution
     {
         foreach (var card in Every(selection, context))
         {
-            var from = card.Area;
             MoveToHand(card, context.World.Seats[card.Owner].Hand, "Return", context, linked: false);
             card.TurnFaceUp();
-            context.Events.Add(new CardDetached(card.ObjectId, from.Host)
-            { Trigger = context.Trigger, Verb = "Return" });
         }
     }
 
@@ -61,6 +58,9 @@ internal static class AbilityCardMovementExecution
         context.Events.Add(new CardsMoved(Places.Reference(from), Places.Reference(hand),
             [new Landing(card.ObjectId, hand.Cards.Count - 1)])
         { Trigger = context.Trigger, Verb = verb });
+        if (from.Host >= 0)
+            context.Events.Add(new CardDetached(card.ObjectId, from.Host)
+            { Trigger = context.Trigger, Verb = verb });
         ending.Complete(context.Trigger, context.Events);
     }
 

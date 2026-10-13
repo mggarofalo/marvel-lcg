@@ -507,3 +507,12 @@ The engine refuses these states:
 
 These failures are part of the product boundary. Replacing one with a no-op can
 turn an unsupported game into a plausible, incorrect one.
+
+### Forced “would” interrupts
+
+A forced trigger may include `"would": true` to give it priority over ordinary
+forced interrupts to the same condition (`rr:would`). Webbed Up uses this for
+attack replacement; status-card priority remains higher. The parser rejects
+this marker on other ability timings. Optional “would” subwindows with distinct
+pass lifecycles are not represented by this marker. The supported Core optional
+damage-prevention and imminent-threat windows already isolate those conditions.

@@ -84,8 +84,15 @@ public static class DamageAttacks
     /// <param name="retaliate">Whether to resolve retaliation before returning.</param>
     public static Damage.AttackResult Attack(
         World world, ICardFacts facts, Card attacker, Card source, Card target, long amount,
-        string trigger, string verb, List<GameEvent> events, bool retaliate = true)
+        string trigger, string verb, List<GameEvent> events, bool retaliate = true) =>
+        Resolve(world, facts, new AttackDamageRequest(attacker, source, target,
+            amount, trigger, verb, retaliate), events);
+
+    /// <summary>Resolve attack damage with explicit causal activation identity.</summary>
+    public static Damage.AttackResult Resolve(World world, ICardFacts facts,
+        AttackDamageRequest request, List<GameEvent> events)
     {
+        var (attacker, source, target, amount, trigger, verb, retaliate, activationId) = request;
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(attacker);
@@ -133,7 +140,7 @@ public static class DamageAttacks
         // has landed. That is after `rr:damage.step.5` places the damage and
         // before steps 6 through 8 can defeat and discard the character. A
         // status created here therefore leaves with a lethally damaged host.
-        ResolveLandedDamage(world, target, placed, events);
+        ResolveLandedDamage(world, activationId, target, placed, events);
 
         var outcome = FinishPlaced(
             world, facts, source, placed, trigger, verb, events,
@@ -144,7 +151,7 @@ public static class DamageAttacks
         long beyond = Math.Max(0, takenAmount - remaining);
         bool overkill = beyond > 0 && hasOverkill;
         var aftermath = new AttackDamageAftermath(attacker, source, target, attackedKind,
-            spillPlayer, beyond, overkill, canRetaliate, trigger);
+            spillPlayer, beyond, overkill, canRetaliate, trigger, activationId);
         aftermath.ResolveOverkill(world, facts, outcome, events);
 
         long dealt = MeasuredDamage(events, firstDamageEvent);
@@ -180,12 +187,12 @@ public static class DamageAttacks
         }
     }
 
-    private static void ResolveLandedDamage(
-        World world, Card target, Damage.PlacedDamage placed, List<GameEvent> events)
+    internal static void ResolveLandedDamage(
+        World world, int? activationId, Card target, Damage.PlacedDamage placed, List<GameEvent> events)
     {
         if (placed.Landed)
         {
-            DelayedEffects.Occur(world, Steps.DamageDealt, target.ObjectId, events);
+            DelayedEffects.Occur(world, Steps.DamageDealt, target.ObjectId, events, activationId);
         }
     }
 

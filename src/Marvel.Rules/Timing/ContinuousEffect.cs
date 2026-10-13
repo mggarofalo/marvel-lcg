@@ -45,6 +45,15 @@ public sealed record ContinuousEffect(
     /// <summary>Whether the numeric amount defines the base or modifies it.</summary>
     public ContinuousValueRole ValueRole { get; init; }
 
+    /// <summary>The activation whose duration and damage own this effect.</summary>
+    public int? ActivationId { get; init; }
+
+    /// <summary>An ability occurrence waiting to schedule the owning activation.</summary>
+    public int? AwaitingActivation { get; init; }
+
+    /// <summary>Apply to each qualifying recipient until the owning period ends.</summary>
+    public bool RepeatsWithinDuration { get; init; }
+
     /// <summary>A live set containing the characters one player controls.</summary>
     public const string CharactersControlledBy = "charactersControlledBy";
 

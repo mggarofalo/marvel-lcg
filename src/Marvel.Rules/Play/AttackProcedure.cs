@@ -1,6 +1,7 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
@@ -133,13 +134,15 @@ internal static class AttackProcedure
         var result = world.FinishedActivation is { } finished
             && finished.Id == step.ActivationId
             ? finished
-            : new EnemyActivation(
+            : world.Activation is { } active && active.Id == step.ActivationId
+                ? active : new EnemyActivation(
                 step.Subject, step.Seat, attacking, step.ActivationId, Made: false);
 
+        world.Effects.CompleteActivation(step.ActivationId, events);
         world.FinishedActivation = result;
-        events.AddRange(abilities.ActivationCompleted(world, result));
+        ActivityBatches.Append(events, abilities.ActivationCompleted(world, result));
         world.FinishedActivation = null;
-        world.Activation = null;
+        if (world.Activation?.Id == step.ActivationId) world.Activation = null;
     }
 
     private static void AllyConsequentialDamage(

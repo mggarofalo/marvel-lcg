@@ -179,11 +179,8 @@ internal static class AbilityCardStateExecution
     {
         foreach (var host in Every(status.Cards, context))
         {
-            var created = Reveal.Afflict(context.World, context.World.Facts, host, status.Status,
+            Reveal.Afflict(context.World, context.World.Facts, host, status.Status,
                 context.Trigger, context.Events);
-            if (created is not null)
-                context.Events.Add(new CardAttached(created.ObjectId, host.ObjectId)
-                { Trigger = context.Trigger, Verb = "Give_Status" });
         }
     }
 

@@ -1,4 +1,5 @@
 using Marvel.Rules.Events;
+using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 
@@ -141,7 +142,7 @@ public static class Offering
         WindowKind kind, List<GameEvent> events, PendingAbility ability)
     {
         occurrence.Trigger(kind, ability.Card);
-        events.AddRange(abilities.Resolve(world, occurrence, ability, [], []));
+        ActivityBatches.Append(events, abilities.Resolve(world, occurrence, ability, [], []));
     }
 
     /// <summary>

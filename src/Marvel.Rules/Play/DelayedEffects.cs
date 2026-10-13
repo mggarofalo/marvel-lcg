@@ -68,14 +68,16 @@ public static class DelayedEffects
     /// <param name="world">The board.</param>
     /// <param name="condition">What has just happened.</param>
     /// <param name="subject">The card it happened to, or <c>-1</c>.</param>
+    /// <param name="activationId">The activation responsible for this occurrence, if any.</param>
     /// <param name="events">Where to record what it did.</param>
     public static void Occur(
-        World world, string condition, int subject, List<GameEvent> events)
+        World world, string condition, int subject, List<GameEvent> events,
+        int? activationId = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
 
-        foreach (var effect in world.Effects.Occur(condition))
+        foreach (var effect in world.Effects.Occur(condition, activationId))
         {
             Resolve(world, effect, condition, subject, events);
         }

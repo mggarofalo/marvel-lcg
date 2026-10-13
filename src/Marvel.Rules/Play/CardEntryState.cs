@@ -37,6 +37,11 @@ internal static class CardEntryState
             Trigger = "toughness",
             Verb = "Enter_Play",
         });
+        events.Add(new CardAttached(status.ObjectId, card.ObjectId)
+        {
+            Trigger = "toughness",
+            Verb = "Enter_Play",
+        });
     }
 
     internal static void PlaceCounters(

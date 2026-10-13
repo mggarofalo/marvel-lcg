@@ -96,10 +96,9 @@ public sealed class SweepingSwoopTests
         var world = Deal();
         world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
         var identity = world.Seats[0].IdentityCard;
-        var card = world.CreateCard(
-            AuthoredCards.SweepingSwoop, world.AreaOf(DeckType.BoostingArea));
+        world.CreateCard(
+            AuthoredCards.SweepingSwoop, world.AreaOf(DeckType.EncounterDeck));
 
-        AuthoredCards.Runner().Boost(world, card, 0);
 
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         world.Agenda.Add(new PhaseStep(
@@ -120,11 +119,10 @@ public sealed class SweepingSwoopTests
         // never about.
         var world = Deal();
         var identity = world.Seats[0].IdentityCard;
-        var card = world.CreateCard(
-            AuthoredCards.SweepingSwoop, world.AreaOf(DeckType.BoostingArea));
+        world.CreateCard(
+            AuthoredCards.SweepingSwoop, world.AreaOf(DeckType.EncounterDeck));
         var villain = world.TheCardIn(DeckType.VillainArea)!;
 
-        AuthoredCards.Runner().Boost(world, card, 0);
 
         // The alter-ego is schemed at, so the activation ends without damage.
         world.Agenda.Add(new PhaseStep(

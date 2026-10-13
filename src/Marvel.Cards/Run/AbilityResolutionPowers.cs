@@ -174,7 +174,7 @@ internal static class AbilityResolutionPowers
                 execution.program, world, occurrence, window, execution.resourceAbilities)
             .Select(candidate => new PendingAbility(
                 candidate.Card.ObjectId, candidate.Ability.Trigger.Timing,
-                candidate.Controller, candidate.Ordinal))];
+                candidate.Controller, candidate.Ordinal) { Would = candidate.Ability.Trigger.Would })];
     }
 
     /// <inheritdoc/>

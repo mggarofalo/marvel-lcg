@@ -103,7 +103,7 @@ internal static class AbilityResolutionLifecycle
             if (updated.Complete)
             {
                 _ = world.Agenda.TakeActivationWait(result.Id);
-                events.AddRange(execution.ResumeAbility(world, updated.Step));
+                ActivityBatches.Append(events, execution.ResumeAbility(world, updated.Step));
             }
             else
             {

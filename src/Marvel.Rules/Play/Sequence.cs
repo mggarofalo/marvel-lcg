@@ -198,7 +198,7 @@ public static class Sequence
         // the answer, not something the engine picks for them. Empty when the
         // affordance was free, which is almost all of them.
         var healthBefore = world.Effects.CaptureCharacterHealth();
-        events.AddRange(abilities.Resolve(
+        ActivityBatches.Append(events, abilities.Resolve(
             world, window.Occurrence, ability, input.Spent, input.Targets,
             input.DefinedValues, input.Allocated));
         Statuses.RemoveAfflictionsIfStalwart(

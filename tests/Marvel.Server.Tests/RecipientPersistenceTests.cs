@@ -40,8 +40,10 @@ public sealed class RecipientPersistenceTests : EngineHostTestBase
         Restart(factory, store, capability, current);
     }
 
-    [Fact]
-    public void PreviousReplayContractIsRejectedWithoutOverwritingItsSave()
+    [Theory]
+    [InlineData("engine-replay-v11")]
+    [InlineData("engine-replay-v14")]
+    public void PreviousReplayContractIsRejectedWithoutOverwritingItsSave(string previousContract)
     {
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         var store = new MemorySessionStore();
@@ -51,12 +53,12 @@ public sealed class RecipientPersistenceTests : EngineHostTestBase
         var stored = Assert.Single(store.Load());
         store.Commit(stored with { Save = stored.Save with
         {
-            Compatibility = stored.Save.Compatibility with { ReplayContract = "engine-replay-v11" },
+            Compatibility = stored.Save.Compatibility with { ReplayContract = previousContract },
         } });
         var restarted = new EngineHost(factory, store: store);
         Assert.Equal("session_not_found", restarted.Exchange(EngineRequest.SyncGame(
             "sync", "previous-recipient", RequiredCapability(opened))).Error?.Code);
-        Assert.Equal("engine-replay-v11", Assert.Single(store.Load()).Save.Compatibility.ReplayContract);
+        Assert.Equal(previousContract, Assert.Single(store.Load()).Save.Compatibility.ReplayContract);
     }
 
     private static EngineHost Restart(DatasetGameFactory factory, MemorySessionStore store,
