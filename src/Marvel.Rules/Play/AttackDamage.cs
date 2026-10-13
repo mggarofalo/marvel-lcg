@@ -83,9 +83,10 @@ internal static class AttackDamage
         // One call, because `rr:piercing`, `rr:overkill` and `rr:ranged` are all
         // properties of the attack rather than of either character.
         int firstDamageEvent = events.Count;
-        var damage = DamageAttacks.Attack(
-            world, facts, world.Cards[attack.Enemy], world.Cards[attack.Target], amount,
-            Steps.AttackInitiated, "Deal_Damage", events);
+        var damage = DamageAttacks.Resolve(world, facts,
+            new AttackDamageRequest(world.Cards[attack.Enemy], world.Cards[attack.Enemy],
+                world.Cards[attack.Target], amount, Steps.AttackInitiated, "Deal_Damage",
+                ActivationId: world.Agenda.Current?.ActivationId), events);
 
         // Recorded on the attack rather than derived later, because by the time
         // `rr:attack-enemy-activation.step.6.a`'s abilities run the damage is on

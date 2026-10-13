@@ -92,8 +92,8 @@ public sealed class ContinuousEffects(World state)
     public bool Use(ContinuousEffect effect) => this.UseCore(effect);
 
     /// <summary>Returns delayed effects whose condition just occurred.</summary>
-    public IReadOnlyList<ContinuousEffect> Occur(string condition) =>
-        this.OccurCore(condition);
+    public IReadOnlyList<ContinuousEffect> Occur(string condition, int? activationId = null) =>
+        this.OccurCore(condition, activationId);
 
     /// <summary>Captures effective character health before constants change.</summary>
     public IReadOnlyDictionary<int, long> CaptureCharacterHealth() =>

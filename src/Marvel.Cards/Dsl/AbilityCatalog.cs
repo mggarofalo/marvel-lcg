@@ -49,7 +49,7 @@ public static class AbilityCatalog
     internal static readonly FrozenSet<string> TriggerKeys =
         new[]
         {
-            "event", "timing", "subject", "actor", "target", "form", "alsoHappened", "player",
+            "event", "timing", "subject", "actor", "target", "form", "alsoHappened", "player", "would",
         }.ToFrozenSet(StringComparer.Ordinal);
 
     /// <summary>Parses the canonical ability dataset.</summary>

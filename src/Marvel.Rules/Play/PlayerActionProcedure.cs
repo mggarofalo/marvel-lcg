@@ -34,7 +34,7 @@ internal static class PlayerActionProcedure
                 "an applying player Action has no occurrence");
         try
         {
-            events.AddRange(world.ActionAbilities.Act(
+            ActivityBatches.Append(events, world.ActionAbilities.Act(
                 world, action.Ability, action.Paying, action.Chosen, occurrence,
                 action.DefinedValues, action.Allocated));
         }

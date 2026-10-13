@@ -160,7 +160,7 @@ internal static class AbilityResolutionPreventionAndDefeat
 
             occurrence.Trigger(WindowKind.Interrupt, mandatory[0].Card);
             spent?.Trigger(WindowKind.Interrupt, mandatory[0].Card);
-            events.AddRange(execution.Resolve(world, occurrence, mandatory[0], [], []));
+            ActivityBatches.Append(events, execution.Resolve(world, occurrence, mandatory[0], [], []));
 
             // `rr:would.1`: once the interrupt changes the imminent defeat,
             // no later interrupt to that original condition may be used.

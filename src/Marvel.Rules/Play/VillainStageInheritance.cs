@@ -62,6 +62,11 @@ internal static class VillainStageInheritance
                     Trigger = trigger,
                     Verb = "Carry_Over",
                 });
+                events.Add(new CardDetached(card.ObjectId, was.ObjectId)
+                {
+                    Trigger = trigger,
+                    Verb = "Carry_Over",
+                });
                 events.Add(new CardAttached(card.ObjectId, now.ObjectId)
                 {
                     Trigger = trigger,

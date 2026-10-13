@@ -32,6 +32,7 @@ internal static class IndirectAttackAssignment
             Subject: attack.Enemy,
             Seat: attack.Player,
             Character: attack.Target,
+            ActivationId: world.Agenda.Current?.ActivationId ?? -1,
             ProcedureAmount: assign,
             ProcedureOccurrence: world.Agenda.Occurrence,
             ProcedureCandidates: [.. candidates.Select(card => card.ObjectId)]);
@@ -118,6 +119,7 @@ internal static class IndirectAttackAssignment
                 Index: index,
                 Subject: pair.Key,
                 Seat: step.Seat,
+                ActivationId: step.ActivationId,
                 ProcedureSource: step.Subject,
                 ProcedureAmount: pair.Value,
                 ProcedureAmounts: new Dictionary<int, long>(),
@@ -130,6 +132,7 @@ internal static class IndirectAttackAssignment
             Subject: step.Subject,
             Seat: step.Seat,
             Character: step.Character,
+            ActivationId: step.ActivationId,
             Plan: true,
             ProcedureCandidates: [.. input.Targets],
             ProcedureOccurrence: occurrence,

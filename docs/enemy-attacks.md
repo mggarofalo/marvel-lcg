@@ -21,6 +21,10 @@ Those roles are distinct: an ally may become the target while its controller
 remains the attacked player. Actor and target facts are captured when the
 window opens so control changes inside the window do not redefine the attack.
 
+A forced interrupt phrased "would attack" precedes ordinary attack interrupts
+within the forced tier (`rr:would`). Webbed Up therefore replaces the attack
+before Charge or Ultron II can trigger. Status-card replacement remains first.
+
 ## Six attack steps
 
 `rr:attack-enemy-activation` defines this order:
@@ -86,6 +90,18 @@ ability data:
 
 - a lasting effect grants overkill until the attack ends; and
 - a delayed effect discards Charge when the attack ends.
+
+Activation-bound effects retain the agenda's exact activation ID. A delayed
+instruction authored before its attack is scheduled binds through the source
+ability occurrence to that scheduled activation. Damage notifications carry the
+originating activation ID through direct, indirect and overkill placement;
+unrelated damage from the same character cannot borrow the effect. Each damaged
+recipient receives the instruction before defeat cleanup, while prevention can
+leave a recipient unaffected.
+
+Normal ending expires effects before ending responses. The completion sentinel
+also retires that activation's registrations when replacement skips the final
+attack or scheme occurrence. It does not expire another activation's effects.
 
 ## Damage and defeat
 

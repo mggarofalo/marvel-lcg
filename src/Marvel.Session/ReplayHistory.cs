@@ -47,7 +47,7 @@ internal sealed class ReplayHistory
         }
 
         public void ObserveEvents(IReadOnlyList<GameEvent> resolvedEvents) =>
-            events.AddRange(resolvedEvents);
+            ActivityBatches.Append(events, resolvedEvents);
 
         public void Append(
             List<HistoryUnitInspection> history,

@@ -19,6 +19,7 @@ internal static class ContinuousEffectRegistry
     internal static ContinuousEffects.Registration RegisterCore(this ContinuousEffects effects, ContinuousEffect effect)
     {
         ArgumentNullException.ThrowIfNull(effect);
+        effect = effects.BindCurrentActivation(effect);
         var entry = new ContinuousEffectEntry(effect, CardEffectSources.Capture(effects.world, effect));
         effects.entries.Add(entry);
         return new ContinuousEffects.Registration(effects, entry);
@@ -197,28 +198,6 @@ internal static class ContinuousEffectRegistry
     }
 
     /// <summary>
-    /// End every lasting effect whose duration names this timing point.
-    /// </summary>
-    /// <remarks>
-    /// <c>rr:lasting-effects.5</c>: "A lasting effect expires as soon as the
-    /// timing point specified by its duration is reached." The villain phase's
-    /// own step 6 is one of these — <c>rr:villain-phase.step.6.a</c>, where
-    /// everything lasting "until the end of the round" ends.
-    /// </remarks>
-    /// <param name="effects">The effect collection being updated.</param>
-    /// <param name="timingPoint">The point that has been reached.</param>
-    /// <param name="events">Where to record state changes caused by restored constants.</param>
-    /// <returns>How many effects ended.</returns>
-    internal static int ExpireCore(this ContinuousEffects effects, string timingPoint, List<GameEvent>? events = null)
-    {
-        ArgumentNullException.ThrowIfNull(timingPoint);
-        var expired = effects.entries.Where(entry => string.Equals(
-            entry.Effect.Lasts?.Until, timingPoint, StringComparison.Ordinal)).ToList();
-        effects.End(expired, timingPoint, events);
-        return expired.Count;
-    }
-
-    /// <summary>
     /// Apply one use of an effect, and end it if that was its last.
     /// </summary>
     /// <remarks>
@@ -263,41 +242,6 @@ internal static class ContinuousEffectRegistry
         return true;
     }
 
-    /// <summary>
-    /// Resolve every delayed effect waiting on a condition that has just
-    /// occurred, and end those that were waiting for the last time.
-    /// </summary>
-    /// <remarks>
-    /// <c>rr:delayed-effect.1</c> — they resolve "automatically and immediately
-    /// after their specified timing point or future condition occurs or becomes
-    /// true, and before responses to that point or condition may be used". So
-    /// this is called at the occurrence, not from the response window.
-    /// <c>rr:delayed-effect.2</c> is why the result is a plain list rather than
-    /// anything that goes into a window: "it is not treated as a new triggered
-    /// ability, even if the delayed effect was originally created by a triggered
-    /// ability".
-    /// </remarks>
-    /// <param name="effects">The effect collection being updated.</param>
-    /// <param name="condition">The condition that has occurred.</param>
-    internal static IReadOnlyList<ContinuousEffect> OccurCore(this ContinuousEffects effects, string condition)
-    {
-        ArgumentNullException.ThrowIfNull(condition);
-
-        var due = effects.entries
-            .Where(entry => string.Equals(
-                entry.Effect.Lasts?.OnCondition, condition, StringComparison.Ordinal))
-            .ToList();
-
-        var ending = due.Where(entry => entry.Remaining is null or <= 1).ToList();
-        effects.End(ending, condition, events: null);
-        foreach (var entry in due.Except(ending))
-        {
-            entry.Remaining -= 1;
-        }
-
-        return [.. due.Select(entry => entry.Effect)];
-    }
-
     private static bool InForce(this ContinuousEffects effects, ContinuousEffect effect)
     {
         if (effect.Source != EffectSource.ConstantAbility)
@@ -320,7 +264,7 @@ internal static class ContinuousEffectRegistry
         }
     }
 
-    private static void End(
+    internal static void End(
         this ContinuousEffects effects,
         List<ContinuousEffectEntry> ending,
         string trigger,

@@ -60,7 +60,7 @@ internal static class IndirectAttackResolution
         foreach (var damage in placed.Where(damage => damage.Landed))
         {
             DelayedEffects.Occur(
-                world, "WhenDamageDealt", damage.Target.ObjectId, events);
+                world, "WhenDamageDealt", damage.Target.ObjectId, events, step.ActivationId < 0 ? null : step.ActivationId);
         }
 
         AttackDamageAccounting.RecordIndirectDamage(world, occurrence, placed);

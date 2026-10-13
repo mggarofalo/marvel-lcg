@@ -79,38 +79,8 @@ public static class Reveal
     /// <returns>The status card, or null when the character could not take one.</returns>
     public static Card? Afflict(
         World world, ICardFacts facts, Card host, string status,
-        string trigger, List<GameEvent> events)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(host);
-        ArgumentNullException.ThrowIfNull(events);
-
-        var given = Statuses.Inflict(world, facts, host, status);
-        if (given is null)
-        {
-            return null;
-        }
-
-        events.Add(new CardsCreated(
-            Places.Reference(given.Area), [new CreatedCard(given.ObjectId, given.FaceId)])
-        {
-            Trigger = trigger,
-            Verb = "Give_Status",
-        });
-        events.Add(new CardAttached(given.ObjectId, host.ObjectId)
-        {
-            Trigger = trigger,
-            Verb = "Give_Status",
-        });
-
-        if (Statuses.Vulnerable(world, facts, host))
-        {
-            Discard.Card(world, host, trigger, events);
-        }
-
-        return given;
-    }
+        string trigger, List<GameEvent> events) =>
+        StatusAffliction.Apply(world, facts, host, status, trigger, events);
 
     /// <summary>Puts a revealed card where its type says it goes.</summary>
     /// <param name="world">The board.</param>
@@ -226,6 +196,14 @@ public static class Reveal
             Verb = verb,
         });
 
+        if (into.Host >= 0)
+        {
+            events.Add(new CardAttached(card.ObjectId, into.Host)
+            {
+                Trigger = "villain phase",
+                Verb = verb,
+            });
+        }
         EnterPlay(world, facts, card, events, occurrence);
     }
 
@@ -451,7 +429,7 @@ public static class Reveal
 
         // Card-specific entry state is still part of the transition and must
         // exist before an "after this card enters play" response is read.
-        events.AddRange((abilities ?? world.CardPlayAbilities).EntersPlay(world, card));
+        ActivityBatches.Append(events, (abilities ?? world.CardPlayAbilities).EntersPlay(world, card));
 
         // A newly active constant may grant stalwart to its own character or
         // to another one already in play. `rr:stalwart.2` removes both kinds of

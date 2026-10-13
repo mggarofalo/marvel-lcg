@@ -157,7 +157,7 @@ internal static class DefeatProcedure
             {
                 containing.Trigger(WindowKind.Interrupt, next.Card);
             }
-            events.AddRange(abilities.Resolve(world, procedure, next, [], []));
+            ActivityBatches.Append(events, abilities.Resolve(world, procedure, next, [], []));
             world.Agenda.ThenContinuation(step with
             {
                 ProcedureAbilities = [],
@@ -288,7 +288,7 @@ internal static class DefeatProcedure
                 $"damage step {damageStep} has no containing occurrence");
         if (!ReferenceEquals(containing, occurrence))
             containing.Trigger(WindowKind.Interrupt, chosen.Card);
-        events.AddRange(abilities.Resolve(world, occurrence, chosen,
+        ActivityBatches.Append(events, abilities.Resolve(world, occurrence, chosen,
             input.Spent, input.Targets, input.DefinedValues, input.Allocated));
         world.Agenda.ThenContinuation(step with
         {
@@ -316,7 +316,7 @@ internal static class DefeatProcedure
             {
                 containing.Trigger(WindowKind.Interrupt, next.Card);
             }
-            events.AddRange(abilities.Resolve(world, occurrence, next, [], []));
+            ActivityBatches.Append(events, abilities.Resolve(world, occurrence, next, [], []));
             world.Agenda.ThenContinuation(step with
             {
                 ProcedureAbilities = [],

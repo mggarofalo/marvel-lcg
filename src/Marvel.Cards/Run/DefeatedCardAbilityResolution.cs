@@ -104,7 +104,7 @@ internal static class DefeatedCardAbilityResolution
             var next = offered[0];
             occurrence.Trigger(WindowKind.Interrupt, next.Card);
             spent?.Trigger(WindowKind.Interrupt, next.Card);
-            events.AddRange(execution.Resolve(world, occurrence, next, [], []));
+            ActivityBatches.Append(events, execution.Resolve(world, occurrence, next, [], []));
             waiting.Remove(next);
         }
 

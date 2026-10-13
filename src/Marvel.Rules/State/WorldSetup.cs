@@ -162,7 +162,7 @@ public static class WorldSetup
         if (scheme is not null)
         {
             // 12a. "Resolve any 'Setup' abilities on main scheme card 1A."
-            happened.AddRange(world.SetupAbilities.Setup(world, scheme));
+            Play.ActivityBatches.Append(happened, world.SetupAbilities.Setup(world, scheme));
             FinishSetupAgenda(world, facts, happened);
             TrackSetupEntrants(
                 world, facts, happened, ref setupEventCursor,
@@ -193,7 +193,7 @@ public static class WorldSetup
             scheme.PlaceTokens("k_threat",
                 facts.PrintedValue(scheme.FaceId, "StartingThreat", players));
 
-            happened.AddRange(world.EncounterAbilities.WhenRevealed(world, scheme, world.FirstPlayer));
+            Play.ActivityBatches.Append(happened, world.EncounterAbilities.WhenRevealed(world, scheme, world.FirstPlayer));
             FinishSetupAgenda(world, facts, happened);
             TrackSetupEntrants(
                 world, facts, happened, ref setupEventCursor,
@@ -213,12 +213,12 @@ public static class WorldSetup
         //      reads the side the players will be playing against.
         if (world.TheCardIn(DeckType.VillainArea) is { } villain)
         {
-            happened.AddRange(world.SetupAbilities.Setup(world, villain));
+            Play.ActivityBatches.Append(happened, world.SetupAbilities.Setup(world, villain));
             FinishSetupAgenda(world, facts, happened);
             TrackSetupEntrants(
                 world, facts, happened, ref setupEventCursor,
                 deferredReveals, deferredRevealSet);
-            happened.AddRange(world.EncounterAbilities.WhenRevealed(world, villain, world.FirstPlayer));
+            Play.ActivityBatches.Append(happened, world.EncounterAbilities.WhenRevealed(world, villain, world.FirstPlayer));
             FinishSetupAgenda(world, facts, happened);
             TrackSetupEntrants(
                 world, facts, happened, ref setupEventCursor,
@@ -275,7 +275,7 @@ public static class WorldSetup
             }
             Play.RevealKeywords.Keywords(
                 world, facts, world.ThreatAbilities, card, world.FirstPlayer, events);
-            events.AddRange(
+            Play.ActivityBatches.Append(events,
                 world.EncounterAbilities.WhenRevealed(world, card, world.FirstPlayer));
             FinishSetupAgenda(world, facts, events);
             TrackSetupEntrants(

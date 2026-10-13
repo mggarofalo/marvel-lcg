@@ -14,4 +14,8 @@ namespace Marvel.Rules.Timing;
 /// Most cards have one and therefore use zero.
 /// </param>
 public readonly record struct PendingAbility(
-    int Card, AbilityType Type, int Player, int Ordinal = 0);
+    int Card, AbilityType Type, int Player, int Ordinal = 0)
+{
+    /// <summary>Resolve before ordinary forced interrupts to the same condition.</summary>
+    public bool Would { get; init; }
+}

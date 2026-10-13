@@ -128,6 +128,7 @@
           "trigger": {
             "event": "WhenAttackInitiated",
             "timing": "ForcedInterrupt",
+            "would": true,
             "actor": "attachedTo"
           },
           "effect": { "seq": [

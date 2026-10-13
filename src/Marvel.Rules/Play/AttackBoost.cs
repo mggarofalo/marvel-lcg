@@ -137,7 +137,7 @@ internal static class AttackBoost
             ?? throw new RulesNotImplementedException(
                 "a boost ability has no activation occurrence");
         int beforeAbility = world.Agenda.Count;
-        events.AddRange(abilities.Boost(world, boost, activation.Player));
+        ActivityBatches.Append(events, abilities.Boost(world, boost, activation.Player));
         if (world.Agenda.Count > beforeAbility)
         {
             // An ordinary authored choice is still scheduled after the flip;

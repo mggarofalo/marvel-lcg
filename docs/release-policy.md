@@ -48,17 +48,18 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `30` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `5` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v14` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v15` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
 
-Replay v14 includes direct, explicitly selected optional-window recipients and
-typed forced-ability/event-face receipts. Protocol 29 carries these choices and
-visibility-filtered descriptions. Older replay contracts require their matching
-runtime. The session schema remains 5; the persisted decision envelope is unchanged.
-Protocol 30 adds current, visibility-safe attack participants through the owning
-resolution's final window; it retains replay v14 and the same save and digest formats.
+Replay v15 binds combat effects to their owning activation, includes all eligible
+attack-damage recipients, orders would interrupts before ordinary triggers, and
+preserves accurate attachment events and activity membership during event composition.
+Older replay contracts require their matching runtime. The session schema remains 5;
+the persisted decision envelope is unchanged. Protocol 30 carries current,
+visibility-safe attack participants through the owning resolution's final window.
+The wire shape, RNG contract and digest format are unchanged.
 
 The product version belongs in desktop and server metadata. The protocol
 version belongs on every request and response. Save schema and replay identities

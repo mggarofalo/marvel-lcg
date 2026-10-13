@@ -55,7 +55,7 @@ namespace Marvel.Rules.Events;
 [JsonDerivedType(typeof(PhaseStarted), nameof(PhaseStarted))]
 public abstract record GameEvent
 {
-    /// <summary>Response-scoped identity of the instruction whose receipt covers this event.</summary>
+    /// <summary>Stream-scoped identity of the instruction whose receipt covers this event.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? ActivityBatch { get; init; }
     /// <summary>Occurrence round, when established by the game loop.</summary>

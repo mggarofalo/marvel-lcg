@@ -171,6 +171,8 @@ internal static class AbilityResolutionEffectChoices
             }
         }
 
+        cast.World.Effects.BindScheduledActivations(
+            cast.Occurrence.Id, cast.Source.ObjectId, activationIds);
         if (activationIds.Count > 0)
         {
             int abilityOrdinal = execution.AbilityOrdinal(command.Effect, cast);

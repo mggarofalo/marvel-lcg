@@ -45,7 +45,7 @@ public static class AbilityWindow
         ArgumentNullException.ThrowIfNull(pending);
         ArgumentNullException.ThrowIfNull(occurrence);
 
-        var byTier = new SortedDictionary<TimingPriority, List<PendingAbility>>();
+        var byTier = new SortedDictionary<(TimingPriority Priority, int WouldOrder), List<PendingAbility>>();
         foreach (var ability in pending)
         {
             if (!BelongsIn(ability.Type, window))
@@ -59,15 +59,18 @@ public static class AbilityWindow
             }
 
             var priority = AbilityTypes.PriorityOf(ability.Type);
-            if (!byTier.TryGetValue(priority, out var tier))
+            // rr:would: "would" interrupts have higher timing priority than
+            // ordinary interrupts to the same triggering condition.
+            var key = (priority, ability.Would ? 0 : 1);
+            if (!byTier.TryGetValue(key, out var tier))
             {
-                byTier[priority] = tier = [];
+                byTier[key] = tier = [];
             }
 
             tier.Add(ability);
         }
 
-        return [.. byTier.Select(pair => new AbilityTier(pair.Key, pair.Value))];
+        return [.. byTier.Select(pair => new AbilityTier(pair.Key.Priority, pair.Value))];
     }
 
     /// <summary>

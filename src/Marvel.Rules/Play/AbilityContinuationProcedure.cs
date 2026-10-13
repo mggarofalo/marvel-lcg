@@ -12,10 +12,10 @@ internal static class AbilityContinuationProcedure
         switch (step.What)
         {
             case Steps.ResumeAbility:
-                events.AddRange(world.ContinuationAbilities.ResumeAbility(world, step));
+                ActivityBatches.Append(events, world.ContinuationAbilities.ResumeAbility(world, step));
                 break;
             case Steps.ResolveSpecial:
-                events.AddRange(world.ContinuationAbilities.ResolveSpecial(
+                ActivityBatches.Append(events, world.ContinuationAbilities.ResolveSpecial(
                     world, world.Cards[step.Subject], step.Seat, step.FinalStep));
                 break;
             case Steps.ChooseOption:
@@ -25,7 +25,7 @@ internal static class AbilityContinuationProcedure
             case Steps.OrderEachPlayer:
                 return EachPlayerEffects.Ordering(world, step);
             case Steps.ResolveEachPlayer:
-                events.AddRange(EachPlayerEffects.Resolve(
+                ActivityBatches.Append(events, EachPlayerEffects.Resolve(
                     world, world.ContinuationAbilities, step));
                 break;
             default:
@@ -42,7 +42,7 @@ internal static class AbilityContinuationProcedure
         switch (step.What)
         {
             case Steps.ChooseOption:
-                events.AddRange(world.ContinuationAbilities.Chose(
+                ActivityBatches.Append(events, world.ContinuationAbilities.Chose(
                     world, world.Cards[step.Subject], step.Seat, step.Index, input, step.Tier,
                     step.FinalStep, step.EachPlayerFrame, step.FinalPlayer, step.Trigger));
                 break;

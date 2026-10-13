@@ -6,7 +6,7 @@ namespace Marvel.Rules.Play;
 /// <summary>Attack roles and excess damage retained across a target's defeat decision.</summary>
 internal sealed record AttackDamageAftermath(
     Card Attacker, Card Source, Card Target, CardKind TargetKind,
-    int ControllingPlayer, long Excess, bool Overkill, bool CanRetaliate, string Trigger)
+    int ControllingPlayer, long Excess, bool Overkill, bool CanRetaliate, string Trigger, int? ActivationId)
 {
     internal void ResolveOverkill(World world, ICardFacts facts,
         Damage.Outcome outcome, List<GameEvent> events)
@@ -33,7 +33,7 @@ internal sealed record AttackDamageAftermath(
                 ProcedureVerb: TargetKind.ToString(),
                 ProcedureAmount: Excess,
                 ProcedureFlag: Overkill,
-                FinalStep: CanRetaliate));
+                FinalStep: CanRetaliate, ActivationId: ActivationId ?? -1));
         }
         else if (CanRetaliate)
             DamageAttacks.Retaliate(world, facts, Target, Attacker, Trigger, events);
@@ -51,7 +51,7 @@ internal sealed record AttackDamageAftermath(
             var aftermath = new AttackDamageAftermath(attacker, source, target,
                 Enum.Parse<CardKind>(step.ProcedureVerb, ignoreCase: false),
                 step.Seat, step.ProcedureAmount, step.ProcedureFlag,
-                step.FinalStep, step.ProcedureTrigger);
+                step.FinalStep, step.ProcedureTrigger, step.ActivationId < 0 ? null : step.ActivationId);
             aftermath.Spill(world, facts, events);
         }
         if (step.FinalStep)
@@ -75,10 +75,12 @@ internal sealed record AttackDamageAftermath(
         {
             // rr:overkill.2: this is "damage from an attack" but "does not
             // constitute an attack against that character", so it does not retaliate.
-            DamagePlacement.DealWithAmounts(
-                world, facts, Source, onto, Excess, Trigger, Keywords.Overkill, events,
-                out long dealt, out _);
-            AttackDamageAccounting.RecordRecipient(world, Source, onto, dealt);
+            var placed = DamagePlacement.Place(
+                world, facts, Source, onto, Excess, Trigger, Keywords.Overkill, events);
+            DamageAttacks.ResolveLandedDamage(world, ActivationId, onto, placed, events);
+            DamagePlacement.FinishPlaced(
+                world, facts, Source, placed, Trigger, Keywords.Overkill, events);
+            AttackDamageAccounting.RecordRecipient(world, Source, onto, placed.Dealt);
         }
     }
 }

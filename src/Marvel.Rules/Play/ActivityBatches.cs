@@ -5,6 +5,27 @@ namespace Marvel.Rules.Play;
 /// <summary>Records semantic instruction boundaries without changing low-level resolution order.</summary>
 public static class ActivityBatches
 {
+    /// <summary>Appends an independent, unfiltered engine stream while preserving instruction ownership.</summary>
+    /// <remarks>
+    /// Batch ids are engine-chosen offsets into the owning stream. Composing streams rebases
+    /// both receipts and members; filtering happens only after composition. Source records
+    /// remain unchanged, so a retained child stream can be composed again independently.
+    /// </remarks>
+    public static void Append(List<GameEvent> destination, IReadOnlyList<GameEvent> source)
+    {
+        int offset = destination.Count;
+        int count = source.Count;
+        for (int index = 0; index < count; index++)
+        {
+            GameEvent happened = source[index];
+            if (happened is ActivityCompleted completed)
+                happened = completed with { Batch = checked(completed.Batch + offset) };
+            if (happened.ActivityBatch is { } batch)
+                happened = happened with { ActivityBatch = checked(batch + offset) };
+            destination.Add(happened);
+        }
+    }
+
     /// <summary>Captures matching movements or ready-state changes produced by one instruction.</summary>
     /// <remarks>Event offsets are deterministic response-local ids, an engine representation choice.</remarks>
     public static void Complete(List<GameEvent> events, int start, string verb,

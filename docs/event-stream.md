@@ -113,8 +113,12 @@ Its engine-chosen verb is `Cancel_When_Revealed`.
 
 `ActivityCompleted` is an engine-authored instruction receipt. Each participant carries
 `player`, actual `count`, and authorized `cards`. Covered low-level events carry
-optional `activity_batch`, a response-local event offset; their order and payloads
-remain intact. Draws still resolve one at a time and deck resets remain separate.
+optional `activity_batch`, an offset into the owning unfiltered event stream;
+their order and payloads remain intact. When independent streams are combined,
+`ActivityBatches.Append` rebases both receipts and member references. This also
+applies when replay history combines decisions into one history unit. Visibility
+filtering preserves these opaque identities; filtered streams must not be rebased
+using their reduced event counts. Draws still resolve one at a time and deck resets remain separate.
 Only explicit instructions and simultaneous phase procedures create receipts;
 matching adjacent verbs never establishes a batch. Restricted visibility keeps
 public quantities while removing concealed card ids and names. Optional `round`

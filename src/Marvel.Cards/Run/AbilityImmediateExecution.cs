@@ -176,9 +176,9 @@ internal static class AbilityImmediateExecution
         AbilityEffect effect, AbilityImmediateContext context)
     {
         if (effect is AbilityEffect.DelayedStun stun)
-            DelayUntil(stun, context);
+            AbilityDelayedEffects.Register(stun, context);
         else
-            DelayUntil(
+            AbilityDelayedEffects.Register(
                 (AbilityEffect.DelayedDiscard)effect, context,
                 context.Admission.Selectors().Find);
         return new(true, true);
@@ -224,23 +224,6 @@ internal static class AbilityImmediateExecution
             Affects: target.ObjectId, Lasts: Duration.UntilEndOf(until)));
         if (string.Equals(kind, "stalwart", StringComparison.Ordinal))
             Statuses.RemoveAfflictionsIfStalwart(world, world.Facts, target, context.Trigger, context.Events);
-    }
-
-    private static void DelayUntil(AbilityEffect.DelayedStun delayed, AbilityImmediateContext context) =>
-        context.Admission.World.Effects.Register(new ContinuousEffect(
-            EffectSource.DelayedEffect, Kind: DelayedEffects.StunTheSubject,
-            Card: context.Admission.Source.ObjectId, Affects: null,
-            Lasts: new Duration(Until: delayed.Within, OnCondition: Steps.DamageDealt, Uses: 1)));
-
-    private static void DelayUntil(AbilityEffect.DelayedDiscard delayed, AbilityImmediateContext context,
-        Func<AbilityCardSelection, Card?> find)
-    {
-        var target = find(delayed.Card) ?? throw new RulesNotImplementedException(
-            $"'{context.Admission.Source.FaceId}' would delay a discard of a card that is not there");
-        context.Admission.World.Effects.Register(new ContinuousEffect(
-            EffectSource.DelayedEffect, Kind: DelayedEffects.DiscardFromPlay,
-            Card: context.Admission.Source.ObjectId, Affects: target.ObjectId,
-            Lasts: Duration.NextTime(delayed.Condition)));
     }
 
     private static void AdvanceMainScheme(AbilityImmediateContext context)
