@@ -60,6 +60,7 @@ internal static class EncounterRevealDiscard
         {
             Trigger = "villain phase",
             Verb = "Reveal",
+            SubjectFaces = OccurrenceFaces.For(card),
         });
     }
 

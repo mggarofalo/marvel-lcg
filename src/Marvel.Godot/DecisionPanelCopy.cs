@@ -37,9 +37,10 @@ internal static class DecisionPanelCopy
         int count = composer.Targets.Count;
         return selected.Verb switch
         {
-            "Resolve Mulligans" when count == 0 => "Keep hand", "Resolve Mulligans" => $"Replace {count} card{(count == 1 ? string.Empty : "s")}",
+            "Resolve Mulligans" when count == 0 => "Keep hand", "Resolve Mulligans" => $"Redraw {count} card{(count == 1 ? string.Empty : "s")}",
             "End Phase" when count == 0 => "Keep hand", "End Phase" => $"Discard {count}",
             "Play" => $"Play {PromptPresentation.Describe(selected.AnchorId, world)}",
+            Attack.DefenseVerb => $"Defend with {PromptPresentation.Describe(selected.AnchorId, world)}",
             "Attack" when count == 1 => $"Attack {PromptPresentation.Describe(composer.Targets[0], world)}",
             "Thwart" when count == 1 => $"Thwart {PromptPresentation.Describe(composer.Targets[0], world)}",
             _ => DecisionCopy.GenericCommit(selected.Verb, selected.DisplayLabel ?? selected.Label, PromptPresentation.Describe(selected.AnchorId, world)),

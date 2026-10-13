@@ -22,6 +22,8 @@ internal static class AffordancePresenter
             option.Targets is null ? "No selection" : Describe(option.Targets),
             option.CostOptions.Select(Describe).ToArray())
         {
+            Timing = option.Timing,
+            WindowChoices = option.WindowChoices,
             DisplayLabel = option.DisplayLabel,
             CommitLabel = option.CommitLabel,
             SourceName = sourceCopy.Name,
@@ -32,6 +34,7 @@ internal static class AffordancePresenter
             TargetRequest = option.Targets,
             PlaysCard = option.PlaysCard,
             DeferredTargetSelection = option.DeferredTargetSelection,
+            DirectRecipientCommit = option.DirectRecipientCommit,
             CostOptions = option.CostOptions,
             Relationships = Relationships(option, source, world),
         };
@@ -86,7 +89,7 @@ internal static class AffordancePresenter
                     RelationshipKind.OfferedGenerator, sourceId, generator.Effect));
             }
         }
-        return relationships;
+        return [.. relationships.DistinctBy(relationship => (relationship.Kind, relationship.Subject, relationship.Related))];
     }
 
     private static string DescribeAnchor(Affordance option, WorldDescriptor world) =>

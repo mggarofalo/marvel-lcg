@@ -97,6 +97,7 @@ public static class EncounterDeck
 
         long remaining = Math.Min(count, deck.Cards.Count);
         var discarded = new List<Card>();
+        int start = events.Count;
         for (long index = 0; index < remaining; index++)
         {
             var card = deck.TakeTop()
@@ -112,6 +113,7 @@ public static class EncounterDeck
             }
         }
 
+        ActivityBatches.Complete(events, start, "Discard", -1);
         return discarded;
     }
 
@@ -167,6 +169,7 @@ public static class EncounterDeck
             return null;
         }
 
+        int start = events.Count;
         int remaining = deck.Cards.Count;
         for (int discarded = 0; discarded < remaining; discarded++)
         {
@@ -182,11 +185,13 @@ public static class EncounterDeck
             if (deck.Cards.Count == 0)
             {
                 Reset(world, trigger, events);
+                ActivityBatches.Complete(events, start, "Discard", -1);
                 return matches ? card : null;
             }
 
             if (matches)
             {
+                ActivityBatches.Complete(events, start, "Discard", -1);
                 return card;
             }
         }

@@ -86,6 +86,12 @@ public sealed record Affordance(
     string? Illegal = null,
     string? Description = null)
 {
+    /// <summary>Timing of this current engine-offered ability.</summary>
+    public Marvel.Rules.Timing.AbilityType? Timing { get; init; }
+
+    /// <summary>Complete current intentions; an empty list retains explicit composition.</summary>
+    public IReadOnlyList<WindowChoice> WindowChoices { get; init; } = [];
+
     /// <summary>Engine-authored display name, separate from the stable command label.</summary>
     public string? DisplayLabel { get; init; }
 
@@ -115,6 +121,11 @@ public sealed record Affordance(
     /// choices inside conditional or later effect branches.
     /// </remarks>
     public bool DeferredTargetSelection { get; init; }
+
+    /// <summary>A single currently offered recipient completes this support's explicit activation.</summary>
+    /// <remarks>Target details disclose the complete mandatory cost and effect. Empty selection
+    /// retains the separately prompted route; clients never pre-answer that future prompt.</remarks>
+    public bool DirectRecipientCommit { get; init; }
 
     /// <summary>Whether the player can actually take this.</summary>
     /// <remarks>

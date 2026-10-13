@@ -65,20 +65,20 @@ public sealed class PlayerPhaseTests
     [Fact]
     public void DecliningChangesNothingAndSaysSo()
     {
-        // The event list is the engine's account of what changed. A decline that
-        // emitted events would be claiming a change the digest denies, and a
-        // digest that moved under an empty event list would be the same lie the
-        // other way round. Both are checked together because either alone
-        // passes while the pair disagrees.
+        // Keeping the opening hand begins round one's player phase without moving
+        // cards. Engine-choice phase facts describe that boundary separately from
+        // state changes; ending the turn emits no additional occurrence.
         var game = Begin();
         string before = game.State.Digest().Canonical();
-
-        for (int step = 1; step <= 2; step++)
-        {
-            var result = game.Resolve(Decision.Decline);
-            Assert.Empty(result.Events);
-            Assert.Equal(before, result.State.Digest().Canonical());
-        }
+        var started = game.Resolve(Decision.Decline);
+        PhaseStarted phase = Assert.IsType<PhaseStarted>(Assert.Single(started.Events));
+        Assert.Equal("Player", phase.Phase);
+        Assert.Equal(1, phase.Round);
+        Assert.Equal("WhenPlayerPhaseBegins", phase.Trigger);
+        Assert.Equal(before, started.State.Digest().Canonical());
+        var ended = game.Resolve(Decision.Decline);
+        Assert.Empty(ended.Events);
+        Assert.Equal(before, ended.State.Digest().Canonical());
     }
 
     [Rule("rr:main-scheme-main-scheme-deck.2")]

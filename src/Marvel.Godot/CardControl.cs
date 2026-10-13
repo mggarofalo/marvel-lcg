@@ -29,6 +29,23 @@ public sealed partial class CardControl : PanelContainer
     {
         ArgumentNullException.ThrowIfNull(card);
         CardLayoutMetrics layout = LayoutFor(card, size, scale);
+        return CreateAtLayout(card, size, scale, art, layout);
+    }
+
+    internal static CardControl CreateFitted(BoardCardPresentation card, InterfaceScale scale,
+        ICardArtProvider? art, float factor)
+    {
+        CardLayoutMetrics layout = LayoutFor(card, CardDisplaySize.Board, scale);
+        return CreateAtLayout(card, CardDisplaySize.Board, scale, art, layout with
+        {
+            Width = Math.Max(1, Mathf.RoundToInt(layout.Width * factor)),
+            MinimumHeight = Math.Max(1, Mathf.RoundToInt(layout.MinimumHeight * factor)),
+        });
+    }
+
+    private static CardControl CreateAtLayout(BoardCardPresentation card, CardDisplaySize size,
+        InterfaceScale scale, ICardArtProvider? art, CardLayoutMetrics layout)
+    {
         CardControl control = CreateShell(card, SpatialCardMetrics.FaceSize(card, size, layout, scale), scale);
         var surface = new Control
         {
@@ -124,9 +141,10 @@ public sealed partial class CardControl : PanelContainer
     /// <summary>Keeps keyboard focus distinct from prompt selection on the same face.</summary>
     public override void _Draw()
     {
+        if (!HasMeta("source_strip")) CardEdgeSmoothing.DrawFrame(this);
         CardInteractionDrawing.Draw(this, interactionCue, highlighted || presented);
-        if (HasFocus()) DrawRect(new Rect2(new Vector2(-4, -4), Size + Vector2.One * (2 * CardVisualTokens.FrameInset)),
-            Colors.White, filled: false, width: 1.5f);
+        if (HasFocus()) CardInteractionDrawing.StrokeRect(this,
+            new Rect2(new Vector2(-4, -4), Size + Vector2.One * (2 * CardVisualTokens.FrameInset)), Colors.White, 1.5f);
     }
 
     internal static CardLayoutMetrics LayoutFor(
@@ -135,8 +153,7 @@ public sealed partial class CardControl : PanelContainer
         InterfaceScale scale)
     {
         CardLayoutMetrics layout = VisualSystem.Card(size, scale);
-        return size is CardDisplaySize.Full or CardDisplaySize.Board
-            && VisualSystem.CardFrame(card.Kind).Family == CardFrameFamily.Scheme
+        return VisualSystem.CardFrame(card.Kind).Family == CardFrameFamily.Scheme
                 ? layout with
                 {
                     Width = layout.MinimumHeight,
@@ -176,6 +193,7 @@ public sealed partial class CardControl : PanelContainer
         }
 
         interactionCue = value;
+        cue.Visible = value != CardInteractionCue.None && baseVariation != GodotThemeVariations.ConcealedCard;
         cue.Text = CueText(value);
         cue.AccessibilityName = CueDescription(value);
         cue.TooltipText = cue.AccessibilityName;
@@ -220,6 +238,7 @@ public sealed partial class CardControl : PanelContainer
         }
         directControls.Columns = directControls.GetChildCount() == 0 ? 1 : 2;
         directControls.Visible = true;
+        SourceTileMeaning.ShowIdle(this, false);
         directControls.AddChild(control);
         return true;
     }
@@ -231,6 +250,7 @@ public sealed partial class CardControl : PanelContainer
     /// <summary>Removes a prior prompt's controls and restores this card's base surface height.</summary>
     internal void ClearInteractionControls()
     {
+        SourceTileMeaning.ShowIdle(this, true);
         if (interactionControls is not null)
         {
             interactionControls.Visible = false;

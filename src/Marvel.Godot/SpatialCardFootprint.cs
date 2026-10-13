@@ -2,14 +2,14 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Owns the occupied face and upright sidecar bounds of one physical card.</summary>
+/// <summary>Owns the rotation-safe face and bounded local control geometry.</summary>
 internal static class SpatialCardFootprint
 {
     internal const float SidecarWidth = 132;
     internal const float Gap = 8;
 
     internal static Vector2 OccupiedSize(Vector2 face) =>
-        new(Math.Max(face.X, face.Y) + Gap + SidecarWidth, Math.Max(face.X, face.Y));
+        new(Math.Max(face.X, face.Y), Math.Max(face.X, face.Y) + 40);
 
     internal static Rect2 Face(Control card) => Bounds(card.GetGlobalTransform(), card.Size);
 
@@ -28,7 +28,8 @@ internal static class SpatialCardFootprint
         Rect2 face = Face(card);
         sidecar.Rotation = -card.Rotation;
         sidecar.Position = ((Control)sidecar.GetParent()).GetGlobalTransform().AffineInverse()
-            * new Vector2(face.End.X + Gap, face.Position.Y);
-        sidecar.Size = new Vector2(SidecarWidth, Math.Max(card.Size.X, card.Size.Y));
+            * new Vector2(face.Position.X, face.End.Y + 4);
+        Vector2 scale = card.GetGlobalTransform().Scale.Abs();
+        sidecar.Size = new Vector2(face.Size.X / scale.X, 44 / scale.Y);
     }
 }

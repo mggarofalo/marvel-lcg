@@ -12,6 +12,22 @@ namespace Marvel.Godot.Tests;
 public sealed class TaskCommitmentProjectionTests
 {
     [Fact]
+    public void DefenseCommitmentNamesTheSelectedCharacter()
+    {
+        // Synthetic authorized prompt: the UI names the exact offered defender.
+        var composer = Composer(new Affordance(3, Attack.DefenseVerb, 55, 0, "Defense"));
+        composer.SelectAffordance(3);
+        var defender = new CardDescriptor(55, CardBack.Player, true, true, -1,
+            new CardFaceDescriptor("01001a", "Spider-Man", "", Marvel.Rules.State.CardKind.Hero,
+                new Dictionary<string, long>()));
+        var world = new WorldDescriptor([], [new AreaDescriptor(1, "Hero", 0, -1, [defender], [])],
+            [], Outcome.Unfinished);
+
+        Assert.Equal("Defend with Spider-Man", DecisionPanelCopy.SubmitAction(composer, world));
+        Assert.Equal(55, composer.Selected!.AnchorId);
+    }
+
+    [Fact]
     public void SingleActionEntryNamesTheExactOfferedChoiceWithoutSubmittingIt()
     {
         var composer = Composer(new Affordance(3, "Use", 55, 0, "First"));

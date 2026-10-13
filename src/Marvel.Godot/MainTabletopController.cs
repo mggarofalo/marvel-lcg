@@ -34,7 +34,7 @@ internal sealed class MainTabletopController
     {
         bool desktop = DesktopTabletop.Uses(viewport);
         renderedDesktopTabletop = desktop;
-        renderedHistoryExpanded = desktop && TableHistoryDrawer.IsExpanded(main);
+        renderedHistoryExpanded = desktop && HasReviewSpace();
         renderedViewport = viewport;
         renderedPayment = CardPaymentWorkspaceLayout.Active(main);
         return desktop ? RenderDesktop(prompt) : null;
@@ -46,11 +46,11 @@ internal sealed class MainTabletopController
         bool geometryChanged = renderedViewport is not { } previous
             || !previous.IsEqualApprox(viewport);
         bool historyChanged = desktop
-            && renderedHistoryExpanded != TableHistoryDrawer.IsExpanded(main);
+            && renderedHistoryExpanded != HasReviewSpace();
         if (main.board.Visible
             && (geometryChanged || historyChanged || renderedPayment != CardPaymentWorkspaceLayout.Active(main)
                 || DesktopTabletop.RouteChanged(renderedDesktopTabletop, viewport))
-            && main.CurrentGame?.World is { } world)
+            && main.boardController.PresentedGame?.World is { } world)
         {
             ScrollContainer table = main.GetNode<ScrollContainer>(
                 "Margin/Shell/Content/Play/Board/TableScroll");
@@ -59,6 +59,8 @@ internal sealed class MainTabletopController
             main.RenderBoard(world);
         }
     }
+
+    private bool HasReviewSpace() => TableHistoryDrawer.IsExpanded(main) || main.invitationOffer.Visible;
 
     internal void FocusAnchors(IReadOnlyList<int> ids)
     {
@@ -87,8 +89,8 @@ internal sealed class MainTabletopController
 
         // This changes only the expanded public workspace. The pending prompt
         // and its composer remain owned by the server-provided prompt player.
-        displayedSeats.Select(seat, Snapshot(main.CurrentGame?.Prompt));
-        if (main.CurrentGame?.World is { } world)
+        displayedSeats.Select(seat, Snapshot(main.boardController.PresentedGame?.Prompt));
+        if (main.boardController.PresentedGame?.World is { } world)
         {
             main.RenderBoard(world);
         }
@@ -102,8 +104,8 @@ internal sealed class MainTabletopController
             return;
         }
 
-        displayedSeats.Focus(seat, Snapshot(main.CurrentGame?.Prompt));
-        if (main.CurrentGame?.World is { } world)
+        displayedSeats.Focus(seat, Snapshot(main.boardController.PresentedGame?.Prompt));
+        if (main.boardController.PresentedGame?.World is { } world)
         {
             main.RenderBoard(world);
         }
@@ -122,7 +124,7 @@ internal sealed class MainTabletopController
             .Distinct()
             .OrderBy(seat => seat)];
         return new DisplayedSeatSnapshot(
-            main.CurrentGame?.GameId ?? "active-game",
+            main.boardController.PresentedGame?.GameId ?? "active-game",
             seats,
             new DisplayedSeatRoles(
                 prompt?.Player ?? board.Table?.PromptOwner,

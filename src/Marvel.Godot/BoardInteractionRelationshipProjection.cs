@@ -18,12 +18,13 @@ internal static class BoardInteractionRelationshipProjection
 
         return [.. (prompt.Affordances.SingleOrDefault(affordance => affordance.Id == selected.Id)
             ?.Relationships ?? [])
-            .Where(relationship => IsOffered(composer, relationship))];
+            .Where(relationship => IsOffered(composer, relationship))
+            .DistinctBy(relationship => (relationship.Kind, relationship.Subject, relationship.Related))];
     }
 
     private static bool IsOffered(DecisionComposer composer, TableRelationshipDescriptor relationship) =>
         relationship.Related is { } related
-        && (relationship.Kind == RelationshipKind.OfferedTarget
+        && (relationship.Kind == RelationshipKind.OfferedTarget && composer.Targets.Contains(related)
             || relationship.Kind == RelationshipKind.OfferedGenerator
-            && DecisionResourceEligibility.CanToggle(composer, related));
+            && composer.Resources.Contains(related));
 }

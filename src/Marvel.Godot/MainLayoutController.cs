@@ -59,10 +59,10 @@ internal sealed class MainLayoutController
         main.eventSkip.CustomMinimumSize = new Vector2(
             main.eventSkip.CustomMinimumSize.X,
             minimumHeight);
-        if (main.CurrentGame?.World is { } world)
+        if (main.boardController.PresentedGame is { World: { } world } presented)
         {
             main.RenderBoard(world);
-            main.RenderPromptSummary(main.CurrentGame.Prompt, world);
+            main.RenderPromptSummary(presented.Prompt, world);
         }
         ApplyResponsivePlayLayout();
     }
@@ -141,6 +141,7 @@ internal sealed class MainLayoutController
         if (main.promptStack.GetNodeOrNull<Control>("PaymentWorkspace") is { } payment)
             CardPaymentWorkspaceLayout.Fit(main, payment);
         ResetPlayContainers();
+        Callable.From(main.eventController.FitTimeline).CallDeferred();
     }
 
     private void ConfigureDecisionDock(
@@ -158,7 +159,7 @@ internal sealed class MainLayoutController
                 ? (CardPaymentWorkspaceLayout.Active(main)
                     ? Math.Max(CardPaymentWorkspaceLayout.Width(main.GetViewportRect().Size),
                         historyExpanded ? TableHistoryDrawer.ExpandedWidth(main) : 0)
-                    : historyExpanded ? TableHistoryDrawer.ExpandedWidth(main) : 172)
+                    : historyExpanded || main.invitationOffer.Visible ? TableHistoryDrawer.ExpandedWidth(main) : 0)
                 : 0,
             decisionHeight);
         main.decisions.CustomMinimumSize = new Vector2(

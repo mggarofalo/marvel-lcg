@@ -1,4 +1,5 @@
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Tests;
@@ -28,8 +29,17 @@ public sealed class CoreEncounterSearchTests
         var passed = world.CreateCard("01186", deck);
         var scheme = world.CreateCard(faceId, world.AreaOf(DeckType.MainSchemesArea));
 
-        AuthoredCards.Runner().WhenRevealed(world, scheme, player: 0);
+        var events = AuthoredCards.Runner().WhenRevealed(world, scheme, player: 0);
 
+        // rr:discard.4: "discarded from the top of the encounter deck".
+        // Engine-choice receipt covers the search, while the subsequent put remains separate.
+        ActivityCompleted completed = Assert.Single(events.OfType<ActivityCompleted>());
+        Assert.Equal("Discard", completed.Verb);
+        Assert.Equal([passed.ObjectId, found.ObjectId], completed.Participants[0].Cards);
+        Assert.Equal(-1, completed.Participants[0].Player);
+        CardsMoved put = Assert.Single(events.OfType<CardsMoved>(), item => item.Verb == "Put_Into_Play");
+        Assert.Null(put.ActivityBatch);
+        Assert.True(events.ToList().IndexOf(completed) < events.ToList().IndexOf(put));
         Assert.Equal([below], deck.Cards);
         Assert.Contains(passed, world.AreaOf(DeckType.EncounterDiscardPile).Cards);
         Assert.Equal(

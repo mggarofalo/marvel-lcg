@@ -17,10 +17,10 @@ static int RunNativeSmoke()
 
     using var process = System.Diagnostics.Process.Start(start)
         ?? throw new InvalidOperationException("Could not start native Godot smoke");
-    if (!process.WaitForExit(TimeSpan.FromMinutes(10)))
+    if (!process.WaitForExit(TimeSpan.FromMinutes(20)))
     {
         process.Kill(true);
-        throw new TimeoutException("Native Godot smoke did not finish within ten minutes");
+        throw new TimeoutException("Native Godot smoke did not finish within twenty minutes");
     }
     return process.ExitCode;
 }

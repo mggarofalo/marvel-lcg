@@ -46,8 +46,8 @@ func _open_ancestral_game() -> bool:
 	# The maintained managed fixture pins this opening: retain Ancestral Knowledge,
 	# replace the other five physical cards, including both copies of Vibranium.
 	for id in [13, 31, 16, 17, 38]:
-		var toggle := main.find_child("MulliganDiscard%d" % id, true, false) as Button
-		if toggle == null or not await _keyboard_activate(toggle):
+		var toggle := _card_for_anchor(id)
+		if toggle == null or not await _keyboard_stage_card(toggle):
 			_fail("the legal seed lost opening replacement %d" % id)
 			return false
 	var commit := _task_commit()
@@ -76,6 +76,9 @@ func _play_ancestral_knowledge() -> bool:
 
 func _finish_shuffle() -> bool:
 	if not await _confirm_shuffle(): return false
+	if not await _set_history_drawer(true): return false
+	var details := _button_named("▸ Details")
+	if details != null and not await _pointer_activate(details): return false
 	if not await _wait_for(_shuffle_receipt_visible):
 		_fail("completed shuffle lost its named, counted result receipt")
 		return false
@@ -84,12 +87,12 @@ func _finish_shuffle() -> bool:
 
 
 func _shuffle_receipt_visible() -> bool:
-	var cue := main.find_child("ResultCue", true, false) as Label
-	var playback := main.find_child("PlayResults", true, false) as Button
-	return cue != null and cue.is_visible_in_tree() and playback != null \
-		and playback.text == "▶" \
-		and cue.text == "Black Panther shuffled 2 cards (Med Team, Vibranium) into their deck."
-
+	var details := main.find_child("OccurrenceComponents", true, false) as Control
+	if details == null or not details.is_visible_in_tree(): return false
+	for row in details.find_children("*", "Button", true, false):
+		if "Black Panther shuffled 2 cards (Med Team, Vibranium) into their deck." in _visible_text(row):
+			return _control_is_fully_visible(row)
+	return false
 
 func _confirm_shuffle() -> bool:
 	var commit := _button_named(SHUFFLE)

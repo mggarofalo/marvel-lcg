@@ -17,7 +17,7 @@ internal static class BoardDragInteractionBinder
         var targeting = new BoardSourceTargetInteraction(composer,
             CurrentOperations(panel, composer), Affordances(panel, composer));
         if (destination is { } target && targeting.Matches(source, target).Count > 0)
-            return DragOnCard(panel, composer, gesture, source, target);
+            return DragOnCard(panel, composer, board, gesture, source, target);
         return DragPlay(panel, composer, board, gesture, source, destination);
     }
 
@@ -49,10 +49,9 @@ internal static class BoardDragInteractionBinder
     {
         if (panel.PaymentModalOpen || gesture.Card.TargetId is not { } source) return;
         IReadOnlyList<Marvel.View.AffordancePresentation> offers = Affordances(panel, composer);
-        board.PresentDestinations(offers.Where(offer => offer.CardAnchorId == source && offer.Illegal is null)
-            .SelectMany(offer => offer.TargetRequest?.Legal ?? []));
         int? destination = board.CardAt(gesture.Position, gesture.Source);
         var interaction = new BoardSourceTargetInteraction(composer, CurrentOperations(panel, composer), offers);
+        board.PresentDestinations(interaction.Destinations(source));
         IReadOnlyList<Marvel.View.AffordancePresentation> matches = destination is { } target
             ? interaction.Matches(source, target) : [];
         if (matches.Count > 0)
@@ -79,7 +78,7 @@ internal static class BoardDragInteractionBinder
     }
 
     private static bool DragOnCard(DecisionPanel panel, DecisionComposer composer,
-        CardPointerGesture gesture, int source, int destination)
+        BoardRenderResult board, CardPointerGesture gesture, int source, int destination)
     {
         var interaction = new BoardSourceTargetInteraction(composer,
             CurrentOperations(panel, composer), Affordances(panel, composer));
@@ -88,6 +87,7 @@ internal static class BoardDragInteractionBinder
         void Select(int id)
         {
             if (!interaction.TrySelect(id, source, destination)) return;
+            board.AnchorDraft(gesture.Position, id);
             panel.RaiseDraftStarted();
             BoardInteractionBinder.RefreshDraft(panel, composer, generation, source);
         }

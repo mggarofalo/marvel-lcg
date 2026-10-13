@@ -22,22 +22,37 @@ internal static class AbilityAffordanceDescription
         // because the engine carries one -- see the remarks on `Affordance.Id`.
         var price = AbilityPaymentPricing.CombinedPrice(
             world, card, ability.Player, found, execution.resourceAbilities);
+        TargetRequest? recipients = AbilityRecipientCommitment.Targets(execution, world, card, found, ability.Player);
+        string? contextual = AbilityReplacementDescription.Caption(execution, world, card, found, ability.Player);
+        string? caption = contextual ?? AbilitySourceActionDescription.Caption(found.Effect)
+            ?? AbilitySearchDescription.Action(found.Effect);
         return new Affordance(
             Id: ability.Card,
             Verb: found.Name,
             AnchorId: ability.Card,
             AnchorPlayer: ability.Player,
             Label: found.Name,
-            Targets: AbilityCostSelection.Ask(world, ability.Player, found.Cost),
-            Costs: price is null ? null : [price], Description: AbilityEffectDescription.Summary(found.Effect))
+            Targets: recipients ?? AbilityCostSelection.Ask(world, ability.Player, found.Cost),
+            Costs: price is null ? null : [price], Description: Description(found.Effect, contextual))
         {
-            DisplayLabel = AbilitySearchDescription.Action(found.Effect),
-            CommitLabel = AbilitySearchDescription.Action(found.Effect),
+            Timing = found.Trigger.Timing,
+            WindowChoices = AbilityWindowChoiceDescription.Describe(execution, world, card, found, ability.Player),
+            DisplayLabel = caption,
+            CommitLabel = caption,
             PlaysCard = EffectiveCards.Kind(card, world.Facts) == CardKind.Event,
-            DeferredTargetSelection = StartsWithTargetSelection(found.Effect),
+            DeferredTargetSelection = recipients is null && StartsWithTargetSelection(found.Effect),
+            DirectRecipientCommit = CanCommitRecipient(recipients, EffectiveCards.Kind(card, world.Facts), found.Trigger.Timing),
             CostDescription = AbilityCostDescription.Summary(world, card, ability.Player, found.Cost),
         };
     }
+
+    private static string? Description(AbilityEffect effect, string? contextual) => contextual is not null
+        ? contextual + ". Damage prevention and interrupts can change the result."
+        : AbilityEffectDescription.Summary(effect) ?? AbilitySourceActionDescription.Caption(effect);
+
+    private static bool CanCommitRecipient(TargetRequest? recipients, CardKind kind, AbilityType timing) =>
+        recipients is not null && (kind != CardKind.Event
+            || timing is AbilityType.Interrupt or AbilityType.Response);
 
     // Admission has already checked the effect's targets. This marker describes
     // its choice boundary, not a future legal set: payment and intervening

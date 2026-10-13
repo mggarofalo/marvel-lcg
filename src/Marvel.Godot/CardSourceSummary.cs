@@ -9,6 +9,17 @@ internal static class CardSourceSummary
     internal static IReadOnlyList<string> Lines(BoardCardPresentation card)
     {
         if (card.Concealed || card.Persistent is not { } source) return [];
+        var lines = new List<string>(AbilityLines(card));
+        if (card.Damage > 0 || StoresDamage(source)) lines.Add($"{card.Damage} damage here");
+        foreach (BoardFieldPresentation counter in card.Counters) lines.Add($"{counter.Value} {counter.Name.ToLowerInvariant()}");
+        if (SpatialTableZones.IsExhausted(card)) lines.Add("Exhausted");
+        if (source.HasUnresolvedAbilities) lines.Add("Further abilities: inspect rules");
+        return lines;
+    }
+
+    internal static IReadOnlyList<string> AbilityLines(BoardCardPresentation card)
+    {
+        if (card.Concealed || card.Persistent is not { } source) return [];
         var lines = new List<string>();
         foreach (CardPersistentAbilityDescriptor ability in source.Abilities)
         {
@@ -17,10 +28,6 @@ internal static class CardSourceSummary
             string effects = string.Join("; ", ability.Effects.Select(Effect));
             lines.Add(trigger + (costs.Length == 0 ? "" : costs + " → ") + effects);
         }
-        if (card.Damage > 0 || StoresDamage(source)) lines.Add($"{card.Damage} damage here");
-        foreach (BoardFieldPresentation counter in card.Counters) lines.Add($"{counter.Value} {counter.Name.ToLowerInvariant()}");
-        if (SpatialTableZones.IsExhausted(card)) lines.Add("Exhausted");
-        if (source.HasUnresolvedAbilities) lines.Add("Further abilities: inspect rules");
         return lines;
     }
 

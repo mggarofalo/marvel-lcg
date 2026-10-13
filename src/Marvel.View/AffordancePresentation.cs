@@ -18,6 +18,12 @@ public sealed record AffordancePresentation(
     IReadOnlyList<string> Costs,
     string? Consequence = null)
 {
+    /// <summary>Timing of this current engine-offered ability.</summary>
+    public Marvel.Rules.Timing.AbilityType? Timing { get; init; }
+
+    /// <summary>Complete current intentions; an empty list retains explicit composition.</summary>
+    public IReadOnlyList<WindowChoice> WindowChoices { get; init; } = [];
+
     /// <summary>Readable engine-authored choice name, without changing command identity.</summary>
     public string? DisplayLabel { get; init; }
 
@@ -47,6 +53,9 @@ public sealed record AffordancePresentation(
 
     /// <summary>The engine establishes a separate target choice after costs, if the effect reaches resolution.</summary>
     public bool DeferredTargetSelection { get; init; }
+
+    /// <summary>The engine admits one current recipient as a complete explicit activation.</summary>
+    public bool DirectRecipientCommit { get; init; }
 
     /// <summary>The offered costs without flattening alternatives, components, variables, or generators.</summary>
     public IReadOnlyList<CostOption> CostOptions { get; init; } = [];

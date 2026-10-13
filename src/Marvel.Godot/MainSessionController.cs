@@ -21,7 +21,7 @@ internal sealed class MainSessionController
 
     internal async void OnDecisionSubmitted(EngineDecision decision)
     {
-        if (!main.lifecycle.CanResolve) return;
+        if (main.boardController.ResponseStaged || !main.lifecycle.CanResolve) return;
         EngineResponse current = main.CurrentGame!;
         DecisionReceiptContext? receipt = current.Prompt is { } prompt
             ? DecisionReceiptContext.From(prompt, current.World!, decision.Affordance,
@@ -49,6 +49,7 @@ internal sealed class MainSessionController
     internal async void UndoTo(int cursor)
     {
         if (main.decisions.PaymentModalOpen || !main.lifecycle.CanUndo(cursor)) return;
+        main.boardController.CancelPendingPresentation();
         await PresentOperation(main.lifecycle.UndoAsync(cursor), EngineProtocol.Undo);
     }
 
@@ -56,6 +57,7 @@ internal sealed class MainSessionController
     {
         if (!main.lifecycle.CanSynchronize) return;
         bool hadDraft = main.decisions.composer?.Selected is not null;
+        main.boardController.CancelPendingPresentation();
         await PresentOperation(main.lifecycle.SynchronizeAsync(hadDraft), EngineProtocol.Sync);
     }
 

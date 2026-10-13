@@ -34,6 +34,8 @@ internal sealed class BoardCardInteractionControls
         contextual.Bind(handler, decline, submit, cancel, selectCost, commitmentLabel);
 
     internal void RegisterContextualHost(Container host) => contextual.Register(host);
+    internal void AnchorDraft(Vector2 position, int offer) => contextual.AnchorDraft(position, offer);
+    internal void SetContextualVisible(bool visible) => contextual.SetVisible(visible);
 
     internal void Present(
         IReadOnlyDictionary<int, List<CardControl>> visible,
@@ -73,7 +75,14 @@ internal sealed class BoardCardInteractionControls
                 installedActions.Add(descriptor.CardId);
         }
         contextual.Present(composer, prompt, installedActions);
-        RestoreFocus(focused, generation);
+        RestoreFocus(focused ?? UnclaimedActionFocus(), generation);
+    }
+
+    private BoardInteractionFocusKey? UnclaimedActionFocus()
+    {
+        Button? first = focusKeys.Keys.FirstOrDefault(InteractionControl.IsUsable);
+        if (first is null || first.GetViewport().GuiGetFocusOwner() is not null) return null;
+        return focusKeys[first];
     }
 
     private void Clear()
@@ -125,6 +134,12 @@ internal sealed class BoardCardInteractionControls
             button.QueueFree();
             return false;
         }
+        if (descriptor.DirectActivation)
+        {
+            button.CustomMinimumSize = new Vector2(88, 44);
+            button.AddThemeFontSizeOverride("font_size", 16);
+        }
+        CardInteractionHitSize.Preserve(card, button);
         button.SetMeta("spatial_control_z", button.ZIndex);
         card.HideInteractionCue();
         PresentControlLayer(card, descriptor.Intent);
@@ -158,7 +173,10 @@ internal sealed class BoardCardInteractionControls
             ThemeTypeVariation = GodotThemeVariations.LegalTargetButton,
         };
         button.SetMeta("card_control_intent", descriptor.Intent.ToString());
+        button.SetMeta("table_mutation", true);
         CardSymbolButtonStyle.Apply(button);
+        if (descriptor.IsDefender) DefenderActionSymbol.Attach(button, descriptor.RequiredDefense);
+        if (descriptor.DirectActivation) button.CustomMinimumSize = new Vector2(88, 44);
 
         button.TooltipText = descriptor.Description ?? (descriptor.Intent == CardInteractionIntent.Action
             ? descriptor.Text

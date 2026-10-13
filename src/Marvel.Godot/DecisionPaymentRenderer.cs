@@ -226,6 +226,7 @@ internal sealed class DecisionPaymentRenderer
             submit.Disabled
                 ? InteractiveVisualState.Unavailable
                 : InteractiveVisualState.Danger);
+        submit.SetMeta("table_mutation", true);
         submit.Pressed += TrySubmit;
         panel.AddCommit(submit);
     }

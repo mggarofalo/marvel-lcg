@@ -61,11 +61,13 @@ internal static class GamePhases
             Discard.Card(game.world, card, MulliganTrigger, happened);
         }
 
+        ActivityBatches.Complete(happened, 0, "Discard", game.Active);
+        int drawStart = happened.Count;
         long limit = PhaseEnd.HandSize(game.world, seat, game.facts);
         while (seat.Hand.Cards.Count < limit)
         {
             int before = seat.Hand.Cards.Count;
-            Draw.Cards(game.world, game.Active, 1, MulliganTrigger, happened);
+            Draw.Resolve(game.world, game.Active, 1, MulliganTrigger, happened);
             if (seat.Hand.Cards.Count == before)
             {
                 // `rr:player-deck.4` -- a deck and a discard pile both empty.
@@ -73,6 +75,8 @@ internal static class GamePhases
                 break;
             }
         }
+
+        ActivityBatches.Complete(happened, drawStart, "Draw", game.Active);
 
         if (game.Next(game.Active) is { } player)
         {
@@ -153,6 +157,7 @@ internal static class GamePhases
         }
 
         game.Round++;
+        happened.Add(new PhaseStarted("Player") { Round = game.Round, Trigger = "WhenPlayerPhaseBegins", Verb = "Phase_Started" });
         game.finishedTurns.Clear();
         game.satisfiedForcedActions.Clear();
         game.endingPlayerPhase = false;

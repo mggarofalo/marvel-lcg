@@ -2,7 +2,7 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Keeps upright captions and source controls alongside their physical face.</summary>
+/// <summary>Keeps upright live state and local controls within the physical card's column.</summary>
 internal static class SpatialCardSidecar
 {
     internal static VBoxContainer For(CardControl card)
@@ -21,7 +21,7 @@ internal static class SpatialCardSidecar
             Name = "SpatialControls", ClipContents = true,
             FollowFocus = true,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever,
+            VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
             MouseFilter = Control.MouseFilterEnum.Pass,
         };
         var sidecar = new VBoxContainer
@@ -33,20 +33,27 @@ internal static class SpatialCardSidecar
         scroll.AddChild(sidecar);
         overlay.AddChild(scroll);
         card.AddChild(overlay);
+        sidecar.MinimumSizeChanged += () => Callable.From(() => Place(card)).CallDeferred();
         Callable.From(() => Place(card)).CallDeferred();
         return sidecar;
     }
 
     internal static void State(CardControl card, Marvel.View.BoardCardPresentation presentation)
     {
+        var state = CardLiveStateRendering.Create(presentation, Math.Min(card.Size.X, card.Size.Y) - 12, compact: true);
+        if (state.GetChildCount() == 0) { state.QueueFree(); return; }
         For(card);
-        var state = CardLiveStateRendering.Create(presentation, SpatialCardFootprint.SidecarWidth, compact: true);
         if (SpatialTableZones.IsExhausted(presentation))
         {
             Label title = CardLiveStateRendering.AddLabel(state, presentation.Title, "UprightIdentity", 11);
             state.MoveChild(title, 0);
         }
-        card.GetNode<Control>("SpatialOverlay").AddChild(state);
+        var panel = new PanelContainer { Name = "LiveStatePanel", MouseFilter = Control.MouseFilterEnum.Ignore };
+        using var style = new StyleBoxFlat { BgColor = CardFaceStyle.Ink,
+            ContentMarginLeft = 6, ContentMarginRight = 6, ContentMarginTop = 3, ContentMarginBottom = 3 };
+        panel.AddThemeStyleboxOverride("panel", style);
+        panel.AddChild(state);
+        card.GetNode<Control>("SpatialOverlay").AddChild(panel);
         state.MinimumSizeChanged += () => Callable.From(() => Place(card)).CallDeferred();
         Callable.From(() => Place(card)).CallDeferred();
     }
@@ -57,14 +64,19 @@ internal static class SpatialCardSidecar
             && card.GetNodeOrNull<ScrollContainer>("SpatialOverlay/SpatialControls") is { } scroll)
         {
             SpatialCardFootprint.PlaceSidecar(card, scroll);
-            if (card.GetNodeOrNull<VBoxContainer>("SpatialOverlay/LiveState") is { } state)
+            if (scroll.FindChild("SourceCollection", true, false) is Control)
             {
-                SpatialCardFootprint.PlaceSidecar(card, state);
+                scroll.VerticalScrollMode = ScrollContainer.ScrollMode.Disabled;
+                scroll.Size = new Vector2(scroll.Size.X, scroll.GetChild<Control>(0).GetCombinedMinimumSize().Y);
+            }
+            if (card.GetNodeOrNull<PanelContainer>("SpatialOverlay/LiveStatePanel") is { } state)
+            {
                 float height = state.GetCombinedMinimumSize().Y;
-                state.Size = new Vector2(SpatialCardFootprint.SidecarWidth, height);
-                Vector2 offset = new(0, height > 0 ? height + 4 : 0);
-                scroll.Position += offset.Rotated(-card.Rotation);
-                scroll.Size = new Vector2(scroll.Size.X, Math.Max(0, scroll.Size.Y - offset.Y));
+                Rect2 bounds = SpatialCardFootprint.Face(card);
+                state.Rotation = -card.Rotation;
+                state.Position = ((Control)state.GetParent()).GetGlobalTransform().AffineInverse()
+                    * new Vector2(bounds.Position.X + 3, bounds.End.Y - height * card.Scale.Y - 3);
+                state.Size = new Vector2(bounds.Size.X / card.Scale.X - 6, height);
             }
         }
     }

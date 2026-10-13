@@ -26,6 +26,12 @@ internal sealed class BoardSourceTargetInteraction
         && offer.CardAnchorId == source
         && (offer.TargetRequest is { Legal.Count: > 0 } || DefersTarget(offer)));
 
+    internal IReadOnlyList<int> Destinations(int source) =>
+        [.. offers.Where(offer => offer.Illegal is null && offer.CardAnchorId == source)
+            .SelectMany(offer => (offer.TargetRequest?.Legal ?? [])
+                .Where(target => CanCompose(offer.Id, target)))
+            .Distinct()];
+
     private static bool DefersTarget(AffordancePresentation offer) =>
         offer.DeferredTargetSelection && offer.TargetRequest is null && !offer.PlaysCard;
 

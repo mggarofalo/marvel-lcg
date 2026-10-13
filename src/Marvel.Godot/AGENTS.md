@@ -47,8 +47,11 @@ If an offer explicitly identifies targeting as deferred, the gesture may open
 its source-action composition with the destination unselected; explain that
 target selection is still ahead. Do not promise that this destination will
 become legal or silently answer a future prompt. A rejected destination in a
-current target request changes nothing; it must not start the source action
-anyway. Missing target data does not establish deferred targeting.
+current target request changes nothing. For a fresh hand play, a drop anywhere
+in the player area may instead open untargeted composition, including over an
+occupied object that is not an authorized attachment target. This generic play
+entry does not claim that object is a target. Missing target data does not
+establish deferred targeting.
 
 Match exact offer identities and target roles. Handle all three outcomes:
 
@@ -127,7 +130,7 @@ from card text.
 During mulligan, accept hand cards at the discard pile or a clearly labelled
 temporary discard-selection area. Stage the selection without performing a
 discard; allow cards to be moved back. Keep a visible overlay with the purpose,
-selected count and "Replace N cards" or "Keep hand" completion control. State
+selected count and "Redraw N" or "Keep hand" completion control. State
 that replacement follows confirmation, and identify whose mulligan is pending.
 Use the same reversible staging language for other multi-object draft choices.
 
@@ -183,8 +186,15 @@ Temporary source/target/payment cues must be distinct and must not imply
 relationships through unrelated cards. Do not draw ambient ownership lines.
 
 Keep one player tableau expanded with meaningful public summaries for others.
-Use bounded pile/region drawers for dense or unfamiliar areas, preserving hand
-and decision access. Test readability and hit targets at supported scales;
+Expose all minions, allies, side schemes, upgrades and supports without paging
+or dropdown selectors. Exposed stacks support direct hover/focus inspection;
+continuous scrolling has a visible overflow cue. Maximize simultaneous source
+visibility while preserving the full hand. Use bounded expansion for dense
+areas, preserving hand and decision access. Temporary causal references occupy
+a reserved seam and never become another physical card in the tableau.
+History is a vertical chronology with expandable details. Complete Choices
+belongs beside the current decision. Tough, stunned and confused use distinct
+shape/letter badges, separate from a defender shield. Test readability and hit targets at supported scales;
 being technically inside the viewport is insufficient. Provide non-color cues,
 visible keyboard focus and reduced-motion behavior.
 

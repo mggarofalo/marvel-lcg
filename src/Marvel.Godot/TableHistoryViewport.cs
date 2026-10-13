@@ -8,20 +8,23 @@ internal static class TableHistoryViewport
     internal static void Configure(Main main, bool payment)
     {
         Bind(main);
-        float preferredHeight = payment ? 100 : 300;
-        main.eventLog.CustomMinimumSize = new Vector2(0, preferredHeight);
-        main.eventLog.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
+        float preferredHeight = payment ? 180 : 440;
+        Viewport(main).CustomMinimumSize = new Vector2(0, preferredHeight);
+        Viewport(main).SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
         // Wrapped sidebar copy has its final height after container layout.
         Callable.From(() => Fit(main)).CallDeferred();
     }
 
+    private static Control Viewport(Main main) =>
+        main.eventLog.GetParent().GetNodeOrNull<Control>("HistoryOccurrences") ?? main.eventLog;
+
     private static void Bind(Main main)
     {
-        if (main.eventLog.HasMeta("history_viewport_bound")) return;
-        main.eventLog.SetMeta("history_viewport_bound", true);
-        main.eventLog.ItemRectChanged += () => Fit(main);
+        if (Viewport(main).HasMeta("history_viewport_bound")) return;
+        Viewport(main).SetMeta("history_viewport_bound", true);
+        Viewport(main).ItemRectChanged += () => Fit(main);
         // Sibling copy can move the log without changing its own local rectangle.
-        if (main.eventLog.GetParent() is Container history)
+        if (Viewport(main).GetParent() is Container history)
             history.SortChildren += () => Callable.From(() => Fit(main)).CallDeferred();
     }
 
@@ -31,11 +34,11 @@ internal static class TableHistoryViewport
             || !TableHistoryDrawer.IsExpanded(main)
             || !DesktopTabletop.Uses(main.GetViewportRect().Size))
             return;
-        float preferredHeight = CardPaymentWorkspaceLayout.Active(main) ? 100 : 300;
+        float minimumHeight = CardPaymentWorkspaceLayout.Active(main) ? 100 : 180;
         // The inset is a layout choice, leaving the scrollbar clear of the window edge.
-        float available = main.GetViewportRect().End.Y - main.eventLog.GlobalPosition.Y - 16;
-        var minimum = new Vector2(0, Math.Clamp(available, 100, preferredHeight));
-        if (!main.eventLog.CustomMinimumSize.IsEqualApprox(minimum))
-            main.eventLog.CustomMinimumSize = minimum;
+        float available = main.GetViewportRect().End.Y - Viewport(main).GlobalPosition.Y - 16;
+        var minimum = new Vector2(0, Math.Max(minimumHeight, available));
+        if (!Viewport(main).CustomMinimumSize.IsEqualApprox(minimum))
+            Viewport(main).CustomMinimumSize = minimum;
     }
 }

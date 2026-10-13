@@ -24,11 +24,12 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 & "$PSScriptRoot/godot-smoke-tableau.ps1" -GodotBin $GodotBin
 
 function Invoke-LocalSmoke {
-    param([string]$Script = "res://smoke/local_game_smoke.gd")
+    param([string]$Script = "res://smoke/local_game_smoke.gd", [string]$Marker = "")
     $output = & $GodotBin --headless --audio-driver Dummy --path "$repoRoot/src/Marvel.Godot" `
         --script $Script 2>&1
     $output | Write-Output
-    if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output)) {
+    if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output) -or
+        ($Marker -and -not (($output -join "`n").Contains($Marker)))) {
         throw "Godot local smoke reported an unexpected failure diagnostic."
     }
 }
@@ -67,6 +68,13 @@ $env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke "res://smoke/ability_choice_smoke.gd"
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
+foreach ($windowScale in @("100", "150")) {
+    $env:MARVEL_UI_SCALE = $windowScale
+    foreach ($windowScript in @("ability_window", "ability_window_pass", "forced_ability", "ability_window_long_cause_layout", "staged_response")) {
+        Invoke-LocalSmoke "res://smoke/${windowScript}_smoke.gd"
+    }
+}
+$env:MARVEL_UI_SCALE = "100"
 Invoke-LocalSmoke "res://smoke/deferred_event_smoke.gd"
 $env:MARVEL_UI_SCALE = "150"
 $env:MARVEL_SMOKE_MOTION = "disabled"
@@ -74,6 +82,15 @@ Invoke-LocalSmoke "res://smoke/deferred_event_smoke.gd"
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
 Invoke-LocalSmoke "res://smoke/repeated_commit_smoke.gd"
+Invoke-LocalSmoke "res://smoke/hand_intent_smoke.gd"
+Invoke-LocalSmoke "res://smoke/discard_preview_smoke.gd"
+$env:MARVEL_RECIPIENT_FACE = "01091"
+$env:MARVEL_RECIPIENT_SEED = "1"
+try { Invoke-LocalSmoke "res://smoke/recipient_commitment_smoke.gd" }
+finally { Remove-Item Env:MARVEL_RECIPIENT_FACE,Env:MARVEL_RECIPIENT_SEED }
+$env:MARVEL_SMOKE_TWO_PLAYER = "true"
+Invoke-LocalSmoke "res://smoke/layout_continuity_smoke.gd"
+Remove-Item Env:MARVEL_SMOKE_TWO_PLAYER
 Invoke-LocalSmoke "res://smoke/resource_finalizer_smoke.gd"
 foreach ($scale in @("50", "80", "100", "150")) {
     $env:MARVEL_UI_SCALE = $scale
@@ -85,12 +102,30 @@ foreach ($scale in @("50", "80", "100", "150")) {
 $env:MARVEL_UI_SCALE = "150"
 $env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke "res://smoke/repeated_commit_smoke.gd"
+Invoke-LocalSmoke "res://smoke/hand_intent_smoke.gd"
+Invoke-LocalSmoke "res://smoke/discard_preview_smoke.gd"
+$env:MARVEL_SMOKE_TWO_PLAYER = "true"
+$env:MARVEL_RECIPIENT_FACE = "01092"
+$env:MARVEL_RECIPIENT_SEED = "9"
+try { Invoke-LocalSmoke "res://smoke/recipient_commitment_smoke.gd" }
+finally { Remove-Item Env:MARVEL_RECIPIENT_FACE,Env:MARVEL_RECIPIENT_SEED }
+Invoke-LocalSmoke "res://smoke/layout_continuity_smoke.gd"
+Remove-Item Env:MARVEL_SMOKE_TWO_PLAYER
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_MOTION = "enabled"
 Invoke-LocalSmoke "res://smoke/result_playback_smoke.gd"
+Invoke-LocalSmoke "res://smoke/event_activity_smoke.gd"
+Invoke-LocalSmoke "res://smoke/attack_activity_lifecycle_smoke.gd" "ATTACK_ACTIVITY_LIFECYCLE_OK"
+Invoke-LocalSmoke "res://smoke/timeline_navigation_smoke.gd"
 $env:MARVEL_UI_SCALE = "150"
 $env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke "res://smoke/result_playback_smoke.gd"
+Invoke-LocalSmoke "res://smoke/event_activity_smoke.gd"
+$env:MARVEL_SMOKE_MOTION = "enabled"
+Invoke-LocalSmoke "res://smoke/attack_activity_lifecycle_smoke.gd" "ATTACK_ACTIVITY_LIFECYCLE_OK"
+$env:MARVEL_SMOKE_MOTION = "disabled"
+Invoke-LocalSmoke "res://smoke/attack_activity_lifecycle_smoke.gd" "ATTACK_ACTIVITY_LIFECYCLE_OK"
+Invoke-LocalSmoke "res://smoke/timeline_navigation_smoke.gd"
 foreach ($viewport in $viewports) {
     foreach ($scale in $scales) {
         $env:MARVEL_UI_SCALE = $scale

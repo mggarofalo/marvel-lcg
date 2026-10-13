@@ -139,7 +139,7 @@ func _hover_preview_pins_on_click(card: Control, inspector: Control) -> bool:
 		return false
 	await process_frame
 	var backdrop := inspector.get_node("Backdrop") as Control
-	if not inspector.visible or backdrop.mouse_filter != Control.MOUSE_FILTER_STOP:
+	if not inspector.visible or backdrop.visible or not (inspector.get_node("Frame/Stack/Header/Close") as Button).visible:
 		_fail("clicking the card behind its hover preview did not pin the inspector")
 		return false
 	var cancel := InputEventAction.new()
@@ -191,7 +191,7 @@ func _show_action_card_preview(action_card: Button) -> Control:
 	await process_frame
 	var frame := inspector.get_node("Frame") as PanelContainer
 	var visible := frame.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
-	if visible.size != frame.size:
+	if not visible.size.is_equal_approx(frame.get_global_rect().size):
 		_fail("the action-card preview does not fit the visible viewport")
 		return null
 	var backdrop := inspector.get_node("Backdrop") as Control
@@ -278,8 +278,8 @@ func _pinned_inspector_mouse_filter_is_safe(hand_card: Control) -> bool:
 		_fail("the pointer probe could not open a pinned card inspector")
 		return false
 	var backdrop := inspector.get_node("Backdrop") as Control
-	if backdrop.mouse_filter != Control.MOUSE_FILTER_STOP:
-		_fail("the pinned inspector backdrop is not modal")
+	if backdrop.visible or backdrop.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		_fail("the pinned inspector unexpectedly obscures the full table")
 		return false
 	var cancel := InputEventAction.new()
 	cancel.action = &"ui_cancel"
@@ -309,8 +309,7 @@ func _inspector_frame_is_safe(inspector: Control) -> bool:
 		_fail("the card inspector did not render full authorized card data")
 		return false
 	var frame := inspector.get_node("Frame") as PanelContainer
-	if frame.get_global_rect().intersection(
-			Rect2(Vector2.ZERO, _viewport_size())).size != frame.size:
+	if not Rect2(Vector2.ZERO, _viewport_size()).encloses(frame.get_global_rect()):
 		_fail("the pointer-aware card inspector left the visible viewport")
 		return false
 	var art := face.find_child("IllustrationRegion", true, false)

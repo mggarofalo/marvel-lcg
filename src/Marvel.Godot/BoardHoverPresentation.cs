@@ -7,7 +7,6 @@ internal static class BoardHoverPresentation
 {
     internal static void Raise(Control control, int restingZ)
     {
-        control.MoveToFront();
         SetControlLayer(control, 400);
         control.ZIndex = Math.Max(140, restingZ + 40);
     }

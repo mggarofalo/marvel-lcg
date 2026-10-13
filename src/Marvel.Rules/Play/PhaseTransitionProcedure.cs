@@ -12,6 +12,7 @@ internal static class PhaseTransitionProcedure
     internal static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        int start = events.Count;
         switch (step.What)
         {
             case Steps.PassFirstPlayerToken:
@@ -33,6 +34,8 @@ internal static class PhaseTransitionProcedure
                 throw new RulesNotImplementedException(
                     $"the phase-transition procedure has no step '{step.What}'");
         }
+        for (int index = start; index < events.Count; index++)
+            events[index] = events[index] with { Round = step.Round };
         return null;
     }
 

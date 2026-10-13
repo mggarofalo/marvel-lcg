@@ -27,13 +27,35 @@ public sealed class SourceTableauTests
         foreach (string id in new[] { "01035", "01036", "01037", "01038", "01038", "01039", "01039", "01081", "01093", "01093", "01093" })
             world.CreateCard(id, upgrades);
         foreach (string id in new[] { "01033", "01034", "01080", "01091", "01092" }) world.CreateCard(id, supports);
-        world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
+        Card rhino = world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
+        Card webbed = world.CreateCard("01009", world.AreaOf(DeckType.UpgradesArea,
+            rhino.Area.PlayArea, cardOwner: 0, host: rhino.ObjectId));
         world.CreateCard("01097b", world.AreaOf(DeckType.MainSchemesArea));
-        foreach (string id in new[] { "01031", "01032", "01088", "01089", "01090" }) world.CreateCard(id, seat.Hand);
+        if (System.Environment.GetEnvironmentVariable("MARVEL_TABLEAU_DENSE_ACTORS") == "1")
+        {
+            foreach (string id in new[] { "01066", "01067", "01083" })
+                world.CreateCard(id, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            for (int index = 0; index < 5; index++)
+            {
+                world.CreateCard("01103", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+                world.CreateCard("01107", world.AreaOf(DeckType.SideSchemesArea));
+            }
+        }
+        else
+        {
+            foreach (string id in new[] { "01066", "01067" })
+                world.CreateCard(id, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            world.CreateCard("01107", world.AreaOf(DeckType.SideSchemesArea));
+        }
+        foreach (string id in new[] { "01031", "01032", "01088", "01089", "01090", "01031", "01032" }) world.CreateCard(id, seat.Hand);
         world.Cards.First(card => card.FaceId == "01039").Exhaust();
         BoardAreaPresentation[] areas = [.. BoardPresentation.From(WorldProjection.For(world, null, [],
             new RestrictedVisibilityPolicy(0).Authorize(null, world.Players)).World).Areas];
         BoardCardPresentation[] sources = CardSourceGroups.Controlled(areas, 0);
+        BoardCardPresentation webbedPresentation = Assert.Single(CardSourceGroups.Attached(areas, rhino.ObjectId));
+        Assert.Equal(webbed.ObjectId, webbedPresentation.TargetId);
+        Assert.Equal(rhino.ObjectId, webbedPresentation.Persistent!.Relation.HostId);
+        Assert.DoesNotContain(sources, card => card.TargetId == webbed.ObjectId);
         Assert.Equal(16, sources.Length);
         Assert.Equal(2, sources.Count(card => card.Title == "Powered Gauntlets"));
         Assert.Contains(sources, card => card.Title == "Pepper Potts");
@@ -79,7 +101,7 @@ public sealed class SourceTableauTests
             SpatialCardPlacement placement = table.HandCard(index, 6, handSize.X);
             var pose = new Transform2D(placement.Rotation,
                 placement.Position + handSize / 2 - handSize.Rotated(placement.Rotation) / 2);
-            Assert.False(SpatialCardFootprint.Bounds(pose, handSize).Intersects(table.SourceTableau));
+            Assert.False(SpatialCardFootprint.Bounds(pose, handSize).Grow(6).Intersects(table.SourceTableau));
         }
     }
 
@@ -89,15 +111,15 @@ public sealed class SourceTableauTests
     public void DenseDesktopSourceViewportPreservesHandCharactersAndDecision(int percent)
     {
         var table = new AstraTableGeometry(1670, 962, percent >= 130, PhysicalCardSize: new Vector2(240, 240), HasSourceTableau: true);
-        var layout = new SourceTableauLayout(table.SourceTableau.Size.X - 12);
+        var layout = new SourceTableauLayout(table.SourceTableau.Size.X, table.SourceTableau.Size.Y, 16);
         Assert.Equal(4, layout.Columns);
         for (int index = 0; index < 16; index++)
         {
-            var tile = new Rect2(table.SourceTableau.Position + new Vector2(0, 24) + layout.Position(index),
+            var tile = new Rect2(table.SourceTableau.Position + layout.Position(index),
                 new Vector2(layout.TileWidth, SourceTableauLayout.TileHeight));
             Assert.True(tile.Position.X >= table.SourceTableau.Position.X);
             Assert.True(tile.End.X <= table.SourceTableau.End.X);
-            if (tile.End.Y > table.SourceTableau.End.Y) continue;
+            Assert.True(tile.End.Y <= table.SourceTableau.End.Y);
             Assert.False(tile.Intersects(table.Hand));
             Assert.False(tile.Intersects(table.Identity));
             Assert.False(tile.Intersects(table.Allies));
@@ -110,7 +132,7 @@ public sealed class SourceTableauTests
     {
         var table = new AstraTableGeometry(1670, 962, true,
             PhysicalCardSize: new Vector2(240, 240), HasSourceTableau: true) { HasAllies = true };
-        Vector2 ally = SpatialCardFootprint.OccupiedSize(new Vector2(240, 240));
+        Vector2 ally = new(172, 240);
         Assert.True(table.Allies.Size.X >= ally.X);
         Assert.False(new Rect2(table.Allies.Position, ally).Intersects(table.SourceTableau));
         Assert.False(table.Hand.Intersects(table.SourceTableau));

@@ -99,7 +99,7 @@ internal static class ActionHistoryResultPresentation
             : world.Players.FirstOrDefault(player => player.Seat == moved.From.Owner)?.Name
                 ?? $"Player {moved.From.Owner + 1}";
         string cards = HistoryCards(moved, world);
-        return string.Equals(moved.From.Zone, "HandsArea", StringComparison.Ordinal)
+        return moved.From.Zone is "HandsArea" or "RevealingArea"
             ? $"{actor} discarded {cards}."
             : $"{actor} discarded {cards} from {HistoryArea(moved.From, world)}.";
     }

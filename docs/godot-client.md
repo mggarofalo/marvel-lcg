@@ -30,21 +30,97 @@ form exposes the second decision. This is a reproducible gameplay check, not
 product acceptance: the owner affirms the tableau and decision area after
 trying the working build.
 
+### Table interactions
+
+Minions and allies use continuous collections; side schemes expose landscape
+faces and named headers in a scrollable stack. Upgrades and supports share
+compact named source strips, including controlled upgrades attached to another
+character. Hover or keyboard focus previews a card; pinning expands bounded
+detail. Related faces and modifier sources are directly visible choices.
+
+Drag the title band of an upgrade or support into an empty grid slot or swap it
+with an occupied slot. The destination outline previews the placement, including
+duplicate copies. Escape or dropping outside the grid restores the order.
+For keyboard use, focus its title grip, press Space, move with arrows, then Enter to
+place or Escape to cancel. Ordering follows physical card identities locally
+through board updates and resets with the session. Column count depends on the
+available area, so adding cards preserves existing slot coordinates at the same
+window size. Empty slots remain available for arranging cards.
+Compact headers use distinct support/upgrade and ready/exhausted symbols, with
+countable counter pips and an explicit numeric treatment for large counts.
+
+Drag an opening-hand card to the discard to stage it physically, or drag it back
+to keep it. Space is the keyboard equivalent. Redraw commits the staged set.
+Kept cards close the gaps while redraw cards are staged. Reordering the kept
+hand preserves the staged cards' local return slots. Hovering a nonempty
+discard previews its visible top card.
+Dragging within the hand previews a local insertion order without changing game
+state. Playing a hand card opens the current engine-offered composition;
+authorized attachment targets can be outside the player area.
+
+History is a vertical account with expandable details. Complete Choices is next
+to the current decision. Temporary causal references have a reserved location
+and do not create another physical action target. Status cards use shape and
+letter badges: octagonal T for tough, jagged S for stunned, ring C for confused;
+defense uses a separate shield.
+
+Accepted activity uses native effect glyphs, source/target impulses and local
+quantity or status marks on visible affected objects. A zoomable chronology in
+the table seam shares occurrences with History's expandable account. Ordinary
+actions group costs and consequences beneath their intention; phase-wide ready,
+draw and discard batches retain their semantic boundaries.
+
+With motion enabled, short consequence playback retains the previously
+authorized table and blocks table actions before exposing the new board and
+decision. It does not synthesize intermediate game states or answer prompts.
+Reduced motion presents the accepted snapshot immediately. Sync and Undo cancel
+superseded playback. Starting a new draft clears transient object emphasis.
+The active attack has a separate source-to-target cue from initiation through
+interrupts, defense, boosts, damage and the final resolution window. Drafting,
+inspection and reduced motion preserve it; the accepted defender becomes its
+target. The cue clears when the attack's final consequences finish presenting,
+or immediately when a synchronized snapshot has no active attack.
+
+Interrupts and responses use a contextual modal with engine-offered effect and
+recipient choices. Optional windows include Pass; choosing a complete effect
+commits it directly. Forced ability notifications require acknowledgement, with
+required decisions kept in the same surface. Complex costs and selections still
+use the prompt-bound composer; the client never answers a future prompt itself.
+
+The MARVEL-492 SVG direction is approved. Acceptance of this implementation
+remains the owner's affirmation of the working build.
+
 ### Card rendering
 
-The Compatibility renderer draws text at the active canvas resolution. Card art
-and icon textures carry mipmaps and use linear mipmap filtering when reduced;
-resource icons use Lanczos resampling before their mipmaps are generated.
-Transparent edge colors are extended before filtering to avoid dark fringes.
+The Compatibility renderer uses `canvas_items`, so the canvas is rendered at the
+window resolution. Fitted collection cards allocate their actual face dimensions
+and integer font sizes instead of shrinking a prebuilt control. Theme roots enable
+scale-aware font oversampling for ancestor/DPI transforms. Pinned inspection
+reveals at its final size, without scaling already-shaped text during animation.
+
+Canonical SVG symbols use `DpiTexture`: their vector source is rasterized at the
+requested icon size and rerasterized for canvas oversampling. Resource rows are
+composed as vector geometry before rasterization. Card illustrations remain
+filtered image textures with mipmaps; they are not fonts or vector symbols.
+Transparent edge colors are extended to avoid dark fringes.
 B1 polygons have a one-pixel transparent coverage fringe, including the compact
-source rails. This smooths their diagonals without a full-screen blur or a change
+source rails, rotated outer frames and interaction outlines. Relationship
+connectors use explicit coverage on both sides of each segment. This smooths their diagonals without a full-screen blur or a change
 of renderer.
 
 The rendered redesign gate samples pixels along an isolated production card
-edge. It requires intermediate coverage between the ink and paper, rather than
+edge, a rotated production frame, and a production connector. It requires intermediate coverage between the ink and paper, rather than
 trusting a renderer setting. Removing the fringe fails this check. Native card
 layout and interaction checks run separately; the pixel check requires a real
 rendering device (Xvfb on Linux), not the headless dummy renderer.
+
+These choices follow Godot's [multiple-resolution guidance](https://docs.godotengine.org/en/stable/tutorials/rendering/multiple_resolutions.html),
+[DPI texture contract](https://docs.godotengine.org/en/stable/classes/class_dpitexture.html),
+and [font guidance](https://docs.godotengine.org/en/stable/tutorials/ui/gui_using_fonts.html).
+Native-size hinted raster fonts suit the small table copy; MSDF loses hinting and
+can be less clear at small sizes. Geometry antialiasing is a separate concern:
+[2D MSAA is unavailable in Compatibility](https://docs.godotengine.org/en/stable/tutorials/2d/2d_antialiasing.html),
+so the renderer retains explicit edge coverage for rotated card frames and lines.
 
 ### Visual Studio Code
 

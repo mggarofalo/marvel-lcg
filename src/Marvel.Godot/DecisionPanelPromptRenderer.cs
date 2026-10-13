@@ -9,6 +9,17 @@ namespace Marvel.Godot;
 /// <summary>Builds the current prompt's layout and affordance controls.</summary>
 internal static class DecisionPanelPromptRenderer
 {
+    internal static void RenderEditor(DecisionPanel panel, DecisionComposer composer, PromptPresentation prompt)
+    {
+        if (CardPaymentPresentation.UsesModal(composer, panel.submitting)) panel.OpenPayment(prompt);
+        CreateLayout(panel, composer, prompt);
+        if (!panel.PaymentModalOpen && !panel.AbilityWindowOpen)
+            AddAffordances(panel, prompt, panel.GetRenderGeneration());
+        DecisionPanelSurface.AddSelectedDraft(panel);
+        if (panel.PaymentModal is { } payment) payment.AddCancel();
+        else DecisionPanelSurface.AddDecline(panel);
+    }
+
     internal static void CreateLayout(
         DecisionPanel panel, DecisionComposer composer, PromptPresentation prompt)
     {

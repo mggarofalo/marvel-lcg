@@ -23,7 +23,13 @@ internal sealed class BoardHandPlayInteraction(DecisionComposer composer,
     private Affordance? EnginePlay(int id) => composer.Prompt.Affordances
         .SingleOrDefault(offer => offer.Id == id && offer.IsLegal && offer.PlaysCard);
 
-    private static bool AcceptsDestination(Affordance offer, int? destination, bool onPlayerLane) =>
-        destination is null ? onPlayerLane
-            : offer.DeferredTargetSelection && offer.Targets is null;
+    private bool AcceptsDestination(Affordance offer, int? destination, bool onPlayerLane)
+    {
+        // A fresh play gesture expresses initiation, not an assertion that the
+        // object underneath is a legal recipient. An existing target draft is
+        // different: an invalid destination must preserve its selections.
+        if (composer.Selected?.Targets is not null)
+            return false;
+        return onPlayerLane || destination is not null || offer.PlaysCard;
+    }
 }

@@ -43,11 +43,7 @@ func _payment_modal_is_safe() -> bool:
 	if "Discard cards from hand" not in copy or "Resource abilities" not in copy:
 		_fail("payment does not explain its sources and commitment")
 		return false
-	var played := modal.find_child("InspectPayment*", true, false) as Button
-	var table := main.find_child("AstraTableSurface", true, false) as Control
-	if played == null or table == null or modal.get_global_rect().intersects(table.get_global_rect()):
-		_fail("payment obscures the table or omits inspection of the played card")
-		return false
+	if not _payment_table_layout_is_safe(modal): return false
 	var overlay := main.find_child("RelationshipOverlay", true, false)
 	if overlay != null and overlay.get_child_count() > 0:
 		_fail("payment left relationship connectors on the table")
@@ -58,6 +54,16 @@ func _payment_modal_is_safe() -> bool:
 		return false
 	if not await _payment_inspection_preserves_draft(): return false
 	return await _capture_checkpoint("card-payment-workspace")
+
+
+func _payment_table_layout_is_safe(modal: Control) -> bool:
+	var played := modal.find_child("PaymentCardPreview", true, false) as Control
+	var table := main.find_child("AstraTableSurface", true, false) as Control
+	if played == null or table == null or modal.get_global_rect().intersects(table.get_global_rect()) \
+			or played.get_global_rect().end.x > modal.get_global_rect().position.x:
+		_fail("payment preview layout: played=%s modal=%s table=%s" % [played.get_global_rect() if played else "missing", modal.get_global_rect(), table.get_global_rect() if table else "missing"])
+		return false
+	return true
 
 
 func _payment_choices_are_comparable(modal: Control) -> bool:
@@ -174,34 +180,23 @@ func _payment_source_stays_under_pointer(resource: Button) -> bool:
 	return true
 
 
-func _payment_inspect_label_fits(inspect: Button) -> bool:
-	var font := inspect.get_theme_font("font")
-	var text_width := font.get_string_size(inspect.text, HORIZONTAL_ALIGNMENT_LEFT, -1,
-		inspect.get_theme_font_size("font_size")).x
-	var padding := inspect.get_theme_stylebox("normal").get_minimum_size().x
-	if inspect.size.x + 1.0 < text_width + padding:
-		_fail("the payment Inspect label cannot be read on one line")
-		return false
-	return true
-
-
 func _inspect_payment_source_and_return(resource_name: String) -> bool:
-	var inspect_name := "InspectPayment%s" % str(resource_name).trim_prefix("Resource")
-	var inspect := _payment_button(inspect_name)
-	if inspect == null or not _payment_inspect_label_fits(inspect): return false
-	if not await _keyboard_activate(inspect): return false
-	var inspector := main.get_node("CardInspector") as Control
-	if not await _wait_for(func() -> bool: return inspector.visible):
-		_fail("a payment source cannot be inspected without discarding it")
+	var resource := _payment_button(resource_name)
+	if resource == null: return false
+	resource.grab_focus()
+	await process_frame
+	var preview := _payment_modal().find_child("PaymentCardPreview", true, false) as Control
+	if preview == null or int(preview.get_meta("previewed_card_anchor", -1)) != int(resource_name.trim_prefix("Resource")):
+		_fail("payment focus did not preview the exact source")
 		return false
-	if int(inspector.get_meta("inspected_card_anchor", -1)) != int(str(resource_name).trim_prefix("Resource")):
-		_fail("payment inspection opened a different physical card")
+	if preview.get_global_rect().end.x > _payment_modal().get_global_rect().position.x:
+		_fail("payment source preview covers payment choices")
 		return false
-	var close := inspector.get_node("Frame/Stack/Header/Close") as Button
-	if not await _pointer_activate(close): return false
-	if not await _wait_for(func() -> bool:
-		return not inspector.visible and render_viewport.gui_get_focus_owner() == _payment_button(inspect_name)):
-		_fail("inspection did not restore the same payment source focus: visible=%s focus=%s expected=%s" % [inspector.visible, render_viewport.gui_get_focus_owner(), _payment_button(inspect_name)])
+	var toggle := preview.find_child("TogglePlayedCardPreview", true, false) as Button
+	toggle.grab_focus()
+	await process_frame
+	if int(preview.get_meta("previewed_card_anchor", -1)) == int(resource_name.trim_prefix("Resource")):
+		_fail("played card preview did not return after leaving the payment source")
 		return false
 	return true
 
@@ -217,7 +212,7 @@ func _payment_history_preserves_draft(resource_name: String, revision: String) -
 		_fail("history obscured commitment or changed the unpaid payment")
 		return false
 	history = main.find_child("ToggleHistory", true, false) as Button
-	if history == null or history.text != "Collapse history" or not await _pointer_activate(history):
+	if history == null or history.text != ">>" or not await _pointer_activate(history):
 		_fail("history could not close while retaining the payment")
 		return false
 	return true
@@ -274,3 +269,11 @@ func _close_payment_pile(popup: PopupPanel) -> bool:
 		_fail("the closed pile inspector retained its owned theme")
 		return false
 	return true
+
+
+func _close_settled_payment_inspector(inspector: Control) -> bool:
+	var frame := inspector.get_node("Frame") as Control
+	if not await _wait_for(func() -> bool: return is_equal_approx(frame.modulate.a, 1.0)):
+		_fail("payment inspector expansion did not settle")
+		return false
+	return await _pointer_activate(inspector.get_node("Frame/Stack/Header/Close") as Button)

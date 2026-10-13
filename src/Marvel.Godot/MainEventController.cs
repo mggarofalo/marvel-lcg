@@ -12,17 +12,24 @@ namespace Marvel.Godot;
 internal sealed class MainEventController : IDisposable
 {
     private readonly Main main;
+    private readonly HistoryAccountController history;
     private readonly MainEventMotionController motion;
     private readonly MainResolutionStageController resolutionStage;
+    private readonly EventTimelineController timeline;
 
     internal MainEventController(Main main)
     {
         this.main = main;
+
         motion = new MainEventMotionController(main);
         resolutionStage = new MainResolutionStageController(main);
+        timeline = new EventTimelineController(main);
+        history = new HistoryAccountController(main, timeline);
     }
     internal void RenderPromptSummary(Prompt? prompt, WorldDescriptor world)
     {
+        if (!main.boardController.ResponseStaged)
+            PresentAttack(AttackActivityPresentation.From(world.ActiveAttack));
         if (prompt is null)
         {
             resolutionStage.Clear();
@@ -114,6 +121,7 @@ internal sealed class MainEventController : IDisposable
 
     internal void DismissLastResult()
     {
+        motion.Skip();
         main.lastResultGeneration++;
         main.lastResultExpanded = false;
         main.lastResult.Visible = false;
@@ -167,45 +175,22 @@ internal sealed class MainEventController : IDisposable
             : GodotThemeVariations.Caption;
     }
 
-    internal void RenderEvents()
-    {
-        IReadOnlyList<HistoryEntryDescriptor> actions =
-            main.CurrentGame?.History?.Entries ?? [];
-        if (actions.Count > 0 || main.CurrentGame?.History?.ActionOpen == true)
-        {
-            RenderActionHistory(actions);
-            return;
-        }
-        if (main.events.Entries.Count == 0)
-        {
-            main.eventLog.Text = "No events yet.";
-            return;
-        }
-        RenderEventChronology();
-    }
+    internal event Action? PlaybackSettled
+    { add => motion.Settled += value; remove => motion.Settled -= value; }
 
-    private void RenderActionHistory(IReadOnlyList<HistoryEntryDescriptor> actions)
-    {
-        string accent = ClientTheme.ToGodot(VisualSystem.Palette.Accent).ToHtml(false);
-        IReadOnlyList<int> undo = main.CurrentGame!.History!.Undo;
-        main.eventLog.Text = EventLogFormatter.FormatActions(actions, undo, accent);
-        if (main.events.Entries.Count > 0)
-        {
-            main.eventLog.Text += EventLogFormatter.FormatChronologySection(
-                main.events.Entries, accent);
-        }
-        main.eventLog.ScrollToLine(main.eventLog.GetLineCount());
-    }
+    internal void RenderEvents() => history.Render();
 
-    private void RenderEventChronology()
-    {
-        string accent = ClientTheme.ToGodot(VisualSystem.Palette.Accent).ToHtml(false);
-        main.eventLog.Text = EventLogFormatter.FormatChronology(main.events.Entries, accent);
-        main.eventLog.ScrollToLine(main.eventLog.GetLineCount());
-    }
+    internal void RecordTimeline(EngineResponse response, IReadOnlyList<EventPresentation> entries, bool reset)
+        { timeline.Record(response, entries, reset); history.Render(); }
+
+    internal void FitTimeline() => timeline.Fit();
+    internal void ClearTimeline() => timeline.Clear();
+    internal void PresentTimelineBeat(EventActivitySequence sequence) => timeline.PresentBeat(sequence);
 
     internal void PresentEvents(IReadOnlyList<EventPresentation> presented)
         => motion.Present(presented);
+
+    internal void PresentAttack(EventPresentation? attack) => motion.PresentAttack(attack);
 
     internal void BeginEventCue(EventPresentation entry, int generation)
         => motion.BeginCue(entry, generation);
@@ -234,7 +219,7 @@ internal sealed class MainEventController : IDisposable
         main.decisions.PresentOperationalNotice(progress);
         main.title.Text = progress.Title;
         main.description.Text = progress.Description;
-        main.status.Text = progress.Status;
+        main.status.Text = main.boardController.ResponseStaged ? "RESOLVING" : progress.Status;
         bool danger = progress.Kind is GameProgressKind.VillainWins
             or GameProgressKind.PlayersLose
             or GameProgressKind.DecisionRejected
@@ -251,7 +236,7 @@ internal sealed class MainEventController : IDisposable
         main.status.ThemeTypeVariation = danger
             ? GodotThemeVariations.DangerText
             : GodotThemeVariations.StatusText;
-        main.decisions.SetSubmitting(progress.LocksDecisions);
+        main.decisions.SetSubmitting(progress.LocksDecisions || main.boardController.ResponseStaged);
         TableSidebarContent.RefreshProgress(main);
     }
 
@@ -261,6 +246,10 @@ internal sealed class MainEventController : IDisposable
         HistoryUndoControl.Refresh(main);
     }
 
-    public void Dispose() => motion.Dispose();
+    public void Dispose()
+    {
+        motion.Dispose();
+        timeline.Dispose();
+    }
 
 }

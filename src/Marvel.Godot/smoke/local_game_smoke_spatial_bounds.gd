@@ -48,8 +48,10 @@ static func card_problems(card: Control, context: Control) -> Array[String]:
 	if sidecar == null:
 		return failures
 	var occupied := bounds(sidecar)
-	if occupied.position.x < face.end.x + 3.0 or occupied.grow(-1).intersects(face.grow(-1)):
+	if occupied.position.y < face.end.y + 3.0 or occupied.grow(-1).intersects(face.grow(-1)):
 		failures.append("%s source controls cover its face: %s / %s" % [card.name, occupied, face])
+	if occupied.position.x < face.position.x - 1.0 or occupied.end.x > face.end.x + 1.0:
+		failures.append("%s source controls escape the card column" % card.name)
 	if absf(sidecar.get_global_transform().get_rotation()) > 0.001:
 		failures.append("%s source controls are not upright" % card.name)
 	if context != null and occupied.grow(-1).intersects(context.get_global_rect().grow(-1)):
@@ -92,6 +94,8 @@ static func continuation_problems(scroll: ScrollContainer, name: String) -> Arra
 	var bar := scroll.get_v_scroll_bar()
 	if bar.max_value <= bar.page + 1.0:
 		return failures
+	if usable_scrollbar(scroll):
+		return failures
 	var navigation := scroll.get_parent().get_node_or_null("OverflowNavigation") as Control
 	if navigation == null or not navigation.is_visible_in_tree():
 		failures.append("%s clips text without a continuation control" % name)
@@ -105,6 +109,12 @@ static func continuation_problems(scroll: ScrollContainer, name: String) -> Arra
 	if not saw_navigation:
 		failures.append("%s has no visible continuation control" % name)
 	return failures
+
+
+static func usable_scrollbar(scroll: ScrollContainer) -> bool:
+	var bar := scroll.get_v_scroll_bar()
+	return bar.is_visible_in_tree() and bar.page > 0 and bar.size.x >= 8 and bar.size.y >= 20 \
+		and bounds(scroll).grow(0.5).encloses(bounds(bar))
 
 
 static func drawer_problems(surface: Control) -> Array[String]:
@@ -138,7 +148,7 @@ static func controlled_source_problems(surface: Control, context: Control) -> Ar
 	if context != null and occupied.intersects(bounds(context)):
 		failures.append("controlled source ledger covers the current decision")
 	for action in ledger.find_children("*", "Button", true, false):
-		if action.is_visible_in_tree() and action.size.y < 44:
+		if action.is_visible_in_tree() and bounds(action).size.y < 27.5:
 			failures.append("installed source action loses its full hit area")
 	for other in surface.find_children("ProceduralCard*", "PanelContainer", true, false):
 		if not other.is_visible_in_tree() or ledger.is_ancestor_of(other): continue

@@ -59,9 +59,9 @@ func _capture_villain_phase_once(state: Dictionary) -> bool:
 func _villain_history_checkpoint_is_safe(state: Dictionary) -> bool:
 	if state.captured_villain_phase or _is_complete():
 		return true
-	var history := (_node(
-		"Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel) \
-		.get_parsed_text().to_lower()
+	var history: String = (_node(
+		"Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control) \
+		.get_meta("chronology", "").to_lower()
 	if "villain phase" not in history:
 		return true
 	if not await _capture_checkpoint("villain-phase"):

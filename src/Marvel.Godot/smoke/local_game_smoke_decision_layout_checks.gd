@@ -101,3 +101,24 @@ func _prompt_progress_is_safe() -> bool:
 		_fail("the pinned prompt summary omitted target progress")
 		return false
 	return true
+
+
+func _collapsed_history_layout_is_safe(board: Control) -> bool:
+	var toggle := main.find_child("ToggleHistory", true, false) as Button
+	var play := _play()
+	if toggle == null or toggle.text != "<<" or not _control_is_fully_visible(toggle) \
+			or toggle.size.x < 44.0 or toggle.size.y < 44.0:
+		_fail("collapsed History has no usable edge control")
+		return false
+	if board.size.x < 480.0 or board.size.x < play.size.x - 64.0:
+		_fail("collapsed History still reserves a blank sidebar: board=%s play=%s" % [
+			board.size.x, play.size.x,
+		])
+		return false
+	var context := main.find_child("ContextualDecision", true, false) as Control
+	if context == null or not _control_is_fully_visible(context):
+		_fail("collapsed History lost the table's current decision surface")
+		return false
+	return true
+
+

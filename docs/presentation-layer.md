@@ -278,7 +278,16 @@ unknown JSON members fail before they reach the engine. Protocol 19 adds
 engine-authored decline commitments to prompts (ending a turn, passing an
 opportunity, or leaving an attack undefended), readable card-choice names, and
 an explicit visibility-safe attack completion event. Both endpoints must use the
-current protocol version (26). Protocol 19 kept replay and digest formats
+current protocol version (30). Protocol 30 adds the visibility-safe active attack
+participants, maintained through nested decisions and the attack's end response
+window. This is a read-only projection; replay v14 and the state digest are unchanged.
+Protocol 29 adds exact optional-window choices,
+forced-ability receipts and authorized event-face references; it requires replay v14.
+Protocol 28 adds explicit activity operation receipts,
+batch membership, round numbers and phase boundaries; it requires replay v13.
+The engine can also offer an early exact recipient for a single public event
+choice, revalidating that recipient after payment and preserving a genuine
+choice if it is no longer legal. Protocol 19 kept replay and digest formats
 unchanged. Protocol 13 adds
 display-only card markup and a separate art-safe face id so full card frames
 can preserve printed emphasis and symbols without requesting concealed art.

@@ -9,8 +9,9 @@ internal static class CardStateDetails
     internal static Control Wrap(CardControl face, BoardCardPresentation card, bool beside,
         Action<BoardCardPresentation>? inspect = null)
     {
-        VBoxContainer state = CardLiveStateRendering.Create(card, beside ? 224 : face.CustomMinimumSize.X, compact: false);
-        if (inspect is not null) CardValueSourceInspection.Add(state, card, inspect);
+        VBoxContainer state = CardLiveStateRendering.Create(card, beside ? 224 : face.CustomMinimumSize.X,
+            compact: false, showProgress: false);
+        if (inspect is not null) CardValueSourceInspection.Add(state, card, inspect, face);
         if (state.GetChildCount() == 0)
         {
             state.Free();
@@ -27,6 +28,9 @@ internal static class CardStateDetails
         panel.AddThemeStyleboxOverride("panel", style);
         panel.AddChild(state);
         details.AddChild(panel);
+        void RefreshVisibility() => panel.Visible = state.GetChildren().OfType<Control>().Any(child => child.Visible);
+        foreach (Control child in state.GetChildren().OfType<Control>()) child.VisibilityChanged += RefreshVisibility;
+        RefreshVisibility();
         return details;
     }
 }

@@ -4,12 +4,31 @@ extends "res://smoke/local_game_smoke.gd"
 func _run() -> void:
 	# Legal Core journey: a fresh activation must distinguish an attack from ending the turn.
 	if not await _stage_core_attack(): return
+	if not await _repeat_preserves_review_clicks(): return
 	if not await _repeat_preserves_next_commitment(): return
 	print("REPEATED_COMMIT_SMOKE_OK")
 	main.queue_free()
 	await process_frame
 	await process_frame
 	quit(0)
+
+
+func _repeat_preserves_review_clicks() -> bool:
+	var history := main.find_child("ToggleHistory", true, false) as Button
+	if history == null: return false
+	var before := history.text
+	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	_inject_repeated_click(history.get_global_rect().get_center())
+	await process_frame
+	if history.text == before:
+		_fail("rapid read-only history click was suppressed")
+		return false
+	_inject_repeated_click(history.get_global_rect().get_center())
+	await process_frame
+	if history.text != before or (_node("Toolbar/SyncStatus") as Label).text != revision:
+		_fail("rapid history clicks did not independently toggle review without commitment")
+		return false
+	return true
 
 
 func _stage_core_attack() -> bool:

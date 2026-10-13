@@ -69,6 +69,9 @@ emits these facts directly:
 | `AttackCompleted` | `enemy`, `target`, `defender`, `damage_dealt` |
 | `WhenRevealedCanceled` | `card`, `source` |
 | `CardsShuffledIntoDeck` | `player`, `count`, `public_titles` |
+| `ActivityCompleted` | `batch`, `participants`, `phase_step` |
+| `PhaseStarted` | `phase`, `round` |
+| `AbilityWindowResult` | `source`, `type`, `player`, `occurrence`, `ordinal`, `description`, `completed` |
 
 `CardsShuffledIntoDeck` is emitted after the selected cards have moved and the
 deck has been shuffled. `count` records the returned quantity. `public_titles`
@@ -107,6 +110,18 @@ cancellation is consumed successfully, rather than when an interrupt registers
 it. It does not cancel revelation or assert that other card effects were
 canceled. Both named cards must be readable to retain this fact in a response.
 Its engine-chosen verb is `Cancel_When_Revealed`.
+
+`ActivityCompleted` is an engine-authored instruction receipt. Each participant carries
+`player`, actual `count`, and authorized `cards`. Covered low-level events carry
+optional `activity_batch`, a response-local event offset; their order and payloads
+remain intact. Draws still resolve one at a time and deck resets remain separate.
+Only explicit instructions and simultaneous phase procedures create receipts;
+matching adjacent verbs never establishes a batch. Restricted visibility keeps
+public quantities while removing concealed card ids and names. Optional `round`
+captures occurrence context from the game loop. `PhaseStarted` names an actual
+phase entry and its round; consumers need not infer boundaries from a final board.
+These event additions require a protocol and replay compatibility revision; state
+digest v3, decisions and RNG consumption are unchanged.
 
 Every event also carries `kind`, `trigger`, and `verb`. An event may carry a
 `subjects` object mapping card object ids to visibility-safe names captured when
@@ -247,3 +262,34 @@ window changes intermediate events/information and uses engine replay v3.
 
 See [affordances.md](affordances.md) for input and
 [presentation-layer.md](presentation-layer.md) for transport and visibility.
+
+Protocol 30's `WorldDescriptor.ActiveAttack` is current resolution context,
+separate from the completed-attack event. The engine owns its lifetime through
+initiation, defense, boosts, damage and the final response window, including
+nested choices. Its current target follows a committed defender. View exposes
+the source and target only when both identities are authorized. Retained
+last-attack facts do not keep this context alive after the owning occurrence
+finishes. This read-only projection changes neither replay nor state digest.
+
+`AbilityWindowResult` records the initial resolution of a Forced Interrupt or Forced
+Response once per occurrence/source/timing/ordinal. `completed=false` means a required decision
+suspended resolution; answering that decision does not emit another initial receipt.
+Public presentation drops receipts whose source is unreadable. A local acknowledgment
+changes presentation only and never initiates another ability or passes a window.
+
+
+A forced ability's initial execution tags its own emitted results with
+`ability_source`, `ability_occurrence`, `ability_timing` and `ability_ordinal`.
+These engine-chosen association fields match the receipt's source, occurrence,
+type and ordinal; they are not inferred from adjacency, labels or printed text.
+The ability executor owns a fresh local event list, so a receipt does not claim
+unrelated payment, attack or later-window events from the enclosing response.
+Visibility filtering removes the association whenever its source is unreadable,
+and filters each result through the normal event policy before any summary.
+
+The native chronology groups those authorized results under the forced receipt,
+with ordered component details retained. Its notification describes actual
+outcomes (for example, cards discarded and cards returned), while its separately
+authorized source-face reference retains the printed rules for inspection. When
+no associated visible result exists, the engine's existing explanation remains;
+absence of a visible result does not assert that hidden state stayed unchanged.

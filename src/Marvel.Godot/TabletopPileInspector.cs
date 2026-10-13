@@ -67,14 +67,25 @@ internal static class TabletopPileInspector
         close.Pressed += popup.Hide;
         navigation.AddChild(close);
         stack.AddChild(navigation);
+        var contentViewport = new ScrollContainer
+        {
+            Name = "PileInspectorViewport",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
+            VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
+            FollowFocus = true,
+        };
         var cardSlot = new CenterContainer
         {
             Name = "PileInspectorCard",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        stack.AddChild(cardSlot);
+        contentViewport.AddChild(cardSlot);
+        stack.AddChild(contentViewport);
         popup.AddChild(stack);
         root.AddChild(popup);
+        InterfaceScale fitted = PileInspectorFrame.Configure(popup, source, pile.InspectionOrder, scale);
 
         int index = Math.Clamp(initialIndex, 0, pile.InspectionOrder.Count - 1);
         void Render()
@@ -85,7 +96,6 @@ internal static class TabletopPileInspector
                 child.QueueFree();
             }
             BoardCardPresentation card = pile.InspectionOrder[index];
-            InterfaceScale fitted = CardInspectorFocus.FittedScale(card, scale, source.GetViewportRect().Size.Y - 96);
             CardInspectionContent detail = CardInspectionContent.Create(card, fitted, art, beside: true,
                 inspect: valueSource => OpenSource(source, card, valueSource, result, scale, art));
             CardControl control = detail.Face;
@@ -99,8 +109,8 @@ internal static class TabletopPileInspector
             position.Text = $"{index + 1} / {pile.InspectionOrder.Count}" + (pile.IsPile ? " · Top first" : "");
             previous.Disabled = index == 0;
             next.Disabled = index == pile.InspectionOrder.Count - 1;
-            detail.Body.MinimumSizeChanged += () => Callable.From(() => Fit(popup, stack, source)).CallDeferred();
-            Callable.From(() => Fit(popup, stack, source)).CallDeferred();
+            contentViewport.ScrollHorizontal = 0;
+            contentViewport.ScrollVertical = 0;
         }
         previous.Pressed += () =>
         {
@@ -139,17 +149,6 @@ internal static class TabletopPileInspector
                     CardFocusPreview.Restore(source);
             }).CallDeferred();
         };
-    }
-
-    private static void Fit(PopupPanel popup, Control content, Control source)
-    {
-        if (!GodotObject.IsInstanceValid(popup) || popup.IsQueuedForDeletion()
-            || !InteractionControl.IsUsable(source)) return;
-        Rect2 frame = CardInspectorPlacement.Fit(source.GetViewportRect().Size,
-            SpatialCardFootprint.Face(source), content.GetCombinedMinimumSize() + new Vector2(20, 20));
-        popup.MinSize = new Vector2I(Mathf.CeilToInt(frame.Size.X), Mathf.CeilToInt(frame.Size.Y));
-        popup.Size = popup.MinSize;
-        popup.Position = new Vector2I(Mathf.RoundToInt(frame.Position.X), Mathf.RoundToInt(frame.Position.Y));
     }
 
     private static void OpenSource(Control opener, BoardCardPresentation host, BoardCardPresentation source,

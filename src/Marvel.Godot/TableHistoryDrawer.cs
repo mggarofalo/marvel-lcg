@@ -2,7 +2,7 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Turns the former decision dock into an independent, collapsible history drawer.</summary>
+/// <summary>Owns the independent, collapsible history drawer.</summary>
 internal static class TableHistoryDrawer
 {
     private const string ExpandedMeta = "history_drawer_expanded";
@@ -10,6 +10,13 @@ internal static class TableHistoryDrawer
     internal static bool IsExpanded(Main main) =>
         main.promptPanel.HasMeta(ExpandedMeta)
         && main.promptPanel.GetMeta(ExpandedMeta).AsBool();
+
+    internal static void Open(Main main)
+    {
+        if (IsExpanded(main)) return;
+        main.promptPanel.SetMeta(ExpandedMeta, true);
+        Callable.From(main.layoutController.ApplyResponsivePlayLayout).CallDeferred();
+    }
 
     internal static void SelectHistory(Main main)
     {
@@ -34,6 +41,7 @@ internal static class TableHistoryDrawer
         {
             main.promptPanel.Visible = true;
             main.decisions.Visible = true;
+            if (main.GetNodeOrNull<Button>("ToggleHistory") is { } edge) edge.Hide();
             HistoryUndoControl.RefreshReason(main, true);
             return;
         }
@@ -61,35 +69,57 @@ internal static class TableHistoryDrawer
         latest.TooltipText = latest.Text;
         Button dismiss = EnsureDismiss(main, history, latest);
         HFlowContainer actions = EnsureActionFlow(history, dismiss);
+        history.MoveChild(history.GetNode<Control>("EventHeader"), 0);
         bool expanded = IsExpanded(main);
         HistoryUndoControl.RefreshReason(main, expanded);
         bool payment = CardPaymentWorkspaceLayout.Active(main);
         if (history.GetNodeOrNull<Control>("TableSidebar") is { } sidebar) sidebar.Visible = !payment;
         TableHistoryViewport.Configure(main, payment);
         ConfigureCueSummary(main, expanded);
-        toggle.Text = expanded ? "Collapse history" : "History";
+        toggle.Text = expanded ? ">>" : "<<";
+        toggle.TooltipText = expanded ? "Collapse history details" : "Expand history details";
+        toggle.AccessibilityName = toggle.TooltipText;
+        toggle.Visible = true;
+        history.Visible = expanded;
+        workbench.Visible = expanded;
+        main.promptPanel.Visible = expanded || payment || main.decisions.CompleteChoicesOpen || main.invitationOffer.Visible;
+        PositionHandle(main, toggle, expanded);
         history.GetNode<Control>("EventHeader/Heading").Visible = false;
+        ConfigureAccount(main, history, dismiss, actions, latest, expanded, payment);
+        main.eventController.RefreshEventCueVisibility();
+        main.eventSkip.Visible = false;
+        main.promptDiagnostic.Visible = false;
+        if (history.FindChild("Skip", recursive: true, owned: false) is Button skip)
+            skip.Text = "Finish animation";
+        ConfigureActions(history, expanded);
+    }
+
+    private static void ConfigureAccount(Main main, Control history, Button dismiss, HFlowContainer actions,
+        Label latest, bool expanded, bool payment)
+    {
         foreach (Control control in new Control[]
                  {
                      history.GetNode<Control>("Rule"),
-                     main.eventLog,
+                     history.GetNodeOrNull<Control>("HistoryOccurrences") ?? main.eventLog,
                      dismiss,
                      actions,
                  })
         {
             control.Visible = expanded;
         }
-        TableLatestResult.Configure(latest, expanded);
+        main.eventLog.Hide();
+        dismiss.Hide();
+        TableLatestResult.Configure(latest, false);
         if (payment) ((Control)latest.GetParent().GetParent()).Visible = false;
-        main.eventController.RefreshEventCueVisibility();
-        main.promptDiagnostic.Visible = false;
-        if (history.FindChild("Skip", recursive: true, owned: false) is Button skip)
-            skip.Text = "Finish animation";
+    }
+
+    private static void ConfigureActions(Control history, bool expanded)
+    {
         foreach (string name in new[] { "Skip", "UndoLast", "CopyReport", "SaveReport" })
         {
             if (history.FindChild(name, recursive: true, owned: false) is Control control)
             {
-                control.Visible = expanded;
+                control.Visible = expanded && name != "Skip";
             }
         }
     }
@@ -165,25 +195,37 @@ internal static class TableHistoryDrawer
 
     private static Button EnsureToggle(Main main, Control history)
     {
-        Control header = history.GetNode<Control>("EventHeader");
-        if (header.GetNodeOrNull<Button>("ToggleHistory") is { } existing)
+        if (main.GetNodeOrNull<Button>("ToggleHistory") is { } existing)
         {
             return existing;
         }
         var toggle = new Button
         {
             Name = "ToggleHistory",
-            Text = "History",
-            TooltipText = "Expand or collapse the game history without covering the table.",
-            CustomMinimumSize = new Vector2(140, 44),
+            Text = "<<",
+            TooltipText = "Open history",
+            CustomMinimumSize = new Vector2(44, 44),
+            ZIndex = 100,
         };
         toggle.Pressed += () =>
         {
             main.promptPanel.SetMeta(ExpandedMeta, !IsExpanded(main));
             Callable.From(main.layoutController.ApplyResponsivePlayLayout).CallDeferred();
         };
-        header.AddChild(toggle);
-        header.MoveChild(toggle, 0);
+        main.AddChild(toggle);
         return toggle;
+    }
+
+    private static void PositionHandle(Main main, Button toggle, bool expanded)
+    {
+        Callable.From(() =>
+        {
+            if (!InteractionControl.IsUsable(toggle)) return;
+            Vector2 viewport = main.GetViewportRect().Size;
+            Vector2 size = toggle.GetCombinedMinimumSize().Max(new Vector2(44, 44));
+            float x = expanded ? main.promptPanel.GlobalPosition.X - size.X : viewport.X - size.X;
+            toggle.GlobalPosition = new Vector2(Math.Max(0, x), 88);
+            toggle.Size = size;
+        }).CallDeferred();
     }
 }

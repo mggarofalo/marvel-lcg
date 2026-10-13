@@ -69,7 +69,7 @@ internal static class CardSourceSample
         {
             foreach (CardControl card in result.VisibleCardControls())
             {
-                card.AddInteractionControl(new Button { Name = "SourceAction", Text = "Action",
+                card.AddInteractionControl(new Button { Name = "SourceAction", Text = "Action", AccessibilityName = "Synthetic action",
                     TooltipText = "Synthetic action control geometry" });
                 card.GuiInput += input =>
                 {

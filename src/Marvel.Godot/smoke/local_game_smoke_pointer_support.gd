@@ -10,17 +10,38 @@ var render_viewport: Viewport
 
 
 func _visible_control_rect(control: Control) -> Rect2:
-	var visible_rect := control.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
+	var visible_rect := _transformed_control_bounds(control).intersection(Rect2(Vector2.ZERO, _viewport_size()))
 	var ancestor := control.get_parent()
 	while ancestor != null and not ancestor is CanvasLayer:
 		if ancestor is ScrollContainer or (ancestor is Control and ancestor.clip_contents):
-			visible_rect = visible_rect.intersection(ancestor.get_global_rect())
+			visible_rect = visible_rect.intersection(_transformed_control_bounds(ancestor))
 		ancestor = ancestor.get_parent()
 	return visible_rect
 
 
+func _transformed_control_bounds(control: Control) -> Rect2:
+	var transform := control.get_global_transform()
+	var bounds := Rect2(transform * Vector2.ZERO, Vector2.ZERO)
+	for corner in [Vector2(control.size.x, 0), control.size, Vector2(0, control.size.y)]:
+		bounds = bounds.expand(transform * corner)
+	return bounds
+
+
+func _point_in_visible_control(control: Control, point: Vector2) -> bool:
+	if not Rect2(Vector2.ZERO, _viewport_size()).has_point(point) \
+			or not Rect2(Vector2.ZERO, control.size).has_point(control.get_global_transform().affine_inverse() * point):
+		return false
+	var ancestor := control.get_parent()
+	while ancestor != null and not ancestor is CanvasLayer:
+		if ancestor is ScrollContainer or (ancestor is Control and ancestor.clip_contents):
+			if not Rect2(Vector2.ZERO, ancestor.size).has_point(ancestor.get_global_transform().affine_inverse() * point):
+				return false
+		ancestor = ancestor.get_parent()
+	return true
+
+
 func _control_owns_point(control: Control, point: Vector2) -> bool:
-	if not _visible_control_rect(control).has_point(point):
+	if not _point_in_visible_control(control, point):
 		return false
 	# A disabled control intentionally does not claim pointer input. It is not an
 	# operable hit target even if its painted rectangle is visible.
@@ -44,7 +65,7 @@ func _current_pointer_owns_control(control: Control, point: Vector2) -> bool:
 	# Refresh Godot's hit test at the same point; its native geometry also handles
 	# transformed card surfaces whose global rectangle is not their hit shape.
 	_position_pointer_without_settle(point)
-	return control.is_visible_in_tree() and not control.is_queued_for_deletion() \
+	return _point_in_visible_control(control, point) and control.is_visible_in_tree() and not control.is_queued_for_deletion() \
 			and control.mouse_filter != Control.MOUSE_FILTER_IGNORE \
 			and not (control is BaseButton and control.disabled) \
 			and render_viewport.get_mouse_position().is_equal_approx(point) \
@@ -98,6 +119,23 @@ func _pointer_ownership_probe_is_strict() -> bool:
 		target.position = Vector2(24, 240), CONNECT_ONE_SHOT)
 	var rejects_moved := not await _control_owns_point(target, Vector2(44, 54))
 	var accepts_current := await _control_owns_point(target, target.get_global_rect().get_center())
+	target.position = Vector2(400, 240)
+	target.rotation = PI / 2
+	await process_frame
+	var accepts_rotated := await _control_owns_point(target, target.get_global_transform() * Vector2(100, 30))
+	var rejects_unpainted := not await _control_owns_point(target, Vector2(450, 270))
+	var clip := Control.new()
+	clip.position = Vector2(600, 200)
+	clip.size = Vector2(40, 40)
+	clip.clip_contents = true
+	render_viewport.add_child(clip)
+	target.reparent(clip)
+	target.position = Vector2(60, 0)
+	await process_frame
+	var rejects_clipped := not await _control_owns_point(target, target.get_global_transform() * Vector2(100, 30))
+	target.reparent(render_viewport)
+	clip.queue_free()
+	print("POINTER_ROTATION_PROBE rotated=%s unpainted=%s clipped=%s" % [accepts_rotated, rejects_unpainted, rejects_clipped])
 	print("POINTER_OWNERSHIP_PROBE covered=%s exposed=%s moved=%s current=%s" % [
 		rejects_covered, accepts_exposed, rejects_moved, accepts_current])
 	render_viewport.remove_child(blocker)
@@ -105,7 +143,8 @@ func _pointer_ownership_probe_is_strict() -> bool:
 	blocker.queue_free()
 	target.queue_free()
 	await process_frame
-	return rejects_covered and accepts_exposed and rejects_moved and accepts_current
+	return rejects_covered and accepts_exposed and rejects_moved and accepts_current \
+		and accepts_rotated and rejects_unpainted and rejects_clipped
 
 
 func _viewport_size() -> Vector2:

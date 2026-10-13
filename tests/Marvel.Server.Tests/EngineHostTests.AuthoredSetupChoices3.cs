@@ -217,16 +217,17 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         Assert.DoesNotContain("secret-card-identity", failed.Error?.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void VersionOneIsRejectedBeforeItCanOpenAGame()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(29)]
+    public void UnsupportedVersionIsRejectedBeforeItCanOpenAGame(int version)
     {
-        // The current protocol carries card presentation markup and an art-safe
-        // face id. A version 1 client cannot deserialize those responses, so it
-        // is rejected before the factory can create mutable game state.
+        // The protocol includes active attack context. Older endpoints are
+        // rejected before the factory can create mutable game state.
         var factory = new UnusedFactory();
         var host = new EngineHost(factory);
-        var rejected = host.Exchange(new EngineRequest(1, "old-client", EngineProtocol.Open, "game", Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
-        Assert.Equal(26, EngineProtocol.Version);
+        var rejected = host.Exchange(new EngineRequest(version, "old-client", EngineProtocol.Open, "game", Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
+        Assert.Equal(30, EngineProtocol.Version);
         Assert.Equal(EngineProtocol.Version, rejected.Version);
         Assert.Equal("unsupported_version", rejected.Error?.Code);
         Assert.Equal(0, factory.Calls);

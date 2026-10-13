@@ -225,10 +225,16 @@ internal static class AbilityResolutionPowers
         // asked whether the cost could be paid at all. What it cannot check is
         // that the player named a payment that works, and `CardPlay.Spend`
         // refuses one that does not.
-        if (!execution.PayAbility(
-            world, card, found, ability, occurrence, paying, chosen,
-            values, allocations, cast, events)) return events;
-        execution.ExecuteAbility(world, card, found, ability, occurrence, cast);
+        if (AbilityRecipientCommitment.Validate(execution, cast, found, chosen) is not null)
+            cast.Results[AbilityRecipientCommitment.PendingRecipient] = chosen[0];
+        if (!AbilityWindowActivation.Pay(execution, cast, found, ability,
+            new Decision(card.ObjectId, chosen, paying, values, allocations)))
+        {
+            AbilityWindowReceipt.Emit(cast, found, ability.Ordinal);
+            return events;
+        }
+        AbilityWindowActivation.Execute(execution, cast, found, ability);
+        AbilityWindowReceipt.Emit(cast, found, ability.Ordinal);
         return events;
     }
 
@@ -293,45 +299,4 @@ internal static class AbilityResolutionPowers
             $"'{card.FaceId}' cannot initiate this ability in the current state");
     }
 
-    private static bool PayAbility(
-        this AbilityResolutionExecution execution, World world, Card card,
-        CompiledCardAbility found, PendingAbility address, Occurrence occurrence,
-        IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
-        IReadOnlyDictionary<string, long>? values,
-        IReadOnlyList<ResourceAllocation>? allocations,
-        AbilityResolutionState cast, List<GameEvent> events)
-    {
-        var costOwner = world.Agenda.Current;
-        var costOccurrence = world.Agenda.Occurrence;
-        var arrowPayment = AbilityCostPayment.Prepare(
-            world, card, cast.Player, found.Cost, paying, chosen,
-            execution.program, execution.resourceAbilities, values,
-            resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-                && ResourceRequirement(found.Cost, card).Length > 0);
-        var eventPayment = AbilityEventPayment.Prepare(
-            world, card, cast.Player, paying, found.Effect,
-            execution.resourceAbilities, allocations, found.Cost);
-        if (eventPayment is not null)
-            cast.PaidWith(eventPayment.Commit(occurrence, events));
-        execution.ApplyPayment(
-            arrowPayment.Commit(execution.cardPlayAbilities, cast.Trigger, events), cast);
-        if (!cast.Suspended) return true;
-        execution.SuspendAfterCost(cast, address.Ordinal, costOwner, costOccurrence);
-        return false;
-    }
-
-    private static void ExecuteAbility(
-        this AbilityResolutionExecution execution, World world, Card card,
-        CompiledCardAbility found, PendingAbility address, Occurrence occurrence,
-        AbilityResolutionState cast)
-    {
-        execution.Use(world, card, found, occurrence);
-        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event)
-            occurrence.BeginCard(card.ObjectId, [address]);
-        cast.RestoreAbility(address.Ordinal, []);
-        cast.TrackResolution(address.Ordinal);
-        execution.Run(found, cast);
-        cast.CompleteResolution();
-        execution.DiscardEvent(card, cast);
-    }
 }

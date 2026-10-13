@@ -8,6 +8,7 @@ internal sealed class CardInspectorFocus
 {
     private readonly Main main;
     private int? returnTargetId;
+    private Control? returnReference;
     private string? returnPaymentControl;
     private Marvel.Decisions.DecisionComposer? returnPaymentDraft;
     private bool backdropDismissalPending;
@@ -40,6 +41,7 @@ internal sealed class CardInspectorFocus
         returnPaymentControl = source?.Name.ToString().StartsWith("InspectPayment", StringComparison.Ordinal) == true
             ? source.Name.ToString() : null;
         returnPaymentDraft = returnPaymentControl is null ? null : main.decisions.composer;
+        returnReference = source is not CardControl && returnPaymentControl is null ? source : null;
     }
 
     internal void Input(InputEvent input)
@@ -142,6 +144,7 @@ internal sealed class CardInspectorFocus
         int? targetId = main.cardInspectorPinned && restoreFocus ? returnTargetId : null;
         string? paymentControl = main.cardInspectorPinned ? returnPaymentControl : null;
         var paymentDraft = returnPaymentDraft;
+        Control? reference = main.cardInspectorPinned && restoreFocus ? returnReference : null;
         main.cardInspectorGeneration++;
         int generation = checked(++restorationGeneration);
         main.cardInspectorPinned = false;
@@ -155,11 +158,27 @@ internal sealed class CardInspectorFocus
         returnTargetId = null;
         returnPaymentControl = null;
         returnPaymentDraft = null;
+        returnReference = null;
         main.cardInspector.Visible = false;
-        if (targetId is not null)
+        ScheduleRestoration(targetId, reference, paymentControl, paymentDraft, generation);
+    }
+
+    private void ScheduleRestoration(int? targetId, Control? reference, string? paymentControl,
+        Marvel.Decisions.DecisionComposer? paymentDraft, int generation)
+    {
+        if (reference is not null)
+            Callable.From(() => RestoreReference(reference, generation)).CallDeferred();
+        else if (targetId is not null)
         {
             Callable.From(() => RestoreSource(targetId.Value, paymentControl, paymentDraft, generation)).CallDeferred();
         }
+    }
+
+    private void RestoreReference(Control reference, int generation)
+    {
+        if (generation == restorationGeneration && !main.cardInspectorPinned
+            && InteractionControl.IsUsable(reference) && reference.IsVisibleInTree())
+            CardFocusPreview.Restore(reference);
     }
 
     internal static InterfaceScale FittedScale(

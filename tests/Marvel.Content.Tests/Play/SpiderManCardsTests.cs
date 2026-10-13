@@ -31,9 +31,18 @@ public sealed class SpiderManCardsTests
         var occurrence = new Occurrence(
             1, [Steps.CardPlayed], Subject: cat.ObjectId, Player: 0);
 
-        runner.Resolve(
+        var events = runner.Resolve(
             world, occurrence,
             new PendingAbility(cat.ObjectId, AbilityType.ForcedResponse, 0), [], []);
+        var receipt = Assert.Single(events.OfType<AbilityWindowResult>());
+        Assert.Equal(cat.ObjectId, receipt.Source);
+        Assert.Equal(occurrence.Id, receipt.Occurrence);
+        Assert.NotEmpty(events.OfType<CardsMoved>());
+        Assert.All(events.OfType<CardsMoved>(), result =>
+        {
+            Assert.Equal(receipt.Source, result.AbilitySource);
+            Assert.Equal(receipt.Occurrence, result.AbilityOccurrence);
+        });
         var resolved = new Resolution(world, Prompt: null, Events: []);
 
         Assert.Equal(DeckType.DiscardPile, energy.Area.Type);

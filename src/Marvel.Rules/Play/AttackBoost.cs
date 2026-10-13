@@ -221,6 +221,7 @@ internal static class AttackBoost
             },
             Trigger = trigger,
             Verb = "Boost_Resolved",
+            SubjectFaces = OccurrenceFaces.For(boost),
         });
 
         // A Boost ability can move itself into play. Step 3d discards the card

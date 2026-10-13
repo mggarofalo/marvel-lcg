@@ -45,13 +45,13 @@ func _required_journey_paths_were_seen(state: Dictionary) -> bool:
 		_fail("the played journey never proved source-chooser keyboard restoration")
 		return false
 
-	if motion_enabled and not state.saw_nonblocking_motion:
-		_fail("the journey never exposed an operable prompt during event motion")
+	if motion_enabled and not state.saw_staged_motion:
+		_fail("the journey never observed staged consequences with gameplay gated")
 		return false
 	if motion_enabled and not state.tested_active_motion_toggle:
 		_fail("the journey never disabled event motion during active playback")
 		return false
-	if not motion_enabled and state.saw_nonblocking_motion:
+	if not motion_enabled and state.saw_staged_motion:
 		_fail("the motion-disabled journey exposed active event playback")
 		return false
 	return true
@@ -87,7 +87,7 @@ func _terminal_decision_is_safe() -> bool:
 
 
 func _terminal_table_outcome_is_visible() -> bool:
-	var context := main.find_child("ContextualDecision", true, false) as Control
+	var context := main.find_child("CausalSituation", true, false) as Control
 	var outcome := _visible_text(context).to_lower() if context != null else ""
 	if "defeat" in outcome and ("villain won" in outcome or "players lost" in outcome):
 		return true
@@ -110,20 +110,18 @@ func _terminal_history_is_accessible(collapse_after := true) -> bool:
 	for _frame in 3:
 		await process_frame
 	var toggle := main.find_child("ToggleHistory", true, false) as Button
-	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
+	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
 	if toggle == null or not toggle.is_visible_in_tree() or not _control_is_fully_visible(toggle):
 		_fail("the terminal result has no visible history entry")
 		return false
-	var before := log.text
+	var before := str(log.get_meta("chronology", ""))
 	if not log.is_visible_in_tree():
 		if not await _keyboard_activate(toggle):
 			return false
 	if not await _wait_for(func() -> bool: return log.is_visible_in_tree()):
 		_fail("terminal history cannot be opened with the keyboard")
 		return false
-	if not _control_is_fully_visible(log) or log.text != before:
-		_fail("opening terminal history clipped or changed the received account: rect=%s visible=%s unchanged=%s" % [log.get_global_rect(), _visible_control_rect(log), log.text == before])
-		return false
+	if not await _terminal_history_account_is_visible(log, before): return false
 	if not collapse_after:
 		return true
 	if not await _pointer_activate(toggle):
@@ -131,12 +129,20 @@ func _terminal_history_is_accessible(collapse_after := true) -> bool:
 	if not await _wait_for(func() -> bool: return not log.is_visible_in_tree()):
 		_fail("terminal history cannot be collapsed")
 		return false
-	return log.text == before and toggle.is_visible_in_tree()
+	return str(log.get_meta("chronology", "")) == before and toggle.is_visible_in_tree()
+
+
+func _terminal_history_account_is_visible(log: Control, before: String) -> bool:
+	for _frame in 3: await process_frame
+	if not _control_is_fully_visible(log) or str(log.get_meta("chronology", "")) != before:
+		_fail("opening terminal history clipped or changed the received account: rect=%s visible=%s unchanged=%s" % [log.get_global_rect(), _visible_control_rect(log), str(log.get_meta("chronology", "")) == before])
+		return false
+	return true
 
 
 func _terminal_history_is_safe() -> bool:
-	var event_log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
-	var text := event_log.get_parsed_text().strip_edges()
+	var event_log := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
+	var text := str(event_log.get_meta("chronology", "")).strip_edges()
 	if text.is_empty() or text == "No events yet.":
 		_fail("the visible event log is empty")
 		return false
@@ -153,7 +159,7 @@ func _terminal_result_is_safe() -> bool:
 		return false
 	var latest := main.find_child("LatestResult", true, false) as Label
 	if latest != null:
-		var context := main.find_child("ContextualDecision", true, false) as Control
+		var context := main.find_child("CausalSituation", true, false) as Control
 		var outcome := _visible_text(context).to_lower() if context != null else ""
 		if not latest.text.is_empty() and ("villain won" in outcome or "players lost" in outcome):
 			return true

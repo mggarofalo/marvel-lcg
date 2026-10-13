@@ -9,6 +9,7 @@ internal static class WindowPromptContext
 {
     internal static Prompt Describe(World world, Occurrence occurrence, WindowKind kind, Prompt prompt)
     {
+        if (kind == WindowKind.Response) return Response(world, occurrence, prompt);
         if (kind != WindowKind.Interrupt) return prompt;
         if (occurrence.Threat is { } threat) return Threat(world, threat, prompt);
         if (occurrence.Is(Steps.CardRevealed) && occurrence.Subject >= 0
@@ -27,6 +28,22 @@ internal static class WindowPromptContext
             };
         }
         return prompt;
+    }
+
+    private static Prompt Response(World world, Occurrence occurrence, Prompt prompt)
+    {
+        if (occurrence.Subject < 0 || world.Cards[occurrence.Subject] is not { FaceUp: true } card)
+            return prompt;
+        string? action = occurrence.Is(Steps.CardEntersPlay) ? "entered play"
+            : occurrence.Is(Steps.CardPlayed) ? "was played" : null;
+        if (action is null) return prompt;
+        string title = EffectiveCards.Title(card, world.Facts);
+        return prompt with
+        {
+            DisplayQuestion = $"{title} {action} — response?",
+            Description = $"{title} {action}. Resolve a response or pass.",
+            ContextCardIds = [card.ObjectId],
+        };
     }
 
     private static Prompt Threat(World world, ThreatPlacement threat, Prompt prompt)

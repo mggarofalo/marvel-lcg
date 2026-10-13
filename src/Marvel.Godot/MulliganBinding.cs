@@ -1,3 +1,4 @@
+using Godot;
 using Marvel.Decisions;
 using Marvel.Rules.Play;
 
@@ -6,6 +7,16 @@ namespace Marvel.Godot;
 /// <summary>Binds opening-hand card controls to the current composer draft.</summary>
 internal static class MulliganBinding
 {
+    internal static void PresentToggle(Button toggle, bool selected)
+    {
+        toggle.SetPressedNoSignal(selected);
+        toggle.Text = selected ? "✓" : "↻";
+        toggle.AccessibilityName = selected ? "Selected for replacement" : "Select for replacement";
+        toggle.ThemeTypeVariation = selected
+            ? GodotThemeVariations.SelectedTargetButton
+            : GodotThemeVariations.LegalTargetButton;
+    }
+
     internal static void Bind(DecisionPanel panel, BoardRenderResult? board)
     {
         if (board is null

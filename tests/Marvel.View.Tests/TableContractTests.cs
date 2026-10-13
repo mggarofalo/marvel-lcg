@@ -49,7 +49,7 @@ public sealed class TableContractTests
             Affordances = [new Affordance(7, Attack.DefenseVerb, remoteDefender.ObjectId, 1,
                 "unknown label", new TargetRequest([villain.ObjectId, minion.ObjectId], 1, 1),
                 [new CostOption(remoteDefender.ObjectId, "X", OrCost: "2", Sources:
-                    [new ResourceSource(remoteDefender.ObjectId, "W")],
+                    [new ResourceSource(remoteDefender.ObjectId, "W"), new ResourceSource(remoteDefender.ObjectId, "W")],
                     Variables: [new VariableRequest("X", 0, 3)],
                     Components: [new ResourceCost("1"), new ResourceCost("1", ["W"])])])],
         };
@@ -69,6 +69,7 @@ public sealed class TableContractTests
         Assert.Equal(remoteDefender.Area.Id, affordance.Source?.AreaId);
         Assert.Equal([villain.ObjectId, minion.ObjectId], affordance.TargetRequest?.Legal);
         Assert.Equal("X", Assert.Single(affordance.CostOptions).Cost);
+        Assert.Single(affordance.Relationships, relationship => relationship.Kind == RelationshipKind.OfferedGenerator);
         Assert.True(Assert.Single(affordance.CostOptions).HasAlternative);
         Assert.Equal(2, Assert.Single(affordance.CostOptions).ResourceCosts.Count);
         Assert.Equal([villain.ObjectId, minion.ObjectId], affordance.Relationships

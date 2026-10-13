@@ -8,7 +8,7 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 	if not await _mulligan_result_is_operable():
 		return false
 	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
-		if not await _dismiss_mulligan_result() \
+		if not await _collapse_mulligan_history_for_next_seat() \
 				or not await _complete_second_opening_hand() \
 				or not await _post_mulligan_desktop_resize_is_safe():
 			return false
@@ -74,7 +74,7 @@ func _cooperative_seat_switch_is_safe() -> bool:
 
 func _submit_mulligan() -> bool:
 	var submit := _task_commit()
-	if submit == null or submit.disabled or not ("replace" in submit.text.to_lower() or "keep hand" in submit.text.to_lower()):
+	if submit == null or submit.disabled or not ("redraw" in submit.text.to_lower() or "keep hand" in submit.text.to_lower()):
 		_fail("the three-card mulligan cannot be submitted")
 		return false
 	if not await _pointer_activate(submit):
@@ -83,8 +83,7 @@ func _submit_mulligan() -> bool:
 		if not await _wait_for(func() -> bool:
 			var heading := _hand_heading()
 			return heading != null and heading.text.to_lower().begins_with("player 2 opening hand") \
-				and not _hand_surface().find_children(
-					"MulliganDiscard*", "Button", true, false).is_empty()):
+				and main.find_child("MulliganStage", true, false) != null):
 			_fail("the first player's submission did not hand the opening decision to player 2")
 			return false
 		return true
@@ -111,19 +110,25 @@ func _protected_mulligan_undo_is_explained() -> bool:
 
 func _complete_second_opening_hand() -> bool:
 	if not await _wait_for_result_motion(): return false
-	var toggles := _hand_surface().find_children(
-		"MulliganDiscard*", "Button", true, false)
-	var second_toggle := toggles[0] as Button if not toggles.is_empty() else null
-	if second_toggle == null or not await _activate_exposed_control_point(second_toggle):
-		_fail("the second player's opening hand has no operable discard target")
+	var second_card: Control = null
+	for candidate in _hand_surface().find_children("ProceduralCard*", "", true, false):
+		if candidate.has_meta("spatial_hand_index"):
+			second_card = candidate as Control
+			break
+	if second_card == null or not await _keyboard_stage_card(second_card):
+		_fail("second player's opening hand has no keyboard staging card")
 		return false
 	var submit := _task_commit()
-	if submit == null or submit.disabled or not ("replace" in submit.text.to_lower() or "keep hand" in submit.text.to_lower()):
+	if submit == null or submit.disabled or not ("redraw" in submit.text.to_lower() or "keep hand" in submit.text.to_lower()):
 		_fail("the second player's selected mulligan cannot be submitted once")
 		return false
 	if not await _pointer_activate(submit):
 		return false
 	if not await _wait_for_result_motion(): return false
+	return await _restore_player_one_after_mulligan()
+
+
+func _restore_player_one_after_mulligan() -> bool:
 	var player_one := _visible_seat_switch(0)
 	if player_one != null and not player_one.disabled and not await _pointer_activate(player_one):
 		_fail("the completed cooperative mulligan could not restore player one's tableau")
@@ -145,41 +150,35 @@ func _wait_for_result_motion() -> bool:
 	# the public playback state settles and its queued layout has run.
 	if not await _wait_for(func() -> bool:
 		var skip := main.find_child("Skip", true, false) as Button
-		return skip != null and skip.disabled):
+		return (skip != null and skip.disabled
+			and not bool(main.get_meta("response_staged", false))
+			and not _status().text.begins_with("DECISION SENT"))):
 		_fail("the mulligan result animation did not finish")
 		return false
 	await process_frame
 	return true
 
 
-func _dismiss_mulligan_result() -> bool:
-	if not await _set_mulligan_history_expanded(true):
+func _collapse_mulligan_history_for_next_seat() -> bool:
+	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
+	var chronology := str(history.get_meta("chronology", ""))
+	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	if not await _set_history_drawer(false): return false
+	var heading := _hand_heading()
+	if history.is_visible_in_tree() or str(history.get_meta("chronology", "")) != chronology \
+			or (_node("Toolbar/SyncStatus") as Label).text != revision \
+			or heading == null or not heading.text.to_lower().begins_with("player 2 opening hand"):
+		_fail("collapsing the first mulligan account lost its receipt or changed the next seat's decision")
 		return false
-	var dismiss := main.find_child("DismissHistoryResult", true, false) as Button
-	if dismiss == null or not await _keyboard_activate(dismiss):
-		var drawer := main.find_child("ToggleHistory", true, false) as Button
-		var focused := render_viewport.gui_get_focus_owner()
-		print("MULLIGAN_DISMISS_FOCUS_FAILURE toggle=%s visible=%s dismiss_id=%s focus=%s focus_id=%s" % [
-			drawer.text if drawer != null else "missing",
-			dismiss != null and dismiss.is_visible_in_tree(),
-			dismiss.get_instance_id() if dismiss != null else 0,
-			focused.name if focused != null else "none",
-			focused.get_instance_id() if focused != null else 0])
-		_fail("the first player's mulligan result cannot be dismissed before the next seat answers")
-		return false
-	if not await _wait_for(func() -> bool:
-		var latest := main.find_child("LatestResult", true, false) as Label
-		return latest != null and latest.text.is_empty()):
-		return false
-	return await _set_mulligan_history_expanded(false)
+	return true
 
 
 func _mulligan_result_is_operable() -> bool:
 	if not await _set_mulligan_history_expanded(true):
 		return false
-	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
+	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
 	var latest := main.find_child("LatestResult", true, false) as Label
-	var summary := history.get_parsed_text() + " " + (latest.text if latest != null else "")
+	var summary := str(history.get_meta("chronology", "")) + " " + (latest.text if latest != null else "")
 	if "Avengers Mansion" not in summary or "Aunt May" not in summary \
 			or "Swinging Web Kick" not in summary:
 		_fail("the expanded history omits the discarded cards: %s" % summary)
@@ -247,10 +246,10 @@ func _set_mulligan_history_expanded(expanded: bool) -> bool:
 
 func _mulligan_history_matches(expanded: bool) -> bool:
 	var drawer := main.find_child("ToggleHistory", true, false) as Button
-	var dismiss := main.find_child("DismissHistoryResult", true, false) as Button
-	return drawer != null and dismiss != null \
-		and drawer.text == ("Collapse history" if expanded else "History") \
-		and dismiss.is_visible_in_tree() == expanded
+	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
+	return drawer != null and history != null \
+		and bool((_node("Play/Prompt") as Control).get_meta("history_drawer_expanded", false)) == expanded \
+		and history.is_visible_in_tree() == expanded
 
 
 func _result_toggle_is_operable(summary: Label) -> bool:

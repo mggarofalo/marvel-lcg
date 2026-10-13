@@ -11,6 +11,23 @@ namespace Marvel.Godot.Tests;
 public sealed class SourceTargetInteractionTests
 {
     [Fact]
+    public void DragDestinationsOnlyExposeCurrentExplicitComposableTargets()
+    {
+        var composer = Composer(Offer(1, 10, [20, 21]) with
+            { Targets = new TargetRequest([20, 21], 1, 2, AllowRepeated: true,
+                MaximumOccurrences: new Dictionary<int, int> { [20] = 1, [21] = 1 }) },
+            Offer(2, 11, [22]), Offer(3, 10, [23]) with { Illegal = "Unavailable" },
+            Offer(4, 10, []) with { Targets = null, DeferredTargetSelection = true });
+        var interaction = Interaction(composer);
+        Assert.Equal([20, 21], interaction.Destinations(10));
+        Assert.True(interaction.TrySelect(1, 10, 20));
+        Assert.Equal([21], interaction.Destinations(10));
+        Assert.Equal([20], composer.Targets);
+        Assert.Equal([22], interaction.Destinations(11));
+        Assert.Empty(interaction.Destinations(99));
+    }
+
+    [Fact]
     public void SourceDestinationStagesExactOfferAndTargetWithoutAcceptingAnAnswer()
     {
         var composer = Composer(Offer(1, 10, [20, 21]));

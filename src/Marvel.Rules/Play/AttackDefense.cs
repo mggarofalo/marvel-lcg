@@ -105,7 +105,8 @@ internal static class AttackDefense
         string uncertainty = AttackBoostDescription.Remaining(world, facts, enemy, Steps.DeclareDefender);
         return EffectiveCards.Kind(card, facts) == CardKind.Hero
             ? $"Exhaust {facts.Title(card.FaceId)}. Reduce attack damage by DEF {StateFields.Modified(world, card, "defense", facts, world.Players)}; this hero takes remaining damage. {uncertainty}"
-            : $"Exhaust {facts.Title(card.FaceId)}. This ally takes the attack damage; no basic DEF reduction. {uncertainty}";
+            : AttackOverkillDescription.Defender(world, facts, enemy, card)
+                + $"Exhaust {facts.Title(card.FaceId)}. This ally takes the attack damage; no basic DEF reduction. {uncertainty}";
     }
 
     /// <summary>The character that answer names becomes the defender.</summary>

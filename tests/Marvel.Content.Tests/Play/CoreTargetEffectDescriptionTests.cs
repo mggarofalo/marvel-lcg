@@ -33,8 +33,9 @@ public sealed class CoreTargetEffectDescriptionTests
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == kick.ObjectId);
         Affordance offered = runner.Describe(world, action);
 
-        Assert.True(offered.DeferredTargetSelection);
-        Assert.Null(offered.Targets);
+        Assert.False(offered.DeferredTargetSelection);
+        Assert.False(offered.DirectRecipientCommit);
+        Assert.Equal(world.TheCardIn(DeckType.VillainArea)!.ObjectId, Assert.Single(offered.Targets!.Legal));
         Assert.Contains("Choose an enemy to attack", offered.Description);
         Assert.Contains("Printed damage: 8", offered.Description);
         Assert.Contains("modifiers, prevention and later effects can change the result", offered.Description);

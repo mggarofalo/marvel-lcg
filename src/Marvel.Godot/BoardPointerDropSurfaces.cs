@@ -7,6 +7,7 @@ internal sealed class BoardPointerDropSurfaces
 {
     private readonly List<BoardDropTarget> dropTargets = [];
     private Control? mulliganDiscard;
+    private Control? mulliganStage;
     private string mulliganDiscardVariation = string.Empty;
 
     internal void Register(int seat, Control control) => dropTargets.Add(new BoardDropTarget(seat, control));
@@ -21,7 +22,10 @@ internal sealed class BoardPointerDropSurfaces
     }
 
     internal bool ContainsMulligan(Vector2 position) => InteractionControl.IsUsable(mulliganDiscard)
-        && mulliganDiscard!.GetGlobalRect().HasPoint(position);
+        && mulliganDiscard!.GetGlobalRect().HasPoint(position)
+        || InteractionControl.IsUsable(mulliganStage) && mulliganStage!.GetGlobalRect().HasPoint(position);
+
+    internal void RegisterStage(Control control) => mulliganStage = control;
 
     internal void SetActive(bool active) {
         foreach (BoardDropTarget target in dropTargets.Where(target =>

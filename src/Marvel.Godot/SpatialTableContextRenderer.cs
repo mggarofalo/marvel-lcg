@@ -1,97 +1,100 @@
 using Godot;
-using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Keeps the current cause, editable answer and latest result distinct on the table.</summary>
+/// <summary>A compact current question, with one nearby path to the complete draft.</summary>
 internal static class SpatialTableContextRenderer
 {
-    internal static void Add(
-        Control surface,
-        BoardRenderResult result,
-        AstraTableGeometry geometry,
-        WorldDescriptor? world,
-        Prompt? prompt)
+    internal static void Add(Control surface, BoardRenderResult result, AstraTableGeometry geometry,
+        WorldDescriptor? world, Prompt? prompt)
     {
-        if (world is null)
-        {
-            return;
-        }
+        if (world is null) return;
         result.RegisterContextualWorld(world);
-        Rect2 rect = geometry.Context;
-        var panel = new PanelContainer
-        {
-            Name = "ContextualDecision",
-            Position = rect.Position,
-            Size = rect.Size,
-            CustomMinimumSize = rect.Size,
-            ThemeTypeVariation = GodotThemeVariations.SpatialDecision,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-            ZIndex = 12,
-            ClipContents = true,
-        };
-        var body = new VBoxContainer
-        {
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        panel.AddChild(body);
+        EventActivitySurface.Add(surface, new Rect2(geometry.SourceTableau.Position.X,
+            geometry.Revealing.Position.Y, geometry.SourceTableau.Size.X,
+            geometry.SourceTableau.Position.Y - geometry.Revealing.Position.Y - 4));
+        Rect2 bounds = geometry.Context;
+        var panel = new HBoxContainer { Name = "ContextualDecision", Position = bounds.Position,
+            Size = bounds.Size, CustomMinimumSize = bounds.Size, MouseFilter = Control.MouseFilterEnum.Ignore,
+            ZIndex = 60 };
         surface.AddChild(panel);
-        Vector2 innerSize = rect.Size - panel.GetThemeStylebox("panel").GetMinimumSize();
-        float actionsWidth = Math.Min(580, innerSize.X * 0.38f);
-        var columns = new HBoxContainer
-        {
-            Name = "DecisionColumns", MouseFilter = Control.MouseFilterEnum.Ignore,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.CompactRow,
-        };
-        body.AddChild(columns);
-        PromptPresentation? presentation = prompt is null ? null : PromptPresentation.From(prompt, world);
-        Label headingLabel = Copy(Heading(presentation, prompt, world), GodotThemeVariations.Body);
-        headingLabel.Name = "ContextualHeading";
-        body.AddChild(headingLabel);
-        body.MoveChild(headingLabel, 0);
-        var causeScroll = TableScrollNavigation.Create(columns, "CausalContext", "details");
-        var cause = new VBoxContainer
-        {
+        var copy = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            MouseFilter = Control.MouseFilterEnum.Ignore };
+        var summaryViewport = new ScrollContainer { Name = "DraftSummaryViewport",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        };
-        causeScroll.AddChild(cause);
-        string context = presentation is null
-            ? PendingSituationPresentation.Context(world)
-            : presentation.Resolution.Replace("\n", " · ");
-        Label resolution = Copy(context, GodotThemeVariations.Caption);
-        cause.AddChild(resolution);
-        Label summary = Copy(string.Empty, GodotThemeVariations.Caption);
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            VerticalScrollMode = ScrollContainer.ScrollMode.Reserve,
+            FocusMode = Control.FocusModeEnum.All, FollowFocus = true };
+        summaryViewport.AddChild(copy);
+        panel.AddChild(summaryViewport);
+        Label resolution = AddSituation(surface, geometry, world, prompt);
+        Label summary = Copy("");
         summary.Name = "DraftProgress";
-        cause.AddChild(summary);
-        result.RegisterContextualSummary(summary, string.Empty, resolution);
-        VBoxContainer actions = TableActionPages.Create(columns, actionsWidth, result.OpenCompleteChoices);
+        summary.AutowrapMode = TextServer.AutowrapMode.Word;
+        summary.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
+        copy.AddChild(summary);
+        summary.VisibilityChanged += () => summaryViewport.Visible = summary.Visible;
+        summaryViewport.Visible = summary.Visible;
+        result.RegisterContextualSummary(summary, "", resolution);
+        var scroll = new ScrollContainer { Name = "ContextualActionScroll", CustomMinimumSize = new Vector2(330, 0),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
+            FollowFocus = true };
+        panel.AddChild(scroll);
+        var actions = new VBoxContainer { Name = "ContextualActionObjects", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        scroll.AddChild(actions);
         result.RegisterContextualActions(actions);
+        var complete = new Button { Name = "CompleteChoiceSheet", Text = "Complete Choices",
+            CustomMinimumSize = new Vector2(148, 44), Visible = prompt is not null };
+        panel.AddChild(complete);
+        result.RegisterCompleteChoices(complete);
+        TableCompactButtonStyle.Apply(complete);
     }
 
-    private static string Heading(PromptPresentation? presentation, Prompt? prompt, WorldDescriptor world)
+    private static Label AddSituation(Control surface, AstraTableGeometry geometry,
+        WorldDescriptor world, Prompt? prompt)
     {
-        string heading = presentation?.Heading ?? PendingSituationPresentation.Heading(world);
-        if (presentation is not null && prompt is not null)
+        PromptPresentation? presentation = prompt is null ? null : PromptPresentation.From(prompt, world);
+        float referenceWidth = surface.HasNode("CausalReferenceStack") ? 180 : 0;
+        var cause = new VBoxContainer { Name = "CausalSituation", Position = geometry.Revealing.Position + new Vector2(referenceWidth, 0),
+            Size = new Vector2(Math.Max(150, geometry.SourceTableau.Position.X
+                - geometry.Revealing.Position.X - referenceWidth - 12), geometry.Revealing.Size.Y),
+            MouseFilter = Control.MouseFilterEnum.Ignore };
+        cause.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        surface.AddChild(cause);
+        Label heading = Copy(prompt?.PublicKind == PublicDecisionKind.PlayerAction ? ""
+            : presentation?.Heading ?? PendingSituationPresentation.Heading(world));
+        heading.AutowrapMode = TextServer.AutowrapMode.Word;
+        heading.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
+        heading.Name = "ContextualHeading";
+        cause.AddChild(heading);
+        return AddResolution(cause, presentation, world, prompt);
+    }
+
+    private static Label AddResolution(VBoxContainer cause, PromptPresentation? presentation,
+        WorldDescriptor world, Prompt? prompt)
+    {
+        bool ordinaryTurn = prompt?.PublicKind == PublicDecisionKind.PlayerAction;
+        Label resolution = Copy(ordinaryTurn ? ""
+            : presentation?.Resolution.Replace("\n", " · ") ?? PendingSituationPresentation.Context(world));
+        resolution.Name = "CausalContext";
+        resolution.Visible = !string.IsNullOrWhiteSpace(resolution.Text);
+        resolution.AutowrapMode = TextServer.AutowrapMode.Word;
+        resolution.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
+        cause.AddChild(resolution);
+        if (presentation is not null && !ordinaryTurn)
         {
-            string player = world.Players.FirstOrDefault(candidate => candidate.Seat == prompt.Player)?.Name
-                ?? $"Player {prompt.Player + 1}";
-            heading += $" / {player} decides";
+            Label answerer = Copy(presentation.Context + " · " + presentation.Requirement);
+            answerer.AutowrapMode = TextServer.AutowrapMode.Word;
+            answerer.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
+            cause.AddChild(answerer);
         }
-        return heading;
+        return resolution;
     }
 
-    private static Label Copy(string text, string variation) => new()
-    {
-        Text = text, ThemeTypeVariation = variation,
-        AutowrapMode = TextServer.AutowrapMode.WordSmart,
-        SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-        MouseFilter = Control.MouseFilterEnum.Ignore,
-    };
-
+    private static Label Copy(string text) => new() { Text = text, ThemeTypeVariation = GodotThemeVariations.Caption,
+        MouseFilter = Control.MouseFilterEnum.Ignore, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        AutowrapMode = TextServer.AutowrapMode.Off, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
 }

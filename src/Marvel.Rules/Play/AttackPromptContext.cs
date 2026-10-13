@@ -26,6 +26,8 @@ internal static class AttackPromptContext
             && !string.IsNullOrWhiteSpace(prompt.Description);
         string situation = defenseContext ? prompt.Description! : AttackSituation(
             world, facts, attack, enemy, target, player, step);
+        if (!defenseContext && world.Attack is not null)
+            situation = AttackOverkillDescription.Context(world, facts, enemy) + situation;
         string[] attachments = AttackAttachments(world, facts, enemy);
         situation = AppendAttackContext(situation, attachments, prompt.Description);
         IReadOnlyList<int> causes = ActivationCausalCards.For(world, step);

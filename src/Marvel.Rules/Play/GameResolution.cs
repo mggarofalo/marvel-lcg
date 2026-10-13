@@ -20,6 +20,14 @@ public static class GameResolution
     /// <exception cref="InvalidOperationException">The game is already over.</exception>
     public static Resolution Resolve(this Game game, Decision input)
     {
+        int round = game.Round;
+        Resolution result = ResolveInput(game, input);
+        return result with { Events = result.Events.Select(happened => happened.Round is null
+            ? happened with { Round = round } : happened).ToArray() };
+    }
+
+    private static Resolution ResolveInput(Game game, Decision input)
+    {
         ArgumentNullException.ThrowIfNull(input);
         game.world.ClearInformationSignals();
 

@@ -27,18 +27,41 @@ func _inspect_ultron() -> bool:
 	if card == null:
 		_fail("Ultron has no readable top-row face")
 		return false
-	if not await _open_immediate_preview(card, inspector): return false
-	await process_frame
-	await process_frame
-	if not _complete_ultron(inspector): return false
-	if not await _bridge_and_dismiss_preview(inspector): return false
-	if not await _pointer_activate_card_body(card): return false
-	await process_frame
-	if not _complete_ultron(inspector): return false
-	if not await _close_inspector_with_keyboard(card, inspector): return false
+	if not await _hover_and_pin_ultron(card, inspector): return false
+	if not await _bounded_expansion(card, inspector): return false
+	if not await _upcoming_stages_are_safe(): return false
 	if (_node("Toolbar/SyncStatus") as Label).text != revision or _logical_prompt_identity() != prompt:
 		_fail("inspection changed the current revision or prompt draft")
 		return false
+	return true
+
+func _bounded_expansion(card: Control, inspector: Control) -> bool:
+	var motion := _node("Toolbar/Motion") as CheckButton
+	var preference := motion.button_pressed
+	var physical := card.get_global_rect()
+	for enabled in [true, false]:
+		motion.button_pressed = enabled
+		motion.toggled.emit(enabled)
+		if not await _pointer_activate_card_body(card): return false
+		var frame := inspector.get_node("Frame") as Control
+		if (inspector.get_node("Backdrop") as Control).visible:
+			_fail("bounded inspection dims the entire table")
+			return false
+		if not frame.scale.is_equal_approx(Vector2.ONE):
+			_fail("inspector resizes already rasterized text during reveal")
+			return false
+		if not enabled and not is_equal_approx(frame.modulate.a, 1.0):
+			_fail("reduced motion retained an inspector transition")
+			return false
+		if not await _wait_for(func() -> bool: return is_equal_approx(frame.modulate.a, 1.0)):
+			_fail("pinned inspection did not settle at its measured size")
+			return false
+		if card.get_global_rect() != physical:
+			_fail("inspection expansion moved its physical source")
+			return false
+		if not await _close_inspector_with_keyboard(card, inspector): return false
+	motion.button_pressed = preference
+	motion.toggled.emit(preference)
 	return true
 
 func _complete_ultron(inspector: Control) -> bool:
@@ -55,4 +78,17 @@ func _complete_ultron(inspector: Control) -> bool:
 		if scroll.get_v_scroll_bar().visible or scroll.get_h_scroll_bar().visible:
 			_fail("Ultron inspection requires a scrollbar")
 			return false
+	return true
+
+
+func _hover_and_pin_ultron(card: Control, inspector: Control) -> bool:
+	if not await _open_immediate_preview(card, inspector): return false
+	await process_frame
+	await process_frame
+	if not _complete_ultron(inspector): return false
+	if not await _bridge_and_dismiss_preview(inspector): return false
+	if not await _pointer_activate_card_body(card): return false
+	await process_frame
+	if not _complete_ultron(inspector): return false
+	if not await _close_inspector_with_keyboard(card, inspector): return false
 	return true

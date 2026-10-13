@@ -14,6 +14,9 @@ public sealed record WorldDescriptor(
     IReadOnlyList<GameAreaDescriptor> GameAreas,
     Outcome Outcome)
 {
+    /// <summary>The authorized attack whose resolution is still open, independently of the current prompt.</summary>
+    public ActiveAttackDescriptor? ActiveAttack { get; init; }
+
     /// <summary>Distinct seat roles for this response, selected by the authoritative host.</summary>
     public TableContextDescriptor? Table { get; init; }
 
@@ -22,4 +25,8 @@ public sealed record WorldDescriptor(
 
     /// <summary>Explicit, visibility-reviewed card and prompt relationships.</summary>
     public IReadOnlyList<TableRelationshipDescriptor> Relationships { get; init; } = [];
+
+    /// <summary>Printed references granted by authorized occurrences in this response, keyed by exact face identity.</summary>
+    public IReadOnlyDictionary<string, BoardCardPresentation> EventFaces { get; init; } =
+        new Dictionary<string, BoardCardPresentation>();
 }

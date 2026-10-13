@@ -16,8 +16,10 @@ internal static class CardPaymentWorkspaceHeader
         var heading = DecisionPanel.Text($"Play {title}", GodotThemeVariations.Heading, wrap: true);
         heading.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         identity.AddChild(heading);
-        identity.AddChild(CardPaymentInspection.Button(panel, main, draft.Selected!.AnchorId, "Inspect played card"));
         content.AddChild(identity);
+        foreach (int target in draft.Targets)
+            content.AddChild(DecisionPanel.Text($"Target: {PromptPresentation.Describe(target, panel.world!)}",
+                GodotThemeVariations.Body, wrap: true));
         if (ShowsResolution(draft.Prompt.PublicKind, draft.Prompt.CauseCardIds.Count > 0)
             && !string.IsNullOrWhiteSpace(prompt.Resolution))
             content.AddChild(DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Caption, wrap: true));

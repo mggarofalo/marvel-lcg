@@ -8,4 +8,5 @@ internal sealed record CardFaceFeatures(bool Landscape, bool HasPrimary, bool Ha
     internal float TitleHeight { get; init; }
     internal bool HasProgress { get; init; }
     internal bool HasConsequences { get; init; }
+    internal int StatCount { get; init; }
 }

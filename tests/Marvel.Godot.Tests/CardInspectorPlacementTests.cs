@@ -6,6 +6,20 @@ namespace Marvel.Godot.Tests;
 
 public sealed class CardInspectorPlacementTests
 {
+    [Fact]
+    public void AttackPreviewLeavesTextOnlyCauseAndCurrentDecisionExposed()
+    {
+        Rect2 source = new(650, 320, 180, 220);
+        Rect2[] situation = [new(850, 120, 400, 150), new(580, 850, 720, 120)];
+
+        Rect2 preview = CardInspectorPlacement.Fit(new Vector2(1920, 1080),
+            source, new Vector2(420, 624), situation: situation);
+
+        Assert.All(situation, region => Assert.False(preview.Intersects(region)));
+        Assert.False(preview.Intersects(source));
+        Assert.Equal(new Vector2(420, 624), preview.Size);
+    }
+
     public static IEnumerable<object[]> Scales => VisualSystem.SupportedScales.Select(scale => new object[] { scale });
 
     [Theory]

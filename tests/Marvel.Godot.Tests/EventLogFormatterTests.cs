@@ -7,6 +7,29 @@ namespace Marvel.Godot.Tests;
 public sealed class EventLogFormatterTests
 {
     [Fact]
+    public void CollapsedAccountKeepsActionOrderAndOffersDetailsWithoutHidingUndo()
+    {
+        HistoryEntryDescriptor[] actions =
+        [
+            new(0, "Spider-Man changed form.", ["Peter Parker became Spider-Man."]),
+            new(1, "Spider-Man attacked.", ["Rhino took 2 damage."]),
+        ];
+        string collapsed = EventLogFormatter.FormatActions(actions, [1], "f0a030", new HashSet<int>());
+        Assert.DoesNotContain("Peter Parker became", collapsed);
+        Assert.DoesNotContain("Rhino took", collapsed);
+        Assert.Contains("[url=details:0]> Expand details[/url]", collapsed);
+        Assert.Contains("[url=undo:1]Undo to before this action[/url]", collapsed);
+        Assert.True(collapsed.IndexOf("changed form", StringComparison.Ordinal)
+            < collapsed.IndexOf("attacked", StringComparison.Ordinal));
+
+        string expanded = EventLogFormatter.FormatActions(actions, [1], "f0a030", new HashSet<int> { 1 });
+        Assert.Contains("[url=details:1]< Collapse details[/url]", expanded);
+        Assert.Contains("Rhino took 2 damage.", expanded);
+        Assert.DoesNotContain("Peter Parker became", expanded);
+        Assert.DoesNotContain("[url=undo:0]", expanded);
+    }
+
+    [Fact]
     public void ActionHistoryIncludesDetailsAndOnlyOfferedUndoLinks()
     {
         HistoryEntryDescriptor[] actions =

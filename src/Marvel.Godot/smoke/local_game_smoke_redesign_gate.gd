@@ -35,7 +35,7 @@ func _redesign_gate_opening_table_is_safe() -> bool:
 		return false
 	if not _redesign_gate_shell_uses_desktop_width("opening mulligan"):
 		return false
-	if not _redesign_gate_cards_are_locally_bounded("opening mulligan"):
+	if not await _redesign_gate_cards_are_locally_bounded("opening mulligan"):
 		return false
 	if not _redesign_gate_required_mulligan_controls_are_visible():
 		return false
@@ -55,7 +55,7 @@ func _redesign_gate_post_mulligan_is_safe() -> bool:
 		return false
 	if not _redesign_gate_required_action_controls_are_visible():
 		return false
-	if not _redesign_gate_cards_are_locally_bounded("post-mulligan actions"):
+	if not await _redesign_gate_cards_are_locally_bounded("post-mulligan actions"):
 		return false
 	if not _redesign_gate_piles_are_compact():
 		return false
@@ -75,7 +75,7 @@ func _redesign_gate_after_decision_is_safe() -> bool:
 		return false
 	if not _redesign_gate_has_no_scrollbar_chrome("after end turn"):
 		return false
-	if not _redesign_gate_cards_are_locally_bounded("after end turn"):
+	if not await _redesign_gate_cards_are_locally_bounded("after end turn"):
 		return false
 	if not await _redesign_gate_inspector_dismissal_is_repeatable(2, false):
 		return false
@@ -83,6 +83,7 @@ func _redesign_gate_after_decision_is_safe() -> bool:
 
 
 func _redesign_gate_cards_are_locally_bounded(checkpoint: String) -> bool:
+	if not await _scrolling_actions_are_reachable(): return false
 	for problem in SpatialBounds.problems(main):
 		_fail("%s: %s" % [checkpoint, problem])
 		return false
@@ -114,6 +115,28 @@ func _redesign_gate_cards_are_locally_bounded(checkpoint: String) -> bool:
 			] + " descendants=%s" % [descendants])
 			return false
 	return _redesign_gate_resource_rows_are_safe(surface)
+
+
+func _scrolling_actions_are_reachable() -> bool:
+	var scroll := main.find_child("ContextualActionScroll", true, false) as ScrollContainer
+	if scroll == null or not SpatialBounds.usable_scrollbar(scroll): return true
+	var rows := main.find_child("ContextualActionObjects", true, false) as Control
+	var original := scroll.scroll_vertical
+	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	for row in rows.get_children():
+		if not row is Control or not row.is_visible_in_tree(): continue
+		scroll.ensure_control_visible(row)
+		await process_frame
+		await process_frame
+		if not _control_is_fully_visible(row):
+			_fail("scrolling cannot reveal the complete action row %s" % row.name)
+			return false
+	scroll.scroll_vertical = original
+	await process_frame
+	if (_node("Toolbar/SyncStatus") as Label).text != revision:
+		_fail("reviewing action rows committed a decision")
+		return false
+	return true
 
 
 func _redesign_gate_resource_rows_are_safe(surface: Control) -> bool:
@@ -154,14 +177,15 @@ func _redesign_gate_shell_uses_desktop_width(checkpoint: String) -> bool:
 
 func _redesign_gate_required_mulligan_controls_are_visible() -> bool:
 	var submit := _task_commit()
-	var toggles := _hand_surface().find_children(
-		"MulliganDiscard*", "Button", true, false)
-	if submit == null or submit.disabled or toggles.size() != 6:
-		_fail("the opening tabletop does not expose all six mulligan choices and its commit action")
+	var cards: Array[Control] = []
+	for candidate in _hand_surface().find_children("ProceduralCard*", "", true, false):
+		if candidate.has_meta("spatial_hand_index"): cards.append(candidate as Control)
+	if submit == null or submit.disabled or cards.size() != 6:
+		_fail("opening tabletop must expose six physical mulligan cards and its single commitment")
 		return false
-	for toggle in toggles:
-		if not _control_is_fully_visible(toggle as Control):
-			_fail("a mulligan choice is outside the fixed desktop viewport: %s" % toggle.name)
+	for card in cards:
+		if card.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size())).size.x < 44:
+			_fail("a mulligan card has no exposed drag/keyboard surface")
 			return false
 	if not _control_is_fully_visible(submit):
 		_fail("the opening-hand card-local execute action is outside the fixed desktop viewport")
@@ -187,6 +211,11 @@ func _redesign_gate_has_no_scrollbar_chrome(checkpoint: String) -> bool:
 		var scroll := node as ScrollContainer
 		if scroll == null or not scroll.is_visible_in_tree():
 			continue
+		if _approved_continuous_region(scroll):
+			if not render_viewport.get_visible_rect().encloses(scroll.get_global_rect()):
+				_fail("the %s continuous region escapes the viewport" % scroll.name)
+				return false
+			continue
 		var horizontal := scroll.get_h_scroll_bar()
 		var vertical := scroll.get_v_scroll_bar()
 		if horizontal != null and horizontal.is_visible_in_tree():
@@ -202,6 +231,12 @@ func _redesign_gate_has_no_scrollbar_chrome(checkpoint: String) -> bool:
 			])
 			return false
 	return true
+
+
+func _approved_continuous_region(scroll: ScrollContainer) -> bool:
+	return scroll.name in [&"SeatSummaryViewport", &"SourceTableauViewport", &"DraftSummaryViewport",
+		&"CausalSituationViewport", &"ContextualActionScroll", &"ContinuousAlliesArea", &"ContinuousEngagedEnemiesArea",
+		&"ContinuousSideSchemesArea"]
 
 
 func _redesign_gate_piles_are_compact() -> bool:
@@ -296,8 +331,10 @@ func _decision_text_and_controls_do_not_overlap(checkpoint: String) -> bool:
 	if cause == null or actions == null or complete == null:
 		_fail("the %s decision has no bounded explanation and control surfaces" % checkpoint)
 		return false
+	if not cause.is_visible_in_tree() or not cause.get_global_rect().has_area():
+		return true
 	for control in [actions, complete]:
-		if cause.get_global_rect().grow(-1).intersects(control.get_global_rect().grow(-1)):
+		if control.is_visible_in_tree() and cause.get_global_rect().intersects(control.get_global_rect()):
 			_fail("the %s action controls cover the decision explanation" % checkpoint)
 			return false
 	return true

@@ -21,14 +21,17 @@ internal static class TableLatestResult
             ThemeTypeVariation = GodotThemeVariations.Body,
         };
         scroll.AddChild(label);
+        label.Resized += () => Fit(label);
         return label;
     }
 
     internal static void Configure(Label label, bool historyExpanded)
     {
         Control frame = Frame(label);
-        frame.SizeFlagsVertical = historyExpanded ? Control.SizeFlags.ShrinkBegin : Control.SizeFlags.ExpandFill;
-        frame.Visible = !string.IsNullOrEmpty(label.Text);
+        frame.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
+        frame.SetMeta("history_result_expanded", historyExpanded);
+        frame.Visible = false;
+        Fit(label);
     }
 
     internal static void Present(Label label, string text)
@@ -37,7 +40,18 @@ internal static class TableLatestResult
         var scroll = (ScrollContainer)label.GetParent();
         scroll.ScrollVertical = 0;
         scroll.SetDeferred("scroll_vertical", 0);
-        Frame(label).Visible = !string.IsNullOrEmpty(text);
+        Control frame = Frame(label);
+        frame.Visible = false;
+        Callable.From(() => Fit(label)).CallDeferred();
+    }
+
+    private static void Fit(Label label)
+    {
+        if (!InteractionControl.IsUsable(label)) return;
+        float height = Math.Clamp(label.GetLineHeight() * Math.Max(3, label.GetLineCount()) + 48, 108, 220);
+        Control frame = Frame(label);
+        var size = new Vector2(0, height);
+        if (!frame.CustomMinimumSize.IsEqualApprox(size)) frame.CustomMinimumSize = size;
     }
 
     private static Control Frame(Label label) => (Control)label.GetParent().GetParent();

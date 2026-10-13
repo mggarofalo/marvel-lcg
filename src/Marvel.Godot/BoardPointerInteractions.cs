@@ -9,8 +9,9 @@ internal sealed class BoardPointerInteractions
     private readonly Action<BoardCardPresentation, Control> activated;
     private readonly Action<BoardCardPresentation, Control> previewEntered;
     private readonly Action<Control> previewExited;
-    private readonly Dictionary<int, CardControl> mulliganCards = [];
-    private readonly HashSet<int> legalMulliganTargets = [];
+    private readonly PointerMulliganDraft mulligan = new();
+    private readonly HandGestureLayout hand;
+    private readonly CardPointerLift lift = new();
     private readonly BoardPointerDropSurfaces drops = new();
     private readonly Dictionary<Control, (Vector2 Position, float Rotation, int Z)> resting = [];
 
@@ -18,7 +19,6 @@ internal sealed class BoardPointerInteractions
     private Func<CardPointerGesture, bool>? directActivation;
     private Func<CardPointerGesture, bool>? directDrag;
     private Func<CardPointerGesture, bool>? canDrag;
-    private Action<int>? mulliganTargetRequested;
     private bool pointerLifted;
     internal Func<bool>? MotionEnabled { get; set; }
     internal Action<CardPointerGesture>? DragPreview { get; set; }
@@ -34,10 +34,12 @@ internal sealed class BoardPointerInteractions
         this.activated = activated;
         this.previewEntered = previewEntered;
         this.previewExited = previewExited;
+        hand = new HandGestureLayout(StoreRestingPose) { MotionEnabled = () => MotionEnabled?.Invoke() != false };
     }
     internal void Track(Control control, BoardCardPresentation card, bool isHandCard)
     {
         resting[control] = (control.Position, control.Rotation, control.ZIndex);
+        if (isHandCard && control is CardControl handCard) hand.Track(handCard);
         SpatialCardPose.Store(control);
         control.MouseEntered += () => EnterCard(control, card);
         control.MouseExited += () => ExitCard(control);
@@ -47,8 +49,21 @@ internal sealed class BoardPointerInteractions
 
     internal void UpdateRestingPose(Control control)
     {
+        StoreRestingPose(control);
+        hand.Capture(control);
+    }
+
+    private void StoreRestingPose(Control control)
+    {
         resting[control] = (control.Position, control.Rotation, control.ZIndex);
         SpatialCardPose.Store(control);
+    }
+
+    internal void TrackPreviewOnly(Control control, BoardCardPresentation card)
+    {
+        control.MouseEntered += () => previewEntered(card, control);
+        control.MouseExited += () => previewExited(control);
+        CardFocusPreview.Bind(control, () => previewEntered(card, control), () => previewExited(control));
     }
 
     internal bool Route(InputEvent input)
@@ -64,8 +79,16 @@ internal sealed class BoardPointerInteractions
         }
         if (!isCurrent() || !InteractionControl.IsUsable(captured.Source))
         {
+            lift.Restore();
             pointerCapture = null;
             return false;
+        }
+        if (input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Escape })
+        {
+            pointerCapture = null;
+            hand.CancelPreview();
+            ReturnCaptured(captured.Source, invalid: false);
+            return true;
         }
         if (input is InputEventMouseMotion motion)
         {
@@ -85,6 +108,7 @@ internal sealed class BoardPointerInteractions
         }
         if (isDrag)
         {
+            lift.Restore();
             bool accepted = TryDrag(captured.Source, captured.Gesture.Card,
                 captured.Gesture.IsHandCard, release.GlobalPosition, captured.Gesture.Start);
             ReturnCaptured(captured.Source, invalid: !accepted);
@@ -111,22 +135,25 @@ internal sealed class BoardPointerInteractions
 
     internal bool IsDroppedOnLivePlayerLane(int seat, Vector2 position) => drops.Contains(seat, position);
 
-    internal void RegisterMulliganCard(int id, CardControl card) => mulliganCards[id] = card;
+    internal void RegisterMulliganCard(int id, CardControl card) => hand.Track(card);
+
+    internal void RegisterHandArea(Control control, int seat,
+        Func<int, int, float, SpatialCardPlacement> placement)
+    {
+        hand.RegisterArea(control, seat);
+        hand.Placement = placement;
+    }
+    internal void RegisterMulliganStage(Control control) { hand.RegisterStage(control); drops.RegisterStage(control); }
 
     internal void RegisterMulliganDiscard(Control discard) => drops.RegisterMulligan(discard);
 
-    internal void BindMulliganTargets(IReadOnlyCollection<int> legal, Action<int> choose) {
-        legalMulliganTargets.Clear();
-        legalMulliganTargets.UnionWith(legal);
-        mulliganTargetRequested = choose;
+    internal void BindMulliganTargets(IReadOnlyCollection<int> legal, IReadOnlyCollection<int> selected, Action<int> choose) {
+        mulligan.Bind(legal, selected, choose);
+        hand.Stage(selected);
     }
 
-    internal void RequestMulliganTarget(int id) {
-        if (legalMulliganTargets.Contains(id))
-        {
-            mulliganTargetRequested?.Invoke(id);
-        }
-    }
+    internal void RequestMulliganTarget(int id) => mulligan.Toggle(id);
+    internal void SetMulliganTargets(IReadOnlyCollection<int> selected) { mulligan.SetSelected(selected); hand.Stage(selected); }
 
     private void HandleCardInput(
         Control control, BoardCardPresentation card, bool isHandCard, InputEvent input)
@@ -141,6 +168,12 @@ internal sealed class BoardPointerInteractions
         }
         else if (input is InputEventKey { Echo: false } && input.IsActionPressed("ui_accept"))
         {
+            if (card.TargetId is { } id && mulligan.Contains(id))
+            {
+                mulligan.Toggle(id);
+                control.AcceptEvent();
+                return;
+            }
             Activate(control, card, isHandCard, Vector2.Zero);
         }
     }
@@ -163,27 +196,12 @@ internal sealed class BoardPointerInteractions
         Control control, BoardCardPresentation card, bool isHandCard, Vector2 finish, Vector2 start)
     {
         bool dragged = CardPointerGestureRouter.IsDrag(start, finish);
-        if (isCurrent() && dragged
-            && directDrag?.Invoke(new CardPointerGesture(card, control, isHandCard, finish)) == true)
-        {
-            return true;
-        }
-        int id = card.TargetId ?? -1;
-        if (!CanDropMulligan(card, id, finish, dragged))
-        {
-            return false;
-        }
-        mulliganTargetRequested?.Invoke(id);
-        return true;
+        if (!isCurrent() || !dragged) return false;
+        if (card.TargetId is { } id && mulligan.Drop(id, drops.ContainsMulligan(finish), hand.Contains(finish))) return true;
+        if (isHandCard && hand.Drop(control, finish)) return true;
+        hand.CancelPreview();
+        return directDrag?.Invoke(new CardPointerGesture(card, control, isHandCard, finish)) == true;
     }
-
-    private bool CanDropMulligan(
-        BoardCardPresentation card, int id, Vector2 finish, bool dragged) =>
-        isCurrent() && dragged && card.TargetId is not null
-        && legalMulliganTargets.Contains(id)
-        && mulliganCards.TryGetValue(id, out CardControl? source)
-        && InteractionControl.IsUsable(source)
-        && drops.ContainsMulligan(finish);
 
     private void Activate(
         Control control, BoardCardPresentation card, bool isHandCard, Vector2 position)
@@ -211,7 +229,7 @@ internal sealed class BoardPointerInteractions
 
     private void ExitCard(Control control)
     {
-        if (pointerCapture is null) RestorePose(control);
+        if (isCurrent() && pointerCapture is null) RestorePose(control);
         BoardHoverPresentation.RestoreControls(control);
         previewExited(control);
     }
@@ -223,23 +241,23 @@ internal sealed class BoardPointerInteractions
         if (!pointerLifted)
         {
             pointerLifted = true;
-            captured.Source.ZIndex = 240;
-            captured.Source.Rotation = 0;
-            captured.Source.Modulate = Colors.White;
+            lift.Begin(captured.Source);
             bool playAvailable = canDrag?.Invoke(new CardPointerGesture(
                 captured.Gesture.Card, captured.Source, captured.Gesture.IsHandCard, pointer)) == true;
             drops.SetActive(playAvailable);
             drops.SetMulliganActive(captured.Gesture.Card.TargetId is { } id
-                && legalMulliganTargets.Contains(id));
+                && mulligan.Contains(id));
         }
-        captured.Source.GlobalPosition = pointer - captured.Source.Size / 2;
-        if (captured.Source is CardControl hand) SpatialHandActionStrip.Refresh(hand);
+        CardPointerLift.Move(captured.Source, pointer);
+        if (captured.Gesture.IsHandCard) hand.Preview(captured.Source, pointer);
+        if (captured.Source is CardControl handCard) SpatialHandActionStrip.Refresh(handCard);
         DragPreview?.Invoke(new CardPointerGesture(captured.Gesture.Card, captured.Source,
             captured.Gesture.IsHandCard, pointer));
     }
 
     private void ReturnCaptured(Control control, bool invalid)
     {
+        lift.Restore();
         drops.SetActive(false);
         drops.SetMulliganActive(false);
         pointerLifted = false;

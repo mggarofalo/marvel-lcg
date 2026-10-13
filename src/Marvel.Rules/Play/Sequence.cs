@@ -58,6 +58,8 @@ public static class Sequence
             {
                 continue;
             }
+            if (step.What == Steps.PlaceThreat && world.Agenda.Occurrence is null)
+                events.Add(new PhaseStarted("Villain") { Round = step.Round, Trigger = "WhenVillainPhaseBegins", Verb = "Phase_Started" });
             if (TryWorkNonApplying(
                     world, facts, abilities, events, scope, step, out Prompt? question))
             {

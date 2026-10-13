@@ -13,12 +13,9 @@ internal static class SourceTableauSample
     {
         string? option = OS.GetCmdlineUserArgs().FirstOrDefault(value => value.StartsWith("--marvel-tableau=", StringComparison.Ordinal));
         if (option is null) return false;
-        owner.SetProcessInput(false);
-        foreach (Node child in owner.GetChildren()) if (child is CanvasItem item) item.Hide();
-        var root = new Control { Name = "TableauFixture", Position = new Vector2(20, 50) };
-        ClientThemeInstallation.Apply(root);
-        owner.AddChild(root);
-        BoardAreaPresentation[] areas = JsonSerializer.Deserialize<BoardAreaPresentation[]>(File.ReadAllText(option["--marvel-tableau=".Length..]))!;
+        Control root = CreateFixture(owner);
+        string path = option["--marvel-tableau=".Length..];
+        BoardAreaPresentation[] areas = ReadAreas(path);
         InterfaceScale scale = SpatialCardMetrics.TableScale(ClientTheme.ConfiguredScale());
         bool narrow = OS.GetCmdlineUserArgs().Contains("--marvel-tableau-narrow");
         root.SetMeta("narrow", narrow);
@@ -35,7 +32,34 @@ internal static class SourceTableauSample
         root.AddChild(new Label { Name = "FixtureContext", Text = "SYNTHETIC DENSE TABLE · 16 physical sources\nCard body inspects · Each action selects that exact copy",
             Position = geometry.Context.Position, ThemeTypeVariation = GodotThemeVariations.Body });
         result.CardActivated += (card, _) => root.SetMeta("inspected_id", card.TargetId ?? -1);
-        string path = option["--marvel-tableau=".Length..];
+        BindFixtureInput(root, result, path);
+        return true;
+    }
+
+    private static Control CreateFixture(Control owner)
+    {
+        owner.SetProcessInput(false);
+        foreach (Node child in owner.GetChildren()) if (child is CanvasItem item) item.Hide();
+        var root = new Control { Name = "TableauFixture", Position = new Vector2(20, 50) };
+        ClientThemeInstallation.Apply(root);
+        owner.AddChild(root);
+        return root;
+    }
+
+    private static BoardAreaPresentation[] ReadAreas(string path)
+    {
+        BoardAreaPresentation[] areas = JsonSerializer.Deserialize<BoardAreaPresentation[]>(File.ReadAllText(path))!;
+        if (OS.GetCmdlineUserArgs().Contains("--marvel-tableau-symbols"))
+            areas = [.. areas.Select(area => area with { Cards = [.. area.Cards.Select(card => card.Kind == "UPGRADE"
+                ? card with { Counters = [new("Energy", "3"), new("Uses", "0"), new("Charges", "25")] } : card)] })];
+        if (OS.GetCmdlineUserArgs().Contains("--marvel-tableau-single-counter"))
+            areas = [.. areas.Select(area => area with { Cards = [.. area.Cards.Select(card => card.Kind == "UPGRADE"
+                ? card with { Counters = [new("Uses", "3")] } : card)] })];
+        return areas;
+    }
+
+    private static void BindFixtureInput(Control root, BoardRenderResult result, string path)
+    {
         WorldDescriptor world = JsonSerializer.Deserialize<WorldDescriptor>(File.ReadAllText(path + ".world"))!;
         Prompt prompt = JsonSerializer.Deserialize<Prompt>(File.ReadAllText(path + ".prompt"))!;
         var composer = new DecisionComposer(prompt);
@@ -53,6 +77,5 @@ internal static class SourceTableauSample
             if (input is InputEventMouseButton { Pressed: false }) result.RoutePointer(input);
         };
         result.PresentInteraction(composer, presentation);
-        return true;
     }
 }

@@ -40,6 +40,7 @@ public static class PlayerDeck
         var deck = world.Seats[player].Deck;
         long remaining = Math.Min(count, deck.Cards.Count);
         var discarded = new List<Card>();
+        int start = events.Count;
         for (long index = 0; index < remaining; index++)
         {
             var card = deck.Cards[^1];
@@ -47,6 +48,7 @@ public static class PlayerDeck
             discarded.Add(card);
         }
 
+        ActivityBatches.Complete(events, start, "Discard", player);
         return discarded;
     }
 

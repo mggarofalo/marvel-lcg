@@ -43,7 +43,7 @@ internal static class CoreTranscriptCardAssertions
         // final landing rather than the engine's operation spelling.
         int discard = context.Events.FindLastIndex(gameEvent => EventLands(gameEvent, card));
         int prior = context.Events.FindLastIndex(gameEvent =>
-            gameEvent.Verb == match.Groups["verb"].Value);
+            gameEvent is not ActivityCompleted && gameEvent.Verb == match.Groups["verb"].Value);
         if (prior < 0 || discard <= prior)
         {
             throw new TranscriptAssertionException(

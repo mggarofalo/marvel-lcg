@@ -15,7 +15,7 @@ internal sealed class SpatialTableObjectRenderer
     private readonly SpatialTablePileRenderer piles;
     private readonly Dictionary<int, (CardControl Control, Vector2 Position)> hosts = [];
     private int renderedCardCount;
-    private CardControl? revealedCard;
+
 
     internal SpatialTableObjectRenderer(
         Control surface,
@@ -43,8 +43,7 @@ internal sealed class SpatialTableObjectRenderer
         piles.Render(areas, "EncounterDeck", geometry.EncounterDeck);
         RenderCards(areas, "MainSchemesArea", geometry.MainScheme, CardDisplaySize.Board);
         RenderCards(areas, "VillainArea", geometry.Villain, CardDisplaySize.Board);
-        RenderCards(areas, "SideSchemesArea", geometry.SideSchemes, CardDisplaySize.Board,
-            geometry.LargeText ? 1 : 2);
+        RenderCards(areas, "SideSchemesArea", geometry.SideSchemes, CardDisplaySize.Board);
     }
 
     internal void RenderRevealing(IReadOnlyList<BoardAreaPresentation> areas,
@@ -53,7 +52,7 @@ internal sealed class SpatialTableObjectRenderer
         BoardAreaPresentation[] resolving = SpatialTableZones.Resolving(areas);
         if (context is { Count: > 0 })
             resolving = [new BoardAreaPresentation(-1, "Current decision", "", context, []), .. resolving];
-        RenderCardRegion(resolving, "RevealingArea", geometry.Revealing, CardDisplaySize.Hand, int.MaxValue);
+        CausalCardReferences.Add(surface, geometry.Revealing, resolving.SelectMany(SpatialTableZones.Current), result, scale);
     }
 
     internal void RenderPlayer(IReadOnlyList<BoardAreaPresentation> areas)
@@ -63,33 +62,37 @@ internal sealed class SpatialTableObjectRenderer
             piles.RenderEmpty("PlayerDiscard", "Discard\nEmpty", geometry.PlayerDiscard, openingMulligan);
         }
         piles.Render(areas, "PlayerDeck", geometry.PlayerDeck);
-        RenderCards(areas, "EngagedEnemiesArea", geometry.EngagedEnemies, CardDisplaySize.Board, 1);
+        RenderCards(areas, "EngagedEnemiesArea", geometry.EngagedEnemies, CardDisplaySize.Board);
         RenderCards(areas, "HeroArea", geometry.Identity, CardDisplaySize.Board);
-        RenderCards(areas, "AlliesArea", geometry.Allies, CardDisplaySize.Board,
-            geometry.LargeText ? 2 : 3);
-        RenderCards(areas, "SupportsArea", geometry.Assets, CardDisplaySize.Board,
-            geometry.HasRevealingCard && !geometry.HasSeparateRevealSlot ? 0 : 1);
-        RenderCards(areas, "UpgradesArea", geometry.Upgrades, CardDisplaySize.Board, 1, includeHosted: true);
+        RenderCards(areas, "AlliesArea", geometry.Allies, CardDisplaySize.Board);
+        RenderCards(areas, "SupportsArea", geometry.Assets, CardDisplaySize.Board);
+        RenderCards(areas, "UpgradesArea", geometry.Upgrades, CardDisplaySize.Board, includeHosted: true);
     }
 
     internal void RenderHosted(IReadOnlyList<BoardAreaPresentation> areas)
     {
+        int seat = areas.FirstOrDefault(area => area.Zone == "HeroArea")?.Seat ?? -1;
+        BoardCardPresentation[] controlled = CardSourceGroups.Controlled(areas, seat);
+        HashSet<int?> controlledIds = [.. controlled.Select(card => card.TargetId)];
         foreach (var host in hosts)
         {
-            SpatialTableHostAttachments.Add(host.Value.Control, CardSourceGroups.Attached(areas, host.Key), result, scale, art);
+            SpatialTableHostAttachments.Add(host.Value.Control,
+                [.. CardSourceGroups.Attached(areas, host.Key).Where(card => !controlledIds.Contains(card.TargetId))], result, scale, art);
         }
         foreach (BoardAreaPresentation area in areas.Where(area => area.Host >= 0))
             if (hosts.TryGetValue(area.Host, out var host))
                 SpatialTableHostAttachments.AddOther(host.Control, area, result, scale, art);
-        int seat = areas.FirstOrDefault(area => area.Zone == "HeroArea")?.Seat ?? -1;
-        BoardCardPresentation[] controlled = CardSourceGroups.Controlled(areas, seat);
         if (controlled.Length == 0) return;
-        surface.AddChild(SourceTableauRenderer.Create(controlled, geometry.SourceTableau, result, scale));
+        Control sources = SourceTableauRenderer.Create(controlled, geometry.SourceTableau, result, scale, seat,
+            areas.SelectMany(area => area.Cards).Where(card => card.TargetId.HasValue && !card.Concealed)
+                .DistinctBy(card => card.TargetId).ToDictionary(card => card.TargetId!.Value, card => card.Title));
+        surface.AddChild(sources);
+        result.RegisterDropTarget(seat, sources);
     }
 
     internal void RenderHand(BoardAreaPresentation? hand)
     {
-        BoardCardPresentation[] cards = hand is null ? [] : SpatialTableZones.Current(hand);
+        BoardCardPresentation[] cards = hand is null ? [] : HandPresentationOrder.Arrange(hand.Seat, SpatialTableZones.Current(hand));
         float width = VisualSystem.Card(CardDisplaySize.Hand, scale).Width;
         for (int index = 0; index < cards.Length; index++)
         {
@@ -105,7 +108,7 @@ internal sealed class SpatialTableObjectRenderer
             if (openingMulligan && cards[index].TargetId is { } id)
             {
                 result.RegisterMulliganCard(id, control);
-                AddMulliganToggle(id, control);
+
             }
         }
     }
@@ -125,15 +128,14 @@ internal sealed class SpatialTableObjectRenderer
         string zone,
         Rect2 region,
         CardDisplaySize size,
-        int maximumVisible = int.MaxValue,
         bool includeHosted = false)
     {
         BoardAreaPresentation[] matching = [.. areas.Where(area => area.Zone == zone && (includeHosted || area.Host < 0))];
-        RenderCardRegion(matching, zone, region, size, maximumVisible);
+        RenderCardRegion(matching, zone, region, size);
     }
 
     private void RenderCardRegion(BoardAreaPresentation[] matching, string zone,
-        Rect2 region, CardDisplaySize size, int maximumVisible)
+        Rect2 region, CardDisplaySize size)
     {
         if (zone != "RevealingArea") matching = [.. matching.Select(area => area with
         { Cards = [.. area.Cards.Where(card => !CardSourceGroups.IsLocalSource(card))] })];
@@ -146,40 +148,25 @@ internal sealed class SpatialTableObjectRenderer
         {
             result.Inspector.Register(area.Cards);
         }
-        Vector2 objectSize = SpatialCardFootprint.OccupiedSize(SpatialCardMetrics.Envelope(cards, size, scale));
-        int capacity = (int)Math.Floor((region.Size.X + 14) / (objectSize.X + 14));
-        BoardCardPresentation[] visible = [.. cards.Take(Math.Min(maximumVisible, capacity))];
-        CardControl? drawerHost = zone == "SupportsArea" && maximumVisible == 0 ? revealedCard : null;
-        bool hasDrawer = cards.Length > visible.Length;
-        drawerHost = RenderVisible(visible, zone, region, size, matching, hasDrawer) ?? drawerHost;
-
-        if (hasDrawer)
+        if (zone is "SideSchemesArea" or "EngagedEnemiesArea" or "AlliesArea")
         {
-            piles.RenderRegion(matching, zone, SpatialRegionDrawerLayout.Bounds(region), drawerHost);
+            IReadOnlyList<CardControl> collection = zone == "SideSchemesArea"
+                ? SchemeStackCollection.Render(surface, region, cards, result, scale, art)
+                : SpatialCardCollection.Render(surface, region, zone, cards, result, scale, art);
+            foreach (CardControl card in collection)
+                if (card.TargetId is { } id) hosts[id] = (card, card.Position);
+            return;
         }
-    }
-
-    private CardControl? RenderVisible(BoardCardPresentation[] visible, string zone, Rect2 region,
-        CardDisplaySize size, BoardAreaPresentation[] matching, bool hasDrawer)
-    {
-        CardControl? first = null;
-        Vector2 objectSize = SpatialCardFootprint.OccupiedSize(SpatialCardMetrics.Envelope(visible, size, scale));
-        for (int index = 0; index < visible.Length; index++)
+        for (int index = 0; index < cards.Length; index++)
         {
-            Vector2 position = geometry.Slot(region, index, visible.Length, objectSize);
-            CardControl control = AddCard(visible[index], position, size, 8 + index);
-            first ??= control;
-            if (zone == "RevealingArea") revealedCard ??= control;
-            SpatialTableLabel.Persistent(control, zone, matching, visible[index], hasDrawer);
-            if (SpatialTableZones.IsExhausted(visible[index]))
+            CardControl control = AddCard(cards[index], region.Position + new Vector2(index * 24, 0), size, 8 + index);
+            if (SpatialTableZones.IsExhausted(cards[index]))
             {
-                Exhaust(control, visible[index], position);
+                Exhaust(control, cards[index], control.Position);
                 result.UpdateRestingPose(control);
             }
         }
-        return first;
     }
-
     private CardControl AddCard(
         BoardCardPresentation card,
         Vector2 position,
@@ -220,27 +207,11 @@ internal sealed class SpatialTableObjectRenderer
 
     private static void Exhaust(CardControl control, BoardCardPresentation card, Vector2 position)
     {
-        control.PivotOffset = control.CustomMinimumSize / 2;
+        control.PivotOffset = Vector2.Zero;
         control.Rotation = Mathf.Pi / 2;
+        control.Position = position + new Vector2(control.Size.Y, 0);
         control.SetMeta("spatial_exhausted", true);
         SpatialCardSidecar.Place(control);
-    }
-
-    private void AddMulliganToggle(int id, CardControl card)
-    {
-        var toggle = new Button
-        {
-            Name = $"MulliganDiscard{id}",
-            Text = "↻",
-            AccessibilityName = "Select for replacement",
-            ToggleMode = true,
-            ZIndex = 0,
-            ZAsRelative = true,
-            TooltipText = "Select this card for replacement. The card body remains inspection.",
-        };
-        toggle.Pressed += () => result.RequestMulliganTarget(id);
-        SpatialHandActionStrip.Place(card, toggle);
-        result.RegisterMulliganToggle(id, toggle);
     }
 
 }

@@ -56,6 +56,7 @@ internal static class GamePlayerSetup
             }
 
             game.Round = 1;
+            happened.Add(new PhaseStarted("Player") { Round = game.Round, Trigger = "WhenPlayerPhaseBegins", Verb = "Phase_Started" });
             game.finishedTurns.Clear();
             game.Active = game.world.FirstPlayer;
             game.Phase = GamePhase.PlayerTurn;

@@ -16,7 +16,7 @@ public sealed class TableAttachmentCaptionTests
             $"{count} concealed encounter cards", "", "", "", [])];
         var area = new BoardAreaPresentation(1, "Boost", "", cards, []) { Zone = "BoostCardsDeck" };
 
-        Assert.Equal($"Boost · {count}\nFace down", SpatialTableHostAttachments.Caption(area, cards));
+        Assert.Equal($"{count} facedown boost {(count == 1 ? "card" : "cards")}", SpatialTableHostAttachments.Caption(area, cards));
     }
 
     [Fact]
@@ -35,6 +35,6 @@ public sealed class TableAttachmentCaptionTests
             new(null, 1, true, "1 concealed encounter card", "", "", "", [])];
         var area = new BoardAreaPresentation(1, "Attachments", "", cards, []);
 
-        Assert.Equal("Cards\n2", SpatialTableHostAttachments.Caption(area, cards));
+        Assert.Equal("Cards · 2", SpatialTableHostAttachments.Caption(area, cards));
     }
 }

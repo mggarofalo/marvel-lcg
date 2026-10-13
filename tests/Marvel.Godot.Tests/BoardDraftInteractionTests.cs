@@ -45,14 +45,16 @@ public sealed class BoardDraftInteractionTests
     }
 
     [Fact]
-    public void HandClickAndOutsideDropLeaveTheDraftUntouched()
+    public void HandClickInspectsWhileOutsideDropBeginsUntargetedPlayComposition()
     {
         var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible"));
         var interaction = Interaction(composer);
 
         Assert.Equal(BoardDraftMutation.None, interaction.TryActivate(19, true));
-        Assert.Equal(BoardDraftMutation.None, interaction.TryPlay(19, true, false));
         Assert.Null(composer.Selected);
+        Assert.Equal(BoardDraftMutation.Affordance, interaction.TryPlay(19, true, false));
+        Assert.Equal(3, composer.Selected!.Id);
+        Assert.Empty(composer.Targets);
     }
 
     [Fact]

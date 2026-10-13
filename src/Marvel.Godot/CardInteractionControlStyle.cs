@@ -4,6 +4,9 @@ namespace Marvel.Godot;
 internal static class CardInteractionControlStyle
 {
     internal static string Symbol(CardInteractionControlDescriptor descriptor) =>
+        descriptor.IsDefender ? ""
+        : descriptor.DirectActivation ? "Activate"
+        :
         (descriptor.Cue & (CardInteractionCue.SelectedTarget | CardInteractionCue.SelectedGenerator
             | CardInteractionCue.SelectedDestructiveChoice)) != 0 ? "✓"
         : descriptor.Intent switch
