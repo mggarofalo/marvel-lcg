@@ -125,8 +125,7 @@ func _wait_for_hosted_motion(main: Control) -> bool:
 
 func _hosted_response_revision(main: Control) -> int:
 	var revision := main.get_node("StatusBar/SyncStatus") as Label
-	var value := revision.text.trim_prefix("Last synced · r")
-	return value.to_int() if value.is_valid_int() else -1
+	return int(revision.get_meta("response_revision", -1))
 
 
 func _hosted_decision_rejected(main: Control) -> bool:

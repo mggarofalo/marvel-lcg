@@ -38,7 +38,7 @@ func _hand_insertion_is_local() -> bool:
 	var neighbor := cards[1]
 	var old_neighbor := neighbor.position
 	var old_source := source.position
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var start := await _exposed_card_body_point(source)
 	if start == Vector2.INF: return false
 	var finish := Vector2(hand.get_global_rect().end.x - 15, hand.get_global_rect().get_center().y)
@@ -62,7 +62,7 @@ func _hand_insertion_is_local() -> bool:
 	release.global_position = finish
 	render_viewport.push_input(release, true)
 	await preload("res://smoke/gesture_settlement.gd").hand(self)
-	if source.position.x <= old_source.x + 100 or (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if source.position.x <= old_source.x + 100 or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("hand reorder did not remain a local presentation change")
 		return false
 	return true
@@ -73,7 +73,7 @@ func _middle_mulligan_closes_gap() -> bool:
 		if candidate.has_meta("spatial_hand_index"): cards.append(candidate as Control)
 	cards.sort_custom(func(a: Control, b: Control) -> bool: return a.position.x < b.position.x)
 	var middle := cards[2]
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var original := cards.map(func(card: Control) -> Vector2: return card.position)
 	middle.grab_focus()
 	await _press_key(KEY_SPACE)
@@ -94,7 +94,7 @@ func _middle_mulligan_closes_gap() -> bool:
 		if cards[index].position.distance_to(original[index]) > 1:
 			_fail("unstaging did not restore local hand order and spacing")
 			return false
-	return (_node("Toolbar/SyncStatus") as Label).text == revision
+	return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == revision
 
 func _press_key(code: Key) -> void:
 	for pressed in [true, false]:

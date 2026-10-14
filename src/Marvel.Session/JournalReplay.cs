@@ -14,8 +14,14 @@ public static class JournalReplay
     {
         ArgumentNullException.ThrowIfNull(expected);
         ArgumentNullException.ThrowIfNull(actual);
-        PromptRecord recorded = NormalizeUnrecordedSchemaTwoFields(
-            expected, PromptRecord.From(actual));
+        RequirePromptRecords(expected, PromptRecord.From(actual), context);
+    }
+
+    /// <summary>Compares optional recorded prompts using their schema's recorded fields.</summary>
+    public static void RequirePromptRecords(PromptRecord? expected, PromptRecord? actual, string context)
+    {
+        PromptRecord? recorded = expected is not null && actual is not null
+            ? NormalizeUnrecordedSchemaTwoFields(expected, actual) : actual;
         RequireEqual(
             JsonSerializer.Serialize(expected, JournalJson.Options),
             JsonSerializer.Serialize(recorded, JournalJson.Options),
@@ -76,10 +82,14 @@ public static class JournalReplay
         {
             return actual;
         }
-        return [.. actual.Select((cost, index) =>
-            expected[index].LegacyDeclarationSensitiveRecorded
-                ? cost
-                : cost with { DeclarationSensitive = expected[index].DeclarationSensitive })];
+        return [.. actual.Select((cost, index) => cost with
+        {
+            DeclarationSensitive = expected[index].LegacyDeclarationSensitiveRecorded
+                ? cost.DeclarationSensitive : expected[index].DeclarationSensitive,
+            Sources = expected[index].ResourceMeaningRecorded ? cost.Sources
+                : cost.Sources?.Select(source => source with
+                    { AbilityName = null, CostDescription = null }).ToArray(),
+        })];
     }
 
     /// <summary>Requires semantic events to retain their exact count, order and shape.</summary>

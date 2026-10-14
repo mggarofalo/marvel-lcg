@@ -22,5 +22,8 @@ internal static class EventActivitySurface
         host.SetMeta("activity_index", sequence.Index);
         host.SetMeta("activity_count", sequence.BeatCount);
         host.SetMeta("receipt_count", sequence.Entries.Count);
+        host.SetMeta("activity_duration", sequence.PlannedDuration);
+        host.SetMeta("activity_attack_boundary", sequence.Current?.Activity?.AttackBoundary switch
+            { true => "started", false => "finished", _ => "" });
     }
 }

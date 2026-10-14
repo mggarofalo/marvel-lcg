@@ -14,6 +14,9 @@ public sealed record WorldDescriptor(
     IReadOnlyList<GameAreaDescriptor> GameAreas,
     Outcome Outcome)
 {
+    /// <summary>The public rule-owned cause distinguishing player-loss outcomes.</summary>
+    public PlayerLossReason LossReason { get; init; }
+
     /// <summary>The authorized attack whose resolution is still open, independently of the current prompt.</summary>
     public ActiveAttackDescriptor? ActiveAttack { get; init; }
 

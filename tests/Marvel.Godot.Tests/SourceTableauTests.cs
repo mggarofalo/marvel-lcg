@@ -59,6 +59,8 @@ public sealed class SourceTableauTests
         Assert.Equal(16, sources.Length);
         Assert.Equal(2, sources.Count(card => card.Title == "Powered Gauntlets"));
         Assert.Contains(sources, card => card.Title == "Pepper Potts");
+        Assert.StartsWith("ready your hero", CardSourceSummary.TileMeaning(sources.Single(card => card.Title == "Arc Reactor")));
+        Assert.Contains("Exhaust this", CardSourceSummary.TileMeaning(sources.Single(card => card.Title == "Arc Reactor")));
         var reordered = areas.AsEnumerable().Reverse().Select(area => area with { Cards = [.. area.Cards.Reverse()
             .Select(card => card with { Status = "EXHAUSTED" })] }).ToArray();
         Assert.Equal(sources.Select(card => card.TargetId), CardSourceGroups.Controlled(reordered, 0).Select(card => card.TargetId));

@@ -34,6 +34,7 @@ The current public events are:
 | `FieldSet` | One named gameplay field changed |
 | `BoostResolved` | Applied boost icons and the current activation stat |
 | `AttackCompleted` | An enemy attack ended with its established target and defender |
+| `AttackBoundary` | Exact attack onset and final response completion |
 | `CardsShuffledIntoDeck` | A completed shuffle of returned cards, with public names and no hidden identities |
 
 Most events use card object ids and `AreaRef` values. A public shuffle receipt
@@ -67,6 +68,7 @@ emits these facts directly:
 | `PlayAreaDetached` | `play_area`, `game_area` |
 | `BoostResolved` | `card`, `enemy`, `icons`, `attacking`, `strength` |
 | `AttackCompleted` | `enemy`, `target`, `defender`, `damage_dealt` |
+| `AttackBoundary` | `identity`, `source`, `target`, `started`, `resumed` |
 | `WhenRevealedCanceled` | `card`, `source` |
 | `CardsShuffledIntoDeck` | `player`, `count`, `public_titles` |
 | `ActivityCompleted` | `batch`, `participants`, `phase_step` |
@@ -297,3 +299,5 @@ outcomes (for example, cards discarded and cards returned), while its separately
 authorized source-face reference retains the printed rules for inspection. When
 no associated visible result exists, the engine's existing explanation remains;
 absence of a visible result does not assert that hidden state stayed unchanged.
+
+Protocol 31 / replay v16 carry engine-authored attack identities and lifetime boundaries, exact scheme/thwart occurrence causes, named resource-ability costs, and authoritative player-loss reasons. Attack identities distinguish enemy activation ids from character occurrence ids. They do not change RNG, card-state digests, game timing, or the save envelope. Supporting travel, reveal and installation receipts may share one presentation beat; every raw event remains available in diagnostics.

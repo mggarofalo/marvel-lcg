@@ -269,6 +269,7 @@ public sealed partial class EliminationTests
 
         Elimination.Eliminate(world, printed, 1, "test", []);
         Assert.Equal(Outcome.PlayersLose, world.Result);
+        Assert.Equal(PlayerLossReason.AllPlayersEliminated, world.LossReason);
     }
 
     [Rule("rr:player-elimination")]

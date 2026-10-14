@@ -21,18 +21,26 @@ internal static class EventActivityTiming
     internal static double Duration(EventPresentation? entry)
     {
         if (entry is null) return 0;
-        // A cause establishes direction; its consequence has its own readable beat.
-        if (entry.Activity?.Operation == "Attack_Presentation") return .48;
+        if (AttackDuration(entry.Activity) is { } attack) return attack;
         if (entry.Activity?.PhaseBoundary == true) return .5;
         if (entry.Activity?.PhaseStep == true) return .8;
         if (BriefTravel(entry)) return .38;
         return ConsequenceDuration(entry);
     }
 
+    // A cause establishes direction; its consequence has its own readable beat.
+    private static double? AttackDuration(EventActivityDescriptor? activity) => activity switch
+    {
+        { AttackBoundary: false } => .01,
+        { AttackBoundary: true } or { Operation: "Attack_Presentation" } => .48,
+        _ => null,
+    };
+
     // Movement endpoints are supplied facts; short travel does not need a second reading pause.
     private static bool BriefTravel(EventPresentation entry) => entry.Motion == EventMotionKind.Move
         && entry.Details.Count == 0 && entry.ForcedAbilityNotification is null
-        && entry.Activity is { Operation: "" or "Move", From.Length: > 0, To.Length: > 0, Quantities.Count: 0 };
+        && entry.Activity is { From.Length: > 0, To.Length: > 0, Quantities.Count: 0 } activity
+        && (activity.Kind == EventActivityKind.Travel || activity.Operation is "" or "Move");
 
     private static double ConsequenceDuration(EventPresentation entry)
     {

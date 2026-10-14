@@ -21,6 +21,9 @@ public sealed record CostOptionRecord(
     [JsonIgnore]
     internal bool LegacyDeclarationSensitiveRecorded { get; init; } = true;
 
+    [JsonIgnore]
+    internal bool ResourceMeaningRecorded { get; init; } = true;
+
     /// <summary>Captures source fields without computed cost aliases.</summary>
     public static CostOptionRecord From(CostOption option)
     {

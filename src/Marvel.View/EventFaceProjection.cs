@@ -10,7 +10,8 @@ internal static class EventFaceProjection
         IReadOnlyList<GameEvent> events, ICardFacts facts)
     {
         var references = new Dictionary<string, BoardCardPresentation>(StringComparer.Ordinal);
-        foreach (string id in events.SelectMany(entry => entry.SubjectFaces?.Values ?? []).Distinct())
+        foreach (string id in events.SelectMany(entry => entry.SubjectFaces?.Values ?? [])
+            .Concat(events.OfType<CardFormChanged>().Select(changed => changed.To)).Distinct())
         {
             CardFaceDescriptor face = PrintedCardFaceProjection.From(facts, id);
             CardBack back = face.Kind is CardKind.AlterEgo or CardKind.Hero or CardKind.Ally or CardKind.Event

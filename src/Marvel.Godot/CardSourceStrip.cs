@@ -52,7 +52,8 @@ internal static class CardSourceStrip
         stack.AddChild(label);
     }
 
-    internal static void AddContributions(VBoxContainer stack, BoardCardPresentation card, bool showRecipients = true)
+    internal static void AddContributions(VBoxContainer stack, BoardCardPresentation card,
+        bool showRecipients = true, InterfaceScale scale = InterfaceScale.Standard)
     {
         if (card.Persistent is not { } source || source.Contributions.Count == 0) return;
         var flow = new HFlowContainer { Name = "SourceContributions", MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -71,7 +72,8 @@ internal static class CardSourceStrip
                 icon.CustomMinimumSize = new Vector2(12, 12);
                 unit.AddChild(icon);
             }
-            Label contribution = Label(CardSourceSummary.Contribution(value), "SourceContribution", 11, CardTypography.Bold);
+            Label contribution = Label(CardSourceSummary.Contribution(value), "SourceContribution",
+                CompactTableTypography.Size(12, scale), CardTypography.Bold);
             contribution.AutowrapMode = TextServer.AutowrapMode.Off;
             unit.AddChild(contribution);
         }

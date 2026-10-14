@@ -54,8 +54,9 @@ func _accept_search() -> bool:
 	if _search_frame() != null or not main.find_children("SearchResult*", "Control", true, false).is_empty():
 		_fail("Shuri exposed candidate faces before search commitment")
 		return false
-	var pass_option := _button_named("Pass this opportunity")
-	if pass_option == null:
+	var pass_option := main.find_child("WindowPass", true, false) as Button
+	if pass_option == null or not pass_option.is_visible_in_tree() or pass_option.disabled \
+		or pass_option.text != "Pass this opportunity  ·  Esc":
 		_fail("Shuri's optional response lost its pass choice")
 		return false
 	var revision := _search_revision()
@@ -72,7 +73,7 @@ func _accept_search() -> bool:
 	return _search_fits()
 
 func _search_revision() -> int:
-	return (_node("Toolbar/SyncStatus") as Label).text.get_slice("· r", 1).to_int()
+	return int((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 
 func _select_and_finish() -> bool:
 	var face := _search_frame().find_child("SearchResult*", true, false) as Control

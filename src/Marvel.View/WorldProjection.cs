@@ -95,7 +95,7 @@ public static class WorldProjection
             new GameAreaDescriptor(
                 area.Id,
                 area.PlayAreas.Select(playArea => playArea.Player).Order().ToList())).ToList();
-        return new WorldDescriptor(players, areas, gameAreas, world.Result);
+        return new WorldDescriptor(players, areas, gameAreas, world.Result) { LossReason = world.LossReason };
     }
 
     private static CardDescriptor? DescribeCard(

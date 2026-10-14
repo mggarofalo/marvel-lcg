@@ -37,7 +37,7 @@ internal static class PrintedCardHeader
         AddPrimary(face, card, r);
         string identity = string.Join(" · ", new[] { CardTypeCaption.From(card.Kind), card.Subtitle }
             .Where(value => !string.IsNullOrWhiteSpace(value))).ToUpperInvariant();
-        Label kind = PrintedCardFace.Text(identity, "Kind", r.Kind, (r.Full ? 12 : 8) * r.Density);
+        Label kind = PrintedCardFace.Text(identity, "Kind", r.Kind, (r.Full ? 12 : 8) * r.Density + r.ReadingBoost);
         kind.AddThemeFontOverride("font", CardTypography.Bold);
         kind.AddThemeColorOverride("font_color", Colors.White);
         face.AddChild(kind);

@@ -162,11 +162,11 @@ func _wait_for_result_motion() -> bool:
 func _collapse_mulligan_history_for_next_seat() -> bool:
 	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
 	var chronology := str(history.get_meta("chronology", ""))
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _set_history_drawer(false): return false
 	var heading := _hand_heading()
 	if history.is_visible_in_tree() or str(history.get_meta("chronology", "")) != chronology \
-			or (_node("Toolbar/SyncStatus") as Label).text != revision \
+			or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision \
 			or heading == null or not heading.text.to_lower().begins_with("player 2 opening hand"):
 		_fail("collapsing the first mulligan account lost its receipt or changed the next seat's decision")
 		return false

@@ -15,7 +15,8 @@ internal static class TerminalOutcomeSurface
             main.RemoveChild(prior);
             prior.QueueFree();
         }
-        OutcomePresentation outcome = OutcomePresentation.From(main.CurrentGame!.World!.Outcome);
+        OutcomePresentation outcome = OutcomePresentation.From(main.CurrentGame!.World!.Outcome,
+            main.CurrentGame.World.LossReason);
         var frame = new PanelContainer
         {
             Name = "TerminalOutcome", ZIndex = 20,
@@ -33,7 +34,7 @@ internal static class TerminalOutcomeSurface
         frame.AddChild(stack);
         stack.AddChild(Copy("OutcomeHeading", outcome.Heading, 28));
         stack.AddChild(Copy("OutcomeResult", outcome.Result, 18));
-        stack.AddChild(Copy("OutcomeCause", outcome.Detail, 15));
+        if (outcome.Detail.Length > 0) stack.AddChild(Copy("OutcomeCause", outcome.Detail, 15));
         var actions = new HBoxContainer { ThemeTypeVariation = GodotThemeVariations.WideRow };
         stack.AddChild(actions);
         var review = new Button

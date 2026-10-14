@@ -28,14 +28,14 @@ public sealed class AttackActivityPresentationTests
     }
 
     [Fact]
-    public void AcceptedDefenderBecomesTargetThroughoutFinalConsequences()
+    public void AcceptedDefenderWaitsForItsCausalBeat()
     {
         var previous = Attack(1, "Rhino", 2, "Spider-Man");
         var defended = Attack(1, "Rhino", 3, "Mockingbird");
         var completed = Introduction(defended);
         var cue = AttackActivityPresentation.DuringTransition(previous, null, [completed]);
-        Assert.Same(completed, cue);
-        Assert.Equal(3, cue!.Activity!.Subjects.Single(subject => subject.Role == ActivitySubjectRole.Target).Card);
+        Assert.NotSame(completed, cue);
+        Assert.Equal(2, cue!.Activity!.Subjects.Single(subject => subject.Role == ActivitySubjectRole.Target).Card);
         Assert.Null(AttackActivityPresentation.From(null));
     }
 
@@ -50,12 +50,12 @@ public sealed class AttackActivityPresentationTests
     }
 
     [Fact]
-    public void NewlyInitiatedAndInstantAttacksBothHaveAStagedCue()
+    public void NewAttacksWaitForTheirOwnInitiationBeat()
     {
         var attack = Attack(1, "Rhino", 2, "Spider-Man");
-        Assert.Equal("Rhino → Spider-Man", AttackActivityPresentation.DuringTransition(null, attack, [])!.Summary);
+        Assert.Null(AttackActivityPresentation.DuringTransition(null, attack, []));
         EventPresentation instant = Introduction(Attack(2, "Spider-Man", 1, "Rhino"));
-        Assert.Same(instant, AttackActivityPresentation.DuringTransition(null, null, [instant]));
+        Assert.Null(AttackActivityPresentation.DuringTransition(null, null, [instant]));
         Assert.Null(AttackActivityPresentation.DuringTransition(null, null, []));
     }
 

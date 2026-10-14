@@ -69,9 +69,8 @@ internal static class SourceTableauRenderer
         var relation = CardSourceStrip.Label($"On {hostName}", "SourceHost", 9, CardTypography.Body);
         relation.AutowrapMode = TextServer.AutowrapMode.Off;
         relation.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
-        relation.TooltipText = $"Attached to {hostName}";
+        relation.AccessibilityName = $"Attached to {hostName}";
         control.FindChild("SourceSymbols", true, false).AddChild(relation);
-        control.TooltipText += $" · Attached to {hostName}";
     }
 
     private static void BindSlot(CardControl card, Control slot)

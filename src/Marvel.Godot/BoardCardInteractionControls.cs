@@ -183,6 +183,9 @@ internal sealed class BoardCardInteractionControls
             : CardInteractionControlStyle.Tooltip(descriptor.Intent));
         if (descriptor.Intent == CardInteractionIntent.Action)
         {
+            button.AccessibilityDescription = button.TooltipText;
+            if (!descriptor.IsDefender && !descriptor.DirectActivation)
+                CardActionHint.Bind(button, descriptor.Text);
             button.SelfModulate = new Color(1, 1, 1, 0.72f);
             button.MouseEntered += () => button.SelfModulate = Colors.White;
             button.MouseExited += () => button.SelfModulate = button.HasFocus()

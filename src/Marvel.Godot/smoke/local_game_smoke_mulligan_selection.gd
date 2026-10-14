@@ -3,7 +3,7 @@ extends "res://smoke/local_game_smoke_direct_intent.gd"
 func _clearing_mulligan_replacements_preserves_task() -> bool:
 	var card := _mulligan_card("Avengers Mansion")
 	if card == null: return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _keyboard_stage_card(card): return false
 	var clear := main.find_child("ContextualCancelDraft", true, false) as Button
 	if clear == null or not await _pointer_activate(clear):
@@ -11,7 +11,7 @@ func _clearing_mulligan_replacements_preserves_task() -> bool:
 		return false
 	var submit := _task_commit()
 	if submit == null or submit.disabled or submit.text != "Keep hand" \
-		or (_node("Toolbar/SyncStatus") as Label).text != revision:
+		or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("clearing replacements changed the game or hid Keep hand")
 		return false
 	return not bool(card.get_meta("mulligan_staged", false))
@@ -99,7 +99,7 @@ func _drag_capture_is_safe() -> bool:
 	var card := _mulligan_card("Swinging Web Kick")
 	if card == null: return false
 	var original := card.global_position
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _drag_mulligan_to_discard(card): return false
 	await preload("res://smoke/gesture_settlement.gd").hand(self)
 	if not bool(card.get_meta("mulligan_staged", false)) or card.global_position.distance_to(original) < 40:
@@ -117,7 +117,7 @@ func _drag_capture_is_safe() -> bool:
 		return false
 	if not await _drag_mulligan(card, hand.get_global_rect().get_center()): return false
 	await preload("res://smoke/gesture_settlement.gd").hand(self)
-	if bool(card.get_meta("mulligan_staged", false)) or (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if bool(card.get_meta("mulligan_staged", false)) or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("moving a staged card back failed to preserve the uncommitted game")
 		return false
 	return true

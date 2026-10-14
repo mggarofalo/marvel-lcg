@@ -8,11 +8,8 @@ internal static class CausalReferenceTile
 {
     internal static CardControl Create(BoardCardPresentation card, float width, InterfaceScale scale)
     {
-        CardControl control = CardControl.CreateSource(card, width, scale);
+        CardControl control = CardControl.CreateSourceFrame(card, width, scale);
         var body = control.GetNode<VBoxContainer>("SourceBody");
-        Node strip = body.GetNode("SourceStrip");
-        body.RemoveChild(strip);
-        strip.QueueFree();
         var content = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         body.AddChild(content);
         body.MoveChild(content, 0);

@@ -8,7 +8,7 @@ static func inspect_played_upgrade(driver) -> bool:
 			or not driver._control_is_fully_visible(card):
 		driver._fail("the played Web-Shooter has no visible installed tableau tile")
 		return false
-	var revision: String = (driver._node("Toolbar/SyncStatus") as Label).text
+	var revision: String = str((driver._node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await driver._keyboard_activate(card): return false
 	var inspector := driver.main.get_node("CardInspector") as Control
 	if not inspector.visible or "Web-Shooter" not in driver._visible_text(inspector) \
@@ -16,7 +16,7 @@ static func inspect_played_upgrade(driver) -> bool:
 		driver._fail("the installed source tile did not open its complete card face")
 		return false
 	if not await driver._close_inspector_with_keyboard(card, inspector): return false
-	if (driver._node("Toolbar/SyncStatus") as Label).text != revision:
+	if str((driver._node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		driver._fail("source inspection committed a game action")
 		return false
 	return true

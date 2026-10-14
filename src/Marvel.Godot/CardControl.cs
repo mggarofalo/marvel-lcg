@@ -43,17 +43,20 @@ public sealed partial class CardControl : PanelContainer
     }
 
     internal static CardControl CreateReconciled(BoardCardPresentation card, CardDisplaySize size,
-        InterfaceScale scale, ICardArtProvider? art, BoardCardFaceReuse? reuse)
-        => CreateAtLayout(card, size, scale, art, LayoutFor(card, size, scale), reuse);
+        InterfaceScale scale, ICardArtProvider? art, BoardCardFaceReuse? reuse,
+        InterfaceScale readingScale = InterfaceScale.Standard)
+        => CreateAtLayout(card, size, scale, art, LayoutFor(card, size, scale) with { ReadingScale = readingScale }, reuse);
 
     internal static CardControl CreateFitted(BoardCardPresentation card, InterfaceScale scale,
-        ICardArtProvider? art, float factor, BoardCardFaceReuse? reuse = null)
+        ICardArtProvider? art, float factor, BoardCardFaceReuse? reuse = null,
+        InterfaceScale readingScale = InterfaceScale.Standard)
     {
         CardLayoutMetrics layout = LayoutFor(card, CardDisplaySize.Board, scale);
         return CreateAtLayout(card, CardDisplaySize.Board, scale, art, layout with
         {
             Width = Math.Max(1, Mathf.RoundToInt(layout.Width * factor)),
             MinimumHeight = Math.Max(1, Mathf.RoundToInt(layout.MinimumHeight * factor)),
+            ReadingScale = readingScale,
         }, reuse);
     }
 
@@ -69,6 +72,7 @@ public sealed partial class CardControl : PanelContainer
         control.AddChild(surface);
         control.FaceReuseKey = reuse is null ? null : CardFaceReuseKey.From(card, size, scale, layout);
         control.FaceArt = art;
+        control.SetMeta("card_reading_scale", (int)layout.ReadingScale);
         Control body = (control.FaceReuseKey is { } key ? reuse?.Take(key, art) : null)
             ?? CardFaceRendering.CreateBody(card, size, layout, scale, art);
         surface.AddChild(body);
@@ -111,7 +115,7 @@ public sealed partial class CardControl : PanelContainer
         return control;
     }
 
-    internal static CardControl CreateSource(BoardCardPresentation card, float width, InterfaceScale scale)
+    internal static CardControl CreateSourceFrame(BoardCardPresentation card, float width, InterfaceScale scale)
     {
         CardControl control = CreateShell(card, new Vector2(width, 0), scale);
         using var paper = new StyleBoxFlat { BgColor = CardFaceStyle.Paper,
@@ -120,7 +124,6 @@ public sealed partial class CardControl : PanelContainer
         control.AddThemeStyleboxOverride("panel", paper);
         var content = new VBoxContainer { Name = "SourceBody", MouseFilter = MouseFilterEnum.Ignore };
         control.AddChild(content);
-        content.AddChild(CardSourceStrip.Create(card, width));
         var overlay = new Control { Name = "SourceInteraction", MouseFilter = MouseFilterEnum.Ignore };
         control.AddChild(overlay);
         control.AddInteractionChrome(overlay, width);
@@ -248,7 +251,8 @@ public sealed partial class CardControl : PanelContainer
 
         CardSymbolButtonStyle.Apply(control, onPaper: HasMeta("source_strip"));
         if (HasMeta("source_tableau_tile"))
-            SourceTableauTile.StyleAction(control, GetMeta("source_title").AsString());
+            SourceTableauTile.StyleAction(control, GetMeta("source_title").AsString(),
+                (InterfaceScale)GetMeta("source_reading_scale", 100).AsInt32());
         if (GetParent() is Container parent)
         {
             parent.QueueSort();

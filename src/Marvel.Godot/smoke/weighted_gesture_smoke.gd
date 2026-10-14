@@ -18,7 +18,7 @@ func _return_click_restores_pose() -> bool:
 	if card == null: return false
 	var position := card.position
 	var rotation := card.rotation
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var start := await _exposed_card_body_point(card)
 	if start == Vector2.INF: return false
 	var finish := Vector2(570, 450)
@@ -62,7 +62,7 @@ func _return_click_inspection_safe(card: Control, revision: String) -> bool:
 			or not inspector.get_node("Frame/Stack/Header/Close").visible:
 		_fail("returning-card click did not retain pinned inspection semantics")
 		return false
-	if bool(card.get_meta("mulligan_staged", false)) or (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if bool(card.get_meta("mulligan_staged", false)) or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("invalid drop or returning-card click changed the draft or authoritative revision")
 		return false
 	return true

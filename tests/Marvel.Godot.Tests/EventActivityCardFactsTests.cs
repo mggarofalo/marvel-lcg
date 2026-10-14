@@ -6,6 +6,25 @@ namespace Marvel.Godot.Tests;
 
 public sealed class EventActivityCardFactsTests
 {
+    [Fact]
+    public void FaceTransitionUsesOnlyTheGrantedFaceAndKeepsCurrentCounters()
+    {
+        var old = Card(2) with { Title = "Peter Parker", FaceId = "01001b", Damage = 3,
+            Fields = [new("HEALTH", "7/10"), new("RECOVER", "3"), new("HAND_SIZE", "6")] };
+        var face = old with { TargetId = null, Title = "Spider-Man", FaceId = "01001a", Damage = 0, Fields = [] };
+        var change = new EventActivityDescriptor([new(2, "Spider-Man", ActivitySubjectRole.Subject) { Reference = face }], [])
+            { FaceChanged = true };
+        BoardCardPresentation shown = EventActivityCardFacts.Apply(old, change);
+        Assert.Equal("Spider-Man", shown.Title);
+        Assert.Equal("01001a", shown.FaceId);
+        Assert.Equal(old.TargetId, shown.TargetId);
+        Assert.Equal([new BoardFieldPresentation("HEALTH", "7/10")], shown.Fields);
+        Assert.DoesNotContain(CardStatValues.From(shown), value => value.Name == "REC");
+        Assert.Equal(3, shown.Damage);
+        Assert.Same(old, EventActivityCardFacts.Apply(old, change with { FaceChanged = false }));
+        Assert.Same(old, EventActivityCardFacts.Apply(old, change with { Subjects = [new(2, "Spider-Man", ActivitySubjectRole.Subject)] }));
+    }
+
     // Synthetic display contracts isolate receipt consumption; these are not played-game fixtures.
     [Fact]
     public void ImpactUsesExactAuthorizedValueWithoutPredictingOtherConsequences()
@@ -48,7 +67,7 @@ public sealed class EventActivityCardFactsTests
         { Activity = new([attack.Source, attack.Target], []) { Operation = "Attack_Completed" } };
         var world = new WorldDescriptor([], [], [], Marvel.Rules.Play.Outcome.Unfinished) { ActiveAttack = attack };
         Assert.Equal([completed], EventPlaybackPlan.From([completed], prior: world));
-        Assert.Same(completed, AttackActivityPresentation.DuringTransition(attack, null, [completed]));
+        Assert.Equal(attack.Source, AttackActivityPresentation.DuringTransition(attack, null, [completed])!.Activity!.Subjects[0]);
     }
 
     [Fact]

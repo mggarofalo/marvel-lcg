@@ -214,6 +214,7 @@ public static class MainScheme
         next.TurnTo(next.Faces[^1]);
         events.Add(new CardsFlipped([next.ObjectId], true)
         {
+            SubjectFaces = OccurrenceFaces.For(next),
             Trigger = trigger,
             Verb = "Advance",
         });

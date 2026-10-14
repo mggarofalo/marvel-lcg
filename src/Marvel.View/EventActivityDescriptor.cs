@@ -5,6 +5,16 @@ public sealed record EventActivityDescriptor(
     IReadOnlyList<ActivitySubject> Subjects,
     IReadOnlyList<ActivityQuantity> Quantities)
 {
+    /// <summary>An accepted printed-face transition, rather than a stat-only receipt.</summary>
+    public bool FaceChanged { get; init; }
+    /// <summary>Typed destination zone for an authorized movement.</summary>
+    public string DestinationZone { get; init; } = string.Empty;
+    /// <summary>Exact attack lifetime enclosing this receipt.</summary>
+    public Marvel.Rules.Events.AttackIdentity? AttackIdentity { get; init; }
+    /// <summary>True at attack onset, false after its final response window, otherwise absent.</summary>
+    public bool? AttackBoundary { get; init; }
+    /// <summary>Structural event meaning, independent of its display copy.</summary>
+    public EventActivityKind Kind { get; init; }
     /// <summary>Engine-authored response-local instruction identity.</summary>
     public int? Batch { get; init; }
     /// <summary>Round context supplied by the authoritative response, when available.</summary>

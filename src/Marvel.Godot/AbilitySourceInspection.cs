@@ -11,7 +11,7 @@ internal static class AbilitySourceInspection
         title.FocusMode = Control.FocusModeEnum.All;
         title.MouseFilter = Control.MouseFilterEnum.Stop;
         title.MouseDefaultCursorShape = Control.CursorShape.PointingHand;
-        title.TooltipText = "Inspect " + face.Title;
+        TooltipPolicy.Inspect(title, face.Title);
         void Preview()
         {
             if (!main.cardInspectorPinned) main.boardController.ShowCardInspector(face, title, false);

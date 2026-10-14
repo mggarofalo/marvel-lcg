@@ -84,7 +84,7 @@ internal sealed class SpatialTableObjectRenderer
             if (hosts.TryGetValue(area.Host, out var host))
                 SpatialTableHostAttachments.AddOther(host.Control, area, result, scale, art);
         if (controlled.Length == 0) return;
-        Control sources = SourceTableauRenderer.Create(controlled, geometry.SourceTableau, result, scale, seat,
+        Control sources = SourceTableauRenderer.Create(controlled, geometry.SourceTableau, result, faces.ReadingScale, seat,
             areas.SelectMany(area => area.Cards).Where(card => card.TargetId.HasValue && !card.Concealed)
                 .DistinctBy(card => card.TargetId).ToDictionary(card => card.TargetId!.Value, card => card.Title));
         surface.AddChild(sources);

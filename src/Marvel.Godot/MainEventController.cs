@@ -33,7 +33,7 @@ internal sealed class MainEventController : IDisposable
         if (prompt is null)
         {
             resolutionStage.Clear();
-            OutcomePresentation outcome = OutcomePresentation.From(world.Outcome);
+            OutcomePresentation outcome = OutcomePresentation.From(world.Outcome, world.LossReason);
             main.promptEyebrow.Text = outcome.Heading.ToUpperInvariant();
             main.promptHeading.Text = outcome.Result;
             main.promptContext.Text = outcome.Detail;

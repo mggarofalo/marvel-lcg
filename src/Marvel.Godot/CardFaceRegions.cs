@@ -22,11 +22,13 @@ internal sealed class CardFaceRegions
     internal float InkEnd { get; private set; }
     internal float RulesFontSize => metrics.RulesFontSize;
     internal float TitleFontSize => metrics.TitleFontSize;
+    internal float ReadingBoost => metrics.ReadingBoost;
 
     internal CardFaceRegions(Vector2 size, CardFaceFeatures features)
     {
         float shortSide = features.Landscape ? size.Y : size.X;
-        metrics = new(features.Full, shortSide / 400, shortSide / (features.Full ? 400 : 172));
+        metrics = new(features.Full, shortSide / 400, shortSide / (features.Full ? 400 : 172))
+            { ReadingScale = features.ReadingScale };
         ArrangeHeader(size, features);
         ArrangeInk(size, features);
         ArrangePaper(size, features);

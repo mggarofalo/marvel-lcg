@@ -22,6 +22,7 @@ public sealed class World
     internal readonly List<GameArea> _gameAreas = [];
     private readonly List<InformationSignal> informationSignals = [];
     private readonly ICardFacts facts;
+    private readonly GameConclusion conclusion = new();
 
     /// <summary>Records concealed knowledge without putting identities on the event wire.</summary>
     public void RecordInformation(InformationKind kind) =>
@@ -220,7 +221,10 @@ public sealed class World
     /// over and cannot say which of those happened — which is the one thing a
     /// player wants to know.
     /// </remarks>
-    public Play.Outcome Result { get; private set; }
+    public Play.Outcome Result => conclusion.Result;
+
+    /// <summary>The authoritative cause when the result is players losing.</summary>
+    public Play.PlayerLossReason LossReason => conclusion.LossReason;
 
     /// <summary>Ends the game.</summary>
     /// <remarks>
@@ -228,16 +232,9 @@ public sealed class World
     /// resolved after the game stopped, which is a fault rather than a tie.
     /// </remarks>
     /// <param name="outcome">Who won.</param>
-    public void Finish(Play.Outcome outcome)
-    {
-        if (Result is not Play.Outcome.Unfinished)
-        {
-            throw new Play.RulesNotImplementedException(
-                $"the game already ended as {Result} and cannot also end as {outcome}");
-        }
-
-        Result = outcome;
-    }
+    /// <param name="lossReason">The rule-owned cause distinguishing player-loss outcomes.</param>
+    public void Finish(Play.Outcome outcome, Play.PlayerLossReason lossReason = Play.PlayerLossReason.Unspecified) =>
+        conclusion.Finish(outcome, lossReason);
 
     /// <summary>The seat holding the first player token.</summary>
     /// <remarks>

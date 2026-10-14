@@ -22,10 +22,10 @@ func _review_attack_results() -> bool:
 	if latest == null or toggle == null or not toggle.is_visible_in_tree():
 		_fail("the completed attack has no durable result or detail disclosure")
 		return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _review_attack_disclosure(toggle, rows, latest): return false
 	if not await _rapid_details_work(toggle, rows): return false
-	if (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("read-only chronology changed the game revision")
 		return false
 	return true
@@ -48,10 +48,10 @@ func _undo_clears_results() -> bool:
 	if not (_node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control).is_visible_in_tree():
 		if history == null or not await _pointer_activate(history): return false
 	var undo := main.find_child("UndoLast", true, false) as Button
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if undo == null or undo.disabled or not await _pointer_activate(undo): return false
 	if not await _wait_for(func() -> bool:
-		return (_node("Toolbar/SyncStatus") as Label).text != revision): return false
+		return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision): return false
 	var account := main.find_child("EventActivity", true, false) as Control
 	if account != null and account.is_visible_in_tree():
 		_fail("undo retained reverted attack details")

@@ -90,6 +90,12 @@ hidden targets while the prompt is active. Other viewers may not.
 `CostOption` describes one printed cost and the sources that can generate
 resources toward it. Generation and payment remain separate decisions.
 
+Each offered `ResourceSource` can carry the authored `AbilityName` and an
+engine-described `CostDescription` for its non-resource commitments. View exposes
+those descriptions only with the authorized source face. Payment distinguishes
+discarding a hand card from using the named ability and displays its exhaustion,
+counter or other costs before commitment. These facts do not change eligibility.
+
 The record can carry:
 
 - a primary cost and required resource types;

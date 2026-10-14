@@ -110,10 +110,11 @@ func _check_source_grip(card: Control, title: Label, failures: Array[String]) ->
 func _check_source_title(title: Label, failures: Array[String]) -> void:
 	if title.get_line_count() > title.get_visible_line_count(): failures.append("source title clipped")
 	var font_size := title.get_theme_font_size("font_size")
-	if font_size < 11 or font_size > 14 or title.autowrap_mode != TextServer.AUTOWRAP_OFF:
+	var large := OS.get_environment("MARVEL_UI_SCALE") == "150"
+	if font_size < (13 if large else 11) or font_size > (16 if large else 14):
 		failures.append("source title does not retain compact native typography")
 	var measured := title.get_theme_font("font").get_string_size(title.text.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
-	if measured.x > title.size.x + 0.1:
+	if title.autowrap_mode == TextServer.AUTOWRAP_OFF and measured.x > title.size.x + 0.1:
 		failures.append("source title truncates its visible name: " + title.text)
 	if title.accessibility_name != title.text or not title.tooltip_text.is_empty():
 		failures.append("source title loses full accessible identity")
@@ -162,12 +163,14 @@ func _check_excerpt(card: Control, failures: Array[String]) -> void:
 	var overflow := rules.get_content_height() > rules.size.y
 	if hint.visible != overflow: failures.append("abbreviated rules lack explicit disclosure")
 	if not overflow: return
+	if rules.visible_characters <= 0 or rules.get_line_range(0).y > rules.visible_characters:
+		failures.append("source summary has no complete meaningful line: " + str(card.name))
 	if hint.get_line_count() != 1 or not rules.get_global_rect().encloses(hint.get_global_rect()):
 		failures.append("rules disclosure is clipped: " + str(card.name) + " rules=" + str(rules.get_global_rect()) + " hint=" + str(hint.get_global_rect()))
 	for line in range(rules.get_line_count()):
 		if rules.get_line_range(line).x >= rules.visible_characters and rules.visible_characters >= 0: break
-		if rules.get_line_offset(line) + rules.get_line_height(line) > hint.position.y:
-			failures.append("partial rule line overlaps disclosure")
+		if rules.get_line_offset(line) + rules.get_line_height(line) > rules.size.y:
+			failures.append("partial rule line is clipped")
 
 func _check_copy_input(copies: Array[Control], viewport: ScrollContainer, fixture: Control, failures: Array[String]) -> void:
 	if copies.size() != 2:

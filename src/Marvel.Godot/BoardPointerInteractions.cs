@@ -101,23 +101,36 @@ internal sealed class BoardPointerInteractions
         }
 
         pointerCapture = null;
-        if (!captured.Gesture.TryReleaseAt(release.GlobalPosition, out bool isDrag))
+        return ReleaseCaptured(captured, release.GlobalPosition);
+    }
+
+    private bool ReleaseCaptured(
+        (Control Source, CardPointerCapture Gesture) captured, Vector2 position)
+    {
+        if (!captured.Gesture.TryReleaseAt(position, out bool isDrag))
         {
             return true;
         }
         if (isDrag)
         {
             lift.Restore();
-            bool accepted = TryDrag(captured.Source, captured.Gesture.Card,
-                captured.Gesture.IsHandCard, release.GlobalPosition, captured.Gesture.Start);
-            ReturnCaptured(captured.Source, invalid: !accepted);
+            // Interaction policy: returning to the grab point cancels the local
+            // gesture, preserving the draft and the pre-drag presentation order.
+            bool returnedToOrigin = !CardPointerGestureRouter.IsDrag(
+                captured.Gesture.Start, position);
+            if (returnedToOrigin) hand.CancelPreview();
+            bool accepted = !returnedToOrigin && CardDropCompletion.TryDrop(
+                new CardPointerGesture(captured.Gesture.Card, captured.Source,
+                    captured.Gesture.IsHandCard, position), isCurrent(), mulligan, drops, hand, directDrag);
+            ReturnCaptured(captured.Source, invalid: !accepted && !returnedToOrigin,
+                cancelled: returnedToOrigin);
         }
         else
         {
             resting.Restore(captured.Source);
             captured.Source.Modulate = Colors.White;
             Activate(captured.Source, captured.Gesture.Card, captured.Gesture.IsHandCard,
-                release.GlobalPosition);
+                position);
         }
         return true;
     }
@@ -195,17 +208,6 @@ internal sealed class BoardPointerInteractions
         card.GetViewport().GuiGetHoveredControl() is BaseButton hovered
         && hovered != card && card.IsAncestorOf(hovered);
 
-    private bool TryDrag(
-        Control control, BoardCardPresentation card, bool isHandCard, Vector2 finish, Vector2 start)
-    {
-        bool dragged = CardPointerGestureRouter.IsDrag(start, finish);
-        if (!isCurrent() || !dragged) return false;
-        if (card.TargetId is { } id && mulligan.Drop(id, drops.ContainsMulligan(finish), hand.Contains(finish))) return true;
-        if (isHandCard && hand.Drop(control, finish)) return true;
-        hand.CancelPreview();
-        return directDrag?.Invoke(new CardPointerGesture(card, control, isHandCard, finish)) == true;
-    }
-
     private void Activate(
         Control control, BoardCardPresentation card, bool isHandCard, Vector2 position)
     {
@@ -243,7 +245,7 @@ internal sealed class BoardPointerInteractions
     private void MoveCaptured(
         (Control Source, CardPointerCapture Gesture) captured, Vector2 pointer)
     {
-        if (!CardPointerGestureRouter.IsDrag(captured.Gesture.Start, pointer)) return;
+        if (!captured.Gesture.ObserveAt(pointer)) return;
         if (!pointerLifted) BeginLift(captured, pointer);
         lift.Move(captured.Source, pointer);
         if (captured.Gesture.IsHandCard) hand.Preview(captured.Source, pointer);

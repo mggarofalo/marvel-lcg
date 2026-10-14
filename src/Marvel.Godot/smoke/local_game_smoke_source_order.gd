@@ -8,7 +8,7 @@ static func perform(driver, source: Control) -> bool:
 	return true
 
 static func _region(driver, source: Control, surface: Control) -> bool:
-	var revision: String = (driver._node("Toolbar/SyncStatus") as Label).text
+	var revision: String = str((driver._node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var original := source.get_global_transform()
 	var start := surface.get_global_rect().get_center()
 	var hover := InputEventMouseMotion.new()
@@ -49,7 +49,7 @@ static func _region(driver, source: Control, surface: Control) -> bool:
 	if not await driver._wait_for(func() -> bool: return source.get_global_transform().is_equal_approx(original)):
 		driver._fail("cancelled source did not finish settling into its physical slot")
 		return false
-	if not source.get_global_transform().is_equal_approx(original) or (driver._node("Toolbar/SyncStatus") as Label).text != revision:
+	if not source.get_global_transform().is_equal_approx(original) or str((driver._node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		driver._fail("source rearrangement changed game revision or failed to restore its physical slot")
 		return false
 	return true

@@ -67,7 +67,7 @@ func _check_obligation_context() -> bool:
 		_fail("Business Problems has no visible contextual face")
 		return false
 	await _capture_checkpoint("business-problems-context")
-	var prior_revision := (_node("Toolbar/SyncStatus") as Label).text
+	var prior_revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var remain := _button_named("Remain in your current form")
 	if remain == null or not await _pointer_activate(remain):
 		_fail("Business Problems did not offer its current-form choice")
@@ -92,7 +92,7 @@ func _check_obligation_context() -> bool:
 func _obligation_choices_ready(prior_revision: String) -> bool:
 	if bool(main.get_meta("response_staged", false)) or _status().text.begins_with("DECISION SENT"):
 		return false
-	if (_node("Toolbar/SyncStatus") as Label).text == prior_revision:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == prior_revision:
 		return false
 	var alternatives := main.find_child("RequiredAlternatives", true, false) as Control
 	if alternatives == null: return false

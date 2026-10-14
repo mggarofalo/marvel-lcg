@@ -12,7 +12,7 @@ static func perform(driver: SceneTree) -> bool:
 
 static func _inspect(driver: SceneTree, card: Control, pointer: bool) -> bool:
 	var before: String = driver._logical_prompt_identity()
-	var revision := (driver._node("Toolbar/SyncStatus") as Label).text
+	var revision := str((driver._node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if pointer:
 		if not await driver._pointer_activate_card_body(card): return false
 	elif not await driver._keyboard_activate(card): return false
@@ -35,7 +35,7 @@ static func _unchanged(driver: SceneTree, card: Control, before: String, revisio
 		driver._fail("inspection did not restore the same candidate and choice page")
 		return false
 	if driver._logical_prompt_identity() != before \
-			or (driver._node("Toolbar/SyncStatus") as Label).text != revision:
+			or str((driver._node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		driver._fail("inspecting a candidate changed selection, draft, or revision")
 		return false
 	return true

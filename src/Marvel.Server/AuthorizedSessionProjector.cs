@@ -68,7 +68,7 @@ internal sealed class AuthorizedSessionProjector(
                 string summary = $"{unit.ActorName} completed an action.";
                 if (outcome is { } terminal)
                 {
-                    summary += $" {EventPresenter.Terminal(terminal).Summary}";
+                    summary += $" {EventPresenter.Terminal(terminal, world.LossReason).Summary}";
                 }
                 entries.Add(new HistoryEntryDescriptor(unit.Cursor, summary, []));
                 continue;

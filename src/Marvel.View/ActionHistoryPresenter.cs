@@ -16,7 +16,7 @@ public static class ActionHistoryPresenter
         IReadOnlyList<GameEvent> events,
         WorldDescriptor world)
     {
-        string summary = Present(action);
+        string summary = Present(action, world.LossReason);
         IReadOnlyList<string> details = ActionHistoryResultPresentation.Present(action, events, world);
         bool discardIsRootChoice = action.Phase is "Mulligan" or "EndPhase";
         if (action.Outcome is null && discardIsRootChoice && details.Count > 0)
@@ -28,7 +28,8 @@ public static class ActionHistoryPresenter
     }
 
     /// <summary>Returns one player-facing sentence for a completed history unit.</summary>
-    public static string Present(ActionHistoryFacts action)
+    public static string Present(ActionHistoryFacts action,
+        PlayerLossReason lossReason = PlayerLossReason.Unspecified)
     {
         ArgumentNullException.ThrowIfNull(action);
         ArgumentException.ThrowIfNullOrWhiteSpace(action.Actor);
@@ -38,7 +39,7 @@ public static class ActionHistoryPresenter
 
         string summary = Summary(action);
         return action.Outcome is { } outcome
-            ? $"{summary} {EventPresenter.Terminal(outcome).Summary}"
+            ? $"{summary} {EventPresenter.Terminal(outcome, lossReason).Summary}"
             : summary;
     }
 

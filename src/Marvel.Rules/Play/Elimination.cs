@@ -151,7 +151,7 @@ public static class Elimination
         // ends on a board nobody is still holding cards on.
         if (world.Seats.All(each => each.Eliminated))
         {
-            world.Finish(Outcome.PlayersLose);
+            world.Finish(Outcome.PlayersLose, PlayerLossReason.AllPlayersEliminated);
         }
     }
 

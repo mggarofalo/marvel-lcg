@@ -128,9 +128,9 @@ func _undo_and_replay_change_form() -> bool:
 		_fail("the direct form change has no authoritative history undo")
 		return false
 	if not _available_undo_has_no_restriction(): return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _pointer_activate(undo) or not await _wait_for(func() -> bool:
-		return (_node("Toolbar/SyncStatus") as Label).text != revision):
+		return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision):
 		_fail("the direct form-change undo did not reconcile")
 		return false
 	if not _reverted_event_presentation_is_clear():
@@ -395,11 +395,11 @@ func _commit_once(expected: String) -> bool:
 	if submit == null or submit.disabled:
 		_fail("%s has no ready named task commitment" % expected)
 		return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _pointer_activate(submit):
 		return false
 	return await _wait_for(func() -> bool:
-		return _is_complete() or (_node("Toolbar/SyncStatus") as Label).text != revision)
+		return _is_complete() or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision)
 
 
 func _drag_to_prompt_owner_lane(card: Control) -> bool:

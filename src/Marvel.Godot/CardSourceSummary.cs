@@ -31,6 +31,17 @@ internal static class CardSourceSummary
         return lines;
     }
 
+    internal static string TileMeaning(BoardCardPresentation card)
+    {
+        if (card.Concealed || card.Persistent?.Abilities is not { Count: > 0 } abilities) return "";
+        CardPersistentAbilityDescriptor ability = abilities[0];
+        string effects = string.Join("; ", ability.Effects.Select(Effect));
+        string costs = string.Join(" + ", ability.Costs.Select(Cost));
+        // The bounded excerpt leads with the supplied effect; complete costs remain in inspection.
+        string detail = Trigger(ability.Trigger) + costs;
+        return effects + (detail.Length == 0 ? "" : " · " + detail.TrimEnd(' ', ':'));
+    }
+
     private static bool StoresDamage(CardPersistentDescriptor source) => source.Abilities
         .SelectMany(ability => ability.Effects).Any(effect => effect.Operation == "RedirectAllDamage" && effect.Target == "Source");
 

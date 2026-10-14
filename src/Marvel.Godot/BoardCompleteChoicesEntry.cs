@@ -11,10 +11,12 @@ internal sealed class BoardCompleteChoicesEntry(Func<bool> isCurrent)
     private bool opened;
     private bool available;
     private string priorVariation = string.Empty;
+    private string disclosureLabel = "All choices";
 
     internal void Register(Button button)
     {
         entry = button;
+        disclosureLabel = button.Text;
         button.Pressed += () => Open(button);
     }
 
@@ -51,7 +53,7 @@ internal sealed class BoardCompleteChoicesEntry(Func<bool> isCurrent)
         if (pending is not null && InteractionControl.IsUsable(entry)) SetVariation(priorVariation);
         pending = null;
         if (!InteractionControl.IsUsable(entry)) return;
-        entry!.Text = "Complete Choices";
+        entry!.Text = disclosureLabel;
         entry.AccessibilityName = entry.Text;
         entry.RemoveMeta("accepted_decision_entry");
         Refresh();

@@ -24,6 +24,10 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Events.PhaseStarted",
             "Marvel.Rules.Events.AreaRef",
             "Marvel.Rules.Events.AreaReordered",
+            "Marvel.Rules.Events.AttackBoundary",
+            "Marvel.Rules.Events.AttackIdentity",
+            "Marvel.Rules.Events.EventCause",
+            "Marvel.Rules.Events.EventCauseKind",
             "Marvel.Rules.Events.AttackCompleted",
             // Passive applied boost facts, with no rules recalculation.
             "Marvel.Rules.Events.BoostResolved",
@@ -46,6 +50,7 @@ public sealed class PresentationAssemblyPolicyTests
             // Passive engine-owned attack lifetime and participants; no timing reconstruction.
             "Marvel.Rules.Play.ActiveAttack",
             "Marvel.Rules.Play.Outcome",
+            "Marvel.Rules.Play.PlayerLossReason",
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.AffordanceAnchorKind",
             "Marvel.Rules.Prompts.CostOption",
@@ -141,6 +146,10 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Events.AreaRef",
             "Marvel.Rules.Events.AreaReordered",
             // Closed event-payload validation accepts the engine's passive completion receipt.
+            "Marvel.Rules.Events.AttackBoundary",
+            "Marvel.Rules.Events.AttackIdentity",
+            "Marvel.Rules.Events.EventCause",
+            "Marvel.Rules.Events.EventCauseKind",
             "Marvel.Rules.Events.AttackCompleted",
             // Passive applied boost facts, with no rules recalculation.
             "Marvel.Rules.Events.BoostResolved",
@@ -163,6 +172,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Timing.AbilityType",
             "Marvel.Rules.Timing.AbilityTypes",
             "Marvel.Rules.Play.Outcome",
+            "Marvel.Rules.Play.PlayerLossReason",
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
@@ -222,6 +232,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View.EventPresentation",
             "Marvel.View.GameAreaDescriptor",
             "Marvel.View.IVisibilityPolicy",
+            "Marvel.View.OutcomeDescription",
             "Marvel.View.PendingSituationDescriptor",
             "Marvel.View.PlayerDescriptor",
             "Marvel.View.ViewerClaim",

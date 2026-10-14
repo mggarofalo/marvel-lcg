@@ -48,6 +48,7 @@ namespace Marvel.Rules.Events;
 [JsonDerivedType(typeof(PlayAreaDetached), nameof(PlayAreaDetached))]
 [JsonDerivedType(typeof(BoostResolved), nameof(BoostResolved))]
 [JsonDerivedType(typeof(AttackCompleted), nameof(AttackCompleted))]
+[JsonDerivedType(typeof(AttackBoundary), nameof(AttackBoundary))]
 [JsonDerivedType(typeof(WhenRevealedCanceled), nameof(WhenRevealedCanceled))]
 [JsonDerivedType(typeof(CardsShuffledIntoDeck), nameof(CardsShuffledIntoDeck))]
 [JsonDerivedType(typeof(ActivityCompleted), nameof(ActivityCompleted))]
@@ -55,6 +56,14 @@ namespace Marvel.Rules.Events;
 [JsonDerivedType(typeof(PhaseStarted), nameof(PhaseStarted))]
 public abstract record GameEvent
 {
+    /// <summary>The exact scheme or thwart occurrence enclosing this result.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public EventCause? Cause { get; init; }
+
+    /// <summary>The exact attack enclosing this result, including nested choices.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public AttackIdentity? AttackIdentity { get; init; }
+
     /// <summary>Stream-scoped identity of the instruction whose receipt covers this event.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? ActivityBatch { get; init; }

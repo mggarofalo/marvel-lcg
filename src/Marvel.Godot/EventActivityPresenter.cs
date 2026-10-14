@@ -45,6 +45,7 @@ internal sealed partial class EventActivityPresenter : Node
     {
         cards!.Clear();
         sequence.Start(entries, main!.eventMotion.ButtonPressed);
+        UpdateAttack();
         cards.Begin(sequence.Attention);
         suppressObjects = false;
         elapsed = 0;
@@ -71,12 +72,18 @@ internal sealed partial class EventActivityPresenter : Node
     private void BeatAdvanced()
     {
         elapsed = 0;
+        UpdateAttack();
         cards!.Begin(sequence.Attention);
         if (!sequence.Active)
         {
             cards.Release();
             Settled?.Invoke();
         }
+    }
+
+    private void UpdateAttack()
+    {
+        PresentAttack(AttackActivityPresentation.Advance(attack, sequence.Current));
     }
 
     internal void Complete()

@@ -8,31 +8,29 @@ internal static class SourceTableauTile
 {
     internal static CardControl CreateCard(BoardCardPresentation card, float width, InterfaceScale scale, string copy = "", bool compact = false)
     {
-        CardControl control = CardControl.CreateSource(card, width, scale);
+        CardControl control = CardControl.CreateSourceFrame(card, width, scale);
         using var paper = new StyleBoxFlat { BgColor = CardFaceStyle.Paper, BorderColor = CardFaceStyle.Accent(card),
             BorderWidthLeft = 4, BorderWidthBottom = 1, ContentMarginLeft = 4, ContentMarginRight = 1,
             ContentMarginTop = 2, ContentMarginBottom = 2 };
         control.AddThemeStyleboxOverride("panel", paper);
         var body = control.GetNode<VBoxContainer>("SourceBody");
         body.AddThemeConstantOverride("separation", 0);
-        Node strip = body.GetNode("SourceStrip");
-        body.RemoveChild(strip);
-        strip.QueueFree();
-        Control summary = SourceTileHeader.Create(card, copy);
+        Control summary = SourceTileHeader.Create(card, copy, scale);
         body.AddChild(summary);
         body.MoveChild(summary, 0);
-        if (!compact) SourceTileMeaning.Add(body, card);
+        if (!compact) SourceTileMeaning.Add(body, card, scale);
         control.CustomMinimumSize = new Vector2(width, compact ? 32 : SourceTableauLayout.TileHeight);
         control.Size = control.CustomMinimumSize;
         control.SetMeta("source_tableau_tile", true);
         control.SetMeta("source_title", card.Title);
+        control.SetMeta("source_reading_scale", (int)scale);
         control.SetMeta("source_copy", copy);
         control.SetMeta("source_identity", copy.Length > 0 ? $"{card.Title}, {copy}" : card.Title);
         control.AccessibilityName += copy.Length > 0 ? $". {copy}" : "";
         return control;
     }
 
-    internal static void StyleAction(Button button, string title)
+    internal static void StyleAction(Button button, string title, InterfaceScale scale)
     {
         button.Text = button.AccessibilityName;
         button.SelfModulate = Colors.White;
@@ -40,7 +38,7 @@ internal static class SourceTableauTile
         button.AutowrapMode = TextServer.AutowrapMode.Word;
         button.Alignment = HorizontalAlignment.Left;
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        button.AddThemeFontSizeOverride("font_size", 12);
+        button.AddThemeFontSizeOverride("font_size", CompactTableTypography.Size(12, scale));
         button.AddThemeFontOverride("font", CardTypography.Bold);
         foreach (string state in new[] { "normal", "hover", "pressed", "hover_pressed", "disabled" })
         {

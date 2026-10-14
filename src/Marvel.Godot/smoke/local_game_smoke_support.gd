@@ -330,7 +330,8 @@ func _event_presentation_is_nonblocking() -> bool:
 		_fail("skipping motion changed or cleared event history")
 		return false
 	var sync_status := _node("Toolbar/SyncStatus") as Label
-	if cue.visible or sync_status == null or not sync_status.text.begins_with("Last synced · r"):
+	if cue.visible or sync_status == null or sync_status.text != "Synced" \
+			or int(sync_status.get_meta("response_revision", -1)) < 0:
 		_fail("settled motion did not collapse its cue or retain the compact sync status")
 		return false
 
@@ -345,7 +346,8 @@ func _disabled_motion_is_settled(skip: Button) -> bool:
 		return false
 	var cue := _node("Play/Prompt/Margin/Stack/Workbench/History/EventCue") as Control
 	var sync_status := _node("Toolbar/SyncStatus") as Label
-	if cue.visible or sync_status == null or not sync_status.text.begins_with("Last synced · r"):
+	if cue.visible or sync_status == null or sync_status.text != "Synced" \
+			or int(sync_status.get_meta("response_revision", -1)) < 0:
 		_fail("motion-disabled presentation did not retain the compact sync status")
 		return false
 	return true

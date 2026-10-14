@@ -22,7 +22,7 @@ func _run() -> void:
 func _inspect_ultron() -> bool:
 	var card := _tabletop_card_named("Ultron")
 	var inspector := main.get_node("CardInspector") as Control
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var prompt := _logical_prompt_identity()
 	if card == null:
 		_fail("Ultron has no readable top-row face")
@@ -30,7 +30,7 @@ func _inspect_ultron() -> bool:
 	if not await _hover_and_pin_ultron(card, inspector): return false
 	if not await _bounded_expansion(card, inspector): return false
 	if not await _upcoming_stages_are_safe(): return false
-	if (_node("Toolbar/SyncStatus") as Label).text != revision or _logical_prompt_identity() != prompt:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision or _logical_prompt_identity() != prompt:
 		_fail("inspection changed the current revision or prompt draft")
 		return false
 	return true

@@ -37,7 +37,7 @@ func _exercise_access(mode: String) -> bool:
 
 func _valid_entry(entry: Button) -> bool:
 	if entry == null or entry.disabled or not entry.has_meta("accepted_decision_entry") \
-			or entry.text == "Complete Choices" or entry.text.is_empty():
+			or entry.text in ["All actions", "All choices"] or entry.text.is_empty():
 		_fail("accepted next prompt has no enabled named entry")
 		return false
 	if _window() != null or not _old_action_controls_are_quiet():

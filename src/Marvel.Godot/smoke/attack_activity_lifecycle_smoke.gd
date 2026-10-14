@@ -23,10 +23,10 @@ func _declare_probe_defender() -> bool:
 	if not await _select_attached_action(IDENTITY, "Defend"): return false
 	if not _attack_cue_is_present("defender selected but not committed"): return false
 	if not await _capture_checkpoint("attack-02-defense-draft"): return false
-	attack_revision = (_node("Toolbar/SyncStatus") as Label).text
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	attack_revision = str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _pointer_activate(_task_commit()): return false
-	return await _wait_for(func(): return bool(main.get_meta("response_staged", false)) or (_node("Toolbar/SyncStatus") as Label).text != revision)
+	return await _wait_for(func(): return bool(main.get_meta("response_staged", false)) or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision)
 
 func _causal_copy_is_readable() -> bool:
 	var cause := main.find_child("CausalSituation", true, false) as Control
@@ -51,11 +51,11 @@ func _attack_cue_is_present(stage: String) -> bool:
 	return true
 
 func _sync_preserves_initiated_attack() -> bool:
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var prompt := _logical_prompt_identity()
 	if not await _pointer_activate(_node("Toolbar/Synchronize") as Button): return false
 	if not await _wait_for(func(): return not (_node("Toolbar/Synchronize") as Button).disabled): return false
-	if (_node("Toolbar/SyncStatus") as Label).text != revision or _logical_prompt_identity() != prompt:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision or _logical_prompt_identity() != prompt:
 		_fail("synchronizing an initiated attack changed its revision or decision")
 		return false
 	if bool(main.get_meta("response_staged", false)) or bool(_timeline().get_meta("activity_running", false)):
@@ -78,9 +78,13 @@ func _observe_attack_initiation() -> int:
 func _watch_completed_probe_attack(defended: bool) -> int:
 	if not defended: return await _observe_attack_initiation()
 	var captured_consequences := false
+	var finished := false
 	while bool(main.get_meta("response_staged", false)):
-		if not _attack_cue_is_present("boost/damage consequence playback"): return -1
-		if (_node("Toolbar/SyncStatus") as Label).text != attack_revision:
+		var activity := main.find_child("EventActivity", true, false)
+		var boundary := str(activity.get_meta("activity_attack_boundary", "")) if activity != null else ""
+		finished = _boundary_finished(boundary, finished)
+		if not _attack_lifetime_matches(finished): return -1
+		if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != attack_revision:
 			_fail("final table appeared before its accepted consequences")
 			return -1
 		if not captured_consequences:
@@ -92,6 +96,19 @@ func _watch_completed_probe_attack(defended: bool) -> int:
 		return -1
 	return await _verify_settled_attack()
 
+func _boundary_finished(boundary: String, prior: bool) -> bool:
+	if boundary == "finished": return true
+	if boundary == "started": return false
+	return prior
+
+func _attack_lifetime_matches(finished: bool) -> bool:
+	if not finished: return _attack_cue_is_present("boost/damage consequence playback")
+	var pulse := main.find_child("AttackActivityPulse", true, false)
+	if pulse != null and int(pulse.get_meta("visible_result_count", 0)) != 0:
+		_fail("attack emphasis outlived its engine-owned final resolution")
+		return false
+	return true
+
 func _verify_settled_attack() -> int:
 	if not saw_attack_intro: return 0
 	await process_frame
@@ -99,7 +116,7 @@ func _verify_settled_attack() -> int:
 	if pulse == null or int(pulse.get_meta("visible_result_count", 0)) != 0:
 		_fail("completed attack still paints over the next decision")
 		return -1
-	if (_node("Toolbar/SyncStatus") as Label).text == attack_revision:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == attack_revision:
 		_fail("attack playback did not apply its accepted revision")
 		return -1
 	if not await _capture_checkpoint("attack-04-next-decision"): return -1
@@ -110,9 +127,9 @@ func _decline_probe_attack_opportunity() -> bool:
 		_fail("attack has no explicit optional-window pass")
 		return false
 	var decline := _visible_attack_pass()
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _pointer_activate(decline): return false
-	if not await _wait_for(func(): return bool(main.get_meta("response_staged", false)) or (_node("Toolbar/SyncStatus") as Label).text != revision): return false
+	if not await _wait_for(func(): return bool(main.get_meta("response_staged", false)) or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision): return false
 	while bool(main.get_meta("response_staged", false)):
 		if not _attack_cue_is_present("interrupt response consequences"): return false
 		await process_frame
@@ -143,24 +160,79 @@ func _prepare_basic_attack() -> bool:
 	return true
 
 func _observe_basic_attack() -> bool:
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
+	var initial_health := _basic_attack_target_health()
+	if initial_health.is_empty(): return false
 	if not await _pointer_activate(_task_commit()): return false
 	if not motion_enabled:
-		if not await _wait_for(func(): return (_node("Toolbar/SyncStatus") as Label).text != revision): return false
+		if not await _wait_for(func(): return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision): return false
 		return await _verify_basic_attack_settled(main.find_child("AttackActivityPulse", true, false) as Control)
 	if not await _wait_for(func(): return bool(main.get_meta("response_staged", false))): return false
-	var caption := _timeline().find_child("TimelineCaption", true, false) as Label
 	var pulse := main.find_child("AttackActivityPulse", true, false) as Control
-	if caption.text != "Spider-Man → Rhino" or int(pulse.get_meta("visible_result_count", 0)) < 2:
+	if not await _await_basic_attack_onset(initial_health, revision): return false
+	if not _basic_attack_onset_is_visible(pulse): return false
+	if not await _capture_attack_frame("basic-attack-02-introduction"): return false
+	if not await _observe_basic_attack_through_finish(initial_health, revision): return false
+	return await _verify_basic_attack_settled(pulse)
+
+func _basic_attack_target_health() -> String:
+	var value := _card_for_anchor(RHINO).find_child("LiveProgressValue", true, false) as Label
+	if value == null:
+		_fail("basic attack target has no visible health baseline")
+		return ""
+	return value.text
+
+func _basic_attack_boundary() -> String:
+	return str(main.find_child("EventActivity", true, false).get_meta("activity_attack_boundary", ""))
+
+func _await_basic_attack_onset(initial_health: String, revision: String) -> bool:
+	# An offered attack pays exhaustion before its engine-owned initiation boundary.
+	# Cost presentation may precede the arrow; target damage may not.
+	var started := Time.get_ticks_msec()
+	while bool(main.get_meta("response_staged", false)) and Time.get_ticks_msec() - started < TIMEOUT_MILLISECONDS:
+		if _basic_attack_target_health() != initial_health:
+			_fail("basic attack changed target health before its source/target introduction")
+			return false
+		if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
+			_fail("basic attack showed final state before source/target transition")
+			return false
+		if _basic_attack_boundary() == "started": return true
+		if _basic_attack_boundary() == "finished": break
+		await process_frame
+	_fail("basic attack never exposed its accepted initiation boundary")
+	return false
+
+func _basic_attack_onset_is_visible(pulse: Control) -> bool:
+	var caption := _timeline().find_child("TimelineCaption", true, false) as Label
+	if not caption.text.begins_with("Spider-Man → Rhino") or int(pulse.get_meta("visible_result_count", 0)) < 2:
 		_fail("basic attack did not show accepted source and target before damage")
 		return false
-	if (_node("Toolbar/SyncStatus") as Label).text != revision:
-		_fail("basic attack showed final state before source/target transition")
+	if "Spider-Man" not in pulse.accessibility_name or "Rhino" not in pulse.accessibility_name:
+		_fail("basic attack introduction names different source or target objects")
 		return false
-	if not await _capture_attack_frame("basic-attack-02-introduction"): return false
-	if not await _wait_for(func(): return caption.text != "Spider-Man → Rhino"): return false
-	if not await _capture_attack_frame("basic-attack-03-damage"): return false
-	return await _verify_basic_attack_settled(pulse)
+	return true
+
+func _observe_basic_attack_through_finish(initial_health: String, revision: String) -> bool:
+	var finished := false
+	var saw_damage := false
+	var started := Time.get_ticks_msec()
+	while bool(main.get_meta("response_staged", false)) and Time.get_ticks_msec() - started < TIMEOUT_MILLISECONDS:
+		finished = _boundary_finished(_basic_attack_boundary(), finished)
+		if not _attack_lifetime_matches(finished): return false
+		if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
+			_fail("basic attack showed final state before its accepted consequences")
+			return false
+		if not saw_damage and _basic_attack_target_health() != initial_health:
+			saw_damage = true
+			if not await _capture_attack_frame("basic-attack-03-damage"): return false
+		await process_frame
+	return _basic_attack_completion_was_observed(saw_damage, finished)
+
+func _basic_attack_completion_was_observed(saw_damage: bool, finished: bool) -> bool:
+	if bool(main.get_meta("response_staged", false)) or not saw_damage or not finished:
+		_fail("basic attack never exposed damage followed by its exact final boundary")
+		return false
+	return true
 
 func _verify_basic_attack_settled(pulse: Control) -> bool:
 	if not await _wait_for(func(): return not bool(main.get_meta("response_staged", false))): return false

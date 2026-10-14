@@ -8,9 +8,32 @@ internal static class EventPlaybackPlan
     internal static IReadOnlyList<EventPresentation> From(IReadOnlyList<EventPresentation> entries,
         DecisionReceiptContext? receipt = null, WorldDescriptor? prior = null)
     {
-        if (BasicAttack(receipt, prior) is { } basic) return [basic, .. entries];
+        entries = WithAttackIntent(entries, prior?.ActiveAttack);
+        if (WithDetails(entries).Any(entry => entry.Activity?.AttackBoundary == true)) return entries;
+        if (BasicAttack(receipt, prior) is { } basic)
+        {
+            return [IdentifyBasicAttack(basic, entries), .. entries];
+        }
         if (prior?.ActiveAttack is not null) return entries;
         return CompletedAttack(entries) is { } completed ? [completed, .. entries] : entries;
+    }
+
+    private static EventPresentation IdentifyBasicAttack(EventPresentation basic, IReadOnlyList<EventPresentation> entries)
+    {
+        var identity = WithDetails(entries).FirstOrDefault(entry => entry.Activity?.AttackIdentity is not null)?.Activity?.AttackIdentity;
+        return basic with { Activity = basic.Activity! with { AttackIdentity = identity } };
+    }
+
+    private static EventPresentation[] WithAttackIntent(IReadOnlyList<EventPresentation> entries,
+        ActiveAttackDescriptor? prior)
+    {
+        var names = new Dictionary<Marvel.Rules.Events.AttackIdentity, string>();
+        if (prior?.Identity is { } identity) names[identity] = $"{prior.Source.Name} → {prior.Target.Name}";
+        foreach (EventPresentation entry in WithDetails(entries))
+            if (entry.Activity is { AttackIdentity: { } id, AttackBoundary: not null } activity)
+                names[id] = string.Join(" → ", activity.Subjects.Select(subject => subject.Name));
+        return entries.Select(entry => entry.Activity?.AttackIdentity is { } id
+            ? entry with { Intention = names.GetValueOrDefault(id) } : entry).ToArray();
     }
 
     private static EventPresentation? CompletedAttack(IReadOnlyList<EventPresentation> entries)

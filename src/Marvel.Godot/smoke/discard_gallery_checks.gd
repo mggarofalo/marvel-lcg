@@ -4,7 +4,7 @@ const INSPECTION = preload("res://smoke/search_inspection_checks.gd")
 const CANDIDATES := [13, 31, 16, 17, 38, 11]
 
 static func perform(driver: SceneTree) -> bool:
-	var before: String = driver._node("Toolbar/SyncStatus").text
+	var before: String = str(driver._node("Toolbar/SyncStatus").get_meta("response_revision", -1))
 	var original_size: Vector2i = driver.render_viewport.size
 	if not await _inspect_empty_selection(driver): return false
 	if not await _narrow_gallery(driver): return false
@@ -13,7 +13,7 @@ static func perform(driver: SceneTree) -> bool:
 	if not await _inspect_two_selected(driver): return false
 	if not await _reopen_compact_views(driver): return false
 	if not await _restore_desktop_and_reopen(driver, original_size): return false
-	if driver._node("Toolbar/SyncStatus").text != before:
+	if str(driver._node("Toolbar/SyncStatus").get_meta("response_revision", -1)) != before:
 		driver._fail("gallery staging, paging, inspection or reopening submitted an answer")
 		return false
 	return await driver._capture_checkpoint("ancestral-gallery-selected")

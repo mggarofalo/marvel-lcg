@@ -7,7 +7,7 @@ func _run() -> void:
 	var rail := timeline.find_child("TimelineRail", true, false) as Control
 	var compact_height := timeline.size.y
 	if not await _expand_timeline(timeline, rail): return
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _zoom_and_preview(timeline, rail): return
 	if not await _keyboard_navigation(timeline, rail): return
 	if not await _history_edge():
@@ -17,7 +17,7 @@ func _run() -> void:
 	if abs(timeline.size.y - compact_height) > 1 or rail.is_visible_in_tree():
 		_fail("collapsing timeline retained its expanded height or controls")
 		return
-	if (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("timeline navigation submitted a game decision")
 		return
 	if not await _capture_checkpoint("timeline-navigation"): return

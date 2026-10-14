@@ -17,6 +17,12 @@ internal static class EventActivityCardFacts
     internal static BoardCardPresentation Apply(BoardCardPresentation card, EventActivityDescriptor activity)
     {
         if (card.Concealed || !activity.Subjects.Any(subject => subject.Card == card.TargetId)) return card;
+        if (activity.FaceChanged && activity.Subjects.FirstOrDefault(subject => subject.Card == card.TargetId)?.Reference
+            is { Concealed: false } face)
+            card = face with { TargetId = card.TargetId, Count = card.Count, Status = card.Status,
+                Fields = [.. card.Fields.Where(field => field.Name is "HEALTH" or "THREAT")],
+                Counters = card.Counters, Statuses = card.Statuses,
+                Damage = card.Damage, DamageKnown = card.DamageKnown };
         foreach (ActivityQuantity quantity in activity.Quantities)
             card = ApplyQuantity(card, quantity);
         card = ApplyStatuses(card, activity);

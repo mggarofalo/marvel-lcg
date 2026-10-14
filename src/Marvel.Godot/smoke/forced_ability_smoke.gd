@@ -74,6 +74,7 @@ func _forced_notification_layout_is_clear(window: Control) -> bool:
 	var heading := window.find_child("ForcedAbilityHeading", true, false) as Label
 	var acknowledge := window.find_child("AcknowledgeForcedAbility", true, false) as Button
 	if heading == null or heading.text != "Black Cat — Forced Response" or acknowledge == null \
+			or acknowledge.text != "Acknowledge" \
 			or window.find_child("WindowPass", true, false) != null:
 		_fail("forced effect lacks distinct acknowledgment: " + _visible_text(window))
 		return false

@@ -227,7 +227,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         var factory = new UnusedFactory();
         var host = new EngineHost(factory);
         var rejected = host.Exchange(new EngineRequest(version, "old-client", EngineProtocol.Open, "game", Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
-        Assert.Equal(30, EngineProtocol.Version);
+        Assert.Equal(31, EngineProtocol.Version);
         Assert.Equal(EngineProtocol.Version, rejected.Version);
         Assert.Equal("unsupported_version", rejected.Error?.Code);
         Assert.Equal(0, factory.Calls);

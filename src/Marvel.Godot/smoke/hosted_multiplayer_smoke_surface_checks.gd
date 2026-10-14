@@ -48,4 +48,5 @@ static func _terminal_cause_visible(main: Control) -> bool:
 	var heading := main.find_child("ContextualHeading", true, false) as Label
 	var cause := main.find_child("CausalContext", true, false) as Label
 	return heading != null and heading.is_visible_in_tree() and heading.text == "Defeat" \
-		and cause != null and cause.is_visible_in_tree() and "The players lost." in cause.text
+		and cause != null and cause.is_visible_in_tree() and cause.text in [
+			"All players were eliminated.", "The final main scheme was completed."]

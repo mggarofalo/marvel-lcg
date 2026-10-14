@@ -15,6 +15,7 @@ internal sealed class AbilityModalFrame : IDisposable
     private readonly HBoxContainer? pairedChoices;
     private readonly bool pinCurrentChoices;
     private float fittedWidth = 560;
+    private bool disposed;
     internal VBoxContainer Content { get; }
     internal Control Frame => frame;
 
@@ -24,6 +25,7 @@ internal sealed class AbilityModalFrame : IDisposable
         pinCurrentChoices = currentChoices is > 0 and <= 2;
         layer = new CanvasLayer { Name = name + "Layer", Layer = 210 };
         main.AddChild(layer);
+        AbilitySituationOwnership.Change(main, 1);
         overlay = new Control { MouseFilter = Control.MouseFilterEnum.Ignore };
         layer.AddChild(overlay);
         overlay.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
@@ -140,7 +142,10 @@ internal sealed class AbilityModalFrame : IDisposable
 
     public void Dispose()
     {
+        if (disposed) return;
+        disposed = true;
         layer.Visible = false;
+        AbilitySituationOwnership.Change(main, -1);
         overlay.Resized -= QueueFit;
         main.interfaceScaleSlider.ValueChanged -= ScaleChanged;
         Content.MinimumSizeChanged -= QueueFit;

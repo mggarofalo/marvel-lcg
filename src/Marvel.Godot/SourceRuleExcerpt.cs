@@ -8,6 +8,9 @@ internal static class SourceRuleExcerpt
     internal static void Bind(RichTextLabel rules)
     {
         rules.VisibleCharactersBehavior = TextServer.VisibleCharactersBehavior.CharsAfterShaping;
+        // Disclosure has its own horizontal space; even a one-line tile retains meaningful text.
+        using var inset = new StyleBoxEmpty { ContentMarginRight = 14 };
+        rules.AddThemeStyleboxOverride("normal", inset);
         Label hint = CardSourceStrip.Label("…", "SourceRulesDisclosure", 10, CardTypography.Body);
         hint.AutowrapMode = TextServer.AutowrapMode.Off;
         hint.AddThemeColorOverride("font_color", ClientTheme.ToGodot(CardVisualTokens.Secondary));
@@ -25,9 +28,9 @@ internal static class SourceRuleExcerpt
         bool abbreviated = rules.GetContentHeight() > rules.Size.Y;
         hint.Visible = abbreviated;
         float hintHeight = Mathf.Ceil(hint.GetCombinedMinimumSize().Y);
-        hint.Position = new Vector2(0, Math.Max(0, rules.Size.Y - hintHeight));
-        hint.Size = new Vector2(rules.Size.X, hintHeight);
-        float available = abbreviated ? hint.Position.Y : rules.Size.Y;
+        hint.Position = new Vector2(Math.Max(0, rules.Size.X - 12), Math.Max(0, rules.Size.Y - hintHeight));
+        hint.Size = new Vector2(12, hintHeight);
+        float available = rules.Size.Y;
         int characters = -1;
         for (int line = 0; line < rules.GetLineCount(); line++)
         {

@@ -105,12 +105,12 @@ func _use_installed_helicarrier(keyboard: bool) -> bool:
 	if action == null or action.disabled or not _control_is_fully_visible(action):
 		_fail("installed Helicarrier has no visible, enabled tableau action")
 		return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var activated := await _keyboard_activate(action) if keyboard else await _pointer_activate(action)
 	if not activated: return false
 	await process_frame
 	await process_frame
-	if (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("selecting Helicarrier's offered action committed before confirmation")
 		return false
 	return true

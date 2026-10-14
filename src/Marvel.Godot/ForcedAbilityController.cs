@@ -45,7 +45,7 @@ internal sealed class ForcedAbilityController(Main main) : IDisposable
             && main.CurrentGame?.World is { } world)
             frame.AddText("PendingDecision", "Next: " + PromptPresentation.From(prompt, world).Heading,
                 GodotThemeVariations.Caption);
-        Button acknowledge = frame.AddButton("AcknowledgeForcedAbility", "Continue", () => Acknowledge(receipt));
+        Button acknowledge = frame.AddButton("AcknowledgeForcedAbility", "Acknowledge", () => Acknowledge(receipt));
         acknowledge.SetMeta("table_mutation", true);
         Callable.From(() =>
         {

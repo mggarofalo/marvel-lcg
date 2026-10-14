@@ -259,10 +259,20 @@ public abstract class SimulationHarnessTestBase
     protected static void AddSchemaTwoCost(JsonObject cost)
     {
         RemoveRepeatedResources(cost);
+        RemoveResourceMeaning(cost);
         cost["has_alternative"] = cost["or_cost"]!.GetValue<string>().Length > 0;
         cost["generators"] = cost["sources"]?.DeepClone() ?? new JsonArray();
         cost["variable_requests"] = cost["variables"]?.DeepClone() ?? new JsonArray();
         cost["resource_costs"] = cost["components"]?.DeepClone() ?? new JsonArray(new JsonObject { ["cost"] = cost["cost"]!.GetValue<string>(), ["rule"] = cost["rule"]?.DeepClone(), ["printed"] = false, });
+    }
+
+    private static void RemoveResourceMeaning(JsonObject cost)
+    {
+        foreach (JsonNode? source in cost["sources"]?.AsArray() ?? [])
+        {
+            _ = source!.AsObject().Remove("ability_name");
+            _ = source.AsObject().Remove("cost_description");
+        }
     }
 
     protected static IEnumerable<JsonElement> Lines(StringWriter writer)

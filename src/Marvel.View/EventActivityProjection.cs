@@ -12,6 +12,8 @@ internal static class EventActivityProjection
     {
         ActivitySubject[] subjects = happened switch
         {
+            AttackBoundary attack => [Subject(happened, world, attack.Source, ActivitySubjectRole.Source),
+                Subject(happened, world, attack.Target, ActivitySubjectRole.Target)],
             AttackCompleted attack => [Subject(happened, world, attack.Enemy, ActivitySubjectRole.Source),
                 Subject(happened, world, attack.Target, ActivitySubjectRole.Target),
                 .. attack.Defender >= 0 ? new[] { Subject(happened, world, attack.Defender, ActivitySubjectRole.Defender) } : []],
@@ -37,6 +39,11 @@ internal static class EventActivityProjection
         var projected = new EventActivityDescriptor(subjects, quantities)
         {
             Operation = happened.Verb,
+            AttackIdentity = happened.AttackIdentity,
+            AttackBoundary = happened is AttackBoundary boundary ? boundary.Started : null,
+            Kind = EventActivityKinds.From(happened),
+            FaceChanged = happened is CardFormChanged or CardsFlipped { FaceUp: true },
+            DestinationZone = happened is CardsMoved destination ? destination.To.Zone : string.Empty,
             StatusChange = happened switch
             {
                 CardsCreated created when created.Area.Zone == "StatusArea" => ActivityStatusChange.Applied,
@@ -56,14 +63,15 @@ internal static class EventActivityProjection
             .FirstOrDefault(card => card.Id == id);
         BoardCardPresentation? reference = happened.SubjectFaces?.TryGetValue(id, out string? faceId) == true
             ? world.EventFaces.GetValueOrDefault(faceId) : null;
-        return new ActivitySubject(id, name, role)
-        {
-            Landscape = reference is not null
-                ? reference.Kind is "MAIN SCHEME" or "ENCOUNTER SIDE SCHEME"
-                : card?.Face?.Title == name
-                    && card.Face.Kind is CardKind.MainScheme or CardKind.EncounterSideScheme,
-            Reference = reference,
-        };
+        if (happened is CardFormChanged changed && changed.Card == id)
+            reference = world.EventFaces.GetValueOrDefault(changed.To);
+        return new ActivitySubject(id, name, role) { Landscape = Landscape(reference, card, name), Reference = reference };
+    }
+
+    private static bool Landscape(BoardCardPresentation? reference, CardDescriptor? card, string name)
+    {
+        return reference is not null ? reference.Kind is "MAIN SCHEME" or "ENCOUNTER SIDE SCHEME"
+            : card?.Face?.Title == name && card.Face.Kind is CardKind.MainScheme or CardKind.EncounterSideScheme;
     }
 
 }

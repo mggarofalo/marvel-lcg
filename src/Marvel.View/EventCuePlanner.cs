@@ -40,7 +40,7 @@ public static class EventCuePlanner
 
         if (previousOutcome == Outcome.Unfinished && world.Outcome != Outcome.Unfinished)
         {
-            EventPresentation terminal = EventPresenter.Terminal(world.Outcome);
+            EventPresentation terminal = EventPresenter.Terminal(world.Outcome, world.LossReason);
             history.Add(terminal);
             cues.Add(terminal);
         }

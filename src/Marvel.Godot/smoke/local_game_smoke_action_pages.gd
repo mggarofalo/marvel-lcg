@@ -99,7 +99,7 @@ static func complete_entry(main: Control) -> Button:
 
 
 static func open_complete_choices(driver, entry: Button) -> bool:
-	var revision: String = driver._node("Toolbar/SyncStatus").text
+	var revision: String = str(driver._node("Toolbar/SyncStatus").get_meta("response_revision", -1))
 	var decision: Control = driver._decision()
 	var heading: Label = driver._node("Play/Prompt/Margin/Stack/PromptHeader/Heading")
 	var prompt_title := heading.text
@@ -113,7 +113,7 @@ static func open_complete_choices(driver, entry: Button) -> bool:
 	if not driver._control_is_fully_visible(frame):
 		driver._fail("the oversized-choice continuation exceeds the viewport")
 		return false
-	if driver._node("Toolbar/SyncStatus").text != revision or driver._decision() != decision or heading.text != prompt_title:
+	if str(driver._node("Toolbar/SyncStatus").get_meta("response_revision", -1)) != revision or driver._decision() != decision or heading.text != prompt_title:
 		driver._fail("opening complete choices replaced the decision surface or committed a response")
 		return false
 	print("COMPLETE_CHOICE_ROUTE_OK " + revision)

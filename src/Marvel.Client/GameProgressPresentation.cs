@@ -1,5 +1,6 @@
 using Marvel.Rules.Play;
 using Marvel.Server;
+using Marvel.View;
 
 namespace Marvel.Client;
 
@@ -46,7 +47,7 @@ public sealed record GameProgressPresentation(
             Outcome.PlayersLose => new(
                 GameProgressKind.PlayersLose,
                 "Defeat.",
-                "The players lost when the encounter could not continue.",
+                OutcomeDescription.Result(response.World.Outcome, response.World.LossReason),
                 "GAME COMPLETE  ·  PLAYERS LOSE",
                 LocksDecisions: true),
             _ => throw new ArgumentOutOfRangeException(

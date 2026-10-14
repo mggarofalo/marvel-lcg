@@ -17,7 +17,7 @@ func _repeat_preserves_review_clicks() -> bool:
 	var history := main.find_child("ToggleHistory", true, false) as Button
 	if history == null: return false
 	var before := history.text
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	_inject_repeated_click(history.get_global_rect().get_center())
 	await process_frame
 	if history.text == before:
@@ -25,7 +25,7 @@ func _repeat_preserves_review_clicks() -> bool:
 		return false
 	_inject_repeated_click(history.get_global_rect().get_center())
 	await process_frame
-	if history.text != before or (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if history.text != before or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("rapid history clicks did not independently toggle review without commitment")
 		return false
 	return true
@@ -52,11 +52,11 @@ func _repeat_preserves_next_commitment() -> bool:
 	var commit := _task_commit()
 	var attack_point := commit.get_global_rect().get_center()
 	if not await _commit_once("Attack Rhino"): return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	_inject_repeated_click(attack_point)
 	await process_frame
 	await process_frame
-	if (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("the second click crossed from Attack Rhino into a replacement decision")
 		return false
 	var end_turn := _button_named("End turn")
@@ -75,14 +75,14 @@ func _repeat_preserves_next_commitment() -> bool:
 	render_viewport.push_input(key_release)
 	await process_frame
 	await process_frame
-	if (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("a repeated activation accepted the replacement End turn decision")
 		return false
 	if not await _pointer_activate(end_turn):
 		_fail("a fresh click could not intentionally end the turn after repeat suppression")
 		return false
 	if not await _wait_for(func() -> bool:
-		return (_node("Toolbar/SyncStatus") as Label).text != revision):
+		return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision):
 		_fail("the fresh End turn commitment was lost")
 		return false
 	return true

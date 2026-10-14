@@ -9,4 +9,5 @@ internal sealed record CardFaceFeatures(bool Landscape, bool HasPrimary, bool Ha
     internal bool HasProgress { get; init; }
     internal bool HasConsequences { get; init; }
     internal int StatCount { get; init; }
+    internal InterfaceScale ReadingScale { get; init; } = InterfaceScale.Standard;
 }

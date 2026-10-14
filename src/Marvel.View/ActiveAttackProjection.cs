@@ -15,6 +15,6 @@ internal static class ActiveAttackProjection
             || !cards.TryGetValue(attack.Target, out var target)) return null;
         return new ActiveAttackDescriptor(
             new ActivitySubject(attack.Source, source.Face!.Title, ActivitySubjectRole.Source),
-            new ActivitySubject(attack.Target, target.Face!.Title, ActivitySubjectRole.Target));
+            new ActivitySubject(attack.Target, target.Face!.Title, ActivitySubjectRole.Target)) { Identity = attack.Identity };
     }
 }

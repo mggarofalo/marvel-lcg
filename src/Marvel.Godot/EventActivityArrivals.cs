@@ -29,7 +29,9 @@ internal sealed class EventActivityArrivals(Main main)
         BoardAreaPresentation? hand = final.Areas.FirstOrDefault(area => area.Zone == "HandsArea" && area.Seat == seat);
         if (hand is null) return;
         BoardCardPresentation[] ordered = HandPresentationOrder.Arrange(seat, hand.Cards);
-        var geometry = new AstraTableGeometry(surface.Size.X, surface.Size.Y, main.interfaceScale >= InterfaceScale.Percent130);
+        var context = DecisionContextCards.MissingFromTable(main.CurrentGame?.Prompt is { } prompt
+            && main.CurrentGame.World is { } world ? PromptPresentation.From(prompt, world) : null, final);
+        var geometry = SpatialTableSurfaceRenderer.ActivityGeometry(surface.Size, main.interfaceScale, final, seat, context);
         InterfaceScale scale = SpatialCardMetrics.TableScale(main.interfaceScale, surface.Size.Y);
         float width = VisualSystem.Card(CardDisplaySize.Hand, scale).Width;
         for (int index = 0; index < ordered.Length; index++)
@@ -54,7 +56,8 @@ internal sealed class EventActivityArrivals(Main main)
             return;
         }
         if (!arriving.Contains(id) || retained.Any(prior => prior.TargetId == id)) return;
-        CardControl card = CardControl.Create(shown, CardDisplaySize.Hand, scale, main.art);
+        CardControl card = CardControl.CreateReconciled(shown, CardDisplaySize.Hand, scale, main.art,
+            reuse: null, readingScale: main.interfaceScale);
         card.Name = "ActivityArrival" + id;
         card.ZIndex = placement.ZIndex;
         card.MouseFilter = Control.MouseFilterEnum.Pass;

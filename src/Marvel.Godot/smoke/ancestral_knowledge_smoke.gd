@@ -99,11 +99,11 @@ func _confirm_shuffle() -> bool:
 	if commit == null or commit.disabled:
 		_fail("the two selected cards lack their named shuffle commitment")
 		return false
-	var before := (_node("Toolbar/SyncStatus") as Label).text
+	var before := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _pointer_activate(commit): return false
 	if not await _wait_for(func() -> bool:
 		return _search_frame() == null and _button_named("End turn") != null): return false
-	if (_node("Toolbar/SyncStatus") as Label).text == before:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == before:
 		_fail("shuffle did not advance the authoritative decision")
 		return false
 	return true

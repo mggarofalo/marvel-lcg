@@ -116,6 +116,7 @@ public static class SchemaTwoPromptJson
             declarationSensitiveRecorded ? option.DeclarationSensitive.GetBoolean() : false)
         {
             LegacyDeclarationSensitiveRecorded = declarationSensitiveRecorded,
+            ResourceMeaningRecorded = false,
         };
     }
 

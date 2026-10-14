@@ -24,7 +24,7 @@ internal sealed partial class CardInspectorLayout(Main main) : Node
 
     private Action? positionCurrent;
 
-    internal void Track(Control detail, BoardCardPresentation card, Control? source, bool pinned)
+    internal void Track(Control detail, BoardCardPresentation card, Control? source, bool pinned, Action refit)
     {
         Vector2 previousSize = Vector2.Zero;
         Vector2 previousViewport = Vector2.Zero;
@@ -43,6 +43,8 @@ internal sealed partial class CardInspectorLayout(Main main) : Node
             previousSource = sourceBounds;
             previousSituation = situation;
             Position(card, source, pinned);
+            if (!main.cardInspectorFrame.GetMeta("bounded_inspection", false).AsBool() && !PreservesSituation())
+                refit();
         };
     }
 
@@ -60,7 +62,8 @@ internal sealed partial class CardInspectorLayout(Main main) : Node
         Control detail = (Control)main.cardInspectorContent.GetChild(0);
         Vector2 detailSize = detail.GetCombinedMinimumSize();
         HBoxContainer header = main.cardInspectorTitle.GetParent<HBoxContainer>();
-        float headerHeight = pinned ? header.GetCombinedMinimumSize().Y + 12 : 0;
+        bool bounded = main.cardInspectorFrame.GetMeta("bounded_inspection", false).AsBool();
+        float headerHeight = header.Visible ? header.GetCombinedMinimumSize().Y + 12 : 0;
         float contentWidth = Math.Max(detailSize.X + 20,
             pinned ? header.GetCombinedMinimumSize().X : 0);
         Control? currentSource = CurrentSource(source, card.TargetId);
@@ -69,9 +72,36 @@ internal sealed partial class CardInspectorLayout(Main main) : Node
         Rect2 frame = CardInspectorPlacement.Fit(new Vector2(main.Size.X, AvailableHeight()), sourceRect,
             new Vector2(contentWidth, detailSize.Y + headerHeight),
             OccupiedCards(pinned, currentSource), VisibleActions(pinned), VisibleSituation());
+        if (bounded)
+            frame = BoundedFrame(sourceRect, new Vector2(contentWidth, detailSize.Y + headerHeight), pinned);
         main.cardInspectorFrame.CustomMinimumSize = Vector2.Zero;
         main.cardInspectorFrame.Size = frame.Size;
         main.cardInspectorFrame.Position = frame.Position;
+        main.cardInspectorFrame.SetMeta("protected_regions", new global::Godot.Collections.Array<Rect2>(VisibleSituation()));
+    }
+
+    private Rect2 BoundedFrame(Rect2 source, Vector2 content, bool pinned)
+    {
+        Rect2 frame = CardInspectorFreeSpace.Fit(new Vector2(main.Size.X, AvailableHeight()),
+            content, [source, .. VisibleSituation()]);
+        bool overlay = !frame.HasArea();
+        main.cardInspectorFrame.SetMeta("inspection_overlay", overlay);
+        main.cardInspectorScroll.Visible = !overlay || pinned;
+        if (overlay) return OverlayFrame(source, content, pinned);
+        main.cardInspectorTitle.Text = pinned ? "Scroll to read the full card" : "Pin to read the full card";
+        using var empty = new StyleBoxEmpty();
+        main.cardInspectorFrame.AddThemeStyleboxOverride("panel", empty);
+        return frame;
+    }
+
+    private Rect2 OverlayFrame(Rect2 source, Vector2 content, bool pinned)
+    {
+        main.cardInspectorTitle.Text = pinned ? "Full card · Close to return" : "Pin to read full card";
+        main.cardInspectorTitle.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        using var notice = new StyleBoxFlat { BgColor = CardFaceStyle.Ink,
+            ContentMarginLeft = 8, ContentMarginRight = 8, ContentMarginTop = 6, ContentMarginBottom = 6 };
+        main.cardInspectorFrame.AddThemeStyleboxOverride("panel", notice);
+        return CardInspectorOverlayPlacement.Fit(main.Size, source, content, pinned);
     }
 
     private Control? CurrentSource(Control? source, int? targetId) =>
@@ -92,7 +122,16 @@ internal sealed partial class CardInspectorLayout(Main main) : Node
     private Rect2[] VisibleSituation() => main.FindChildren("*", "Control", true, false)
         .OfType<Control>()
         .Where(control => control.IsVisibleInTree() && HasSituation(control))
-        .Select(control => control.GetGlobalRect()).Concat(HandCards()).ToArray();
+        .Select(control => control.GetGlobalRect()).Concat(HandCards()).Concat(Participants()).ToArray();
+
+    private IEnumerable<Rect2> Participants()
+    {
+        IReadOnlySet<int> ids = CardInspectionProtection.Participants(main.decisions.composer,
+            main.boardController.PresentedGame?.World);
+        return main.boardRender?.VisibleCardControls()
+            .Where(control => control.IsVisibleInTree() && control.TargetId is { } id && ids.Contains(id))
+            .Select(SpatialCardFootprint.Face) ?? [];
+    }
 
     private IEnumerable<Rect2> HandCards() => main.FindChildren("ProceduralCard*", "Control", true, false)
         .OfType<Control>()

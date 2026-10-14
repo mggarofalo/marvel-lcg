@@ -47,19 +47,21 @@ internal static class SpatialTableSurfaceRenderer
             : expanded ? TableHistoryDrawer.ExpandedWidth(main) + 40 : 56;
         float width = Math.Max(expanded ? 920 : 1060, viewport.X - reserved);
         float height = Math.Min(AstraTableGeometry.ReferenceHeight, Math.Max(820, viewport.Y - 118));
-        return new AstraTableGeometry(
-            width, height, main.interfaceScale >= InterfaceScale.Percent130,
-            HasRevealingCard: main.boardPresentation!.Areas.Any(area =>
-                SpatialTableZones.IsResolving(area) && SpatialTableZones.Current(area).Length > 0)
-                || Context(main, prompt).Count > 0,
-            PhysicalCardSize: PhysicalCardSize(main.boardPresentation!, main.interfaceScale, height, Context(main, prompt)),
-            HasSeatSummaries: main.boardPresentation.PlayerSummaries.Count > 1,
-            HasSourceTableau: CardSourceGroups.Controlled(main.boardPresentation.Areas, selection.ExpandedSeat).Length > 0)
-        {
-            HasAllies = main.boardPresentation.Areas.Any(area => area.Zone == "AlliesArea"
-                && area.Seat == selection.ExpandedSeat && area.Cards.Count > 0),
-        };
+        return ActivityGeometry(new(width, height), main.interfaceScale, main.boardPresentation!,
+            selection.ExpandedSeat, Context(main, prompt));
     }
+
+    internal static AstraTableGeometry ActivityGeometry(Vector2 size, InterfaceScale scale,
+        BoardPresentation board, int seat, IReadOnlyList<BoardCardPresentation> context) =>
+        new(size.X, size.Y, scale >= InterfaceScale.Percent130,
+            HasRevealingCard: board.Areas.Any(area => SpatialTableZones.IsResolving(area)
+                && SpatialTableZones.Current(area).Length > 0) || context.Count > 0,
+            PhysicalCardSize: PhysicalCardSize(board, scale, size.Y, context),
+            HasSeatSummaries: board.PlayerSummaries.Count > 1,
+            HasSourceTableau: CardSourceGroups.Controlled(board.Areas, seat).Length > 0)
+        {
+            HasAllies = board.Areas.Any(area => area.Zone == "AlliesArea" && area.Seat == seat && area.Cards.Count > 0),
+        };
 
     private static IReadOnlyList<BoardCardPresentation> Context(Main main, Prompt? prompt) =>
         DecisionContextCards.MissingFromTable(prompt is null || main.boardController.PresentedGame?.World is null ? null
@@ -124,7 +126,7 @@ internal static class SpatialTableSurfaceRenderer
         BoardAreaPresentation[] player = Lane(board, $"player-{selection.ExpandedSeat}");
         InterfaceScale cardScale = SpatialCardMetrics.TableScale(main.interfaceScale, geometry.Height);
         var objects = new SpatialTableObjectRenderer(
-            surface, result, geometry, new SpatialCardFactory(cardScale, main.art, faces),
+            surface, result, geometry, new SpatialCardFactory(cardScale, main.art, faces, main.interfaceScale),
             MulliganPrompt.IsOpening(prompt));
         var handArea = new Control { Name = "HandDropArea", Position = geometry.Hand.Position,
             Size = geometry.Hand.Size, MouseFilter = Control.MouseFilterEnum.Ignore };

@@ -41,7 +41,7 @@ internal static class WindowPromptContext
         return prompt with
         {
             DisplayQuestion = $"{title} {action} — response?",
-            Description = $"{title} {action}. Resolve a response or pass.",
+            Description = $"{title} {action}.",
             ContextCardIds = [card.ObjectId],
         };
     }

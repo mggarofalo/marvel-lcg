@@ -46,6 +46,7 @@ static bool IsRequiredGeneratedType(
         "src/Marvel.Godot/StatusCardBadge.cs" => (Namespace: "Marvel.Godot", Type: "StatusCardBadge"),
         "src/Marvel.Godot/smoke/ResourceFinalizerProbe.cs" => (Namespace: "Marvel.Godot", Type: "ResourceFinalizerProbe"),
         "src/Marvel.Godot/smoke/CardFaceReuseNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "CardFaceReuseNativeProbe"),
+        "src/Marvel.Godot/smoke/TooltipPolicyProbe.cs" => (Namespace: "Marvel.Godot", Type: "TooltipPolicyProbe"),
         "src/Marvel.Server/EngineJsonContext.cs" => (Namespace: "Marvel.Server", Type: "EngineJsonContext"),
         _ => default,
     };

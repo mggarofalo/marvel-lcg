@@ -29,7 +29,7 @@ public sealed class GameProgressPresentationTests
         Assert.Contains("PLAYERS WIN", won.Status);
         Assert.Equal("Defeat.", villainWon.Title);
         Assert.Contains("VILLAIN WINS", villainWon.Status);
-        Assert.Contains("encounter", playersLost.Description, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("The players lost.", playersLost.Description);
         Assert.Contains("PLAYERS LOSE", playersLost.Status);
         Assert.All([won, villainWon, playersLost], state => Assert.True(state.LocksDecisions));
     }

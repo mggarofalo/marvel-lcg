@@ -169,6 +169,12 @@ One engine decision returns:
 - a visibility-filtered world descriptor; and
 - terminal game state when the game has ended.
 
+Terminal results distinguish final villain defeat, final main-scheme completion,
+and player loss. `WorldDescriptor.LossReason` distinguishes elimination of all
+players from simultaneous exhaustion of the encounter deck and discard pile.
+The rule owner supplies that public reason; View describes it without inferring
+the ending from the visible board. Replay derives it along with the outcome.
+
 The internal `World` and `World.Digest()` never cross this boundary. The digest
 contains hidden truth by design and is unsuitable as a client bootstrap format.
 
@@ -291,7 +297,7 @@ unknown JSON members fail before they reach the engine. Protocol 19 adds
 engine-authored decline commitments to prompts (ending a turn, passing an
 opportunity, or leaving an attack undefended), readable card-choice names, and
 an explicit visibility-safe attack completion event. Both endpoints must use the
-current protocol version (30). Protocol 30 adds the visibility-safe active attack
+current protocol version (31). Protocol 30 adds the visibility-safe active attack
 participants, maintained through nested decisions and the attack's end response
 window. This is a read-only projection; replay v14 and the state digest are unchanged.
 Protocol 29 adds exact optional-window choices,
@@ -434,3 +440,5 @@ Protocol 22 adds `history.undo_status`, a bounded latest-action edit status:
 search, reveal or randomness signal, its objects, or any concealed result.
 Another player's operation is classified by authority before protection.
 Replay and save identities remain unchanged.
+
+Protocol 31 / replay v16 carry engine-authored attack identities and lifetime boundaries, exact scheme/thwart occurrence causes, named resource-ability costs, and authoritative player-loss reasons. Attack identities distinguish enemy activation ids from character occurrence ids. They do not change RNG, card-state digests, game timing, or the save envelope. Supporting travel, reveal and installation receipts may share one presentation beat; every raw event remains available in diagnostics.

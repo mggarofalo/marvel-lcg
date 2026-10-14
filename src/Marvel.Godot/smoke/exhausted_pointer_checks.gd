@@ -6,7 +6,7 @@ static func perform(driver, card: Control, anchor: int) -> bool:
 		return false
 	card.force_update_transform()
 	var pose := card.get_global_transform()
-	var revision: String = driver._node("Toolbar/SyncStatus").text
+	var revision: String = str(driver._node("Toolbar/SyncStatus").get_meta("response_revision", -1))
 	var commit: Button = driver._task_commit()
 	var commitment: String = commit.text if commit != null else ""
 	if not await driver._pointer_activate_card_body(card): return false
@@ -36,7 +36,7 @@ static func _invalid_drops(driver, card: Control, pose: Transform2D, revision: S
 			return false
 		var commit: Button = driver._task_commit()
 		if card.is_set_as_top_level() or not card.get_global_transform().is_equal_approx(pose) \
-				or driver._node("Toolbar/SyncStatus").text != revision \
+				or str(driver._node("Toolbar/SyncStatus").get_meta("response_revision", -1)) != revision \
 				or (commit.text if commit != null else "") != commitment:
 			driver._fail("invalid exhausted drop changed pose, revision or commitment")
 			return false

@@ -164,6 +164,22 @@ public sealed class BoardDraftInteractionTests
         Assert.True(isDrag);
     }
 
+    [Fact]
+    public void DragReturningToItsOriginRemainsADragAndConsumesItsReleaseOnce()
+    {
+        BoardCardPresentation card = new(19, 1, false, "Visible", string.Empty,
+            "EVENT", string.Empty, []);
+        Vector2 start = new(8, 12);
+        var capture = new CardPointerCapture(card, true, start);
+
+        Assert.False(capture.ObserveAt(start + new Vector2(9, 0)));
+        Assert.True(capture.ObserveAt(start + new Vector2(180, -130)));
+        Assert.True(capture.ObserveAt(start));
+        Assert.True(capture.TryReleaseAt(start, out bool isDrag));
+        Assert.True(isDrag);
+        Assert.False(capture.TryReleaseAt(start, out _));
+    }
+
     private static DecisionComposer TargetAndGeneratorComposer()
     {
         var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible",

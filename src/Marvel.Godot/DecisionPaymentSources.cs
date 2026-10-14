@@ -35,11 +35,11 @@ internal sealed class DecisionPaymentSources
         {
             bool selected = composer.Resources.Contains(source.Id);
             bool available = DecisionResourceEligibility.CanToggle(composer, source.Id);
-            string verb = source.DiscardsCard ? "Discard" : "Use";
+            string label = DecisionCopy.ResourceChoice(source);
             var button = new Button
             {
                 Name = $"Resource{source.Id}",
-                Text = $"{(selected ? "✓ " : "")}{verb} {source.Name}"
+                Text = $"{(selected ? "✓ " : "")}{label}"
                     + (available ? "" : " · Does not pay this cost"),
                 Alignment = HorizontalAlignment.Left,
                 ToggleMode = true,
@@ -58,16 +58,24 @@ internal sealed class DecisionPaymentSources
             row.AddChild(button);
             CardPaymentInspection.Bind(panel, button, source.Id);
             panel.AddContent(row);
-            if (!source.DiscardsCard && !string.IsNullOrWhiteSpace(source.Reference))
+            AddDetails(source);
+        }
+    }
+
+    private void AddDetails(PaymentSourcePresentation source)
+    {
+        if (source.DiscardsCard) return;
+        if (!string.IsNullOrWhiteSpace(source.CostDescription))
+            panel.AddContent(DecisionPanel.Text(source.CostDescription, GodotThemeVariations.Caption, wrap: true));
+        if (source.AbilityName is null && !string.IsNullOrWhiteSpace(source.Reference))
+        {
+            CardRulesMarkup.ResourceFont();
+            panel.AddContent(new RichTextLabel
             {
-                CardRulesMarkup.ResourceFont();
-                panel.AddContent(new RichTextLabel
-                {
-                    Name = "ResourceAbilityReference", BbcodeEnabled = true, FitContent = true,
-                    ScrollActive = false, MouseFilter = Control.MouseFilterEnum.Ignore,
-                    Text = CardRulesMarkup.ToBbCode(source.ReferenceMarkup, source.Reference),
-                });
-            }
+                Name = "ResourceAbilityReference", BbcodeEnabled = true, FitContent = true,
+                ScrollActive = false, MouseFilter = Control.MouseFilterEnum.Ignore,
+                Text = CardRulesMarkup.ToBbCode(source.ReferenceMarkup, source.Reference),
+            });
         }
     }
 }

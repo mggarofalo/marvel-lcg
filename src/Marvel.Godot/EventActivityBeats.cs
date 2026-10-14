@@ -9,6 +9,8 @@ internal static class EventActivityBeats
     internal static IReadOnlyList<EventPresentation> From(IReadOnlyList<EventPresentation> entries)
     {
         if (entries.Count == 0) return entries;
+        entries = SemanticActivityBeats.From(entries);
+        if (entries.Count == 0) return entries;
         int terminalSuffix = TerminalSuffix(entries);
         List<EventPresentation> beats = [];
         for (int index = 0; index < entries.Count;)

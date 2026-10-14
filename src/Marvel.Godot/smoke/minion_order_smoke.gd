@@ -40,12 +40,12 @@ func _choose_one_minion() -> bool:
 	if buttons.size() != 3 or main.find_child("NextSearchPage", true, false) != null:
 		_fail("minion ordering must expose all physical minions without a paging chooser")
 		return false
-	var before: String = _node("Toolbar/SyncStatus").text
+	var before: String = str(_node("Toolbar/SyncStatus").get_meta("response_revision", -1))
 	if _task_commit() != null:
 		_fail("opening minion order silently selected an answer")
 		return false
 	if not await _keyboard_activate(buttons[2]): return false
-	if not await _wait_for(func() -> bool: return _node("Toolbar/SyncStatus").text != before):
+	if not await _wait_for(func() -> bool: return str(_node("Toolbar/SyncStatus").get_meta("response_revision", -1)) != before):
 		_fail("one explicit Activate did not commit that exact minion")
 		return false
 	if not _activation_buttons().is_empty():

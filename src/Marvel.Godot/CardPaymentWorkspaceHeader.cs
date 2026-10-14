@@ -43,8 +43,6 @@ internal static class CardPaymentWorkspaceHeader
             copy.AddChild(DecisionPanel.Text(fact, GodotThemeVariations.Body, wrap: true));
         if (selected.CostOptions.Count == 1)
             copy.AddChild(DecisionCostLabel.Create(selected.CostOptions[0], panel.world!, showTarget: false));
-        copy.AddChild(DecisionPanel.Text("Hover or focus to inspect · I to pin · Esc to close",
-            GodotThemeVariations.Caption, wrap: true));
         if (ShowsResolution(draft.Prompt.PublicKind, draft.Prompt.CauseCardIds.Count > 0)
             && !string.IsNullOrWhiteSpace(prompt.Resolution))
             content.AddChild(DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Body, wrap: true));

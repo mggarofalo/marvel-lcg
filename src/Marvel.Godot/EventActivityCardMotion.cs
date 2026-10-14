@@ -10,6 +10,7 @@ internal sealed class EventActivityCardMotion(Main main)
     private readonly Dictionary<CardControl, (Vector2 Position, float Rotation, bool Depart)> targets = [];
     private readonly Dictionary<CardControl, (Vector2 Position, float Rotation)> starts = [];
     private readonly EventActivityArrivals arrivals = new(main);
+    private readonly EventActivityTableArrivals tableArrivals = new(main);
     private readonly Dictionary<int, BoardCardPresentation> displayed = [];
     private readonly HashSet<int> departed = [];
     private BoardRenderResult? boundBoard;
@@ -93,14 +94,15 @@ internal sealed class EventActivityCardMotion(Main main)
     private void Impact()
     {
         if (current is null || main.boardRender is not { } board) return;
-        foreach (EventPresentation fact in EventActivityCardFacts.Facts(current))
-            if (fact.Activity is { } activity) ApplyFacts(board, activity);
         foreach (var (card, target) in targets)
             if (InteractionControl.IsUsable(card) && target.Depart)
             {
                 card.SetMeta("activity_departed", true);
                 if (card.TargetId is { } id) departed.Add(id);
             }
+        tableArrivals.Impact(current);
+        foreach (EventPresentation fact in EventActivityCardFacts.Facts(current))
+            if (fact.Activity is { } activity) ApplyFacts(board, activity);
         main.SetMeta("activity_impact", true);
     }
 
@@ -149,6 +151,7 @@ internal sealed class EventActivityCardMotion(Main main)
         displayed.Clear();
         departed.Clear();
         arrivals.Clear();
+        tableArrivals.Clear();
         current = null;
         impacted = false;
     }
@@ -161,6 +164,7 @@ internal sealed class EventActivityCardMotion(Main main)
         displayed.Clear();
         departed.Clear();
         arrivals.Clear();
+        tableArrivals.Clear();
         current = null;
         impacted = false;
     }

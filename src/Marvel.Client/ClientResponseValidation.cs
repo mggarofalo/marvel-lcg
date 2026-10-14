@@ -175,10 +175,14 @@ internal static class ClientResponseValidation
         && HasCompleteEvents(response.Events)
         && HasCompleteBoard(response.World)
         && HasCompleteHistory(response.History)
-        && Enum.IsDefined(response.World!.Outcome)
-        && (response.World.Outcome == Outcome.Unfinished
+        && HasConsistentOutcome(response.World!)
+        && (response.World!.Outcome == Outcome.Unfinished
             ? (allowWaiting && response.Prompt is null) || HasCompletePrompt(response.Prompt)
             : response.Prompt is null);
+
+    private static bool HasConsistentOutcome(WorldDescriptor world) =>
+        Enum.IsDefined(world.Outcome) && Enum.IsDefined(world.LossReason)
+        && (world.Outcome == Outcome.PlayersLose || world.LossReason == PlayerLossReason.Unspecified);
 
     internal static bool HasCompleteSynchronizationResponse(EngineResponse response) =>
         response.Events is { Count: 0 }

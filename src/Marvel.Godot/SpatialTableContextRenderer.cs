@@ -46,7 +46,7 @@ internal static class SpatialTableContextRenderer
         var actions = new VBoxContainer { Name = "ContextualActionObjects", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         scroll.AddChild(actions);
         result.RegisterContextualActions(actions);
-        var complete = new Button { Name = "CompleteChoiceSheet", Text = "Complete Choices",
+        var complete = new Button { Name = "CompleteChoiceSheet", Text = ChoiceDisclosure.Label(prompt),
             CustomMinimumSize = new Vector2(148, 44), Visible = prompt is not null };
         panel.AddChild(complete);
         result.RegisterCompleteChoices(complete);
@@ -64,14 +64,18 @@ internal static class SpatialTableContextRenderer
             MouseFilter = Control.MouseFilterEnum.Ignore };
         cause.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         surface.AddChild(cause);
+        var prose = new VBoxContainer { Name = "CausalSituationCopy",
+            MouseFilter = Control.MouseFilterEnum.Ignore };
+        cause.AddChild(prose);
+        prose.Ready += () => AbilitySituationOwnership.Apply(ClientSceneHost.MainFor(prose), prose);
         Label heading = Copy(prompt?.PublicKind == PublicDecisionKind.PlayerAction ? ""
             : presentation?.Heading ?? PendingSituationPresentation.Heading(world));
         heading.AutowrapMode = TextServer.AutowrapMode.Word;
         heading.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         heading.Name = "ContextualHeading";
-        cause.AddChild(heading);
+        prose.AddChild(heading);
         heading.AddThemeFontSizeOverride("font_size", 18);
-        Label resolution = AddResolution(cause, presentation, world, prompt);
+        Label resolution = AddResolution(prose, presentation, world, prompt);
         Label operation = Copy("");
         operation.Name = "SpatialOperationalNotice";
         operation.AutowrapMode = TextServer.AutowrapMode.Word;

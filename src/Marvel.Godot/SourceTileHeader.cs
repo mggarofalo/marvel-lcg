@@ -6,7 +6,8 @@ namespace Marvel.Godot;
 /// <summary>Native-size source identity and symbolic public state within a measured title band.</summary>
 internal static class SourceTileHeader
 {
-    internal static Control Create(BoardCardPresentation card, string copy)
+    internal static Control Create(BoardCardPresentation card, string copy,
+        InterfaceScale readingScale = InterfaceScale.Standard)
     {
         var panel = new VBoxContainer { Name = "SourceTitleBand", MouseFilter = Control.MouseFilterEnum.Ignore };
         panel.AddThemeConstantOverride("separation", 0);
@@ -19,7 +20,8 @@ internal static class SourceTileHeader
         var header = new HBoxContainer { Name = "SourceHeaderLine", MouseFilter = Control.MouseFilterEnum.Ignore };
         header.AddThemeConstantOverride("separation", 3);
         inset.AddChild(header);
-        Label title = CardSourceStrip.Label(card.Title, "SourceTitle", 14, CardTypography.Title);
+        int titleSize = CompactTableTypography.Size(14, readingScale);
+        Label title = CardSourceStrip.Label(card.Title, "SourceTitle", titleSize, CardTypography.Title);
         title.Uppercase = true;
         title.CustomMinimumSize = new Vector2(0, 28);
         title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
@@ -28,7 +30,7 @@ internal static class SourceTileHeader
         title.AccessibilityName = card.Title;
         title.VerticalAlignment = VerticalAlignment.Center;
         title.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
-        title.Resized += () => FitTitle(title);
+        title.Resized += () => FitTitle(title, readingScale);
         header.AddChild(title);
         var cluster = new HBoxContainer { Name = "SourceStateCluster", MouseFilter = Control.MouseFilterEnum.Ignore };
         cluster.AddThemeConstantOverride("separation", 3);
@@ -66,13 +68,25 @@ internal static class SourceTileHeader
         return panel;
     }
 
-    private static void FitTitle(Label title)
+    private static void FitTitle(Label title, InterfaceScale readingScale)
     {
-        int size = 14;
+        int size = CompactTableTypography.Size(14, readingScale);
         string text = title.Text.ToUpperInvariant();
-        while (size > 11 && CardTypography.Title.GetStringSize(text, fontSize: size).X > title.Size.X)
+        while (size > CompactTableTypography.Size(11, readingScale)
+            && CardTypography.Title.GetStringSize(text, fontSize: size).X > title.Size.X)
             size--;
         title.AddThemeFontSizeOverride("font_size", size);
+        bool twoLines = CardTypography.Title.GetStringSize(text, fontSize: size).X > title.Size.X;
+        title.AutowrapMode = twoLines ? TextServer.AutowrapMode.WordSmart : TextServer.AutowrapMode.Off;
+        title.MaxLinesVisible = 2;
+        // Compact identity reserves at most two lines. Longer titles use explicit
+        // single-line ellipsis; inspection and accessibility retain the full name.
+        if (twoLines && title.GetLineCount() > 2)
+        {
+            twoLines = false;
+            title.AutowrapMode = TextServer.AutowrapMode.Off;
+        }
+        title.CustomMinimumSize = new Vector2(0, twoLines ? Mathf.Ceil(CardTypography.Title.GetHeight(size)) * 2 : 28);
     }
 
     private static Control Symbol(string glyph, string name, string description)

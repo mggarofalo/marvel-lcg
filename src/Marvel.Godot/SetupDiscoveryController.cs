@@ -15,6 +15,7 @@ internal sealed class SetupDiscoveryController(Main main, MainSetupController co
         main.SetAssignmentControlsEnabled(false);
         main.status.Text = "Loading setup choices…";
         main.statusPanel.Visible = true;
+        SourceTableauWarmup.Prepare(main);
         try
         {
             LocalClientConnection connection = ClientComposition.Connect(

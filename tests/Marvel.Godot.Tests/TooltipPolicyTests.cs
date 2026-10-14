@@ -15,4 +15,12 @@ public sealed class TooltipPolicyTests
     {
         Assert.Equal(expected, TooltipPolicy.Restates(visible, tooltip));
     }
+
+    [Theory]
+    [InlineData(false, "")]
+    [InlineData(true, "A very long card title")]
+    public void FullCaptionAddsInformationOnlyWhenItsVisibleLabelIsClipped(bool clipped, string expected)
+    {
+        Assert.Equal(expected, TooltipPolicy.ClippedCaption("A very long card title", clipped));
+    }
 }

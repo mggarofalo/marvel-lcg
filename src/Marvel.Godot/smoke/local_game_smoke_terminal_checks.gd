@@ -74,10 +74,10 @@ func _terminal_decision_is_safe() -> bool:
 	if "DEFEAT" not in decision:
 		_fail("the null-prompt terminal decision copy does not identify defeat")
 		return false
-	if "VILLAIN WON" not in decision and "PLAYERS LOST" not in decision:
+	if not _has_authoritative_loss_reason(decision):
 		_fail("the null-prompt terminal decision copy does not identify the loss")
 		return false
-	if "VILLAIN WON" not in prompt and "PLAYERS LOST" not in prompt:
+	if not _has_authoritative_loss_reason(prompt):
 		_fail("the terminal prompt header does not identify the loss")
 		return false
 	if _node("Status").theme_type_variation != &"DangerStatusPanel":
@@ -89,7 +89,7 @@ func _terminal_decision_is_safe() -> bool:
 func _terminal_table_outcome_is_visible() -> bool:
 	var context := main.find_child("CausalSituation", true, false) as Control
 	var outcome := _visible_text(context).to_lower() if context != null else ""
-	if "defeat" in outcome and ("villain won" in outcome or "players lost" in outcome):
+	if "defeat" in outcome and _has_authoritative_loss_reason(outcome):
 		return true
 	_fail("the terminal task surface does not identify defeat and its authoritative outcome")
 	return false
@@ -146,8 +146,7 @@ func _terminal_history_is_safe() -> bool:
 	if text.is_empty() or text == "No events yet.":
 		_fail("the visible event log is empty")
 		return false
-	if "villain won the game" not in text.to_lower() \
-			and "players lost the game" not in text.to_lower():
+	if not _has_authoritative_loss_reason(text):
 		_fail("the terminal outcome did not remain in recent history")
 		return false
 	return true
@@ -161,13 +160,13 @@ func _terminal_result_is_safe() -> bool:
 	if latest != null:
 		var context := main.find_child("CausalSituation", true, false) as Control
 		var outcome := _visible_text(context).to_lower() if context != null else ""
-		if not latest.text.is_empty() and ("villain won" in outcome or "players lost" in outcome):
+		if not latest.text.is_empty() and _has_authoritative_loss_reason(outcome):
 			return true
 		_fail("the terminal task lost its outcome or durable result receipt")
 		return false
 	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
 	var text := _visible_text(result).to_lower()
-	if result.visible and ("villain won the game" in text or "players lost the game" in text):
+	if result.visible and _has_authoritative_loss_reason(text):
 		return true
 	_fail("the terminal outcome did not remain in the primary action pane")
 	return false
@@ -228,3 +227,10 @@ func _dismiss_terminal_result() -> bool:
 		_fail("the latest result cannot be dismissed")
 		return false
 	return true
+
+
+func _has_authoritative_loss_reason(text: String) -> bool:
+	var lower := text.to_lower()
+	return "all players were eliminated" in lower \
+		or "the final main scheme was completed" in lower \
+		or "the encounter deck and discard pile are both empty" in lower

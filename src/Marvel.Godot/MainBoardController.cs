@@ -103,7 +103,8 @@ internal sealed class MainBoardController : IDisposable
         main.board.Visible = true;
         RenderBoard(world, response.Prompt, renderGeneration);
         main.syncStatus.Visible = true;
-        main.syncStatus.Text = $"Last synced · r{response.Revision}";
+        main.syncStatus.Text = "Synced";
+        main.syncStatus.SetMeta("response_revision", response.Revision);
         main.synchronize.Visible = true;
         main.RenderPromptSummary(response.Prompt, world);
         main.decisions.Render(response.Prompt, world, response.Revision);
@@ -187,7 +188,7 @@ internal sealed class MainBoardController : IDisposable
         var dock = new VBoxContainer { Name = "CompactDecisionDock",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         dock.AddChild(actions);
-        var complete = new Button { Name = "CompleteChoiceSheet", Text = "Complete Choices",
+        var complete = new Button { Name = "CompleteChoiceSheet", Text = ChoiceDisclosure.Label(main.CurrentGame?.Prompt),
             CustomMinimumSize = new Vector2(148, 44),
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
             Visible = main.CurrentGame?.Prompt is not null };

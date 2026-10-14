@@ -42,8 +42,39 @@ public static class EventPresenter
         ArgumentNullException.ThrowIfNull(happened);
         ArgumentNullException.ThrowIfNull(world);
 
-        (string summary, IReadOnlyList<int> anchors, EventMotionKind motion) = happened switch
+        var (summary, anchors, motion) = Describe(happened, world);
+
+        EventActivityDescriptor activityDescriptor = EventActivityProjection.From(happened, world, anchors);
+        return EventRelationshipProjection.WithSubjects(new EventPresentation(summary, Cause(happened), anchors, motion)
         {
+            Activity = activityDescriptor,
+            Intention = happened.Cause is { } causal ? causal.Kind switch
+            {
+                EventCauseKind.Scheme => $"{causal.SourceTitle} schemes against {causal.TargetTitle}",
+                EventCauseKind.Thwart => $"{causal.SourceTitle} thwarts {causal.TargetTitle}",
+                _ => null,
+            } : null,
+            ForcedAbilityNotification = happened is AbilityWindowResult receipt
+                ? new ForcedAbilityNotification(receipt.Source,
+                    $"{Card(receipt.Source, world, receipt)} — {PromptPresentation.Words(receipt.Type.ToString())}",
+                    summary, receipt.Player, receipt.Occurrence, receipt.Completed)
+                { SourceCard = activityDescriptor.Subjects.FirstOrDefault(subject => subject.Card == receipt.Source)?.Reference } : null,
+            CueSummary = happened switch
+            {
+                FieldSet set => EventFieldPresentation.CueSummary(set, world),
+                CardsFlipped flipped => EventFlipPresentation.CueSummary(flipped, world),
+                _ => null,
+            },
+        }, happened);
+    }
+
+    private static (string Summary, IReadOnlyList<int> Anchors, EventMotionKind Motion) Describe(
+        GameEvent happened, WorldDescriptor world) =>
+        happened switch
+        {
+            AttackBoundary boundary => ($"{Card(boundary.Source, world, boundary)} → {Card(boundary.Target, world, boundary)}"
+                + (boundary.Started ? boundary.Resumed ? " · Attack resumes." : " · Attack begins." : " · Attack resolved."),
+                [boundary.Source, boundary.Target], EventMotionKind.Attack),
             AbilityWindowResult result => (result.Description + (result.Completed
                 ? ". Ability resolved." : ". Resolution awaits a decision."), [result.Source], EventMotionKind.State),
             PhaseStarted phase => ($"Round {phase.Round}: {phase.Phase} phase.", [], EventMotionKind.State),
@@ -123,31 +154,15 @@ public static class EventPresenter
                 $"event kind {happened.GetType().Name} has no presentation"),
         };
 
-        EventActivityDescriptor activityDescriptor = EventActivityProjection.From(happened, world, anchors);
-        return EventRelationshipProjection.WithSubjects(new EventPresentation(summary, Cause(happened), anchors, motion)
-        {
-            Activity = activityDescriptor,
-            ForcedAbilityNotification = happened is AbilityWindowResult receipt
-                ? new ForcedAbilityNotification(receipt.Source,
-                    $"{Card(receipt.Source, world, receipt)} — {PromptPresentation.Words(receipt.Type.ToString())}",
-                    summary, receipt.Player, receipt.Occurrence, receipt.Completed)
-                { SourceCard = activityDescriptor.Subjects.FirstOrDefault(subject => subject.Card == receipt.Source)?.Reference } : null,
-            CueSummary = happened switch
-            {
-                FieldSet set => EventFieldPresentation.CueSummary(set, world),
-                CardsFlipped flipped => EventFlipPresentation.CueSummary(flipped, world),
-                _ => null,
-            },
-        }, happened);
-    }
-
     /// <summary>Describes a newly reached terminal state without inventing a game event.</summary>
-    public static EventPresentation Terminal(Outcome outcome) => outcome switch
+    public static EventPresentation Terminal(Outcome outcome,
+        PlayerLossReason lossReason = PlayerLossReason.Unspecified) => outcome switch
     {
         Outcome.VillainWins => new(
-            "The villain won the game.", "Game outcome", [], EventMotionKind.Terminal),
+            OutcomeDescription.Result(outcome), "Game outcome", [], EventMotionKind.Terminal),
         Outcome.PlayersLose => new(
-            "The players lost the game.", "Game outcome", [], EventMotionKind.Terminal),
+            lossReason == PlayerLossReason.Unspecified ? "The players lost the game."
+                : OutcomeDescription.Result(outcome, lossReason), "Game outcome", [], EventMotionKind.Terminal),
         Outcome.PlayersWin => new(
             "The players won the game.", "Game outcome", [], EventMotionKind.Terminal),
         _ => throw new ArgumentOutOfRangeException(

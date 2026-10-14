@@ -45,10 +45,14 @@ internal static class BoardActionChoiceSurface
             Text = actions[0].Anchor,
             ThemeTypeVariation = GodotThemeVariations.Heading,
         });
+        string[] states = actions.Select(action => action.SourceState)
+            .Where(state => !string.IsNullOrWhiteSpace(state)).Distinct().Cast<string>().ToArray();
+        if (states.Length == 1)
+            stack.AddChild(new Label { Text = states[0], ThemeTypeVariation = GodotThemeVariations.Caption });
         Button? first = null;
         foreach (AffordancePresentation action in actions)
         {
-            Button button = AddActionButton(stack, action, isCurrent, choose, recipientCommitments);
+            Button button = AddActionButton(stack, action, isCurrent, choose, recipientCommitments, states.Length != 1);
             first ??= button;
         }
         popup.AddChild(stack);
@@ -68,7 +72,7 @@ internal static class BoardActionChoiceSurface
     }
 
     private static Button AddActionButton(VBoxContainer stack, AffordancePresentation action,
-        Func<bool> isCurrent, Action<int> choose, bool recipientCommitments)
+        Func<bool> isCurrent, Action<int> choose, bool recipientCommitments, bool showState)
     {
         var button = new Button
         {
@@ -92,7 +96,8 @@ internal static class BoardActionChoiceSurface
         {
             stack.AddChild(new Label
             {
-                Text = DecisionCopy.ActionSummary(action),
+                Text = string.Join("\n", new[] { showState ? action.SourceState : null,
+                    DecisionCopy.CompactActionSummary(action) }.Where(value => !string.IsNullOrWhiteSpace(value))),
                 ThemeTypeVariation = GodotThemeVariations.Caption,
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
                 CustomMinimumSize = new Vector2(250, 0),

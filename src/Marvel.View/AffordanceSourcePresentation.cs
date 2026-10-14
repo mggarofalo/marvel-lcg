@@ -14,7 +14,7 @@ internal static class AffordanceSourcePresentation
         return (Name(area, card, visible.Title), CardStatePresentation.Summary(visible, includeTitle: false));
     }
 
-    private static string Name(AreaDescriptor area, CardDescriptor card, string title)
+    internal static string Name(AreaDescriptor area, CardDescriptor card, string title)
     {
         CardDescriptor[] copies = [.. area.Cards.Where(candidate => candidate.Face?.Title == card.Face!.Title)];
         int ordinal = Array.FindIndex(copies, candidate => candidate.Id == card.Id);

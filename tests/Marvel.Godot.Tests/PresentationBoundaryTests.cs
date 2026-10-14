@@ -23,8 +23,10 @@ public sealed class PresentationBoundaryTests
             "Marvel.Rules.Timing.AbilityType",
             // Authorized receipts drive local acknowledgment without inventing an engine prompt.
             "Marvel.View.ForcedAbilityNotification",
+            "Marvel.Rules.Events.AttackIdentity",
             "Marvel.Rules.Events.GameEvent",
             "Marvel.Rules.Play.Outcome",
+            "Marvel.Rules.Play.PlayerLossReason",
             "Marvel.Rules.Play.Resources",
             "Marvel.Rules.Prompts.Affordance",
             // Synthetic native selector specimens construct public prompt contracts only.
@@ -129,6 +131,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.EventPresentation",
             // Typed facts derived locally from visibility-filtered events.
             "Marvel.View.EventActivityDescriptor",
+            "Marvel.View.EventActivityKind",
+            "Marvel.View.OutcomeDescription",
             "Marvel.View.ActivitySubject",
             "Marvel.View.ActivitySubjectRole",
             "Marvel.View.ActivityQuantity",
@@ -136,6 +140,7 @@ public sealed class PresentationBoundaryTests
             // Public waiting copy contains no actionable private prompt.
             "Marvel.View.PendingSituationPresentation",
             "Marvel.View.PromptPresentation",
+            "Marvel.View.PlayerDescriptor",
             "Marvel.View.PlayerSummaryDescriptor",
             // The decision heading identifies the acting seat from public player information.
             "Marvel.View.PaymentSourcePresentation",

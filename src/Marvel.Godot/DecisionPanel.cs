@@ -252,6 +252,8 @@ public sealed partial class DecisionPanel : VBoxContainer
             Outcome.PlayersLose => ("DEFEAT", "The players lost. No further decision is waiting."),
             _ => ("NO DECISION", "No decision is available."),
         };
+        if (world is { Outcome: not Outcome.Unfinished })
+            detail = OutcomeDescription.Result(world.Outcome, world.LossReason);
         AddChild(Text(heading, GodotThemeVariations.Caption));
         AddChild(Text(detail, GodotThemeVariations.Body, wrap: true));
     }

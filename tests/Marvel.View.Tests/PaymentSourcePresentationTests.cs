@@ -19,13 +19,19 @@ public sealed class PaymentSourcePresentationTests
         var card = new CardDescriptor(7, CardBack.Player, true, true, -1, face);
         var world = new WorldDescriptor([], [new(1, zone, 0, -1, [card], [])], [], Outcome.Unfinished);
 
-        PaymentSourcePresentation source = PaymentSourcePresentation.From(new(7, "GG"), world);
+        PaymentSourcePresentation source = PaymentSourcePresentation.From(new(7, "GG")
+        {
+            AbilityName = "Offered generator",
+            CostDescription = "Exhaust Visible source",
+        }, world);
 
         Assert.Equal(discards, source.DiscardsCard);
         Assert.Equal("Visible source", source.Name);
         Assert.Equal("GG", source.Resources);
         Assert.Equal(face.RulesText, source.Reference);
         Assert.Equal(face.RulesMarkup, source.ReferenceMarkup);
+        Assert.Equal("Offered generator", source.AbilityName);
+        Assert.Equal("Exhaust Visible source", source.CostDescription);
     }
 
     [Fact]
@@ -34,12 +40,18 @@ public sealed class PaymentSourcePresentationTests
         var hidden = new CardDescriptor(7, CardBack.Player, false, true, -1, null);
         var world = new WorldDescriptor([], [new(7, "HandsArea", 1, -1, [hidden], [])], [], Outcome.Unfinished);
 
-        PaymentSourcePresentation source = PaymentSourcePresentation.From(new(7, "G"), world);
+        PaymentSourcePresentation source = PaymentSourcePresentation.From(new(7, "G")
+        {
+            AbilityName = "Concealed ability",
+            CostDescription = "Concealed cost",
+        }, world);
 
         Assert.Equal("Resource ability", source.Name);
         Assert.Empty(source.Reference);
         Assert.Empty(source.ReferenceMarkup);
         Assert.False(source.DiscardsCard);
         Assert.Equal("G", source.Resources);
+        Assert.Null(source.AbilityName);
+        Assert.Null(source.CostDescription);
     }
 }

@@ -6,14 +6,14 @@ static func perform(driver) -> bool:
 	if original.size() != 6:
 		driver._fail("reserved-order fixture lacks six exact opening instances")
 		return false
-	var revision: String = driver._node("Toolbar/SyncStatus").text
+	var revision: String = str(driver._node("Toolbar/SyncStatus").get_meta("response_revision", -1))
 	var expected := await _single_reserved_slot(driver, original)
 	if expected.is_empty(): return false
 	var after := await _two_reserved_slots(driver, expected)
 	if after.is_empty(): return false
 	if not await _round_trip_and_cancel(driver, after): return false
 	if not await _repeat_drag_return(driver, original[2], after): return false
-	if driver._node("Toolbar/SyncStatus").text != revision:
+	if str(driver._node("Toolbar/SyncStatus").get_meta("response_revision", -1)) != revision:
 		driver._fail("reversible hand ordering changed the authoritative revision")
 		return false
 	print("MULLIGAN_RESERVED_ORDER_OK ", after.map(func(card: Control): return card.name))

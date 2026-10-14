@@ -98,7 +98,7 @@ func _same_face(anchor: int, previous_id: int, count: int) -> bool:
 
 func _payment_wait_geometry_is_safe(probe: Node) -> bool:
 	var original := _hand_surface().get_instance_id()
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _sending_keeps_geometry(probe, original): return false
 	if not await _waiting_resize_applies(original): return false
 	return await _not_sent_resumes_payment(probe, revision)
@@ -137,7 +137,7 @@ func _waiting_resize_applies(original: int) -> bool:
 func _not_sent_resumes_payment(probe: Node, revision: String) -> bool:
 	probe.ShowNotSent(main)
 	for frame in 3: await process_frame
-	if (_node("Toolbar/SyncStatus") as Label).text != revision or _payment_modal() == null \
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision or _payment_modal() == null \
 			or not await _payment_table_layout_is_safe(_payment_modal()):
 		_fail("not-sent recovery fails to restore the same unpaid workspace and geometry")
 		return false
