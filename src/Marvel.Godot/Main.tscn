@@ -506,7 +506,7 @@ autowrap_mode = 2
 [node name="CopyInvitation" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer/Margin/Row" unique_id=1000000082]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-theme_type_variation = &"PrimaryButton"
+theme_type_variation = &"TertiaryButton"
 text = "Copy invitation"
 
 [node name="PromptHeader" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack" unique_id=1000000083]

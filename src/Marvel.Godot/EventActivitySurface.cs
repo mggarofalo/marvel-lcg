@@ -20,6 +20,7 @@ internal static class EventActivitySurface
         host.Visible = false;
         host.SetMeta("activity_running", sequence.Active);
         host.SetMeta("activity_index", sequence.Index);
-        host.SetMeta("activity_count", sequence.Entries.Count);
+        host.SetMeta("activity_count", sequence.BeatCount);
+        host.SetMeta("receipt_count", sequence.Entries.Count);
     }
 }

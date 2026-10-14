@@ -24,7 +24,8 @@ internal static class SourceTableauSample
             HasSourceTableau: true, HasRevealingCard: narrow);
         var result = new BoardRenderResult { IsCurrent = () => true };
         result.BindMotion(() => OS.GetEnvironment("MARVEL_SMOKE_MOTION") != "disabled");
-        var objects = new SpatialTableObjectRenderer(root, result, geometry, scale, null, false);
+        var objects = new SpatialTableObjectRenderer(root, result, geometry,
+            new SpatialCardFactory(scale, null, null), false);
         objects.RenderScenario(areas.Where(area => area.Seat < 0).ToArray());
         if (narrow) objects.RenderRevealing([], [areas.SelectMany(area => area.Cards).First(card => card.Kind == "HERO")]);
         objects.RenderPlayer(areas.Where(area => area.Seat == 0).ToArray());

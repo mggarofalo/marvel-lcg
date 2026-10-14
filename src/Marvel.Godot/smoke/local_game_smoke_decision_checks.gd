@@ -104,15 +104,21 @@ func _interaction_styles_are_safe(start: Button) -> bool:
 	if focus == null or normal == null or hover == null or disabled == null:
 		_fail("the primary action is missing a required interaction style")
 		return false
-	var expected_focus := _scaled_metric(3)
+	var expected_focus := maxi(2, _scaled_metric(2))
 	if focus.border_width_left < expected_focus:
 		_fail("keyboard focus has no structural focus ring")
 		return false
-	if hover.border_width_bottom == normal.border_width_bottom:
-		_fail("pointer hover differs from rest by color alone")
+	for treatment in [normal, hover, disabled, start.get_theme_stylebox("pressed")]:
+		for side in ["left", "top", "right", "bottom"]:
+			if treatment.get("content_margin_" + side) != normal.get("content_margin_" + side) \
+				or treatment.get("border_width_" + side) != 1:
+				_fail("commitment interaction changes its fixed content or edge geometry")
+				return false
+	if disabled.bg_color.a != 1.0 or disabled.bg_color.is_equal_approx(normal.bg_color):
+		_fail("unavailable commitment has no opaque distinct treatment")
 		return false
-	if disabled.border_width_bottom == normal.border_width_bottom:
-		_fail("unavailable actions differ from rest by color alone")
+	if hover.bg_color.is_equal_approx(normal.bg_color) or not start.has_meta("shared_control_bound"):
+		_fail("pointer hover has no surface treatment and shared edge feedback")
 		return false
 	return true
 
@@ -125,8 +131,11 @@ func _semantic_styles_are_safe() -> bool:
 	if legal == null or selected == null or unavailable == null:
 		_fail("the theme does not define every semantic action state")
 		return false
-	if legal.border_width_left == selected.border_width_left:
-		_fail("legal and selected targets differ by color alone")
+	if legal.border_width_left != 3 or selected.border_width_left != 3:
+		_fail("legal and selected targets have no fixed local marker rail")
+		return false
+	if selected.bg_color.is_equal_approx(theme.get_stylebox("normal", &"PrimaryButton").bg_color):
+		_fail("a selected target competes with the primary commitment")
 		return false
 	if unavailable.border_width_left == legal.border_width_left:
 		_fail("unavailable and legal actions differ by color alone")

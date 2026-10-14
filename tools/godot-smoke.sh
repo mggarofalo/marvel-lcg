@@ -61,10 +61,12 @@ else
 fi
 
 unset MARVEL_SMOKE_TWO_PLAYER
-for polish_script in shared_control_finish theme_palette causal_activity causal_arrival causal_departure weighted_gesture shell_finish; do
+for polish_script in shared_control_finish cursor_theme theme_palette card_face_reconciliation next_decision_access causal_activity causal_arrival causal_departure weighted_gesture shell_finish; do
   MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
     run_local_smoke "res://smoke/${polish_script}_smoke.gd"
 done
+MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled MARVEL_MATERIAL_EXPECT=new \
+  run_local_smoke res://smoke/control_material_smoke.gd CONTROL_MATERIAL_OK
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/close_resolution_smoke.gd '"operation":"resolve"'
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
@@ -131,7 +133,7 @@ MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled 
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/event_activity_smoke.gd
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
-  run_local_smoke res://smoke/attack_activity_lifecycle_smoke.gd ATTACK_ACTIVITY_LIFECYCLE_OK
+  run_local_smoke res://smoke/motion_finish_smoke.gd MOTION_FINISH_SMOKE_OK
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/timeline_navigation_smoke.gd
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
@@ -139,9 +141,9 @@ MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/event_activity_smoke.gd
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
-  run_local_smoke res://smoke/attack_activity_lifecycle_smoke.gd ATTACK_ACTIVITY_LIFECYCLE_OK
+  run_local_smoke res://smoke/motion_finish_smoke.gd MOTION_FINISH_SMOKE_OK
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
-  run_local_smoke res://smoke/attack_activity_lifecycle_smoke.gd ATTACK_ACTIVITY_LIFECYCLE_OK
+  run_local_smoke res://smoke/motion_finish_smoke.gd MOTION_FINISH_SMOKE_OK
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke res://smoke/timeline_navigation_smoke.gd
 

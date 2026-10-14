@@ -17,10 +17,11 @@ static int RunNativeSmoke()
 
     using var process = System.Diagnostics.Process.Start(start)
         ?? throw new InvalidOperationException("Could not start native Godot smoke");
-    if (!process.WaitForExit(TimeSpan.FromMinutes(20)))
+    // The full native suite includes eleven motion-enabled game journeys.
+    if (!process.WaitForExit(TimeSpan.FromMinutes(35)))
     {
         process.Kill(true);
-        throw new TimeoutException("Native Godot smoke did not finish within twenty minutes");
+        throw new TimeoutException("Native Godot smoke did not finish within thirty-five minutes");
     }
     return process.ExitCode;
 }

@@ -101,7 +101,7 @@ func _drag_capture_is_safe() -> bool:
 	var original := card.global_position
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
 	if not await _drag_mulligan_to_discard(card): return false
-	await create_timer(0.22).timeout
+	await preload("res://smoke/gesture_settlement.gd").hand(self)
 	if not bool(card.get_meta("mulligan_staged", false)) or card.global_position.distance_to(original) < 40:
 		_fail("mulligan drop did not physically move the selected card out of the hand")
 		return false
@@ -109,14 +109,14 @@ func _drag_capture_is_safe() -> bool:
 	if not bool(card.get_meta("mulligan_staged", false)):
 		_fail("repeat discard drop toggled the staged card back")
 		return false
-	await create_timer(0.22).timeout
+	await preload("res://smoke/gesture_settlement.gd").hand(self)
 	var hand := main.find_child("HandDropArea", true, false) as Control
 	if hand == null: hand = main.find_child("SpatialHandArea", true, false) as Control
 	if hand == null:
 		_fail("the hand has no reversible staging destination")
 		return false
 	if not await _drag_mulligan(card, hand.get_global_rect().get_center()): return false
-	await create_timer(0.22).timeout
+	await preload("res://smoke/gesture_settlement.gd").hand(self)
 	if bool(card.get_meta("mulligan_staged", false)) or (_node("Toolbar/SyncStatus") as Label).text != revision:
 		_fail("moving a staged card back failed to preserve the uncommitted game")
 		return false

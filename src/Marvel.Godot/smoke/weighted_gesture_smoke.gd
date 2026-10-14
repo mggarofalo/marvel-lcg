@@ -1,6 +1,6 @@
 extends "res://smoke/local_game_smoke.gd"
 
-# Real seeded mulligan; native pointer events interrupt an invalid return before its 160 ms settle.
+# Real seeded mulligan; native pointer events interrupt an invalid return before it settles.
 func _run() -> void:
 	if not await _open_setup(load("res://Main.tscn") as PackedScene): return
 	await _configure_seeded_game()
@@ -9,7 +9,7 @@ func _run() -> void:
 	if not await _return_click_restores_pose(): return
 	await _press_key(KEY_ESCAPE)
 	if not await _check_cancel_paths(): return
-	if not await _release_table_resources(): return
+	if not await _pending_return_retires(): return
 	print("WEIGHTED_GESTURE_OK returning_click_restores=true inspection=true unchanged_revision=true escape=true focus_loss=true")
 	quit(0)
 
@@ -33,6 +33,7 @@ func _return_click_restores_pose() -> bool:
 	if not await _capture_checkpoint("weighted-invalid-held"): return false
 	_send_pointer(finish, false)
 	await process_frame
+	if not _return_state_matches(card, motion_enabled): return false
 	if motion_enabled and card.position.is_equal_approx(position):
 		_fail("return-click regression did not interrupt an intermediate returning card")
 		return false
@@ -46,11 +47,16 @@ func _return_click_restores_pose() -> bool:
 	await process_frame
 	_send_pointer(click, false)
 	await process_frame
-	await create_timer(0.2).timeout
+	await preload("res://smoke/gesture_settlement.gd").pose(self, card, position, rotation)
+	if not _return_state_matches(card, false): return false
 	if not card.position.is_equal_approx(position) or not is_equal_approx(card.rotation, rotation) \
 			or card.modulate != Color.WHITE or card.is_set_as_top_level():
 		_fail("clicking a returning card failed to restore its exact resting pose and white tint")
 		return false
+	if not _return_click_inspection_safe(card, revision): return false
+	return await _capture_checkpoint("weighted-return-click-settled")
+
+func _return_click_inspection_safe(card: Control, revision: String) -> bool:
 	var inspector := main.get_node("CardInspector") as Control
 	if not inspector.visible or inspector.get_node("Backdrop").visible \
 			or not inspector.get_node("Frame/Stack/Header/Close").visible:
@@ -59,7 +65,7 @@ func _return_click_restores_pose() -> bool:
 	if bool(card.get_meta("mulligan_staged", false)) or (_node("Toolbar/SyncStatus") as Label).text != revision:
 		_fail("invalid drop or returning-card click changed the draft or authoritative revision")
 		return false
-	return await _capture_checkpoint("weighted-return-click-settled")
+	return true
 
 func _send_pointer(point: Vector2, pressed: bool) -> void:
 	var event := InputEventMouseButton.new()
@@ -89,11 +95,12 @@ func _check_cancel_paths() -> bool:
 		else:
 			await _press_key(KEY_ESCAPE)
 		_send_pointer(finish, false)
-		await create_timer(0.2).timeout
+		await preload("res://smoke/gesture_settlement.gd").pose(self, card, resting, rotation)
 		if not _cancelled_pose_is_safe(card, resting, rotation): return false
 	return true
 
 func _cancelled_pose_is_safe(card: Control, resting: Vector2, rotation: float) -> bool:
+	if not _return_state_matches(card, false): return false
 	if card.is_set_as_top_level() or not card.position.is_equal_approx(resting) \
 			or not is_equal_approx(card.rotation, rotation) or card.modulate != Color.WHITE:
 		_fail("cancelled drag failed to restore exact pose")
@@ -102,6 +109,42 @@ func _cancelled_pose_is_safe(card: Control, resting: Vector2, rotation: float) -
 		_fail("cancelled drag retained forbidden cursor")
 		return false
 	return true
+
+func _return_state_matches(card: Control, active: bool) -> bool:
+	if bool(card.get_meta("card_return_active", false)) != active:
+		_fail("card return lifecycle disagrees with its active or completed gesture")
+		return false
+	return true
+
+func _pending_return_retires() -> bool:
+	var card := _mulligan_card("Swinging Web Kick")
+	var tracked: WeakRef = weakref(card)
+	var observed := {"seen": false, "valid": false, "active": true}
+	card.tree_exiting.connect(func() -> void:
+		var current := tracked.get_ref() as Control
+		observed.seen = true
+		observed.valid = current != null
+		observed.active = bool(current.get_meta("card_return_active", false)) if current != null else true)
+	if not await _start_pending_return(card): return false
+	if not await _release_table_resources(): return false
+	if not observed.seen or not observed.valid or observed.active:
+		_fail("scene retirement retained an active return or missed its live tree-exit cleanup")
+		return false
+	return true
+
+func _start_pending_return(card: Control) -> bool:
+	var start := await _exposed_card_body_point(card)
+	if start == Vector2.INF: return false
+	_send_pointer(start, true)
+	await process_frame
+	var move := InputEventMouseMotion.new()
+	move.position = Vector2(570, 450)
+	move.global_position = move.position
+	render_viewport.push_input(move, true)
+	await process_frame
+	_send_pointer(move.position, false)
+	await process_frame
+	return _return_state_matches(card, motion_enabled)
 
 func _press_key(code: Key) -> void:
 	for pressed in [true, false]:

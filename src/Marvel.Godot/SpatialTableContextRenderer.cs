@@ -71,7 +71,14 @@ internal static class SpatialTableContextRenderer
         heading.Name = "ContextualHeading";
         cause.AddChild(heading);
         heading.AddThemeFontSizeOverride("font_size", 18);
-        return AddResolution(cause, presentation, world, prompt);
+        Label resolution = AddResolution(cause, presentation, world, prompt);
+        Label operation = Copy("");
+        operation.Name = "SpatialOperationalNotice";
+        operation.AutowrapMode = TextServer.AutowrapMode.Word;
+        operation.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
+        operation.Visible = false;
+        cause.AddChild(operation);
+        return resolution;
     }
 
     private static Label AddResolution(VBoxContainer cause, PromptPresentation? presentation,

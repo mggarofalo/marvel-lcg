@@ -38,6 +38,7 @@ internal static class SharedControlFeedback
 
     private static void Bind(Button button, Control owner)
     {
+        button.ThemeTypeVariation = ButtonHierarchy.Variation(button.Name, button.ThemeTypeVariation);
         if (button.HasMeta("shared_control_bound")) return;
         button.SetMeta("shared_control_bound", true);
         _ = new ButtonSurfaceFeedback(button, owner);

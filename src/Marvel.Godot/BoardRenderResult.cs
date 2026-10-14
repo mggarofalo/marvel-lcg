@@ -17,8 +17,7 @@ public sealed class BoardRenderResult
     private DecisionComposer? currentComposer;
     private PromptPresentation? currentPrompt;
     private readonly BoardContextualCopy copy = new();
-    private Action<Control>? openCompleteChoices;
-    private Button? completeChoicesEntry;
+    private readonly BoardCompleteChoicesEntry completeChoicesEntry;
     private Container? contextualActions;
     private bool completeChoicesOpen;
     private bool sourceArrangementActive;
@@ -27,6 +26,7 @@ public sealed class BoardRenderResult
     /// <summary>Owns controls and source lookup for one authorized board snapshot.</summary>
     public BoardRenderResult(BoardPresentation? board = null)
     {
+        completeChoicesEntry = new(IsCurrentRender);
         Inspector = new(board);
         reveal = new BoardControlReveal(this);
         interactionControls = new BoardCardInteractionControls(IsCurrentRender);
@@ -90,18 +90,17 @@ public sealed class BoardRenderResult
     }
 
     internal void RegisterCompleteChoices(Button entry)
-    {
-        completeChoicesEntry = entry;
-        entry.Pressed += () => OpenCompleteChoices(entry);
-    }
+        => completeChoicesEntry.Register(entry);
 
     internal void OpenCompleteChoices(Control source)
-    {
-        if (IsCurrentRender() && InteractionControl.IsUsable(source))
-            openCompleteChoices?.Invoke(source);
-    }
+        => completeChoicesEntry.Open(source);
 
-    internal void BindCompleteChoices(Action<Control> open) => openCompleteChoices = open;
+    internal void BindCompleteChoices(Action<Control> open) => completeChoicesEntry.Bind(open);
+
+    internal void PresentPendingChoices(string heading, Action<Control> open) =>
+        completeChoicesEntry.PresentPending(heading, open);
+
+    internal void ClearPendingChoices() => completeChoicesEntry.ClearPending();
 
     internal void SetCompleteChoicesOpen(bool open)
     {
@@ -111,10 +110,7 @@ public sealed class BoardRenderResult
         {
             contextualActions!.Visible = !open;
         }
-        if (InteractionControl.IsUsable(completeChoicesEntry))
-        {
-            completeChoicesEntry!.Disabled = open || currentComposer is null;
-        }
+        completeChoicesEntry.SetOpen(open, currentComposer is not null);
     }
 
     internal void RegisterContextualWorld(WorldDescriptor world) => copy.RegisterWorld(world);

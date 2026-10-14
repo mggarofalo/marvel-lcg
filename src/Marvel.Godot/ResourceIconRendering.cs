@@ -84,7 +84,8 @@ internal static class ResourceIconRendering
     internal static void ButtonContent(Button button, Control content, string accessibleName)
     {
         button.AccessibilityName = accessibleName;
-        button.TooltipText = accessibleName;
+        button.TooltipText = string.Empty;
+        ButtonContentTypography.Apply(content);
         ButtonContentLayout.Attach(button, content);
     }
 

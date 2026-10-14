@@ -22,15 +22,17 @@ internal sealed class ButtonSurfaceFeedback
         button.MouseExited += () => { hovered = false; Refresh(); };
         button.FocusEntered += Refresh;
         button.FocusExited += Refresh;
-        button.ButtonDown += () => { pressed = true; Refresh(); };
-        button.ButtonUp += () => { pressed = false; Refresh(); };
+        button.ButtonDown += () => { pressed = true; Refresh(0.06); };
+        button.ButtonUp += () => { pressed = false; Refresh(0.14); };
         button.Ready += Refresh;
         button.TreeExiting += Stop;
         button.Draw += Draw;
         Refresh();
     }
 
-    private void Refresh()
+    private void Refresh() => Refresh(0.1);
+
+    private void Refresh(double duration)
     {
         TooltipPolicy.RemoveRestatement(button);
         UpdateCursor();
@@ -38,14 +40,14 @@ internal sealed class ButtonSurfaceFeedback
         Stop();
         if (!MotionEnabled() || !button.IsInsideTree()) { SetStrength(target); return; }
         tween = button.CreateTween();
-        tween.TweenMethod(Callable.From<float>(SetStrength), strength, target, pressed ? 0.06 : 0.12)
+        tween.TweenMethod(Callable.From<float>(SetStrength), strength, target, duration)
             .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
     }
 
     private float TargetStrength()
     {
         if (button.Disabled || (!hovered && !button.HasFocus())) return 0;
-        return pressed ? 0.28f : 0.65f;
+        return pressed ? 0.8f : 0.65f;
     }
 
     private bool MotionEnabled() => owner.FindChild("Motion", true, false) is not BaseButton toggle || toggle.ButtonPressed;

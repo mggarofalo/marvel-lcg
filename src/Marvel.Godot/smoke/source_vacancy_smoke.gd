@@ -44,9 +44,9 @@ func _check_vacancy(grid: GridContainer, viewport: ScrollContainer, vacancy: Con
 	var index := vacancy.get_index()
 	var point := vacancy.get_global_rect().get_center()
 	var selected := int(fixture.get_meta("selected_id", -1))
-	await _source_grip_drag(card, point, true)
+	await _source_grip_drag(card, point, true, failures)
 	if grid.get_children() != original: failures.append("vacant destination cancellation changed source order")
-	await _source_grip_drag(card, point, false)
+	await _source_grip_drag(card, point, false, failures)
 	if grid.get_child(index) != source or grid.get_child(index - 1) != vacancy:
 		failures.append("pointer placement failed to preserve the vacant source slot")
 	var grip := card.find_child("SourceReorderGrip", true, false) as Button

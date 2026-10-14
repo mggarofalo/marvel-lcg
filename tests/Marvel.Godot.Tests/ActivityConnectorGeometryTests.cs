@@ -46,4 +46,15 @@ public sealed class ActivityConnectorGeometryTests
         Assert.True(piece.From.Y > 50);
     }
 
+    [Fact]
+    public void NeighboringCardFaceOccludesTheTraceButKeepsExteriorEndpoints()
+    {
+        var pieces = ActivityConnectorGeometry.Segments(new(45, 50), new(173, 50),
+            [new Rect2(0, 20, 40, 60).Grow(2), new Rect2(80, 0, 40, 100).Grow(2),
+             new Rect2(180, 20, 40, 60).Grow(2)]);
+        Assert.Equal(2, pieces.Count);
+        Assert.Equal((new Vector2(45, 50), new Vector2(78, 50)), pieces[0]);
+        Assert.Equal((new Vector2(122, 50), new Vector2(173, 50)), pieces[1]);
+    }
+
 }

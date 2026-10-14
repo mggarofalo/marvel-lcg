@@ -31,7 +31,7 @@ public sealed class EventActivityCardFactsTests
         var sequence = new EventActivitySequence();
         sequence.Start([batch], true);
         Assert.Single(sequence.Entries);
-        Assert.InRange(sequence.Onset, .14, .18);
+        Assert.InRange(sequence.Onset, .26, .3);
         Assert.False(sequence.Advance(.16));
         foreach (var detail in EventActivityCardFacts.Facts(batch))
         {

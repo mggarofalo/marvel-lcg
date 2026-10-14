@@ -3,17 +3,25 @@ extends "res://smoke/local_game_smoke.gd"
 var arrival_samples: Array = []
 var sampled_faces := {}
 var arrival_images: Array[Image] = []
+var overlapping_deal := false
 
 func _process(delta: float) -> bool:
 	if not is_instance_valid(main): return false
+	var partial_alphas: Array[float] = []
 	for card in main.find_children("ActivityArrival*", "Control", true, false):
 		if card.is_visible_in_tree():
+			if not card.scale.is_equal_approx(Vector2.ONE):
+				_fail("dealing a card scaled its printed text")
+				return false
 			arrival_samples.append({"milliseconds": Time.get_ticks_msec(), "delta": delta, "card": str(card.name), "alpha": card.modulate.a, "x": card.position.x, "y": card.position.y})
 			if card.modulate.a > 0.1 and card.modulate.a < 0.95:
+				partial_alphas.append(card.modulate.a)
 				sampled_faces[str(card.name)] = true
 				if arrival_images.size() < 3 and DisplayServer.get_name() != "headless" \
 						and not OS.get_environment("MARVEL_SMOKE_CAPTURE_DIR").is_empty():
 					arrival_images.append(render_viewport.get_texture().get_image())
+	if partial_alphas.size() >= 2 and partial_alphas.max() - partial_alphas.min() > 0.08:
+		overlapping_deal = true
 	return false
 
 func _run() -> void:
@@ -23,12 +31,19 @@ func _run() -> void:
 	if not await _wait_for(func(): return _task_commit() != null): return
 	if not await _select_arrival_replacements(): return
 	if not await _commit_once("Redraw 2"): return
-	if sampled_faces.size() != 2:
+	if motion_enabled and sampled_faces.size() != 2:
 		_fail("two-card mulligan lacked simultaneous native arrival frames: " + str(sampled_faces))
+		return
+	if motion_enabled and not overlapping_deal:
+		_fail("the two authorized arrivals lacked overlapping staggered motion")
+		return
+	if not motion_enabled and not sampled_faces.is_empty():
+		_fail("reduced motion retained partial card travel")
 		return
 	_save_arrival_frames()
 	if not await _capture_checkpoint("arrival-settled"): return
-	print("CAUSAL_ARRIVAL_SMOKE_OK authorized_arrivals=true simultaneous=2 intermediate_frames=", arrival_samples.size())
+	print("CAUSAL_ARRIVAL_SMOKE_OK authorized_arrivals=true overlapping_deal=", overlapping_deal,
+		" motion=", motion_enabled, " intermediate_frames=", arrival_samples.size())
 	main.queue_free()
 	await process_frame
 	await process_frame

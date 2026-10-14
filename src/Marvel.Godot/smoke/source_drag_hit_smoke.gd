@@ -53,6 +53,7 @@ func _check_region(card: Control, region: Control, grid: GridContainer, fixture:
 			break
 	await _source_key(KEY_ESCAPE)
 	await _pointer(finish, false)
+	await _wait_for_source_slot(card, failures)
 	if grid.get_children() != original or card.is_set_as_top_level(): failures.append("cancel failed for " + str(region.name))
 	if int(fixture.get_meta("selected_id", -1)) != selected or int(fixture.get_meta("inspected_id", -1)) != inspected:
 		failures.append("drag dispatched action/inspection from " + str(region.name))

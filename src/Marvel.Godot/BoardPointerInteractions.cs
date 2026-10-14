@@ -229,7 +229,7 @@ internal sealed class BoardPointerInteractions
         }
         control.MouseDefaultCursorShape = card.TargetId is { } id && mulligan.Contains(id)
             || canDrag?.Invoke(new CardPointerGesture(card, control, control.HasMeta("spatial_hand_index"),
-                control.GetGlobalMousePosition())) == true ? Control.CursorShape.Drag : Control.CursorShape.PointingHand;
+                control.GetGlobalMousePosition())) == true ? Control.CursorShape.Move : Control.CursorShape.PointingHand;
         previewEntered(card, control);
     }
 

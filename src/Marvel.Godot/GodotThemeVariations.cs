@@ -55,6 +55,7 @@ public static class GodotThemeVariations
     public const string CardState = nameof(CardState);
     public const string WaitingButton = nameof(WaitingButton);
     public const string PrimaryButton = nameof(PrimaryButton);
+    public const string TertiaryButton = nameof(TertiaryButton);
     public const string ChoiceButton = nameof(ChoiceButton);
     public const string LegalTargetButton = nameof(LegalTargetButton);
     public const string SelectedTargetButton = nameof(SelectedTargetButton);

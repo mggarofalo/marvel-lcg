@@ -9,9 +9,10 @@ internal static class StagedResponseInput
     {
         // A pinned inspector owns its complete dismissal gesture, including the backdrop release.
         if (main.cardInspector.Visible && main.cardInspectorPinned) return false;
-        if (input is InputEventKey { Keycode: Key.Escape }) return false;
+        if (input is InputEventKey { Keycode: Key.Escape or Key.Tab }) return false;
         Control? target = input is InputEventKey ? main.GetViewport().GuiGetFocusOwner()
             : main.GetViewport().GuiGetHoveredControl();
+        if (target?.HasMeta("accepted_decision_entry") == true) return false;
         if (!IsStagedBoardTarget(main, target)) return false;
         Inspect(main, FindCard(target), input);
         if (input is InputEventMouseButton or InputEventKey) main.GetViewport().SetInputAsHandled();

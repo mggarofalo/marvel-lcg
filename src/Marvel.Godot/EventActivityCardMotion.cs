@@ -70,18 +70,17 @@ internal sealed class EventActivityCardMotion(Main main)
         if (!ReferenceEquals(boundBoard, main.boardRender)) Rebind();
         arrivals.Advance(elapsed, onset);
         float approach = Mathf.Clamp((float)(elapsed / onset), 0, 1);
-        float settle = Mathf.Clamp((float)((elapsed - onset) / .18), 0, 1);
         float ease = 1 - Mathf.Pow(1 - approach, 3);
         foreach (var (card, target) in targets)
         {
             if (!InteractionControl.IsUsable(card)) continue;
             var origin = starts[card];
-            Vector2 offset = target.Depart ? new Vector2(0, -26 * ease) : new Vector2(0, -4 * Mathf.Sin(approach * Mathf.Pi));
+            float settle = Mathf.Clamp((float)((elapsed - onset) / .2), 0, 1);
+            float lift = elapsed < onset ? Mathf.Sin(approach * Mathf.Pi / 2) : 1 - settle;
+            Vector2 offset = target.Depart ? new Vector2(0, -26 * ease) : new Vector2(0, -4 * lift);
             card.Position = origin.Position.Lerp(target.Position, ease) + offset;
             card.Rotation = Mathf.Lerp(origin.Rotation, target.Rotation, ease);
             card.Modulate = target.Depart ? originals[card].Tint with { A = 1 - ease } : originals[card].Tint;
-            if (!target.Depart && elapsed >= onset)
-                card.Scale = Vector2.One * (1 + .018f * (1 - settle));
             SpatialCardSidecar.Place(card);
         }
         if (!impacted && elapsed >= onset)

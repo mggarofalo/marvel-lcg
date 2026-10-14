@@ -256,7 +256,7 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             ThemeTypeVariation = name == "ContextualCommit" ? GodotThemeVariations.PrimaryButton
-                : name == "ContextualCancelDraft" ? string.Empty : GodotThemeVariations.LegalTargetButton,
+                : name == "ContextualCancelDraft" ? GodotThemeVariations.TertiaryButton : GodotThemeVariations.ChoiceButton,
         };
         int current = generation;
         button.SetMeta("table_mutation", true);

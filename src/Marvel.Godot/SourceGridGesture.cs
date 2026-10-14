@@ -58,7 +58,7 @@ internal sealed partial class SourceGridGesture : Node
         Label title = (Label)card.FindChild("SourceTitle", true, false);
         var grip = new Button { Name = "SourceReorderGrip", Text = "", Flat = true,
             AccessibilityName = $"Arrange {identity}", TooltipText = "Drag and drop into any slot. Space picks up; arrows move; Enter places; Escape cancels.",
-            Alignment = HorizontalAlignment.Right, MouseDefaultCursorShape = Control.CursorShape.Drag,
+            Alignment = HorizontalAlignment.Right, MouseDefaultCursorShape = Control.CursorShape.Move,
             MouseFilter = Control.MouseFilterEnum.Stop, ZIndex = 20 };
         grip.AddThemeFontSizeOverride("font_size", 16);
         using var empty = new StyleBoxEmpty();

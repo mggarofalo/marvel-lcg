@@ -24,9 +24,9 @@ public static class VisualSystem
     ];
 
     public static VisualPalette Palette { get; } = new(
-        Canvas: VisualColor.FromRgb(0x092A2C),
-        Surface: VisualColor.FromRgb(0x101C26),
-        RaisedSurface: VisualColor.FromRgb(0x172B34),
+        Canvas: VisualColor.FromRgb(0x0B171F),
+        Surface: VisualColor.FromRgb(0x101F2A),
+        RaisedSurface: VisualColor.FromRgb(0x1B303D),
         Text: VisualColor.FromRgb(0xF2EDD9),
         MutedText: VisualColor.FromRgb(0xB2C0C2),
         Accent: VisualColor.FromRgb(0xF2C14E),
@@ -34,8 +34,8 @@ public static class VisualSystem
         Legal: VisualColor.FromRgb(0x4C9ED9),
         Selected: VisualColor.FromRgb(0xF2C14E),
         Danger: VisualColor.FromRgb(0xE05B5E),
-        Unavailable: VisualColor.FromRgb(0x9AA6B8),
-        Outline: VisualColor.FromRgb(0x78959D),
+        Unavailable: VisualColor.FromRgb(0x8F9EA8),
+        Outline: VisualColor.FromRgb(0x36505D),
         Focus: VisualColor.FromRgb(0xF2C14E));
 
     /// <summary>Every scale the client promises to render and test.</summary>
@@ -99,9 +99,9 @@ public static class VisualSystem
             Palette.RaisedSurface,
             Palette.Accent,
             NonColorCue.Raised,
-            BorderWidth: 2,
+            BorderWidth: 1,
             FocusRingWidth: 0,
-            VerticalOffset: -2,
+            VerticalOffset: 0,
             Enabled: true),
         InteractiveVisualState.KeyboardFocus => new(
             GodotThemeVariations.ChoiceButton,
@@ -110,7 +110,7 @@ public static class VisualSystem
             Palette.Focus,
             NonColorCue.FocusRing,
             BorderWidth: 2,
-            FocusRingWidth: 3,
+            FocusRingWidth: 2,
             VerticalOffset: 0,
             Enabled: true),
         InteractiveVisualState.Legal => new(
@@ -125,13 +125,13 @@ public static class VisualSystem
             Enabled: true),
         InteractiveVisualState.Selected => new(
             GodotThemeVariations.SelectedTargetButton,
-            Palette.OnAccent,
-            Palette.Selected,
+            Palette.Text,
+            ButtonMaterials.SelectedSurface,
             Palette.Selected,
             NonColorCue.Checkmark | NonColorCue.Pressed,
             BorderWidth: 3,
             FocusRingWidth: 0,
-            VerticalOffset: 1,
+            VerticalOffset: 0,
             Enabled: true),
         InteractiveVisualState.Unavailable => new(
             GodotThemeVariations.UnavailableButton,
@@ -175,8 +175,8 @@ public static class VisualSystem
         MinimumHeight: Math.Max(34, Scale(44, scale)),
         MinimumPointerTarget: Math.Max(34, Scale(44, scale)),
         MinimumButtonWidth: Math.Max(64, Scale(96, scale)),
-        FocusRingWidth: Scale(3, scale),
-        CornerRadius: Scale(8, scale));
+        FocusRingWidth: Math.Max(2, Scale(2, scale)),
+        CornerRadius: Math.Clamp(Scale(6, scale), 4, 9));
 
     /// <summary>Keeps the active decision dominant while preserving a usable table.</summary>
     public static DesktopPlayMetrics DesktopPlay(

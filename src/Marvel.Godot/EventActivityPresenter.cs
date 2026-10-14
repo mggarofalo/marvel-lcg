@@ -121,9 +121,9 @@ internal sealed partial class EventActivityPresenter : Node
     private void RefreshPulse()
     {
         if (!InteractionControl.IsUsable(pulse)) return;
-        var visible = sequence.Elapsed >= sequence.Onset && sequence.Attention is { } current && !(attack is not null && current.Motion == EventMotionKind.Attack)
+        var visible = sequence.Attention is { } current && !(attack is not null && current.Motion == EventMotionKind.Attack)
             ? VisibleSubjects([current]) : [];
-        pulse!.Present(visible, elapsed, sequence.Active);
+        pulse!.Present(visible, elapsed, sequence.Active, sequence.Onset);
         attackPulse!.Present(attack is null ? [] : VisibleSubjects([attack], duringDraft: true),
             attackElapsed, main!.eventMotion.ButtonPressed);
     }

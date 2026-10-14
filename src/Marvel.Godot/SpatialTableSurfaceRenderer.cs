@@ -12,14 +12,16 @@ internal static class SpatialTableSurfaceRenderer
         Main main,
         DisplayedSeatSelection selection,
         Action<int> switchSeat,
-        Prompt? prompt)
+        Prompt? prompt,
+        BoardRenderResult? previous)
     {
+        using var faces = new BoardCardFaceReuse(previous);
         Prepare(main);
         AstraTableGeometry geometry = Geometry(main, selection, prompt);
         Control surface = CreateSurface(main, geometry);
         var result = new BoardRenderResult(main.boardPresentation);
         AddMats(surface, result, geometry, selection);
-        RenderObjects(main, result, surface, geometry, selection, prompt);
+        RenderObjects(main, result, surface, geometry, selection, prompt, faces);
         AddSeats(surface, geometry, main.boardPresentation!, selection, switchSeat);
         surface.SetMeta("spatial_table_grammar", "astra-far-to-near-v1");
         surface.SetMeta("expanded_seat", selection.ExpandedSeat);
@@ -90,6 +92,7 @@ internal static class SpatialTableSurfaceRenderer
             MouseFilter = Control.MouseFilterEnum.Pass,
         };
         main.boardAreas.AddChild(surface);
+        TableMaterialLighting.Add(surface);
         return surface;
     }
 
@@ -114,14 +117,15 @@ internal static class SpatialTableSurfaceRenderer
         Control surface,
         AstraTableGeometry geometry,
         DisplayedSeatSelection selection,
-        Prompt? prompt)
+        Prompt? prompt, BoardCardFaceReuse faces)
     {
         BoardPresentation board = main.boardPresentation!;
         BoardAreaPresentation[] scenario = Lane(board, "scenario");
         BoardAreaPresentation[] player = Lane(board, $"player-{selection.ExpandedSeat}");
         InterfaceScale cardScale = SpatialCardMetrics.TableScale(main.interfaceScale, geometry.Height);
         var objects = new SpatialTableObjectRenderer(
-            surface, result, geometry, cardScale, main.art, MulliganPrompt.IsOpening(prompt));
+            surface, result, geometry, new SpatialCardFactory(cardScale, main.art, faces),
+            MulliganPrompt.IsOpening(prompt));
         var handArea = new Control { Name = "HandDropArea", Position = geometry.Hand.Position,
             Size = geometry.Hand.Size, MouseFilter = Control.MouseFilterEnum.Ignore };
         surface.AddChild(handArea);
@@ -168,6 +172,8 @@ internal static class SpatialTableSurfaceRenderer
             ZIndex = 0,
         };
         surface.AddChild(mat);
+        MatMaterialHighlight.Attach(mat, variation == GodotThemeVariations.SpatialVillainMat
+            ? VisualSystem.Palette.Danger : VisualSystem.Palette.Legal);
         return mat;
     }
 

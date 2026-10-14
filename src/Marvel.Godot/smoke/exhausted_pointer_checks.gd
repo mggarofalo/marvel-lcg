@@ -1,6 +1,10 @@
 extends RefCounted
 
 static func perform(driver, card: Control, anchor: int) -> bool:
+	if not await preload("res://smoke/gesture_settlement.gd").authored_pose(driver, card):
+		driver._fail("exhausted pointer check could not establish its exact resting baseline")
+		return false
+	card.force_update_transform()
 	var pose := card.get_global_transform()
 	var revision: String = driver._node("Toolbar/SyncStatus").text
 	var commit: Button = driver._task_commit()
@@ -19,15 +23,21 @@ static func perform(driver, card: Control, anchor: int) -> bool:
 	if not card.get_global_transform().is_equal_approx(pose) or inspector.visible:
 		driver._fail("exhausted inspection dismissal changed the physical pose")
 		return false
+	if not await _invalid_drops(driver, card, pose, revision, commitment): return false
+	print("EXHAUSTED_POINTER_HELPERS_OK anchor=%d" % anchor)
+	return true
+
+static func _invalid_drops(driver, card: Control, pose: Transform2D, revision: String, commitment: String) -> bool:
 	var enemy: Control = driver._card_for_anchor(driver.RHINO)
 	for finish in [Vector2(4, 4), enemy.get_global_rect().get_center()]:
 		if not await driver.CardDrag.perform(driver, card, finish): return false
-		await driver.create_timer(0.25).timeout
-		commit = driver._task_commit()
+		if not await preload("res://smoke/gesture_settlement.gd").global_pose(driver, card, pose):
+			driver._fail("invalid exhausted drop did not settle at its saved physical pose")
+			return false
+		var commit: Button = driver._task_commit()
 		if card.is_set_as_top_level() or not card.get_global_transform().is_equal_approx(pose) \
 				or driver._node("Toolbar/SyncStatus").text != revision \
 				or (commit.text if commit != null else "") != commitment:
 			driver._fail("invalid exhausted drop changed pose, revision or commitment")
 			return false
-	print("EXHAUSTED_POINTER_HELPERS_OK anchor=%d" % anchor)
 	return true

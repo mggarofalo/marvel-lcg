@@ -15,10 +15,10 @@ func _check_intermediate_swap(tableau: Control, source: Control, destination: Co
 	if not destination.get_global_rect().is_equal_approx(original_bounds):
 		failures.append("displaced slot geometry did not immediately reach the exact origin")
 	if displaced != null: _check_neighbor_frame(displaced, failures)
-	if source.mouse_default_cursor_shape != Control.CURSOR_DRAG:
-		failures.append("held source does not use a drag cursor")
+	if source.mouse_default_cursor_shape != Control.CURSOR_CAN_DROP:
+		failures.append("valid source slot does not expose its legal drop cursor")
 	await _capture_neighbor("-neighbor-moving")
-	await create_timer(0.18).timeout
+	if displaced != null: await _wait_for_source_slot(displaced, failures)
 	if displaced != null and not displaced.position.is_equal_approx(Vector2.ZERO):
 		failures.append("displaced source did not settle exactly inside its destination slot")
 	await _motion(Vector2(8, 8))
@@ -26,8 +26,8 @@ func _check_intermediate_swap(tableau: Control, source: Control, destination: Co
 		failures.append("off-grid source does not expose a forbidden destination")
 	await _source_key(KEY_ESCAPE)
 	await _pointer(Vector2(8, 8), false)
-	await create_timer(0.2).timeout
-	if grip.mouse_default_cursor_shape != Control.CURSOR_DRAG:
+	await _wait_for_source_slot(source, failures)
+	if grip.mouse_default_cursor_shape != Control.CURSOR_MOVE:
 		failures.append("source cancellation did not restore its pickup cursor")
 	await super._check_intermediate_swap(tableau, source, destination, failures)
 

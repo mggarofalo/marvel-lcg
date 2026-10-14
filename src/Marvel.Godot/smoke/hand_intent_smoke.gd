@@ -61,7 +61,7 @@ func _hand_insertion_is_local() -> bool:
 	release.position = finish
 	release.global_position = finish
 	render_viewport.push_input(release, true)
-	await create_timer(0.22).timeout
+	await preload("res://smoke/gesture_settlement.gd").hand(self)
 	if source.position.x <= old_source.x + 100 or (_node("Toolbar/SyncStatus") as Label).text != revision:
 		_fail("hand reorder did not remain a local presentation change")
 		return false
@@ -77,7 +77,7 @@ func _middle_mulligan_closes_gap() -> bool:
 	var original := cards.map(func(card: Control) -> Vector2: return card.position)
 	middle.grab_focus()
 	await _press_key(KEY_SPACE)
-	await create_timer(0.16).timeout
+	await preload("res://smoke/gesture_settlement.gd").hand(self)
 	if not middle.get_meta("mulligan_staged", false):
 		_fail("middle mulligan card did not stage")
 		return false
@@ -89,7 +89,7 @@ func _middle_mulligan_closes_gap() -> bool:
 			return false
 	middle.grab_focus()
 	await _press_key(KEY_SPACE)
-	await create_timer(0.16).timeout
+	await preload("res://smoke/gesture_settlement.gd").hand(self)
 	for index in range(cards.size()):
 		if cards[index].position.distance_to(original[index]) > 1:
 			_fail("unstaging did not restore local hand order and spacing")

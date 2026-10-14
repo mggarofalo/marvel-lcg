@@ -10,7 +10,8 @@ internal static class DesktopTabletopPresentation
     internal static BoardRenderResult Render(
         Main main,
         DisplayedSeatSelection selection,
-        Action<int> switchSeat)
+        Action<int> switchSeat,
+        BoardRenderResult? previous)
         => SpatialTableSurfaceRenderer.Render(
-            main, selection, switchSeat, main.boardController.PresentedGame?.Prompt);
+            main, selection, switchSeat, main.boardController.PresentedGame?.Prompt, previous);
 }

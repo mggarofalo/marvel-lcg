@@ -30,7 +30,7 @@ internal sealed class DragPointerFeedback
     internal void Preview(Vector2 position, bool accepted, string rejected = "No offered action here")
     {
         pointer = position;
-        SetCursor(accepted ? Control.CursorShape.Drag : Control.CursorShape.Forbidden);
+        SetCursor(accepted ? Control.CursorShape.CanDrop : Control.CursorShape.Forbidden);
         if (accepted) ClearCue();
         else ShowCue(rejected);
     }
@@ -62,9 +62,12 @@ internal sealed class DragPointerFeedback
             cue.ZIndex = 250;
             cue.MouseFilter = Control.MouseFilterEnum.Ignore;
             cue.AccessibilityLive = AccessibilityServer.AccessibilityLiveMode.Polite;
-            using var paper = new StyleBoxFlat { BgColor = CardFaceStyle.Paper,
+            cue.AddThemeColorOverride("font_color", ClientTheme.ToGodot(VisualSystem.Palette.Text));
+            using var paper = new StyleBoxFlat { BgColor = new Color("142631"),
                 ContentMarginLeft = 8, ContentMarginRight = 8, ContentMarginTop = 5, ContentMarginBottom = 5,
-                BorderColor = CardFaceStyle.Ink, BorderWidthBottom = 2 };
+                BorderColor = new Color("36505D"), BorderWidthBottom = 1, BorderWidthTop = 1,
+                BorderWidthLeft = 1, BorderWidthRight = 1, CornerRadiusTopLeft = 6,
+                CornerRadiusTopRight = 6, CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6 };
             cue.AddThemeStyleboxOverride("normal", paper);
             source!.AddChild(cue);
         }

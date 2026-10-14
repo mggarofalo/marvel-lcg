@@ -20,6 +20,24 @@ internal sealed class SpatialTablePileRenderer(
         }
         TabletopAreaObject pile = TabletopAreaObject.From(area);
         var panel = PilePanel($"Pile{area.Id}", rect, $"{area.Title}. {area.Context}");
+        Button inspect = InspectButton(pile);
+        inspect.Pressed += () => TabletopPileInspector.Show(inspect, pile, result, scale, art);
+        panel.AddChild(inspect);
+        surface.AddChild(panel);
+        if (pile.Count > 0) PileMaterialDepth.Add(surface, panel);
+        TableCompactButtonStyle.Apply(inspect);
+        if (area.Zone.Contains("Discard", StringComparison.Ordinal) && pile.Top is { } top)
+            result.TrackPreviewOnly(inspect, top);
+        if (openingMulligan && area.Zone == "DiscardPile")
+        {
+            result.RegisterMulliganDiscard(panel);
+        }
+        return true;
+    }
+
+    private static Button InspectButton(TabletopAreaObject pile)
+    {
+        BoardAreaPresentation area = pile.Area;
         var inspect = new Button
         {
             Name = $"InspectPile{area.Id}",
@@ -31,17 +49,7 @@ internal sealed class SpatialTablePileRenderer(
                 ? $"{pile.Count} concealed cards"
                 : $"Inspect {area.Title.ToLowerInvariant()}, top card first.",
         };
-        inspect.Pressed += () => TabletopPileInspector.Show(inspect, pile, result, scale, art);
-        panel.AddChild(inspect);
-        surface.AddChild(panel);
-        TableCompactButtonStyle.Apply(inspect);
-        if (area.Zone.Contains("Discard", StringComparison.Ordinal) && pile.Top is { } top)
-            result.TrackPreviewOnly(inspect, top);
-        if (openingMulligan && area.Zone == "DiscardPile")
-        {
-            result.RegisterMulliganDiscard(panel);
-        }
-        return true;
+        return inspect;
     }
 
     internal void RenderEmpty(string name, string text, Rect2 rect, bool mulliganDiscard)

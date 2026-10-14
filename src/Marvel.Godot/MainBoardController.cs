@@ -173,6 +173,7 @@ internal sealed class MainBoardController : IDisposable
         relationships.Bind(rendered);
         main.decisions.BindMulliganTargets(rendered);
         cardInspector.Refresh(main.boardPresentation!, rendered);
+        transition.PresentNextDecision(rendered);
     }
     private BoardRenderResult RenderCompactBoard()
     {

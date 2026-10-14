@@ -2,10 +2,18 @@ extends "res://smoke/recipient_commitment_smoke.gd"
 
 
 func _run() -> void:
-	if not await _open_helicarrier_game(): return
-	if not await _play_helicarrier(): return
-	if not await _activate_helicarrier(): return
-	if not await _choose_discount_recipient(): return
+	if not await _open_helicarrier_game():
+		_fail("Helicarrier opening did not complete")
+		return
+	if not await _play_helicarrier():
+		_fail("Helicarrier play did not complete")
+		return
+	if not await _activate_helicarrier():
+		_fail("Helicarrier action entry did not complete")
+		return
+	if not await _choose_discount_recipient():
+		_fail("Helicarrier recipient commitment did not complete")
+		return
 	print("ABILITY_CHOICE_SMOKE_OK scale=%d" % _scale_percentage())
 	main.queue_free()
 	await process_frame

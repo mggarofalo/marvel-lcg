@@ -7,7 +7,7 @@ namespace Marvel.Godot;
 internal static class SchemeStackCollection
 {
     internal static IReadOnlyList<CardControl> Render(Control surface, Rect2 bounds,
-        BoardCardPresentation[] cards, BoardRenderResult result, InterfaceScale scale, ICardArtProvider? art)
+        BoardCardPresentation[] cards, BoardRenderResult result, SpatialCardFactory faces)
     {
         var panel = new VBoxContainer { Name = "CollectionSideSchemesArea", Position = bounds.Position,
             Size = bounds.Size, CustomMinimumSize = bounds.Size, MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -28,9 +28,9 @@ internal static class SchemeStackCollection
         for (int index = 0; index < cards.Length; index++)
         {
             BoardCardPresentation card = cards[index];
-            CardLayoutMetrics layout = CardControl.LayoutFor(card, CardDisplaySize.Board, scale);
+            CardLayoutMetrics layout = CardControl.LayoutFor(card, CardDisplaySize.Board, faces.Scale);
             float factor = Math.Min(1, (bounds.Size.X - 18) / layout.Width);
-            CardControl control = CardControl.CreateFitted(card, scale, art, factor);
+            CardControl control = faces.CreateFitted(card, factor);
             control.Name = $"ProceduralCard{card.TargetId}";
             control.Position = new Vector2(0, index * 64);
             control.ZIndex = index;

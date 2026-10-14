@@ -8,8 +8,8 @@ internal static class ClientThemeSurfaces
     internal static void Define(
         Theme theme, Color surface, Color raised, Color outline, Color amber, Color encounter, Color hero)
     {
-        Panel(theme, GodotThemeVariations.ShellPanel, Flat(surface, Alpha(outline, 0.46f), 1, 18, M(22, 18, 22, 18)));
-        Panel(theme, GodotThemeVariations.SurfacePanel, Flat(raised, Alpha(outline, 0.38f), 1, 12, M(16, 14, 16, 14)));
+        Panel(theme, GodotThemeVariations.ShellPanel, Flat(surface, Alpha(outline, 0.46f), 1, 10, M(22, 18, 22, 18)));
+        Panel(theme, GodotThemeVariations.SurfacePanel, Floating(outline, M(16, 14, 16, 14)));
         Panel(theme, GodotThemeVariations.TabletopDock, Flat(raised, Alpha(outline, 0.38f), 1, 12, M(16, 12, 16, 12)));
         Panel(theme, GodotThemeVariations.TabletopShelf, Flat(raised, Alpha(outline, 0.38f), 1, 12, M(16, 8, 16, 8)));
         Panel(theme, GodotThemeVariations.TabletopSeatStrip, Flat(raised, Alpha(outline, 0.5f), 1, 10, M(16, 0, 16, 0)));
@@ -19,20 +19,17 @@ internal static class ClientThemeSurfaces
             Alpha(hero, 0.035f), hero, 0, M(12, 16, 12, 10), M(0, 2, 0, 0)));
         Panel(theme, GodotThemeVariations.TabletopZone, Flat(
             Alpha(raised, 0.16f), Alpha(outline, 0.18f), 0, 8, M(8, 6, 8, 8)));
-        Panel(theme, GodotThemeVariations.TabletopPile, FlatEdges(
-            raised.Darkened(0.04f), Alpha(outline, 0.62f), 7, M(10, 8, 12, 10), M(1, 1, 5, 5)));
+        Panel(theme, GodotThemeVariations.TabletopPile, Contact(
+            Flat(raised, Alpha(outline, 0.62f), 1, 6, M(10, 8, 12, 10))));
         Panel(theme, GodotThemeVariations.SpatialVillainMat, Flat(
-            Alpha(encounter, 0.045f), Alpha(outline, 0.20f), 1, 12,
+            Alpha(surface, 0.20f), Alpha(outline, 0.22f), 1, 10,
             M(18, 14, 18, 14)));
         Panel(theme, GodotThemeVariations.SpatialPlayerMat, Flat(
-            Alpha(hero, 0.035f), Alpha(outline, 0.20f), 1, 12,
+            Alpha(surface, 0.20f), Alpha(outline, 0.22f), 1, 10,
             M(18, 14, 18, 14)));
-        Panel(theme, GodotThemeVariations.SpatialPile, FlatEdges(
-            surface.Darkened(0.12f), Alpha(outline, 0.8f), 9,
-            M(8, 8, 8, 8), M(2, 2, 7, 7)));
-        Panel(theme, GodotThemeVariations.SpatialDecision, Flat(
-            Alpha(surface.Darkened(0.08f), 0.98f), Alpha(outline, 0.38f), 1, 6,
-            M(14, 6, 14, 6)));
+        Panel(theme, GodotThemeVariations.SpatialPile, Contact(
+            Flat(surface, Alpha(outline, 0.8f), 1, 6, M(8, 8, 8, 8))));
+        Panel(theme, GodotThemeVariations.SpatialDecision, Floating(outline, M(14, 6, 14, 6)));
         Panel(theme, GodotThemeVariations.SpatialDropTarget, Flat(
             Alpha(hero, 0.12f), amber, 3, 38, M(18, 14, 18, 14)));
         Panel(theme, GodotThemeVariations.StatusPanel, Flat(Alpha(amber, 0.14f), Alpha(amber, 0.62f), 1, 8, M(14, 9, 14, 9), borderLeft: 5));
@@ -47,6 +44,23 @@ internal static class ClientThemeSurfaces
         Panel(theme, GodotThemeVariations.SchemeCard, Flat(surface.Lightened(0.08f), encounter, 1, 6, M(16, 14, 16, 14), borderBottom: 3));
         Panel(theme, GodotThemeVariations.EnvironmentCard, Flat(surface.Lightened(0.05f), outline, 2, 12, M(16, 14, 16, 14), borderLeft: 5));
         Panel(theme, GodotThemeVariations.CardArtWell, Flat(surface.Darkened(0.18f), Alpha(outline, 0.55f), 1, 7, M(8, 8, 8, 8)));
+    }
+
+    private static StyleBoxFlat Floating(Color outline, Vector4 margins)
+    {
+        StyleBoxFlat style = Flat(ClientTheme.ToGodot(ButtonMaterials.SecondaryPressed), outline, 1, 8, margins);
+        style.ShadowColor = new Color(0, 0, 0, 0.24f);
+        style.ShadowOffset = new Vector2(0, 8);
+        style.ShadowSize = 20;
+        return style;
+    }
+
+    private static StyleBoxFlat Contact(StyleBoxFlat style)
+    {
+        style.ShadowColor = new Color(0.02f, 0.04f, 0.06f, 0.28f);
+        style.ShadowOffset = new Vector2(0, 3);
+        style.ShadowSize = 5;
+        return style;
     }
 
     private static void Panel(Theme theme, string variation, StyleBoxFlat style)

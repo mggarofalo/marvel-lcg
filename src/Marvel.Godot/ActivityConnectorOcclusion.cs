@@ -8,7 +8,10 @@ internal static class ActivityConnectorOcclusion
         ["ContextualDecision", "EventTimeline", "PaymentWorkspace", "AbilityWindow", "CausalReferenceStack"];
 
     internal static Rect2[] Regions(Main main) =>
-        [.. Surfaces(main)
+        [.. (main.boardRender?.VisibleCardControls() ?? [])
+            .Where(card => card.IsVisibleInTree() && card.Modulate.A > 0)
+            .Select(card => SpatialCardFootprint.Face(card).Grow(2)),
+         .. Surfaces(main)
             .Where(control => InteractionControl.IsUsable(control) && control!.IsVisibleInTree())
             .Select(control => control!.GetGlobalRect().Grow(6))];
 

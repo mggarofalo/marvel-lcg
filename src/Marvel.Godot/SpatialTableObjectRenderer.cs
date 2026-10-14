@@ -11,6 +11,7 @@ internal sealed class SpatialTableObjectRenderer
     private readonly AstraTableGeometry geometry;
     private readonly InterfaceScale scale;
     private readonly ICardArtProvider? art;
+    private readonly SpatialCardFactory faces;
     private readonly bool openingMulligan;
     private readonly SpatialTablePileRenderer piles;
     private readonly Dictionary<int, (CardControl Control, Vector2 Position)> hosts = [];
@@ -21,15 +22,15 @@ internal sealed class SpatialTableObjectRenderer
         Control surface,
         BoardRenderResult result,
         AstraTableGeometry geometry,
-        InterfaceScale scale,
-        ICardArtProvider? art,
+        SpatialCardFactory faces,
         bool openingMulligan)
     {
         this.surface = surface;
         this.result = result;
         this.geometry = geometry;
-        this.scale = scale;
-        this.art = art;
+        scale = faces.Scale;
+        art = faces.Art;
+        this.faces = faces;
         this.openingMulligan = openingMulligan;
         piles = new SpatialTablePileRenderer(surface, result, scale, art, openingMulligan);
     }
@@ -151,8 +152,8 @@ internal sealed class SpatialTableObjectRenderer
         if (zone is "SideSchemesArea" or "EngagedEnemiesArea" or "AlliesArea")
         {
             IReadOnlyList<CardControl> collection = zone == "SideSchemesArea"
-                ? SchemeStackCollection.Render(surface, region, cards, result, scale, art)
-                : SpatialCardCollection.Render(surface, region, zone, cards, result, scale, art);
+                ? SchemeStackCollection.Render(surface, region, cards, result, faces)
+                : SpatialCardCollection.Render(surface, region, zone, cards, result, faces);
             foreach (CardControl card in collection)
                 if (card.TargetId is { } id) hosts[id] = (card, card.Position);
             return;
@@ -174,7 +175,7 @@ internal sealed class SpatialTableObjectRenderer
         int z,
         bool isHand = false)
     {
-        CardControl control = CardControl.Create(card, size, scale, art);
+        CardControl control = faces.Create(card, size);
         control.Name = card.TargetId is { } id
             ? $"ProceduralCard{id}"
             : $"ProceduralCardHidden{renderedCardCount}";

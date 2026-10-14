@@ -3,6 +3,10 @@ extends "res://smoke/local_game_smoke_direct_journey.gd"
 func _exhausted_card_is_spatial(anchor: int) -> bool:
 	if not await super._exhausted_card_is_spatial(anchor): return false
 	var card := _card_for_anchor(anchor)
+	if not await preload("res://smoke/gesture_settlement.gd").authored_pose(self, card):
+		_fail("exhausted drag could not establish its exact resting baseline")
+		return false
+	card.force_update_transform()
 	var original := card.get_global_transform()
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
 	var start := _card_body_point(card)
@@ -29,7 +33,9 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 	escape.keycode = KEY_ESCAPE
 	escape.pressed = true
 	render_viewport.push_input(escape, true)
-	await create_timer(0.25).timeout
+	if not await preload("res://smoke/gesture_settlement.gd").global_pose(self, card, original):
+		_fail("cancelled exhausted drag did not settle at its saved physical pose")
+		return false
 	if not card.get_global_transform().is_equal_approx(original):
 		_fail("cancelled exhausted drag did not restore the exact physical pose")
 		return false

@@ -35,9 +35,16 @@ func _motion_state_is_safe(state: Dictionary) -> bool:
 func _current_table_prompt_is_operable() -> bool:
 	for pattern in ["ContextualCommit", "ContextualDecline", "Card*Action", "Card*Target", "Card*Generator", "CompleteChoiceSheet"]:
 		for candidate in main.find_children(pattern, "Button", true, false):
-			if candidate.is_visible_in_tree() and not candidate.disabled:
+			if candidate.is_visible_in_tree() and not candidate.disabled and not _accepted_decision_entry(candidate):
 				return true
 	return _first_enabled_choice() != null
+
+func _accepted_decision_entry(candidate: Button) -> bool:
+	if candidate.name != &"CompleteChoiceSheet" or not bool(candidate.get_meta("accepted_decision_entry", false)):
+		return false
+	var normal := candidate.get_theme_stylebox("normal") as StyleBoxFlat
+	return not candidate.text.strip_edges().is_empty() and candidate.text != "Complete Choices" \
+		and candidate.theme_type_variation == &"ChoiceButton" and normal != null and normal.bg_color.a >= 0.9
 
 
 func _toggle_active_motion(skip: Button) -> bool:

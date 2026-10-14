@@ -7,6 +7,7 @@ internal static class ClientThemeInstallation
 {
     internal static void Apply(Control control, InterfaceScale scale = InterfaceScale.Standard)
     {
+        if (control is Main && control.IsInsideTree()) TableCursorTheme.Apply(control, scale);
         Theme theme = ClientThemePalette.For(scale);
         if (control.Theme != theme) control.Theme = theme;
         SharedControlFeedback.Install(control);

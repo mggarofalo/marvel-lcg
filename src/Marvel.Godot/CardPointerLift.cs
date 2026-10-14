@@ -24,7 +24,7 @@ internal sealed class CardPointerLift
         shadow = new PanelContainer { Name = "DragContactShadow", MouseFilter = Control.MouseFilterEnum.Ignore,
             ShowBehindParent = true, Position = Vector2.Zero, Size = card.Size };
         using var style = new StyleBoxFlat { BgColor = Colors.Transparent,
-            ShadowColor = new Color(0, 0, 0, 0.36f), ShadowSize = 7, ShadowOffset = new Vector2(0, 6),
+            ShadowColor = new Color(0, 0, 0, 0.34f), ShadowSize = 14, ShadowOffset = new Vector2(0, 9),
             CornerRadiusTopLeft = 3, CornerRadiusTopRight = 3, CornerRadiusBottomLeft = 3, CornerRadiusBottomRight = 3 };
         shadow.AddThemeStyleboxOverride("panel", style);
         card.AddChild(shadow);
