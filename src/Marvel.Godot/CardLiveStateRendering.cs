@@ -44,7 +44,7 @@ internal static class CardLiveStateRendering
         var parts = new List<string> { card.Title };
         CardProgressValue? progress = CardProgressValue.From(card);
         if (progress is not null) parts.Add($"{(progress.IsThreat ? "Threat" : "Hit points")} {progress.Value}");
-        if (card.Damage > 0) parts.Add($"{card.Damage.ToString(CultureInfo.InvariantCulture)} damage");
+        if (card.DamageKnown && card.Damage > 0) parts.Add($"{card.Damage.ToString(CultureInfo.InvariantCulture)} damage");
         parts.AddRange(CardStatusEntries.From(card).Select(entry => entry.Text));
         return string.Join(" · ", parts);
     }

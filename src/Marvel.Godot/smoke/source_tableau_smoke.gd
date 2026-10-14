@@ -115,7 +115,7 @@ func _check_source_title(title: Label, failures: Array[String]) -> void:
 	var measured := title.get_theme_font("font").get_string_size(title.text.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	if measured.x > title.size.x + 0.1:
 		failures.append("source title truncates its visible name: " + title.text)
-	if title.accessibility_name != title.text or title.tooltip_text != title.text:
+	if title.accessibility_name != title.text or not title.tooltip_text.is_empty():
 		failures.append("source title loses full accessible identity")
 
 func _check_source_action(card: Control, failures: Array[String]) -> void:
@@ -132,7 +132,7 @@ func _check_source_symbols(card: Control, failures: Array[String]) -> void:
 	if state == null or state.find_child("SourceSymbol", true, false) == null:
 		failures.append("missing readiness symbol")
 	var title := card.find_child("SourceTitle", true, false) as Control
-	if type != null and state != null and (type.get_parent() != title.get_parent() or state.get_parent() != title.get_parent()):
+	if type != null and state != null and (abs(type.get_global_rect().get_center().y - title.get_global_rect().get_center().y) > 1 or abs(state.get_global_rect().get_center().y - title.get_global_rect().get_center().y) > 1):
 		failures.append("source title and type/readiness do not share one header line")
 
 func _check_counter_groups(card: Control, body: Control, failures: Array[String]) -> void:
@@ -242,12 +242,13 @@ func _check_measured_title(tableau: Control, viewport: ScrollContainer, failures
 func _check_intermediate_swap(tableau: Control, source: Control, destination: Control, failures: Array[String]) -> void:
 	var grip := source.find_child("SourceReorderGrip", true, false) as Button
 	var start := grip.get_global_rect().position + Vector2(16, 16)
+	var pickup := source.global_position
 	var finish := destination.get_global_rect().get_center()
 	await _pointer(start, true)
 	await _motion(finish)
 	var feedback := tableau.find_child("SourceSwapFeedback", true, false) as Label
 	if not source.is_set_as_top_level(): failures.append("source did not lift out of its slot")
-	if source.get_global_rect().has_point(finish): failures.append("lifted source obscures destination pointer")
+	if not source.global_position.is_equal_approx(pickup + finish - start): failures.append("lifted source lost the grab point")
 	if feedback == null or not feedback.is_visible_in_tree() or feedback.text != "↔":
 		failures.append("source exchange lacks explicit destination feedback")
 	elif not feedback.accessibility_name.contains("row ") or not feedback.accessibility_name.contains("column "):
@@ -262,6 +263,7 @@ func _check_intermediate_swap(tableau: Control, source: Control, destination: Co
 	tableau.find_child("SourceGridGesture", true, false).notification(Node.NOTIFICATION_WM_WINDOW_FOCUS_OUT)
 	await process_frame
 	await _pointer(finish, false)
+	await create_timer(0.2).timeout
 	if source.is_set_as_top_level() or feedback.is_visible_in_tree(): failures.append("focus loss retained a source arrangement preview")
 
 func _check_every_grip(tableau: Control, viewport: ScrollContainer, fixture: Control, failures: Array[String]) -> void:
@@ -353,6 +355,7 @@ func _source_grip_drag(card: Control, finish: Vector2, cancel: bool) -> void:
 	release.button_index = MOUSE_BUTTON_LEFT
 	Input.parse_input_event(release)
 	for frame in range(3): await process_frame
+	await create_timer(0.2).timeout
 
 func _capture() -> void:
 	var capture := OS.get_environment("MARVEL_TABLEAU_CAPTURE")

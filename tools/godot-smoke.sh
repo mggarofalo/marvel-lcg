@@ -61,6 +61,14 @@ else
 fi
 
 unset MARVEL_SMOKE_TWO_PLAYER
+for polish_script in shared_control_finish theme_palette causal_activity causal_arrival causal_departure weighted_gesture shell_finish; do
+  MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+    run_local_smoke "res://smoke/${polish_script}_smoke.gd"
+done
+MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+  run_local_smoke res://smoke/close_resolution_smoke.gd '"operation":"resolve"'
+MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \
+  run_local_smoke res://smoke/weighted_gesture_smoke.gd
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
   run_local_smoke res://smoke/ultron_inspection_smoke.gd
 MARVEL_UI_SCALE=150 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=disabled \

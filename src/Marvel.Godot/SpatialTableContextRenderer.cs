@@ -70,6 +70,7 @@ internal static class SpatialTableContextRenderer
         heading.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         heading.Name = "ContextualHeading";
         cause.AddChild(heading);
+        heading.AddThemeFontSizeOverride("font_size", 18);
         return AddResolution(cause, presentation, world, prompt);
     }
 
@@ -94,7 +95,12 @@ internal static class SpatialTableContextRenderer
         return resolution;
     }
 
-    private static Label Copy(string text) => new() { Text = text, ThemeTypeVariation = GodotThemeVariations.Caption,
-        MouseFilter = Control.MouseFilterEnum.Ignore, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-        AutowrapMode = TextServer.AutowrapMode.Off, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
+    private static Label Copy(string text)
+    {
+        var label = new Label { Text = text, ThemeTypeVariation = GodotThemeVariations.Caption,
+            MouseFilter = Control.MouseFilterEnum.Ignore, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            AutowrapMode = TextServer.AutowrapMode.Off, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
+        label.AddThemeFontSizeOverride("font_size", 15);
+        return label;
+    }
 }

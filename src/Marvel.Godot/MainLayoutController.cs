@@ -17,6 +17,7 @@ internal sealed class MainLayoutController
     {
         // Terminal presentation retains the same inspectable account as a live table.
         TableHistoryDrawer.SelectHistory(main);
+        TerminalOutcomeSurface.Show(main);
         main.GetViewport().GuiReleaseFocus();
         main.pageScroll.FollowFocus = false;
         main.pageScroll.ScrollVertical = 0;
@@ -92,12 +93,14 @@ internal sealed class MainLayoutController
         main.description.Visible = true;
         main.description.Text = joinMode
             ? "Connect to an already-running engine and use a one-time seat invitation."
-            : "Choose an authored Core Set assignment. The engine validates it again when play starts.";
+            : "Choose your heroes and encounter. Your starting decks are included.";
         main.RefreshEntryAvailability();
+        SetupEntryPresentation.Configure(main);
     }
 
     internal void ApplyResponsivePlayLayout()
     {
+        TerminalOutcomeSurface.ResetForLiveGame(main);
         // This is a presentation choice. The desktop table owns the canvas,
         // with a stable decision dock beside the flexible table column. Only
         // bounded, task-local surfaces such as the hand and decision body may
@@ -141,6 +144,7 @@ internal sealed class MainLayoutController
         if (main.promptStack.GetNodeOrNull<Control>("PaymentWorkspace") is { } payment)
             CardPaymentWorkspaceLayout.Fit(main, payment);
         ResetPlayContainers();
+        SetupEntryPresentation.Configure(main);
         Callable.From(main.eventController.FitTimeline).CallDeferred();
     }
 
@@ -194,11 +198,14 @@ internal sealed class MainLayoutController
             ? Control.SizeFlags.ShrinkBegin
             : Control.SizeFlags.ExpandFill;
         main.pageScroll.OffsetTop = desktopGameplay ? 4 : 16;
+        main.pageScroll.OffsetLeft = 16;
+        main.pageScroll.OffsetRight = -16;
         main.pageScroll.OffsetBottom = desktopGameplay ? 0 : -16;
         float shellWidth = desktopGameplay
             ? Math.Max(0, main.GetViewportRect().Size.X - 32)
             : 0;
         shell.CustomMinimumSize = new Vector2(shellWidth, shell.CustomMinimumSize.Y);
+        shell.SizeFlagsHorizontal = gameplay ? Control.SizeFlags.ExpandFill : Control.SizeFlags.ShrinkCenter;
         main.pageScroll.HorizontalScrollMode = gameplay
             ? ScrollContainer.ScrollMode.Disabled
             : ScrollContainer.ScrollMode.Auto;

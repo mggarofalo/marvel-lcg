@@ -8,7 +8,7 @@ internal static class SourceRuleExcerpt
     internal static void Bind(RichTextLabel rules)
     {
         rules.VisibleCharactersBehavior = TextServer.VisibleCharactersBehavior.CharsAfterShaping;
-        Label hint = CardSourceStrip.Label("… Inspect card", "SourceRulesDisclosure", 10, CardTypography.Body);
+        Label hint = CardSourceStrip.Label("…", "SourceRulesDisclosure", 10, CardTypography.Body);
         hint.AutowrapMode = TextServer.AutowrapMode.Off;
         hint.AddThemeColorOverride("font_color", ClientTheme.ToGodot(CardVisualTokens.Secondary));
         rules.AddChild(hint);

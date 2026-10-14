@@ -16,11 +16,11 @@ internal static class CausalReferenceTile
         var content = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         body.AddChild(content);
         body.MoveChild(content, 0);
-        content.AddChild(CardSourceStrip.Label(card.Title, "ReferenceTitle", 16, CardTypography.Title));
-        content.AddChild(CardSourceStrip.Label(card.Kind, "ReferenceKind", 10, CardTypography.Body));
-        if (CardProgressValue.From(card) is { } progress)
-            content.AddChild(CardSourceStrip.Label($"{(progress.IsThreat ? "Threat" : "HP")} {progress.Value}",
-                "ReferenceProgress", 13, CardTypography.Bold));
+        Label title = CardSourceStrip.Label(card.Title, "ReferenceTitle", 16, CardTypography.Title);
+        title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        title.AutowrapMode = TextServer.AutowrapMode.Off;
+        content.AddChild(title);
+        control.CustomMinimumSize = new Vector2(width, 32);
         control.AccessibilityName = CardLiveStateRendering.Description(card);
         return control;
     }

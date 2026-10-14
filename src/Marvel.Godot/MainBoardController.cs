@@ -235,5 +235,5 @@ internal sealed class MainBoardController : IDisposable
     }
 
     private bool IsCurrentRender(int generation) => renderLifetime.IsCurrent(generation)
-        && main.IsInsideTree();
+        && InteractionControl.IsUsable(main);
 }

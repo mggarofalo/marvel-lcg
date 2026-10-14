@@ -55,6 +55,8 @@ public sealed class CardSourceFixtureTests
         Assert.Contains("discard this after attack", CardSourceSummary.Lines(Source("01099"))[0]);
         Assert.Contains("All damage → here; discard this when damage here ≥5", CardSourceSummary.Lines(Source("01098"))[0]);
         Assert.Contains("2 damage here", CardSourceSummary.Lines(Source("01098")));
+        Assert.DoesNotContain("2 damage here", CardSourceSummary.Lines(Source("01098") with { DamageKnown = false }));
+        Assert.DoesNotContain("0 damage here", CardSourceSummary.Lines(Source("01098") with { Damage = 0, DamageKnown = false }));
         Assert.DoesNotContain("2 damage here", CardSourceSummary.AbilityLines(Source("01098")));
         Assert.Contains("All damage → here; discard this when damage here ≥5",
             CardSourceSummary.AbilityLines(Source("01098"))[0]);

@@ -46,6 +46,9 @@ static func _region(driver, source: Control, surface: Control) -> bool:
 	press.global_position = move.position
 	driver.render_viewport.push_input(press, true)
 	await driver.process_frame
+	if not await driver._wait_for(func() -> bool: return source.get_global_transform().is_equal_approx(original)):
+		driver._fail("cancelled source did not finish settling into its physical slot")
+		return false
 	if not source.get_global_transform().is_equal_approx(original) or (driver._node("Toolbar/SyncStatus") as Label).text != revision:
 		driver._fail("source rearrangement changed game revision or failed to restore its physical slot")
 		return false

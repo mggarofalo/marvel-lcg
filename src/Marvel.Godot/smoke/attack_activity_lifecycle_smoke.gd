@@ -13,6 +13,7 @@ func _run() -> void:
 	quit(0)
 
 func _declare_probe_defender() -> bool:
+	if not _causal_copy_is_readable(): return false
 	var meaning := _visible_text(main.find_child("CausalSituation", true, false)).to_lower()
 	if "rhino" not in meaning or "spider-man" not in meaning or "boost" not in meaning:
 		_fail("attack source, target and unresolved boost missing before defense")
@@ -26,6 +27,18 @@ func _declare_probe_defender() -> bool:
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
 	if not await _pointer_activate(_task_commit()): return false
 	return await _wait_for(func(): return bool(main.get_meta("response_staged", false)) or (_node("Toolbar/SyncStatus") as Label).text != revision)
+
+func _causal_copy_is_readable() -> bool:
+	var cause := main.find_child("CausalSituation", true, false) as Control
+	for label in cause.find_children("*", "Label", true, false):
+		if label.get_theme_font_size("font_size") < 15 or not _control_is_fully_visible(label):
+			_fail("current attack explanation is too small or clipped")
+			return false
+	var references := main.find_child("CausalReferenceStack", true, false) as ScrollContainer
+	if references != null and references.get_v_scroll_bar().visible:
+		_fail("ordinary attack references require a scrolling box")
+		return false
+	return true
 
 func _attack_cue_is_present(stage: String) -> bool:
 	var pulse := main.find_child("AttackActivityPulse", true, false) as Control
@@ -93,11 +106,10 @@ func _verify_settled_attack() -> int:
 	return 1
 
 func _decline_probe_attack_opportunity() -> bool:
-	var decline := main.find_child("WindowPass", true, false) as Button
-	if decline == null: decline = main.find_child("ContextualDecline", true, false) as Button
-	if decline == null or not decline.is_visible_in_tree():
+	if not await _wait_for(func(): return _visible_attack_pass() != null):
 		_fail("attack has no explicit optional-window pass")
 		return false
+	var decline := _visible_attack_pass()
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
 	if not await _pointer_activate(decline): return false
 	if not await _wait_for(func(): return bool(main.get_meta("response_staged", false)) or (_node("Toolbar/SyncStatus") as Label).text != revision): return false
@@ -105,6 +117,13 @@ func _decline_probe_attack_opportunity() -> bool:
 		if not _attack_cue_is_present("interrupt response consequences"): return false
 		await process_frame
 	return _attack_cue_is_present("after interrupt and before defense")
+
+func _visible_attack_pass() -> Button:
+	for candidate in main.find_children("*", "Button", true, false):
+		if candidate.name in ["WindowPass", "ContextualDecline"] \
+				and candidate.is_visible_in_tree() and not candidate.is_queued_for_deletion():
+			return candidate as Button
+	return null
 
 func _capture_attack_frame(checkpoint: String) -> bool:
 	var folder := OS.get_environment("MARVEL_SMOKE_CAPTURE_DIR")

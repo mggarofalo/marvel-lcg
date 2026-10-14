@@ -6,6 +6,23 @@ namespace Marvel.Godot.Tests;
 
 public sealed class CardInspectorPlacementTests
 {
+    [Theory]
+    [InlineData(1920, 1080)]
+    [InlineData(2560, 1440)]
+    [InlineData(1920, 1200)]
+    public void PaymentInspectionProtectsTheWholeHandAndFixedTask(int width, int height)
+    {
+        Rect2 hand = new(180, height - 330, width - 790, 290);
+        Rect2 workspace = new(width - 560, 88, 544, height - 120);
+        Rect2 source = new(500, height - 300, 160, 220);
+        Rect2 preview = CardInspectorPlacement.Fit(new Vector2(width, height),
+            source, new Vector2(400, 560), situation: [hand, workspace]);
+
+        Assert.False(preview.Intersects(hand));
+        Assert.False(preview.Intersects(workspace));
+        Assert.Equal(new Vector2(400, 560), preview.Size);
+    }
+
     [Fact]
     public void AttackPreviewLeavesTextOnlyCauseAndCurrentDecisionExposed()
     {

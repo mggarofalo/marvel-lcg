@@ -4,6 +4,7 @@ using Marvel.View;
 namespace Marvel.Godot;
 
 /// <summary>Owns card-inspection previews, pinned detail, and its input behavior.</summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001", Justification = "The scene tree owns the inspector layout node.")]
 internal sealed class BoardCardInspectorController
 {
     private readonly Main main;
@@ -18,6 +19,7 @@ internal sealed class BoardCardInspectorController
         this.main = main;
         main.AddChild(new CardInspectorTransition { Name = "InspectorExpansion" });
         layout = new CardInspectorLayout(main);
+        main.AddChild(layout);
         this.tabletop = tabletop;
         inspector = new CardInspectorFocus(main);
         cardNavigation = new CardInspectorCardNavigation(
@@ -105,14 +107,14 @@ internal sealed class BoardCardInspectorController
         Control detail = CreateFittedDetail(card, source, pinned);
         detail.FocusMode = Control.FocusModeEnum.All;
         CardInspectorFocus.IgnoreMouseRecursively(detail);
-        layout.BindMeasurement(detail, card, source, pinned);
+        layout.Track(detail, card, source, pinned);
         layout.Position(card, source, pinned);
         Present(detail, sourceId, source, pinned, inspectorGeneration);
     }
 
     private Control CreateFittedDetail(BoardCardPresentation card, Control? source, bool pinned)
     {
-        InterfaceScale scale = CardInspectorFocus.FittedScale(card, main.interfaceScale, main.Size.Y);
+        InterfaceScale scale = CardInspectorFocus.FittedScale(card, main.interfaceScale, layout.AvailableHeight());
         while (true)
         {
             ClearContent();

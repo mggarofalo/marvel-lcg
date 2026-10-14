@@ -12,8 +12,11 @@ internal sealed class BoardPointerInteractions
     private readonly PointerMulliganDraft mulligan = new();
     private readonly HandGestureLayout hand;
     private readonly CardPointerLift lift = new();
+    private readonly CardReturnMotion returns = new();
+    private readonly DragPointerFeedback feedback = new();
     private readonly BoardPointerDropSurfaces drops = new();
-    private readonly Dictionary<Control, (Vector2 Position, float Rotation, int Z)> resting = [];
+    private readonly CardPointerRestingPoses resting = new();
+    private bool localDestination;
 
     private (Control Source, CardPointerCapture Gesture)? pointerCapture;
     private Func<CardPointerGesture, bool>? directActivation;
@@ -38,9 +41,9 @@ internal sealed class BoardPointerInteractions
     }
     internal void Track(Control control, BoardCardPresentation card, bool isHandCard)
     {
-        resting[control] = (control.Position, control.Rotation, control.ZIndex);
+        resting.Store(control);
+        control.TreeExiting += () => returns.Stop(control);
         if (isHandCard && control is CardControl handCard) hand.Track(handCard);
-        SpatialCardPose.Store(control);
         control.MouseEntered += () => EnterCard(control, card);
         control.MouseExited += () => ExitCard(control);
         CardFocusPreview.Bind(control, () => EnterCard(control, card), () => ExitCard(control));
@@ -55,8 +58,7 @@ internal sealed class BoardPointerInteractions
 
     private void StoreRestingPose(Control control)
     {
-        resting[control] = (control.Position, control.Rotation, control.ZIndex);
-        SpatialCardPose.Store(control);
+        resting.Store(control);
     }
 
     internal void TrackPreviewOnly(Control control, BoardCardPresentation card)
@@ -70,7 +72,7 @@ internal sealed class BoardPointerInteractions
     {
         if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
         {
-            pointerCapture = null;
+            CancelCaptured();
             return false;
         }
         if (pointerCapture is not { } captured)
@@ -79,15 +81,12 @@ internal sealed class BoardPointerInteractions
         }
         if (!isCurrent() || !InteractionControl.IsUsable(captured.Source))
         {
-            lift.Restore();
-            pointerCapture = null;
+            CancelCaptured();
             return false;
         }
         if (input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Escape })
         {
-            pointerCapture = null;
-            hand.CancelPreview();
-            ReturnCaptured(captured.Source, invalid: false);
+            CancelCaptured();
             return true;
         }
         if (input is InputEventMouseMotion motion)
@@ -115,6 +114,8 @@ internal sealed class BoardPointerInteractions
         }
         else
         {
+            resting.Restore(captured.Source);
+            captured.Source.Modulate = Colors.White;
             Activate(captured.Source, captured.Gesture.Card, captured.Gesture.IsHandCard,
                 release.GlobalPosition);
         }
@@ -183,6 +184,8 @@ internal sealed class BoardPointerInteractions
     {
         if (isCurrent() && InteractionControl.IsUsable(control))
         {
+            returns.Stop(control);
+            hand.ReleasePointer(control);
             pointerCapture = (control, new CardPointerCapture(card, isHandCard, start));
             pointerLifted = false;
         }
@@ -222,14 +225,17 @@ internal sealed class BoardPointerInteractions
             || InteractiveDescendantOwnsPointer(control)) return;
         if (resting.TryGetValue(control, out var pose))
         {
-            BoardHoverPresentation.Raise(control, RestingZ(control, pose.Z));
+            BoardHoverPresentation.Raise(control, SpatialCardPose.RestingZ(control, pose.Z));
         }
+        control.MouseDefaultCursorShape = card.TargetId is { } id && mulligan.Contains(id)
+            || canDrag?.Invoke(new CardPointerGesture(card, control, control.HasMeta("spatial_hand_index"),
+                control.GetGlobalMousePosition())) == true ? Control.CursorShape.Drag : Control.CursorShape.PointingHand;
         previewEntered(card, control);
     }
 
     private void ExitCard(Control control)
     {
-        if (isCurrent() && pointerCapture is null) RestorePose(control);
+        if (isCurrent() && pointerCapture is null) resting.Restore(control);
         BoardHoverPresentation.RestoreControls(control);
         previewExited(control);
     }
@@ -238,55 +244,57 @@ internal sealed class BoardPointerInteractions
         (Control Source, CardPointerCapture Gesture) captured, Vector2 pointer)
     {
         if (!CardPointerGestureRouter.IsDrag(captured.Gesture.Start, pointer)) return;
-        if (!pointerLifted)
-        {
-            pointerLifted = true;
-            lift.Begin(captured.Source);
-            bool playAvailable = canDrag?.Invoke(new CardPointerGesture(
-                captured.Gesture.Card, captured.Source, captured.Gesture.IsHandCard, pointer)) == true;
-            drops.SetActive(playAvailable);
-            drops.SetMulliganActive(captured.Gesture.Card.TargetId is { } id
-                && mulligan.Contains(id));
-        }
-        CardPointerLift.Move(captured.Source, pointer);
+        if (!pointerLifted) BeginLift(captured, pointer);
+        lift.Move(captured.Source, pointer);
         if (captured.Gesture.IsHandCard) hand.Preview(captured.Source, pointer);
         if (captured.Source is CardControl handCard) SpatialHandActionStrip.Refresh(handCard);
+        localDestination = captured.Gesture.IsHandCard && hand.Contains(pointer)
+            || captured.Gesture.Card.TargetId is { } target && mulligan.Contains(target) && drops.ContainsMulligan(pointer);
+        feedback.Preview(pointer, localDestination);
         DragPreview?.Invoke(new CardPointerGesture(captured.Gesture.Card, captured.Source,
             captured.Gesture.IsHandCard, pointer));
     }
 
-    private void ReturnCaptured(Control control, bool invalid)
+    private void BeginLift((Control Source, CardPointerCapture Gesture) captured, Vector2 pointer)
     {
+        pointerLifted = true;
+        lift.Begin(captured.Source, captured.Gesture.Start);
+        feedback.Begin(captured.Source, CancelCaptured);
+        bool playAvailable = canDrag?.Invoke(new CardPointerGesture(
+            captured.Gesture.Card, captured.Source, captured.Gesture.IsHandCard, pointer)) == true;
+        drops.SetActive(playAvailable);
+        drops.SetMulliganActive(captured.Gesture.Card.TargetId is { } id
+            && mulligan.Contains(id));
+    }
+
+    internal void PresentDestination(CardPointerGesture gesture, bool accepted) => feedback.Preview(gesture.Position, accepted || localDestination);
+
+    private void CancelCaptured()
+    {
+        if (pointerCapture is not { } captured) return;
+        pointerCapture = null;
+        hand.CancelPreview();
+        ReturnCaptured(captured.Source, invalid: false, cancelled: true);
+    }
+
+    private void ReturnCaptured(Control control, bool invalid, bool cancelled = false)
+    {
+        hand.ReleasePointer(control);
         lift.Restore();
         drops.SetActive(false);
         drops.SetMulliganActive(false);
         pointerLifted = false;
+        feedback.Finish(invalid ? "No offered action here · returned" : cancelled ? "Drag cancelled · returned" : "");
         DragFinished?.Invoke(invalid);
         if (!resting.TryGetValue(control, out var pose) || !InteractionControl.IsUsable(control)) return;
         if (MotionEnabled?.Invoke() == false)
         {
-            RestorePose(control);
+            resting.Restore(control);
             control.Modulate = Colors.White;
             return;
         }
         if (invalid) control.Modulate = ClientTheme.ToGodot(VisualSystem.Palette.Danger);
-        Tween tween = control.CreateTween().SetParallel();
-        tween.SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
-        tween.TweenProperty(control, "position", pose.Position, 0.18);
-        tween.TweenProperty(control, "rotation", pose.Rotation, 0.18);
-        tween.TweenProperty(control, "modulate", Colors.White, 0.18);
-        tween.Finished += () => RestorePose(control);
+        returns.Settle(control, pose.Position, pose.Rotation, () => resting.Restore(control));
     }
-
-    private void RestorePose(Control control) {
-        if (!resting.TryGetValue(control, out var pose) || !InteractionControl.IsUsable(control)) return;
-        control.Position = pose.Position;
-        control.Rotation = pose.Rotation;
-        if (control is CardControl hand) SpatialHandActionStrip.Refresh(hand);
-        control.ZIndex = RestingZ(control, pose.Z);
-    }
-
-    private static int RestingZ(Control control, int fallback) =>
-        SpatialCardPose.RestingZ(control, fallback);
 
 }

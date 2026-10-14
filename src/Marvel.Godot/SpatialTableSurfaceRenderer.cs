@@ -38,7 +38,7 @@ internal static class SpatialTableSurfaceRenderer
     private static AstraTableGeometry Geometry(Main main, DisplayedSeatSelection selection, Prompt? prompt)
     {
         Vector2 viewport = main.GetViewportRect().Size;
-        bool expanded = TableHistoryDrawer.IsExpanded(main) || main.invitationOffer.Visible;
+        bool expanded = main.invitationOffer.Visible;
         float reserved = CardPaymentWorkspaceLayout.Active(main)
             ? Math.Max(CardPaymentWorkspaceLayout.Width(viewport),
                 expanded ? TableHistoryDrawer.ExpandedWidth(main) : 0) + 40

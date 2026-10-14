@@ -7,6 +7,7 @@ namespace Marvel.Godot;
 public sealed partial class CardControl : PanelContainer
 {
     private string baseVariation = GodotThemeVariations.BoardCard;
+    internal BoardCardPresentation? DisplayedPresentation { get; set; }
     private bool highlighted;
     private bool presented;
     private CardInteractionCue interactionCue;
@@ -74,9 +75,9 @@ public sealed partial class CardControl : PanelContainer
         {
             Name = "ProceduralCard",
             TargetId = card.TargetId,
+            DisplayedPresentation = card,
             CustomMinimumSize = dimensions,
             SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
-            TooltipText = CardLiveStateRendering.Description(card),
             AccessibilityName = CardLiveStateRendering.Description(card),
             FocusMode = card.Concealed ? FocusModeEnum.None : FocusModeEnum.All,
             MouseFilter = MouseFilterEnum.Pass,

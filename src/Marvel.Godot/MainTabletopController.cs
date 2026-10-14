@@ -60,7 +60,7 @@ internal sealed class MainTabletopController
         }
     }
 
-    private bool HasReviewSpace() => TableHistoryDrawer.IsExpanded(main) || main.invitationOffer.Visible;
+    private bool HasReviewSpace() => main.invitationOffer.Visible;
 
     internal void FocusAnchors(IReadOnlyList<int> ids)
     {

@@ -54,7 +54,7 @@ internal static class TableSidebarContent
         notice.Visible = !ordinary;
         notice.Text = ordinary ? ""
             : $"{progress!.Title}\n{progress.Description}";
-        notice.TooltipText = notice.Text;
+        notice.AccessibilityDescription = notice.Text;
     }
 
     private static VBoxContainer EnsureContent(Control history)

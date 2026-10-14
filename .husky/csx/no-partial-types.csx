@@ -38,6 +38,7 @@ static bool IsRequiredGeneratedType(
         "src/Marvel.Godot/HistoryOccurrenceList.cs" => (Namespace: "Marvel.Godot", Type: "HistoryOccurrenceList"),
         "src/Marvel.Godot/HistoryOccurrenceRow.cs" => (Namespace: "Marvel.Godot", Type: "HistoryOccurrenceRow"),
         "src/Marvel.Godot/CardInspectorTransition.cs" => (Namespace: "Marvel.Godot", Type: "CardInspectorTransition"),
+        "src/Marvel.Godot/CardInspectorLayout.cs" => (Namespace: "Marvel.Godot", Type: "CardInspectorLayout"),
         "src/Marvel.Godot/EventActivityPresenter.cs" => (Namespace: "Marvel.Godot", Type: "EventActivityPresenter"),
         "src/Marvel.Godot/EventActivityPulse.cs" => (Namespace: "Marvel.Godot", Type: "EventActivityPulse"),
         "src/Marvel.Godot/SourceGridGesture.cs" => (Namespace: "Marvel.Godot", Type: "SourceGridGesture"),

@@ -5,7 +5,7 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Keeps the last authorized table still while accepted consequences precede the next decision.</summary>
+/// <summary>Reserves prior table slots while receipt-driven consequences settle before the next decision.</summary>
 internal sealed class BoardResponseTransition(Main main) : IDisposable
 {
     private readonly PendingResponsePresentation pending = new();

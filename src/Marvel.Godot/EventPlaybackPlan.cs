@@ -9,20 +9,26 @@ internal static class EventPlaybackPlan
         DecisionReceiptContext? receipt = null, WorldDescriptor? prior = null)
     {
         if (BasicAttack(receipt, prior) is { } basic) return [basic, .. entries];
+        if (prior?.ActiveAttack is not null) return entries;
+        return CompletedAttack(entries) is { } completed ? [completed, .. entries] : entries;
+    }
+
+    private static EventPresentation? CompletedAttack(IReadOnlyList<EventPresentation> entries)
+    {
         EventPresentation[] attacks = [.. WithDetails(entries).Where(entry => entry.Activity?.Operation == "Attack_Completed")];
         // A single completed attack establishes one unambiguous accepted source/target.
         // Several activations retain their engine order rather than guessing their effect boundaries.
-        if (attacks.Length != 1 || attacks[0].Activity is not { } attack) return entries;
+        if (attacks.Length != 1 || attacks[0].Activity is not { } attack) return null;
         ActivitySubject? source = attack.Subjects.FirstOrDefault(subject => subject.Role == ActivitySubjectRole.Source);
         ActivitySubject? target = attack.Subjects.FirstOrDefault(subject => subject.Role == ActivitySubjectRole.Target);
-        if (source is null || target is null) return entries;
+        if (source is null || target is null) return null;
         string caption = $"{source.Name} → {target.Name}";
         var introduction = new EventPresentation(caption, "Accepted attack", attacks[0].Anchors, EventMotionKind.Attack)
         {
             CueSummary = caption,
             Activity = attack with { Quantities = [], Operation = "Attack_Presentation" },
         };
-        return [introduction, .. entries];
+        return introduction;
     }
     private static EventPresentation? BasicAttack(DecisionReceiptContext? receipt, WorldDescriptor? prior)
     {

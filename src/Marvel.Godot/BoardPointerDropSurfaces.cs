@@ -8,7 +8,6 @@ internal sealed class BoardPointerDropSurfaces
     private readonly List<BoardDropTarget> dropTargets = [];
     private Control? mulliganDiscard;
     private Control? mulliganStage;
-    private string mulliganDiscardVariation = string.Empty;
 
     internal void Register(int seat, Control control) => dropTargets.Add(new BoardDropTarget(seat, control));
 
@@ -18,7 +17,6 @@ internal sealed class BoardPointerDropSurfaces
     internal void RegisterMulligan(Control control)
     {
         mulliganDiscard = control;
-        mulliganDiscardVariation = control.ThemeTypeVariation;
     }
 
     internal bool ContainsMulligan(Vector2 position) => InteractionControl.IsUsable(mulliganDiscard)
@@ -39,8 +37,6 @@ internal sealed class BoardPointerDropSurfaces
 
     internal void SetMulliganActive(bool active) {
         if (!InteractionControl.IsUsable(mulliganDiscard)) return;
-        mulliganDiscard!.ThemeTypeVariation = active
-            ? GodotThemeVariations.SpatialDropTarget : mulliganDiscardVariation;
-        mulliganDiscard.SetMeta("spatial_drop_active", active);
+        DropSurfaceCue.Set(mulliganDiscard!, active);
     }
 }

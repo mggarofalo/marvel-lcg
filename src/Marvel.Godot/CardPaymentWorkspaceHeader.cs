@@ -5,28 +5,53 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Identifies the unpaid card and preserves the current resolution context.</summary>
+/// <summary>Retains the unpaid source, current effect and requirement above payment choices.</summary>
 internal static class CardPaymentWorkspaceHeader
 {
     internal static void Add(VBoxContainer content, DecisionPanel panel, Main main,
         DecisionComposer draft, PromptPresentation prompt)
     {
-        string title = PromptPresentation.Describe(panel.composer!.Selected!.AnchorId, panel.world!);
+        var selected = draft.Selected!;
+        AffordancePresentation offer = prompt.Affordances.Single(value => value.Id == selected.Id);
+        content.AddChild(DecisionPanel.Text(prompt.Context, GodotThemeVariations.Caption, wrap: true));
         var identity = new HBoxContainer { Name = "PaymentIdentity" };
-        var heading = DecisionPanel.Text($"Play {title}", GodotThemeVariations.Heading, wrap: true);
-        heading.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        identity.AddChild(heading);
         content.AddChild(identity);
-        foreach (int target in draft.Targets)
-            content.AddChild(DecisionPanel.Text($"Target: {PromptPresentation.Describe(target, panel.world!)}",
-                GodotThemeVariations.Body, wrap: true));
+        BoardCardPresentation? card = CardPaymentPreview.Card(main.boardPresentation, selected.AnchorId);
+        if (card is not null)
+        {
+            CardControl face = CardControl.Create(card, CardDisplaySize.Board, InterfaceScale.Percent50, main.art);
+            face.Name = "PlayingCardReference";
+            CardInspectorFocus.IgnoreMouseRecursively(face, interactiveRules: false);
+            var inspect = new Button { Name = "InspectPaymentPlayed", Flat = true,
+                CustomMinimumSize = face.GetCombinedMinimumSize(), SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
+                AccessibilityName = $"Inspect {card.Title}", TooltipText = "Pin card details" };
+            inspect.AddChild(face);
+            inspect.Pressed += () => main.ToggleCardInspector(card, inspect);
+            CardPaymentInspection.Bind(panel, inspect, selected.AnchorId);
+            identity.AddChild(inspect);
+        }
+        var copy = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            ThemeTypeVariation = GodotThemeVariations.TightStack };
+        identity.AddChild(copy);
+        copy.AddChild(DecisionPanel.Text($"Play {offer.SourceName ?? offer.Anchor}",
+            GodotThemeVariations.Heading, wrap: true));
+        if (draft.UsesAutomaticTargetSelection)
+            copy.AddChild(DecisionPanel.Text(string.Join(" → ", draft.Targets.Select(target =>
+                PromptPresentation.Describe(target, panel.world!))), GodotThemeVariations.Body, wrap: true));
+        foreach (string fact in new[] { offer.CostDescription, offer.Description, offer.Consequence }
+            .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().Cast<string>())
+            copy.AddChild(DecisionPanel.Text(fact, GodotThemeVariations.Body, wrap: true));
+        if (selected.CostOptions.Count == 1)
+            copy.AddChild(DecisionCostLabel.Create(selected.CostOptions[0], panel.world!, showTarget: false));
+        copy.AddChild(DecisionPanel.Text("Hover or focus to inspect · I to pin · Esc to close",
+            GodotThemeVariations.Caption, wrap: true));
         if (ShowsResolution(draft.Prompt.PublicKind, draft.Prompt.CauseCardIds.Count > 0)
             && !string.IsNullOrWhiteSpace(prompt.Resolution))
-            content.AddChild(DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Caption, wrap: true));
-        if (draft.Selected!.DeferredTargetSelection)
+            content.AddChild(DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Body, wrap: true));
+        if (selected.DeferredTargetSelection)
             content.AddChild(DecisionPanel.Text(
                 "Payment commits now. Choose a target as the effect resolves; cancelling a later draft does not refund payment.",
-                GodotThemeVariations.Caption, wrap: true));
+                GodotThemeVariations.Body, wrap: true));
     }
 
     internal static bool ShowsResolution(PublicDecisionKind kind, bool hasCause) =>

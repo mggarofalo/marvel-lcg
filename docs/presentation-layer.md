@@ -256,12 +256,25 @@ application composition.
 `IEngineTransport.ExchangeAsync` is the one interface a client uses in either
 deployment:
 
-- `InProcessTransport` calls the host in the same process; and
+- `InProcessTransport` synchronously calls the host in the same process for headless callers;
+- `QueuedInProcessTransport` gives the desktop's embedded host one dedicated FIFO
+  owner, returning control to the UI while each synchronous request runs; and
 - `SocketTransport` sends the same request to `SocketEngineServer`.
 
 The in-process path does not create a second gameplay API. The socket path may
 use asynchronous network input, but game-state mutation remains synchronous and
 single-threaded inside the host.
+
+The queued transport exclusively owns endpoint exchange. Cancellation while a
+request is queued proves it was not sent; after dispatch begins, cancellation
+does not interrupt replay, persistence or consumption of the authoritative
+response. An endpoint exception preserves uncertainty and permits read-only
+synchronization on the same owner. Shutdown stops new admission and drains all
+accepted requests before the owner exits. Client detach requests shutdown without
+waiting on the UI thread; temporary setup connections release their owners too.
+Normal window close asynchronously drains every application-owned embedded host
+before quitting Godot, including setup and detached requests still finishing.
+No scheduling choice enters the seed, digest, ledger or protocol version.
 
 The current socket framing and bearer capabilities are plaintext. A remote
 endpoint is therefore for development and trusted private networks only; it is

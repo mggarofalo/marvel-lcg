@@ -36,6 +36,9 @@ public static class ClientComposition
     /// <summary>Flushes queued desktop operational records within a bounded interval.</summary>
     public static void Flush(TimeSpan timeout) => Log.Flush(timeout);
 
+    /// <summary>Stops embedded admission and awaits all application-owned host work before process shutdown.</summary>
+    public static Task ShutdownAsync() => LocalClientConnectionFactory.ShutdownAsync();
+
     private static OperationalLog CreateLog()
     {
         IOperationalSink sink = new JsonTextOperationalSink(Console.Error);

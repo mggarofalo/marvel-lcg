@@ -70,12 +70,12 @@ internal sealed class MainSessionController
             ClientLifecycleUpdate? update = await operation;
             if (!sendingDisplayed && update is not null)
                 throw new InvalidOperationException("The sending state could not be displayed.");
-            if (!main.IsInsideTree() || update is null) return;
+            if (!InteractionControl.IsUsable(main) || update is null) return;
             Present(update, kind, receipt);
         }
         catch (Exception)
         {
-            if (main.IsInsideTree())
+            if (InteractionControl.IsUsable(main))
             {
                 main.lifecycle.PresentationFailed();
                 ShowRecoveryControls();
@@ -84,7 +84,7 @@ internal sealed class MainSessionController
         }
         finally
         {
-            if (main.IsInsideTree()) main.RefreshSynchronizeAvailability();
+            if (InteractionControl.IsUsable(main)) main.RefreshSynchronizeAvailability();
         }
     }
 

@@ -19,7 +19,7 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 	motion.global_position = finish
 	render_viewport.push_input(motion, true)
 	await process_frame
-	if not card.is_set_as_top_level() or CardDrag.bounds(card).get_center().distance_to(finish) > 1:
+	if not card.is_set_as_top_level() or card.global_position.distance_to(original.origin + finish - start) > 1:
 		_fail("exhausted card drag did not lift beneath the pointer")
 		return false
 	if abs(card.get_global_transform().get_rotation() - original.get_rotation()) > 0.01:
@@ -266,10 +266,11 @@ func _deferred_preview_when_offered() -> bool:
 		return false
 	main.remove_meta("checking_deferred_preview")
 	var modal := _payment_modal()
-	if modal == null or "Target: Rhino" not in _visible_text(modal):
+	var chosen := _payment_button("Target%d" % RHINO)
+	if modal == null or chosen == null or not chosen.button_pressed or "Rhino" not in chosen.text:
 		_fail("the targeted event drop did not retain Rhino through payment")
 		return false
-	if not await _capture_checkpoint("targeted-event-payment"): return false
+	if not await _initial_targeted_payment_inspection(): return false
 	if not await _payment_cancel_is_safe(): return false
 	if (_node("Toolbar/SyncStatus") as Label).text != revision:
 		_fail("the deferred drag preview or cancelled payment committed an answer")
@@ -277,6 +278,40 @@ func _deferred_preview_when_offered() -> bool:
 	main.set_meta("deferred_preview_proved", true)
 	return true
 
+
+func _initial_targeted_payment_inspection() -> bool:
+	await process_frame
+	await process_frame
+	var preview := main.get_node("CardInspector") as Control
+	if preview.visible:
+		_fail("targeted payment automatically opened a card face without inspection intent")
+		return false
+	if not await _capture_checkpoint("targeted-event-payment"): return false
+	if not await _deliberate_targeted_inspection(preview): return false
+	return true
+
+func _deliberate_targeted_inspection(preview: Control) -> bool:
+	var thumbnail := _payment_button("InspectPaymentPlayed")
+	var hover := InputEventMouseMotion.new()
+	hover.position = thumbnail.get_global_rect().get_center()
+	hover.global_position = hover.position
+	render_viewport.push_input(hover, true)
+	await process_frame
+	await process_frame
+	if not preview.visible:
+		_fail("deliberate payment thumbnail hover did not open the full card")
+		return false
+	var frame := preview.get_node("Frame") as Control
+	var detail_scroll := preview.get_node("Frame/Stack/Scroll") as ScrollContainer
+	if detail_scroll.get_v_scroll_bar().visible:
+		_fail("targeted payment inspection clips the full card face")
+		return false
+	for candidate in _hand_surface().find_children("ProceduralCard*", "", true, false):
+		if candidate.has_meta("spatial_hand_index") and frame.get_global_rect().intersects(candidate.get_global_rect()):
+			_fail("targeted payment inspection covers a hand choice: %s frame=%s" % [candidate.name, frame.get_global_rect()])
+			return false
+	if not await _capture_checkpoint("targeted-event-deliberate-inspection"): return false
+	return true
 
 func _drag_preview_is_meaningful(card: Control) -> bool:
 	if not main.has_meta("checking_deferred_preview"):

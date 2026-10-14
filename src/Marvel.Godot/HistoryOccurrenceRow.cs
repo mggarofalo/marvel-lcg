@@ -34,7 +34,6 @@ internal sealed partial class HistoryOccurrenceRow : Button
         context.Text = presented.ResultSummary ?? (presented.Activity is { Round: { } round, Phase.Length: > 0 } activity
             ? $"ROUND {round} · {activity.Phase.ToUpperInvariant()}" : "");
         AccessibilityName = presented.Summary;
-        TooltipText = presented.Summary;
         using var frame = new StyleBoxFlat { BgColor = selected ? new Color("25384a") : CardFaceStyle.Ink,
             BorderColor = ClientTheme.ToGodot(VisualSystem.Palette.Accent), BorderWidthLeft = selected ? 4 : 1,
             ContentMarginLeft = 8, ContentMarginRight = 8, ContentMarginTop = 6, ContentMarginBottom = 6 };

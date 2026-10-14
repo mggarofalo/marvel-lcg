@@ -14,7 +14,7 @@ internal sealed partial class EventActivityPulse : Control
         double seconds, bool motion)
     {
         subjects = references;
-        progress = (float)(seconds % 1);
+        progress = Mathf.Clamp((float)(seconds / .16), 0, 1);
         animated = motion;
         AccessibilityName = string.Join(" · ", references.Select(reference =>
             reference.Item2.Name + ": " + (reference.Item1.Motion == EventMotionKind.Attack
@@ -48,7 +48,8 @@ internal sealed partial class EventActivityPulse : Control
             DrawLine(corner, corner + new Vector2(0, 22), ink, 3, true);
             // Compact sources already expose their updated counters and state inline.
             // Their transient emphasis stays inside the tile, clear of the chronology.
-            if (rect.Size.Y < 110 || reference.Entry.Motion == EventMotionKind.State) continue;
+            if (rect.Size.Y < 110 || reference.Entry.Motion == EventMotionKind.State
+                || reference.Entry.Motion == EventMotionKind.Attack && reference.Subject.Role == ActivitySubjectRole.Target) continue;
             int row = rows.GetValueOrDefault(reference.Subject.Card);
             rows[reference.Subject.Card] = row + 1;
             DrawBadge(reference, result, roleOnly, row);
@@ -97,10 +98,21 @@ internal sealed partial class EventActivityPulse : Control
         Color ink = ClientTheme.ToGodot(VisualSystem.Palette.Accent);
         Vector2 direction = (target - source).Normalized();
         Vector2 tip = target - direction * 18;
-        DrawLine(source, tip, ink, 2, true);
+        Rect2[] exclusions = Exclusions?.Invoke() ?? [];
+        DrawConnectorStroke(source, tip, ink, 2, exclusions);
         Vector2 normal = new(-direction.Y, direction.X);
-        DrawLine(tip, tip - direction * 12 + normal * 7, ink, 3, true);
-        DrawLine(tip, tip - direction * 12 - normal * 7, ink, 3, true);
-        if (animated) DrawCircle(source.Lerp(tip, progress), 5, CardFaceStyle.Paper, antialiased: true);
+        DrawConnectorStroke(tip, tip - direction * 12 + normal * 7, ink, 3, exclusions);
+        DrawConnectorStroke(tip, tip - direction * 12 - normal * 7, ink, 3, exclusions);
+        Vector2 marker = source.Lerp(tip, progress);
+        if (animated && progress < 1 && !exclusions.Any(region => region.HasPoint(marker)))
+            DrawCircle(marker, 5, CardFaceStyle.Paper, antialiased: true);
     }
+
+    private void DrawConnectorStroke(Vector2 from, Vector2 to, Color ink, float width, IReadOnlyList<Rect2> exclusions)
+    {
+        foreach (var segment in ActivityConnectorGeometry.Segments(from, to, exclusions))
+            DrawLine(segment.From, segment.To, ink, width, true);
+    }
+
+    internal Func<Rect2[]>? Exclusions { get; set; }
 }

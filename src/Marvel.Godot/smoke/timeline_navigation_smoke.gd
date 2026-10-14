@@ -5,11 +5,17 @@ func _run() -> void:
 	if not await _open_phase_activity(false): return
 	var timeline := _timeline()
 	var rail := timeline.find_child("TimelineRail", true, false) as Control
+	var compact_height := timeline.size.y
+	if not await _expand_timeline(timeline, rail): return
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
 	if not await _zoom_and_preview(timeline, rail): return
 	if not await _keyboard_navigation(timeline, rail): return
 	if not await _history_edge():
 		_fail("history edge navigation failed")
+		return
+	if not await _pointer_activate(timeline.find_child("TimelineDisclosure", true, false)): return
+	if abs(timeline.size.y - compact_height) > 1 or rail.is_visible_in_tree():
+		_fail("collapsing timeline retained its expanded height or controls")
 		return
 	if (_node("Toolbar/SyncStatus") as Label).text != revision:
 		_fail("timeline navigation submitted a game decision")
@@ -17,6 +23,17 @@ func _run() -> void:
 	if not await _capture_checkpoint("timeline-navigation"): return
 	print("TIMELINE_NAVIGATION_SMOKE_OK zoom=true preview=true keyboard=true hidden_history=true")
 	quit(0)
+
+
+func _expand_timeline(timeline: Control, rail: Control) -> bool:
+	if rail.is_visible_in_tree():
+		_fail("compact activity unexpectedly exposes dense history controls")
+		return false
+	if not await _pointer_activate(timeline.find_child("TimelineDisclosure", true, false)): return false
+	if not rail.is_visible_in_tree():
+		_fail("timeline disclosure did not reveal its navigable chronology")
+		return false
+	return true
 
 
 func _zoom_and_preview(timeline: Control, rail: Control) -> bool:
@@ -79,12 +96,50 @@ func _history_edge() -> bool:
 	if drawer.is_visible_in_tree() or toggle.text != "<<" or not _control_is_fully_visible(toggle):
 		_fail("collapsed History still reserves a visible panel")
 		return false
+	var anchors: Dictionary = {}
+	for card in _hand_surface().find_children("ProceduralCard*", "", true, false):
+		anchors[card] = card.global_position
 	if not await _set_history_drawer(true): return false
+	if not _hand_anchors_preserved(anchors): return false
 	if toggle.text != ">>" or not drawer.is_visible_in_tree():
 		_fail("History edge cannot reveal its details")
 		return false
+	if not _history_preserves_hand(drawer): return false
+	if not await _history_disclosure_resizes(drawer): return false
 	if not await _history_details_keep_selected(): return false
 	return await _set_history_drawer(false)
+
+
+func _hand_anchors_preserved(anchors: Dictionary) -> bool:
+	for card in anchors:
+		if not is_instance_valid(card) or card.global_position.distance_to(anchors[card]) > 1:
+			_fail("opening history moved or rebuilt the physical hand")
+			return false
+	return true
+
+
+func _history_preserves_hand(drawer: Control) -> bool:
+	if _timeline().get_global_rect().intersects(drawer.get_global_rect()):
+		_fail("timeline overlaps the open history chronology")
+		return false
+	for card in _hand_surface().find_children("ProceduralCard*", "", true, false):
+		if drawer.get_global_rect().intersects(card.get_global_rect()):
+			_fail("history drawer covers a card in hand: drawer=%s card=%s timeline=%s" % [drawer.get_global_rect(), card.get_global_rect(), _timeline().get_global_rect()])
+			return false
+	return true
+
+
+func _history_disclosure_resizes(drawer: Control) -> bool:
+	var disclosure := _timeline().find_child("TimelineDisclosure", true, false)
+	var anchors: Dictionary = {}
+	for card in _hand_surface().find_children("ProceduralCard*", "", true, false):
+		anchors[card] = card.global_position
+	for _change in 2:
+		if not await _pointer_activate(disclosure): return false
+		for _frame in 4: await process_frame
+		if not _history_preserves_hand(drawer): return false
+		if not _hand_anchors_preserved(anchors): return false
+	return true
 
 
 func _history_details_keep_selected() -> bool:

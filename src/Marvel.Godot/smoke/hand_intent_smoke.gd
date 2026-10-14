@@ -77,7 +77,7 @@ func _middle_mulligan_closes_gap() -> bool:
 	var original := cards.map(func(card: Control) -> Vector2: return card.position)
 	middle.grab_focus()
 	await _press_key(KEY_SPACE)
-	await process_frame
+	await create_timer(0.16).timeout
 	if not middle.get_meta("mulligan_staged", false):
 		_fail("middle mulligan card did not stage")
 		return false
@@ -89,7 +89,7 @@ func _middle_mulligan_closes_gap() -> bool:
 			return false
 	middle.grab_focus()
 	await _press_key(KEY_SPACE)
-	await process_frame
+	await create_timer(0.16).timeout
 	for index in range(cards.size()):
 		if cards[index].position.distance_to(original[index]) > 1:
 			_fail("unstaging did not restore local hand order and spacing")

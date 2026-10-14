@@ -135,6 +135,9 @@ func _semantic_styles_are_safe() -> bool:
 
 
 func _setup_overflow_is_safe() -> bool:
+	var advanced := _node("Setup/Selections/Fields/AdvancedSetup") as Button
+	advanced.button_pressed = true
+	advanced.toggled.emit(true)
 	var page := main.get_node("Margin") as ScrollContainer
 	if page == null:
 		_fail("the scaled page has no outer scroll container")
@@ -167,6 +170,8 @@ func _setup_control_paths() -> Array[String]:
 
 func _setup_control_is_visible(page: ScrollContainer, path: String) -> bool:
 	var control := _node(path) as Control
+	if control is OptionButton or control is MenuButton:
+		control = control.get_parent().get_node(str(control.name) + "Choices").get_child(0) as Control
 	var expected := _scaled_metric(44)
 	if control.custom_minimum_size.y < expected:
 		_fail("setup control '%s' is smaller than the pointer-target floor" % path)
@@ -239,10 +244,13 @@ func _mulligan_scale_rebuilds_the_dock() -> bool:
 
 
 func _entry_modes_are_explicit() -> bool:
+	var advanced := _node("Setup/Selections/Fields/AdvancedSetup") as Button
+	advanced.button_pressed = true
+	advanced.toggled.emit(true)
 	var endpoint := _node("Setup/Selections/Fields/ConnectionGrid/Endpoint") as LineEdit
 	var game_id := _node("Setup/Selections/Fields/ConnectionGrid/GameId") as LineEdit
 	var second_hero := _node("Setup/Selections/Fields/Grid/SecondHero") as OptionButton
-	var reload_setup := _button_named("Reload setup options")
+	var reload_setup := _node("Setup/Selections/Fields/ReloadSetup") as Button
 	if not _start_fields_are_safe(endpoint, game_id, second_hero, reload_setup):
 		return false
 	if not await _second_hero_is_safe(second_hero):
@@ -251,7 +259,10 @@ func _entry_modes_are_explicit() -> bool:
 		return false
 	if not await _endpoint_retry_is_safe(endpoint, reload_setup):
 		return false
-	return await _join_flow_is_safe()
+	if not await _join_flow_is_safe(): return false
+	advanced.button_pressed = false
+	advanced.toggled.emit(false)
+	return true
 
 
 func _start_fields_are_safe(
@@ -376,7 +387,7 @@ func _endpoint_retry_is_safe(endpoint: LineEdit, reload_setup: Button) -> bool:
 
 
 func _join_flow_is_safe() -> bool:
-	var join_flow := _button_named("Join a game")
+	var join_flow := _node("Setup/Selections/Fields/EntryModes/JoinFlow") as Button
 	if join_flow == null:
 		_fail("the setup screen has no explicit Join a game action")
 		return false
@@ -395,7 +406,7 @@ func _join_flow_is_safe() -> bool:
 		return false
 	if not await _capture_checkpoint("join-setup"):
 		return false
-	var start_flow := _button_named("Start a game")
+	var start_flow := _node("Setup/Selections/Fields/EntryModes/StartFlow") as Button
 	if start_flow == null:
 		_fail("the setup screen cannot return to the explicit start flow")
 		return false

@@ -213,6 +213,9 @@ func _drag_mulligan(card: Control, finish: Vector2) -> bool:
 	if start == Vector2.INF:
 		_fail("the mulligan card has no exposed body point for drag capture")
 		return false
+	var discard := main.find_child("PileEmptyPlayerDiscard", true, false) as Control
+	var discard_variation := discard.theme_type_variation if discard != null else &""
+	var discard_bounds := discard.get_global_rect() if discard != null else Rect2()
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
@@ -223,6 +226,10 @@ func _drag_mulligan(card: Control, finish: Vector2) -> bool:
 	move.position = finish
 	move.global_position = finish
 	render_viewport.push_input(move, true)
+	await process_frame
+	if discard != null and (discard.theme_type_variation != discard_variation or discard.get_global_rect() != discard_bounds):
+		_fail("mulligan target highlighting changed the discard silhouette or layout")
+		return false
 	var release := InputEventMouseButton.new()
 	release.button_index = MOUSE_BUTTON_LEFT
 	release.position = finish

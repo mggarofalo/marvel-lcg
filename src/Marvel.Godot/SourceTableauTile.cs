@@ -38,26 +38,35 @@ internal static class SourceTableauTile
         button.SelfModulate = Colors.White;
         button.CustomMinimumSize = new Vector2(0, 28);
         button.AutowrapMode = TextServer.AutowrapMode.Word;
+        button.Alignment = HorizontalAlignment.Left;
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         button.AddThemeFontSizeOverride("font_size", 12);
         button.AddThemeFontOverride("font", CardTypography.Bold);
         foreach (string state in new[] { "normal", "hover", "pressed", "hover_pressed", "disabled" })
         {
-            bool active = state is "hover" or "pressed" or "hover_pressed";
-            using var treatment = new StyleBoxFlat { BgColor = active ? CardFaceStyle.Ink : CardFaceStyle.Paper,
+            bool unavailable = state == "disabled";
+            Color fill = state switch
+            {
+                "hover" => CardFaceStyle.Ink.Lightened(0.18f),
+                "pressed" or "hover_pressed" => CardFaceStyle.Ink.Darkened(0.25f),
+                "disabled" => CardFaceStyle.Paper.Darkened(0.08f),
+                _ => CardFaceStyle.Ink,
+            };
+            using var treatment = new StyleBoxFlat { BgColor = fill,
                 BorderColor = CardFaceStyle.Ink with { A = 0.18f }, BorderWidthTop = 1,
+                BorderWidthBottom = state is "hover" ? 2 : 1,
                 ContentMarginLeft = 6, ContentMarginRight = 6, ContentMarginTop = 0, ContentMarginBottom = 0 };
             button.AddThemeStyleboxOverride(state, treatment);
-            button.AddThemeColorOverride(state == "normal" ? "font_color" : $"font_{state}_color", active ? CardFaceStyle.Paper : CardFaceStyle.Ink);
+            button.AddThemeColorOverride(state == "normal" ? "font_color" : $"font_{state}_color", unavailable ? ClientTheme.ToGodot(CardVisualTokens.Secondary) : CardFaceStyle.Paper);
         }
         using var focus = new StyleBoxFlat { BgColor = Colors.Transparent, BorderColor = ClientTheme.ToGodot(CardVisualTokens.Modified),
             BorderWidthLeft = 2, BorderWidthRight = 2, BorderWidthTop = 2, BorderWidthBottom = 2 };
         button.AddThemeStyleboxOverride("focus", focus);
-        button.AddThemeColorOverride("font_focus_color", CardFaceStyle.Ink);
+        button.AddThemeColorOverride("font_focus_color", CardFaceStyle.Paper);
     }
 
     internal static string State(BoardCardPresentation card) => string.Join(" · ",
         new[] { SpatialTableZones.IsExhausted(card) ? "Exhausted" : "Ready" }
             .Concat(card.Counters.Select(value => $"{value.Value} {value.Name.ToLowerInvariant()}"))
-            .Concat(card.Damage > 0 ? [$"{card.Damage} damage"] : []));
+            .Concat(card.DamageKnown && card.Damage > 0 ? [$"{card.Damage} damage"] : []));
 }

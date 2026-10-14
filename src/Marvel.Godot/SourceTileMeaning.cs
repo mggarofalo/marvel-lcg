@@ -12,7 +12,13 @@ internal static class SourceTileMeaning
             CustomMinimumSize = new Vector2(0, 20), MouseFilter = Control.MouseFilterEnum.Ignore };
         body.AddChild(footer);
         CardSourceStrip.AddContributions(footer, card, showRecipients: false);
-        if (footer.GetChildCount() > 0) return;
+        if (footer.GetChildCount() > 0)
+        {
+            footer.AddThemeConstantOverride("separation", 0);
+            foreach (Node child in footer.GetChildren())
+                if (child is Control unit) unit.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            return;
+        }
         IReadOnlyList<string> lines = CardSourceSummary.AbilityLines(card);
         if (lines.Count == 0) { footer.Hide(); return; }
         string meaning = lines[0];

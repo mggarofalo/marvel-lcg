@@ -41,6 +41,13 @@ detail. Related faces and modifier sources are directly visible choices.
 Drag the title band of an upgrade or support into an empty grid slot or swap it
 with an occupied slot. The destination outline previews the placement, including
 duplicate copies. Escape or dropping outside the grid restores the order.
+Dragging preserves the point grabbed on the card, including exhausted characters.
+A contact shadow separates the lifted face; cancellation settles back in 160 ms
+without scaling its text. A fresh grab cancels the old return. Slot gaps and
+engine-offered target edges have an 8-pixel acquisition tolerance and 12-pixel
+release tolerance; this never adds targets or commits a decision. Reduced motion
+restores the final pose immediately. Mulligan and hand reflow use 120 ms cubic-out
+movement while retaining the same explicit commitment boundary.
 For keyboard use, focus its title grip, press Space, move with arrows, then Enter to
 place or Escape to cancel. Ordering follows physical card identities locally
 through board updates and resets with the session. Column count depends on the
@@ -70,9 +77,15 @@ the table seam shares occurrences with History's expandable account. Ordinary
 actions group costs and consequences beneath their intention; phase-wide ready,
 draw and discard batches retain their semantic boundaries.
 
-With motion enabled, short consequence playback retains the previously
-authorized table and blocks table actions before exposing the new board and
-decision. It does not synthesize intermediate game states or answer prompts.
+With motion enabled, short consequence playback reserves the prior table slots
+and blocks table actions while exact receipt quantities, readiness and departures
+land at their causal beat. Authorized draw faces arrive together into the final
+hand slots. The accepted snapshot reconciles the table before the next decision.
+Health keeps its typed maximum; health-only receipts omit damage quantities until
+an exact damage fact or the accepted snapshot supplies them. Inspection uses the
+same temporary facts and retains modal dismissal. Long cleanup receipts share the
+bounded playback budget while retaining their complete ordered chronology.
+These temporary card presentations do not create intermediate worlds or answer prompts.
 Reduced motion presents the accepted snapshot immediately. Sync and Undo cancel
 superseded playback. Starting a new draft clears transient object emphasis.
 The active attack has a separate source-to-target cue from initiation through

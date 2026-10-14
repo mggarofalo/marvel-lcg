@@ -13,23 +13,29 @@ internal sealed partial class EventActivityPresenter : Node
     private EventActivityPulse? attackPulse;
     private EventPresentation? attack;
     private double elapsed;
+    private double attackElapsed;
     private bool suppressObjects;
+    private EventActivityCardMotion? cards;
     internal event Action? Settled;
 
     internal void Configure(Main owner)
     {
         main = owner;
+        cards = new EventActivityCardMotion(owner);
         pulse = new EventActivityPulse { Name = "EventActivityPulse", MouseFilter = Control.MouseFilterEnum.Ignore,
             TopLevel = true, ZAsRelative = false, ZIndex = 2000 };
         AddChild(pulse);
         attackPulse = new EventActivityPulse { Name = "AttackActivityPulse", MouseFilter = Control.MouseFilterEnum.Ignore,
             TopLevel = true, ZAsRelative = false, ZIndex = 1999 };
         AddChild(attackPulse);
+        pulse.Exclusions = () => ActivityConnectorOcclusion.Regions(owner);
+        attackPulse.Exclusions = pulse.Exclusions;
         SetProcess(false);
     }
 
     internal void PresentAttack(EventPresentation? active)
     {
+        if (!Enumerable.SequenceEqual(attack?.Anchors ?? [], active?.Anchors ?? [])) attackElapsed = 0;
         attack = active;
         RefreshPulse();
         SetProcess(sequence.Active || attack is not null);
@@ -37,7 +43,9 @@ internal sealed partial class EventActivityPresenter : Node
 
     internal void Present(IReadOnlyList<EventPresentation> entries)
     {
+        cards!.Clear();
         sequence.Start(entries, main!.eventMotion.ButtonPressed);
+        cards.Begin(sequence.Attention);
         suppressObjects = false;
         elapsed = 0;
         host = null;
@@ -50,7 +58,9 @@ internal sealed partial class EventActivityPresenter : Node
     {
         if (!InteractionControl.IsUsable(main)) return;
         elapsed += delta;
+        attackElapsed += delta;
         if (!main!.eventMotion.ButtonPressed && sequence.Active) Complete();
+        cards!.Advance(sequence.Elapsed + delta, sequence.Onset);
         bool changed = sequence.Advance(delta);
         if (changed) BeatAdvanced();
         if (RefreshHost() || changed) UpdateText();
@@ -61,12 +71,18 @@ internal sealed partial class EventActivityPresenter : Node
     private void BeatAdvanced()
     {
         elapsed = 0;
-        if (!sequence.Active) Settled?.Invoke();
+        cards!.Begin(sequence.Attention);
+        if (!sequence.Active)
+        {
+            cards.Release();
+            Settled?.Invoke();
+        }
     }
 
     internal void Complete()
     {
         bool wasActive = sequence.Active;
+        cards!.Clear();
         sequence.Complete();
         UpdateText();
         RefreshPulse();
@@ -81,6 +97,7 @@ internal sealed partial class EventActivityPresenter : Node
 
     internal void Clear()
     {
+        cards!.Clear();
         sequence.Clear();
         UpdateText();
         RefreshPulse();
@@ -104,11 +121,11 @@ internal sealed partial class EventActivityPresenter : Node
     private void RefreshPulse()
     {
         if (!InteractionControl.IsUsable(pulse)) return;
-        var visible = sequence.Attention is { } current && !(attack is not null && current.Motion == EventMotionKind.Attack)
+        var visible = sequence.Elapsed >= sequence.Onset && sequence.Attention is { } current && !(attack is not null && current.Motion == EventMotionKind.Attack)
             ? VisibleSubjects([current]) : [];
         pulse!.Present(visible, elapsed, sequence.Active);
         attackPulse!.Present(attack is null ? [] : VisibleSubjects([attack], duringDraft: true),
-            elapsed, main!.eventMotion.ButtonPressed);
+            attackElapsed, main!.eventMotion.ButtonPressed);
     }
 
     private List<(EventPresentation, ActivitySubject, Rect2)> VisibleSubjects(IReadOnlyList<EventPresentation> entries,
@@ -125,7 +142,7 @@ internal sealed partial class EventActivityPresenter : Node
 
     private static Rect2? VisibleBounds(Control card)
     {
-        if (!InteractionControl.IsUsable(card) || !card.IsVisibleInTree()) return null;
+        if (!InteractionControl.IsUsable(card) || !card.IsVisibleInTree() || card.HasMeta("activity_departed")) return null;
         Rect2 bounds = SpatialCardFootprint.Face(card).Intersection(card.GetViewportRect());
         for (Node? parent = card.GetParent(); parent is not null; parent = parent.GetParent())
             if (parent is Control clip && (clip.ClipContents || clip is ScrollContainer))

@@ -78,6 +78,24 @@ public sealed class EventActivitySequenceTests
         Assert.Equal(count, observed.Count);
     }
 
+    [Theory]
+    [InlineData(30)]
+    [InlineData(60)]
+    public void TypedCleanupReceiptsKeepThePlaybackBudgetAndEveryOrderedFact(int count)
+    {
+        var sequence = new EventActivitySequence();
+        sequence.Start(Enumerable.Range(0, count).Select(index => Cue($"Removed {index}") with
+            { Activity = new([new(index, "Card", ActivitySubjectRole.Subject)], []) { Operation = "Move" } }).ToArray(), true);
+        var observed = new List<int>();
+        for (int frame = 0; frame < 360 && sequence.Active; frame++)
+        {
+            if (observed.Count == 0 || observed[^1] != sequence.Index) observed.Add(sequence.Index);
+            sequence.Advance(1.0 / 120);
+        }
+        Assert.False(sequence.Active);
+        Assert.Equal(Enumerable.Range(0, count), observed);
+    }
+
     [Fact]
     public void AttackCausePrecedesDamageAndNoBoardAttentionSurvivesCompletion()
     {
@@ -130,10 +148,10 @@ public sealed class EventActivitySequenceTests
         Assert.Empty(intro.Activity!.Quantities);
         var sequence = new EventActivitySequence();
         sequence.Start(EventPlaybackPlan.From([damage], receipt, world), true);
-        Assert.False(sequence.Advance(.19));
+        Assert.False(sequence.Advance(.35));
         Assert.True(sequence.Advance(.02));
         Assert.Same(damage, sequence.Attention);
-        sequence.Advance(.21);
+        sequence.Advance(.37);
         Assert.False(sequence.Active);
         var concealed = world with { Areas = [new(1, "HeroArea", 0, -1, [hero, villain with { Face = null }], [])] };
         Assert.Equal([damage], EventPlaybackPlan.From([damage], receipt, concealed));

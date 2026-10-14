@@ -13,9 +13,9 @@ internal static class BoardDragInteractionBinder
         CardPointerGesture gesture)
     {
         if (panel.PaymentModalOpen || gesture.Card.TargetId is not { } source) return false;
-        int? destination = board.CardAt(gesture.Position, gesture.Source);
         var targeting = new BoardSourceTargetInteraction(composer,
             CurrentOperations(panel, composer), Affordances(panel, composer));
+        int? destination = board.TargetSnap.At(board, gesture, targeting.Destinations(source));
         if (destination is { } target && targeting.Matches(source, target).Count > 0)
             return DragOnCard(panel, composer, board, gesture, source, target);
         return DragPlay(panel, composer, board, gesture, source, destination);
@@ -49,13 +49,15 @@ internal static class BoardDragInteractionBinder
     {
         if (panel.PaymentModalOpen || gesture.Card.TargetId is not { } source) return;
         IReadOnlyList<Marvel.View.AffordancePresentation> offers = Affordances(panel, composer);
-        int? destination = board.CardAt(gesture.Position, gesture.Source);
         var interaction = new BoardSourceTargetInteraction(composer, CurrentOperations(panel, composer), offers);
-        board.PresentDestinations(interaction.Destinations(source));
+        int[] destinations = [.. interaction.Destinations(source)];
+        int? destination = board.TargetSnap.At(board, gesture, destinations);
+        board.PresentDestinations(destinations);
         IReadOnlyList<Marvel.View.AffordancePresentation> matches = destination is { } target
             ? interaction.Matches(source, target) : [];
         if (matches.Count > 0)
         {
+            board.PresentDragDestination(gesture, true);
             board.PresentGestureFeedback(string.Join(" or ", matches.Select(offer =>
                 DecisionCopy.ActionSummary(offer) + (offer.DeferredTargetSelection
                     ? " Activate first; choose the recipient next." : ""))));
@@ -71,6 +73,7 @@ internal static class BoardDragInteractionBinder
         var play = new BoardHandPlayInteraction(composer, CurrentOperations(panel, composer), offers);
         IReadOnlyList<Marvel.View.AffordancePresentation> matches = play.Matches(source, destination,
             gesture.IsHandCard, board.IsDroppedOnLivePlayerLane(composer.Prompt.Player, gesture.Position));
+        board.PresentDragDestination(gesture, matches.Count > 0);
         board.PresentGestureFeedback(matches.Count == 0
             ? "No offered action matches this drop. Your choices are unchanged."
             : string.Join(" or ", matches.Select(offer => DecisionCopy.ActionSummary(offer)

@@ -10,6 +10,8 @@ internal sealed class EventActivitySequence
     internal IReadOnlyList<EventPresentation> Entries { get; private set; } = [];
     internal int Index { get; private set; } = -1;
     internal bool Active { get; private set; }
+    internal double Elapsed => elapsed;
+    internal double Onset => Math.Min(.16, beatDuration * .45);
     internal EventPresentation? Current => Index >= 0 ? Entries[Index] : null;
 
     // Completed attacks remain chronology entries, not a second attack animation.
@@ -23,6 +25,8 @@ internal sealed class EventActivitySequence
         elapsed = 0;
         int consequences = Entries.Count - (Entries.Count > 0 && Entries[0].Activity?.Operation == "Attack_Presentation" ? 1 : 0);
         beatDuration = consequences <= 1 ? 0.4 / Math.Max(1, Entries.Count) : Math.Min(0.6, 2.4 / Entries.Count);
+        if (Entries.Any(entry => entry.Activity is not null))
+            beatDuration = Math.Min(2.4 / Entries.Count, Math.Max(.36, beatDuration));
         Active = animate && Entries.Count > 0;
         if (!Active) Complete();
     }

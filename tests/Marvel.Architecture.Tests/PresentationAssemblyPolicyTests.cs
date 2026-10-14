@@ -193,11 +193,12 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Server.ISessionCapabilityIssuer",
             "Marvel.Server.ISessionStore",
             "Marvel.Server.ITelemetryExporter",
-            "Marvel.Server.InProcessTransport",
             "Marvel.Server.JsonTextOperationalSink",
             "Marvel.Server.ModularSetupChoice",
             "Marvel.Server.OperationalLog",
             "Marvel.Server.OperationalTelemetrySink",
+            // The client selects and owns an explicitly queued embedded transport.
+            "Marvel.Server.QueuedInProcessTransport",
             "Marvel.Server.RuntimeIdentity",
             "Marvel.Server.ScenarioSetupChoice",
             "Marvel.Server.SeatInvitation",

@@ -23,6 +23,7 @@ internal static class SourceTableauSample
             PhysicalCardSize: SpatialCardMetrics.Envelope(areas.SelectMany(area => area.Cards), CardDisplaySize.Board, scale),
             HasSourceTableau: true, HasRevealingCard: narrow);
         var result = new BoardRenderResult { IsCurrent = () => true };
+        result.BindMotion(() => OS.GetEnvironment("MARVEL_SMOKE_MOTION") != "disabled");
         var objects = new SpatialTableObjectRenderer(root, result, geometry, scale, null, false);
         objects.RenderScenario(areas.Where(area => area.Seat < 0).ToArray());
         if (narrow) objects.RenderRevealing([], [areas.SelectMany(area => area.Cards).First(card => card.Kind == "HERO")]);

@@ -37,11 +37,14 @@ func _check_region(card: Control, region: Control, grid: GridContainer, fixture:
 	var inspected := int(fixture.get_meta("inspected_id", -1))
 	var selected := int(fixture.get_meta("selected_id", -1))
 	var start := region.get_global_rect().get_center()
+	var initial_position := card.global_position
 	# Stay in the source slot; capture and outlines must exist before reaching another slot.
 	var finish := start + Vector2(12, 0)
 	await _motion(start)
 	await _pointer(start, true)
 	await _motion(finish)
+	if not card.global_position.is_equal_approx(initial_position + finish - start):
+		failures.append(str(region.name) + " did not preserve the pointer grab point")
 	if not card.is_set_as_top_level(): failures.append(str(card.name) + "/" + str(region.name) + " did not begin arrangement")
 	for slot in original:
 		var outline := slot.find_child("SourceSwapOutline", false, false) as Control

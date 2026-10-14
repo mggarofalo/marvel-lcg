@@ -54,6 +54,7 @@ static func _round_trip_and_cancel(driver, after: Array) -> bool:
 	if not await _cancel_insertion(driver, after[0]): return false
 	var clear: Button = driver.main.find_child("ContextualCancelDraft", true, false)
 	if not await driver._pointer_activate(clear): return false
+	await driver.create_timer(0.16).timeout
 	if not _matches(driver, after, "cancel insertion and clear replacements"): return false
 	return true
 
@@ -70,7 +71,7 @@ static func _repeat_drag_return(driver, middle: Control, after: Array) -> bool:
 static func _toggle(driver, card: Control) -> void:
 	card.grab_focus()
 	await driver._press_key(KEY_SPACE)
-	await driver.process_frame
+	await driver.create_timer(0.16).timeout
 
 static func _move_last(driver, card: Control) -> bool:
 	var hand: Control = driver.main.find_child("HandDropArea", true, false)

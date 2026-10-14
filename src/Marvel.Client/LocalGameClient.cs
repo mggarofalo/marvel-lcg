@@ -13,11 +13,9 @@ using static Marvel.Client.ClientResponseValidation;
 namespace Marvel.Client;
 
 /// <summary>Uses the engine protocol for both local and remote game setup.</summary>
-public sealed class LocalGameClient
+public sealed class LocalGameClient : IDisposable, IAsyncDisposable
 {
     internal const int MaximumDisplayedErrorLength = 240;
-    private const string AttachRequestId = "local-attach";
-    private const string OpenRequestId = "local-open";
     internal const string RecoverRequestId = "local-recover";
     internal const string ResolveRequestId = "local-resolve";
     private const string SetupRequestId = "local-setup";
@@ -30,6 +28,7 @@ public sealed class LocalGameClient
     private readonly string? requestNonce;
     private readonly Func<uint> seedSource;
     private long requestSequence;
+    private readonly LocalGameEntryClient entry;
 
     /// <summary>Creates an app client over an embedded or remote transport.</summary>
     public LocalGameClient(
@@ -37,6 +36,7 @@ public sealed class LocalGameClient
         OperationalLog? log = null,
         Func<uint>? seedSource = null)
     {
+        entry = new LocalGameEntryClient(this);
         this.transport = transport ?? throw new ArgumentNullException(nameof(transport));
         this.log = log ?? OperationalLog.None;
         this.seedSource = seedSource ?? GameSeed.Create;
@@ -48,29 +48,20 @@ public sealed class LocalGameClient
     }
 
     /// <summary>Composes the local host while keeping dataset access at its boundary.</summary>
-    public static LocalClientConnection ConnectLocal(string dataRoot)
+    public static LocalClientConnection ConnectLocal(string dataRoot) => LocalClientConnectionFactory.Connect(dataRoot);
+
+    /// <summary>Requests transport shutdown without blocking the presentation thread.</summary>
+    public void Dispose()
     {
-        OperationalLog log = ClientComposition.ProcessLog;
-        try
-        {
-            var host = new EngineHost(
-                DatasetGameFactory.Load(dataRoot), log: log);
-            return new LocalClientConnection(
-                new LocalGameClient(new InProcessTransport(host), log), Error: null);
-        }
-        catch (Exception)
-        {
-            log.Write(
-                OperationalEventIds.ServerStartFailed,
-                "rejected",
-                operation: "embedded_start",
-                errorCode: "content_unavailable");
-            return new LocalClientConnection(
-                Client: null,
-                Error(
-                    "content_unavailable",
-                    "The local game could not load its committed Core Set content."));
-        }
+        if (transport is IDisposable lifetime) lifetime.Dispose();
+    }
+
+    /// <summary>Awaits any accepted embedded exchanges before transport shutdown completes.</summary>
+    public ValueTask DisposeAsync()
+    {
+        if (transport is IAsyncDisposable lifetime) return lifetime.DisposeAsync();
+        Dispose();
+        return ValueTask.CompletedTask;
     }
 
     /// <summary>Submits one answer without retrying an uncertain mutation.</summary>
@@ -216,26 +207,26 @@ public sealed class LocalGameClient
             gameId, "invalid_game_id", "Enter a game id from 1 through 256 characters.");
         if (gameIdFailure is not null)
         {
-            return ValueTask.FromResult(EntryFailed(gameIdFailure));
+            return ValueTask.FromResult(LocalGameEntryClient.EntryFailed(gameIdFailure));
         }
 
         if (!ValidHeroSelection(available, selection.HeroKeys)
             || !available.Scenarios.Any(scenario => scenario.Key == selection.ScenarioKey))
         {
-            return ValueTask.FromResult(EntryFailed(Error(
+            return ValueTask.FromResult(LocalGameEntryClient.EntryFailed(Error(
                 "invalid_selection",
                 "Choose one or two distinct heroes and a scenario offered by this game service.")));
         }
 
         if (!TryResolveModularSets(available, selection, out IReadOnlyList<string>? modularSets))
         {
-            return ValueTask.FromResult(EntryFailed(Error(
+            return ValueTask.FromResult(LocalGameEntryClient.EntryFailed(Error(
                 "invalid_selection",
                 "Choose modular sets offered by this game service.")));
         }
 
         if (!TrySeed(selection.Seed, out uint seed))
-            return ValueTask.FromResult(EntryFailed(Error(
+            return ValueTask.FromResult(LocalGameEntryClient.EntryFailed(Error(
                 "invalid_seed",
                 "Enter a whole-number seed from 0 through 4294967295, or leave it blank.")));
 
@@ -250,30 +241,9 @@ public sealed class LocalGameClient
     }
 
     /// <summary>Sends one canonical open request for an explicit opaque game id.</summary>
-    public async ValueTask<ClientEntryResult> OpenSessionAsync(
-        string gameId,
-        GameSpecification specification,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(specification);
-        ClientStartupError? gameIdFailure = IdentifierError(
-            gameId, "invalid_game_id", "Enter a game id from 1 through 256 characters.");
-        if (gameIdFailure is not null)
-        {
-            return EntryFailed(gameIdFailure);
-        }
-
-        if (!ValidSpecification(specification))
-        {
-            return EntryFailed(Error(
-                "invalid_selection",
-                "Choose one or two distinct heroes in seat order."));
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
-        return await SendOpenSessionAsync(gameId, specification, cancellationToken)
-            .ConfigureAwait(false);
-    }
+    public ValueTask<ClientEntryResult> OpenSessionAsync(
+        string gameId, GameSpecification specification, CancellationToken cancellationToken = default) =>
+        entry.OpenSessionAsync(gameId, specification, cancellationToken);
 
     private bool TrySeed(string? text, out uint seed)
     {
@@ -284,77 +254,10 @@ public sealed class LocalGameClient
         return true;
     }
 
-    private async ValueTask<ClientEntryResult> SendOpenSessionAsync(
-        string gameId, GameSpecification specification, CancellationToken cancellationToken)
-    {
-        try
-        {
-            string requestId = NextRequestId(OpenRequestId);
-            EngineResponse response = await transport.ExchangeAsync(
-                EngineRequest.OpenGame(requestId, gameId, specification),
-                cancellationToken).ConfigureAwait(false);
-            return EntryResponse(response, requestId, gameId, allowWaiting: false);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception)
-        {
-            return EntryFailed(Error(
-                "transport_unavailable",
-                "The game service could not be reached. Try starting the game again."));
-        }
-    }
-
-    private static bool ValidSpecification(GameSpecification specification) =>
-        specification.Heroes is { Count: 1 or 2 }
-        && !specification.Heroes.Any(string.IsNullOrWhiteSpace)
-        && specification.Heroes.Distinct(StringComparer.Ordinal).Count()
-            == specification.Heroes.Count;
-
     /// <summary>Redeems a one-time seat invitation with exactly one request.</summary>
-    public async ValueTask<ClientEntryResult> AttachAsync(
-        string gameId,
-        string invitation,
-        CancellationToken cancellationToken = default)
-    {
-        ClientStartupError? gameIdFailure = IdentifierError(
-            gameId, "invalid_game_id", "Enter a game id from 1 through 256 characters.");
-        if (gameIdFailure is not null)
-        {
-            return EntryFailed(gameIdFailure);
-        }
-
-        ClientStartupError? invitationFailure = IdentifierError(
-            invitation,
-            "invalid_invitation",
-            "Enter a seat invitation from 1 through 256 characters.");
-        if (invitationFailure is not null)
-        {
-            return EntryFailed(invitationFailure);
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
-        try
-        {
-            string requestId = NextRequestId(AttachRequestId);
-            EngineResponse response = await transport.ExchangeAsync(
-                EngineRequest.AttachGame(requestId, gameId, invitation),
-                cancellationToken).ConfigureAwait(false);
-            return EntryResponse(response, requestId, gameId, allowWaiting: true);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception)
-        {
-            return EntryFailed(Error(
-                "transport_unavailable",
-                "The game service could not be reached. The invitation was not retried."));
-        }
-    }
+    public ValueTask<ClientEntryResult> AttachAsync(
+        string gameId, string invitation, CancellationToken cancellationToken = default) =>
+        entry.AttachAsync(gameId, invitation, cancellationToken);
 
     /// <summary>Sends the canonical open request through the configured transport.</summary>
     public async ValueTask<ClientStartupResult> OpenAsync(
@@ -379,68 +282,6 @@ public sealed class LocalGameClient
 
     private static ClientStartupResult Failed(string code, string message) =>
         new(Response: null, Error(code, message));
-
-    private static ClientEntryResult EntryFailed(ClientStartupError error) =>
-        new(Session: null, Response: null, Invitations: [], error);
-
-    private ClientEntryResult EntryResponse(
-        EngineResponse response,
-        string requestId,
-        string gameId,
-        bool allowWaiting)
-    {
-        ClientStartupError? envelope = EnvelopeError(response, requestId, gameId);
-        if (envelope is not null)
-        {
-            return EntryFailed(envelope);
-        }
-
-        if (response.Error is not null) return EntryError(response.Error, requestId);
-
-        if (!CompleteEntry(response, requestId, allowWaiting))
-        {
-            return EntryFailed(Error(
-                "invalid_response",
-                "The engine did not return a complete initial game view."));
-        }
-
-        IReadOnlyList<SeatInvitation> invitations = response.Invitations ?? [];
-        var session = new ClientSession(gameId, response.Capability!);
-        RememberRevision(session, response);
-        return new ClientEntryResult(
-            session,
-            Sanitize(response),
-            invitations,
-            Error: null);
-    }
-
-    private static ClientEntryResult EntryError(EngineError error, string requestId)
-    {
-        if (!Complete(error))
-            return EntryFailed(Error("invalid_response",
-                "The game service returned an incomplete error."));
-        if (!HasRequestPrefix(requestId, AttachRequestId))
-            return EntryFailed(Error(error.Code, error.Message));
-        return EntryFailed(error.Code switch
-        {
-            "session_not_found" => Error("invitation_unavailable",
-                "That seat invitation is unavailable. Ask the host for a new invitation."),
-            "save_failed" => Error("save_failed",
-                "The game service could not durably accept that seat invitation."),
-            _ => Error("attach_failed",
-                "The game service could not accept that seat invitation."),
-        });
-    }
-
-    private static bool CompleteEntry(
-        EngineResponse response, string requestId, bool allowWaiting) =>
-        HasCompleteGameplayResponse(response, allowWaiting)
-        && (allowWaiting || response.Prompt is not null)
-        && (!HasRequestPrefix(requestId, OpenRequestId) || response.Revision == 0)
-        && ValidIdentifier(response.Capability)
-        && CompleteInvitations(response.Invitations)
-        && (!allowWaiting || response.Invitations is not { Count: > 0 });
-
 
     internal string NextRequestId(string prefix) => requestNonce is null
         ? prefix

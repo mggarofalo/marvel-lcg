@@ -122,6 +122,7 @@ public sealed partial class Main : Control
     public override void _Ready()
     {
         if (ClientStartup.Initialize(this)) return;
+        ClientThemePalette.Retain(this);
         InterfaceScale scale = ClientTheme.ConfiguredScale();
         interfaceScale = scale;
         ClientThemeInstallation.Apply(this, scale);
@@ -180,6 +181,7 @@ public sealed partial class Main : Control
         eventController?.Dispose();
         boardController?.Dispose();
         ClientComposition.Flush(TimeSpan.FromSeconds(3));
+        ClientThemePalette.ReleaseFor(this);
     }
 
     internal void ApplyInterfaceScale(InterfaceScale scale) =>
@@ -447,15 +449,8 @@ public sealed partial class Main : Control
         reloadSetup.Disabled = !enabled || lifecycle.EntryPending;
     }
 
-    internal void SetAssignmentControlsEnabled(bool enabled)
-    {
-        hero.Disabled = !enabled;
-        secondHero.Disabled = !enabled;
-        scenario.Disabled = !enabled;
-        mode.Disabled = !enabled;
-        modular.Disabled = !enabled;
-        seed.Editable = enabled;
-    }
+    internal void SetAssignmentControlsEnabled(bool enabled) =>
+        SetupEntryPresentation.SetAssignmentEnabled(this, enabled);
 
     internal void ShowFailure(ClientStartupError failure)
     {

@@ -74,7 +74,7 @@ internal static class BoardActionChoiceSurface
         {
             Name = $"Affordance{action.Id}",
             Text = PromptPresentation.Words(action.DisplayLabel ?? action.Label),
-            TooltipText = PromptPresentation.Words(action.DisplayLabel ?? action.Label),
+            AccessibilityDescription = PromptPresentation.Words(action.DisplayLabel ?? action.Label),
             CustomMinimumSize = new Vector2(250, 44),
             Alignment = HorizontalAlignment.Left,
             TextOverrunBehavior = recipientCommitments ? TextServer.OverrunBehavior.NoTrimming : TextServer.OverrunBehavior.TrimEllipsis,

@@ -21,7 +21,7 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 	move.global_position = midpoint
 	driver.render_viewport.push_input(move, true)
 	await driver.process_frame
-	if bounds(card).get_center().distance_to(midpoint) > 4.0 or card.z_index < 120:
+	if card.global_position.distance_to(origin + midpoint - start) > 4.0 or card.z_index < 120:
 		driver._fail("dragging '%s' produced no lifted intermediate frame" % card.name)
 		return false
 	if not card.is_set_as_top_level():

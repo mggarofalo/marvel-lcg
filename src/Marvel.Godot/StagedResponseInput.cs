@@ -7,16 +7,46 @@ internal static class StagedResponseInput
 {
     internal static bool Consume(Main main, InputEvent input)
     {
-        // Let Godot update hover ownership so review, Sync and Undo remain reachable.
-        if (input is InputEventMouseMotion) return true;
+        // A pinned inspector owns its complete dismissal gesture, including the backdrop release.
+        if (main.cardInspector.Visible && main.cardInspectorPinned) return false;
+        if (input is InputEventKey { Keycode: Key.Escape }) return false;
         Control? target = input is InputEventKey ? main.GetViewport().GuiGetFocusOwner()
             : main.GetViewport().GuiGetHoveredControl();
+        if (!IsStagedBoardTarget(main, target)) return false;
+        Inspect(main, FindCard(target), input);
+        if (input is InputEventMouseButton or InputEventKey) main.GetViewport().SetInputAsHandled();
+        return true;
+    }
+
+    private static bool IsStagedBoardTarget(Main main, Control? target)
+    {
         Control table = main.GetNode<Control>("Margin/Shell/Content/Play/Board");
         if (target is null || !table.IsAncestorOf(target)) return false;
         for (Node? node = target; node is not null; node = node.GetParent())
             if (node.Name == "EventTimeline") return false;
-        if (input is not (InputEventMouseButton or InputEventKey)) return false;
-        main.GetViewport().SetInputAsHandled();
         return true;
+    }
+
+    private static void Inspect(Main main, CardControl? card, InputEvent input)
+    {
+        if (card?.DisplayedPresentation is not { Concealed: false } shown || card.HasMeta("activity_departed"))
+        {
+            if (input is InputEventMouseMotion) main.boardController.ScheduleCardInspectorHide();
+            return;
+        }
+        bool pin = input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }
+            or InputEventKey { Pressed: true, Keycode: Key.Enter };
+        if (pin || ShouldHover(main, input, shown.TargetId))
+            main.boardController.ShowCardInspector(shown, card, pin);
+    }
+
+    private static bool ShouldHover(Main main, InputEvent input, int? id) =>
+        input is InputEventMouseMotion && (!main.cardInspector.Visible || main.inspectedCardId != id);
+
+    private static CardControl? FindCard(Node? node)
+    {
+        for (; node is not null; node = node.GetParent())
+            if (node is CardControl card) return card;
+        return null;
     }
 }

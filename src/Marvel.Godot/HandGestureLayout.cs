@@ -43,6 +43,10 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
         && area!.GetGlobalRect().HasPoint(position);
 
     internal bool IsStaged(int id) => staged.Contains(id);
+    internal void ReleasePointer(Control card)
+    {
+        if (card is CardControl hand) StopMotion(hand);
+    }
 
     internal void Stage(IReadOnlyCollection<int> selected)
     {
@@ -150,12 +154,16 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
         card.ZIndex = pose.Z;
         if (capture)
         {
+            Vector2 currentPosition = card.Position;
+            float currentRotation = card.Rotation;
             // Capture the final authored pose before the pointer return animation runs.
             card.Position = pose.Position;
             card.Rotation = pose.Rotation;
             poseChanged(card);
+            card.Position = currentPosition;
+            card.Rotation = currentRotation;
         }
-        if (MotionEnabled?.Invoke() == false || capture)
+        if (MotionEnabled?.Invoke() == false)
         {
             card.Position = pose.Position;
             card.Rotation = pose.Rotation;

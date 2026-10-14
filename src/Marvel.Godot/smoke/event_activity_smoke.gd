@@ -265,6 +265,7 @@ func _probe_attack_result_tile(_activity_host: Control) -> Control:
 
 
 func _retained_probe_attack() -> Control:
+	if not await _expand_activity_timeline(): return null
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
 	var prompt := _logical_prompt_identity()
 	var timeline := _timeline()
@@ -311,6 +312,7 @@ func _decline_probe_attack_opportunity() -> bool:
 
 
 func _historical_encounter_face_is_inspectable() -> bool:
+	if not await _expand_activity_timeline(): return false
 	if not await _pointer_activate(_timeline_button("Latest event")): return false
 	for index in range(int(_timeline().get_meta("timeline_count", 0))):
 		var references := _timeline().find_child("ActivityReference", true, false)
@@ -329,3 +331,9 @@ func _historical_encounter_face_is_inspectable() -> bool:
 		if not await _pointer_activate(_timeline_button("Previous event")): return false
 	_fail("chronology has no authorized reference for the resolved boost")
 	return false
+
+
+func _expand_activity_timeline() -> bool:
+	var disclosure := _timeline().find_child("TimelineDisclosure", true, false) as Button
+	if disclosure == null or bool(_timeline().get_meta("timeline_expanded", false)): return true
+	return await _pointer_activate(disclosure)

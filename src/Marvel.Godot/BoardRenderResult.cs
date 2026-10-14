@@ -22,6 +22,8 @@ public sealed class BoardRenderResult
     private Container? contextualActions;
     private bool completeChoicesOpen;
     private bool sourceArrangementActive;
+    internal BoardTargetSnap TargetSnap { get; } = new();
+    internal bool MotionEnabled => pointer.MotionEnabled?.Invoke() != false;
     /// <summary>Owns controls and source lookup for one authorized board snapshot.</summary>
     public BoardRenderResult(BoardPresentation? board = null)
     {
@@ -171,10 +173,13 @@ public sealed class BoardRenderResult
         pointer.DragPreview = preview;
         pointer.DragFinished = invalid =>
         {
+            TargetSnap.Clear();
             RefreshInteraction();
             if (invalid) PresentGestureFeedback("No offered action matches this drop. Your choices are unchanged.");
         };
     }
+
+    internal void PresentDragDestination(CardPointerGesture gesture, bool accepted) => pointer.PresentDestination(gesture, accepted);
 
     internal void PresentGestureFeedback(string text) => copy.PresentFeedback(text);
     internal void AnchorDraft(Vector2 position, int offer) => interactionControls.AnchorDraft(position, offer);

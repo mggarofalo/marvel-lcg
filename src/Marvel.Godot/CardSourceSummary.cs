@@ -10,7 +10,7 @@ internal static class CardSourceSummary
     {
         if (card.Concealed || card.Persistent is not { } source) return [];
         var lines = new List<string>(AbilityLines(card));
-        if (card.Damage > 0 || StoresDamage(source)) lines.Add($"{card.Damage} damage here");
+        if (card.DamageKnown && (card.Damage > 0 || StoresDamage(source))) lines.Add($"{card.Damage} damage here");
         foreach (BoardFieldPresentation counter in card.Counters) lines.Add($"{counter.Value} {counter.Name.ToLowerInvariant()}");
         if (SpatialTableZones.IsExhausted(card)) lines.Add("Exhausted");
         if (source.HasUnresolvedAbilities) lines.Add("Further abilities: inspect rules");

@@ -21,7 +21,8 @@ internal static class AttackActivityPresentation
     internal static EventPresentation? DuringTransition(ActiveAttackDescriptor? previous,
         ActiveAttackDescriptor? current, IReadOnlyList<EventPresentation> playback)
     {
-        EventPresentation? accepted = playback.FirstOrDefault(entry => entry.Activity?.Operation == "Attack_Presentation");
+        EventPresentation? accepted = playback.SelectMany(entry => entry.Details.Prepend(entry))
+            .FirstOrDefault(entry => entry.Activity?.Operation is "Attack_Presentation" or "Attack_Completed");
         if (previous is null) return From(current) ?? accepted;
         // A defender may be accepted and the attack finish in the same response.
         // Its completed occurrence supplies the final target while consequences are presented.

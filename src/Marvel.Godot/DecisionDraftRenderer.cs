@@ -48,11 +48,11 @@ internal sealed class DecisionDraftRenderer
                 wrap: true);
             automatic.Name = "AutomaticTargets";
             panel.BindAnchors(automatic, [.. composer.Targets]);
-            panel.AddContent(automatic);
+            AddContent(automatic);
             return;
         }
 
-        panel.AddContent(DecisionPanel.Text(DecisionPanelCopy.TargetProgress(composer, progress),
+        AddContent(DecisionPanel.Text(DecisionPanelCopy.TargetProgress(composer, progress),
             GodotThemeVariations.Caption, wrap: true));
         AddTargetInstructions(request);
 
@@ -66,11 +66,18 @@ internal sealed class DecisionDraftRenderer
         AddTargetOrder();
     }
 
+    private void AddContent(Control control)
+    {
+        if (panel.PaymentModal is { } payment && composer.Selected?.Targets?.Legal.Count <= 3)
+            payment.Targets.AddChild(control);
+        else panel.AddContent(control);
+    }
+
     private void AddTargetInstructions(TargetRequest request)
     {
         if (request.MustIncludeTraits is { Count: > 0 })
         {
-            panel.AddContent(DecisionPanel.Text(
+            AddContent(DecisionPanel.Text(
                 $"MUST INCLUDE  ·  {string.Join(", ", request.MustIncludeTraits)}",
                 GodotThemeVariations.Caption, wrap: true));
         }
@@ -102,7 +109,7 @@ internal sealed class DecisionDraftRenderer
                 if (operations.TrySelectGroup(group)) panel.Rebuild();
             };
             panel.BindAnchors(choose, [.. group]);
-            panel.AddContent(choose);
+            AddContent(choose);
         }
     }
 
@@ -123,27 +130,31 @@ internal sealed class DecisionDraftRenderer
 
     private void AddTargetOrder()
     {
-        if (composer.Targets.Count > 0)
+        if (composer.Targets.Count > 1)
         {
-            panel.AddContent(DecisionPanel.Text(
+            AddContent(DecisionPanel.Text(
                 "Order: " + string.Join(" → ", composer.Targets.Select(id =>
                     PromptPresentation.Describe(id, world))),
                 GodotThemeVariations.Caption, wrap: true));
         }
     }
 
+    internal static string TargetLabel(string name, string? detail, string? visibleDescription = null) =>
+        string.IsNullOrWhiteSpace(detail) || detail == visibleDescription || detail == $"{name}: {visibleDescription}" ? name
+            : detail.StartsWith(name + ":", StringComparison.Ordinal) ? detail : $"{name} · {detail}";
+
     internal void AddOrdinaryTarget(int target)
     {
         string targetName = PromptPresentation.Describe(target, world!);
-        string detail = composer!.Selected?.Targets?.Details?.GetValueOrDefault(target) is { } text
-            ? $"  ·  {text}"
-            : string.Empty;
+        string detail = TargetLabel(targetName,
+            composer!.Selected?.Targets?.Details?.GetValueOrDefault(target),
+            panel.PaymentModalOpen ? composer.Selected?.Description : null);
         var choose = new Button
         {
             Name = $"Target{target}",
             Text = composer!.Targets.Contains(target)
-                ? $"✓ {DecisionPanelCopy.TargetAction(composer, selected: true)}  ·  {targetName}{detail}"
-                : $"◇ {DecisionPanelCopy.TargetAction(composer, selected: false)}  ·  {targetName}{detail}",
+                ? $"✓ {DecisionPanelCopy.TargetAction(composer, selected: true)}  ·  {detail}"
+                : $"◇ {DecisionPanelCopy.TargetAction(composer, selected: false)}  ·  {detail}",
             Alignment = HorizontalAlignment.Left,
             ToggleMode = true,
             ButtonPressed = composer!.Targets.Contains(target),
@@ -154,24 +165,20 @@ internal sealed class DecisionDraftRenderer
             choose.ButtonPressed
                 ? InteractiveVisualState.Selected
                 : InteractiveVisualState.Legal);
-        choose.Pressed += () =>
-        {
-            if (MulliganPrompt.IsOpening(composer.Prompt))
-            {
-                if (operations.TryToggleTarget(target))
-                {
-                    panel.RefreshMulliganTargets(composer, target);
-                }
-                return;
-            }
-            if (operations.TryToggleTarget(target))
-            {
-                panel.NotifyAnchorFocused([target]);
-                panel.Rebuild();
-            }
-        };
+        choose.Pressed += () => ToggleOrdinaryTarget(target);
         panel.BindAnchors(choose, target);
-        panel.AddContent(choose);
+        AddContent(choose);
+    }
+
+    private void ToggleOrdinaryTarget(int target)
+    {
+        if (!operations.TryToggleTarget(target)) return;
+        if (MulliganPrompt.IsOpening(composer!.Prompt)) panel.RefreshMulliganTargets(composer, target);
+        else
+        {
+            panel.NotifyAnchorFocused([target]);
+            panel.Rebuild();
+        }
     }
 
     internal void AddRepeatedTarget(TargetRequest request, int target)
@@ -227,6 +234,6 @@ internal sealed class DecisionDraftRenderer
         };
         panel.BindAnchors(add, target);
         row.AddChild(add);
-        panel.AddContent(row);
+        AddContent(row);
     }
 }
