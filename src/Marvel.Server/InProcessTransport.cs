@@ -11,7 +11,23 @@ public sealed class InProcessTransport(IEngineEndpoint endpoint) : IEngineTransp
         EngineRequest request,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
-        return ValueTask.FromResult(endpoint.Exchange(request));
+        bool dispatched = false;
+        try
+        {
+            var admitted = EngineJson.Snapshot(request);
+            cancellationToken.ThrowIfCancellationRequested();
+            dispatched = true;
+            return ValueTask.FromResult(EngineJson.Snapshot(endpoint.Exchange(admitted)));
+        }
+        catch (OperationCanceledException) when (!dispatched && cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception failure)
+        {
+            throw new EngineTransportException(dispatched, failure);
+        }
     }
 }

@@ -63,46 +63,30 @@ public static class BasicThwartPowers
 
     /// <summary>Initiates a card ability labelled as a thwart.</summary>
     public static bool CardThwart(
-        World world, ICardFacts facts, int player, Card source, Card scheme, long amount,
-        string trigger, List<GameEvent> events, int abilityIndex = -1,
-        int powerOrdinal = 0, int resumeFrom = -1,
-        bool finalStep = false, IReadOnlyList<int>? targets = null,
-        ThreatPlacement? imminentThreat = null, bool automaticTarget = false,
-        bool nested = false, bool surgeGained = false,
-        IReadOnlyList<string>? abilityPath = null, string abilityFace = "",
-        IReadOnlyDictionary<string, long>? abilityResults = null,
-        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
-        bool abilityHasContinuation = false, Card? performer = null)
+        World world, ICardFacts facts, CardPowerInvocation power, List<GameEvent> events,
+        ThreatPlacement? imminentThreat = null, bool automaticTarget = false, bool nested = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(scheme);
+        ArgumentNullException.ThrowIfNull(power);
         ArgumentNullException.ThrowIfNull(events);
 
-        var thwarter = performer ?? LabeledAbilities.Begin(
-            world, facts, player, source, [ThwartVerb], events);
-        if (thwarter is null)
-        {
-            return false;
-        }
+        var thwarter = power.Performer ?? LabeledAbilities.Begin(
+            world, facts, power.Player, power.Source, [ThwartVerb], events);
+        if (thwarter is null) return false;
 
         if (automaticTarget
-            ? !CanAutomaticallyThwart(world, facts, player, scheme)
-            : !Thwartable(world, facts, player).Any(card => card.ObjectId == scheme.ObjectId))
+            ? !CanAutomaticallyThwart(world, facts, power.Player, power.Target)
+            : !Thwartable(world, facts, power.Player).Any(card => card.ObjectId == power.Target.ObjectId))
         {
             throw new RulesNotImplementedException(
-                $"card {scheme.ObjectId} is not a scheme {world.Seats[player].Name} can thwart");
+                $"card {power.Target.ObjectId} is not a scheme {world.Seats[power.Player].Name} can thwart");
         }
 
-        InitiateThwart(
-            world, thwarter, scheme, player, amount, source, trigger, abilityIndex,
-            powerOrdinal, resumeFrom, finalStep, targets, imminentThreat, nested,
-            surgeGained, abilityPath, abilityFace, abilityResults, abilityOccurrence,
-            discarded, eachPlayerFrame, finalPlayer, abilityPlayer,
-            abilityHasContinuation, thwarter.ObjectId);
-
+        ScheduleThwart(world, new CharacterThwart(
+            thwarter.ObjectId, power.Target.ObjectId, power.Player, power.Amount,
+            power.Source.ObjectId, power.Trigger, power.Continuation, power.Origin, power.SurgeGained,
+            imminentThreat, power.Target.Incarnation), nested);
         return true;
     }
 

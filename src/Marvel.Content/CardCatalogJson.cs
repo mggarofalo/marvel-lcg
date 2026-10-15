@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 using Marvel.Rules.State;
 
@@ -33,11 +34,14 @@ public static class CardCatalogJson
         string formatted = ReadString(element, "text", printed);
 
         return new CardCatalogEntry(
-            kind, set, linkedTo, traits, printedTraitLabels, attributes, title, subtitle, printed,
-            formatted, KeywordsOf(attributes),
-            CounterTypesOf(printed, attributes), CounterMaximumsOf(printed))
+            kind, set, linkedTo.ToImmutableArray(), traits.ToImmutableArray(),
+            printedTraitLabels.ToImmutableArray(), attributes.ToImmutableDictionary(StringComparer.Ordinal),
+            title, subtitle, printed, formatted, KeywordsOf(attributes).ToImmutableArray(),
+            CounterTypesOf(printed, attributes).ToImmutableArray(),
+            CounterMaximumsOf(printed).ToImmutableDictionary(StringComparer.Ordinal))
         {
-            PrintedStats = CardCatalogPrintedStats.Read(element, kind, attributes),
+            PrintedStats = CardCatalogPrintedStats.Read(element, kind, attributes)
+                .ToImmutableDictionary(StringComparer.Ordinal),
         };
     }
 

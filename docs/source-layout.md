@@ -26,7 +26,7 @@ type grows into an independently understandable collaborator, make it internal
 and give it its own matching file rather than weakening the file rule.
 
 Generated code and declarations that a source generator requires to be partial
-retain only the exact exceptions enforced by `.husky/csx/no-partial-types.csx`.
+retain only the exact exceptions enforced by `tests/Marvel.Architecture.Tests/GeneratedPartialTypePolicy.cs`.
 
 ## Class size
 
@@ -90,7 +90,10 @@ The deterministic rules are:
 - that type's identifier exactly matches the file basename;
 - a class declaration over 300 lines is a baselined remediation finding and a
   declaration over 500 lines is never admitted;
-- a behavioural method or constructor has at most seven parameters; and
+- a behavioural method or constructor, including a class or struct primary constructor,
+  has at most seven parameters;
+- application partial types are rejected, except exact declarations required by
+  Godot, JSON and regex source generators; and
 - only the exact generated partial declarations already admitted by the
   partial-type policy are exempt from the applicable layout rules.
 

@@ -11,7 +11,10 @@ func _run() -> void:
     root.size = Vector2i(1920, 1080)
     main = (load("res://Main.tscn") as PackedScene).instantiate()
     root.add_child(main)
-    for frame in range(8): await process_frame
+    if await preload("res://smoke/setup_smoke_readiness.gd").wait_for_start(main) == null:
+        push_error("CONTROL_MATERIAL_FAILED setup never became ready")
+        quit(1)
+        return
     var controls := _create_specimen()
     for frame in range(4): await process_frame
     for control in controls: _check_styles(control)

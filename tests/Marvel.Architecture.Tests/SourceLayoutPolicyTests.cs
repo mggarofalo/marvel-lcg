@@ -53,68 +53,143 @@ public sealed class SourceLayoutPolicyTests
             + string.Join(Environment.NewLine, stale));
     }
 
+    [Theory]
+    [InlineData("class First { } class Second { }")]
+    [InlineData("namespace Outer { namespace Inner { class First { } class Second { } } }")]
+    [InlineData("namespace Outer.Inner; class First { } class Second { }")]
+    public void TopLevelTypesIncludeEveryNamespaceDepth(string source)
+    {
+        string diagnostic = Assert.Single(Diagnostics("src/Example/First.cs", source));
+        Assert.Contains(": SL001: top-level-types=First,Second", diagnostic, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NestedImplementationTypesBelongToTheirOwner()
+    {
+        Assert.Empty(Diagnostics("src/Example/Owner.cs",
+            "namespace Outer { namespace Inner { class Owner { class Nested { } } } }"));
+    }
+
+    [Theory]
+    [InlineData("class Service(int a, int b, int c, int d, int e, int f, int g, int h) { }")]
+    [InlineData("struct Service(int a, int b, int c, int d, int e, int f, int g, int h) { }")]
+    [InlineData("class Service { public Service(int a, int b, int c, int d, int e, int f, int g, int h) { } }")]
+    public void BehavioralConstructorsIncludePrimarySyntax(string source)
+    {
+        Assert.Equal("src/Example/Service.cs:1: SL005: Service=8",
+            Assert.Single(Diagnostics("src/Example/Service.cs", source)));
+    }
+
+    [Theory]
+    [InlineData("record Contract(int A, int B, int C, int D, int E, int F, int G, int H);")]
+    [InlineData("record struct Contract(int A, int B, int C, int D, int E, int F, int G, int H);")]
+    public void PositionalDataContractsAreNotBehavioralSignatures(string source)
+    {
+        Assert.Empty(Diagnostics("src/Example/Contract.cs", source));
+    }
+
+    [Theory]
+    [InlineData("partial class Worker { }")]
+    [InlineData("partial record Worker;")]
+    [InlineData("partial struct Worker { }")]
+    [InlineData("partial interface Worker { }")]
+    public void ApplicationPartialTypesFailTheSharedGate(string declaration)
+    {
+        string diagnostic = Assert.Single(Diagnostics("src/Example/Worker.cs", declaration));
+        Assert.Equal("src/Example/Worker.cs:1: SL007: Worker", diagnostic);
+    }
+
+    [Fact]
+    public void PartialWordsInTextDoNotDeclareTypes()
+    {
+        const string source = "class Worker { const string Text = \"partial class Hidden { }\"; /* partial class Hidden */ }";
+        Assert.Empty(Diagnostics("src/Example/Worker.cs", source));
+    }
+
     private static IEnumerable<string> Diagnostics()
     {
         foreach (string path in ApplicationSources())
         {
             string relative = Path.GetRelativePath(RepositoryPaths.Root, path)
                 .Replace('\\', '/');
-            SyntaxTree tree = CSharpSyntaxTree.ParseText(
-                File.ReadAllText(path), path: relative);
-            CompilationUnitSyntax root = tree.GetCompilationUnitRoot();
-            MemberDeclarationSyntax[] types = TopLevelTypes(root).ToArray();
-            bool testSource = relative.StartsWith("tests/", StringComparison.Ordinal);
-
-            if (types.Length > 1)
+            foreach (string diagnostic in Diagnostics(relative, File.ReadAllText(path)))
             {
-                string names = string.Join(",", types.Select(TypeName));
+                yield return diagnostic;
+            }
+        }
+    }
+
+    private static IEnumerable<string> Diagnostics(string relative, string source)
+    {
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(
+            source, path: relative);
+        CompilationUnitSyntax root = tree.GetCompilationUnitRoot();
+        MemberDeclarationSyntax[] types = TopLevelTypes(root).ToArray();
+        bool testSource = relative.StartsWith("tests/", StringComparison.Ordinal);
+
+        if (types.Length > 1)
+        {
+            string names = string.Join(",", types.Select(TypeName));
+            yield return Diagnostic(
+                relative, types[1], "SL001", $"top-level-types={names}");
+        }
+
+        if (types.Length == 1 && !testSource)
+        {
+            string name = TypeName(types[0]);
+            if (!string.Equals(Path.GetFileNameWithoutExtension(relative), name,
+                    StringComparison.Ordinal))
+            {
+                yield return Diagnostic(relative, types[0], "SL002", name);
+            }
+            if (VagueTypeNames.Contains(name))
+            {
+                yield return Diagnostic(relative, types[0], "SL006", name);
+            }
+        }
+
+        if (testSource)
+        {
+            yield break;
+        }
+
+        foreach (string diagnostic in DeclarationDiagnostics(relative, root))
+        {
+            yield return diagnostic;
+        }
+    }
+
+    private static IEnumerable<string> DeclarationDiagnostics(
+        string relative, CompilationUnitSyntax root)
+    {
+        foreach (TypeDeclarationSyntax type in root.DescendantNodes()
+                     .OfType<TypeDeclarationSyntax>())
+        {
+            if (type.Modifiers.Any(SyntaxKind.PartialKeyword)
+                && !GeneratedPartialTypePolicy.IsRequired(relative, root, type))
+            {
+                yield return Diagnostic(relative, type, "SL007", type.Identifier.ValueText);
+            }
+            int lines = DeclarationLines(type);
+            if (lines > MaximumTypeLines)
+            {
                 yield return Diagnostic(
-                    relative, types[1], "SL001", $"top-level-types={names}");
+                    relative, type, "SL004", $"{type.Identifier.ValueText}={lines}");
             }
-
-            if (types.Length == 1 && !testSource)
+            else if (lines > LargeTypeLines)
             {
-                string name = TypeName(types[0]);
-                if (!string.Equals(Path.GetFileNameWithoutExtension(path), name,
-                        StringComparison.Ordinal))
-                {
-                    yield return Diagnostic(relative, types[0], "SL002", name);
-                }
-                if (VagueTypeNames.Contains(name))
-                {
-                    yield return Diagnostic(relative, types[0], "SL006", name);
-                }
+                yield return Diagnostic(
+                    relative, type, "SL003", $"{type.Identifier.ValueText}={lines}");
             }
+        }
 
-            if (testSource)
+        foreach ((SyntaxNode declaration, string name, int parameters) in
+                 BehavioralSignatures(root))
+        {
+            if (parameters > MaximumParameters)
             {
-                continue;
-            }
-
-            foreach (TypeDeclarationSyntax type in root.DescendantNodes()
-                         .OfType<TypeDeclarationSyntax>())
-            {
-                int lines = DeclarationLines(type);
-                if (lines > MaximumTypeLines)
-                {
-                    yield return Diagnostic(
-                        relative, type, "SL004", $"{type.Identifier.ValueText}={lines}");
-                }
-                else if (lines > LargeTypeLines)
-                {
-                    yield return Diagnostic(
-                        relative, type, "SL003", $"{type.Identifier.ValueText}={lines}");
-                }
-            }
-
-            foreach ((SyntaxNode declaration, string name, int parameters) in
-                     BehavioralSignatures(root))
-            {
-                if (parameters > MaximumParameters)
-                {
-                    yield return Diagnostic(
-                        relative, declaration, "SL005", $"{name}={parameters}");
-                }
+                yield return Diagnostic(
+                    relative, declaration, "SL005", $"{name}={parameters}");
             }
         }
     }
@@ -122,21 +197,14 @@ public sealed class SourceLayoutPolicyTests
     private static IEnumerable<MemberDeclarationSyntax> TopLevelTypes(
         CompilationUnitSyntax root)
     {
-        foreach (MemberDeclarationSyntax member in root.Members)
+        foreach (MemberDeclarationSyntax member in root.DescendantNodes()
+                     .OfType<MemberDeclarationSyntax>()
+                     .Where(member => member.Parent is CompilationUnitSyntax
+                         or BaseNamespaceDeclarationSyntax))
         {
             if (member is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax)
             {
                 yield return member;
-            }
-            else if (member is BaseNamespaceDeclarationSyntax @namespace)
-            {
-                foreach (MemberDeclarationSyntax child in @namespace.Members)
-                {
-                    if (child is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax)
-                    {
-                        yield return child;
-                    }
-                }
             }
         }
     }
@@ -158,6 +226,14 @@ public sealed class SourceLayoutPolicyTests
     private static IEnumerable<(SyntaxNode Declaration, string Name, int Parameters)>
         BehavioralSignatures(CompilationUnitSyntax root)
     {
+        foreach (TypeDeclarationSyntax type in root.DescendantNodes()
+                     .OfType<TypeDeclarationSyntax>()
+                     .Where(type => type is ClassDeclarationSyntax or StructDeclarationSyntax
+                         && type.ParameterList is not null))
+        {
+            yield return (type, type.Identifier.ValueText, type.ParameterList!.Parameters.Count);
+        }
+
         foreach (MethodDeclarationSyntax method in root.DescendantNodes()
                      .OfType<MethodDeclarationSyntax>())
         {

@@ -1,6 +1,5 @@
 using Godot;
 using Marvel.Decisions;
-using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.View;
 
@@ -49,7 +48,7 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
 
     private void AddAllocation(ResourceSource source, int iconIndex, char printed, int componentCount)
     {
-        List<AllocationChoice> choices = Choices(printed, componentCount);
+        List<AllocationChoice> choices = Choices(source.Effect, iconIndex, componentCount);
         var row = new HBoxContainer();
         var label = ResourceIconRendering.Row(
             $"{PromptPresentation.Describe(source.Effect, world)} · {iconIndex + 1}",
@@ -97,7 +96,7 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
             : 0;
     }
 
-    private static List<AllocationChoice> Choices(char printed, int componentCount)
+    private List<AllocationChoice> Choices(int source, int icon, int componentCount)
     {
         var choices = new List<AllocationChoice>
         {
@@ -105,20 +104,8 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
         };
         for (int component = 0; component < componentCount; component++)
         {
-            if (printed == Resources.Wild)
-            {
-                choices.AddRange(Resources.Types.Select(declared => new AllocationChoice(
-                    component,
-                    declared,
-                    $"Cost {component + 1}")));
-            }
-            else
-            {
-                choices.Add(new AllocationChoice(
-                    component,
-                    printed,
-                    $"Cost {component + 1}"));
-            }
+            choices.AddRange(DecisionResourceDeclarations.For(composer, source, icon, component)
+                .Select(declared => new AllocationChoice(component, declared, $"Cost {component + 1}")));
         }
         return choices;
     }

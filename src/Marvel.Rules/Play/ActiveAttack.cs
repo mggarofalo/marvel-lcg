@@ -32,7 +32,7 @@ public sealed record ActiveAttack(int Source, int Target)
         if (step.What == Steps.EndAttack && world.Attack is { } pending)
             yield return new ActiveAttack(pending.Enemy, pending.Target) { Identity = new(step.ActivationId, true) };
         if (FinishedOwner(world, occurrence) is { } finished) yield return finished;
-        if (FinishedOwner(world, step.CharacterAttack?.AbilityOccurrence ?? step.AbilityOccurrence) is { } enclosing)
+        if (FinishedOwner(world, step.CharacterAttack?.Origin ?? step.AbilityOccurrence) is { } enclosing)
             yield return enclosing;
     }
 

@@ -42,7 +42,7 @@ public static class BasicPowerResolution
                 "a character thwart is resolving and the board holds none");
         }
 
-        if (thwart.AbilityIndex < 0
+        if (thwart.Continuation is null
             && (!DeckTypes.IsInPlay(world.Cards[thwart.Scheme].Area.Type)
                 || world.Cards[thwart.Scheme].Incarnation != thwart.TargetIncarnation))
         {
@@ -51,7 +51,7 @@ public static class BasicPowerResolution
             return;
         }
 
-        if (thwart.AbilityIndex >= 0)
+        if (thwart.Continuation is not null)
         {
             var occurrence = world.Agenda.Occurrence
                 ?? throw new RulesNotImplementedException(
@@ -110,7 +110,7 @@ public static class BasicPowerResolution
         var occurrence = world.Agenda.Occurrence
             ?? throw new RulesNotImplementedException(
                 "a character attack resolved without an occurrence for its response window");
-        if (attack.AbilityIndex < 0 && !TargetRemains(world, attack))
+        if (attack.Continuation is null && !TargetRemains(world, attack))
         {
             // `rr:consequential-damage.2` and `.2.1`: if an ally's basic-power
             // target leaves before application, the exhausted ally neither
@@ -120,7 +120,7 @@ public static class BasicPowerResolution
                 attack.Attacker, attack.Enemy, attack: true);
             return;
         }
-        if (attack.AbilityIndex >= 0)
+        if (attack.Continuation is not null)
         {
             world.PowerAbilities.ResolveCardAttack(world, attack, occurrence, events);
             occurrence.Also(Steps.AttackEnds);

@@ -66,20 +66,21 @@ internal static class AbilityResolutionEffectChoices
         var continuationChosen = cast.CaptureCurrentSelection();
         cast.Choose(command.Target);
         var capture = execution.Capture(cast, command.AbilityIndex, continuationChosen);
-        var continuation = AbilityContinuationScheduling.Power(
-            capture, command.PowerOrdinal, cast.HasContinuation);
+        var power = new CardPowerInvocation(
+            execution.Resolver(cast), cast.Source, command.Target, command.Amount, cast.Trigger)
+        {
+            Performer = cast.AbilityActor,
+            Continuation = AbilityContinuationScheduling.Power(
+                capture, command.PowerOrdinal, [.. command.Targets.Select(card => card.ObjectId)]),
+            SurgeGained = capture.SurgeGained,
+            Origin = capture.Occurrence,
+        };
         bool scheduled = command.Verb == BasicPowers.AttackVerb
-            ? BasicPowers.CardAttack(
-                cast.World, cast.World.Facts, execution.Resolver(cast), cast.Source,
-                command.Target, command.Amount,
-                cast.Trigger, cast.Events, continuation,
-                [.. command.Targets.Select(card => card.ObjectId)], cast.AbilityActor)
-            : BasicPowers.CardThwart(
-                cast.World, cast.World.Facts, execution.Resolver(cast), cast.Source,
-                command.Target, command.Amount,
-                cast.Trigger, cast.Events, continuation,
-                [.. command.Targets.Select(card => card.ObjectId)], cast.Occurrence.Threat,
-                command.AutomaticThwartTarget, cast.AbilityActor);
+            ? BasicPowerInitiation.CardAttack(
+                cast.World, cast.World.Facts, power, cast.Events, nested: true)
+            : BasicThwartPowers.CardThwart(
+                cast.World, cast.World.Facts, power, cast.Events, cast.Occurrence.Threat,
+                command.AutomaticThwartTarget, nested: true);
         if (!scheduled)
         {
             return;

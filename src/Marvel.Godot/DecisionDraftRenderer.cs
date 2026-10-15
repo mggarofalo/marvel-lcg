@@ -216,7 +216,7 @@ internal sealed class DecisionDraftRenderer
         {
             Name = $"Target{target}Add",
             Text = "+",
-            Disabled = submitting || count >= limit || composer.Targets.Count >= request.Max,
+            Disabled = submitting || !operations.CanAddTarget(target),
         };
         panel.StyleButton(
             add,

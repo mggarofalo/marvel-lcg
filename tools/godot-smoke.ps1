@@ -46,6 +46,7 @@ Remove-Item Env:MARVEL_SMOKE_TWO_PLAYER -ErrorAction SilentlyContinue
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_VIEWPORT = "1920x1080"
 $env:MARVEL_SMOKE_MOTION = "enabled"
+Invoke-LocalSmoke "res://smoke/setup_readiness_smoke.gd" "SETUP_READINESS_SMOKE_OK"
 Invoke-LocalSmoke "res://smoke/close_resolution_smoke.gd" '"operation":"resolve"'
 Invoke-LocalSmoke "res://smoke/shared_control_finish_smoke.gd"
 Invoke-LocalSmoke "res://smoke/cursor_theme_smoke.gd" "CURSOR_THEME_OK"

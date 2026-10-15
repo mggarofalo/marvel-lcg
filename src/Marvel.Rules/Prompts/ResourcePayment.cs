@@ -135,7 +135,7 @@ public static class ResourcePayment
     {
         if (!Resources.Types.Contains(declared)) return false;
         int icon = available.IndexOf(declared);
-        if (icon < 0 && !printedCost && declared != Resources.Wild)
+        if (icon < 0 && CanDeclare(Resources.Wild, declared, printedCost))
             icon = available.IndexOf(Resources.Wild);
         if (icon < 0) return false;
         available.RemoveAt(icon);

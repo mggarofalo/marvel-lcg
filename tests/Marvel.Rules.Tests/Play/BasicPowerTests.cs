@@ -27,11 +27,13 @@ public abstract class BasicPowerTestBase
     {
         public List<int> Targets { get; } = [];
         public List<long> Amounts { get; } = [];
+        public List<CardPowerContinuation?> Continuations { get; } = [];
 
         public override void ResolveCardAttack(World world, CharacterAttack attack, Marvel.Rules.Timing.Occurrence occurrence, List<GameEvent> events)
         {
             Targets.Add(attack.Enemy);
             Amounts.Add(attack.Amount);
+            Continuations.Add(attack.Continuation);
         }
     }
 

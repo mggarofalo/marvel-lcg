@@ -45,24 +45,6 @@ public static class BasicPowers
         BasicPowerInitiation.BasicAttackWithoutExhausting(
             world, facts, character, enemy, events);
 
-    /// <inheritdoc cref="BasicPowerInitiation.CardAttack"/>
-    public static bool CardAttack(
-        World world, ICardFacts facts, int player, Card source, Card enemy, long amount,
-        string trigger, List<GameEvent> events, bool overkill = false, Card? moveFrom = null,
-        int abilityIndex = -1, int powerOrdinal = 0, int resumeFrom = -1,
-        bool finalStep = false, IReadOnlyList<int>? targets = null, bool nested = false,
-        bool surgeGained = false, IReadOnlyList<string>? abilityPath = null,
-        string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
-        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
-        bool abilityHasContinuation = false, Card? performer = null) =>
-        BasicPowerInitiation.CardAttack(
-            world, facts, player, source, enemy, amount, trigger, events, overkill,
-            moveFrom, abilityIndex, powerOrdinal, resumeFrom, finalStep, targets,
-            nested, surgeGained, abilityPath, abilityFace, abilityResults,
-            abilityOccurrence, discarded, eachPlayerFrame, finalPlayer,
-            abilityPlayer, abilityHasContinuation, performer);
-
     /// <inheritdoc cref="BasicPowerResolution.ResolveCharacterThwart"/>
     public static void ResolveCharacterThwart(
         World world, ICardFacts facts, List<GameEvent> events,
@@ -85,26 +67,6 @@ public static class BasicPowers
     public static void BasicThwart(
         World world, ICardFacts facts, int player, Card scheme, List<GameEvent> events) =>
         BasicThwartPowers.BasicThwart(world, facts, player, scheme, events);
-
-    /// <inheritdoc cref="BasicThwartPowers.CardThwart"/>
-    public static bool CardThwart(
-        World world, ICardFacts facts, int player, Card source, Card scheme, long amount,
-        string trigger, List<GameEvent> events, int abilityIndex = -1,
-        int powerOrdinal = 0, int resumeFrom = -1, bool finalStep = false,
-        IReadOnlyList<int>? targets = null, ThreatPlacement? imminentThreat = null,
-        bool automaticTarget = false, bool nested = false, bool surgeGained = false,
-        IReadOnlyList<string>? abilityPath = null, string abilityFace = "",
-        IReadOnlyDictionary<string, long>? abilityResults = null,
-        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
-        bool abilityHasContinuation = false, Card? performer = null) =>
-        BasicThwartPowers.CardThwart(
-            world, facts, player, source, scheme, amount, trigger, events,
-            abilityIndex, powerOrdinal, resumeFrom, finalStep, targets,
-            imminentThreat, automaticTarget, nested, surgeGained, abilityPath,
-            abilityFace, abilityResults, abilityOccurrence, discarded,
-            eachPlayerFrame, finalPlayer, abilityPlayer, abilityHasContinuation,
-            performer);
 
     /// <inheritdoc cref="BasicThwartPowers.CanAutomaticallyThwart"/>
     public static bool CanAutomaticallyThwart(
@@ -136,37 +98,6 @@ public static class BasicPowers
         List<GameEvent> events) =>
         BasicPowerStatus.Cancelled(world, facts, character, status, events);
 
-    /// <summary>Initiates an attack using an opaque Cards-owned continuation payload.</summary>
-    public static bool CardAttack(
-        World world, ICardFacts facts, int player, Card source, Card enemy, long amount,
-        string trigger, List<GameEvent> events, CardPowerContinuation continuation,
-        IReadOnlyList<int> targets, Card? performer = null) => BasicPowerInitiation.CardAttack(
-            world, facts, player, source, enemy, amount, trigger, events,
-            abilityIndex: continuation.AbilityIndex, powerOrdinal: continuation.PowerOrdinal,
-            resumeFrom: continuation.ResumeFrom, finalStep: continuation.FinalStep,
-            targets: targets, nested: true, surgeGained: continuation.SurgeGained,
-            abilityPath: continuation.AbilityPath, abilityFace: continuation.AbilityFace,
-            abilityResults: continuation.AbilityResults, abilityOccurrence: continuation.AbilityOccurrence,
-            discarded: continuation.Discarded, eachPlayerFrame: continuation.EachPlayerFrame,
-            finalPlayer: continuation.FinalPlayer, abilityPlayer: continuation.AbilityPlayer,
-            abilityHasContinuation: continuation.AbilityHasContinuation, performer: performer);
-
-    /// <summary>Initiates a thwart using an opaque Cards-owned continuation payload.</summary>
-    public static bool CardThwart(
-        World world, ICardFacts facts, int player, Card source, Card scheme, long amount,
-        string trigger, List<GameEvent> events, CardPowerContinuation continuation,
-        IReadOnlyList<int> targets, ThreatPlacement? imminentThreat, bool automaticTarget,
-        Card? performer = null) => BasicThwartPowers.CardThwart(
-            world, facts, player, source, scheme, amount, trigger, events,
-            abilityIndex: continuation.AbilityIndex, powerOrdinal: continuation.PowerOrdinal,
-            resumeFrom: continuation.ResumeFrom, finalStep: continuation.FinalStep,
-            targets: targets, imminentThreat: imminentThreat, automaticTarget: automaticTarget,
-            nested: true, surgeGained: continuation.SurgeGained,
-            abilityPath: continuation.AbilityPath, abilityFace: continuation.AbilityFace,
-            abilityResults: continuation.AbilityResults, abilityOccurrence: continuation.AbilityOccurrence,
-            discarded: continuation.Discarded, eachPlayerFrame: continuation.EachPlayerFrame,
-            finalPlayer: continuation.FinalPlayer, abilityPlayer: continuation.AbilityPlayer,
-            abilityHasContinuation: continuation.AbilityHasContinuation, performer: performer);
     /// <summary>Whether a character has a usable printed value for one basic power.</summary>
     public static bool CanUsePower(ICardFacts facts, Card character, string field)
     {

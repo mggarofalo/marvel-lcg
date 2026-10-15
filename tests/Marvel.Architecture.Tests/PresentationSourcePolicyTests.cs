@@ -10,22 +10,11 @@ namespace Marvel.Architecture.Tests;
 
 public sealed class PresentationSourcePolicyTests
 {
-    private static readonly string[] ImplicitUsings =
-    [
-        "System",
-        "System.Collections.Generic",
-        "System.IO",
-        "System.Linq",
-        "System.Net.Http",
-        "System.Threading",
-        "System.Threading.Tasks",
-    ];
-
     [Fact]
     public void ViewUsesOnlyReviewedEngineMembers()
     {
-        CSharpCompilation compilation = CompileView();
-        string[] actual = ExternalMarvelMembers(compilation);
+        CSharpCompilation compilation = PresentationSourceCompilation.Compile(Path.Combine(RepositoryPaths.Root, "src", "Marvel.View"));
+        string[] actual = PresentationSourceCompilation.ExternalMarvelMembers(compilation);
 
         string[] reviewed =
         [
@@ -397,7 +386,7 @@ public sealed class PresentationSourcePolicyTests
             [CSharpSyntaxTree.ParseText(
                 source,
                 cancellationToken: TestContext.Current.CancellationToken)],
-            References(),
+            PresentationSourceCompilation.References(),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
         Assert.Equal(
@@ -405,74 +394,7 @@ public sealed class PresentationSourcePolicyTests
                 "Marvel.Rules.Play.EncounterDeck.AccelerationToken",
                 "Marvel.Rules.State.Card.Exhaust()",
             ],
-            ExternalMarvelMembers(compilation));
+            PresentationSourceCompilation.ExternalMarvelMembers(compilation));
     }
 
-    private static CSharpCompilation CompileView()
-    {
-        string sourceDirectory = Path.Combine(RepositoryPaths.Root, "src", "Marvel.View");
-        SyntaxTree implicitUsings = CSharpSyntaxTree.ParseText(
-            string.Join("\n", ImplicitUsings.Select(value => $"global using {value};")),
-            new CSharpParseOptions(LanguageVersion.Latest),
-            "ImplicitUsings.g.cs");
-        SyntaxTree[] source = Directory.GetFiles(sourceDirectory, "*.cs")
-            .Order(StringComparer.Ordinal)
-            .Select(path => CSharpSyntaxTree.ParseText(
-                File.ReadAllText(path),
-                new CSharpParseOptions(LanguageVersion.Latest),
-                path))
-            .Prepend(implicitUsings)
-            .ToArray();
-        var options = new CSharpCompilationOptions(
-            OutputKind.DynamicallyLinkedLibrary,
-            nullableContextOptions: NullableContextOptions.Enable);
-        CSharpCompilation compilation = CSharpCompilation.Create(
-            "Marvel.View.SourcePolicy",
-            source,
-            References(),
-            options);
-        Diagnostic[] errors = compilation.GetDiagnostics()
-            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
-            .ToArray();
-        Assert.True(errors.Length == 0,
-            "The View source policy could not compile its subject:\n"
-                + string.Join("\n", errors.Select(error => error.ToString())));
-        return compilation;
-    }
-
-    private static MetadataReference[] References()
-    {
-        string[] platformAssemblies = ((string?)AppContext.GetData(
-                "TRUSTED_PLATFORM_ASSEMBLIES"))!
-            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
-        return platformAssemblies
-            .Append(typeof(World).Assembly.Location)
-            .Distinct(StringComparer.Ordinal)
-            .Select(path => MetadataReference.CreateFromFile(path))
-            .ToArray();
-    }
-
-    private static string[] ExternalMarvelMembers(CSharpCompilation compilation)
-    {
-        var members = new HashSet<string>(StringComparer.Ordinal);
-        foreach (SyntaxTree tree in compilation.SyntaxTrees)
-        {
-            SemanticModel model = compilation.GetSemanticModel(tree);
-            foreach (SyntaxNode node in tree.GetRoot().DescendantNodes())
-            {
-                ISymbol? symbol = model.GetSymbolInfo(node).Symbol;
-                if (symbol is not (IMethodSymbol or IPropertySymbol or IFieldSymbol or IEventSymbol)
-                    || symbol.ContainingAssembly?.Name is not { } assembly
-                    || !assembly.StartsWith("Marvel.", StringComparison.Ordinal)
-                    || assembly == compilation.AssemblyName)
-                {
-                    continue;
-                }
-
-                members.Add(symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat));
-            }
-        }
-
-        return members.Order(StringComparer.Ordinal).ToArray();
-    }
 }
