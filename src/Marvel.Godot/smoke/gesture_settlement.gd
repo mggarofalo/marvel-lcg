@@ -29,7 +29,11 @@ static func _return_finished(card: Control) -> bool:
 
 static func _global_matches(card: Control, expected: Transform2D) -> bool:
 	card.force_update_transform()
-	return card.get_global_transform().is_equal_approx(expected)
+	var actual := card.get_global_transform()
+	# Composed parent transforms may settle by a fraction of a pixel. Keep basis
+	# checks strict and bound positional error below a tenth of a rendered pixel.
+	return actual.x.is_equal_approx(expected.x) and actual.y.is_equal_approx(expected.y) \
+		and actual.origin.distance_to(expected.origin) < 0.1
 
 static func _authored_pose_matches(card: Control) -> bool:
 	if not card.has_meta("spatial_resting_position"): return true
