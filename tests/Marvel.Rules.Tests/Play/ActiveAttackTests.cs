@@ -103,6 +103,29 @@ public sealed class ActiveAttackTests : AttackTestBase
         Assert.NotNull(world.CharacterAttack);
     }
 
+    [Fact]
+    public void AQueuedResponsePowerRetainsItsEnclosingFinishedAttack()
+    {
+        // Synthetic response ownership: the pending nested power retains the
+        // enemy attack that caused it, even after that enemy attack has ended.
+        var facts = Printed(atk: 3, boost: 0);
+        var world = Board(facts);
+        world.Agenda.Abandon();
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        world.Attack = null;
+        world.FinishedAttack = new EnemyAttack(villain.ObjectId, 0, hero.ObjectId);
+        var origin = Occurrence.ForAttack(
+            123, [Steps.AttackEnds], world, facts, villain.ObjectId, hero.ObjectId, 0);
+
+        Assert.True(BasicPowerInitiation.CardAttack(world, facts,
+            new(0, hero, villain, 1, "response") { Performer = hero, Origin = origin }, []));
+
+        Assert.Equal(new ActiveAttack(villain.ObjectId, hero.ObjectId), ActiveAttack.From(world));
+        world.Agenda.Abandon();
+        Assert.Null(ActiveAttack.From(world));
+    }
+
     private sealed class ActiveObserver : NoCardAbilities
     {
         public HashSet<string> Conditions { get; } = [];

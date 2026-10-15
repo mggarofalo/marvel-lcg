@@ -47,6 +47,13 @@ not count targets, inspect resources or parse card text to reach its own answer.
 `Marvel.Decisions` may call `TargetRequest.Allows` because that function remains
 engine-owned. The server validates the submitted answer again before mutation.
 
+Draft editing uses that same authority. `TargetRequest.AllowsPartial` assesses
+an unfinished selection, including combination exclusions, allocation capacities
+and prefixes of complete grouped answers. `ResourceCost.Declarations` supplies
+the resource types an icon may declare for that cost, including printed-resource
+restrictions. Decisions exposes these assessments to controls; renderers do not
+maintain parallel count or wildcard rules.
+
 `ClientGameLifecycle` owns admission of setup, entry and session requests, one
 in-flight operation, and generation checks that discard superseded completions.
 It accepts the complete validated response, revision and history together from
@@ -271,6 +278,14 @@ The in-process path does not create a second gameplay API. The socket path may
 use asynchronous network input, but game-state mutation remains synchronous and
 single-threaded inside the host.
 
+Embedded transports detach requests and responses through the same
+source-generated JSON contract as socket messages. A queued request is captured
+before admission; a response is captured on the host owner before publication.
+Nested collections therefore cannot carry client mutations into an authoritative
+prompt or change an accepted request while it waits. Snapshot failures before
+dispatch report that the request did not commit; failures after dispatch preserve
+uncertainty. This is transport isolation and does not change the wire version.
+
 The queued transport exclusively owns endpoint exchange. Cancellation while a
 request is queued proves it was not sent; after dispatch begins, cancellation
 does not interrupt replay, persistence or consumption of the authoritative
@@ -385,6 +400,17 @@ file read, dynamic card code, process execution or cheat-console endpoint.
 
 Dataset loading happens at the host boundary. Engine and card projects accept
 already-opened content and never gain network or filesystem authority.
+
+`EngineAssemblyPolicyTests` checks the compiled dependency direction of Core,
+Rules, Cards, Content and Session, and rejects ambient filesystem, network,
+clock, randomness and threading capabilities there. Supplied streams, in-memory
+parsing and deterministic hashing remain allowed. These checks protect a hosting
+boundary; they do not replace review of iteration order or gameplay semantics.
+
+Parsed card facts and setup recipes are immutable snapshots shared across games.
+Duplicate identities within a catalog namespace fail ingestion rather than
+selecting whichever definition appeared last. Content admission is an engine
+choice, independent of where a host obtains the dataset bytes.
 
 ## Card rendering
 

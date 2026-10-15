@@ -192,7 +192,7 @@ public sealed class StatusAStunnedHeroExhaustsAttacksNothingTests : StatusTestBa
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var eventCard = world.CreateCard("event", world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
         Statuses.Give(world, hero, Statuses.Stunned);
-        BasicPowerInitiation.CardAttack(world, printed, 0, eventCard, villain, 8, "event", []);
+        BasicPowerInitiation.CardAttack(world, printed, new(0, eventCard, villain, 8, "event"), []);
         Agendas.Finish(world, printed);
         Assert.Equal(0, villain.Damage);
         Assert.True(hero.Ready);
@@ -210,7 +210,7 @@ public sealed class StatusAStunnedHeroExhaustsAttacksNothingTests : StatusTestBa
         var eventCard = world.CreateCard("event", world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
         scheme.PlaceTokens("k_threat", 5);
         Statuses.Give(world, hero, Statuses.Confused);
-        BasicThwartPowers.CardThwart(world, printed, 0, eventCard, scheme, 4, "event", []);
+        BasicThwartPowers.CardThwart(world, printed, new(0, eventCard, scheme, 4, "event"), []);
         Agendas.Finish(world, printed);
         Assert.Equal(5, scheme.Tokens["k_threat"]);
         Assert.True(hero.Ready);

@@ -128,12 +128,14 @@ as important.
      `datasets/rules-reference/`, `datasets/rules-packs/`,
      `datasets/marvelcdb-faq/`, `datasets/rulings/`.
    - *Authored* — written here because nothing else records it.
-     `datasets/setup/` is the only one: what a scenario is dealt from is
-     printed in rules inserts, not on cards, so there is nothing to generate it
-     from and no upstream to copy. **An authored dataset needs a gate**, since
-     it has no regeneration to compare against — `SetupDatasetTests` is
-     `datasets/setup/`'s, and every assertion in it is a failure a game would
-     otherwise meet at the table.
+     `datasets/setup/` records scenario recipes from rules inserts;
+     `datasets/abilities/` records executable interpretations of printed card
+     text. Neither has an upstream executable representation to copy.
+     **An authored dataset needs a gate**, since it has no regeneration to
+     compare against: `SetupDatasetTests` validates setup, while ability
+     admission/lowering tests and executable Core transcripts validate the
+     ability book. Each dataset's `UPSTREAM.md` identifies its authorities
+     and gates.
 
    A fourth kind is not on offer. If a dataset fits none of these, that is the
    thing to fix.

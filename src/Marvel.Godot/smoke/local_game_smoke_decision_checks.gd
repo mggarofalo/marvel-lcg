@@ -178,9 +178,13 @@ func _setup_control_paths() -> Array[String]:
 
 
 func _setup_control_is_visible(page: ScrollContainer, path: String) -> bool:
-	var control := _node(path) as Control
+	var control := main.get_node_or_null("Margin/Shell/Content/" + path) as Control
 	if control is OptionButton or control is MenuButton:
-		control = control.get_parent().get_node(str(control.name) + "Choices").get_child(0) as Control
+		var choices := control.get_parent().get_node_or_null(str(control.name) + "Choices")
+		control = choices.get_child(0) as Control if choices != null and choices.get_child_count() > 0 else null
+	if control == null:
+		_fail("setup control '%s' has no visible choice control" % path)
+		return false
 	var expected := _scaled_metric(44)
 	if control.custom_minimum_size.y < expected:
 		_fail("setup control '%s' is smaller than the pointer-target floor" % path)

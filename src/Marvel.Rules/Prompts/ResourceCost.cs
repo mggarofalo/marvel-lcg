@@ -6,6 +6,11 @@ public sealed record ResourceCost(
     IReadOnlyList<string>? Rule = null,
     bool Printed = false)
 {
+    /// <summary>Declarations this icon may make toward this component, before whole-payment assessment.</summary>
+    public IReadOnlyList<char> Declarations(char icon) =>
+        [.. Marvel.Rules.Play.Resources.Types.Where(declared =>
+            ResourcePaymentRequirements.CanDeclare(icon, declared, Printed))];
+
     /// <summary>
     /// Requires every resource in Cost to have this type, including when Cost
     /// names a variable. Mutually exclusive with the fixed Rule requirements.

@@ -138,9 +138,8 @@ public static class BasicPowerInitiation
     /// <b>Scheduled rather than resolved.</b> <c>.step.7</c> and <c>.step.8</c>
     /// put abilities around the attack — "after [character] attacks [and
     /// damages/defeats] [an enemy/a minion]", "after [character] is attacked"
-    /// — and one of them may ask the player something. A basic attack that
-    /// dealt its damage inline had nowhere to open those windows, which is why
-    /// Shocker's "after Shocker is attacked" could not be written.
+    /// — and one of them may ask the player something. The scheduled attack
+    /// retains its actor, target and source through those windows.
     /// </para>
     /// <para>
     /// The cost is already paid by the time this runs:
@@ -148,62 +147,19 @@ public static class BasicPowerInitiation
     /// exhausting is the cost of a basic power.
     /// </para>
     /// </remarks>
-    internal static void InitiateAttack(
-        World world, Card attacker, Card enemy, int player, long amount = -1,
-        Card? source = null, Card? moveFrom = null, bool overkill = false,
-        string trigger = AttackVerb, int abilityIndex = -1, int powerOrdinal = 0,
-        int resumeFrom = -1,
-        bool finalStep = false, IReadOnlyList<int>? targets = null, bool nested = false,
-        bool surgeGained = false, IReadOnlyList<string>? abilityPath = null,
-        string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
-        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
-        bool abilityHasContinuation = false, int abilityActor = -1)
+    internal static void InitiateAttack(World world, Card attacker, Card enemy, int player) =>
+        ScheduleAttack(world, new CharacterAttack(
+            attacker.ObjectId, enemy.ObjectId, player, TargetIncarnation: enemy.Incarnation));
+
+    private static void ScheduleAttack(World world, CharacterAttack attack, bool nested = false)
     {
-        var attack = new CharacterAttack(
-            attacker.ObjectId,
-            enemy.ObjectId,
-            player,
-            amount,
-            source?.ObjectId ?? -1,
-            moveFrom?.ObjectId ?? -1,
-            overkill,
-            trigger,
-            abilityIndex,
-            powerOrdinal,
-            resumeFrom,
-            finalStep,
-            targets,
-            surgeGained,
-            abilityPath,
-            abilityFace,
-            abilityResults,
-            abilityOccurrence,
-            discarded,
-            eachPlayerFrame,
-            finalPlayer,
-            abilityPlayer,
-            abilityActor,
-            abilityHasContinuation,
-            enemy.Incarnation);
         world.CharacterAttack = attack;
         var step = new PhaseStep(
-            Steps.CharacterAttacks,
-            world.Agenda.Current?.Round ?? 0,
-            2,
-            Index: player,
-            Subject: enemy.ObjectId,
-            Seat: player,
-            CharacterAttack: attack,
-            SurgeGained: surgeGained);
-        if (nested)
-        {
-            world.Agenda.Now(step);
-        }
-        else
-        {
-            world.Agenda.Then(step);
-        }
+            Steps.CharacterAttacks, world.Agenda.Current?.Round ?? 0, 2,
+            Index: attack.Player, Subject: attack.Enemy, Seat: attack.Player,
+            CharacterAttack: attack, SurgeGained: attack.SurgeGained);
+        if (nested) world.Agenda.Now(step);
+        else world.Agenda.Then(step);
     }
 
     /// <summary>Initiates a card ability labelled as an attack.</summary>
@@ -215,43 +171,29 @@ public static class BasicPowerInitiation
     /// the former while damage prohibitions inspect the latter.
     /// </remarks>
     public static bool CardAttack(
-        World world, ICardFacts facts, int player, Card source, Card enemy, long amount,
-        string trigger, List<GameEvent> events, bool overkill = false, Card? moveFrom = null,
-        int abilityIndex = -1, int powerOrdinal = 0, int resumeFrom = -1,
-        bool finalStep = false,
-        IReadOnlyList<int>? targets = null, bool nested = false,
-        bool surgeGained = false, IReadOnlyList<string>? abilityPath = null,
-        string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
-        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
-        bool abilityHasContinuation = false, Card? performer = null)
+        World world, ICardFacts facts, CardPowerInvocation power, List<GameEvent> events,
+        bool overkill = false, Card? moveFrom = null, bool nested = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(enemy);
+        ArgumentNullException.ThrowIfNull(power);
         ArgumentNullException.ThrowIfNull(events);
 
-        var attacker = performer ?? LabeledAbilities.Begin(
-            world, facts, player, source, [AttackVerb], events);
-        if (attacker is null)
-        {
-            return false;
-        }
+        var attacker = power.Performer ?? LabeledAbilities.Begin(
+            world, facts, power.Player, power.Source, [AttackVerb], events);
+        if (attacker is null) return false;
 
-        if (!Attackable(world, facts, player).Any(card => card.ObjectId == enemy.ObjectId)
-            || !world.DamageAbilities.CanTakeDamage(world, enemy, source))
+        if (!Attackable(world, facts, power.Player).Any(card => card.ObjectId == power.Target.ObjectId)
+            || !world.DamageAbilities.CanTakeDamage(world, power.Target, power.Source))
         {
             throw new RulesNotImplementedException(
-                $"card {enemy.ObjectId} is not an enemy {world.Seats[player].Name} can attack");
+                $"card {power.Target.ObjectId} is not an enemy {world.Seats[power.Player].Name} can attack");
         }
 
-        InitiateAttack(
-            world, attacker, enemy, player, amount, source, moveFrom, overkill, trigger,
-            abilityIndex, powerOrdinal, resumeFrom, finalStep, targets, nested, surgeGained,
-            abilityPath, abilityFace, abilityResults, abilityOccurrence, discarded,
-            eachPlayerFrame, finalPlayer, abilityPlayer, abilityHasContinuation,
-            attacker.ObjectId);
+        ScheduleAttack(world, new CharacterAttack(
+            attacker.ObjectId, power.Target.ObjectId, power.Player, power.Amount,
+            power.Source.ObjectId, moveFrom?.ObjectId ?? -1, overkill, power.Trigger,
+            power.Continuation, power.Origin, power.SurgeGained, power.Target.Incarnation), nested);
         return true;
     }
 
@@ -265,74 +207,26 @@ public static class BasicPowerInitiation
     /// its own, so the case comes from <c>rr:consequential-damage.1</c>: an
     /// ally's consequential damage is dealt "after resolving abilities that are
     /// triggered by the ally attacking <b>or thwarting</b>". Abilities triggered
-    /// by a thwart are abilities in the window after it, and a thwart that took
-    /// its threat off inline had nowhere to open one.
+    /// by a thwart resolve in its response window before consequential damage.
     /// </para>
     /// <para>
-    /// The number is 3 where the attack's is 2 so that <c>Moment.Id</c> tells
-    /// the two apart, and <b>nothing yet reads that number</b>: an occurrence
-    /// remembers which abilities have used it in a set of its own, so what
-    /// distinguishes two occurrences at run time is that they are two objects.
-    /// Giving a thwart the attack's number changes no behaviour today. It is
-    /// written correctly anyway because the id is what a saved game would have
-    /// to rebuild an occurrence from, and a number that was already wrong when
-    /// nothing read it would be wrong on the day something did.
+    /// The engine assigns number 3 to thwart and 2 to attack, so
+    /// <c>Moment.Id</c> distinguishes their scheduled occurrences. The number
+    /// is an engine identity choice, not a rulebook thwart-step number.
     /// </para>
     /// </remarks>
-    internal static void InitiateThwart(
-        World world, Card thwarter, Card scheme, int player, long amount = -1,
-        Card? source = null, string trigger = ThwartVerb, int abilityIndex = -1,
-        int powerOrdinal = 0, int resumeFrom = -1, bool finalStep = false,
-        IReadOnlyList<int>? targets = null,
-        ThreatPlacement? imminentThreat = null, bool nested = false,
-        bool surgeGained = false, IReadOnlyList<string>? abilityPath = null,
-        string abilityFace = "", IReadOnlyDictionary<string, long>? abilityResults = null,
-        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool eachPlayerFrame = false, bool finalPlayer = false, int abilityPlayer = -1,
-        bool abilityHasContinuation = false, int abilityActor = -1)
+    internal static void InitiateThwart(World world, Card thwarter, Card scheme, int player) =>
+        ScheduleThwart(world, new CharacterThwart(
+            thwarter.ObjectId, scheme.ObjectId, player, TargetIncarnation: scheme.Incarnation));
+
+    internal static void ScheduleThwart(World world, CharacterThwart thwart, bool nested = false)
     {
-        var thwart = new CharacterThwart(
-            thwarter.ObjectId,
-            scheme.ObjectId,
-            player,
-            amount,
-            source?.ObjectId ?? -1,
-            trigger,
-            abilityIndex,
-            powerOrdinal,
-            resumeFrom,
-            finalStep,
-            targets,
-            imminentThreat,
-            surgeGained,
-            abilityPath,
-            abilityFace,
-            abilityResults,
-            abilityOccurrence,
-            discarded,
-            eachPlayerFrame,
-            finalPlayer,
-            abilityPlayer,
-            abilityActor,
-            abilityHasContinuation,
-            scheme.Incarnation);
         world.CharacterThwart = thwart;
         var step = new PhaseStep(
-            Steps.CharacterThwarts,
-            world.Agenda.Current?.Round ?? 0,
-            3,
-            Index: player,
-            Subject: scheme.ObjectId,
-            Seat: player,
-            CharacterThwart: thwart,
-            SurgeGained: surgeGained);
-        if (nested)
-        {
-            world.Agenda.Now(step);
-        }
-        else
-        {
-            world.Agenda.Then(step);
-        }
+            Steps.CharacterThwarts, world.Agenda.Current?.Round ?? 0, 3,
+            Index: thwart.Player, Subject: thwart.Scheme, Seat: thwart.Player,
+            CharacterThwart: thwart, SurgeGained: thwart.SurgeGained);
+        if (nested) world.Agenda.Now(step);
+        else world.Agenda.Then(step);
     }
 }

@@ -109,9 +109,9 @@ internal static class AbilityConditionProjection
         IReadOnlySet<(int Card, string Status)> statusChanges,
         IReadOnlyDictionary<int, int> engagementChanges,
         ulong formsMayChange, int traceFirstPlayer, out bool result) =>
-        VillainConditionTrace.Create(
-            current, next, cast, discarded, threatChanges, damageChanges,
-            modifierChanges, traitChanges, statusChanges, engagementChanges,
+        new VillainConditionTrace(
+            current, next, cast, new VillainTraceChanges(discarded, threatChanges,
+                damageChanges, modifierChanges, traitChanges, statusChanges, engagementChanges),
             formsMayChange, traceFirstPlayer).TryTest(test, out result);
 
     internal static bool AmountCanDifferInVillainTrace(
@@ -123,9 +123,9 @@ internal static class AbilityConditionProjection
         IReadOnlySet<(int Card, string Status)> statusChanges,
         IReadOnlyDictionary<int, int> engagementChanges,
         ulong formsMayChange, int traceFirstPlayer, int dependencyDepth = 16) =>
-        VillainConditionTrace.Create(
-            current, next, cast, discarded, threatChanges, damageChanges,
-            modifierChanges, traitChanges, statusChanges, engagementChanges,
+        new VillainConditionTrace(
+            current, next, cast, new VillainTraceChanges(discarded, threatChanges,
+                damageChanges, modifierChanges, traitChanges, statusChanges, engagementChanges),
             formsMayChange, traceFirstPlayer).AmountCanDiffer(number, dependencyDepth);
 
     internal static bool TestCanChangeOnVillainAdvance(
@@ -137,8 +137,8 @@ internal static class AbilityConditionProjection
         IReadOnlySet<(int Card, string Status)> statusChanges,
         IReadOnlyDictionary<int, int> engagementChanges,
         ulong formsMayChange, int traceFirstPlayer, int dependencyDepth = 16) =>
-        VillainConditionTrace.Create(
-            current, next, cast, discarded, threatChanges, damageChanges,
-            modifierChanges, traitChanges, statusChanges, engagementChanges,
+        new VillainConditionTrace(
+            current, next, cast, new VillainTraceChanges(discarded, threatChanges,
+                damageChanges, modifierChanges, traitChanges, statusChanges, engagementChanges),
             formsMayChange, traceFirstPlayer).TestCanChange(test, dependencyDepth);
 }

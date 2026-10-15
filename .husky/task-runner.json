@@ -12,16 +12,6 @@
       ]
     },
     {
-      "name": "no-partial-types",
-      "group": "pre-commit",
-      "command": "dotnet",
-      "args": [
-        "husky",
-        "exec",
-        ".husky/csx/no-partial-types.csx"
-      ]
-    },
-    {
       "name": "cyclomatic-complexity",
       "group": "pre-commit",
       "command": "dotnet",

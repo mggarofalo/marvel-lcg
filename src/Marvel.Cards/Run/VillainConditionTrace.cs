@@ -12,27 +12,8 @@ namespace Marvel.Cards.Run;
 
 internal sealed class VillainConditionTrace(
     Card current, Card next, AbilityAdmissionScope cast,
-    HashSet<int> discarded, IReadOnlyDictionary<int, long> threatChanges,
-    IReadOnlyDictionary<int, long> damageChanges,
-    IReadOnlyDictionary<(int Card, string Field), long> modifierChanges,
-    IReadOnlyDictionary<int, HashSet<string>> traitChanges,
-    IReadOnlySet<(int Card, string Status)> statusChanges,
-    IReadOnlyDictionary<int, int> engagementChanges,
-    ulong formsMayChange, int traceFirstPlayer)
+    VillainTraceChanges changes, ulong formsMayChange, int traceFirstPlayer)
 {
-    internal static VillainConditionTrace Create(
-        Card current, Card next, AbilityAdmissionScope cast,
-        HashSet<int> discarded, IReadOnlyDictionary<int, long> threatChanges,
-        IReadOnlyDictionary<int, long> damageChanges,
-        IReadOnlyDictionary<(int Card, string Field), long> modifierChanges,
-        IReadOnlyDictionary<int, HashSet<string>> traitChanges,
-        IReadOnlySet<(int Card, string Status)> statusChanges,
-        IReadOnlyDictionary<int, int> engagementChanges,
-        ulong formsMayChange, int traceFirstPlayer) =>
-        new(current, next, cast, discarded, threatChanges, damageChanges,
-            modifierChanges, traitChanges, statusChanges, engagementChanges,
-            formsMayChange, traceFirstPlayer);
-
     internal bool TryTest(AbilityCondition test, out bool result)
     {
         if (LogicalTrace(test) is { } logical)
@@ -42,10 +23,10 @@ internal sealed class VillainConditionTrace(
         }
         if (TryDirectTest(test, out result)) return true;
         if (TryTraceEnteredCardTest(
-            test, cast, discarded, traitChanges, statusChanges, out result)) return true;
+            test, cast, changes.Discarded, changes.Traits, changes.Statuses, out result)) return true;
         if (TraceTestCard(test) is { } selector
             && Find(selector, cast) is { } absent
-            && discarded.Contains(absent.ObjectId))
+            && changes.Discarded.Contains(absent.ObjectId))
         {
             result = false;
             return true;
@@ -128,20 +109,20 @@ internal sealed class VillainConditionTrace(
         string.Equals(cast.World.Facts.Title(card.FaceId), title,
             StringComparison.Ordinal)
         && (DeckTypes.IsInPlay(card.Area.Type)
-            ? !discarded.Contains(card.ObjectId)
+            ? !changes.Discarded.Contains(card.ObjectId)
             : EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion
-                && !discarded.Contains(card.ObjectId));
+                && !changes.Discarded.Contains(card.ObjectId));
 
     private bool TryTraceExists(AbilityCardSelection cards, out bool result)
     {
-        if (TraceVillainExists(cards, next, cast, discarded) is { } found)
+        if (TraceVillainExists(cards, next, cast, changes.Discarded) is { } found)
         {
             result = found;
             return true;
         }
         if (TryTraceCount(
-            cards, next, cast, discarded, traitChanges, modifierChanges,
-            engagementChanges, formsMayChange, out long count))
+            cards, next, cast, changes.Discarded, changes.Traits, changes.Modifiers,
+            changes.Engagement, formsMayChange, out long count))
         {
             result = count > 0;
             return true;
@@ -154,11 +135,11 @@ internal sealed class VillainConditionTrace(
         AbilityCondition.AtLeast comparison, out bool result)
     {
         if (!TryTraceCountAmount(
-                comparison.Value, next, cast, discarded, traitChanges,
-                modifierChanges, engagementChanges, formsMayChange, out long value)
+                comparison.Value, next, cast, changes.Discarded, changes.Traits,
+                changes.Modifiers, changes.Engagement, formsMayChange, out long value)
             || !TryTraceCountAmount(
-                comparison.Count, next, cast, discarded, traitChanges,
-                modifierChanges, engagementChanges, formsMayChange, out long count))
+                comparison.Count, next, cast, changes.Discarded, changes.Traits,
+                changes.Modifiers, changes.Engagement, formsMayChange, out long count))
         {
             result = false;
             return false;
@@ -210,51 +191,43 @@ internal sealed class VillainConditionTrace(
 
     private bool ThreatCanDiffer(AbilityCardSelection cards) =>
         PotentialVillainSelector(cards, cast)
-        || TraceEnteredCard(cards, discarded, cast) is not null
+        || TraceEnteredCard(cards, changes.Discarded, cast) is not null
         || Find(cards, cast) is { } card
-            && (discarded.Contains(card.ObjectId)
-                || threatChanges.ContainsKey(card.ObjectId));
+            && changes.ThreatMayDiffer(card.ObjectId);
 
     private bool DamageCanDiffer(AbilityCardSelection cards) =>
         PotentialVillainSelector(cards, cast)
-        || (Find(cards, cast) ?? TraceEnteredCard(cards, discarded, cast)) is { } card
-            && (discarded.Contains(card.ObjectId)
-                || damageChanges.ContainsKey(card.ObjectId));
+        || (Find(cards, cast) ?? TraceEnteredCard(cards, changes.Discarded, cast)) is { } card
+            && changes.DamageMayDiffer(card.ObjectId);
 
     private bool HealthCanDiffer(AbilityCardSelection cards, int depth) =>
         PotentialVillainSelector(cards, cast)
-        || TraceEnteredCard(cards, discarded, cast) is not null
+        || TraceEnteredCard(cards, changes.Discarded, cast) is not null
         || Find(cards, cast) is { } card
-            && (discarded.Contains(card.ObjectId)
-                || damageChanges.ContainsKey(card.ObjectId)
-                || modifierChanges.ContainsKey((card.ObjectId, "health"))
+            && (changes.HealthMayDiffer(card.ObjectId)
                 || ConditionalModifierCanDiffer(card, "health", depth));
 
     private bool CountCanDiffer(AbilityCardSelection cards) =>
         !TryTraceCount(
-            cards, next, cast, discarded, traitChanges, modifierChanges,
-            engagementChanges, formsMayChange, out long traced)
+            cards, next, cast, changes.Discarded, changes.Traits, changes.Modifiers,
+            changes.Engagement, formsMayChange, out long traced)
         || traced != Every(cards, cast).Count;
 
     private bool ModifiedCanDiffer(AbilityNumber.Modified modified, int depth) =>
         PotentialVillainSelector(modified.Card, cast)
-        || TraceEnteredCard(modified.Card, discarded, cast) is not null
+        || TraceEnteredCard(modified.Card, changes.Discarded, cast) is not null
         || Find(modified.Card, cast) is { } card
             && ModifiedCardCanDiffer(card, modified.Field, depth);
 
     private bool ModifiedCardCanDiffer(Card card, string field, int depth) =>
-        discarded.Contains(card.ObjectId)
-        || modifierChanges.ContainsKey((card.ObjectId, field))
-        || damageChanges.ContainsKey(card.ObjectId)
-        || traitChanges.ContainsKey(card.ObjectId)
-        || statusChanges.Any(change => change.Card == card.ObjectId)
+        changes.FieldMayDiffer(card.ObjectId, field)
         || ConditionalModifierCanDiffer(card, field, depth);
 
     private bool ConditionalModifierCanDiffer(Card card, string field, int depth) =>
         AbilityPowerProjection.ConditionalModifierCanDiffer(
-            card, field, current, next, cast, discarded, threatChanges,
-            damageChanges, modifierChanges, traitChanges, statusChanges,
-            engagementChanges, formsMayChange, traceFirstPlayer, depth);
+            card, field, current, next, cast, changes.Discarded, changes.Threat,
+            changes.Damage, changes.Modifiers, changes.Traits, changes.Statuses,
+            changes.Engagement, formsMayChange, traceFirstPlayer, depth);
 
     private bool ConditionalAmountCanDiffer(
         AbilityNumber.Conditional conditional, int depth) =>
@@ -265,7 +238,7 @@ internal sealed class VillainConditionTrace(
     internal bool TestCanChange(AbilityCondition test, int depth)
     {
         if (TryTraceEnteredCardTest(
-            test, cast, discarded, traitChanges, statusChanges, out bool traced)
+            test, cast, changes.Discarded, changes.Traits, changes.Statuses, out bool traced)
             && traced != Test(test, cast)) return true;
         if (test is AbilityCondition.CardText text)
             return CardTextCanChange(text);
@@ -276,11 +249,11 @@ internal sealed class VillainConditionTrace(
             AbilityCondition.Negated negated => TestCanChange(negated.Operand, depth),
             AbilityCondition.InForm form => FormCanChange(form),
             AbilityCondition.TitleInPlay title => TitleCanChange(title.Title),
-            AbilityCondition.Exists exists => TraceCardsInPlayMayDiffer(discarded, cast)
+            AbilityCondition.Exists exists => TraceCardsInPlayMayDiffer(changes.Discarded, cast)
                 || PotentialVillainSelector(exists.Cards, cast),
             AbilityCondition.IsKind kind => PotentialVillainSelector(kind.Card, cast)
                 || Find(kind.Card, cast) is { } card
-                    && discarded.Contains(card.ObjectId),
+                    && changes.Discarded.Contains(card.ObjectId),
             AbilityCondition.AtLeast comparison => ComparisonCanChange(comparison, depth),
             _ => false,
         };
@@ -303,23 +276,20 @@ internal sealed class VillainConditionTrace(
                 StringComparison.Ordinal)
             || string.Equals(title, cast.World.Facts.Title(next.FaceId),
                 StringComparison.Ordinal))
-        || TraceTitlePresenceMayDiffer(title, discarded, cast);
+        || TraceTitlePresenceMayDiffer(title, changes.Discarded, cast);
 
     private bool CardTextCanChange(AbilityCondition.CardText text) =>
         text.Property switch
         {
             AbilityCardTextProperty.Status => PotentialVillainSelector(text.Card, cast)
                 || Find(text.Card, cast) is { } card
-                    && (discarded.Contains(card.ObjectId)
-                        || statusChanges.Contains((card.ObjectId, text.Text))),
+                    && changes.StatusMayDiffer(card.ObjectId, text.Text),
             AbilityCardTextProperty.Trait => PotentialVillainSelector(text.Card, cast)
                 || Find(text.Card, cast) is { } card
-                    && (discarded.Contains(card.ObjectId)
-                        || traitChanges.TryGetValue(card.ObjectId, out var traits)
-                            && traits.Contains(text.Text)),
+                    && changes.TraitMayDiffer(card.ObjectId, text.Text),
             AbilityCardTextProperty.Title => PotentialVillainSelector(text.Card, cast)
                 || Find(text.Card, cast) is { } card
-                    && discarded.Contains(card.ObjectId),
+                    && changes.Discarded.Contains(card.ObjectId),
             _ => false,
         };
 

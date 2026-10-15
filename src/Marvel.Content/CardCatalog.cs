@@ -48,7 +48,10 @@ public sealed class CardCatalog : ICardFacts
         {
             string id = element.GetProperty("card_id").GetString()
                         ?? throw new JsonException("a card has no 'card_id'");
-            parsed[id] = CardCatalogJson.ReadEntry(element);
+            // Identity uniqueness is our ingestion contract: ambiguous facts
+            // must not depend on which duplicate happens to appear last.
+            if (!parsed.TryAdd(id, CardCatalogJson.ReadEntry(element)))
+                throw new JsonException($"duplicate card identity '{id}'");
         }
 
         return new CardCatalog(parsed);

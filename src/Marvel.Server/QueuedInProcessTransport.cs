@@ -40,7 +40,16 @@ public sealed class QueuedInProcessTransport : IEngineTransport, IDisposable, IA
             if (closing)
                 return ValueTask.FromException<EngineResponse>(new EngineTransportException(
                     requestMayHaveCommitted: false, new ObjectDisposedException(nameof(QueuedInProcessTransport))));
-            var exchange = new QueuedEngineExchange(request, cancellationToken);
+            QueuedEngineExchange exchange;
+            try
+            {
+                exchange = new QueuedEngineExchange(request, cancellationToken);
+            }
+            catch (Exception failure)
+            {
+                return ValueTask.FromException<EngineResponse>(new EngineTransportException(
+                    requestMayHaveCommitted: false, failure));
+            }
             pending.Enqueue(exchange);
             Monitor.Pulse(gate);
             return new(exchange.Response);

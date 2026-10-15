@@ -336,6 +336,16 @@ The continuation records stable data such as the source card, ability address,
 selected targets, paid resources and intermediate results. It never stores a C#
 delegate or a copy of the effect tree.
 
+Card-labelled attacks and thwarts carry one `CardPowerContinuation` intact from
+the interpreter to the queued power and back. Rules owns status replacement,
+legal targets, source/performer identity, target incarnation, enclosing
+occurrence, timing and the reveal's gained-Surge fact. Cards owns the
+continuation's structural path,
+bindings and resumption. `CardPowerInvocation` describes the power being
+initiated; it does not flatten the interpreter's suspended work into arguments.
+`AbilityPowerResolution` resumes the power and its containing ability, while
+`AbilityWindowResolution` owns activation of an ordinary window ability.
+
 This preserves the engine contract:
 
 ```text

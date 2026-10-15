@@ -58,7 +58,7 @@ func _release_table_resources() -> bool:
 func _open_setup(packed: PackedScene) -> bool:
 	main = packed.instantiate() as Control
 	render_viewport.add_child(main)
-	if not await _wait_for(func() -> bool: return _button_named("Start game") != null):
+	if not await _wait_for_setup():
 		_fail("setup never became ready")
 		return false
 	if not await _visual_system_is_resolved():
@@ -66,6 +66,12 @@ func _open_setup(packed: PackedScene) -> bool:
 	if not await _entry_modes_are_explicit():
 		return false
 	return await _capture_checkpoint("setup")
+
+
+func _wait_for_setup() -> bool:
+	# Setup discovery is asynchronous; the enabled commitment means its choices
+	# have been published and the setup controls can be inspected.
+	return await preload("res://smoke/setup_smoke_readiness.gd").wait_for_start(main) != null
 
 
 func _configure_seeded_game() -> void:
