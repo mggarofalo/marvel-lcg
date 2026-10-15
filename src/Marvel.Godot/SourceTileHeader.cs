@@ -6,7 +6,8 @@ namespace Marvel.Godot;
 /// <summary>Native-size source identity and symbolic public state within a measured title band.</summary>
 internal static class SourceTileHeader
 {
-    internal static Control Create(BoardCardPresentation card, string copy)
+    internal static Control Create(BoardCardPresentation card, string copy,
+        InterfaceScale readingScale = InterfaceScale.Standard)
     {
         var panel = new VBoxContainer { Name = "SourceTitleBand", MouseFilter = Control.MouseFilterEnum.Ignore };
         panel.AddThemeConstantOverride("separation", 0);
@@ -14,26 +15,29 @@ internal static class SourceTileHeader
         panel.Resized += panel.QueueRedraw;
         var inset = new MarginContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         inset.AddThemeConstantOverride("margin_left", 7);
-        inset.AddThemeConstantOverride("margin_right", 3);
+        inset.AddThemeConstantOverride("margin_right", 4);
         panel.AddChild(inset);
         var header = new HBoxContainer { Name = "SourceHeaderLine", MouseFilter = Control.MouseFilterEnum.Ignore };
-        header.AddThemeConstantOverride("separation", 4);
+        header.AddThemeConstantOverride("separation", 3);
         inset.AddChild(header);
-        Label title = CardSourceStrip.Label(card.Title, "SourceTitle", 14, CardTypography.Title);
+        int titleSize = CompactTableTypography.Size(14, readingScale);
+        Label title = CardSourceStrip.Label(card.Title, "SourceTitle", titleSize, CardTypography.Title);
         title.Uppercase = true;
         title.CustomMinimumSize = new Vector2(0, 28);
         title.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         title.AutowrapMode = TextServer.AutowrapMode.Off;
         title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         title.AccessibilityName = card.Title;
-        title.TooltipText = card.Title;
         title.VerticalAlignment = VerticalAlignment.Center;
         title.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
-        title.Resized += () => FitTitle(title);
+        title.Resized += () => FitTitle(title, readingScale);
         header.AddChild(title);
-        header.AddChild(Symbol(card.Kind == "SUPPORT" ? "support" : "upgrade", "SourceType", card.Kind));
+        var cluster = new HBoxContainer { Name = "SourceStateCluster", MouseFilter = Control.MouseFilterEnum.Ignore };
+        cluster.AddThemeConstantOverride("separation", 3);
+        header.AddChild(cluster);
+        cluster.AddChild(Symbol(card.Kind == "SUPPORT" ? "support" : "upgrade", "SourceType", card.Kind));
         bool exhausted = SpatialTableZones.IsExhausted(card);
-        header.AddChild(Symbol(exhausted ? "exhausted" : "ready", "SourceState", exhausted ? "Exhausted" : "Ready"));
+        cluster.AddChild(Symbol(exhausted ? "exhausted" : "ready", "SourceState", exhausted ? "Exhausted" : "Ready"));
         var symbols = new HFlowContainer { Name = "SourceSymbols", MouseFilter = Control.MouseFilterEnum.Ignore,
             CustomMinimumSize = new Vector2(0, 16) };
         symbols.AddThemeConstantOverride("h_separation", 4);
@@ -42,16 +46,17 @@ internal static class SourceTileHeader
         if (copy.Length > 0)
         {
             Label marker = CardSourceStrip.Label(copy.Replace("copy ", "", StringComparison.Ordinal), "SourceCopy", 10, CardTypography.Bold);
-            marker.AccessibilityName = marker.TooltipText = copy;
+            marker.AccessibilityName = copy;
+            marker.CustomMinimumSize = new Vector2(8, 0);
             marker.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
             marker.AutowrapMode = TextServer.AutowrapMode.Off;
             header.AddChild(marker);
         }
         for (int index = 0; index < card.Counters.Count; index++)
             symbols.AddChild(SourceCounterPips.Create(card.Counters[index], card.Counters.Count > 1));
-        if (card.Damage > 0)
+        if (card.DamageKnown && card.Damage > 0)
         {
-            var damage = new HBoxContainer { AccessibilityName = $"{card.Damage} damage", TooltipText = $"{card.Damage} damage" };
+            var damage = new HBoxContainer { AccessibilityName = $"{card.Damage} damage" };
             damage.AddChild(Symbol("heart", "SourceDamage", damage.AccessibilityName));
             Label count = CardSourceStrip.Label(card.Damage.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 "SourceDamageValue", 10, CardTypography.Body);
@@ -63,21 +68,33 @@ internal static class SourceTileHeader
         return panel;
     }
 
-    private static void FitTitle(Label title)
+    private static void FitTitle(Label title, InterfaceScale readingScale)
     {
-        int size = 14;
+        int size = CompactTableTypography.Size(14, readingScale);
         string text = title.Text.ToUpperInvariant();
-        while (size > 11 && CardTypography.Title.GetStringSize(text, fontSize: size).X > title.Size.X)
+        while (size > CompactTableTypography.Size(11, readingScale)
+            && CardTypography.Title.GetStringSize(text, fontSize: size).X > title.Size.X)
             size--;
         title.AddThemeFontSizeOverride("font_size", size);
+        bool twoLines = CardTypography.Title.GetStringSize(text, fontSize: size).X > title.Size.X;
+        title.AutowrapMode = twoLines ? TextServer.AutowrapMode.WordSmart : TextServer.AutowrapMode.Off;
+        title.MaxLinesVisible = 2;
+        // Compact identity reserves at most two lines. Longer titles use explicit
+        // single-line ellipsis; inspection and accessibility retain the full name.
+        if (twoLines && title.GetLineCount() > 2)
+        {
+            twoLines = false;
+            title.AutowrapMode = TextServer.AutowrapMode.Off;
+        }
+        title.CustomMinimumSize = new Vector2(0, twoLines ? Mathf.Ceil(CardTypography.Title.GetHeight(size)) * 2 : 28);
     }
 
     private static Control Symbol(string glyph, string name, string description)
     {
-        var icon = new Control { Name = name, CustomMinimumSize = new Vector2(16, 16),
+        var icon = new Control { Name = name, CustomMinimumSize = new Vector2(14, 14),
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
-            AccessibilityName = description, TooltipText = description, MouseFilter = Control.MouseFilterEnum.Pass };
-        icon.AddChild(CardGlyphRendering.Create(glyph, "SourceSymbol", new Rect2(0, 0, 16, 16), CardFaceStyle.Paper));
+            AccessibilityName = description, MouseFilter = Control.MouseFilterEnum.Pass };
+        icon.AddChild(CardGlyphRendering.Create(glyph, "SourceSymbol", new Rect2(0, 0, 14, 14), CardFaceStyle.Paper));
         return icon;
     }
 

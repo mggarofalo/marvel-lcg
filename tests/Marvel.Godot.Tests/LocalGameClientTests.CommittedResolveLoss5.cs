@@ -76,6 +76,12 @@ public sealed class LocalGameClientCommittedResolveLossTests : LocalGameClientTe
             }
         }, complete with
         {
+            World = complete.World! with { LossReason = (PlayerLossReason)999 }
+        }, complete with
+        {
+            World = complete.World! with { LossReason = PlayerLossReason.AllPlayersEliminated }
+        }, complete with
+        {
             Events = [new FieldSet(1, null!, From: 0, To: 1)],
         }, complete with
         {

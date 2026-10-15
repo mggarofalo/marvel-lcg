@@ -32,6 +32,8 @@ internal static class CardFaceTokens
             slot.AutowrapMode = TextServer.AutowrapMode.Off;
             slot.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
             slot.TooltipText = name;
+            slot.AccessibilityName = name;
+            slot.MouseFilter = Control.MouseFilterEnum.Pass;
             ResourceIconRendering.Style(slot, glyph[0]);
             icons.AddChild(slot);
         }
@@ -72,6 +74,8 @@ internal static class CardFaceTokens
         label.VerticalAlignment = VerticalAlignment.Center;
         label.AddThemeColorOverride("font_color", threat ? CardFaceStyle.Ink : Colors.White);
         label.TooltipText = threat ? $"Threat {value.Value}" : $"Hit points {value.Value}";
+        label.AccessibilityName = label.TooltipText;
+        label.MouseFilter = Control.MouseFilterEnum.Pass;
         token.AddChild(label);
         AddMaximumMark(token, label, value, r);
         if (value.PerPlayer)

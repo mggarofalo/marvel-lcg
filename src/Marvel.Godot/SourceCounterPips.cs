@@ -15,7 +15,7 @@ internal static class SourceCounterPips
         bool pips = numeric && count is >= 0 and <= MaximumPips;
         string name = $"{value.Name}: {value.Value}";
         var group = new HBoxContainer { Name = "SourceCounter", AccessibilityName = name,
-            TooltipText = name, MouseFilter = Control.MouseFilterEnum.Pass };
+            MouseFilter = Control.MouseFilterEnum.Pass };
         group.AddThemeConstantOverride("separation", 1);
         string abbreviation = showName ? value.Name[..Math.Min(3, value.Name.Length)].ToUpperInvariant() : "";
         Label label = CardSourceStrip.Label(pips && count > 0 ? abbreviation : $"{abbreviation} {value.Value}".Trim(),

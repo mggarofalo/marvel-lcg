@@ -9,7 +9,6 @@ public static class ClientTheme
     private static readonly Color Input = Surface.Darkened(0.18f);
     private static readonly Color Ink = C(VisualSystem.Palette.Text);
     private static readonly Color Muted = C(VisualSystem.Palette.MutedText);
-    private static readonly Color OnAccent = C(VisualSystem.Palette.OnAccent);
     private static readonly Color Amber = C(VisualSystem.Palette.Accent);
     private static readonly Color Hero = C(VisualSystem.Palette.Legal);
     private static readonly Color Encounter = C(VisualSystem.Palette.Danger);
@@ -24,7 +23,7 @@ public static class ClientTheme
         ClientThemeLayout.Define(theme, VisualSystem.Spacing(scale));
         ClientThemeSurfaces.Define(theme, Surface, Raised, Outline, Amber, Encounter, Hero);
         DefineInputs(theme, controls);
-        DefineButtons(theme, type, controls);
+        ClientThemeButtons.Define(theme, type, controls);
         DefineOtherControls(theme);
         return theme;
     }
@@ -40,7 +39,7 @@ public static class ClientTheme
         StyleBoxFlat normal = Flat(Input, Alpha(Outline, 0.62f),
             1, controls.CornerRadius, M(13, 9, 13, 9));
         StyleBoxFlat hover = Flat(
-            Raised, Amber, 2, controls.CornerRadius, M(13, 9, 13, 9));
+            C(ButtonMaterials.SecondaryHover), Amber, 1, controls.CornerRadius, M(13, 9, 13, 9));
         StyleBoxFlat focus = FocusBox(controls);
         StyleBoxFlat disabled = Flat(
             Surface.Darkened(0.08f), Alpha(Outline, 0.42f),
@@ -67,75 +66,6 @@ public static class ClientTheme
         hover.Dispose();
         focus.Dispose();
         disabled.Dispose();
-    }
-
-    private static void DefineButtons(
-        Theme theme,
-        TypeMetrics type,
-        ControlMetrics controls)
-    {
-        ButtonSet(theme, "Button", Raised, Alpha(Outline, 0.58f), controls);
-        ButtonSet(theme, GodotThemeVariations.MultiSelectButton,
-            Input, Alpha(Outline, 0.62f), controls, basis: "MenuButton");
-        ButtonSet(theme, GodotThemeVariations.ChoiceButton,
-            Raised, Alpha(Outline, 0.58f), controls);
-        ButtonSet(theme, GodotThemeVariations.LegalTargetButton,
-            Raised.Lightened(0.04f), Hero, controls, left: 4);
-        ButtonSet(theme, GodotThemeVariations.SelectedTargetButton,
-            Raised.Lightened(0.12f), Amber, controls, left: 7);
-        ButtonSet(theme, GodotThemeVariations.UnavailableButton,
-            Surface.Darkened(0.08f), Alpha(Outline, 0.42f), controls);
-
-        string selected = GodotThemeVariations.SelectedTargetButton;
-        foreach (string colorName in new[]
-                 {
-                     "font_color", "font_hover_color", "font_pressed_color",
-                     "font_focus_color",
-                 })
-        {
-            theme.SetColor(colorName, selected, OnAccent);
-        }
-        SetStylebox(theme, "normal", selected, Flat(
-            Amber, Amber.Darkened(0.22f), 2, controls.CornerRadius,
-            M(12, 10, 12, 10), left: 7));
-        SetStylebox(theme, "hover", selected, Flat(
-            Amber.Lightened(0.08f), OnAccent, 2, controls.CornerRadius,
-            M(12, 9, 12, 11), left: 8));
-        SetStylebox(theme, "pressed", selected, Flat(
-            Amber, OnAccent, 2, controls.CornerRadius,
-            M(12, 12, 12, 8), left: 8));
-        SetStylebox(theme, "hover_pressed", selected, Flat(
-            Amber.Lightened(0.08f), OnAccent, 3, controls.CornerRadius,
-            M(12, 12, 12, 8), left: 8));
-
-        string unavailable = GodotThemeVariations.UnavailableButton;
-        SetStylebox(theme, "disabled", unavailable, Flat(
-            Surface.Darkened(0.08f), Alpha(Outline, 0.42f),
-            1, controls.CornerRadius, M(12, 10, 12, 10), left: 2));
-
-        string primary = GodotThemeVariations.PrimaryButton;
-        Variation(theme, primary, "Button");
-        theme.SetColor("font_color", primary, OnAccent);
-        theme.SetColor("font_hover_color", primary, OnAccent);
-        theme.SetColor("font_pressed_color", primary, OnAccent);
-        theme.SetColor("font_disabled_color", primary, Muted);
-        theme.SetFontSize("font_size", primary, type.Body);
-        SetStylebox(theme, "normal", primary, Flat(
-            Encounter.Darkened(0.14f), Encounter, 1, controls.CornerRadius,
-            M(18, 11, 18, 11), bottom: 4));
-        SetStylebox(theme, "hover", primary, Flat(
-            Encounter, Amber, 2, controls.CornerRadius,
-            M(18, 10, 18, 12), bottom: 5));
-        SetStylebox(theme, "pressed", primary, Flat(
-            Encounter.Darkened(0.28f), Amber, 1, controls.CornerRadius,
-            M(18, 13, 18, 9), left: 5));
-        SetStylebox(theme, "hover_pressed", primary, Flat(
-            Encounter.Darkened(0.18f), Amber, 2, controls.CornerRadius,
-            M(18, 13, 18, 9), left: 5));
-        SetStylebox(theme, "focus", primary, FocusBox(controls));
-        SetStylebox(theme, "disabled", primary, Flat(
-            Surface.Darkened(0.08f), Alpha(Outline, 0.42f),
-            1, controls.CornerRadius, M(18, 11, 18, 11)));
     }
 
     private static void DefineOtherControls(Theme theme)
@@ -178,45 +108,6 @@ public static class ClientTheme
     {
         Variation(theme, variation, "PanelContainer");
         SetStylebox(theme, "panel", variation, style);
-    }
-
-    private static void ButtonSet(
-        Theme theme,
-        string variation,
-        Color background,
-        Color border,
-        ControlMetrics controls,
-        int left = 1,
-        string basis = "Button")
-    {
-        if (variation != basis)
-        {
-            Variation(theme, variation, basis);
-        }
-
-        theme.SetColor("font_color", variation, Ink);
-        theme.SetColor("font_hover_color", variation, Ink);
-        theme.SetColor("font_pressed_color", variation, Ink);
-        theme.SetColor("font_focus_color", variation, Ink);
-        theme.SetColor("font_disabled_color", variation, Muted);
-        SetStylebox(theme, "normal", variation, Flat(
-            background, border, 1, controls.CornerRadius,
-            M(12, 10, 12, 10), left: left, bottom: 3));
-        SetStylebox(theme, "hover", variation, Flat(
-            background.Lightened(0.08f), Amber, 2, controls.CornerRadius,
-            M(12, 9, 12, 11),
-            left: Math.Max(2, left), bottom: 4));
-        SetStylebox(theme, "pressed", variation, Flat(
-            background.Darkened(0.08f), Amber, 1, controls.CornerRadius,
-            M(12, 12, 12, 8),
-            left: Math.Max(6, left)));
-        SetStylebox(theme, "hover_pressed", variation, Flat(
-            background, Amber, 2, controls.CornerRadius, M(12, 12, 12, 8),
-            left: Math.Max(6, left)));
-        SetStylebox(theme, "focus", variation, FocusBox(controls));
-        SetStylebox(theme, "disabled", variation, Flat(
-            Surface.Darkened(0.08f), Alpha(Outline, 0.42f),
-            1, 7, M(12, 10, 12, 10)));
     }
 
     private static void Variation(Theme theme, string variation, string basis) =>

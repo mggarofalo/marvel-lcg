@@ -87,7 +87,11 @@ internal sealed class AbilityOfferQueries
         {
             if (ResourceAbility(world, player, card) is not { } ability) continue;
             string generated = Generated(ability.Effect, world, player);
-            if (generated.Length > 0) sources.Add(new ResourceSource(card.ObjectId, generated));
+            if (generated.Length > 0) sources.Add(new ResourceSource(card.ObjectId, generated)
+            {
+                AbilityName = ability.Name,
+                CostDescription = AbilityCostDescription.Summary(world, card, player, ability.Cost),
+            });
         }
         return sources;
     }

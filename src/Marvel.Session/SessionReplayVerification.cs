@@ -17,7 +17,8 @@ internal static class SessionReplayVerification
         int unitCount,
         Func<SessionSetup, ReplayOpenedGame> open,
         bool requireExposures,
-        List<HistoryUnitInspection>? history = null)
+        List<HistoryUnitInspection>? history = null,
+        List<PromptRecord>? verifiedPrompts = null)
     {
         ReplayOpenedGame opened = open(save.Setup);
         Game game = opened.Game;
@@ -26,7 +27,7 @@ internal static class SessionReplayVerification
         for (int unitIndex = 0; unitIndex < unitCount; unitIndex++)
         {
             derived.Add(ReplayUnit(
-                save.Units[unitIndex], unitIndex, game, requireExposures, history));
+                save.Units[unitIndex], unitIndex, game, requireExposures, history, verifiedPrompts));
         }
 
         RequireReplayFrontier(save, unitCount, requireExposures);
@@ -54,7 +55,8 @@ internal static class SessionReplayVerification
         int unitIndex,
         Game game,
         bool requireExposures,
-        List<HistoryUnitInspection>? history)
+        List<HistoryUnitInspection>? history,
+        List<PromptRecord>? verifiedPrompts)
     {
         RequireUnitPosition(unit, unitIndex, game);
         ReplayHistory? inspection = CreateReplayHistory(history, unit);
@@ -62,7 +64,7 @@ internal static class SessionReplayVerification
         string? derivedRole = null;
         for (int decisionIndex = 0; decisionIndex < unit.Decisions.Count; decisionIndex++)
         {
-            ReplayUnitDecision(
+            Prompt verified = ReplayUnitDecision(
                 unit,
                 unitIndex,
                 decisionIndex,
@@ -70,6 +72,7 @@ internal static class SessionReplayVerification
                 inspection,
                 ref derivedRole,
                 ref exposures);
+            verifiedPrompts?.Add(PromptRecord.From(verified));
         }
 
         RequireUnitBoundary(unit, unitIndex, game, derivedRole);
@@ -83,7 +86,7 @@ internal static class SessionReplayVerification
         JournalUnit unit) =>
         history is not null && unit.Status == "complete" ? new ReplayHistory() : null;
 
-    internal static void ReplayUnitDecision(
+    internal static Prompt ReplayUnitDecision(
         JournalUnit unit,
         int unitIndex,
         int decisionIndex,
@@ -101,12 +104,13 @@ internal static class SessionReplayVerification
         Decision decision = step.Decision.Resolve(prompt);
         ObserveReplayRoot(inspection, unit, step, decisionIndex, game, prompt, decision);
         ObserveReplayResources(inspection, step, decision, game);
-        DeriveReplayRole(unit, step, unitIndex, decisionIndex, game, prompt, decision,
-            ref derivedRole);
+        if (decisionIndex == 0)
+            derivedRole = DeriveReplayRole(unit, step, unitIndex, game, prompt, decision);
         SessionReplay.ReplayDecision resolved = ResolveReplayDecision(
             step, decision, context, game, exposures);
         exposures = resolved.Exposures;
         ObserveReplayEvents(inspection, resolved.Events);
+        return prompt;
     }
 
     internal static void ObserveReplayRoot(
@@ -124,23 +128,16 @@ internal static class SessionReplayVerification
         }
     }
 
-    internal static void DeriveReplayRole(
+    private static string DeriveReplayRole(
         JournalUnit unit,
         JournalStep step,
         int unitIndex,
-        int decisionIndex,
         Game game,
         Prompt prompt,
-        Decision decision,
-        ref string? derivedRole)
+        Decision decision)
     {
-        if (decisionIndex != 0)
-        {
-            return;
-        }
-
         RequireRootMetadata(unit, step, unitIndex);
-        derivedRole = UnitRole(game, prompt, decision);
+        return UnitRole(game, prompt, decision);
     }
 
     internal static void ObserveReplayResources(

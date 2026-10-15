@@ -203,7 +203,4 @@ func _direct_choice_once(choice: Button) -> bool:
 
 func _boost_revision() -> int:
 	var status := _node("Toolbar/SyncStatus") as Label
-	var regex := RegEx.new()
-	regex.compile("r([0-9]+)")
-	var found := regex.search(status.text)
-	return int(found.get_string(1)) if found != null else -1
+	return int(status.get_meta("response_revision", -1))

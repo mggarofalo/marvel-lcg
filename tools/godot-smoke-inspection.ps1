@@ -1,4 +1,7 @@
-param([Parameter(Mandatory = $true)][string]$GodotBin)
+param(
+    [Parameter(Mandatory = $true)][string]$GodotBin,
+    [switch]$AllScales
+)
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -14,7 +17,8 @@ try {
     dotnet test "$repoRoot/tests/Marvel.Godot.Tests/Marvel.Godot.Tests.csproj" -c Release --nologo `
         --filter FullyQualifiedName~CardInspectionFixtureTests
     if ($LASTEXITCODE -ne 0) { throw "Could not project native inspection fixtures." }
-    foreach ($scale in @("50", "80", "100", "150")) {
+    $profiles = if ($AllScales) { 50..150 | Where-Object { $_ % 10 -eq 0 } } else { @("50", "80", "100", "150") }
+    foreach ($scale in $profiles) {
         $env:MARVEL_UI_SCALE = $scale
         $output = & $GodotBin --headless --audio-driver Dummy --log-file $log `
             --path "$repoRoot/src/Marvel.Godot" --script res://smoke/card_inspection_smoke.gd `

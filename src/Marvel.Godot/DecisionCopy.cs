@@ -63,6 +63,13 @@ internal static class DecisionCopy
         return string.Join(" · ", parts.Where(part => !string.IsNullOrWhiteSpace(part)).Distinct());
     }
 
+    internal static string AbilityDetail(AffordancePresentation view, string label, string? choice)
+    {
+        string?[] parts = [choice, view.CostDescription, view.Description, view.Consequence];
+        return string.Join("\n", parts.Where(part => !string.IsNullOrWhiteSpace(part)
+            && !TooltipPolicy.Restates(label, part)).Distinct());
+    }
+
     public static string WithPaymentConsequence(string action, PaymentProgress payment) =>
         payment.ExcessIcons == 0
             ? action
@@ -73,4 +80,11 @@ internal static class DecisionCopy
 
     public static string ResourceCount(int count) =>
         $"{count} excess resource{(count == 1 ? string.Empty : "s")}";
+
+    internal static string ResourceChoice(PaymentSourcePresentation source)
+    {
+        if (source.DiscardsCard) return $"Discard {source.Name}";
+        if (string.IsNullOrWhiteSpace(source.AbilityName)) return $"Use {source.Name}";
+        return source.AbilityName == source.Name ? source.Name : $"{source.AbilityName} · {source.Name}";
+    }
 }

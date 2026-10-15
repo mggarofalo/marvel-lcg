@@ -3,8 +3,12 @@ extends "res://smoke/local_game_smoke_direct_journey.gd"
 func _exhausted_card_is_spatial(anchor: int) -> bool:
 	if not await super._exhausted_card_is_spatial(anchor): return false
 	var card := _card_for_anchor(anchor)
+	if not await preload("res://smoke/gesture_settlement.gd").authored_pose(self, card):
+		_fail("exhausted drag could not establish its exact resting baseline")
+		return false
+	card.force_update_transform()
 	var original := card.get_global_transform()
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var start := _card_body_point(card)
 	var finish := start + Vector2(80, -90)
 	var press := InputEventMouseButton.new()
@@ -19,7 +23,7 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 	motion.global_position = finish
 	render_viewport.push_input(motion, true)
 	await process_frame
-	if not card.is_set_as_top_level() or CardDrag.bounds(card).get_center().distance_to(finish) > 1:
+	if not card.is_set_as_top_level() or card.global_position.distance_to(original.origin + finish - start) > 1:
 		_fail("exhausted card drag did not lift beneath the pointer")
 		return false
 	if abs(card.get_global_transform().get_rotation() - original.get_rotation()) > 0.01:
@@ -29,14 +33,16 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 	escape.keycode = KEY_ESCAPE
 	escape.pressed = true
 	render_viewport.push_input(escape, true)
-	await create_timer(0.25).timeout
+	if not await preload("res://smoke/gesture_settlement.gd").global_pose(self, card, original):
+		_fail("cancelled exhausted drag did not settle at its saved physical pose")
+		return false
 	if not card.get_global_transform().is_equal_approx(original):
 		_fail("cancelled exhausted drag did not restore the exact physical pose")
 		return false
 	if not await preload("res://smoke/exhausted_pointer_checks.gd").perform(self, card, anchor): return false
 	if anchor == IDENTITY and not _hero_clears_player_piles(card): return false
 	if not await _capture_checkpoint("exhausted-" + str(anchor)): return false
-	return (_node("Toolbar/SyncStatus") as Label).text == revision
+	return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == revision
 
 func _hero_clears_player_piles(card: Control) -> bool:
 	var face := CardDrag.bounds(card)
@@ -58,7 +64,7 @@ func _direct_change_form_is_played() -> bool:
 func _hero_target_drag_preserves_commitment() -> bool:
 	var source := _card_for_anchor(IDENTITY)
 	var target := _card_for_anchor(RHINO)
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if source == null or target == null or not await _drag(source, target.get_global_rect().get_center()):
 		_fail("the ready hero could not be dragged onto the offered enemy")
 		return false
@@ -66,7 +72,7 @@ func _hero_target_drag_preserves_commitment() -> bool:
 	if commit == null or commit.text.trim_prefix("✓ ") != "Attack Rhino" or commit.disabled:
 		_fail("the hero drop did not stage its offered attack and exact enemy")
 		return false
-	if (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("a source-target drop committed an answer without confirmation")
 		return false
 	var history := main.find_child("ToggleHistory", true, false) as Button
@@ -80,7 +86,7 @@ func _hero_target_drag_preserves_commitment() -> bool:
 		_fail("the attack drag draft cannot be cancelled locally")
 		return false
 	await process_frame
-	return (_node("Toolbar/SyncStatus") as Label).text == revision and _task_commit() == null
+	return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == revision and _task_commit() == null
 
 
 func _direct_black_cat_is_played() -> bool:
@@ -90,7 +96,7 @@ func _direct_black_cat_is_played() -> bool:
 		return false
 	if not await _collection_actor_drag_stages_and_returns(): return false
 	var entry := _attached(_attached_name(BLACK_CAT, "Action"))
-	if entry == null or not entry.accessibility_name.begins_with("Actions"):
+	if entry == null or not entry.accessibility_name.begins_with("Choose action"):
 		print("SOURCE_CHOOSER_FOCUS_PENDING: no ambiguous ally action in this legal state")
 		return true
 	return await _source_chooser_restores_keyboard_focus()
@@ -104,7 +110,7 @@ func _discard_hover_is_passive() -> bool:
 	if discard == null:
 		_fail("paid card left no visible player discard to inspect")
 		return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	_position_pointer_without_settle(Vector2(4, 4))
 	await create_timer(0.2).timeout
 	_position_pointer_without_settle(discard.get_global_rect().get_center())
@@ -117,7 +123,7 @@ func _discard_hover_is_passive() -> bool:
 		return false
 	_position_pointer_without_settle(Vector2(4, 4))
 	await create_timer(0.2).timeout
-	return (_node("Toolbar/SyncStatus") as Label).text == revision
+	return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == revision
 
 
 func _source_tableau_receives_fresh_play() -> bool:
@@ -127,12 +133,12 @@ func _source_tableau_receives_fresh_play() -> bool:
 		_fail("the source drop regression needs an installed Web-Shooter")
 		return false
 	if not await preload("res://smoke/local_game_smoke_source_order.gd").perform(self, occupied): return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var points: Array[Vector2] = [tableau.global_position + Vector2(12, 8),
 		occupied.global_position + Vector2(12, 8)]
 	for point in points:
 		if not await _compose_source_tableau_drop(point): return false
-		if (_node("Toolbar/SyncStatus") as Label).text != revision:
+		if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 			_fail("source tableau drop or cancellation committed engine state")
 			return false
 	return true
@@ -157,7 +163,7 @@ func _collection_actor_drag_stages_and_returns() -> bool:
 	if source == null or target == null or source.find_parent("Continuous*") == null:
 		_fail("the installed ally has no continuous physical collection")
 		return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var parent := source.get_parent()
 	if not await _drag(source, target.get_global_rect().get_center()): return false
 	var commit := _task_commit()
@@ -166,7 +172,7 @@ func _collection_actor_drag_stages_and_returns() -> bool:
 		return false
 	var cancel := main.find_child("ContextualCancelDraft", true, false) as Button
 	if cancel == null or not await _pointer_activate(cancel): return false
-	if source.get_parent() != parent or (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if source.get_parent() != parent or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("canceling the collection actor drag changed physical ownership or engine state")
 		return false
 	return true
@@ -241,7 +247,7 @@ func _source_chooser_focus_when_offered() -> bool:
 	if main.has_meta("source_chooser_focus_proved"):
 		return true
 	var entry := _attached(_attached_name(BLACK_CAT, "Action"))
-	if entry == null or not entry.accessibility_name.begins_with("Actions"):
+	if entry == null or not entry.accessibility_name.begins_with("Choose action"):
 		return true
 	if not await _source_chooser_restores_keyboard_focus():
 		return false
@@ -259,24 +265,64 @@ func _deferred_preview_when_offered() -> bool:
 	var action := _attached(_attached_name(anchor, "Action"))
 	if action == null or action.disabled: return true
 	var target := _card_for_anchor(RHINO)
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	main.set_meta("checking_deferred_preview", true)
 	if target == null or not await _drag(card, target.get_global_rect().get_center()):
 		_fail("the deferred event could not be dragged onto its visible enemy")
 		return false
 	main.remove_meta("checking_deferred_preview")
 	var modal := _payment_modal()
-	if modal == null or "Target: Rhino" not in _visible_text(modal):
+	var chosen := _payment_button("Target%d" % RHINO)
+	if modal == null or chosen == null or not chosen.button_pressed or "Rhino" not in chosen.text:
 		_fail("the targeted event drop did not retain Rhino through payment")
 		return false
-	if not await _capture_checkpoint("targeted-event-payment"): return false
+	if not await _initial_targeted_payment_inspection(): return false
 	if not await _payment_cancel_is_safe(): return false
-	if (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("the deferred drag preview or cancelled payment committed an answer")
 		return false
 	main.set_meta("deferred_preview_proved", true)
 	return true
 
+
+func _initial_targeted_payment_inspection() -> bool:
+	await process_frame
+	await process_frame
+	var preview := main.get_node("CardInspector") as Control
+	if preview.visible:
+		_fail("targeted payment automatically opened a card face without inspection intent")
+		return false
+	if not await _capture_checkpoint("targeted-event-payment"): return false
+	if not await _deliberate_targeted_inspection(preview): return false
+	return true
+
+func _deliberate_targeted_inspection(preview: Control) -> bool:
+	var thumbnail := _payment_button("InspectPaymentPlayed")
+	var hover := InputEventMouseMotion.new()
+	hover.position = thumbnail.get_global_rect().get_center()
+	hover.global_position = hover.position
+	render_viewport.push_input(hover, true)
+	await process_frame
+	await process_frame
+	if not preview.visible:
+		_fail("deliberate payment thumbnail hover did not open the full card")
+		return false
+	var frame := preview.get_node("Frame") as Control
+	var detail_scroll := preview.get_node("Frame/Stack/Scroll") as ScrollContainer
+	var target := _card_for_anchor(RHINO)
+	if target == null or frame.get_global_rect().intersects(target.get_global_rect()):
+		_fail("targeted payment inspection obscures the selected Rhino")
+		return false
+	if not preload("res://smoke/card_inspection_protection_checks.gd").verify(self, frame): return false
+	if detail_scroll.get_v_scroll_bar().visible:
+		_fail("targeted payment inspection clips the full card face")
+		return false
+	for candidate in _hand_surface().find_children("ProceduralCard*", "", true, false):
+		if candidate.has_meta("spatial_hand_index") and frame.get_global_rect().intersects(candidate.get_global_rect()):
+			_fail("targeted payment inspection covers a hand choice: %s frame=%s" % [candidate.name, frame.get_global_rect()])
+			return false
+	if not await _capture_checkpoint("targeted-event-deliberate-inspection"): return false
+	return true
 
 func _drag_preview_is_meaningful(card: Control) -> bool:
 	if not main.has_meta("checking_deferred_preview"):

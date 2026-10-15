@@ -37,6 +37,7 @@ internal static class TableHistoryDrawer
 
     internal static void Configure(Main main, bool desktop)
     {
+        HistoryOverlayLayout.Configure(main, desktop, CardPaymentWorkspaceLayout.Active(main));
         if (!desktop)
         {
             main.promptPanel.Visible = true;
@@ -66,7 +67,7 @@ internal static class TableHistoryDrawer
         latest.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         latest.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         latest.CustomMinimumSize = Vector2.Zero;
-        latest.TooltipText = latest.Text;
+        latest.AccessibilityDescription = latest.Text;
         Button dismiss = EnsureDismiss(main, history, latest);
         HFlowContainer actions = EnsureActionFlow(history, dismiss);
         history.MoveChild(history.GetNode<Control>("EventHeader"), 0);
@@ -135,7 +136,7 @@ internal static class TableHistoryDrawer
         main.eventCueSummary.CustomMinimumSize = expanded
             ? Vector2.Zero
             : new Vector2(0, 44);
-        main.eventCueSummary.TooltipText = main.eventCueSummary.Text;
+        main.eventCueSummary.AccessibilityDescription = main.eventCueSummary.Text;
     }
 
     private static HFlowContainer EnsureActionFlow(Control history, Button dismiss)

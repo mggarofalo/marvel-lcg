@@ -25,8 +25,7 @@ internal sealed class SearchChoiceInspection
 
     internal void Bind(CardControl face, BoardCardPresentation card)
     {
-        face.TooltipText = $"Inspect {card.Title}";
-        face.AccessibilityName = $"Inspect {card.Title}";
+        TooltipPolicy.Inspect(face, card.Title);
         face.GuiInput += input =>
         {
             if (!IsCurrent()) return;

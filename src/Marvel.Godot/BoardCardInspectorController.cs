@@ -4,6 +4,7 @@ using Marvel.View;
 namespace Marvel.Godot;
 
 /// <summary>Owns card-inspection previews, pinned detail, and its input behavior.</summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001", Justification = "The scene tree owns the inspector layout node.")]
 internal sealed class BoardCardInspectorController
 {
     private readonly Main main;
@@ -18,6 +19,7 @@ internal sealed class BoardCardInspectorController
         this.main = main;
         main.AddChild(new CardInspectorTransition { Name = "InspectorExpansion" });
         layout = new CardInspectorLayout(main);
+        main.AddChild(layout);
         this.tabletop = tabletop;
         inspector = new CardInspectorFocus(main);
         cardNavigation = new CardInspectorCardNavigation(
@@ -85,7 +87,8 @@ internal sealed class BoardCardInspectorController
         BoardCardPresentation card,
         Control? source,
         bool pinned,
-        IReadOnlyList<BoardCardPresentation>? stages = null)
+        IReadOnlyList<BoardCardPresentation>? stages = null,
+        int? maximumScale = null)
     {
         int inspectorGeneration = checked(++main.cardInspectorGeneration);
         previewSource = pinned ? null : source;
@@ -101,26 +104,42 @@ internal sealed class BoardCardInspectorController
         inspectorHeader.Visible = pinned;
         main.cardInspectorTitle.Visible = false;
         main.cardInspectorClose.Visible = pinned;
+        main.cardInspectorFrame.SetMeta("bounded_inspection", false);
+        main.cardInspectorFrame.SetMeta("inspection_overlay", false);
+        main.cardInspectorScroll.Visible = true;
         ConfigureFrame();
-        Control detail = CreateFittedDetail(card, source, pinned);
+        Control detail = CreateFittedDetail(card, source, pinned, maximumScale);
         detail.FocusMode = Control.FocusModeEnum.All;
         CardInspectorFocus.IgnoreMouseRecursively(detail);
-        layout.BindMeasurement(detail, card, source, pinned);
+        layout.Track(detail, card, source, pinned, () => Show(card, source, pinned, stages,
+            detail.GetMeta("inspection_scale").AsInt32() - 10));
         layout.Position(card, source, pinned);
         Present(detail, sourceId, source, pinned, inspectorGeneration);
     }
 
-    private Control CreateFittedDetail(BoardCardPresentation card, Control? source, bool pinned)
+    private Control CreateFittedDetail(BoardCardPresentation card, Control? source, bool pinned, int? maximumScale)
     {
-        InterfaceScale scale = CardInspectorFocus.FittedScale(card, main.interfaceScale, main.Size.Y);
+        InterfaceScale scale = CardInspectorFocus.FittedScale(card, main.interfaceScale, layout.AvailableHeight());
+        if (maximumScale is { } maximum) scale = (InterfaceScale)Math.Min((int)scale, Math.Max(80, maximum));
         while (true)
         {
             ClearContent();
             Control detail = CardInspectionContent.Create(card, scale, main.art, beside: false,
                 inspect: valueSource => OpenValueSource(valueSource, card, source)).Body;
+            detail.SetMeta("inspection_scale", (int)scale);
             main.cardInspectorContent.AddChild(detail);
             layout.Position(card, source, pinned);
-            if (layout.PreservesSituation() || (int)scale <= 50) return detail;
+            if (maximumScale is not < 80 && layout.PreservesSituation()) return detail;
+            if ((int)scale <= 80)
+            {
+                main.cardInspectorFrame.SetMeta("bounded_inspection", true);
+                main.cardInspectorTitle.Text = pinned ? "Scroll to read the full card" : "Pin to read the full card";
+                main.cardInspectorTitle.Visible = true;
+                main.cardInspectorTitle.GetParent<HBoxContainer>().Visible = true;
+                main.cardInspectorScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Auto;
+                layout.Position(card, source, pinned);
+                return detail;
+            }
             // Recreate native controls at the next fitted size; never resample rendered text or icons.
             scale = (InterfaceScale)((int)scale - 10);
         }

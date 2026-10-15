@@ -59,6 +59,7 @@ public static class CardFlip
         card.TurnTo(face);
         events.Add(new CardsFlipped([card.ObjectId], true)
         {
+            SubjectFaces = OccurrenceFaces.For(card),
             Trigger = trigger,
             Verb = "Flip",
         });

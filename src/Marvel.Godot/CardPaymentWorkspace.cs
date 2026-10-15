@@ -14,6 +14,7 @@ internal sealed class CardPaymentWorkspace : IDisposable
     private readonly int generation;
     private readonly CardPaymentPreview preview;
     internal VBoxContainer Content { get; }
+    internal VBoxContainer Targets { get; }
 
     internal CardPaymentWorkspace(DecisionPanel panel, PromptPresentation prompt)
     {
@@ -32,8 +33,15 @@ internal sealed class CardPaymentWorkspace : IDisposable
         Content = new VBoxContainer { Name = "PaymentContent", ThemeTypeVariation = GodotThemeVariations.TightStack };
         frame.AddChild(Content);
         CardPaymentWorkspaceHeader.Add(Content, panel, main, draft, prompt);
-        preview = new CardPaymentPreview(main, panel, frame, draft.Selected!.AnchorId);
-        Callable.From(() => CardPaymentWorkspaceLayout.Refresh(main)).CallDeferred();
+        Targets = new VBoxContainer { Name = "PaymentTargets",
+            ThemeTypeVariation = GodotThemeVariations.TightStack };
+        Content.AddChild(Targets);
+        preview = new CardPaymentPreview(main);
+        Callable.From(() =>
+        {
+            DecisionReadingScale.Apply(frame);
+            CardPaymentWorkspaceLayout.Refresh(main);
+        }).CallDeferred();
     }
 
     internal void Preview(int? id) => preview.ShowSource(id);

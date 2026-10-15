@@ -23,15 +23,21 @@ internal static class SourceTableauSample
             PhysicalCardSize: SpatialCardMetrics.Envelope(areas.SelectMany(area => area.Cards), CardDisplaySize.Board, scale),
             HasSourceTableau: true, HasRevealingCard: narrow);
         var result = new BoardRenderResult { IsCurrent = () => true };
-        var objects = new SpatialTableObjectRenderer(root, result, geometry, scale, null, false);
+        result.BindMotion(() => OS.GetEnvironment("MARVEL_SMOKE_MOTION") != "disabled");
+        var objects = new SpatialTableObjectRenderer(root, result, geometry,
+            new SpatialCardFactory(scale, null, null, ClientTheme.ConfiguredScale()), false);
         objects.RenderScenario(areas.Where(area => area.Seat < 0).ToArray());
         if (narrow) objects.RenderRevealing([], [areas.SelectMany(area => area.Cards).First(card => card.Kind == "HERO")]);
         objects.RenderPlayer(areas.Where(area => area.Seat == 0).ToArray());
         objects.RenderHosted(areas);
         objects.RenderHand(areas.FirstOrDefault(area => area.Zone == "HandsArea"));
-        root.AddChild(new Label { Name = "FixtureContext", Text = "SYNTHETIC DENSE TABLE · 16 physical sources\nCard body inspects · Each action selects that exact copy",
+        string caption = OS.GetCmdlineUserArgs().Contains("--marvel-tableau-legal")
+            ? "REACHABLE CORE TABLE · Iron Man · seed 5 · after 48 accepted decisions"
+            : "SYNTHETIC DENSE TABLE · 16 physical sources";
+        root.AddChild(new Label { Name = "FixtureContext", Text = caption + "\nHover previews; Enter pins · Each action selects that exact copy",
             Position = geometry.Context.Position, ThemeTypeVariation = GodotThemeVariations.Body });
         result.CardActivated += (card, _) => root.SetMeta("inspected_id", card.TargetId ?? -1);
+        result.CardPreviewEntered += (card, _) => root.SetMeta("previewed_id", card.TargetId ?? -1);
         BindFixtureInput(root, result, path);
         return true;
     }

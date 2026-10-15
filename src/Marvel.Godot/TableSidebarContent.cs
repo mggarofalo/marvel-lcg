@@ -46,15 +46,25 @@ internal static class TableSidebarContent
 
     internal static void RefreshProgress(Main main)
     {
-        if (main.promptPanel.FindChild("TableOperationalNotice", true, false) is not Label notice)
-            return;
+        Label? notice = main.promptPanel.FindChild("TableOperationalNotice", true, false) as Label;
+        Label? tableNotice = main.boardAreas.FindChild("SpatialOperationalNotice", true, false) as Label;
         GameProgressPresentation? progress = main.currentProgress;
         bool ordinary = progress?.Kind is null or GameProgressKind.AwaitingDecision
             or GameProgressKind.WaitingForOtherPlayer;
-        notice.Visible = !ordinary;
-        notice.Text = ordinary ? ""
-            : $"{progress!.Title}\n{progress.Description}";
-        notice.TooltipText = notice.Text;
+        string text = ordinary ? "" : progress!.Kind == GameProgressKind.Resolving
+            ? progress.Title : $"{progress.Title}\n{progress.Description}";
+        if (InteractionControl.IsUsable(tableNotice))
+        {
+            tableNotice!.Visible = !ordinary;
+            tableNotice.Text = text;
+            tableNotice.AccessibilityDescription = text;
+        }
+        if (InteractionControl.IsUsable(notice))
+        {
+            notice!.Visible = !ordinary && !InteractionControl.IsUsable(tableNotice);
+            notice.Text = text;
+            notice.AccessibilityDescription = text;
+        }
     }
 
     private static VBoxContainer EnsureContent(Control history)

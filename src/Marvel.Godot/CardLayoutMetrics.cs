@@ -6,4 +6,8 @@ public sealed record CardLayoutMetrics(
     int MinimumHeight,
     bool ShowSubtitle,
     bool ShowTraits,
-    bool ShowPrintedStats);
+    bool ShowPrintedStats)
+{
+    /// <summary>Native compact typography can increase independently of the physical card footprint.</summary>
+    public InterfaceScale ReadingScale { get; init; } = InterfaceScale.Standard;
+}

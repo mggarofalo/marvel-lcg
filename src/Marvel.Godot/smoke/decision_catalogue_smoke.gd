@@ -67,12 +67,13 @@ func _check_obligation_context() -> bool:
 		_fail("Business Problems has no visible contextual face")
 		return false
 	await _capture_checkpoint("business-problems-context")
+	var prior_revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var remain := _button_named("Remain in your current form")
 	if remain == null or not await _pointer_activate(remain):
 		_fail("Business Problems did not offer its current-form choice")
 		return false
-	if not await _wait_for(func() -> bool: return "Exhaust Tony Stark" in _visible_text(main)):
-		_fail("the obligation consequences did not arrive")
+	if not await _wait_for(func() -> bool: return _obligation_choices_ready(prior_revision)):
+		_fail("the accepted obligation choices did not settle fully inside their visible surface")
 		return false
 	var alternatives := main.find_child("RequiredAlternatives", true, false) as Control
 	if alternatives == null or _visible_buttons(alternatives).size() != 2:
@@ -88,6 +89,18 @@ func _check_obligation_context() -> bool:
 		return false
 	return true
 
+func _obligation_choices_ready(prior_revision: String) -> bool:
+	if bool(main.get_meta("response_staged", false)) or _status().text.begins_with("DECISION SENT"):
+		return false
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == prior_revision:
+		return false
+	var alternatives := main.find_child("RequiredAlternatives", true, false) as Control
+	if alternatives == null: return false
+	var buttons := _visible_buttons(alternatives)
+	if buttons.size() != 2 or "Exhaust Tony Stark" not in _visible_text(alternatives): return false
+	for alternative in buttons:
+		if not _control_is_fully_visible(alternative): return false
+	return true
 
 func _obligation_face_visible() -> bool:
 	var references: Array[Control] = []

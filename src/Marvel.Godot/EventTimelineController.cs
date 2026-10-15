@@ -17,6 +17,9 @@ internal sealed class EventTimelineController(Main main) : IDisposable
     private PanelContainer? popup;
     private Label? detail;
     private EventPresentation? active;
+    private readonly List<Button> navigation = [];
+    private Button? disclosure;
+    private bool expanded;
     private int lastSelection = -1;
     internal IReadOnlyList<TimelineOccurrence> Entries => archive.Entries;
     internal int Selected => viewport.Selected;
@@ -63,12 +66,20 @@ internal sealed class EventTimelineController(Main main) : IDisposable
         Ensure();
         Control? anchor = main.boardAreas.FindChild("EventActivity", true, false) as Control;
         panel!.Visible = main.board.Visible && anchor is not null && archive.Entries.Count > 0;
+        if (!panel.Visible) HidePreview();
         if (anchor is null) return;
-        panel.Size = new Vector2(anchor.Size.X, Math.Max(44, anchor.Size.Y));
+        Refresh();
+        panel.ResetSize();
+        panel.Size = new Vector2(anchor.Size.X, expanded ? 76 : 44);
         panel.GlobalPosition = new Vector2(anchor.GlobalPosition.X,
             anchor.GetGlobalRect().End.Y - panel.Size.Y);
+        if (TableHistoryDrawer.IsExpanded(main) && !CardPaymentWorkspaceLayout.Active(main))
+        {
+            float width = TableHistoryDrawer.ExpandedWidth(main);
+            panel.Size = new Vector2(width, panel.Size.Y);
+            panel.GlobalPosition = new Vector2(main.GetViewportRect().Size.X - width - 16, 88);
+        }
         panel.SetMeta("timeline_count", archive.Entries.Count);
-        Refresh();
     }
 
     private void Ensure()
@@ -87,7 +98,7 @@ internal sealed class EventTimelineController(Main main) : IDisposable
         row.AddChild(body);
         caption = new Label { Name = "TimelineCaption", TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
             MouseFilter = Control.MouseFilterEnum.Ignore };
-        caption.AddThemeFontSizeOverride("font_size", 12);
+        caption.AddThemeFontSizeOverride("font_size", 14);
         var headline = new HBoxContainer();
         body.AddChild(headline);
         caption.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
@@ -107,7 +118,20 @@ internal sealed class EventTimelineController(Main main) : IDisposable
         AddButton(row, "-", "Zoom out", () => viewport.Zoom(1 / .7, .5));
         AddButton(row, "+", "Zoom in", () => viewport.Zoom(.7, .5));
         AddButton(row, "|>", "Latest event", viewport.Latest);
+        disclosure = new Button { Name = "TimelineDisclosure", Text = "Timeline",
+            AccessibilityName = "Expand timeline", CustomMinimumSize = new Vector2(44, 44) };
+        disclosure.Pressed += ToggleDisclosure;
+        row.AddChild(disclosure);
         CreatePreview();
+    }
+
+    private void ToggleDisclosure()
+    {
+        expanded = !expanded;
+        HidePreview();
+        Fit();
+        HistoryOverlayLayout.Configure(main, DesktopTabletop.Uses(main.GetViewportRect().Size),
+            CardPaymentWorkspaceLayout.Active(main));
     }
 
     private void AddButton(Control row, string symbol, string name, Action action)
@@ -115,6 +139,7 @@ internal sealed class EventTimelineController(Main main) : IDisposable
         var button = new Button { Text = symbol, AccessibilityName = name, TooltipText = name,
             CustomMinimumSize = new Vector2(44, 44), MouseFilter = Control.MouseFilterEnum.Stop };
         button.Pressed += () => { action(); HidePreview(); Refresh(); };
+        navigation.Add(button);
         row.AddChild(button);
     }
 
@@ -130,6 +155,27 @@ internal sealed class EventTimelineController(Main main) : IDisposable
     }
 
     private void Refresh()
+    {
+        if (panel is null || rail is null || caption is null) return;
+        RefreshDisclosure();
+        RefreshSelection();
+    }
+
+    private void RefreshDisclosure()
+    {
+        if (rail is null || panel is null) return;
+        rail.Visible = expanded;
+        foreach (Button button in navigation) button.Visible = expanded;
+        if (disclosure is not null)
+        {
+            disclosure.Text = expanded ? "−" : "Timeline";
+            disclosure.AccessibilityName = expanded ? "Collapse timeline" : "Expand timeline";
+            disclosure.TooltipText = expanded ? "Collapse timeline" : string.Empty;
+        }
+        panel.SetMeta("timeline_expanded", expanded);
+    }
+
+    private void RefreshSelection()
     {
         if (panel is null || rail is null || caption is null) return;
         int selected = viewport.Selected;

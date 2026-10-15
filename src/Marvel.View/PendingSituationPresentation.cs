@@ -20,7 +20,7 @@ public static class PendingSituationPresentation
     public static string Context(WorldDescriptor world)
     {
         if (world.Outcome != Outcome.Unfinished)
-            return world.Outcome == Outcome.PlayersWin ? "The players won." : "The players lost.";
+            return OutcomeDescription.Result(world.Outcome, world.LossReason);
         return UnfinishedContext(world, world.Table?.PendingSituation);
     }
 

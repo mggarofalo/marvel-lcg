@@ -13,6 +13,7 @@ internal sealed class MainTabletopController
     private bool? renderedHistoryExpanded;
     private Vector2? renderedViewport;
     private bool renderedPayment;
+    private bool reuseFaces;
 
     internal int? InspectedSeat => renderedDesktopTabletop == true ? renderedExpandedSeat : null;
 
@@ -28,6 +29,7 @@ internal sealed class MainTabletopController
         renderedExpandedSeat = null;
         renderedHistoryExpanded = null;
         renderedViewport = null;
+        reuseFaces = false;
     }
 
     internal BoardRenderResult? Render(Prompt? prompt, Vector2 viewport)
@@ -37,19 +39,13 @@ internal sealed class MainTabletopController
         renderedHistoryExpanded = desktop && HasReviewSpace();
         renderedViewport = viewport;
         renderedPayment = CardPaymentWorkspaceLayout.Active(main);
+        if (!desktop) reuseFaces = false;
         return desktop ? RenderDesktop(prompt) : null;
     }
 
     internal void RerenderForViewport(Vector2 viewport)
     {
-        bool desktop = DesktopTabletop.Uses(viewport);
-        bool geometryChanged = renderedViewport is not { } previous
-            || !previous.IsEqualApprox(viewport);
-        bool historyChanged = desktop
-            && renderedHistoryExpanded != HasReviewSpace();
-        if (main.board.Visible
-            && (geometryChanged || historyChanged || renderedPayment != CardPaymentWorkspaceLayout.Active(main)
-                || DesktopTabletop.RouteChanged(renderedDesktopTabletop, viewport))
+        if (main.board.Visible && LayoutChanged(viewport)
             && main.boardController.PresentedGame?.World is { } world)
         {
             ScrollContainer table = main.GetNode<ScrollContainer>(
@@ -60,7 +56,22 @@ internal sealed class MainTabletopController
         }
     }
 
-    private bool HasReviewSpace() => TableHistoryDrawer.IsExpanded(main) || main.invitationOffer.Visible;
+    private bool LayoutChanged(Vector2 viewport)
+    {
+        bool desktop = DesktopTabletop.Uses(viewport);
+        bool geometryChanged = renderedViewport is not { } previous
+            || !previous.IsEqualApprox(viewport);
+        bool historyChanged = desktop
+            && renderedHistoryExpanded != HasReviewSpace();
+        // Sending closes the draft workspace. Preserve its authored card slots
+        // until the authoritative response arrives; resize and history still apply.
+        bool paymentChanged = renderedPayment != CardPaymentWorkspaceLayout.Active(main)
+            && !main.decisions.submitting;
+        return geometryChanged || historyChanged || paymentChanged
+            || DesktopTabletop.RouteChanged(renderedDesktopTabletop, viewport);
+    }
+
+    private bool HasReviewSpace() => main.invitationOffer.Visible;
 
     internal void FocusAnchors(IReadOnlyList<int> ids)
     {
@@ -77,7 +88,10 @@ internal sealed class MainTabletopController
     {
         DisplayedSeatSelection selection = Selection(prompt);
         renderedExpandedSeat = selection.ExpandedSeat;
-        return DesktopTabletopPresentation.Render(main, selection, SwitchSeat);
+        BoardRenderResult rendered = DesktopTabletopPresentation.Render(main, selection, SwitchSeat,
+            reuseFaces ? main.boardRender : null);
+        reuseFaces = true;
+        return rendered;
     }
 
     private void SwitchSeat(int seat)

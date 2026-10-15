@@ -21,12 +21,25 @@ func _run() -> void:
 func _keep_recipient_opening() -> bool:
 	var players := 2 if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true" else 1
 	for seat in players:
-		if not await _wait_for(func() -> bool: return _button_named("Keep hand") != null):
-			_fail("recipient opening mulligan did not arrive")
+		if not await _wait_for(func() -> bool: return _recipient_opening_is_ready(seat)):
+			_fail("recipient opening mulligan did not arrive for player %d" % (seat + 1))
 			return false
 		if not await _pointer_activate(_button_named("Keep hand")): return false
-		await create_timer(0.15).timeout
+		# Each seat's commitment must publish before acquiring the next seat's control.
+		# Engine exchange runs independently of timer and presentation frame rates.
+		if not await _wait_for(func() -> bool: return _recipient_revision() == seat + 1):
+			_fail("keeping player %d's hand did not publish exactly one decision" % (seat + 1))
+			return false
+		if not await _wait_for_result_motion(): return false
 	return await _wait_for(func() -> bool: return _button_named("End turn") != null)
+
+func _recipient_opening_is_ready(seat: int) -> bool:
+	var heading := _hand_heading()
+	var keep := _button_named("Keep hand")
+	return _recipient_revision() == seat and heading != null \
+		and heading.text.to_lower().begins_with("player %d opening hand" % (seat + 1)) \
+		and keep != null and not keep.disabled \
+		and not bool(main.get_meta("response_staged", false))
 
 func _play_recipient_source() -> bool:
 	var matches := _visible_cards_named(recipient_title)
@@ -103,7 +116,4 @@ func _commit_recipient(before: int) -> bool:
 
 func _recipient_revision() -> int:
 	var status := _node("Toolbar/SyncStatus") as Label
-	var regex := RegEx.new()
-	regex.compile("r([0-9]+)")
-	var found := regex.search(status.text)
-	return int(found.get_string(1)) if found != null else -1
+	return int(status.get_meta("response_revision", -1))

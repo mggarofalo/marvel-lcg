@@ -11,7 +11,19 @@ public readonly record struct ResourceSourceRecord(
     [property: JsonRequired] int Effect,
     [property: JsonRequired] string Generates)
 {
+    /// <summary>The authored ability name retained with the offered generator.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? AbilityName { get; init; }
+
+    /// <summary>The non-resource commitments shown before selecting this generator.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? CostDescription { get; init; }
+
     /// <summary>Captures one engine-authored generator.</summary>
     public static ResourceSourceRecord From(ResourceSource source) =>
-        new(source.Effect, source.Generates);
+        new(source.Effect, source.Generates)
+        {
+            AbilityName = source.AbilityName,
+            CostDescription = source.CostDescription,
+        };
 }

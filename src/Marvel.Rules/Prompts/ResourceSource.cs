@@ -13,4 +13,11 @@ namespace Marvel.Rules.Prompts;
 /// is a thing the player does, which is why it carries an id that can be handed
 /// back in rather than a card reference.
 /// </remarks>
-public readonly record struct ResourceSource(int Effect, string Generates);
+public readonly record struct ResourceSource(int Effect, string Generates)
+{
+    /// <summary>The offered resource ability's authored name; null for a hand discard.</summary>
+    public string? AbilityName { get; init; }
+
+    /// <summary>Engine-described non-resource commitments of this offered ability.</summary>
+    public string? CostDescription { get; init; }
+}

@@ -57,6 +57,7 @@ internal static class SourceTableauRenderer
             { if (InteractionControl.IsUsable(control) && !control.TopLevel) result.UpdateRestingPose(control); }).CallDeferred();
             if (card.TargetId is { } id) result.Register(id, control);
             result.TrackCard(control, card);
+            result.TrackPreviewOnly((Control)control.FindChild("SourceReorderGrip", true, false), card);
         }
         SourceTableauViewport.Bind(scroll, grid);
         return panel;
@@ -69,9 +70,8 @@ internal static class SourceTableauRenderer
         var relation = CardSourceStrip.Label($"On {hostName}", "SourceHost", 9, CardTypography.Body);
         relation.AutowrapMode = TextServer.AutowrapMode.Off;
         relation.AddThemeColorOverride("font_color", CardFaceStyle.Paper);
-        relation.TooltipText = $"Attached to {hostName}";
+        relation.AccessibilityName = $"Attached to {hostName}";
         control.FindChild("SourceSymbols", true, false).AddChild(relation);
-        control.TooltipText += $" · Attached to {hostName}";
     }
 
     private static void BindSlot(CardControl card, Control slot)

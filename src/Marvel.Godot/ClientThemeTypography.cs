@@ -9,13 +9,16 @@ internal static class ClientThemeTypography
         Theme theme, TypeMetrics type, Color ink, Color muted, Color amber, Color canvas)
     {
         theme.DefaultFont = CardTypography.Body;
+        foreach (string control in new[] { "Button", "OptionButton", "MenuButton", "PopupMenu", "CheckButton", "CheckBox" })
+            theme.SetFont("font", control, CardTypography.Bold);
         theme.SetFont("normal_font", "RichTextLabel", CardTypography.Body);
         theme.SetFont("bold_font", "RichTextLabel", CardTypography.Bold);
         theme.SetFont("italics_font", "RichTextLabel", CardTypography.Italic);
         theme.SetFont("bold_italics_font", "RichTextLabel", CardTypography.BoldItalic);
-        foreach (string variation in new[] { GodotThemeVariations.CardTitle,
-            GodotThemeVariations.DisplayTitle, GodotThemeVariations.Heading })
-            theme.SetFont("font", variation, CardTypography.Title);
+        theme.SetFont("font", GodotThemeVariations.CardTitle, CardTypography.Title);
+        foreach (string variation in new[] { GodotThemeVariations.DisplayTitle,
+            GodotThemeVariations.BriefingTitle, GodotThemeVariations.Heading })
+            theme.SetFont("font", variation, CardTypography.Bold);
         theme.SetColor("font_color", "Label", ink);
         theme.SetFontSize("font_size", "Label", type.Body);
         Label(theme, GodotThemeVariations.DisplayTitle, ink, type.DisplayTitle, canvas, 8);

@@ -14,18 +14,25 @@ internal static class VisibilityEventFilter
         foreach (GameEvent happened in events)
         {
             GameEvent? safe = Filter(happened, addressable, readable);
-            if (safe is not null) filtered.Add(safe with
+            if (safe is not null) filtered.Add(KeepMetadata(safe, readable));
+        }
+
+        return filtered;
+    }
+
+    private static GameEvent KeepMetadata(GameEvent safe, HashSet<int> readable) =>
+        safe with
             {
+                Cause = KeepCause(safe.Cause, readable),
                 SubjectFaces = KeepSubjects(safe.SubjectFaces, readable),
                 AbilitySource = safe.AbilitySource is { } source && readable.Contains(source) ? source : null,
                 AbilityOccurrence = HasReadableAbility(safe, readable) ? safe.AbilityOccurrence : null,
                 AbilityTiming = HasReadableAbility(safe, readable) ? safe.AbilityTiming : null,
                 AbilityOrdinal = HasReadableAbility(safe, readable) ? safe.AbilityOrdinal : null,
-            });
-        }
+        };
 
-        return filtered;
-    }
+    private static EventCause? KeepCause(EventCause? cause, HashSet<int> readable) =>
+        cause is not null && readable.Contains(cause.Source) && readable.Contains(cause.Target) ? cause : null;
 
     private static bool HasReadableAbility(GameEvent happened, HashSet<int> readable) =>
         happened.AbilitySource is { } source && readable.Contains(source);
@@ -34,6 +41,8 @@ internal static class VisibilityEventFilter
         GameEvent happened, HashSet<int> addressable, HashSet<int> readable) =>
         happened switch
         {
+            AttackBoundary boundary => readable.Contains(boundary.Source) && readable.Contains(boundary.Target)
+                ? boundary with { Subjects = KeepSubjects(boundary.Subjects, [boundary.Source, boundary.Target]) } : null,
             ActivityCompleted activity => KeepActivity(activity, readable),
             AbilityWindowResult result => readable.Contains(result.Source) ? result with
                 { Subjects = KeepSubjects(result.Subjects, [result.Source]) } : null,
@@ -50,16 +59,18 @@ internal static class VisibilityEventFilter
             BoostResolved boost => KeepBoost(boost, readable),
             AttackCompleted completed => KeepAttack(completed, readable),
             CardsShuffledIntoDeck shuffled => shuffled with { Subjects = null },
-            WhenRevealedCanceled canceled =>
-                readable.Contains(canceled.Card) && (canceled.Source is not { } source || readable.Contains(source))
-                    ? canceled with { Subjects = KeepSubjects(canceled.Subjects,
-                        [canceled.Card, .. canceled.Source is { } known ? new[] { known } : Array.Empty<int>()]) }
-                    : null,
+            WhenRevealedCanceled canceled => KeepCancellation(canceled, readable),
             PlayAreaJoined joined => joined,
             PlayAreaDetached detached => detached,
             _ => throw new InvalidOperationException(
                 $"event kind {happened.GetType().Name} has no visibility decision"),
         };
+
+    private static WhenRevealedCanceled? KeepCancellation(WhenRevealedCanceled canceled, HashSet<int> readable) =>
+        readable.Contains(canceled.Card) && (canceled.Source is not { } source || readable.Contains(source))
+            ? canceled with { Subjects = KeepSubjects(canceled.Subjects,
+                [canceled.Card, .. canceled.Source is { } known ? new[] { known } : Array.Empty<int>()]) }
+            : null;
 
     private static ActivityCompleted KeepActivity(ActivityCompleted activity, HashSet<int> readable)
     {

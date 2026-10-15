@@ -354,6 +354,10 @@ public sealed class SpiderManCardsTests
         Reveal.EnterPlay(world, Cards, shooter, []);
         shooter.PlaceTokens("c_web", -2);
 
+        var offered = Assert.Single(runner.ResourceAbilities(world, 0), source => source.Effect == shooter.ObjectId);
+        Assert.Equal("Web-Shooter", offered.AbilityName);
+        Assert.Equal("Exhaust Web-Shooter; Remove 1 web counter from Web-Shooter", offered.CostDescription);
+
         var events = new List<GameEvent>();
         string generated = runner.UseResource(world, 0, shooter.ObjectId, events);
 

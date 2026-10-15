@@ -28,5 +28,6 @@ public static class AcceptedActivityOccurrence
 
     private static bool IsBoundary(EventPresentation entry) => entry.Activity is
         { PhaseBoundary: true } or { PhaseStep: true } or { Batch: not null }
+        or { AttackIdentity: not null } or { AttackBoundary: not null }
         or { Operation: "Ability_Resolved" or "Ability_Initiated" } || entry.Motion == EventMotionKind.Terminal;
 }

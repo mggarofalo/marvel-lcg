@@ -49,6 +49,13 @@ internal sealed partial class HistoryOccurrenceList : VBoxContainer
         FitScroll();
     }
 
+    internal void SetViewportHeight(float height)
+    {
+        CustomMinimumSize = new Vector2(0, height);
+        // Child minimums must follow the budget even when their old allocation prevents a resize.
+        FitScroll();
+    }
+
     private void FitScroll()
     {
         float height = Math.Min(Size.Y, CustomMinimumSize.Y);

@@ -3,7 +3,7 @@ extends "res://smoke/local_game_smoke_direct_intent.gd"
 func _clearing_mulligan_replacements_preserves_task() -> bool:
 	var card := _mulligan_card("Avengers Mansion")
 	if card == null: return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _keyboard_stage_card(card): return false
 	var clear := main.find_child("ContextualCancelDraft", true, false) as Button
 	if clear == null or not await _pointer_activate(clear):
@@ -11,7 +11,7 @@ func _clearing_mulligan_replacements_preserves_task() -> bool:
 		return false
 	var submit := _task_commit()
 	if submit == null or submit.disabled or submit.text != "Keep hand" \
-		or (_node("Toolbar/SyncStatus") as Label).text != revision:
+		or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("clearing replacements changed the game or hid Keep hand")
 		return false
 	return not bool(card.get_meta("mulligan_staged", false))
@@ -99,9 +99,9 @@ func _drag_capture_is_safe() -> bool:
 	var card := _mulligan_card("Swinging Web Kick")
 	if card == null: return false
 	var original := card.global_position
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _drag_mulligan_to_discard(card): return false
-	await create_timer(0.22).timeout
+	await preload("res://smoke/gesture_settlement.gd").hand(self)
 	if not bool(card.get_meta("mulligan_staged", false)) or card.global_position.distance_to(original) < 40:
 		_fail("mulligan drop did not physically move the selected card out of the hand")
 		return false
@@ -109,15 +109,15 @@ func _drag_capture_is_safe() -> bool:
 	if not bool(card.get_meta("mulligan_staged", false)):
 		_fail("repeat discard drop toggled the staged card back")
 		return false
-	await create_timer(0.22).timeout
+	await preload("res://smoke/gesture_settlement.gd").hand(self)
 	var hand := main.find_child("HandDropArea", true, false) as Control
 	if hand == null: hand = main.find_child("SpatialHandArea", true, false) as Control
 	if hand == null:
 		_fail("the hand has no reversible staging destination")
 		return false
 	if not await _drag_mulligan(card, hand.get_global_rect().get_center()): return false
-	await create_timer(0.22).timeout
-	if bool(card.get_meta("mulligan_staged", false)) or (_node("Toolbar/SyncStatus") as Label).text != revision:
+	await preload("res://smoke/gesture_settlement.gd").hand(self)
+	if bool(card.get_meta("mulligan_staged", false)) or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("moving a staged card back failed to preserve the uncommitted game")
 		return false
 	return true
@@ -213,6 +213,9 @@ func _drag_mulligan(card: Control, finish: Vector2) -> bool:
 	if start == Vector2.INF:
 		_fail("the mulligan card has no exposed body point for drag capture")
 		return false
+	var discard := main.find_child("PileEmptyPlayerDiscard", true, false) as Control
+	var discard_variation := discard.theme_type_variation if discard != null else &""
+	var discard_bounds := discard.get_global_rect() if discard != null else Rect2()
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
@@ -223,6 +226,10 @@ func _drag_mulligan(card: Control, finish: Vector2) -> bool:
 	move.position = finish
 	move.global_position = finish
 	render_viewport.push_input(move, true)
+	await process_frame
+	if discard != null and (discard.theme_type_variation != discard_variation or discard.get_global_rect() != discard_bounds):
+		_fail("mulligan target highlighting changed the discard silhouette or layout")
+		return false
 	var release := InputEventMouseButton.new()
 	release.button_index = MOUSE_BUTTON_LEFT
 	release.position = finish

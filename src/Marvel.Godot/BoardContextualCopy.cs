@@ -33,11 +33,11 @@ internal sealed class BoardContextualCopy
         if (!InteractionControl.IsUsable(summary)) return;
         if (InteractionControl.IsUsable(resolution))
             resolution!.Visible = resolution.Text.Length > 0 && ShowsResolution(composer);
-        string text = TableDraftSummary.From(composer, prompt, world, compact: true)
+        string text = CardPaymentPresentation.UsesModal(composer) ? "" : TableDraftSummary.From(composer, prompt, world, compact: true)
             ?? ContextualOfferDescription.SingleResponse(prompt, composer?.Prompt.PublicKind) ?? fallback;
         summary!.Text = text;
         summary.Visible = text.Length > 0;
-        summary.TooltipText = text;
+        summary.AccessibilityDescription = text;
     }
 
     internal static bool ShowsResolution(DecisionComposer? composer) =>
@@ -48,5 +48,6 @@ internal sealed class BoardContextualCopy
         if (!InteractionControl.IsUsable(summary)) return;
         summary!.Text = text;
         summary.Visible = text.Length > 0;
+        summary.AccessibilityDescription = text;
     }
 }

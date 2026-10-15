@@ -38,7 +38,7 @@ internal sealed class CardInspectorFocus
     {
         restorationGeneration++;
         returnTargetId = targetId;
-        returnPaymentControl = source?.Name.ToString().StartsWith("InspectPayment", StringComparison.Ordinal) == true
+        returnPaymentControl = source?.HasMeta("payment_inspection") == true
             ? source.Name.ToString() : null;
         returnPaymentDraft = returnPaymentControl is null ? null : main.decisions.composer;
         returnReference = source is not CardControl && returnPaymentControl is null ? source : null;

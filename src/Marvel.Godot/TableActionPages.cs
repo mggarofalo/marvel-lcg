@@ -49,8 +49,8 @@ internal sealed class TableActionPages : IDisposable
         earlier = TableNavigationButton.Create(navigation, "Earlier", "Earlier complete choices");
         more = TableNavigationButton.Create(navigation, "More", "More complete choices");
         complete = TableNavigationButton.Create(frame, "ActionPageCompleteChoices",
-            "Open complete choices because this choice needs more room");
-        complete.Text = "Open complete choices\nThis choice needs more room";
+            "Open all choices because this choice needs more room");
+        complete.Text = "All choices\nThis choice needs more room";
         complete.Visible = false;
         complete.Pressed += () => openCompleteChoices(complete);
         earlier.Pressed += () => Move(-1);

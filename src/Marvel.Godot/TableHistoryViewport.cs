@@ -9,7 +9,7 @@ internal static class TableHistoryViewport
     {
         Bind(main);
         float preferredHeight = payment ? 180 : 440;
-        Viewport(main).CustomMinimumSize = new Vector2(0, preferredHeight);
+        SetHeight(Viewport(main), preferredHeight);
         Viewport(main).SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
         // Wrapped sidebar copy has its final height after container layout.
         Callable.From(() => Fit(main)).CallDeferred();
@@ -28,7 +28,7 @@ internal static class TableHistoryViewport
             history.SortChildren += () => Callable.From(() => Fit(main)).CallDeferred();
     }
 
-    private static void Fit(Main main)
+    internal static void Fit(Main main)
     {
         if (!InteractionControl.IsUsable(main) || !main.board.Visible
             || !TableHistoryDrawer.IsExpanded(main)
@@ -36,9 +36,15 @@ internal static class TableHistoryViewport
             return;
         float minimumHeight = CardPaymentWorkspaceLayout.Active(main) ? 100 : 180;
         // The inset is a layout choice, leaving the scrollbar clear of the window edge.
-        float available = main.GetViewportRect().End.Y - Viewport(main).GlobalPosition.Y - 16;
-        var minimum = new Vector2(0, Math.Max(minimumHeight, available));
-        if (!Viewport(main).CustomMinimumSize.IsEqualApprox(minimum))
-            Viewport(main).CustomMinimumSize = minimum;
+        float bottom = main.promptPanel.TopLevel ? HistoryOverlayLayout.Bottom(main) : main.GetViewportRect().End.Y;
+        float available = bottom - Viewport(main).GlobalPosition.Y - 16;
+        SetHeight(Viewport(main), Math.Max(minimumHeight, available));
+    }
+
+    private static void SetHeight(Control viewport, float height)
+    {
+        if (viewport is HistoryOccurrenceList list) list.SetViewportHeight(height);
+        else if (!viewport.CustomMinimumSize.IsEqualApprox(new Vector2(0, height)))
+            viewport.CustomMinimumSize = new Vector2(0, height);
     }
 }

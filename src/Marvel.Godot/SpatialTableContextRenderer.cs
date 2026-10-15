@@ -46,7 +46,7 @@ internal static class SpatialTableContextRenderer
         var actions = new VBoxContainer { Name = "ContextualActionObjects", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         scroll.AddChild(actions);
         result.RegisterContextualActions(actions);
-        var complete = new Button { Name = "CompleteChoiceSheet", Text = "Complete Choices",
+        var complete = new Button { Name = "CompleteChoiceSheet", Text = ChoiceDisclosure.Label(prompt),
             CustomMinimumSize = new Vector2(148, 44), Visible = prompt is not null };
         panel.AddChild(complete);
         result.RegisterCompleteChoices(complete);
@@ -64,13 +64,25 @@ internal static class SpatialTableContextRenderer
             MouseFilter = Control.MouseFilterEnum.Ignore };
         cause.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         surface.AddChild(cause);
+        var prose = new VBoxContainer { Name = "CausalSituationCopy",
+            MouseFilter = Control.MouseFilterEnum.Ignore };
+        cause.AddChild(prose);
+        prose.Ready += () => AbilitySituationOwnership.Apply(ClientSceneHost.MainFor(prose), prose);
         Label heading = Copy(prompt?.PublicKind == PublicDecisionKind.PlayerAction ? ""
             : presentation?.Heading ?? PendingSituationPresentation.Heading(world));
         heading.AutowrapMode = TextServer.AutowrapMode.Word;
         heading.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         heading.Name = "ContextualHeading";
-        cause.AddChild(heading);
-        return AddResolution(cause, presentation, world, prompt);
+        prose.AddChild(heading);
+        heading.AddThemeFontSizeOverride("font_size", 18);
+        Label resolution = AddResolution(prose, presentation, world, prompt);
+        Label operation = Copy("");
+        operation.Name = "SpatialOperationalNotice";
+        operation.AutowrapMode = TextServer.AutowrapMode.Word;
+        operation.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
+        operation.Visible = false;
+        cause.AddChild(operation);
+        return resolution;
     }
 
     private static Label AddResolution(VBoxContainer cause, PromptPresentation? presentation,
@@ -94,7 +106,12 @@ internal static class SpatialTableContextRenderer
         return resolution;
     }
 
-    private static Label Copy(string text) => new() { Text = text, ThemeTypeVariation = GodotThemeVariations.Caption,
-        MouseFilter = Control.MouseFilterEnum.Ignore, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-        AutowrapMode = TextServer.AutowrapMode.Off, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
+    private static Label Copy(string text)
+    {
+        var label = new Label { Text = text, ThemeTypeVariation = GodotThemeVariations.Caption,
+            MouseFilter = Control.MouseFilterEnum.Ignore, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            AutowrapMode = TextServer.AutowrapMode.Off, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis };
+        label.AddThemeFontSizeOverride("font_size", 15);
+        return label;
+    }
 }

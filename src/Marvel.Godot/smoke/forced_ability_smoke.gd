@@ -62,6 +62,7 @@ func _inspect_forced_source() -> bool:
 		_fail("Black Cat receipt does not identify its actual discarded cards: " + summary.text)
 		return false
 	var heading := _window().find_child("ForcedAbilityHeading", true, false) as Control
+	if not await preload("res://smoke/transient_inspection_checks.gd").verify(self, heading): return false
 	if not await _keyboard_activate(heading): return false
 	var inspector := main.get_node("CardInspector") as Control
 	if not inspector.visible or "Black Cat" not in _visible_text(inspector):
@@ -74,6 +75,7 @@ func _forced_notification_layout_is_clear(window: Control) -> bool:
 	var heading := window.find_child("ForcedAbilityHeading", true, false) as Label
 	var acknowledge := window.find_child("AcknowledgeForcedAbility", true, false) as Button
 	if heading == null or heading.text != "Black Cat — Forced Response" or acknowledge == null \
+			or acknowledge.text != "Acknowledge" \
 			or window.find_child("WindowPass", true, false) != null:
 		_fail("forced effect lacks distinct acknowledgment: " + _visible_text(window))
 		return false

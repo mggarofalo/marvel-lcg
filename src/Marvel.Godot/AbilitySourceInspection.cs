@@ -10,8 +10,8 @@ internal static class AbilitySourceInspection
     {
         title.FocusMode = Control.FocusModeEnum.All;
         title.MouseFilter = Control.MouseFilterEnum.Stop;
-        title.MouseDefaultCursorShape = Control.CursorShape.PointingHand;
-        title.TooltipText = "Inspect " + face.Title;
+        title.MouseDefaultCursorShape = Control.CursorShape.Arrow;
+        TooltipPolicy.Inspect(title, face.Title);
         void Preview()
         {
             if (!main.cardInspectorPinned) main.boardController.ShowCardInspector(face, title, false);
@@ -21,8 +21,7 @@ internal static class AbilitySourceInspection
         CardFocusPreview.Bind(title, Preview, main.boardController.ScheduleCardInspectorHide);
         title.GuiInput += input =>
         {
-            if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }
-                || input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Enter or Key.Space })
+            if (input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Enter or Key.Space })
             {
                 main.boardController.ShowCardInspector(face, title, true);
                 title.AcceptEvent();

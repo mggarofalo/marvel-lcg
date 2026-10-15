@@ -169,6 +169,12 @@ One engine decision returns:
 - a visibility-filtered world descriptor; and
 - terminal game state when the game has ended.
 
+Terminal results distinguish final villain defeat, final main-scheme completion,
+and player loss. `WorldDescriptor.LossReason` distinguishes elimination of all
+players from simultaneous exhaustion of the encounter deck and discard pile.
+The rule owner supplies that public reason; View describes it without inferring
+the ending from the visible board. Replay derives it along with the outcome.
+
 The internal `World` and `World.Digest()` never cross this boundary. The digest
 contains hidden truth by design and is unsuitable as a client bootstrap format.
 
@@ -256,12 +262,25 @@ application composition.
 `IEngineTransport.ExchangeAsync` is the one interface a client uses in either
 deployment:
 
-- `InProcessTransport` calls the host in the same process; and
+- `InProcessTransport` synchronously calls the host in the same process for headless callers;
+- `QueuedInProcessTransport` gives the desktop's embedded host one dedicated FIFO
+  owner, returning control to the UI while each synchronous request runs; and
 - `SocketTransport` sends the same request to `SocketEngineServer`.
 
 The in-process path does not create a second gameplay API. The socket path may
 use asynchronous network input, but game-state mutation remains synchronous and
 single-threaded inside the host.
+
+The queued transport exclusively owns endpoint exchange. Cancellation while a
+request is queued proves it was not sent; after dispatch begins, cancellation
+does not interrupt replay, persistence or consumption of the authoritative
+response. An endpoint exception preserves uncertainty and permits read-only
+synchronization on the same owner. Shutdown stops new admission and drains all
+accepted requests before the owner exits. Client detach requests shutdown without
+waiting on the UI thread; temporary setup connections release their owners too.
+Normal window close asynchronously drains every application-owned embedded host
+before quitting Godot, including setup and detached requests still finishing.
+No scheduling choice enters the seed, digest, ledger or protocol version.
 
 The current socket framing and bearer capabilities are plaintext. A remote
 endpoint is therefore for development and trusted private networks only; it is
@@ -278,7 +297,7 @@ unknown JSON members fail before they reach the engine. Protocol 19 adds
 engine-authored decline commitments to prompts (ending a turn, passing an
 opportunity, or leaving an attack undefended), readable card-choice names, and
 an explicit visibility-safe attack completion event. Both endpoints must use the
-current protocol version (30). Protocol 30 adds the visibility-safe active attack
+current protocol version (31). Protocol 30 adds the visibility-safe active attack
 participants, maintained through nested decisions and the attack's end response
 window. This is a read-only projection; replay v14 and the state digest are unchanged.
 Protocol 29 adds exact optional-window choices,
@@ -421,3 +440,5 @@ Protocol 22 adds `history.undo_status`, a bounded latest-action edit status:
 search, reveal or randomness signal, its objects, or any concealed result.
 Another player's operation is classified by authority before protection.
 Replay and save identities remain unchanged.
+
+Protocol 31 / replay v16 carry engine-authored attack identities and lifetime boundaries, exact scheme/thwart occurrence causes, named resource-ability costs, and authoritative player-loss reasons. Attack identities distinguish enemy activation ids from character occurrence ids. They do not change RNG, card-state digests, game timing, or the save envelope. Supporting travel, reveal and installation receipts may share one presentation beat; every raw event remains available in diagnostics.

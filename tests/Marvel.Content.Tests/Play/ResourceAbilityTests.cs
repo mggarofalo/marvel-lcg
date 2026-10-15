@@ -58,6 +58,8 @@ public sealed class ResourceAbilityTests
         var source = Assert.Single(price!.Sources!);
         Assert.Equal(world.Seats[0].IdentityCard.ObjectId, source.Effect);
         Assert.Equal("B", source.Generates);
+        Assert.Equal("Scientist", source.AbilityName);
+        Assert.Null(source.CostDescription);
         Assert.Equal(
             "Scientist",
             world.Abilities.ResourceGeneratorName(world, 0, source.Effect));

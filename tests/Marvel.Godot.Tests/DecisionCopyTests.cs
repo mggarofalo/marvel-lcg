@@ -6,6 +6,30 @@ namespace Marvel.Godot.Tests;
 
 public sealed class DecisionCopyTests
 {
+    [Fact]
+    public void AbilityHoverRetainsAdditionalMeaningWithoutRepeatingItsVisibleAction()
+    {
+        var action = new AffordancePresentation(1, "Stun Rhino", "Stun Rhino.", "Response",
+            "Mockingbird", 7, 0, null, "", [])
+        {
+            SourceState = "Ready",
+            CostDescription = "Exhaust Mockingbird",
+        };
+        Assert.Equal("Exhaust Mockingbird", DecisionCopy.AbilityDetail(action, "Stun Rhino", "Stun Rhino"));
+        Assert.Empty(DecisionCopy.AbilityDetail(action with { CostDescription = null }, "Stun Rhino", null));
+    }
+
+    [Theory]
+    [InlineData(true, "Scientist", "Discard Peter Parker")]
+    [InlineData(false, "Scientist", "Scientist · Peter Parker")]
+    [InlineData(false, null, "Use Peter Parker")]
+    [InlineData(false, "Peter Parker", "Peter Parker")]
+    public void PaymentChoiceDistinguishesDiscardFromNamedAbility(bool discard, string? ability, string expected)
+    {
+        var source = new PaymentSourcePresentation(1, "Peter Parker", "B", discard, "") { AbilityName = ability };
+        Assert.Equal(expected, DecisionCopy.ResourceChoice(source));
+    }
+
     [Theory]
     [InlineData("Choose option", "Choose Rhino", "Choose Rhino")]
     [InlineData("Choose", "Choose Black Cat", "Choose Black Cat")]

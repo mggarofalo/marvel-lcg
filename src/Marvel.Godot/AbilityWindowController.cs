@@ -58,7 +58,9 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
         frame.AddText("AbilityWindowHeading", RequiredNotification?.Title
             ?? (titles.Length == 1 ? titles[0] : prompt.Heading), GodotThemeVariations.Heading);
         frame.AddText("AbilityWindowCause", RequiredNotification?.Summary ?? prompt.Resolution, GodotThemeVariations.Body);
-        frame.AddText("AbilityWindowAnswerer", $"Player {draft.Prompt.Player + 1}", GodotThemeVariations.Caption);
+        string answerer = panel.world?.Players.FirstOrDefault(player => player.Seat == draft.Prompt.Player)?.Name
+            ?? $"Player {draft.Prompt.Player + 1}";
+        frame.AddText("AbilityWindowAnswerer", answerer, GodotThemeVariations.Caption);
     }
 
     private void AddOffer(DecisionComposer draft, AffordancePresentation offer, int generation, bool showSource)
@@ -83,8 +85,7 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
 
     private static void AttachPreview(Button button, AffordancePresentation offer, string? choice = null)
     {
-        string summary = DecisionCopy.ActionSummary(offer);
-        button.TooltipText = string.IsNullOrWhiteSpace(choice) ? summary : $"{choice}\n{summary}";
+        button.TooltipText = DecisionCopy.AbilityDetail(offer, button.Text, choice);
         button.AccessibilityDescription = button.TooltipText;
     }
 
@@ -98,7 +99,7 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
     private void AddPass(DecisionComposer draft, PromptPresentation prompt, int generation)
     {
         if (!draft.Prompt.Cancellable) return;
-        Button pass = frame!.AddButton("WindowPass", prompt.DeclineLabel,
+        Button pass = frame!.AddButton("WindowPass", $"{prompt.DeclineLabel}  ·  Esc",
             () => Decline(draft, generation), panel.submitting);
         pass.SetMeta("table_mutation", true);
     }

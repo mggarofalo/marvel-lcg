@@ -7,7 +7,7 @@ namespace Marvel.Godot;
 internal static class SpatialCardCollection
 {
     internal static IReadOnlyList<CardControl> Render(Control surface, Rect2 bounds, string zone,
-        BoardCardPresentation[] cards, BoardRenderResult result, InterfaceScale scale, ICardArtProvider? art)
+        BoardCardPresentation[] cards, BoardRenderResult result, SpatialCardFactory faces)
     {
         var panel = new VBoxContainer { Name = $"Collection{zone}", Position = bounds.Position,
             Size = bounds.Size, CustomMinimumSize = bounds.Size, MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -27,7 +27,7 @@ internal static class SpatialCardCollection
         var controls = new List<CardControl>();
         foreach (BoardCardPresentation card in cards)
         {
-            CardLayoutMetrics layout = CardControl.LayoutFor(card, CardDisplaySize.Board, scale);
+            CardLayoutMetrics layout = CardControl.LayoutFor(card, CardDisplaySize.Board, faces.Scale);
             float factor = Math.Min(1, (bounds.Size.Y - 40 - 48) / (layout.MinimumHeight + 32));
             if (zone == "AlliesArea")
             {
@@ -36,7 +36,7 @@ internal static class SpatialCardCollection
                 float widestFace = cards.Any(SpatialTableZones.IsExhausted) ? layout.MinimumHeight : layout.Width;
                 factor = Math.Min(factor, slotWidth / widestFace);
             }
-            CardControl control = CardControl.CreateFitted(card, scale, art, factor);
+            CardControl control = faces.CreateFitted(card, factor);
             control.Name = $"ProceduralCard{card.TargetId}";
             SpatialCardSidecar.State(control, card);
             controls.Add(control);

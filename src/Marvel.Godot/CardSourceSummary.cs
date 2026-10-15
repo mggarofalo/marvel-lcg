@@ -10,7 +10,7 @@ internal static class CardSourceSummary
     {
         if (card.Concealed || card.Persistent is not { } source) return [];
         var lines = new List<string>(AbilityLines(card));
-        if (card.Damage > 0 || StoresDamage(source)) lines.Add($"{card.Damage} damage here");
+        if (card.DamageKnown && (card.Damage > 0 || StoresDamage(source))) lines.Add($"{card.Damage} damage here");
         foreach (BoardFieldPresentation counter in card.Counters) lines.Add($"{counter.Value} {counter.Name.ToLowerInvariant()}");
         if (SpatialTableZones.IsExhausted(card)) lines.Add("Exhausted");
         if (source.HasUnresolvedAbilities) lines.Add("Further abilities: inspect rules");
@@ -29,6 +29,17 @@ internal static class CardSourceSummary
             lines.Add(trigger + (costs.Length == 0 ? "" : costs + " → ") + effects);
         }
         return lines;
+    }
+
+    internal static string TileMeaning(BoardCardPresentation card)
+    {
+        if (card.Concealed || card.Persistent?.Abilities is not { Count: > 0 } abilities) return "";
+        CardPersistentAbilityDescriptor ability = abilities[0];
+        string effects = string.Join("; ", ability.Effects.Select(Effect));
+        string costs = string.Join(" + ", ability.Costs.Select(Cost));
+        // The bounded excerpt leads with the supplied effect; complete costs remain in inspection.
+        string detail = Trigger(ability.Trigger) + costs;
+        return effects + (detail.Length == 0 ? "" : " · " + detail.TrimEnd(' ', ':'));
     }
 
     private static bool StoresDamage(CardPersistentDescriptor source) => source.Abilities

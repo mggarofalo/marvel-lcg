@@ -20,7 +20,7 @@ func _run() -> void:
 		await _check_sample(sample, fixtures, failures)
 		sample.hide()
 	for failure in failures: push_error("B1_SOURCES_FAILED " + failure)
-	if failures.is_empty(): print("B1_SOURCES_OK continuous_copies=true titles_complete=true complete_rules=true pointer_keyboard=true")
+	if failures.is_empty(): print("B1_SOURCES_OK continuous_copies=true titles_bounded=true full_identity_accessible=true complete_rules=true pointer_keyboard=true")
 	main.queue_free()
 	await process_frame
 	await process_frame
@@ -57,23 +57,36 @@ func _check_copy(card: Control, scroll: ScrollContainer, fixtures: Control, fail
 	var title := card.find_child("SourceTitle", true, false) as Label
 	_scroll_ancestors(card, title)
 	for frame in range(3): await process_frame
-	if title == null or title.text.is_empty() or title.get_line_count() > title.get_visible_line_count():
-		failures.append("source title clipped or missing")
-	if not card.get_global_rect().encloses(title.get_global_rect()):
-		failures.append("source title exceeds its compact host-local tile")
+	_check_title(title, card, failures)
 	var action := card.find_child("SourceAction", true, false) as Button
 	_check_action(action, card, failures)
 	await _check_copy_input(card, title, fixtures, failures)
 
+func _check_title(title: Label, card: Control, failures: Array[String]) -> void:
+	if title == null or title.text.is_empty():
+		failures.append("source title clipped or missing")
+		return
+	if title.get_line_count() > title.get_visible_line_count():
+		failures.append("source title clipped or missing")
+	if title.get_line_count() > 2:
+		failures.append("source title exceeds two compact lines")
+	if not card.get_global_rect().encloses(title.get_global_rect()):
+		failures.append("source title exceeds its compact host-local tile")
+	if title.accessibility_name != str(card.get_meta("source_title")):
+		failures.append("source title loses full accessible identity")
+	var measured := title.get_theme_font("font").get_string_size(title.text.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, title.get_theme_font_size("font_size"))
+	if title.autowrap_mode == TextServer.AUTOWRAP_OFF and measured.x > title.size.x and title.text_overrun_behavior != TextServer.OVERRUN_TRIM_ELLIPSIS:
+		failures.append("bounded source title hides words without ellipsis")
+
 func _check_copy_input(card: Control, title: Label, fixtures: Control, failures: Array[String]) -> void:
 	var identity := int(str(card.name).trim_prefix("ProceduralCard"))
 	var original: Vector2 = card.position
-	# Inspect the title, leaving the source-integrated action hit area independent.
+	# Preview the title, leaving the source-integrated action hit area independent.
 	var visible_title := _visible_rect(title)
 	if not visible_title.has_area(): failures.append("host attachment title cannot be reached")
 	await _click(visible_title.get_center())
-	if int(fixtures.get_meta("inspected_id", -1)) != identity:
-		failures.append("pointer inspection lost physical source " + str(identity))
+	if int(fixtures.get_meta("previewed_id", -1)) != identity:
+		failures.append("pointer preview lost physical source " + str(identity))
 	if card.position.distance_to(original) > 1: failures.append("hover reordered a physical source")
 	card.grab_focus()
 	await _key(KEY_ENTER)

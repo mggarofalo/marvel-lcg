@@ -79,7 +79,8 @@ internal static class DecisionFocus
             return;
         }
 
-        candidate.GrabFocus();
+        if (panel.PaymentModalOpen && key == "InspectPaymentPlayed") CardFocusPreview.Restore(candidate);
+        else candidate.GrabFocus();
         Callable.From(() =>
         {
             Control? settled = CurrentControl(panel, key, renderGeneration);

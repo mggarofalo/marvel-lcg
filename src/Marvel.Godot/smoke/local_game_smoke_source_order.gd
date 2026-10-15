@@ -4,11 +4,15 @@ static func perform(driver, source: Control) -> bool:
 	for region in ["SourceReorderGrip", "SourceType", "SourceState", "SourceMeaning", "Card*Action"]:
 		var surface := source.find_child(region, true, false) as Control
 		if surface == null or not surface.is_visible_in_tree(): continue
+		if not await preload("res://smoke/gesture_settlement.gd").authored_pose(driver, source):
+			driver._fail("source arrangement baseline did not settle")
+			return false
 		if not await _region(driver, source, surface): return false
 	return true
 
 static func _region(driver, source: Control, surface: Control) -> bool:
-	var revision: String = (driver._node("Toolbar/SyncStatus") as Label).text
+	var revision: String = str((driver._node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
+	source.force_update_transform()
 	var original := source.get_global_transform()
 	var start := surface.get_global_rect().get_center()
 	var hover := InputEventMouseMotion.new()
@@ -46,7 +50,10 @@ static func _region(driver, source: Control, surface: Control) -> bool:
 	press.global_position = move.position
 	driver.render_viewport.push_input(press, true)
 	await driver.process_frame
-	if not source.get_global_transform().is_equal_approx(original) or (driver._node("Toolbar/SyncStatus") as Label).text != revision:
+	if not await preload("res://smoke/gesture_settlement.gd").global_pose(driver, source, original):
+		driver._fail("cancelled source did not settle: region=%s expected=%s actual=%s local=%s slot=%s" % [surface.name, original, source.get_global_transform(), source.position, source.get_parent().get_global_rect()])
+		return false
+	if not source.get_global_transform().is_equal_approx(original) or str((driver._node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		driver._fail("source rearrangement changed game revision or failed to restore its physical slot")
 		return false
 	return true

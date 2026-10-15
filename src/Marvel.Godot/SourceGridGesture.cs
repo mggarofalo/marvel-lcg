@@ -8,6 +8,11 @@ internal sealed partial class SourceGridGesture : Node
     private readonly Dictionary<Control, CardControl> cards = [];
     private readonly List<Control> vacancies = [];
     private readonly CardPointerLift lift = new();
+    private readonly CardReturnMotion returns = new();
+    private int? hoveredSlot;
+    private readonly DragPointerFeedback pointerFeedback = new();
+    private SourceGridSlotMotion slotMotion = null!;
+    private Control? swapped;
     private GridContainer grid = null!;
     private ScrollContainer viewport = null!;
     private BoardRenderResult result = null!;
@@ -28,6 +33,7 @@ internal sealed partial class SourceGridGesture : Node
         viewport = scroll;
         seat = player;
         result = board;
+        slotMotion = new SourceGridSlotMotion(grid, cards, () => result.MotionEnabled);
         feedback = new SourceArrangementFeedback(scroll.GetParent<Control>());
     }
 
@@ -51,8 +57,8 @@ internal sealed partial class SourceGridGesture : Node
         Control header = card.FindChild("SourceTitleBand", true, false) as Control ?? card;
         Label title = (Label)card.FindChild("SourceTitle", true, false);
         var grip = new Button { Name = "SourceReorderGrip", Text = "", Flat = true,
-            AccessibilityName = $"Arrange {identity}", TooltipText = "Drag and drop into any slot. Space picks up; arrows move; Enter places; Escape cancels.",
-            Alignment = HorizontalAlignment.Right, MouseDefaultCursorShape = Control.CursorShape.Drag,
+            AccessibilityName = $"Arrange {identity}", AccessibilityDescription = "Space picks up; arrows move; Enter places; Escape cancels.",
+            Alignment = HorizontalAlignment.Right, MouseDefaultCursorShape = Control.CursorShape.Move,
             MouseFilter = Control.MouseFilterEnum.Stop, ZIndex = 20 };
         grip.AddThemeFontSizeOverride("font_size", 16);
         using var empty = new StyleBoxEmpty();
@@ -121,15 +127,16 @@ internal sealed partial class SourceGridGesture : Node
     private void Begin(CardControl card, Control slot, Button grip, Vector2 point, bool usingKeyboard)
     {
         Cancel();
+        returns.Stop(card);
         dragged = card;
         origin = slot;
         handle = grip;
         start = point;
         keyboard = usingKeyboard;
         original = [.. grid.GetChildren().OfType<Control>()];
-        result.SetSourceArrangement(true);
+        if (usingKeyboard) result.SetSourceArrangement(true);
         foreach (Control vacancy in vacancies) vacancy.QueueRedraw();
-        feedback.Show(slot, $"Picked up {Identity(slot)} · {Place(slot)}. Arrows move; Enter places; Escape cancels.");
+        if (usingKeyboard) feedback.Show(slot, $"Picked up {Identity(slot)} · {Place(slot)}. Arrows move; Enter places; Escape cancels.");
     }
 
     public override void _Input(InputEvent input)
@@ -158,10 +165,10 @@ internal sealed partial class SourceGridGesture : Node
     private void Preview(Vector2 pointer)
     {
         if (dragged is null || !CardPointerGestureRouter.IsDrag(start, pointer)) return;
-        if (!moving) { lift.Begin(dragged); moving = true; }
-        CardPointerLift.Move(dragged, pointer);
-        dragged.GlobalPosition -= new Vector2(dragged.Size.X / 2 + 16, 0);
+        if (!moving) { result.SetSourceArrangement(true); lift.Begin(dragged, start); pointerFeedback.Begin(dragged, Cancel); moving = true; }
+        lift.Move(dragged, pointer);
         Control? target = SlotAt(pointer);
+        pointerFeedback.Preview(pointer, target is not null, "Outside source grid · release to cancel");
         if (target is null)
         {
             feedback.Show(origin!, "Outside the source grid · release to cancel. Your table order is unchanged.");
@@ -172,6 +179,9 @@ internal sealed partial class SourceGridGesture : Node
 
     private void SwapWith(Control target)
     {
+        if (swapped == target) return;
+        swapped = target;
+        slotMotion.Capture(dragged);
         if (target == origin)
         {
             RestoreOrder();
@@ -190,8 +200,9 @@ internal sealed partial class SourceGridGesture : Node
     private Control? SlotAt(Vector2 pointer)
     {
         if (!viewport.GetGlobalRect().HasPoint(pointer)) return null;
-        Control? hit = grid.GetChildren().OfType<Control>().FirstOrDefault(slot => slot.GetGlobalRect().HasPoint(pointer));
-        return hit is null ? null : original[hit.GetIndex()];
+        Rect2[] bounds = [.. grid.GetChildren().OfType<Control>().Select(slot => slot.GetGlobalRect())];
+        hoveredSlot = TargetSnapGeometry.Select(bounds, pointer, hoveredSlot);
+        return hoveredSlot is { } index ? original[index] : null;
     }
 
     private void Complete(Vector2 pointer)
@@ -210,21 +221,19 @@ internal sealed partial class SourceGridGesture : Node
 
     private void CompleteClick(Vector2 pointer)
     {
-        CardControl? inspected = dragged;
         Button? action = clickedAction;
         Cancel();
         if (InteractionControl.IsUsable(action) && action!.GetGlobalRect().HasPoint(pointer))
             action.EmitSignal(BaseButton.SignalName.Pressed);
-        else if (action is null && inspected is not null && CardPointerHitTest.Contains(inspected, pointer))
-            result.InspectSource(inspected);
     }
 
     private void Cancel()
     {
         if (dragged is null) return;
+        slotMotion.Capture(dragged);
         RestoreOrder();
         result.PresentGestureFeedback("");
-        Finish();
+        Finish(cancelled: true);
     }
 
     private void RestoreOrder()
@@ -232,24 +241,35 @@ internal sealed partial class SourceGridGesture : Node
         for (int index = 0; index < original.Length; index++) grid.MoveChild(original[index], index);
     }
 
-    private void Finish()
+    private void Finish(bool cancelled = false)
     {
         if (InteractionControl.IsUsable(clickedAction)) clickedAction!.SetPressedNoSignal(false);
         clickedAction = null;
+        pointerFeedback.Finish(cancelled && moving ? "Arrangement cancelled · returned" : "");
         feedback.Hide();
         result.SetSourceArrangement(false);
         lift.Restore();
         if (InteractionControl.IsUsable(dragged))
         {
+            CardControl settling = dragged!;
+            Vector2 released = settling.Position;
             dragged!.Position = Vector2.Zero;
             dragged.ZIndex = 0;
             result.UpdateRestingPose(dragged);
+            if (moving && !keyboard && result.MotionEnabled)
+            {
+                settling.Position = released;
+                returns.Settle(settling, Vector2.Zero, settling.Rotation,
+                    () => result.UpdateRestingPose(settling));
+            }
         }
         dragged = null;
         foreach (Control vacancy in vacancies) vacancy.QueueRedraw();
         origin = null;
         moving = false;
         original = [];
+        hoveredSlot = null;
+        swapped = null;
         if (keyboard && InteractionControl.IsUsable(handle)) CardFocusPreview.Restore(handle!);
         handle = null;
     }

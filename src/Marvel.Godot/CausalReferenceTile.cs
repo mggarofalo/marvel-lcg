@@ -8,19 +8,16 @@ internal static class CausalReferenceTile
 {
     internal static CardControl Create(BoardCardPresentation card, float width, InterfaceScale scale)
     {
-        CardControl control = CardControl.CreateSource(card, width, scale);
+        CardControl control = CardControl.CreateSourceFrame(card, width, scale);
         var body = control.GetNode<VBoxContainer>("SourceBody");
-        Node strip = body.GetNode("SourceStrip");
-        body.RemoveChild(strip);
-        strip.QueueFree();
         var content = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         body.AddChild(content);
         body.MoveChild(content, 0);
-        content.AddChild(CardSourceStrip.Label(card.Title, "ReferenceTitle", 16, CardTypography.Title));
-        content.AddChild(CardSourceStrip.Label(card.Kind, "ReferenceKind", 10, CardTypography.Body));
-        if (CardProgressValue.From(card) is { } progress)
-            content.AddChild(CardSourceStrip.Label($"{(progress.IsThreat ? "Threat" : "HP")} {progress.Value}",
-                "ReferenceProgress", 13, CardTypography.Bold));
+        Label title = CardSourceStrip.Label(card.Title, "ReferenceTitle", 16, CardTypography.Title);
+        title.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        title.AutowrapMode = TextServer.AutowrapMode.Off;
+        content.AddChild(title);
+        control.CustomMinimumSize = new Vector2(width, 32);
         control.AccessibilityName = CardLiveStateRendering.Description(card);
         return control;
     }

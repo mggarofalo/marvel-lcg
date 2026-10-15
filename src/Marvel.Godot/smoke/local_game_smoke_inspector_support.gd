@@ -32,7 +32,7 @@ func _capture_named_card(title: String, checkpoint: String) -> bool:
 	if card == null:
 		_fail("the table has no readable '%s' card for visual inspection" % title)
 		return false
-	if not await _pointer_activate_card_body(card):
+	if not await _keyboard_activate(card):
 		return false
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control

@@ -185,6 +185,7 @@ internal sealed class SetupSelectionControls
             : $"{main.setupChoices.Heroes[main.hero.Selected].Name} + {main.secondHero.GetItemText(main.secondHero.Selected)}";
         main.briefingModular.Text = main.modular.Text;
         RefreshStartAvailability();
+        SetupEntryPresentation.Configure(main);
     }
 
     internal void RefreshStartAvailability()
@@ -206,6 +207,7 @@ internal sealed class SetupSelectionControls
             main.status.Text = string.Empty;
             main.statusPanel.Visible = false;
         }
+        SetupEntryPresentation.RefreshAvailability(main);
     }
 
     internal void RefreshEntryAvailability()

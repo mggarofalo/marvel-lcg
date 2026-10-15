@@ -19,15 +19,15 @@ internal static class AttackPromptContext
 
         Card enemy = world.Cards[attack.Enemy];
         Card target = world.Cards[attack.Target];
-        string player = AttackPlayerName(world, attack.Player);
         string stage = SequenceDescriptions.AttackStage(step.What);
         string window = AttackWindowDescription(world.Agenda.Stage);
         bool defenseContext = prompt.PublicKind == PublicDecisionKind.Defense
             && !string.IsNullOrWhiteSpace(prompt.Description);
         string situation = defenseContext ? prompt.Description! : AttackSituation(
-            world, facts, attack, enemy, target, player, step);
+            world, facts, attack, enemy, target, step);
         if (!defenseContext && world.Attack is not null)
             situation = AttackOverkillDescription.Context(world, facts, enemy) + situation;
+        situation += AttackedPlayerContext(world, attack);
         string[] attachments = AttackAttachments(world, facts, enemy);
         situation = AppendAttackContext(situation, attachments, prompt.Description);
         IReadOnlyList<int> causes = ActivationCausalCards.For(world, step);
@@ -42,6 +42,10 @@ internal static class AttackPromptContext
 
     private static EnemyAttack? AttackForPrompt(World world, PhaseStep step) =>
         world.Attack ?? (step.What == Steps.EndAttack ? world.FinishedAttack : null);
+
+    private static string AttackedPlayerContext(World world, EnemyAttack attack) =>
+        world.Seats[attack.Player].IdentityCard.ObjectId == attack.Target
+            ? string.Empty : $" Attacked player: {AttackPlayerName(world, attack.Player)}.";
 
     private static string AttackPlayerName(World world, int player) =>
         player >= 0 && player < world.Seats.Count
@@ -79,27 +83,25 @@ internal static class AttackPromptContext
 
     private static string AttackSituation(
         World world, ICardFacts facts, EnemyAttack attack, Card enemy, Card target,
-        string player, PhaseStep step)
+        PhaseStep step)
     {
         if (world.Attack is null && step.What == Steps.EndAttack)
         {
-            return FinishedAttackSituation(world, facts, attack, enemy, target, player);
+            return FinishedAttackSituation(world, facts, attack, enemy, target);
         }
         if (attack.CalculatedDamage is { } damage)
         {
             return $"{AttackCompletion.SubjectTitle(world, facts, enemy.ObjectId)} is attacking {EffectiveCards.Title(target, facts)} "
-                + $"for {damage} damage against {player}. "
+                + $"for {damage} damage. "
                 + Damage.PreviewAttack(world, facts, enemy, enemy, target, damage);
         }
         long attackValue = StateFields.Modified(world, enemy, "attack", facts, world.Players);
-        return $"{AttackCompletion.SubjectTitle(world, facts, enemy.ObjectId)} is initiating an attack against {player}. "
-            + $"Target: {EffectiveCards.Title(target, facts)}. "
+        return $"{AttackCompletion.SubjectTitle(world, facts, enemy.ObjectId)} is attacking {EffectiveCards.Title(target, facts)}. "
             + $"ATK {attackValue} {AttackBoostDescription.Before(world, facts, enemy, step.What)}.";
     }
 
     private static string FinishedAttackSituation(
-        World world, ICardFacts facts, EnemyAttack attack, Card enemy, Card target,
-        string player)
+        World world, ICardFacts facts, EnemyAttack attack, Card enemy, Card target)
     {
         string targetState;
         if (!DeckTypes.IsInPlay(target.Area.Type))
@@ -116,7 +118,7 @@ internal static class AttackPromptContext
             ? $" Calculated attack damage: {calculated}."
             : string.Empty;
         return $"{AttackCompletion.SubjectTitle(world, facts, enemy.ObjectId)} finished attacking "
-            + $"{EffectiveCards.Title(target, facts)} against {player}."
+            + $"{EffectiveCards.Title(target, facts)}."
             + damage
             + (attack.Damaged ? " The attack dealt damage. " : " No damage was dealt. ")
             + targetState;

@@ -20,7 +20,8 @@ internal static class PrintedCardFace
         var features = new CardFaceFeatures(landscape, card.Cost is not null || card.PrintedStats.Any(value => value.Name == "Stage"),
             illustration is not null, stats.Count > 0, card.Traits.Count > 0,
             displaySize == CardDisplaySize.Full, CardPrintedIcons.RowCount(card))
-        { StatCount = stats.Count, HasConsequences = stats.Any(stat => stat.ConsequentialDamage > 0),
+        { StatCount = stats.Count, ReadingScale = layout.ReadingScale,
+            HasConsequences = stats.Any(stat => stat.ConsequentialDamage > 0),
             HasProgress = CardProgressValue.From(card) is not null };
         var provisional = new CardFaceRegions(size, features);
         RichTextLabel rules = CardRulesRendering.Create(card, scale, provisional.RulesFontSize);

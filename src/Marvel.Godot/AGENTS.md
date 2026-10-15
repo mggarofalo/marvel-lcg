@@ -80,7 +80,7 @@ invented reason such as insufficient resources.
 
 Provide discoverable click and keyboard equivalents, including source actions,
 target selection, payment, cancellation and confirmation. Card inspection is
-distinct from choosing an action. Clicking a card body pins its inspector;
+distinct from choosing an action. Hovering a card body previews it; Enter pins its inspector;
 source actions need a clear contextual entry or keyboard equivalent rather
 than making a body click both inspect and act.
 

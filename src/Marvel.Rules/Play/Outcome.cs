@@ -26,10 +26,11 @@ public enum Outcome
     VillainWins,
 
     /// <summary>
-    /// The encounter deck and its discard pile emptied together.
+    /// All players were eliminated, or the encounter deck and its discard pile emptied together.
     /// </summary>
     /// <remarks>
-    /// <c>rr:encounter-deck.4</c>, and it is worded from the players' side
+    /// <c>rr:player-elimination.4</c>: "If all players are eliminated, the game ends and the players lose."
+    /// <c>rr:encounter-deck.4</c> is also worded from the players' side
     /// rather than the villain's: "an infinite loop occurs with an infinite
     /// number of acceleration tokens being placed next to the main scheme deck.
     /// <b>If this happens, the players lose.</b>" Kept apart from

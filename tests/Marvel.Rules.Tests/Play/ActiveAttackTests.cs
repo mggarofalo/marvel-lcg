@@ -91,10 +91,10 @@ public sealed class ActiveAttackTests : AttackTestBase
             CharacterAttack: world.CharacterAttack);
         world.Agenda.Now(step);
         world.Agenda.Begin(world, world.Facts);
-        Assert.Equal(new ActiveAttack(hero, villain), ActiveAttack.From(world));
+        Assert.Equal(new ActiveAttack(hero, villain) { Identity = new(Moment.Id(step.Round, step.Number, step.Index), false) }, ActiveAttack.From(world));
         world.Agenda.Advance();
         world.Agenda.Advance();
-        Assert.Equal(new ActiveAttack(hero, villain), ActiveAttack.From(world));
+        Assert.Equal(new ActiveAttack(hero, villain) { Identity = new(Moment.Id(step.Round, step.Number, step.Index), false) }, ActiveAttack.From(world));
         world.Agenda.Advance();
         Assert.Equal(new ActiveAttack(villain, hero), ActiveAttack.From(world));
         world.Attack = null;

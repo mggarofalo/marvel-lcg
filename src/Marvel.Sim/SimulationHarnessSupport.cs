@@ -439,13 +439,8 @@ internal static class SimulationHarnessSupport
     }
 
     internal static void RequireNullablePrompt(
-        PromptRecord? expected, PromptRecord? actual, string what)
-    {
-        RequireEqual(
-            JsonSerializer.Serialize(expected, RecordJson.Options),
-            JsonSerializer.Serialize(actual, RecordJson.Options),
-            what);
-    }
+        PromptRecord? expected, PromptRecord? actual, string what) =>
+        JournalReplay.RequirePromptRecords(expected, actual, what);
 
     internal static void RequireSequence<T>(
         IReadOnlyList<T> expected, IReadOnlyList<T> actual, string what)

@@ -83,4 +83,42 @@ public sealed class EventActivityProjectionTests : EventPresentationTestBase
             Assert.Equal(new ActivityQuantity("health", 1, 2), Assert.Single(activity.Quantities));
         }
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CausalNamesAreRemovedWhenEitherParticipantIsPrivate(bool cooperative)
+    {
+        var world = VisibilityFixture.Board();
+        int privateCard = world.Seats[1].Hand.Cards[0].ObjectId;
+        int source = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
+        IVisibilityPolicy policy = cooperative ? new PermissiveVisibilityPolicy() : new RestrictedVisibilityPolicy(0);
+        var changed = new FieldSet(source, "health", 10, 9)
+        { Cause = new(15, EventCauseKind.Thwart, source, privateCard) { SourceTitle = "Hero", TargetTitle = "Private identity" } };
+        var projected = WorldProjection.For(world, null, [changed], policy.Authorize(null, world.Players));
+        var retained = Assert.Single(projected.Events);
+        if (cooperative) Assert.Equal("Hero thwarts Private identity", EventPresenter.Present(retained, projected.World).Intention);
+        else { Assert.Null(retained.Cause); Assert.Null(EventPresenter.Present(retained, projected.World).Intention); }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AttackBoundariesCannotExposeAnUnauthorizedParticipant(bool cooperative)
+    {
+        var world = VisibilityFixture.Board();
+        int privateCard = world.Seats[1].Hand.Cards[0].ObjectId;
+        int source = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
+        IVisibilityPolicy policy = cooperative ? new PermissiveVisibilityPolicy() : new RestrictedVisibilityPolicy(0);
+        var boundary = new AttackBoundary(new(17, true), source, privateCard, true)
+        { AttackIdentity = new(17, true), Subjects = new Dictionary<int, string> { [privateCard] = "Private participant" } };
+        var projected = WorldProjection.For(world, null, [boundary], policy.Authorize(null, world.Players));
+        if (!cooperative) Assert.Empty(projected.Events);
+        else
+        {
+            var retained = Assert.IsType<AttackBoundary>(Assert.Single(projected.Events));
+            Assert.Equal(boundary.Identity, retained.Identity);
+            Assert.Equal(privateCard, retained.Target);
+        }
+    }
 }

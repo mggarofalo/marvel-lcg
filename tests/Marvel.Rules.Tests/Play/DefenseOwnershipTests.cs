@@ -24,7 +24,7 @@ public sealed class DefenseOwnershipTests : AttackTestBase
         Assert.All(first.Affordances, option => Assert.Equal(1, option.AnchorPlayer));
         Assert.Equal("Pass defense opportunity", first.DeclineLabel);
         Assert.Contains("Passing offers the next eligible player a defense opportunity.", first.Description);
-        Assert.Contains("against p0", first.Description);
+        Assert.DoesNotContain(" against ", first.Description);
         Sequence.Answer(world, facts, abilities, first, Decision.Decline, []);
         var second = Sequence.Work(world, facts, abilities, [])!;
         Assert.Equal(2, second.Player);

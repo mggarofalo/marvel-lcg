@@ -26,7 +26,6 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal void PresentOperationalNotice(Marvel.Client.GameProgressPresentation progress) =>
         choices.PresentProgress(progress);
     internal void SetCompleteChoicesVisibility(bool open) => mulliganBoard?.SetCompleteChoicesOpen(open);
-    internal bool PaymentPreviewExpanded = true;
     internal bool PaymentModalOpen => paymentModal is not null;
     internal CardPaymentWorkspace? PaymentModal => paymentModal;
     internal void OpenPayment(PromptPresentation prompt)
@@ -253,6 +252,8 @@ public sealed partial class DecisionPanel : VBoxContainer
             Outcome.PlayersLose => ("DEFEAT", "The players lost. No further decision is waiting."),
             _ => ("NO DECISION", "No decision is available."),
         };
+        if (world is { Outcome: not Outcome.Unfinished })
+            detail = OutcomeDescription.Result(world.Outcome, world.LossReason);
         AddChild(Text(heading, GodotThemeVariations.Caption));
         AddChild(Text(detail, GodotThemeVariations.Body, wrap: true));
     }

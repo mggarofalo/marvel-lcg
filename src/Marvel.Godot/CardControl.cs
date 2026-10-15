@@ -7,6 +7,16 @@ namespace Marvel.Godot;
 public sealed partial class CardControl : PanelContainer
 {
     private string baseVariation = GodotThemeVariations.BoardCard;
+    private BoardCardPresentation? displayedPresentation;
+    internal BoardCardPresentation? DisplayedPresentation
+    {
+        get => displayedPresentation;
+        // Receipt animation may change values inside the body; only freshly
+        // constructed snapshot faces receive a reusable key.
+        set { displayedPresentation = value; FaceReuseKey = null; }
+    }
+    internal CardFaceReuseKey? FaceReuseKey { get; private set; }
+    internal ICardArtProvider? FaceArt { get; private set; }
     private bool highlighted;
     private bool presented;
     private CardInteractionCue interactionCue;
@@ -32,19 +42,26 @@ public sealed partial class CardControl : PanelContainer
         return CreateAtLayout(card, size, scale, art, layout);
     }
 
+    internal static CardControl CreateReconciled(BoardCardPresentation card, CardDisplaySize size,
+        InterfaceScale scale, ICardArtProvider? art, BoardCardFaceReuse? reuse,
+        InterfaceScale readingScale = InterfaceScale.Standard)
+        => CreateAtLayout(card, size, scale, art, LayoutFor(card, size, scale) with { ReadingScale = readingScale }, reuse);
+
     internal static CardControl CreateFitted(BoardCardPresentation card, InterfaceScale scale,
-        ICardArtProvider? art, float factor)
+        ICardArtProvider? art, float factor, BoardCardFaceReuse? reuse = null,
+        InterfaceScale readingScale = InterfaceScale.Standard)
     {
         CardLayoutMetrics layout = LayoutFor(card, CardDisplaySize.Board, scale);
         return CreateAtLayout(card, CardDisplaySize.Board, scale, art, layout with
         {
             Width = Math.Max(1, Mathf.RoundToInt(layout.Width * factor)),
             MinimumHeight = Math.Max(1, Mathf.RoundToInt(layout.MinimumHeight * factor)),
-        });
+            ReadingScale = readingScale,
+        }, reuse);
     }
 
     private static CardControl CreateAtLayout(BoardCardPresentation card, CardDisplaySize size,
-        InterfaceScale scale, ICardArtProvider? art, CardLayoutMetrics layout)
+        InterfaceScale scale, ICardArtProvider? art, CardLayoutMetrics layout, BoardCardFaceReuse? reuse = null)
     {
         CardControl control = CreateShell(card, SpatialCardMetrics.FaceSize(card, size, layout, scale), scale);
         var surface = new Control
@@ -53,7 +70,11 @@ public sealed partial class CardControl : PanelContainer
             CustomMinimumSize = control.CustomMinimumSize - Vector2.One * (2 * CardVisualTokens.FrameInset),
         };
         control.AddChild(surface);
-        Control body = CardFaceRendering.CreateBody(card, size, layout, scale, art);
+        control.FaceReuseKey = reuse is null ? null : CardFaceReuseKey.From(card, size, scale, layout);
+        control.FaceArt = art;
+        control.SetMeta("card_reading_scale", (int)layout.ReadingScale);
+        Control body = (control.FaceReuseKey is { } key ? reuse?.Take(key, art) : null)
+            ?? CardFaceRendering.CreateBody(card, size, layout, scale, art);
         surface.AddChild(body);
         if (body.FindChild("ResourceIcons", true, false) is Control resources)
             control.SetMeta("card_resource_rect", new Rect2(resources.Position + Vector2.One * CardVisualTokens.FrameInset, resources.Size));
@@ -74,9 +95,9 @@ public sealed partial class CardControl : PanelContainer
         {
             Name = "ProceduralCard",
             TargetId = card.TargetId,
+            DisplayedPresentation = card,
             CustomMinimumSize = dimensions,
             SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
-            TooltipText = CardLiveStateRendering.Description(card),
             AccessibilityName = CardLiveStateRendering.Description(card),
             FocusMode = card.Concealed ? FocusModeEnum.None : FocusModeEnum.All,
             MouseFilter = MouseFilterEnum.Pass,
@@ -94,7 +115,7 @@ public sealed partial class CardControl : PanelContainer
         return control;
     }
 
-    internal static CardControl CreateSource(BoardCardPresentation card, float width, InterfaceScale scale)
+    internal static CardControl CreateSourceFrame(BoardCardPresentation card, float width, InterfaceScale scale)
     {
         CardControl control = CreateShell(card, new Vector2(width, 0), scale);
         using var paper = new StyleBoxFlat { BgColor = CardFaceStyle.Paper,
@@ -103,7 +124,6 @@ public sealed partial class CardControl : PanelContainer
         control.AddThemeStyleboxOverride("panel", paper);
         var content = new VBoxContainer { Name = "SourceBody", MouseFilter = MouseFilterEnum.Ignore };
         control.AddChild(content);
-        content.AddChild(CardSourceStrip.Create(card, width));
         var overlay = new Control { Name = "SourceInteraction", MouseFilter = MouseFilterEnum.Ignore };
         control.AddChild(overlay);
         control.AddInteractionChrome(overlay, width);
@@ -194,8 +214,8 @@ public sealed partial class CardControl : PanelContainer
 
         interactionCue = value;
         cue.Visible = value != CardInteractionCue.None && baseVariation != GodotThemeVariations.ConcealedCard;
-        cue.Text = CueText(value);
-        cue.AccessibilityName = CueDescription(value);
+        cue.Text = CardInteractionCueText.Symbol(value);
+        cue.AccessibilityName = CardInteractionCueText.Description(value);
         cue.TooltipText = cue.AccessibilityName;
         bool resource = (value & (CardInteractionCue.LegalGenerator | CardInteractionCue.SelectedGenerator)) != 0;
         cue.Position = resource && HasMeta("card_resource_rect")
@@ -226,12 +246,13 @@ public sealed partial class CardControl : PanelContainer
         }
 
         interactionCue &= ~CardInteractionCue.OfferedAction;
-        cue.Text = CueText(interactionCue);
+        cue.Text = CardInteractionCueText.Symbol(interactionCue);
         cue.Visible = false;
 
         CardSymbolButtonStyle.Apply(control, onPaper: HasMeta("source_strip"));
         if (HasMeta("source_tableau_tile"))
-            SourceTableauTile.StyleAction(control, GetMeta("source_title").AsString());
+            SourceTableauTile.StyleAction(control, GetMeta("source_title").AsString(),
+                (InterfaceScale)GetMeta("source_reading_scale", 100).AsInt32());
         if (GetParent() is Container parent)
         {
             parent.QueueSort();
@@ -275,18 +296,4 @@ public sealed partial class CardControl : PanelContainer
         QueueRedraw();
     }
 
-    private static string CueText(CardInteractionCue cue) =>
-        (cue & (CardInteractionCue.SelectedTarget | CardInteractionCue.SelectedGenerator
-            | CardInteractionCue.SelectedDestructiveChoice)) != 0 ? "✓"
-        : cue.HasFlag(CardInteractionCue.LegalTarget) ? "◎"
-        : cue.HasFlag(CardInteractionCue.OfferedAction) ? "↗"
-        : cue.HasFlag(CardInteractionCue.Unavailable) ? "×" : "";
-
-    private static string CueDescription(CardInteractionCue cue) =>
-        cue.HasFlag(CardInteractionCue.SelectedTarget) ? "Selected target"
-        : cue.HasFlag(CardInteractionCue.SelectedGenerator) ? "Selected payment source"
-        : cue.HasFlag(CardInteractionCue.SelectedDestructiveChoice) ? "Staged discard"
-        : cue.HasFlag(CardInteractionCue.LegalTarget) ? "Available target"
-        : cue.HasFlag(CardInteractionCue.OfferedAction) ? "Available action"
-        : cue.HasFlag(CardInteractionCue.Unavailable) ? "Unavailable" : "";
 }

@@ -37,13 +37,15 @@ func _inspect(sample: Control, failures: Array[String]) -> void:
 	var source := sample.get_node("InspectionSource") as Control
 	await _neighbor(sample, failures)
 	var original := source.get_global_transform()
-	await _click(source)
+	source.grab_focus()
+	await _key(KEY_ENTER)
 	for frame in range(4): await process_frame
 	var popup := root.find_child("PileInspector", true, false) as PopupPanel
 	if popup == null:
-		failures.append("pointer did not open inspection")
+		failures.append("Enter did not open inspection")
 		return
 	_check(popup, sample, failures)
+	await _late_minimum_growth(popup, failures)
 	await _modified_value(popup, failures)
 	await _close(popup, source, failures)
 	if source.get_global_transform() != original: failures.append("inspection moved its source")
@@ -61,7 +63,8 @@ func _inspect(sample: Control, failures: Array[String]) -> void:
 
 func _navigation(sample: Control, failures: Array[String]) -> void:
 	var source := sample.get_node("InspectionSource") as Control
-	await _click(source)
+	source.grab_focus()
+	await _key(KEY_ENTER)
 	for frame in range(4): await process_frame
 	var popup := root.find_child("PileInspector", true, false) as PopupPanel
 	if popup == null:
@@ -75,6 +78,7 @@ func _navigation(sample: Control, failures: Array[String]) -> void:
 	var fixed_point := Vector2(popup.position) + next_rect.get_center()
 	var orientations: Dictionary = {}
 	for index in range(6):
+		_check_popup_bounds(popup, failures)
 		var face := popup.find_child("CardFace", true, false) as Control
 		orientations[face.size.x > face.size.y] = true
 		if next.get_global_rect() != next_rect or previous.get_global_rect() != previous_rect or Rect2(Vector2(popup.position), Vector2(popup.size)) != popup_rect:
@@ -115,13 +119,24 @@ func _neighbor(sample: Control, failures: Array[String]) -> void:
 		await process_frame
 
 func _check(popup: PopupPanel, sample: Control, failures: Array[String]) -> void:
-	var bounds := Rect2(Vector2(popup.position), Vector2(popup.size))
-	if not Rect2(0, 0, 1920, 1080).encloses(bounds): failures.append("popup exceeds viewport: " + str(bounds))
+	_check_popup_bounds(popup, failures)
 	var face := popup.find_child("CardFace", true, false)
 	var title := face.find_child("Title", true, false) as Label
 	if title.text != str(sample.get_meta("title")): failures.append("inspection lost full card identity")
 	_check_text(popup, face, failures)
 	_check_boundaries(popup, failures)
+
+func _check_popup_bounds(popup: PopupPanel, failures: Array[String]) -> void:
+	var bounds := Rect2(Vector2(popup.position), Vector2(popup.size))
+	if not Rect2(0, 0, 1920, 1080).encloses(bounds): failures.append("popup exceeds viewport: " + str(bounds))
+
+func _late_minimum_growth(popup: PopupPanel, failures: Array[String]) -> void:
+	if OS.get_environment("MARVEL_UI_SCALE") != "50": return
+	# Synthetic layout stress: late native minimum growth must reposition
+	# the window while source geometry and dismissal remain usable.
+	popup.min_size = popup.size + Vector2i(0, 16)
+	for frame in range(3): await process_frame
+	_check_popup_bounds(popup, failures)
 
 func _check_text(popup: PopupPanel, face: Control, failures: Array[String]) -> void:
 	for label in popup.find_children("*", "Label", true, false):

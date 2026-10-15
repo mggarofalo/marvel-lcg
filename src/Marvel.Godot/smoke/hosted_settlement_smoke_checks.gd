@@ -35,7 +35,8 @@ func _response_surface(revision: int, status: String) -> Control:
 	main.add_child(status_bar)
 	var sync := Label.new()
 	sync.name = "SyncStatus"
-	sync.text = "Last synced · r%d" % revision
+	sync.text = "Synced"
+	sync.set_meta("response_revision", revision)
 	status_bar.add_child(sync)
 	var parent: Node = main
 	for name in ["Margin", "Shell", "Content", "Status"]:

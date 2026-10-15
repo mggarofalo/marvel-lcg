@@ -33,27 +33,10 @@ internal sealed class MainEventController : IDisposable
         if (prompt is null)
         {
             resolutionStage.Clear();
-            (main.promptEyebrow.Text, main.promptHeading.Text, main.promptContext.Text) =
-                world.Outcome switch
-                {
-                    Outcome.Unfinished => (
-                        "OTHER PLAYER'S DECISION",
-                        "Waiting for another player.",
-                        "THE GAME IS STILL IN PROGRESS"),
-                    Outcome.PlayersWin => (
-                        "VICTORY",
-                        "The players won.",
-                        "THE FINAL VILLAIN STAGE WAS DEFEATED"),
-                    Outcome.VillainWins => (
-                        "DEFEAT",
-                        "The villain won.",
-                        "THE FINAL MAIN SCHEME WAS COMPLETED"),
-                    Outcome.PlayersLose => (
-                        "DEFEAT",
-                        "The players lost.",
-                        "THE ENCOUNTER COULD NOT CONTINUE"),
-                    _ => ("GAME COMPLETE", "The game ended.", "THE TABLE IS SETTLED"),
-                };
+            OutcomePresentation outcome = OutcomePresentation.From(world.Outcome, world.LossReason);
+            main.promptEyebrow.Text = outcome.Heading.ToUpperInvariant();
+            main.promptHeading.Text = outcome.Result;
+            main.promptContext.Text = outcome.Detail;
             main.promptRequirement.Text = world.Outcome == Outcome.Unfinished
                 ? "WAITING"
                 : "RESOLVED";

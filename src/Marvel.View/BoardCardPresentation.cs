@@ -62,6 +62,9 @@ public sealed record BoardCardPresentation(
     /// <summary>Damage currently on the card.</summary>
     public long Damage { get; init; }
 
+    /// <summary>Whether Damage is an exact fact for this display instant; a health-only receipt does not supply it.</summary>
+    public bool DamageKnown { get; init; } = true;
+
     /// <summary>Live counters currently on the card.</summary>
     public IReadOnlyList<BoardFieldPresentation> Counters { get; init; } = [];
 

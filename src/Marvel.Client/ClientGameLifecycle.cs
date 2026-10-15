@@ -78,6 +78,7 @@ public sealed class ClientGameLifecycle
         lock (gate)
         {
             generation = checked(generation + 1);
+            client?.Dispose();
             client = null;
             session = null;
             CurrentGame = null;

@@ -122,7 +122,7 @@ func _scrolling_actions_are_reachable() -> bool:
 	if scroll == null or not SpatialBounds.usable_scrollbar(scroll): return true
 	var rows := main.find_child("ContextualActionObjects", true, false) as Control
 	var original := scroll.scroll_vertical
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	for row in rows.get_children():
 		if not row is Control or not row.is_visible_in_tree(): continue
 		scroll.ensure_control_visible(row)
@@ -133,7 +133,7 @@ func _scrolling_actions_are_reachable() -> bool:
 			return false
 	scroll.scroll_vertical = original
 	await process_frame
-	if (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("reviewing action rows committed a decision")
 		return false
 	return true
@@ -283,7 +283,7 @@ func _redesign_gate_inspector_dismissal_is_repeatable(
 			_fail("inspector dismissal attempt %d has no current background action" % (attempt + 1))
 			return false
 		var action_id := action.get_instance_id()
-		var revision := (_node("Toolbar/SyncStatus") as Label).text
+		var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 		var backdrop := inspector.get_node("Backdrop") as Control
 		var click := InputEventMouseButton.new()
 		click.button_index = MOUSE_BUTTON_LEFT
@@ -302,7 +302,7 @@ func _redesign_gate_inspector_dismissal_is_repeatable(
 		var action_replaced := not is_instance_valid(action) \
 				or action.get_instance_id() != action_id
 		var choices_opened := main.find_child("CardActionChoices", true, false) != null
-		if action_replaced or choices_opened or (_node("Toolbar/SyncStatus") as Label).text != revision:
+		if action_replaced or choices_opened or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 			_fail(("inspector dismissal attempt %d activated its underlying action " \
 					+ "(replaced=%s choices=%s)") % [
 					attempt + 1, action_replaced, choices_opened])

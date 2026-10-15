@@ -2,10 +2,15 @@ extends RefCounted
 
 # Delivers real viewport pointer events and checks lifted intermediate geometry.
 static func perform(driver, card: Control, finish: Vector2, expected_drop_surface: Control = null) -> bool:
+	if not await preload("res://smoke/gesture_settlement.gd").authored_pose(driver, card):
+		driver._fail("card drag could not establish its exact resting baseline")
+		return false
 	var start: Vector2 = driver._card_body_point(card)
 	if not await driver._control_owns_point(card, start):
 		driver._fail("card '%s' has no exposed body from which to begin its drag" % card.name)
 		return false
+	card.force_update_transform()
+	var original := card.get_global_transform()
 	var origin := card.global_position
 	var collection := card.find_parent("Continuous*")
 	var press := InputEventMouseButton.new()
@@ -21,7 +26,7 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 	move.global_position = midpoint
 	driver.render_viewport.push_input(move, true)
 	await driver.process_frame
-	if bounds(card).get_center().distance_to(midpoint) > 4.0 or card.z_index < 120:
+	if card.global_position.distance_to(origin + midpoint - start) > 4.0 or card.z_index < 120:
 		driver._fail("dragging '%s' produced no lifted intermediate frame" % card.name)
 		return false
 	if not card.is_set_as_top_level():
@@ -44,8 +49,9 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 	release.global_position = finish
 	driver.render_viewport.push_input(release, true)
 	await driver.process_frame
-	if is_instance_valid(card) and card.is_inside_tree() and card.global_position.distance_to(origin) > 2.0:
-		await driver.main.get_tree().create_timer(0.25).timeout
+	if not await preload("res://smoke/gesture_settlement.gd").returned_or_retired(driver, card, original):
+		driver._fail("released card did not finish returning or retire within 750 ms: " + _return_diagnostic(card, original))
+		return false
 	return true
 
 static func bounds(card: Control) -> Rect2:
@@ -56,3 +62,7 @@ static func bounds(card: Control) -> Rect2:
 	return result
 
 
+
+static func _return_diagnostic(card: Control, expected: Transform2D) -> String:
+	if not is_instance_valid(card): return "retired"
+	return "%s expected=%s actual=%s local=%s resting=%s returning=%s lifted=%s tint=%s" % [card.name, expected, card.get_global_transform(), card.position, card.get_meta("spatial_resting_position", Vector2.INF), card.get_meta("card_return_active", false), card.is_set_as_top_level(), card.modulate]

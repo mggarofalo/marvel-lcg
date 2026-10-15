@@ -56,16 +56,16 @@ func _mixed_submit_is_single_shot() -> bool:
 	var change_form := _visible_button_beginning(_decision(), "Change Form")
 	if change_form == null or change_form.disabled:
 		return true
-	var revision_before_selection := (_node("Toolbar/SyncStatus") as Label).text
+	var revision_before_selection := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _pointer_activate(change_form):
 		return false
 	var submit := _submit_button()
 	if submit == null or submit.disabled:
-		if (_node("Toolbar/SyncStatus") as Label).text != revision_before_selection:
+		if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision_before_selection:
 			return true
 		_fail("the rapid-input probe cannot prepare a submit")
 		return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var prompt := _logical_prompt_identity()
 	if not await _prepare_activation(submit):
 		return false
@@ -78,11 +78,11 @@ func _mixed_submit_is_single_shot() -> bool:
 	# Never reacquire a generic Submit: a quick authoritative response may already
 	# have rendered a distinct prompt with the same node name. The queued keys
 	# belong only to the focused original revision and logical prompt.
-	if (_node("Toolbar/SyncStatus") as Label).text == revision \
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == revision \
 			and _logical_prompt_identity() == prompt:
 		_accept_repeats_without_settle(2)
 	if not await _wait_for(func() -> bool:
-		return _is_complete() or (_node("Toolbar/SyncStatus") as Label).text != revision):
+		return _is_complete() or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision):
 		_fail("the rapid-input probe never received its single authoritative response")
 		return false
 	return true

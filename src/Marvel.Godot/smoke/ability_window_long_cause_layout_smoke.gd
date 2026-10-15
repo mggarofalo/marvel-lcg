@@ -1,6 +1,6 @@
 extends "res://smoke/ability_window_smoke.gd"
 
-const STAMPEDE_CAUSE := "Cause: Stampede. Enemy attack · Initiation · Interrupt window · Rhino is initiating an attack against Spider-Man. Target: Spider-Man. ATK 2 before boost icons and defense."
+const STAMPEDE_CAUSE := "Cause: Stampede. Enemy attack · Initiation · Interrupt window · Rhino is attacking Spider-Man. ATK 2 before boost icons and defense."
 
 
 func _run() -> void:

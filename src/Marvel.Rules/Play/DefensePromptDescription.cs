@@ -12,7 +12,7 @@ internal static class DefensePromptDescription
         var choice = opportunity.Choice;
         return $"{EffectiveCards.Title(enemy, facts)} is attacking "
                 + $"{EffectiveCards.Title(world.Cards[attack.Target], facts)}"
-                + (opportunity.Player != attack.Player ? $" against {world.Seats[attack.Player].Name}. " : ". ")
+                + ". "
                 + AttackOverkillDescription.Context(world, facts, enemy)
                 + $"ATK {attackValue} {AttackBoostDescription.Before(world, facts, enemy, Steps.DeclareDefender)}. "
                 + (attack.IsDefended

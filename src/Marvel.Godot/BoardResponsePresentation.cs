@@ -29,7 +29,7 @@ internal static class BoardResponsePresentation
             options.Operation == EngineProtocol.Resolve && response.Error is null && !options.ResetEvents,
             options.ResetEvents);
         main.eventController.RecordTimeline(response,
-            AcceptedActivityOccurrence.From(cues, options.Receipt), options.ResetEvents);
+            EventActivityBeats.From(AcceptedActivityOccurrence.From(cues, options.Receipt)), options.ResetEvents);
         if (options.ResetEvents) main.events.Reset(presented.History);
         else main.events.Append(presented.History);
         main.RenderEvents();
@@ -42,9 +42,7 @@ internal static class BoardResponsePresentation
 
     internal static EventPresentation[] Cues(EventBatchPresentation presented, DecisionReceiptContext? receipt)
     {
-        string? intention = receipt?.ActionVerb is null or Game.EndPhaseVerb
-            ? null : receipt.OccurrenceTitle ?? receipt.Commitment;
-        return [.. presented.Cues.Select(entry => entry with { Intention = intention })];
+        return presented.Cues.ToArray();
     }
 
     private static HistoryEntryDescriptor[] Completed(

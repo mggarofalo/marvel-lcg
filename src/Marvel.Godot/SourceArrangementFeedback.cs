@@ -14,11 +14,15 @@ internal sealed class SourceArrangementFeedback
     internal SourceArrangementFeedback(Control owner)
     {
         caption = CardSourceStrip.Label("", "SourceSwapFeedback", 12, CardTypography.Bold);
+        caption.AddThemeColorOverride("font_color", ClientTheme.ToGodot(VisualSystem.Palette.Text));
         caption.AccessibilityLive = AccessibilityServer.AccessibilityLiveMode.Polite;
         frame = new PanelContainer { Name = "SourceSwapFeedbackFrame", TopLevel = true, Visible = false,
             ZIndex = 245, MouseFilter = Control.MouseFilterEnum.Ignore };
-        using var background = new StyleBoxFlat { BgColor = CardFaceStyle.Paper,
-            BorderColor = CardFaceStyle.Ink, BorderWidthBottom = 1, ContentMarginLeft = 5, ContentMarginRight = 5 };
+        using var background = new StyleBoxFlat { BgColor = ClientTheme.ToGodot(ButtonMaterials.SecondaryPressed),
+            BorderColor = ClientTheme.ToGodot(VisualSystem.Palette.Outline),
+            BorderWidthLeft = 1, BorderWidthTop = 1, BorderWidthRight = 1, BorderWidthBottom = 1,
+            CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6, CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6,
+            ContentMarginLeft = 5, ContentMarginRight = 5 };
         frame.AddThemeStyleboxOverride("panel", background);
         owner.AddChild(frame);
         frame.AddChild(caption);

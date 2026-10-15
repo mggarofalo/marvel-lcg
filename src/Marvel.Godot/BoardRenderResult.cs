@@ -17,14 +17,16 @@ public sealed class BoardRenderResult
     private DecisionComposer? currentComposer;
     private PromptPresentation? currentPrompt;
     private readonly BoardContextualCopy copy = new();
-    private Action<Control>? openCompleteChoices;
-    private Button? completeChoicesEntry;
+    private readonly BoardCompleteChoicesEntry completeChoicesEntry;
     private Container? contextualActions;
     private bool completeChoicesOpen;
     private bool sourceArrangementActive;
+    internal BoardTargetSnap TargetSnap { get; } = new();
+    internal bool MotionEnabled => pointer.MotionEnabled?.Invoke() != false;
     /// <summary>Owns controls and source lookup for one authorized board snapshot.</summary>
     public BoardRenderResult(BoardPresentation? board = null)
     {
+        completeChoicesEntry = new(IsCurrentRender);
         Inspector = new(board);
         reveal = new BoardControlReveal(this);
         interactionControls = new BoardCardInteractionControls(IsCurrentRender);
@@ -52,12 +54,6 @@ public sealed class BoardRenderResult
     {
         sourceArrangementActive = active;
         if (active) SourceArrangementStarted?.Invoke();
-    }
-
-    internal void InspectSource(CardControl control)
-    {
-        if (Inspector.For(control.TargetId).FirstOrDefault(candidate => candidate.TargetId == control.TargetId)
-            is { } card) CardActivated?.Invoke(card, control);
     }
 
     internal void Register(int id, CardControl control)
@@ -88,18 +84,17 @@ public sealed class BoardRenderResult
     }
 
     internal void RegisterCompleteChoices(Button entry)
-    {
-        completeChoicesEntry = entry;
-        entry.Pressed += () => OpenCompleteChoices(entry);
-    }
+        => completeChoicesEntry.Register(entry);
 
     internal void OpenCompleteChoices(Control source)
-    {
-        if (IsCurrentRender() && InteractionControl.IsUsable(source))
-            openCompleteChoices?.Invoke(source);
-    }
+        => completeChoicesEntry.Open(source);
 
-    internal void BindCompleteChoices(Action<Control> open) => openCompleteChoices = open;
+    internal void BindCompleteChoices(Action<Control> open) => completeChoicesEntry.Bind(open);
+
+    internal void PresentPendingChoices(string heading, Action<Control> open) =>
+        completeChoicesEntry.PresentPending(heading, open);
+
+    internal void ClearPendingChoices() => completeChoicesEntry.ClearPending();
 
     internal void SetCompleteChoicesOpen(bool open)
     {
@@ -109,10 +104,7 @@ public sealed class BoardRenderResult
         {
             contextualActions!.Visible = !open;
         }
-        if (InteractionControl.IsUsable(completeChoicesEntry))
-        {
-            completeChoicesEntry!.Disabled = open || currentComposer is null;
-        }
+        completeChoicesEntry.SetOpen(open, currentComposer is not null);
     }
 
     internal void RegisterContextualWorld(WorldDescriptor world) => copy.RegisterWorld(world);
@@ -171,10 +163,13 @@ public sealed class BoardRenderResult
         pointer.DragPreview = preview;
         pointer.DragFinished = invalid =>
         {
+            TargetSnap.Clear();
             RefreshInteraction();
             if (invalid) PresentGestureFeedback("No offered action matches this drop. Your choices are unchanged.");
         };
     }
+
+    internal void PresentDragDestination(CardPointerGesture gesture, bool accepted) => pointer.PresentDestination(gesture, accepted);
 
     internal void PresentGestureFeedback(string text) => copy.PresentFeedback(text);
     internal void AnchorDraft(Vector2 position, int offer) => interactionControls.AnchorDraft(position, offer);

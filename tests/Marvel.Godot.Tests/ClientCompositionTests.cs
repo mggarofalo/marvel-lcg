@@ -34,7 +34,8 @@ public sealed class ClientCompositionTests
             RepositoryPaths.Root, configuredEndpoint: string.Empty);
 
         Assert.True(connection.Succeeded);
-        ClientSetupResult setup = await connection.Client!.ReadSetupAsync(
+        await using LocalGameClient client = connection.Client!;
+        ClientSetupResult setup = await client.ReadSetupAsync(
             TestContext.Current.CancellationToken);
         Assert.True(setup.Succeeded, setup.Error?.Message);
     }

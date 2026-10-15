@@ -57,6 +57,10 @@ func _verify_named_response() -> bool:
 			or (main.find_child("HandDropArea", true, false) as Control).get_global_rect() != hand_bounds:
 		_fail("named response changed layout or needed more than one commitment")
 		return false
+	var seam := main.find_child("CausalSituationCopy", true, false) as Control
+	if seam == null or not seam.is_visible_in_tree():
+		_fail("the current situation did not return after the ability sheet closed")
+		return false
 	var statuses := _card_for_anchor(RHINO).find_children("StatusCard*", "Control", true, false)
 	if statuses.is_empty() or statuses[0].accessibility_name != "Stunned":
 		_fail("the named response did not visibly stun Rhino")
@@ -85,8 +89,19 @@ func _named_response_layout_is_clear(window: Control, choice: Button) -> bool:
 	var cause := window.find_child("AbilityWindowCause", true, false) as Label
 	if heading == null or heading.text != "Mockingbird Response" or choice == null \
 			or choice.text != "Stun Rhino" or pass_button == null or cause == null \
-			or "Mockingbird entered play" not in cause.text:
+			or cause.text != "Mockingbird entered play.":
 		_fail("the response omitted its named ability, recipient, or Pass: " + _visible_text(window))
+		return false
+	var seam := main.find_child("CausalSituationCopy", true, false) as Control
+	if seam == null or seam.is_visible_in_tree():
+		_fail("the ability sheet repeats its current situation in the table seam")
+		return false
+	var notice := main.find_child("SpatialOperationalNotice", true, false) as Control
+	if notice == null or not notice.get_parent().is_visible_in_tree():
+		_fail("the ability sheet hides the transport/recovery notice area")
+		return false
+	if "Esc" not in pass_button.text:
+		_fail("the optional decline does not disclose its Escape shortcut")
 		return false
 	for control in [heading, cause, choice, pass_button]:
 		if not _control_is_fully_visible(control):

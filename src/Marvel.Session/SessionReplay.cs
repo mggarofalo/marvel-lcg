@@ -128,15 +128,26 @@ public static class SessionReplay
         ArgumentNullException.ThrowIfNull(expected);
         ArgumentNullException.ThrowIfNull(open);
         RequireCompatibility(expected, save.Compatibility);
-        ReplayResult replayed = SessionReplayVerification.Replay(save, save.Units.Count, open, requireExposures: true);
-        RequireCurrentPrompt(save.CurrentPrompt, replayed.Game.Pending);
+        var verifiedPrompts = new List<PromptRecord>();
+        ReplayResult replayed = SessionReplayVerification.Replay(
+            save, save.Units.Count, open, requireExposures: true, verifiedPrompts: verifiedPrompts);
+        Game active = save.Cursor == save.Units.Count
+            ? replayed.Game
+            : SessionReplayVerification.Replay(save, save.Cursor, open, requireExposures: true).Game;
+        RequireCurrentPrompt(save.CurrentPrompt, active.Pending);
+        int promptIndex = 0;
         SessionSave migrated = save with
         {
             Schema = SessionSave.CurrentSchema,
             Compatibility = expected,
+            CurrentPrompt = active.Pending is null ? null : PromptRecord.From(active.Pending),
             Units = [.. save.Units.Select(unit => unit with
             {
-                Decisions = [.. unit.Decisions],
+                // Migration records engine meaning only after verifying the predecessor's facts.
+                Decisions = [.. unit.Decisions.Select(step => step with
+                {
+                    Prompt = verifiedPrompts[promptIndex++],
+                })],
                 Exposures = [.. unit.Exposures],
             })],
         };

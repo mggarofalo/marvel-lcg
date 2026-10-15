@@ -6,14 +6,14 @@ static func perform(driver) -> bool:
 	if original.size() != 6:
 		driver._fail("reserved-order fixture lacks six exact opening instances")
 		return false
-	var revision: String = driver._node("Toolbar/SyncStatus").text
+	var revision: String = str(driver._node("Toolbar/SyncStatus").get_meta("response_revision", -1))
 	var expected := await _single_reserved_slot(driver, original)
 	if expected.is_empty(): return false
 	var after := await _two_reserved_slots(driver, expected)
 	if after.is_empty(): return false
 	if not await _round_trip_and_cancel(driver, after): return false
 	if not await _repeat_drag_return(driver, original[2], after): return false
-	if driver._node("Toolbar/SyncStatus").text != revision:
+	if str(driver._node("Toolbar/SyncStatus").get_meta("response_revision", -1)) != revision:
 		driver._fail("reversible hand ordering changed the authoritative revision")
 		return false
 	print("MULLIGAN_RESERVED_ORDER_OK ", after.map(func(card: Control): return card.name))
@@ -54,6 +54,7 @@ static func _round_trip_and_cancel(driver, after: Array) -> bool:
 	if not await _cancel_insertion(driver, after[0]): return false
 	var clear: Button = driver.main.find_child("ContextualCancelDraft", true, false)
 	if not await driver._pointer_activate(clear): return false
+	await preload("res://smoke/gesture_settlement.gd").hand(driver)
 	if not _matches(driver, after, "cancel insertion and clear replacements"): return false
 	return true
 
@@ -63,20 +64,20 @@ static func _repeat_drag_return(driver, middle: Control, after: Array) -> bool:
 		if not await driver._drag_mulligan_to_discard(middle): return false
 		var hand: Control = driver.main.find_child("HandDropArea", true, false)
 		if not await driver._drag_mulligan(middle, hand.get_global_rect().get_center()): return false
-		await driver.create_timer(0.22).timeout
+		await preload("res://smoke/gesture_settlement.gd").hand(driver)
 		if not _matches(driver, after, "repeated stage and drag return"): return false
 	return true
 
 static func _toggle(driver, card: Control) -> void:
 	card.grab_focus()
 	await driver._press_key(KEY_SPACE)
-	await driver.process_frame
+	await preload("res://smoke/gesture_settlement.gd").hand(driver)
 
 static func _move_last(driver, card: Control) -> bool:
 	var hand: Control = driver.main.find_child("HandDropArea", true, false)
 	if not await driver._drag_mulligan(card, Vector2(hand.get_global_rect().end.x - 15, hand.get_global_rect().get_center().y)):
 		return false
-	await driver.create_timer(0.22).timeout
+	await preload("res://smoke/gesture_settlement.gd").hand(driver)
 	return true
 
 static func _kept(driver) -> Array:
@@ -122,5 +123,5 @@ static func _cancel_insertion(driver, source: Control) -> bool:
 	release.position = Vector2(4, 4)
 	release.global_position = release.position
 	driver.render_viewport.push_input(release, true)
-	await driver.create_timer(0.22).timeout
+	await preload("res://smoke/gesture_settlement.gd").hand(driver)
 	return not source.is_set_as_top_level() and driver._task_commit().text == "Redraw 2 cards"

@@ -25,6 +25,7 @@ static func _clear(driver) -> bool:
 		driver._fail("defender focus did not expose the full card")
 		return false
 	var bounds: Rect2 = inspector.get_node("Frame").get_global_rect()
+	if not preload("res://smoke/card_inspection_protection_checks.gd").verify(driver, inspector.get_node("Frame")): return false
 	for name in ["CausalSituation", "ContextualDecision", "EventTimeline"]:
 		var region: Control = driver.main.find_child(name, true, false)
 		if region != null and region.is_visible_in_tree() and bounds.intersects(region.get_global_rect()):

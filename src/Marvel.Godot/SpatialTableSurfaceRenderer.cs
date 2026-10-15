@@ -12,14 +12,16 @@ internal static class SpatialTableSurfaceRenderer
         Main main,
         DisplayedSeatSelection selection,
         Action<int> switchSeat,
-        Prompt? prompt)
+        Prompt? prompt,
+        BoardRenderResult? previous)
     {
+        using var faces = new BoardCardFaceReuse(previous);
         Prepare(main);
         AstraTableGeometry geometry = Geometry(main, selection, prompt);
         Control surface = CreateSurface(main, geometry);
         var result = new BoardRenderResult(main.boardPresentation);
         AddMats(surface, result, geometry, selection);
-        RenderObjects(main, result, surface, geometry, selection, prompt);
+        RenderObjects(main, result, surface, geometry, selection, prompt, faces);
         AddSeats(surface, geometry, main.boardPresentation!, selection, switchSeat);
         surface.SetMeta("spatial_table_grammar", "astra-far-to-near-v1");
         surface.SetMeta("expanded_seat", selection.ExpandedSeat);
@@ -38,26 +40,28 @@ internal static class SpatialTableSurfaceRenderer
     private static AstraTableGeometry Geometry(Main main, DisplayedSeatSelection selection, Prompt? prompt)
     {
         Vector2 viewport = main.GetViewportRect().Size;
-        bool expanded = TableHistoryDrawer.IsExpanded(main) || main.invitationOffer.Visible;
+        bool expanded = main.invitationOffer.Visible;
         float reserved = CardPaymentWorkspaceLayout.Active(main)
             ? Math.Max(CardPaymentWorkspaceLayout.Width(viewport),
                 expanded ? TableHistoryDrawer.ExpandedWidth(main) : 0) + 40
             : expanded ? TableHistoryDrawer.ExpandedWidth(main) + 40 : 56;
         float width = Math.Max(expanded ? 920 : 1060, viewport.X - reserved);
         float height = Math.Min(AstraTableGeometry.ReferenceHeight, Math.Max(820, viewport.Y - 118));
-        return new AstraTableGeometry(
-            width, height, main.interfaceScale >= InterfaceScale.Percent130,
-            HasRevealingCard: main.boardPresentation!.Areas.Any(area =>
-                SpatialTableZones.IsResolving(area) && SpatialTableZones.Current(area).Length > 0)
-                || Context(main, prompt).Count > 0,
-            PhysicalCardSize: PhysicalCardSize(main.boardPresentation!, main.interfaceScale, height, Context(main, prompt)),
-            HasSeatSummaries: main.boardPresentation.PlayerSummaries.Count > 1,
-            HasSourceTableau: CardSourceGroups.Controlled(main.boardPresentation.Areas, selection.ExpandedSeat).Length > 0)
-        {
-            HasAllies = main.boardPresentation.Areas.Any(area => area.Zone == "AlliesArea"
-                && area.Seat == selection.ExpandedSeat && area.Cards.Count > 0),
-        };
+        return ActivityGeometry(new(width, height), main.interfaceScale, main.boardPresentation!,
+            selection.ExpandedSeat, Context(main, prompt));
     }
+
+    internal static AstraTableGeometry ActivityGeometry(Vector2 size, InterfaceScale scale,
+        BoardPresentation board, int seat, IReadOnlyList<BoardCardPresentation> context) =>
+        new(size.X, size.Y, scale >= InterfaceScale.Percent130,
+            HasRevealingCard: board.Areas.Any(area => SpatialTableZones.IsResolving(area)
+                && SpatialTableZones.Current(area).Length > 0) || context.Count > 0,
+            PhysicalCardSize: PhysicalCardSize(board, scale, size.Y, context),
+            HasSeatSummaries: board.PlayerSummaries.Count > 1,
+            HasSourceTableau: CardSourceGroups.Controlled(board.Areas, seat).Length > 0)
+        {
+            HasAllies = board.Areas.Any(area => area.Zone == "AlliesArea" && area.Seat == seat && area.Cards.Count > 0),
+        };
 
     private static IReadOnlyList<BoardCardPresentation> Context(Main main, Prompt? prompt) =>
         DecisionContextCards.MissingFromTable(prompt is null || main.boardController.PresentedGame?.World is null ? null
@@ -90,6 +94,7 @@ internal static class SpatialTableSurfaceRenderer
             MouseFilter = Control.MouseFilterEnum.Pass,
         };
         main.boardAreas.AddChild(surface);
+        TableMaterialLighting.Add(surface);
         return surface;
     }
 
@@ -114,14 +119,15 @@ internal static class SpatialTableSurfaceRenderer
         Control surface,
         AstraTableGeometry geometry,
         DisplayedSeatSelection selection,
-        Prompt? prompt)
+        Prompt? prompt, BoardCardFaceReuse faces)
     {
         BoardPresentation board = main.boardPresentation!;
         BoardAreaPresentation[] scenario = Lane(board, "scenario");
         BoardAreaPresentation[] player = Lane(board, $"player-{selection.ExpandedSeat}");
         InterfaceScale cardScale = SpatialCardMetrics.TableScale(main.interfaceScale, geometry.Height);
         var objects = new SpatialTableObjectRenderer(
-            surface, result, geometry, cardScale, main.art, MulliganPrompt.IsOpening(prompt));
+            surface, result, geometry, new SpatialCardFactory(cardScale, main.art, faces, main.interfaceScale),
+            MulliganPrompt.IsOpening(prompt));
         var handArea = new Control { Name = "HandDropArea", Position = geometry.Hand.Position,
             Size = geometry.Hand.Size, MouseFilter = Control.MouseFilterEnum.Ignore };
         surface.AddChild(handArea);
@@ -168,6 +174,8 @@ internal static class SpatialTableSurfaceRenderer
             ZIndex = 0,
         };
         surface.AddChild(mat);
+        MatMaterialHighlight.Attach(mat, variation == GodotThemeVariations.SpatialVillainMat
+            ? VisualSystem.Palette.Danger : VisualSystem.Palette.Legal);
         return mat;
     }
 

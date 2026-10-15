@@ -34,9 +34,9 @@ func _open_phase_activity(animated: bool) -> bool:
 	if not await _wait_for(func(): return _button_named("Keep hand") != null):
 		_fail("End turn did not offer its required end-of-phase discard commitment")
 		return false
-	var prior := (_node("Toolbar/SyncStatus") as Label).text
+	var prior := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	main.set_meta("phase_prior_revision", prior)
-	main.set_meta("phase_expected_revision", int(prior.split("r")[-1]) + 1)
+	main.set_meta("phase_expected_revision", int(prior) + 1)
 	if not await _pointer_activate(_button_named("Keep hand")): return false
 	if await _wait_for(func() -> bool:
 		var activity := _timeline()
@@ -64,7 +64,7 @@ func _verify_phase_activity(animated: bool) -> bool:
 	if not await _wait_for(func(): return not bool(main.get_meta("response_staged", false))):
 		_fail("accepted phase consequences never settled")
 		return false
-	if (_node("Toolbar/SyncStatus") as Label).text != "Last synced · r%d" % settled_revision:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != str(settled_revision):
 		_fail("presentation did not settle on exactly the accepted revision")
 		return false
 	return await _capture_checkpoint("phase-activity-%s" % ("animated" if animated else "reduced"))
@@ -102,7 +102,7 @@ func _prior_phase_is_retained() -> bool:
 	if not bool(main.get_meta("response_staged", false)) or _button_named("End turn") != null:
 		_fail("the next phase decision appeared during prior consequences")
 		return false
-	if (_node("Toolbar/SyncStatus") as Label).text != str(main.get_meta("phase_prior_revision")):
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != str(main.get_meta("phase_prior_revision")):
 		_fail("the prior authorized table revision changed during a phase beat")
 		return false
 	return true
@@ -177,7 +177,7 @@ func _open_hero_attack_probe() -> bool:
 	if not await _pointer_activate(_button_named("Start game")): return false
 	if not await _wait_for(func() -> bool: return _task_commit() != null): return false
 	if not await _commit_once("Keep hand"): return false
-	if not await _wait_for(func(): return (_node("Toolbar/SyncStatus") as Label).text == "Last synced · r1" and not bool(main.get_meta("response_staged", false))):
+	if not await _wait_for(func(): return int((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == 1 and not bool(main.get_meta("response_staged", false))):
 		_fail("initial Keep hand did not settle before form-change drafting")
 		return false
 	if not await _select_attached_action(IDENTITY, "Change Form"): return false
@@ -202,7 +202,7 @@ func _end_hero_turn_for_attack() -> bool:
 	return await _wait_for(func(): return not bool(main.get_meta("response_staged", false)) and not _status().text.begins_with("DECISION SENT"))
 
 func _stage_required_hero_discard() -> bool:
-	var before := (_node("Toolbar/SyncStatus") as Label).text
+	var before := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var card := _mulligan_card("Avengers Mansion")
 	if card == null:
 		_fail("the seeded hero end-phase choice lacks Avengers Mansion")
@@ -215,7 +215,7 @@ func _stage_required_hero_discard() -> bool:
 	if submit == null or submit.disabled or submit.text != "Discard 1":
 		_fail("the required hero discard did not stage exactly one offered card")
 		return false
-	if (_node("Toolbar/SyncStatus") as Label).text != before:
+	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != before:
 		_fail("staging the required discard changed the authoritative revision")
 		return false
 	return await _pointer_activate(submit)
@@ -265,14 +265,15 @@ func _probe_attack_result_tile(_activity_host: Control) -> Control:
 
 
 func _retained_probe_attack() -> Control:
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	if not await _expand_activity_timeline(): return null
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var prompt := _logical_prompt_identity()
 	var timeline := _timeline()
 	if not await _pointer_activate(_timeline_button("Latest event")): return null
 	for _event in range(int(timeline.get_meta("timeline_count", 0))):
 		var caption := _probe_attack_result_tile(_activity())
 		if caption != null:
-			if (_node("Toolbar/SyncStatus") as Label).text != revision or _logical_prompt_identity() != prompt:
+			if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision or _logical_prompt_identity() != prompt:
 				_fail("timeline navigation changed the engine decision")
 				return null
 			return caption
@@ -304,13 +305,14 @@ func _decline_probe_attack_opportunity() -> bool:
 		print("ATTACK_PROBE_CONTEXT ", _visible_text(main.find_child("CausalSituation", true, false)), " choices=", _visible_buttons(main).map(func(button): return button.text))
 		_fail("legal attack probe has no explicit optional response")
 		return false
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _pointer_activate(decline): return false
-	if not await _wait_for(func() -> bool: return (_node("Toolbar/SyncStatus") as Label).text != revision): return false
+	if not await _wait_for(func() -> bool: return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision): return false
 	return true
 
 
 func _historical_encounter_face_is_inspectable() -> bool:
+	if not await _expand_activity_timeline(): return false
 	if not await _pointer_activate(_timeline_button("Latest event")): return false
 	for index in range(int(_timeline().get_meta("timeline_count", 0))):
 		var references := _timeline().find_child("ActivityReference", true, false)
@@ -329,3 +331,9 @@ func _historical_encounter_face_is_inspectable() -> bool:
 		if not await _pointer_activate(_timeline_button("Previous event")): return false
 	_fail("chronology has no authorized reference for the resolved boost")
 	return false
+
+
+func _expand_activity_timeline() -> bool:
+	var disclosure := _timeline().find_child("TimelineDisclosure", true, false) as Button
+	if disclosure == null or bool(_timeline().get_meta("timeline_expanded", false)): return true
+	return await _pointer_activate(disclosure)

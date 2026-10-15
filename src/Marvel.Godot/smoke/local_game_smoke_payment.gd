@@ -57,11 +57,28 @@ func _payment_modal_is_safe() -> bool:
 
 
 func _payment_table_layout_is_safe(modal: Control) -> bool:
-	var played := modal.find_child("PaymentCardPreview", true, false) as Control
+	var played := modal.find_child("PlayingCardReference", true, false) as Control
 	var table := main.find_child("AstraTableSurface", true, false) as Control
 	if played == null or table == null or modal.get_global_rect().intersects(table.get_global_rect()) \
-			or played.get_global_rect().end.x > modal.get_global_rect().position.x:
-		_fail("payment preview layout: played=%s modal=%s table=%s" % [played.get_global_rect() if played else "missing", modal.get_global_rect(), table.get_global_rect() if table else "missing"])
+			or not modal.get_global_rect().encloses(played.get_global_rect()):
+		_fail("payment must retain its played card reference beside the table")
+		return false
+	for button in modal.find_children("InspectPayment*", "Button", true, false):
+		if button.name != "InspectPaymentPlayed":
+			_fail("payment source rows must preview directly without separate inspection buttons")
+			return false
+	if main.find_child("PaymentSourcePreview", true, false) != null \
+			or main.find_child("PaymentCardPreview", true, false) != null:
+		_fail("payment created a second independent inspection surface")
+		return false
+	var cost := modal.find_child("PaymentCost", true, false) as Control
+	var scroll := modal.find_child("DecisionBodyScroll", true, false) as ScrollContainer
+	if cost == null or scroll == null or scroll.is_ancestor_of(cost):
+		_fail("payment requirement must remain visible while comparing sources")
+		return false
+	var commitment := modal.find_child("Submit", true, false) as Control
+	if commitment == null or not _control_is_fully_visible(commitment):
+		_fail("payment commitment is clipped")
 		return false
 	return true
 
@@ -95,7 +112,7 @@ func _payment_symbols_are_readable(modal: Control) -> bool:
 
 
 func _payment_cancel_is_safe() -> bool:
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var modal := _payment_modal()
 	if modal == null: return false
 	var source := _payment_button("Resource*")
@@ -103,7 +120,7 @@ func _payment_cancel_is_safe() -> bool:
 	var cancel := _payment_button("CancelCardPlay")
 	if cancel == null or not await _pointer_activate(cancel): return false
 	await process_frame
-	if _payment_modal() != null or (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if _payment_modal() != null or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("cancelling payment changed the game or retained the modal")
 		return false
 	return true
@@ -144,7 +161,12 @@ func _payment_recovery_surface_is_safe() -> bool:
 
 
 func _payment_inspection_preserves_draft() -> bool:
-	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	if not await preload("res://smoke/transient_inspection_checks.gd").verify(self, _payment_modal().find_child("InspectPaymentPlayed", true, false)): return false
+	return await _payment_source_inspection_preserves_draft()
+
+
+func _payment_source_inspection_preserves_draft() -> bool:
+	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var resource := _payment_button("Resource*")
 	if resource == null: return false
 	var resource_name := resource.name
@@ -153,7 +175,7 @@ func _payment_inspection_preserves_draft() -> bool:
 	if refreshed == null or not refreshed.button_pressed: return false
 	if not await _inspect_payment_source_and_return(resource_name): return false
 	refreshed = _payment_button(resource_name)
-	if refreshed == null or not refreshed.button_pressed or (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if refreshed == null or not refreshed.button_pressed or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("inspection changed an unpaid draft or committed payment")
 		return false
 	if not await _payment_history_preserves_draft(resource_name, revision): return false
@@ -185,21 +207,48 @@ func _inspect_payment_source_and_return(resource_name: String) -> bool:
 	if resource == null: return false
 	resource.grab_focus()
 	await process_frame
-	var preview := _payment_modal().find_child("PaymentCardPreview", true, false) as Control
-	if preview == null or int(preview.get_meta("previewed_card_anchor", -1)) != int(resource_name.trim_prefix("Resource")):
-		_fail("payment focus did not preview the exact source")
+	var inspector := main.get_node("CardInspector") as Control
+	var frame := inspector.get_node("Frame") as Control
+	var expected := int(resource_name.trim_prefix("Resource"))
+	if not inspector.visible or int(inspector.get_meta("inspected_card_anchor", -1)) != expected:
+		_fail("payment focus did not immediately inspect the exact source")
 		return false
-	if preview.get_global_rect().end.x > _payment_modal().get_global_rect().position.x:
-		_fail("payment source preview covers payment choices")
+	if frame.get_global_rect().intersects(_payment_modal().get_global_rect()):
+		_fail("source inspection covers payment choices")
 		return false
-	var toggle := preview.find_child("TogglePlayedCardPreview", true, false) as Button
-	toggle.grab_focus()
+	if not _payment_inspection_preserves_hand(frame): return false
+	if not preload("res://smoke/card_inspection_protection_checks.gd").verify(self, frame): return false
+	if not await _capture_checkpoint("payment-shared-inspection"): return false
+	var pin := InputEventKey.new()
+	pin.keycode = KEY_I
+	pin.pressed = true
+	render_viewport.push_input(pin)
 	await process_frame
-	if int(preview.get_meta("previewed_card_anchor", -1)) == int(resource_name.trim_prefix("Resource")):
-		_fail("played card preview did not return after leaving the payment source")
+	var release := InputEventKey.new()
+	release.keycode = KEY_I
+	render_viewport.push_input(release)
+	if not await _close_settled_payment_inspector(inspector): return false
+	if not await _wait_for(func() -> bool: return render_viewport.gui_get_focus_owner() == resource):
+		_fail("unpinning payment inspection did not restore its opener")
+		return false
+	if inspector.visible:
+		_fail("unpinning payment inspection immediately reopened the preview")
 		return false
 	return true
 
+
+func _payment_inspection_preserves_hand(frame: Control) -> bool:
+	var hand_count := 0
+	for card in _hand_surface().find_children("ProceduralCard*", "", true, false):
+		if not card.has_meta("spatial_hand_index"): continue
+		hand_count += 1
+		if frame.get_global_rect().intersects(card.get_global_rect()):
+			_fail("source inspection covers the hand")
+			return false
+	if hand_count == 0:
+		_fail("payment inspection check has no visible hand")
+		return false
+	return true
 
 func _payment_history_preserves_draft(resource_name: String, revision: String) -> bool:
 	var history := main.find_child("ToggleHistory", true, false) as Button
@@ -208,7 +257,7 @@ func _payment_history_preserves_draft(resource_name: String, revision: String) -
 	if not _payment_undo_is_explained(): return false
 	var source := _payment_button(resource_name)
 	var submit := _payment_button("Submit")
-	if source == null or not source.button_pressed or submit == null 			or not _control_is_fully_visible(submit) 			or (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if source == null or not source.button_pressed or submit == null 			or not _control_is_fully_visible(submit) 			or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("history obscured commitment or changed the unpaid payment")
 		return false
 	history = main.find_child("ToggleHistory", true, false) as Button
@@ -246,7 +295,7 @@ func _payment_pile_preserves_draft(resource_name: String, revision: String) -> b
 		_fail("closing the pile did not restore its opener")
 		return false
 	var source := _payment_button(resource_name)
-	if source == null or not source.button_pressed or (_node("Toolbar/SyncStatus") as Label).text != revision:
+	if source == null or not source.button_pressed or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("pile inspection changed the unpaid choices")
 		return false
 	return true

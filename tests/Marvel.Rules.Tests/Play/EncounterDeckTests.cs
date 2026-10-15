@@ -182,6 +182,7 @@ public sealed class EncounterDeckTests
         Deal.EncounterCard(world, 0, "test", []);
 
         Assert.Equal(Outcome.PlayersLose, world.Result);
+        Assert.Equal(PlayerLossReason.EncounterCardsExhausted, world.LossReason);
     }
 
     [Rule("rr:encounter-deck.2")]

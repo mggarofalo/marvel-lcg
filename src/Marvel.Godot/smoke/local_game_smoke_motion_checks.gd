@@ -3,10 +3,28 @@ extends "res://smoke/local_game_smoke_resolution_checks.gd"
 
 func _settle_decision(decisions: int, state: Dictionary) -> bool:
 	var started := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - started < TIMEOUT_MILLISECONDS:
+	var deadline := started + TIMEOUT_MILLISECONDS
+	var last_progress := started
+	var last_beat := -1
+	var planned := false
+	while Time.get_ticks_msec() < deadline:
 		if not await _motion_state_is_safe(state): return false
 		if not bool(main.get_meta("response_staged", false)) and not _status().text.begins_with("DECISION SENT"):
 			return true
+		var activity := main.find_child("EventActivity", true, false)
+		if activity != null and bool(activity.get_meta("activity_running", false)):
+			var now := Time.get_ticks_msec()
+			if not planned:
+				# The production plan supplies its readable cadence; each beat must still progress.
+				deadline = maxi(deadline, now + 3000 + int(float(activity.get_meta("activity_duration", 0.0)) * 1500))
+				planned = true
+			var beat := int(activity.get_meta("activity_index", -1))
+			if beat != last_beat:
+				last_beat = beat
+				last_progress = now
+			elif now - last_progress > 5000:
+				_fail("accepted consequence stalled at beat %d of decision %d" % [beat, decisions])
+				return false
 		await process_frame
 	_fail("the engine and staged consequences did not reconcile decision %d" % decisions)
 	return false
@@ -35,9 +53,16 @@ func _motion_state_is_safe(state: Dictionary) -> bool:
 func _current_table_prompt_is_operable() -> bool:
 	for pattern in ["ContextualCommit", "ContextualDecline", "Card*Action", "Card*Target", "Card*Generator", "CompleteChoiceSheet"]:
 		for candidate in main.find_children(pattern, "Button", true, false):
-			if candidate.is_visible_in_tree() and not candidate.disabled:
+			if candidate.is_visible_in_tree() and not candidate.disabled and not _accepted_decision_entry(candidate):
 				return true
 	return _first_enabled_choice() != null
+
+func _accepted_decision_entry(candidate: Button) -> bool:
+	if candidate.name != &"CompleteChoiceSheet" or not bool(candidate.get_meta("accepted_decision_entry", false)):
+		return false
+	var normal := candidate.get_theme_stylebox("normal") as StyleBoxFlat
+	return not candidate.text.strip_edges().is_empty() and candidate.text not in ["All actions", "All choices"] \
+		and candidate.theme_type_variation == &"ChoiceButton" and normal != null and normal.bg_color.a >= 0.9
 
 
 func _toggle_active_motion(skip: Button) -> bool:
@@ -53,7 +78,7 @@ func _toggle_active_motion(skip: Button) -> bool:
 	if not skip.disabled or bool(timeline.get_meta("activity_running", false)):
 		_fail("disabling active motion did not settle playback")
 		return false
-	if int(timeline.get_meta("timeline_count", 0)) != count or (_node("Toolbar/SyncStatus") as Label).text != "Last synced · r%d" % revision:
+	if int(timeline.get_meta("timeline_count", 0)) != count or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != str(revision):
 		_fail("settling motion changed the accepted chronology or revision")
 		return false
 	motion.button_pressed = true

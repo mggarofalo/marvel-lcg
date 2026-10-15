@@ -14,22 +14,21 @@ internal static class AttackActivityPresentation
         {
             CueSummary = caption,
             Activity = new EventActivityDescriptor([attack.Source, attack.Target], [])
-                { Operation = "Attack_Active" },
+                { Operation = "Attack_Active", AttackIdentity = attack.Identity },
         };
     }
 
     internal static EventPresentation? DuringTransition(ActiveAttackDescriptor? previous,
         ActiveAttackDescriptor? current, IReadOnlyList<EventPresentation> playback)
     {
-        EventPresentation? accepted = playback.FirstOrDefault(entry => entry.Activity?.Operation == "Attack_Presentation");
-        if (previous is null) return From(current) ?? accepted;
-        // A defender may be accepted and the attack finish in the same response.
-        // Its completed occurrence supplies the final target while consequences are presented.
-        if (HasSource(accepted, previous.Source.Card)) return accepted;
-        return From(current?.Source.Card == previous.Source.Card ? current : previous);
+        return From(previous);
     }
 
-    private static bool HasSource(EventPresentation? presentation, int source) =>
-        presentation?.Activity?.Subjects.Any(subject => subject.Role == ActivitySubjectRole.Source
-            && subject.Card == source) == true;
+    internal static EventPresentation? Advance(EventPresentation? active, EventPresentation? beat)
+    {
+        if (beat?.Activity is not { } activity) return active;
+        if (activity.AttackBoundary == true || activity.Operation == "Attack_Presentation") return beat;
+        return activity.AttackBoundary == false && activity.AttackIdentity == active?.Activity?.AttackIdentity
+            ? null : active;
+    }
 }

@@ -55,7 +55,6 @@ internal sealed class DecisionPaymentRenderer
     {
         if (panel.PaymentModalOpen && selected.CostOptions.Count == 1)
         {
-            panel.AddContent(DecisionCostLabel.Create(selected.CostOptions[0], world, showTarget: false));
             return;
         }
         for (int index = 0; index < selected.CostOptions.Count; index++)
@@ -183,14 +182,14 @@ internal sealed class DecisionPaymentRenderer
             summary += $" · {progress.AssignedIcons} assigned to payment";
         if (progress.ExcessIcons > 0) summary += $" · {progress.ExcessIcons} excess";
         Label label = DecisionPanel.Text(summary,
-            progress.ExcessIcons > 0 ? GodotThemeVariations.DangerText : GodotThemeVariations.Caption,
+            progress.ExcessIcons > 0 ? GodotThemeVariations.DangerText : GodotThemeVariations.Body,
             wrap: true);
         label.Name = "PaymentProgress";
         if (panel.PaymentModalOpen) panel.AddCommit(label);
         else panel.AddContent(label);
     }
 
-    internal void AddSubmit(DecisionProgressPresentation progress)
+    private void AddWarnings(DecisionProgressPresentation progress)
     {
         if (!progress.IsReady && progress.Error is not null
             && (!panel.PaymentModalOpen || progress.Payment.IsSatisfied))
@@ -211,6 +210,11 @@ internal sealed class DecisionPaymentRenderer
                 wrap: true));
         }
 
+    }
+
+    internal void AddSubmit(DecisionProgressPresentation progress)
+    {
+        AddWarnings(progress);
         string action = DecisionCopy.WithPaymentConsequence(
             DecisionPanelCopy.SubmitAction(composer, world), progress.Payment);
         if (panel.PaymentModalOpen)
@@ -226,6 +230,7 @@ internal sealed class DecisionPaymentRenderer
             submit.Disabled
                 ? InteractiveVisualState.Unavailable
                 : InteractiveVisualState.Danger);
+        if (submitting) submit.ThemeTypeVariation = "WaitingButton";
         submit.SetMeta("table_mutation", true);
         submit.Pressed += TrySubmit;
         panel.AddCommit(submit);

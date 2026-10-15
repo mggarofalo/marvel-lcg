@@ -67,7 +67,7 @@ internal static class BoardInteractionControlProjection
                 CardInteractionIntent.Action,
                 actions.Count() == 1
                     ? ActionEntry(actions.Single())
-                    : $"Actions · {actions.Count()}",
+                    : $"Choose action · {actions.Count()}",
                 CardInteractionCue.OfferedAction,
                 Description: actions.Count() == 1 ? DecisionCopy.ActionSummary(actions.Single()) : null)
             {

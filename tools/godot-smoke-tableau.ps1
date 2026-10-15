@@ -7,6 +7,7 @@ $temporary = Join-Path ([IO.Path]::GetTempPath()) ("marvel-tableau-" + [guid]::N
 $fixture = Join-Path $temporary "tableau.json"
 $previousFixture = $env:MARVEL_TABLEAU_FIXTURE
 $previousScale = $env:MARVEL_UI_SCALE
+$previousMotion = $env:MARVEL_SMOKE_MOTION
 try {
     $env:MARVEL_TABLEAU_FIXTURE = $fixture
     dotnet test "$repoRoot/tests/Marvel.Godot.Tests/Marvel.Godot.Tests.csproj" -c Release --nologo `
@@ -40,8 +41,19 @@ try {
             throw "Native source drag regions failed at $scale%. Diagnostics retained in $temporary."
         }
     }
+    $env:MARVEL_UI_SCALE = "100"
+    foreach ($motion in @("enabled", "disabled")) {
+        $env:MARVEL_SMOKE_MOTION = $motion
+        $output = & $GodotBin --headless --audio-driver Dummy --path "$repoRoot/src/Marvel.Godot" `
+            --script res://smoke/source_weighted_gesture_smoke.gd -- "--marvel-tableau=$fixture" 2>&1
+        $output | Write-Output
+        if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output)) {
+            throw "Native source motion failed with motion $motion. Diagnostics retained in $temporary."
+        }
+    }
 }
 finally {
     $env:MARVEL_TABLEAU_FIXTURE = $previousFixture
     $env:MARVEL_UI_SCALE = $previousScale
+    $env:MARVEL_SMOKE_MOTION = $previousMotion
 }

@@ -47,7 +47,7 @@ public sealed class InteractionSurfaceProjectionTests
             BoardInteractionControlProjection.From(composer, prompt));
 
         Assert.Equal(CardInteractionIntent.Action, action.Intent);
-        Assert.Equal("Actions · 2", action.Text);
+        Assert.Equal("Choose action · 2", action.Text);
         Assert.Null(composer.Selected);
     }
 

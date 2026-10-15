@@ -14,12 +14,18 @@ internal static class ActivityReferenceChips
         foreach (ActivitySubject subject in subjects)
         {
             var chip = new Button { Text = "▱ " + subject.Name, CustomMinimumSize = new Vector2(compact ? 96 : 0, 32), ClipText = compact,
-                TooltipText = subject.Reference is null ? subject.Name : "Inspect " + subject.Name + " · event reference",
+                TooltipText = subject.Reference is null ? "" : "Pin card details · event reference",
                 AccessibilityName = "Event reference: " + subject.Name,
+                TextOverrunBehavior = compact ? TextServer.OverrunBehavior.TrimEllipsis : TextServer.OverrunBehavior.NoTrimming,
                 MouseFilter = Control.MouseFilterEnum.Stop };
             chip.AddThemeFontSizeOverride("font_size", 12);
             host.AddChild(chip);
-            if (subject.Reference is not { } face) { chip.Disabled = true; continue; }
+            if (subject.Reference is not { } face)
+            {
+                chip.Disabled = true;
+                TooltipPolicy.ClippedCaption(chip, subject.Name);
+                continue;
+            }
             void Preview()
             {
                 if (!main.cardInspectorPinned) main.boardController.ShowCardInspector(face, chip, false);

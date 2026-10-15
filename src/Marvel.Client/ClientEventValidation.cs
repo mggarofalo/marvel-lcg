@@ -7,6 +7,8 @@ internal static class ClientEventValidation
 {
     internal static bool Complete(GameEvent happened) =>
         happened is not null && happened.Trigger is not null && happened.Verb is not null
+        && (happened.Cause is null || happened.Cause is { Source: >= 0, Target: >= 0, SourceTitle: not null, TargetTitle: not null } cause
+            && Enum.IsDefined(cause.Kind))
         && CompleteEventPayload(happened);
 
     private static bool CompleteEventPayload(GameEvent happened) => happened switch
@@ -33,11 +35,15 @@ internal static class ClientEventValidation
                 FieldSet set => set.Field is not null,
                 BoostResolved boost => boost.Card >= 0 && boost.Enemy >= 0 && boost.Icons >= 0,
                 AttackCompleted => true,
+                AttackBoundary boundary => CompleteBoundary(boundary),
                 CardsShuffledIntoDeck shuffled => CompleteShuffleReceipt(shuffled),
                 WhenRevealedCanceled canceled => canceled.Card >= 0
                     && (canceled.Source is null or >= 0),
                 _ => false,
             };
+
+    private static bool CompleteBoundary(AttackBoundary boundary) => boundary.Identity is not null
+        && boundary.Source >= 0 && boundary.Target >= 0 && boundary.AttackIdentity == boundary.Identity;
 
     private static bool CompleteWindow(AbilityWindowResult result) =>
         result.Source >= 0 && result.Player >= -1 && result.Occurrence >= 0

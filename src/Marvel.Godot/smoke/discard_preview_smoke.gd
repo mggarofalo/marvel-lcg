@@ -56,7 +56,7 @@ func _known_discard_preview(expected: int) -> bool:
 	if discard == null:
 		_fail("accepted payment created no player discard")
 		return false
-	var revision: String = _node("Toolbar/SyncStatus").text
+	var revision: String = str(_node("Toolbar/SyncStatus").get_meta("response_revision", -1))
 	var inspector: Control = main.get_node("CardInspector")
 	var focus := render_viewport.gui_get_focus_owner()
 	if not await _control_owns_point(discard, discard.get_global_rect().get_center()): return false
@@ -76,7 +76,7 @@ func _known_discard_preview(expected: int) -> bool:
 			or render_viewport.gui_get_focus_owner() != discard:
 		_fail("discard keyboard focus lost exact paid identity or stole focus")
 		return false
-	if _node("Toolbar/SyncStatus").text != revision:
+	if str(_node("Toolbar/SyncStatus").get_meta("response_revision", -1)) != revision:
 		_fail("discard preview changed the authoritative revision")
 		return false
 	return true

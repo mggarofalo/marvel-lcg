@@ -54,6 +54,7 @@ public static class Sequence
 
         while (world.Agenda.Current is { } step)
         {
+            using var attackEvents = new AttackEventScope(world, events);
             if (ActivationDeparture.EndDepartedActivation(world, step))
             {
                 continue;
@@ -156,6 +157,8 @@ public static class Sequence
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(events);
         IWindowAbilities abilities = world.WindowAbilities;
+
+        using var attackEvents = new AttackEventScope(world, events);
 
         if (world.Windows.Current is not { } window)
         {

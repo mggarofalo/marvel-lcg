@@ -235,7 +235,7 @@ public static class EncounterDeck
 
         if (pile.Cards.Count == 0)
         {
-            world.Finish(Outcome.PlayersLose);
+            world.Finish(Outcome.PlayersLose, PlayerLossReason.EncounterCardsExhausted);
             return false;
         }
 

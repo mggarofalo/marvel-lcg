@@ -10,7 +10,7 @@ internal static class CardPaymentWorkspaceLayout
 
     internal static float Width(Vector2 viewport) => Math.Min(560, Math.Max(280, viewport.X - 1360));
 
-    internal static float Height(Vector2 viewport) => Math.Clamp(viewport.Y - 440, 360, 680);
+    internal static float Height(Vector2 viewport) => Math.Max(360, viewport.Y - 160);
 
     internal static void Install(Main main, PanelContainer frame)
     {
@@ -28,5 +28,6 @@ internal static class CardPaymentWorkspaceLayout
     }
 
     internal static void Fit(Main main, Control frame) =>
-        frame.CustomMinimumSize = new Vector2(0, Height(main.GetViewportRect().Size));
+        frame.CustomMinimumSize = new Vector2(0, Height(main.GetViewportRect().Size)
+            - (TableHistoryDrawer.IsExpanded(main) ? 300 : 0));
 }

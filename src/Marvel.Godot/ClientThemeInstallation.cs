@@ -2,20 +2,21 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Installs fresh themes while bounding their temporary managed ownership.</summary>
+/// <summary>Installs shared scale themes without repeating ancestor theme notifications.</summary>
 internal static class ClientThemeInstallation
 {
     internal static void Apply(Control control, InterfaceScale scale = InterfaceScale.Standard)
     {
-        // The native owner retains the theme after this temporary wrapper is released.
-        using var theme = ClientTheme.Create(scale);
-        control.Theme = theme;
+        if (control is Main && control.IsInsideTree()) TableCursorTheme.Apply(control, scale);
+        Theme theme = ClientThemePalette.For(scale);
+        if (control.Theme != theme) control.Theme = theme;
+        SharedControlFeedback.Install(control);
         control.OversamplingWithScale = CanvasItem.OversamplingWithScaleEnum.Enabled;
     }
 
     internal static void Apply(Window window, InterfaceScale scale = InterfaceScale.Standard)
     {
-        // The native owner retains the theme after this temporary wrapper is released.
+        // A popup owns its independent theme until its native window is freed.
         using var theme = ClientTheme.Create(scale);
         window.Theme = theme;
     }

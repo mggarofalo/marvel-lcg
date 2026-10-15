@@ -17,7 +17,7 @@ internal static class PrintedCardStats
             CardStatValue stat = stats[index];
             var cell = new Control { Name = $"Stat{stat.Name}",
                 Position = r.Stats.Position + new Vector2(width * (index % columns), height * (index / columns)),
-                Size = new Vector2(width, height), MouseFilter = Control.MouseFilterEnum.Ignore };
+                Size = new Vector2(width, height), MouseFilter = Control.MouseFilterEnum.Pass };
             face.AddChild(cell);
             AddValue(cell, stat, r);
         }
@@ -25,7 +25,7 @@ internal static class PrintedCardStats
 
     private static void AddValue(Control cell, CardStatValue stat, CardFaceRegions r)
     {
-        int fontSize = Math.Max(5, Mathf.RoundToInt((r.Full ? CardVisualTokens.FullStatSize : CardVisualTokens.CompactStatSize) * r.Density));
+        int fontSize = Math.Max(5, Mathf.RoundToInt((r.Full ? CardVisualTokens.FullStatSize : CardVisualTokens.CompactStatSize) * r.Density + r.ReadingBoost));
         float icon = (r.Full ? 22 : 11) * r.Density;
         float gap = (r.Full ? 7 : 4) * r.Density;
         using var line = new TextLine();
@@ -34,7 +34,8 @@ internal static class PrintedCardStats
         Rect2 number = new(icon + gap, 0, measured.X, measured.Y);
         AddNumber(cell, stat, number, fontSize);
         AddIdentity(cell, stat, r, measured, line.GetLineAscent());
-        cell.TooltipText = $"{Name(stat.Name)} {stat.Value}";
+        cell.AccessibilityName = $"{Name(stat.Name)} {stat.Value}";
+        cell.TooltipText = r.Full ? string.Empty : cell.AccessibilityName;
         var geometry = new CardNumberGeometry(number, line.GetLineAscent(),
             new CardNumberMarks(stat.SpecialStar && !stat.IsBareStar, stat.PerPlayer, stat.ConsequentialDamage),
             r.Density, r.Full);
@@ -98,6 +99,8 @@ internal static class PrintedCardStats
             TextureRect mark = CardGlyphRendering.Create("D", $"Consequential{stat.Name}{index}",
                 geometry.Consequences[index], Colors.White);
             mark.TooltipText = $"{stat.ConsequentialDamage} consequential damage";
+            mark.AccessibilityName = mark.TooltipText;
+            mark.MouseFilter = Control.MouseFilterEnum.Pass;
             cell.AddChild(mark);
         }
     }
