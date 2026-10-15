@@ -100,37 +100,33 @@ public sealed record TargetRequest(
     /// </remarks>
     public bool Allows(IReadOnlyList<int> selection)
     {
-        ArgumentNullException.ThrowIfNull(selection);
+        if (!AllowsPartial(selection)) return false;
+        return IsGrouped
+            ? Groups!.Any(group => selection.SequenceEqual(group))
+            : selection.Count >= Min;
+    }
 
+    /// <summary>Whether this ordered draft respects the offered constraints before its minimum is met.</summary>
+    /// <remarks>
+    /// The engine chooses prefix semantics for grouped drafts: only a prefix of a
+    /// complete offered answer can be extended. This does not authorize submission.
+    /// </remarks>
+    public bool AllowsPartial(IReadOnlyList<int> selection)
+    {
+        ArgumentNullException.ThrowIfNull(selection);
         if (!AllowsCombination(selection)) return false;
 
-        // `rr:choose-game-element.3.1`: "The same target cannot be chosen
-        // multiple times this way." This applies before either representation
-        // below. Indirect damage is the explicit exception represented here:
-        // its entries allocate points rather than choosing a target repeatedly.
-        if (!AllowRepeated && selection.Distinct().Count() != selection.Count)
-        {
-            return false;
-        }
-
+        // rr:choose-game-element.3.1: "The same target cannot be chosen
+        // multiple times this way." Repeated allocations are explicitly offered.
+        if (!AllowRepeated && selection.Distinct().Count() != selection.Count) return false;
         if (MaximumOccurrences is not null
             && selection.GroupBy(id => id).Any(chosen =>
                 !MaximumOccurrences.TryGetValue(chosen.Key, out int maximum)
-                || chosen.Count() > maximum))
-        {
-            return false;
-        }
+                || chosen.Count() > maximum)) return false;
 
-        if (IsGrouped)
-        {
-            // Groups are complete ordered answers, not pools from which a
-            // subset may be taken. Ordering is observable for rules that ask
-            // the player to order simultaneous resolutions.
-            return Groups!.Any(group => selection.SequenceEqual(group));
-        }
-
-        return selection.Count >= Min
-            && selection.Count <= Max
-            && selection.All(Legal.Contains);
+        return IsGrouped
+            ? Groups!.Any(group => selection.Count <= group.Count
+                && selection.SequenceEqual(group.Take(selection.Count)))
+            : selection.Count <= Max && selection.All(Legal.Contains);
     }
 }

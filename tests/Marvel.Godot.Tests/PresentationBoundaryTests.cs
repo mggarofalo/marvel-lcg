@@ -27,7 +27,6 @@ public sealed class PresentationBoundaryTests
             "Marvel.Rules.Events.GameEvent",
             "Marvel.Rules.Play.Outcome",
             "Marvel.Rules.Play.PlayerLossReason",
-            "Marvel.Rules.Play.Resources",
             "Marvel.Rules.Prompts.Affordance",
             // Synthetic native selector specimens construct public prompt contracts only.
             "Marvel.Rules.Prompts.AffordanceAnchorKind",
@@ -69,6 +68,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.Decisions.PaymentProgress",
             // Guided source selection delegates slot matching to the engine.
             "Marvel.Decisions.DecisionResourceEligibility",
+            // Icon declaration choices are assessed by the engine through the current draft.
+            "Marvel.Decisions.DecisionResourceDeclarations",
             "Marvel.Decisions.ResourceIconAssignment",
             "Marvel.Decisions.TableDraftOperations",
             "Marvel.Decisions.TargetSelectionMode",

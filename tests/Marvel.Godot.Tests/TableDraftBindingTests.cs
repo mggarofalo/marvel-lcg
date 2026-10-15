@@ -10,6 +10,29 @@ namespace Marvel.Godot.Tests;
 public sealed class TableDraftBindingTests
 {
     [Fact]
+    public void RepeatedTargetAvailabilityUsesEngineConstraintsAndExpiresWithTheRender()
+    {
+        // Synthetic engine offer exercises the UI binding without claiming a played scenario.
+        var request = new TargetRequest([31, 32], 1, 2, AllowRepeated: true)
+        { ExclusiveSets = [[31, 32]] };
+        var composer = new DecisionComposer(new Prompt(0, Question.Order,
+            TimingPriority.Untimed, "test", "Allocate", false,
+            [new Affordance(14, "Choose", 101, 0, "Allocate", request)]));
+        bool current = true;
+        var binding = new TableDraftBinding(composer, 4, 9, (_, _) => current);
+        Assert.True(binding.TrySelectAffordance(14));
+        Assert.True(binding.CanAddTarget(31));
+        Assert.True(binding.TryAddTarget(31));
+        Assert.False(binding.CanAddTarget(32));
+        Assert.False(binding.TryAddTarget(32));
+        Assert.True(binding.CanAddTarget(31));
+        current = false;
+        Assert.False(binding.CanAddTarget(31));
+        Assert.False(binding.TryAddTarget(31));
+        Assert.Equal([31], composer.Targets);
+    }
+
+    [Fact]
     public void StaleGenerationRevisionAndHiddenIdentifiersCannotMutateTheCurrentDraft()
     {
         long liveRevision = 9;

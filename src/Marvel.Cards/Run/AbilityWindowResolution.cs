@@ -1,0 +1,145 @@
+using static Marvel.Cards.Run.AbilityEffectStructure;
+using static Marvel.Cards.Run.AbilityPaymentRules;
+using Marvel.Cards.Dsl;
+using Marvel.Rules.Events;
+using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
+using Marvel.Rules.State;
+using Marvel.Rules.Timing;
+
+namespace Marvel.Cards.Run;
+
+/// <summary>Admits and resolves card abilities in interrupt and response windows.</summary>
+internal static class AbilityWindowResolution
+{
+    /// <inheritdoc/>
+    internal static IReadOnlyList<PendingAbility> Waiting(this AbilityResolutionExecution execution,
+        World world, Occurrence occurrence, WindowKind window)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(occurrence);
+        return [.. AbilityWindowAdmission.Waiting(
+                execution.program, world, occurrence, window, execution.resourceAbilities)
+            .Select(candidate => new PendingAbility(
+                candidate.Card.ObjectId, candidate.Ability.Trigger.Timing,
+                candidate.Controller, candidate.Ordinal) { Would = candidate.Ability.Trigger.Would })];
+    }
+
+    /// <inheritdoc/>
+    internal static IReadOnlyList<GameEvent> Resolve(this AbilityResolutionExecution execution,
+        World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying,
+        IReadOnlyList<int> chosen) =>
+        execution.Resolve(world, occurrence, ability, new Decision(ability.Card, chosen, paying));
+
+    /// <inheritdoc/>
+    internal static IReadOnlyList<GameEvent> Resolve(this AbilityResolutionExecution execution,
+        World world, Occurrence occurrence, PendingAbility ability, Decision answer)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(occurrence);
+        ArgumentNullException.ThrowIfNull(answer);
+
+        var card = world.Cards[ability.Card];
+        var found = execution.Pending(card, ability);
+        var events = new List<GameEvent>();
+
+        // **Who "you" is, which is not who may trigger it.**
+        // `PendingAbility.Player` is control -- `rr:ability.8` lets any player
+        // use an optional ability on an encounter card, so an encounter card's
+        // is the scenario. That is the right answer to "whose opportunity is
+        // this" and the wrong one to "who does the card mean by *you*".
+        //
+        // `rr:you-your.7` is explicit for the case this arrived on: "for
+        // abilities that trigger 'after [enemy] attacks you,' 'you' refers to
+        // the attacked player, even if that player defended with an ally." The
+        // attacked player is the occurrence's, so an ability on a card nobody
+        // owns resolves as the player the occurrence happened to. `.16` is not
+        // in the way -- it says an encounter card's ability is not performed by
+        // that player's identity, which is about who acts, not about who the
+        // word points at.
+        int resolving = ability.Player >= 0 ? ability.Player : occurrence.Player;
+        var cast = CreateAbilityState(world, card, occurrence, resolving, events, found);
+        EnsureAvailable(execution, world, card, found, occurrence);
+        if (!CanPayAbility(execution, world, card, found, resolving)) return events;
+        if (!CanInitiateAbility(execution, card, found, resolving, cast)) return events;
+
+        // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
+        // before step 6 resolves. Nothing here can abort for want of resources,
+        // because step 3 -- `Payable`, when the ability was offered -- already
+        // asked whether the cost could be paid at all. What it cannot check is
+        // that the player named a payment that works, and `CardPlay.Spend`
+        // refuses one that does not.
+        if (AbilityRecipientCommitment.Validate(execution, cast, found, answer.Targets) is not null)
+            cast.Results[AbilityRecipientCommitment.PendingRecipient] = answer.Targets[0];
+        if (!AbilityWindowActivation.Pay(execution, cast, found, ability, answer))
+        {
+            AbilityWindowReceipt.Emit(cast, found, ability.Ordinal);
+            return events;
+        }
+        AbilityWindowActivation.Execute(execution, cast, found, ability);
+        AbilityWindowReceipt.Emit(cast, found, ability.Ordinal);
+        return events;
+    }
+
+    private static AbilityResolutionState CreateAbilityState(
+        World world, Card card, Occurrence occurrence, int resolving,
+        List<GameEvent> events, CompiledCardAbility ability)
+    {
+        var cast = new AbilityResolutionState(world, card, occurrence, resolving, events)
+        {
+            Tier = ability.Trigger.Timing,
+        };
+        return cast.ForReachability(cast.Reachability with
+        {
+            PaymentMayMutate = ability.Cost is not null
+                || EffectiveCards.Kind(card, world.Facts) == CardKind.Event,
+            PaymentCost = ability.Cost,
+        });
+    }
+
+    private static void EnsureAvailable(
+        AbilityResolutionExecution execution, World world, Card card,
+        CompiledCardAbility ability, Occurrence occurrence)
+    {
+        if (AbilityAvailability.Available(
+            world, card, ability,
+            AbilityAvailability.IndexOf(execution.program, card, ability), occurrence)) return;
+        throw new RulesNotImplementedException(
+            $"'{card.FaceId}' has reached its printed maximum for this ability's period");
+    }
+
+    private static bool CanPayAbility(
+        AbilityResolutionExecution execution, World world, Card card,
+        CompiledCardAbility ability, int resolving)
+    {
+        // Forced abilities pay their printed arrow cost, but the timing window
+        // cannot choose a non-automatic payment on a player's behalf.
+        if (AbilityTypes.IsMandatory(ability.Trigger.Timing) && ability.Cost is not null)
+        {
+            if (!MandatoryCostIsAutomatic(ability.Cost))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{card.FaceId}' has a mandatory ability whose "
+                    + $"'{ability.Cost.OperationName()}' cost requires a player decision");
+            }
+            return Payable(
+                world, card, resolving, ability.Cost,
+                execution.program, execution.resourceAbilities);
+        }
+        if (CounterCostsPayable(world, card, resolving, ability.Cost)) return true;
+        throw new RulesNotImplementedException(
+            $"'{card.FaceId}' can no longer pay this ability's cost");
+    }
+
+    private static bool CanInitiateAbility(
+        AbilityResolutionExecution execution, Card card,
+        CompiledCardAbility ability, int resolving, AbilityResolutionState cast)
+    {
+        if (resolving < 0 || execution.CanInitiate(ability, cast)) return true;
+        // A mandatory ability with no target is reached but does nothing.
+        if (AbilityTypes.IsMandatory(ability.Trigger.Timing)) return false;
+        throw new RulesNotImplementedException(
+            $"'{card.FaceId}' cannot initiate this ability in the current state");
+    }
+
+}

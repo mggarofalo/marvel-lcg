@@ -10,12 +10,8 @@ func _run() -> void:
     root.size = Vector2i(1920, 1080)
     main = (load("res://Main.tscn") as PackedScene).instantiate()
     root.add_child(main)
-    for frame in range(8): await process_frame
-    var primary: Button
-    for node in main.find_children("*", "Button", true, false):
-        if node.is_visible_in_tree() and node.theme_type_variation == "PrimaryButton" and not node.disabled:
-            primary = node
-    if primary == null:
+    var primary := await preload("res://smoke/setup_smoke_readiness.gd").wait_for_start(main)
+    if primary == null or primary.theme_type_variation != "PrimaryButton":
         push_error("CONTROL_FINISH_FAILED missing primary")
         quit(1)
         return

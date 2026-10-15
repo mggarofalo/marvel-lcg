@@ -111,7 +111,6 @@ public sealed class PresentationAssemblyPolicyTests
             typeof(DecisionComposer).Assembly,
             "Marvel.Rules.Play.Decision",
             "Marvel.Rules.Play.ResourceAllocation",
-            "Marvel.Rules.Play.Resources",
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",

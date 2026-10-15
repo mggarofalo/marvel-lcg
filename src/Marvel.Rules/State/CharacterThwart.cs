@@ -37,26 +37,10 @@ namespace Marvel.Rules.State;
 /// <param name="Amount">Fixed card-ability threat removal, or -1 for the thwart statistic.</param>
 /// <param name="Source">The ability card, or -1 when it is the thwarter.</param>
 /// <param name="Trigger">Event-stream provenance for the card ability.</param>
-/// <param name="AbilityIndex">The source card's authored ability, or -1 for fixed removal.</param>
-/// <param name="PowerOrdinal">Which thwart wrapper inside that ability.</param>
-/// <param name="ResumeFrom">The next top-level sequence step, or -1 when none remains.</param>
-/// <param name="FinalStep">Whether this is the final Special in its parent sequence.</param>
-/// <param name="Targets">Every scheme selected for this one thwart.</param>
+/// <param name="Continuation">Opaque interpreter work resumed when the power resolves.</param>
+/// <param name="Origin">The containing occurrence whose response may own this nested power.</param>
+/// <param name="SurgeGained">Whether the containing reveal has already gained Surge.</param>
 /// <param name="ImminentThreat">The outer assignment an interrupt can prevent.</param>
-/// <param name="SurgeGained">
-/// Whether the suspended source ability has already gained and resolved Surge.
-/// The field is engine continuation data rather than a rulebook term.
-/// </param>
-/// <param name="AbilityPath">The structural route to this thwart wrapper.</param>
-/// <param name="AbilityFace">The printed face whose authored ability scheduled the thwart.</param>
-/// <param name="AbilityResults">Effect-local numeric bindings carried across the thwart.</param>
-/// <param name="AbilityOccurrence">The occurrence the source ability is resolving in.</param>
-/// <param name="Discarded">Cards discarded earlier in the source ability, by object id.</param>
-/// <param name="EachPlayerFrame">Whether this thwart belongs to one each-player frame.</param>
-/// <param name="FinalPlayer">Whether that frame is the last chosen player.</param>
-/// <param name="AbilityPlayer">The player resolving the containing ability.</param>
-/// <param name="AbilityActor">The performer attributed to the containing labeled ability.</param>
-/// <param name="AbilityHasContinuation">Whether structural ancestor work remains.</param>
 /// <param name="TargetIncarnation">
 /// The scheme copy that was chosen. Object ids survive leaving play, so this
 /// distinguishes that target from the same physical card entering play again.
@@ -68,21 +52,8 @@ public sealed record CharacterThwart(
     long Amount = -1,
     int Source = -1,
     string Trigger = "Thwart",
-    int AbilityIndex = -1,
-    int PowerOrdinal = 0,
-    int ResumeFrom = -1,
-    bool FinalStep = false,
-    IReadOnlyList<int>? Targets = null,
-    ThreatPlacement? ImminentThreat = null,
+    CardPowerContinuation? Continuation = null,
+    Occurrence? Origin = null,
     bool SurgeGained = false,
-    IReadOnlyList<string>? AbilityPath = null,
-    string AbilityFace = "",
-    IReadOnlyDictionary<string, long>? AbilityResults = null,
-    Occurrence? AbilityOccurrence = null,
-    IReadOnlyList<int>? Discarded = null,
-    bool EachPlayerFrame = false,
-    bool FinalPlayer = false,
-    int AbilityPlayer = -1,
-    int AbilityActor = -1,
-    bool AbilityHasContinuation = false,
+    ThreatPlacement? ImminentThreat = null,
     int TargetIncarnation = -1);

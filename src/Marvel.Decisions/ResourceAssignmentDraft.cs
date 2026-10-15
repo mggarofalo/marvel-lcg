@@ -112,7 +112,7 @@ internal sealed class ResourceAssignmentDraft
         }
         return IconIsOffered(generator, icon)
             && CostIsOffered(costOption, cost)
-            && PaidTypeIsOffered(generator, icon, paidAs);
+            && PaidTypeIsOffered(costOption, generator, icon, cost, paidAs);
     }
 
     private static bool IconIsOffered(ResourceSource generator, int icon) =>
@@ -122,11 +122,9 @@ internal sealed class ResourceAssignmentDraft
         cost is null || cost >= 0 && cost < option.ResourceCosts.Count;
 
     private static bool PaidTypeIsOffered(
-        ResourceSource generator, int icon, char? paidAs) =>
-        paidAs is null
-        || Marvel.Rules.Play.Resources.Types.Contains(paidAs.Value)
-            && (generator.Generates[icon] == Marvel.Rules.Play.Resources.Wild
-                || generator.Generates[icon] == paidAs);
+        CostOption option, ResourceSource generator, int icon, int? cost, char? paidAs) =>
+        paidAs is null || option.ResourceCosts[cost!.Value].Declarations(generator.Generates[icon])
+            .Contains(paidAs.Value);
 
     internal IReadOnlyList<ResourceAllocation> CollapseAssignments()
     {

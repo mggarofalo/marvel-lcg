@@ -48,6 +48,10 @@ internal static class ResourcePaymentRequirements
             out amount)
         || values is not null && values.TryGetValue(written, out amount);
 
+    internal static bool CanDeclare(char icon, char declared, bool printedCost) =>
+        Resources.Types.Contains(declared)
+        && (icon == declared || !printedCost && icon == Resources.Wild);
+
     internal static bool Accepts(char printed, char? required, bool printedCost) =>
         required is null
         || printed == required

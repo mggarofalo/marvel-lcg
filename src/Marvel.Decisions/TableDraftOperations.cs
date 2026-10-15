@@ -38,7 +38,7 @@ public sealed class TableDraftOperations
         ArgumentNullException.ThrowIfNull(targets);
         TargetRequest? request = composer.Selected?.Targets;
         if (!HasLegalSelection()
-            || request?.Groups?.Any(group => group.SequenceEqual(targets)) != true)
+            || request is not { IsGrouped: true } || !request.Allows(targets))
         {
             return false;
         }
@@ -66,7 +66,7 @@ public sealed class TableDraftOperations
     {
         TargetRequest? request = OrdinaryRequest(id);
         return request is { AllowRepeated: false }
-            && (composer.Targets.Contains(id) || CanAddDistinct(request, id));
+            && (composer.Targets.Contains(id) || CanAddTarget(id));
     }
 
     /// <summary>Adds one offered target while retaining order and allocation bounds.</summary>
@@ -78,7 +78,7 @@ public sealed class TableDraftOperations
             return false;
         }
 
-        if (!CanAdd(request, id))
+        if (!CanAddTarget(id))
         {
             return false;
         }
@@ -152,20 +152,15 @@ public sealed class TableDraftOperations
 
     private bool HasLegalSelection() => composer.Selected?.IsLegal == true;
 
-    private bool CanAdd(TargetRequest request, int id) => request.AllowRepeated
-        ? CanAddRepeated(request, id)
-        : CanAddDistinct(request, id);
-
-    private bool CanAddDistinct(TargetRequest request, int id) =>
-        !composer.Targets.Contains(id)
-        && request.AllowsCombination(request.Max == 1 ? [id] : [.. composer.Targets, id])
-        && (composer.Targets.Count < request.Max || request.Max == 1);
-
-    private bool CanAddRepeated(TargetRequest request, int id)
+    /// <summary>Asks the engine whether adding this target preserves a valid partial draft.</summary>
+    public bool CanAddTarget(int id)
     {
-        int occurrences = composer.Targets.Count(target => target == id);
-        int maximumOccurrences = request.MaximumOccurrences?.GetValueOrDefault(id)
-            ?? request.Max;
-        return occurrences < maximumOccurrences && composer.Targets.Count < request.Max;
+        TargetRequest? request = OrdinaryRequest(id);
+        if (request is null || !request.AllowRepeated && composer.Targets.Contains(id)) return false;
+        // Replacing a single selection is an interaction choice; the engine
+        // assesses the resulting answer using the same constraints as submission.
+        int[] proposed = !request.AllowRepeated && request.Max == 1
+            ? [id] : [.. composer.Targets, id];
+        return request.AllowsPartial(proposed);
     }
 }

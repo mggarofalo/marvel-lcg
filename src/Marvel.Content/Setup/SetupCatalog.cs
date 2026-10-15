@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 
 namespace Marvel.Content.Setup;
@@ -79,20 +80,23 @@ public sealed class SetupCatalog
         var campaigns = new Dictionary<string, CampaignSetup>(StringComparer.Ordinal);
         foreach (var entry in Section(root, "campaigns"))
         {
-            campaigns[entry.Name] = ReadCampaign(entry.Value);
+            if (!campaigns.TryAdd(entry.Name, ReadCampaign(entry.Value)))
+                throw new JsonException($"duplicate campaign identity '{entry.Name}'");
         }
 
         var heroes = new Dictionary<string, HeroSetup>(StringComparer.Ordinal);
         foreach (var entry in Section(root, "heroes"))
         {
-            heroes[entry.Name] = ReadHero(entry.Value);
+            if (!heroes.TryAdd(entry.Name, ReadHero(entry.Value)))
+                throw new JsonException($"duplicate hero identity '{entry.Name}'");
         }
 
         var sets = new Dictionary<string, EncounterSetSetup>(StringComparer.Ordinal);
         foreach (var entry in Section(root, "encounter_sets"))
         {
-            sets[entry.Name] = new EncounterSetSetup(
-                Text(entry.Value, "name"), Strings(entry.Value, "encounters"));
+            if (!sets.TryAdd(entry.Name, new EncounterSetSetup(
+                    Text(entry.Value, "name"), Strings(entry.Value, "encounters"))))
+                throw new JsonException($"duplicate encounter set identity '{entry.Name}'");
         }
 
         return new SetupCatalog(campaigns, heroes, sets);
@@ -131,7 +135,7 @@ public sealed class SetupCatalog
     // A missing list is an error rather than an empty one. Every record the
     // emitter writes carries every field its dataclass declares, including the
     // empty ones, so an absent key means the file is not what it claims to be.
-    private static List<string> Strings(JsonElement element, string name)
+    private static ImmutableArray<string> Strings(JsonElement element, string name)
     {
         if (!element.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.Array)
         {
@@ -145,6 +149,8 @@ public sealed class SetupCatalog
                       ?? throw new JsonException($"'{name}' holds a non-string"));
         }
 
-        return items;
+        // Catalogs are shared across games. Our ingestion contract publishes
+        // immutable recipes so callers cannot change another game's setup.
+        return items.ToImmutableArray();
     }
 }

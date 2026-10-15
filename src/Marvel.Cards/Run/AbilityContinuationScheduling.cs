@@ -31,12 +31,9 @@ internal static class AbilityContinuationScheduling
     }
 
     internal static CardPowerContinuation Power(
-        AbilityContinuationCapture capture, int powerOrdinal, bool hasContinuation) => new(
-            capture.Address.Ordinal, powerOrdinal,
-            hasContinuation ? capture.Position + 1 : -1, capture.FinalStep,
-            [], capture.SurgeGained, [.. capture.Frames.Select(EncodeFrame)], capture.Address.Face,
-            capture.Results, capture.Occurrence, capture.Discarded,
-            capture.EachPlayerFrame, capture.FinalPlayer, capture.AbilityPlayer,
-            hasContinuation);
-
+        AbilityContinuationCapture capture, int powerOrdinal, IReadOnlyList<int> targets) => new(
+            capture.Address.Ordinal, powerOrdinal, capture.FinalStep,
+            targets, [.. capture.Frames.Select(EncodeFrame)], capture.Address.Face,
+            capture.Results, capture.Discarded,
+            capture.EachPlayerFrame, capture.FinalPlayer, capture.AbilityPlayer);
 }

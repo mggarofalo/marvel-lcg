@@ -6,6 +6,13 @@ namespace Marvel.Server;
 /// <summary>The source-generated spelling of the engine-host protocol.</summary>
 internal static class EngineJson
 {
+    // Embedded exchanges use the same value boundary as socket exchanges. The
+    // protocol codec copies every nested wire field without sharing collections
+    // with the sender or exposing server-only, nonserialized metadata.
+    internal static EngineRequest Snapshot(EngineRequest request) => ReadRequest(Write(request));
+
+    internal static EngineResponse Snapshot(EngineResponse response) => ReadResponse(Write(response));
+
     public static byte[] Write(EngineRequest request) =>
         JsonSerializer.SerializeToUtf8Bytes(request, EngineJsonContext.Default.EngineRequest);
 

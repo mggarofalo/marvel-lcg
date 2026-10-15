@@ -2,15 +2,13 @@ using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
-using Marvel.Rules.Timing;
 using static Marvel.Cards.Run.AbilityEffectStructure;
 
 namespace Marvel.Cards.Run;
 
 internal sealed class AbilityChoiceAnswer(
-    AbilityResolutionExecution execution, World world, Card source, int player,
-    int stoppedAt, Decision input, AbilityType? tier, PhaseStep? persisted,
-    AbilityResolutionState cast)
+    AbilityResolutionExecution execution, int player, int stoppedAt,
+    Decision input, PhaseStep? persisted, AbilityResolutionState cast)
 {
     private static readonly HashSet<string> SpecialOperations =
     [
@@ -75,8 +73,8 @@ internal sealed class AbilityChoiceAnswer(
         {
             string required = ((AbilityEffect.PayOrEffect)choice).Resources;
             CardPlay.Spend(
-                world, world.Facts, execution.resourceAbilities,
-                [world.Seats[player].Hand], input.Spent, required.Length,
+                cast.World, cast.World.Facts, execution.resourceAbilities,
+                [cast.World.Seats[player].Hand], input.Spent, required.Length,
                 required, -1, player, cast.Events);
             cast.ResolveEffect();
         }
@@ -89,8 +87,8 @@ internal sealed class AbilityChoiceAnswer(
         else
         {
             string reason = choice.OperationName() == "payOrExhaust"
-                ? $"'{source.FaceId}' offers spend or exhaust, not option {input.Affordance}"
-                : $"'{source.FaceId}' did not offer option {input.Affordance}";
+                ? $"'{cast.Source.FaceId}' offers spend or exhaust, not option {input.Affordance}"
+                : $"'{cast.Source.FaceId}' did not offer option {input.Affordance}";
             throw new RulesNotImplementedException(reason);
         }
         return Continue();
@@ -105,8 +103,8 @@ internal sealed class AbilityChoiceAnswer(
             ?? throw new InvalidOperationException(
                 "Structural owner did not return top-card selection");
         AbilityCardStateExecution.ChooseTopForHand(
-            command.Top.Select(id => world.Cards[id]).ToList(),
-            world.Cards[command.Selected], CardStateContext());
+            command.Top.Select(id => cast.World.Cards[id]).ToList(),
+            cast.World.Cards[command.Selected], CardStateContext());
         cast.ResolveEffect();
         return Continue();
     }
@@ -121,7 +119,7 @@ internal sealed class AbilityChoiceAnswer(
             ?? throw new InvalidOperationException(
                 "Structural owner did not return discard selection");
         AbilityCardStateExecution.ShuffleDiscardIntoDeck(
-            command.Targets.Select(id => world.Cards[id]).ToList(),
+            command.Targets.Select(id => cast.World.Cards[id]).ToList(),
             CardStateContext());
         cast.ResolveEffect();
         return Continue();
@@ -136,12 +134,12 @@ internal sealed class AbilityChoiceAnswer(
         AbilityEffect.ThwartGroup choice)
     {
         var command = AnswerThwartChoice(choice);
-        var selected = command.Resolving.Select(id => world.Cards[id]).ToList();
+        var selected = command.Resolving.Select(id => cast.World.Cards[id]).ToList();
         // rr:then: only the first selected scheme belongs to the pre-then effect.
-        cast.Choose(world.Cards[command.Scheme]);
+        cast.Choose(cast.World.Cards[command.Scheme]);
         execution.ApplyStructuralDecision(AbilityStructuralPowerExecution.Power(
             execution.StructuralContext(cast), choice.Thwart,
-            world.Cards[command.Scheme], selected, -1), cast);
+            cast.World.Cards[command.Scheme], selected, -1), cast);
         return Continue();
     }
 
@@ -149,9 +147,9 @@ internal sealed class AbilityChoiceAnswer(
         AbilityEffect.ThwartGroup choice)
     {
         var command = AnswerThwartChoice(choice);
-        var scheme = world.Cards[command.Scheme];
+        var scheme = cast.World.Cards[command.Scheme];
         AbilityCardStateExecution.DiscardCards(
-            command.Discard.Select(id => world.Cards[id]).ToList(),
+            command.Discard.Select(id => cast.World.Cards[id]).ToList(),
             CardPlay.Verb, CardStateContext());
         cast.ResolveEffect();
         cast.Choose(scheme);
@@ -175,15 +173,15 @@ internal sealed class AbilityChoiceAnswer(
         var answer = AbilityStructuralExecution.AnswerMakeTheCall(
             execution.StructuralContext(cast), input);
         ThrowIfUnsupported(answer);
-        var ally = world.Cards[((MakeTheCallCommand)answer).Ally];
-        long cost = Resources.Cost(ally.FaceId, world.Facts, world.Players) ?? 0;
+        var ally = cast.World.Cards[((MakeTheCallCommand)answer).Ally];
+        long cost = Resources.Cost(ally.FaceId, cast.World.Facts, cast.World.Players) ?? 0;
         CardPlay.Spend(
-            world, world.Facts, execution.resourceAbilities,
-            [world.Seats[player].Hand], input.Spent, cost,
-            Resources.Required(world, ally, world.Facts), source.ObjectId,
+            cast.World, cast.World.Facts, execution.resourceAbilities,
+            [cast.World.Seats[player].Hand], input.Spent, cost,
+            Resources.Required(cast.World, ally, cast.World.Facts), cast.Source.ObjectId,
             player, cast.Events, payingFor: ally);
         CardPlay.PutAllyIntoPlay(
-            world, world.Facts, execution.cardPlayAbilities, ally, player,
+            cast.World, cast.World.Facts, execution.cardPlayAbilities, ally, player,
             cast.Trigger, cast.Events);
         cast.ResolveEffect();
         return Continue();
@@ -205,7 +203,7 @@ internal sealed class AbilityChoiceAnswer(
         execution.ApplyStructuralDecision(
             AbilityStructuralFlowExecution.AnswerGenericChoice(
                 execution.StructuralContext(cast), choice,
-                execution.ContinuationFacts(source, persisted, tier), input), cast);
+                execution.ContinuationFacts(cast.Source, persisted, cast.Tier), input), cast);
         return cast.Suspended ? cast.Events : Continue();
     }
 
@@ -215,7 +213,7 @@ internal sealed class AbilityChoiceAnswer(
             new AbilityCardStateResult());
 
     private List<Marvel.Rules.Events.GameEvent> Continue() =>
-        execution.Continue(source, cast, stoppedAt);
+        execution.Continue(cast.Source, cast, stoppedAt);
 
     private static void ThrowIfUnsupported(AbilityStructuralTransition answer)
     {

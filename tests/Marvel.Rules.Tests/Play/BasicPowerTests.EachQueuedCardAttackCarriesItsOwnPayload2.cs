@@ -12,8 +12,8 @@ public sealed class BasicPowerEachQueuedCardAttackCarriesItsOwnPayloadTests : Ba
     public void EachQueuedCardAttackCarriesItsOwnPayload()
     {
         // The engine chooses to put the complete card attack on its agenda
-        // step. A later nested attack may update the board's compatibility
-        // snapshot, but it cannot rewrite an earlier occurrence.
+        // step. A later attack may update the board's current power, but it
+        // cannot rewrite an earlier occurrence or its interpreter continuation.
         var printed = new Printed().With("hero", ("ATK", "3")).With("villain", ("HP", "10")).With("minion", ("HP", "10")).With("event");
         var world = Board(printed);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
@@ -21,11 +21,18 @@ public sealed class BasicPowerEachQueuedCardAttackCarriesItsOwnPayloadTests : Ba
         var source = world.CreateCard("event", world.Seats[0].Hand);
         var abilities = new RecordingCardPowers();
         world.Abilities = abilities;
-        Assert.True(BasicPowerInitiation.CardAttack(world, printed, 0, source, villain, 5, "first", [], abilityIndex: 0));
-        Assert.True(BasicPowerInitiation.CardAttack(world, printed, 0, source, minion, 7, "second", [], abilityIndex: 0));
+        var first = new CardPowerContinuation(
+            0, 0, false, [villain.ObjectId], [], "event", new Dictionary<string, long>(),
+            [], false, false, 0);
+        var second = first with { Targets = [minion.ObjectId], PowerOrdinal = 1 };
+        Assert.True(BasicPowerInitiation.CardAttack(world, printed,
+            new(0, source, villain, 5, "first") { Continuation = first }, []));
+        Assert.True(BasicPowerInitiation.CardAttack(world, printed,
+            new(0, source, minion, 7, "second") { Continuation = second }, []));
         Agendas.Finish(world, printed, abilities);
         Assert.Equal([villain.ObjectId, minion.ObjectId], abilities.Targets);
         Assert.Equal([5, 7], abilities.Amounts);
+        Assert.Equal([first, second], abilities.Continuations);
     }
 
     [Rule("rr:thwart.1")]

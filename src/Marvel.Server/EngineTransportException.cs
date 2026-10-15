@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace Marvel.Server;
 
-/// <summary>A socket exchange failed before or after request transmission could begin.</summary>
+/// <summary>An exchange failed before or after host dispatch or request transmission could begin.</summary>
 public sealed class EngineTransportException : IOException
 {
     /// <summary>Creates a transport failure without exposing its diagnostic as the message.</summary>
@@ -18,7 +18,7 @@ public sealed class EngineTransportException : IOException
     }
 
     /// <summary>
-    /// Whether request transmission began before the failure occurred.
+    /// Whether host dispatch or request transmission began before the failure occurred.
     /// </summary>
     public bool RequestMayHaveCommitted { get; }
 }

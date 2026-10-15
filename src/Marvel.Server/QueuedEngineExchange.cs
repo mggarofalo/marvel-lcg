@@ -11,7 +11,8 @@ internal sealed class QueuedEngineExchange
 
     internal QueuedEngineExchange(EngineRequest request, CancellationToken cancellationToken)
     {
-        this.request = request;
+        // Capture before queue admission, while the caller still owns the input.
+        this.request = EngineJson.Snapshot(request);
         this.cancellationToken = cancellationToken;
         cancellation = cancellationToken.Register(Cancel);
     }
@@ -32,7 +33,7 @@ internal sealed class QueuedEngineExchange
         try
         {
             if (Interlocked.CompareExchange(ref dispatchedOrCancelled, 1, 0) != 0) return;
-            completion.SetResult(endpoint.Exchange(request));
+            completion.SetResult(EngineJson.Snapshot(endpoint.Exchange(request)));
         }
         catch (Exception failure)
         {

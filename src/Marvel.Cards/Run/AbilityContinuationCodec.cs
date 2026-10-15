@@ -70,36 +70,21 @@ internal static class AbilityContinuationCodec
     }
 
     internal static DecodedPowerContinuation DecodePower(
-        AbilityProgram program, Card source, int abilityIndex, int powerOrdinal,
-        string power, int resumeFrom, IReadOnlyList<string>? path, string savedFace,
-        bool eachPlayerFrame, bool finalPlayer)
+        AbilityProgram program, Card source, CardPowerContinuation continuation, string power)
     {
-        var ability = AbilityAt(program, source, null, abilityIndex, savedFace);
+        var ability = AbilityAt(program, source, null, continuation.AbilityIndex, continuation.AbilityFace);
         var wrappers = AbilityAdmission.PowerEffects(ability.Effect, power).ToList();
-        var wrapper = wrappers.ElementAtOrDefault(powerOrdinal)
+        var wrapper = wrappers.ElementAtOrDefault(continuation.PowerOrdinal)
             ?? throw new RulesNotImplementedException(
-                $"'{source.FaceId}' ability {abilityIndex} has no {power.ToLowerInvariant()} wrapper {powerOrdinal}");
-        var sameTier = AbilitiesOn(program, source, savedFace)
+                $"'{source.FaceId}' ability {continuation.AbilityIndex} has no "
+                + $"{power.ToLowerInvariant()} wrapper {continuation.PowerOrdinal}");
+        var sameTier = AbilitiesOn(program, source, continuation.AbilityFace)
             .Where(candidate => candidate.Trigger.Timing == ability.Trigger.Timing).ToList();
         int ordinal = sameTier.IndexOf(ability);
         if (ordinal < 0) throw new RulesNotImplementedException(
             $"'{source.FaceId}' cannot identify its saved {power.ToLowerInvariant()} ability");
-        ImmutableArray<AbilityStructuralFrame> frames;
-        if (path is not null)
-        {
-            frames = FramesAtPath(ability.Effect, path, eachPlayerFrame, finalPlayer);
-        }
-        else if (resumeFrom >= 0)
-        {
-            if (ability.Effect is not AbilityEffect.Sequence sequence)
-                throw new RulesNotImplementedException(
-                    $"'{source.FaceId}' resumes a {power.ToLowerInvariant()} outside a sequence");
-            frames = [new SequenceFrame(resumeFrom, sequence.Effects.Length)];
-        }
-        else
-        {
-            frames = [];
-        }
+        var frames = FramesAtPath(
+            ability.Effect, continuation.AbilityPath, continuation.EachPlayerFrame, continuation.FinalPlayer);
         return new(ability, EffectBody(wrapper), frames, ordinal);
     }
 

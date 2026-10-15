@@ -154,7 +154,7 @@ internal static class AbilityResolutionChoices
         cast.SetContinuation(persisted?.AbilityHasContinuation
             ?? HasAuthoredContinuation(execution, source, tier, stoppedAt));
         return new AbilityChoiceAnswer(
-            execution, world, source, player, stoppedAt, input, tier, persisted, cast)
+            execution, player, stoppedAt, input, persisted, cast)
             .Apply(choice);
     }
 
