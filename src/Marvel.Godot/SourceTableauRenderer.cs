@@ -57,6 +57,7 @@ internal static class SourceTableauRenderer
             { if (InteractionControl.IsUsable(control) && !control.TopLevel) result.UpdateRestingPose(control); }).CallDeferred();
             if (card.TargetId is { } id) result.Register(id, control);
             result.TrackCard(control, card);
+            result.TrackPreviewOnly((Control)control.FindChild("SourceReorderGrip", true, false), card);
         }
         SourceTableauViewport.Bind(scroll, grid);
         return panel;

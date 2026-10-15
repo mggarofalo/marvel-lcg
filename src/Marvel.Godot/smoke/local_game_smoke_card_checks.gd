@@ -143,7 +143,7 @@ func _upcoming_stages_are_safe() -> bool:
 		_fail("upcoming stages permanently occupy the live table")
 		return false
 	var active_stage := _active_villain_stage()
-	if active_stage == null or not await _pointer_activate_card_body(active_stage):
+	if active_stage == null or not await _keyboard_activate(active_stage):
 		_fail("the current villain stage cannot open its inspector")
 		return false
 	await process_frame

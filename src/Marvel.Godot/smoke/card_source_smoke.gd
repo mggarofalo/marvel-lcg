@@ -81,12 +81,12 @@ func _check_title(title: Label, card: Control, failures: Array[String]) -> void:
 func _check_copy_input(card: Control, title: Label, fixtures: Control, failures: Array[String]) -> void:
 	var identity := int(str(card.name).trim_prefix("ProceduralCard"))
 	var original: Vector2 = card.position
-	# Inspect the title, leaving the source-integrated action hit area independent.
+	# Preview the title, leaving the source-integrated action hit area independent.
 	var visible_title := _visible_rect(title)
 	if not visible_title.has_area(): failures.append("host attachment title cannot be reached")
 	await _click(visible_title.get_center())
-	if int(fixtures.get_meta("inspected_id", -1)) != identity:
-		failures.append("pointer inspection lost physical source " + str(identity))
+	if int(fixtures.get_meta("previewed_id", -1)) != identity:
+		failures.append("pointer preview lost physical source " + str(identity))
 	if card.position.distance_to(original) > 1: failures.append("hover reordered a physical source")
 	card.grab_focus()
 	await _key(KEY_ENTER)

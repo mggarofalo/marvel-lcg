@@ -5,11 +5,11 @@ namespace Marvel.Godot;
 /// <summary>Tooltips add information; visible captions and accessible names stand on their own.</summary>
 internal static class TooltipPolicy
 {
-    internal const string PinDetails = "Click or press Enter to pin card details.";
+    internal const string PinDetails = "Press Enter to pin card details.";
 
     internal static void Inspect(Control control, string title)
     {
-        control.TooltipText = PinDetails;
+        control.TooltipText = "";
         control.AccessibilityName = "Inspect " + title;
         control.AccessibilityDescription = PinDetails;
     }

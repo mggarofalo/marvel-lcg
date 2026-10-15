@@ -80,15 +80,15 @@ func _loop_returns(card: Control, context: String, start_override: Vector2 = Vec
 		_fail(context + ": looped drag did not restore its exact authored pose and original visual location")
 		return false
 	if not await _loop_state_is_clean(card, revision, commitment, order, context): return false
-	# The next body click must retain inspection semantics after the consumed drag release.
+	# A body click keeps hover inspection transient after the consumed drag release.
 	_loop_motion(start)
 	_loop_pointer(start, true)
 	await process_frame
 	_loop_pointer(start, false)
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
-	if not inspector.visible or not inspector.get_node("Frame/Stack/Header/Close").visible:
-		_fail(context + ": the next ordinary card click could not pin inspection")
+	if not inspector.visible or inspector.get_node("Frame/Stack/Header/Close").visible:
+		_fail(context + ": the next ordinary card click did not retain transient inspection")
 		return false
 	await _loop_key(KEY_ESCAPE)
 	return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == revision
@@ -143,9 +143,9 @@ func _loop_key(code: Key) -> void:
 func _follow_loop(card: Control, start: Vector2, origin: Vector2, release_offset: Vector2, context: String) -> bool:
 	_loop_pointer(start, true)
 	await process_frame
-	for position in [start + Vector2(180, -130), start + Vector2(5, -2), start + release_offset]:
+	for position in [start + Vector2(160, 0), start + Vector2(180, -350), start + Vector2(5, -2), start + release_offset]:
 		_loop_motion(position)
-		await process_frame
+		for frame in range(8): await process_frame
 		if not card.is_set_as_top_level() or card.global_position.distance_to(origin + position - start) > 4:
 			_fail(context + ": recognized drag stopped following the pointer near its origin")
 			return false

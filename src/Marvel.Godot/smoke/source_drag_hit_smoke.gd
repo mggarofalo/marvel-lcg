@@ -20,7 +20,7 @@ func _run() -> void:
 		attempts += await _check_card(card, grid, fixture, failures)
 	if attempts < 48: failures.append("too few real title/icon/body drag attempts: " + str(attempts))
 	for failure in failures: push_error("SOURCE_DRAG_HIT_FAILED " + failure)
-	if failures.is_empty(): print("SOURCE_DRAG_HIT_OK attempts=" + str(attempts) + " all_destinations=true body_click_inspects=true")
+	if failures.is_empty(): print("SOURCE_DRAG_HIT_OK attempts=" + str(attempts) + " all_destinations=true body_click_does_not_pin=true")
 	quit(0 if failures.is_empty() else 1)
 
 func _check_card(card: Control, grid: GridContainer, fixture: Control, failures: Array[String]) -> int:
@@ -41,6 +41,7 @@ func _check_region(card: Control, region: Control, grid: GridContainer, fixture:
 	# Stay in the source slot; capture and outlines must exist before reaching another slot.
 	var finish := start + Vector2(12, 0)
 	await _motion(start)
+	_check_hover(card, region, fixture, failures)
 	await _pointer(start, true)
 	await _motion(finish)
 	if not card.global_position.is_equal_approx(initial_position + finish - start):
@@ -60,5 +61,11 @@ func _check_region(card: Control, region: Control, grid: GridContainer, fixture:
 	await _click(region.get_global_rect().get_center())
 	var identity := int(str(card.name).trim_prefix("ProceduralCard"))
 	var result_key := "selected_id" if str(region.name).begins_with("Card") else "inspected_id"
-	if int(fixture.get_meta(result_key, -1)) != identity:
-		failures.append("click failed to inspect from " + str(region.name))
+	var expected := identity if result_key == "selected_id" else inspected
+	if int(fixture.get_meta(result_key, -1)) != expected:
+		failures.append("click dispatched the wrong action from " + str(region.name))
+
+func _check_hover(card: Control, region: Control, fixture: Control, failures: Array[String]) -> void:
+	if str(region.name).begins_with("Card"): return
+	if int(fixture.get_meta("previewed_id", -1)) != int(str(card.name).trim_prefix("ProceduralCard")):
+		failures.append("source hover failed from " + str(region.name))

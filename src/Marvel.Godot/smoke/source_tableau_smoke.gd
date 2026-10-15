@@ -26,7 +26,7 @@ func _run() -> void:
 	await _check_collections(fixture, failures)
 	await _capture()
 	for failure in failures: push_error("SOURCE_TABLEAU_FAILED " + failure)
-	if failures.is_empty(): print("SOURCE_TABLEAU_OK sixteen_reachable=true duplicates=true pointer_inspection=true keyboard=true")
+	if failures.is_empty(): print("SOURCE_TABLEAU_OK sixteen_reachable=true duplicates=true hover_preview=true keyboard=true")
 	quit(0 if failures.is_empty() else 1)
 
 func _check_table_bounds(fixture: Control, tableau: Control, narrow: bool, failures: Array[String]) -> void:
@@ -90,6 +90,9 @@ func _check_card_readability(card: Control, failures: Array[String]) -> void:
 	var title := card.find_child("SourceTitle", true, false) as Label
 	var body := card.find_child("SourceTitleBand", true, false) as Control
 	_check_source_grip(card, title, failures)
+	for name in ["SourceReorderGrip", "SourceType", "SourceState", "SourceCounter"]:
+		for surface in card.find_children(name, "Control", true, false):
+			if not surface.tooltip_text.is_empty(): failures.append("redundant source tooltip: " + name)
 	_check_source_title(title, failures)
 	_check_source_action(card, failures)
 	_check_source_symbols(card, failures)
@@ -180,9 +183,14 @@ func _check_copy_input(copies: Array[Control], viewport: ScrollContainer, fixtur
 		viewport.ensure_control_visible(copy)
 		for frame in range(3): await process_frame
 		var original_position := copy.global_position
+		var inspected_before := int(fixture.get_meta("inspected_id", -1))
 		await _click((copy.find_child("SourceType", true, false) as Control).get_global_rect().get_center())
 		if copy.global_position.distance_to(original_position) > 1:
 			failures.append("hover inspection reordered a physical source")
+		if int(fixture.get_meta("inspected_id", -1)) != inspected_before:
+			failures.append("source body click pinned inspection")
+		copy.grab_focus()
+		await _activate_key()
 		var identity := int(str(copy.name).trim_prefix("ProceduralCard"))
 		if int(fixture.get_meta("inspected_id", -1)) != identity:
 			failures.append("body inspection lost physical source expected " + str(identity) + " got " + str(fixture.get_meta("inspected_id", -1)))

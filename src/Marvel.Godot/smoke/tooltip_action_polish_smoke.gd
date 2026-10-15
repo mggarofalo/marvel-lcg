@@ -42,7 +42,7 @@ func _tooltip_authoring() -> bool:
 	clipped.size.x = 120
 	await process_frame
 	if clipped.tooltip_text != clipped.text or not readable.tooltip_text.is_empty() \
-			or inspection.tooltip_text != "Click or press Enter to pin card details." \
+			or not inspection.tooltip_text.is_empty() \
 			or inspection.accessibility_name != "Inspect Rhino" or readable.accessibility_name.is_empty():
 		_fail("authored tooltip policy lost clipping detail, accessibility or pinning distinction: %s / %s / %s / %s / %s" % [clipped.tooltip_text, readable.tooltip_text, inspection.tooltip_text, inspection.accessibility_name, readable.accessibility_name])
 		return false

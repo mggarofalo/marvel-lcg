@@ -42,7 +42,7 @@ func _bounded_expansion(card: Control, inspector: Control) -> bool:
 	for enabled in [true, false]:
 		motion.button_pressed = enabled
 		motion.toggled.emit(enabled)
-		if not await _pointer_activate_card_body(card): return false
+		if not await _keyboard_activate(card): return false
 		var frame := inspector.get_node("Frame") as Control
 		if (inspector.get_node("Backdrop") as Control).visible:
 			_fail("bounded inspection dims the entire table")
@@ -87,7 +87,7 @@ func _hover_and_pin_ultron(card: Control, inspector: Control) -> bool:
 	await process_frame
 	if not _complete_ultron(inspector): return false
 	if not await _bridge_and_dismiss_preview(inspector): return false
-	if not await _pointer_activate_card_body(card): return false
+	if not await _keyboard_activate(card): return false
 	await process_frame
 	if not _complete_ultron(inspector): return false
 	if not await _close_inspector_with_keyboard(card, inspector): return false

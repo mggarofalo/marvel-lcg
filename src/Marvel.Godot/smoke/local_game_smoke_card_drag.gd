@@ -50,7 +50,7 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 	driver.render_viewport.push_input(release, true)
 	await driver.process_frame
 	if not await preload("res://smoke/gesture_settlement.gd").returned_or_retired(driver, card, original):
-		driver._fail("released card did not finish returning or retire within 750 ms")
+		driver._fail("released card did not finish returning or retire within 750 ms: " + _return_diagnostic(card, original))
 		return false
 	return true
 
@@ -62,3 +62,7 @@ static func bounds(card: Control) -> Rect2:
 	return result
 
 
+
+static func _return_diagnostic(card: Control, expected: Transform2D) -> String:
+	if not is_instance_valid(card): return "retired"
+	return "%s expected=%s actual=%s local=%s resting=%s returning=%s lifted=%s tint=%s" % [card.name, expected, card.get_global_transform(), card.position, card.get_meta("spatial_resting_position", Vector2.INF), card.get_meta("card_return_active", false), card.is_set_as_top_level(), card.modulate]

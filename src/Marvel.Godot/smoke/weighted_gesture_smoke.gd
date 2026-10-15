@@ -59,8 +59,8 @@ func _return_click_restores_pose() -> bool:
 func _return_click_inspection_safe(card: Control, revision: String) -> bool:
 	var inspector := main.get_node("CardInspector") as Control
 	if not inspector.visible or inspector.get_node("Backdrop").visible \
-			or not inspector.get_node("Frame/Stack/Header/Close").visible:
-		_fail("returning-card click did not retain pinned inspection semantics")
+			or inspector.get_node("Frame/Stack/Header/Close").visible:
+		_fail("returning-card click did not retain transient inspection semantics")
 		return false
 	if bool(card.get_meta("mulligan_staged", false)) or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("invalid drop or returning-card click changed the draft or authoritative revision")

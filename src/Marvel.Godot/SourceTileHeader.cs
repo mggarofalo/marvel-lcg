@@ -56,7 +56,7 @@ internal static class SourceTileHeader
             symbols.AddChild(SourceCounterPips.Create(card.Counters[index], card.Counters.Count > 1));
         if (card.DamageKnown && card.Damage > 0)
         {
-            var damage = new HBoxContainer { AccessibilityName = $"{card.Damage} damage", TooltipText = $"{card.Damage} damage" };
+            var damage = new HBoxContainer { AccessibilityName = $"{card.Damage} damage" };
             damage.AddChild(Symbol("heart", "SourceDamage", damage.AccessibilityName));
             Label count = CardSourceStrip.Label(card.Damage.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 "SourceDamageValue", 10, CardTypography.Body);
@@ -93,7 +93,7 @@ internal static class SourceTileHeader
     {
         var icon = new Control { Name = name, CustomMinimumSize = new Vector2(14, 14),
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
-            AccessibilityName = description, TooltipText = description, MouseFilter = Control.MouseFilterEnum.Pass };
+            AccessibilityName = description, MouseFilter = Control.MouseFilterEnum.Pass };
         icon.AddChild(CardGlyphRendering.Create(glyph, "SourceSymbol", new Rect2(0, 0, 14, 14), CardFaceStyle.Paper));
         return icon;
     }

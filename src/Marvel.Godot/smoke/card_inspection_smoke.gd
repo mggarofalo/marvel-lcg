@@ -37,11 +37,12 @@ func _inspect(sample: Control, failures: Array[String]) -> void:
 	var source := sample.get_node("InspectionSource") as Control
 	await _neighbor(sample, failures)
 	var original := source.get_global_transform()
-	await _click(source)
+	source.grab_focus()
+	await _key(KEY_ENTER)
 	for frame in range(4): await process_frame
 	var popup := root.find_child("PileInspector", true, false) as PopupPanel
 	if popup == null:
-		failures.append("pointer did not open inspection")
+		failures.append("Enter did not open inspection")
 		return
 	_check(popup, sample, failures)
 	await _late_minimum_growth(popup, failures)
@@ -62,7 +63,8 @@ func _inspect(sample: Control, failures: Array[String]) -> void:
 
 func _navigation(sample: Control, failures: Array[String]) -> void:
 	var source := sample.get_node("InspectionSource") as Control
-	await _click(source)
+	source.grab_focus()
+	await _key(KEY_ENTER)
 	for frame in range(4): await process_frame
 	var popup := root.find_child("PileInspector", true, false) as PopupPanel
 	if popup == null:

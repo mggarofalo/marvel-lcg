@@ -34,9 +34,10 @@ internal static class SourceTableauSample
         string caption = OS.GetCmdlineUserArgs().Contains("--marvel-tableau-legal")
             ? "REACHABLE CORE TABLE · Iron Man · seed 5 · after 48 accepted decisions"
             : "SYNTHETIC DENSE TABLE · 16 physical sources";
-        root.AddChild(new Label { Name = "FixtureContext", Text = caption + "\nCard body inspects · Each action selects that exact copy",
+        root.AddChild(new Label { Name = "FixtureContext", Text = caption + "\nHover previews; Enter pins · Each action selects that exact copy",
             Position = geometry.Context.Position, ThemeTypeVariation = GodotThemeVariations.Body });
         result.CardActivated += (card, _) => root.SetMeta("inspected_id", card.TargetId ?? -1);
+        result.CardPreviewEntered += (card, _) => root.SetMeta("previewed_id", card.TargetId ?? -1);
         BindFixtureInput(root, result, path);
         return true;
     }

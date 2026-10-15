@@ -161,6 +161,11 @@ func _payment_recovery_surface_is_safe() -> bool:
 
 
 func _payment_inspection_preserves_draft() -> bool:
+	if not await preload("res://smoke/transient_inspection_checks.gd").verify(self, _payment_modal().find_child("InspectPaymentPlayed", true, false)): return false
+	return await _payment_source_inspection_preserves_draft()
+
+
+func _payment_source_inspection_preserves_draft() -> bool:
 	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var resource := _payment_button("Resource*")
 	if resource == null: return false

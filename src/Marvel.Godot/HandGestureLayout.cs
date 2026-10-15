@@ -60,7 +60,7 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
     {
         if (source is not CardControl dragged || !CanPreview(dragged, position))
         {
-            CancelPreview();
+            CancelPreview(source);
             return;
         }
         var remaining = cards.Where(card => card != dragged && !Staged(card)).ToList();
@@ -98,21 +98,23 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
         return true;
     }
 
-    internal void CancelPreview()
+    internal void CancelPreview(Control? held = null)
     {
         if (preview is null) return;
         preview = null;
-        ApplyStaging();
+        ApplyStaging(held);
     }
 
     private bool Staged(CardControl card) => card.TargetId is { } id && staged.Contains(id);
 
-    private void ApplyStaging()
+    private void ApplyStaging(Control? held = null)
     {
         ReflowKeptCards();
         int index = 0;
         foreach (CardControl card in cards.Where(InteractionControl.IsUsable))
         {
+            // The pointer owns the held card; only its neighbours restore their slots.
+            if (card == held) continue;
             if (!slots.TryGetValue(card, out var pose)) continue;
             if (Staged(card) && InteractionControl.IsUsable(stage) && card.GetParent() is Control parent)
             {

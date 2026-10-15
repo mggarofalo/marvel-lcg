@@ -52,6 +52,7 @@ internal static class CardSourceSample
             Position = new Vector2(80, 300), Size = new Vector2(400, 300) });
         var result = new BoardRenderResult { IsCurrent = () => true };
         result.CardActivated += (card, _) => { root.SetMeta("inspected_id", card.TargetId ?? -1); root.SetMeta("inspected_rules", card.RulesText); };
+        result.CardPreviewEntered += (card, _) => root.SetMeta("previewed_id", card.TargetId ?? -1);
         CardControl face = CardControl.Create(host, CardDisplaySize.Board,
             SpatialCardMetrics.TableScale(ClientTheme.ConfiguredScale()));
         face.Name = "SourceHost";

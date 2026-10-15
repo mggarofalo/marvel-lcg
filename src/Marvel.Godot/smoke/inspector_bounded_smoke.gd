@@ -45,7 +45,7 @@ func _bounded_preview(card: Control, inspector: Control) -> bool:
 	return await _capture_checkpoint("synthetic-bounded-inspection")
 
 func _bounded_pinned(card: Control, inspector: Control) -> bool:
-	if not await _pointer_activate_card_body(card): return false
+	if not await _keyboard_activate(card): return false
 	for count in range(8): await process_frame
 	if not "Scroll to read the full card" in _visible_text(inspector):
 		_fail("pinned bounded inspection lost its reading instruction")
@@ -85,7 +85,7 @@ func _no_space_notice(inspector: Control) -> bool:
 	return await _capture_checkpoint("synthetic-no-space-notice")
 
 func _no_space_pinned(card: Control, inspector: Control) -> bool:
-	if not await _pointer_activate_card_body(card): return false
+	if not await _keyboard_activate(card): return false
 	for count in range(12): await process_frame
 	var frame := inspector.get_node("Frame") as Control
 	var scroll := inspector.get_node("Frame/Stack/Scroll") as ScrollContainer

@@ -47,7 +47,7 @@ func _action_card_preview_is_safe() -> bool:
 	if not await _open_immediate_preview(card, inspector): return false
 	if not await preload("res://smoke/local_game_smoke_preview_switch.gd").perform(self, card, inspector): return false
 	if not await _bridge_and_dismiss_preview(inspector): return false
-	return await _hover_preview_pins_on_click(card, inspector)
+	return await _hover_preview_stays_unpinned_on_click(card, inspector)
 
 
 func _open_immediate_preview(card: Control, inspector: Control) -> bool:
@@ -125,7 +125,7 @@ func _bridge_and_dismiss_preview(inspector: Control) -> bool:
 	return true
 
 
-func _hover_preview_pins_on_click(card: Control, inspector: Control) -> bool:
+func _hover_preview_stays_unpinned_on_click(card: Control, inspector: Control) -> bool:
 	var body_point := _card_body_point(card)
 	var motion := InputEventMouseMotion.new()
 	motion.position = body_point
@@ -138,9 +138,13 @@ func _hover_preview_pins_on_click(card: Control, inspector: Control) -> bool:
 	if not await _pointer_activate_card_body(card):
 		return false
 	await process_frame
+	if (inspector.get_node("Frame/Stack/Header/Close") as Button).visible:
+		_fail("ordinary card click pinned the hover preview")
+		return false
+	if not await _keyboard_activate(card): return false
 	var backdrop := inspector.get_node("Backdrop") as Control
 	if not inspector.visible or backdrop.visible or not (inspector.get_node("Frame/Stack/Header/Close") as Button).visible:
-		_fail("clicking the card behind its hover preview did not pin the inspector")
+		_fail("Enter did not pin the hovered card")
 		return false
 	var cancel := InputEventAction.new()
 	cancel.action = &"ui_cancel"
@@ -270,7 +274,7 @@ func _pinned_inspector_mouse_filter_is_safe(hand_card: Control) -> bool:
 	if hand_card == null:
 		_fail("the settled tabletop has no hand card for pinned inspection")
 		return false
-	if not await _pointer_activate_card_body(hand_card):
+	if not await _keyboard_activate(hand_card):
 		return false
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
@@ -293,7 +297,7 @@ func _pinned_inspector_mouse_filter_is_safe(hand_card: Control) -> bool:
 
 
 func _open_card_inspector(hand_card: Control) -> Control:
-	if not await _pointer_activate_card_body(hand_card):
+	if not await _keyboard_activate(hand_card):
 		return null
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control

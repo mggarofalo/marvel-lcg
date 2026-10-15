@@ -57,7 +57,7 @@ internal sealed partial class SourceGridGesture : Node
         Control header = card.FindChild("SourceTitleBand", true, false) as Control ?? card;
         Label title = (Label)card.FindChild("SourceTitle", true, false);
         var grip = new Button { Name = "SourceReorderGrip", Text = "", Flat = true,
-            AccessibilityName = $"Arrange {identity}", TooltipText = "Drag and drop into any slot. Space picks up; arrows move; Enter places; Escape cancels.",
+            AccessibilityName = $"Arrange {identity}", AccessibilityDescription = "Space picks up; arrows move; Enter places; Escape cancels.",
             Alignment = HorizontalAlignment.Right, MouseDefaultCursorShape = Control.CursorShape.Move,
             MouseFilter = Control.MouseFilterEnum.Stop, ZIndex = 20 };
         grip.AddThemeFontSizeOverride("font_size", 16);
@@ -134,9 +134,9 @@ internal sealed partial class SourceGridGesture : Node
         start = point;
         keyboard = usingKeyboard;
         original = [.. grid.GetChildren().OfType<Control>()];
-        result.SetSourceArrangement(true);
+        if (usingKeyboard) result.SetSourceArrangement(true);
         foreach (Control vacancy in vacancies) vacancy.QueueRedraw();
-        feedback.Show(slot, $"Picked up {Identity(slot)} · {Place(slot)}. Arrows move; Enter places; Escape cancels.");
+        if (usingKeyboard) feedback.Show(slot, $"Picked up {Identity(slot)} · {Place(slot)}. Arrows move; Enter places; Escape cancels.");
     }
 
     public override void _Input(InputEvent input)
@@ -165,7 +165,7 @@ internal sealed partial class SourceGridGesture : Node
     private void Preview(Vector2 pointer)
     {
         if (dragged is null || !CardPointerGestureRouter.IsDrag(start, pointer)) return;
-        if (!moving) { lift.Begin(dragged, start); pointerFeedback.Begin(dragged, Cancel); moving = true; }
+        if (!moving) { result.SetSourceArrangement(true); lift.Begin(dragged, start); pointerFeedback.Begin(dragged, Cancel); moving = true; }
         lift.Move(dragged, pointer);
         Control? target = SlotAt(pointer);
         pointerFeedback.Preview(pointer, target is not null, "Outside source grid · release to cancel");
@@ -221,13 +221,10 @@ internal sealed partial class SourceGridGesture : Node
 
     private void CompleteClick(Vector2 pointer)
     {
-        CardControl? inspected = dragged;
         Button? action = clickedAction;
         Cancel();
         if (InteractionControl.IsUsable(action) && action!.GetGlobalRect().HasPoint(pointer))
             action.EmitSignal(BaseButton.SignalName.Pressed);
-        else if (action is null && inspected is not null && CardPointerHitTest.Contains(inspected, pointer))
-            result.InspectSource(inspected);
     }
 
     private void Cancel()

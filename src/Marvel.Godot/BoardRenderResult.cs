@@ -56,12 +56,6 @@ public sealed class BoardRenderResult
         if (active) SourceArrangementStarted?.Invoke();
     }
 
-    internal void InspectSource(CardControl control)
-    {
-        if (Inspector.For(control.TargetId).FirstOrDefault(candidate => candidate.TargetId == control.TargetId)
-            is { } card) CardActivated?.Invoke(card, control);
-    }
-
     internal void Register(int id, CardControl control)
     {
         if (!controls.TryGetValue(id, out List<CardControl>? matches))

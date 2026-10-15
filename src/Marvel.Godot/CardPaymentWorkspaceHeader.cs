@@ -24,9 +24,15 @@ internal static class CardPaymentWorkspaceHeader
             CardInspectorFocus.IgnoreMouseRecursively(face, interactiveRules: false);
             var inspect = new Button { Name = "InspectPaymentPlayed", Flat = true,
                 CustomMinimumSize = face.GetCombinedMinimumSize(), SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
-                AccessibilityName = $"Inspect {card.Title}", TooltipText = "Pin card details" };
+                AccessibilityName = $"Inspect {card.Title}" };
             inspect.AddChild(face);
-            inspect.Pressed += () => main.ToggleCardInspector(card, inspect);
+            TooltipPolicy.Inspect(inspect, card.Title);
+            inspect.GuiInput += input =>
+            {
+                if (input is not InputEventKey { Pressed: true, Echo: false, Keycode: Key.Enter }) return;
+                main.ToggleCardInspector(card, inspect);
+                inspect.AcceptEvent();
+            };
             CardPaymentInspection.Bind(panel, inspect, selected.AnchorId);
             identity.AddChild(inspect);
         }

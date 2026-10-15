@@ -182,7 +182,8 @@ internal sealed class BoardPointerInteractions
         }
         else if (input is InputEventKey { Echo: false } && input.IsActionPressed("ui_accept"))
         {
-            if (card.TargetId is { } id && mulligan.Contains(id))
+            if (input is InputEventKey { Keycode: Key.Space }
+                && card.TargetId is { } id && mulligan.Contains(id))
             {
                 mulligan.Toggle(id);
                 control.AcceptEvent();
@@ -217,7 +218,8 @@ internal sealed class BoardPointerInteractions
             control.AcceptEvent();
             return;
         }
-        activated(card, control);
+        if (position == Vector2.Zero) activated(card, control);
+        else previewEntered(card, control);
         control.AcceptEvent();
     }
 
