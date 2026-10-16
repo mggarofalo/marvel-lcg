@@ -35,8 +35,11 @@ trying the working build.
 Minions and allies use continuous collections; side schemes expose landscape
 faces and named headers in a scrollable stack. Upgrades and supports share
 compact named source strips, including controlled upgrades attached to another
-character. Hover or keyboard focus previews a card; pinning expands bounded
-detail. Related faces and modifier sources are directly visible choices.
+character. Hover or keyboard focus previews a complete card; pinning retains
+its detail and owns focus. Inspection fits native controls in 10% steps down
+to 50%, without scrollbars or partial card faces. If no complete face fits
+beside protected context, an explicit pin notice opens a closeable reading
+overlay. Related faces and modifier sources are directly visible choices.
 
 Drag the title band of an upgrade or support into an empty grid slot or swap it
 with an occupied slot. The destination outline previews the placement, including
@@ -65,6 +68,8 @@ to keep it. Space is the keyboard equivalent. Redraw commits the staged set.
 Kept cards close the gaps while redraw cards are staged. Reordering the kept
 hand preserves the staged cards' local return slots. Hovering a nonempty
 discard previews its visible top card.
+Mulligan instructions remain in the visible decision area and card accessibility
+descriptions; they do not create tooltips over the hand.
 Dragging within the hand previews a local insertion order without changing game
 state. Playing a hand card opens the current engine-offered composition;
 authorized attachment targets can be outside the player area.

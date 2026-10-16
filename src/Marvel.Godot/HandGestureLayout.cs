@@ -24,7 +24,7 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
     {
         if (cards.Contains(card)) return;
         cards.Add(card);
-        descriptions[card] = card.TooltipText;
+        descriptions[card] = card.AccessibilityDescription;
         card.TreeExiting += () =>
         {
             StopMotion(card);
@@ -128,7 +128,7 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
                 card.SetMeta("mulligan_staged", false);
                 Move(card, pose, true);
             }
-            if (opening) card.TooltipText = descriptions[card] + " · " + (Staged(card)
+            if (opening) card.AccessibilityDescription = descriptions[card] + " · " + (Staged(card)
                 ? "Staged for redraw. Drag back to hand or press Space to keep. Not discarded until Redraw."
                 : "Drag to discard to stage a redraw, or press Space. Changes remain uncommitted.");
         }

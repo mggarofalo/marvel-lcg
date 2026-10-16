@@ -88,7 +88,8 @@ internal sealed partial class CardInspectorLayout(Main main) : Node
         main.cardInspectorFrame.SetMeta("inspection_overlay", overlay);
         main.cardInspectorScroll.Visible = !overlay || pinned;
         if (overlay) return OverlayFrame(source, content, pinned);
-        main.cardInspectorTitle.Text = pinned ? "Scroll to read the full card" : "Pin to read the full card";
+        main.cardInspectorTitle.Visible = false;
+        main.cardInspectorTitle.GetParent<HBoxContainer>().Visible = pinned;
         using var empty = new StyleBoxEmpty();
         main.cardInspectorFrame.AddThemeStyleboxOverride("panel", empty);
         return frame;
@@ -96,12 +97,15 @@ internal sealed partial class CardInspectorLayout(Main main) : Node
 
     private Rect2 OverlayFrame(Rect2 source, Vector2 content, bool pinned)
     {
+        main.cardInspectorTitle.Visible = true;
+        main.cardInspectorTitle.GetParent<HBoxContainer>().Visible = true;
         main.cardInspectorTitle.Text = pinned ? "Full card · Close to return" : "Pin to read full card";
         main.cardInspectorTitle.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         using var notice = new StyleBoxFlat { BgColor = CardFaceStyle.Ink,
             ContentMarginLeft = 8, ContentMarginRight = 8, ContentMarginTop = 6, ContentMarginBottom = 6 };
         main.cardInspectorFrame.AddThemeStyleboxOverride("panel", notice);
-        return CardInspectorOverlayPlacement.Fit(main.Size, source, content, pinned);
+        return CardInspectorOverlayPlacement.Fit(main.Size, source,
+            content + notice.GetMinimumSize(), pinned);
     }
 
     private Control? CurrentSource(Control? source, int? targetId) =>

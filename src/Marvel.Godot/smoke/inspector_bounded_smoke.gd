@@ -24,38 +24,24 @@ func _protected_fixture() -> Panel:
 	var coverage := _protect("CausalSituation", Rect2(0, 0, 500, 1080))
 	_protect("ContextualDecision", Rect2(900, 0, 1020, 1080))
 	_protect("EventTimeline", Rect2(500, 400, 400, 680))
-	_protect("AbilityWindow", Rect2(500, 0, 400, 100))
+	_protect("AbilityWindow", Rect2(500, 0, 400, 30))
 	return coverage
 
 func _bounded_preview(card: Control, inspector: Control) -> bool:
 	card.grab_focus()
 	for count in range(12): await process_frame
 	var frame := inspector.get_node("Frame") as Control
-	if not inspector.visible or not frame.get_meta("bounded_inspection", false):
-		_fail("crowded inspection did not expose its explicit bounded reading surface")
+	if not inspector.visible:
+		_fail("crowded inspection did not expose its complete reading surface")
 		return false
 	if not preload("res://smoke/card_inspection_protection_checks.gd").verify(self, frame): return false
-	if not "Pin to read the full card" in _visible_text(inspector):
-		_fail("bounded hover does not explain how to read the rest")
-		return false
-	var scroll := inspector.get_node("Frame/Stack/Scroll") as ScrollContainer
-	if not scroll.get_v_scroll_bar().visible:
-		_fail("bounded inspection has no overflow affordance")
-		return false
+	if not _whole_face(inspector): return false
 	return await _capture_checkpoint("synthetic-bounded-inspection")
 
 func _bounded_pinned(card: Control, inspector: Control) -> bool:
 	if not await _keyboard_activate(card): return false
 	for count in range(8): await process_frame
-	if not "Scroll to read the full card" in _visible_text(inspector):
-		_fail("pinned bounded inspection lost its reading instruction")
-		return false
-	var scroll := inspector.get_node("Frame/Stack/Scroll") as ScrollContainer
-	scroll.scroll_vertical = 10000
-	await process_frame
-	if scroll.scroll_vertical <= 0:
-		_fail("pinned bounded face cannot scroll to the remaining content")
-		return false
+	if not _whole_face(inspector): return false
 	var frame := inspector.get_node("Frame") as Control
 	if not preload("res://smoke/card_inspection_protection_checks.gd").verify(self, frame): return false
 	print("BOUNDED_INSPECTION_OK native_scale=%s frame=%s" % [inspector.get_node("Frame/Stack/Scroll/Content").get_child(0).get_meta("inspection_scale"), frame.get_global_rect()])
@@ -95,16 +81,28 @@ func _no_space_pinned(card: Control, inspector: Control) -> bool:
 	if not Rect2(Vector2.ZERO, main.size).encloses(frame.get_global_rect()):
 		_fail("no-space full-card mode leaves the viewport")
 		return false
+	if not _whole_face(inspector): return false
 	return await _capture_checkpoint("synthetic-no-space-full-card")
 
 func _released_space(inspector: Control, coverage: Panel) -> bool:
 	coverage.size = Vector2(500, 1080)
 	for count in range(12): await process_frame
 	var frame := inspector.get_node("Frame") as Control
-	if frame.get_meta("inspection_overlay", true) or not "Scroll to read the full card" in _visible_text(inspector):
+	if frame.get_meta("inspection_overlay", true):
 		_fail("released protection did not return inspection to the clear reading space")
 		return false
 	return preload("res://smoke/card_inspection_protection_checks.gd").verify(self, frame)
+
+func _whole_face(inspector: Control) -> bool:
+	var scroll := inspector.get_node("Frame/Stack/Scroll") as ScrollContainer
+	var detail := scroll.get_node("Content").get_child(0) as Control
+	if not scroll.visible or scroll.get_v_scroll_bar().visible or scroll.get_h_scroll_bar().visible:
+		_fail("inspection must show a complete face without scrollbars")
+		return false
+	if not scroll.get_global_rect().grow(1).encloses(detail.get_global_rect()):
+		_fail("inspection clips the card: viewport=%s detail=%s" % [scroll.get_global_rect(), detail.get_global_rect()])
+		return false
+	return true
 
 func _protect(title: String, bounds: Rect2) -> Panel:
 	var panel := Panel.new()

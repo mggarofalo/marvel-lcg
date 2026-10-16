@@ -2,7 +2,7 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Bounded scroll space when a readable native face cannot fit beside protected objects.</summary>
+/// <summary>Finds space for complete detail beside protected objects.</summary>
 internal static class CardInspectorFreeSpace
 {
     internal static Rect2 Fit(Vector2 viewport, Vector2 content, IReadOnlyList<Rect2> protectedRegions)
@@ -14,12 +14,9 @@ internal static class CardInspectorFreeSpace
             free = [.. free.SelectMany(region => Subtract(region, obstacle.Grow(6))).Distinct()];
             free = [.. free.Where(region => !free.Any(other => other != region && other.Encloses(region)))];
         }
-        // Width takes priority so a native line remains readable in a vertical scroll surface.
-        return free.Select(region => new Rect2(region.Position,
-                new Vector2(Math.Min(content.X, region.Size.X), Math.Min(content.Y, region.Size.Y))))
-            .Where(region => region.Size.X >= Math.Min(240, content.X) && region.Size.Y >= 120)
-            .OrderByDescending(region => region.Size.X >= content.X && region.Size.Y >= 120)
-            .ThenByDescending(region => region.Size.X * region.Size.Y).FirstOrDefault();
+        return free.Where(region => region.Size.X >= content.X && region.Size.Y >= content.Y)
+            .OrderBy(region => region.Position.Y).ThenBy(region => region.Position.X)
+            .Select(region => new Rect2(region.Position, content)).FirstOrDefault();
     }
 
     private static IEnumerable<Rect2> Subtract(Rect2 region, Rect2 obstacle)
