@@ -16,11 +16,11 @@ namespace Marvel.Rules.Play;
 public class NoCardAbilities : ICardAbilities
 {
     /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> EntersPlay(World world, Card card) => [];
+    public virtual AbilityExecutionResult EntersPlay(World world, AbilityExecution entry, Card card) => world.Agenda.Executions.FinishBatch(entry, []);
 
     /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> ActivationCompleted(
-        World world, EnemyActivation result) => [];
+    public virtual AbilityExecutionResult ActivationCompleted(
+        World world, AbilityExecution entry, EnemyActivation result) => world.Agenda.Executions.FinishBatch(entry, []);
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> ResumeAbility(
@@ -39,11 +39,7 @@ public class NoCardAbilities : ICardAbilities
         new(candidates, Required: false);
 
     /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => [];
-
-    /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> WhenRevealed(
-        World world, Card card, int player, Occurrence occurrence) => WhenRevealed(world, card, player);
+    public virtual AbilityExecutionResult WhenRevealed(World world, AbilityExecution entry, Card card, int player) => world.Agenda.Executions.FinishBatch(entry, []);
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<PendingAbility> WhenRevealedAbilities(
@@ -54,11 +50,7 @@ public class NoCardAbilities : ICardAbilities
         World world, Card card, int player, Occurrence occurrence) => null;
 
     /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> Boost(World world, Card card, int player) => [];
-
-    /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> WhenCardDefeated(
-        World world, Card card, Defeated defeated) => [];
+    public virtual AbilityExecutionResult Boost(World world, AbilityExecution entry, Card card, int player) => world.Agenda.Executions.FinishBatch(entry, []);
 
     /// <inheritdoc/>
     public virtual void ResolveCardAttack(
@@ -87,8 +79,14 @@ public class NoCardAbilities : ICardAbilities
     public virtual bool CanReady(World world, Card target, Card source) => true;
 
     /// <inheritdoc/>
-    public virtual long WouldBeDealt(
-        World world, Card target, Card source, long amount, List<GameEvent> events) => amount;
+    public virtual AbilityExecutionResult WouldBeDealt(
+        World world, AbilityExecution entry, DamageReplacement replacement)
+    {
+        world.Agenda.Executions.RequireBatch(entry);
+        if (!ReferenceEquals(entry, replacement.Execution))
+            throw new InvalidOperationException("the entry does not own this replacement");
+        return entry.Finish([]);
+    }
 
     /// <inheritdoc/>
     public virtual long WouldTake(
@@ -101,27 +99,12 @@ public class NoCardAbilities : ICardAbilities
     }
 
     /// <inheritdoc/>
-    public virtual void WouldBeDefeated(
-        World world, Card target, List<GameEvent> events)
-    {
-    }
+    public virtual AbilityExecutionResult WouldBeDefeated(World world, AbilityExecution entry,
+        Card target, DefeatCause cause) => world.Agenda.Executions.FinishBatch(entry, []);
 
     /// <inheritdoc/>
-    public virtual bool WouldBeDefeated(
-        World world, Card target, Card source, string trigger, string verb, int by,
-        List<GameEvent> events, Occurrence? recordDefeatOn = null)
-    {
-        WouldBeDefeated(world, target, events);
-        return true;
-    }
-
-    /// <inheritdoc/>
-    public virtual bool WhenCardDefeated(
-        World world, Card card, Defeated defeated, string trigger, List<GameEvent> events)
-    {
-        ActivityBatches.Append(events, WhenCardDefeated(world, card, defeated));
-        return true;
-    }
+    public virtual AbilityExecutionResult WhenCardDefeated(World world, AbilityExecution entry,
+        Card card, Defeated defeated, string trigger) => world.Agenda.Executions.FinishBatch(entry, []);
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<Prompts.ResourceSource> ResourceAbilities(
@@ -139,8 +122,8 @@ public class NoCardAbilities : ICardAbilities
     }
 
     /// <inheritdoc/>
-    public virtual string UseResource(
-        World world, int player, int card, List<GameEvent> events) =>
+    public virtual ResourceExecutionResult UseResource(
+        World world, AbilityExecution entry, int player, int card) =>
         throw new RulesNotImplementedException(
             "no card has a resource ability, so none of them can be used");
 
@@ -148,25 +131,14 @@ public class NoCardAbilities : ICardAbilities
     public virtual IReadOnlyList<PendingAbility> Actions(World world, int player) => [];
 
     /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> Act(
-        World world, PendingAbility ability, IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen,
-        IReadOnlyDictionary<string, long>? values = null,
-        IReadOnlyList<ResourceAllocation>? allocations = null) =>
+    public virtual AbilityExecutionResult Act(
+        World world, AbilityExecution invocation, Decision answer) =>
         throw new RulesNotImplementedException(
             "no card has an action, so none of them can be triggered");
 
     /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> Act(
-        World world, PendingAbility ability, IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen, Occurrence occurrence,
-        IReadOnlyDictionary<string, long>? values = null,
-        IReadOnlyList<ResourceAllocation>? allocations = null) =>
-        Act(world, ability, paying, chosen, values, allocations);
-
-    /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> ResolveSpecial(
-        World world, Card card, int player, bool finalStep) =>
+    public virtual AbilityExecutionResult ResolveSpecial(
+        World world, AbilityExecution entry, Card card, int player, bool finalStep) =>
         throw new RulesNotImplementedException(
             $"card '{card.FaceId}' has no implemented Special ability");
 
@@ -197,7 +169,7 @@ public class NoCardAbilities : ICardAbilities
     public virtual IReadOnlyList<Card> PlayerSetupCards(World world, int player) => [];
 
     /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> Setup(World world, Card card) => [];
+    public virtual AbilityExecutionResult Setup(World world, AbilityExecution entry, Card card) => world.Agenda.Executions.FinishBatch(entry, []);
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<Timing.ContinuousEffect> Constant(World world, Card card) => [];
@@ -207,19 +179,10 @@ public class NoCardAbilities : ICardAbilities
         World world, Occurrence occurrence, WindowKind window) => [];
 
     /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> Resolve(
-        World world, Occurrence occurrence, PendingAbility ability,
-        IReadOnlyList<int> paying, IReadOnlyList<int> chosen) =>
+    public virtual AbilityExecutionResult Resolve(
+        World world, AbilityExecution invocation, Decision answer) =>
         throw new RulesNotImplementedException(
             "nothing is waiting in any window, so nothing can be resolved from one");
-
-    /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> Resolve(
-        World world, Occurrence occurrence, PendingAbility ability,
-        IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
-        IReadOnlyDictionary<string, long>? values = null,
-        IReadOnlyList<ResourceAllocation>? allocations = null) =>
-        Resolve(world, occurrence, ability, paying, chosen);
 
     /// <inheritdoc/>
     public virtual Prompts.Affordance Describe(World world, PendingAbility ability) =>

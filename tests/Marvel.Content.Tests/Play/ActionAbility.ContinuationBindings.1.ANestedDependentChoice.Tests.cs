@@ -212,7 +212,7 @@ public sealed class ActionAbilityContinuationBindingsANestedDependentChoiceTests
         var source = world.CreateCard(AuthoredCards.AuntMay, world.AreaOf(DeckType.RevealingArea));
         world.Abilities = runner;
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        var events = runner.WhenRevealed(world, source, 0).ToList();
+        var events = runner.ExecuteReveal(world, source, 0).Events.ToList();
         var prompt = Sequence.Work(world, CardCatalogData, runner, events)!;
         Assert.Contains(prompt.Affordances, option => option.Id == world.Seats[0].IdentityCard.ObjectId);
         Assert.DoesNotContain(prompt.Affordances, option => option.Id == villain.ObjectId);
@@ -239,11 +239,12 @@ public sealed class ActionAbilityContinuationBindingsANestedDependentChoiceTests
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), hero: true, heroes: ["spider_man", "captain_marvel"], abilities: runner);
         int held = world.Seats[1].Hand.Cards.Count;
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == source!.ObjectId);
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         var choice = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
         runner.Chose(world, choice, Decision.Take(world.Seats[1].IdentityCard.ObjectId));
         var attack = Assert.Single(world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
-        runner.ActivationCompleted(world, new EnemyActivation(attack.Subject, attack.Seat, Attacking: true, attack.ActivationId, Made: false));
+        Statuses.Give(world, world.Cards[attack.Subject], Statuses.Stunned);
+        Sequence.Work(world, CardCatalogData, runner, []);
         Assert.Equal(held + 1, world.Seats[1].Hand.Cards.Count);
     }
 }

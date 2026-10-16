@@ -405,6 +405,62 @@ the preceding steps have updated the board.
 The villain winning abandons the rest — `rr:main-scheme-main-scheme-deck.2.1`,
 the villain wins the game, and the encounter cards are not dealt.
 
+## Execution ownership and completion
+
+The agenda admits each Action, window ability, resource ability, setup, entry,
+reveal, boost, Special, defeat interrupt batch, and activation completion batch
+before its implementation can pay costs or schedule work. Individual authored
+abilities retain their semantic resolution address; entry batches and delayed
+effects own execution without inventing another printed ability address.
+An empty event list is not a completion signal. A finished body remains pending
+until its registered child procedures and continuations finish.
+
+The registry contains active invocations only. Completion retires an invocation
+from its parent and registry; retained external handles cannot resume it. A
+continuation has a game-bound, single-use permit and explicit prerequisites.
+It may resume only as the current frame after its immediate children complete.
+Removing an unanswered continuation cannot silently complete its parent.
+
+Scheduling uses the executing frame's identity, not whichever newly enqueued
+child happens to become the first agenda item. Each procedure invocation starts
+its own insertion batch. Immediate owned work is ordered with its descendants
+before the parent continuation, including entry paths that begin with an empty
+agenda. Activation work explicitly deferred under `rr:activation.8` remains
+behind the current activation. This permits the current activation to finish
+without reporting the deferred ability as complete (`rr:activation.7`, `.8.2`).
+
+Interrupt and response windows also depend on unfinished invocations for their
+exact occurrence. Their prerequisites include every outstanding descendant frame,
+even when a finished parent body waits for a child that schedules more work.
+The ordering pass preserves the existing order among unrelated frames and rejects
+dependency cycles. After each procedure scope disposes and reorders work, a
+scheduler iteration must offer a decision, advance the current frame or stage,
+or make another frame current. An unchanged frame and stage with no decision is
+an explicit invariant failure, rather than an unbounded retry.
+
+These identities, permits, and completion states are engine choices. They do not
+change the RNG or state digest format. Replaying accepted decisions reconstructs
+them deterministically, including the same pending choice boundaries.
+
+Damage step-one replacement has its own typed receipt. Its amount can be
+changed only by an active invocation descended from that replacement batch;
+placement cannot read a final amount while a replacement choice remains open.
+Forced replacements are re-evaluated after each completed ability and share the
+occurrence's once-per-trigger ledger. Enemy attacks finish that forced tier before
+opening their optional damage interrupt tier. Dealt and taken amounts remain
+separate: prevention at a later damage step does not rewrite damage dealt.
+
+Damage paid as a cost separates placement from defeat settlement. The placement
+child fixes the amount actually paid, then the cost owner pays the remaining
+simultaneous costs (`rr:cost.5`). Only that exact active owner may release the
+receipt's settlement, once. A retained completion obligation prevents a dropped
+receipt from completing its parent; settlement then owns any would-defeat choices
+and final defeat procedures. The post-arrow effect waits for settlement to finish.
+Both placement and settlement retain their original execution identities.
+
+Game termination may abandon unfinished executions. Abandonment is not reported
+as successful completion and does not authorize a retained continuation to resume.
+
 ## A step may ask, as well as a window
 
 Not every question in a phase comes from a window. Declaring a defender is a
@@ -413,10 +469,14 @@ and nobody is using an ability when it is asked. So the phase-neutral
 `AgendaProcedures.Apply` returns a `Prompt?`, the agenda stays on that step's
 `Apply`, and the answer is what makes the step happen.
 
-Routing reads the current agenda operation and window. A suspended ability's
-choice is answered by its continuation even while the enclosing window remains
-open. Otherwise an open window receives the answer, or the current procedure
-does when no window is open.
+Every authoritative prompt retains an engine-local execution binding: game,
+frame, stage, and its specific window when it is a window question. Procedure
+questions have no window binding. Answer routing uses this origin, so declaring
+a defender inside an interrupt answers the attack procedure while the enclosing
+interrupt window remains open. Stale and foreign bindings are rejected before
+changing the world's ability ports or any gameplay state. View snapshots remove
+the binding; saved decisions reconstruct it by replay rather than serializing
+live execution handles.
 
 A triggered ability's direct damage or threat removal owns a separate effect
 occurrence. Its defeats belong to that effect, not to the attack or other event
@@ -429,6 +489,15 @@ Being asked follows the same rule either way — **only where there is something
 to ask**. A player with no ready character cannot defend (`rr:defend-defense.2`
 and `.3` both require exhausting one), so the step passes in silence exactly as
 an empty window does.
+
+A direct damage entry without an enclosing game occurrence owns both its damage
+procedure and its response window. The entry execution is distinct from the
+effect occurrence so its own pending response does not block itself. Its receipt
+remains incomplete until replacement, placement, defeat, and responses finish.
+Attack overkill retains the exact originating occurrence. Zero or prevented
+placement does not invent a damage-taken triggering condition. Callers use the
+live typed receipt; there is no scalar damage API that treats pending defeat as
+false.
 
 ## Supported boundary
 

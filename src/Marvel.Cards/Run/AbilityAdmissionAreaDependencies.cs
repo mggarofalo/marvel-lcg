@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.State;
 
@@ -5,19 +6,19 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilityAdmissionAreaDependencies
 {
-    private static readonly HashSet<Type> OrderedContainerTypes =
+    private static readonly ImmutableArray<Type> OrderedContainerTypes =
     [
         typeof(AbilityEffect.Sequence), typeof(AbilityEffect.Simultaneous),
         typeof(AbilityEffect.Choose),
     ];
 
-    private static readonly HashSet<Type> BranchingContainerTypes =
+    private static readonly ImmutableArray<Type> BranchingContainerTypes =
     [
         typeof(AbilityEffect.Conditional), typeof(AbilityEffect.Dependent),
         typeof(AbilityEffect.EachTime),
     ];
 
-    private static readonly HashSet<Type> WrappedContainerTypes =
+    private static readonly ImmutableArray<Type> WrappedContainerTypes =
     [
         typeof(AbilityEffect.EachPlayer), typeof(AbilityEffect.ForEach),
         typeof(AbilityEffect.ChooseCard), typeof(AbilityEffect.AfterActivation),
@@ -25,7 +26,7 @@ internal static class AbilityAdmissionAreaDependencies
         typeof(AbilityEffect.PayOrEffect),
     ];
 
-    private static readonly HashSet<Type> SelectionDependencyTypes =
+    private static readonly ImmutableArray<Type> SelectionDependencyTypes =
     [
         typeof(AbilityEffect.CardAction), typeof(AbilityEffect.Heal),
         typeof(AbilityEffect.MoveDamage), typeof(AbilityEffect.RemoveThreat),
@@ -33,7 +34,7 @@ internal static class AbilityAdmissionAreaDependencies
         typeof(AbilityEffect.PreventDamageWhile),
     ];
 
-    private static readonly HashSet<Type> CardMutationDependencyTypes =
+    private static readonly ImmutableArray<Type> CardMutationDependencyTypes =
     [
         typeof(AbilityEffect.DelayedDiscard), typeof(AbilityEffect.DealEncounterCard),
         typeof(AbilityEffect.PlaceAtRandom), typeof(AbilityEffect.Search),
@@ -41,7 +42,7 @@ internal static class AbilityAdmissionAreaDependencies
         typeof(AbilityEffect.RemoveCounters),
     ];
 
-    private static readonly HashSet<Type> NumberDependencyTypes =
+    private static readonly ImmutableArray<Type> NumberDependencyTypes =
     [
         typeof(AbilityEffect.Damage), typeof(AbilityEffect.AttackDamage),
         typeof(AbilityEffect.IndirectDamage), typeof(AbilityEffect.PlaceThreat),
@@ -51,7 +52,7 @@ internal static class AbilityAdmissionAreaDependencies
         typeof(AbilityEffect.ReduceNextCardCost),
     ];
 
-    private static readonly HashSet<AbilityCardInstruction> SingularCardInstructions =
+    private static readonly ImmutableArray<AbilityCardInstruction> SingularCardInstructions =
     [
         AbilityCardInstruction.AttachTo, AbilityCardInstruction.Exhaust,
         AbilityCardInstruction.RemoveFromGame, AbilityCardInstruction.Reveal,

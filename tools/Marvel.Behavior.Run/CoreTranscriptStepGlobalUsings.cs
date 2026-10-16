@@ -8,6 +8,7 @@ global using static Marvel.Behavior.Run.CoreTranscriptVillainPhaseActions;
 global using static Marvel.Behavior.Run.CoreTranscriptCardActions;
 global using static Marvel.Behavior.Run.CoreTranscriptTurnActions;
 global using static Marvel.Behavior.Run.CoreTranscriptChoiceActions;
+global using static Marvel.Behavior.Run.CoreTranscriptOpportunitySteps;
 global using static Marvel.Behavior.Run.CoreTranscriptPromptAssertions;
 global using static Marvel.Behavior.Run.CoreTranscriptSetupAssertions;
 global using static Marvel.Behavior.Run.CoreTranscriptEventAssertions;

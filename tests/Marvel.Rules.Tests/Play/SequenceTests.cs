@@ -65,7 +65,7 @@ public sealed class SequenceTests
         // than a suspended call.
         var world = Board(players: 1);
         VillainPhase.Schedule(world.Agenda, round: 1);
-        var cards = new Interrupter(Steps.ConditionsOf(Steps.PlaceThreat)[0]);
+        var cards = new Interrupter(StepConditions.ConditionsOf(Steps.PlaceThreat)[0]);
 
         var asked = Sequence.Work(world, new Facts(), cards, []);
 
@@ -85,7 +85,7 @@ public sealed class SequenceTests
         // is what lets the condition resolve.
         var world = Board(players: 1);
         VillainPhase.Schedule(world.Agenda, round: 1);
-        var cards = new Interrupter(Steps.ConditionsOf(Steps.PlaceThreat)[0]);
+        var cards = new Interrupter(StepConditions.ConditionsOf(Steps.PlaceThreat)[0]);
         var events = new List<GameEvent>();
 
         var asked = Sequence.Work(world, new Facts(), cards, events);
@@ -107,7 +107,7 @@ public sealed class SequenceTests
         // again and the phase carries on.
         var world = Board(players: 1);
         VillainPhase.Schedule(world.Agenda, round: 1);
-        var cards = new Interrupter(Steps.ConditionsOf(Steps.PlaceThreat)[0]);
+        var cards = new Interrupter(StepConditions.ConditionsOf(Steps.PlaceThreat)[0]);
         var events = new List<GameEvent>();
 
         var asked = Sequence.Work(world, new Facts(), cards, events);
@@ -126,11 +126,9 @@ public sealed class SequenceTests
         // "in what order?".
         var world = Board(players: 1);
         var occurrence = new Occurrence(1, "WhenAttacked");
-        var cards = new Interrupter("WhenAttacked");
-        world.Windows.Open(occurrence, WindowKind.Interrupt);
-
-        var asked = new Prompt(0, Question.Order, TimingPriority.ForcedInterrupt,
-                               "WhenAttacked", "in what order?", false, []);
+        var cards = new ForcedPair();
+        var asked = Offering.Work(world, cards, occurrence, WindowKind.Interrupt, [])!;
+        Assert.Equal(Question.Order, asked.Asking);
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
             () => Sequence.Answer(world, new Facts(), cards, asked, Decision.Decline, []));
@@ -142,9 +140,8 @@ public sealed class SequenceTests
     {
         var world = Board(players: 1);
         var cards = new Interrupter("WhenAttacked");
-        world.Windows.Open(new Occurrence(1, "WhenAttacked"), WindowKind.Interrupt);
-        var asked = new Prompt(0, Question.Opportunity, TimingPriority.Interrupt,
-                               "WhenAttacked", "interrupt?", true, []);
+        var asked = Offering.Work(world, cards, new Occurrence(1, "WhenAttacked"), WindowKind.Interrupt, [])!;
+        Assert.Equal(Question.Opportunity, asked.Asking);
 
         Assert.Throws<RulesNotImplementedException>(
             () => Sequence.Answer(world, new Facts(), cards, asked, Decision.Take(999), []));
@@ -199,12 +196,11 @@ public sealed class SequenceTests
     private class Silent : NoCardAbilities
     {
 
-        public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
+        public override AbilityExecutionResult Resolve(
+            World world, AbilityExecution invocation, Decision answer)
         {
-            Resolved.Add(ability.Card);
-            return [];
+            Resolved.Add(invocation.Ability.Card);
+            return invocation.Finish([]);
         }
 
         public override Affordance Describe(World world, PendingAbility ability) =>
@@ -229,6 +225,14 @@ public sealed class SequenceTests
             && !Resolved.Contains(Card)
                 ? [new PendingAbility(Card, AbilityType.Interrupt, 0)]
                 : [];
+    }
+
+    private sealed class ForcedPair : Silent
+    {
+        public override IReadOnlyList<PendingAbility> Waiting(World world, Occurrence occurrence, WindowKind window) =>
+            [new(3, AbilityType.ForcedInterrupt, 0), new(4, AbilityType.ForcedInterrupt, 0)];
+        public override Affordance Describe(World world, PendingAbility ability) =>
+            new(ability.Card, "Use", ability.Card, ability.Player, "forced interrupt");
     }
 
     private sealed class Facts(bool overThreshold = false) : ICardFacts

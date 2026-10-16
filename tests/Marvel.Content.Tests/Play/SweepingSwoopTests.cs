@@ -144,7 +144,7 @@ public sealed class SweepingSwoopTests
     private static void Reveal(World world, string faceId)
     {
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, card, 0);
     }
 
     private static void Run(World world)

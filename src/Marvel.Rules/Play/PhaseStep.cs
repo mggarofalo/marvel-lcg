@@ -12,7 +12,11 @@ public readonly record struct PhaseStep(
     // Scheduler identity is an engine choice, independent of occurrence identity
     // and mutable procedure payloads. It is assigned only when work is enqueued.
     internal long FrameId { get; init; }
-    internal bool SameFrameAs(PhaseStep other) => FrameId != 0 && FrameId == other.FrameId;
+    internal object? FrameGame { get; init; }
+    internal AbilityExecution? ExecutionOwner { get; init; }
+    internal AbilityExecution? CompletionPrerequisite { get; init; }
+    internal AbilityContinuationPermit? ContinuationPermit { get; init; }
+    internal bool SameFrameAs(PhaseStep other) => FrameId != 0 && FrameId == other.FrameId && ReferenceEquals(FrameGame, other.FrameGame);
 
     /// <summary>The containing enemy activation, or -1 outside an activation.</summary>
     public int ActivationId { get; init; } = -1;
@@ -30,7 +34,7 @@ public readonly record struct PhaseStep(
     /// round ends — and <c>rr:triggering-condition.2</c> is why they share one
     /// occurrence rather than getting two windows each.
     /// </remarks>
-    public IReadOnlyList<string> Conditions => Steps.ConditionsOf(What);
+    public IReadOnlyList<string> Conditions => StepConditions.ConditionsOf(What);
 
     /// <summary>This step's occurrence, distinct from every other in the game.</summary>
     /// <remarks>

@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Marvel.Rules.Setup;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -17,30 +18,30 @@ namespace Marvel.Content.Behavior;
 /// </remarks>
 public sealed class CanonicalCoreScene
 {
-    private static readonly Dictionary<Type, Action<CanonicalCoreScene, CoreSceneOperation>>
+    private static readonly FrozenDictionary<Type, Action<CanonicalCoreScene, CoreSceneOperation>>
         OperationHandlers = new Dictionary<Type, Action<CanonicalCoreScene, CoreSceneOperation>>
         {
-            [typeof(MoveSceneCard)] = (scene, value) =>
+            [typeof(MoveSceneCard)] = static (scene, value) =>
                 scene.Move(scene.Find(((MoveSceneCard)value).Card), ((MoveSceneCard)value).Destination),
-            [typeof(SetSceneVillain)] = (scene, value) =>
+            [typeof(SetSceneVillain)] = static (scene, value) =>
                 scene.Villain(scene.Find(((SetSceneVillain)value).Card)),
-            [typeof(StackPlayerDeck)] = (scene, value) => scene.StackPlayer((StackPlayerDeck)value),
-            [typeof(SetPlayerHand)] = (scene, value) => scene.PlayerHand((SetPlayerHand)value),
-            [typeof(StackEncounterDeck)] = (scene, value) => scene.StackEncounter((StackEncounterDeck)value),
-            [typeof(SetSceneDamage)] = (scene, value) => scene.Damage(
+            [typeof(StackPlayerDeck)] = static (scene, value) => scene.StackPlayer((StackPlayerDeck)value),
+            [typeof(SetPlayerHand)] = static (scene, value) => scene.PlayerHand((SetPlayerHand)value),
+            [typeof(StackEncounterDeck)] = static (scene, value) => scene.StackEncounter((StackEncounterDeck)value),
+            [typeof(SetSceneDamage)] = static (scene, value) => scene.Damage(
                 scene.Find(((SetSceneDamage)value).Card), ((SetSceneDamage)value).Damage),
-            [typeof(SetSceneCounters)] = (scene, value) => scene.Counters(
+            [typeof(SetSceneCounters)] = static (scene, value) => scene.Counters(
                 scene.Find(((SetSceneCounters)value).Card),
                 ((SetSceneCounters)value).Type,
                 ((SetSceneCounters)value).Count),
-            [typeof(SetSceneAccelerationTokens)] = (scene, value) =>
+            [typeof(SetSceneAccelerationTokens)] = static (scene, value) =>
                 scene.AccelerationTokens(((SetSceneAccelerationTokens)value).Count),
-            [typeof(SetSceneForm)] = (scene, value) => scene.Form((SetSceneForm)value),
-            [typeof(SetSceneReady)] = (scene, value) => Ready(
+            [typeof(SetSceneForm)] = static (scene, value) => scene.Form((SetSceneForm)value),
+            [typeof(SetSceneReady)] = static (scene, value) => Ready(
                 scene.Find(((SetSceneReady)value).Card), ((SetSceneReady)value).Ready),
-            [typeof(GiveSceneStatus)] = (scene, value) => scene.Status(
+            [typeof(GiveSceneStatus)] = static (scene, value) => scene.Status(
                 scene.Find(((GiveSceneStatus)value).Host), ((GiveSceneStatus)value).Status),
-        };
+        }.ToFrozenDictionary();
 
     internal readonly Dictionary<int, int> _accountedOwners;
     internal readonly List<CoreSceneOperation> _operations = [];

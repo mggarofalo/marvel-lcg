@@ -28,7 +28,7 @@ public sealed class CorePaymentChoiceDescriptionTests
         world.CreateCard("01083", seat.Deck);
         Card boost = world.CreateCard(face, world.AreaOf(DeckType.BoostingArea));
         var runner = AuthoredCards.Runner();
-        runner.Boost(world, boost, 0);
+        runner.ExecuteBoost(world, boost, 0);
         var step = Assert.Single(world.Agenda.Outstanding);
         var before = world.Digest().Fingerprint();
 

@@ -28,9 +28,7 @@ public sealed class CorePlayerSelectionTests
         var left = world.CreateCard("01049", discard);
         var runner = AuthoredCards.Runner();
 
-        runner.Act(
-            world, new PendingAbility(card.ObjectId, AbilityType.Action, 0),
-            [payment.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(card.ObjectId, AbilityType.Action, 0), [payment.ObjectId], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         runner.Chose(world, choice, Decision.Take(card.ObjectId,
                 [first.ObjectId, second.ObjectId, third.ObjectId], []));
@@ -59,9 +57,7 @@ public sealed class CorePlayerSelectionTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
-        runner.Act(
-            world, new PendingAbility(card.ObjectId, AbilityType.Action, 0),
-            [payment.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(card.ObjectId, AbilityType.Action, 0), [payment.ObjectId], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, choice)!;
         Assert.Equal(2, Assert.Single(prompt.Affordances).Targets!.Min);
@@ -144,10 +140,7 @@ public sealed class CorePlayerSelectionTests
         Assert.Equal(8, variable.Max);
 
         var pending = runner.Actions(world, 0).ToList();
-        runner.Act(
-            world, pending.Single(action => action.Ordinal == 0),
-            [first.ObjectId, second.ObjectId], [],
-            new Dictionary<string, long>(StringComparer.Ordinal) { ["X"] = 4 });
+        runner.ExecuteAction(world, new PlayerAction(pending.Single(action => action.Ordinal == 0), [first.ObjectId, second.ObjectId], [], new Dictionary<string, long>(StringComparer.Ordinal) { ["X"] = 4 }));
 
         // Both generators produce six energy in total. X was defined as four
         // before payment, so the other two are overpaid and do not change X.
@@ -157,7 +150,7 @@ public sealed class CorePlayerSelectionTests
             .ToList();
         Assert.Equal(2, charged.Count);
         Assert.NotEqual(charged[0].Ordinal, charged[1].Ordinal);
-        runner.Act(world, charged.Single(action => action.Ordinal == 1), [], []);
+        runner.ExecuteAction(world, new PlayerAction(charged.Single(action => action.Ordinal == 1), [], []));
         var step = Assert.Single(world.Agenda.Outstanding);
         var target = runner.Choosing(world, step)!;
         Assert.Equal(Question.Element, target.Asking);
@@ -221,8 +214,7 @@ public sealed class CorePlayerSelectionTests
             runner.Actions(world, 0),
             ability => ability.Card == channel.ObjectId && ability.Ordinal == 0);
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.Act(
-            world, charge, [energy.ObjectId], []));
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(charge, [energy.ObjectId], [])));
 
         Assert.Contains("explicit value for X", thrown.Message, StringComparison.Ordinal);
         Assert.Same(world.Seats[0].Hand, energy.Area);

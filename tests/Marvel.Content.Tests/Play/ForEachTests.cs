@@ -121,7 +121,7 @@ public sealed class ForEachTests
         var source = world.CreateCard(SourceFace, world.AreaOf(DeckType.RevealingArea));
 
         var refused = Assert.Throws<RulesNotImplementedException>(() =>
-            runner.WhenRevealed(world, source, 0));
+            runner.ExecuteReveal(world, source, 0));
 
         Assert.Contains("one target cannot be persisted", refused.Message);
         Assert.Equal(DeckType.RevealingArea, source.Area.Type);
@@ -153,20 +153,17 @@ public sealed class ForEachTests
             """);
         var source = world.CreateCard(SourceFace, world.AreaOf(DeckType.RevealingArea));
 
-        runner.WhenRevealed(world, source, 0);
-        var first = Assert.Single(world.Agenda.Outstanding);
-        var firstPrompt = runner.Choosing(world, first)!;
+        runner.ExecuteReveal(world, source, 0);
+        var events = new List<GameEvent>();
+        var firstPrompt = Sequence.Work(world, world.Facts, runner, events)!;
         Assert.Equal([guard.ObjectId], firstPrompt.Affordances.Select(each => each.Id));
-
-        var firstEvents = runner.Chose(world, first, Decision.Take(guard.ObjectId));
+        Sequence.Answer(world, world.Facts, runner, firstPrompt, Decision.Take(guard.ObjectId), events);
+        var secondPrompt = Sequence.Work(world, world.Facts, runner, events)!;
         Assert.Equal(DeckType.EncounterDiscardPile, guard.Area.Type);
-        Assert.Contains(firstEvents, gameEvent => gameEvent is CardsMoved);
-
-        var second = world.Agenda.Outstanding[^1];
-        var secondPrompt = runner.Choosing(world, second)!;
+        Assert.Contains(events, gameEvent => gameEvent is CardsMoved);
         Assert.Equal([villain.ObjectId], secondPrompt.Affordances.Select(each => each.Id));
-
-        runner.Chose(world, second, Decision.Take(villain.ObjectId));
+        Sequence.Answer(world, world.Facts, runner, secondPrompt, Decision.Take(villain.ObjectId), events);
+        Sequence.Finish(world, world.Facts, runner, events);
 
         Assert.Equal(3, villain.Damage);
     }
@@ -201,11 +198,14 @@ public sealed class ForEachTests
             } } }
             """);
 
-        runner.WhenRevealed(world, source, 0);
-        var first = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(world, first, Decision.Take(villain.ObjectId));
-        var second = world.Agenda.Outstanding[^1];
-        runner.Chose(world, second, Decision.Take(villain.ObjectId));
+        runner.ExecuteReveal(world, source, 0);
+        var events = new List<GameEvent>();
+        for (int instance = 0; instance < 2; instance++)
+        {
+            var prompt = Sequence.Work(world, world.Facts, runner, events)!;
+            Sequence.Answer(world, world.Facts, runner, prompt, Decision.Take(villain.ObjectId), events);
+        }
+        Sequence.Finish(world, world.Facts, runner, events);
 
         Assert.Equal(6, villain.Damage);
     }
@@ -222,7 +222,7 @@ public sealed class ForEachTests
     private static IReadOnlyList<GameEvent> Resolve(World world, AbilityRunner runner)
     {
         var source = world.CreateCard(SourceFace, world.AreaOf(DeckType.RevealingArea));
-        return runner.WhenRevealed(world, source, 0);
+        return runner.ExecuteReveal(world, source, 0).Events;
     }
 
     private static World Deal() => WorldSetup.DealWithoutCardAbilities(

@@ -196,6 +196,7 @@ Seven, all run by hand and none on any path a game takes.
 | C# type or file layout, class size, parameter lists or type naming | [source-layout.md](docs/source-layout.md) |
 | Plane issues, modules, labels, priority | [plane.md](docs/plane.md) |
 | why the engine is shaped as it is | [migration.md](docs/migration.md) |
+| an architecture boundary, enforcement exception or content extension | [architecture-invariants.md](docs/architecture-invariants.md) |
 
 ## Commands
 

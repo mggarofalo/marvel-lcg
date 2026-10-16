@@ -20,7 +20,7 @@ public abstract class ChoosingCardsTestBase
     protected static (Card Card, IReadOnlyList<Marvel.Rules.Events.GameEvent> Events) Reveal(World world, string faceId, int player = 0)
     {
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
-        return (card, AuthoredCards.Runner().WhenRevealed(world, card, player));
+        return (card, AuthoredCards.Runner().ExecuteReveal(world, card, player).Events);
     }
 
     /// <summary>Nick Fury's core choice, isolated from the rest of his card.</summary>

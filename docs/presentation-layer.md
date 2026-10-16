@@ -336,7 +336,7 @@ visibility configuration, durable sessions and shutdown behavior.
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Both endpoints must use
-protocol 32. Setup and decisions replay under engine-replay-v17, with session
+protocol 32. Setup and decisions replay under engine-replay-v18, with session
 schema 6 retaining the exact ordered decks. Requests carry engine-authored
 commitments and explicit payment allocations; authorized responses include
 readable choices, active attack participants and attack completion events.
@@ -498,4 +498,11 @@ search, reveal or randomness signal, its objects, or any concealed result.
 Another player's operation is classified by authority before protection.
 Replay and save identities remain unchanged.
 
-Protocol 31 / replay v16 carry engine-authored attack identities and lifetime boundaries, exact scheme/thwart occurrence causes, named resource-ability costs, and authoritative player-loss reasons. Attack identities distinguish enemy activation ids from character occurrence ids. They do not change RNG, card-state digests, game timing, or the save envelope. Supporting travel, reveal and installation receipts may share one presentation beat; every raw event remains available in diagnostics.
+Protocol 32 carries engine-authored attack identities and lifetime boundaries,
+exact scheme/thwart occurrence causes, resource-ability costs and player-loss
+reasons. Attack identities distinguish enemy activation ids from character
+occurrence ids. Replay v18 owns their nested completion order; its compatibility
+contract is defined in [release-policy.md](release-policy.md). The RNG,
+card-state digest and save envelope retain their existing formats. Supporting
+travel, reveal and installation receipts may share one presentation beat; every
+raw event remains available in diagnostics.

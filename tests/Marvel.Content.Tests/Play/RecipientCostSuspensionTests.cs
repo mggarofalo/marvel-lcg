@@ -27,32 +27,29 @@ public sealed class RecipientCostSuspensionTests : ChoosingCardsTestBase
         var health = new ExhaustHealthInterruption(source, ally);
         world.Abilities = health;
         int[] before = [.. world.Seats.Select(seat => seat.Hand.Cards.Count)];
-        var cost = runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [],
-            [world.Seats[recipient].IdentityCard.ObjectId]);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], [world.Seats[recipient].IdentityCard.ObjectId]));
+        var cost = resolution.Events;
         Assert.True(health.Reached);
         Assert.False(source.Ready);
         Assert.DoesNotContain(cost, entry => entry.Verb == "Draw");
         Assert.Equal(before, world.Seats.Select(seat => seat.Hand.Cards.Count));
-        var step = world.Agenda.Current!.Value;
-        Assert.Equal(Steps.ResumeAbility, step.What);
-        // The game-owned continuation retains the selected identity through the cost procedure.
-        var restored = step;
+        Assert.False(resolution.IsComplete);
         ally.TakeDamage(-2);
+        if (eliminated) world.Seats[recipient].Eliminated = true;
+        var effect = new List<GameEvent>();
+        var prompt = Sequence.Work(world, Cards, runner, effect);
+        Assert.DoesNotContain(effect, entry => entry.Verb == "Exhaust");
         if (eliminated)
         {
-            world.Seats[recipient].Eliminated = true;
-            var resumed = runner.ResumeAbility(world, restored);
-            Assert.DoesNotContain(resumed, entry => entry.Verb is "Exhaust" or "Draw");
+            Assert.NotNull(prompt);
+            Assert.DoesNotContain(effect, entry => entry.Verb == "Draw");
             Assert.False(source.Ready);
-            var waiting = world.Agenda.Outstanding[^1];
-            var prompt = runner.Choosing(world, waiting)!;
             Assert.Equal(world.Seats[0].IdentityCard.ObjectId, Assert.Single(prompt.Affordances).Id);
             Assert.DoesNotContain(prompt.Affordances, option => option.Id == world.Seats[recipient].IdentityCard.ObjectId);
             Assert.Equal(before, world.Seats.Select(seat => seat.Hand.Cards.Count));
             return;
         }
-        var effect = runner.ResumeAbility(world, restored);
-        Assert.DoesNotContain(effect, entry => entry.Verb == "Exhaust");
+        Assert.Null(prompt);
         Assert.Contains(effect, entry => entry.Verb == "Draw");
         for (int seat = 0; seat < 2; seat++)
             Assert.Equal(before[seat] + (seat == recipient ? 1 : 0), world.Seats[seat].Hand.Cards.Count);
@@ -66,13 +63,14 @@ public sealed class RecipientCostSuspensionTests : ChoosingCardsTestBase
             card == source && source.Ready
                 ? [new(EffectSource.ConstantAbility, "health", 1, source.ObjectId, ally.ObjectId)] : [];
 
-        public override bool WouldBeDefeated(World world, Card target, Card cause, string trigger,
-            string verb, int by, List<GameEvent> events, Occurrence? recordDefeatOn = null)
+        public override AbilityExecutionResult WouldBeDefeated(World world, AbilityExecution entry,
+            Card target, DefeatCause cause)
         {
             Assert.Same(ally, target);
             Assert.False(source.Ready);
             Reached = true;
-            return false;
+            world.Agenda.Add(new PhaseStep(new LifecycleOperation(LifecycleKind.CardPlayed), 0, 1, Plan: true));
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 }

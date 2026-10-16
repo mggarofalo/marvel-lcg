@@ -21,7 +21,7 @@ public sealed class CoreDroneAbilityTests
         var scheme = world.CreateCard("01137b", world.AreaOf(DeckType.MainSchemesArea));
         var runner = AuthoredCards.Runner();
 
-        runner.WhenRevealed(world, scheme, player: 0);
+        runner.ExecuteReveal(world, scheme, player: 0);
 
         Assert.Single(Marvel.Content.Tests.Cards.AuthoredCards.FacedownDrones(world, 0));
         Assert.Single(Marvel.Content.Tests.Cards.AuthoredCards.FacedownDrones(world, 1));
@@ -44,7 +44,7 @@ public sealed class CoreDroneAbilityTests
             runner.Waiting(world, occurrence, WindowKind.Interrupt),
             pending => pending.Card == ultron.ObjectId);
 
-        runner.Resolve(world, occurrence, ability, [], []);
+        runner.ResolveWindow(world, occurrence, ability, new Decision(ability.Card, [], []));
 
         Assert.Collection(
             Marvel.Content.Tests.Cards.AuthoredCards.FacedownDrones(world, 0),
@@ -63,7 +63,7 @@ public sealed class CoreDroneAbilityTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
-        runner.WhenRevealed(world, invasive, player: 0);
+        runner.ExecuteReveal(world, invasive, player: 0);
         var ordering = Sequence.Work(world, Cards, runner, [])!;
         var order = Assert.Single(ordering.Affordances);
         int[] identities = world.Seats
@@ -100,7 +100,7 @@ public sealed class CoreDroneAbilityTests
         var imperative = world.CreateCard("01150", world.AreaOf(DeckType.SideSchemesArea));
         var runner = AuthoredCards.Runner();
 
-        runner.WhenRevealed(world, imperative, player: 0);
+        runner.ExecuteReveal(world, imperative, player: 0);
 
         Assert.Empty(Marvel.Content.Tests.Cards.AuthoredCards.FacedownDrones(world, 0));
         Assert.Collection(

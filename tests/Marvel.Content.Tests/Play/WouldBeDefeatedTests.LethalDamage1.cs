@@ -18,8 +18,10 @@ public sealed class WouldBeDefeatedLethalDamageTests : WouldBeDefeatedTestBase
     public void LethalDamageIsHealedAndTheAttachmentIsDiscardedInstead()
     {
         var(world, minion, upgrade) = Board();
-        bool defeated = DamagePlacement.Deal(world, Cards, minion, minion, 3, "test", "test", []);
-        Assert.False(defeated);
+        var damage = DamagePlacement.Resolve(world, Cards,
+            new(minion, minion, 3, "test", "test"), []);
+        Assert.False(damage.IsComplete);
+        Sequence.Finish(world, Cards, world.Abilities, []);
         Assert.Equal(0, minion.Damage);
         Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, upgrade.Area.Type);
@@ -50,6 +52,7 @@ public sealed class WouldBeDefeatedLethalDamageTests : WouldBeDefeatedTestBase
         minion.TakeDamage(3);
         Agendas.Happening(world);
         world.Effects.Expire(TimingPoints.EndOfRound, []);
+        Sequence.Finish(world, Cards, world.Abilities, []);
         Assert.Equal(0, minion.Damage);
         Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, upgrade.Area.Type);
@@ -125,7 +128,8 @@ public sealed class WouldBeDefeatedLethalDamageTests : WouldBeDefeatedTestBase
         Agendas.Happening(world);
         Assert.Equal(6, DamagePlacement.Health(world, Cards, soldier));
         var events = new List<GameEvent>();
-        DamagePlacement.Deal(world, Cards, defeated, defeated, 3, "test", "test", events);
+        DamagePlacement.Resolve(world, Cards,
+            new(defeated, defeated, 3, "test", "test"), events);
         var order = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
         Assert.Equal(Question.Order, order.Asking);
         Sequence.Answer(world, Cards, world.Abilities, order, Decision.Take(tracer.ObjectId), events);
@@ -147,8 +151,9 @@ public sealed class WouldBeDefeatedLethalDamageTests : WouldBeDefeatedTestBase
     public void NonlethalDamageDoesNotTriggerTheInterrupt()
     {
         var(world, minion, upgrade) = Board();
-        bool defeated = DamagePlacement.Deal(world, Cards, minion, minion, 2, "test", "test", []);
-        Assert.False(defeated);
+        var damage = DamagePlacement.Resolve(world, Cards,
+            new(minion, minion, 2, "test", "test"), []);
+        Assert.False(damage.IsComplete);
         Assert.Equal(2, minion.Damage);
         Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
     }
@@ -160,7 +165,8 @@ public sealed class WouldBeDefeatedLethalDamageTests : WouldBeDefeatedTestBase
     {
         var(world, minion, upgrade) = Board();
         Statuses.Give(world, minion, Statuses.Tough);
-        DamagePlacement.Deal(world, Cards, minion, minion, 3, "test", "test", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(minion, minion, 3, "test", "test"), []);
         Assert.Equal(0, minion.Damage);
         Assert.False(Statuses.Has(world, minion, Statuses.Tough));
         Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
@@ -173,8 +179,9 @@ public sealed class WouldBeDefeatedLethalDamageTests : WouldBeDefeatedTestBase
         var(world, _, upgrade) = Board();
         var other = world.CreateCard(Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         Agendas.Happening(world);
-        bool defeated = DamagePlacement.Deal(world, Cards, other, other, 3, "test", "test", []);
-        Assert.True(defeated);
+        var damage = DamagePlacement.Resolve(world, Cards,
+            new(other, other, 3, "test", "test"), []);
+        Sequence.Finish(world, Cards, world.Abilities, []);
         Assert.Equal(DeckType.EncounterDiscardPile, other.Area.Type);
         Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
     }
@@ -241,9 +248,10 @@ public sealed class WouldBeDefeatedLethalDamageTests : WouldBeDefeatedTestBase
         var minion = world.CreateCard(Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.CreateCard(AuthoredCards.BiomechanicalUpgrades, world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
         var events = new List<GameEvent>();
-        bool defeated = DamagePlacement.Deal(world, Cards, minion, minion, 3, "test", "test", events);
+        var damage = DamagePlacement.Resolve(world, Cards,
+            new(minion, minion, 3, "test", "test"), events);
         var asked = Sequence.Work(world, Cards, world.Abilities, events);
-        Assert.False(defeated);
+        Assert.False(damage.IsComplete);
         Assert.NotNull(asked);
         Assert.True(asked.Cancellable);
         Assert.Equal(Question.Opportunity, asked.Asking);

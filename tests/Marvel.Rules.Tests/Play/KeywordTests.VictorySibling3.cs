@@ -23,7 +23,8 @@ public sealed class KeywordVictorySiblingTests : KeywordTestBase
         var permanent = world.CreateCard("permanentAttachment", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
         var events = new List<GameEvent>();
         Agendas.Happening(world);
-        Assert.Throws<RulesNotImplementedException>(() => DamagePlacement.Deal(world, printed, minion, minion, 1, "test", "test", events));
+        Assert.Throws<RulesNotImplementedException>(() => DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 1, "test", "test"), events));
         Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
         Assert.Equal(DeckType.UpgradesArea, victory.Area.Type);
         Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
@@ -43,7 +44,8 @@ public sealed class KeywordVictorySiblingTests : KeywordTestBase
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var attachment = world.CreateCard("attachment", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
         Agendas.Happening(world);
-        DamagePlacement.Deal(world, printed, minion, minion, 1, "test", "test", []);
+        DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 1, "test", "test"), []);
         Assert.Equal(DeckType.VictoryDisplay, attachment.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
     }
@@ -67,7 +69,8 @@ public sealed class KeywordVictorySiblingTests : KeywordTestBase
         var attachment = world.CreateCard("attachment", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId));
         world.Abilities = new ConstantCharacteristic(host.ObjectId, attachment.ObjectId, granted ? "victory" : Characteristics.LossOf("victory"));
         Agendas.Happening(world);
-        DamagePlacement.Deal(world, printed, host, host, 1, "test", "test", []);
+        DamagePlacement.Resolve(world, printed,
+            new(host, host, 1, "test", "test"), []);
         Assert.Equal(destination, attachment.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, host.Area.Type);
     }
@@ -86,7 +89,8 @@ public sealed class KeywordVictorySiblingTests : KeywordTestBase
         var attachment = world.CreateCard("attachment", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId));
         world.Abilities = new ConstantCharacteristic(host.ObjectId, attachment.ObjectId, Characteristics.LossOf("permanent"));
         Agendas.Happening(world);
-        Assert.Throws<RulesNotImplementedException>(() => DamagePlacement.Deal(world, printed, host, host, 1, "test", "test", []));
+        Assert.Throws<RulesNotImplementedException>(() => DamagePlacement.Resolve(world, printed,
+            new(host, host, 1, "test", "test"), []));
         Assert.Equal(DeckType.EngagedEnemiesArea, host.Area.Type);
         Assert.Equal(DeckType.UpgradesArea, attachment.Area.Type);
     }
@@ -107,7 +111,8 @@ public sealed class KeywordVictorySiblingTests : KeywordTestBase
         var permanent = world.CreateCard("permanentAttachment", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), victory.ObjectId));
         world.Abilities = new ConstantCharacteristic(victory.ObjectId, permanent.ObjectId, Characteristics.LossOf("permanent"));
         Agendas.Happening(world);
-        Assert.Throws<RulesNotImplementedException>(() => DamagePlacement.Deal(world, printed, host, host, 1, "test", "test", []));
+        Assert.Throws<RulesNotImplementedException>(() => DamagePlacement.Resolve(world, printed,
+            new(host, host, 1, "test", "test"), []));
         Assert.Equal(DeckType.EngagedEnemiesArea, host.Area.Type);
         Assert.Equal(DeckType.UpgradesArea, victory.Area.Type);
         Assert.Equal(DeckType.UpgradesArea, permanent.Area.Type);
@@ -127,7 +132,8 @@ public sealed class KeywordVictorySiblingTests : KeywordTestBase
         var attachment = world.CreateCard("attachment", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), host.ObjectId));
         world.Abilities = new ConstantWhenHostAbsent(host.ObjectId, attachment.ObjectId, "permanent");
         Agendas.Happening(world);
-        Assert.Throws<RulesNotImplementedException>(() => DamagePlacement.Deal(world, printed, host, host, 1, "test", "test", []));
+        Assert.Throws<RulesNotImplementedException>(() => DamagePlacement.Resolve(world, printed,
+            new(host, host, 1, "test", "test"), []));
         Assert.Equal(DeckType.EngagedEnemiesArea, host.Area.Type);
         Assert.Equal(DeckType.UpgradesArea, attachment.Area.Type);
     }
@@ -145,7 +151,8 @@ public sealed class KeywordVictorySiblingTests : KeywordTestBase
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var tucked = world.CreateCard("attachment", world.AreaOf(DeckType.AsideDeck, PlayArea.Of(0), minion.ObjectId));
         Agendas.Happening(world);
-        DamagePlacement.Deal(world, printed, minion, minion, 1, "test", "test", []);
+        DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 1, "test", "test"), []);
         Assert.Equal(DeckType.EncounterDiscardPile, tucked.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
     }
@@ -168,7 +175,8 @@ public sealed class KeywordVictorySiblingTests : KeywordTestBase
         world.Abilities = new ConstantUsesLoss(host.ObjectId, uses.ObjectId);
         Assert.True(Characteristics.IsLost(world, uses, "uses"));
         Agendas.Happening(world);
-        Assert.Throws<RulesNotImplementedException>(() => DamagePlacement.Deal(world, printed, host, host, 1, "test", "test", []));
+        Assert.Throws<RulesNotImplementedException>(() => DamagePlacement.Resolve(world, printed,
+            new(host, host, 1, "test", "test"), []));
         Assert.Equal(DeckType.EngagedEnemiesArea, host.Area.Type);
         Assert.Equal(DeckType.UpgradesArea, victory.Area.Type);
         Assert.Equal(DeckType.SideSchemesArea, uses.Area.Type);
@@ -188,7 +196,8 @@ public sealed class KeywordVictorySiblingTests : KeywordTestBase
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Characteristics.LossOf("victory"), Affects: minion.ObjectId));
         Agendas.Happening(world);
-        DamagePlacement.Deal(world, printed, minion, minion, 1, "test", "test", []);
+        DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 1, "test", "test"), []);
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
         Assert.Empty(world.AreaOf(DeckType.VictoryDisplay).Cards);
     }

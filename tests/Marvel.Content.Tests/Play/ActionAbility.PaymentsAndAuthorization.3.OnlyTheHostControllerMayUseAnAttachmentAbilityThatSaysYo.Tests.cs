@@ -152,7 +152,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationOnlyTheHostControllerMa
             payment = [..board.Seats[1].Hand.Cards.Take(2)];
         }, heroes: ["spider_man", "captain_marvel"], abilities: runner);
         var action = Assert.Single(runner.Actions(world, 1), option => option.Card == attachment!.ObjectId);
-        runner.Act(world, action, [..payment.Select(card => card.ObjectId)], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [..payment.Select(card => card.ObjectId)], []));
         Assert.Equal(DeckType.EncounterDiscardPile, attachment!.Area.Type);
         Assert.All(payment, card => Assert.Equal(DeckType.DiscardPile, card.Area.Type));
     }
@@ -183,7 +183,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationOnlyTheHostControllerMa
         var(_, world) = Playing(board => support = InPlay(board, "44050"), heroes: ["spider_man", "captain_marvel"], abilities: runner);
         int held = world.Seats[1].Hand.Cards.Count;
         var action = Assert.Single(runner.Actions(world, 1), option => option.Card == support!.ObjectId);
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         Assert.False(support!.Ready);
         Assert.Equal(held + 1, world.Seats[1].Hand.Cards.Count);
     }
@@ -206,7 +206,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationOnlyTheHostControllerMa
         int held = world.Seats[1].Hand.Cards.Count;
         var response = Assert.Single(runner.Waiting(world, new Occurrence(1, [Steps.DamageDealt], Player: 0), WindowKind.Response), option => option.Player == 1);
         Assert.Equal(1, response.Player);
-        runner.Act(world, response, [payment[0].ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(response, [payment[0].ObjectId], []));
         Assert.Equal(DeckType.DiscardPile, payment[0].Area.Type);
         Assert.Equal(held, world.Seats[1].Hand.Cards.Count);
         Assert.Equal(support!.ObjectId, response.Card);

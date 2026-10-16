@@ -19,6 +19,9 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal bool AcknowledgementPending => AbilityWindows.Paused;
     private readonly CompleteDecisionSheetController choices;
     internal readonly DecisionCardChoices CardChoices;
+    internal readonly BoardChoiceContinuity BoardChoices;
+    internal long CurrentRevision => lifecycle.Revision;
+    internal BoardRenderResult? CurrentBoard => mulliganBoard;
     internal bool CompleteChoicesOpen => choices.IsOpen;
     internal void ShowCompleteChoices(Control source) => choices.Open(source);
     internal void CompleteChoicesClosed() => choices.Closed();
@@ -65,6 +68,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         TreeExiting += AbilityWindows.Dispose;
         choices = new CompleteDecisionSheetController(this);
         CardChoices = new DecisionCardChoices(this);
+        BoardChoices = new BoardChoiceContinuity(this);
         cardPreview.Changed += id => CardHovered?.Invoke(id);
     }
     /// <summary>Raised with one answer built from the current prompt.</summary>
@@ -154,7 +158,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         mulliganBoard = board;
         MulliganBinding.Bind(this, board);
         BoardInteractionBinder.Bind(this, board);
-        bool modal = AbilityWindowOpen || AcknowledgementPending;
+        bool modal = BoardInteractionsSuppressed;
         board?.PresentInteraction(modal ? null : composer,
             modal || composer is null || world is null ? null : PromptPresentation.From(composer.Prompt, world));
     }
@@ -179,6 +183,7 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     internal void Rebuild(bool focusFirst = false)
     {
+        Action<BoardRenderResult>? restoreChoice = BoardChoices.Capture();
         BoardActionChoiceSurface.Close();
         int generation = lifecycle.NextRenderGeneration();
         string? focusName = DecisionFocus.CurrentKey(this);
@@ -190,8 +195,11 @@ public sealed partial class DecisionPanel : VBoxContainer
             RenderNoDecision();
             return;
         }
+        if (mulliganBoard is { } board) restoreChoice?.Invoke(board);
         Callable.From(() => lifecycle.RestoreFocus(focusName, focusFirst || PaymentModalOpen, generation, paymentScroll)).CallDeferred();
     }
+
+    private bool BoardInteractionsSuppressed => AbilityWindowOpen || AcknowledgementPending || submitting;
 
     private bool RenderPrompt()
     {
@@ -204,7 +212,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         MulliganBinding.Bind(this, mulliganBoard);
         BoardInteractionBinder.Bind(this, mulliganBoard);
         bool completeWindow = AbilityWindows.Open(prompt);
-        bool modal = AbilityWindowOpen || AcknowledgementPending;
+        bool modal = BoardInteractionsSuppressed;
         DraftChanged?.Invoke(modal ? null : composer, modal ? null : prompt);
         if (completeWindow)
         {

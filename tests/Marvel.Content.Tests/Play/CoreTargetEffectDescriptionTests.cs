@@ -40,7 +40,7 @@ public sealed class CoreTargetEffectDescriptionTests
         Assert.Contains("Printed damage: 8", offered.Description);
         Assert.Contains("modifiers, prevention and later effects can change the result", offered.Description);
 
-        var events = runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []).ToList();
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId, energy.ObjectId], [])).Events.ToList();
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
 
         Assert.Equal("Swinging Web Kick: choose an enemy to attack", prompt.DisplayQuestion);
@@ -69,7 +69,7 @@ public sealed class CoreTargetEffectDescriptionTests
         Reveal.EnterPlay(world, Cards, team, [], abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == team.ObjectId);
 
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
 
         Assert.Equal("Tac Team: choose an enemy to deal damage to", prompt.DisplayQuestion);
@@ -92,7 +92,7 @@ public sealed class CoreTargetEffectDescriptionTests
         Reveal.EnterPlay(world, Cards, team, [], abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == team.ObjectId);
 
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
 
         Assert.Equal("Surveillance Team: choose a scheme to remove threat from", prompt.DisplayQuestion);
@@ -113,7 +113,7 @@ public sealed class CoreTargetEffectDescriptionTests
         world.Abilities = runner;
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == justice.ObjectId);
 
-        runner.Act(world, action, [genius.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId], []));
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
 
         Assert.Equal("For Justice!: choose a scheme to remove threat from", prompt.DisplayQuestion);
@@ -139,7 +139,7 @@ public sealed class CoreTargetEffectDescriptionTests
 
         Assert.True(offered.PlaysCard);
         Assert.False(offered.DeferredTargetSelection);
-        runner.Act(world, action, [genius.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId], []));
         Sequence.Finish(world, Cards, runner, []);
         Assert.Equal(1, world.TheCardIn(DeckType.VillainArea)!.Damage);
         Assert.Equal(DeckType.DiscardPile, stomp.Area.Type);
@@ -164,7 +164,7 @@ public sealed class CoreTargetEffectDescriptionTests
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == source.ObjectId);
 
         Affordance offered = runner.Describe(world, action);
-        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId, energy.ObjectId], []));
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
 
         Assert.True(offered.DeferredTargetSelection);

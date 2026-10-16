@@ -336,9 +336,8 @@ public sealed class MainSchemeTests
     {
 
 
-        public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => [];
+        public override AbilityExecutionResult Resolve(
+            World world, AbilityExecution invocation, Decision answer) => invocation.Finish([]);
 
     }
 
@@ -347,7 +346,7 @@ public sealed class MainSchemeTests
     {
         public List<string> Faces { get; } = [];
 
-        public override IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)
+        public override AbilityExecutionResult WhenRevealed(World world, AbilityExecution entry, Card card, int player)
         {
             // Only the scheme stages; the encounter cards this board deals are
             // not what the test is about.
@@ -356,13 +355,12 @@ public sealed class MainSchemeTests
                 Faces.Add(card.FaceId);
             }
 
-            return [];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
 
 
-        public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => [];
+        public override AbilityExecutionResult Resolve(
+            World world, AbilityExecution invocation, Decision answer) => invocation.Finish([]);
 
     }
 

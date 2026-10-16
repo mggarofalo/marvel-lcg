@@ -9,7 +9,7 @@ namespace Marvel.Rules.Play;
 /// What a card does when it is revealed from the encounter deck.
 /// </summary>
 /// <remarks>
-/// This is the public compatibility composition surface. Rules services take
+/// This is the host composition surface. Rules services take
 /// their exact consumer ports; hosts may supply one implementation that
 /// satisfies all of them.
 /// </remarks>

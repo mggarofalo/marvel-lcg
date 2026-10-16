@@ -75,7 +75,10 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         var occurrence = Occurrence.ForThreat(9, [Steps.ThreatWouldBePlaced], world, Cards, new ThreatPlacement(scheme.ObjectId, villain.ObjectId, 4, ThreatCause.CardAbility, "test", 0));
         var ability = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Interrupt), pending => pending.Card == card.ObjectId);
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "preventDamage", Amount: long.MaxValue, Affects: hero.ObjectId, Lasts: new Duration(Uses: 1)));
-        runner.Resolve(world, occurrence, ability, [], []);
+        var resolution = runner.ResolveWindow(world, occurrence, ability, new Decision(ability.Card, [], []));
+        Assert.False(resolution.IsComplete);
+        Sequence.Finish(world, Cards, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.True(occurrence.Threat!.Replaced);
         Assert.Equal(0, hero.Damage);
         Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(ability));
@@ -99,7 +102,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
             World.MoveToTop(aside, world.AreaOf(DeckType.EncounterDeck));
         }
 
-        runner.WhenRevealed(world, card, 0, occurrence);
+        runner.ExecuteReveal(world, card, 0, occurrence);
         Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
     }
 
@@ -126,7 +129,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
             World.MoveToTop(extra, discard);
         }
 
-        runner.WhenRevealed(world, card, 0, occurrence);
+        runner.ExecuteReveal(world, card, 0, occurrence);
         Assert.Equal(ResolutionStatus.Unresolved, occurrence.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
     }
 
@@ -144,7 +147,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
             World.MoveToTop(extra, discard);
         }
 
-        runner.WhenRevealed(world, card, 0, occurrence);
+        runner.ExecuteReveal(world, card, 0, occurrence);
         Assert.Equal(ResolutionStatus.Unresolved, occurrence.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
     }
 
@@ -175,7 +178,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
             ] } ] }
             """));
         world.Abilities = runner;
-        var events = runner.WhenRevealed(world, card, 0, occurrence).ToList();
+        var events = runner.ExecuteReveal(world, card, 0, occurrence).Events.ToList();
         var question = Sequence.Work(world, Cards, runner, events)!;
         Sequence.Answer(world, Cards, runner, question, Decision.Take(0), events);
         Sequence.Finish(world, Cards, runner, events);

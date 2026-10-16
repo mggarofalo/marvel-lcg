@@ -1,11 +1,16 @@
+using System.Collections.Frozen;
+using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using static Marvel.Rules.Play.Steps;
 using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
-internal static class StepConditions
+/// <summary>Maps scheduled procedures to their triggering conditions.</summary>
+public static class StepConditions
 {
-    private static readonly Dictionary<string, string[]> Conditions = new(StringComparer.Ordinal)
+    private static readonly ReadOnlyDictionary<string, ImmutableArray<string>> Conditions = new(
+        new Dictionary<string, ImmutableArray<string>>(StringComparer.Ordinal)
     {
         [PlaceThreat] = [ThreatWouldBePlaced],
         [PlaceThreatEffect] = [ThreatWouldBePlaced],
@@ -55,11 +60,11 @@ internal static class StepConditions
         // response window between them.
         [EndVillainPhase] = [PhaseEnd.VillainPhaseEnds, PhaseEnd.RoundEnds],
         [EndPlayerPhase] = [PhaseEnd.PlayerPhaseEnds],
-    };
+    });
 
     /// <summary>The triggering conditions a step creates.</summary>
     /// <param name="what">One of the step names here.</param>
-    internal static IReadOnlyList<string> ConditionsOf(string what) =>
+    public static IReadOnlyList<string> ConditionsOf(string what) =>
         Conditions.TryGetValue(what, out var conditions) ? conditions : [what];
 
     /// <summary>
@@ -72,11 +77,9 @@ internal static class StepConditions
     /// dataset looking implemented and never fire. Holding the two sets against
     /// each other turns that into a failing test.
     /// </remarks>
-    internal static IReadOnlySet<string> EveryCondition { get; } =
-        new HashSet<string>(
-            Conditions.Values.SelectMany(each => each).Concat(
+    public static IReadOnlySet<string> EveryCondition { get; } =
+        Conditions.Values.SelectMany(each => each).Concat(
                 // These are discovered while their occurrence applies rather
                 // than promised when its step is scheduled.
-                [DamageDealt, ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds, BasicAttackEnds]),
-            StringComparer.Ordinal);
+                [DamageDealt, ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds, BasicAttackEnds]).ToFrozenSet(StringComparer.Ordinal);
 }

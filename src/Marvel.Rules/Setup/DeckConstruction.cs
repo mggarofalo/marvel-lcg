@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Rules.State;
 
 namespace Marvel.Rules.Setup;
@@ -5,7 +6,7 @@ namespace Marvel.Rules.Setup;
 /// <summary>Product-independent deck construction checks.</summary>
 public static class DeckConstruction
 {
-    private static readonly HashSet<string> Aspects =
+    private static readonly ImmutableArray<string> Aspects =
         ["Aggression", "Justice", "Leadership", "Protection", "'Pool"];
 
     /// <summary>Validates the rules that every supported identity deck shares.</summary>

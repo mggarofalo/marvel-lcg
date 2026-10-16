@@ -139,6 +139,8 @@ public sealed class PresentationBoundaryTests
             // Typed facts derived locally from visibility-filtered events.
             "Marvel.View.EventActivityDescriptor",
             "Marvel.View.EventActivityKind",
+            // Native read-only witnesses locate cards in authorized area descriptors.
+            "Marvel.View.GameAreaDescriptor",
             "Marvel.View.OutcomeDescription",
             "Marvel.View.ActivitySubject",
             "Marvel.View.ActivitySubjectRole",

@@ -7,11 +7,8 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-public sealed class CoreCardDslTests
+public sealed class CoreCardDslTests : CoreCardTestBase
 {
-    private static readonly CardCatalog Cards = CardCatalog.Parse(
-        File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
-
     [Rule("rr:ready")]
     [Fact]
     public void ArcReactorExhaustsAndReadiesIronMan()
@@ -26,7 +23,7 @@ public sealed class CoreCardDslTests
         world.Abilities = runner;
 
         var action = Assert.Single(runner.Actions(world, 0), action => action.Card == reactor.ObjectId);
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
 
         Assert.False(reactor.Ready);
         Assert.True(world.Seats[0].IdentityCard.Ready);
@@ -100,7 +97,7 @@ public sealed class CoreCardDslTests
         world.Abilities = runner;
         var action = Assert.Single(runner.Actions(world, 0), action => action.Card == mansion.ObjectId);
 
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         var waiting = Assert.Single(world.Agenda.Outstanding);
         runner.Chose(world, waiting, Decision.Take(world.Seats[1].IdentityCard.ObjectId));
 
@@ -147,9 +144,7 @@ public sealed class CoreCardDslTests
         var occurrence = new Occurrence(
             1, [Steps.CardPlayed], Subject: maria.ObjectId, Player: 0);
 
-        runner.Resolve(
-            world, occurrence,
-            new PendingAbility(maria.ObjectId, AbilityType.Response, 0), [], []);
+        runner.ResolveWindow(world, occurrence, new PendingAbility(maria.ObjectId, AbilityType.Response, 0), new Decision(maria.ObjectId, [], []));
 
         Assert.Equal(DeckType.HandsArea, first.Area.Type);
         Assert.Equal(DeckType.HandsArea, second.Area.Type);
@@ -176,9 +171,7 @@ public sealed class CoreCardDslTests
         var occurrence = new Occurrence(
             1, [Steps.CardPlayed], Subject: maria.ObjectId, Player: 0);
 
-        runner.Resolve(
-            world, occurrence,
-            new PendingAbility(maria.ObjectId, AbilityType.Response, 0), [], []);
+        runner.ResolveWindow(world, occurrence, new PendingAbility(maria.ObjectId, AbilityType.Response, 0), new Decision(maria.ObjectId, [], []));
 
         Assert.Equal(DeckType.DiscardPile, staysDiscarded.Area.Type);
         Assert.Empty(world.Seats[0].Hand.Cards);
@@ -199,7 +192,7 @@ public sealed class CoreCardDslTests
         var villain = world.CreateCard(
             "01094", world.AreaOf(DeckType.VillainArea));
 
-        AuthoredCards.Runner().WhenRevealed(world, herb, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, herb, 0);
 
         Assert.True(Statuses.Has(world, villain, Statuses.Tough));
         Assert.Empty(world.AreaOf(
@@ -227,76 +220,11 @@ public sealed class CoreCardDslTests
         world.Seats[0].IdentityCard.TakeDamage(2);
         var action = Assert.Single(runner.Actions(world, 0), action =>
             action.Card == world.Seats[0].IdentityCard.ObjectId);
-        runner.Act(world, action, [payment.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [payment.ObjectId], []));
 
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
         Assert.Single(world.Seats[0].Hand.Cards);
         Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
-    }
-
-    [Rule("rr:prevent")]
-    [Rule("rr:prevent.1")]
-    [Rule("rr:prevent.1.1")]
-    [Fact]
-    public void CosmicFlightPreventsExactlyThreeDamage()
-    {
-        // Preventing damage "reduce[s] the amount of damage the target takes";
-        // the amount "dealt" is not reduced. Five is still dealt, while only
-        // two is taken after Cosmic Flight prevents three.
-        var world = Hero("01010a");
-        var flight = world.CreateCard(
-            "01017", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
-        world.CreateCard("01087", world.Seats[0].Deck);
-        var villain = world.CreateCard("01134", world.AreaOf(DeckType.VillainArea));
-        var runner = AuthoredCards.Runner();
-        world.Abilities = runner;
-        var occurrence = Occurrence.ForAttack(
-            1, [Steps.DamageWouldBeDealt], world, Cards, villain.ObjectId,
-            world.Seats[0].IdentityCard.ObjectId, player: 0);
-        var interrupt = Assert.Single(
-            runner.Waiting(world, occurrence, WindowKind.Interrupt),
-            pending => pending.Card == flight.ObjectId);
-
-        runner.Resolve(world, occurrence, interrupt, [], []);
-
-        Assert.Equal(5, runner.WouldBeDealt(
-            world, world.Seats[0].IdentityCard, villain, 5, []));
-        Assert.Equal(2, runner.WouldTake(
-            world, world.Seats[0].IdentityCard, villain, 5, []));
-        Assert.Equal(DeckType.DiscardPile, flight.Area.Type);
-    }
-
-    [Rule("rr:tough.2")]
-    [Rule("rr:damage.step.3")]
-    [Fact]
-    public void ToughExpiresPreventionCommittedToThatDamageInstance()
-    {
-        // Cosmic Flight has already committed its one-use prevention when
-        // Tough stops the whole instance at step 2. Both defenses expire with
-        // that damage; the prevention cannot leak into a later instance.
-        var world = Hero("01010a");
-        var flight = world.CreateCard(
-            "01017", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
-        var villain = world.CreateCard("01134", world.AreaOf(DeckType.VillainArea));
-        var hero = world.Seats[0].IdentityCard;
-        var runner = AuthoredCards.Runner();
-        world.Abilities = runner;
-        Statuses.Give(world, hero, Statuses.Tough);
-        var occurrence = Occurrence.ForAttack(
-            1, [Steps.DamageWouldBeDealt], world, Cards,
-            villain.ObjectId, hero.ObjectId, player: 0);
-        var interrupt = Assert.Single(
-            runner.Waiting(world, occurrence, WindowKind.Interrupt),
-            pending => pending.Card == flight.ObjectId);
-        runner.Resolve(world, occurrence, interrupt, [], []);
-
-        DamagePlacement.Deal(world, Cards, villain, hero, 5, "test", "Damage", []);
-        DamagePlacement.Deal(world, Cards, villain, hero, 2, "test", "Damage", []);
-
-        Assert.False(Statuses.Has(world, hero, Statuses.Tough));
-        Assert.Equal(2, hero.Damage);
-        Assert.DoesNotContain(
-            world.Effects.Active(), effect => effect.Kind == "preventDamage");
     }
 
     [Rule("rr:printed")]
@@ -319,7 +247,7 @@ public sealed class CoreCardDslTests
         world.Abilities = runner;
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == split.ObjectId);
 
-        runner.Act(world, action, [.. payments.Select(card => card.ObjectId)], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [.. payments.Select(card => card.ObjectId)], []));
 
         Assert.Equal("01019b", world.Seats[0].IdentityCard.FaceId);
         Assert.Equal(6, world.Seats[0].Hand.Cards.Count);
@@ -339,28 +267,11 @@ public sealed class CoreCardDslTests
         var occurrence = new Occurrence(
             1, [Steps.CardDefeated], Subject: soldier.ObjectId, Player: 0);
 
-        runner.Resolve(
-            world, occurrence,
-            new PendingAbility(soldier.ObjectId, AbilityType.WhenDefeated, 0), [], []);
+        runner.ResolveWindow(world, occurrence, new PendingAbility(soldier.ObjectId, AbilityType.WhenDefeated, 0), new Decision(soldier.ObjectId, [], []));
 
         Assert.Equal(DeckType.DealtEncounterCardsDeck, encounter.Area.Type);
         Assert.Equal(1, encounter.Area.PlayArea.Player);
         Assert.Empty(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards);
     }
 
-    private static long Modified(World world, Card card, string field) =>
-        StateFields.Modified(world, card, field, Cards, world.Players);
-
-    private static World Hero(string faceId, int players = 1)
-    {
-        var world = new World(Cards, players);
-        for (int player = 0; player < players; player++)
-        {
-            var seat = world.CreateSeat($"p{player}");
-            string identity = player == 0 ? faceId : "01001a";
-            seat.IdentityCard = world.CreateCard(identity, seat.Hero);
-        }
-
-        return world;
-    }
 }

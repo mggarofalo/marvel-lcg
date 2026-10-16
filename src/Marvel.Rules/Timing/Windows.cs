@@ -78,6 +78,7 @@ public sealed class Windows(World world)
     public bool Pass()
     {
         var window = Innermost();
+        world.Agenda.Executions.RequireWindowComplete(window.Occurrence);
         var passed = window.Passed + 1;
         if (passed >= world.Players)
         {

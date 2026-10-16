@@ -30,8 +30,15 @@ public sealed class Agenda
 {
     internal readonly List<(PhaseStep Step, Stage Stage, Occurrence? Occurrence)> items = [];
     internal readonly Dictionary<int, List<int>> queuedAfterActivation = [];
+    /// <summary>Invocation ownership, suspension and completion for this game.</summary>
+    public AbilityExecutions Executions { get; }
+
+    /// <summary>Create an empty game-owned agenda.</summary>
+    public Agenda() => Executions = new(this);
+
     private long nextFrameId;
     private int scheduledCount;
+    private long schedulingFrame;
     internal readonly HashSet<long> scheduledFrames = [];
     internal int scheduled
     {
@@ -42,12 +49,27 @@ public sealed class Agenda
             if (value == 0) scheduledFrames.Clear();
         }
     }
+    internal void StartProcedureScheduling(PhaseStep owner)
+    {
+        scheduled = 0;
+        schedulingFrame = owner.FrameId;
+    }
+
+    internal void BeginScheduling()
+    {
+        long current = Executions.SchedulingFrame;
+        if (schedulingFrame == current) return;
+        scheduled = 0;
+        schedulingFrame = current;
+    }
+
     internal int nextActivationId;
     internal int nextPlayerActionOccurrence = -1;
 
     internal (PhaseStep Step, Stage Stage, Occurrence? Occurrence) Frame(
         PhaseStep step, Stage stage, Occurrence? occurrence) =>
-        (step with { FrameId = checked(++nextFrameId) }, stage, occurrence);
+        (Executions.Register(step with { FrameId = checked(++nextFrameId), FrameGame = Executions.Identity },
+            ContinuationExecution.Of(step)), stage, occurrence);
 
     /// <summary>Whether the game is part-way through anything.</summary>
     public bool IsBusy => items.Count > 0;
@@ -245,8 +267,10 @@ public sealed class Agenda
         // Nested work can move ahead of the owner while its effect is running.
         // Track the frames enqueued by this batch rather than inferring them
         // from a contiguous slice after the owner's current position.
-        var children = items.Where(item => scheduledFrames.Contains(item.Step.FrameId)).ToList();
-        items.RemoveAll(item => scheduledFrames.Contains(item.Step.FrameId));
+        var children = items.Where(item => scheduledFrames.Contains(item.Step.FrameId)
+            && item.Step.ExecutionOwner is null && !item.Step.SameFrameAs(owner)).ToList();
+        items.RemoveAll(item => scheduledFrames.Contains(item.Step.FrameId)
+            && item.Step.ExecutionOwner is null && !item.Step.SameFrameAs(owner));
         parent = items.FindIndex(item => item.Step.SameFrameAs(owner));
         items.InsertRange(parent, children);
         scheduled = 0;
@@ -264,6 +288,7 @@ public sealed class Agenda
     /// <param name="step">What to do next.</param>
     public void Then(PhaseStep step)
     {
+        BeginScheduling();
         if (this.IsActivation(step))
         {
             this.ThenActivation(step);

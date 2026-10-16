@@ -12,6 +12,12 @@ internal static class AbilityContinuationFixtures
         world.Agenda.Outstanding.First(step => step.Subject == source.ObjectId
             && step.Operation is AbilityContinuationAgendaOperation);
 
+    internal static PhaseStep Current(World world, Card source, params AbilityStructuralFrame[] frames)
+    {
+        world.Agenda.Now(Step(source, frames));
+        return world.Agenda.Current!.Value;
+    }
+
     internal static PhaseStep Step(Card source, params AbilityStructuralFrame[] frames) => new(
         new AbilityContinuationAgendaOperation(AbilityContinuationStage.Resume)
         {

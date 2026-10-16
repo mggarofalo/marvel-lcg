@@ -23,8 +23,8 @@ internal static class AbilityResolutionContinuations
     {
         if (cast.Suspended)
         {
-            cast.CompleteResolution();
             execution.DiscardEvent(source, cast);
+            cast.CompleteResolution();
             return cast.Events;
         }
 
@@ -42,8 +42,9 @@ internal static class AbilityResolutionContinuations
                 new ContinueAfterResumedNode(ability, state, EffectApplied: false));
         }
 
-        cast.CompleteResolution();
         execution.DiscardEvent(source, cast);
+
+        cast.CompleteResolution();
         return cast.Events;
     }
 

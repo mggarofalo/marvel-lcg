@@ -81,14 +81,15 @@ public sealed class TemporaryIdentityRegressionTests
         Agendas.Happening(world);
         var occurrence = world.Agenda.Occurrence!;
         var events = new List<GameEvent>();
-        Assert.True(DamagePlacement.Deal(world, Cards, world.Seats[1].IdentityCard, drone, 1, "test", "Damage", events));
+        Assert.Equal(Damage.Outcome.Defeated, DamagePlacement.Resolve(world, Cards,
+            new(world.Seats[1].IdentityCard, drone, 1, "test", "Damage"), events).Outcome);
         Assert.Null(drone.InstanceState.Profile);
         Assert.Equal(0, drone.Damage);
         Assert.Equal(DeckType.DiscardPile, drone.Area.Type);
 
         var response = Assert.Single(world.Abilities.Waiting(world, occurrence, WindowKind.Response),
             option => option.Card == environment.ObjectId);
-        events.AddRange(world.Abilities.Resolve(world, occurrence, response, [], []));
+        events.AddRange(world.Abilities.ResolveWindow(world, occurrence, response, new Decision(response.Card, [], [])).Events);
 
         Assert.Equal(PlayArea.Of(0), drone.Area.PlayArea);
         Assert.Same(drone, world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0).Cards[^1]);
@@ -132,7 +133,8 @@ public sealed class TemporaryIdentityRegressionTests
         if (!reenter) drone.TurnFaceUp();
         Agendas.Happening(world);
         var occurrence = world.Agenda.Occurrence!;
-        Assert.True(DamagePlacement.Deal(world, Cards, world.Seats[0].IdentityCard, drone, 1, "test", "Damage", []));
+        Assert.Equal(Damage.Outcome.Defeated, DamagePlacement.Resolve(world, Cards,
+            new(world.Seats[0].IdentityCard, drone, 1, "test", "Damage"), []).Outcome);
         if (reenter)
         {
             Assert.Contains(world.Abilities.Waiting(world, occurrence, WindowKind.Response),
@@ -157,7 +159,8 @@ public sealed class TemporaryIdentityRegressionTests
         var drone = Engage(world);
         Agendas.Happening(world);
         var occurrence = world.Agenda.Occurrence!;
-        Assert.True(DamagePlacement.Deal(world, Cards, world.Seats[0].IdentityCard, drone, 1, "test", "Damage", []));
+        Assert.Equal(Damage.Outcome.Defeated, DamagePlacement.Resolve(world, Cards,
+            new(world.Seats[0].IdentityCard, drone, 1, "test", "Damage"), []).Outcome);
         Assert.Contains(world.Abilities.Waiting(world, occurrence, WindowKind.Response),
             option => option.Card == environment.ObjectId);
         World.MoveToTop(drone, world.AreaOf(DeckType.RemovedArea));

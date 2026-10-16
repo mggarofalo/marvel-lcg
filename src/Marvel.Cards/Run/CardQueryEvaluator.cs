@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -8,7 +9,7 @@ namespace Marvel.Cards.Run;
 internal sealed class CardQueryEvaluator(
     AbilityQueryContext cast, AbilityProgram? program)
 {
-    private static readonly HashSet<AbilityCardQuery> ScenarioQueries =
+    private static readonly ImmutableArray<AbilityCardQuery> ScenarioQueries =
     [
         AbilityCardQuery.AttachedToThis, AbilityCardQuery.SideSchemes,
         AbilityCardQuery.Schemes, AbilityCardQuery.PowerTargets,
@@ -16,14 +17,14 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.Villain, AbilityCardQuery.MainScheme,
         AbilityCardQuery.YourAsideMinion, AbilityCardQuery.YourAsideSideScheme,
     ];
-    private static readonly HashSet<AbilityCardQuery> EnemyQueries =
+    private static readonly ImmutableArray<AbilityCardQuery> EnemyQueries =
     [
         AbilityCardQuery.MinionsEngagedWithYou, AbilityCardQuery.Minions,
         AbilityCardQuery.Enemies, AbilityCardQuery.AttackableEnemies,
         AbilityCardQuery.AttackableMinions, AbilityCardQuery.ThwartableSchemes,
         AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
     ];
-    private static readonly HashSet<AbilityCardQuery> ControlledQueries =
+    private static readonly ImmutableArray<AbilityCardQuery> ControlledQueries =
     [
         AbilityCardQuery.UpgradesAndSupportsYouControl,
         AbilityCardQuery.IdentitySpecificInYourHand,
@@ -32,7 +33,7 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.UpgradesYouControl,
         AbilityCardQuery.AlliesYouControl,
     ];
-    private static readonly HashSet<AbilityCardQuery> IdentityQueries =
+    private static readonly ImmutableArray<AbilityCardQuery> IdentityQueries =
     [
         AbilityCardQuery.IdentitiesWithinPerPlayerLimit,
         AbilityCardQuery.HeroesAndAllies, AbilityCardQuery.HeroAndAllyTargets, AbilityCardQuery.Allies,

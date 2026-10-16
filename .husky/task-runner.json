@@ -2,13 +2,13 @@
   "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
   "tasks": [
     {
-      "name": "source-layout",
+      "name": "architecture-policy",
       "group": "pre-commit",
       "command": "dotnet",
       "args": [
         "husky",
         "exec",
-        ".husky/csx/source-layout.csx"
+        ".husky/csx/architecture-policy.csx"
       ]
     },
     {

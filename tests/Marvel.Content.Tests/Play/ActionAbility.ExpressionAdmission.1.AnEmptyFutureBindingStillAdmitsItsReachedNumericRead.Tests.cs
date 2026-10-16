@@ -140,7 +140,7 @@ public sealed class ActionAbilityExpressionAdmissionAnEmptyFutureBindingStillAdm
         {
             var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
             Assert.Equal(before, world.Digest().Canonical());
-            runner.Act(world, action, [], []);
+            runner.ExecuteAction(world, new PlayerAction(action, [], []));
             Assert.Equal(1, source.Tokens.GetValueOrDefault("c_test"));
             Assert.False(source.Ready);
             Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);

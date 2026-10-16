@@ -321,7 +321,7 @@ public sealed class StandardSetCardsTests
         World world, string faceId, int player = 0)
     {
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
-        return AuthoredCards.Runner().WhenRevealed(world, card, player);
+        return AuthoredCards.Runner().ExecuteReveal(world, card, player).Events;
     }
 
     private static void Finish(

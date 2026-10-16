@@ -14,16 +14,13 @@ internal static class DefeatWindowResumption
         DefeatWindow window = operation.Window;
         Occurrence origin = window.Origin
             ?? throw new InvalidOperationException("a defeat window has no occurrence");
-        IReadOnlyList<PendingAbility> carried = window.Abilities ?? [];
-        if (carried.Count == 1 && AbilityTypes.IsMandatory(carried[0].Type))
+        bool beforeDefeat = operation.Kind == DefeatAbilityKind.ResumeWouldBeDefeated;
+        IReadOnlyList<PendingAbility> pending = DefeatWindowEligibility.Pending(world, abilities, step);
+        if (pending.Count == 1 && AbilityTypes.IsMandatory(pending[0].Type))
         {
-            ResolveMandatory(world, abilities, step, carried[0], events);
+            ResolveMandatory(world, abilities, step, pending[0], events);
             return;
         }
-        bool beforeDefeat = operation.Kind == DefeatAbilityKind.ResumeWouldBeDefeated;
-        IReadOnlyList<PendingAbility> pending = carried.Count > 0 ? carried
-            : FirstInterruptTier(abilities, world, origin,
-                excludeCard: beforeDefeat ? -1 : step.Subject, after: window.Tier);
         if (pending.Count > 0)
         {
             DefeatProcedure.ScheduleProcedureChoice(world, step with
@@ -37,8 +34,6 @@ internal static class DefeatWindowResumption
                 OccurrenceId = null,
             });
         }
-        else if (beforeDefeat) DefeatProcedure.FinishWouldBeDefeated(world, facts, step, events);
-        else DefeatProcedure.FinalizeCardDefeat(world, facts, step, events);
     }
 
     private static void ResolveMandatory(World world, IWindowAbilities abilities,
@@ -50,29 +45,15 @@ internal static class DefeatWindowResumption
             ?? throw new InvalidOperationException("a defeat resume has no containing occurrence");
         origin.Trigger(WindowKind.Interrupt, next);
         if (!ReferenceEquals(containing, origin)) containing.Trigger(WindowKind.Interrupt, next);
-        ActivityBatches.Append(events, abilities.Resolve(world, origin, next, [], []));
+        ActivityBatches.Append(events, abilities.ResolveWindow(world, origin, next, new Decision(next.Card, [], [])).Events);
         world.Agenda.ContinueBeforeOwner(containing, step, step with
         {
             Operation = operation with
             {
-                Window = operation.Window with { Abilities = [], Passed = [], Tier = next.Type },
+                Window = operation.Window with { Abilities = [], Passed = [] },
             },
             OccurrenceId = null,
         });
     }
 
-    private static IReadOnlyList<PendingAbility> FirstInterruptTier(
-        IWindowAbilities abilities, World world, Occurrence occurrence,
-        int excludeCard, AbilityType? after)
-    {
-        var tiers = AbilityWindow.Tiers(
-            abilities.Waiting(world, occurrence, WindowKind.Interrupt)
-                .Where(ability => ability.Card != excludeCard),
-            WindowKind.Interrupt, occurrence);
-        var tier = tiers.FirstOrDefault(candidate => after is null
-            || candidate.Priority > AbilityTypes.PriorityOf(after.Value));
-        if (tier.Abilities is null) return [];
-        var (forced, optional) = AbilityWindow.Split(tier);
-        return forced.Count > 0 ? [.. forced] : [.. optional];
-    }
 }

@@ -51,7 +51,8 @@ public sealed class AbilityRunner : ICardAbilities
     public IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player) => offerQueries.ResourceAbilities(world, player);
     public string ResourceGeneratorName(World world, int player, int card) => offerQueries.ResourceGeneratorName(world, player, card);
     public IReadOnlyList<ResourceSource> PrintedResourceAbilities(World world, int player) => offerQueries.PrintedResourceAbilities(world, player);
-    public string UseResource(World world, int player, int card, List<GameEvent> events) => resourceExecution.UseResource(world, player, card, events, this, this);
+    public ResourceExecutionResult UseResource(World world, AbilityExecution entry, int player, int card) =>
+        resourceExecution.UseResource(world, entry, player, card, this, this);
     public bool CanTakeDamage(World world, Card target, Card source) => AbilityProgramQueries.CanTakeDamage(world, program, target, source);
     public DamageProjection PreviewDamageReplacement(World world, Card target, Card source, long amount) => damageProjection.PreviewDamageReplacement(world, target, source, amount);
     public DefeatProjection? PreviewDefeatReplacement(World world, Card target, long maximumHealth) => damageProjection.PreviewDefeatReplacement(world, target, maximumHealth);
@@ -63,34 +64,51 @@ public sealed class AbilityRunner : ICardAbilities
     public IReadOnlyList<Card> PlayerSetupCards(World world, int player) => AbilityProgramQueries.PlayerSetupCards(world, program, player);
     public IReadOnlyList<PendingAbility> Actions(World world, int player) => offerQueries.Actions(world, player);
 
-    public IReadOnlyList<GameEvent> EntersPlay(World world, Card card) => resolution.EntersPlay(world, card);
-    public IReadOnlyList<GameEvent> ActivationCompleted(World world, EnemyActivation result) => resolution.ActivationCompleted(world, result);
-    public IReadOnlyList<GameEvent> ResumeAbility(World world, PhaseStep continuation) => resolution.ResumeAbility(world, continuation);
+    public AbilityExecutionResult EntersPlay(World world, AbilityExecution entry, Card card) =>
+        AbilityEntryExecution.Run(world, entry, () => resolution.EntersPlay(world, card));
+    public AbilityExecutionResult ActivationCompleted(World world, AbilityExecution entry, EnemyActivation result) =>
+        AbilityEntryExecution.Run(world, entry, () => resolution.ActivationCompleted(world, result));
+    public IReadOnlyList<GameEvent> ResumeAbility(World world, PhaseStep continuation) =>
+        continuation.Operation is AbilityContinuationAgendaOperation { Continuation: ResourceAbilityContinuation }
+            ? resourceExecution.Resume(world, continuation, this)
+            : continuation.Operation is AbilityContinuationAgendaOperation { Continuation: DamageReplacementContinuation }
+                ? AbilityDamageReplacementExecution.Resume(resolution, world, continuation)
+                : resolution.ResumeAbility(world, continuation);
     public void ResolveCardAttack(World world, CharacterAttack attack, Occurrence occurrence, List<GameEvent> events) => resolution.ResolveCardAttack(world, attack, occurrence, events);
     public void ResolveCardThwart(World world, CharacterThwart thwart, Occurrence occurrence, List<GameEvent> events) => resolution.ResolveCardThwart(world, thwart, occurrence, events);
-    public IReadOnlyList<GameEvent> Resolve(World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => resolution.Resolve(world, occurrence, ability, paying, chosen);
-    public IReadOnlyList<GameEvent> Resolve(World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, IReadOnlyDictionary<string, long>? values = null, IReadOnlyList<ResourceAllocation>? allocations = null) => resolution.Resolve(world, occurrence, ability, new Decision(ability.Card, chosen, paying, values, allocations));
-    public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player) => resolution.WhenRevealed(world, card, player);
+    public AbilityExecutionResult Resolve(World world, AbilityExecution invocation, Decision answer) => resolution.Resolve(world, invocation, answer);
     public IReadOnlyList<PendingAbility> WhenRevealedAbilities(World world, Card card, int player) => resolution.WhenRevealedAbilities(world, card, player);
-    public IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player, Occurrence occurrence) => resolution.WhenRevealed(world, card, player, occurrence);
+    public AbilityExecutionResult WhenRevealed(World world, AbilityExecution entry, Card card, int player) =>
+        AbilityEntryExecution.Run(world, entry, () => resolution.WhenRevealed(world, card, player, entry.Occurrence));
     public WhenRevealedCanceled? CancelWhenRevealed(World world, Card card, int player, Occurrence occurrence) => resolution.CancelWhenRevealed(world, card, player, occurrence);
-    public IReadOnlyList<GameEvent> Boost(World world, Card card, int player) => resolution.Boost(world, card, player);
-    public IReadOnlyList<GameEvent> ResolveSpecial(World world, Card card, int player, bool finalStep) => resolution.ResolveSpecial(world, card, player, finalStep);
-    public long WouldBeDealt(World world, Card target, Card source, long amount, List<GameEvent> events) => resolution.WouldBeDealt(world, target, source, amount, events);
+    public AbilityExecutionResult Boost(World world, AbilityExecution entry, Card card, int player) =>
+        AbilityEntryExecution.Run(world, entry, () => resolution.Boost(world, card, player));
+    public AbilityExecutionResult ResolveSpecial(World world, AbilityExecution entry, Card card, int player, bool finalStep) =>
+        AbilityEntryExecution.Run(world, entry, () => resolution.ResolveSpecial(world, card, player, finalStep));
+    public AbilityExecutionResult WouldBeDealt(World world, AbilityExecution entry, DamageReplacement replacement) =>
+        AbilityDamageReplacementExecution.Begin(resolution, world, entry, replacement);
     public long WouldTake(World world, Card target, Card source, long amount, List<GameEvent> events) => resolution.WouldTake(world, target, source, amount, events);
     public void DamagePreventedByTough(World world, Card target, Card source, List<GameEvent> events) => resolution.DamagePreventedByTough(world, target, source, events);
-    public void WouldBeDefeated(World world, Card target, List<GameEvent> events) => resolution.WouldBeDefeated(world, target, events);
-    public bool WouldBeDefeated(World world, Card target, Card source, string trigger, string verb, int by, List<GameEvent> events, Occurrence? recordDefeatOn = null) => resolution.WouldBeDefeated(world, target, source, trigger, verb, by, events, recordDefeatOn);
-    public IReadOnlyList<GameEvent> Setup(World world, Card card) => resolution.Setup(world, card);
+    public AbilityExecutionResult WouldBeDefeated(World world, AbilityExecution entry,
+        Card target, DefeatCause cause) =>
+        AbilityEntryExecution.Run(world, entry, () => resolution.WouldBeDefeated(world, target, cause, entry.Occurrence));
+    public AbilityExecutionResult Setup(World world, AbilityExecution entry, Card card) =>
+        AbilityEntryExecution.Run(world, entry, () => resolution.Setup(world, card));
     public IReadOnlyList<GameEvent> ResolveEachPlayer(World world, PhaseStep continuation) => new EachPlayerAbilityResolution(resolution).Resolve(world, continuation);
-    public IReadOnlyList<GameEvent> WhenCardDefeated(World world, Card card, Defeated defeated) => resolution.WhenCardDefeated(world, card, defeated);
-    public bool WhenCardDefeated(World world, Card card, Defeated defeated, string trigger, List<GameEvent> events) => resolution.WhenCardDefeated(world, card, defeated, trigger, events);
-    public IReadOnlyList<GameEvent> Act(World world, PendingAbility ability, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, IReadOnlyDictionary<string, long>? values = null, IReadOnlyList<ResourceAllocation>? allocations = null) => resolution.Act(world, ability, paying, chosen, values, allocations);
-    public IReadOnlyList<GameEvent> Act(World world, PendingAbility ability, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, Occurrence occurrence, IReadOnlyDictionary<string, long>? values = null, IReadOnlyList<ResourceAllocation>? allocations = null) => resolution.Act(world, ability, paying, chosen, occurrence, values, allocations);
-    public Prompt? Choosing(World world, PhaseStep continuation) => resolution.Choosing(world, continuation);
+    public AbilityExecutionResult WhenCardDefeated(World world, AbilityExecution entry,
+        Card card, Defeated defeated, string trigger) =>
+        AbilityEntryExecution.Run(world, entry, () => resolution.WhenCardDefeated(world, card, defeated, trigger, entry.Occurrence));
+    public Prompt? Choosing(World world, PhaseStep continuation) =>
+        continuation.Operation is AbilityContinuationAgendaOperation { Continuation: DamageReplacementContinuation }
+            ? AbilityDamageReplacementExecution.Choosing(resolution, world, continuation)
+            : resolution.Choosing(world, continuation);
     public Prompt? PreviewChoice(World world, Card source, int player, int position, AbilityType? tier = null, bool finalStep = false) =>
         AbilityChoicePreview.Describe(resolution, world, source, player, position, tier, finalStep);
-    public IReadOnlyList<GameEvent> Chose(World world, PhaseStep continuation, Decision input) => resolution.Chose(world, continuation, input);
+    public AbilityExecutionResult Act(World world, AbilityExecution invocation, Decision answer) => resolution.Act(world, invocation, answer);
+    public IReadOnlyList<GameEvent> Chose(World world, PhaseStep continuation, Decision input) =>
+        continuation.Operation is AbilityContinuationAgendaOperation { Continuation: DamageReplacementContinuation }
+            ? AbilityDamageReplacementExecution.Chose(resolution, world, continuation, input)
+            : resolution.Chose(world, continuation, input);
     public PersistentAbilityDescription DescribePersistent(Card card) => AbilityPersistentQueries.Describe(program, card);
 }
 

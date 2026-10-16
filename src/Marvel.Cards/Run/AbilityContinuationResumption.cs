@@ -19,6 +19,9 @@ internal static class AbilityContinuationResumption
         if (state.Reason == AbilityResumeReason.StartAbility)
             return new RunResumedNode(decoded.Ability, decoded.Ability.Effect,
                 state with { Reason = AbilityResumeReason.Choice });
+        if (state.Reason == AbilityResumeReason.DelayedEffect)
+            return new RunResumedNode(decoded.Ability, decoded.Node,
+                state with { Reason = AbilityResumeReason.Choice });
         if (state.Reason == AbilityResumeReason.RepeatSpecial)
             return new RunResumedNode(decoded.Ability, decoded.Node, state with
             { Reason = AbilityResumeReason.Choice },

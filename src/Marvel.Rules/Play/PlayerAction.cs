@@ -26,5 +26,5 @@ public sealed record PlayerAction(
     public IReadOnlyList<ResourceAllocation> Allocated => Allocations ?? [];
 
     private static IReadOnlyDictionary<string, long> EmptyValues { get; } =
-        new Dictionary<string, long>(StringComparer.Ordinal);
+        System.Collections.Immutable.ImmutableDictionary<string, long>.Empty;
 }

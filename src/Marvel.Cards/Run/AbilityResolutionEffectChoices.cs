@@ -54,7 +54,7 @@ internal static class AbilityResolutionEffectChoices
 
     /// <summary>"Deal N damage to …" — <c>rr:damage</c>.</summary>
     /// <remarks>
-    /// Through <see cref="DamagePlacement.Deal"/> and not at the token, because damage
+    /// Through <see cref="DamagePlacement.Resolve"/> and not at the token, because damage
     /// is one rule however it arrived: <c>rr:tough.2</c> prevents all of it and
     /// discards a status card instead, and <c>rr:defeat</c> is the other half
     /// of the same moment. A card that wrote to <c>k_damage</c> would skip
@@ -150,36 +150,15 @@ internal static class AbilityResolutionEffectChoices
         ScheduleActivationsCommand command, AbilityResolutionState cast)
     {
         int round = cast.World.Agenda.Current?.Round ?? 0;
-        var activations = new List<PhaseStep>();
-        foreach (var target in command.Targets)
-        {
-            activations.Add(new PhaseStep(
-                command.Effect.Attack ? new EnemyAttackOperation(command.Against) : new EnemySchemeOperation(),
-                round, 2, Index: target.Seat, Subject: target.Enemy.ObjectId,
-                Seat: target.Seat));
-        }
-
-        var activationIds = new List<int>();
-        foreach (var activation in activations)
-        {
-            if (command.Dynamic)
-            {
-                cast.Results[$"dynamicActivation:{activation.Subject}"] = 1;
-            }
-            if (command.First)
-            {
-                activationIds.Add(cast.World.Agenda.NowActivation(activation));
-            }
-            else
-            {
-                activationIds.Add(cast.World.Agenda.ThenActivation(activation));
-            }
-        }
+        bool duringActivation = cast.World.Agenda.Current?.ActivationId >= 0;
+        var activationIds = EnqueueActivations(command, cast, round);
 
         cast.World.Effects.BindScheduledActivations(
             cast.Occurrence.Id, cast.Source.ObjectId, activationIds);
         if (activationIds.Count > 0)
         {
+            if (duringActivation && !command.First && cast.Execution is { } invocation)
+                cast.World.Agenda.Executions.DeferActivation(invocation);
             int abilityOrdinal = execution.AbilityOrdinal(command.Effect, cast);
             var capture = AbilityContinuationScheduling.ForActivations(
                 execution.Capture(cast, abilityOrdinal), command.Dynamic);
@@ -192,6 +171,23 @@ internal static class AbilityResolutionEffectChoices
         {
             AbilityContinuations.CompleteDynamicActivation(cast.Results);
         }
+    }
+
+    private static List<int> EnqueueActivations(ScheduleActivationsCommand command,
+        AbilityResolutionState cast, int round)
+    {
+        var activationIds = new List<int>();
+        foreach (var target in command.Targets)
+        {
+            var activation = new PhaseStep(
+                command.Effect.Attack ? new EnemyAttackOperation(command.Against) : new EnemySchemeOperation(),
+                round, 2, Index: target.Seat, Subject: target.Enemy.ObjectId, Seat: target.Seat);
+            if (command.Dynamic) cast.Results[$"dynamicActivation:{activation.Subject}"] = 1;
+            activationIds.Add(command.First
+                ? cast.World.Agenda.NowActivation(activation)
+                : cast.World.Agenda.ThenActivation(activation));
+        }
+        return activationIds;
     }
 
     /// <summary>Resume the containing ability after a rules procedure finishes.</summary>
@@ -261,7 +257,8 @@ internal static class AbilityResolutionEffectChoices
             new AbilityMemory(cast.Results.ToImmutableDictionary(StringComparer.Ordinal),
                 [.. cast.Discarded.Select(card => card.ObjectId)], binding, crisis,
                 cast.CaptureSourceState(), cast.GainedKeywords.Contains("surge")))
-        { Completion = cast.PendingCompletion, CompletedOutcome = cast.CompletedOutcome };
+        { Execution = cast.Execution, Completion = cast.PendingCompletion, DamageCompletion = cast.PendingDamageCompletion,
+            CompletedOutcome = cast.CompletedOutcome, Payment = cast.PendingPayment, DamageReplacement = cast.DamageReplacement };
 
     }
 

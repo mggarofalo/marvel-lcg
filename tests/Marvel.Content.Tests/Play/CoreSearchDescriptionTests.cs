@@ -56,7 +56,7 @@ public sealed class CoreSearchDescriptionTests
         var runner = AuthoredCards.Runner();
         var occurrence = new Occurrence(1, [Steps.CardEntersPlay], Subject: shuri.ObjectId, Player: 0);
         var response = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
-        runner.Resolve(world, occurrence, response, [], []);
+        runner.ResolveWindow(world, occurrence, response, new Decision(response.Card, [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
 
         Prompt prompt = runner.Choosing(world, choice)!;

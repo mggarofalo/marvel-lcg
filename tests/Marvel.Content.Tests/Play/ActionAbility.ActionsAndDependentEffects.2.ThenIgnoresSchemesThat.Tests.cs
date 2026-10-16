@@ -189,9 +189,10 @@ public sealed class ActionAbilityActionsAndDependentEffectsThenIgnoresSchemesTha
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
         int held = world.Seats[0].Hand.Cards.Count;
-        runner.WhenRevealed(world, source!, 0);
+        runner.ExecuteReveal(world, source!, 0);
         var attack = Assert.Single(world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
-        runner.ActivationCompleted(world, new EnemyActivation(attack.Subject, attack.Seat, Attacking: true, attack.ActivationId, Made: false));
+        Statuses.Give(world, world.Cards[attack.Subject], Statuses.Stunned);
+        Sequence.Work(world, world.Facts, runner, []);
         Assert.True(source!.Ready);
         Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }

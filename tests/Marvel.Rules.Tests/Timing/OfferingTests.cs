@@ -300,12 +300,11 @@ public sealed class OfferingTests
             World world, Occurrence occurrence, WindowKind window) =>
             [.. waiting.Where(ability => ability.Card != WithdrawnCard)];
 
-        public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
+        public override AbilityExecutionResult Resolve(
+            World world, AbilityExecution invocation, Decision answer)
         {
-            Resolved.Add(ability.Card);
-            return [new CardsFlipped([ability.Card], true) { Trigger = "test" }];
+            Resolved.Add(invocation.Ability.Card);
+            return invocation.Finish([new CardsFlipped([invocation.Ability.Card], true) { Trigger = "test" }]);
         }
 
         public override Affordance Describe(World world, PendingAbility ability) =>

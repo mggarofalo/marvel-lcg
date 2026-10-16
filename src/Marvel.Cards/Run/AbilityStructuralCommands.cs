@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.State;
 using Marvel.Rules.Play;
@@ -7,7 +8,7 @@ namespace Marvel.Cards.Run;
 /// <summary>Applies the structural owner's explicit commands and suspension transitions.</summary>
 internal static class AbilityStructuralCommands
 {
-    private static readonly HashSet<Type> DirectStructuralTransitionTypes =
+    private static readonly ImmutableArray<Type> DirectStructuralTransitionTypes =
     [
         typeof(StartSequenceCommand), typeof(StartDependentCommand),
         typeof(StartForEachCommand), typeof(StartEachTimeCommand),

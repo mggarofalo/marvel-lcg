@@ -217,7 +217,7 @@ public static class Reveal
 
         // Card-specific entry state is still part of the transition and must
         // exist before an "after this card enters play" response is read.
-        ActivityBatches.Append(events, (abilities ?? world.CardPlayAbilities).EntersPlay(world, card));
+        ActivityBatches.Append(events, (abilities ?? world.CardPlayAbilities).ExecuteEntry(world, card).Events);
 
         // A newly active constant may grant stalwart to its own character or
         // to another one already in play. `rr:stalwart.2` removes both kinds of

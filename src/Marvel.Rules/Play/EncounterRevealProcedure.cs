@@ -229,7 +229,7 @@ internal static class EncounterRevealProcedure
             }
 
             RevealKeywords.Keywords(world, facts, abilities, card, player, events, occurrence);
-            ActivityBatches.Append(events, abilities.WhenRevealed(world, card, player, occurrence));
+            ActivityBatches.Append(events, abilities.ExecuteReveal(world, card, player, occurrence).Events);
         }
 
         FinishEncounterRevealTail(

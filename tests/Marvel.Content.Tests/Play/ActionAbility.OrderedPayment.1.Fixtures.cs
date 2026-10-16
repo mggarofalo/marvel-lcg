@@ -38,12 +38,14 @@ internal static class ActionAbilityOrderedPaymentFixtures
         internal int Uses { get; private set; }
 
         public override IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player) => [new(generator.ObjectId, resources)];
-        public override string UseResource(World world, int player, int card, List<GameEvent> events)
+        public override ResourceExecutionResult UseResource(World world, AbilityExecution entry, int player, int card)
         {
             Assert.Equal(generator.ObjectId, card);
             Uses++;
             commit();
-            return resources;
+            var receipt = new ResourceGenerationReceipt(world, entry);
+            receipt.Complete(world, entry, resources);
+            return new(entry.Finish([]), receipt);
         }
     }
 
@@ -53,6 +55,6 @@ internal static class ActionAbilityOrderedPaymentFixtures
         public override bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1) => throw new InvalidOperationException("the unrelated World threat port was used");
         public override IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player) => throw new InvalidOperationException("the unrelated World resource port was used");
         public override string ResourcesGeneratedBy(World world, Card source, Card? payingFor) => throw new InvalidOperationException("the unrelated World resource port was used");
-        public override string UseResource(World world, int player, int card, List<GameEvent> events) => throw new InvalidOperationException("the unrelated World resource port was used");
+        public override ResourceExecutionResult UseResource(World world, AbilityExecution entry, int player, int card) => throw new InvalidOperationException("the unrelated World resource port was used");
     }
 }

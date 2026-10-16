@@ -35,7 +35,7 @@ namespace Marvel.Rules.Play;
 /// </para>
 /// <para>
 /// The earlier "would be defeated" interrupt is <c>rr:damage.step.6</c> and
-/// resolves in <c>Damage.Deal</c> before this class is called. If it changes
+/// resolves in <c>DamagePlacement.Resolve</c> before this class is called. If it changes
 /// the imminent defeat, <c>rr:would.1</c> means this class is not reached.
 /// </para>
 /// </remarks>
@@ -68,8 +68,8 @@ public static class Defeat
     /// The occurrence the defeat joins when an internal plan is applying it.
     /// Null uses the current agenda occurrence.
     /// </param>
-    /// <returns>True, so that a caller can report it in one expression.</returns>
-    public static bool Character(
+    /// <returns>Whether defeat finalized or is waiting for owned interrupt work.</returns>
+    public static Damage.Outcome Character(
         World world, ICardFacts facts, Card character, string trigger, List<GameEvent> events,
         string how = "", int by = -1, Timing.Occurrence? recordOn = null)
     {
@@ -79,7 +79,8 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(events);
 
         var defeated = Record(world, character, by, how, recordOn);
-        var occurrence = world.Agenda.Occurrence!;
+        var owner = world.Agenda.Current;
+        var containing = world.Agenda.Occurrence;
 
         // `rr:damage.step.7` -- "abilities that trigger *when [character] is
         // defeated…* *(including **When Defeated** abilities)*". The card's own
@@ -93,25 +94,19 @@ public static class Defeat
         // where it was, which is what lets an ability read its own tokens and
         // what is attached to it.
         //
-        // A call and not a window because everything here is forced, and
-        // `rr:forced.1` leaves nothing to offer and nothing to decline. The
-        // occurrence's interrupt window closed before the damage that caused
-        // this was dealt, and `rr:damage`'s own order is what says that is not
-        // where these belong.
-        if (!world.DamageAbilities.WhenCardDefeated(
-                world, character, defeated, trigger, events))
+        // Step seven owns its interrupt batch. Finalization waits for every
+        // selected ability and nested procedure before the card leaves play.
+        var result = world.DamageAbilities.ExecuteDefeat(world, character, defeated, trigger);
+        ActivityBatches.Append(events, result.Events);
+        if (!result.IsComplete)
         {
-            return false;
-        }
-
-        if (!ReferenceEquals(world.Agenda.Occurrence, occurrence))
-        {
-            Defer(world, occurrence, character, trigger, DefeatCompletionKind.FinalizeCharacterDefeat);
-            return true;
+            DefeatScheduling.Finalize(world, owner, containing, character,
+                new DefeatCompletionOperation(DefeatCompletionKind.FinalizeCharacterDefeat, trigger, character.Incarnation), result.Invocation);
+            return Damage.Outcome.Suspended;
         }
 
         FinalizeCharacter(world, facts, character, trigger, events);
-        return true;
+        return Damage.Outcome.Defeated;
     }
 
     /// <summary>Damage step 8: move or eliminate a defeated card.</summary>
@@ -190,19 +185,17 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(facts);
 
         var defeated = Record(world, scheme, by, BasicPowers.ThwartVerb, recordOn);
-        var occurrence = world.Agenda.Occurrence!;
+        var owner = world.Agenda.Current;
+        var containing = world.Agenda.Occurrence;
 
         // `rr:when-defeated-abilities.2` lists a side scheme among the cards
         // this happens to, and `.2.1` puts it before the card goes.
-        if (!world.DamageAbilities.WhenCardDefeated(
-                world, scheme, defeated, trigger, events))
+        var result = world.DamageAbilities.ExecuteDefeat(world, scheme, defeated, trigger);
+        ActivityBatches.Append(events, result.Events);
+        if (!result.IsComplete)
         {
-            return;
-        }
-
-        if (!ReferenceEquals(world.Agenda.Occurrence, occurrence))
-        {
-            Defer(world, occurrence, scheme, trigger, DefeatCompletionKind.FinalizeSchemeDefeat);
+            DefeatScheduling.Finalize(world, owner, containing, scheme,
+                new DefeatCompletionOperation(DefeatCompletionKind.FinalizeSchemeDefeat, trigger, scheme.Incarnation), result.Invocation);
             return;
         }
 
@@ -219,24 +212,6 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(events);
 
         VictoryDisplay.MoveDefeatedCard(world, facts, scheme, trigger, events);
-    }
-
-    /// <summary>Put damage step 8 after nested step-7 agenda work.</summary>
-    private static void Defer(
-        World world, Timing.Occurrence occurrence, Card card, string trigger, DefeatCompletionKind step)
-    {
-        var current = world.Agenda.Current
-            ?? throw new InvalidOperationException("nested defeat work has no agenda step");
-        world.Agenda.Before(
-            occurrence,
-            new PhaseStep(
-                new DefeatCompletionOperation(step, trigger),
-                current.Round,
-                current.Number,
-                Index: current.Index,
-                Subject: card.ObjectId,
-                Plan: true
-            ));
     }
 
     /// <summary>

@@ -87,17 +87,5 @@ public sealed class EngineRandomTests
         Assert.Throws<ArgumentOutOfRangeException>(() => random.Choice2(Four, -1));
     }
 
-    [Fact]
-    public void ReseedingRestartsTheStream()
-    {
-        // A seed names a game, so seeding twice with one value has to produce
-        // one game. `SetSeed` reinitialises the state rather than mixing into
-        // it.
-        var random = new EngineRandom(5489u);
-        uint first = random.Generator.NextUInt32();
 
-        random.SetSeed(5489u);
-
-        Assert.Equal(first, random.Generator.NextUInt32());
-    }
 }

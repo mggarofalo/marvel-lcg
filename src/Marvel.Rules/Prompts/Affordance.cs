@@ -1,79 +1,23 @@
 namespace Marvel.Rules.Prompts;
 
-/// <summary>
-/// One thing a player can do right now, anchored to the object they click.
-/// </summary>
-/// <param name="Id">
-/// What gets handed back to take this. Opaque to the client, and valid only
-/// within the session that issued it — see the remarks.
-/// </param>
-/// <param name="Verb">
-/// What kind of thing this is — <c>Play</c>, <c>Attack</c>, <c>Thwart</c>,
-/// <c>Change_Form</c>, <c>Ask</c>. A domain word, not a UI word.
-/// </param>
-/// <param name="AnchorId">
-/// The board object the player interacts with to take this. Always present:
-/// measured informative on 100% of 6,351 sampled options.
-/// </param>
-/// <param name="AnchorPlayer">Whose board the anchor sits on.</param>
-/// <param name="Label">
-/// The domain-level label, unchanged from what the original investigation requires of the prompt
-/// so the spec suite is unaffected.
-/// </param>
-/// <param name="Targets">
-/// What still has to be chosen before this can resolve, or <c>null</c> when it
-/// takes no targets. Informative on <b>86.5%</b> of sampled options.
-/// </param>
-/// <param name="Costs">
-/// What it costs and the ways to pay, per target. Informative on <b>53.5%</b>.
-/// Empty when free.
-/// </param>
-/// <param name="Illegal">
-/// Why this cannot be taken, or <c>null</c> when it can.
-/// </param>
+/// <summary>One engine-offered action with its anchor, target constraints and payment options.</summary>
+/// <param name="Id">Opaque handle valid only for the issuing prompt.</param>
+/// <param name="Verb">The engine-authored domain action.</param>
+/// <param name="AnchorId">Object identity within the namespace named by AnchorKind.</param>
+/// <param name="AnchorPlayer">Seat whose board holds the anchor.</param>
+/// <param name="Label">Domain label used when identifying the offered choice.</param>
+/// <param name="Targets">Required selections, or null when the offer takes no targets.</param>
+/// <param name="Costs">Complete alternative costs; null or empty when free.</param>
+/// <param name="Illegal">Why the offer cannot be taken, or null when legal.</param>
 /// <param name="Description">Readable action text supplied by the engine.</param>
 /// <remarks>
-/// <para>
-/// <b><paramref name="Id"/> is a handle, not a name.</b> Ids are allocated per
-/// session, so an id written down in one run does not necessarily name the same
-/// option in another. the original investigation measured the drift and found it real but
-/// narrow — nine of 5,809 recorded inputs, all of one ability kind, every one of
-/// the nine <b>exactly 25 too high</b>, across four scenes in four different
-/// campaigns. A recorded id therefore has to be re-resolved rather than
-/// trusted.
-/// </para>
-/// <para>
-/// In that corpus, <paramref name="AnchorId"/> and <paramref name="Verb"/>
-/// resolved every drifted input uniquely. <see cref="AnchorKind"/> is part of
-/// that identity because card and area ids have separate namespaces. Multiplayer requires
-/// <paramref name="AnchorPlayer"/> to distinguish who takes an implied shared
-/// action, and multiple actions on one card require <paramref name="Label"/>.
-/// A consumer that persists an affordance must therefore persist
-/// (AnchorKind, AnchorId, AnchorPlayer, Verb, Label) plus its zero-based occurrence among
-/// exact matches, and never persist the id. Repeated choice nodes in printed
-/// order can otherwise be identical on every public field. The rules define
-/// no persistent command identifier; this is the engine's wire-format choice.
-/// </para>
-/// <para>
-/// This replaces a list of option strings. The strings were enough for a web
-/// client that repaints a document; a game needs to know which card on the table
-/// the option belongs to, which is what <paramref name="AnchorId"/> is for.
-/// </para>
-/// <para>
-/// <b>On the size of this record.</b> The original sketch in
-/// <c>presentation-layer.md</c> had five fields and omitted both
-/// <paramref name="Targets"/> and <paramref name="Costs"/>. Measured against
-/// what the engine already renders, those two are informative on 86.5% and 53.5%
-/// of options respectively — they are not edge cases, they are most of what a
-/// player is actually deciding. See <c>docs/affordances.md</c>.
-/// </para>
-/// <para>
-/// <b>A wire type.</b> Integers, strings and lists of them, no references into
-/// engine state — same constraint as the event stream, and for the same two
-/// reasons: these cross a socket in the hosted case, and a live reference would
-/// let the view layer read hidden state through a field that was only meant to
-/// say what is clickable.
-/// </para>
+/// These are value contracts without references to live game state. View snapshots
+/// copy their nested collection storage and filter disclosure for the authorized seat.
+/// Clients assess drafts through engine-owned legality; an offered handle alone is
+/// neither enduring authority nor a persistent command identity. Replay identifies
+/// the current offer through its semantic address, including the anchor namespace,
+/// acting seat and occurrence among otherwise identical options. This address is an
+/// engine wire-format choice; see docs/affordances.md and docs/session-ledger.md.
 /// </remarks>
 public sealed record Affordance(
     int Id,

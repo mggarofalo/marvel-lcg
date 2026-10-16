@@ -144,7 +144,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationACompiledDamageCostResu
         Assert.Equal(1, target.Min);
         Assert.Equal(1, target.Max);
         Assert.Equal([ally!.ObjectId], target.Legal);
-        runner.Act(world, pending, [], [ally.ObjectId]);
+        runner.ExecuteAction(world, new PlayerAction(pending, [], [ally.ObjectId]));
         Assert.False(ally.Ready);
     }
 
@@ -283,7 +283,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationACompiledDamageCostResu
         Assert.Contains("01080", runner.Authored);
         Assert.Equal(world.FirstPlayer, runner.SetupController(world, source!));
         Assert.Equal(new CardCounterPool("medical", 3, Uses: true), runner.CounterPool(world, source!));
-        Assert.Empty(runner.WhenRevealed(world, source!, 0));
+        Assert.Empty(runner.ExecuteReveal(world, source!, 0).Events);
         runner.ValidateForPlay(world);
     }
 }

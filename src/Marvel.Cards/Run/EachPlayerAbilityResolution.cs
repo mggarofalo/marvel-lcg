@@ -13,6 +13,7 @@ internal sealed class EachPlayerAbilityResolution(AbilityResolutionExecution exe
     /// <inheritdoc/>
     internal IReadOnlyList<GameEvent> Resolve(World world, PhaseStep step)
     {
+        world.Agenda.Executions.RequireContinuation(step);
         var state = AbilityContinuationFrames.StateOf(step)
             ?? throw new InvalidOperationException("the each-player operation has no interpreter frame");
         var source = world.Cards[step.Subject];

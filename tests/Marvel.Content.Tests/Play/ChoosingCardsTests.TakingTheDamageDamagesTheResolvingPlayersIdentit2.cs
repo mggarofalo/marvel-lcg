@@ -53,8 +53,8 @@ public sealed class ChoosingCardsTakingTheDamageDamagesTheResolvingPlayersIdenti
         var world = Deal();
         var(card, _) = Reveal(world, AuthoredCards.HydraBomber);
         var runner = AuthoredCards.Runner();
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Decline));
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(2)));
+        Assert.Throws<ArgumentException>(() => runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Decline));
+        Assert.Throws<ArgumentException>(() => runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(2)));
     }
 
     [Rule("rr:surge.2")]
@@ -113,7 +113,7 @@ public sealed class ChoosingCardsTakingTheDamageDamagesTheResolvingPlayersIdenti
         var identity = world.Seats[0].IdentityCard;
         var card = world.CreateCard(AuthoredCards.HydraBomber, world.AreaOf(DeckType.RevealingArea));
         int held = world.Seats[0].Hand.Cards.Count;
-        runner.WhenRevealed(world, card, 0);
+        runner.ExecuteReveal(world, card, 0);
         // The question is out and the step after it has not happened.
         var waiting = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(Steps.ChooseOption, waiting.What);
@@ -146,7 +146,7 @@ public sealed class ChoosingCardsTakingTheDamageDamagesTheResolvingPlayersIdenti
         var identity = world.Seats[0].IdentityCard;
         var card = world.CreateCard(AuthoredCards.HydraBomber, world.AreaOf(DeckType.RevealingArea));
         int held = world.Seats[0].Hand.Cards.Count;
-        runner.WhenRevealed(world, card, 0);
+        runner.ExecuteReveal(world, card, 0);
         var first = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(1, first.Index);
         // Answering the first asks the second, at the next index.
@@ -182,7 +182,7 @@ public sealed class ChoosingCardsTakingTheDamageDamagesTheResolvingPlayersIdenti
         var identity = world.Seats[0].IdentityCard;
         var card = world.CreateCard(AuthoredCards.HydraBomber, world.AreaOf(DeckType.RevealingArea));
         int held = world.Seats[0].Hand.Cards.Count;
-        runner.WhenRevealed(world, card, 0);
+        runner.ExecuteReveal(world, card, 0);
         Assert.Equal([0], world.Agenda.Outstanding.Select(step => Assert.IsType<AbilityContinuationState>(step.Require<AbilityContinuationAgendaOperation>().Continuation).Invocation.Address.Ordinal));
         var events = new List<GameEvent>();
         var first = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));

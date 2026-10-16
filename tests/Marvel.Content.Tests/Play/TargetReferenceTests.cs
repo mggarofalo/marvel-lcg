@@ -34,7 +34,7 @@ public abstract class TargetReferenceTestBase
         world.Seats[0].IdentityCard.TurnTo(identity);
         var abilitySource = world.CreateCard(source, world.AreaOf(DeckType.RevealingArea, PlayArea.Of(0)));
         var sameTitledAlly = InPlay(world, unrelated, DeckType.AlliesArea);
-        runner.WhenRevealed(world, abilitySource, 0);
+        runner.ExecuteReveal(world, abilitySource, 0);
         Assert.True(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Tough));
         Assert.False(Statuses.Has(world, sameTitledAlly, Statuses.Tough));
     }

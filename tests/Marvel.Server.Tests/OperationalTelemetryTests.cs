@@ -70,14 +70,6 @@ public sealed class OperationalTelemetryTests
     }
 
     [Fact]
-    public void NoOpExporterIsTheDefaultSafeConsumer()
-    {
-        var sink = new OperationalTelemetrySink(new NoOpTelemetryExporter());
-
-        sink.Write(Record(EngineProtocol.Resolve, "accepted"));
-    }
-
-    [Fact]
     public void TransportAndHostSignalsShareATraceWithoutExposingTheirRequestLabel()
     {
         var exporter = new CollectingExporter();

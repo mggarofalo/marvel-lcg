@@ -17,26 +17,21 @@ internal static class SequenceWindow
         if (kind == WindowKind.Interrupt && step.What == Steps.RevealEncounterCard)
             EncounterRevealExposure.Prepare(world, world.Cards[step.Subject], step.Seat, events);
         var occurrence = world.Agenda.Begin(world, facts);
-        if (!PrepareIndirectWindow(world, step, occurrence, events)) return null;
+        if (kind == WindowKind.Interrupt
+            && !DamageWindowPreparation.Prepare(world, step, occurrence, events)) return null;
 
         var status = new PriorityStatusResolution(world, facts, step, occurrence, kind, events);
-        IWindowAbilities offered = step.What == Steps.PrepareIndirectAttackDamage
+        IWindowAbilities offered = step.What is Steps.PrepareIndirectAttackDamage or Steps.DealAttackDamage
             ? new OptionalDamageInterrupts(abilities) : abilities;
         Prompt? question = Offering.Work(
             world, offered, occurrence, kind, events, scope, status.Resolve);
         if (question is not null) return AttackPromptContext.WithAttackContext(world, facts, step, question);
 
-        if (WindowIsSuspended(world.Agenda, step, occurrence)) return null;
+        if (world.Agenda.Executions.Blocks(occurrence)) return null;
 
         FinishWindow(world, step, occurrence, status);
         return null;
     }
-
-    // A suspended triggered ability owns the next work while its original
-    // window remains outstanding. Cancellation removes that window instead.
-    private static bool WindowIsSuspended(Agenda agenda, PhaseStep owner, Occurrence occurrence) =>
-        (agenda.Current is not { } current || !current.SameFrameAs(owner))
-        && agenda.IsOutstanding(owner, occurrence);
 
     private static void FinishWindow(World world, PhaseStep step, Occurrence occurrence,
         PriorityStatusResolution status)
@@ -49,19 +44,6 @@ internal static class SequenceWindow
         else world.Agenda.Advance(occurrence);
     }
 
-    private static bool PrepareIndirectWindow(
-        World world, PhaseStep step, Occurrence occurrence, List<GameEvent> events)
-    {
-        if (step.What != Steps.PrepareIndirectAttackDamage
-            || Attack.PrepareIndirectDamage(world, step, events) > 0)
-        {
-            return true;
-        }
-        if (world.Windows.Current is not null) world.Windows.Close();
-        world.Agenda.Cancel(step, occurrence);
-        return false;
-    }
-
     private static void CancelAttackWindow(
         World world, PhaseStep step, Occurrence occurrence, bool cancelOccurrence)
     {
@@ -70,6 +52,86 @@ internal static class SequenceWindow
         if (world.Windows.Current is not null) world.Windows.Close();
         if (cancelOccurrence) world.Agenda.Cancel(step, occurrence);
     }
+
+    internal static void Answer(
+        World world, ICardFacts facts, Prompt asked, Decision input, List<GameEvent> events)
+    {
+        IWindowAbilities abilities = world.WindowAbilities;
+        var window = world.Windows.Current
+            ?? throw new InvalidOperationException("the bound window is no longer open");
+        if (input.IsDecline)
+        {
+            DeclineWindow(world, asked, window);
+            return;
+        }
+
+        PendingAbility ability = AcceptedAbility(world, abilities, window, asked, input);
+
+        window.Occurrence.Trigger(window.Kind, ability);
+
+        // `rr:initiating-abilities.step.5` -- what the player spent is part of
+        // the answer, not something the engine picks for them. Empty when the
+        // affordance was free, which is almost all of them.
+        var healthBefore = world.Effects.CaptureCharacterHealth();
+        ActivityBatches.Append(events, abilities.ResolveWindow(
+            world, window.Occurrence, ability, input).Events);
+        Statuses.RemoveAfflictionsIfStalwart(
+            world, facts, "stalwart", events);
+        world.Effects.SettleLostHealth(healthBefore, asked.Trigger, events);
+
+        if (window.Occurrence.Threat is { Replaced: true })
+        {
+            // `rr:replacement-effect.1`: the original effect is no longer
+            // imminent, so it has neither further interrupts nor responses.
+            world.Windows.Close();
+            world.Agenda.Cancel(window.Occurrence);
+            return;
+        }
+
+        // Not a close: rr:interrupt.5 is about *further* abilities, so using one
+        // gives everybody another opportunity and the step stays where it is.
+        world.Windows.Used();
+    }
+
+    private static PendingAbility AcceptedAbility(
+        World world, IWindowAbilities abilities, Window window, Prompt asked, Decision input)
+    {
+        var taken = Offering.CurrentlyAvailable(world, abilities, window, asked.Player)
+            .Select(ability => (Ability: ability, Offered: abilities.Describe(world, ability)))
+            .Where(pair => pair.Offered.Id == input.Affordance
+                && (asked.Asking != Question.Opportunity
+                    || pair.Ability.Player == asked.Player
+                    || pair.Ability.Player < 0))
+            .Select(pair => (PendingAbility?)pair.Ability)
+            .FirstOrDefault();
+
+        if (taken is not { } ability)
+        {
+            throw new RulesNotImplementedException(
+                $"affordance {input.Affordance} is not on offer in '{asked.Label}'");
+        }
+
+        return ability;
+    }
+
+    private static void DeclineWindow(World world, Prompt asked, Window window)
+    {
+        // "Forced Interrupt" and "Forced Response" abilities must resolve (rr:forced.1).
+        if (!asked.Cancellable)
+            throw new RulesNotImplementedException($"'{asked.Label}' cannot be declined");
+        Passed(world, window.Occurrence, world.Windows.Pass());
+    }
+    // Answering the last question of a window finishes that part of the step.
+    // Without this the walk would find no window open, take that for "not yet
+    // opened", and ask the same question again.
+    private static void Passed(World world, Occurrence occurrence, bool closed)
+    {
+        if (closed && world.Agenda.IsBusy)
+        {
+            world.Agenda.Advance(occurrence);
+        }
+    }
+
 
     private sealed class PriorityStatusResolution(
         World world, ICardFacts facts, PhaseStep step, Occurrence occurrence,

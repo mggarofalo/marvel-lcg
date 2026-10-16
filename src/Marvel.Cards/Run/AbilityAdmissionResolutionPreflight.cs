@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
 using static Marvel.Cards.Run.AbilityPowerProjection;
@@ -17,12 +18,12 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilityAdmissionResolutionPreflight
 {
-    private static readonly HashSet<string> BindingChangingGuardOperations =
+    private static readonly ImmutableArray<string> BindingChangingGuardOperations =
     [
         "chooseCard", "thwartSchemes", "thwartDifferentSchemes", "legalPractice",
     ];
 
-    private static readonly HashSet<string> StateChangingGuardOperations =
+    private static readonly ImmutableArray<string> StateChangingGuardOperations =
     [
         "afterActivation", "delayUntil", "defense", "payOrEffect", "payOrExhaust",
     ];

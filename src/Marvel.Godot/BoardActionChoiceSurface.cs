@@ -9,13 +9,21 @@ internal static class BoardActionChoiceSurface
     private static CanvasLayer? active;
     private static Control? opener;
     private static Func<bool>? current;
+    private static object? owner;
+
+    internal static bool IsOwnedBy(object candidate) => active is { } layer
+        && IsActive(layer) && ReferenceEquals(owner, candidate);
+
+    private static bool IsActive(CanvasLayer layer) => ReferenceEquals(active, layer)
+        && GodotObject.IsInstanceValid(layer) && !layer.IsQueuedForDeletion();
 
     internal static void Show(
         Control source,
         IReadOnlyList<AffordancePresentation> actions,
         Func<bool> isCurrent,
         Action<int> choose,
-        bool recipientCommitments = false)
+        bool recipientCommitments = false,
+        object? choiceOwner = null)
     {
         Close();
         if (actions.Count < (recipientCommitments ? 1 : 2) || !InteractionControl.IsUsable(source))
@@ -26,8 +34,9 @@ internal static class BoardActionChoiceSurface
         while (host.GetParent() is Control parent) host = parent;
         var layer = new CanvasLayer { Name = "CardActionLayer", Layer = 24 };
         active = layer;
-        opener = source.GetViewport().GuiGetFocusOwner() ?? source;
+        opener = FocusOpener(source);
         current = isCurrent;
+        owner = choiceOwner;
         host.AddChild(layer);
         var overlay = new Control { MouseFilter = Control.MouseFilterEnum.Ignore };
         layer.AddChild(overlay);
@@ -50,16 +59,24 @@ internal static class BoardActionChoiceSurface
         if (states.Length == 1)
             stack.AddChild(new Label { Text = states[0], ThemeTypeVariation = GodotThemeVariations.Caption });
         Button? first = null;
+        Func<bool> valid = ChoiceValidity(layer, isCurrent);
         foreach (AffordancePresentation action in actions)
         {
-            Button button = AddActionButton(stack, action, isCurrent, choose, recipientCommitments, states.Length != 1);
+            Button button = AddActionButton(stack, action, valid,
+                choose, recipientCommitments, states.Length != 1);
             first ??= button;
         }
         popup.AddChild(stack);
         PlaceWhenSettled(source, popup, stack);
         ContainFocus(source, stack);
-        FocusFirst(first, isCurrent);
+        FocusFirst(first, valid);
     }
+
+    private static Control FocusOpener(Control source) =>
+        source is Button ? source : source.GetViewport().GuiGetFocusOwner() ?? source;
+
+    private static Func<bool> ChoiceValidity(CanvasLayer layer, Func<bool> isCurrent) =>
+        () => IsActive(layer) && isCurrent();
 
     private static void PlaceWhenSettled(Control source, PanelContainer popup, VBoxContainer stack)
     {
@@ -87,8 +104,9 @@ internal static class BoardActionChoiceSurface
         button.SetMeta("offered_verb", action.Verb);
         button.Pressed += () =>
         {
-            if (isCurrent()) choose(action.Id);
+            if (!isCurrent()) return;
             Close();
+            choose(action.Id);
         };
         stack.AddChild(button);
         DecisionCostLabel.AttachTo(button, action);
@@ -186,5 +204,6 @@ internal static class BoardActionChoiceSurface
         active = null;
         opener = null;
         current = null;
+        owner = null;
     }
 }

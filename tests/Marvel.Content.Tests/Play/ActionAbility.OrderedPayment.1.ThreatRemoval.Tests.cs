@@ -28,7 +28,7 @@ public sealed class ActionAbilityOrderedPaymentThreatRemovalTests
         var scheme = world.CreateCard("01137b", world.AreaOf(DeckType.MainSchemesArea));
         scheme.PlaceTokens("k_threat", 2);
         world.Abilities = new UnrelatedPaymentAbilities();
-        runner.Act(world, Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId), [], []);
+        runner.ExecuteAction(world, new PlayerAction(Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId), [], []));
         Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat"));
     }
 
@@ -55,7 +55,7 @@ public sealed class ActionAbilityOrderedPaymentThreatRemovalTests
         var generator = InPlay(world, "01091");
         world.Abilities = new UnrelatedPaymentAbilities();
         var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
-        runner.Act(world, action, [generator.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [generator.ObjectId], []));
         Assert.Equal(1, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_test"));
         Assert.True(generator.Ready);
     }
@@ -77,7 +77,7 @@ public sealed class ActionAbilityOrderedPaymentThreatRemovalTests
         source.TakeDamage(1);
         world.Abilities = new UnrelatedPaymentAbilities();
         var occurrence = new Occurrence(0, ["Probe"], Subject: source.ObjectId, Player: 0);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Resolve(world, occurrence, new PendingAbility(source.ObjectId, AbilityType.Response, 0), [], []));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ResolveWindow(world, occurrence, new PendingAbility(source.ObjectId, AbilityType.Response, 0), new Decision(source.ObjectId, [], [])));
         Assert.Equal(1, source.Damage);
         Assert.Equal(0, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_test"));
     }
@@ -102,9 +102,9 @@ public sealed class ActionAbilityOrderedPaymentThreatRemovalTests
         var generator = InPlay(world, "01091");
         var probe = new PaymentResourceProbe(generator, "Y", () => chosen[0] = other.ObjectId);
         var ability = Assert.Single(program.On(source.FaceId));
-        var payment = AbilityCostPayment.Prepare(world, source, 0, ability.Cost, [generator.ObjectId], chosen, program, probe);
+        var payment = AbilityCostPayment.Prepare(world, source, 0, ability.Cost, program, probe, AbilityPaymentSelection.Capture([generator.ObjectId], chosen));
         var events = new List<GameEvent>();
-        payment.Commit(runner, Steps.TurnAction, events);
+        PreparedCostPayment.Commit(world, payment, runner, events);
         Assert.Equal(other.ObjectId, Assert.Single(chosen));
         Assert.False(selected.Ready);
         Assert.True(other.Ready);
@@ -132,9 +132,9 @@ public sealed class ActionAbilityOrderedPaymentThreatRemovalTests
             World.MoveToTop(source, area);
         });
         var ability = Assert.Single(program.On(source.FaceId));
-        var payment = AbilityCostPayment.Prepare(world, source, 0, ability.Cost, [generator.ObjectId], [], program, probe);
+        var payment = AbilityCostPayment.Prepare(world, source, 0, ability.Cost, program, probe, AbilityPaymentSelection.Capture([generator.ObjectId], []));
         var events = new List<GameEvent>();
-        payment.Commit(runner, Steps.TurnAction, events);
+        Assert.Throws<RulesNotImplementedException>(() => PreparedCostPayment.Commit(world, payment, runner, events));
         Assert.Equal(incarnation + 1, source.Incarnation);
         Assert.True(source.Ready);
         Assert.DoesNotContain(events.OfType<FieldSet>(), change => change.Card == source.ObjectId && change.Field == "is_exhaust");
@@ -167,11 +167,15 @@ public sealed class ActionAbilityOrderedPaymentThreatRemovalTests
         world.Abilities = new NoCardAbilities();
         var events = new List<GameEvent>();
         if (timing == "Resource")
-            Assert.Equal("Y", runner.UseResource(world, 0, source.ObjectId, events));
+        {
+            var result = runner.ExecuteResource(world, 0, source.ObjectId);
+            events.AddRange(result.Execution.Events);
+            Assert.Equal("Y", result.Generation.Resources);
+        }
         else if (timing == "Response")
-            events.AddRange(runner.Resolve(world, new Occurrence(0, ["WhenActionTriggered"], Player: 0), new PendingAbility(source.ObjectId, AbilityType.Response, 0), [], []));
+            events.AddRange(runner.ResolveWindow(world, new Occurrence(0, ["WhenActionTriggered"], Player: 0), new PendingAbility(source.ObjectId, AbilityType.Response, 0), new Decision(source.ObjectId, [], [])).Events);
         else
-            events.AddRange(runner.Act(world, Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId), [], []));
+            events.AddRange(runner.ExecuteAction(world, new PlayerAction(Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId), [], [])).Events);
         Assert.Equal(uses ? DeckType.DiscardPile : DeckType.SupportsArea, source.Area.Type);
         Assert.Equal(0, source.Tokens.GetValueOrDefault("c_test"));
         Assert.Single(events.OfType<FieldSet>(), change => change.Field == "c_test" && change.Card == source.ObjectId);
@@ -192,9 +196,9 @@ public sealed class ActionAbilityOrderedPaymentThreatRemovalTests
         var generator = InPlay(world, "01091");
         var probe = new PaymentResourceProbe(generator, "YY", () => Assert.True(source.Ready));
         var ability = Assert.Single(program.On(source.FaceId));
-        var payment = AbilityCostPayment.Prepare(world, source, 0, ability.Cost, [generator.ObjectId], [], program, probe);
+        var payment = AbilityCostPayment.Prepare(world, source, 0, ability.Cost, program, probe, AbilityPaymentSelection.Capture([generator.ObjectId], []));
         var events = new List<GameEvent>();
-        payment.Commit(runner, Steps.TurnAction, events);
+        PreparedCostPayment.Commit(world, payment, runner, events);
         Assert.Equal(1, probe.Uses);
         Assert.False(source.Ready);
         Assert.Single(events.OfType<FieldSet>(), change => change.Card == source.ObjectId && change.Field == "is_exhaust");
@@ -212,7 +216,7 @@ public sealed class ActionAbilityOrderedPaymentThreatRemovalTests
                 """);
         var(world, source) = OrderedPaymentBoard(runner);
         world.Seats[0].IdentityCard.TakeDamage(1);
-        runner.Act(world, Assert.Single(runner.Actions(world, 0)), [], []);
+        runner.ExecuteAction(world, new PlayerAction(Assert.Single(runner.Actions(world, 0)), [], []));
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(2, source.Tokens.GetValueOrDefault("c_test"));
     }
@@ -242,11 +246,11 @@ public sealed class ActionAbilityOrderedPaymentThreatRemovalTests
         });
         var occurrence = new Occurrence(0, [Steps.TurnAction], Subject: source.ObjectId, Player: 0);
         var ability = Assert.Single(program.On(source.FaceId));
-        var arrowPayment = AbilityCostPayment.Prepare(world, source, 0, ability.Cost, [generator.ObjectId], [], program, probe, resourcesPaidByEvent: true);
-        var eventPayment = Assert.IsType<AbilityEventPayment>(AbilityEventPayment.Prepare(world, source, 0, [generator.ObjectId], ability.Effect, probe, allocations: [new ResourceAllocation(generator.ObjectId, Cost: 1, PaidAs: "Y")], additionalCost: ability.Cost));
+        var arrowPayment = AbilityCostPayment.Prepare(world, source, 0, ability.Cost, program, probe, AbilityPaymentSelection.Capture([generator.ObjectId], [], resourcesPaidByEvent: true));
+        var eventPayment = Assert.IsType<AbilityEventPayment>(AbilityEventPayment.Prepare(world, source, 0, [generator.ObjectId], ability, probe, allocations: [new ResourceAllocation(generator.ObjectId, Cost: 1, PaidAs: "Y")]));
         var events = new List<GameEvent>();
         eventPayment.Commit(occurrence, events);
-        arrowPayment.Commit(runner, Steps.TurnAction, events);
+        PreparedCostPayment.Commit(world, arrowPayment, runner, events);
         Assert.Equal(removeModifier ? 1 : 3, world.Seats[0].IdentityCard.Damage);
         Assert.False(occurrence.Is(Steps.DamageDealt));
         Assert.Equal(DeckType.RevealingArea, source.Area.Type);
@@ -282,14 +286,14 @@ public sealed class ActionAbilityOrderedPaymentThreatRemovalTests
         string before = world.Digest().Canonical();
         if (declared == 3)
         {
-            Assert.Throws<RulesNotImplementedException>(() => AbilityCostPayment.Prepare(world, source, 0, ability.Cost, [generator.ObjectId], [], program, probe, values));
+            Assert.Throws<RulesNotImplementedException>(() => AbilityCostPayment.Prepare(world, source, 0, ability.Cost, program, probe, AbilityPaymentSelection.Capture([generator.ObjectId], [], values)));
             Assert.Equal(before, world.Digest().Canonical());
             Assert.Equal(0, probe.Uses);
             return;
         }
 
-        var payment = AbilityCostPayment.Prepare(world, source, 0, ability.Cost, [generator.ObjectId], [], program, probe, values);
-        var result = payment.Commit(runner, Steps.TurnAction, []);
+        var payment = AbilityCostPayment.Prepare(world, source, 0, ability.Cost, program, probe, AbilityPaymentSelection.Capture([generator.ObjectId], [], values));
+        var result = PreparedCostPayment.Commit(world, payment, runner, []);
         Assert.Equal(99, values["X"]);
         Assert.Equal(declared, result.Energy);
         Assert.Equal(1, probe.Uses);

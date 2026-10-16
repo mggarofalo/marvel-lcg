@@ -12,126 +12,64 @@ namespace Marvel.Rules.Play;
 public static class DamagePlacement
 {
 
-    /// <summary>
-    /// Deals damage to a character, and defeats it if that was enough.
-    /// </summary>
-    /// <param name="world">The board.</param>
-    /// <param name="facts">The printed card data.</param>
-    /// <param name="source">The card dealing it.</param>
-    /// <param name="target">Who takes it.</param>
-    /// <param name="amount">How much. Zero or less does nothing.</param>
-    /// <param name="trigger">What caused it, for the event stream.</param>
-    /// <param name="verb">What kind of thing caused it.</param>
-    /// <param name="events">Where to record what happened.</param>
-    /// <param name="by">
-    /// The seat whose character is dealing it, or <c>-1</c>.
-    /// <para>
-    /// The caller supplies causal attribution. For card effects,
-    /// <c>rr:you-your.12</c> and <c>.14</c> credit events and eligible upgrades
-    /// to the identity; <c>.15</c> and <c>.18</c> exclude allies and supports.
-    /// Resolving an encounter card does not make its damage the resolving
-    /// identity's damage. Its assignment therefore carries <c>-1</c>.
-    /// </para>
-    /// </param>
-    /// <returns>Whether the target was defeated.</returns>
-    public static bool Deal(
-        World world, ICardFacts facts, Card source, Card target, long amount,
-        string trigger, string verb, List<GameEvent> events, int by = -1)
-        => DealOutcome(world, facts, source, target, amount, trigger, verb, events, by)
-            == Damage.Outcome.Defeated;
-
-    /// <summary>Deals damage while preserving a possible procedure suspension.</summary>
-    public static Damage.Outcome DealOutcome(
-        World world, ICardFacts facts, Card source, Card target, long amount,
-        string trigger, string verb, List<GameEvent> events, int by = -1)
-        => DealWithAmounts(
-            world, facts, source, target, amount, trigger, verb, events,
-            out _, out _, by);
-
-    /// <summary>Deals damage and reports the distinct dealt and taken amounts.</summary>
-    internal static Damage.Outcome DealWithAmounts(
-        World world, ICardFacts facts, Card source, Card target, long amount,
-        string trigger, string verb, List<GameEvent> events,
-        out long dealt, out long taken, int by = -1)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(target);
-        ArgumentNullException.ThrowIfNull(events);
-
-        var result = Resolve(world, facts,
-            new DamageRequest(source, target, amount, trigger, verb, by), events);
-        dealt = result.Dealt;
-        taken = result.Taken;
-        return result.Outcome;
-    }
-
     /// <summary>Resolves damage and retains dealt/taken facts across defeat.</summary>
     public static DamageResult Resolve(
         World world, ICardFacts facts, DamageRequest request, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(request);
-        var placed = Place(world, facts, request.Source, request.Target,
-            request.Amount, request.Trigger, request.Verb, events);
-        var outcome = FinishPlaced(world, facts, request.Source, placed,
-            request.Trigger, request.Verb, events, request.By, request.RecordDefeatOn);
-        return new DamageResult(outcome, placed.Dealt, placed.Taken);
+        DamageResolution? resolution = null;
+        AbilityExecutionResult Apply(Occurrence cause, AbilityExecution? completion) =>
+            world.Agenda.Executions.RunBatch(cause, entry =>
+            {
+                resolution = new DamageResolution(world, facts,
+                    request with { RecordDefeatOn = cause }, entry, completion);
+                resolution.Continue(events);
+                return entry.Report(events);
+            });
+        if ((request.RecordDefeatOn ?? world.Agenda.Occurrence) is { } cause) Apply(cause, null);
+        else RootDamageExecution.Run(world, request.Source, request.Target, (origin, owner) => Apply(origin, owner));
+        return resolution!.Result;
     }
 
-    /// <summary>
-    /// Resolve damage through placement while deferring defeat, so simultaneous
-    /// damage can be placed on every recipient before any one leaves play.
-    /// </summary>
-    internal static PlacedDamage Place(
-        World world, ICardFacts facts, Card source, Card target, long amount,
-        string trigger, string verb, List<GameEvent> events)
+    /// <summary>Pay a damage cost through placement; its exact owner releases defeat after sibling costs are paid.</summary>
+    public static DamageCostReceipt BeginCost(World world, ICardFacts facts, DamageRequest request,
+        AbilityExecution owner, List<GameEvent> events)
     {
-        var prepared = Prepare(
-            world, facts, source, target, amount, trigger, events);
-        ApplyPlaced(world, facts, prepared, trigger, verb, events);
-        return prepared;
-    }
-
-    /// <summary>Resolve damage through step 4 without changing hit points.</summary>
-    internal static PlacedDamage Prepare(
-        World world, ICardFacts facts, Card source, Card target, long amount,
-        string trigger, List<GameEvent> events)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(target);
-        ArgumentNullException.ThrowIfNull(events);
-
-        amount = Replace(world, target, source, amount, events);
-        return PrepareAfterReplacement(
-            world, facts, source, target, amount, trigger, events);
+        world.Agenda.Executions.RequireActive(owner);
+        DamageCostReceipt? receipt = null;
+        var obligation = new AbilityCompletionObligation(owner);
+        var captured = request with { RecordDefeatOn = request.RecordDefeatOn ?? owner.Occurrence };
+        world.Agenda.Executions.RunBatch(captured.RecordDefeatOn, execution =>
+        {
+            receipt = new DamageCostReceipt(world, facts, captured, owner, execution, obligation);
+            new DamageCostPlacement(world, facts, captured, receipt).Continue(events);
+            return execution.Report(events);
+        });
+        return receipt!;
     }
 
     /// <summary>Resolve damage step 1 and return the still-imminent amount.</summary>
-    internal static long Replace(
-        World world, Card target, Card source, long amount, List<GameEvent> events)
+    public static DamageReplacement Replace(World world, DamageRequest request, List<GameEvent> events)
     {
-        if (amount <= 0)
+        ArgumentNullException.ThrowIfNull(request);
+        var occurrence = new Occurrence(0, [Steps.DamageWouldBeDealt],
+            Subject: request.Target.ObjectId, Player: request.Target.Owner, Target: request.Target.ObjectId,
+            Actor: request.Source.ObjectId,
+            ActorFacts: OccurrenceCard.Capture(request.Source, world.Facts),
+            TargetFacts: OccurrenceCard.Capture(request.Target, world.Facts));
+        DamageReplacement? replacement = null;
+        var result = world.Agenda.Executions.RunBatch(occurrence, entry =>
         {
-            return 0;
-        }
-
-        // `rr:cannot` -- "cannot" is absolute. A character forbidden from
-        // taking damage from this source never reaches the damage sequence:
-        // there is no imminent damage to replace and no tough card to spend.
-        if (!world.DamageAbilities.CanTakeDamage(world, target, source))
-        {
-            return 0;
-        }
-
-        // `rr:damage.step.1` -- "abilities that trigger when [character] would
-        // be dealt any amount of damage", which is where a replacement effect
-        // sits. It comes before the tough card, which is step 2, and a card
-        // that replaces all of the damage leaves nothing for the rest of the
-        // nine steps to do.
-        return world.DamageAbilities.WouldBeDealt(world, target, source, amount, events);
+            replacement = new DamageReplacement(request, entry);
+            if (request.Amount <= 0 || !world.DamageAbilities.CanTakeDamage(world, request.Target, request.Source))
+            {
+                replacement.Replace(entry, 0);
+                return entry.Finish([]);
+            }
+            return world.DamageAbilities.WouldBeDealt(world, entry, replacement);
+        });
+        ActivityBatches.Append(events, result.Events);
+        return replacement!;
     }
 
     /// <summary>Continue damage after step 1 has fixed the amount dealt.</summary>
@@ -216,7 +154,8 @@ public static class DamagePlacement
         // be a new copy of the card." A delayed effect can make that happen
         // between damage step 5 and defeat; the old copy cannot then proceed
         // through damage steps 6 through 8.
-        if (!placed.Landed || !DeckTypes.IsInPlay(placed.Target.Area.Type))
+        if (!placed.Landed || placed.Target.Incarnation != placed.Incarnation
+            || !DeckTypes.IsInPlay(placed.Target.Area.Type))
         {
             return Damage.Outcome.NotDefeated;
         }
@@ -231,15 +170,9 @@ public static class DamagePlacement
         // `rr:would.1` then makes the original condition invalid.
         if (after <= 0)
         {
-            int beforeProcedure = world.Agenda.Count;
-            if (!world.DamageAbilities.WouldBeDefeated(
-                    world, target, source, trigger, verb, by, events,
-                    recordDefeatOn))
-            {
-                return world.Agenda.Count > beforeProcedure
-                    ? Damage.Outcome.Suspended
-                    : Damage.Outcome.NotDefeated;
-            }
+            if (DefeatInterruption.Begin(world, target,
+                    new DefeatCause(source.ObjectId, trigger, verb, by, recordDefeatOn), events))
+                return Damage.Outcome.Suspended;
             after = Math.Max(0, Health(world, facts, target) - target.Damage);
         }
 
@@ -256,15 +189,8 @@ public static class DamagePlacement
             return Damage.Outcome.NotDefeated;
         }
 
-        int beforeDefeat = world.Agenda.Count;
-        bool defeated = Defeat.Character(
-            world, facts, target, trigger, events, how: verb, by: by,
+        return Defeat.Character(world, facts, target, trigger, events, how: verb, by: by,
             recordOn: recordDefeatOn);
-        if (!defeated && world.Agenda.Count > beforeDefeat)
-        {
-            return Damage.Outcome.Suspended;
-        }
-        return defeated ? Damage.Outcome.Defeated : Damage.Outcome.NotDefeated;
     }
 
     /// <summary>

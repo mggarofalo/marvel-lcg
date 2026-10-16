@@ -2,7 +2,7 @@ extends RefCounted
 
 
 static func fully_contained(smoke: SceneTree, control: Control) -> bool:
-	var actual: Rect2 = control.get_global_rect()
+	var actual: Rect2 = smoke._transformed_control_bounds(control)
 	var visible: Rect2 = smoke._visible_control_rect(control)
 	return visible.position.is_equal_approx(actual.position) \
 		and visible.size.is_equal_approx(actual.size)

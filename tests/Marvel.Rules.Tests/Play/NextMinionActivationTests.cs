@@ -73,7 +73,7 @@ public sealed class NextMinionActivationTests : VillainPhaseTestBase
         public List<int> Completed { get; } = [];
         public int Arriving { get; private set; }
 
-        public override IReadOnlyList<GameEvent> ActivationCompleted(World world, EnemyActivation result)
+        public override AbilityExecutionResult ActivationCompleted(World world, AbilityExecution entry, EnemyActivation result)
         {
             Completed.Add(result.Enemy);
             if (result.Enemy == selected && Completed.Count(id => id == selected) == 1)
@@ -88,7 +88,7 @@ public sealed class NextMinionActivationTests : VillainPhaseTestBase
                 }
                 else Arriving = world.CreateCard("minion", engaged).ObjectId;
             }
-            return [];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 }

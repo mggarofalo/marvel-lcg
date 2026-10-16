@@ -41,7 +41,7 @@ public sealed class PlayerEffectExplanationTests
         Assert.Contains(effect, offer.Description!, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(before, world.Digest().Fingerprint());
         if (face is "01091" or "01092") Assert.Contains("Exhaust", offer.CostDescription);
-        runner.Act(world, action, paying, []);
+        runner.ExecuteAction(world, new PlayerAction(action, paying, []));
         var step = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, step)!;
         Assert.Contains(effect, prompt.Description!, StringComparison.OrdinalIgnoreCase);

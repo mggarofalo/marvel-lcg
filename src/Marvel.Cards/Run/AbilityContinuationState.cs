@@ -8,6 +8,9 @@ internal sealed record AbilityContinuationState(
     AbilityInvocation Invocation, AbilityCursor Cursor, AbilityMemory Memory) : CardAbilityContinuation
 {
     internal AbilityResumeReason Reason { get; init; } = AbilityResumeReason.Choice;
+    internal AbilityDamageCompletion? DamageCompletion { get; init; }
     internal EffectCompletion? Completion { get; init; }
     internal AbilityStructuralOutcome? CompletedOutcome { get; init; }
+    internal AbilityPaymentPlan? Payment { get; init; }
+    internal DamageReplacement? DamageReplacement { get; init; }
 }

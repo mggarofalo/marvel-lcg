@@ -130,7 +130,7 @@ public sealed class StampedeTests
         int queued = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count;
 
         var card = world.CreateCard(AuthoredCards.Stampede, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, card, 0);
 
         Assert.Empty(world.Agenda.Outstanding);
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);

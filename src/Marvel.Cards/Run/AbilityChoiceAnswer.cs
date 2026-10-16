@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -10,7 +11,7 @@ internal sealed class AbilityChoiceAnswer(
     AbilityResolutionExecution execution, int player, int stoppedAt,
     Decision input, PhaseStep? persisted, AbilityResolutionState cast)
 {
-    private static readonly HashSet<string> SpecialOperations =
+    private static readonly ImmutableArray<string> SpecialOperations =
     [
         "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle",
     ];
@@ -25,7 +26,7 @@ internal sealed class AbilityChoiceAnswer(
             return ApplyPayment(choice);
         if (operation is "thwartDifferentSchemes" or "legalPractice")
             return ApplyThwartChoice(choice);
-        if (operation == "makeTheCall") return ApplyMakeTheCall();
+        if (operation == "makeTheCall") return ApplyMakeTheCall(choice);
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);
         return ApplyGeneric(choice);
     }
@@ -72,10 +73,18 @@ internal sealed class AbilityChoiceAnswer(
         if (((PayOrCommand)answer).Pay)
         {
             string required = ((AbilityEffect.PayOrEffect)choice).Resources;
-            CardPlay.Spend(
+            var owner = cast.World.Agenda.Current;
+            var occurrence = cast.World.Agenda.Occurrence;
+            var payment = CardPlay.Spend(
                 cast.World, cast.World.Facts, execution.resourceAbilities,
                 [cast.World.Seats[player].Hand], input.Spent, required.Length,
                 required, -1, player, cast.Events);
+            if (!payment.IsComplete)
+            {
+                cast.PendingPayment = new AbilityChoicePayment(payment);
+                execution.SuspendAfterProcedure(choice, cast, owner, occurrence);
+                return cast.Events;
+            }
             cast.ResolveEffect();
         }
         else if (input.Affordance == 1)
@@ -168,18 +177,26 @@ internal sealed class AbilityChoiceAnswer(
         return (ThwartSelectionCommand)answer;
     }
 
-    private List<Marvel.Rules.Events.GameEvent> ApplyMakeTheCall()
+    private List<Marvel.Rules.Events.GameEvent> ApplyMakeTheCall(AbilityEffect choice)
     {
         var answer = AbilityStructuralExecution.AnswerMakeTheCall(
             execution.StructuralContext(cast), input);
         ThrowIfUnsupported(answer);
         var ally = cast.World.Cards[((MakeTheCallCommand)answer).Ally];
         long cost = Resources.Cost(ally.FaceId, cast.World.Facts, cast.World.Players) ?? 0;
-        CardPlay.Spend(
+        var owner = cast.World.Agenda.Current;
+        var occurrence = cast.World.Agenda.Occurrence;
+        var payment = CardPlay.Spend(
             cast.World, cast.World.Facts, execution.resourceAbilities,
             [cast.World.Seats[player].Hand], input.Spent, cost,
             Resources.Required(cast.World, ally, cast.World.Facts), cast.Source.ObjectId,
             player, cast.Events, payingFor: ally);
+        if (!payment.IsComplete)
+        {
+            cast.PendingPayment = new AbilityChoicePayment(payment, ally);
+            execution.SuspendAfterProcedure(choice, cast, owner, occurrence);
+            return cast.Events;
+        }
         CardPlay.PutAllyIntoPlay(
             cast.World, cast.World.Facts, execution.cardPlayAbilities, ally, player,
             cast.Trigger, cast.Events);

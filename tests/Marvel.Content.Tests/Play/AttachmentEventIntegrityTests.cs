@@ -26,14 +26,14 @@ public sealed class AttachmentEventIntegrityTests : ChoosingCardsTestBase
         var source = world.CreateCard(face, world.AreaOf(DeckType.RevealingArea));
         var host = villain ? world.TheCardIn(DeckType.VillainArea)! : world.Seats[0].IdentityCard;
 
-        var events = runner.WhenRevealed(world, source, 0);
+        var events = runner.ExecuteReveal(world, source, 0).Events;
 
         var applied = Assert.Single(Statuses.On(world, host, status));
         Assert.Equal(applied.ObjectId, Assert.Single(Assert.Single(events.OfType<CardsCreated>()).Cards).Id);
         Assert.Equal(new CardAttached(applied.ObjectId, host.ObjectId)
             { Trigger = "WhenCardRevealed", Verb = "Give_Status" }, Assert.Single(events.OfType<CardAttached>()));
 
-        var repeated = runner.WhenRevealed(world, source, 0);
+        var repeated = runner.ExecuteReveal(world, source, 0).Events;
         Assert.Empty(repeated.OfType<CardsCreated>());
         Assert.Empty(repeated.OfType<CardAttached>());
         Assert.Equal(applied.ObjectId, Assert.Single(Statuses.On(world, host, status)).ObjectId);
@@ -54,7 +54,7 @@ public sealed class AttachmentEventIntegrityTests : ChoosingCardsTestBase
             world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), hellcat.ObjectId, 0)) : null;
         var action = Assert.Single(runner.Actions(world, 0), item => item.Card == hellcat.ObjectId);
 
-        var events = runner.Act(world, action, [], []);
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [], [])).Events;
 
         Assert.Equal(DeckType.HandsArea, hellcat.Area.Type);
         Assert.Single(events.OfType<CardsMoved>(), item => item.Cards.Any(card => card.Card == hellcat.ObjectId));
@@ -76,7 +76,7 @@ public sealed class AttachmentEventIntegrityTests : ChoosingCardsTestBase
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
         var scheme = world.CreateCard("01166", world.AreaOf(DeckType.SideSchemesArea));
-        var placed = runner.WhenRevealed(world, scheme, 0);
+        var placed = runner.ExecuteReveal(world, scheme, 0).Events;
         var attachment = Assert.Single(placed.OfType<CardAttached>());
         var card = world.Cards[attachment.Card];
         Assert.Equal(scheme.ObjectId, card.Area.Host);
@@ -84,7 +84,7 @@ public sealed class AttachmentEventIntegrityTests : ChoosingCardsTestBase
         occurrence.Also(new Defeated(scheme.ObjectId, 0, "Thwart") { Kind = CardKind.EncounterSideScheme });
         var ability = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Interrupt));
 
-        var events = runner.Resolve(world, occurrence, ability, [], []);
+        var events = runner.ResolveWindow(world, occurrence, ability, new Decision(ability.Card, [], [])).Events;
 
         Assert.Equal(DeckType.HandsArea, card.Area.Type);
         Assert.True(card.FaceUp);

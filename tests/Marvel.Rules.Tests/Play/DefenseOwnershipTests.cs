@@ -102,7 +102,7 @@ public sealed class DefenseOwnershipTests : AttackTestBase
         var world = Board(facts, players: 2);
         var asked = Sequence.Work(world, facts, new NoCardAbilities(), [])!;
         Attack.BeginDefenseAbility(world, 1);
-        asked = Attack.DeclareDefender(world, facts, new NoCardAbilities())!;
+        asked = Sequence.Work(world, facts, new NoCardAbilities(), [])!;
         Assert.Equal(1, asked.Player);
         Assert.Equal("Keep current defense", asked.DeclineLabel);
         Assert.Contains("is already defending", asked.Description);

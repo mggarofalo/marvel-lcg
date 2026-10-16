@@ -279,9 +279,9 @@ public sealed class World
     /// consumer sees only the card behavior it uses.
     /// </para>
     /// <para>
-    /// <b>Defeat is the caller that needed it.</b>
+    /// <b>Nested defeat uses the damage capability.</b>
     /// <c>rr:when-defeated-abilities</c> resolves a card's ability before the
-    /// card leaves play, and a defeat happens inside <c>Damage.Deal</c>. Keeping
+    /// card leaves play, and a defeat happens inside <c>DamagePlacement.Resolve</c>. Keeping
     /// the capabilities on the board lets that nested procedure use the damage
     /// port without threading unrelated card behavior through every caller.
     /// </para>

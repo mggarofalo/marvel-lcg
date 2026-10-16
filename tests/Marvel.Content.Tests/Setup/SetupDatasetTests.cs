@@ -198,9 +198,10 @@ public sealed class SetupDatasetTests
         // The authored setup names signature and customizable cards; the
         // generated card dataset supplies their printed class and set icon.
         // Validate every starter rather than proving one hand-picked deck.
+        Assert.NotEmpty(Setup.HeroNames);
         foreach (string hero in Setup.HeroNames)
         {
-            Blueprints.From(Dealer.DealOrder(Setup, "rhino", [hero], facts: Cards), Cards);
+            Assert.NotEmpty(Blueprints.From(Dealer.DealOrder(Setup, "rhino", [hero], facts: Cards), Cards));
         }
     }
 

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -29,8 +30,8 @@ public static class InformationFrontier
     /// <summary>A seat received a prompt exposing hidden search candidates.</summary>
     public const string Search = "search";
 
-    private static readonly HashSet<string> Reasons =
-        new([Draw, Random, Reveal, Search], StringComparer.Ordinal);
+    private static readonly ImmutableArray<string> Reasons =
+        [Draw, Random, Reveal, Search];
 
     /// <summary>Classifies one resolved decision without consulting client behavior.</summary>
     public static IReadOnlyList<InformationExposure> Classify(

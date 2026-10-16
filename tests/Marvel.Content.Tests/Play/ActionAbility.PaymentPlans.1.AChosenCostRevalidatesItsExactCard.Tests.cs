@@ -53,14 +53,14 @@ public sealed class ActionAbilityPaymentPlansAChosenCostRevalidatesItsExactCardT
         int held = world.Seats[0].Hand.Cards.Count;
         if (selection != "legal")
         {
-            Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, ability, [], [selected.ObjectId]));
+            Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(ability, [], [selected.ObjectId])));
             Assert.Equal(before, world.Digest().Canonical());
             Assert.True(source!.Ready);
             Assert.True(legal!.Ready);
             return;
         }
 
-        runner.Act(world, ability, [], [selected.ObjectId]);
+        runner.ExecuteAction(world, new PlayerAction(ability, [], [selected.ObjectId]));
         Assert.False(source!.Ready);
         Assert.False(legal!.Ready);
         Assert.True(foreign!.Ready);
@@ -100,7 +100,7 @@ public sealed class ActionAbilityPaymentPlansAChosenCostRevalidatesItsExactCardT
             return;
         }
 
-        runner.Act(world, Assert.Single(offered), [physical!.ObjectId, energy!.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(Assert.Single(offered), [physical!.ObjectId, energy!.ObjectId], []));
         Assert.Equal(DeckType.DiscardPile, physical.Area.Type);
         Assert.Equal(DeckType.DiscardPile, energy.Area.Type);
         Assert.Single(world.Seats[0].Hand.Cards);
@@ -134,7 +134,7 @@ public sealed class ActionAbilityPaymentPlansAChosenCostRevalidatesItsExactCardT
         IReadOnlyList<ResourceAllocation> allocation = [new(generator!.ObjectId, Cost: valid ? 1 : 0, PaidAs: "Y")];
         if (!valid)
         {
-            Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, ability, [generator.ObjectId], [], occurrence, allocations: allocation));
+            Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(ability, [generator.ObjectId], [], Allocations: allocation), occurrence));
             Assert.Equal(before, world.Digest().Canonical());
             Assert.Equal(words, world.Random.Generator.WordsConsumed);
             Assert.True(identity.Ready);
@@ -144,7 +144,7 @@ public sealed class ActionAbilityPaymentPlansAChosenCostRevalidatesItsExactCardT
             return;
         }
 
-        var events = runner.Act(world, ability, [generator.ObjectId], [], occurrence, allocations: allocation);
+        var events = runner.ExecuteAction(world, new PlayerAction(ability, [generator.ObjectId], [], Allocations: allocation), occurrence).Events;
         Assert.False(identity.Ready);
         Assert.Equal(DeckType.DiscardPile, source!.Area.Type);
         Assert.Equal(DeckType.DiscardPile, generator.Area.Type);
@@ -189,14 +189,14 @@ public sealed class ActionAbilityPaymentPlansAChosenCostRevalidatesItsExactCardT
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "preventDamage", Amount: 1, Card: source!.ObjectId, Affects: identity.ObjectId, Lasts: new Duration(Uses: 1)));
         if (mustTakeAll)
         {
-            var failure = Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, ability, [generator!.ObjectId], []));
+            var failure = Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(ability, [generator!.ObjectId], [])));
             Assert.Contains("only 1 was taken", failure.Message, StringComparison.Ordinal);
             Assert.True(source.Ready);
             Assert.Same(world.Seats[0].Hand, generator!.Area);
         }
         else
         {
-            runner.Act(world, ability, [generator!.ObjectId], []);
+            runner.ExecuteAction(world, new PlayerAction(ability, [generator!.ObjectId], []));
             Assert.False(source.Ready);
             Assert.Equal(DeckType.DiscardPile, generator.Area.Type);
         }

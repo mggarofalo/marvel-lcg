@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Marvel.Rules.Play;
 using Marvel.Rules.Timing;
 
@@ -49,8 +50,8 @@ public sealed record AbilityBook(
     IReadOnlyDictionary<string, CardCounterPool>? CounterPools = null)
 {
     /// <summary>An empty book. No card has been read.</summary>
-    public static AbilityBook None { get; } =
-        new([], new HashSet<string>(StringComparer.Ordinal));
+    public static AbilityBook None =>
+        new([], FrozenSet<string>.Empty);
 
     /// <summary>What one card's "attach to" names, or null when it prints none.</summary>
     /// <param name="card">A printed face id.</param>

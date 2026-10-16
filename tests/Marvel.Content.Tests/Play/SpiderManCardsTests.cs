@@ -10,13 +10,8 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-public sealed class SpiderManCardsTests
+public sealed class SpiderManCardsTests : SpiderManCardTestBase
 {
-    private static readonly SetupCatalog Setup = SetupCatalog.Parse(
-        File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
-    private static readonly CardCatalog Cards = CardCatalog.Parse(
-        File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
-
     [Rule("rr:printed")]
     [Fact]
     public void BlackCatRecoversOnlyCardsWithAPrintedMentalResource()
@@ -32,9 +27,7 @@ public sealed class SpiderManCardsTests
         var occurrence = new Occurrence(
             1, [Steps.CardPlayed], Subject: cat.ObjectId, Player: 0);
 
-        var events = runner.Resolve(
-            world, occurrence,
-            new PendingAbility(cat.ObjectId, AbilityType.ForcedResponse, 0), [], []);
+        var events = runner.ResolveWindow(world, occurrence, new PendingAbility(cat.ObjectId, AbilityType.ForcedResponse, 0), new Decision(cat.ObjectId, [], [])).Events;
         var receipt = Assert.Single(events.OfType<AbilityWindowResult>());
         Assert.Equal(cat.ObjectId, receipt.Source);
         Assert.Equal(occurrence.Id, receipt.Occurrence);
@@ -74,7 +67,7 @@ public sealed class SpiderManCardsTests
         var action = Assert.Single(runner.Actions(world, 0));
         Assert.True(runner.Describe(world, action).PlaysCard);
 
-        var events = runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []).ToList();
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId, energy.ObjectId], [])).Events.ToList();
         Assert.Equal(DeckType.RevealingArea, kick.Area.Type);
         Assert.True(kick.FaceUp);
         Assert.False(DeckTypes.IsInPlay(kick.Area.Type));
@@ -143,7 +136,7 @@ public sealed class SpiderManCardsTests
         Statuses.Give(world, hero, Statuses.Stunned);
 
         var action = Assert.Single(runner.Actions(world, 0));
-        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId, energy.ObjectId], []));
         var prompt = Sequence.Work(world, Cards, runner, [])!;
         Assert.Contains("Stunned cancels this attack", Assert.Single(prompt.Affordances).Description);
         Sequence.Answer(world, Cards, runner, prompt, Decision.Take(villain.ObjectId), []);
@@ -174,7 +167,7 @@ public sealed class SpiderManCardsTests
             world.AreaOf(DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId));
 
         var action = runner.Actions(world, 0).Single(ability => ability.Card == kick.ObjectId);
-        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId, energy.ObjectId], []));
 
         string? preview = Assert.Single(
             Sequence.Work(world, Cards, runner, [])!.Affordances).Description;
@@ -203,7 +196,7 @@ public sealed class SpiderManCardsTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
 
         var action = runner.Actions(world, 0).Single(ability => ability.Card == kick.ObjectId);
-        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId, energy.ObjectId], []));
         var offers = Sequence.Work(world, Cards, runner, [])!.Affordances;
 
         Assert.Equal([guard.ObjectId], offers.Select(offer => offer.AnchorId));
@@ -226,7 +219,7 @@ public sealed class SpiderManCardsTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
 
         var action = Assert.Single(firstRunner.Actions(world, 0));
-        firstRunner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        firstRunner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId, energy.ObjectId], []));
         var prompt = Sequence.Work(world, Cards, firstRunner, [])!;
         Sequence.Answer(
             world, Cards, firstRunner, prompt, Decision.Take(villain.ObjectId), []);
@@ -239,254 +232,4 @@ public sealed class SpiderManCardsTests
         Assert.Equal(DeckType.DiscardPile, kick.Area.Type);
     }
 
-    [Rule("rr:prevent")]
-    [Rule("rr:prevent.1.2")]
-    [Rule("rr:damage.step.3")]
-    [Fact]
-    public void BackflipPreventsTheImminentAttackDamage()
-    {
-        // "If an effect prevents all damage dealt to a character, that
-        // character is not considered to have taken damage." Seven remains
-        // the dealt amount while the taken amount becomes zero.
-        var world = Deal(hero: true);
-        var runner = AuthoredCards.Runner();
-        world.Abilities = runner;
-        var backflip = world.CreateCard(AuthoredCards.Backflip, world.Seats[0].Hand);
-        var hero = world.Seats[0].IdentityCard;
-        var occurrence = Occurrence.ForAttack(
-            1,
-            [Steps.DamageWouldBeDealt],
-            world,
-            Cards,
-            world.TheCardIn(DeckType.VillainArea)!.ObjectId,
-            hero.ObjectId,
-            player: 0);
-        var ability = Assert.Single(
-            runner.Waiting(world, occurrence, WindowKind.Interrupt),
-            pending => pending.Card == backflip.ObjectId);
-
-        runner.Resolve(world, occurrence, ability, [], []);
-
-        Assert.Equal(7, runner.WouldBeDealt(world, hero, hero, 7, []));
-        Assert.Equal(0, runner.WouldTake(world, hero, hero, 7, []));
-        Assert.Equal(DeckType.DiscardPile, backflip.Area.Type);
-        Assert.Equal(Steps.EventPlayed, world.Agenda.Current!.Value.What);
-        Assert.Equal(backflip.ObjectId, world.Agenda.Occurrence!.Subject);
-        Assert.True(world.Agenda.Occurrence.Is(Steps.CardPlayed));
-        Assert.False(world.Agenda.Occurrence.Is(Steps.DamageWouldBeDealt));
-    }
-
-    [Rule("rr:cancel.4")]
-    [Fact]
-    public void EnhancedSpiderSenseCancelsOnlyTheTreacheriesWhenRevealedEffect()
-    {
-        var world = Deal(hero: true);
-        var runner = AuthoredCards.Runner();
-        world.Abilities = runner;
-        var sense = world.CreateCard(AuthoredCards.EnhancedSpiderSense, world.Seats[0].Hand);
-        var payment = world.CreateCard("01088", world.Seats[0].Hand);
-        var treachery = world.CreateCard(
-            AuthoredCards.ImTough, world.AreaOf(DeckType.RevealingArea));
-        var villain = world.TheCardIn(DeckType.VillainArea)!;
-        var occurrence = new Occurrence(
-            1, [Steps.CardRevealed], Subject: treachery.ObjectId, Player: 0);
-        var ability = Assert.Single(
-            runner.Waiting(world, occurrence, WindowKind.Interrupt),
-            pending => pending.Card == sense.ObjectId);
-
-        Assert.Equal(
-            "Cancel the revealed treachery's When Revealed effects",
-            runner.Describe(world, ability).Description);
-
-        runner.Resolve(world, occurrence, ability, [payment.ObjectId], []);
-        var canceled = Assert.Single(runner.WhenRevealed(world, treachery, 0)
-            .OfType<Marvel.Rules.Events.WhenRevealedCanceled>());
-        Assert.Equal(treachery.ObjectId, canceled.Card);
-        Assert.Equal(sense.ObjectId, canceled.Source);
-
-        Assert.False(Statuses.Has(world, villain, Statuses.Tough));
-        Assert.Equal(DeckType.RevealingArea, treachery.Area.Type);
-        Assert.Equal(DeckType.DiscardPile, sense.Area.Type);
-    }
-
-    [Rule("rr:when-revealed-abilities.3")]
-    [Theory]
-    [InlineData(DeckType.VillainArea)]
-    [InlineData(DeckType.MainSchemesArea)]
-    public void VillainAndMainSchemeWhenRevealedAbilitiesCannotBeCanceled(
-        DeckType area)
-    {
-        var world = Deal(hero: true);
-        var card = world.TheCardIn(area)!;
-        var runner = new Marvel.Cards.Run.AbilityRunner(
-            Marvel.Cards.Dsl.AbilityCatalog.Parse(
-                $$"""
-                { "cards": [ { "card": "{{card.FaceId}}", "abilities": [ {
-                    "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-                    "effect": { "draw": { "player": "you", "count": 1 } }
-                } ] } ] }
-                """));
-        world.Effects.Register(new ContinuousEffect(
-            EffectSource.LastingEffect,
-            Kind: "cancelWhenRevealed",
-            Affects: card.ObjectId,
-            Lasts: new Duration(Uses: 1)));
-        int held = world.Seats[0].Hand.Cards.Count;
-
-        runner.WhenRevealed(world, card, 0);
-
-        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
-        Assert.Contains(
-            world.Effects.Active(), effect => effect.Affects == card.ObjectId);
-    }
-
-    [Rule("rr:uses-x-type")]
-    [Rule("rr:resource-ability.1")]
-    [Fact]
-    public void WebShooterPaysItsCostsAndLeavesWhenTheLastCounterIsRemoved()
-    {
-        var world = Deal(hero: true);
-        var runner = AuthoredCards.Runner();
-        world.Abilities = runner;
-        var shooter = world.CreateCard(
-            AuthoredCards.WebShooter,
-            world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0),
-                world.Seats[0].IdentityCard.ObjectId, 0));
-        Reveal.EnterPlay(world, Cards, shooter, []);
-        shooter.PlaceTokens("c_web", -2);
-
-        var offered = Assert.Single(runner.ResourceAbilities(world, 0), source => source.Effect == shooter.ObjectId);
-        Assert.Equal("Web-Shooter", offered.AbilityName);
-        Assert.Equal("Exhaust Web-Shooter; Remove 1 web counter from Web-Shooter", offered.CostDescription);
-
-        var events = new List<GameEvent>();
-        string generated = runner.UseResource(world, 0, shooter.ObjectId, events);
-
-        Assert.Equal("G", generated);
-        Assert.Contains(events.OfType<FieldSet>(), change => change.Card == shooter.ObjectId
-            && change.Field == "is_exhaust" && change.To == 1);
-        Assert.True(shooter.Ready);
-        Assert.Equal(0, shooter.Tokens.GetValueOrDefault("c_web"));
-        Assert.Equal(DeckType.DiscardPile, shooter.Area.Type);
-    }
-
-    [Rule("rr:resource-ability")]
-    [Fact]
-    public void WebShooterIsAvailableOnlyInHeroFormAndWhileItsCostsCanBePaid()
-    {
-        var world = Deal();
-        var runner = AuthoredCards.Runner();
-        world.Abilities = runner;
-        var shooter = world.CreateCard(
-            AuthoredCards.WebShooter,
-            world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0),
-                world.Seats[0].IdentityCard.ObjectId, 0));
-        Reveal.EnterPlay(world, Cards, shooter, []);
-
-        Assert.DoesNotContain(
-            runner.ResourceAbilities(world, 0), source => source.Effect == shooter.ObjectId);
-
-        world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
-        Assert.Contains(
-            runner.ResourceAbilities(world, 0), source => source.Effect == shooter.ObjectId);
-
-        runner.UseResource(world, 0, shooter.ObjectId, []);
-        Assert.DoesNotContain(
-            runner.ResourceAbilities(world, 0), source => source.Effect == shooter.ObjectId);
-    }
-
-    [Rule("rr:stun-stunned.1")]
-    [Rule("rr:stun-stunned.2")]
-    [Rule("rr:upgrade.3")]
-    [Fact]
-    public void WebbedUpDiscardsItselfAndStunsItsEnemy()
-    {
-        // An attached upgrade "modif[ies] the card [it is] attached to", not
-        // the identity who played it. "If an ability 'stuns' a character, give
-        // that character a stunned status card." Webbed Up's interrupt does
-        // both printed effects to its enemy host.
-        var world = Deal(hero: true);
-        var runner = AuthoredCards.Runner();
-        var villain = world.TheCardIn(DeckType.VillainArea)!;
-        var webbed = world.CreateCard(
-            AuthoredCards.WebbedUp,
-            world.AreaOf(DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId, 0));
-        var occurrence = Occurrence.ForAttack(
-            1, [Steps.AttackInitiated], world, Cards,
-            villain.ObjectId, world.Seats[0].IdentityCard.ObjectId, player: 0);
-        var ability = Assert.Single(
-            runner.Waiting(world, occurrence, WindowKind.Interrupt),
-            pending => pending.Card == webbed.ObjectId);
-
-        runner.Resolve(world, occurrence, ability, [], []);
-
-        Assert.Equal(DeckType.DiscardPile, webbed.Area.Type);
-        Assert.True(Statuses.Has(world, villain, Statuses.Stunned));
-    }
-
-    [Rule("rr:choose-game-element.1")]
-    [Fact]
-    public void SpiderTracerLetsItsControllerChooseTheScheme()
-    {
-        var world = Deal(hero: true);
-        var runner = AuthoredCards.Runner();
-        var minion = world.CreateCard(
-            AuthoredCards.Shocker,
-            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-        var tracer = world.CreateCard(
-            AuthoredCards.SpiderTracer,
-            world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId, 0));
-        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
-        scheme.PlaceTokens("k_threat", 4);
-        var occurrence = new Occurrence(
-            1, [Steps.CardDefeated], Subject: minion.ObjectId, Player: 0);
-        occurrence.Also(new Defeated(minion.ObjectId, 0, "Attack") { Kind = CardKind.Minion });
-        var ability = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Interrupt));
-
-        runner.Resolve(world, occurrence, ability, [], []);
-        var waiting = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(world, waiting, Decision.Take(scheme.ObjectId));
-
-        Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat"));
-    }
-
-    [Rule("rr:attach-to")]
-    [Fact]
-    public void TheTwoAttachmentsExposeTheirPrintedLegalHosts()
-    {
-        var world = Deal(hero: true);
-        var runner = AuthoredCards.Runner();
-        var minion = world.CreateCard(
-            AuthoredCards.Shocker,
-            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-        var tracer = world.CreateCard(AuthoredCards.SpiderTracer, world.Seats[0].Hand);
-        var webbed = world.CreateCard(AuthoredCards.WebbedUp, world.Seats[0].Hand);
-        var villain = world.TheCardIn(DeckType.VillainArea)!;
-
-        Assert.Equal([minion.ObjectId], runner.AttachmentTargets(world, tracer));
-        Assert.Equal(
-            [villain.ObjectId, minion.ObjectId],
-            runner.AttachmentTargets(world, webbed));
-    }
-
-    private static World Deal(bool hero = false)
-    {
-        var world = WorldSetup.Deal(
-            Cards,
-            Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
-            ["Spider-Man"], 12345, AuthoredCards.Runner());
-        if (hero)
-        {
-            world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
-        }
-        return world;
-    }
-
-    private static void EmptyHand(World world)
-    {
-        foreach (var card in world.Seats[0].Hand.Cards.ToList())
-        {
-            World.MoveToTop(card, world.Seats[0].Deck);
-        }
-    }
 }

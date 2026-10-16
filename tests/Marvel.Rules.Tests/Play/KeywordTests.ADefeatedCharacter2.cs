@@ -227,7 +227,8 @@ public sealed class KeywordADefeatedCharacterTests : KeywordTestBase
         var attachment = world.CreateCard("attachment", world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
         var events = new List<GameEvent>();
         Agendas.Happening(world);
-        DamagePlacement.Deal(world, printed, minion, minion, 1, "test", "test", events);
+        DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 1, "test", "test"), events);
         Assert.Equal(DeckType.VictoryDisplay, minion.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, attachment.Area.Type);
         Assert.Contains(events.OfType<CardDetached>(), detached => detached.Card == attachment.ObjectId && detached.Host == minion.ObjectId);
@@ -252,7 +253,8 @@ public sealed class KeywordADefeatedCharacterTests : KeywordTestBase
         var attachment = world.CreateCard("attachment", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
         Agendas.Happening(world);
         var events = new List<GameEvent>();
-        DamagePlacement.Deal(world, printed, minion, minion, 1, "test", "test", events);
+        DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 1, "test", "test"), events);
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
         Assert.Equal(DeckType.VictoryDisplay, attachment.Area.Type);
         Assert.False(DeckTypes.IsInPlay(attachment.Area.Type));
@@ -273,7 +275,8 @@ public sealed class KeywordADefeatedCharacterTests : KeywordTestBase
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var attachment = world.CreateCard("attachment", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
         Agendas.Happening(world);
-        DamagePlacement.Deal(world, printed, minion, minion, 1, "test", "test", []);
+        DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 1, "test", "test"), []);
         Assert.Equal(DeckType.VictoryDisplay, attachment.Area.Type);
         Assert.Equal(0, VictoryDisplay.VictoryPoints(world, printed));
     }

@@ -28,7 +28,7 @@ public sealed class CoreLifecycleAbilityTests
 
         var response = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Response));
-        runner.Resolve(world, occurrence, response, [], []);
+        runner.ResolveWindow(world, occurrence, response, new Decision(response.Card, [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         runner.Chose(world, choice, Decision.Take(minion.ObjectId));
 
@@ -51,7 +51,7 @@ public sealed class CoreLifecycleAbilityTests
 
         var response = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Response));
-        runner.Resolve(world, occurrence, response, [], []);
+        runner.ResolveWindow(world, occurrence, response, new Decision(response.Card, [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         Prompt prompt = runner.Choosing(world, choice)!;
         Assert.True(prompt.ExposesConcealedCandidates);
@@ -77,7 +77,7 @@ public sealed class CoreLifecycleAbilityTests
 
         PendingAbility response = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Response));
-        runner.Resolve(world, occurrence, response, [], []);
+        runner.ResolveWindow(world, occurrence, response, new Decision(response.Card, [], []));
         var resolved = new Resolution(world, Prompt: null, Events: []);
 
         Assert.Empty(world.Agenda.Outstanding);
@@ -103,7 +103,7 @@ public sealed class CoreLifecycleAbilityTests
         Assert.Equal(4, hawkeye.Tokens["c_arrow"]);
         var response = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Response));
-        runner.Resolve(world, occurrence, response, [], []);
+        runner.ResolveWindow(world, occurrence, response, new Decision(response.Card, [], []));
 
         Assert.Equal(3, hawkeye.Tokens["c_arrow"]);
         Assert.Equal(2, minion.Damage);
@@ -131,7 +131,7 @@ public sealed class CoreLifecycleAbilityTests
 
         PendingAbility response = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Response));
-        runner.Resolve(world, occurrence, response, [], []);
+        runner.ResolveWindow(world, occurrence, response, new Decision(response.Card, [], []));
 
         Assert.Equal(0, hawkeye.Tokens.GetValueOrDefault("c_arrow"));
         Assert.Equal(DeckType.AlliesArea, hawkeye.Area.Type);

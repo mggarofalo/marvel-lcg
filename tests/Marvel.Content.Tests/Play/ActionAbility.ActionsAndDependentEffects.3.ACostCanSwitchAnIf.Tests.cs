@@ -107,7 +107,7 @@ public sealed class ActionAbilityActionsAndDependentEffectsACostCanSwitchAnIfTes
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
         int held = world.Seats[0].Hand.Cards.Count;
-        runner.WhenRevealed(world, source!, 0);
+        runner.ExecuteReveal(world, source!, 0);
         Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(Steps.ChooseOption, waiting.What);

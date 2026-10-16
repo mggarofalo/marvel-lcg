@@ -50,7 +50,7 @@ public sealed class CoreChoiceMeaningTests : ChoosingCardsTestBase
             world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1))
             : world.Seats[1].IdentityCard;
         var action = Assert.Single(runner.Actions(world, 1), candidate => candidate.Card == source.ObjectId);
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         PhaseStep waiting = Assert.Single(world.Agenda.Outstanding);
         Prompt prompt = runner.Choosing(world, waiting)!;
         Assert.Contains("choose a player to draw 1 card", prompt.DisplayQuestion);
@@ -78,7 +78,7 @@ public sealed class CoreChoiceMeaningTests : ChoosingCardsTestBase
             }]}]}
             """));
         Card source = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
-        runner.WhenRevealed(world, source, 0);
+        runner.ExecuteReveal(world, source, 0);
         PhaseStep waiting = Assert.Single(world.Agenda.Outstanding);
         Prompt prompt = runner.Choosing(world, waiting)!;
         Assert.All(prompt.Affordances, option => Assert.DoesNotContain("draws", option.Description));

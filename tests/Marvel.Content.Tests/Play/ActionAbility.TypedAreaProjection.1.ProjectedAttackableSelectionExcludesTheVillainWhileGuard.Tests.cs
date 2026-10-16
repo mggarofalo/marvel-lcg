@@ -32,7 +32,9 @@ public sealed class ActionAbilityTypedAreaProjectionProjectedAttackableSelection
         var attachment = world.CreateCard("01098", world.AreaOf(DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId));
         var discarded = world.CreateCard("01098", world.AreaOf(DeckType.EncounterDiscardPile));
         var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
-        runner.Act(world, action, [], []);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.Equal(damageBefore, minion.Damage);
         Assert.False(Statuses.Has(world, minion, Statuses.Tough));
         Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
@@ -106,7 +108,9 @@ public sealed class ActionAbilityTypedAreaProjectionProjectedAttackableSelection
         // not change which branch the compiled program projects or executes.
         fields["test"] = new AbilityValue.Map(new Dictionary<string, AbilityValue> { ["not"] = fields["test"], });
         var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
-        runner.Act(world, action, [], []);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.Equal(damageBefore, minion.Damage);
         Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
         Assert.False(Statuses.Has(world, minion, Statuses.Tough));
@@ -128,7 +132,9 @@ public sealed class ActionAbilityTypedAreaProjectionProjectedAttackableSelection
         long damageBefore = minion.Damage;
         fields["amount"] = new AbilityValue.Number(1);
         var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
-        runner.Act(world, action, [], []);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.Equal(damageBefore, minion.Damage);
         Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
         Assert.Equal(DeckType.RemovedArea, discarded.Area.Type);
@@ -150,7 +156,9 @@ public sealed class ActionAbilityTypedAreaProjectionProjectedAttackableSelection
         world.Seats[0].IdentityCard.TakeDamage(2);
         fields["amount"] = new AbilityValue.Number(2);
         var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
-        runner.Act(world, action, [], []);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
         Assert.Equal(DeckType.RemovedArea, discarded.Area.Type);
@@ -169,7 +177,9 @@ public sealed class ActionAbilityTypedAreaProjectionProjectedAttackableSelection
         long damageBefore = minion.Damage;
         fields["status"] = new AbilityValue.Word("stunned");
         var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
-        runner.Act(world, action, [], []);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.Equal(damageBefore, minion.Damage);
         Assert.False(Statuses.Has(world, minion, Statuses.Tough));
         Assert.False(Statuses.Has(world, minion, Statuses.Stunned));
@@ -190,7 +200,9 @@ public sealed class ActionAbilityTypedAreaProjectionProjectedAttackableSelection
         long damageBefore = minion.Damage;
         fields["amount"] = new AbilityValue.Number(0);
         var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
-        runner.Act(world, action, [], []);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.Equal(damageBefore + 1, minion.Damage);
         Assert.Equal(1, Damage.Health(world, world.Facts, minion) - minion.Damage);
         Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);

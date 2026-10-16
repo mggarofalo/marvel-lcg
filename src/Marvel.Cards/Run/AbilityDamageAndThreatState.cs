@@ -10,6 +10,7 @@ namespace Marvel.Cards.Run;
 internal sealed class AbilityDamageAndThreatState
 {
     internal AbilityStructuralOutcome? Outcome { get; set; }
+    internal AbilityDamageCompletion? Damage { get; set; }
     internal ThreatBatch? Threat { get; set; }
     internal AbilityEffectBoundary? Boundary { get; set; }
     internal long? Healed { get; set; }
@@ -18,5 +19,5 @@ internal sealed class AbilityDamageAndThreatState
     internal AbilityDamageAndThreatSuspension Suspension { get; set; }
     internal List<Card> Attacked { get; } = [];
     internal AbilityDamageAndThreatResult ToResult() => new(true, Healed, Remaining, ResolveEffect, Suspension, [.. Attacked])
-        { Threat = Threat, Outcome = Outcome, Boundary = Boundary };
+        { Threat = Threat, Outcome = Outcome, Boundary = Boundary, Damage = Damage };
 }

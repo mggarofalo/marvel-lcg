@@ -197,11 +197,8 @@ internal static class AbilityDamageAndThreatExecution
                 new DamageRequest(context.Source, target, amount, context.Trigger, verb,
                     AbilityEffectAttribution.IdentityPlayer(context))
                     { RecordDefeatOn = occurrence }, context.Events);
-            suspended |= result.Outcome == Damage.Outcome.Suspended;
-            state.Outcome = AbilityCompletion.Combine(state.Outcome,
-                AbilityCompletion.Amount(result.Dealt, amount));
-            if (context.Power == BasicPowers.AttackVerb && result.Taken > 0)
-                context.Occurrence.Also(Steps.DamageDealt);
+            suspended |= !result.IsComplete;
+            (state.Damage ??= new(context.Occurrence)).Add(result, amount, context.Power == BasicPowers.AttackVerb);
         }
         if (suspended) state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
     }
@@ -258,8 +255,8 @@ internal static class AbilityDamageAndThreatExecution
             var damaged = DamageAttacks.Attack(context.World, context.World.Facts, attacker, context.Source, target,
                 amount, context.Trigger, "Attack", context.Events, retaliate: false);
             state.Attacked.Add(target);
-            if (damaged.Characters.Count > 0) context.Occurrence.Also(Steps.DamageDealt);
-            suspended |= damaged.Suspended;
+            (state.Damage ??= new(context.Occurrence)).Add(damaged, amount);
+            suspended |= !damaged.IsComplete;
         }
         foreach (var modifier in context.Power == BasicPowers.AttackVerb ? [] : attackModifiers)
             context.World.Effects.Use(modifier);
@@ -283,8 +280,8 @@ internal static class AbilityDamageAndThreatExecution
         var damaged = DamageAttacks.Attack(context.World, context.World.Facts,
             context.PowerActor ?? context.AbilityActor ?? context.World.Seats[Resolver(context)].IdentityCard,
             context.Source, to, amount, context.Trigger, BasicPowers.AttackVerb, context.Events, retaliate: false);
-        if (damaged.Characters.Count > 0) context.Occurrence.Also(Steps.DamageDealt);
-        if (damaged.Suspended) state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
+        (state.Damage ??= new(context.Occurrence)).Add(damaged, amount);
+        if (!damaged.IsComplete) state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
     }
 
     private static void Soak(AbilityCardSelection selection, AbilityDamageAndThreatContext context,

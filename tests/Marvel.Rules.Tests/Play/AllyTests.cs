@@ -89,7 +89,7 @@ public sealed class AllyTests
         // "If an ally's remaining hit points are reduced to zero, it is
         // defeated and discarded from play." One hit point and one icon, so
         // attacking once is the end of it -- and `rr:consequential-damage` is
-        // dealt to the ally by the same `Damage.Deal` an enemy uses.
+        // dealt to the ally by the same `DamagePlacement.Resolve` an enemy uses.
         var printed = Cards();
         var world = Board(printed);
         var ally = Ally(world, "fragile");

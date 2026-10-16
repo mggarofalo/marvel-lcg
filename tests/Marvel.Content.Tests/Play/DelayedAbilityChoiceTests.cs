@@ -24,7 +24,9 @@ public sealed class DelayedAbilityChoiceTests
         var seat = world.CreateSeat("p0");
         seat.IdentityCard = world.CreateCard("01001a", seat.Hero);
         var villain = world.CreateCard("01113", world.AreaOf(DeckType.VillainArea));
-        var source = world.CreateCard("01123", world.AreaOf(DeckType.BoostingArea));
+        var encounter = world.AreaOf(DeckType.EncounterDeck);
+        world.CreateCard("01101", encounter);
+        world.CreateCard("01123", encounter);
         for (int index = 0; index < 6; index++) world.CreateCard("01002", seat.Deck);
         var runner = new AbilityRunner(AbilityCatalog.Parse("""
             {"cards":[{"card":"01123","abilities":[{
@@ -36,20 +38,17 @@ public sealed class DelayedAbilityChoiceTests
                   {"exhaust":"you"}]}}},
                 {"draw":{"player":"you","count":1}}]}}]}]}
             """));
-        world.Activation = new EnemyActivation(villain.ObjectId, 0, Attacking: true, Id: 12);
-        var completed = world.Activation with { Made = true };
-        runner.Boost(world, source, 0);
+        world.Agenda.Now(new PhaseStep(new EnemyAttackOperation(), 1, 0,
+            Subject: villain.ObjectId, Seat: 0));
+        var events = new List<GameEvent>();
+        var defense = Sequence.Work(world, cards, runner, events)!;
+        Assert.Equal(Question.Defender, defense.Asking);
+        Assert.Empty(seat.Hand.Cards);
+        Assert.True(seat.IdentityCard.Ready);
+        Sequence.Answer(world, cards, runner, defense, Decision.Decline, events);
+        var prompt = Sequence.Work(world, cards, runner, events)!;
         Assert.Single(seat.Hand.Cards);
         Assert.True(seat.IdentityCard.Ready);
-        Assert.Empty(world.Agenda.Outstanding);
-
-        runner.ActivationCompleted(world, completed);
-        Assert.Single(world.Agenda.Outstanding);
-        runner.ActivationCompleted(world, completed);
-        Assert.Single(world.Agenda.Outstanding);
-        Assert.Single(seat.Hand.Cards);
-        var events = new List<GameEvent>();
-        var prompt = Sequence.Work(world, cards, runner, events)!;
         Assert.Equal(2, prompt.Affordances.Count);
         Sequence.Answer(world, cards, runner, prompt, Decision.Take(0), events);
         Assert.Null(Sequence.Work(world, cards, runner, events));
@@ -57,7 +56,7 @@ public sealed class DelayedAbilityChoiceTests
         Assert.Equal(3, seat.Hand.Cards.Count);
         Assert.False(seat.IdentityCard.Ready);
         string final = world.Digest().Canonical();
-        Assert.Empty(runner.ActivationCompleted(world, completed));
+        Assert.Null(Sequence.Work(world, cards, runner, events));
         Assert.Empty(world.Agenda.Outstanding);
         Assert.Equal(final, world.Digest().Canonical());
     }

@@ -6,6 +6,8 @@ namespace Marvel.Rules.Play;
 /// <summary>State owned by the AttackStage procedure.</summary>
 public sealed record AttackStageOperation(AttackStageKind Kind) : AgendaOperation
 {
+    internal DamageReplacement? Replacement { get; set; }
+
     /// <inheritdoc/>
     public override string What => Kind switch
     {

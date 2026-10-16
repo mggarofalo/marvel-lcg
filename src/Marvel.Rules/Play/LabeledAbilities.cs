@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Rules.Events;
 using Marvel.Rules.State;
 
@@ -17,13 +18,12 @@ public static class LabeledAbilities
     }
 
     /// <summary>The labels whose rules the engine executes.</summary>
-    public static IReadOnlySet<string> Known { get; } =
-        new HashSet<string>(StringComparer.Ordinal)
-        {
+    public static ImmutableArray<string> Known { get; } =
+        [
             BasicPowers.AttackVerb,
             Attack.DefenseVerb,
             BasicPowers.ThwartVerb,
-        };
+        ];
 
     /// <summary>The card considered to perform an ability from <paramref name="source"/>.</summary>
     /// <remarks>

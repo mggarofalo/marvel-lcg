@@ -207,7 +207,7 @@ internal static class RevealProcedure
             return;
         }
 
-        ActivityBatches.Append(events, abilities.Resolve(world, occurrence, ability, [], []));
+        ActivityBatches.Append(events, abilities.ResolveWindow(world, occurrence, ability, new Decision(ability.Card, [], [])).Events);
     }
 
     internal static Prompt ChoosePostRevealAbility(World world, PhaseStep step)

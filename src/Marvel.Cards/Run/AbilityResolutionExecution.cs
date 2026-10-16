@@ -1,6 +1,6 @@
+using System.Collections.Immutable;
 using static Marvel.Cards.Run.AbilityEffectStructure;
 using static Marvel.Cards.Run.AbilityPaymentRules;
-using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -62,9 +62,9 @@ internal sealed class AbilityResolutionExecution
     /// <summary>The verb an option carries on the wire.</summary>
     public const string ChooseVerb = AbilityStructuralExecution.ChooseVerb;
 
-    internal static readonly string[] Branches = ["then", "else"];
+    internal static readonly ImmutableArray<string> Branches = ["then", "else"];
 
-    internal static readonly DeckType[] Owned = [DeckType.UpgradesArea, DeckType.SupportsArea];
+    internal static readonly ImmutableArray<DeckType> Owned = [DeckType.UpgradesArea, DeckType.SupportsArea];
 
     // A facedown Ultron Drone retains the underlying player-card face id for
     // the state digest, but `rr:in-play-and-out-of-play.5` and `.13` make that

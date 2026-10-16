@@ -84,7 +84,8 @@ when an affordance is built and when the submitted action is applied.
 
 ## Damage, defeat, and elimination
 
-All damage uses `Damage.Deal`. A character with zero or fewer remaining hit
+Damage placement uses `DamagePlacement.Resolve` and retains a typed completion
+receipt. A character with zero or fewer remaining hit
 points is defeated; prevention, tough, defense, piercing, overkill, and defeat
 windows are resolved through the same pipeline.
 

@@ -30,10 +30,14 @@ func _required_journey_paths_were_seen(state: Dictionary) -> bool:
 	if not state.tested_attached_focus:
 		_fail("the journey never reached an attached action control")
 		return false
-	if not state.changed_form or not state.tested_undo:
+	if not state.form_undo_excluded and (not state.changed_form or not state.tested_undo):
 		_fail("the journey did not change form again after proving undo")
 		return false
 	var multiplayer := OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true"
+	if state.form_undo_excluded:
+		print("NATIVE_OBLIGATION_EXCLUDED form_change_undo reason=multiplayer_profile")
+	else:
+		print("NATIVE_OBLIGATION_ASSERTED form_change_undo")
 	# The exact attack/exhaustion journey is deterministic in the one-player
 	# profile. The multiplayer profile owns seat switching and still has to
 	# reach the villain phase without duplicating that seeded card sequence.

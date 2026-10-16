@@ -23,6 +23,7 @@ public static class AgendaActivationScheduling
             throw new ArgumentException("the step is not an enemy activation", nameof(step));
         }
 
+        agenda.BeginScheduling();
         int id = agenda.nextActivationId++;
         var root = step with { ActivationId = id };
         var completion = agenda.Completion(root);
@@ -133,6 +134,7 @@ public static class AgendaActivationScheduling
 
     internal static void AddActivation(this Agenda agenda, PhaseStep step)
     {
+        agenda.BeginScheduling();
         int id = agenda.nextActivationId++;
         var root = step with { ActivationId = id };
         var completion = agenda.Completion(root);
@@ -147,6 +149,7 @@ public static class AgendaActivationScheduling
         {
             throw new ArgumentException("the step is not an enemy activation", nameof(step));
         }
+        agenda.BeginScheduling();
         int id = agenda.nextActivationId++;
         var root = step with { ActivationId = id };
         var completion = agenda.Completion(root);
@@ -196,16 +199,6 @@ public static class AgendaActivationScheduling
         agenda.items[at] = (replacement with { FrameId = item.Step.FrameId }, item.Stage, item.Occurrence);
     }
 
-    /// <summary>Take one activation wait as opaque scheduled work.</summary>
-    public static PhaseStep TakeActivationWait(this Agenda agenda, int activationId)
-    {
-        int at = agenda.ActivationWaitIndex(activationId);
-        if (at < 0) throw new InvalidOperationException("the activation wait is not on the agenda");
-        var step = agenda.items[at].Step;
-        agenda.items.RemoveAt(at);
-        return step;
-    }
-
     internal static int ActivationWaitIndex(this Agenda agenda, int activationId) => agenda.items.FindIndex(item =>
         item.Step.What == Steps.ResumeAbility
         && item.Step.Require<AbilityContinuationAgendaOperation>().AwaitedActivations.Contains(activationId));
@@ -241,6 +234,7 @@ public static class AgendaActivationScheduling
                 && item.Step.What is not (Steps.CompleteAttackActivation
                     or Steps.CompleteSchemeActivation))
             {
+                agenda.Executions.Removed(item.Step, cancelled: true);
                 agenda.items.RemoveAt(index);
             }
         }

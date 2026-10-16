@@ -134,7 +134,7 @@ public sealed class CoreCorrectionTriggerTests : ChoosingCardsTestBase
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == uppercut.ObjectId);
-        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId, energy.ObjectId], []));
         var target = Sequence.Work(world, Cards, runner, [])!;
         Sequence.Answer(world, Cards, runner, target, Decision.Take(enemy.ObjectId), []);
         Assert.Null(Sequence.Work(world, Cards, runner, []));

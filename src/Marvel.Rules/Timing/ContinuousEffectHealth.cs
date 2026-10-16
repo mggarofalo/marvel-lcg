@@ -75,9 +75,8 @@ internal static class ContinuousEffectHealth
         // the engine chooses this spelling to distinguish it from damage.
         const string verb = "Hit_Points_Reduced";
         var occurrence = effects.world.Agenda.Occurrence;
-        if (!effects.world.DamageAbilities.WouldBeDefeated(
-                effects.world, card, card, trigger, verb, by: -1,
-                events: events, recordDefeatOn: occurrence))
+        if (DefeatInterruption.Begin(effects.world, card,
+                new DefeatCause(card.ObjectId, trigger, verb, Owner: occurrence), events))
         {
             effects.healthDefeatPending.Add(card.ObjectId);
             return true;

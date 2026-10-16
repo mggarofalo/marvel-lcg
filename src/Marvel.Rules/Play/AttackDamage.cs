@@ -82,19 +82,21 @@ internal static class AttackDamage
         // a second place for the defeat rules to be wrong.
         // One call, because `rr:piercing`, `rr:overkill` and `rr:ranged` are all
         // properties of the attack rather than of either character.
-        int firstDamageEvent = events.Count;
-        var damage = DamageAttacks.Resolve(world, facts,
+        DamageAttacks.Resolve(world, facts,
             new AttackDamageRequest(world.Cards[attack.Enemy], world.Cards[attack.Enemy],
                 world.Cards[attack.Target], amount, Steps.AttackInitiated, "Deal_Damage",
-                ActivationId: world.Agenda.Current?.ActivationId), events);
+                ActivationId: world.Agenda.Current?.ActivationId) { EnemyAttack = attack,
+                    Replacement = PreparedReplacement(world, attack) }, events);
 
-        // Recorded on the attack rather than derived later, because by the time
-        // `rr:attack-enemy-activation.step.6.a`'s abilities run the damage is on
-        // a dial that had damage on it before. `damaged` is the list
-        // `rr:tough.3` shortens -- a character whose tough card absorbed the
-        // attack "is not considered to have taken damage" -- so an attack that
-        // hit a tough card did not damage anybody.
-        AttackDamageAccounting.RecordAttackDamage(world, attack, damage, events, firstDamageEvent);
+    }
+
+    private static DamageReplacement? PreparedReplacement(World world, EnemyAttack attack)
+    {
+        var replacement = (world.Agenda.Current?.Operation as AttackStageOperation)?.Replacement;
+        return replacement is not null
+            && ReferenceEquals(replacement.Source, world.Cards[attack.Enemy])
+            && ReferenceEquals(replacement.Target, world.Cards[attack.Target])
+                ? replacement : null;
     }
 
     private static void MarkDamageStepResolved(World world, EnemyAttack attack) =>
@@ -113,7 +115,7 @@ internal static class AttackDamage
         IndirectAttackAssignment.AssignIndirectDamage(world, facts, step, input, events);
 
     /// <summary>Prepare one assigned recipient's damage.</summary>
-    public static long PrepareIndirectDamage(World world, PhaseStep step, List<GameEvent> events) =>
+    public static long? PrepareIndirectDamage(World world, PhaseStep step, List<GameEvent> events) =>
         IndirectAttackResolution.PrepareIndirectDamage(world, step, events);
 
     /// <summary>Place all assigned shares simultaneously.</summary>

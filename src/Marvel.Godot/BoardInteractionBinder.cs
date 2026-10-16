@@ -94,7 +94,7 @@ internal static class BoardInteractionBinder
             CardInteractionIntent.Submit => Submit(panel, composer, generation),
             CardInteractionIntent.Decline => Decline(panel, composer, generation),
             CardInteractionIntent.Action => SelectAction(
-                panel, composer, generation, gesture, interaction, cardId),
+                panel, composer, generation, gesture.Source, interaction, cardId),
             _ => BoardDraftMutation.None,
         };
         if (mutation == BoardDraftMutation.None)
@@ -140,19 +140,23 @@ internal static class BoardInteractionBinder
         DecisionPanel panel,
         DecisionComposer composer,
         int generation,
-        CardPointerGesture gesture,
+        Control source,
         BoardDraftInteraction interaction,
         int cardId)
     {
         IReadOnlyList<Marvel.View.AffordancePresentation> actions = interaction.VisibleActions(cardId);
         if (actions.Count == 1)
         {
-            if (RecipientCommitmentChoices.Show(gesture.Source, actions[0],
-                () => panel.IsCurrentDraft(composer, generation), recipient =>
+            if (RecipientCommitmentChoices.Entries(actions[0]) is { Count: > 0 } recipients)
+            {
+                panel.BoardChoices.Show(source, composer, cardId, recipients, recipient =>
                 {
                     if (RecipientCommitmentChoices.Select(composer, CurrentOperations(panel, composer), actions[0].Id, recipient))
                         Submit(panel, composer, generation);
-                })) return BoardDraftMutation.None;
+                }, replacement => ReopenSourceChoice(panel, composer, cardId, replacement), recipients: true);
+                return BoardDraftMutation.None;
+            }
+            if (panel.BoardChoices.IsRestoring) return BoardDraftMutation.None;
             BoardDraftMutation mutation = interaction.TrySelectAction(actions[0].Id, cardId);
             return mutation == BoardDraftMutation.Affordance
                 && DirectCommitment.IsReady(composer)
@@ -160,8 +164,7 @@ internal static class BoardInteractionBinder
         }
         if (actions.Count > 1)
         {
-            BoardActionChoiceSurface.Show(gesture.Source, actions,
-                () => panel.IsCurrentDraft(composer, panel.GetRenderGeneration()), id =>
+            panel.BoardChoices.Show(source, composer, cardId, actions, id =>
             {
                 if (interaction.TrySelectAction(id, cardId) == BoardDraftMutation.Affordance)
                 {
@@ -169,9 +172,15 @@ internal static class BoardInteractionBinder
                     if (DirectCommitment.IsReady(composer)) Submit(panel, composer, generation);
                     else RefreshDraft(panel, composer, generation, cardId);
                 }
-            });
+            }, replacement => ReopenSourceChoice(panel, composer, cardId, replacement));
         }
         return BoardDraftMutation.None;
+    }
+
+    private static void ReopenSourceChoice(DecisionPanel panel, DecisionComposer composer, int source, Control replacement)
+    {
+        var interaction = new BoardDraftInteraction(composer, CurrentOperations(panel, composer), Affordances(panel, composer));
+        SelectAction(panel, composer, panel.GetRenderGeneration(), replacement, interaction, source);
     }
 
     private static TableDraftBinding CurrentOperations(

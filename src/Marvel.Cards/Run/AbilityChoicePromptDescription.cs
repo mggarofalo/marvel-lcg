@@ -39,14 +39,21 @@ internal static class AbilityChoicePromptDescription
             DisplayQuestion = choice is AbilityEffect.ChooseCard cardChoice ? AbilityDamageTransferDescription.Question(context, cardChoice) ?? AbilityEffectDescription.Question(
                 context.Expressions.World, context.SourceFace, cardChoice)
                 : $"{context.Expressions.World.Facts.Title(context.SourceFace)}: choose an option",
-            Description = choice is AbilityEffect.ChooseCard describedChoice
-                ? AbilityDamageTransferDescription.Summary(context, describedChoice) ?? AbilityEffectDescription.Summary(describedChoice)
-                : null,
+            Description = DescribePrompt(context, choice),
             ExposesConcealedCandidates = concealedCards,
             PublicKind = concealedCards ? PublicDecisionKind.CardSearch : PublicDecisionKind.Choice,
         };
         return new AbilityStructuralPrompt(prompt, Admission(evidence));
     }
+
+    private static string? DescribePrompt(AbilityStructuralContext context, AbilityEffect choice)
+    {
+        string? summary = choice is AbilityEffect.ChooseCard card
+            ? AbilityDamageTransferDescription.Summary(context, card) ?? AbilityEffectDescription.Summary(card)
+            : null;
+        return context.Expressions.FinalStep ? $"Final step. {summary}".TrimEnd() : summary;
+    }
+
     private static IEnumerable<Affordance> CardChoices(AbilityStructuralContext context,
         AbilityEffect.ChooseCard chooseCard, AbilityContinuationFacts continuation,
         HashSet<AbilityEffect> evidence)

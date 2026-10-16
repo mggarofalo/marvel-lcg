@@ -8,6 +8,8 @@ public enum AgendaProcedureKind
 {
     /// <summary>Enemy and player attack procedures.</summary>
     Attack,
+    /// <summary>Damage replacement, placement and defeat completion.</summary>
+    Damage,
     /// <summary>Threat placement and enemy scheme procedures.</summary>
     Threat,
     /// <summary>Encounter-card reveal procedures.</summary>
@@ -24,4 +26,8 @@ public enum AgendaProcedureKind
     PhaseTransition,
     /// <summary>Lifecycle occurrences whose mutation already happened.</summary>
     Lifecycle,
+    /// <summary>Accepted resource payment and post-payment card entry.</summary>
+    ResourcePayment,
+    /// <summary>Played card resolution and finalization.</summary>
+    CardEntry,
 }

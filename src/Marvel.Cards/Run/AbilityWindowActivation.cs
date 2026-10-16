@@ -22,19 +22,21 @@ internal static class AbilityWindowActivation
         var costOwner = world.Agenda.Current;
         var costOccurrence = world.Agenda.Occurrence;
         var arrowPayment = AbilityCostPayment.Prepare(
-            world, card, cast.Player, found.Cost, paying,
-            cast.Results.ContainsKey(AbilityRecipientCommitment.PendingRecipient) ? [] : chosen,
-            execution.program, execution.resourceAbilities, answer.DefinedValues,
-            resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-                && ResourceRequirement(found.Cost, card).Length > 0);
+            world, card, cast.Player, found.Cost, execution.program, execution.resourceAbilities,
+            AbilityPaymentSelection.Capture(paying,
+                cast.Results.ContainsKey(AbilityRecipientCommitment.PendingRecipient) ? [] : chosen,
+                answer.DefinedValues,
+                resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
+                    && ResourceRequirement(found.Cost, card).Length > 0));
         var eventPayment = AbilityEventPayment.Prepare(
-            world, card, cast.Player, paying, found.Effect,
-            execution.resourceAbilities, answer.Allocated, found.Cost);
-        if (eventPayment is not null)
-            cast.PaidWith(eventPayment.Commit(occurrence, events));
-        execution.ApplyPayment(
-            arrowPayment.Commit(execution.cardPlayAbilities, cast.Trigger, events), cast);
-        if (!cast.Suspended) return true;
+            world, card, cast.Player, paying, found,
+            execution.resourceAbilities, answer.Allocated);
+        cast.PendingPayment = new AbilityInitiationPayment(eventPayment, arrowPayment);
+        if (cast.PendingPayment.Commit(execution, cast))
+        {
+            cast.PendingPayment = null;
+            return true;
+        }
         execution.SuspendAfterCost(cast, address.Ordinal, costOwner, costOccurrence);
         return false;
     }
@@ -51,7 +53,7 @@ internal static class AbilityWindowActivation
         cast.RestoreAbility(address.Ordinal, []);
         cast.TrackResolution(address.Ordinal);
         if (!AbilityRecipientCommitment.Resume(execution, cast, found)) execution.Run(found, cast);
-        cast.CompleteResolution();
         execution.DiscardEvent(card, cast);
+        cast.CompleteResolution();
     }
 }

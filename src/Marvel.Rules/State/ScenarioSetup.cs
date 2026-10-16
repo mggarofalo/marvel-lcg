@@ -71,7 +71,7 @@ internal sealed class ScenarioSetup
     private static void RunPrintedSetup(World world, List<GameEvent> events, DeckType area)
     {
         if (world.TheCardIn(area) is Card card)
-            ActivityBatches.Append(events, world.SetupAbilities.Setup(world, card));
+            ActivityBatches.Append(events, world.SetupAbilities.ExecuteSetup(world, card).Events);
     }
 
     private static void RevealMainScheme(World world, List<GameEvent> events)
@@ -79,13 +79,13 @@ internal sealed class ScenarioSetup
         if (world.TheCardIn(DeckType.MainSchemesArea) is not Card scheme) return;
         scheme.TurnTo(scheme.Faces[^1]);
         scheme.PlaceTokens("k_threat", world.Facts.PrintedValue(scheme.FaceId, "StartingThreat", world.Players));
-        ActivityBatches.Append(events, world.EncounterAbilities.WhenRevealed(world, scheme, world.FirstPlayer));
+        ActivityBatches.Append(events, world.EncounterAbilities.ExecuteReveal(world, scheme, world.FirstPlayer).Events);
     }
 
     private static void RevealVillain(World world, List<GameEvent> events)
     {
         if (world.TheCardIn(DeckType.VillainArea) is Card villain)
-            ActivityBatches.Append(events, world.EncounterAbilities.WhenRevealed(world, villain, world.FirstPlayer));
+            ActivityBatches.Append(events, world.EncounterAbilities.ExecuteReveal(world, villain, world.FirstPlayer).Events);
     }
 
     private void ValidateRemainingSetupCards()
@@ -104,7 +104,7 @@ internal sealed class ScenarioSetup
             Card card = world.Cards[address.Card];
             if (card.Incarnation != address.Incarnation || !DeckTypes.IsInPlay(card.Area.Type)) continue;
             RevealKeywords.Keywords(world, world.Facts, world.ThreatAbilities, card, world.FirstPlayer, events);
-            ActivityBatches.Append(events, world.EncounterAbilities.WhenRevealed(world, card, world.FirstPlayer));
+            ActivityBatches.Append(events, world.EncounterAbilities.ExecuteReveal(world, card, world.FirstPlayer).Events);
             return true;
         }
         return false;

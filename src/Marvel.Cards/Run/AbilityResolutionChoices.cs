@@ -10,7 +10,7 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilityResolutionChoices
 {
-    private static readonly HashSet<string> SpecialChoiceOperations =
+    private static readonly System.Collections.Immutable.ImmutableArray<string> SpecialChoiceOperations =
         ["resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle"];
 
     internal static Prompt? Choosing(this AbilityResolutionExecution execution, World world, PhaseStep step)
@@ -24,12 +24,19 @@ internal static class AbilityResolutionChoices
     internal static IReadOnlyList<GameEvent> Chose(
         this AbilityResolutionExecution execution, World world, PhaseStep step, Decision input)
     {
+        world.Agenda.Executions.RequireContinuation(step);
         var cast = RestoreChoice(execution, world, step);
         var choice = AbilityContinuations.Choice(execution.program, cast.Source, cast.Tier,
             step.Index, step, execution.AdmissionContext(cast));
+        var prompt = execution.DescribeChoice(cast.Source, cast.Tier, step, choice, cast)
+            ?? throw new InvalidOperationException("the continuation no longer asks for an answer");
+        var assessment = DecisionAssessment.Assess(prompt, input);
+        if (!assessment.IsAccepted) throw new ArgumentException(assessment.Reason ?? assessment.Rejection.ToString(), nameof(input));
         cast.TrackResolution(cast.AbilityOrdinal);
         cast.At(Math.Max(0, step.Index - 1));
-        return new AbilityChoiceAnswer(execution, step.Seat, step.Index, input, step, cast).Apply(choice);
+        var events = new AbilityChoiceAnswer(execution, step.Seat, step.Index, input, step, cast).Apply(choice);
+        cast.CompleteResolution();
+        return events;
     }
 
     private static AbilityResolutionState RestoreChoice(

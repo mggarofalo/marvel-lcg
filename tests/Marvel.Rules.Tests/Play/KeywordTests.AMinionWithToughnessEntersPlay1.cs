@@ -52,8 +52,10 @@ public sealed class KeywordAMinionWithToughnessEntersPlayTests : KeywordTestBase
         var world = Board(printed);
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         Statuses.Give(world, minion, Statuses.Tough);
-        bool defeated = DamagePlacement.Deal(world, printed, minion, minion, 9, "test", "test", []);
-        Assert.False(defeated);
+        var damage = DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 9, "test", "test"), []);
+        Sequence.Finish(world, world.Facts, world.Abilities, []);
+        Assert.Equal(Damage.Outcome.NotDefeated, damage.Outcome);
         Assert.Equal(0, minion.Damage);
         Assert.False(Statuses.Has(world, minion, Statuses.Tough));
     }
@@ -70,11 +72,14 @@ public sealed class KeywordAMinionWithToughnessEntersPlayTests : KeywordTestBase
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         Statuses.Give(world, minion, Statuses.Tough);
         Statuses.Give(world, minion, Statuses.Tough);
-        DamagePlacement.Deal(world, printed, minion, minion, 1, "test", "test", []);
+        DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 1, "test", "test"), []);
         Assert.True(Statuses.Has(world, minion, Statuses.Tough));
-        DamagePlacement.Deal(world, printed, minion, minion, 1, "test", "test", []);
+        DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 1, "test", "test"), []);
         Assert.False(Statuses.Has(world, minion, Statuses.Tough));
-        DamagePlacement.Deal(world, printed, minion, minion, 1, "test", "test", []);
+        DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 1, "test", "test"), []);
         Assert.Equal(1, minion.Damage);
     }
 

@@ -21,7 +21,7 @@ public sealed class ActionAbilityTypedChoiceOperandsSimultaneousChoiceAdvertises
         var(world, source) = FixedCountBoard(runner);
         var identity = world.Seats[0].IdentityCard;
         identity.TakeDamage(1);
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, choice)!;
         var order = Assert.Single(prompt.Affordances);
@@ -50,7 +50,7 @@ public sealed class ActionAbilityTypedChoiceOperandsSimultaneousChoiceAdvertises
         world.Seats[0].IdentityCard.TakeDamage(3);
         if (editBeforeAction)
             fields["descriptions"] = new AbilityValue.Number(0);
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         fields["descriptions"] = new AbilityValue.Number(0);
         var prompt = runner.Choosing(world, choice)!;
@@ -77,7 +77,7 @@ public sealed class ActionAbilityTypedChoiceOperandsSimultaneousChoiceAdvertises
         world.CreateCard("01005", world.Seats[0].Deck);
         if (editBeforeAction)
             fields["resources"] = new AbilityValue.Word("YYY");
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         fields["resources"] = new AbilityValue.Word("YYY");
         var prompt = runner.Choosing(world, choice)!;
@@ -88,9 +88,11 @@ public sealed class ActionAbilityTypedChoiceOperandsSimultaneousChoiceAdvertises
         // Changing the syntax cannot substitute energy for the compiled
         // mental-resource requirement, even after the question was offered.
         fields["resources"] = new AbilityValue.Word("YY");
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, choice, Decision.Take(0, [], [energy.ObjectId])));
+        Assert.Throws<ArgumentException>(() => runner.Chose(world, choice,
+            new Decision(0, [], [energy.ObjectId], Allocations: [new(energy.ObjectId, 0, "YY")])));
         Assert.Equal([genius, energy], hand.Cards);
-        runner.Chose(world, choice, Decision.Take(0, [], [genius.ObjectId]));
+        runner.Chose(world, choice,
+            new Decision(0, [], [genius.ObjectId], Allocations: [new(genius.ObjectId, 0, "BB")]));
         Assert.Equal([energy], hand.Cards);
         Assert.Equal(DeckType.DiscardPile, genius.Area.Type);
         Assert.True(world.Seats[0].IdentityCard.Ready);
@@ -128,14 +130,14 @@ public sealed class ActionAbilityTypedChoiceOperandsSimultaneousChoiceAdvertises
         string face = wrapper == "withTrait" ? "01035" : "01005";
         var first = world.CreateCard(face, pile);
         var second = world.CreateCard(face, pile);
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         fields["from"] = new AbilityValue.Word("you");
         var prompt = runner.Choosing(world, choice)!;
         Assert.Equal(Question.Element, prompt.Asking);
         Assert.Equal(concealed, prompt.ExposesConcealedCandidates);
         Assert.Equal([first.ObjectId, second.ObjectId], prompt.Affordances.Select(option => option.Id));
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, choice, Decision.Take(world.Seats[0].IdentityCard.ObjectId)));
+        Assert.Throws<ArgumentException>(() => runner.Chose(world, choice, Decision.Take(world.Seats[0].IdentityCard.ObjectId)));
         Assert.Equal([first, second], pile.Cards);
         Assert.Empty(world.Seats[0].Hand.Cards);
         runner.Chose(world, choice, Decision.Take(second.ObjectId));
@@ -154,12 +156,12 @@ public sealed class ActionAbilityTypedChoiceOperandsSimultaneousChoiceAdvertises
         var first = world.CreateCard("01046", upgrades);
         var second = world.CreateCard("01047", upgrades);
         fields["cards"] = new AbilityValue.Word("you");
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, choice)!;
         Assert.Equal([first.ObjectId, second.ObjectId], prompt.Affordances.Select(offer => offer.Id));
         Assert.All(prompt.Affordances, offer => Assert.Null(offer.Targets));
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, choice, Decision.Take(world.Seats[0].IdentityCard.ObjectId)));
+        Assert.Throws<ArgumentException>(() => runner.Chose(world, choice, Decision.Take(world.Seats[0].IdentityCard.ObjectId)));
         Assert.DoesNotContain(world.Agenda.Outstanding, step => step.What == Steps.ResolveSpecial);
         runner.Chose(world, choice, Decision.Take(second.ObjectId));
         var selected = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.ResolveSpecial);
@@ -184,7 +186,7 @@ public sealed class ActionAbilityTypedChoiceOperandsSimultaneousChoiceAdvertises
         side.PlaceTokens("k_threat", 3);
         var handCard = world.CreateCard("01088", world.Seats[0].Hand);
         world.CreateCard("01005", world.Seats[0].Deck);
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         fields["schemes"] = new AbilityValue.Map(new Dictionary<string, AbilityValue> { ["query"] = new AbilityValue.Word("mainScheme"), });
         var prompt = Sequence.Work(world, CardCatalogData, runner, [])!;
@@ -194,7 +196,7 @@ public sealed class ActionAbilityTypedChoiceOperandsSimultaneousChoiceAdvertises
         else
             Assert.Equal([side.ObjectId], selection.Targets!.Legal);
         var wrong = operation == "legalPractice" ? Decision.Take(main.ObjectId, [handCard.ObjectId], []) : Decision.Take(selection.Id, [main.ObjectId], []);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, choice, wrong));
+        Assert.Throws<ArgumentException>(() => runner.Chose(world, choice, wrong));
         Assert.Equal([handCard], world.Seats[0].Hand.Cards);
         Assert.Equal(4, main.Tokens["k_threat"]);
         Assert.Equal(3, side.Tokens["k_threat"]);

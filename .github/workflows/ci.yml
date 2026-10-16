@@ -99,6 +99,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - name: Establish the reviewed architecture baseline
+        shell: pwsh
+        env:
+          MARVEL_ARCHITECTURE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: ./tools/architecture-base.ps1
+
+      - name: Native process deadlines contain descendant processes
+        shell: pwsh
+        run: ./tools/native-process-tests.ps1
+
+      - name: Native case admission rejects malformed inputs
+        shell: pwsh
+        run: ./tools/native-manifest-tests.ps1
 
       # Build with the pinned SDK and execute on the net8.0 runtime Godot hosts.
       - uses: actions/setup-dotnet@v5
@@ -180,22 +196,39 @@ jobs:
       - name: A representative local game is playable through native Godot controls (Linux)
         if: ${{ runner.os == 'Linux' && !inputs.exhaustive }}
         shell: bash
+        env:
+          MARVEL_NATIVE_RESULTS_DIRECTORY: ${{ runner.temp }}/native-evidence
         run: bash tools/godot-smoke.sh "$GODOT_BIN" --representative
 
       - name: A representative local game is playable through native Godot controls (Windows)
         if: ${{ runner.os == 'Windows' && !inputs.exhaustive }}
         shell: pwsh
+        env:
+          MARVEL_NATIVE_RESULTS_DIRECTORY: ${{ runner.temp }}/native-evidence
         run: tools/godot-smoke.ps1 -GodotBin $env:GODOT_BIN -Representative
 
       - name: The local viewport and scale matrix passes (Linux)
         if: ${{ runner.os == 'Linux' && inputs.exhaustive }}
         shell: bash
+        env:
+          MARVEL_NATIVE_RESULTS_DIRECTORY: ${{ runner.temp }}/native-evidence
         run: bash tools/godot-smoke.sh "$GODOT_BIN"
 
       - name: The local viewport and scale matrix passes (Windows)
         if: ${{ runner.os == 'Windows' && inputs.exhaustive }}
         shell: pwsh
+        env:
+          MARVEL_NATIVE_RESULTS_DIRECTORY: ${{ runner.temp }}/native-evidence
         run: tools/godot-smoke.ps1 -GodotBin $env:GODOT_BIN
+
+      - name: Retain native case inputs and results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-evidence-${{ matrix.os }}
+          path: ${{ runner.temp }}/native-evidence
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Two restricted clients complete a hosted game (Linux)
         if: runner.os == 'Linux'
@@ -238,7 +271,7 @@ jobs:
           grep -q 'name: marvel-diagnostics' <<<"$compose"
           [[ $(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$image") == 0.1.0-dev.0 ]]
           docker run --rm --entrypoint dotnet "$image" Marvel.Server.Host.dll --version |
-            grep -F 'v0.1.0-dev.0 · engine engine-replay-v17 · protocol 32 · save 6'
+            grep -F 'v0.1.0-dev.0 · engine engine-replay-v18 · protocol 32 · save 6'
           docker volume create "$volume" >/dev/null
           docker volume create "$diagnostics" >/dev/null
           docker run --detach --name "$container" \

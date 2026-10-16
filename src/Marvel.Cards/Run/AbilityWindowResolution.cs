@@ -18,9 +18,7 @@ internal static class AbilityWindowResolution
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(occurrence);
-        var seen = new HashSet<int>();
-        int next = world.Cards.Count;
-        return [.. AbilityWindowAdmission.Waiting(
+        return AbilityOfferHandles.Assign(AbilityWindowAdmission.Waiting(
                 execution.program, world, occurrence, window, execution.resourceAbilities)
             .Select(candidate => new PendingAbility(
                 candidate.Card.ObjectId, candidate.Ability.Trigger.Timing,
@@ -28,23 +26,30 @@ internal static class AbilityWindowResolution
             {
                 Would = candidate.Ability.Trigger.Would,
                 TriggeringDefeat = candidate.TriggeringDefeat,
-                OfferId = seen.Add(candidate.Card.ObjectId) ? null : next++,
-            })];
+            }), world.Cards.Count);
     }
 
-    /// <inheritdoc/>
-    internal static IReadOnlyList<GameEvent> Resolve(this AbilityResolutionExecution execution,
-        World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen) =>
-        execution.Resolve(world, occurrence, ability, new Decision(ability.Card, chosen, paying));
+    internal static AbilityExecutionResult Resolve(this AbilityResolutionExecution execution,
+        World world, Occurrence occurrence, PendingAbility ability, Decision answer) =>
+        world.Agenda.Executions.Run(occurrence, ability,
+            invocation => execution.Resolve(world, invocation, answer));
 
-    /// <inheritdoc/>
-    internal static IReadOnlyList<GameEvent> Resolve(this AbilityResolutionExecution execution,
-        World world, Occurrence occurrence, PendingAbility ability, Decision answer)
+    internal static AbilityExecutionResult Resolve(this AbilityResolutionExecution execution,
+        World world, AbilityExecution invocation, Decision answer) =>
+        ResolveCore(execution, world, invocation, answer, null);
+
+    internal static AbilityExecutionResult ResolveReplacement(this AbilityResolutionExecution execution,
+        World world, AbilityExecution invocation, Decision answer, DamageReplacement replacement) =>
+        ResolveCore(execution, world, invocation, answer, replacement);
+
+    private static AbilityExecutionResult ResolveCore(AbilityResolutionExecution execution,
+        World world, AbilityExecution invocation, Decision answer, DamageReplacement? replacement)
     {
         ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(occurrence);
         ArgumentNullException.ThrowIfNull(answer);
+        world.Agenda.Executions.RequireActive(invocation);
+        var occurrence = invocation.Occurrence;
+        var ability = invocation.Ability;
 
         var card = world.Cards[ability.Card];
         var found = execution.Pending(card, ability);
@@ -66,10 +71,11 @@ internal static class AbilityWindowResolution
         // word points at.
         int resolving = ability.Player >= 0 ? ability.Player : occurrence.Player;
         var cast = CreateAbilityState(world, card, occurrence, resolving, events, found)
-            with { TriggeringDefeat = ability.TriggeringDefeat };
+            with { TriggeringDefeat = ability.TriggeringDefeat, DamageReplacement = replacement };
+        cast.EnterExecution(invocation);
         EnsureAvailable(execution, world, card, found, occurrence);
-        if (!CanPayAbility(execution, world, card, found, resolving)) return events;
-        if (!CanInitiateAbility(execution, card, found, resolving, cast)) return events;
+        if (!CanPayAbility(execution, world, card, found, resolving)) return invocation.Finish(events);
+        if (!CanInitiateAbility(execution, card, found, resolving, cast)) return invocation.Finish(events);
 
         // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
         // before step 6 resolves. Nothing here can abort for want of resources,
@@ -79,14 +85,16 @@ internal static class AbilityWindowResolution
         // refuses one that does not.
         if (AbilityRecipientCommitment.Validate(execution, cast, found, answer.Targets) is not null)
             cast.Results[AbilityRecipientCommitment.PendingRecipient] = answer.Targets[0];
+        cast.TrackResolution(ability.Ordinal);
         if (!AbilityWindowActivation.Pay(execution, cast, found, ability, answer))
         {
+            cast.CompleteResolution();
             AbilityWindowReceipt.Emit(cast, found, ability.Ordinal);
-            return events;
+            return invocation.Report(events);
         }
         AbilityWindowActivation.Execute(execution, cast, found, ability);
         AbilityWindowReceipt.Emit(cast, found, ability.Ordinal);
-        return events;
+        return invocation.Report(events);
     }
 
     private static AbilityResolutionState CreateAbilityState(

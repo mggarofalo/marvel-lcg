@@ -140,7 +140,7 @@ public sealed class ActionAbilityCoreAlterEgoReferencesOnlyAffectAnIdentityInAlt
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
         int held = world.Seats[0].Hand.Cards.Count;
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "preventDamage", Amount: 1, Card: source!.ObjectId, Affects: world.Seats[0].IdentityCard.ObjectId, Lasts: new Duration(Uses: 1)));
-        var failure = Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, action, [], []));
+        var failure = Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(action, [], [])));
         Assert.Contains("only 1 was taken", failure.Message);
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
@@ -159,7 +159,7 @@ public sealed class ActionAbilityCoreAlterEgoReferencesOnlyAffectAnIdentityInAlt
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
         int held = world.Seats[0].Hand.Cards.Count;
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
@@ -189,7 +189,9 @@ public sealed class ActionAbilityCoreAlterEgoReferencesOnlyAffectAnIdentityInAlt
         }, hero: true, abilities: runner);
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "eventDamage", Amount: 2, Card: played!.ObjectId, Affects: played.ObjectId));
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == played.ObjectId);
-        runner.Act(world, action, [..payments.Select(card => card.ObjectId)], []);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(action, [..payments.Select(card => card.ObjectId)], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.Equal(6, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
@@ -218,7 +220,9 @@ public sealed class ActionAbilityCoreAlterEgoReferencesOnlyAffectAnIdentityInAlt
         }, hero: true, abilities: runner);
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "eventThreatRemoval", Amount: 2, Card: played!.ObjectId, Affects: played.ObjectId));
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == played.ObjectId);
-        runner.Act(world, action, [..payments.Select(card => card.ObjectId)], []);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(action, [..payments.Select(card => card.ObjectId)], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.Equal(4, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
     }
 }

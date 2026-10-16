@@ -29,7 +29,7 @@ public sealed class ActionAbilityTypedPlayerPreflightHandSizeOptionChecksItsName
             world.CreateCard("01002", recipient.Hand);
         var top = world.CreateCard("01003", recipient.Deck);
         world.TheCardIn(DeckType.VillainArea)!.TakeDamage(1);
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, choice)!;
         int[] expected = full ? [1] : [0, 1];
@@ -44,7 +44,7 @@ public sealed class ActionAbilityTypedPlayerPreflightHandSizeOptionChecksItsName
         }
         else
         {
-            Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, choice, Decision.Take(0)));
+            Assert.Throws<ArgumentException>(() => runner.Chose(world, choice, Decision.Take(0)));
             Assert.Equal(size, recipient.Hand.Cards.Count);
             Assert.Equal([top], recipient.Deck.Cards);
         }
@@ -66,7 +66,7 @@ public sealed class ActionAbilityTypedPlayerPreflightHandSizeOptionChecksItsName
         // Neither the resolving player's empty hand nor a later map edit can
         // hide the option that will discard the named player's card.
         fields["player"] = new AbilityValue.Word("you");
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, choice)!;
         Assert.Equal(0, Assert.Single(prompt.Affordances).Id);
@@ -94,7 +94,7 @@ public sealed class ActionAbilityTypedPlayerPreflightHandSizeOptionChecksItsName
         world.FirstPlayer = 1;
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         villain.TakeDamage(1);
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         fields["chooser"] = new AbilityValue.Word("firstPlayer");
         var prompt = runner.Choosing(world, choice)!;

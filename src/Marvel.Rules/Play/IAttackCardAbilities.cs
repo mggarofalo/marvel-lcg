@@ -11,6 +11,6 @@ namespace Marvel.Rules.Play;
 public interface IAttackCardAbilities
 {
     DefenderChoice Defenders(World world, EnemyAttack attack, IReadOnlyList<Card> candidates);
-    IReadOnlyList<GameEvent> Boost(World world, Card card, int player);
+    AbilityExecutionResult Boost(World world, AbilityExecution entry, Card card, int player);
 }
 #pragma warning restore CS1591

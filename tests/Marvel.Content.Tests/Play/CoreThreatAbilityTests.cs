@@ -23,7 +23,7 @@ public sealed class CoreThreatAbilityTests
         var first = ThreatOccurrence(world, ThreatCause.VillainPhase, amount: 3);
         var ability = Assert.Single(runner.Waiting(world, first, WindowKind.Interrupt));
 
-        runner.Resolve(world, first, ability, [], []);
+        runner.ResolveWindow(world, first, ability, new Decision(ability.Card, [], []));
 
         Assert.Equal(2, first.Threat!.Remaining);
         var second = ThreatOccurrence(world, ThreatCause.VillainPhase, amount: 3);
@@ -44,7 +44,9 @@ public sealed class CoreThreatAbilityTests
             runner.Waiting(world, occurrence, WindowKind.Interrupt),
             pending => pending.Card == responsibility.ObjectId);
 
-        runner.Resolve(world, occurrence, ability, [], []);
+        var resolution = runner.ResolveWindow(world, occurrence, ability, new Decision(ability.Card, [], []));
+        Sequence.Finish(world, Cards, runner, []);
+        Assert.True(resolution.IsComplete);
 
         Assert.True(occurrence.Threat!.Replaced);
         Assert.Equal(0, occurrence.Threat.Remaining);
@@ -66,7 +68,7 @@ public sealed class CoreThreatAbilityTests
             runner.Waiting(world, villainScheme, WindowKind.Interrupt),
             pending => pending.Card == emergency.ObjectId);
 
-        runner.Resolve(world, villainScheme, ability, [], []);
+        runner.ResolveWindow(world, villainScheme, ability, new Decision(ability.Card, [], []));
         Sequence.Finish(world, Cards, runner, []);
 
         Assert.Equal(2, villainScheme.Threat!.Remaining);
@@ -115,7 +117,7 @@ public sealed class CoreThreatAbilityTests
         world.Abilities = runner;
 
         var action = runner.Actions(world, 0).Single(ability => ability.Card == forJustice.ObjectId);
-        runner.Act(world, action, [genius.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId], []));
         var prompt = Sequence.Work(world, Cards, runner, [])!;
         Sequence.Answer(world, Cards, runner, prompt, Decision.Take(scheme.ObjectId), []);
         Sequence.Finish(world, Cards, runner, []);

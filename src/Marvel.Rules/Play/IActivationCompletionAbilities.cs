@@ -10,6 +10,6 @@ namespace Marvel.Rules.Play;
 /// <summary>Card text waiting for an enemy activation to complete.</summary>
 public interface IActivationCompletionAbilities
 {
-    IReadOnlyList<GameEvent> ActivationCompleted(World world, EnemyActivation result);
+    AbilityExecutionResult ActivationCompleted(World world, AbilityExecution entry, EnemyActivation result);
 }
 #pragma warning restore CS1591

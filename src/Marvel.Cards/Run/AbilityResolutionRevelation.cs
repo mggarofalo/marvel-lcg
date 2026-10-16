@@ -76,34 +76,13 @@ internal static class AbilityResolutionRevelation
             return events;
         }
 
-        // Later abilities start only after every suspension of their predecessor completes.
-        var owner = world.Agenda.Current;
-        var containing = world.Agenda.Occurrence;
         var gainedKeywords = new HashSet<string>(StringComparer.Ordinal);
-        bool suspended = false;
-        foreach (var (ability, ordinal) in reveals)
-        {
-            var cast = new AbilityResolutionState(world, card, occurrence, player, events)
+        execution.RunOrdered(reveals.Select(entry => entry.Ability),
+            ability => new AbilityResolutionState(world, card, occurrence, player, events)
             {
                 Tier = ability.Trigger.Timing,
                 GainedKeywords = gainedKeywords,
-            };
-            cast.RestoreAbility(ordinal, []);
-            if (suspended)
-            {
-                var continuation = AbilityContinuations.Step(
-                    execution.Capture(cast, ordinal) with { Reason = AbilityResumeReason.StartAbility },
-                    AbilityContinuationStage.Resume, owner?.Round ?? 0);
-                if (owner is { } step && containing is not null)
-                    world.Agenda.ContinueBeforeOwner(containing, step, continuation, occurrence);
-                else world.Agenda.Add(continuation);
-                continue;
-            }
-            cast.TrackResolution(ordinal);
-            execution.Run(ability, cast);
-            cast.CompleteResolution();
-            suspended = cast.Suspended;
-        }
+            });
 
         return events;
     }
@@ -190,21 +169,11 @@ internal static class AbilityResolutionRevelation
         var occurrence = new Occurrence(
             0, [Steps.CardRevealed], Subject: card.ObjectId, Player: player);
 
-        foreach (var (ability, ordinal) in boosts.Select((ability, ordinal) =>
-                     (ability, ordinal)))
-        {
-            // `rr:ability` puts a "Boost" ability at the occurrence tier, like
-            // "When Revealed": it is the thing happening rather than a window
-            // around it, so there is nothing to offer and nothing to decline.
-            var cast = new AbilityResolutionState(world, card, occurrence, player, events)
+        execution.RunOrdered(boosts,
+            ability => new AbilityResolutionState(world, card, occurrence, player, events)
             {
                 Tier = ability.Trigger.Timing,
-            };
-            cast.RestoreAbility(ordinal, []);
-            cast.TrackResolution(ordinal);
-            execution.Run(ability, cast);
-            cast.CompleteResolution();
-        }
+            });
 
         return events;
     }

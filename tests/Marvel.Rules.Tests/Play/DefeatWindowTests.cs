@@ -163,20 +163,37 @@ public sealed class DefeatWindowTests
     }
 
     [Rule("rr:triggering-condition.2")]
-    [Fact]
-    public void ADefeatWithNothingHappeningIsRefusedRatherThanSilentlyWindowless()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void StandaloneDamageOwnsItsDefeatResponseUntilTheAnswerCompletes(bool accept)
     {
-        // If this ever fires in a game, the missing piece is the *cause*: some
-        // way of doing damage that this engine still performs as a call rather
-        // than as a step, whose own windows are therefore missing too. Silence
-        // would hide that inside the cards written to notice it.
+        // Damage and defeat share "a single interrupt window and a single response window."
+        // An engine primitive without an enclosing cause must retain that real response window.
         var world = Board(out var printed, out var minion);
-
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => DamagePlacement.Deal(world, printed, minion, minion, 5, "test", "test", []));
-
-        Assert.Contains(
-            "nothing is happening on the agenda", thrown.Message, StringComparison.Ordinal);
+        var cards = new Responder(Steps.CardDefeated);
+        world.Abilities = cards;
+        var events = new List<GameEvent>();
+        var result = DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 5, "test", "test"), events);
+        Assert.False(result.IsComplete);
+        var prompt = Sequence.Work(world, printed, cards, events)!;
+        Assert.Equal(Question.Opportunity, prompt.Asking);
+        Assert.Equal(Stage.Responses, world.Agenda.Stage);
+        Assert.Equal(1, world.Agenda.Count);
+        var cause = Assert.IsType<Occurrence>(world.Agenda.Occurrence);
+        Assert.Equal(minion.ObjectId, Assert.IsType<Defeated>(cause.Defeat).Card);
+        Assert.Contains(Steps.DamageDealt, cause.Conditions);
+        Assert.NotNull(cause.ActorFacts);
+        Assert.NotNull(cause.TargetFacts);
+        Sequence.Answer(world, printed, cards, prompt,
+            accept ? Decision.Take(Responder.Handle) : Decision.Decline, events);
+        Sequence.Finish(world, printed, cards, events);
+        Assert.True(result.IsComplete);
+        Assert.Equal(Damage.Outcome.Defeated, result.Outcome);
+        Assert.Equal(accept ? 1 : 0, cards.Resolved);
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.False(world.Agenda.IsBusy);
     }
 
     [Rule("rr:triggering-condition.2")]
@@ -223,6 +240,13 @@ public sealed class DefeatWindowTests
 
         /// <summary>The object id of the card carrying it.</summary>
         public const int Card = 5;
+
+        public int Resolved { get; private set; }
+        public override AbilityExecutionResult Resolve(World world, AbilityExecution invocation, Decision answer)
+        {
+            Resolved++;
+            return invocation.Finish([]);
+        }
 
         public override IReadOnlyList<PendingAbility> Waiting(
             World world, Occurrence occurrence, WindowKind window) =>

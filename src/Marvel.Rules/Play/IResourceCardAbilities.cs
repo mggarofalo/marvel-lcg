@@ -14,6 +14,6 @@ public interface IResourceCardAbilities
     IReadOnlyList<ResourceSource> PrintedResourceAbilities(World world, int player);
     IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player);
     string ResourceGeneratorName(World world, int player, int card);
-    string UseResource(World world, int player, int card, List<GameEvent> events);
+    ResourceExecutionResult UseResource(World world, AbilityExecution entry, int player, int card);
 }
 #pragma warning restore CS1591

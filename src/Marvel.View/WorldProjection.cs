@@ -37,16 +37,7 @@ public static class WorldProjection
             .ToHashSet();
 
         Prompt? authorizedPrompt = promptVisible
-            ? prompt! with
-            {
-                Affordances = prompt!.Affordances.Select(option => option with
-                {
-                    WindowChoices = readableIds.Contains(option.AnchorId)
-                        ? option.WindowChoices.Where(choice => choice.RecipientIds.All(readableIds.Contains)).ToArray() : [],
-                }).ToArray(),
-                ContextCardIds = [.. prompt!.ContextCardIds.Where(readableIds.Contains)],
-                CauseCardIds = [.. prompt.CauseCardIds.Where(readableIds.Contains)],
-            }
+            ? PromptSnapshot.For(prompt!, readableIds)
             : null;
         int active = activePlayer ?? world.FirstPlayer;
         visible = TableDescriptorProjection.WithContext(

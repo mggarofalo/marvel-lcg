@@ -17,6 +17,9 @@ public enum Stage
     /// <summary>It happens — <c>rr:ability.step.3</c>.</summary>
     Apply,
 
+    /// <summary>The body applied; its owned immediate work must finish before responses.</summary>
+    AwaitingCompletion,
+
     /// <summary>After it happened — <c>rr:ability.step.4</c>.</summary>
     Responses,
 }

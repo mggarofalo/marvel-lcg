@@ -104,6 +104,15 @@ violation was removed in the same change. Removing a violation requires removing
 its baseline entry, so the baseline can only shrink during remediation. The test
 prints both unadmitted violations and stale baseline entries.
 
+`SourceDebtRatchetTests` also compares committed debt against the reviewed branch
+base. Updating the current baseline cannot admit a new declaration, increase its
+measured debt, or hide extra occurrences by removing another finding. Line-number
+movement alone is allowed; the exact-current-diagnostics check still requires
+correct locations. Local runs use the merge base with `origin/main`. CI fetches
+the PR target or previous main head and exports `MARVEL_ARCHITECTURE_BASE`; manual
+and release certification compare the certified commit with its parent. A missing
+comparison baseline fails instead of silently admitting current debt.
+
 Run the policy through the normal architecture test project so CI executes it on
 both operating systems. A Husky task invokes the same checker before commit and
 must propagate its exit code. Keep the existing whole-file length hook as a fast

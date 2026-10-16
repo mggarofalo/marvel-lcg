@@ -37,7 +37,7 @@ public sealed class ActionAbilityContinuationsAFinalOrderedPowerKeepsNestedAnces
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
         int held = world.Seats[0].Hand.Cards.Count;
-        var forged = AbilityContinuationFixtures.Step(source!, new SimultaneousFrame(0, [0, 1], []));
+        var forged = AbilityContinuationFixtures.Current(world, source!, new SimultaneousFrame(0, [0, 1], []));
         Assert.Throws<RulesNotImplementedException>(() => runner.ResumeAbility(world, forged));
         Assert.True(source!.Ready);
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
@@ -51,7 +51,7 @@ public sealed class ActionAbilityContinuationsAFinalOrderedPowerKeepsNestedAnces
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
         int held = world.Seats[0].Hand.Cards.Count;
-        var forged = AbilityContinuationFixtures.Step(source!, new SequenceFrame(-1, 2));
+        var forged = AbilityContinuationFixtures.Current(world, source!, new SequenceFrame(-1, 2));
         Assert.Throws<RulesNotImplementedException>(() => runner.ResumeAbility(world, forged));
         Assert.True(source!.Ready);
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
@@ -65,7 +65,8 @@ public sealed class ActionAbilityContinuationsAFinalOrderedPowerKeepsNestedAnces
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
         var absent = new PhaseStep(new AbilityContinuationAgendaOperation(AbilityContinuationStage.Resume), 1, 2, Subject: source!.ObjectId, Seat: 0);
-        var thrown = Assert.Throws<InvalidOperationException>(() => runner.ResumeAbility(world, absent));
+        world.Agenda.Now(absent);
+        var thrown = Assert.Throws<InvalidOperationException>(() => runner.ResumeAbility(world, world.Agenda.Current!.Value));
         Assert.Contains("typed ability continuation", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(DeckType.SupportsArea, source.Area.Type);
     }
@@ -76,7 +77,7 @@ public sealed class ActionAbilityContinuationsAFinalOrderedPowerKeepsNestedAnces
         var runner = Runner(AuthoredCards.AuntMay, "WhenRevealed", """{ "grantUntil": { "card": "this", "trait": "AERIAL", "until": "EndOfAttack" } }""", eventName: Steps.CardRevealed);
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.WhenRevealed(world, source!, 0));
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteReveal(world, source!, 0));
         Assert.Contains("outside its named period", thrown.Message, StringComparison.Ordinal);
         Assert.Empty(world.Effects.Active());
     }
@@ -117,10 +118,11 @@ public sealed class ActionAbilityContinuationsAFinalOrderedPowerKeepsNestedAnces
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
         int held = world.Seats[0].Hand.Cards.Count;
-        runner.WhenRevealed(world, source!, 0);
+        runner.ExecuteReveal(world, source!, 0);
         var attack = Assert.Single(world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
-        runner.ActivationCompleted(world, new EnemyActivation(attack.Subject, attack.Seat, Attacking: true, attack.ActivationId, Made: false));
+        Statuses.Give(world, world.Cards[attack.Subject], Statuses.Stunned);
+        Sequence.Work(world, world.Facts, runner, []);
         Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
@@ -130,12 +132,14 @@ public sealed class ActionAbilityContinuationsAFinalOrderedPowerKeepsNestedAnces
         var runner = Runner(AuthoredCards.AuntMay, "WhenRevealed", """{ "seq": [ { "seq": [ { "enemyAttacks": { "enemies": { "query": "villain" } } }, { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } } ] } ] }""", eventName: Steps.CardRevealed);
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
-        runner.WhenRevealed(world, source!, 0);
+        runner.ExecuteReveal(world, source!, 0);
         var attack = Assert.Single(world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
-        runner.ActivationCompleted(world, new EnemyActivation(attack.Subject, attack.Seat, Attacking: true, attack.ActivationId, Made: true));
-        var placement = Assert.Single(world.Agenda.Outstanding, pending => pending.What == Steps.PlaceThreatEffect);
-        Assert.Equal(world.TheCardIn(DeckType.MainSchemesArea)!.ObjectId, placement.Require<ThreatPlacementOperation>().Placement.Scheme);
-        Assert.Equal(1, placement.Require<ThreatPlacementOperation>().Placement.Assigned);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        long before = scheme.Tokens["k_threat"];
+        Statuses.Give(world, world.Cards[attack.Subject], Statuses.Stunned);
+        Sequence.Work(world, world.Facts, runner, []);
+        Assert.Equal(before + 1, scheme.Tokens["k_threat"]);
+        Assert.DoesNotContain(world.Agenda.Outstanding, pending => pending.What == Steps.PlaceThreatEffect);
     }
 
     [Fact]
@@ -146,7 +150,7 @@ public sealed class ActionAbilityContinuationsAFinalOrderedPowerKeepsNestedAnces
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay),
             heroes: ["spider_man", "captain_marvel"], abilities: runner);
         int held = world.Seats[0].Hand.Cards.Count;
-        runner.WhenRevealed(world, source!, 0);
+        runner.ExecuteReveal(world, source!, 0);
         var ordering = Sequence.Work(world, world.Facts, runner, [])!;
         Sequence.Answer(world, world.Facts, runner, ordering,
             new Decision(ordering.Affordances.Single().Id,

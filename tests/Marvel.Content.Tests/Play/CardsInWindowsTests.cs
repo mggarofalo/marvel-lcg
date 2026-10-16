@@ -425,12 +425,12 @@ public sealed class CardsInWindowsTests
         var rhino = world.TheCardIn(DeckType.VillainArea)!;
         var copies = world.Cards.Where(card => card.FaceId == AuthoredCards.ImTough).ToList();
 
-        abilities.WhenRevealed(world, copies[0], 0);
+        abilities.ExecuteReveal(world, copies[0], 0);
         Assert.Equal(1, Statuses.Count(world, rhino, Statuses.Tough));
 
         int queued = world.AreaOf(
             DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count;
-        abilities.WhenRevealed(world, copies[1], 0);
+        abilities.ExecuteReveal(world, copies[1], 0);
         Assert.Equal(1, Statuses.Count(world, rhino, Statuses.Tough));
         Assert.Equal(
             queued + 1,

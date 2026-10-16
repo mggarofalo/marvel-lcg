@@ -208,7 +208,7 @@ public static class MainScheme
             Verb = "Advance",
         });
 
-        ActivityBatches.Append(events, abilities.WhenRevealed(world, next, world.FirstPlayer));
+        ActivityBatches.Append(events, abilities.ExecuteReveal(world, next, world.FirstPlayer).Events);
 
         // Step 3. Then the B side, its starting threat, and its ability.
         next.TurnTo(next.Faces[^1]);
@@ -238,6 +238,6 @@ public static class MainScheme
             });
         }
 
-        ActivityBatches.Append(events, abilities.WhenRevealed(world, next, world.FirstPlayer));
+        ActivityBatches.Append(events, abilities.ExecuteReveal(world, next, world.FirstPlayer).Events);
     }
 }

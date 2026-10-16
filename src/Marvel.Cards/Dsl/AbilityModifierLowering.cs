@@ -91,7 +91,7 @@ internal static class AbilityModifierLowering
     {
         var fields = Fields(value, location, "condition", "effect", "within");
         string condition = Text(Required(fields, "condition", location), location.Child("condition"));
-        if (!Steps.EveryCondition.Contains(condition))
+        if (!StepConditions.EveryCondition.Contains(condition))
         {
             throw location.Child("condition").Error($"'{condition}' is not an engine occurrence");
         }

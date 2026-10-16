@@ -55,6 +55,11 @@ public sealed record Prompt(
     bool Cancellable,
     IReadOnlyList<Affordance> Affordances)
 {
+    internal Play.PromptExecutionBinding? ExecutionBinding { get; init; }
+
+    /// <summary>Return descriptive prompt data without its engine-local execution address.</summary>
+    public Prompt WithoutExecutionBinding() => this with { ExecutionBinding = null };
+
     /// <summary>Engine-authored meaning of legally declining this decision.</summary>
     public string DeclineLabel { get; init; } = "Pass this opportunity";
 

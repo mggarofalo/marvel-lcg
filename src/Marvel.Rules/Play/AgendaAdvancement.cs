@@ -13,6 +13,7 @@ public static class AgendaAdvancement
     public static bool Advance(this Agenda agenda)
     {
         var (step, stage, occurrence) = agenda.items[0];
+        agenda.Executions.RequireAdvance(step);
         switch (stage)
         {
             case Stage.Interrupts:
@@ -20,10 +21,12 @@ public static class AgendaAdvancement
                 return true;
 
             case Stage.Apply:
+            case Stage.AwaitingCompletion:
                 agenda.items[0] = (step, Stage.Responses, occurrence);
                 return true;
 
             default:
+                agenda.Executions.Removed(step);
                 agenda.items.RemoveAt(0);
                 agenda.scheduled = 0;
                 return false;
@@ -46,15 +49,18 @@ public static class AgendaAdvancement
         }
 
         var (step, stage, found) = agenda.items[at];
+        agenda.Executions.RequireAdvance(step);
         switch (stage)
         {
             case Stage.Interrupts:
                 agenda.items[at] = (step, Stage.Apply, found);
                 return true;
             case Stage.Apply:
+            case Stage.AwaitingCompletion:
                 agenda.items[at] = (step, Stage.Responses, found);
                 return true;
             default:
+                agenda.Executions.Removed(step);
                 agenda.items.RemoveAt(at);
                 if (at == 0)
                 {
@@ -83,15 +89,18 @@ public static class AgendaAdvancement
         }
 
         var (step, stage, found) = agenda.items[at];
+        agenda.Executions.RequireAdvance(step);
         switch (stage)
         {
             case Stage.Interrupts:
                 agenda.items[at] = (step, Stage.Apply, found);
                 return true;
             case Stage.Apply:
+            case Stage.AwaitingCompletion:
                 agenda.items[at] = (step, Stage.Responses, found);
                 return true;
             default:
+                agenda.Executions.Removed(step);
                 agenda.items.RemoveAt(at);
                 if (at == 0)
                 {
@@ -99,6 +108,22 @@ public static class AgendaAdvancement
                 }
                 return false;
         }
+    }
+
+    /// <summary>Record an applied body, waiting explicitly for its immediate owned work.</summary>
+    internal static void Applied(this Agenda agenda, PhaseStep owner, Occurrence occurrence)
+    {
+        if (!agenda.Executions.OwnsUnfinishedWork(owner))
+        {
+            agenda.Advance(owner, occurrence);
+            return;
+        }
+        int at = agenda.items.FindIndex(item => item.Step.SameFrameAs(owner)
+            && ReferenceEquals(item.Occurrence, occurrence));
+        if (at < 0 || agenda.items[at].Stage != Stage.Apply)
+            throw new InvalidOperationException("only an applying frame can await its child work");
+        var item = agenda.items[at];
+        agenda.items[at] = (item.Step, Stage.AwaitingCompletion, item.Occurrence);
     }
 
     /// <summary>Remove a replaced occurrence and both of its remaining windows.</summary>
@@ -123,6 +148,7 @@ public static class AgendaAdvancement
 
         if (agenda.items[at].Step.Operation is ThreatPlacementOperation threat)
             threat.Completion.Complete(threat.Part, 0);
+        agenda.Executions.Removed(agenda.items[at].Step, cancelled: true);
         agenda.items.RemoveAt(at);
         if (at == 0)
         {
@@ -149,6 +175,7 @@ public static class AgendaAdvancement
             && character == target);
         if (at >= 0)
         {
+            agenda.Executions.Removed(agenda.items[at].Step, cancelled: true);
             agenda.items.RemoveAt(at);
             if (at <= agenda.scheduled)
             {
@@ -167,6 +194,7 @@ public static class AgendaAdvancement
     /// </remarks>
     public static void Abandon(this Agenda agenda)
     {
+        agenda.Executions.Abandon();
         agenda.items.Clear();
         agenda.scheduled = 0;
     }

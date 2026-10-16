@@ -50,6 +50,7 @@ public static class AgendaProcedures
 
         return step.Operation.Procedure switch
         {
+            AgendaProcedureKind.Damage => ApplyDamage(world, step, events),
             AgendaProcedureKind.Attack => AttackProcedure.Apply(world, facts, step, events),
             AgendaProcedureKind.Threat => ThreatProcedure.Apply(world, facts, step, events),
             AgendaProcedureKind.Reveal => RevealProcedure.Apply(world, facts, step, events),
@@ -61,10 +62,19 @@ public static class AgendaProcedures
             AgendaProcedureKind.Activation => ActivationProcedure.Apply(world, facts, step),
             AgendaProcedureKind.PhaseTransition =>
                 PhaseTransitionProcedure.Apply(world, facts, step, events),
+            AgendaProcedureKind.CardEntry => EventCardEntry.Apply(world, step, events),
+            AgendaProcedureKind.ResourcePayment => ResourcePaymentProcedure.Apply(world, step, events),
             AgendaProcedureKind.Lifecycle => null,
             _ => throw new RulesNotImplementedException(
                 $"the agenda has no procedure for '{step.What}'"),
         };
+    }
+
+    private static Prompt? ApplyDamage(World world, PhaseStep step, List<GameEvent> events)
+    {
+        if (step.Operation is DamageCostPlacementOperation) DamageCostPlacement.Resume(world, step, events);
+        else DamageResolution.Resume(world, step, events);
+        return null;
     }
 
     /// <summary>Give a step the answer it stopped for.</summary>

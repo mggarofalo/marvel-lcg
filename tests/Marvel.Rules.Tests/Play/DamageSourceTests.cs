@@ -26,10 +26,11 @@ public sealed partial class DamageSourceTests
         var abilities = new Prohibition(source);
         world.Abilities = abilities;
 
-        bool defeated = DamagePlacement.Deal(
-            world, facts, source, target, 3, "test", "Deal_Damage", []);
+        var damage = DamagePlacement.Resolve(world, facts,
+            new(source, target, 3, "test", "Deal_Damage"), []);
 
-        Assert.False(defeated);
+        Sequence.Finish(world, world.Facts, world.Abilities, []);
+        Assert.Equal(Damage.Outcome.NotDefeated, damage.Outcome);
         Assert.Equal(0, target.Damage);
         Assert.True(Statuses.Has(world, target, Statuses.Tough));
         Assert.False(abilities.ReplacementVisited);
@@ -48,7 +49,8 @@ public sealed partial class DamageSourceTests
         var abilities = new Prohibition(null);
         world.Abilities = abilities;
 
-        DamagePlacement.Deal(world, facts, source, target, 1, "test", "Deal_Damage", []);
+        DamagePlacement.Resolve(world, facts,
+            new(source, target, 1, "test", "Deal_Damage"), []);
 
         Assert.Same(source, abilities.ReplacementSource);
     }
@@ -72,7 +74,8 @@ public sealed partial class DamageSourceTests
         var abilities = new DamageModifier();
         world.Abilities = abilities;
 
-        DamagePlacement.Deal(world, facts, source, target, 3, "test", "Deal_Damage", []);
+        DamagePlacement.Resolve(world, facts,
+            new(source, target, 3, "test", "Deal_Damage"), []);
 
         Assert.Equal(5, abilities.AmountThatWouldBeTaken);
         Assert.Equal(4, target.Damage);
@@ -176,12 +179,12 @@ public sealed partial class DamageSourceTests
         public override bool CanTakeDamage(World world, Card target, Card source) =>
             !ReferenceEquals(source, blockedSource);
 
-        public override long WouldBeDealt(
-            World world, Card target, Card source, long amount, List<GameEvent> events)
+        public override AbilityExecutionResult WouldBeDealt(
+            World world, AbilityExecution entry, DamageReplacement replacement)
         {
             ReplacementVisited = true;
-            ReplacementSource = source;
-            return amount;
+            ReplacementSource = replacement.Source;
+            return entry.Finish([]);
         }
     }
 
@@ -189,9 +192,12 @@ public sealed partial class DamageSourceTests
     {
         public long AmountThatWouldBeTaken { get; private set; }
 
-        public override long WouldBeDealt(
-            World world, Card target, Card source, long amount, List<GameEvent> events) =>
-            amount + 2;
+        public override AbilityExecutionResult WouldBeDealt(
+            World world, AbilityExecution entry, DamageReplacement replacement)
+        {
+            replacement.Replace(entry, replacement.CurrentAmount + 2);
+            return entry.Finish([]);
+        }
 
         public override long WouldTake(
             World world, Card target, Card source, long amount, List<GameEvent> events)

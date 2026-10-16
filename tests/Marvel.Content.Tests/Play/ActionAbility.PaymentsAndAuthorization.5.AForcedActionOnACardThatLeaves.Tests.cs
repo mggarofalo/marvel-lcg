@@ -114,7 +114,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAForcedActionOnACardTha
         }, hero: true, abilities: runner);
         Assert.DoesNotContain(runner.Actions(world, 0), action => action.Card == card!.ObjectId);
         var forged = new PendingAbility(card!.ObjectId, AbilityType.Action, 0);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, forged, [], []));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(forged, [], [])));
         Assert.Same(world.Seats[0].Hand, card.Area);
     }
 
@@ -154,7 +154,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAForcedActionOnACardTha
             second = board.CreateCard(AuthoredCards.AuntMay, board.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
         }, heroes: ["spider_man", "captain_marvel"], abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == first!.ObjectId);
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         Assert.DoesNotContain(runner.Actions(world, 1), pending => pending.Card == second!.ObjectId);
         world.Effects.Expire(TimingPoints.EndOfRound);
         Assert.Contains(runner.Actions(world, 1), pending => pending.Card == second!.ObjectId);
@@ -172,7 +172,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAForcedActionOnACardTha
             first = InPlay(board, AuthoredCards.AuntMay);
             second = InPlay(board, AuthoredCards.AuntMay);
         }, abilities: runner);
-        runner.Act(world, Assert.Single(runner.Actions(world, 0), pending => pending.Card == first!.ObjectId), [], []);
+        runner.ExecuteAction(world, new PlayerAction(Assert.Single(runner.Actions(world, 0), pending => pending.Card == first!.ObjectId), [], []));
         Assert.DoesNotContain(runner.Actions(world, 0), pending => pending.Card == second!.ObjectId);
         world.Effects.Expire(TimingPoints.EndOfPhase);
         Assert.Contains(runner.Actions(world, 0), pending => pending.Card == second!.ObjectId);
@@ -190,7 +190,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAForcedActionOnACardTha
             first = InPlay(board, AuthoredCards.AuntMay);
             second = InPlay(board, AuthoredCards.AuntMay);
         }, abilities: runner);
-        runner.Act(world, Assert.Single(runner.Actions(world, 0), pending => pending.Card == first!.ObjectId), [], []);
+        runner.ExecuteAction(world, new PlayerAction(Assert.Single(runner.Actions(world, 0), pending => pending.Card == first!.ObjectId), [], []));
         world.Effects.Expire(TimingPoints.EndOfPhase);
         world.Effects.Expire(TimingPoints.EndOfRound);
         Assert.DoesNotContain(runner.Actions(world, 0), pending => pending.Card == second!.ObjectId);
@@ -210,7 +210,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAForcedActionOnACardTha
             Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Stunned);
         }, hero: true, abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == first!.ObjectId);
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Stunned));
         Assert.DoesNotContain(runner.Actions(world, 0), pending => pending.Card == second!.ObjectId);
     }

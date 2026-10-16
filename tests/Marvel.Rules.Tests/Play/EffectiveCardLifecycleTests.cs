@@ -113,7 +113,8 @@ public sealed class EffectiveCardLifecycleTests
         Agendas.Happening(world);
         var events = new List<GameEvent>();
 
-        Assert.True(DamagePlacement.Deal(world, world.Facts, card, card, 3, "synthetic", "Damage", events));
+        Assert.Equal(Damage.Outcome.Defeated, DamagePlacement.Resolve(world, world.Facts,
+            new(card, card, 3, "synthetic", "Damage"), events).Outcome);
 
         Assert.Equal(DeckType.DiscardPile, card.Area.Type);
         Assert.Equal(PlayArea.Of(0), card.Area.PlayArea);

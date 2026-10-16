@@ -17,30 +17,35 @@ internal static class BoardDragInteractionBinder
             CurrentOperations(panel, composer), Affordances(panel, composer));
         int? destination = board.TargetSnap.At(board, gesture, targeting.Destinations(source));
         if (destination is { } target && targeting.Matches(source, target).Count > 0)
-            return DragOnCard(panel, composer, board, gesture, source, target);
+            return DragOnCard(panel, composer, board, gesture.Source, source, target);
         return DragPlay(panel, composer, board, gesture, source, destination);
     }
 
     private static bool DragPlay(DecisionPanel panel, DecisionComposer composer,
         BoardRenderResult board, CardPointerGesture gesture, int source, int? destination)
+        => ChoosePlay(panel, composer, gesture.Source, new BoardPlayChoiceIntent(source, destination,
+            gesture.IsHandCard, board.IsDroppedOnLivePlayerLane(composer.Prompt.Player, gesture.Position)));
+
+    private static bool ChoosePlay(DecisionPanel panel, DecisionComposer composer, Control sourceControl,
+        BoardPlayChoiceIntent intent)
     {
         var play = new BoardHandPlayInteraction(composer, CurrentOperations(panel, composer),
             Affordances(panel, composer));
-        bool onLane = board.IsDroppedOnLivePlayerLane(composer.Prompt.Player, gesture.Position);
-        IReadOnlyList<Marvel.View.AffordancePresentation> matches = play.Matches(source, destination,
-            gesture.IsHandCard, onLane);
+        IReadOnlyList<Marvel.View.AffordancePresentation> matches = play.Matches(intent.Source, intent.Destination,
+            intent.IsHandCard, intent.OnPlayerLane);
+        if (!panel.BoardChoices.Matches(matches)) return false;
         int generation = panel.GetRenderGeneration();
         bool Select(int id)
         {
-            if (!play.TrySelect(id, source, destination, gesture.IsHandCard, onLane)) return false;
+            if (!play.TrySelect(id, intent.Source, intent.Destination, intent.IsHandCard, intent.OnPlayerLane)) return false;
             panel.RaiseDraftStarted();
-            BoardInteractionBinder.RefreshDraft(panel, composer, generation, source);
+            BoardInteractionBinder.RefreshDraft(panel, composer, generation, intent.Source);
             return true;
         }
         if (matches.Count == 0) return false;
         if (matches.Count == 1) return Select(matches[0].Id);
-        BoardActionChoiceSurface.Show(gesture.Source, matches,
-            () => panel.IsCurrentDraft(composer, generation), id => Select(id));
+        panel.BoardChoices.Show(sourceControl, composer, intent.Source, matches, id => Select(id),
+            replacement => ChoosePlay(panel, composer, replacement, intent));
         return true;
     }
 
@@ -81,24 +86,33 @@ internal static class BoardDragInteractionBinder
     }
 
     private static bool DragOnCard(DecisionPanel panel, DecisionComposer composer,
-        BoardRenderResult board, CardPointerGesture gesture, int source, int destination)
+        BoardRenderResult board, Control sourceControl, int source, int destination)
     {
         var interaction = new BoardSourceTargetInteraction(composer,
             CurrentOperations(panel, composer), Affordances(panel, composer));
         IReadOnlyList<Marvel.View.AffordancePresentation> matches = interaction.Matches(source, destination);
+        if (!panel.BoardChoices.Matches(matches)) return false;
         int generation = panel.GetRenderGeneration();
         void Select(int id)
         {
             if (!interaction.TrySelect(id, source, destination)) return;
-            board.AnchorDraft(gesture.Position, id);
+            Control recipient = board.VisibleCardControls().FirstOrDefault(card => card.TargetId == destination)
+                ?? (Control)sourceControl;
+            board.AnchorDraft(recipient.GetGlobalRect().GetCenter(), id);
             panel.RaiseDraftStarted();
             BoardInteractionBinder.RefreshDraft(panel, composer, generation, source);
         }
         if (matches.Count == 0) return false;
         if (matches.Count == 1) Select(matches[0].Id);
-        else BoardActionChoiceSurface.Show(gesture.Source, matches,
-            () => panel.IsCurrentDraft(composer, generation), Select);
+        else panel.BoardChoices.Show(sourceControl, composer, source, matches, Select,
+            replacement => ReopenTargetChoice(panel, composer, replacement, source, destination));
         return true;
+    }
+
+    private static void ReopenTargetChoice(DecisionPanel panel, DecisionComposer composer,
+        Control sourceControl, int source, int destination)
+    {
+        if (panel.CurrentBoard is { } board) DragOnCard(panel, composer, board, sourceControl, source, destination);
     }
 
     internal static bool CanDrag(DecisionPanel panel, DecisionComposer composer,

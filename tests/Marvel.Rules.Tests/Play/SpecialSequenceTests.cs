@@ -75,11 +75,11 @@ public sealed class SpecialSequenceTests
 
         public bool ChoseWasFinal { get; private set; }
 
-        public override IReadOnlyList<GameEvent> ResolveSpecial(
-            World world, Card card, int player, bool finalStep)
+        public override AbilityExecutionResult ResolveSpecial(
+            World world, AbilityExecution entry, Card card, int player, bool finalStep)
         {
             Specials.Add((card.ObjectId, finalStep));
-            return [];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
 
         public override Prompt? Choosing(

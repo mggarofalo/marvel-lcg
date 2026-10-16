@@ -32,7 +32,8 @@ public sealed class IndirectDamageUnassignedIdentityTests : IndirectDamageTestBa
         int amount = Assert.Single(assign.Affordances).Targets!.Min;
         Sequence.Answer(world, Cards, runner, assign, Decision.Take(assign.Affordances[0].Id, [..Enumerable.Repeat(ally.ObjectId, amount)], []), events);
         Assert.Null(Sequence.Work(world, Cards, runner, events));
-        DamagePlacement.Deal(world, Cards, villain, world.Seats[0].IdentityCard, 1, "later", "Damage", events);
+        DamagePlacement.Resolve(world, Cards,
+            new(villain, world.Seats[0].IdentityCard, 1, "later", "Damage"), events);
         Assert.Equal(DeckType.HandsArea, backflip.Area.Type);
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
     }
@@ -112,7 +113,8 @@ public sealed class IndirectDamageUnassignedIdentityTests : IndirectDamageTestBa
         Assert.Equal(0, soak.Damage);
         Assert.Equal(DeckType.EncounterDiscardPile, soak.Area.Type);
         Assert.Equal(DeckType.HandsArea, backflip.Area.Type);
-        DamagePlacement.Deal(world, Cards, villain, identity, 1, "later", "Damage", events);
+        DamagePlacement.Resolve(world, Cards,
+            new(villain, identity, 1, "later", "Damage"), events);
         Assert.Equal(1, identity.Damage);
         Assert.Equal(DeckType.HandsArea, backflip.Area.Type);
     }
@@ -151,6 +153,7 @@ public sealed class IndirectDamageUnassignedIdentityTests : IndirectDamageTestBa
         ally.TakeDamage(DamagePlacement.Health(world, Cards, ally));
         Reveal(world, AuthoredCards.Explosion);
         // One eligible character, so nothing is asked and the identity takes it.
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, []));
         Assert.Empty(world.Agenda.Outstanding);
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
     }

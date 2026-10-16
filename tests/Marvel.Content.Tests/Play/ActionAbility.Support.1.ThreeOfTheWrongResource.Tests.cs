@@ -40,7 +40,7 @@ public sealed class ActionAbilitySupportThreeOfTheWrongResourceTests
         // `rr:initiating-abilities.step.5` aborts "without paying any costs".
         var ability = Assert.Single(AuthoredCards.Runner().Actions(world, 0).Where(pending => pending.Card == horn!.ObjectId).DefaultIfEmpty(new PendingAbility(horn!.ObjectId, AbilityType.Action, 0)));
         int before = world.Seats[0].Hand.Cards.Count;
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => AuthoredCards.Runner().Act(world, ability, [..world.Seats[0].Hand.Cards.Select(card => card.ObjectId)], []));
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => AuthoredCards.Runner().ExecuteAction(world, new PlayerAction(ability, [..world.Seats[0].Hand.Cards.Select(card => card.ObjectId)], [])));
         Assert.Contains("requiring 'RRR'", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(before, world.Seats[0].Hand.Cards.Count);
     }

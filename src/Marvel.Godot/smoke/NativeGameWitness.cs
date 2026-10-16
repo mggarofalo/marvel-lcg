@@ -1,0 +1,52 @@
+using Godot;
+
+namespace Marvel.Godot;
+
+/// <summary>Read-only native evidence from the same authorized response the table displays.</summary>
+public sealed partial class NativeGameWitness : RefCounted
+{
+    private Main? table;
+
+    /// <summary>Binds the visible table being observed.</summary>
+    public void Bind(Main main) => table = main;
+
+    /// <summary>Reports the engine's public decision purpose, without inferring it from button text.</summary>
+    public string DecisionKind() => table?.CurrentGame?.Prompt?.PublicKind.ToString() ?? string.Empty;
+
+    /// <summary>Reports the accepted response revision for an exact commitment witness.</summary>
+    public long Revision() => table?.CurrentGame?.Revision ?? -1;
+
+    /// <summary>Locates one authorized physical face in the displayed state.</summary>
+    public int Anchor(string title) => table?.CurrentGame?.World?.Areas.SelectMany(area => area.Cards)
+        .FirstOrDefault(card => card.Face?.Title == title)?.Id ?? -1;
+
+    /// <summary>Locates a readable face in the requested displayed area when pile copies share its title.</summary>
+    public int AreaAnchor(string title, string zone) => table?.CurrentGame?.World?.Areas
+        .Where(area => area.Zone == zone).SelectMany(area => area.Cards)
+        .SingleOrDefault(card => card.Face?.Title == title)?.Id ?? -1;
+
+    /// <summary>Reports the authoritative terminal outcome.</summary>
+    public string Outcome() => table?.CurrentGame?.World?.Outcome.ToString() ?? string.Empty;
+
+    /// <summary>Reports whether the existing lifecycle currently admits a mutation.</summary>
+    public bool CanResolve() => table?.lifecycle.CanResolve ?? false;
+
+    /// <summary>Reports whether the displayed decision editor suppresses mutation controls.</summary>
+    public bool SubmissionLocked() => table?.decisions.submitting ?? false;
+
+    /// <summary>Reports the engine's repeated-target contract on the displayed prompt.</summary>
+    public bool HasRepeatedTargets() => table?.CurrentGame?.Prompt?.Affordances.Any(
+        offer => offer.Targets?.AllowRepeated == true) ?? false;
+
+    /// <summary>Reports operational progress without exposing a capability.</summary>
+    public string ProgressKind() => table?.lifecycle.Progress?.Kind.ToString() ?? string.Empty;
+
+    /// <summary>Captures selected identities, ordered targets, costs and allocations for continuity assertions.</summary>
+    public string Draft()
+    {
+        var draft = table?.decisions?.composer;
+        if (draft is null) return "none";
+        return $"{draft.Selected?.Id}|{draft.SelectedCost}|{string.Join(',', draft.Targets)}|"
+            + $"{string.Join(',', draft.Resources)}|{string.Join(',', draft.Assignments)}|{string.Join(',', draft.Values)}";
+    }
+}

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 namespace Marvel.Rules.State;
 
 /// <summary>What each <see cref="DeckType"/> means for the cards in it.</summary>
@@ -6,7 +7,7 @@ public static class DeckTypes
     // Only the three flags that decide `face_up` are carried. A zone is a
     // deck, a hand, or neither, and that is all the digest needs to know to
     // say whether a card in it is visible.
-    private static readonly HashSet<DeckType> Decks =
+    private static readonly ImmutableArray<DeckType> Decks =
     [
         DeckType.PlayerDeck, DeckType.DiscardPile, DeckType.AdditionalDeck,
         DeckType.AdditionalDiscardPile, DeckType.EncounterDeck, DeckType.EncounterDiscardPile,
@@ -23,7 +24,7 @@ public static class DeckTypes
         DeckType.BoostCardsDeck,
     ];
 
-    private static readonly HashSet<DeckType> FaceUpFlagged =
+    private static readonly ImmutableArray<DeckType> FaceUpFlagged =
     [
         DeckType.UpgradesArea, DeckType.DiscardPile, DeckType.AlliesArea, DeckType.SupportsArea,
         DeckType.EngagedEnemiesArea, DeckType.HeroArea, DeckType.ResourcesArea,

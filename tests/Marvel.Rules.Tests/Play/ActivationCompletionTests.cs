@@ -36,8 +36,11 @@ public sealed class ActivationCompletionTests
         agenda.ReplaceActivationWait(first, waiting.Value with
         { Operation = waiting.Value.Require<AbilityContinuationAgendaOperation>() with { AwaitedActivations = [second] } });
         Assert.Null(agenda.ActivationWait(first));
-        var resumed = agenda.TakeActivationWait(second);
-        Assert.Same(waiting.Value.Require<AbilityContinuationAgendaOperation>().Continuation, resumed.Require<AbilityContinuationAgendaOperation>().Continuation);
+        var retained = agenda.ActivationWait(second);
+        Assert.NotNull(retained);
+        Assert.Equal([second], retained.Value.Require<AbilityContinuationAgendaOperation>().AwaitedActivations);
+        Assert.Same(waiting.Value.Require<AbilityContinuationAgendaOperation>().Continuation,
+            retained.Value.Require<AbilityContinuationAgendaOperation>().Continuation);
     }
 
     [Rule("rr:activation.8")]
@@ -222,11 +225,11 @@ public sealed class ActivationCompletionTests
     {
         public List<EnemyActivation> Results { get; } = [];
 
-        public override IReadOnlyList<GameEvent> ActivationCompleted(
-            World world, EnemyActivation result)
+        public override AbilityExecutionResult ActivationCompleted(
+            World world, AbilityExecution entry, EnemyActivation result)
         {
             Results.Add(result);
-            return [];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 
@@ -242,19 +245,18 @@ public sealed class ActivationCompletionTests
                 ? [new PendingAbility(card, AbilityType.ForcedResponse, 0)]
                 : [];
 
-        public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
+        public override AbilityExecutionResult Resolve(
+            World world, AbilityExecution invocation, Decision answer)
         {
             Order.Add("response");
-            return [];
+            return invocation.Finish([]);
         }
 
-        public override IReadOnlyList<GameEvent> ActivationCompleted(
-            World world, EnemyActivation result)
+        public override AbilityExecutionResult ActivationCompleted(
+            World world, AbilityExecution entry, EnemyActivation result)
         {
             Order.Add("completion");
-            return [];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 

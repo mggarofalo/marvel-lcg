@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -12,18 +13,18 @@ internal sealed class AbilityAreaMutationQuery(
     IReadOnlySet<DeckType> queried, AbilityAdmissionContext context,
     long multiplier)
 {
-    private static readonly HashSet<string> DrawOperations =
+    private static readonly ImmutableArray<string> DrawOperations =
     [
         "draw", "drawToHandSize", "drawToPrintedHandSize",
     ];
 
-    private static readonly HashSet<string> EncounterDeckOperations =
+    private static readonly ImmutableArray<string> EncounterDeckOperations =
     [
         "dealEncounterCard", "dealEncounterCards", "revealTop", "discardTop",
         "discardUntil",
     ];
 
-    private static readonly HashSet<string> HandPaymentOperations =
+    private static readonly ImmutableArray<string> HandPaymentOperations =
     [
         "discardFromHand", "discardUpToFromHand", "discardAnyFromHand",
         "spend", "spendPrinted", "spendEnergyX",

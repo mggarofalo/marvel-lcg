@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <MarvelInfrastructureProbe>true</MarvelInfrastructureProbe>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Marvel.Transport/Marvel.Transport.csproj" />
+  </ItemGroup>
+</Project>

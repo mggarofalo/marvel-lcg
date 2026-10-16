@@ -80,7 +80,7 @@ public sealed class AttachToTests
         var charge = world.Cards.First(card => card.FaceId == AuthoredCards.Charge);
         var before = charge.Area.Type;
 
-        AuthoredCards.Runner().WhenRevealed(world, charge, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, charge, 0);
 
         Assert.Equal(before, charge.Area.Type);
     }

@@ -123,7 +123,7 @@ public sealed class CardDeclaredDefenderTests
 
         var pending = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Interrupt));
-        runner.Resolve(world, occurrence, pending, [], []);
+        runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
 
         Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
         Assert.False(world.Attack!.IsDefended);
@@ -163,7 +163,7 @@ public sealed class CardDeclaredDefenderTests
         var pending = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Interrupt),
             ability => ability.Card == source.ObjectId);
-        runner.Resolve(world, occurrence, pending, [], []);
+        runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
 
         Assert.Equal(ally.ObjectId, world.Attack!.Defender);
         Assert.Equal(ally.ObjectId, world.Attack.Target);

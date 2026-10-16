@@ -59,7 +59,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
             ] } ] }
             """));
         var card = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
-        runner.Boost(world, card, 0);
+        runner.ExecuteBoost(world, card, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(AbilityType.Boost, Assert.IsType<AbilityContinuationState>(waiting.Require<AbilityContinuationAgendaOperation>().Continuation).Invocation.Address.Tier);
         var asked = runner.Choosing(world, waiting)!;
@@ -133,7 +133,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         var world = Deal();
         world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
         var card = world.CreateCard("01173", world.AreaOf(DeckType.RevealingArea));
-        runner.WhenRevealed(world, card, 0);
+        runner.ExecuteReveal(world, card, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         var asked = runner.Choosing(world, waiting)!;
         var damage = Assert.Single(asked.Affordances);
@@ -155,7 +155,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         var card = world.CreateCard("01173", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        var events = runner.WhenRevealed(world, card, player: 0);
+        var events = runner.ExecuteReveal(world, card, player: 0).Events;
         Assert.Empty(events);
         Assert.Empty(world.Agenda.Outstanding);
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
@@ -172,7 +172,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         var runner = NickFuryRunner();
         var world = Deal();
         var fury = world.CreateCard("01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
-        runner.WhenRevealed(world, fury, 0);
+        runner.ExecuteReveal(world, fury, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         var asked = runner.Choosing(world, waiting)!;
         var draw = Assert.Single(asked.Affordances);
@@ -181,7 +181,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         Assert.Equal("Draw 3 cards", draw.Description);
         // Prompt filtering is not the authority boundary: a forged answer for
         // the unavailable original index is refused too.
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, waiting, Decision.Take(0)));
+        Assert.Throws<ArgumentException>(() => runner.Chose(world, waiting, Decision.Take(0)));
     }
 
     [Rule("rr:choose-option.2")]
@@ -198,11 +198,11 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         world.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 2);
         world.CreateCard("01108", world.AreaOf(DeckType.SideSchemesArea));
         var fury = world.CreateCard("01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
-        runner.WhenRevealed(world, fury, 0);
+        runner.ExecuteReveal(world, fury, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         var asked = runner.Choosing(world, waiting)!;
         Assert.Equal([1], asked.Affordances.Select(option => option.Id));
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, waiting, Decision.Take(0)));
+        Assert.Throws<ArgumentException>(() => runner.Chose(world, waiting, Decision.Take(0)));
     }
 
     [Rule("rr:crisis-icon.1")]
@@ -224,7 +224,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         scheme.PlaceTokens("k_threat", 2);
         world.CreateCard("01108", world.AreaOf(DeckType.SideSchemesArea));
         var fury = world.CreateCard("01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
-        runner.WhenRevealed(world, fury, 0);
+        runner.ExecuteReveal(world, fury, 0);
         Assert.Equal(2, scheme.Tokens.GetValueOrDefault("k_threat"));
     }
 
@@ -248,7 +248,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         scheme.PlaceTokens("k_threat", 2);
         world.CreateCard("01108", world.AreaOf(DeckType.SideSchemesArea));
         var treachery = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
-        runner.WhenRevealed(world, treachery, 0);
+        runner.ExecuteReveal(world, treachery, 0);
         Assert.Equal(0, scheme.Tokens.GetValueOrDefault("k_threat"));
     }
 
@@ -282,7 +282,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         }
 
         var fury = world.CreateCard("01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
-        runner.WhenRevealed(world, fury, 0);
+        runner.ExecuteReveal(world, fury, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         var asked = runner.Choosing(world, waiting)!;
         Assert.Equal([1], asked.Affordances.Select(option => option.Id));
@@ -311,7 +311,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
             """));
         var world = Deal();
         var fury = world.CreateCard("01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
-        runner.WhenRevealed(world, fury, 0);
+        runner.ExecuteReveal(world, fury, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         var asked = runner.Choosing(world, waiting)!;
         Assert.Equal([0, 1], asked.Affordances.Select(option => option.Id));

@@ -71,7 +71,7 @@ public sealed class BoostAbilityTests
         var card = world.CreateCard(unauthoredBoost, world.AreaOf(DeckType.BoostingArea));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => AuthoredCards.Runner().Boost(world, card, 0));
+            () => AuthoredCards.Runner().ExecuteBoost(world, card, 0));
 
         Assert.Contains("no ability data", thrown.Message, StringComparison.Ordinal);
         Assert.Contains(unauthoredBoost, thrown.Message, StringComparison.Ordinal);
@@ -110,7 +110,7 @@ public sealed class BoostAbilityTests
         var world = Deal();
         var card = world.CreateCard(Advance, world.AreaOf(DeckType.BoostingArea));
 
-        Assert.Empty(AuthoredCards.Runner().Boost(world, card, 0));
+        Assert.Empty(AuthoredCards.Runner().ExecuteBoost(world, card, 0).Events);
     }
 
     [Rule("rr:boost-boost-icon.2")]
@@ -134,7 +134,7 @@ public sealed class BoostAbilityTests
         var world = Deal();
         var card = world.CreateCard(SonicBoom, world.AreaOf(DeckType.BoostingArea));
 
-        new AbilityRunner(book).Boost(world, card, 0);
+        new AbilityRunner(book).ExecuteBoost(world, card, 0);
 
         Assert.True(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Stunned));
     }
@@ -190,7 +190,7 @@ public sealed class BoostAbilityTests
         var card = world.CreateCard(SonicBoom, world.AreaOf(DeckType.BoostingArea));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => new AbilityRunner(book).Boost(world, card, 0));
+            () => new AbilityRunner(book).ExecuteBoost(world, card, 0));
 
         Assert.Contains("'Boost' ability", thrown.Message, StringComparison.Ordinal);
         Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Confused));
@@ -215,7 +215,7 @@ public sealed class BoostAbilityTests
         var card = world.CreateCard(SonicBoom, world.AreaOf(DeckType.BoostingArea));
         var identity = world.Seats[0].IdentityCard;
 
-        new AbilityRunner(book).Boost(world, card, 0);
+        new AbilityRunner(book).ExecuteBoost(world, card, 0);
 
         Assert.True(Statuses.Has(world, identity, Statuses.Stunned));
         Assert.False(Statuses.Has(world, identity, Statuses.Confused));

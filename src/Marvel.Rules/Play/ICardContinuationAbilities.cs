@@ -11,7 +11,7 @@ namespace Marvel.Rules.Play;
 public interface ICardContinuationAbilities
 {
     IReadOnlyList<GameEvent> ResumeAbility(World world, PhaseStep continuation);
-    IReadOnlyList<GameEvent> ResolveSpecial(World world, Card card, int player, bool finalStep);
+    AbilityExecutionResult ResolveSpecial(World world, AbilityExecution entry, Card card, int player, bool finalStep);
     IReadOnlyList<GameEvent> ResolveEachPlayer(World world, PhaseStep continuation);
     Prompt? Choosing(World world, PhaseStep continuation);
     IReadOnlyList<GameEvent> Chose(World world, PhaseStep continuation, Decision input);

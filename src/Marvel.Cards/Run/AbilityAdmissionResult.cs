@@ -11,5 +11,5 @@ internal sealed record AbilityAdmissionResult(
     bool IsAdmissible,
     ImmutableHashSet<AbilityEffect> CrisisIgnoringThwarts)
 {
-    internal static AbilityAdmissionResult Rejected { get; } = new(false, []);
+    internal static AbilityAdmissionResult Rejected => new(false, []);
 }

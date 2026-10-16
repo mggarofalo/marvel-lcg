@@ -86,7 +86,7 @@ internal static class AbilityTriggerReader
     /// A "Setup" ability is the other, and for a different reason: it <i>is</i>
     /// a triggered ability, but <c>rr:setup-triggered-ability.2</c> times it to
     /// a step of setup rather than to something happening in the game. Setup is
-    /// not on the agenda, so no condition in <c>Steps.EveryCondition</c> names
+    /// not on the agenda, so no condition in <c>StepConditions.EveryCondition</c> names
     /// it — and inventing one would put a triggering condition nothing produces
     /// into the data, which is the failure the whole dataset is held against
     /// the engine to avoid.
@@ -141,7 +141,7 @@ internal static class AbilityTriggerReader
     /// A second triggering condition of the same occurrence, or null.
     /// </summary>
     /// <remarks>
-    /// Held against <c>Steps.EveryCondition</c> exactly as
+    /// Held against <c>StepConditions.EveryCondition</c> exactly as
     /// a trigger's event is, and for the same reason: the vocabulary is the
     /// engine's spelling of a triggering condition rather than a DSL word, so a
     /// name nothing produces is a card that would never fire and this is where
@@ -150,7 +150,7 @@ internal static class AbilityTriggerReader
     internal static string? Also(JsonElement trigger, string card)
     {
         string? also = Text(trigger, "alsoHappened");
-        if (also is null || Steps.EveryCondition.Contains(also))
+        if (also is null || StepConditions.EveryCondition.Contains(also))
         {
             return also;
         }

@@ -13,7 +13,7 @@ namespace Marvel.Rules.Play;
 internal static class IndirectAttackResolution
 {
     /// <summary>Resolve step 1 for one assigned indirect-damage recipient.</summary>
-    public static long PrepareIndirectDamage(
+    public static long? PrepareIndirectDamage(
         World world, PhaseStep step, List<GameEvent> events)
     {
         if (step.Require<IndirectDamageOperation>().Origin is not { } procedure)
@@ -29,11 +29,26 @@ internal static class IndirectAttackResolution
 
         var attacker = world.Cards[step.Require<IndirectDamageOperation>().Source];
         var target = world.Cards[step.Subject];
-        long amount = DamagePlacement.Replace(
-            world, target, attacker, step.Require<IndirectDamageOperation>().Amount, events);
+        var operation = step.Require<IndirectDamageOperation>();
+        if (!IsAssignedIncarnation(operation, target))
+        {
+            world.Agenda.RecordProcedureAmount(procedure, step.Subject, 0);
+            return 0;
+        }
+        operation.Replacement ??= DamagePlacement.Replace(world,
+            new DamageRequest(attacker, target, operation.Amount, Steps.AttackInitiated, "Attack")
+                { RecordDefeatOn = procedure }, events);
+        if (!operation.Replacement.IsComplete) return null;
+        long amount = target.Incarnation == operation.Replacement.TargetIncarnation
+            && DeckTypes.IsInPlay(target.Area.Type) ? operation.Replacement.ResolvedAmount : 0;
         world.Agenda.RecordProcedureAmount(procedure, step.Subject, amount);
         return amount;
     }
+
+    private static bool IsAssignedIncarnation(IndirectDamageOperation operation, Card target) =>
+        DeckTypes.IsInPlay(target.Area.Type)
+        && (operation.Incarnations is not { } incarnations
+            || target.Incarnation == incarnations[target.ObjectId]);
 
     /// <summary>Place an assigned indirect attack after every recipient window.</summary>
     public static void ApplyIndirectDamage(
@@ -47,7 +62,10 @@ internal static class IndirectAttackResolution
                 "indirect attack damage has no prepared recipient results");
 
         var attacker = world.Cards[step.Subject];
-        var placed = PrepareIndirectPlacements(world, facts, events, attacker, assigned);
+        var current = assigned.Where(pair => IsAssignedIncarnation(
+                step.Require<IndirectDamageOperation>(), world.Cards[pair.Key]))
+            .ToDictionary(pair => pair.Key, pair => pair.Value);
+        var placed = PrepareIndirectPlacements(world, facts, events, attacker, current);
         foreach (var damage in placed)
         {
             DamagePlacement.ApplyPlaced(

@@ -77,11 +77,11 @@ public sealed class FacedownDroneTests
             FacedownMinions.EngageTop(world, 0, DroneProfileFixture.Profile, "01140", "Create_Drone", events));
         Agendas.Happening(world);
 
-        bool defeated = DamagePlacement.Deal(
-            world, facts, drone, drone, 1, "test", "Deal_Damage", events);
+        var damage = DamagePlacement.Resolve(world, facts,
+            new(drone, drone, 1, "test", "Deal_Damage"), events);
         var resolved = new Resolution(world, Prompt: null, Events: []);
 
-        Assert.True(defeated);
+        Assert.Equal(Damage.Outcome.Defeated, damage.Outcome);
         Assert.Same(underneath, drone);
         Assert.Equal(DeckType.DiscardPile, drone.Area.Type);
         Assert.Equal(PlayArea.Of(0), drone.Area.PlayArea);

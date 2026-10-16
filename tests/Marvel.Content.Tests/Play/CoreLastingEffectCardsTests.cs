@@ -25,9 +25,7 @@ public sealed class CoreLastingEffectCardsTests
             "01076", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
         var runner = AuthoredCards.Runner();
 
-        runner.Act(
-            world, new PendingAbility(eventCard.ObjectId, AbilityType.Action, 0),
-            [payment.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(eventCard.ObjectId, AbilityType.Action, 0), [payment.ObjectId], []));
         AnswerCardChoice(world, runner, eventCard, world.Seats[1].IdentityCard);
 
         var later = world.CreateCard(
@@ -62,8 +60,7 @@ public sealed class CoreLastingEffectCardsTests
         Assert.Contains(world.Seats[1].IdentityCard.ObjectId, action.Targets!.Legal);
         Assert.Contains("choose a player", action.Description, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("next card this phase costs 1 fewer resources", action.Description);
-        runner.Act(
-            world, new PendingAbility(support.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(support.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, choice)!;
         Assert.Equal(
@@ -91,8 +88,7 @@ public sealed class CoreLastingEffectCardsTests
         team.PlaceTokens("c_snoop", 3);
         var runner = AuthoredCards.Runner();
 
-        runner.Act(
-            world, new PendingAbility(team.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(team.ObjectId, AbilityType.Action, 0), [], []));
         var step = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, step)!;
 
@@ -118,8 +114,7 @@ public sealed class CoreLastingEffectCardsTests
         world.CreateCard("01005", world.Seats[0].Deck);
         var runner = AuthoredCards.Runner();
 
-        runner.Act(
-            world, new PendingAbility(support.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(support.ObjectId, AbilityType.Action, 0), [], []));
         AnswerCardChoice(world, runner, support, world.Seats[0].IdentityCard);
 
         var action = Assert.Single(
@@ -128,7 +123,7 @@ public sealed class CoreLastingEffectCardsTests
         Assert.Equal("1", price.Cost);
         Assert.Contains(price.Generators, source => source.Effect == payment.ObjectId);
 
-        runner.Act(world, action, [payment.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [payment.ObjectId], []));
 
         Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
         Assert.Equal(3, CardPayment.CostOf(world, Cards, world.Seats[0], next).Amount);
@@ -149,13 +144,12 @@ public sealed class CoreLastingEffectCardsTests
         var next = world.CreateCard("01083", world.Seats[0].Hand);
         var runner = AuthoredCards.Runner();
 
-        runner.Act(
-            world, new PendingAbility(support.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(support.ObjectId, AbilityType.Action, 0), [], []));
         AnswerCardChoice(world, runner, support, world.Seats[0].IdentityCard);
         var action = Assert.Single(
             runner.Actions(world, 0), candidate => candidate.Card == eventCard.ObjectId);
 
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, action, [], []));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(action, [], [])));
 
         Assert.Equal(2, CardPayment.CostOf(world, Cards, world.Seats[0], next).Amount);
     }
@@ -177,8 +171,7 @@ public sealed class CoreLastingEffectCardsTests
         var runner = AuthoredCards.Runner();
         world.Abilities = new UnrelatedWorldAbilities();
 
-        runner.Act(
-            world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var step = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, step)!;
         var offer = Assert.Single(prompt.Affordances);
@@ -186,7 +179,9 @@ public sealed class CoreLastingEffectCardsTests
         Assert.Equal("3", Assert.Single(offer.CostOptions).Cost);
 
         runner.Chose(world, step, Decision.Take(
-                chosen.ObjectId, [], [doubleResource.ObjectId, singleResource.ObjectId]));
+                chosen.ObjectId, [], [doubleResource.ObjectId, singleResource.ObjectId], new Dictionary<string, long>(),
+                Assert.IsAssignableFrom<IReadOnlyList<ResourceAllocation>>(ResourcePayment.Allocate(
+                    Assert.Single(offer.CostOptions), [doubleResource.ObjectId, singleResource.ObjectId]))));
 
         Assert.Equal(1, chosen.Owner);
         Assert.Equal(PlayArea.Of(0), chosen.Area.PlayArea);
@@ -212,8 +207,7 @@ public sealed class CoreLastingEffectCardsTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
-        runner.Act(
-            world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var step = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, step)!;
         var offer = Assert.Single(prompt.Affordances);
@@ -223,7 +217,9 @@ public sealed class CoreLastingEffectCardsTests
         Assert.Equal("2", price.Cost);
         Assert.Equal("GG", Assert.Single(price.Generators).Generates);
 
-        runner.Chose(world, step, Decision.Take(maria.ObjectId, [], [power.ObjectId]));
+        runner.Chose(world, step, Decision.Take(maria.ObjectId, [], [power.ObjectId], new Dictionary<string, long>(),
+            Assert.IsAssignableFrom<IReadOnlyList<ResourceAllocation>>(
+                ResourcePayment.Allocate(price, [power.ObjectId]))));
 
         Assert.Equal(DeckType.AlliesArea, maria.Area.Type);
         Assert.Equal(PlayArea.Of(0), maria.Area.PlayArea);
@@ -259,8 +255,8 @@ public sealed class CoreLastingEffectCardsTests
         public CardCounterPool? CounterPool(World world, Card card) =>
             throw new InvalidOperationException(counterFailure);
 
-        public override IReadOnlyList<Marvel.Rules.Events.GameEvent> EntersPlay(
-            World world, Card card) =>
+        public override AbilityExecutionResult EntersPlay(
+            World world, AbilityExecution entry, Card card) =>
             throw new InvalidOperationException("the unrelated World enter-play port was used");
 
         public override IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player) =>
@@ -269,9 +265,8 @@ public sealed class CoreLastingEffectCardsTests
         public override string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
             throw new InvalidOperationException("the unrelated World resource port was used");
 
-        public override string UseResource(
-            World world, int player, int card,
-            List<Marvel.Rules.Events.GameEvent> events) =>
+        public override ResourceExecutionResult UseResource(
+            World world, AbilityExecution entry, int player, int card) =>
             throw new InvalidOperationException("the unrelated World resource port was used");
     }
 }

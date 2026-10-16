@@ -135,11 +135,22 @@ internal static class AbilityStructuralPowerExecution
     internal static Prompt DescribeTopForHand(AbilityStructuralContext context, AbilityEffect.ChooseTopForHand top)
     {
         var cards = TopCards(context.Expressions.World.Seats[context.Player].Deck, top.Count);
+        string consequence = $"Add 1 of these {cards.Count} cards to your hand and discard the others.";
         return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose a top card", false,
             cards.Select(card => new Affordance(card.ObjectId, ChooseVerb,
-                card.ObjectId, context.Player, card.FaceId)).ToList())
-        { ExposesConcealedCandidates = true, PublicKind = PublicDecisionKind.CardLook };
+                card.ObjectId, context.Player, card.FaceId, Description: consequence)
+            {
+                DisplayLabel = EffectiveCards.Title(card, context.Expressions.World.Facts),
+                CommitLabel = $"Add {EffectiveCards.Title(card, context.Expressions.World.Facts)} to hand",
+            }).ToList())
+        {
+            ExposesConcealedCandidates = true,
+            PublicKind = PublicDecisionKind.CardLook,
+            ContextCardIds = [context.Expressions.Source.ObjectId],
+            DisplayQuestion = $"{context.Expressions.World.Facts.Title(context.SourceFace)}: choose a card to add to your hand",
+            Description = consequence,
+        };
     }
 
     internal static AbilityStructuralTransition AnswerTopForHand(

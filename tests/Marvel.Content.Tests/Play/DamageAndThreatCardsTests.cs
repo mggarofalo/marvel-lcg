@@ -159,7 +159,7 @@ public sealed class DamageAndThreatCardsTests
         // to be additional to.
         Reveal.Resolve(world, world.Facts, card, 0, landing);
         var abilities = AuthoredCards.Runner();
-        events = [.. abilities.WhenRevealed(world, card, 0)];
+        events = [.. abilities.ExecuteReveal(world, card, 0).Events];
         var asked = Sequence.Work(world, Cards, abilities, events);
         while (asked is not null)
         {
@@ -173,7 +173,7 @@ public sealed class DamageAndThreatCardsTests
     private static void RevealTreachery(World world, string faceId)
     {
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, card, 0);
     }
 
     private static World Deal(params string[] heroes)

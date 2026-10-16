@@ -248,12 +248,11 @@ public sealed class ThreatWindowTests
         public override Affordance Describe(World world, PendingAbility ability) =>
             new(Handle, "Interrupt", ability.Card, 0, "interrupt threat");
 
-        public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
+        public override AbilityExecutionResult Resolve(
+            World world, AbilityExecution invocation, Decision answer)
         {
-            resolve(occurrence);
-            return [];
+            resolve(invocation.Occurrence);
+            return invocation.Finish([]);
         }
     }
 

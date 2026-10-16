@@ -66,7 +66,7 @@ public sealed class StateDigest
     /// choice, and the only property it has to keep is holding still.
     /// </para>
     /// </remarks>
-    internal static readonly JsonWriterOptions CanonicalOptions = new()
+    internal static JsonWriterOptions CanonicalOptions => new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         Indented = false,

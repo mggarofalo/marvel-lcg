@@ -5,7 +5,7 @@ namespace Marvel.Rules.Play;
 
 /// <summary>State owned by the DefeatCompletion procedure.</summary>
 public sealed record DefeatCompletionOperation(DefeatCompletionKind Kind,
-    string Trigger = "") : AgendaOperation
+    string Trigger, int Incarnation) : AgendaOperation
 {
     /// <inheritdoc/>
     public override string What => Kind switch

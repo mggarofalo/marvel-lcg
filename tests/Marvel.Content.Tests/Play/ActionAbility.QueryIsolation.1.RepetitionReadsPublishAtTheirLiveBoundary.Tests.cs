@@ -28,11 +28,15 @@ public sealed class ActionAbilityQueryIsolationRepetitionReadsPublishAtTheirLive
         var(game, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
         var action = Assert.Single(game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
         string before = world.Digest().Canonical();
+        long words = world.Random.Generator.WordsConsumed;
+        var randomState = world.Random.Generator.GetState();
         Assert.Contains(runner.Actions(world, 0), option => option.Card == source!.ObjectId);
         Assert.Equal(before, world.Digest().Canonical());
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         long damage = villain.Damage;
-        long words = world.Random.Generator.WordsConsumed;
+        Assert.Equal(words, world.Random.Generator.WordsConsumed);
+        Assert.Equal(randomState.Index, world.Random.Generator.GetState().Index);
+        Assert.Equal(randomState.Words, world.Random.Generator.GetState().Words);
         var result = game.Resolve(Decision.Take(action.Id));
         Assert.Single(result.Information, signal => signal.Kind == InformationKind.Search);
         Assert.Equal(alteration ? 1 : 0, source!.Tokens.GetValueOrDefault("c_test"));

@@ -26,7 +26,7 @@ public sealed class AuthoredStatusHistoryTests
             PersistentFixture.Cards, rhino.ObjectId, world.Seats[0].IdentityCard.ObjectId, player: 0);
         var ability = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Interrupt), item => item.Card == webbed.ObjectId);
 
-        var events = runner.Resolve(world, occurrence, ability, [], []);
+        var events = runner.ResolveWindow(world, occurrence, ability, new Decision(ability.Card, [], [])).Events;
 
         var status = Assert.Single(Statuses.On(world, rhino, Statuses.Stunned));
         Assert.Equal(status.ObjectId, Assert.Single(events.OfType<CardAttached>()).Card);

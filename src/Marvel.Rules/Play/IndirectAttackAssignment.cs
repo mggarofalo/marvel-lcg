@@ -111,6 +111,7 @@ internal static class IndirectAttackAssignment
         }
 
         var assigned = AllocateIndirectDamage(world, facts, eligible, input.Targets);
+        var incarnations = assigned.Keys.ToDictionary(id => id, id => world.Cards[id].Incarnation);
 
         int round = world.Agenda.Current?.Round ?? 0;
         var windows = assigned
@@ -122,7 +123,7 @@ internal static class IndirectAttackAssignment
                     Amount: pair.Value,
                     Amounts: new Dictionary<int, long>(),
                     Origin: occurrence
-                ),
+                ) { Incarnations = incarnations },
                 round,
                 5,
                 Index: index,
@@ -137,7 +138,7 @@ internal static class IndirectAttackAssignment
                 Candidates: [.. input.Targets],
                 Origin: occurrence,
                 Amounts: new Dictionary<int, long>()
-            ),
+            ) { Incarnations = incarnations },
             round,
             5,
             Subject: step.Subject,

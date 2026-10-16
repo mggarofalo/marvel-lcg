@@ -1,7 +1,7 @@
 namespace Marvel.Core.Random;
 
 /// <summary>
-/// The facade the game calls, mirroring <c>engine/lib/random.py</c>.
+/// The game-owned facade over the seeded integer stream.
 /// </summary>
 /// <remarks>
 /// Thin on purpose. It exists for one behaviour the raw generator must not
@@ -12,9 +12,6 @@ public sealed class EngineRandom(uint seed)
 {
     /// <summary>The underlying generator.</summary>
     public MersenneTwister Generator { get; } = new(seed);
-
-    /// <summary>Re-seeds the generator.</summary>
-    public void SetSeed(uint seed) => Generator.Seed(seed);
 
     /// <summary>One element, uniformly.</summary>
     public T Choice<T>(IReadOnlyList<T> items) => Generator.Choice(items);

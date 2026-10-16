@@ -62,8 +62,11 @@ public sealed class PresentationAssemblyPolicyTests
             // Passive public purpose without answer choices.
             "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.Question",
+            // Detached copies of engine-authored payment facts, without invoking legality.
+            "Marvel.Rules.Prompts.ResourceCost",
             "Marvel.Rules.Prompts.ResourceSource",
             "Marvel.Rules.Prompts.TargetRequest",
+            "Marvel.Rules.Prompts.VariableRequest",
             "Marvel.Rules.Prompts.WindowChoice",
             "Marvel.Rules.State.Area",
             "Marvel.Rules.State.Card",

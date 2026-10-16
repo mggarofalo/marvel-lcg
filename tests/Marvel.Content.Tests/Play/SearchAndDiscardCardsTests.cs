@@ -64,7 +64,7 @@ public sealed class SearchAndDiscardCardsTests
 
         var card = world.CreateCard(
             AuthoredCards.CaughtOffGuard, world.AreaOf(DeckType.RevealingArea));
-        runner.WhenRevealed(world, card, 0);
+        runner.ExecuteReveal(world, card, 0);
 
         var asked = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, card))!;
         Assert.Equal(Question.Element, asked.Asking);
@@ -98,7 +98,7 @@ public sealed class SearchAndDiscardCardsTests
 
         var card = world.CreateCard(
             AuthoredCards.CaughtOffGuard, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, card, 0);
 
         Assert.Empty(world.Agenda.Outstanding);
         Assert.Equal(queued + 1, Queue(world).Cards.Count);
@@ -119,7 +119,7 @@ public sealed class SearchAndDiscardCardsTests
 
         var card = world.CreateCard(
             AuthoredCards.CaughtOffGuard, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, card, 0);
 
         Assert.Empty(world.Agenda.Outstanding);
         Assert.Equal(queued + 1, Queue(world).Cards.Count);
@@ -145,7 +145,7 @@ public sealed class SearchAndDiscardCardsTests
 
         var card = world.CreateCard(
             AuthoredCards.CaughtOffGuard, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, card, 1);
+        AuthoredCards.Runner().ExecuteReveal(world, card, 1);
 
         Assert.Empty(world.Agenda.Outstanding);
         Assert.Equal(queued + 1, Queue(world, 1).Cards.Count);
@@ -166,7 +166,7 @@ public sealed class SearchAndDiscardCardsTests
 
         var stage = world.CreateCard(
             AuthoredCards.RhinoTwo, world.AreaOf(DeckType.RevealingArea));
-        var events = AuthoredCards.Runner().WhenRevealed(world, stage, 0);
+        var events = AuthoredCards.Runner().ExecuteReveal(world, stage, 0).Events;
 
         var scheduled = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(Steps.RevealEncounterCard, scheduled.What);
@@ -205,7 +205,7 @@ public sealed class SearchAndDiscardCardsTests
 
         var stage = world.CreateCard(
             AuthoredCards.RhinoTwo, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, stage, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, stage, 0);
 
         var after = world.AreaOf(DeckType.EncounterDeck).Cards.Select(c => c.ObjectId).ToList();
         Assert.NotEqual(before.Where(id => id != wanted.ObjectId), after);
@@ -234,7 +234,7 @@ public sealed class SearchAndDiscardCardsTests
 
         var stage = world.CreateCard(
             AuthoredCards.RhinoTwo, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, stage, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, stage, 0);
 
         Assert.Equal(
             wanted.ObjectId, Assert.Single(world.Agenda.Outstanding).Subject);

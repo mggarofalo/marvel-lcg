@@ -39,7 +39,9 @@ public sealed class ActionAbilityCoreAnAttackModifierAppliesOnlyToAnEventsFirstA
         }, hero: true, abilities: runner);
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "attackDamage", Amount: 2, Card: played!.ObjectId, Affects: played.ObjectId, Lasts: new Duration(Uses: 1)));
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == played.ObjectId);
-        runner.Act(world, action, [..payments.Select(card => card.ObjectId)], []);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(action, [..payments.Select(card => card.ObjectId)], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.Equal(4, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 

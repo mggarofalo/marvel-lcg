@@ -132,7 +132,7 @@ public static class BasicPowerResolution
         ContinuousEffect? temporaryOverkill = RegisterOverkill(world, attack, source, attacker);
         amount = MoveDamage(world, facts, attack, source, amount, events);
 
-        var damaged = DamageAttacks.Attack(
+        DamageAttacks.Attack(
             world, facts, attacker, source, world.Cards[attack.Enemy], amount,
             attack.Trigger, AttackVerb, events);
 
@@ -143,10 +143,6 @@ public static class BasicPowerResolution
 
         occurrence.Also(Steps.AttackEnds);
         occurrence.Also(Steps.BasicAttackEnds);
-        if (damaged.Characters.Count > 0)
-        {
-            occurrence.Also(Steps.DamageDealt);
-        }
     }
 
     private static bool TargetRemains(World world, CharacterAttack attack) =>
@@ -210,7 +206,7 @@ public static class BasicPowerResolution
                 byAttack ? "attack_consequential_damage" : "thwart_consequential_damage",
                 facts, world.Players);
 
-        DamagePlacement.Deal(
-            world, facts, ally, ally, consequential, verb, "Consequential_Damage", events);
+        DamagePlacement.Resolve(world, facts,
+            new(ally, ally, consequential, verb, "Consequential_Damage"), events);
     }
 }

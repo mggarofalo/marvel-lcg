@@ -213,6 +213,9 @@ public sealed class KeywordExpiringLossesPreflightTheCompleteConstantTests : Key
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.Effects.Register(new ContinuousEffect(EffectSource.DelayedEffect, Kind: DelayedEffects.StunTheSubject, Card: villain.ObjectId, Affects: null, Lasts: Duration.NextTime(Steps.DamageDealt)));
         var result = DamageAttacks.Attack(world, printed, villain, minion, 3, "test", "Attack", []);
+        Assert.False(result.IsComplete);
+        Sequence.Finish(world, printed, world.Abilities, []);
+        Assert.True(result.IsComplete);
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
         Assert.Empty(world.AreaOf(DeckType.VictoryDisplay).Cards);
         Assert.Equal([minion], result.Characters);

@@ -161,7 +161,7 @@ public sealed class EvictionNoticeTests
 
         var card = world.CreateCard(
             AuthoredCards.EvictionNotice, world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
-        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, card, 0);
         return (world, card);
     }
 }

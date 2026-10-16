@@ -161,11 +161,11 @@ public sealed class LifecycleOccurrenceTests
 
     private sealed class EntryResponse(int card) : NoCardAbilities
     {
-        public override IReadOnlyList<GameEvent> EntersPlay(World world, Card entered)
+        public override AbilityExecutionResult EntersPlay(World world, AbilityExecution entry, Card entered)
         {
             long before = entered.Tokens.GetValueOrDefault("c_arrow");
             entered.PlaceTokens("c_arrow", 4 - before);
-            return [];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
 
         public override IReadOnlyList<PendingAbility> Waiting(

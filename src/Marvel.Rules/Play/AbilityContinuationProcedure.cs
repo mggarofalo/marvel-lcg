@@ -15,8 +15,8 @@ internal static class AbilityContinuationProcedure
                 ActivityBatches.Append(events, world.ContinuationAbilities.ResumeAbility(world, step));
                 break;
             case Steps.ResolveSpecial:
-                ActivityBatches.Append(events, world.ContinuationAbilities.ResolveSpecial(
-                    world, world.Cards[step.Subject], step.Seat, step.Require<AbilityContinuationAgendaOperation>().FinalSpecial));
+                ActivityBatches.Append(events, world.ContinuationAbilities.ExecuteSpecial(
+                    world, world.Cards[step.Subject], step.Seat, step.Require<AbilityContinuationAgendaOperation>().FinalSpecial).Events);
                 break;
             case Steps.ChooseOption:
                 return world.ContinuationAbilities.Choosing(world, step);

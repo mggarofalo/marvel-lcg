@@ -34,29 +34,19 @@ internal static class AbilityResolutionActions
         return [];
     }
 
-    /// <inheritdoc/>
-    internal static IReadOnlyList<GameEvent> Act(this AbilityResolutionExecution execution,
-        World world, PendingAbility ability, IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen,
-        IReadOnlyDictionary<string, long>? values = null,
-        IReadOnlyList<ResourceAllocation>? allocations = null)
-        => execution.Act(
-            world, ability, paying, chosen,
-            new Occurrence(
-                0, [Steps.TurnAction], Subject: ability.Card, Player: ability.Player),
-            values, allocations);
-
-    /// <inheritdoc/>
-    internal static IReadOnlyList<GameEvent> Act(this AbilityResolutionExecution execution,
-        World world, PendingAbility ability, IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen, Occurrence occurrence,
-        IReadOnlyDictionary<string, long>? values = null,
-        IReadOnlyList<ResourceAllocation>? allocations = null)
+    internal static AbilityExecutionResult Act(this AbilityResolutionExecution execution,
+        World world, AbilityExecution invocation, Decision answer)
     {
         ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(paying);
-        ArgumentNullException.ThrowIfNull(chosen);
-        ArgumentNullException.ThrowIfNull(occurrence);
+        ArgumentNullException.ThrowIfNull(invocation);
+        ArgumentNullException.ThrowIfNull(answer);
+        world.Agenda.Executions.RequireActive(invocation);
+        var ability = invocation.Ability;
+        var occurrence = invocation.Occurrence;
+        var paying = answer.Spent;
+        var chosen = answer.Targets;
+        var values = answer.Values;
+        var allocations = answer.Allocations;
 
         var card = world.Cards[ability.Card];
         var found = execution.Pending(card, ability);
@@ -71,6 +61,8 @@ internal static class AbilityResolutionActions
         {
             Tier = found.Trigger.Timing,
         };
+
+        cast.EnterExecution(invocation);
 
         // The wire only names an affordance; it is not authority to use one
         // after its legality has changed. Re-run the same initiation checks
@@ -100,25 +92,24 @@ internal static class AbilityResolutionActions
         var costOccurrence = world.Agenda.Occurrence;
         var recipientChoice = AbilityRecipientCommitment.Validate(execution, cast, found, chosen);
         var arrowPayment = AbilityCostPayment.Prepare(
-            world, card, cast.Player, found.Cost, paying, recipientChoice is null ? chosen : [],
-            execution.program, execution.resourceAbilities, values,
-            resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-                && ResourceRequirement(found.Cost, card).Length > 0);
+            world, card, cast.Player, found.Cost, execution.program, execution.resourceAbilities,
+            AbilityPaymentSelection.Capture(paying, recipientChoice is null ? chosen : [], values,
+                resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
+                    && ResourceRequirement(found.Cost, card).Length > 0));
         var eventPayment = AbilityEventPayment.Prepare(
-            world, card, cast.Player, paying, found.Effect, execution.resourceAbilities,
-            allocations, found.Cost);
-        if (eventPayment is not null)
-        {
-            cast.PaidWith(eventPayment.Commit(occurrence, events));
-        }
-        execution.ApplyPayment(arrowPayment.Commit(execution.cardPlayAbilities, cast.Trigger, events), cast);
+            world, card, cast.Player, paying, found, execution.resourceAbilities, allocations);
+        cast.TrackResolution(ability.Ordinal);
+        cast.PendingPayment = new AbilityInitiationPayment(eventPayment, arrowPayment);
+        cast.PendingPayment.Commit(execution, cast);
         if (cast.Suspended)
         {
             if (recipientChoice is not null)
                 cast.Results[AbilityRecipientCommitment.PendingRecipient] = chosen[0];
             execution.SuspendAfterCost(cast, ability.Ordinal, costOwner, costOccurrence);
-            return events;
+            cast.CompleteResolution();
+            return invocation.Report(events);
         }
+        cast.PendingPayment = null;
         execution.Use(world, card, found, occurrence);
         if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event)
         {
@@ -129,9 +120,9 @@ internal static class AbilityResolutionActions
         if (recipientChoice is not null)
             AbilityRecipientCommitment.Resolve(execution, cast, recipientChoice, chosen[0]);
         else execution.Run(found, cast);
-        cast.CompleteResolution();
         execution.DiscardEvent(card, cast);
-        return events;
+        cast.CompleteResolution();
+        return invocation.Report(events);
     }
 
     /// <summary>The exact same-timing ability named by a pending ordinal.</summary>

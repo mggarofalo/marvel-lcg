@@ -10,10 +10,10 @@ internal static class PrintedCardFaceProjection
         IReadOnlyDictionary<string, string> attributes = facts.Attributes(id);
         return new CardFaceDescriptor(id, facts.Title(id), facts.Subtitle(id), facts.Kind(id), new Dictionary<string, long>())
         {
-            Traits = facts.PrintedTraits(id), Cost = attributes.GetValueOrDefault("Cost"),
+            Traits = facts.PrintedTraits(id).ToArray(), Cost = attributes.GetValueOrDefault("Cost"),
             PrintedStats = PrintedFaceAttributes.PrintedStats(attributes),
             PrintedValues = CardPrintedValues.From(facts.PrintedStats(id)),
-            Keywords = facts.Keywords(id), RulesText = facts.Text(id), RulesMarkup = facts.FormattedText(id),
+            Keywords = facts.Keywords(id).ToArray(), RulesText = facts.Text(id), RulesMarkup = facts.FormattedText(id),
             ArtFaceId = id,
         };
     }

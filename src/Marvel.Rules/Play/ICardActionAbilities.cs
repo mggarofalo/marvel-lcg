@@ -11,12 +11,6 @@ namespace Marvel.Rules.Play;
 public interface ICardActionAbilities : IAbilityDescriptions
 {
     IReadOnlyList<PendingAbility> Actions(World world, int player);
-    IReadOnlyList<GameEvent> Act(World world, PendingAbility ability, IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen, IReadOnlyDictionary<string, long>? values = null,
-        IReadOnlyList<ResourceAllocation>? allocations = null);
-    IReadOnlyList<GameEvent> Act(World world, PendingAbility ability, IReadOnlyList<int> paying,
-        IReadOnlyList<int> chosen, Occurrence occurrence,
-        IReadOnlyDictionary<string, long>? values = null,
-        IReadOnlyList<ResourceAllocation>? allocations = null);
+    AbilityExecutionResult Act(World world, AbilityExecution invocation, Decision answer);
 }
 #pragma warning restore CS1591

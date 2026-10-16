@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -35,7 +36,7 @@ public sealed class Game
     internal const string TurnTrigger = "WhenPlayerInTurn";
     internal const string EndPhaseTrigger = "End Turn";
 
-    private static readonly HashSet<string> Derived =
+    private static readonly ImmutableArray<string> Derived =
         [ResolveMulligans, ChangeForm, EndPhaseVerb];
 
     // An affordance id is a handle, and the property that matters is that the
@@ -98,7 +99,7 @@ public sealed class Game
     }
 
     /// <summary>The verbs this resolve derives from state alone.</summary>
-    public static IReadOnlySet<string> DerivedVerbs => Derived;
+    public static ImmutableArray<string> DerivedVerbs => Derived;
 
     /// <summary>The world. The engine's first argument.</summary>
     public World State => world;
@@ -166,9 +167,9 @@ public sealed class Game
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(abilities);
-        // The world carries them too, for `rr:when-defeated-abilities` and its
-        // like: a defeat happens deep inside `Damage.Deal`, four calls below
-        // the public compatibility entry point.
+        // Nested procedures use the world's narrow ability capabilities:
+        // DamagePlacement.Resolve reaches the card's defeat abilities before
+        // the card leaves play, as rr:when-defeated-abilities requires.
         world.Abilities = abilities;
         world.SetupAbilities.ValidateForPlay(world);
         return new Game(world, facts);

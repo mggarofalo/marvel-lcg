@@ -55,7 +55,7 @@ public sealed class MersenneTwister
     /// by argument type. The contract always uses this one, so a C#
     /// implementation never has to reproduce that choice.
     /// </remarks>
-    public void Seed(uint seed)
+    private void Seed(uint seed)
     {
         _mt[0] = seed;
         for (uint i = 1; i < N; i++)

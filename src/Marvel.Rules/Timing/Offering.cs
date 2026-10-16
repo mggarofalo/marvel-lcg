@@ -80,11 +80,7 @@ public static class Offering
         ArgumentNullException.ThrowIfNull(occurrence);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (world.Windows.Current is not { } open
-            || open.Occurrence != occurrence || open.Kind != kind)
-        {
-            world.Windows.Open(occurrence, kind);
-        }
+        OpenWindow(world, occurrence, kind);
 
         // A window is walked until nothing more happens, not once: resolving a
         // forced ability changes the board, and rr:interrupt.5 is about
@@ -97,6 +93,7 @@ public static class Offering
             // this loop re-reads and offers another ability.
             if (PriorityResolved(priorityResolved)) return null;
 
+            if (world.Agenda.Executions.Blocks(occurrence)) return null;
             var waiting = WaitingInScope(world, abilities, occurrence, kind, scope);
 
             var tiers = AbilityWindow.Tiers(waiting, kind, occurrence);
@@ -104,9 +101,8 @@ public static class Offering
             var forced = Forced(tiers);
             if (forced.Count == 1)
             {
-                var owner = world.Agenda.Current;
                 ResolveForced(world, abilities, occurrence, kind, events, forced[0]);
-                if (!SameFrame(world.Agenda.Current, owner)) return null;
+                if (world.Agenda.Executions.Blocks(occurrence)) return null;
                 continue;
             }
 
@@ -114,20 +110,26 @@ public static class Offering
             {
                 // rr:forced.5 -- the first player decides the order, regardless
                 // of who controls the cards.
-                return Ordering(world, abilities, occurrence, kind, forced);
+                return PromptExecutionBinding.BindWindow(world,
+                    Ordering(world, abilities, occurrence, kind, forced));
             }
 
             if (Ask(world, abilities, occurrence, kind, tiers) is { } prompt)
             {
-                return WindowPromptContext.Describe(world, occurrence, kind, prompt);
+                return PromptExecutionBinding.BindWindow(world,
+                    WindowPromptContext.Describe(world, occurrence, kind, prompt));
             }
 
             return null;
         }
     }
 
-    private static bool SameFrame(PhaseStep? current, PhaseStep? owner) =>
-        current is { } now && owner is { } before ? now.SameFrameAs(before) : current == owner;
+    private static void OpenWindow(World world, Occurrence occurrence, WindowKind kind)
+    {
+        if (world.Windows.Current is not { } open
+            || !ReferenceEquals(open.Occurrence, occurrence) || open.Kind != kind)
+            world.Windows.Open(occurrence, kind);
+    }
 
     private static bool PriorityResolved(Func<bool>? resolve) => resolve is not null && resolve();
 
@@ -147,7 +149,7 @@ public static class Offering
         WindowKind kind, List<GameEvent> events, PendingAbility ability)
     {
         occurrence.Trigger(kind, ability);
-        ActivityBatches.Append(events, abilities.Resolve(world, occurrence, ability, [], []));
+        ActivityBatches.Append(events, abilities.ResolveWindow(world, occurrence, ability, new Decision(ability.Card, [], [])).Events);
     }
 
     /// <summary>
@@ -216,6 +218,16 @@ public static class Offering
 
     private static bool Peril(World world, Card card) =>
         StateFields.Modified(world, card, "peril", world.Facts, world.Players) > 0;
+
+    internal static IReadOnlyList<PendingAbility> CurrentlyAvailable(
+        World world, IWindowAbilities abilities, Window window, int player)
+    {
+        world.Agenda.Executions.RequireWindowComplete(window.Occurrence);
+        var tiers = AbilityWindow.Tiers(abilities.Waiting(world, window.Occurrence, window.Kind),
+            window.Kind, window.Occurrence);
+        var forced = Forced(tiers);
+        return forced.Count > 0 ? forced : Eligible(world, window.Occurrence, tiers, player);
+    }
 
     private static IReadOnlyList<PendingAbility> Forced(IReadOnlyList<AbilityTier> tiers)
     {
