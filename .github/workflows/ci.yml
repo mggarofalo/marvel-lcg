@@ -91,7 +91,7 @@ jobs:
     name: Native integration (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     # Certification includes the complete scale matrix and rendered acceptance.
-    timeout-minutes: ${{ inputs.exhaustive && 90 || 30 }}
+    timeout-minutes: ${{ inputs.exhaustive && 90 || 40 }}
     strategy:
       fail-fast: false
       matrix:

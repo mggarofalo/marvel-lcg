@@ -88,8 +88,10 @@ executable-specification and deterministic dataset checks. `Native integration`
 runs integration tests, architecture walls, representative Godot journeys,
 hosted-client and invitation-layout checks on both Windows and Linux; Linux also
 proves the supported server container. Windows desktop packaging remains an
-independent job. Routine native jobs have a 30-minute deadline; this is a failure
-bound, not a measured completion-time guarantee.
+independent job. Routine native jobs have a 40-minute deadline. The preceding Windows run took
+46.6 minutes, including 13 minutes of rendered checks now assigned to
+certification. This budget preserves the remaining checks with headroom; it is
+not a completion-time guarantee or a substitute for measuring later changes.
 
 Exhaustive certification repeats the managed checks on both platforms, runs the
 complete viewport and scale matrix, and adds rendered visual and contextual-table
