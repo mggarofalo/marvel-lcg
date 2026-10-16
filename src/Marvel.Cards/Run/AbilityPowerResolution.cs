@@ -130,7 +130,7 @@ internal static class AbilityPowerResolution
             _ = execution.ResumeContinuation(cast, cast.Source, next);
             return;
         }
-        cast.CompleteResolution();
         execution.DiscardEvent(cast.Source, cast);
+        cast.CompleteResolution();
     }
 }

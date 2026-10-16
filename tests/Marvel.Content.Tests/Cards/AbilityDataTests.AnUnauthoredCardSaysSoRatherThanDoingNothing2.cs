@@ -22,7 +22,7 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         // keeps the fail-closed contract observable without making a core game
         // stop on missing data.
         var card = world.CreateCard("02001a", world.AreaOf(DeckType.RevealingArea));
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => AuthoredCards.Runner().WhenRevealed(world, card, 0));
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => AuthoredCards.Runner().ExecuteReveal(world, card, 0));
         Assert.Contains("no ability data", thrown.Message, StringComparison.Ordinal);
     }
 
@@ -99,7 +99,7 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
               {"trigger":{"event":"WhenCardRevealed","timing":"Interrupt","subject":"this"},
                "effect":{"giveStatus":{"card":"yourHero","status":"stunned"}}}]}]}
             """);
-        new Marvel.Cards.Run.AbilityRunner(book).WhenRevealed(world, card, 0);
+        new Marvel.Cards.Run.AbilityRunner(book).ExecuteReveal(world, card, 0);
         Assert.True(Statuses.Has(world, hero, "tough"));
         Assert.False(Statuses.Has(world, hero, "stunned"));
     }
@@ -215,7 +215,7 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         foreach (string faceId in AuthoredCards.ReadAndSilent)
         {
             var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
-            Assert.Empty(runner.WhenRevealed(world, card, 0));
+            Assert.Empty(runner.ExecuteReveal(world, card, 0).Events);
         }
     }
 }

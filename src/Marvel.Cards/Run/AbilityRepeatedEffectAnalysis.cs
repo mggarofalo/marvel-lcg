@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using static Marvel.Cards.Run.AbilityPlayerSelectorRelations;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
@@ -24,11 +25,11 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilityRepeatedEffectAnalysis
 {
-    private static readonly HashSet<string> DamageChangeOperations =
+    private static readonly ImmutableArray<string> DamageChangeOperations =
     [
         "dealDamage", "indirectDamage", "moveDamage", "replaceThreatWithDamage",
     ];
-    private static readonly HashSet<string> BindingOperations =
+    private static readonly ImmutableArray<string> BindingOperations =
     [
         "chooseCard", "thwartSchemes", "thwartDifferentSchemes", "legalPractice",
     ];

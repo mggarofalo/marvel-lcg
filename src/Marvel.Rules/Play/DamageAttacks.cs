@@ -55,7 +55,7 @@ public static class DamageAttacks
     /// cards are written against that — "if a character is damaged by this
     /// attack, that character is stunned".
     /// </returns>
-    public static Damage.AttackResult Attack(
+    public static AttackDamageResult Attack(
         World world, ICardFacts facts, Card attacker, Card target, long amount,
         string trigger, string verb, List<GameEvent> events, bool retaliate = true)
         => Attack(
@@ -82,98 +82,35 @@ public static class DamageAttacks
     /// <param name="verb">What kind of thing caused it.</param>
     /// <param name="events">Where to record what happened.</param>
     /// <param name="retaliate">Whether to resolve retaliation before returning.</param>
-    public static Damage.AttackResult Attack(
+    public static AttackDamageResult Attack(
         World world, ICardFacts facts, Card attacker, Card source, Card target, long amount,
         string trigger, string verb, List<GameEvent> events, bool retaliate = true) =>
         Resolve(world, facts, new AttackDamageRequest(attacker, source, target,
             amount, trigger, verb, retaliate), events);
 
     /// <summary>Resolve attack damage with explicit causal activation identity.</summary>
-    public static Damage.AttackResult Resolve(World world, ICardFacts facts,
-        AttackDamageRequest request, List<GameEvent> events)
+    public static AttackDamageResult Resolve(World world, ICardFacts facts,
+        AttackDamageRequest request, List<GameEvent> events) => Begin(world, facts, request, events, false);
+
+    internal static AttackDamageResult Begin(World world, ICardFacts facts,
+        AttackDamageRequest request, List<GameEvent> events, bool spillOnly)
     {
-        var (attacker, source, target, amount, trigger, verb, retaliate, activationId) = request;
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(attacker);
-        ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(target);
-        ArgumentNullException.ThrowIfNull(events);
+        AttackDamageResolution? resolution = null;
+        if ((request.Origin ?? world.Agenda.Occurrence) is { } occurrence)
+            Apply(occurrence, null);
+        else
+            RootDamageExecution.Run(world, request.Attacker, request.Target, Apply);
 
-        // `rr:piercing.2` -- "if an attack with the piercing keyword would deal
-        // no damage to the attacked character, it does not discard tough status
-        // cards from that character", which is why this is inside the guard.
-        DiscardPiercedTough(world, facts, attacker, target, amount, trigger, events);
-
-        // Remaining hit points are captured before the damage because the
-        // defeated character may leave play before overkill is resolved.
-        long remaining = Math.Max(
-            0, DamagePlacement.Health(world, facts, target) - target.Damage);
-        // The same is true of control. A defeated ally moves to its owner's
-        // discard pile, but `rr:overkill.1` sends excess damage to the identity
-        // of the player who **controlled** it while it was defeated.
-        CardKind attackedKind = EffectiveCards.Kind(target, facts);
-        int spillPlayer = attackedKind == CardKind.Ally
-            ? target.Area.PlayArea.Player
-            : -1;
-        // `rr:overkill.4`: "if excess damage from an attack with overkill is
-        // prevented, that damage is **not** dealt to the identity or villain."
-        //
-        // **Nothing extra is needed for that.** A tough status card prevents all
-        // the damage and `Deal` answers false, so the character was not
-        // defeated and nothing spills -- `rr:tough.3` again, that a character
-        // whose tough card ate the damage "is not considered to have taken
-        // damage". A separate check here would be a second statement of the
-        // same rule, and only one of them could be right after an edit.
-        var damaged = new List<Card>();
-        int firstDamageEvent = events.Count;
-        bool hasOverkill = Keywords.Has(world, attacker, Keywords.Overkill, facts);
-        bool canRetaliate = retaliate
-            && !Keywords.Has(world, attacker, Keywords.Ranged, facts);
-        var placed = Place(
-            world, facts, source, target, amount, trigger, verb, events);
-        AttackDamageAccounting.RecordRecipient(world, source, target, placed.Dealt);
-        long dealtAmount = placed.Dealt;
-        long takenAmount = placed.Taken;
-
-        // `rr:delayed-effect.1`: the effect resolves immediately when damage
-        // has landed. That is after `rr:damage.step.5` places the damage and
-        // before steps 6 through 8 can defeat and discard the character. A
-        // status created here therefore leaves with a lethally damaged host.
-        ResolveLandedDamage(world, activationId, target, placed, events);
-
-        var outcome = FinishPlaced(
-            world, facts, source, placed, trigger, verb, events,
-            by: LabeledAbilities.IdentityPlayer(world, attacker));
-        // Prevention changes what is taken without changing what was dealt,
-        // but `rr:overkill.4` specifically withholds prevented excess. The
-        // spill is therefore the taken amount beyond the former hit points.
-        long beyond = Math.Max(0, takenAmount - remaining);
-        bool overkill = beyond > 0 && hasOverkill;
-        var aftermath = new AttackDamageAftermath(attacker, source, target, attackedKind,
-            spillPlayer, beyond, overkill, canRetaliate, trigger, activationId);
-        aftermath.ResolveOverkill(world, facts, outcome, events);
-
-        long dealt = MeasuredDamage(events, firstDamageEvent);
-
-        // Placement is the fact of taking damage, even when defeat or a
-        // delayed effect subsequently ends that in-play copy.
-        if (placed.Landed) damaged.Add(target);
-
-        // `rr:ranged.1` -- "this attack ignores the retaliate keyword".
-        aftermath.FinishOrSuspend(world, facts, outcome, events);
-
-        // `rr:overkill.3`: a card ability that counts excess damage uses the
-        // same value the overkill keyword calculated. Expose that calculation
-        // rather than asking every card to reconstruct the defeated target's
-        // former remaining hit points after it has left play.
-        long excess = outcome == Damage.Outcome.Defeated ? beyond : 0;
-        return new Damage.AttackResult(
-            damaged, dealt, outcome == Damage.Outcome.Suspended, excess,
-            dealtAmount, takenAmount);
+        AbilityExecutionResult Apply(Occurrence cause, AbilityExecution? completion) =>
+            world.Agenda.Executions.RunBatch(cause, entry =>
+            {
+                resolution = new(world, facts, request with { Origin = cause }, entry, spillOnly, completion);
+                resolution.Continue(events);
+                return entry.Report(events);
+            });
+        return resolution!.Result;
     }
-
-    private static void DiscardPiercedTough(
+    internal static void DiscardPiercedTough(
         World world, ICardFacts facts, Card attacker, Card target, long amount,
         string trigger, List<GameEvent> events)
     {
@@ -195,18 +132,6 @@ public static class DamageAttacks
             DelayedEffects.Occur(world, Steps.DamageDealt, target.ObjectId, events, activationId);
         }
     }
-
-    private static long MeasuredDamage(List<GameEvent> events, int firstDamageEvent) =>
-        events.Skip(firstDamageEvent)
-            .OfType<FieldSet>()
-            .Where(change => change.Field == "health"
-                && change.From is { } from && change.To is { } to && from > to)
-            .Sum(change => change.From!.Value - change.To!.Value);
-
-    /// <summary>Resolve overkill and retaliate after a suspended defeat decision.</summary>
-    public static void FinishAttack(
-        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events) =>
-        AttackDamageAftermath.Resume(world, facts, step, events);
 
     /// <summary>
     /// A character that was attacked hits back — <c>rr:retaliate-x</c>.
@@ -261,7 +186,7 @@ public static class DamageAttacks
         long retaliate = StateFields.Modified(
             world, attacked, "retaliate", facts, world.Players);
 
-        DamagePlacement.Deal(
-            world, facts, attacked, attacker, retaliate, trigger, "Retaliate", events);
+        DamagePlacement.Resolve(world, facts,
+            new(attacked, attacker, retaliate, trigger, "Retaliate"), events);
     }
 }

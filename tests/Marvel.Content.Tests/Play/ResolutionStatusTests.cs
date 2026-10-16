@@ -16,17 +16,19 @@ public abstract class ResolutionStatusTestBase
 {
     protected static readonly SetupCatalog Setup = SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
     protected static readonly CardCatalog Cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
-    protected static (World World, Card Card, Occurrence Occurrence, AbilityRunner Runner) Revealing(string face, string effect)
+    protected static (World World, Card Card, Occurrence Occurrence, AbilityRunner Runner) Revealing(string face, string effect, string? noRevealFace = null)
     {
         var world = WorldSetup.DealWithoutCardAbilities(Cards, Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards), ["Spider-Man"], 12345);
         var card = world.CreateCard(face, world.AreaOf(DeckType.RevealingArea));
         var occurrence = new Occurrence(1, [Steps.CardRevealed], Subject: card.ObjectId, Player: 0);
+        string additional = noRevealFace is null ? ""
+            : $", {{\"card\":\"{noRevealFace}\",\"abilities\":[]}}";
         string json = $$"""
             { "cards": [ { "card": "{{face}}", "abilities": [ {
               "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
                              "subject": "this" },
               "effect": {{effect}}
-            } ] } ] }
+            } ] }{{additional}} ] }
             """;
         return (world, card, occurrence, new AbilityRunner(AbilityCatalog.Parse(json)));
     }

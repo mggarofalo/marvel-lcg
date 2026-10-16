@@ -21,7 +21,7 @@ namespace Marvel.Content.Tests.Play;
 /// </para>
 /// <para>
 /// <b>Placed, not dealt.</b> The damage goes onto the attachment as tokens
-/// rather than through <c>Damage.Deal</c>, which would start the nine steps
+/// rather than through <c>DamagePlacement.Resolve</c>, which would start the nine steps
 /// again on a card that is not a character.
 /// </para>
 /// </remarks>
@@ -39,7 +39,8 @@ public sealed class ReplacementEffectTests
     {
         var (world, suit, villain) = Board();
 
-        DamagePlacement.Deal(world, Cards, villain, villain, 3, "test", "test", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(villain, villain, 3, "test", "test"), []);
 
         Assert.Equal(3, suit.Damage);
         Assert.Equal(0, villain.Damage);
@@ -55,7 +56,8 @@ public sealed class ReplacementEffectTests
         var (world, suit, villain) = Board();
         Statuses.Give(world, villain, Statuses.Tough);
 
-        DamagePlacement.Deal(world, Cards, villain, villain, 2, "test", "test", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(villain, villain, 2, "test", "test"), []);
 
         Assert.True(Statuses.Has(world, villain, Statuses.Tough));
         Assert.Equal(2, suit.Damage);
@@ -69,10 +71,12 @@ public sealed class ReplacementEffectTests
         // lands on the suit and the suit goes.
         var (world, suit, villain) = Board();
 
-        DamagePlacement.Deal(world, Cards, villain, villain, 4, "test", "test", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(villain, villain, 4, "test", "test"), []);
         Assert.Equal(DeckType.UpgradesArea, suit.Area.Type);
 
-        DamagePlacement.Deal(world, Cards, villain, villain, 1, "test", "test", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(villain, villain, 1, "test", "test"), []);
 
         Assert.Equal(DeckType.EncounterDiscardPile, suit.Area.Type);
         Assert.Equal(0, villain.Damage);
@@ -84,10 +88,12 @@ public sealed class ReplacementEffectTests
         // The whole point of the card, and the reason the discard matters: it
         // is a shield with a limit rather than a permanent one.
         var (world, suit, villain) = Board();
-        DamagePlacement.Deal(world, Cards, villain, villain, 5, "test", "test", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(villain, villain, 5, "test", "test"), []);
         Assert.Equal(DeckType.EncounterDiscardPile, suit.Area.Type);
 
-        DamagePlacement.Deal(world, Cards, villain, villain, 3, "test", "test", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(villain, villain, 3, "test", "test"), []);
 
         Assert.Equal(3, villain.Damage);
     }
@@ -102,7 +108,8 @@ public sealed class ReplacementEffectTests
         var minion = world.CreateCard(
             "01101", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
-        DamagePlacement.Deal(world, Cards, minion, minion, 2, "test", "test", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(minion, minion, 2, "test", "test"), []);
 
         Assert.Equal(2, minion.Damage);
         Assert.Equal(0, suit.Damage);
@@ -136,10 +143,11 @@ public sealed class ReplacementEffectTests
 
         var watcher = world.CreateCard(
             AuthoredCards.ArmoredSuit, world.AreaOf(DeckType.RevealingArea));
-        runner.WhenRevealed(world, watcher, 0);
+        runner.ExecuteReveal(world, watcher, 0);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
 
-        DamagePlacement.Deal(world, Cards, villain, villain, 3, "test", "test", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(villain, villain, 3, "test", "test"), []);
 
         Assert.Equal(3, villain.Damage);
         Assert.Equal(0, watcher.Damage);
@@ -157,7 +165,7 @@ public sealed class ReplacementEffectTests
 
         var suit = world.CreateCard(
             AuthoredCards.ArmoredSuit, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, suit, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, suit, 0);
 
         return (world, suit, world.TheCardIn(DeckType.VillainArea)!);
     }

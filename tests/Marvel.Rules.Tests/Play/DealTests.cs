@@ -344,9 +344,8 @@ public sealed class DealTests
     {
 
 
-        public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => [];
+        public override AbilityExecutionResult Resolve(
+            World world, AbilityExecution invocation, Decision answer) => invocation.Finish([]);
 
     }
 
@@ -355,23 +354,22 @@ public sealed class DealTests
     {
         private bool used;
 
-        public override IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)
+        public override AbilityExecutionResult WhenRevealed(World world, AbilityExecution entry, Card card, int player)
         {
             if (used)
             {
-                return [];
+                return world.Agenda.Executions.FinishBatch(entry, []);
             }
 
             used = true;
             var events = new List<GameEvent>();
             Deal.EncounterCard(world, player, "when revealed", events);
-            return events;
+            return world.Agenda.Executions.FinishBatch(entry, events);
         }
 
 
-        public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => [];
+        public override AbilityExecutionResult Resolve(
+            World world, AbilityExecution invocation, Decision answer) => invocation.Finish([]);
 
     }
 
@@ -388,13 +386,13 @@ public sealed class DealTests
 
         public int Responses { get; private set; }
 
-        public override IReadOnlyList<GameEvent> WhenRevealed(
-            World world, Card card, int player)
+        public override AbilityExecutionResult WhenRevealed(
+            World world, AbilityExecution entry, Card card, int player)
         {
             Card = card;
             AreaDuringWhenRevealed = card.Area.Type;
             FaceUpDuringWhenRevealed = card.FaceUp;
-            return [];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
 
         public override IReadOnlyList<PendingAbility> Waiting(
@@ -404,13 +402,12 @@ public sealed class DealTests
                 ? [new PendingAbility(occurrence.Subject, AbilityType.ForcedResponse, 0)]
                 : [];
 
-        public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
+        public override AbilityExecutionResult Resolve(
+            World world, AbilityExecution invocation, Decision answer)
         {
             Responses += 1;
-            AreaDuringResponse = world.Cards[ability.Card].Area.Type;
-            return [];
+            AreaDuringResponse = world.Cards[invocation.Ability.Card].Area.Type;
+            return invocation.Finish([]);
         }
     }
 

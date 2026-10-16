@@ -10,8 +10,8 @@ internal sealed record AbilityDeckAndRevealResult(
     bool IsHandled, bool ResolveEffect, AbilityRevealRequest? Reveal,
     ImmutableDictionary<string, long> Values)
 {
-    internal static AbilityDeckAndRevealResult Handled { get; } =
+    internal static AbilityDeckAndRevealResult Handled =>
         new(true, false, null, ImmutableDictionary<string, long>.Empty);
-    internal static AbilityDeckAndRevealResult NotHandled { get; } =
+    internal static AbilityDeckAndRevealResult NotHandled =>
         new(false, false, null, ImmutableDictionary<string, long>.Empty);
 }

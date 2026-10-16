@@ -79,10 +79,10 @@ public abstract class AttackTestBase
             return[];
         }
 
-        public override IReadOnlyList<GameEvent> ActivationCompleted(World world, EnemyActivation result)
+        public override AbilityExecutionResult ActivationCompleted(World world, AbilityExecution entry, EnemyActivation result)
         {
             CompletedActivations.Add(result);
-            return[];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 
@@ -99,10 +99,10 @@ public abstract class AttackTestBase
     {
         public List<EnemyActivation> Results { get; } = [];
 
-        public override IReadOnlyList<GameEvent> ActivationCompleted(World world, EnemyActivation result)
+        public override AbilityExecutionResult ActivationCompleted(World world, AbilityExecution entry, EnemyActivation result)
         {
             Results.Add(result);
-            return[];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 
@@ -110,10 +110,10 @@ public abstract class AttackTestBase
     {
         public List<int> Defeated { get; } = [];
 
-        public override IReadOnlyList<GameEvent> WhenCardDefeated(World world, Card card, Defeated defeated)
+        public override AbilityExecutionResult WhenCardDefeated(World world, AbilityExecution entry, Card card, Defeated defeated, string trigger)
         {
             Defeated.Add(card.ObjectId);
-            return[];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 
@@ -122,32 +122,33 @@ public abstract class AttackTestBase
         public List<string> Faces { get; } = [];
         public List<int> DiscardedBeforeResolution { get; } = [];
 
-        public override IReadOnlyList<GameEvent> Boost(World world, Card card, int player)
+        public override AbilityExecutionResult Boost(World world, AbilityExecution entry, Card card, int player)
         {
             Assert.Equal(DeckType.BoostingArea, card.Area.Type);
             Assert.True(card.FaceUp);
             Faces.Add(card.FaceId);
             DiscardedBeforeResolution.Add(world.AreaOf(DeckType.EncounterDiscardPile).Cards.Count);
-            return[];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 
     protected sealed class DamagingBoost : NoCardAbilities
     {
-        public override IReadOnlyList<GameEvent> Boost(World world, Card card, int player)
+        public override AbilityExecutionResult Boost(World world, AbilityExecution entry, Card card, int player)
         {
             var events = new List<GameEvent>();
-            DamagePlacement.Deal(world, world.Facts, card, world.Seats[player].IdentityCard, 2, "Boost", "Deal_Damage", events);
-            return events;
+            DamagePlacement.Resolve(world, world.Facts,
+            new(card, world.Seats[player].IdentityCard, 2, "Boost", "Deal_Damage"), events);
+            return world.Agenda.Executions.FinishBatch(entry, events);
         }
     }
 
     protected sealed class IconChangingBoost : NoCardAbilities
     {
-        public override IReadOnlyList<GameEvent> Boost(World world, Card card, int player)
+        public override AbilityExecutionResult Boost(World world, AbilityExecution entry, Card card, int player)
         {
             world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "boost_const", Amount: 2, Card: card.ObjectId, Affects: card.ObjectId));
-            return[];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 

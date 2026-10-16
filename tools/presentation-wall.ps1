@@ -40,6 +40,25 @@ Get-Command dotnet -ErrorAction Stop | Out-Null
 try {
     Write-Host 'The presentation project wall:'
 
+    foreach ($role in @('View', 'Decisions', 'Client', 'Godot')) {
+        & dotnet build (Join-Path $probes 'Marvel.PresentationProbe.Allowed/Marvel.PresentationProbe.Allowed.csproj') `
+            "-p:MarvelAllowedProbeRole=$role" --nologo --verbosity quiet *> $log
+        if ($LASTEXITCODE -eq 0) { Write-Host "  ok    $role consumes engine-owned target validation" }
+        else {
+            Write-Host "  FAIL  $role cannot consume its allowed contract"
+            Get-Content -LiteralPath $log
+            $script:failures++
+        }
+    }
+    & dotnet build (Join-Path $probes 'Marvel.PresentationProbe.InfrastructureAllowed/Marvel.PresentationProbe.InfrastructureAllowed.csproj') `
+        --nologo --verbosity quiet *> $log
+    if ($LASTEXITCODE -eq 0) { Write-Host '  ok    infrastructure consumes transport without hosting state' }
+    else {
+        Write-Host '  FAIL  legitimate infrastructure could not compile'
+        Get-Content -LiteralPath $log
+        $script:failures++
+    }
+
     Test-PresentationWall `
         -Role "View's forbidden engine reference" `
         -ExpectedError 'MARVELPRESENTATION' `
@@ -73,7 +92,7 @@ try {
     }
 
     Write-Host
-    Write-Host 'Every forbidden presentation dependency and configuration was rejected.'
+    Write-Host 'Allowed contracts compiled; every forbidden presentation dependency and configuration was rejected.'
 }
 finally {
     Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue

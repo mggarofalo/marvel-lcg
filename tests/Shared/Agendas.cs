@@ -32,13 +32,13 @@ public static class Agendas
     /// A defeat is not an occurrence of its own — <c>rr:triggering-condition.2</c>
     /// joins it to whatever caused it, so that "a single attack causing a
     /// character to both take damage and be defeated" gets one window pair and
-    /// not two. <c>Defeat</c> therefore refuses a defeat with nothing on the
-    /// agenda to join, because in a game there always is something.
+    /// not two. This helper supplies a known cause for tests that inspect
+    /// damage or defeat inside an already-running procedure.
     /// </para>
     /// <para>
-    /// In a unit test that calls <c>Damage.Deal</c> straight there is not, and
-    /// this is that difference and nothing more. The step is the damage step
-    /// because that is the rule's own example; nothing here takes it.
+    /// Standalone <c>DamagePlacement.Resolve</c> owns its own response window.
+    /// Tests using this helper instead retain the explicitly supplied cause.
+    /// The synthetic damage carrier is not itself executed.
     /// </para>
     /// </remarks>
     /// <param name="world">The board.</param>

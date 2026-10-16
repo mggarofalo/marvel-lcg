@@ -204,7 +204,7 @@ public sealed class PlayerPhaseTests
         var queue = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0));
         int before = queue.Cards.Count;
 
-        world.EncounterAbilities.WhenRevealed(
+        world.EncounterAbilities.ExecuteReveal(
             world, world.Cards.First(card => card.FaceId == AuthoredCards.ImTough), 0);
 
         // One card dealt, and Rhino is no more Tough than he already was --

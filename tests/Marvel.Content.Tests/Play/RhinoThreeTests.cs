@@ -93,10 +93,8 @@ public sealed class RhinoThreeTests
 
         Agendas.Happening(world);
 
-        DamagePlacement.Deal(
-            world, Cards, villain, villain,
-            Cards.PrintedValue(villain.FaceId, "HP", world.Players),
-            "test", "Attack", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(villain, villain, Cards.PrintedValue(villain.FaceId, "HP", world.Players), "test", "Attack"), []);
 
         Assert.Equal(DeckType.VillainArea, next.Area.Type);
         Assert.True(Statuses.Has(world, next, Statuses.Tough));
@@ -106,7 +104,7 @@ public sealed class RhinoThreeTests
     private static void Reveal(World world, string faceId, int player = 0)
     {
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, card, player);
+        AuthoredCards.Runner().ExecuteReveal(world, card, player);
     }
 
     private static World Deal(params string[] heroes)

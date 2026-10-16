@@ -66,8 +66,8 @@ internal static class SpatialTableContextRenderer
         surface.AddChild(cause);
         var prose = new VBoxContainer { Name = "CausalSituationCopy",
             MouseFilter = Control.MouseFilterEnum.Ignore };
-        cause.AddChild(prose);
         prose.Ready += () => AbilitySituationOwnership.Apply(ClientSceneHost.MainFor(prose), prose);
+        cause.AddChild(prose);
         Label heading = Copy(prompt?.PublicKind == PublicDecisionKind.PlayerAction ? ""
             : presentation?.Heading ?? PendingSituationPresentation.Heading(world));
         heading.AutowrapMode = TextServer.AutowrapMode.Word;

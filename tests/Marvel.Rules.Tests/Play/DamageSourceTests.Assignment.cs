@@ -43,8 +43,8 @@ public sealed partial class DamageSourceTests
         Assert.Equal(before, world.Digest().Canonical());
         var events = new List<GameEvent>();
 
-        Assert.False(DamagePlacement.Deal(
-            world, facts, world.Seats[0].IdentityCard, target, amount, "test", "Damage", events));
+        Assert.Equal(taken, DamagePlacement.Resolve(world, facts,
+            new(world.Seats[0].IdentityCard, target, amount, "test", "Damage"), events).Taken);
 
         Assert.Equal(taken, target.Damage);
         Assert.Equal(remainingTough, Statuses.Count(world, target, Statuses.Tough));
@@ -88,8 +88,8 @@ public sealed partial class DamageSourceTests
         Assert.Equal(tough && replaced > 0, assignment.SpendsTough);
         Assert.False(abilities.VisitedStepThree);
 
-        DamagePlacement.Deal(world, facts, world.Seats[0].IdentityCard,
-            target, 3, "test", "Damage", []);
+        DamagePlacement.Resolve(world, facts,
+            new(world.Seats[0].IdentityCard, target, 3, "test", "Damage"), []);
 
         Assert.Equal(taken, target.Damage);
         Assert.Equal(visitsStepThree, abilities.VisitedStepThree);
@@ -100,8 +100,12 @@ public sealed partial class DamageSourceTests
     {
         public bool VisitedStepThree { get; private set; }
 
-        public override long WouldBeDealt(
-            World world, Card target, Card source, long amount, List<GameEvent> events) => replaced;
+        public override AbilityExecutionResult WouldBeDealt(
+            World world, AbilityExecution entry, DamageReplacement replacement)
+        {
+            replacement.Replace(entry, replaced);
+            return entry.Finish([]);
+        }
 
         public override long WouldTake(
             World world, Card target, Card source, long amount, List<GameEvent> events)

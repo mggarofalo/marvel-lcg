@@ -35,7 +35,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAnAttachmentsYouTrigger
         var(_, obligationWorld) = Playing(board => obligation = board.CreateCard(AuthoredCards.EvictionNotice, board.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0))), heroes: ["spider_man", "captain_marvel"], abilities: obligationRunner);
         Assert.Contains(obligationRunner.ResourceAbilities(obligationWorld, 0), source => source.Effect == obligation!.ObjectId);
         Assert.DoesNotContain(obligationRunner.ResourceAbilities(obligationWorld, 1), source => source.Effect == obligation!.ObjectId);
-        Assert.Throws<RulesNotImplementedException>(() => obligationRunner.UseResource(obligationWorld, 1, obligation!.ObjectId, []));
+        Assert.Throws<RulesNotImplementedException>(() => obligationRunner.ExecuteResource(obligationWorld, 1, obligation!.ObjectId));
         // Compound bindings are still printed “you/your”: this query means
         // allies controlled by the resolving player and restricts a
         // player-hosted attachment just as the bare word “you” does.

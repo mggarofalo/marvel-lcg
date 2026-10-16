@@ -29,7 +29,7 @@ public sealed class VisibleTargetGalleryTests
         Area discard = world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0);
         string[] faces = ["01046", "01047", "01048", "01049"];
         Card[] cards = [.. Enumerable.Range(0, 17).Select(index => world.CreateCard(faces[index % 4], discard))];
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [payment.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [payment.ObjectId], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         Prompt prompt = runner.Choosing(world, choice)!;
         Assert.Equal(PublicDecisionKind.VisibleCardSelection, prompt.PublicKind);

@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Marvel.Rules.Play;
 using Marvel.Rules.Timing;
 
@@ -38,8 +39,7 @@ public static class AbilityRoles
     public const string Enemy = "enemy";
 
     /// <summary>Every role matcher this vocabulary has.</summary>
-    public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal)
-    {
+    public static IReadOnlySet<string> All { get; } = new[] {
         This, AttachedTo, You, Villain, Minion, Hero, Ally, Friendly, Enemy,
-    };
+    }.ToFrozenSet(StringComparer.Ordinal);
 }

@@ -25,7 +25,7 @@ public sealed class DecisionVocabularyTests
         PendingAbility pending = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Response));
 
-        runner.Resolve(world, occurrence, pending, [], []);
+        runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
         Prompt prompt = Assert.IsType<Prompt>(
             Sequence.Work(world, CardCatalogData, runner, []));
 

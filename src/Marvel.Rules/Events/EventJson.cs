@@ -19,11 +19,18 @@ namespace Marvel.Rules.Events;
 public static class EventJson
 {
     /// <summary>The canonical options for reading and writing events.</summary>
-    public static readonly JsonSerializerOptions Options = new()
+    public static readonly JsonSerializerOptions Options = CreateOptions();
+
+    private static JsonSerializerOptions CreateOptions()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        WriteIndented = false,
-    };
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            WriteIndented = false,
+        };
+        options.MakeReadOnly(populateMissingResolver: true);
+        return options;
+    }
 
     /// <summary>Serialises one event, discriminator included.</summary>
     public static string Write(GameEvent value) =>

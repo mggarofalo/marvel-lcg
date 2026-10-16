@@ -1,4 +1,3 @@
-using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
@@ -14,17 +13,8 @@ internal sealed class OptionalDamageInterrupts(IWindowAbilities inner)
             window != WindowKind.Interrupt
             || !AbilityTypes.IsMandatory(ability.Type))];
 
-    public IReadOnlyList<GameEvent> Resolve(
-        World world, Occurrence occurrence, PendingAbility ability,
-        IReadOnlyList<int> paying, IReadOnlyList<int> chosen) =>
-        inner.Resolve(world, occurrence, ability, paying, chosen);
-
-    public IReadOnlyList<GameEvent> Resolve(
-        World world, Occurrence occurrence, PendingAbility ability,
-        IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
-        IReadOnlyDictionary<string, long>? values = null,
-        IReadOnlyList<ResourceAllocation>? allocations = null) =>
-        inner.Resolve(world, occurrence, ability, paying, chosen, values, allocations);
+    public AbilityExecutionResult Resolve(World world, AbilityExecution invocation, Decision answer) =>
+        inner.Resolve(world, invocation, answer);
 
     public Affordance Describe(World world, PendingAbility ability) =>
         inner.Describe(world, ability);

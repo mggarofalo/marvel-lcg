@@ -334,3 +334,68 @@ the canonical comparison with the stricter whole-transform comparison produced
 scale-80 full journey passed. The original intermittent failure was not reproduced
 in the initial full journey and five bounded focused repeats; this evidence proves
 the predicate contradiction, not an independently reproduced production race.
+
+## Owned execution and damage settlement evidence
+
+The execution registry owns invocation lifetime, suspended segments, child work,
+and completion obligations. `ContinuationExtensionTests` exercises a child that
+suspends a second time after its parent has already yielded: both child segments
+finish before the parent resumes. Entry contract tests distinguish an empty event
+list from completed execution. Public direct damage tests retain a pending
+receipt through the actual defeat response, accepting and declining that response
+separately; zero and tough-prevented damage produce no false damage condition.
+
+The following mutations compiled and failed distinguishing behavioral assertions:
+
+| Decision | Mutation | Observable failure |
+| --- | --- | --- |
+| Defeat finalization waits for owned work | Remove the finalizer's completion prerequisite | A step-seven choice loses its nested health-loss defeat interrupt. |
+| Completion includes child invocations | Ignore children when declaring an execution complete | Entry contract tests publish completion while a child remains suspended. |
+| Replacement writes require the owning invocation | Omit the replacement ancestry check | A sibling invocation can change the pending damage amount. |
+| Staged damage must be settled | Ignore completion obligations | An ability completes after dropping its placed damage-cost receipt. |
+| Replacement amounts remain pending through choices | Expose the amount before replacement completion | The unresolved-read assertion no longer throws. |
+| Cost settlement retains recipient identity | Group all receipts into one recipient | The second recipient remains alive after its lethal damage cost. |
+| Placement waits for replacement | Skip replacement suspension | Damage is consumed before the accepted replacement completes. |
+| An enemy damage replacement runs once | Offer forced replacement again in the direct attack window | Real enemy attacks ask for the same replacement choice twice. |
+| A standalone receipt includes its response window | Publish leaf completion instead of entry completion | Both accepted and declined defeat-response cases report completion before the response. |
+
+All sources were restored after these mutations and the distinguishing focused
+tests passed. The root-response checkpoint passed all 898 Rules tests and
+119 affected Content cases. After completing the direct-entry fixtures through
+their owned response windows, the integrated Content suite passed all 2109 cases,
+including the final physical-payment checks. Final numeric and zone expectations
+were retained, and those fixtures additionally assert execution completion.
+
+Two surviving mutations were investigated rather than counted as kills. A
+per-receipt version of same-recipient cost settlement was observationally
+equivalent in that fixture because the first actual defeat invalidated the second
+queued window; the different-recipient mutation above distinguishes erroneous
+grouping. A repeated live-child scan in the continuation permit dependency check was
+redundant with captured dependencies and insertion before the executing segment.
+That scan was removed, and the two-segment child regression verifies the retained
+ordering contract. Neither survivor is evidence of a killed mutant.
+
+### Occurrence windows wait for descendant work
+
+The real Core Daredevil regression thwarts with the ally, uses its response to
+defeat Rhino I, and completes Rhino II's Breakin' & Takin' reveal before applying
+Daredevil's consequential damage. It asserts both final board state and event
+order. This path distinguishes a response window's exact-occurrence dependencies
+from a continuation permit's captured dependencies: the window must wait for
+unfinished descendant frames even when its owning ability body has finished.
+The redundant permit scan described above does not supply that separate window
+ordering requirement.
+
+Removing the occurrence-window prerequisite union compiled and failed the
+Daredevil case in 265 ms with an explicit `CardEffectResolved` response-frame
+no-progress exception. The restored implementation passed. The dropped damage-cost
+receipt case independently verifies that unresolved completion obligations reject
+an attempted window advance without consuming the owner or reporting completion.
+The ordering traversal retains its explicit cycle rejection; that unchanged
+cycle branch was reviewed but was not separately mutation-tested in this pass.
+
+After restoring the mutation, fresh complete runs passed 898 Rules tests, 2,109
+Content tests, and all 76 Acceptance cases. The Acceptance run completed in
+17 seconds, including the Rhino seed-38 path that otherwise left a response
+window ahead of its unfinished descendant reveal. The focused 160-game
+no-ambiguous-option case completed in six seconds.

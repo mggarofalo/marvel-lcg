@@ -13,13 +13,12 @@ public interface ICardDamageAbilities
     bool CanTakeDamage(World world, Card target, Card source);
     DamageProjection PreviewDamageReplacement(World world, Card target, Card source, long amount);
     DefeatProjection? PreviewDefeatReplacement(World world, Card target, long maximumHealth);
-    long WouldBeDealt(World world, Card target, Card source, long amount, List<GameEvent> events);
+    AbilityExecutionResult WouldBeDealt(World world, AbilityExecution entry, DamageReplacement replacement);
     long WouldTake(World world, Card target, Card source, long amount, List<GameEvent> events);
     void DamagePreventedByTough(World world, Card target, Card source, List<GameEvent> events);
-    void WouldBeDefeated(World world, Card target, List<GameEvent> events);
-    bool WouldBeDefeated(World world, Card target, Card source, string trigger, string verb, int by,
-        List<GameEvent> events, Occurrence? recordDefeatOn = null);
-    IReadOnlyList<GameEvent> WhenCardDefeated(World world, Card card, Defeated defeated);
-    bool WhenCardDefeated(World world, Card card, Defeated defeated, string trigger, List<GameEvent> events);
+    AbilityExecutionResult WouldBeDefeated(World world, AbilityExecution entry,
+        Card target, DefeatCause cause);
+    AbilityExecutionResult WhenCardDefeated(World world, AbilityExecution entry, Card card,
+        Defeated defeated, string trigger);
 }
 #pragma warning restore CS1591

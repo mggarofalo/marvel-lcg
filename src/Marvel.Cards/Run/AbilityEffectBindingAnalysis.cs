@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 
 namespace Marvel.Cards.Run;
@@ -17,30 +18,30 @@ internal static class AbilityEffectBindingAnalysis
         Other,
     }
 
-    private static readonly HashSet<Type> OrderedTypes =
+    private static readonly ImmutableArray<Type> OrderedTypes =
     [
         typeof(AbilityEffect.Sequence), typeof(AbilityEffect.Simultaneous),
         typeof(AbilityEffect.Choose),
     ];
-    private static readonly HashSet<Type> BranchingTypes =
+    private static readonly ImmutableArray<Type> BranchingTypes =
     [
         typeof(AbilityEffect.Conditional), typeof(AbilityEffect.Dependent),
         typeof(AbilityEffect.EachTime),
     ];
-    private static readonly HashSet<Type> WrappedTypes =
+    private static readonly ImmutableArray<Type> WrappedTypes =
     [
         typeof(AbilityEffect.EachPlayer), typeof(AbilityEffect.ForEach),
         typeof(AbilityEffect.ChooseCard), typeof(AbilityEffect.AfterActivation),
         typeof(AbilityEffect.PayOrEffect),
     ];
-    private static readonly HashSet<Type> BasicCardTypes =
+    private static readonly ImmutableArray<Type> BasicCardTypes =
     [
         typeof(AbilityEffect.CardAction), typeof(AbilityEffect.Heal),
         typeof(AbilityEffect.Damage), typeof(AbilityEffect.AttackDamage),
         typeof(AbilityEffect.MoveDamage), typeof(AbilityEffect.IndirectDamage),
         typeof(AbilityEffect.GiveStatus),
     ];
-    private static readonly HashSet<Type> ThreatAndGrantTypes =
+    private static readonly ImmutableArray<Type> ThreatAndGrantTypes =
     [
         typeof(AbilityEffect.PlaceThreat), typeof(AbilityEffect.RemoveThreat),
         typeof(AbilityEffect.PreventThreat), typeof(AbilityEffect.PreventDamage),
@@ -48,7 +49,7 @@ internal static class AbilityEffectBindingAnalysis
         typeof(AbilityEffect.DefineBaseValue),
         typeof(AbilityEffect.PreventDamageWhile),
     ];
-    private static readonly HashSet<Type> PlayerTypes =
+    private static readonly ImmutableArray<Type> PlayerTypes =
     [
         typeof(AbilityEffect.ChangeForm), typeof(AbilityEffect.Draw),
         typeof(AbilityEffect.DrawToHandSize),
@@ -56,14 +57,14 @@ internal static class AbilityEffectBindingAnalysis
         typeof(AbilityEffect.DealEncounterCards), typeof(AbilityEffect.EngageTopAsMinion),
         typeof(AbilityEffect.DealEncounterCard),
     ];
-    private static readonly HashSet<Type> PlacementTypes =
+    private static readonly ImmutableArray<Type> PlacementTypes =
     [
         typeof(AbilityEffect.DelayedDiscard), typeof(AbilityEffect.DiscardAtRandom),
         typeof(AbilityEffect.PlaceAtRandom), typeof(AbilityEffect.DiscardTop),
         typeof(AbilityEffect.ShuffleInto), typeof(AbilityEffect.PutIntoPlay),
         typeof(AbilityEffect.PlaceCounters), typeof(AbilityEffect.RemoveCounters),
     ];
-    private static readonly HashSet<Type> PowerTypes =
+    private static readonly ImmutableArray<Type> PowerTypes =
     [
         typeof(AbilityEffect.ReduceNextCardCost), typeof(AbilityEffect.Power),
         typeof(AbilityEffect.ThwartGroup), typeof(AbilityEffect.ActivateEnemies),

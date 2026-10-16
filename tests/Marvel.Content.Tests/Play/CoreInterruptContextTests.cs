@@ -133,7 +133,7 @@ public sealed class CoreInterruptContextTests
         Assert.True(option.PlaysCard);
         Assert.Empty(option.WindowChoices);
         var ability = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Interrupt));
-        runner.Resolve(world, occurrence, ability, [], []);
+        runner.ResolveWindow(world, occurrence, ability, new Decision(ability.Card, [], []));
         Assert.True(placement.Replaced);
         Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(3, scheme.Tokens["k_threat"]);

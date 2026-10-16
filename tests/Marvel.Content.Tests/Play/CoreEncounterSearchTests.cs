@@ -29,7 +29,7 @@ public sealed class CoreEncounterSearchTests
         var passed = world.CreateCard("01186", deck);
         var scheme = world.CreateCard(faceId, world.AreaOf(DeckType.MainSchemesArea));
 
-        var events = AuthoredCards.Runner().WhenRevealed(world, scheme, player: 0);
+        var events = AuthoredCards.Runner().ExecuteReveal(world, scheme, player: 0).Events;
 
         // rr:discard.4: "discarded from the top of the encounter deck".
         // Engine-choice receipt covers the search, while the subsequent put remains separate.
@@ -65,7 +65,7 @@ public sealed class CoreEncounterSearchTests
         var jessica = world.CreateCard("56185", deck);
         var scheme = world.CreateCard("01117a", world.AreaOf(DeckType.MainSchemesArea));
 
-        AuthoredCards.Runner().WhenRevealed(world, scheme, player: 0);
+        AuthoredCards.Runner().ExecuteReveal(world, scheme, player: 0);
 
         Assert.Equal([below], deck.Cards);
         Assert.Contains(jessica, world.AreaOf(DeckType.EncounterDiscardPile).Cards);
@@ -94,7 +94,7 @@ public sealed class CoreEncounterSearchTests
         var jessica = world.CreateCard("56185", deck);
         var scheme = world.CreateCard("01117a", world.AreaOf(DeckType.MainSchemesArea));
 
-        AuthoredCards.Runner().WhenRevealed(world, scheme, player: 0);
+        AuthoredCards.Runner().ExecuteReveal(world, scheme, player: 0);
 
         Assert.Equal([below], deck.Cards);
         Assert.Contains(jessica, world.AreaOf(DeckType.EncounterDiscardPile).Cards);
@@ -114,7 +114,7 @@ public sealed class CoreEncounterSearchTests
         var plain = world.CreateCard("01103", deck);
         var scheme = world.CreateCard("01128", world.AreaOf(DeckType.SideSchemesArea));
 
-        AuthoredCards.Runner().WhenRevealed(world, scheme, player: 0);
+        AuthoredCards.Runner().ExecuteReveal(world, scheme, player: 0);
 
         Assert.Contains(plain, world.AreaOf(DeckType.EncounterDiscardPile).Cards);
         Assert.Contains(below, deck.Cards);

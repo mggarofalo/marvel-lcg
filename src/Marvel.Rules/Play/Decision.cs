@@ -37,7 +37,7 @@ public sealed record Decision(
     IReadOnlyList<ResourceAllocation>? Allocations = null)
 {
     /// <summary>Take nothing. The engine's empty command.</summary>
-    public static readonly Decision Decline = new(-1, []);
+    public static Decision Decline => new(-1, []);
 
     /// <summary>Whether this answer takes no affordance.</summary>
     public bool IsDecline => Affordance < 0;

@@ -88,19 +88,19 @@ public sealed class SetupLifecycleTests
     {
         public List<string> Revealed { get; } = [];
 
-        public override IReadOnlyList<GameEvent> WhenRevealed(
-            World world, Card card, int player)
+        public override AbilityExecutionResult WhenRevealed(
+            World world, AbilityExecution entry, Card card, int player)
         {
             Revealed.Add(card.FaceId);
             if (card.FaceId != "setupSide")
             {
-                return [];
+                return world.Agenda.Executions.FinishBatch(entry, []);
             }
 
             var later = world.Cards.Single(each => each.FaceId == "laterMinion");
             var events = new List<GameEvent>();
             Reveal.Resolve(world, facts, later, player, events);
-            return events;
+            return world.Agenda.Executions.FinishBatch(entry, events);
         }
     }
 

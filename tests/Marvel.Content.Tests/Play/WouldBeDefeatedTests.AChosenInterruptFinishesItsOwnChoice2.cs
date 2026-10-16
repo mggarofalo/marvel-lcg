@@ -30,7 +30,8 @@ public sealed class WouldBeDefeatedAChosenInterruptFinishesItsOwnChoiceTests : W
         var minion = world.CreateCard(Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.CreateCard(AuthoredCards.BiomechanicalUpgrades, world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
         var events = new List<GameEvent>();
-        DamagePlacement.Deal(world, Cards, minion, minion, 3, "test", "test", events);
+        DamagePlacement.Resolve(world, Cards,
+            new(minion, minion, 3, "test", "test"), events);
         var interrupt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
         Sequence.Answer(world, Cards, world.Abilities, interrupt, Decision.Take(interrupt.Affordances[0].Id), events);
         var inner = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
@@ -58,7 +59,8 @@ public sealed class WouldBeDefeatedAChosenInterruptFinishesItsOwnChoiceTests : W
         var minion = world.CreateCard(Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.CreateCard(AuthoredCards.BiomechanicalUpgrades, world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
         var events = new List<GameEvent>();
-        DamagePlacement.Deal(world, Cards, minion, minion, 3, "test", "test", events);
+        DamagePlacement.Resolve(world, Cards,
+            new(minion, minion, 3, "test", "test"), events);
         var asked = Sequence.Work(world, Cards, world.Abilities, events);
         Assert.NotNull(asked);
         Sequence.Answer(world, Cards, world.Abilities, asked, Decision.Decline, events);
@@ -87,7 +89,7 @@ public sealed class WouldBeDefeatedAChosenInterruptFinishesItsOwnChoiceTests : W
         var events = new List<GameEvent>();
         var result = DamageAttacks.Attack(world, Cards, attacker, minion, 3, "test", "Attack", events);
         var asked = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
-        Assert.True(result.Suspended);
+        Assert.False(result.IsComplete);
         Assert.Equal(0, attacker.Damage);
         Sequence.Answer(world, Cards, world.Abilities, asked, Decision.Decline, events);
         Assert.Null(Sequence.Work(world, Cards, world.Abilities, events));
@@ -116,8 +118,10 @@ public sealed class WouldBeDefeatedAChosenInterruptFinishesItsOwnChoiceTests : W
             """);
         var minion = world.CreateCard(Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.CreateCard(AuthoredCards.BiomechanicalUpgrades, world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
-        bool defeated = DamagePlacement.Deal(world, Cards, minion, minion, 3, "test", "test", []);
-        Assert.False(defeated);
+        var damage = DamagePlacement.Resolve(world, Cards,
+            new(minion, minion, 3, "test", "test"), []);
+        Assert.False(damage.IsComplete);
+        Sequence.Finish(world, Cards, world.Abilities, []);
         Assert.Equal(0, minion.Damage);
         Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
     }
@@ -136,8 +140,9 @@ public sealed class WouldBeDefeatedAChosenInterruptFinishesItsOwnChoiceTests : W
         var minion = world.CreateCard(Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var upgrade = world.CreateCard(AuthoredCards.BiomechanicalUpgrades, world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
         Agendas.Happening(world);
-        bool defeated = DamagePlacement.Deal(world, Cards, minion, minion, 3, "test", "test", []);
-        Assert.True(defeated);
+        var damage = DamagePlacement.Resolve(world, Cards,
+            new(minion, minion, 3, "test", "test"), []);
+        Sequence.Finish(world, Cards, world.Abilities, []);
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, upgrade.Area.Type);
     }
@@ -163,7 +168,8 @@ public sealed class WouldBeDefeatedAChosenInterruptFinishesItsOwnChoiceTests : W
         var minion = world.CreateCard(Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var upgrade = world.CreateCard(AuthoredCards.BiomechanicalUpgrades, world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId));
         var events = new List<GameEvent>();
-        DamagePlacement.Deal(world, Cards, minion, minion, 3, "test", "test", events);
+        DamagePlacement.Resolve(world, Cards,
+            new(minion, minion, 3, "test", "test"), events);
         var asked = Sequence.Work(world, Cards, world.Abilities, events);
         Assert.NotNull(asked);
         Assert.Equal(Question.Order, asked.Asking);
@@ -176,8 +182,10 @@ public sealed class WouldBeDefeatedAChosenInterruptFinishesItsOwnChoiceTests : W
 
     [Rule("rr:triggering-condition.1")]
     [Fact]
-    public void OneCardTriggersOnceWhenOneOccurrenceWouldDefeatTwoCharacters()
+    public void EachImminentDefeatTriggersTheAbilityOnce()
     {
+        // "Each Interrupt and Response ability can only be triggered once per occurrence of its triggering condition."
+        // Two different imminent defeats are two conditions, even within one surrounding damage procedure.
         var world = Empty("""
             {"cards":[{"card":"01140","abilities":[{
               "trigger":{"event":"WhenCardWouldBeDefeated","timing":"ForcedInterrupt",
@@ -190,8 +198,13 @@ public sealed class WouldBeDefeatedAChosenInterruptFinishesItsOwnChoiceTests : W
         var first = world.CreateCard(Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var second = world.CreateCard(Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         Agendas.Happening(world);
-        DamagePlacement.Deal(world, Cards, first, first, 3, "test", "test", []);
-        DamagePlacement.Deal(world, Cards, second, second, 3, "test", "test", []);
-        Assert.Equal(1, scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken));
+        DamagePlacement.Resolve(world, Cards,
+            new(first, first, 3, "test", "test"), []);
+        DamagePlacement.Resolve(world, Cards,
+            new(second, second, 3, "test", "test"), []);
+        Sequence.Finish(world, Cards, world.Abilities, []);
+        Assert.Equal(2, scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken));
+        Assert.Equal(DeckType.EncounterDiscardPile, first.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, second.Area.Type);
     }
 }

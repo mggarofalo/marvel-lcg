@@ -32,7 +32,7 @@ public sealed class CoreHiddenChoiceMeaningTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
         var action = Assert.Single(runner.Actions(world, 0), offered => offered.Card == kick!.ObjectId);
-        var events = runner.Act(world, action, [genius!.ObjectId, energy!.ObjectId], []).ToList();
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [genius!.ObjectId, energy!.ObjectId], [])).Events.ToList();
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, events));
         Affordance target = Assert.Single(prompt.Affordances, offered => offered.AnchorId == drone!.ObjectId);
 
@@ -77,7 +77,7 @@ public sealed class CoreHiddenChoiceMeaningTests
             }]}]}
             """));
         world.Abilities = runner;
-        runner.ResolveSpecial(world, source, 0, finalStep: false);
+        runner.ExecuteSpecial(world, source, 0, finalStep: false);
         Prompt prompt = Sequence.Work(world, world.Facts, runner, [])!;
         Assert.Null(prompt.DisplayQuestion);
         Assert.Null(prompt.Description);

@@ -145,6 +145,7 @@ internal sealed class MainBoardController : IDisposable
     internal void RenderBoard(
         WorldDescriptor world, Prompt? prompt = null, int? renderGeneration = null)
     {
+        Action<BoardRenderResult>? restoreChoice = main.decisions.BoardChoices.Capture(renderGeneration is null);
         if (ResponseStaged && displayedResponse is { World: { } prior })
         {
             world = prior;
@@ -175,6 +176,7 @@ internal sealed class MainBoardController : IDisposable
         main.decisions.BindMulliganTargets(rendered);
         cardInspector.Refresh(main.boardPresentation!, rendered);
         transition.PresentNextDecision(rendered);
+        BoardChoiceContinuity.Restore(restoreChoice, rendered);
     }
     private BoardRenderResult RenderCompactBoard()
     {

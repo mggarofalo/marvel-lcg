@@ -125,7 +125,9 @@ public sealed class ActionAbilityProjectedMovementNestedChoiceTests
         }, hero: true, abilities: AuthoredCards.Runner());
         Statuses.Give(world, minion!, Statuses.Tough);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
-        runner.Act(world, action, [], []);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
         Assert.False(Statuses.Has(world, minion, Statuses.Tough));
         Assert.Equal(DeckType.RemovedArea, discarded!.Area.Type);
@@ -160,7 +162,9 @@ public sealed class ActionAbilityProjectedMovementNestedChoiceTests
         }, hero: true, abilities: AuthoredCards.Runner());
         Statuses.Give(world, minion!, Statuses.Tough);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
-        runner.Act(world, action, [], []);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
         Assert.False(Statuses.Has(world, minion, Statuses.Tough));
         Assert.Equal(DeckType.RemovedArea, discarded!.Area.Type);
@@ -232,7 +236,9 @@ public sealed class ActionAbilityProjectedMovementNestedChoiceTests
             discarded = board.CreateCard("08028", board.AreaOf(DeckType.EncounterDiscardPile));
         }, hero: true, abilities: AuthoredCards.Runner());
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
-        runner.Act(world, action, [], []);
+        var resolution = runner.ExecuteAction(world, new PlayerAction(action, [], []));
+        Sequence.Finish(world, world.Facts, runner, []);
+        Assert.True(resolution.IsComplete);
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(Damage.Health(world, world.Facts, minion!) - 1, minion!.Damage);
         Assert.Equal(DeckType.RemovedArea, discarded!.Area.Type);

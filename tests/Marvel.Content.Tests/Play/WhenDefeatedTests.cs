@@ -63,7 +63,11 @@ public sealed class WhenDefeatedTests
         Agendas.Happening(world);
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Defeat.Scheme(world, Cards, scheme, "test", []));
+            () =>
+            {
+                Defeat.Scheme(world, Cards, scheme, "test", []);
+                Sequence.Finish(world, Cards, world.Abilities, []);
+            });
 
         Assert.Contains("'When Defeated'", thrown.Message, StringComparison.Ordinal);
         Assert.Contains(Unwritten, thrown.Message, StringComparison.Ordinal);
@@ -81,6 +85,7 @@ public sealed class WhenDefeatedTests
         var events = new List<GameEvent>();
         Agendas.Happening(world);
         Defeat.Character(world, Cards, minion, "test", events);
+        Sequence.Finish(world, Cards, world.Abilities, events);
 
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
     }
@@ -106,6 +111,7 @@ public sealed class WhenDefeatedTests
         var events = new List<GameEvent>();
         Agendas.Happening(world);
         Defeat.Scheme(world, Cards, scheme, "test", events);
+        Sequence.Finish(world, Cards, world.Abilities, events);
 
         int gave = events.FindIndex(happened => happened.Verb == "Give_Status");
         int left = events.FindIndex(
@@ -139,6 +145,12 @@ public sealed class WhenDefeatedTests
 
         Agendas.Happening(world);
         Defeat.Scheme(world, Cards, scheme, "test", []);
+        var ordering = Sequence.Work(world, Cards, world.Abilities, [])!;
+        Assert.Equal(2, ordering.Affordances.Count);
+        Assert.NotEqual(ordering.Affordances[0].Id, ordering.Affordances[1].Id);
+        Sequence.Answer(world, Cards, world.Abilities, ordering,
+            Decision.Take(ordering.Affordances[1].Id), []);
+        Sequence.Finish(world, Cards, world.Abilities, []);
 
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         Assert.True(Statuses.Has(world, villain, Statuses.Tough));
@@ -167,6 +179,7 @@ public sealed class WhenDefeatedTests
 
         Agendas.Happening(world);
         Defeat.Character(world, Cards, minion, "test", []);
+        Sequence.Finish(world, Cards, world.Abilities, []);
 
 
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
@@ -185,13 +198,13 @@ public sealed class WhenDefeatedTests
             """
             {"cards":[{"card":"01094","abilities":[{
               "trigger":{"event":"WhenCardDefeated","timing":"WhenDefeated","subject":"this"},
-              "effect":{"placeThreat":{"scheme":{"query":"mainScheme"},"amount":1}}}]}]}
+              "effect":{"placeThreat":{"scheme":{"query":"mainScheme"},"amount":1}}}]},{"card":"01095","abilities":[]}]}
             """,
             out _);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
 
-        world.Abilities.WhenCardDefeated(world, villain, Killed(villain));
+        world.Abilities.ExecuteDefeat(world, villain, Killed(villain), "test");
         Agendas.Finish(world, Cards, world.Abilities);
 
         Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat"));
@@ -219,7 +232,11 @@ public sealed class WhenDefeatedTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => world.Abilities.WhenCardDefeated(world, villain, Killed(villain)));
+            () =>
+            {
+                world.Abilities.ExecuteDefeat(world, villain, Killed(villain), "test");
+                Sequence.Finish(world, Cards, world.Abilities, []);
+            });
 
         Assert.Contains("asks who is resolving it", thrown.Message, StringComparison.Ordinal);
         Assert.False(

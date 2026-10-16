@@ -88,12 +88,15 @@ public sealed class CardPlayAnOmittedCostTests : CardPlayTestBase
         var upgrade = InHand(world, "upgrade");
         var payment = world.Cards[Pay(world, "res")];
         CardPayment.ReduceNextCardCost(world, source, player: 0, amount: 1);
-        // This upgrade requires one specific host, and the forged play names
-        // none. Its payment succeeds, but step 7 never says the card was
-        // played, so "the next card you play" has not happened.
+        // An accepted play requires its attachment host. Reject the malformed
+        // selection before exposing the card or committing any resource payment.
+        var before = world.Digest().Canonical();
         Assert.Throws<RulesNotImplementedException>(() => CardPlay.Play(world, printed, new Targets(seat.IdentityCard.ObjectId), seat, upgrade, [payment.ObjectId], [], targets: []));
         Assert.Single(world.Effects.Active());
         Assert.Same(seat.Hand, upgrade.Area);
+        Assert.Same(seat.Hand, payment.Area);
+        Assert.Equal(before, world.Digest().Canonical());
+        Assert.False(world.Agenda.IsBusy);
     }
 
     [Rule("rr:modifiers.2")]

@@ -82,7 +82,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAPrintedTextBoxResource
         var price = Assert.Single(runner.Describe(world, ability).CostOptions);
         Assert.Equal(2, price.ResourceCosts.Count);
         Assert.All(price.ResourceCosts, component => Assert.True(component.Printed));
-        runner.Act(world, ability, [peter, energy!.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(ability, [peter, energy!.ObjectId], []));
         Assert.Equal(DeckType.DiscardPile, energy.Area.Type);
         Assert.DoesNotContain(runner.ResourceAbilities(world, 0), generator => generator.Effect == peter);
     }
@@ -107,7 +107,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAPrintedTextBoxResource
         var ability = Assert.Single(runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
         var targets = Assert.IsType<TargetRequest>(runner.Describe(world, ability).Targets);
         Assert.DoesNotContain(otherPlayersCard!.ObjectId, targets.Legal);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, ability, [], [otherPlayersCard.ObjectId]));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(ability, [], [otherPlayersCard.ObjectId])));
         Assert.Same(world.Seats[1].Hand, otherPlayersCard.Area);
         Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
     }
@@ -136,7 +136,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAPrintedTextBoxResource
         var targets = Assert.IsType<TargetRequest>(runner.Describe(world, ability).Targets);
         Assert.Contains(friendly!.ObjectId, targets.Legal);
         Assert.DoesNotContain(world.Seats[1].IdentityCard.ObjectId, targets.Legal);
-        runner.Act(world, ability, [], [friendly.ObjectId]);
+        runner.ExecuteAction(world, new PlayerAction(ability, [], [friendly.ObjectId]));
         Assert.False(friendly.Ready);
     }
 
@@ -156,10 +156,10 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAPrintedTextBoxResource
         int held = world.Seats[0].Hand.Cards.Count;
         Assert.Equal(1, targets.Min);
         Assert.True(targets.Max >= 1);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, ability, [], []));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(ability, [], [])));
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
         int paid = targets.Legal[0];
-        runner.Act(world, ability, [], [paid]);
+        runner.ExecuteAction(world, new PlayerAction(ability, [], [paid]));
         Assert.Equal(DeckType.DiscardPile, world.Cards[paid].Area.Type);
     }
 
@@ -178,7 +178,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAPrintedTextBoxResource
             Hand(board, Physicals, 1);
         }, abilities: runner);
         var forged = new PendingAbility(source!.ObjectId, AbilityType.Action, 0);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, forged, [world.Seats[0].Hand.Cards[0].ObjectId], []));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(forged, [world.Seats[0].Hand.Cards[0].ObjectId], [])));
         Assert.True(source!.Ready);
     }
 

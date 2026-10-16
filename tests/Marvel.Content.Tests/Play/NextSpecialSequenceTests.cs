@@ -109,7 +109,7 @@ public sealed class NextSpecialSequenceTests
         Prompt choice = Begin(world, runner, events);
         Decision answer = invented ? Decision.Take(999)
             : Decision.Take(claws.ObjectId, [daggers.ObjectId], []);
-        Assert.Throws<RulesNotImplementedException>(() =>
+        Assert.Throws<ArgumentException>(() =>
             Sequence.Answer(world, Cards, runner, choice, answer, events));
         Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
@@ -151,8 +151,7 @@ public sealed class NextSpecialSequenceTests
         world.Abilities = runner;
         Card played = world.CreateCard("01043a", world.Seats[0].Hand);
         Card resource = world.CreateCard("01044", world.Seats[0].Hand);
-        runner.Act(world, new PendingAbility(played.ObjectId, AbilityType.Action, 0),
-            [resource.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(played.ObjectId, AbilityType.Action, 0), [resource.ObjectId], []));
         return Sequence.Work(world, Cards, runner, events)!;
     }
 

@@ -142,8 +142,10 @@ public sealed class CardPlayAnotherPlayersCharacterTests : CardPlayTestBase
         world.CreateCard("res", world.Seats[0].Hand);
         var theirs = world.CreateCard("res", world.Seats[1].Hand);
         var card = world.CreateCard("alone", world.Seats[0].Hand);
+        var before = world.Digest().Canonical();
         var thrown = Assert.Throws<RulesNotImplementedException>(() => CardPlay.Play(world, printed, new Silent(), world.Seats[0], card, [theirs.ObjectId], []));
-        Assert.Contains("is not in p0's hand", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("cannot be discarded to pay this cost", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(before, world.Digest().Canonical());
         Assert.Same(world.Seats[1].Hand, theirs.Area);
     }
 
@@ -156,8 +158,10 @@ public sealed class CardPlayAnotherPlayersCharacterTests : CardPlayTestBase
         var printed = Cards();
         var world = Board(printed);
         var free = InHand(world, "free");
+        var before = world.Digest().Canonical();
         var thrown = Assert.Throws<RulesNotImplementedException>(() => CardPlay.Play(world, printed, new Silent(), world.Seats[0], free, [free.ObjectId], []));
-        Assert.Contains("cannot also pay for itself", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("cannot be discarded to pay this cost", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(before, world.Digest().Canonical());
     }
 
     [Rule("rr:cost.3")]
@@ -173,8 +177,10 @@ public sealed class CardPlayAnotherPlayersCharacterTests : CardPlayTestBase
         var seat = world.Seats[0];
         var ally = InHand(world, "ally");
         var inDeck = seat.Deck.Cards[0];
+        var before = world.Digest().Canonical();
         var thrown = Assert.Throws<RulesNotImplementedException>(() => CardPlay.Play(world, printed, new Silent(), seat, ally, [inDeck.ObjectId], []));
-        Assert.Contains("is not in p0's hand", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("cannot be discarded to pay this cost", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(before, world.Digest().Canonical());
         Assert.Same(seat.Hand, ally.Area);
         Assert.Same(seat.Deck, inDeck.Area);
     }

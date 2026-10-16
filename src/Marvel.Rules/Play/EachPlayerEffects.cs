@@ -80,7 +80,10 @@ public static class EachPlayerEffects
                 $"'{source.FaceId}' needs an exact ordering of every player in the game");
         }
 
+        var invocation = step.ExecutionOwner;
+        if (invocation is not null) world.Agenda.Executions.Resume(invocation);
         ScheduleFrames(world, step, input.Targets.Select(identity => candidates[identity]).ToList());
+        if (invocation is not null) world.Agenda.Executions.Suspend(invocation);
     }
 
     internal static IReadOnlyList<GameEvent> Resolve(
@@ -92,6 +95,11 @@ public static class EachPlayerEffects
             // `rr:player-elimination.6`: effects referring to players in the
             // game ignore an eliminated player. A player can be eliminated
             // after the first player chose the order but before their frame.
+            if (step.ExecutionOwner is { } invocation)
+            {
+                world.Agenda.Executions.Resume(invocation);
+                world.Agenda.Executions.Complete(invocation);
+            }
             return [];
         }
 

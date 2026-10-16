@@ -60,7 +60,7 @@ public sealed class CoreObligationChoiceMeaningTests : ChoosingCardsTestBase
         world.CreateCard("01046", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         Card source = world.CreateCard(obligation, world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
         var runner = AuthoredCards.Runner();
-        runner.WhenRevealed(world, source, 0);
+        runner.ExecuteReveal(world, source, 0);
         runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(1));
         string before = world.Digest().Fingerprint();
 
@@ -89,7 +89,7 @@ public sealed class CoreObligationChoiceMeaningTests : ChoosingCardsTestBase
         Card unrelated = world.CreateCard("01077", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         var runner = AuthoredCards.Runner();
         Card source = world.CreateCard("01155", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
-        runner.WhenRevealed(world, source, 0);
+        runner.ExecuteReveal(world, source, 0);
         runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(1));
         runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(1));
         PhaseStep next = world.Agenda.Outstanding.First(step => step.What == Steps.ChooseOption);

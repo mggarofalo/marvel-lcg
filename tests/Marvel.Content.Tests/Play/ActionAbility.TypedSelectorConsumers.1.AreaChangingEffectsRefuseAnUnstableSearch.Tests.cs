@@ -176,7 +176,7 @@ public sealed class ActionAbilityTypedSelectorConsumersAreaChangingEffectsRefuse
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == source.ObjectId);
         Assert.True(source.Ready);
         Assert.Equal(original, discard.Cards);
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         Assert.Equal([other], discard.Cards);
         Assert.Equal(DeckType.RevealingArea, first.Area.Type);
         Assert.Equal(first.ObjectId, Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.RevealEncounterCard).Subject);

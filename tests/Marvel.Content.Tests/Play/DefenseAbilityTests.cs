@@ -33,7 +33,7 @@ public sealed class DefenseAbilityTests
         var pending = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Interrupt),
             ability => ability.Card == source.ObjectId);
-        runner.Resolve(world, occurrence, pending, [], []);
+        runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
 
         Assert.Equal(second.ObjectId, world.Attack!.Defender);
         Assert.Equal(second.ObjectId, world.Attack.Target);
@@ -60,7 +60,7 @@ public sealed class DefenseAbilityTests
         var taken = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Interrupt),
             ability => ability.Card == secondPlayers.ObjectId);
-        runner.Resolve(world, occurrence, taken, [], []);
+        runner.ResolveWindow(world, occurrence, taken, new Decision(taken.Card, [], []));
 
         var next = new Occurrence(
             2, ["WhenBoostCardGiven"], Player: world.Attack!.Player);
@@ -102,7 +102,7 @@ public sealed class DefenseAbilityTests
 
         var forged = new PendingAbility(source.ObjectId, AbilityType.Interrupt, 1, 0);
         Assert.Throws<RulesNotImplementedException>(
-            () => runner.Resolve(world, occurrence, forged, [], []));
+            () => runner.ResolveWindow(world, occurrence, forged, new Decision(forged.Card, [], [])));
         Assert.True(source.Ready);
     }
 
@@ -131,7 +131,7 @@ public sealed class DefenseAbilityTests
         var occurrence = AttackWindow(world, villain);
 
         var pending = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Interrupt));
-        runner.Resolve(world, occurrence, pending, [], []);
+        runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
 
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
         Assert.Equal(world.Seats[0].IdentityCard.ObjectId, world.Attack!.Defender);
@@ -160,7 +160,7 @@ public sealed class DefenseAbilityTests
         var pending = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Interrupt),
             ability => ability.Card == source.ObjectId);
-        runner.Resolve(world, occurrence, pending, [], []);
+        runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
 
         Assert.Equal(ally.ObjectId, world.Attack!.Defender);
         Assert.Equal(ally.ObjectId, world.Attack.Target);
@@ -180,7 +180,7 @@ public sealed class DefenseAbilityTests
         var pending = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Interrupt),
             ability => ability.Card == source.ObjectId);
-        runner.Resolve(world, occurrence, pending, [], []);
+        runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
 
         Assert.Null(world.Attack);
     }

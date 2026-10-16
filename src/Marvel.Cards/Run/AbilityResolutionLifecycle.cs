@@ -22,21 +22,14 @@ internal static class AbilityResolutionLifecycle
         var occurrence = new Occurrence(
             0, [Steps.CardEntersPlay], Subject: card.ObjectId,
             Player: execution.ControllerOf(world, card));
-        foreach (var ability in execution.On(card).Where(ability =>
+        execution.RunOrdered(execution.On(card).Where(ability =>
             ability.Trigger.Timing == AbilityType.WhenRevealed
-            && string.Equals(
-                ability.Trigger.Event, Steps.CardEntersPlay,
-                StringComparison.Ordinal)))
-        {
-            var cast = new AbilityResolutionState(
+            && string.Equals(ability.Trigger.Event, Steps.CardEntersPlay, StringComparison.Ordinal)),
+            ability => new AbilityResolutionState(
                 world, card, occurrence, execution.ControllerOf(world, card), events)
             {
                 Tier = ability.Trigger.Timing,
-            };
-            execution.TrackResolution(cast, ability);
-            execution.Run(ability, cast);
-            cast.CompleteResolution();
-        }
+            });
 
         return events;
     }
@@ -50,25 +43,15 @@ internal static class AbilityResolutionLifecycle
         var enemy = world.Cards[result.Enemy];
         if (result.Made)
         {
-            foreach (var ability in execution.On(enemy).Where(ability =>
+            var occurrence = new Occurrence(0, ["WhenActivationCompleted"],
+                Actor: enemy.ObjectId, Player: result.Player);
+            execution.RunOrdered(execution.On(enemy).Where(ability =>
                 ability.Trigger.Timing == AbilityType.ForcedResponse
-                && string.Equals(
-                    ability.Trigger.Event, "WhenActivationCompleted",
-                    StringComparison.Ordinal)))
-            {
-                var cast = new AbilityResolutionState(
-                    world, enemy,
-                    new Occurrence(
-                        0, ["WhenActivationCompleted"],
-                        Actor: enemy.ObjectId, Player: result.Player),
-                    result.Player, events)
+                && string.Equals(ability.Trigger.Event, "WhenActivationCompleted", StringComparison.Ordinal)),
+                ability => new AbilityResolutionState(world, enemy, occurrence, result.Player, events)
                 {
                     Tier = ability.Trigger.Timing,
-                };
-                execution.TrackResolution(cast, ability);
-                execution.Run(ability, cast);
-                cast.CompleteResolution();
-            }
+                });
         }
 
         AbilityDelayedExecution.CompleteActivation(execution, world, result, events);
@@ -76,15 +59,7 @@ internal static class AbilityResolutionLifecycle
         if (world.Agenda.ActivationWait(result.Id) is { } waiting)
         {
             var updated = AbilityContinuations.RecordActivationResult(waiting, result);
-            if (updated.Complete)
-            {
-                _ = world.Agenda.TakeActivationWait(result.Id);
-                ActivityBatches.Append(events, execution.ResumeAbility(world, updated.Step));
-            }
-            else
-            {
-                world.Agenda.ReplaceActivationWait(result.Id, updated.Step);
-            }
+            world.Agenda.ReplaceActivationWait(result.Id, updated.Step);
         }
 
         return events;
@@ -93,10 +68,12 @@ internal static class AbilityResolutionLifecycle
     /// <inheritdoc/>
     internal static IReadOnlyList<GameEvent> ResumeAbility(this AbilityResolutionExecution execution, World world, PhaseStep continuation)
     {
+        world.Agenda.Executions.RequireContinuation(continuation);
         var source = continuation.Subject >= 0 && continuation.Subject < world.Cards.Count
             ? world.Cards[continuation.Subject]
             : throw new RulesNotImplementedException(
                 $"activation continuation has no card at object id {continuation.Subject}");
+        bool delayed = StateOf(continuation)?.Reason == AbilityResumeReason.DelayedEffect;
         var transition = AbilityContinuations.BeginResume(execution.program, source, continuation);
         var resumed = transition switch
         {
@@ -122,8 +99,11 @@ internal static class AbilityResolutionLifecycle
                 : new HashSet<string>(StringComparer.Ordinal),
         };
         execution.RestoreContinuationCursor(cast, resumed);
-        cast.TrackResolution(resumed.Invocation.Address.Ordinal);
         execution.RestorePersisted(cast, continuation);
+        if (delayed)
+            cast.EnterExecution(world.Agenda.Executions.BeginBatch(cast.Occurrence));
+        cast.TrackResolution(resumed.Invocation.Address.Ordinal);
+        if (!AbilityPaymentResumption.Complete(execution, cast, resumed)) return cast.Events;
         if (transition is RestartAfterPaidCost paidCost)
         {
             // The cost has settled. Do not persist its resume marker into a
@@ -143,8 +123,8 @@ internal static class AbilityResolutionLifecycle
             }
             if (!AbilityRecipientCommitment.Resume(execution, cast, ability))
                 execution.Run(ability, cast);
-            cast.CompleteResolution();
             execution.DiscardEvent(source, cast);
+            cast.CompleteResolution();
             return cast.Events;
         }
         return execution.ResumeContinuation(cast, source, transition);
@@ -173,8 +153,8 @@ internal static class AbilityResolutionLifecycle
 
                 case ResumeComplete complete:
                     execution.RestoreContinuationCursor(cast, complete.State);
-                    cast.CompleteResolution();
                     execution.DiscardEvent(source, cast);
+                    cast.CompleteResolution();
                     return cast.Events;
 
                 case ResumeRejected rejected:
@@ -192,12 +172,14 @@ internal static class AbilityResolutionLifecycle
         ContinueAfterResumedNode completed)
     {
         execution.RestoreContinuationCursor(cast, completed.State);
-        cast.CompletedOutcome = completed.State.Completion is { } receipt
+        cast.CompletedOutcome = completed.State.DamageCompletion is { } damage ? damage.Complete()
+            : completed.State.Completion is { } receipt
             ? AbilityCompletion.Amount(receipt.Applied, receipt.Requested)
             : completed.State.CompletedOutcome ?? cast.CompletedOutcome;
         cast.PendingCompletion = null;
+        cast.PendingDamageCompletion = null;
         if (cast.CompletedOutcome is AbilityStructuralOutcome.Full or AbilityStructuralOutcome.Partial
-            || completed.EffectApplied && completed.State.Completion is null) cast.ResolveEffect();
+            || completed.EffectApplied && completed.State.Completion is null && completed.State.DamageCompletion is null) cast.ResolveEffect();
         return AbilityContinuations.Advance(
             execution.StructuralContext(cast), completed.Ability, completed.State,
             new AbilityStructuralObservation(false, Outcome: cast.CompletedOutcome));
@@ -244,6 +226,7 @@ internal static class AbilityResolutionLifecycle
     internal static void RestoreContinuationCursor(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, AbilityContinuationState state)
     {
+        cast.Execution ??= state.Execution;
         cast.TriggeringDefeat = state.Invocation.TriggeringDefeat;
         cast.RestoreAbility(
             state.Invocation.Address.Ordinal,

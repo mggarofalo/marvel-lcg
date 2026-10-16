@@ -1,9 +1,12 @@
+using System.Collections.ObjectModel;
+using System.Collections.Immutable;
 namespace Marvel.Rules.State;
 
 /// <summary>Defines registered, printed, and modifiable state fields.</summary>
 public static class StateFieldCatalog
 {
-    internal static readonly Dictionary<CardKind, string[]> Registered = new()
+    internal static readonly ReadOnlyDictionary<CardKind, ImmutableArray<string>> Registered = new(
+        new Dictionary<CardKind, ImmutableArray<string>>()
     {
         [CardKind.Insert] = [],
         // A status card registers nothing of its own: the recorded Tough on
@@ -92,7 +95,7 @@ public static class StateFieldCatalog
             "printed_stage", "retaliate", "scheme", "stalwart", "steady", "surge", "toughness",
             "victory", "vulnerable",
         ],
-    };
+    });
 
     // Token pools, acquired when a card enters play and never given back. This
     // is why the two villain stages on the milestone board register different
@@ -102,7 +105,8 @@ public static class StateFieldCatalog
     //
     // Measured, kind by kind, on the recorded board. A status card enters play
     // and registers nothing, so this is not "everything in play".
-    internal static readonly Dictionary<CardKind, string[]> TokensOnceInPlay = new()
+    internal static readonly ReadOnlyDictionary<CardKind, ImmutableArray<string>> TokensOnceInPlay = new(
+        new Dictionary<CardKind, ImmutableArray<string>>()
     {
         [CardKind.AlterEgo] = ["k_threat"],
         // Same pool, same reasoning as the `Hero` row above: one card, and
@@ -115,14 +119,15 @@ public static class StateFieldCatalog
         [CardKind.Treachery] = ["k_threat"],
         [CardKind.Minion] = ["k_threat"],
         [CardKind.Attachment] = ["k_threat"],
-    };
+    });
 
     // A registered field whose value is printed on the card. Filled when the
     // card registers -- which is not the same as being in play, and the
     // recording forces them apart: `01101` Hydra Mercenary reaches the discard
     // pile with `attack: 1` and `guard: 1` filled and `health: 0`, having only
     // ever passed through the boosting area.
-    internal static readonly Dictionary<string, string> PrintedFrom = new(StringComparer.Ordinal)
+    internal static readonly ReadOnlyDictionary<string, string> PrintedFrom = new(
+        new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["alliance"] = "Alliance",
         ["attack"] = "ATK",
@@ -158,7 +163,7 @@ public static class StateFieldCatalog
         ["victory"] = "Victory",
         ["villainous"] = "Villainous",
         ["vulnerable"] = "Vulnerable",
-    };
+    });
 
     /// <summary>Whether a name is a field the engine reads modifiers into.</summary>
     /// <remarks>
@@ -190,15 +195,16 @@ public static class StateFieldCatalog
     //
     // Declarative, so no card ability is involved. Charge takes Rhino's attack
     // from 2 to 5 because it is attached to him and prints `ATK+ 3`.
-    internal static readonly Dictionary<string, string> ModifiedBy = new(StringComparer.Ordinal)
+    internal static readonly ReadOnlyDictionary<string, string> ModifiedBy = new(
+        new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["attack"] = "ATK+",
         ["scheme"] = "SCH+",
         ["thwart"] = "THW+",
-    };
+    });
 
-    internal static readonly HashSet<string> PowerAttributes =
-        new(["ATK", "THW", "DEF", "REC", "SCH"], StringComparer.Ordinal);
+    internal static readonly ImmutableArray<string> PowerAttributes =
+        ["ATK", "THW", "DEF", "REC", "SCH"];
 
     /// <summary>Whether one of the five basic powers prints a usable value.</summary>
     /// <remarks>
@@ -233,7 +239,7 @@ public static class StateFieldCatalog
 
     // The two fields whose value is a count of icons printed *inside* another
     // attribute rather than an attribute of its own.
-    internal static readonly (string Field, string Power)[] ConsequentialFrom =
+    internal static readonly ImmutableArray<(string Field, string Power)> ConsequentialFrom =
     [
         ("attack_consequential_damage", "ATK"),
         ("thwart_consequential_damage", "THW"),

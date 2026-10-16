@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Marvel.Rules.Play;
 using Marvel.Rules.Timing;
 
@@ -49,5 +50,5 @@ public static class AbilitySubjects
 
     /// <summary>Every subject this vocabulary has.</summary>
     public static IReadOnlySet<string> All { get; } =
-        new HashSet<string>(StringComparer.Ordinal) { This, AttachedTo, You, Game };
+        new[] { This, AttachedTo, You, Game }.ToFrozenSet(StringComparer.Ordinal);
 }

@@ -57,6 +57,7 @@ public sealed class HighwayRobberyTests
 
         Agendas.Happening(world);
         Defeat.Scheme(world, Cards, scheme, "test", []);
+        Sequence.Finish(world, Cards, world.Abilities, []);
 
         Assert.Equal(mine, world.Seats[0].Hand.Cards.Count);
         Assert.Equal(theirs, world.Seats[1].Hand.Cards.Count);
@@ -93,7 +94,7 @@ public sealed class HighwayRobberyTests
     {
         var scheme = world.CreateCard(
             AuthoredCards.HighwayRobbery, world.AreaOf(DeckType.SideSchemesArea));
-        AuthoredCards.Runner().WhenRevealed(world, scheme, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, scheme, 0);
         return scheme;
     }
 

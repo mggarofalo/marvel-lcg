@@ -143,7 +143,7 @@ public sealed class SetupAbilityTests
     {
         // `rr:setup-triggered-ability.2` times these to a step of setup rather
         // than to something happening in the game, so there is no occurrence to
-        // name and no condition in `Steps.EveryCondition` that names one.
+        // name and no condition in `StepConditions.EveryCondition` that names one.
         var refused = Assert.Throws<AbilityException>(() => AbilityCatalog.Parse(
             """
             { "cards": [ { "card": "01097a", "abilities": [ {

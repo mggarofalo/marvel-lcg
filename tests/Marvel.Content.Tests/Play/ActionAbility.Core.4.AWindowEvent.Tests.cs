@@ -28,7 +28,7 @@ public sealed class ActionAbilityCoreAWindowEventTests
         var payment = Assert.IsType<Card>(energy);
         var occurrence = new Occurrence(1, ["WhenDamageWouldBeDealt"], Player: 0, Target: world.Seats[0].IdentityCard.ObjectId);
         Assert.Contains(runner.Waiting(world, occurrence, WindowKind.Interrupt), pending => pending.Card == eventCard.ObjectId);
-        runner.Resolve(world, occurrence, new PendingAbility(eventCard.ObjectId, AbilityType.Interrupt, 0), [payment.ObjectId], [], allocations: [new ResourceAllocation(payment.ObjectId, Cost: 1, PaidAs: "Y"), ]);
+        runner.ResolveWindow(world, occurrence, new PendingAbility(eventCard.ObjectId, AbilityType.Interrupt, 0), new Decision(eventCard.ObjectId, [], [payment.ObjectId], Allocations: [new ResourceAllocation(payment.ObjectId, Cost: 1, PaidAs: "Y"), ]));
         Assert.Equal(DeckType.DiscardPile, eventCard.Area.Type);
         Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
     }
@@ -59,7 +59,7 @@ public sealed class ActionAbilityCoreAWindowEventTests
         var price = Assert.Single(runner.Describe(world, action).CostOptions);
         Assert.Contains(price.Generators, source => source.Effect == doubleMental!.ObjectId);
         Assert.Contains(price.Generators, source => source.Effect == physical!.ObjectId);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, action, [doubleMental!.ObjectId, physical!.ObjectId], [world.Cards.First(candidate => candidate.FaceId == AuthoredCards.Shocker).ObjectId]));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(action, [doubleMental!.ObjectId, physical!.ObjectId], [world.Cards.First(candidate => candidate.FaceId == AuthoredCards.Shocker).ObjectId])));
         Assert.Same(world.Seats[0].Hand, card!.Area);
         Assert.Same(world.Seats[0].Hand, doubleMental!.Area);
         Assert.Same(world.Seats[0].Hand, physical!.Area);
@@ -81,7 +81,7 @@ public sealed class ActionAbilityCoreAWindowEventTests
             shocker = board.CreateCard(AuthoredCards.Shocker, board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         }, hero: true, abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
-        runner.Act(world, action, [strength!.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [strength!.ObjectId], []));
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, CardCatalogData, runner, []));
         string? preview = Assert.Single(prompt.Affordances, option => option.Id == shocker!.ObjectId).Description;
         Assert.Contains("Overkill carries 2 excess damage", preview);
@@ -105,7 +105,7 @@ public sealed class ActionAbilityCoreAWindowEventTests
         }, hero: true, abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
         int target = world.Cards.First(candidate => candidate.FaceId == AuthoredCards.Shocker).ObjectId;
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, action, [doubleMental!.ObjectId, wild!.ObjectId], [target]));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(action, [doubleMental!.ObjectId, wild!.ObjectId], [target])));
         Assert.Same(world.Seats[0].Hand, card!.Area);
         Assert.Same(world.Seats[0].Hand, doubleMental!.Area);
         Assert.Same(world.Seats[0].Hand, wild!.Area);
@@ -134,7 +134,7 @@ public sealed class ActionAbilityCoreAWindowEventTests
         }, heroes: ["captain_marvel"], abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
         int target = world.Cards.First(candidate => candidate.FaceId == AuthoredCards.Shocker).ObjectId;
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, action, [..wilds.Select(source => source.ObjectId)], [target]));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(action, [..wilds.Select(source => source.ObjectId)], [target])));
         Assert.Same(world.Seats[0].Hand, card!.Area);
         Assert.All(wilds, source => Assert.Same(world.Seats[0].Hand, source.Area));
     }
@@ -157,7 +157,7 @@ public sealed class ActionAbilityCoreAWindowEventTests
         }, hero: true, abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
         int target = world.Cards.First(candidate => candidate.FaceId == AuthoredCards.Shocker).ObjectId;
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, action, [wild!.ObjectId, mental!.ObjectId], [target]));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(action, [wild!.ObjectId, mental!.ObjectId], [target])));
         Assert.Same(world.Seats[0].Hand, card!.Area);
         Assert.Same(world.Seats[0].Hand, wild!.Area);
         Assert.Same(world.Seats[0].Hand, mental!.Area);
@@ -178,7 +178,7 @@ public sealed class ActionAbilityCoreAWindowEventTests
             doubleWild = board.CreateCard("01044", board.Seats[0].Hand);
         }, heroes: ["captain_marvel"], abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
-        runner.Act(world, action, [doubleWild!.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [doubleWild!.ObjectId], []));
         Assert.Equal(DeckType.DiscardPile, card!.Area.Type);
         Assert.Equal(DeckType.DiscardPile, doubleWild.Area.Type);
     }
@@ -201,7 +201,7 @@ public sealed class ActionAbilityCoreAWindowEventTests
         }, heroes: ["captain_marvel"], abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
         int held = world.Seats[0].Hand.Cards.Count;
-        runner.Act(world, action, [wild!.ObjectId, mental!.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [wild!.ObjectId, mental!.ObjectId], []));
         // The requirement declared the wild physical, so the energy branch
         // did not draw. The event and both generators have left the hand.
         Assert.Equal(held - 3, world.Seats[0].Hand.Cards.Count);

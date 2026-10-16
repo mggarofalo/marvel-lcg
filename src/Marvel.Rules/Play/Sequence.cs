@@ -54,24 +54,41 @@ public static class Sequence
 
         while (world.Agenda.Current is { } step)
         {
-            using var attackEvents = new AttackEventScope(world, events);
-            if (ActivationDeparture.EndDepartedActivation(world, step))
-            {
-                continue;
-            }
-            if (step.What == Steps.PlaceThreat && world.Agenda.Occurrence is null)
-                events.Add(new PhaseStarted("Villain") { Round = step.Round, Trigger = "WhenVillainPhaseBegins", Verb = "Phase_Started" });
-            if (TryWorkNonApplying(
-                    world, facts, abilities, events, scope, step, out Prompt? question))
-            {
-                if (question is not null) return question;
-                continue;
-            }
-            Prompt? applyingQuestion = ApplyStep(world, facts, step, events);
-            if (applyingQuestion is not null) return applyingQuestion;
+            var stage = world.Agenda.Stage;
+            var question = WorkIteration(world, facts, abilities, events, scope, step);
+            if (question is not null) return question;
+            if (world.Agenda.Current?.SameFrameAs(step) == true && world.Agenda.Stage == stage)
+                throw new InvalidOperationException(
+                    $"agenda frame '{step.What}' at {stage} made no progress and offered no decision");
         }
 
         return null;
+    }
+
+    private static Prompt? WorkIteration(
+        World world, ICardFacts facts, IWindowAbilities abilities,
+        List<GameEvent> events, WindowAbilityScope scope, PhaseStep step)
+    {
+        using var executionScope = world.Agenda.Executions.EnterProcedure(step);
+        using var attackEvents = new AttackEventScope(world, events);
+        return ActivationDeparture.EndDepartedActivation(world, step) ? null
+            : WorkCurrentStep(world, facts, abilities, events, scope, step);
+    }
+
+    private static Prompt? WorkCurrentStep(
+        World world, ICardFacts facts, IWindowAbilities abilities,
+        List<GameEvent> events, WindowAbilityScope scope, PhaseStep step)
+    {
+        if (step.What == Steps.PlaceThreat && world.Agenda.Occurrence is null)
+            events.Add(new PhaseStarted("Villain") { Round = step.Round, Trigger = "WhenVillainPhaseBegins", Verb = "Phase_Started" });
+        if (TryWorkNonApplying(world, facts, abilities, events, scope, step, out Prompt? question))
+        {
+            if (question is null) return null;
+            return step.Plan ? PromptExecutionBinding.Bind(world, question)
+                : PromptExecutionBinding.BindWindow(world, question);
+        }
+        Prompt? applyingQuestion = ApplyStep(world, facts, step, events);
+        return applyingQuestion is null ? null : PromptExecutionBinding.Bind(world, applyingQuestion);
     }
 
     private static bool TryWorkNonApplying(
@@ -79,6 +96,12 @@ public static class Sequence
         List<GameEvent> events, WindowAbilityScope scope, PhaseStep step,
         out Prompt? question)
     {
+        if (world.Agenda.Stage == Stage.AwaitingCompletion)
+        {
+            world.Agenda.Advance();
+            question = null;
+            return true;
+        }
         if (step.Plan)
         {
             question = WorkPlan(world, facts, step, events);
@@ -103,7 +126,7 @@ public static class Sequence
         Prompt? question = world.Agenda.Stage == Stage.Apply
             ? AgendaProcedures.ApplyWithWorldAbilities(world, facts, step, events)
             : null;
-        if (question is null) world.Agenda.Advance(step, occurrence);
+        if (question is null) world.Agenda.Applied(step, occurrence);
         return question;
     }
 
@@ -118,7 +141,7 @@ public static class Sequence
         if (question is not null) return AttackPromptContext.WithAttackContext(world, facts, step, question);
         Statuses.RemoveAfflictionsIfStalwart(world, facts, "stalwart", events);
         world.Effects.SettleLostHealth(healthBefore, step.What, events);
-        if (step.What != Steps.TurnAction) world.Agenda.Advance(step, occurrence);
+        if (step.What != Steps.TurnAction) world.Agenda.Applied(step, occurrence);
         if (world.IsOver) world.Agenda.Abandon();
         return null;
     }
@@ -143,6 +166,7 @@ public static class Sequence
         List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(abilities);
+        PromptExecutionBinding.RequireCurrent(world, asked);
         world.Abilities = abilities;
         AnswerWithWorldAbilities(world, facts, asked, input, events);
     }
@@ -156,73 +180,19 @@ public static class Sequence
         ArgumentNullException.ThrowIfNull(asked);
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(events);
-        IWindowAbilities abilities = world.WindowAbilities;
+        PromptExecutionBinding.RequireCurrent(world, asked);
 
+        using var executionScope = world.Agenda.Current is { } current
+            ? world.Agenda.Executions.EnterProcedure(current) : null;
         using var attackEvents = new AttackEventScope(world, events);
 
-        if (world.Agenda.Current is { Plan: true, Operation: AbilityContinuationAgendaOperation }
-            || world.Windows.Current is not { } window)
+        if (asked.ExecutionBinding!.Window is null)
         {
             AnswerAgendaStep(world, facts, asked, input, events);
             return;
         }
 
-        if (input.IsDecline)
-        {
-            DeclineWindow(world, asked, window);
-            return;
-        }
-
-        var taken = abilities
-            .Waiting(world, window.Occurrence, window.Kind)
-            .Where(candidate => window.Occurrence.MayTrigger(window.Kind, candidate))
-            .Select(ability => (Ability: ability, Offered: abilities.Describe(world, ability)))
-            .Where(pair => pair.Offered.Id == input.Affordance
-                && (asked.Asking != Question.Opportunity
-                    || pair.Ability.Player == asked.Player
-                    || pair.Ability.Player < 0))
-            .Select(pair => (PendingAbility?)pair.Ability)
-            .FirstOrDefault();
-
-        if (taken is not { } ability)
-        {
-            throw new RulesNotImplementedException(
-                $"affordance {input.Affordance} is not on offer in '{asked.Label}'");
-        }
-
-        window.Occurrence.Trigger(window.Kind, ability);
-
-        // `rr:initiating-abilities.step.5` -- what the player spent is part of
-        // the answer, not something the engine picks for them. Empty when the
-        // affordance was free, which is almost all of them.
-        var healthBefore = world.Effects.CaptureCharacterHealth();
-        ActivityBatches.Append(events, abilities.Resolve(
-            world, window.Occurrence, ability, input.Spent, input.Targets,
-            input.DefinedValues, input.Allocated));
-        Statuses.RemoveAfflictionsIfStalwart(
-            world, facts, "stalwart", events);
-        world.Effects.SettleLostHealth(healthBefore, asked.Trigger, events);
-
-        if (window.Occurrence.Threat is { Replaced: true })
-        {
-            // `rr:replacement-effect.1`: the original effect is no longer
-            // imminent, so it has neither further interrupts nor responses.
-            world.Windows.Close();
-            world.Agenda.Cancel(window.Occurrence);
-            return;
-        }
-
-        // Not a close: rr:interrupt.5 is about *further* abilities, so using one
-        // gives everybody another opportunity and the step stays where it is.
-        world.Windows.Used();
-    }
-
-    private static void DeclineWindow(World world, Prompt asked, Window window)
-    {
-        // "Forced Interrupt" and "Forced Response" abilities must resolve (rr:forced.1).
-        if (!asked.Cancellable)
-            throw new RulesNotImplementedException($"'{asked.Label}' cannot be declined");
-        Passed(world, window.Occurrence, world.Windows.Pass());
+        SequenceWindow.Answer(world, facts, asked, input, events);
     }
 
     private static void AnswerAgendaStep(
@@ -246,7 +216,7 @@ public static class Sequence
         if (QuestionAdvancesByIdentity(step)
             && world.Agenda.IsOutstanding(step, occurrence))
         {
-            world.Agenda.Advance(step, occurrence);
+            world.Agenda.Applied(step, occurrence);
         }
         else
         {
@@ -260,17 +230,6 @@ public static class Sequence
             or Steps.ChooseCardDefeatedAbility
             or Steps.ChooseRevealAbility
             or Steps.AssignIndirectAttackDamage;
-
-    // Answering the last question of a window finishes that part of the step.
-    // Without this the walk would find no window open, take that for "not yet
-    // opened", and ask the same question again.
-    private static void Passed(World world, Occurrence occurrence, bool closed)
-    {
-        if (closed && world.Agenda.IsBusy)
-        {
-            world.Agenda.Advance(occurrence);
-        }
-    }
 
     /// <summary>
     /// Run a whole phase in one go, refusing to stop.

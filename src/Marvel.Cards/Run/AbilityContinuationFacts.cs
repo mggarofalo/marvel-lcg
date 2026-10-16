@@ -10,5 +10,5 @@ namespace Marvel.Cards.Run;
 internal sealed record AbilityContinuationFacts(
     bool HasPath, ImmutableArray<AbilityContinuationFrame> Frames)
 {
-    internal static AbilityContinuationFacts Empty { get; } = new(false, []);
+    internal static AbilityContinuationFacts Empty => new(false, []);
 }

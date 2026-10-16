@@ -101,7 +101,7 @@ public sealed class ActionAbilityProjectedStateEnteredVillainStageProjectsItsPri
             minion.TakeDamage(Damage.Health(board, board.Facts, minion) - 1);
             board.CreateCard("01098", board.AreaOf(DeckType.EncounterDiscardPile));
         }, hero: true, abilities: AuthoredCards.Runner());
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, new PendingAbility(source!.ObjectId, AbilityType.Action, 0), [], []));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source!.ObjectId, AbilityType.Action, 0), [], [])));
         Assert.Equal(DeckType.UpgradesArea, source!.Area.Type);
         Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
     }
@@ -170,7 +170,7 @@ public sealed class ActionAbilityProjectedStateEnteredVillainStageProjectsItsPri
             Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Stunned);
         }, hero: true, abilities: AuthoredCards.Runner());
         var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source!.ObjectId);
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         Assert.False(source!.Ready);
         Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Stunned));
         Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);

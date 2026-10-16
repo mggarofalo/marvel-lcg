@@ -1,9 +1,10 @@
+using System.Collections.Immutable;
 namespace Marvel.Rules.State;
 
 /// <summary>Normalizes the engine's attribute notation without evaluating a printed value.</summary>
 public static class PrintedStatFacts
 {
-    private static readonly string[] Names =
+    private static readonly ImmutableArray<string> Names =
     [
         "Cost", "REC", "THW", "ATK", "DEF", "SCH", "HP", "HS", "Stage",
         "REC+", "THW+", "ATK+", "DEF+", "SCH+", "HP+",

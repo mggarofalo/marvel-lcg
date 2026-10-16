@@ -26,8 +26,7 @@ public sealed class CoreSelectionResourceTests
         var tony = world.Seats[0].IdentityCard;
         var runner = AuthoredCards.Runner();
 
-        runner.Act(
-            world, new PendingAbility(tony.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(tony.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, choice)!;
         Assert.Equal(
@@ -35,6 +34,12 @@ public sealed class CoreSelectionResourceTests
             prompt.Affordances.Select(option => option.Id));
         Assert.True(prompt.ExposesConcealedCandidates);
         Assert.Equal(PublicDecisionKind.CardLook, prompt.PublicKind);
+        // Engine-owned meaning names only the three admitted look candidates.
+        Assert.Equal([tony.ObjectId], prompt.ContextCardIds);
+        Assert.Contains("Tony Stark", prompt.DisplayQuestion);
+        Assert.Contains("discard the others", prompt.Description);
+        Assert.Equal("Add Enhanced Spider-Sense to hand", prompt.Affordances[1].CommitLabel);
+        Assert.DoesNotContain(prompt.Affordances, offer => offer.AnchorId == bottom.ObjectId);
 
         var events = runner.Chose(world, choice, Decision.Take(second.ObjectId));
 
@@ -69,7 +74,7 @@ public sealed class CoreSelectionResourceTests
         var source = Assert.Single(
             runner.ResourceAbilities(world, 0), option => option.Effect == pepper.ObjectId);
         Assert.Equal("GG", source.Generates);
-        Assert.Equal("GG", runner.UseResource(world, 0, pepper.ObjectId, []));
+        Assert.Equal("GG", runner.ExecuteResource(world, 0, pepper.ObjectId).Generation.Resources);
         Assert.False(pepper.Ready);
     }
 
@@ -89,8 +94,7 @@ public sealed class CoreSelectionResourceTests
         var nonTech = world.CreateCard("01044", discard);
         var runner = AuthoredCards.Runner();
 
-        runner.Act(
-            world, new PendingAbility(tower.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(tower.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         runner.Chose(world, choice, Decision.Take(second.IdentityCard.ObjectId));
 
@@ -139,7 +143,7 @@ public sealed class CoreSelectionResourceTests
         abilities.Clear();
         Assert.Equal("Stored energy", runner.ResourceGeneratorName(world, player, source.ObjectId));
         Assert.Equal(source.ObjectId, Assert.Single(runner.PrintedResourceAbilities(world, player)).Effect);
-        Assert.Equal("GG", runner.UseResource(world, player, source.ObjectId, []));
+        Assert.Equal("GG", runner.ExecuteResource(world, player, source.ObjectId).Generation.Resources);
         Assert.False(source.Ready);
         Assert.Contains(world.Effects.Active(), effect =>
             effect.Kind == $"spent:{source.Incarnation}:01033:1");
@@ -147,7 +151,7 @@ public sealed class CoreSelectionResourceTests
         source.Refresh();
         Assert.Empty(runner.ResourceAbilities(world, player));
         Assert.Empty(runner.PrintedResourceAbilities(world, player));
-        Assert.Throws<RulesNotImplementedException>(() => runner.UseResource(world, player, source.ObjectId, []));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteResource(world, player, source.ObjectId).Generation.Resources);
         Assert.True(source.Ready);
     }
 

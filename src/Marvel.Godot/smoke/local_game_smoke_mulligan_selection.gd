@@ -5,6 +5,8 @@ func _clearing_mulligan_replacements_preserves_task() -> bool:
 	if card == null: return false
 	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await _keyboard_stage_card(card): return false
+	if not await preload("res://smoke/native_scale_checkpoint.gd").requested(self, "mulligan" ): return false
+	card = _mulligan_card("Avengers Mansion")
 	var clear := main.find_child("ContextualCancelDraft", true, false) as Button
 	if clear == null or not await _pointer_activate(clear):
 		_fail("opening-hand replacements cannot be cleared without abandoning the task")

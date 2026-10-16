@@ -272,8 +272,9 @@ public abstract class EngineHostTestBase
         }
 
         public override Affordance Describe(World world, PendingAbility ability) => new(ability.Card, Game.ActionVerb, ability.Card, ability.Player, ability.Card == attack.ObjectId ? "Attack and record excess" : ability.Card == heal.ObjectId ? "Heal for recorded excess" : "Increase the later attack");
-        public override IReadOnlyList<GameEvent> Act(World world, PendingAbility ability, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, IReadOnlyDictionary<string, long>? values = null, IReadOnlyList<ResourceAllocation>? allocations = null)
+        public override AbilityExecutionResult Act(World world, AbilityExecution invocation, Decision answer)
         {
+            PendingAbility ability = invocation.Ability;
             Card source = world.Cards[ability.Card];
             source.Exhaust();
             var events = new List<GameEvent>
@@ -282,21 +283,21 @@ public abstract class EngineHostTestBase
             };
             if (source == upgrade)
             {
-                return events;
+                return invocation.Finish(events);
             }
 
             if (source == attack)
             {
                 long amount = upgrade.Ready ? 4 : 6;
-                Damage.AttackResult result = DamageAttacks.Attack(world, world.Facts, world.Seats[0].IdentityCard, victim, amount, "rewrite-example", Game.ActionVerb, events, retaliate: false);
+                AttackDamageResult result = DamageAttacks.Attack(world, world.Facts, world.Seats[0].IdentityCard, victim, amount, "rewrite-example", Game.ActionVerb, events, retaliate: false);
                 long before = DamagePlacement.Health(world, world.Facts, excessMeter) - excessMeter.Damage;
                 excessMeter.TakeDamage(result.Excess);
                 events.Add(new FieldSet(excessMeter.ObjectId, "health", before, before - result.Excess));
-                return events;
+                return invocation.Finish(events);
             }
 
             DamageRecovery.Heal(world, world.Facts, world.Seats[0].IdentityCard, excessMeter.Damage, "rewrite-example", Game.ActionVerb, events);
-            return events;
+            return invocation.Finish(events);
         }
     }
 
@@ -309,8 +310,9 @@ public abstract class EngineHostTestBase
             _ => [],
         };
         public override Affordance Describe(World world, PendingAbility ability) => new(ability.Card, Game.ActionVerb, ability.Card, ability.Player, ability.Player == 0 ? "Heal player 2" : "Use player 2 action");
-        public override IReadOnlyList<GameEvent> Act(World world, PendingAbility ability, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, IReadOnlyDictionary<string, long>? values = null, IReadOnlyList<ResourceAllocation>? allocations = null)
+        public override AbilityExecutionResult Act(World world, AbilityExecution invocation, Decision answer)
         {
+            PendingAbility ability = invocation.Ability;
             var events = new List<GameEvent>();
             if (ability.Player == 0)
             {
@@ -321,7 +323,7 @@ public abstract class EngineHostTestBase
                 }
             }
 
-            return events;
+            return invocation.Finish(events);
         }
     }
 

@@ -157,10 +157,10 @@ public sealed class PlayerSetupTests
             return cards.GetValueOrDefault(player) ?? [];
         }
 
-        public override IReadOnlyList<GameEvent> Setup(World world, Card card)
+        public override AbilityExecutionResult Setup(World world, AbilityExecution entry, Card card)
         {
             Resolved.Add(card.ObjectId);
-            return [];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 
@@ -170,16 +170,17 @@ public sealed class PlayerSetupTests
     {
         public bool AnsweredChoice { get; private set; }
 
-        public override IReadOnlyList<GameEvent> Setup(World world, Card card)
+        public override AbilityExecutionResult Setup(World world, AbilityExecution entry, Card card)
         {
-            var events = base.Setup(world, card);
+            Resolved.Add(card.ObjectId);
+            var events = new List<GameEvent>();
             if (card.ObjectId == choosing)
             {
                 world.Agenda.Then(new PhaseStep(
                     new AbilityContinuationAgendaOperation(AbilityContinuationStage.Choose), 0, 16, Subject: card.ObjectId, Seat: 0));
             }
 
-            return events;
+            return world.Agenda.Executions.FinishBatch(entry, events);
         }
 
         public override Prompt? Choosing(

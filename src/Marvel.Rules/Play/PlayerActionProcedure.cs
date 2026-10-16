@@ -34,9 +34,8 @@ internal static class PlayerActionProcedure
                 "an applying player Action has no occurrence");
         try
         {
-            ActivityBatches.Append(events, world.ActionAbilities.Act(
-                world, action.Ability, action.Paying, action.Chosen, occurrence,
-                action.DefinedValues, action.Allocated));
+            ActivityBatches.Append(events,
+                world.ActionAbilities.ExecuteAction(world, action, occurrence).Events);
         }
         catch
         {
@@ -48,7 +47,7 @@ internal static class PlayerActionProcedure
         }
 
         // Children share the Action occurrence and resolve before responses.
-        world.Agenda.Advance(step, occurrence);
+        world.Agenda.Applied(step, occurrence);
         world.Agenda.BeforeResponses(step, occurrence);
         return null;
     }

@@ -33,7 +33,7 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
             world.CreateCard("01046", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
             var runner = AuthoredCards.Runner();
             Card source = world.CreateCard(obligation, world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
-            runner.WhenRevealed(world, source, 0);
+            runner.ExecuteReveal(world, source, 0);
             runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(1));
             Prompt? choices = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source));
             bool mayRemove = !heroForm && !exhausted;
@@ -47,8 +47,8 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
             else
             {
                 string before = world.Digest().Fingerprint();
-                var rejected = Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(0)));
-                Assert.Contains("cannot choose illegal option 0", rejected.Message);
+                var rejected = Assert.Throws<ArgumentException>(() => runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(0)));
+                Assert.Contains("MissingOffer", rejected.Message, StringComparison.Ordinal);
                 Assert.Equal(before, world.Digest().Fingerprint());
                 Assert.NotEqual(DeckType.RemovedArea, source.Area.Type);
             }
@@ -72,7 +72,7 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
             world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0)) : null;
         Card source = world.CreateCard("01173", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
-        runner.WhenRevealed(world, source, 0);
+        runner.ExecuteReveal(world, source, 0);
         if (!upgradePresent)
         {
             Assert.DoesNotContain(world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
@@ -103,7 +103,7 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         var runner = AuthoredCards.Runner();
         Card source = world.CreateCard("01159", world.AreaOf(DeckType.RevealingArea));
         world.CreateCard("01186", world.AreaOf(DeckType.EncounterDeck));
-        runner.WhenRevealed(world, source, 0);
+        runner.ExecuteReveal(world, source, 0);
         PhaseStep step = world.Agenda.Outstanding.First(item => item.What == Steps.ChooseOption);
         Prompt prompt = runner.Choosing(world, step)!;
         Assert.Equal(1, Assert.Single(prompt.Affordances).Id);
@@ -125,7 +125,7 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
         var action = Assert.Single(runner.Actions(world, 0), action => action.Card == source.ObjectId);
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         PhaseStep step = world.Agenda.Outstanding.First(item => item.What == Steps.ChooseOption);
         Prompt prompt = runner.Choosing(world, step)!;
         Assert.Equal(ally.ObjectId, Assert.Single(prompt.Affordances).AnchorId);
@@ -144,7 +144,7 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         bomb.PlaceTokens("k_threat", 3);
         Card source = world.CreateCard("01111", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
-        runner.WhenRevealed(world, source, 0);
+        runner.ExecuteReveal(world, source, 0);
         Prompt prompt = runner.PreviewChoice(world, source, 0, 0)!;
         int[] legal = [.. Assert.Single(prompt.Affordances).Targets!.Legal];
         // In alter-ego form, "card abilities that interact with their hero do not interact with their identity."
@@ -163,7 +163,7 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         Card source = world.CreateCard("01111", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        runner.WhenRevealed(world, source, 0);
+        runner.ExecuteReveal(world, source, 0);
         Assert.Null(Sequence.Work(world, Cards, runner, []));
         Assert.All(world.Seats, seat => Assert.Equal(0, seat.IdentityCard.Damage));
     }
@@ -179,7 +179,7 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         Card source = world.CreateCard("01151", world.AreaOf(DeckType.SideSchemesArea));
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        runner.WhenRevealed(world, source, 0);
+        runner.ExecuteReveal(world, source, 0);
         var events = new List<Marvel.Rules.Events.GameEvent>();
         for (int count = 0; count < 6; count++)
         {
@@ -203,7 +203,7 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         Card source = world.CreateCard("01086", world.Seats[0].Hand);
         var runner = AuthoredCards.Runner();
         var action = Assert.Single(runner.Actions(world, 0), action => action.Card == source.ObjectId);
-        runner.Act(world, action, [world.Seats[0].Hand.Cards.First(card => card != source).ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [world.Seats[0].Hand.Cards.First(card => card != source).ObjectId], []));
         PhaseStep step = world.Agenda.Outstanding.First(item => item.What == Steps.ChooseOption);
         Prompt prompt = runner.Choosing(world, step)!;
         Assert.Equal(world.Seats[0].IdentityCard.ObjectId, Assert.Single(prompt.Affordances).AnchorId);
@@ -220,7 +220,7 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         world.Seats[0].IdentityCard.TurnTo("01040a");
         Card source = world.CreateCard("01155", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
         var runner = AuthoredCards.Runner();
-        runner.WhenRevealed(world, source, 0);
+        runner.ExecuteReveal(world, source, 0);
         Prompt prompt = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source))!;
         Assert.Equal(2, prompt.Affordances.Count);
         // "If a card ability causes a player to change forms, it does not count

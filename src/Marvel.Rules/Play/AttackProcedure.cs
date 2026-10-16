@@ -15,6 +15,11 @@ internal static class AttackProcedure
     public static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        if (step.Operation is AttackDamageResolutionOperation)
+        {
+            AttackDamageResolution.Resume(world, step, events);
+            return null;
+        }
         if (TryApplyActivation(world, facts, step, events, out Prompt? prompt)) return prompt;
         if (TryApplyDamage(world, facts, step, events, out prompt)) return prompt;
         if (TryApplyCharacterPower(world, facts, step, events)) return null;
@@ -82,9 +87,6 @@ internal static class AttackProcedure
             case Steps.EndAttack:
                 Attack.End(world, events);
                 return true;
-            case Steps.FinishAttackDamage:
-                DamageAttacks.FinishAttack(world, facts, step, events);
-                return true;
             default: return false;
         }
     }
@@ -140,7 +142,7 @@ internal static class AttackProcedure
 
         world.Effects.CompleteActivation(step.ActivationId, events);
         world.FinishedActivation = result;
-        ActivityBatches.Append(events, abilities.ActivationCompleted(world, result));
+        ActivityBatches.Append(events, abilities.CompleteActivation(world, result).Events);
         world.FinishedActivation = null;
         if (world.Activation?.Id == step.ActivationId) world.Activation = null;
     }

@@ -329,7 +329,7 @@ public static class Steps
     /// </summary>
     /// <remarks>
     /// <b>Not a triggering condition</b>, and deliberately absent from
-    /// <see cref="EveryCondition"/>: <c>rr:setup-triggered-ability.2</c> times a
+    /// <see cref="StepConditions.EveryCondition"/>: <c>rr:setup-triggered-ability.2</c> times a
     /// "Setup" ability to a step of setup rather than to something happening,
     /// and setup is not on the agenda. This is the label its events carry, so
     /// that a board built during setup can be told apart in the stream from one
@@ -412,7 +412,10 @@ public static class Steps
     /// <summary>Resolve damage step 6 through a player decision.</summary>
     public const string ChooseWouldBeDefeated = "ChooseWouldBeDefeated";
 
-    /// <summary>Continue damage step 6 after a selected ability fully resolves.</summary>
+    /// <summary>Recheck defeat after its interrupt batch has completed.</summary>
+    public const string FinishWouldBeDefeated = "FinishWouldBeDefeated";
+
+    /// <summary>Resume the interrupted window before a character is defeated.</summary>
     public const string ResumeWouldBeDefeated = "ResumeWouldBeDefeated";
 
     /// <summary>Resolve damage step 7 through a player decision.</summary>
@@ -427,8 +430,6 @@ public static class Steps
     /// <summary>Continue reveal step 3 after one ability fully resolves.</summary>
     public const string ResumeRevealAbility = "ResumeRevealAbility";
 
-    /// <summary>Finish an attack after a suspended damage procedure resolves.</summary>
-    public const string FinishAttackDamage = "FinishAttackDamage";
 
     /// <summary>Order simultaneous post-reveal keyword responses.</summary>
     public const string ChoosePostRevealAbility = "ChoosePostRevealAbility";
@@ -487,11 +488,4 @@ public static class Steps
     /// <summary>Step one of the villain phase finished resolving.</summary>
     public const string VillainPhaseStepOneEnds = "WhenVillainPhaseStepOneEnds";
 
-
-    /// <summary>The triggering conditions a step creates.</summary>
-    public static IReadOnlyList<string> ConditionsOf(string what) =>
-        StepConditions.ConditionsOf(what);
-
-    /// <summary>Every triggering condition any known step produces.</summary>
-    public static IReadOnlySet<string> EveryCondition => StepConditions.EveryCondition;
 }

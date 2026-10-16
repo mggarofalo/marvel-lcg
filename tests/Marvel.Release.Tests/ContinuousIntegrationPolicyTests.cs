@@ -16,9 +16,9 @@ public sealed class ContinuousIntegrationPolicyTests
             StringComparison.Ordinal);
         Assert.Contains("if: ${{ !inputs.exhaustive }}", workflow,
             StringComparison.Ordinal);
-        Assert.Contains("godot-smoke.sh \"$GODOT_BIN\" --representative", workflow,
+        Assert.Contains("platform-gates:\n    name: Platform gates (${{ matrix.os }})", workflow,
             StringComparison.Ordinal);
-        Assert.Contains("godot-smoke.ps1 -GodotBin $env:GODOT_BIN -Representative", workflow,
+        Assert.Contains("NATIVE_PROFILE: ${{ inputs.exhaustive && 'exhaustive' || 'representative' }}", workflow,
             StringComparison.Ordinal);
         Assert.Contains("The supported Linux server container hosts a restricted game", workflow,
             StringComparison.Ordinal);
@@ -33,12 +33,33 @@ public sealed class ContinuousIntegrationPolicyTests
 
         Assert.Contains("if: ${{ inputs.exhaustive }}", workflow,
             StringComparison.Ordinal);
-        Assert.Contains("The local viewport and scale matrix passes (Linux)", workflow,
-            StringComparison.Ordinal);
-        Assert.Contains("The local viewport and scale matrix passes (Windows)", workflow,
+        Assert.Contains("The selected native profile completes its exact shard", workflow,
             StringComparison.Ordinal);
         Assert.Contains("uses: ./.github/workflows/ci.yml\n    with:\n      exhaustive: true",
             release, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RequiredNativeChecksDependOnEveryPlatformGateAndIsolatedShard()
+    {
+        string workflow = Read(".github", "workflows", "ci.yml");
+        string journeys = workflow.Split("  native-journeys:\n", StringSplitOptions.None)[1]
+            .Split("  platform:\n", StringSplitOptions.None)[0];
+        string required = workflow.Split("  platform:\n", StringSplitOptions.None)[1]
+            .Split("  desktop-package:\n", StringSplitOptions.None)[0];
+
+        Assert.Contains("os: [windows-latest, ubuntu-latest]\n        shard: [0, 1]", journeys, StringComparison.Ordinal);
+        Assert.Contains("-ShardCount 2 -ShardIndex ${{ matrix.shard }}", journeys, StringComparison.Ordinal);
+        Assert.Contains("native-evidence-${{ matrix.os }}-shard-${{ matrix.shard }}", journeys, StringComparison.Ordinal);
+        Assert.DoesNotContain("Marvel.UnitTests", journeys, StringComparison.Ordinal);
+        Assert.DoesNotContain("Marvel.Acceptance.Tests", journeys, StringComparison.Ordinal);
+        Assert.Contains("if: ${{ always() }}", required, StringComparison.Ordinal);
+        Assert.Contains("needs: [platform-gates, native-journeys]", required, StringComparison.Ordinal);
+        Assert.Contains("PLATFORM_GATES_RESULT: ${{ needs.platform-gates.result }}", required, StringComparison.Ordinal);
+        Assert.Contains("NATIVE_JOURNEYS_RESULT: ${{ needs.native-journeys.result }}", required, StringComparison.Ordinal);
+        Assert.Contains("./tools/native-integration-result.ps1 -PlatformGates $env:PLATFORM_GATES_RESULT -NativeJourneys $env:NATIVE_JOURNEYS_RESULT",
+            required, StringComparison.Ordinal);
+        Assert.Contains("run: ./tools/native-shard-tests.ps1", workflow, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -48,15 +69,10 @@ public sealed class ContinuousIntegrationPolicyTests
         string powershell = Read("tools", "godot-smoke.ps1");
 
         Assert.Contains("profile=${2:---exhaustive}", bash, StringComparison.Ordinal);
-        Assert.Contains("viewports=(1920x1080)", bash, StringComparison.Ordinal);
-        Assert.DoesNotContain("1040x680", bash, StringComparison.Ordinal);
-        Assert.DoesNotContain("1280x720", bash, StringComparison.Ordinal);
-        Assert.DoesNotContain("1600x900", bash, StringComparison.Ordinal);
+        Assert.Contains("native-cases.ps1", bash, StringComparison.Ordinal);
         Assert.Contains("[switch]$Representative", powershell, StringComparison.Ordinal);
-        Assert.Contains("@(\"1920x1080\")", powershell, StringComparison.Ordinal);
-        Assert.DoesNotContain("1040x680", powershell, StringComparison.Ordinal);
-        Assert.DoesNotContain("1280x720", powershell, StringComparison.Ordinal);
-        Assert.DoesNotContain("1600x900", powershell, StringComparison.Ordinal);
+        Assert.Contains("else { 'exhaustive' }", powershell, StringComparison.Ordinal);
+        Assert.Contains("native-cases.ps1", powershell, StringComparison.Ordinal);
     }
 
     [Fact]

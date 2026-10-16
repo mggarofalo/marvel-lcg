@@ -49,7 +49,8 @@ internal static class VisibilityEventFilter
             PhaseStarted phase => phase with { Subjects = null },
             CardsCreated created => KeepCreated(created, readable),
             CardsMoved moved => KeepMoved(moved, addressable),
-            AreaReordered reordered => reordered.Order.All(addressable.Contains) ? reordered : null,
+            AreaReordered reordered => reordered.Order.All(addressable.Contains)
+                ? reordered with { Order = reordered.Order.ToArray() } : null,
             CardFormChanged changed => readable.Contains(changed.Card) ? changed : null,
             CardsFlipped flipped => KeepFlipped(flipped, addressable),
             CardAttached attached => KeepAttached(attached, addressable),
@@ -58,7 +59,7 @@ internal static class VisibilityEventFilter
             FieldSet set => readable.Contains(set.Card) ? set : null,
             BoostResolved boost => KeepBoost(boost, readable),
             AttackCompleted completed => KeepAttack(completed, readable),
-            CardsShuffledIntoDeck shuffled => shuffled with { Subjects = null },
+            CardsShuffledIntoDeck shuffled => shuffled with { Subjects = null, PublicTitles = shuffled.PublicTitles.ToArray() },
             WhenRevealedCanceled canceled => KeepCancellation(canceled, readable),
             PlayAreaJoined joined => joined,
             PlayAreaDetached detached => detached,

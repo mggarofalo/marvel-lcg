@@ -220,12 +220,16 @@ internal static class CoreTranscriptDeckAndReveal
                 + $"{asked.Affordances.Count} choices");
         }
 
+        Affordance offered = asked.Affordances[option - 1];
+        IReadOnlyList<ResourceAllocation>? allocations = offered.CostOptions
+            .Select(cost => ResourcePayment.Allocate(cost, payments))
+            .FirstOrDefault(candidate => candidate is not null);
         Sequence.Answer(
             context.World,
             context.Cards,
             context.World.Abilities,
             asked,
-            Decision.Take(asked.Affordances[option - 1].Id, [], payments),
+            new Decision(offered.Id, [], payments, Allocations: allocations),
             context.Events);
         SetPendingPrompt(context, Sequence.Work(
             context.World, context.Cards, context.World.Abilities, context.Events));

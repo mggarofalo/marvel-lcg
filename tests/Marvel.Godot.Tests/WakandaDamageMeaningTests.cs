@@ -26,7 +26,7 @@ public sealed class WakandaDamageMeaningTests
     public void SelectedClawsKeepsItsCurrentAmountAndSequenceStep(bool finalStep, bool restricted)
     {
         var (world, runner, claws, target) = Board();
-        runner.ResolveSpecial(world, claws, 0, finalStep);
+        runner.ExecuteSpecial(world, claws, 0, finalStep);
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
         string before = world.Digest().Fingerprint();
         string summary = SelectedSummary(world, prompt, target, restricted);
@@ -55,7 +55,7 @@ public sealed class WakandaDamageMeaningTests
         Card affected = stunned ? world.Seats[0].IdentityCard : target;
         string status = stunned ? Statuses.Stunned : Statuses.Tough;
         Statuses.Give(world, affected, status);
-        runner.ResolveSpecial(world, claws, 0, finalStep: true);
+        runner.ExecuteSpecial(world, claws, 0, finalStep: true);
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
         string before = world.Digest().Fingerprint();
         string summary = SelectedSummary(world, prompt, target, restricted: true);
@@ -91,7 +91,7 @@ public sealed class WakandaDamageMeaningTests
         Card daggers = world.CreateCard("01046", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         Card wakanda = world.CreateCard("01043a", world.Seats[0].Hand);
         Card payment = world.CreateCard("01044", world.Seats[0].Hand);
-        runner.Act(world, new PendingAbility(wakanda.ObjectId, AbilityType.Action, 0), [payment.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(wakanda.ObjectId, AbilityType.Action, 0), [payment.ObjectId], []));
         Prompt next = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
         Assert.Equal(PublicDecisionKind.SpecialAbilityNext, next.PublicKind);
         Sequence.Answer(world, Cards, runner, next, Decision.Take(daggers.ObjectId), []);
@@ -127,7 +127,7 @@ public sealed class WakandaDamageMeaningTests
             "01048" => scheme,
             _ => enemy,
         };
-        runner.ResolveSpecial(world, source, 0, finalStep);
+        runner.ExecuteSpecial(world, source, 0, finalStep);
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
         string before = world.Digest().Fingerprint();
         string summary = SelectedSummary(world, prompt, target, restricted: true, sourceTitle: Cards.Title(face));
@@ -144,7 +144,7 @@ public sealed class WakandaDamageMeaningTests
         Card scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
         scheme.PlaceTokens("k_threat", 1);
         Statuses.Give(world, world.Seats[0].IdentityCard, Statuses.Confused);
-        runner.ResolveSpecial(world, source, 0, finalStep: true);
+        runner.ExecuteSpecial(world, source, 0, finalStep: true);
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
         string summary = SelectedSummary(world, prompt, scheme, restricted: true, sourceTitle: "Tactical Genius");
         Assert.Contains("Final step", summary);

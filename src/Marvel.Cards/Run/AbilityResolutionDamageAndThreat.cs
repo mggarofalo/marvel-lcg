@@ -24,7 +24,7 @@ internal static class AbilityResolutionDamageAndThreat
     internal static void ApplyDamageAndThreat(this AbilityResolutionExecution execution,
         AbilityDamageAndThreatResult result, AbilityEffect syntax, AbilityResolutionState cast)
     {
-        cast.CompletedOutcome = result.Outcome;
+        RetainDamageCompletion(result, cast);
         if (result.Healed is { } healed) cast.Results["healed"] = healed;
         if (result.Remaining is { } remaining) cast.Replace(remaining);
         cast.Attacked.AddRange(result.Attacked);
@@ -43,6 +43,12 @@ internal static class AbilityResolutionDamageAndThreat
                 break;
         }
     }
+    private static void RetainDamageCompletion(AbilityDamageAndThreatResult result, AbilityResolutionState cast)
+    {
+        cast.CompletedOutcome = result.Damage is { IsComplete: true } damage ? damage.Complete() : result.Outcome;
+        cast.PendingDamageCompletion = result.Damage is { IsComplete: false } ? result.Damage : null;
+    }
+
     private static void ScheduleThreat(this AbilityResolutionExecution execution,
         ThreatBatch batch, AbilityEffect effect, AbilityResolutionState cast)
     {

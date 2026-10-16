@@ -108,11 +108,15 @@ public abstract class TransportTestBase
             var world = opened.Game.State;
             var events = opened.SetupEvents.ToList();
             Card scheme = world.CreateCard("01166", world.AreaOf(DeckType.SideSchemesArea));
-            events.AddRange(world.Abilities.WhenRevealed(world, scheme, player: 0));
+            events.AddRange(world.Abilities.ExecuteReveal(world, scheme, player: 0).Events);
             ReturnedForSeatOne = Assert.Single(world.Areas.Where(area => area.Host == scheme.ObjectId).SelectMany(area => area.Cards), card => card.Owner == 1).ObjectId;
             world.Agenda.Add(new PhaseStep(new AttackStageOperation(AttackStageKind.DealAttackDamage), Round: 1, Number: 4, Plan: true));
             world.Agenda.Begin(world, world.Facts);
             Defeat.Scheme(world, world.Facts, scheme, "test", events);
+            Sequence.Finish(world, world.Facts, world.Abilities, events);
+            Assert.Equal(DeckType.EncounterDiscardPile, scheme.Area.Type);
+            Assert.Equal(DeckType.HandsArea, Assert.Single(world.Cards,
+                card => card.ObjectId == ReturnedForSeatOne).Area.Type);
             return opened with
             {
                 SetupEvents = events

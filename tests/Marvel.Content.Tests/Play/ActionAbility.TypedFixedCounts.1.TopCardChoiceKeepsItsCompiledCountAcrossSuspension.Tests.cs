@@ -21,14 +21,14 @@ public sealed class ActionAbilityTypedFixedCountsTopCardChoiceKeepsItsCompiledCo
         var bottomToTop = FixedCountFaces.Select(face => world.CreateCard(face, deck)).ToArray();
         if (editBeforeAction)
             fields["count"] = new AbilityValue.Number(0);
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, choice)!;
         Assert.True(prompt.ExposesConcealedCandidates);
         Assert.Equal(bottomToTop.Skip(1).Reverse().Select(card => card.ObjectId), prompt.Affordances.Select(option => option.Id));
         // Widening the original map cannot admit the unoffered fourth card.
         fields["count"] = new AbilityValue.Number(4);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, choice, Decision.Take(bottomToTop[0].ObjectId)));
+        Assert.Throws<ArgumentException>(() => runner.Chose(world, choice, Decision.Take(bottomToTop[0].ObjectId)));
         Assert.Equal(bottomToTop, deck.Cards);
         Assert.Empty(world.Seats[0].Hand.Cards);
         // Narrowing it cannot invalidate an already offered third card either.
@@ -52,7 +52,7 @@ public sealed class ActionAbilityTypedFixedCountsTopCardChoiceKeepsItsCompiledCo
         var cards = FixedCountFaces.Select(face => world.CreateCard(face, discard)).ToArray();
         if (editBeforeAction)
             fields["max"] = new AbilityValue.Number(1);
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, choice)!;
         var selection = Assert.Single(prompt.Affordances);
@@ -84,13 +84,13 @@ public sealed class ActionAbilityTypedFixedCountsTopCardChoiceKeepsItsCompiledCo
             duplicateTitle ? "01002" : "01003",
             "01004"
         }.Select(face => world.CreateCard(face, discard)).ToArray();
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         fields["max"] = new AbilityValue.Number(4);
         int[] targets = cards.Take(duplicateTitle ? 2 : 3).Select(card => card.ObjectId).ToArray();
         var prompt = runner.Choosing(world, choice)!;
         Assert.False(Assert.Single(prompt.Affordances).Targets!.Allows(targets));
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, choice, Decision.Take(source.ObjectId, targets, [])));
+        Assert.Throws<ArgumentException>(() => runner.Chose(world, choice, Decision.Take(source.ObjectId, targets, [])));
         Assert.Equal(cards, discard.Cards);
         Assert.Empty(world.Seats[0].Deck.Cards);
         Assert.Equal(0, world.Random.Generator.WordsConsumed);

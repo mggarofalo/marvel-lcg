@@ -24,15 +24,8 @@ internal static class CoreTranscriptPlayerActions
         Card target = context.SceneRequired(step).Find(SceneCard(match, step));
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
-        _ = DamagePlacement.Deal(
-            context.World,
-            context.Cards,
-            villain,
-            target,
-            Number(match, "count", step),
-            "behavioral transcript",
-            "Damage",
-            context.Events);
+        _ = DamagePlacement.Resolve(context.World, context.Cards,
+            new(villain, target, Number(match, "count", step), "behavioral transcript", "Damage"), context.Events);
     }
 
     internal static void IdentityDefeated(
@@ -84,15 +77,8 @@ internal static class CoreTranscriptPlayerActions
         Card target = context.SceneRequired(step).Find(SceneCard(match, step));
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
-        _ = DamagePlacement.Deal(
-            context.World,
-            context.Cards,
-            source,
-            target,
-            Number(match, "count", step),
-            "behavioral transcript",
-            "Damage",
-            context.Events);
+        _ = DamagePlacement.Resolve(context.World, context.Cards,
+            new(source, target, Number(match, "count", step), "behavioral transcript", "Damage"), context.Events);
     }
 
     internal static void PlaceThreat(

@@ -19,21 +19,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	if not await preload("res://smoke/gesture_settlement.gd").fractional_parent_probe(self):
-		_fail("gesture settlement must bound fractional parent drift and reject changed local poses")
-		return
-	var packed := load("res://Main.tscn") as PackedScene
-	if packed == null:
-		_fail("Main.tscn could not be loaded")
-		return
-	if not await _open_setup(packed):
-		return
-	if not await _pointer_ownership_probe_is_strict():
-		_fail("the pointer ownership probe did not reject occlusion or stale layout geometry")
-		return
-	await _configure_seeded_game()
-	if not await _open_and_validate_table():
-		return
+	if not await _open_smoke_table(): return
 	var journey := await _play_seeded_journey()
 	if journey.is_empty():
 		return
@@ -46,6 +32,26 @@ func _run() -> void:
 		"enabled" if motion_enabled else "disabled",
 	])
 	quit(0)
+
+
+func _open_smoke_table() -> bool:
+	if not await preload("res://smoke/gesture_settlement.gd").fractional_parent_probe(self):
+		_fail("gesture settlement must bound fractional parent drift and reject changed local poses")
+		return false
+	var packed := load("res://Main.tscn") as PackedScene
+	if packed == null:
+		_fail("Main.tscn could not be loaded")
+		return false
+	if not await _open_setup(packed):
+		return false
+	if not await _pointer_ownership_probe_is_strict():
+		_fail("the pointer ownership probe did not reject occlusion or stale layout geometry")
+		return false
+	await _configure_seeded_game()
+	if not await preload("res://smoke/native_scale_checkpoint.gd").requested(self, "setup"): return false
+	if not await _open_and_validate_table():
+		return false
+	return true
 
 
 func _release_table_resources() -> bool:
@@ -176,9 +182,10 @@ func _play_seeded_journey() -> Dictionary:
 		# The deterministic one-player journey owns the exact form/undo action.
 		# Multiplayer exercises seat switching without hard-coding one seat's
 		# identity anchor as the other seat's current action.
-		"changed_form": direct_form_undo or multiplayer,
+		"changed_form": direct_form_undo,
+		"form_undo_excluded": multiplayer,
 		"form_before_change": "",
-		"tested_undo": direct_form_undo or multiplayer,
+		"tested_undo": direct_form_undo,
 		"tested_attached_focus": false,
 		"saw_attack_resolution": false,
 		"decisions": 0,
@@ -198,12 +205,17 @@ func _play_one_decision(state: Dictionary) -> bool:
 	var ending_player_phase := _observe_decision(state)
 	if ending_player_phase and not await _capture_checkpoint("player-phase"):
 		return false
+	var witness = preload("res://smoke/NativeGameWitness.cs").new()
+	witness.Bind(main)
+	var prior_kind: String = witness.DecisionKind()
+	var prior_revision: int = witness.Revision()
 	if not await _advance_visible_decision(state):
 		return false
 	state.decisions += 1
 	await process_frame
 	if not await _settle_decision(state.decisions, state):
 		return false
+	_record_end_phase(state, prior_kind, prior_revision, witness.Revision())
 	var had_tested_undo: bool = state.tested_undo
 	if not await _undo_first_form_change(state):
 		return false
@@ -214,6 +226,11 @@ func _play_one_decision(state: Dictionary) -> bool:
 	if not await _active_resolution_is_safe(state):
 		return false
 	return await _villain_history_checkpoint_is_safe(state)
+
+
+func _record_end_phase(state: Dictionary, prior_kind: String, before: int, after: int) -> void:
+	if prior_kind == "EndPhaseDiscards" and after == before + 1:
+		state.saw_end_phase = true
 
 
 func _attached_controls_are_safe(state: Dictionary) -> bool:
@@ -236,8 +253,9 @@ func _observe_decision(state: Dictionary) -> bool:
 	var context := main.find_child("ContextualDecision", true, false) as Control
 	var text := _visible_text(context) if context != null else _visible_text(_decision())
 	state.saw_mulligan = state.saw_mulligan or "discard and redraw" in text.to_lower()
-	var ending_player_phase := "End Phase" in text
-	state.saw_end_phase = state.saw_end_phase or ending_player_phase
+	var witness = preload("res://smoke/NativeGameWitness.cs").new()
+	witness.Bind(main)
+	var ending_player_phase: bool = witness.DecisionKind() == "EndPhaseDiscards"
 	return ending_player_phase
 
 
@@ -254,7 +272,7 @@ func _advance_visible_decision(state: Dictionary) -> bool:
 
 func _advance_table_decision(state: Dictionary) -> bool:
 	var identity_action := _attached(_attached_name(1, "Action"))
-	if not state.changed_form and identity_action != null and not identity_action.disabled:
+	if not state.form_undo_excluded and not state.changed_form and identity_action != null and not identity_action.disabled:
 		state.form_before_change = "Peter Parker" \
 				if "Peter Parker\nREC" in _visible_text(_play()) else "Spider-Man"
 		if not await _pointer_activate_attached(identity_action):
@@ -270,7 +288,6 @@ func _advance_table_decision(state: Dictionary) -> bool:
 			_fail("Pass is not in the shared decision area")
 			return false
 		state.saw_pass = true
-		state.saw_end_phase = true
 		return await _pointer_activate(decline)
 	return await _compose_table_decision()
 
@@ -289,7 +306,7 @@ func _choose_change_form() -> bool:
 func _advance_fallback_decision(state: Dictionary) -> bool:
 	var change_form := _visible_button_beginning(_decision(), "Change Form")
 	var pass_button := _decision().find_child("Decline", true, false) as Button
-	if not state.changed_form and change_form != null and not change_form.disabled:
+	if not state.form_undo_excluded and not state.changed_form and change_form != null and not change_form.disabled:
 		state.form_before_change = "Peter Parker" \
 			if "Peter Parker\nREC" in _visible_text(_play()) else "Spider-Man"
 		if not await _mixed_submit_is_single_shot():
@@ -368,7 +385,7 @@ func _compose_visible_decision() -> bool:
 
 
 func _undo_first_form_change(state: Dictionary) -> bool:
-	if not state.changed_form or state.tested_undo:
+	if state.form_undo_excluded or not state.changed_form or state.tested_undo:
 		return true
 	if not await _show_history_tab():
 		return false

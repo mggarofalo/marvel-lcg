@@ -134,11 +134,8 @@ public static class CardPlay
         ArgumentNullException.ThrowIfNull(paying);
         ArgumentNullException.ThrowIfNull(events);
 
-        // Step 1 is the card going faceup on the table, and `.step.1` says in
-        // as many words that it "is not in play" there. Nothing on this board
-        // can observe that instant, so it is not modelled -- but a card that
-        // fails step 2 has to still be in hand, which it is.
-        //
+        // Admission checks precede committed changes; the accepted card is exposed
+        // faceup outside play before any generator cost can open an interrupt.
         // Step 2. Play restrictions.
         if (!Permitted(world, facts, seat, card, targets, abilities))
         {
@@ -157,20 +154,8 @@ public static class CardPlay
         // payment is checked before a single card is discarded.
         // `rr:alliance` -- for an alliance card this is every player's hand,
         // and for every other card it is only this player's.
-        var hands = Paying(world, facts, seat, card).Select(player => player.Hand).ToList();
-
-        Spend(
-            world, facts, hands, paying, adjusted.Amount, Resources.Required(world, card, facts),
-            card.ObjectId, seat.Index, events, payingFor: card);
-
-        // Steps 6 and 7. The card is played: it enters play, or it is an event
-        // and its ability resolves before it is discarded.
-        Enter(world, facts, abilities, seat, card, events, targets ?? []);
-
-        // Playing, not pricing or attempting to pay, spends "the next card"
-        // effect. The snapshot excludes a discount the played card itself may
-        // have created while entering play.
-        UseCostModifiers(world, adjusted);
+        CardPlayPayment.Play(world,
+            new CardPlayInitiation(facts, abilities, seat, card, adjusted, [.. targets ?? []], [.. paying]), events);
     }
 
     /// <summary>Plays a card while an effect ignores its resource cost.</summary>
@@ -221,13 +206,8 @@ public static class CardPlay
         }
 
         var adjusted = CostOf(world, facts, seat, card);
-        var hands = Paying(world, facts, seat, card).Select(player => player.Hand).ToList();
-        Spend(
-            world, facts, hands, paying, adjusted.Amount,
-            Resources.Required(world, card, facts), card.ObjectId, seat.Index,
-            events, payingFor: card);
-        Enter(world, facts, abilities, seat, card, events, targets ?? []);
-        UseCostModifiers(world, adjusted);
+        CardPlayPayment.Play(world,
+            new CardPlayInitiation(facts, abilities, seat, card, adjusted, [.. targets ?? []], [.. paying]), events);
     }
 
     /// <summary>
@@ -291,7 +271,7 @@ public static class CardPlay
     /// omit this because every ability belongs to <paramref name="payer"/>;
     /// alliance payments may name a helper's ability.
     /// </param>
-    public static void Spend(
+    public static ResourcePaymentReceipt Spend(
         World world, ICardFacts facts, IReadOnlyList<Area> hands, IReadOnlyList<int> paying,
         long cost, string required, int itself, int payer, List<GameEvent> events,
         Card? payingFor = null, IReadOnlyDictionary<int, int>? resourcePayers = null)
@@ -299,14 +279,15 @@ public static class CardPlay
             itself, payer, events, payingFor, resourcePayers);
 
     /// <summary>Spends resources through one explicit card capability.</summary>
-    public static void Spend(
+    public static ResourcePaymentReceipt Spend(
         World world, ICardFacts facts, IResourceCardAbilities resourceAbilities,
         IReadOnlyList<Area> hands, IReadOnlyList<int> paying,
         long cost, string required, int itself, int payer, List<GameEvent> events,
         Card? payingFor = null, IReadOnlyDictionary<int, int>? resourcePayers = null) =>
         new CardResourcePayment(world, facts, resourceAbilities, new CardResourcePaymentRequest
         {
-            Hands = hands, Paying = paying, Cost = cost, Required = required, Itself = itself,
-            Payer = payer, PayingFor = payingFor, ResourcePayers = resourcePayers,
+            Hands = [.. hands], Paying = [.. paying], Cost = cost, Required = required, Itself = itself,
+            Payer = payer, PayingFor = payingFor, ResourcePayers = resourcePayers?.ToDictionary(pair => pair.Key, pair => pair.Value),
         }).Spend(events);
+
 }

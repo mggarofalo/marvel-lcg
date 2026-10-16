@@ -27,7 +27,7 @@ public sealed class CoreFinalCardBatchTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
-        runner.WhenRevealed(world, scheme, player: 0);
+        runner.ExecuteReveal(world, scheme, player: 0);
         var ordering = Sequence.Work(world, Cards, runner, [])!;
         var order = Assert.Single(ordering.Affordances);
         int[] identities = [
@@ -72,7 +72,7 @@ public sealed class CoreFinalCardBatchTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
-        runner.WhenRevealed(world, backlash, player: 0);
+        runner.ExecuteReveal(world, backlash, player: 0);
         var ordering = Sequence.Work(world, Cards, runner, [])!;
         var order = Assert.Single(ordering.Affordances);
         var identities = world.Seats.Select(seat => seat.IdentityCard.ObjectId).ToArray();
@@ -104,7 +104,7 @@ public sealed class CoreFinalCardBatchTests
         world.Abilities = runner;
 
         var action = runner.Actions(world, 0).Single(ability => ability.Card == blast.ObjectId);
-        runner.Act(world, action, [payment.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [payment.ObjectId], []));
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = Sequence.Work(world, Cards, runner, [])!;
         Sequence.Answer(world, Cards, runner, prompt, Decision.Take(target.ObjectId), []);
@@ -125,7 +125,7 @@ public sealed class CoreFinalCardBatchTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
-        runner.WhenRevealed(world, ritual, player: 0);
+        runner.ExecuteReveal(world, ritual, player: 0);
         var prompt = Sequence.Work(world, Cards, runner, [])!;
         Assert.Equal(Question.Option, prompt.Asking);
         Sequence.Answer(world, Cards, runner, prompt, Decision.Take(1), []);
@@ -157,7 +157,7 @@ public sealed class CoreFinalCardBatchTests
         world.Abilities = runner;
 
         var action = runner.Actions(world, 0).Single(ability => ability.Card == legalPractice.ObjectId);
-        var events = runner.Act(world, action, [], []).ToList();
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [], [])).Events.ToList();
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, choice)!;
         Assert.Equal(1, Assert.Single(prompt.Affordances).Targets!.Min);

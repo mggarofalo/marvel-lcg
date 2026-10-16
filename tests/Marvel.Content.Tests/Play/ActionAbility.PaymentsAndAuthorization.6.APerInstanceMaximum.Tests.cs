@@ -27,7 +27,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAPerInstanceMaximumTest
         var occurrence = new Occurrence(91, ["WhenDamageWouldBeDealt"], Player: 0, Target: world.Seats[0].IdentityCard.ObjectId);
         var offered = runner.Waiting(world, occurrence, WindowKind.Response);
         Assert.Equal(2, offered.Count);
-        runner.Resolve(world, occurrence, offered.Single(pending => pending.Card == first!.ObjectId), [], []);
+        runner.ResolveWindow(world, occurrence, offered.Single(pending => pending.Card == first!.ObjectId), new Decision((offered.Single(pending => pending.Card == first!.ObjectId)).Card, [], []));
         Assert.Empty(runner.Waiting(world, occurrence, WindowKind.Response));
         Assert.Equal(2, runner.Waiting(world, new Occurrence(92, ["WhenDamageWouldBeDealt"], Player: 0, Target: world.Seats[0].IdentityCard.ObjectId), WindowKind.Response).Count);
         Assert.NotNull(second);
@@ -46,7 +46,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAPerInstanceMaximumTest
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         Assert.Equal(10, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
@@ -160,7 +160,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAPerInstanceMaximumTest
         Card? source = null;
         var(_, world) = Playing(board => source = board.CreateCard("01017", board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), board.Seats[0].IdentityCard.ObjectId, cardOwner: 0)), hero: true);
         var forged = new PendingAbility(source!.ObjectId, AbilityType.Action, 0);
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, forged, [], []));
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(forged, [], [])));
         Assert.Contains("saveable attack power", thrown.Message, StringComparison.Ordinal);
         Assert.True(source.Ready);
         Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
@@ -176,7 +176,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAPerInstanceMaximumTest
         var runner = Runner("01017", "WhenRevealed", """{ "dealAttackDamage": { "cards": { "query": "villain" }, "amount": 1 } }""", eventName: Steps.CardRevealed, labels: "[ \"attack\" ]");
         Card? source = null;
         var(_, world) = Playing(board => source = board.CreateCard("01017", board.AreaOf(DeckType.RevealingArea)), hero: true);
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.WhenRevealed(world, source!, 0));
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteReveal(world, source!, 0));
         Assert.Contains("saveable attack power", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
@@ -204,7 +204,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAPerInstanceMaximumTest
         var(_, world) = Playing(board => source = board.CreateCard("01017", board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), board.Seats[0].IdentityCard.ObjectId, cardOwner: 0)), hero: true);
         int held = world.Seats[0].Hand.Cards.Count;
         var forged = new PendingAbility(source!.ObjectId, AbilityType.Action, 0);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, forged, [], []));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(forged, [], [])));
         Assert.True(source.Ready);
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
     }

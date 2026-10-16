@@ -31,5 +31,5 @@ internal static class AbilityContinuationScheduling
 
     internal static AbilityPowerContinuation Power(
         AbilityContinuationState capture, int powerOrdinal, IReadOnlyList<int> targets) => new(
-            capture, powerOrdinal, [.. targets]);
+            capture, powerOrdinal, [.. targets]) { Execution = capture.Execution };
 }

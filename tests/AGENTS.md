@@ -5,6 +5,19 @@ Apply the root instructions. For presentation or interaction work, also read
 [the UI guidance](../src/Marvel.Godot/AGENTS.md), even when only tests change.
 Read [testing.md](../docs/testing.md) for the existing test-lane boundaries.
 
+Architecture gates reject empty test bodies and exact same-class test bodies with
+the same declared inputs. This is a narrow safeguard, not a test-quality score:
+helpers, theory data, concurrency and negative compile probes need semantic
+review. A test must have a distinguishing observation or a specific expected
+failure; successful execution alone is not a general assertion. When removing a
+duplicate, identify the retained assertion. Never replace an assertion with a
+weaker one merely to accommodate a refactor.
+
+Capture query-purity baselines before the first query. Include RNG state and
+relevant pending work as well as the card digest, then compare subsequent
+decisions with an unprobed control. An unchanged card digest alone does not prove
+that a query left execution or hidden-information observations untouched.
+
 ## Test the player's observable task
 
 Use legal Core engine states for reachable gameplay. Synthetic contracts can

@@ -15,6 +15,7 @@ public static class AgendaContinuationScheduling
     public static void ThenContinuation(this Agenda agenda, PhaseStep step, Occurrence occurrence)
     {
         ArgumentNullException.ThrowIfNull(occurrence);
+        agenda.BeginScheduling();
         agenda.scheduled += 1;
         var frame = agenda.Frame(
             step with { Plan = true, OccurrenceId = occurrence.Id }, Stage.Apply, occurrence);

@@ -300,4 +300,11 @@ authorized source-face reference retains the printed rules for inspection. When
 no associated visible result exists, the engine's existing explanation remains;
 absence of a visible result does not assert that hidden state stayed unchanged.
 
-Protocol 31 / replay v16 carry engine-authored attack identities and lifetime boundaries, exact scheme/thwart occurrence causes, named resource-ability costs, and authoritative player-loss reasons. Attack identities distinguish enemy activation ids from character occurrence ids. They do not change RNG, card-state digests, game timing, or the save envelope. Supporting travel, reveal and installation receipts may share one presentation beat; every raw event remains available in diagnostics.
+Protocol 32 carries engine-authored attack identities and lifetime boundaries,
+exact scheme/thwart occurrence causes, resource-ability costs and player-loss
+reasons. Attack identities distinguish enemy activation ids from character
+occurrence ids. Replay v18 owns their nested completion order; its compatibility
+contract is defined in [release-policy.md](release-policy.md). The RNG,
+card-state digest and save envelope retain their existing formats. Supporting
+travel, reveal and installation receipts may share one presentation beat; every
+raw event remains available in diagnostics.

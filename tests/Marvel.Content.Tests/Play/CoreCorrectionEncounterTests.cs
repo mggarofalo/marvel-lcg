@@ -56,7 +56,7 @@ public sealed class CoreCorrectionEncounterTests : ChoosingCardsTestBase
         Card legions = world.CreateCard("01180", world.AreaOf(DeckType.SideSchemesArea));
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        runner.WhenRevealed(world, legions, 0);
+        runner.ExecuteReveal(world, legions, 0);
         Assert.Null(Sequence.Work(world, Cards, runner, []));
         // The specified search areas contain no Madame Hydra; the independent
         // instruction still adds 2 threat for the HYDRA enemy in play.
@@ -80,10 +80,12 @@ public sealed class CoreCorrectionEncounterTests : ChoosingCardsTestBase
             StateFields.Modified(world, drone, "attack", Cards, 1));
         Assert.Equal(Cards.PrintedValue(drone.FaceId, "HP", 1) + 1,
             DamagePlacement.Health(world, Cards, drone));
-        DamagePlacement.Deal(world, Cards, world.Seats[0].IdentityCard, ultron, 3, "test", "test", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(world.Seats[0].IdentityCard, ultron, 3, "test", "test"), []);
         Assert.Equal(0, ultron.Damage);
         World.MoveToTop(drone, world.AreaOf(DeckType.EncounterDiscardPile));
-        DamagePlacement.Deal(world, Cards, world.Seats[0].IdentityCard, ultron, 3, "test", "test", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(world.Seats[0].IdentityCard, ultron, 3, "test", "test"), []);
         Assert.Equal(3, ultron.Damage);
     }
 
@@ -97,7 +99,7 @@ public sealed class CoreCorrectionEncounterTests : ChoosingCardsTestBase
         Card factory = world.CreateCard("01148", world.AreaOf(DeckType.SideSchemesArea));
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        runner.WhenRevealed(world, factory, 0);
+        runner.ExecuteReveal(world, factory, 0);
         Assert.Null(Sequence.Work(world, Cards, runner, []));
         Assert.Single(AuthoredCards.FacedownDrones(world));
         Assert.Equal(2, factory.Tokens["k_threat"]);
@@ -120,24 +122,33 @@ public sealed class CoreCorrectionEncounterTests : ChoosingCardsTestBase
         Card ally = world.CreateCard("01002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        world.Activation = new EnemyActivation(villain.ObjectId, 0, true, Id: 19);
-        Card boost = world.CreateCard("01123", world.AreaOf(DeckType.BoostingArea));
-        runner.Boost(world, boost, 0);
+        world.CreateCard("01123", world.AreaOf(DeckType.EncounterDeck));
+        long desired = overkill ? 5 : 1;
+        long printedAttack = StateFields.Modified(world, villain, "attack", Cards, world.Players);
+        world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
+            Kind: "attack", Amount: desired - printedAttack, Affects: villain.ObjectId));
         if (overkill) world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
             Kind: Keywords.Overkill, Amount: 1, Card: villain.ObjectId, Affects: villain.ObjectId));
         if (tough) Statuses.Give(world, identity, Statuses.Tough);
-        world.Attack = new EnemyAttack(villain.ObjectId, 0, identityTarget ? identity.ObjectId : ally.ObjectId,
-            Defender: identityTarget ? -1 : ally.ObjectId, CalculatedDamage: overkill ? 5 : 1);
-        world.Agenda.Add(new PhaseStep(new AttackStageOperation(AttackStageKind.DealAttackDamage), Round: 1, Number: 5, Subject: villain.ObjectId));
-        world.Agenda.Begin(world, Cards);
-        Attack.DealDamage(world, Cards, []);
-        EnemyActivation result = world.Activation!;
-        runner.ActivationCompleted(world, result);
+        world.Agenda.Now(new PhaseStep(new EnemyAttackOperation(), 1, 0,
+            Subject: villain.ObjectId, Seat: 0));
+        var events = new List<GameEvent>();
+        var defense = Sequence.Work(world, Cards, runner, events)!;
+        Assert.Equal(Marvel.Rules.Prompts.Question.Defender, defense.Asking);
+        Sequence.Answer(world, Cards, runner, defense,
+            identityTarget ? Decision.Decline : Decision.Take(ally.ObjectId), events);
+        while (Sequence.Work(world, Cards, runner, events) is { } prompt)
+        {
+            Assert.True(prompt.Cancellable);
+            Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
+        }
+        var completed = Assert.Single(events.OfType<AttackCompleted>());
+        Assert.Equal(desired, completed.DamageDealt);
         // Damage to you "applies it to the hit point dial of their identity."
         // Overkill "is considered damage from an attack" (.2). When damage taken
         // is modified, "the amount of damage dealt is not modified" (damage.3.2).
         Assert.Equal(exhausted, !identity.Ready);
-        Assert.Equal(exhausted, result.DamageRecipients.Contains(identity.ObjectId));
+        Assert.Equal(identityTarget ? identity.ObjectId : ally.ObjectId, completed.Target);
         Assert.Equal(tough ? 0 : identityTarget ? 1 : overkill ? 3 : 0, identity.Damage);
     }
 }

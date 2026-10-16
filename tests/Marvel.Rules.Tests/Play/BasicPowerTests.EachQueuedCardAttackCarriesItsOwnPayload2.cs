@@ -282,7 +282,8 @@ public sealed class BasicPowerEachQueuedCardAttackCarriesItsOwnPayloadTests : Ba
         var world = Board(printed);
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         Agendas.Happening(world);
-        Assert.True(DamagePlacement.Deal(world, printed, minion, minion, 3, "test", "test", []));
+        Assert.Equal(Damage.Outcome.Defeated, DamagePlacement.Resolve(world, printed,
+            new(minion, minion, 3, "test", "test"), []).Outcome);
     }
 
     [Rule("rr:villain-defeat")]

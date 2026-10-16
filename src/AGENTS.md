@@ -6,6 +6,33 @@ Read [presentation-layer.md](../docs/presentation-layer.md) and
 The player-facing interaction requirements live in
 [Marvel.Godot/AGENTS.md](Marvel.Godot/AGENTS.md).
 
+Before implementing, identify the owning layer, the applicable rule or repository
+choice, the affected contract, and the observations that would distinguish a
+correct result from a plausible wrong one. Use the
+[architecture invariant inventory](../docs/architecture-invariants.md) to select
+existing gates and negative controls. Routine work within the authorized scope
+does not need another approval ceremony.
+
+Choose the owner by the decision being made:
+
+- Printed facts and product composition belong in their admitted datasets and
+  content catalogs. A catalog entry does not authorize unsupported runtime content.
+- Legality, costs, timing and effects belong in the engine, including bespoke
+  mechanics that do not fit the card DSL.
+- Permission to disclose and render-safe meaning belong in View; drafting one
+  offered answer belongs in Decisions.
+- Authorization and authoritative publication belong in Server; transport and
+  recovery belong in Client and its infrastructure; gestures and layout belong
+  in Godot.
+
+Never catch unsupported behavior and substitute a plausible result. Fix a missing
+semantic contract at its owner. Do not weaken assertions, broaden allowlists,
+silently regenerate debt baselines, or delete negative probes to make a gate
+green. A changed exception needs its precise reason and a distinguishing control
+in the review; formatting and pass-through extraction do not remediate complexity.
+Do not add compatibility layers or speculative infrastructure without a current
+requirement. Report evidence and scope gaps as gaps.
+
 ## Supply meaning at the owning layer
 
 An affordance is an engine offer. A visual affordance is how a player discovers

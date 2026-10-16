@@ -224,8 +224,9 @@ internal static class CoreTranscriptCardActions
         }
 
         context.Events.Clear();
-        string resources = runner.UseResource(
-            context.World, seat, card.ObjectId, context.Events);
+        var result = runner.ExecuteResource(context.World, seat, card.ObjectId);
+        context.Events.AddRange(result.Execution.Events);
+        string resources = result.Generation.Resources;
         context.LastResourceGeneration = (card.ObjectId, resources);
     }
 

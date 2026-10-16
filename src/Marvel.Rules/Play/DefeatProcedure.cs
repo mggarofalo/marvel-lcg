@@ -22,6 +22,9 @@ internal static class DefeatProcedure
                 break;
             case Steps.ChooseWouldBeDefeated:
                 return ChooseWouldBeDefeated(world, world.WindowAbilities, step);
+            case Steps.FinishWouldBeDefeated:
+                FinishWouldBeDefeated(world, facts, step, events);
+                break;
             case Steps.ResumeWouldBeDefeated:
                 ResumeWouldBeDefeated(world, facts, world.WindowAbilities, step, events);
                 break;
@@ -71,7 +74,7 @@ internal static class DefeatProcedure
     internal static Prompt ChooseWouldBeDefeated(
         World world, IWindowAbilities abilities, PhaseStep step)
     {
-        var pending = step.Require<DefeatAbilityOperation>().Window.Abilities ?? [];
+        var pending = DefeatWindowEligibility.Pending(world, abilities, step);
         if (pending.Count == 0)
         {
             throw new InvalidOperationException("damage step 6 has no pending abilities");
@@ -101,7 +104,6 @@ internal static class DefeatProcedure
         var target = world.Cards[step.Subject];
         if (DamagePlacement.Health(world, facts, target) - target.Damage > 0)
         {
-            world.Effects.CompleteHealthDefeat(target);
             return;
         }
 
@@ -111,22 +113,19 @@ internal static class DefeatProcedure
     internal static void FinishWouldBeDefeated(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        var operation = step.Require<PendingDefeatOperation>();
         var target = world.Cards[step.Subject];
         world.Effects.CompleteHealthDefeat(target);
-        if (DeckTypes.IsInPlay(target.Area.Type)
+        if (target.Incarnation == operation.Incarnation && DeckTypes.IsInPlay(target.Area.Type)
             && DamagePlacement.Health(world, facts, target) - target.Damage <= 0)
-        {
-            Defeat.Character(
-                world, facts, target, step.Require<DefeatAbilityOperation>().Cause.Trigger, events,
-                how: step.Require<DefeatAbilityOperation>().Cause.Verb, by: step.Require<DefeatAbilityOperation>().Cause.By,
-                recordOn: step.Require<DefeatAbilityOperation>().Cause.Owner);
-        }
+            Defeat.Character(world, facts, target, operation.Cause.Trigger, events,
+                how: operation.Cause.Verb, by: operation.Cause.By, recordOn: operation.Cause.Owner);
     }
 
     internal static Prompt ChooseCardDefeatedAbility(
         World world, IWindowAbilities abilities, PhaseStep step)
     {
-        var pending = step.Require<DefeatAbilityOperation>().Window.Abilities ?? [];
+        var pending = DefeatWindowEligibility.Pending(world, abilities, step);
         if (pending.Count == 0)
         {
             throw new InvalidOperationException("damage step 7 has no pending abilities");
@@ -149,27 +148,19 @@ internal static class DefeatProcedure
             [.. offered.Select(ability => abilities.Describe(world, ability))]);
     }
 
-    internal static void FinalizeCardDefeat(
-        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    internal static void FinalizeCharacter(World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        var operation = step.Require<DefeatCompletionOperation>();
         var card = world.Cards[step.Subject];
-        if (EffectiveCards.Kind(card, facts) == CardKind.EncounterSideScheme)
-        {
-            Defeat.FinalizeScheme(world, facts, card, step.Require<DefeatAbilityOperation>().Cause.Trigger, events);
-        }
-        else
-        {
-            Defeat.FinalizeCharacter(world, facts, card, step.Require<DefeatAbilityOperation>().Cause.Trigger, events);
-        }
+        if (card.Incarnation == operation.Incarnation && DeckTypes.IsInPlay(card.Area.Type))
+            Defeat.FinalizeCharacter(world, facts, card, operation.Trigger, events);
     }
 
-    internal static void FinalizeCharacter(
-        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events) =>
-        Defeat.FinalizeCharacter(
-            world, facts, world.Cards[step.Subject], step.Require<DefeatCompletionOperation>().Trigger, events);
-
-    internal static void FinalizeScheme(
-        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events) =>
-        Defeat.FinalizeScheme(
-            world, facts, world.Cards[step.Subject], step.Require<DefeatCompletionOperation>().Trigger, events);
+    internal static void FinalizeScheme(World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        var operation = step.Require<DefeatCompletionOperation>();
+        var card = world.Cards[step.Subject];
+        if (card.Incarnation == operation.Incarnation && DeckTypes.IsInPlay(card.Area.Type))
+            Defeat.FinalizeScheme(world, facts, card, operation.Trigger, events);
+    }
 }

@@ -26,7 +26,7 @@ public sealed class AbilityChoiceProgressionTests
         var sonicBoom = world.CreateCard("01123", world.AreaOf(DeckType.RevealingArea));
         string before = world.Digest().Canonical();
 
-        AuthoredCards.Runner().WhenRevealed(world, sonicBoom, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, sonicBoom, 0);
 
         Assert.Empty(world.Agenda.Outstanding);
         Assert.Equal(before, world.Digest().Canonical());

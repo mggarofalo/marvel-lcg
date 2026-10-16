@@ -7,13 +7,12 @@ namespace Marvel.Godot.Tests;
 public sealed class NativeSmokeDiagnosticsTests
 {
     [Theory]
-    [InlineData("tools/godot-smoke.ps1")]
-    [InlineData("tools/godot-smoke.sh")]
+    [InlineData("tools/native-cases.ps1")]
     [InlineData("tools/godot-hosted-multiplayer-smoke.ps1")]
     [InlineData("tools/godot-hosted-multiplayer-smoke.sh")]
     [InlineData("tools/godot-visual-qa.ps1")]
     [InlineData("tools/godot-visual-qa.sh")]
-    public void NativeSmokeWrappersUseTheSharedErrorContract(string relativePath)
+    public void NativeSmokeLaunchersUseTheSharedErrorContract(string relativePath)
     {
         string path = Path.Combine(RepositoryPaths.Root, relativePath);
         string script = File.ReadAllText(path);
@@ -25,8 +24,7 @@ public sealed class NativeSmokeDiagnosticsTests
     }
 
     [Theory]
-    [InlineData("tools/godot-smoke.ps1")]
-    [InlineData("tools/godot-smoke.sh")]
+    [InlineData("tools/native-cases.ps1")]
     [InlineData("tools/godot-hosted-multiplayer-smoke.ps1")]
     [InlineData("tools/godot-hosted-multiplayer-smoke.sh")]
     [InlineData("tools/godot-visual-qa.ps1")]
@@ -34,7 +32,7 @@ public sealed class NativeSmokeDiagnosticsTests
     [InlineData("tools/windows-portable-install-smoke.ps1")]
     [InlineData("tools/windows-community-install-smoke.ps1")]
     [InlineData("tools/macos-community-install-smoke.sh")]
-    public void NativeSmokeWrappersForceGodotsDummyAudioDriver(string relativePath)
+    public void NativeSmokeLaunchersForceGodotsDummyAudioDriver(string relativePath)
     {
         string script = File.ReadAllText(Path.Combine(RepositoryPaths.Root, relativePath));
 

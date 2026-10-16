@@ -139,7 +139,7 @@ internal static class AttackBoost
         PhaseStep owner = world.Agenda.Current
             ?? throw new InvalidOperationException("a boost ability has no agenda owner");
         int beforeAbility = world.Agenda.Count;
-        ActivityBatches.Append(events, abilities.Boost(world, boost, activation.Player));
+        ActivityBatches.Append(events, abilities.ExecuteBoost(world, boost, activation.Player).Events);
         if (world.Agenda.Count > beforeAbility)
         {
             // An ordinary authored choice is still scheduled after the flip;

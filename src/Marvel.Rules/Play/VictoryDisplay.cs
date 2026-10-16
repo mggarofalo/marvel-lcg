@@ -254,6 +254,6 @@ public static class VictoryDisplay
         // `rr:reveal.step.3` puts the card's own text after the placement and
         // the keywords -- and `.3` there, with `rr:villain-defeat.1`, is why
         // nothing between here and the deck gets to cancel it.
-        ActivityBatches.Append(events, world.EncounterAbilities.WhenRevealed(world, next, world.FirstPlayer));
+        ActivityBatches.Append(events, world.EncounterAbilities.ExecuteReveal(world, next, world.FirstPlayer).Events);
     }
 }

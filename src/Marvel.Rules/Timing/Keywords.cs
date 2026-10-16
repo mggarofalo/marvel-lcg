@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 namespace Marvel.Rules.Timing;
 
 /// <summary>
@@ -45,7 +46,7 @@ public static class Keywords
     /// is adding to that field rather than naming the keyword.
     /// </remarks>
     public static IReadOnlySet<string> Granted { get; } =
-        new HashSet<string>(StringComparer.Ordinal) { Overkill, Piercing, Ranged };
+        new[] { Overkill, Piercing, Ranged }.ToFrozenSet(StringComparer.Ordinal);
 
     /// <summary>
     /// Whether a card has a keyword, printed on it or granted to it.

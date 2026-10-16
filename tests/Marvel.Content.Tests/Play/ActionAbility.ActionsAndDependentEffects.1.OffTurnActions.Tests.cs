@@ -76,7 +76,7 @@ public sealed class ActionAbilityActionsAndDependentEffectsOffTurnActionsTests
         var(game, _) = Playing(board =>
         {
             var horn = board.CreateCard(AuthoredCards.IvoryHorn, board.AreaOf(DeckType.RevealingArea));
-            AuthoredCards.Runner().WhenRevealed(board, horn, 0);
+            AuthoredCards.Runner().ExecuteReveal(board, horn, 0);
             Physical(board, 2);
         }, hero: true);
         Assert.DoesNotContain(game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);

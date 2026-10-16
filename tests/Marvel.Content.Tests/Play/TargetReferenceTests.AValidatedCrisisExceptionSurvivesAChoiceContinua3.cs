@@ -120,11 +120,13 @@ public sealed class TargetReferenceAValidatedCrisisExceptionSurvivesAChoiceConti
             board.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 2);
         }, runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         var activation = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.Attack);
-        runner.ActivationCompleted(world, new EnemyActivation(activation.Subject, activation.Seat, Attacking: true, activation.ActivationId, Made: false));
-        Assert.NotNull(world.CharacterThwart);
-        Assert.Equal(world.TheCardIn(DeckType.MainSchemesArea)!.ObjectId, world.CharacterThwart!.Scheme);
+        Statuses.Give(world, world.Cards[activation.Subject], Statuses.Stunned);
+        Sequence.Work(world, Cards, runner, []);
+        Assert.Equal(1, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens["k_threat"]);
+        Assert.Equal(1, Assert.Single(world.AreaOf(DeckType.SideSchemesArea).Cards,
+            candidate => candidate.FaceId == "01108").Tokens["k_threat"]);
     }
 
     [Rule("rr:target.3.3")]

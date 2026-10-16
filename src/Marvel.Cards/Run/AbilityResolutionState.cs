@@ -22,6 +22,9 @@ internal sealed record AbilityResolutionState(
     public int Player { get; private set; } = InitialPlayer;
 
     public Defeated? TriggeringDefeat { get; set; }
+    internal AbilityExecution? Execution { get; set; }
+    internal AbilityPaymentPlan? PendingPayment { get; set; }
+    private bool executionEntered;
 
     /// <summary>The resolver to restore after leaving an each-player frame.</summary>
     public int AbilityPlayer { get; init; } = InitialPlayer;
@@ -116,6 +119,7 @@ internal sealed record AbilityResolutionState(
     public List<AbilityStructuralFrame> StructuralPath { get; } = [];
 
     public AbilityStructuralOutcome? CompletedOutcome { get; set; }
+    internal AbilityDamageCompletion? PendingDamageCompletion { get; set; }
     public EffectCompletion? PendingCompletion { get; set; }
 
 
@@ -136,6 +140,13 @@ internal sealed record AbilityResolutionState(
     /// <summary>The exact ability whose status this cast updates.</summary>
     public PendingAbility? ResolutionAbility => resolutionAbility;
 
+    internal void EnterExecution(AbilityExecution invocation)
+    {
+        World.Agenda.Executions.RequireActive(invocation);
+        Execution = invocation;
+        executionEntered = true;
+    }
+
     /// <summary>Begin tracking the exact ability whose tree this cast runs.</summary>
     public void TrackResolution(int ordinal)
     {
@@ -145,7 +156,14 @@ internal sealed record AbilityResolutionState(
         }
         resolutionAbility = new PendingAbility(Source.ObjectId, tier, Player, ordinal)
             { TriggeringDefeat = TriggeringDefeat };
-        Occurrence.Begin(resolutionAbility.Value);
+        if (!executionEntered)
+        {
+            if (Execution is null) Execution = World.Agenda.Executions.Begin(Occurrence, resolutionAbility.Value);
+            else World.Agenda.Executions.Resume(Execution);
+            executionEntered = true;
+        }
+        if (Execution?.IsBatch == true) resolutionAbility = null;
+        else Occurrence.Begin(resolutionAbility.Value);
     }
 
     /// <summary>Record that one effect in the tracked ability applied.</summary>
@@ -160,10 +178,13 @@ internal sealed record AbilityResolutionState(
     /// <summary>Finish a tracked ability unless it remains suspended.</summary>
     public void CompleteResolution()
     {
-        if (!Suspended && resolutionAbility is { } ability)
+        if (!executionEntered || Execution is null) return;
+        if (Suspended) World.Agenda.Executions.Suspend(Execution);
+        else
         {
-            Occurrence.Complete(ability);
+            World.Agenda.Executions.Complete(Execution);
         }
+        executionEntered = false;
     }
 
     public bool HasPendingDependency => StructuralPath.Any(frame =>
@@ -267,12 +288,10 @@ internal sealed record AbilityResolutionState(
     public List<Card> Attacked { get; } = [];
 
     /// <summary>How much damage is about to be dealt — <c>rr:damage.step.1</c>.</summary>
-    public long Incoming { get; init; }
+    internal DamageReplacement? DamageReplacement { get; set; }
+    public long Incoming => DamageReplacement?.CurrentAmount ?? 0;
 
-    /// <summary>How much is left after this ability, defaulting to all of it.</summary>
-    public long Remaining { get; private set; } = -1;
-
-    /// <summary>Replaces the damage with this much.</summary>
-    /// <param name="amount">What is left.</param>
-    public void Replace(long amount) => Remaining = amount;
+    /// <summary>Replaces the imminent damage within its owned execution.</summary>
+    public void Replace(long amount) => DamageReplacement?.Replace(
+        Execution ?? throw new InvalidOperationException("replacement has no active invocation"), amount);
 }

@@ -29,7 +29,7 @@ public sealed class NickFuryCommitmentTests
         Card nick = world.CreateCard("01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         var occurrence = new Occurrence(1, [Steps.CardEntersPlay], Subject: nick.ObjectId, Player: 0);
         var response = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
-        runner.Resolve(world, occurrence, response, [], []);
+        runner.ResolveWindow(world, occurrence, response, new Decision(response.Card, [], []));
         Prompt prompt = Sequence.Work(world, cards, runner, [])!;
         Assert.Equal(3, prompt.Affordances.Count);
         var composer = new DecisionComposer(prompt);

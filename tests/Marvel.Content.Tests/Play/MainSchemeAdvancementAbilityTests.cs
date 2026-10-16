@@ -34,7 +34,7 @@ public sealed class MainSchemeAdvancementAbilityTests
 
         var action = Assert.Single(
             runner.Actions(world, 0), ability => ability.Card == source.ObjectId);
-        var events = runner.Act(world, action, [], []);
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [], [])).Events;
         var resolved = new Resolution(world, Prompt: null, events);
 
         Assert.Equal(DeckType.RemovedArea, old.Area.Type);
@@ -66,7 +66,7 @@ public sealed class MainSchemeAdvancementAbilityTests
         World.MoveToTop(next, world.AreaOf(DeckType.RemovedArea));
 
         Assert.Throws<RulesNotImplementedException>(
-            () => runner.Act(world, offered, [], []));
+            () => runner.ExecuteAction(world, new PlayerAction(offered, [], [])));
         Assert.Same(old, world.TheCardIn(DeckType.MainSchemesArea));
         Assert.Equal(DeckType.MainSchemesArea, old.Area.Type);
         Assert.Equal(0, old.Tokens.GetValueOrDefault("is_completed"));
@@ -83,7 +83,7 @@ public sealed class MainSchemeAdvancementAbilityTests
         var action = Assert.Single(
             runner.Actions(world, 0), ability => ability.Card == source.ObjectId);
 
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
 
         Assert.Equal(handBefore + 1, world.Seats[0].Hand.Cards.Count);
     }
@@ -132,8 +132,8 @@ public sealed class MainSchemeAdvancementAbilityTests
 
     private sealed class UnrelatedWorldAbilities : NoCardAbilities
     {
-        public override IReadOnlyList<Marvel.Rules.Events.GameEvent> WhenRevealed(
-            World world, Card card, int player) =>
+        public override AbilityExecutionResult WhenRevealed(
+            World world, AbilityExecution entry, Card card, int player) =>
             throw new InvalidOperationException("the unrelated World ability aggregate was used");
     }
 }

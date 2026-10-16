@@ -113,8 +113,8 @@ public static class DamageRecovery
         }
 
         long healed = Heal(world, facts, from, moved, trigger, verb, events);
-        DamagePlacement.Deal(
-            world, facts, source, to, healed, trigger, verb, events, by);
+        DamagePlacement.Resolve(world, facts,
+            new(source, to, healed, trigger, verb, by), events);
         return healed;
     }
 }

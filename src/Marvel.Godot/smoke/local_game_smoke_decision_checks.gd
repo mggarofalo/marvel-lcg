@@ -1,5 +1,6 @@
 extends "res://smoke/local_game_smoke_mulligan_checks.gd"
 func _synchronization_preserves_history(expect_terminal: bool) -> bool:
+	var outcome_before := _status().text
 	var synchronize := main.find_child("Synchronize", true, false) as Button
 	if synchronize == null or not synchronize.visible or synchronize.disabled:
 		_fail("the table has no operable always-visible synchronization control")
@@ -19,7 +20,7 @@ func _synchronization_preserves_history(expect_terminal: bool) -> bool:
 		_fail("synchronization replayed or cleared the visible event history")
 		return false
 	if expect_terminal:
-		if "VILLAIN WINS" not in _status().text and "PLAYERS LOSE" not in _status().text:
+		if not _is_complete() or _status().text != outcome_before:
 			_fail("synchronizing the terminal table lost its authoritative outcome")
 			return false
 	elif main.find_child("VillainTable", true, false) != null \

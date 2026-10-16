@@ -30,7 +30,7 @@ public sealed class ActionAbilityTypedActivationsActivationKeepsCompiledPriority
         world.Agenda.NowActivation(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         var occurrence = new Occurrence(17, [Steps.TurnAction], Player: 0);
         fields["first"] = new AbilityValue.Word(first ? "false" : "true");
-        runner.Resolve(world, occurrence, action, [], []);
+        runner.ResolveWindow(world, occurrence, action, new Decision(action.Card, [], []));
         Assert.Equal(first ? [minion!.ObjectId, villain.ObjectId] : [villain.ObjectId, minion!.ObjectId], world.Agenda.Outstanding.Where(step => step.What == Steps.Attack).Select(step => step.Subject));
         var scheduled = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.Attack && step.Subject == minion.ObjectId);
         var continuation = world.Agenda.ActivationWait(scheduled.ActivationId);
@@ -62,7 +62,7 @@ public sealed class ActionAbilityTypedActivationsActivationKeepsCompiledPriority
         Assert.Equal(1, occurrence.TargetFacts!.Controller);
         World.MoveToTop(ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         fields["against"] = new AbilityValue.Word("you");
-        runner.Resolve(world, occurrence, action, [], []);
+        runner.ResolveWindow(world, occurrence, action, new Decision(action.Card, [], []));
         var attack = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.Attack);
         Assert.Equal(role == "trigger.actor" ? ally.ObjectId : world.Seats[1].IdentityCard.ObjectId, attack.Require<EnemyAttackOperation>().Character);
         Assert.Equal(1, attack.Seat);
@@ -87,7 +87,7 @@ public sealed class ActionAbilityTypedActivationsActivationKeepsCompiledPriority
         }, heroes: ["spider_man", "captain_marvel"], abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == source!.ObjectId);
         fields["against"] = new AbilityValue.Word("you");
-        runner.Resolve(world, new Occurrence(19, [Steps.TurnAction], Player: 0), action, [], []);
+        runner.ResolveWindow(world, new Occurrence(19, [Steps.TurnAction], Player: 0), action, new Decision(action.Card, [], []));
         var attacks = world.Agenda.Outstanding.Where(step => step.What == Steps.Attack).ToList();
         if (hero)
         {

@@ -27,12 +27,11 @@ public sealed class EventRecipientCommitmentTests : ChoosingCardsTestBase
         Assert.Contains(target, offer.Targets!.Legal);
         Assert.True(offer.PlaysCard);
         Assert.False(offer.DirectRecipientCommit);
-        var actual = runner.Act(direct, action, paying, [target]).ToList();
+        var actual = runner.ExecuteAction(direct, new PlayerAction(action, paying, [target])).Events.ToList();
         Sequence.Finish(direct, Cards, runner, actual);
 
         var (deferred, other, sameSource, samePaying) = Board(face);
-        var expected = other.Act(deferred, new PendingAbility(sameSource.ObjectId, AbilityType.Action, 0),
-            samePaying, []).ToList();
+        var expected = other.ExecuteAction(deferred, new PlayerAction(new PendingAbility(sameSource.ObjectId, AbilityType.Action, 0), samePaying, [])).Events.ToList();
         var prompt = Sequence.Work(deferred, Cards, other, expected)!;
         Sequence.Answer(deferred, Cards, other, prompt, Decision.Take(target), expected);
         Sequence.Finish(deferred, Cards, other, expected);
@@ -48,8 +47,7 @@ public sealed class EventRecipientCommitmentTests : ChoosingCardsTestBase
         // "If the card or ability specifies one or more targets, check that it has at least one valid target."
         var (world, runner, source, paying) = Board("01005");
         string before = world.Digest().Canonical();
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world,
-            new PendingAbility(source.ObjectId, AbilityType.Action, 0), paying, [world.Seats[0].IdentityCard.ObjectId]));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), paying, [world.Seats[0].IdentityCard.ObjectId])));
         Assert.Equal(before, world.Digest().Canonical());
     }
 
@@ -68,8 +66,7 @@ public sealed class EventRecipientCommitmentTests : ChoosingCardsTestBase
         world.Abilities = runner;
         Card intended = world.CreateCard("01006", world.Seats[0].Hand);
         Card remaining = world.CreateCard("01006", world.Seats[0].Hand);
-        var events = runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0),
-            [paying[0], intended.ObjectId], [intended.ObjectId]).ToList();
+        var events = runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [paying[0], intended.ObjectId], [intended.ObjectId])).Events.ToList();
         Assert.Equal(DeckType.DiscardPile, intended.Area.Type);
         Assert.Equal(DeckType.DiscardPile, world.Cards[paying[0]].Area.Type);
         Assert.Equal(DeckType.RevealingArea, source.Area.Type);

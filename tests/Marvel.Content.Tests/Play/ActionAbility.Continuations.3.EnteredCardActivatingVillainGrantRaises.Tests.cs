@@ -191,6 +191,7 @@ public sealed class ActionAbilityContinuationsEnteredCardActivatingVillainGrantR
 
     [Rule("rr:activation.7")]
     [Fact]
+    [Rule("rr:status-cards.2")]
     public void SequentialActivationWaitsUseTheOriginatingFaceAndFreshResults()
     {
         // The first attack changes neither the identity's current face nor the
@@ -201,14 +202,22 @@ public sealed class ActionAbilityContinuationsEnteredCardActivatingVillainGrantR
         {
         }, hero: true, abilities: runner);
         var identity = world.Seats[0].IdentityCard;
+        world.CreateCard("01002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         int held = world.Seats[0].Hand.Cards.Count;
-        runner.WhenRevealed(world, identity, 0);
+        runner.ExecuteReveal(world, identity, 0);
         Assert.Equal("01001b", identity.FaceId);
         var first = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.Attack);
-        runner.ActivationCompleted(world, new EnemyActivation(first.Subject, first.Seat, Attacking: true, first.ActivationId, Made: true, DamageDealt: 2));
-        var second = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.Attack && step.ActivationId != first.ActivationId);
-        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
-        runner.ActivationCompleted(world, new EnemyActivation(second.Subject, second.Seat, Attacking: true, second.ActivationId, Made: true, DamageDealt: 0));
+        var events = new List<GameEvent>();
+        var firstDefense = Sequence.Work(world, world.Facts, runner, events)!;
+        Assert.Equal(Question.Defender, firstDefense.Asking);
+        // rr:status-cards.2 replaces the next attack, while the attack whose defender
+        // is already being chosen completes with actual positive damage.
+        Statuses.Give(world, world.Cards[world.Activation!.Enemy], Statuses.Stunned);
+        Sequence.Answer(world, world.Facts, runner, firstDefense, Decision.Decline, events);
+        Assert.Null(Sequence.Work(world, world.Facts, runner, events));
+        Assert.True(identity.Damage > 0);
+        Assert.Contains(events.OfType<AttackCompleted>(), completed => completed.DamageDealt > 0);
+        Assert.False(Statuses.Has(world, world.Cards[first.Subject], Statuses.Stunned));
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
     }
 
@@ -220,7 +229,7 @@ public sealed class ActionAbilityContinuationsEnteredCardActivatingVillainGrantR
         var(_, world) = Playing(board => board.Seats[0].IdentityCard.TakeDamage(1), hero: true, abilities: runner);
         var identity = world.Seats[0].IdentityCard;
         int held = world.Seats[0].Hand.Cards.Count;
-        runner.WhenRevealed(world, identity, 0);
+        runner.ExecuteReveal(world, identity, 0);
         var frame = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.ResolveEachPlayer);
         for (int advances = 0; world.Agenda.Current?.What != Steps.ResolveEachPlayer && advances < 20; advances++)
         {

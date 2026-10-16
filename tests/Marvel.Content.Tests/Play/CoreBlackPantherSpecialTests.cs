@@ -24,11 +24,7 @@ public sealed class CoreBlackPantherSpecialTests
         var claws = Upgrade(world, "01047");
         var runner = AuthoredCards.Runner();
 
-        runner.Act(
-            world,
-            new PendingAbility(eventCard.ObjectId, AbilityType.Action, 0),
-            [resource.ObjectId],
-            []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(eventCard.ObjectId, AbilityType.Action, 0), [resource.ObjectId], []));
         var choice = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
 
@@ -52,7 +48,7 @@ public sealed class CoreBlackPantherSpecialTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
-        runner.ResolveSpecial(world, claws, 0, finalStep: true);
+        runner.ExecuteSpecial(world, claws, 0, finalStep: true);
         var choice = Assert.Single(world.Agenda.Outstanding);
         var events = new List<Marvel.Rules.Events.GameEvent>();
         var prompt = Sequence.Work(world, Cards, runner, events)!;
@@ -78,7 +74,7 @@ public sealed class CoreBlackPantherSpecialTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
-        runner.ResolveSpecial(world, suit, 0, finalStep: true);
+        runner.ExecuteSpecial(world, suit, 0, finalStep: true);
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = Sequence.Work(world, Cards, runner, [])!;
 
@@ -109,7 +105,7 @@ public sealed class CoreBlackPantherSpecialTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
-        runner.ResolveSpecial(world, daggers, 0, finalStep: true);
+        runner.ExecuteSpecial(world, daggers, 0, finalStep: true);
         var choice = Assert.Single(world.Agenda.Outstanding);
         runner.Chose(world, choice, Decision.Take(world.Seats[0].IdentityCard.ObjectId));
 
@@ -131,7 +127,7 @@ public sealed class CoreBlackPantherSpecialTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
-        var events = runner.ResolveSpecial(world, suit, 0, finalStep);
+        var events = runner.ExecuteSpecial(world, suit, 0, finalStep).Events;
 
         Assert.Empty(world.Agenda.Outstanding);
         Assert.Empty(events);
@@ -158,7 +154,7 @@ public sealed class CoreBlackPantherSpecialTests
         var suit = Upgrade(world, "01049");
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        runner.ResolveSpecial(world, suit, 0, finalStep);
+        runner.ExecuteSpecial(world, suit, 0, finalStep);
         var events = new List<Marvel.Rules.Events.GameEvent>();
         var prompt = Sequence.Work(world, Cards, runner, events)!;
         Assert.Contains("choose where to move damage", prompt.DisplayQuestion);
@@ -194,8 +190,7 @@ public sealed class CoreBlackPantherSpecialTests
         var enemy = world.TheCardIn(DeckType.VillainArea)!;
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        runner.Act(world, new PendingAbility(played.ObjectId, AbilityType.Action, 0),
-            [resource.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(played.ObjectId, AbilityType.Action, 0), [resource.ObjectId], []));
         var events = new List<Marvel.Rules.Events.GameEvent>();
         var ordering = Sequence.Work(world, Cards, runner, events)!;
         Sequence.Answer(world, Cards, runner, ordering,
@@ -224,7 +219,7 @@ public sealed class CoreBlackPantherSpecialTests
         var suit = Upgrade(world, "01049");
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        runner.ResolveSpecial(world, suit, 0, finalStep: true);
+        runner.ExecuteSpecial(world, suit, 0, finalStep: true);
         var events = new List<Marvel.Rules.Events.GameEvent>();
         var prompt = Sequence.Work(world, Cards, runner, events)!;
         if (stunned)

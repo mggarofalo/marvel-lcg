@@ -151,7 +151,7 @@ public sealed class HealAndStatusCardsTests
     private static void Reveal(World world, string faceId, int player = 0)
     {
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, card, player);
+        AuthoredCards.Runner().ExecuteReveal(world, card, player);
     }
 
     private static World Deal(params string[] heroes)

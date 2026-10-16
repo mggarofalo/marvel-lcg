@@ -12,9 +12,10 @@ internal sealed record AbilityDamageAndThreatResult(
     AbilityDamageAndThreatSuspension Suspension, ImmutableArray<Card> Attacked)
 {
     internal AbilityStructuralOutcome? Outcome { get; init; }
+    internal AbilityDamageCompletion? Damage { get; init; }
     internal ThreatBatch? Threat { get; init; }
     internal AbilityEffectBoundary? Boundary { get; init; }
 
-    internal static AbilityDamageAndThreatResult NotHandled { get; } =
+    internal static AbilityDamageAndThreatResult NotHandled =>
         new(false, null, null, false, AbilityDamageAndThreatSuspension.None, []);
 }

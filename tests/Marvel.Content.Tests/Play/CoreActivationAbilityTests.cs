@@ -1,5 +1,6 @@
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
+using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
@@ -26,7 +27,7 @@ public sealed class CoreActivationAbilityTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
-        runner.WhenRevealed(world, legions, 0);
+        runner.ExecuteReveal(world, legions, 0);
 
         Assert.Equal(DeckType.EngagedEnemiesArea, madame.Area.Type);
         Assert.Equal(PlayArea.Of(0), madame.Area.PlayArea);
@@ -45,9 +46,9 @@ public sealed class CoreActivationAbilityTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
 
-        var events = runner.ActivationCompleted(
+        var events = runner.CompleteActivation(
             world,
-            new EnemyActivation(madame.ObjectId, 0, Attacking: true, Made: true));
+            new EnemyActivation(madame.ObjectId, 0, Attacking: true, Made: true)).Events;
 
         Assert.Empty(events);
         Assert.Empty(world.Agenda.Outstanding);
@@ -72,7 +73,7 @@ public sealed class CoreActivationAbilityTests
         var pending = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Interrupt),
             ability => ability.Card == klaw.ObjectId);
-        runner.Resolve(world, occurrence, pending, [], []);
+        runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
 
         var waiting = world.AreaOf(
             DeckType.BoostCardsDeck, klaw.Area.PlayArea, host: klaw.ObjectId);
@@ -86,22 +87,19 @@ public sealed class CoreActivationAbilityTests
     public void KlawsVengeanceWaitsToSeeWhetherTheAttackDealtDamage()
     {
         var world = Board("01001a", "01113");
-        var scheme = world.CreateCard("01116a", world.AreaOf(DeckType.MainSchemesArea));
+        var scheme = world.CreateCard("01116b", world.AreaOf(DeckType.MainSchemesArea));
         var card = world.CreateCard("01122", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
 
-        runner.WhenRevealed(world, card, 0);
-        int activation = Assert.Single(
-            world.Agenda.Outstanding, step => step.What == Steps.Attack).ActivationId;
+        world.CreateCard("01102", world.AreaOf(DeckType.EncounterDeck));
+        world.CreateCard("01101", world.AreaOf(DeckType.EncounterDeck));
+        world.CreateCard("01101", world.AreaOf(DeckType.EncounterDeck));
+        runner.ExecuteReveal(world, card, 0);
+        FinishUnopposed(world, runner);
 
-        runner.ActivationCompleted(
-            world, new EnemyActivation(world.TheCardIn(DeckType.VillainArea)!.ObjectId,
-                0, Attacking: true, activation, Made: true, DamageDealt: 2));
-
-        var placement = Assert.Single(
-            world.Agenda.Outstanding, step => step.What == Steps.PlaceThreatEffect);
-        Assert.Equal(scheme.ObjectId, placement.Require<ThreatPlacementOperation>().Placement!.Scheme);
-        Assert.Equal(1, placement.Require<ThreatPlacementOperation>().Placement.Assigned);
+        Assert.False(world.IsOver);
+        Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(1, scheme.Tokens["k_threat"]);
     }
 
     [Rule("rr:activation.7")]
@@ -115,13 +113,13 @@ public sealed class CoreActivationAbilityTests
         var card = world.CreateCard("01145", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
 
-        runner.WhenRevealed(world, card, 0);
-        int activation = Assert.Single(
-            world.Agenda.Outstanding, step => step.What == Steps.Scheme).ActivationId;
-
-        runner.ActivationCompleted(
-            world, new EnemyActivation(world.TheCardIn(DeckType.VillainArea)!.ObjectId,
-                0, Attacking: false, activation, Made: true, ThreatPlaced: 2));
+        var scheme = world.CreateCard("01137b", world.AreaOf(DeckType.MainSchemesArea));
+        world.CreateCard("01102", world.AreaOf(DeckType.EncounterDeck));
+        world.CreateCard("01101", world.AreaOf(DeckType.EncounterDeck));
+        runner.ExecuteReveal(world, card, 0);
+        FinishUnopposed(world, runner);
+        Assert.False(world.IsOver);
+        Assert.Equal(2, scheme.Tokens["k_threat"]);
 
         var discard = world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0);
         Assert.Single(world.Seats[0].Deck.Cards);
@@ -145,12 +143,9 @@ public sealed class CoreActivationAbilityTests
         var card = world.CreateCard("01147", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
 
-        runner.WhenRevealed(world, card, 0);
-        int activation = Assert.Single(
-            world.Agenda.Outstanding, step => step.What == Steps.Attack).ActivationId;
-        runner.ActivationCompleted(
-            world, new EnemyActivation(original.ObjectId, 0, Attacking: true,
-                activation, Made: false));
+        runner.ExecuteReveal(world, card, 0);
+        Statuses.Give(world, original, Statuses.Stunned);
+        FinishUnopposed(world, runner);
 
         Assert.Equal(
             2,
@@ -171,12 +166,8 @@ public sealed class CoreActivationAbilityTests
         var card = world.CreateCard("01147", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
 
-        runner.WhenRevealed(world, card, 0);
-        int activation = Assert.Single(
-            world.Agenda.Outstanding, step => step.What == Steps.Attack).ActivationId;
-        runner.ActivationCompleted(
-            world, new EnemyActivation(original.ObjectId, 0, Attacking: true,
-                activation, Made: true));
+        runner.ExecuteReveal(world, card, 0);
+        FinishUnopposed(world, runner);
 
         Assert.Single(
             world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards);
@@ -205,15 +196,13 @@ public sealed class CoreActivationAbilityTests
             1, [Steps.CardRevealed], Subject: card.ObjectId, Player: 0);
         var runner = AuthoredCards.Runner();
 
-        runner.WhenRevealed(world, card, 0, occurrence);
+        runner.ExecuteReveal(world, card, 0, occurrence);
         var ability = new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0);
         Assert.Equal(ResolutionStatus.Pending, occurrence.StatusOf(ability));
         Assert.Equal(ResolutionStatus.Pending, occurrence.CardStatus(card.ObjectId));
 
-        var attack = Assert.Single(
-            world.Agenda.Outstanding, step => step.What == Steps.Attack);
-        runner.ActivationCompleted(world, new EnemyActivation(
-            drone.ObjectId, attack.Seat, Attacking: true, attack.ActivationId, Made: made));
+        if (!made) Statuses.Give(world, drone, Statuses.Stunned);
+        FinishUnopposed(world, runner);
 
         Assert.Equal(expected, occurrence.StatusOf(ability));
         Assert.Equal(expected, occurrence.CardStatus(card.ObjectId));
@@ -237,7 +226,7 @@ public sealed class CoreActivationAbilityTests
         var card = world.CreateCard("01147", world.AreaOf(DeckType.RevealingArea));
         world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId, Seat: 0));
 
-        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, card, 0);
 
         var choice = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
@@ -266,12 +255,9 @@ public sealed class CoreActivationAbilityTests
         var card = world.CreateCard("01164", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
 
-        runner.WhenRevealed(world, card, 0);
-        int activation = Assert.Single(
-            world.Agenda.Outstanding, step => step.What == Steps.Attack).ActivationId;
-        runner.ActivationCompleted(
-            world, new EnemyActivation(titania.ObjectId, 0, Attacking: true,
-                activation, Made: false));
+        runner.ExecuteReveal(world, card, 0);
+        Statuses.Give(world, titania, Statuses.Stunned);
+        FinishUnopposed(world, runner);
 
         Assert.Equal(0, titania.Damage);
         Assert.Single(world.AreaOf(
@@ -289,7 +275,7 @@ public sealed class CoreActivationAbilityTests
         var runner = AuthoredCards.Runner();
         world.Agenda.Add(new PhaseStep(new ActivationCompletionOperation(ActivationCompletionKind.CompleteSchemeActivation), Round: 1, Number: 1, Subject: madame.ObjectId, Seat: 0) { ActivationId = 7 });
 
-        runner.ActivationCompleted(
+        runner.CompleteActivation(
             world, new EnemyActivation(
                 madame.ObjectId, 0, Attacking: false, Id: 7, Made: true, ThreatPlaced: 1));
 
@@ -321,7 +307,7 @@ public sealed class CoreActivationAbilityTests
         var card = world.CreateCard("01133", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
 
-        runner.WhenRevealed(world, card, 0);
+        runner.ExecuteReveal(world, card, 0);
 
         var choice = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
@@ -345,7 +331,7 @@ public sealed class CoreActivationAbilityTests
         var card = world.CreateCard("01133", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
 
-        runner.WhenRevealed(world, card, 0);
+        runner.ExecuteReveal(world, card, 0);
         var choice = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
         Prompt prompt = runner.Choosing(world, choice)!;
@@ -368,7 +354,7 @@ public sealed class CoreActivationAbilityTests
         var card = world.CreateCard("01123", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
 
-        runner.WhenRevealed(world, card, 0);
+        runner.ExecuteReveal(world, card, 0);
         var choice = Assert.Single(world.Agenda.Outstanding);
         var prompt = runner.Choosing(world, choice)!;
         var exhaust = Assert.Single(prompt.Affordances);
@@ -385,21 +371,22 @@ public sealed class CoreActivationAbilityTests
     {
         var world = Board("01001a", "01113");
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        var card = world.CreateCard("01123", world.AreaOf(DeckType.BoostingArea));
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        world.CreateCard("01101", deck);
+        world.CreateCard("01101", deck);
+        world.CreateCard("01123", deck);
+        world.CreateCard("01088", world.Seats[0].Deck);
         var runner = AuthoredCards.Runner();
-        world.Activation = new EnemyActivation(
-            villain.ObjectId, 0, Attacking: true, Id: 12);
-
-        runner.Boost(world, card, 0);
+        world.Agenda.Now(new PhaseStep(new EnemyAttackOperation(), 1, 0,
+            Subject: villain.ObjectId, Seat: 0));
+        Assert.NotNull(Sequence.Work(world, Cards, runner, []));
         Assert.True(world.Seats[0].IdentityCard.Ready);
 
-        runner.ActivationCompleted(
-            world, new EnemyActivation(
-                villain.ObjectId, 0, Attacking: true, Id: 12,
-                Made: true, DamageDealt: 1)
-                { DamageRecipients = [world.Seats[0].IdentityCard.ObjectId] });
+        FinishUnopposed(world, runner);
 
+        Assert.True(world.Seats[0].IdentityCard.Damage > 0);
         Assert.False(world.Seats[0].IdentityCard.Ready);
+        Assert.False(world.IsOver);
     }
 
     [Rule("rr:attack-enemy-activation")]
@@ -422,7 +409,7 @@ public sealed class CoreActivationAbilityTests
 
         var response = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Interrupt));
-        runner.Resolve(world, occurrence, response, [], []);
+        runner.ResolveWindow(world, occurrence, response, new Decision(response.Card, [], []));
 
         Assert.Equal([1, 2], world.PendingAdditionalAttackPlayers);
     }
@@ -439,9 +426,21 @@ public sealed class CoreActivationAbilityTests
         }
         var card = world.CreateCard("01130", world.AreaOf(DeckType.BoostingArea));
 
-        AuthoredCards.Runner().Boost(world, card, 0);
+        AuthoredCards.Runner().ExecuteBoost(world, card, 0);
 
         Assert.Equal([1L, 1L], world.Seats.Select(seat => seat.IdentityCard.Damage));
+    }
+
+    private static void FinishUnopposed(World world, ICardAbilities runner)
+    {
+        var events = new List<GameEvent>();
+        int answers = 0;
+        while (Sequence.Work(world, Cards, runner, events) is { } prompt)
+        {
+            Assert.True(++answers <= 8, "A bounded activation must finish after optional opportunities.");
+            Assert.True(prompt.Cancellable, prompt.Label);
+            Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
+        }
     }
 
     private static World Board(string identity, string villain)

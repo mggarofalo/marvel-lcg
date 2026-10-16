@@ -116,7 +116,7 @@ public sealed class AbilityDataPrintedTextBoxResourceIconsTests : AbilityDataTes
             // payment and Special-resolution APIs. Activation completion is
             // likewise delivered as the result of a suspended activation.
             // Their event labels identify those direct calls; none is an
-            // occurrence-window condition in Steps.EveryCondition.
+            // occurrence-window condition in StepConditions.EveryCondition.
             if (ability.Trigger.Timing is AbilityType.Resource or AbilityType.Special || string.Equals(ability.Trigger.Event, "WhenActivationCompleted", StringComparison.Ordinal))
             {
                 Assert.NotNull(ability.Trigger.Event);
@@ -124,14 +124,14 @@ public sealed class AbilityDataPrintedTextBoxResourceIconsTests : AbilityDataTes
             }
 
             Assert.NotNull(ability.Trigger.Event);
-            Assert.True(Steps.EveryCondition.Contains(ability.Trigger.Event), $"'{ability.Card}' triggers on '{ability.Trigger.Event}', which no step " + $"produces. The engine's conditions are: " + string.Join(", ", Steps.EveryCondition.Order(StringComparer.Ordinal)));
+            Assert.True(StepConditions.EveryCondition.Contains(ability.Trigger.Event), $"'{ability.Card}' triggers on '{ability.Trigger.Event}', which no step " + $"produces. The engine's conditions are: " + string.Join(", ", StepConditions.EveryCondition.Order(StringComparer.Ordinal)));
             // The second condition of a `rr:triggering-condition.2` pair, held
             // against the same set for the same reason. A card gated on a
             // condition nothing produces never fires at all, which is worse
             // than one that fires too often and just as invisible.
             if (ability.Trigger.Also is { } also)
             {
-                Assert.True(Steps.EveryCondition.Contains(also), $"'{ability.Card}' also requires '{also}', which no step produces");
+                Assert.True(StepConditions.EveryCondition.Contains(also), $"'{ability.Card}' also requires '{also}', which no step produces");
             }
         }
     }
@@ -249,7 +249,7 @@ public sealed class AbilityDataPrintedTextBoxResourceIconsTests : AbilityDataTes
         var rhino = world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
         var card = world.CreateCard(AuthoredCards.ImTough, world.AreaOf(DeckType.RevealingArea));
         var runner = new Marvel.Cards.Run.AbilityRunner(book);
-        runner.WhenRevealed(world, card, 0);
+        runner.ExecuteReveal(world, card, 0);
         Assert.Equal(1, Statuses.Count(world, rhino, Statuses.Stunned));
         // Stalwart, granted the way a card ability grants a keyword. The stun
         // already there stays -- `rr:stalwart.2` removes existing cards and is
@@ -260,7 +260,7 @@ public sealed class AbilityDataPrintedTextBoxResourceIconsTests : AbilityDataTes
             Discard.Card(world, existing, "test", []);
         }
 
-        runner.WhenRevealed(world, card, 0);
+        runner.ExecuteReveal(world, card, 0);
         Assert.Equal(0, Statuses.Count(world, rhino, Statuses.Stunned));
     }
 

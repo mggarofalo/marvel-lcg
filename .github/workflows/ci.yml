@@ -87,8 +87,8 @@ jobs:
       - name: The rulings index is what the vendored pages produce
         run: dotnet run --project tools/Marvel.Rulings.Harvest --no-build --configuration Release -- check
 
-  platform:
-    name: Native integration (${{ matrix.os }})
+  platform-gates:
+    name: Platform gates (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     # Certification includes the complete scale matrix and rendered acceptance.
     timeout-minutes: ${{ inputs.exhaustive && 90 || 40 }}
@@ -99,6 +99,26 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - name: Establish the reviewed architecture baseline
+        shell: pwsh
+        env:
+          MARVEL_ARCHITECTURE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: ./tools/architecture-base.ps1
+
+      - name: Native process deadlines contain descendant processes
+        shell: pwsh
+        run: ./tools/native-process-tests.ps1
+
+      - name: Native case admission rejects malformed inputs
+        shell: pwsh
+        run: ./tools/native-manifest-tests.ps1
+
+      - name: Native shards retain exact membership and required results
+        shell: pwsh
+        run: ./tools/native-shard-tests.ps1
 
       # Build with the pinned SDK and execute on the net8.0 runtime Godot hosts.
       - uses: actions/setup-dotnet@v5
@@ -177,26 +197,6 @@ jobs:
           if ($null -eq $godot) { throw "Godot .NET console executable was not found" }
           "GODOT_BIN=$($godot.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: A representative local game is playable through native Godot controls (Linux)
-        if: ${{ runner.os == 'Linux' && !inputs.exhaustive }}
-        shell: bash
-        run: bash tools/godot-smoke.sh "$GODOT_BIN" --representative
-
-      - name: A representative local game is playable through native Godot controls (Windows)
-        if: ${{ runner.os == 'Windows' && !inputs.exhaustive }}
-        shell: pwsh
-        run: tools/godot-smoke.ps1 -GodotBin $env:GODOT_BIN -Representative
-
-      - name: The local viewport and scale matrix passes (Linux)
-        if: ${{ runner.os == 'Linux' && inputs.exhaustive }}
-        shell: bash
-        run: bash tools/godot-smoke.sh "$GODOT_BIN"
-
-      - name: The local viewport and scale matrix passes (Windows)
-        if: ${{ runner.os == 'Windows' && inputs.exhaustive }}
-        shell: pwsh
-        run: tools/godot-smoke.ps1 -GodotBin $env:GODOT_BIN
-
       - name: Two restricted clients complete a hosted game (Linux)
         if: runner.os == 'Linux'
         shell: bash
@@ -238,7 +238,7 @@ jobs:
           grep -q 'name: marvel-diagnostics' <<<"$compose"
           [[ $(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$image") == 0.1.0-dev.0 ]]
           docker run --rm --entrypoint dotnet "$image" Marvel.Server.Host.dll --version |
-            grep -F 'v0.1.0-dev.0 · engine engine-replay-v17 · protocol 32 · save 6'
+            grep -F 'v0.1.0-dev.0 · engine engine-replay-v18 · protocol 32 · save 6'
           docker volume create "$volume" >/dev/null
           docker volume create "$diagnostics" >/dev/null
           docker run --detach --name "$container" \
@@ -359,6 +359,89 @@ jobs:
       - name: The wall's gates fire
         shell: pwsh
         run: ./tools/godot-wall.ps1
+
+  native-journeys:
+    name: Native journeys (${{ matrix.os }}, shard ${{ matrix.shard }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ inputs.exhaustive && 90 || 40 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        shard: [0, 1]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.424
+            10.0.400
+
+      - name: Install Godot 4.7 .NET (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          curl --fail --location --silent --show-error \
+            --output godot-mono.zip \
+            https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_linux_x86_64.zip
+          echo "6ca7ff0459f1b806900be683c1b0837c607a9c16834c530dc68c81b9fc3ae1f6  godot-mono.zip" | sha256sum --check
+          unzip -q godot-mono.zip -d godot-mono
+          GODOT_BIN=$(find godot-mono -type f -name 'Godot*_mono_linux.*' | head -1)
+          chmod +x "$GODOT_BIN"
+          echo "GODOT_BIN=$GITHUB_WORKSPACE/$GODOT_BIN" >> "$GITHUB_ENV"
+
+      - name: Install Godot 4.7 .NET (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest `
+            -Uri "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_win64.zip" `
+            -OutFile godot-mono.zip
+          $actual = (Get-FileHash godot-mono.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne "764a089809fb1a6f745686ce9f6d3ca83adce8fb60fb9a4e2324b63baaebaa45") {
+            throw "Godot archive hash mismatch: $actual"
+          }
+          Expand-Archive godot-mono.zip -DestinationPath godot-mono
+          $godot = Get-ChildItem godot-mono -Recurse -Filter '*_console.exe' | Select-Object -First 1
+          if ($null -eq $godot) { throw "Godot .NET console executable was not found" }
+          "GODOT_BIN=$($godot.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: The selected native profile completes its exact shard
+        shell: pwsh
+        env:
+          NATIVE_PROFILE: ${{ inputs.exhaustive && 'exhaustive' || 'representative' }}
+          MARVEL_NATIVE_RESULTS_DIRECTORY: ${{ runner.temp }}/native-evidence-${{ matrix.shard }}
+        run: ./tools/native-cases.ps1 -GodotBin $env:GODOT_BIN -Profile $env:NATIVE_PROFILE -ShardCount 2 -ShardIndex ${{ matrix.shard }}
+
+      - name: Retain native shard inputs and results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-evidence-${{ matrix.os }}-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/native-evidence-${{ matrix.shard }}
+          retention-days: 7
+          if-no-files-found: ignore
+
+  platform:
+    name: Native integration (${{ matrix.os }})
+    # Keep the required check names while requiring every platform gate and journey shard.
+    if: ${{ always() }}
+    needs: [platform-gates, native-journeys]
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.exhaustive && 90 || 40 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Require every platform gate and native shard to succeed
+        shell: pwsh
+        env:
+          PLATFORM_GATES_RESULT: ${{ needs.platform-gates.result }}
+          NATIVE_JOURNEYS_RESULT: ${{ needs.native-journeys.result }}
+        run: ./tools/native-integration-result.ps1 -PlatformGates $env:PLATFORM_GATES_RESULT -NativeJourneys $env:NATIVE_JOURNEYS_RESULT
 
   desktop-package:
     name: Windows desktop community package

@@ -41,6 +41,7 @@ func _window() -> Control:
 
 
 func _verify_named_response() -> bool:
+	if not await preload("res://smoke/native_scale_checkpoint.gd").requested(self, "nested-window" ): return false
 	await process_frame
 	await process_frame
 	var window := _window()

@@ -44,7 +44,7 @@ public sealed class FacedownMinionAdmissionTests
         var held = Assert.Single(world.Seats[0].Deck.Cards);
         var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
 
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
 
         Assert.Equal(DeckType.EngagedEnemiesArea, held.Area.Type);
         Assert.Equal("effective-drone", held.InstanceState.Profile?.Id);

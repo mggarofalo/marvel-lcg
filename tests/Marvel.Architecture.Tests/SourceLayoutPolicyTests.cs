@@ -269,7 +269,7 @@ public sealed class SourceLayoutPolicyTests
         return $"{path}:{line}: {rule}: {detail}";
     }
 
-    private static IEnumerable<string> ApplicationSources()
+    internal static IEnumerable<string> ApplicationSources()
     {
         string output = GitOutput(
             "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--",

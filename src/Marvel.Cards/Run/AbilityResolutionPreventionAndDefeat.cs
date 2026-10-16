@@ -17,65 +17,6 @@ internal static class AbilityResolutionPreventionAndDefeat
         => AbilityUseRecording.Record(world, execution.program, card, ability, occurrence);
 
     /// <inheritdoc/>
-    internal static long WouldBeDealt(this AbilityResolutionExecution execution,
-        World world, Card target, Card source, long amount, List<GameEvent> events)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(target);
-        ArgumentNullException.ThrowIfNull(events);
-
-        if (amount <= 0)
-        {
-            return amount;
-        }
-
-        var occurrence = new Occurrence(
-            0, [Steps.DamageWouldBeDealt], Subject: target.ObjectId, Player: target.Owner);
-
-        long left = amount;
-        foreach (var (card, ability) in execution.Waiting(world, occurrence))
-        {
-            // **Forced only.** `rr:ability.11` makes everything optional unless
-            // prefaced by "Forced", and an optional interrupt is a question --
-            // which needs a window, which dealing damage has not got. A card
-            // that would ask here is refused by name rather than resolved
-            // without asking.
-            if (ability.Trigger.Timing != AbilityType.ForcedInterrupt)
-            {
-                // Optional interrupts are offered by the agenda before attack
-                // damage is applied. A direct damage call has no window, so it
-                // cannot trigger one and must not resolve it on the player's
-                // behalf.
-                continue;
-            }
-
-            var cast = new AbilityResolutionState(world, card, occurrence, target.Owner, events)
-            {
-                Incoming = left,
-                Tier = ability.Trigger.Timing,
-            };
-
-            execution.TrackResolution(cast, ability);
-            execution.Run(ability, cast);
-            cast.CompleteResolution();
-
-            // An ability that touched the damage says so; one that did nothing
-            // to it leaves it alone. `rr:damage.step.1` holds abilities that
-            // *may* replace the damage, not ones that must.
-            left = cast.Remaining < 0 ? left : cast.Remaining;
-            if (left <= 0)
-            {
-                // `rr:replacement-effect.1` -- "when an effect is replaced, it
-                // is no longer considered imminent and no further interrupts or
-                // responses to that effect can be triggered."
-                return 0;
-            }
-        }
-
-        return left;
-    }
-
-    /// <inheritdoc/>
     internal static long WouldTake(this AbilityResolutionExecution execution,
         World world, Card target, Card source, long amount, List<GameEvent> events)
     {
@@ -114,91 +55,19 @@ internal static class AbilityResolutionPreventionAndDefeat
         }
     }
 
-    /// <inheritdoc/>
-    internal static void WouldBeDefeated(this AbilityResolutionExecution execution, World world, Card target, List<GameEvent> events)
+    internal static IReadOnlyList<GameEvent> WouldBeDefeated(this AbilityResolutionExecution execution,
+        World world, Card target, DefeatCause cause, Occurrence occurrence)
     {
-        _ = execution.WouldBeDefeated(
-            world, target, target, Steps.CardWouldBeDefeated,
-            Steps.CardWouldBeDefeated, -1, events);
-    }
-
-    /// <inheritdoc/>
-    internal static bool WouldBeDefeated(this AbilityResolutionExecution execution,
-        World world, Card target, Card source, string trigger, string verb, int by,
-        List<GameEvent> events, Occurrence? recordDefeatOn = null)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(target);
-        ArgumentNullException.ThrowIfNull(events);
-
-        var occurrence = new Occurrence(
-            0, [Steps.CardWouldBeDefeated], Subject: target.ObjectId, Player: target.Owner);
-        var spent = world.Agenda.Occurrence;
-
-        while (AbilityWindow.Tiers(
-            execution.Waiting(world, occurrence, WindowKind.Interrupt)
-                .Where(pending => spent?.MayTrigger(WindowKind.Interrupt, pending) ?? true),
-            WindowKind.Interrupt,
-            occurrence) is { Count: > 0 } tiers)
-        {
-            var (mandatory, optional) = AbilityWindow.Split(tiers[0]);
-            if (mandatory.Count == 0)
-            {
-                execution.SuspendWouldBeDefeated(
-                    world, target, source, trigger, verb, by, occurrence, optional,
-                    recordDefeatOn);
-                return false;
-            }
-
-            if (mandatory.Count > 1)
-            {
-                execution.SuspendWouldBeDefeated(
-                    world, target, source, trigger, verb, by, occurrence, mandatory,
-                    recordDefeatOn);
-                return false;
-            }
-
-            occurrence.Trigger(WindowKind.Interrupt, mandatory[0]);
-            spent?.Trigger(WindowKind.Interrupt, mandatory[0]);
-            ActivityBatches.Append(events, execution.Resolve(world, occurrence, mandatory[0], [], []));
-
-            // `rr:would.1`: once the interrupt changes the imminent defeat,
-            // no later interrupt to that original condition may be used.
-            if (DamagePlacement.Health(world, world.Facts, target) - target.Damage > 0)
-            {
-                return true;
-            }
-        }
-
-        return true;
-    }
-
-    internal static void SuspendWouldBeDefeated(this AbilityResolutionExecution execution,
-        World world, Card target, Card source, string trigger, string verb, int by,
-        Occurrence occurrence, IReadOnlyList<PendingAbility> pending,
-        Occurrence? recordDefeatOn)
-    {
-        var step = new PhaseStep(
-            new DefeatAbilityOperation(DefeatAbilityKind.ChooseWouldBeDefeated,
-                new DefeatCause(source.ObjectId, trigger, verb, by, recordDefeatOn),
-                new DefeatWindow(occurrence, [.. pending])),
-            world.Agenda.Current?.Round ?? 0,
-            6,
-            Subject: target.ObjectId,
-            Seat: target.Owner >= 0 ? target.Owner : world.FirstPlayer,
-            Plan: true);
-
-        if (world.Agenda.Occurrence is { } parent)
-        {
-            var owner = world.Agenda.Current
-                ?? throw new InvalidOperationException("a defeat occurrence has no owning frame");
-            world.Agenda.ThenContinuation(step, parent);
-            world.Agenda.BeforeResponses(owner, parent);
-        }
-        else
-        {
-            world.Agenda.Add(step);
-        }
+        var pending = execution.Waiting(world, occurrence, WindowKind.Interrupt);
+        if (AbilityWindow.Tiers(pending, WindowKind.Interrupt, occurrence).Count == 0) return [];
+        var continuation = new PhaseStep(
+            new DefeatAbilityOperation(DefeatAbilityKind.ResumeWouldBeDefeated, cause,
+                new DefeatWindow(occurrence)), world.Agenda.Current?.Round ?? 0, 6,
+            Subject: target.ObjectId, Seat: target.Owner >= 0 ? target.Owner : world.FirstPlayer, Plan: true);
+        if (world.Agenda.Current is { } owner && world.Agenda.Occurrence is { } containing)
+            world.Agenda.ContinueBeforeOwner(containing, owner, continuation);
+        else world.Agenda.Add(continuation);
+        return [];
     }
 
     /// <summary>Every authored ability answering one occurrence, with its card.</summary>

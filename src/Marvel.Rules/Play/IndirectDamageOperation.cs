@@ -9,6 +9,8 @@ public sealed record IndirectDamageOperation(IndirectDamageKind Kind,
     Occurrence? Origin = null, IReadOnlyList<int>? Candidates = null,
     IReadOnlyDictionary<int, long>? Amounts = null) : AgendaOperation
 {
+    internal DamageReplacement? Replacement { get; set; }
+    internal IReadOnlyDictionary<int, int>? Incarnations { get; init; }
     /// <inheritdoc/>
     public override string What => Kind switch
     {

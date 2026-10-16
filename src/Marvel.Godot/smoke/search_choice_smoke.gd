@@ -62,6 +62,7 @@ func _stage_search_choice() -> bool:
 
 
 func _commit_search_choice() -> bool:
+	if not await preload("res://smoke/native_scale_checkpoint.gd").requested(self, "selected-search" ): return false
 	if not await _pointer_activate(_button_named("Add Tactical Genius to your hand")): return false
 	if not await _wait_for(func() -> bool: return _search_frame() == null):
 		_fail("committed search stayed open")

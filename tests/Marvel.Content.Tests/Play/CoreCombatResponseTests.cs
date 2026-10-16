@@ -29,7 +29,7 @@ public sealed class CoreCombatResponseTests
         world.Abilities = runner;
 
         var action = runner.Actions(world, 0).Single(ability => ability.Card == blast.ObjectId);
-        var events = runner.Act(world, action, [payment.ObjectId], []).ToList();
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [payment.ObjectId], [])).Events.ToList();
         var prompt = Sequence.Work(world, Cards, runner, events)!;
         Assert.Contains(
             "14/14 → 9/14 HP", Assert.Single(prompt.Affordances).Description);
@@ -56,7 +56,7 @@ public sealed class CoreCombatResponseTests
         Reveal.EnterPlay(world, Cards, team, [], abilities: runner);
 
         var action = runner.Actions(world, 0).Single(ability => ability.Card == team.ObjectId);
-        runner.Act(world, action, [], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         var prompt = Sequence.Work(world, Cards, runner, [])!;
 
         Assert.Contains(
@@ -80,7 +80,7 @@ public sealed class CoreCombatResponseTests
         var pending = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Response),
             ability => ability.Card == strength.ObjectId);
-        runner.Resolve(world, occurrence, pending, [], []);
+        runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
 
         Assert.False(DeckTypes.IsInPlay(strength.Area.Type));
         Assert.True(Statuses.Has(world, minion, Statuses.Stunned));
@@ -105,7 +105,7 @@ public sealed class CoreCombatResponseTests
         world.Abilities = runner;
 
         var action = runner.Actions(world, 0).Single(ability => ability.Card == uppercut.ObjectId);
-        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId, energy.ObjectId], []));
         var target = Sequence.Work(world, Cards, runner, [])!;
         Sequence.Answer(world, Cards, runner, target, Decision.Take(enemy.ObjectId), []);
 
@@ -141,7 +141,7 @@ public sealed class CoreCombatResponseTests
             Card: hero.ObjectId, Affects: hero.ObjectId));
 
         var action = runner.Actions(world, 0).Single(ability => ability.Card == uppercut.ObjectId);
-        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+        runner.ExecuteAction(world, new PlayerAction(action, [genius.ObjectId, energy.ObjectId], []));
         var target = Sequence.Work(world, Cards, runner, [])!;
         Sequence.Answer(world, Cards, runner, target, Decision.Take(modok.ObjectId), []);
         Sequence.Finish(world, Cards, runner, []);
@@ -169,7 +169,7 @@ public sealed class CoreCombatResponseTests
 
         occurrence.Also(new Defeated(minion.ObjectId, tigra.ObjectId, "Attack") { Kind = CardKind.Minion });
         var pending = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
-        runner.Resolve(world, occurrence, pending, [], []);
+        runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
 
         Assert.Equal(0, tigra.Damage);
     }
@@ -190,7 +190,7 @@ public sealed class CoreCombatResponseTests
             daredevil.ObjectId, scheme.ObjectId, 0);
 
         var pending = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
-        runner.Resolve(world, occurrence, pending, [], []);
+        runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
         var waiting = Assert.Single(world.Agenda.Outstanding);
         runner.Chose(world, waiting, Decision.Take(minion.ObjectId));
 
@@ -217,7 +217,7 @@ public sealed class CoreCombatResponseTests
         world.FinishedAttack = new EnemyAttack(
             enemy.ObjectId, 0, hero.ObjectId, Defender: hero.ObjectId, BasicDefense: false);
         var pending = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
-        runner.Resolve(world, occurrence, pending, [], []);
+        runner.ResolveWindow(world, occurrence, pending, new Decision(pending.Card, [], []));
 
         Assert.True(hero.Ready);
         Assert.False(DeckTypes.IsInPlay(indomitable.Area.Type));
@@ -278,9 +278,7 @@ public sealed class CoreCombatResponseTests
         Assert.DoesNotContain(
             runner.Waiting(world, occurrence, WindowKind.Response),
             ability => ability.Card == counterPunch.ObjectId);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Resolve(
-            world, occurrence,
-            new PendingAbility(counterPunch.ObjectId, AbilityType.Response, 0), [], []));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ResolveWindow(world, occurrence, new PendingAbility(counterPunch.ObjectId, AbilityType.Response, 0), new Decision(counterPunch.ObjectId, [], [])));
 
         Assert.Equal(DeckType.HandsArea, counterPunch.Area.Type);
         Assert.Equal(0, enemy.Damage);

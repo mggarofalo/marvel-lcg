@@ -13,7 +13,7 @@ public sealed class CommitGatePolicyTests
             RepositoryPaths.Repository(".husky", "task-runner.json")));
         JsonElement[] tasks = configuration.RootElement.GetProperty("tasks")
             .EnumerateArray().ToArray();
-        Assert.Equal(["source-layout", "cyclomatic-complexity", "file-length"],
+        Assert.Equal(["architecture-policy", "cyclomatic-complexity", "file-length"],
             tasks.Where(task => task.GetProperty("group").GetString() == "pre-commit")
                 .Select(Name));
         tasks = tasks.Where(task => task.GetProperty("group").GetString() == "validation")

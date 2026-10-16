@@ -29,7 +29,7 @@ public sealed class RecipientCommitmentTests : ChoosingCardsTestBase
         Assert.Equal(players, offer.Targets!.Legal.Count);
         Assert.Contains("Exhaust Avengers Mansion", offer.Targets.Details![world.Seats[recipient].IdentityCard.ObjectId]);
         int[] before = [.. world.Seats.Select(seat => seat.Hand.Cards.Count)];
-        var events = runner.Act(world, ability, [], [world.Seats[recipient].IdentityCard.ObjectId]);
+        var events = runner.ExecuteAction(world, new PlayerAction(ability, [], [world.Seats[recipient].IdentityCard.ObjectId])).Events;
         Assert.False(source.Ready);
         Assert.Equal("Exhaust", events[0].Verb);
         Assert.Contains(events.Skip(1), entry => entry.Verb == "Draw");
@@ -45,8 +45,7 @@ public sealed class RecipientCommitmentTests : ChoosingCardsTestBase
     {
         var (world, runner, source) = Board(players, "01092");
         Card[] cards = [.. world.Seats.Select(seat => world.CreateCard("01083", seat.Hand))];
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [],
-            [world.Seats[recipient].IdentityCard.ObjectId]);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], [world.Seats[recipient].IdentityCard.ObjectId]));
         Assert.False(source.Ready);
         Assert.Empty(world.Agenda.Outstanding);
         for (int seat = 0; seat < players; seat++)
@@ -61,9 +60,7 @@ public sealed class RecipientCommitmentTests : ChoosingCardsTestBase
         var (world, runner, source) = Board(2, "01091");
         int identity = world.Seats[0].IdentityCard.ObjectId;
         var digest = world.Digest().Canonical();
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world,
-            new PendingAbility(source.ObjectId, AbilityType.Action, 0), [],
-            repeated ? [identity, identity] : [source.ObjectId]));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], repeated ? [identity, identity] : [source.ObjectId])));
         Assert.True(source.Ready);
         Assert.Equal(digest, world.Digest().Canonical());
     }
@@ -72,7 +69,7 @@ public sealed class RecipientCommitmentTests : ChoosingCardsTestBase
     public void EmptyRecipientRetainsTheSeparateChoiceForDurableAnswers()
     {
         var (world, runner, source) = Board(2, "01091");
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         Assert.False(source.Ready);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(2, runner.Choosing(world, waiting)!.Affordances.Count);
@@ -82,10 +79,9 @@ public sealed class RecipientCommitmentTests : ChoosingCardsTestBase
     public void DirectRecipientKeepsTheCostAndEffectEventOrderOfTheSeparateChoice()
     {
         var (direct, runner, source) = Board(2, "01091");
-        var expected = runner.Act(direct, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [],
-            [direct.Seats[1].IdentityCard.ObjectId]);
+        var expected = runner.ExecuteAction(direct, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], [direct.Seats[1].IdentityCard.ObjectId])).Events;
         var (deferred, other, sameSource) = Board(2, "01091");
-        var cost = other.Act(deferred, new PendingAbility(sameSource.ObjectId, AbilityType.Action, 0), [], []);
+        var cost = other.ExecuteAction(deferred, new PlayerAction(new PendingAbility(sameSource.ObjectId, AbilityType.Action, 0), [], [])).Events;
         var waiting = Assert.Single(deferred.Agenda.Outstanding);
         var effect = other.Chose(deferred, waiting, Decision.Take(deferred.Seats[1].IdentityCard.ObjectId));
         // Instruction ids are response-local: the direct route includes the cost

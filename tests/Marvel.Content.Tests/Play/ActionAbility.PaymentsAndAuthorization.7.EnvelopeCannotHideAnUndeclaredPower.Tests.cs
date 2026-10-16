@@ -46,7 +46,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationEnvelopeCannotHideAnUnd
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
         long threat = scheme.Tokens.GetValueOrDefault("k_threat");
         var forged = new PendingAbility(source!.ObjectId, AbilityType.Action, 0);
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, forged, [], []));
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(forged, [], [])));
         Assert.Contains("absent from its ability labels", thrown.Message);
         Assert.True(source.Ready);
         Assert.True(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Confused));

@@ -242,7 +242,7 @@ public static class Attack
     /// <inheritdoc cref="AttackDamage.AssignIndirectDamage"/>
     public static void AssignIndirectDamage(World world, ICardFacts facts, PhaseStep step, Decision input, List<GameEvent> events) => AttackDamage.AssignIndirectDamage(world, facts, step, input, events);
     /// <inheritdoc cref="AttackDamage.PrepareIndirectDamage"/>
-    public static long PrepareIndirectDamage(World world, PhaseStep step, List<GameEvent> events) => AttackDamage.PrepareIndirectDamage(world, step, events);
+    public static long? PrepareIndirectDamage(World world, PhaseStep step, List<GameEvent> events) => AttackDamage.PrepareIndirectDamage(world, step, events);
     /// <inheritdoc cref="AttackDamage.ApplyIndirectDamage"/>
     public static void ApplyIndirectDamage(World world, ICardFacts facts, PhaseStep step, List<GameEvent> events) => AttackDamage.ApplyIndirectDamage(world, facts, step, events);
     /// <inheritdoc cref="AttackDamage.FinishIndirectDamage"/>

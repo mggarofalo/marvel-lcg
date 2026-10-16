@@ -118,7 +118,7 @@ public sealed class KeywordStackingTests
         ResolveReveal(world, card, runner);
         int activation = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.Attack).ActivationId;
-        runner.ActivationCompleted(
+        runner.CompleteActivation(
             world,
             new EnemyActivation(
                 villain.ObjectId, 0, Attacking: true, activation, Made: true));
@@ -184,15 +184,16 @@ public sealed class KeywordStackingTests
         var (world, card) = Board("01110", runner);
         var seat = world.Seats[0];
         seat.IdentityCard = world.CreateCard("01001a", seat.Hero);
-        var villain = world.CreateCard("01113", world.AreaOf(DeckType.VillainArea));
+        world.CreateCard("01113", world.AreaOf(DeckType.VillainArea));
+        world.CreateCard("01101", world.AreaOf(DeckType.EncounterDeck));
 
         ResolveReveal(world, card, runner);
-        int activation = Assert.Single(
-            world.Agenda.Outstanding, step => step.What == Steps.Attack).ActivationId;
-        runner.ActivationCompleted(
-            world,
-            new EnemyActivation(
-                villain.ObjectId, 0, Attacking: true, activation, Made: true));
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        var defense = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
+        Assert.Equal(Question.Defender, defense.Asking);
+        Sequence.Answer(world, Cards, runner, defense, Decision.Decline, events);
+        Sequence.Finish(world, Cards, runner, events);
+        Assert.False(world.IsOver);
 
         AssertOneAdditionalCard(world);
     }
@@ -232,20 +233,19 @@ public sealed class KeywordStackingTests
         var world = new World(Cards, players: 2) { Abilities = runner };
         world.CreateSeat("p0");
         world.CreateSeat("p1");
+        world.Seats[0].IdentityCard = world.CreateCard("01001a", world.Seats[0].Hero);
+        world.Seats[1].IdentityCard = world.CreateCard("01010a", world.Seats[1].Hero);
         var card = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
         world.CreateCard("01122", world.AreaOf(DeckType.EncounterDeck));
         world.CreateCard("01123", world.AreaOf(DeckType.EncounterDeck));
         ResolveReveal(world, card, runner);
-        var order = Assert.Single(world.Agenda.Outstanding,
-            item => item.What == Steps.OrderEachPlayer);
-        var operation = order.Require<AbilityContinuationAgendaOperation>() with
-            { Stage = AbilityContinuationStage.ResolvePlayer };
-        world.Agenda.Add(order with { Operation = operation, Seat = 0 });
-        world.Agenda.Add(order with { Operation = operation with { FinalPlayer = true }, Seat = 1 });
-        var first = world.Agenda.Outstanding.First(item => item.What == Steps.ResolveEachPlayer);
-        runner.ResolveEachPlayer(world, first);
-        var second = world.Agenda.Outstanding.Last(item => item.What == Steps.ResolveEachPlayer);
-        runner.ResolveEachPlayer(world, second);
+        var prompt = Sequence.Work(world, Cards, runner, []);
+        Assert.NotNull(prompt);
+        Assert.Equal(Question.Order, prompt.Asking);
+        var order = Assert.Single(prompt.Affordances);
+        Sequence.Answer(world, Cards, runner, prompt,
+            new Decision(order.Id, world.Seats.Select(seat => seat.IdentityCard.ObjectId).ToArray()), []);
+        Sequence.Finish(world, Cards, runner, []);
 
         AssertOneAdditionalCard(world);
     }
@@ -358,7 +358,7 @@ public sealed class KeywordStackingTests
     private static void ResolveReveal(World world, Card card, AbilityRunner runner)
     {
         RevealKeywords.Keywords(world, Cards, runner, card, player: 0, []);
-        runner.WhenRevealed(world, card, player: 0);
+        runner.ExecuteReveal(world, card, player: 0);
     }
 
     private static void AssertOneAdditionalCard(World world)

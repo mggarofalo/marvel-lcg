@@ -34,7 +34,7 @@ internal static class SourceTableauTile
     {
         button.Text = button.AccessibilityName;
         button.SelfModulate = Colors.White;
-        button.CustomMinimumSize = new Vector2(0, 28);
+        button.CustomMinimumSize = new Vector2(0, 32);
         button.AutowrapMode = TextServer.AutowrapMode.Word;
         button.Alignment = HorizontalAlignment.Left;
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;

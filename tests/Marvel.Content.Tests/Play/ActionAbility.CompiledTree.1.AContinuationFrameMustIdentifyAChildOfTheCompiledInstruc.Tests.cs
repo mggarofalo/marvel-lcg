@@ -30,13 +30,13 @@ public sealed class ActionAbilityCompiledTreeAContinuationFrameMustIdentifyAChil
             1 => new ConditionalFrame(true),
             _ => new ForEachFrame(1, 2),
         };
-        var forged = AbilityContinuationFixtures.Step(source, invalid);
+        var forged = AbilityContinuationFixtures.Current(world, source, invalid);
         var error = Assert.Throws<RulesNotImplementedException>(() => runner.ResumeAbility(world, forged));
         Assert.Contains("continuation frame", error.Message, StringComparison.Ordinal);
         Assert.True(source.Ready);
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(0, world.Random.Generator.WordsConsumed);
-        Assert.False(world.Agenda.IsBusy);
+        Assert.Equal(forged, world.Agenda.Current);
     }
 
     [Rule("rr:choose-option.2")]
@@ -56,7 +56,7 @@ public sealed class ActionAbilityCompiledTreeAContinuationFrameMustIdentifyAChil
         var populated = world.Seats[selectedDeckEmpty ? 0 : 1].Deck;
         var bottom = world.CreateCard("01002", populated);
         var top = world.CreateCard("01003", populated);
-        runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
+        runner.ExecuteAction(world, new PlayerAction(new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []));
         var selection = Assert.IsType<Prompt>(Sequence.Work(world, CardCatalogData, runner, []));
         Sequence.Answer(world, CardCatalogData, runner, selection, Decision.Take(world.Seats[1].IdentityCard.ObjectId), []);
         var options = Assert.IsType<Prompt>(Sequence.Work(world, CardCatalogData, runner, []));

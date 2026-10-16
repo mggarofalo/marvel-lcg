@@ -183,6 +183,10 @@ func _source_chooser_restores_keyboard_focus() -> bool:
 	if chooser == null:
 		_fail("the ally's multiple actions did not open a local chooser")
 		return false
+	var continuity = preload("res://smoke/native_choice_continuity.gd")
+	var captured: Dictionary = await continuity.exercise_scale(self, chooser)
+	if captured.is_empty(): return false
+	chooser = main.find_child("CardActionChoices", true, false) as Control
 	if not await _dismiss_source_chooser(chooser): return false
 	if not await _wait_for(func() -> bool:
 		var current := _attached(_attached_name(BLACK_CAT, "Action"))
@@ -196,8 +200,11 @@ func _source_chooser_restores_keyboard_focus() -> bool:
 	if chooser == null:
 		_fail("the restored source focus could not reopen its chooser with the keyboard")
 		return false
+	if not await preload("res://smoke/native_scale_checkpoint.gd").requested(self, "ambiguity"): return false
+	chooser = main.find_child("CardActionChoices", true, false) as Control
+	captured = continuity.capture(self, chooser)
 	if not await _dismiss_source_chooser(chooser): return false
-	return _task_commit() == null
+	return await continuity.stays_dismissed(self, captured)
 
 
 func _dismiss_source_chooser(chooser: Control) -> bool:

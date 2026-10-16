@@ -72,20 +72,22 @@ public abstract class CardPlayTestBase
     .With("together", ("Cost", "3"), ("Alliance", "1")).With("alone", ("Cost", "3"));
     protected sealed class Silent : NoCardAbilities
     {
-        public override IReadOnlyList<GameEvent> Resolve(World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => [];
+        public override AbilityExecutionResult Resolve(
+            World world, AbilityExecution invocation, Decision answer) => invocation.Finish([]);
     }
 
     protected sealed class Counting : NoCardAbilities
     {
         public int Resolved { get; private set; }
 
-        public override IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player)
+        public override AbilityExecutionResult WhenRevealed(World world, AbilityExecution entry, Card card, int player)
         {
             Resolved += 1;
-            return[];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
 
-        public override IReadOnlyList<GameEvent> Resolve(World world, Occurrence occurrence, PendingAbility ability, IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => [];
+        public override AbilityExecutionResult Resolve(
+            World world, AbilityExecution invocation, Decision answer) => invocation.Finish([]);
     }
 
     protected sealed class Targets(params int[] targets) : NoCardAbilities

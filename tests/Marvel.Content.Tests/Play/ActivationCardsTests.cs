@@ -186,7 +186,7 @@ public sealed class ActivationCardsTests
         var card = world.CreateCard(
             AuthoredCards.Assault, world.AreaOf(DeckType.RevealingArea));
         world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId));
-        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+        AuthoredCards.Runner().ExecuteReveal(world, card, 0);
 
         // Not a scratch on the identity yet, and an attack waiting behind the
         // reveal that caused it.
@@ -270,7 +270,7 @@ public sealed class ActivationCardsTests
     private static void Reveal(World world, string faceId, int player = 0)
     {
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().WhenRevealed(world, card, player);
+        AuthoredCards.Runner().ExecuteReveal(world, card, player);
     }
 
     private static World Deal(params string[] heroes)

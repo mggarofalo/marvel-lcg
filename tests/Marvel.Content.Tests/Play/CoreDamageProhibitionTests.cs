@@ -32,10 +32,12 @@ public sealed class CoreDamageProhibitionTests
         Assert.False(runner.CanTakeDamage(world, killmonger, pantherUpgrade));
         Assert.True(runner.CanTakeDamage(world, killmonger, basicUpgrade));
 
-        DamagePlacement.Deal(world, Cards, pantherUpgrade, killmonger, 3, "test", "Damage", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(pantherUpgrade, killmonger, 3, "test", "Damage"), []);
         Assert.Equal(0, killmonger.Damage);
 
-        DamagePlacement.Deal(world, Cards, basicUpgrade, killmonger, 2, "test", "Damage", []);
+        DamagePlacement.Resolve(world, Cards,
+            new(basicUpgrade, killmonger, 2, "test", "Damage"), []);
         Assert.Equal(2, killmonger.Damage);
     }
 

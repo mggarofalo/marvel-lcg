@@ -10,11 +10,9 @@ namespace Marvel.Rules.Play;
 /// <summary>Card text needed while resolving an encounter card.</summary>
 public interface IEncounterCardAbilities
 {
-    IReadOnlyList<GameEvent> EntersPlay(World world, Card card);
-    IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player);
-    IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player, Occurrence occurrence);
+    AbilityExecutionResult EntersPlay(World world, AbilityExecution entry, Card card);
+    AbilityExecutionResult WhenRevealed(World world, AbilityExecution entry, Card card, int player);
     IReadOnlyList<PendingAbility> WhenRevealedAbilities(World world, Card card, int player);
     WhenRevealedCanceled? CancelWhenRevealed(World world, Card card, int player, Occurrence occurrence);
-    IReadOnlyList<GameEvent> Boost(World world, Card card, int player);
 }
 #pragma warning restore CS1591

@@ -13,6 +13,6 @@ public interface ICardSetupAbilities
     int? SetupController(World world, Card card);
     void ValidateForPlay(World world);
     IReadOnlyList<Card> PlayerSetupCards(World world, int player);
-    IReadOnlyList<GameEvent> Setup(World world, Card card);
+    AbilityExecutionResult Setup(World world, AbilityExecution entry, Card card);
 }
 #pragma warning restore CS1591

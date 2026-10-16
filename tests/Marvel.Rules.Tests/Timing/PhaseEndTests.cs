@@ -235,9 +235,8 @@ public sealed class PhaseEndTests
             return [];
         }
 
-        public override IReadOnlyList<GameEvent> Resolve(
-            World asked, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen) => [];
+        public override AbilityExecutionResult Resolve(
+            World asked, AbilityExecution invocation, Decision answer) => invocation.Finish([]);
 
         public override Affordance Describe(World asked, PendingAbility ability) =>
             new(ability.Card, "Use", ability.Card, ability.Player, $"ability on {ability.Card}");
@@ -251,12 +250,11 @@ public sealed class PhaseEndTests
         public override IReadOnlyList<PendingAbility> Waiting(
             World world, Occurrence occurrence, WindowKind window) => abilities;
 
-        public override IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
+        public override AbilityExecutionResult Resolve(
+            World world, AbilityExecution invocation, Decision answer)
         {
             Resolved += 1;
-            return [];
+            return invocation.Finish([]);
         }
 
         public override Affordance Describe(World world, PendingAbility ability) =>

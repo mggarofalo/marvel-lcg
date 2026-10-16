@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
 using static Marvel.Cards.Run.AbilityPowerProjection;
@@ -23,7 +24,7 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilityRepeatedDamageAnalysis
 {
-    private static readonly HashSet<string> CardMutationTransferOperations =
+    private static readonly ImmutableArray<string> CardMutationTransferOperations =
     [
         "giveStatus", "grantUntil", "discard", "putIntoPlay",
     ];

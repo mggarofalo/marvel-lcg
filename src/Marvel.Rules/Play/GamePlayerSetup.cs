@@ -51,7 +51,7 @@ internal static class GamePlayerSetup
 
             if (game.playerSetup.TryDequeue(out var card))
             {
-                ActivityBatches.Append(happened, game.world.SetupAbilities.Setup(game.world, card));
+                ActivityBatches.Append(happened, game.world.SetupAbilities.ExecuteSetup(game.world, card).Events);
                 continue;
             }
 

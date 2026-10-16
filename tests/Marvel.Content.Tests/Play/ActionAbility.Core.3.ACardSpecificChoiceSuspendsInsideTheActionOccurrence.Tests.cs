@@ -226,7 +226,7 @@ public sealed class ActionAbilityCoreACardSpecificChoiceSuspendsInsideTheActionO
         var eventCard = Assert.IsType<Card>(card);
         Assert.DoesNotContain(game.Pending!.Affordances, option => option.Verb == Game.ActionVerb && option.AnchorId == eventCard.ObjectId);
         int[] payment = [..world.Seats[0].Hand.Cards.Where(candidate => candidate.ObjectId != eventCard.ObjectId).Select(candidate => candidate.ObjectId)];
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, new PendingAbility(eventCard.ObjectId, AbilityType.Action, 0), payment, []));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(new PendingAbility(eventCard.ObjectId, AbilityType.Action, 0), payment, [])));
         Assert.Same(world.Seats[0].Hand, eventCard.Area);
         Assert.All(payment, id => Assert.Same(world.Seats[0].Hand, world.Cards[id].Area));
     }

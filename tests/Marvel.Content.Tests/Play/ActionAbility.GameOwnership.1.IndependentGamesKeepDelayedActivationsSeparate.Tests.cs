@@ -18,10 +18,13 @@ public sealed class ActionAbilityGameOwnershipIndependentGamesKeepDelayedActivat
     {
         // Activation and card ids are game-local. Completing an id in one
         // board must neither run nor consume another board's delayed text.
-        var program = GameOwnershipProgram("""
-            {"afterActivation":{"effect":{
-              "placeCounters":{"card":"this","counter":"test","count":1}}}}
-            """);
+        var program = AbilityLowering.Book(AbilityCatalog.Parse("""
+            {"cards":[{"card":"01006","abilities":[{
+              "trigger":{"event":"WhenDamageWouldBeDealt","timing":"Interrupt","target":"you"},
+              "effect":{"afterActivation":{"effect":{
+                "placeCounters":{"card":"this","counter":"test","count":1}}}}
+            }]}]}
+            """));
         var firstRunner = new AbilityRunner(program);
         var secondRunner = shareRunner ? firstRunner : new AbilityRunner(program);
         static (World World, Card Source, AbilityRunner Runner) Board(AbilityRunner runner)
@@ -40,9 +43,24 @@ public sealed class ActionAbilityGameOwnershipIndependentGamesKeepDelayedActivat
 
         )
         {
-            world.Activation = new EnemyActivation(world.TheCardIn(DeckType.VillainArea)!.ObjectId, 0, Attacking: true, Id: 41);
-            var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
-            runner.Act(world, action, [], []);
+            var deck = world.AreaOf(DeckType.EncounterDeck);
+            world.CreateCard("01101", deck);
+            world.CreateCard("01101", deck);
+            world.Agenda.Now(new PhaseStep(new EnemyAttackOperation(), 1, 0,
+                Subject: world.TheCardIn(DeckType.VillainArea)!.ObjectId, Seat: 0));
+            var events = new List<Marvel.Rules.Events.GameEvent>();
+            for (int count = 0; count < 6; count++)
+            {
+                var prompt = Sequence.Work(world, world.Facts, runner, events)!;
+                var offered = prompt.Affordances.SingleOrDefault(offer => offer.AnchorId == source.ObjectId);
+                if (offered is not null)
+                {
+                    Sequence.Answer(world, world.Facts, runner, prompt, Decision.Take(offered.Id), events);
+                    break;
+                }
+                Assert.True(prompt.Cancellable);
+                Sequence.Answer(world, world.Facts, runner, prompt, Decision.Decline, events);
+            }
             Assert.DoesNotContain("c_test", source.Tokens.Keys);
         }
 
@@ -54,15 +72,15 @@ public sealed class ActionAbilityGameOwnershipIndependentGamesKeepDelayedActivat
 
         : [first, second];
         string untouched = boards[1].World.Digest().Canonical();
-        boards[0].Runner.ActivationCompleted(boards[0].World, boards[0].World.Activation!);
+        Sequence.Finish(boards[0].World, boards[0].World.Facts, boards[0].Runner, []);
         Assert.Equal(1, boards[0].Source.Tokens.GetValueOrDefault("c_test"));
         Assert.Equal(untouched, boards[1].World.Digest().Canonical());
         Assert.DoesNotContain("c_test", boards[1].Source.Tokens.Keys);
-        boards[1].Runner.ActivationCompleted(boards[1].World, boards[1].World.Activation!);
+        Sequence.Finish(boards[1].World, boards[1].World.Facts, boards[1].Runner, []);
         Assert.Equal(1, boards[1].Source.Tokens.GetValueOrDefault("c_test"));
         foreach (var(world, source, runner)in boards)
         {
-            runner.ActivationCompleted(world, world.Activation!);
+            Sequence.Finish(world, world.Facts, runner, []);
             Assert.Equal(1, source.Tokens.GetValueOrDefault("c_test"));
             Assert.False(world.Agenda.IsBusy);
             Assert.Equal(0, world.Random.Generator.WordsConsumed);

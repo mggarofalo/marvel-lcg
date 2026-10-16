@@ -136,7 +136,10 @@ public sealed class DefeatStepSevenTests
               "effect":{"placeAccelerationToken":1}}]}]}
             """.Replace("@card", Attachment, StringComparison.Ordinal),
             out var minion,
-            out _);
+            out var source);
+        // The synthetic global observer stays in play throughout both departures.
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        World.MoveToTop(source, world.AreaOf(DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId));
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
         var other = world.CreateCard(
             Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
@@ -145,10 +148,13 @@ public sealed class DefeatStepSevenTests
         Agendas.Happening(world);
         Defeat.Character(world, Cards, other, "test", []);
         Defeat.Character(world, Cards, minion, "test", []);
+        Agendas.Finish(world, Cards, world.Abilities);
 
         Assert.Equal(
             2,
             scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken) - before);
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, other.Area.Type);
     }
 
     [Rule("rr:damage.step.7")]
@@ -315,7 +321,7 @@ public sealed class DefeatStepSevenTests
         // `rr:when-defeated-abilities.2` lists it among the cards this happens
         // to -- so the step is the same step.
         var world = Board(AttachmentInterrupt, out _, out var attachment);
-        var side = world.CreateCard("01096", world.AreaOf(DeckType.SideSchemesArea));
+        var side = world.CreateCard("01109", world.AreaOf(DeckType.SideSchemesArea));
         World.MoveToTop(
             attachment,
             world.AreaOf(DeckType.UpgradesArea, side.Area.PlayArea, side.ObjectId));

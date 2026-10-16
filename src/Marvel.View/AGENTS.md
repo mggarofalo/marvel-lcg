@@ -4,6 +4,12 @@ Apply the root and [shared source guidance](../AGENTS.md). Read
 [presentation-layer.md](../../docs/presentation-layer.md) before changing this
 project. View describes authorized engine facts; it does not decide rules.
 
+Published snapshots own their collection storage. Copy nested targets, payment
+rules, occurrence metadata and provider lists at the export boundary. An
+`IReadOnlyList` declaration does not make its backing list immutable. Test source
+mutation and consumer mutation separately; distinguish a live-state alias from
+sharing between already detached presentation objects.
+
 ## Explain the decision, not just the available controls
 
 Project the current cause, source, affected objects, answering seat, question,

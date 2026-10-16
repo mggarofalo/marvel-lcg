@@ -16,7 +16,7 @@ public sealed class PublicInstructionChoiceMeaningTests : ChoosingCardsTestBase
         World world = Deal("spider_man", "black_panther");
         var runner = AuthoredCards.Runner();
         Card source = world.CreateCard("01155", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(1)));
-        runner.WhenRevealed(world, source, 1);
+        runner.ExecuteReveal(world, source, 1);
         runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(1));
 
         Prompt prompt = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source))!;
@@ -48,7 +48,7 @@ public sealed class PublicInstructionChoiceMeaningTests : ChoosingCardsTestBase
             }]}]}
             """));
         Card source = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
-        runner.WhenRevealed(world, source, 0);
+        runner.ExecuteReveal(world, source, 0);
         string before = world.Digest().Fingerprint();
 
         Prompt prompt = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source))!;

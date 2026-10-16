@@ -49,7 +49,7 @@ public sealed class ActionAbilityTypedDamageCompiledThreatExceptionOverridesOnly
         // Engine-owned source addressing: the compiled exception identifies
         // one prohibition, not permission to ignore every active prohibition.
         fields["overridesCannotFrom"] = new AbilityValue.Word("you");
-        runner.WhenRevealed(world, source, 0);
+        runner.ExecuteReveal(world, source, 0);
         Assert.Equal(anotherProhibition ? 3 : 2, scheme.Tokens.GetValueOrDefault("k_threat"));
         Assert.False(runner.CanRemoveThreat(world, scheme));
     }

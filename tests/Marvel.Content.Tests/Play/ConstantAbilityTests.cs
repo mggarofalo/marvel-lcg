@@ -154,7 +154,7 @@ public sealed class ConstantAbilityTests
 
         var action = Assert.Single(
             runner.Actions(world, 0), candidate => candidate.Card == hellcat.ObjectId);
-        var events = runner.Act(world, action, [], []);
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [], [])).Events;
 
         Assert.Equal(DeckType.HandsArea, hellcat.Area.Type);
         Assert.Equal(DeckType.DiscardPile, inspired.Area.Type);

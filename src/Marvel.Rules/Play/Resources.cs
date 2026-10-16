@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Rules.State;
 
 namespace Marvel.Rules.Play;
@@ -54,7 +55,7 @@ public static class Resources
     /// the rulebook names the resource types, not their serialized letters.
     /// </para>
     /// </remarks>
-    public static IReadOnlyList<char> Types { get; } = [Mental, Energy, Physical, Wild];
+    public static ImmutableArray<char> Types { get; } = [Mental, Energy, Physical, Wild];
 
     /// <summary>Whether a card prints a cost value that permits it to be played.</summary>
     public static bool HasPlayableCost(string faceId, ICardFacts facts)

@@ -10,14 +10,14 @@ internal static class DefeatChoiceResolution
     internal static void Resolve(World world, ICardFacts facts, IWindowAbilities abilities,
         PhaseStep step, Decision input, List<GameEvent> events)
     {
-        if (input.IsDecline) Decline(world, facts, step, events);
+        if (input.IsDecline) Decline(world, facts, abilities, step, events);
         else Choose(world, abilities, step, input, events);
     }
 
-    private static void Decline(World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    private static void Decline(World world, ICardFacts facts, IWindowAbilities abilities, PhaseStep step, List<GameEvent> events)
     {
         DefeatAbilityOperation operation = step.Require<DefeatAbilityOperation>();
-        IReadOnlyList<PendingAbility> pending = operation.Window.Abilities ?? [];
+        IReadOnlyList<PendingAbility> pending = DefeatWindowEligibility.Pending(world, abilities, step);
         if (pending.All(ability => AbilityTypes.IsMandatory(ability.Type)))
             throw new RulesNotImplementedException("a forced defeat ability ordering cannot be declined");
         int player = Player(world, step, pending, mandatory: false);
@@ -31,9 +31,6 @@ internal static class DefeatChoiceResolution
                 OccurrenceId = null,
             });
         }
-        else if (operation.Kind == DefeatAbilityKind.ChooseWouldBeDefeated)
-            DefeatProcedure.FinishWouldBeDefeated(world, facts, step, events);
-        else DefeatProcedure.FinalizeCardDefeat(world, facts, step, events);
     }
 
     private static void Choose(World world, IWindowAbilities abilities, PhaseStep step,
@@ -42,7 +39,7 @@ internal static class DefeatChoiceResolution
         DefeatAbilityOperation operation = step.Require<DefeatAbilityOperation>();
         Occurrence occurrence = operation.Window.Origin
             ?? throw new InvalidOperationException("a defeat choice has no occurrence");
-        IReadOnlyList<PendingAbility> pending = operation.Window.Abilities ?? [];
+        IReadOnlyList<PendingAbility> pending = DefeatWindowEligibility.Pending(world, abilities, step);
         bool mandatory = pending.All(ability => AbilityTypes.IsMandatory(ability.Type));
         int player = Player(world, step, pending, mandatory);
         var offered = mandatory ? pending
@@ -56,8 +53,7 @@ internal static class DefeatChoiceResolution
             ?? throw new InvalidOperationException("a defeat choice has no containing occurrence");
         if (!ReferenceEquals(containing, occurrence))
             containing.Trigger(WindowKind.Interrupt, chosen);
-        ActivityBatches.Append(events, abilities.Resolve(world, occurrence, chosen,
-            input.Spent, input.Targets, input.DefinedValues, input.Allocated));
+        ActivityBatches.Append(events, abilities.ResolveWindow(world, occurrence, chosen, input).Events);
         world.Agenda.ContinueBeforeOwner(containing, step, step with
         {
             Operation = operation with
@@ -68,7 +64,6 @@ internal static class DefeatChoiceResolution
                 {
                     Abilities = [.. pending.Where(ability => ability != chosen)],
                     Passed = [],
-                    Tier = chosen.Type,
                 },
             },
             OccurrenceId = null,

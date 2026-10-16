@@ -23,10 +23,10 @@ public abstract class VillainPhaseTestBase
     {
         public List<int> Players { get; } = [];
 
-        public override IReadOnlyList<GameEvent> ActivationCompleted(World world, EnemyActivation result)
+        public override AbilityExecutionResult ActivationCompleted(World world, AbilityExecution entry, EnemyActivation result)
         {
             Players.Add(result.Player);
-            return[];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 
@@ -34,10 +34,10 @@ public abstract class VillainPhaseTestBase
     {
         public List<string> Enemies { get; } = [];
 
-        public override IReadOnlyList<GameEvent> ActivationCompleted(World world, EnemyActivation result)
+        public override AbilityExecutionResult ActivationCompleted(World world, AbilityExecution entry, EnemyActivation result)
         {
             Enemies.Add(world.Cards[result.Enemy].FaceId);
-            return[];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 
@@ -45,7 +45,7 @@ public abstract class VillainPhaseTestBase
     {
         public List<string> Completed { get; } = [];
 
-        public override IReadOnlyList<GameEvent> ActivationCompleted(World world, EnemyActivation result)
+        public override AbilityExecutionResult ActivationCompleted(World world, AbilityExecution entry, EnemyActivation result)
         {
             Completed.Add(world.Cards[result.Enemy].FaceId);
             if (result.Enemy == villain)
@@ -53,7 +53,7 @@ public abstract class VillainPhaseTestBase
                 world.CreateCard("arriving", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(result.Player)));
             }
 
-            return[];
+            return world.Agenda.Executions.FinishBatch(entry, []);
         }
     }
 

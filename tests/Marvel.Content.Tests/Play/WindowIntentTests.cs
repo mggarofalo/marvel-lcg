@@ -41,8 +41,7 @@ public sealed class WindowIntentTests : ChoosingCardsTestBase
     {
         var (world, runner, source, occurrence, prompt) = Bird(true);
         string digest = world.Digest().Canonical();
-        Assert.Throws<RulesNotImplementedException>(() => runner.Resolve(world, occurrence,
-            new PendingAbility(source.ObjectId, AbilityType.Response, 0), [], [source.ObjectId]));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ResolveWindow(world, occurrence, new PendingAbility(source.ObjectId, AbilityType.Response, 0), new Decision(source.ObjectId, [source.ObjectId], [])));
         Assert.Equal(digest, world.Digest().Canonical());
         Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, []);
         Assert.Equal(digest, world.Digest().Canonical());
@@ -89,7 +88,7 @@ public sealed class WindowIntentTests : ChoosingCardsTestBase
         var intention = Assert.Single(offer.WindowChoices);
         Assert.Equal("Peter Parker draws 1 card", intention.Label);
         int before = world.Seats[0].Hand.Cards.Count;
-        runner.Resolve(world, occurrence, new PendingAbility(source.ObjectId, AbilityType.Response, 0), [], [intention.TargetId!.Value]);
+        runner.ResolveWindow(world, occurrence, new PendingAbility(source.ObjectId, AbilityType.Response, 0), new Decision(source.ObjectId, [intention.TargetId!.Value], []));
         Assert.Equal(before + 1, world.Seats[0].Hand.Cards.Count);
         Assert.Empty(world.Agenda.Outstanding);
     }
@@ -107,8 +106,7 @@ public sealed class WindowIntentTests : ChoosingCardsTestBase
             """);
         world.Abilities = runner;
         Assert.Empty(runner.Describe(world, new PendingAbility(source.ObjectId, AbilityType.Response, 0)).WindowChoices);
-        var events = runner.Resolve(world, occurrence,
-            new PendingAbility(source.ObjectId, AbilityType.Response, 0), [], [source.ObjectId]);
+        var events = runner.ResolveWindow(world, occurrence, new PendingAbility(source.ObjectId, AbilityType.Response, 0), new Decision(source.ObjectId, [source.ObjectId], [])).Events;
         Assert.Equal(DeckType.DiscardPile, source.Area.Type);
         Assert.Contains(events, item => item.Verb == "Discard");
         Assert.False(Statuses.Has(world, remaining, Statuses.Tough));
@@ -122,10 +120,9 @@ public sealed class WindowIntentTests : ChoosingCardsTestBase
     public void CompleteRecipientAnswerMatchesTheDurableSeparateChoiceState()
     {
         var (direct, runner, source, occurrence, _) = Bird(true);
-        runner.Resolve(direct, occurrence, new PendingAbility(source.ObjectId, AbilityType.Response, 0), [],
-            [direct.TheCardIn(DeckType.VillainArea)!.ObjectId]);
+        runner.ResolveWindow(direct, occurrence, new PendingAbility(source.ObjectId, AbilityType.Response, 0), new Decision(source.ObjectId, [direct.TheCardIn(DeckType.VillainArea)!.ObjectId], []));
         var (deferred, other, same, sameOccurrence, _) = Bird(true);
-        other.Resolve(deferred, sameOccurrence, new PendingAbility(same.ObjectId, AbilityType.Response, 0), [], []);
+        other.ResolveWindow(deferred, sameOccurrence, new PendingAbility(same.ObjectId, AbilityType.Response, 0), new Decision(same.ObjectId, [], []));
         var waiting = Assert.Single(deferred.Agenda.Outstanding);
         other.Chose(deferred, waiting, Decision.Take(deferred.TheCardIn(DeckType.VillainArea)!.ObjectId));
         Assert.Equal(direct.Digest().Canonical(), deferred.Digest().Canonical());

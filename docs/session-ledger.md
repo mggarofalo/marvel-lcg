@@ -615,4 +615,11 @@ The final native journey uses 2 clients and one persistent server. It plays,
 saves, disconnects, restarts, restores, reconnects, edits reversible history
 and reaches an engine-reported terminal result.
 
-Protocol 31 / replay v16 carry engine-authored attack identities and lifetime boundaries, exact scheme/thwart occurrence causes, named resource-ability costs, and authoritative player-loss reasons. Attack identities distinguish enemy activation ids from character occurrence ids. They do not change RNG, card-state digests, game timing, or the save envelope. Supporting travel, reveal and installation receipts may share one presentation beat; every raw event remains available in diagnostics.
+Protocol 32 carries engine-authored decision shapes, attack identities and lifetime
+boundaries, scheme/thwart occurrence causes, resource-ability costs, typed failure
+dispositions and player-loss reasons. Replay v18 reconstructs invocation-owned
+payments and nested interrupt continuations with their completion dependencies.
+Live execution permits never enter the save; replay recreates them in the new
+world. The save envelope remains schema 6, with unchanged RNG and state-digest
+formats. Supporting travel, reveal and installation receipts may share one
+presentation beat; every raw event remains available in diagnostics.

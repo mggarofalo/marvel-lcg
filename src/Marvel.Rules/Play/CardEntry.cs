@@ -27,8 +27,7 @@ public static class CardEntry
             // owner's discard pile." The ability *is* the card, so a card whose
             // ability nothing implements must say so rather than being a very
             // expensive discard.
-            ActivityBatches.Append(events, abilities.WhenRevealed(world, card, seat.Index));
-            Discard.Card(world, card, Verb, events);
+            EventCardEntry.Resolve(world, abilities, seat, card, events);
             return;
         }
 

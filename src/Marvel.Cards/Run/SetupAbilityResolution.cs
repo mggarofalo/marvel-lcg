@@ -40,19 +40,11 @@ internal static class SetupAbilityResolution
         var occurrence = new Occurrence(
             0, [Steps.Setup], Subject: card.ObjectId, Player: card.Owner);
 
-        foreach (var ability in execution.On(card))
-        {
-            if (ability.Trigger.Timing == AbilityType.Setup)
+        execution.RunOrdered(execution.On(card).Where(ability => ability.Trigger.Timing == AbilityType.Setup),
+            ability => new AbilityResolutionState(world, card, occurrence, card.Owner, events)
             {
-                var cast = new AbilityResolutionState(world, card, occurrence, card.Owner, events)
-                {
-                    Tier = ability.Trigger.Timing,
-                };
-                execution.TrackResolution(cast, ability);
-                execution.Run(ability, cast);
-                cast.CompleteResolution();
-            }
-        }
+                Tier = ability.Trigger.Timing,
+            });
 
         return events;
     }

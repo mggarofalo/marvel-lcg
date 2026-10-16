@@ -36,8 +36,8 @@ public sealed partial class DamageSourceTests
 
         // Live execution still follows the rule; it does not consume the
         // preview result as an amount or use unsupported as an illegality flag.
-        Assert.False(DamagePlacement.Deal(world, facts, world.Seats[0].IdentityCard,
-            target, 3, "test", "Damage", []));
+        Assert.Equal(0, DamagePlacement.Resolve(world, facts,
+            new(world.Seats[0].IdentityCard, target, 3, "test", "Damage"), []).Taken);
         Assert.Equal(0, target.Damage);
         Assert.False(Statuses.Has(world, target, Statuses.Tough));
     }

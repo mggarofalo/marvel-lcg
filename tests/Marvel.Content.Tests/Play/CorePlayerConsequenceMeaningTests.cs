@@ -29,12 +29,13 @@ public sealed class CorePlayerConsequenceMeaningTests
         Card second = world.CreateCard("01129", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        runner.ResolveSpecial(world, daggers, 0, finalStep: final);
+        runner.ExecuteSpecial(world, daggers, 0, finalStep: final);
         var events = new List<GameEvent>();
         Prompt prompt = Sequence.Work(world, Cards, runner, events)!;
         Affordance choice = Assert.Single(prompt.Affordances,
             offer => offer.AnchorId == world.Seats[1].IdentityCard.ObjectId);
 
+        Assert.Equal(final, prompt.Description!.StartsWith("Final step.", StringComparison.Ordinal));
         Assert.Contains("choose a player", prompt.DisplayQuestion);
         Assert.Contains("villain and their engaged enemies", prompt.Description);
         Assert.Contains("Spider-Man", choice.CommitLabel);
@@ -58,7 +59,7 @@ public sealed class CorePlayerConsequenceMeaningTests
         world.Abilities = runner;
         var occurrence = new Occurrence(1, [Steps.VillainPhaseStepOneEnds]);
         var response = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
-        runner.Resolve(world, occurrence, response, [], []);
+        runner.ResolveWindow(world, occurrence, response, new Decision(response.Card, [], []));
         var events = new List<GameEvent>();
         Prompt prompt = Sequence.Work(world, Cards, runner, events)!;
         Affordance order = Assert.Single(prompt.Affordances);
@@ -96,7 +97,7 @@ public sealed class CorePlayerConsequenceMeaningTests
             }]}]}
             """));
         world.Abilities = runner;
-        runner.ResolveSpecial(world, source, 0, finalStep: false);
+        runner.ExecuteSpecial(world, source, 0, finalStep: false);
         Prompt prompt = Sequence.Work(world, Cards, runner, [])!;
         Affordance choice = Assert.Single(prompt.Affordances,
             offer => offer.AnchorId == world.Seats[1].IdentityCard.ObjectId);
@@ -116,7 +117,7 @@ public sealed class CorePlayerConsequenceMeaningTests
         world.Abilities = runner;
         var occurrence = new Occurrence(1, [Steps.CardEntersPlay], Subject: nick.ObjectId, Player: 0);
         var response = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
-        runner.Resolve(world, occurrence, response, [], []);
+        runner.ResolveWindow(world, occurrence, response, new Decision(response.Card, [], []));
         Prompt prompt = Sequence.Work(world, Cards, runner, [])!;
         Assert.Equal(["Remove 2 threat", "Draw 3 cards", "Deal 4 damage"],
             prompt.Affordances.Select(offer => offer.DisplayLabel));

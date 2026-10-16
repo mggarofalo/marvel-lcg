@@ -1,61 +1,148 @@
 using System.Text;
 using Marvel.Rules.Events;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
-/// <summary>Validates and commits one resource payment, distinguishing generators from hand discards.</summary>
+/// <summary>Retains the accepted contribution order while generator costs resolve.</summary>
 internal sealed class CardResourcePayment(
     World world, ICardFacts facts, IResourceCardAbilities abilities, CardResourcePaymentRequest request)
 {
-    internal void Spend(List<GameEvent> events)
+    private readonly List<int> discarded = [];
+    private int firstDiscardEvent = -1;
+    private readonly StringBuilder generated = new();
+    private IReadOnlyDictionary<int, int> payers = new Dictionary<int, int>();
+    private ResourceContribution[] contributions = [];
+    private int next;
+    private ResourceExecutionResult? pending;
+    internal AbilityExecution Execution { get; private set; } = null!;
+
+    internal ResourcePaymentReceipt Spend(List<GameEvent> events)
     {
-        ArgumentNullException.ThrowIfNull(world);
+        Prepare();
+        return Commit(events);
+    }
+
+    internal void Prepare()
+    {
         ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(abilities);
-        ArgumentNullException.ThrowIfNull(request.Hands);
-        ArgumentNullException.ThrowIfNull(request.Paying);
-        ArgumentNullException.ThrowIfNull(events);
-        var spent = new List<Card>();
-        var generated = new StringBuilder();
-        IReadOnlyDictionary<int, int> abilityPayers = AbilityPayers();
-        foreach (int id in request.Paying)
-            generated.Append(Contribution(id, abilityPayers, spent, events));
-        if (!Resources.Pays(generated.ToString(), request.Cost, request.Required))
-            throw new RulesNotImplementedException(
-                $"the cost is {request.Cost}"
-                + (request.Required.Length > 0 ? $" requiring '{request.Required}'" : string.Empty)
-                + $" and the payment generates '{generated}'; "
-                + "rr:initiating-abilities.step.5 aborts without paying");
-        // rr:cost.3: resources are spent "by discarding cards from their hand".
-        // The receipt groups this explicit payment; generators retain their own committed events.
-        int start = events.Count;
-        foreach (Card card in spent) Discard.Card(world, card, CardPlay.Verb, events);
-        ActivityBatches.Complete(events, start, "Discard", -1,
-            included: spent.Select(card => card.ObjectId).ToArray());
+        payers = request.ResourcePayers ?? abilities.ResourceAbilities(world, request.Payer)
+            .GroupBy(source => source.Effect).ToDictionary(group => group.Key, _ => request.Payer);
+        Validate();
+        contributions = [.. request.Paying.Select(id => new ResourceContribution(
+            world.Cards[id], world.Cards[id].Incarnation, IsGenerator(world.Cards[id])))];
     }
 
-    private IReadOnlyDictionary<int, int> AbilityPayers() => request.ResourcePayers
-        ?? abilities.ResourceAbilities(world, request.Payer).GroupBy(source => source.Effect)
-            .ToDictionary(group => group.Key, _ => request.Payer);
-
-    private string Contribution(int id, IReadOnlyDictionary<int, int> abilityPayers,
-        List<Card> spent, List<GameEvent> events)
+    internal ResourcePaymentReceipt Commit(List<GameEvent> events)
     {
-        Card card = world.Cards[id];
-        // rr:resource-ability: using a generator in play is distinct from discarding a hand card.
-        if (abilityPayers.TryGetValue(id, out int payer) && !request.Hands.Contains(card.Area))
-            return abilities.UseResource(world, payer, id, events);
-        if (!request.Hands.Contains(card.Area)) throw OutsideHand(id);
-        if (card.ObjectId == request.Itself)
-            throw new RulesNotImplementedException($"card {id} is being played and cannot also pay for itself");
-        spent.Add(card);
-        return abilities.ResourcesGeneratedBy(world, card, request.PayingFor);
+        world.Agenda.Executions.RunBatch(
+            new Occurrence(0, ["ResourcePayment"], Subject: request.Itself, Player: request.Payer),
+            entry => { Execution = entry; return Continue(events); });
+        return new(Execution);
     }
 
-    private RulesNotImplementedException OutsideHand(int id) => new(
-        request.Hands.Count == 1 && request.Hands[0].CardOwner >= 0
-            ? $"card {id} is not in {world.Seats[request.Hands[0].CardOwner].Name}'s hand "
-              + "and cannot be spent from it"
-            : $"card {id} is in no player's hand and cannot be spent from one");
+    private void Validate()
+    {
+        if (request.Paying.Distinct().Count() != request.Paying.Count)
+            throw new RulesNotImplementedException("one resource contributor cannot pay twice");
+        var proposed = new StringBuilder();
+        foreach (int id in request.Paying)
+        {
+            Card card = world.Cards[id];
+            if (IsGenerator(card))
+            {
+                var offered = abilities.ResourceAbilities(world, payers[id]);
+                proposed.Append(offered.Single(source => source.Effect == id).Generates);
+            }
+            else
+            {
+                RequireHand(card);
+                proposed.Append(abilities.ResourcesGeneratedBy(world, card, request.PayingFor));
+            }
+        }
+        RequireEnough(proposed.ToString());
+    }
+
+    internal void Resume(List<GameEvent> events)
+    {
+        world.Agenda.Executions.Resume(Execution);
+        _ = Continue(events);
+    }
+
+    private AbilityExecutionResult Continue(List<GameEvent> events)
+    {
+        if (pending is { } previous)
+        {
+            if (!previous.Execution.IsComplete || !previous.Generation.IsComplete)
+                throw new InvalidOperationException("payment resumed before its resource generator completed");
+            generated.Append(previous.Generation.Resources);
+            pending = null;
+        }
+        while (next < contributions.Length)
+        {
+            var contribution = contributions[next++];
+            if (!Contribute(contribution, events))
+            {
+                world.Agenda.ThenContinuation(
+                    new PhaseStep(new ResourcePaymentOperation(this), world.Agenda.Current?.Round ?? 0, 0), Execution.Occurrence);
+                return Execution.Yield(events);
+            }
+        }
+        RequireEnough(generated.ToString());
+        CompleteDiscardBatch(events);
+        return Execution.Finish(events);
+    }
+
+    private bool Contribute(ResourceContribution contribution, List<GameEvent> events)
+    {
+        var card = contribution.Card;
+        if (card.Incarnation != contribution.Incarnation
+            || IsGenerator(card) != contribution.IsGenerator)
+            throw new RulesNotImplementedException(
+                $"resource contributor {card.ObjectId} no longer names its accepted copy and contribution");
+        if (contribution.IsGenerator)
+        {
+            CompleteDiscardBatch(events);
+            var result = abilities.ExecuteResource(world, payers[card.ObjectId], card.ObjectId);
+            events.AddRange(result.Execution.Events);
+            if (!result.Execution.IsComplete) { pending = result; return false; }
+            generated.Append(result.Generation.Resources);
+        }
+        else
+        {
+            RequireHand(card);
+            generated.Append(abilities.ResourcesGeneratedBy(world, card, request.PayingFor));
+            // rr:resource.1: generate resources "by discarding cards from their hand".
+            // Generation commits this discard before a later generator can suspend.
+            if (firstDiscardEvent < 0) firstDiscardEvent = events.Count;
+            discarded.Add(card.ObjectId);
+            Discard.Card(world, card, CardPlay.Verb, events);
+        }
+        return true;
+    }
+
+    private void CompleteDiscardBatch(List<GameEvent> events)
+    {
+        if (firstDiscardEvent < 0) return;
+        ActivityBatches.Complete(events, firstDiscardEvent, "Discard", -1, included: discarded.ToArray());
+        discarded.Clear();
+        firstDiscardEvent = -1;
+    }
+
+    private bool IsGenerator(Card card) => payers.ContainsKey(card.ObjectId) && !request.Hands.Contains(card.Area);
+
+    private void RequireHand(Card card)
+    {
+        if (!request.Hands.Contains(card.Area) || card.ObjectId == request.Itself)
+            throw new RulesNotImplementedException($"card {card.ObjectId} cannot be discarded to pay this cost");
+    }
+
+    private void RequireEnough(string resources)
+    {
+        if (!Resources.Pays(resources, request.Cost, request.Required))
+            throw new RulesNotImplementedException(
+                $"the cost is {request.Cost} requiring '{request.Required}' and payment generates '{resources}'; "
+                + "rr:initiating-abilities.step.5 aborts without paying");
+    }
 }

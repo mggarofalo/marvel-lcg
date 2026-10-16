@@ -37,7 +37,7 @@ public sealed class ActionAbilityCoreARedundantSourceRemainsAdvertisedTests
         var price = Assert.Single(runner.Describe(world, action).CostOptions);
         Assert.Contains(price.Generators, source => source.Effect == triplePhysical!.ObjectId);
         Assert.Contains(price.Generators, source => source.Effect == mental!.ObjectId);
-        runner.Act(world, action, [triplePhysical!.ObjectId, mental!.ObjectId], [world.Cards.First(candidate => candidate.FaceId == AuthoredCards.Shocker).ObjectId]);
+        runner.ExecuteAction(world, new PlayerAction(action, [triplePhysical!.ObjectId, mental!.ObjectId], [world.Cards.First(candidate => candidate.FaceId == AuthoredCards.Shocker).ObjectId]));
         Assert.Equal(DeckType.DiscardPile, triplePhysical.Area.Type);
         Assert.Equal(DeckType.DiscardPile, mental.Area.Type);
     }
@@ -60,13 +60,13 @@ public sealed class ActionAbilityCoreARedundantSourceRemainsAdvertisedTests
         var price = Assert.Single(runner.Describe(world, action).CostOptions);
         Assert.True(price.DeclarationSensitive);
         Assert.Contains(price.Generators, source => source.Effect == doubleWild!.ObjectId);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, action, [doubleWild!.ObjectId], []));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(action, [doubleWild!.ObjectId], [])));
         Assert.Same(world.Seats[0].Hand, card!.Area);
         Assert.Same(world.Seats[0].Hand, doubleWild!.Area);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, action, [doubleWild.ObjectId], [], allocations: [new ResourceAllocation(doubleWild.ObjectId, Cost: 0, PaidAs: "GG"), ]));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(action, [doubleWild.ObjectId], [], Allocations: [new ResourceAllocation(doubleWild.ObjectId, Cost: 0, PaidAs: "GG"), ])));
         Assert.Same(world.Seats[0].Hand, card.Area);
         Assert.Same(world.Seats[0].Hand, doubleWild.Area);
-        runner.Act(world, action, [doubleWild.ObjectId], [], allocations: [new ResourceAllocation(doubleWild.ObjectId, Cost: 0, PaidAs: "RG"), ]);
+        runner.ExecuteAction(world, new PlayerAction(action, [doubleWild.ObjectId], [], Allocations: [new ResourceAllocation(doubleWild.ObjectId, Cost: 0, PaidAs: "RG"), ]));
         Assert.Equal(DeckType.DiscardPile, card.Area.Type);
         Assert.Equal(DeckType.DiscardPile, doubleWild.Area.Type);
     }
@@ -141,7 +141,7 @@ public sealed class ActionAbilityCoreARedundantSourceRemainsAdvertisedTests
             doubleEnergy = board.CreateCard("01088", board.Seats[0].Hand);
         }, abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, action, [doubleEnergy!.ObjectId], []));
+        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(action, [doubleEnergy!.ObjectId], [])));
         Assert.Contains("allocation was not supplied", thrown.Message, StringComparison.Ordinal);
         Assert.Same(world.Seats[0].Hand, card!.Area);
         Assert.Same(world.Seats[0].Hand, doubleEnergy!.Area);
@@ -161,7 +161,7 @@ public sealed class ActionAbilityCoreARedundantSourceRemainsAdvertisedTests
             doubleEnergy = board.CreateCard("01088", board.Seats[0].Hand);
         }, abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, action, [doubleEnergy!.ObjectId], [], allocations: [new ResourceAllocation(doubleEnergy.ObjectId, Cost: 0, PaidAs: "Y"), ]));
+        Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(action, [doubleEnergy!.ObjectId], [], Allocations: [new ResourceAllocation(doubleEnergy.ObjectId, Cost: 0, PaidAs: "Y"), ])));
         Assert.Same(world.Seats[0].Hand, card!.Area);
         Assert.Same(world.Seats[0].Hand, doubleEnergy!.Area);
     }
