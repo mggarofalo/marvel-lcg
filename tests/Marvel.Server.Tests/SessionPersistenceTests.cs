@@ -1,3 +1,5 @@
+using Marvel.Protocol;
+using Marvel.Rules.Play;
 using Marvel.Decisions;
 using Marvel.Session;
 using System.Security.Cryptography;
@@ -49,15 +51,8 @@ public sealed class SessionPersistenceTests
                 "keep",
                 "persistent-table",
                 opened.Capability!,
-                new EngineDecision(mulligan.Id, []),
+                new Decision(mulligan.Id, []),
                 opened.Revision)).Error);
-
-            // Simulate the frozen schema-2 predecessor generation.
-            // The next host must verify it and atomically publish the migrated save.
-            string directory = Assert.Single(Directory.GetDirectories(root));
-            string generation = File.ReadAllText(Path.Combine(directory, "current")).Trim();
-            string predecessor = Path.Combine(directory, generation + ".session.json");
-            File.WriteAllText(predecessor, SchemaTwo(File.ReadAllText(predecessor)));
 
             var restarted = new EngineHost(
                 factory,
@@ -306,7 +301,7 @@ public sealed class SessionPersistenceTests
                     File.WriteAllText(
                         badSave,
                         File.ReadAllText(badSave).Replace(
-                            "\"schema\":5",
+                            "\"schema\":6",
                             "\"schema\":999999999999999999999",
                             StringComparison.Ordinal));
                     break;
@@ -397,62 +392,9 @@ public sealed class SessionPersistenceTests
                 Marvel.Tests.RepositoryPaths.Root, "datasets", dataset, file))))
             .ToLowerInvariant();
 
-    private static string SchemaTwo(string json)
-    {
-        JsonObject root = Assert.IsType<JsonObject>(JsonNode.Parse(json));
-        root["schema"] = 2;
-        if (root["current_prompt"] is JsonObject current)
-        {
-            AddSchemaTwoAliases(current);
-        }
-
-        foreach (JsonNode? unitNode in root["units"]!.AsArray())
-        {
-            foreach (JsonNode? stepNode in unitNode!["decisions"]!.AsArray())
-            {
-                AddSchemaTwoAliases(stepNode!["prompt"]!.AsObject());
-                _ = stepNode["decision"]!["selector"]!.AsObject().Remove("anchor_kind");
-            }
-        }
-
-        return root.ToJsonString(SessionSaveJson.Options);
-    }
-
-    private static void AddSchemaTwoAliases(JsonObject prompt)
-    {
-        foreach (JsonNode? affordanceNode in prompt["affordances"]!.AsArray())
-        {
-            AddSchemaTwoAffordance(affordanceNode!.AsObject());
-        }
-    }
-
-    private static void AddSchemaTwoAffordance(JsonObject affordance)
-    {
-        _ = affordance.Remove("anchor_kind");
-        if (affordance["targets"] is JsonObject target)
-            target["is_grouped"] = target["groups"] is JsonArray { Count: > 0 };
-        foreach (JsonNode? cost in affordance["costs"]!.AsArray())
-            AddSchemaTwoCost(cost!.AsObject());
-    }
-
-    private static void AddSchemaTwoCost(JsonObject cost)
-    {
-        cost["has_alternative"] = cost["or_cost"]!.GetValue<string>().Length > 0;
-        cost["generators"] = cost["sources"]?.DeepClone() ?? new JsonArray();
-        cost["variable_requests"] = cost["variables"]?.DeepClone() ?? new JsonArray();
-        cost["resource_costs"] = cost["components"]?.DeepClone()
-            ?? new JsonArray(new JsonObject
-            {
-                ["cost"] = cost["cost"]!.GetValue<string>(),
-                ["rule"] = cost["rule"]?.DeepClone(),
-                ["printed"] = false,
-            });
-    }
-
     private sealed class FixedCapabilities(params string[] values) : ISessionCapabilityIssuer
     {
         private readonly Queue<string> values = new(values);
-
         public string Issue() => values.Dequeue();
     }
 }

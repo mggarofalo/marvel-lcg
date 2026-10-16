@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Cards.Dsl;
 using Marvel.Content.Setup;
 using Marvel.Rules.State;

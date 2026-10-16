@@ -46,10 +46,7 @@ internal static class DecisionProgressProjection
                 .Where(generator => generator.Effect == effect)
                 .Sum(generator => generator.Generates.Length));
         VariableRequest[] requested = cost.VariableRequests.ToArray();
-        bool variablesSatisfied = composer.Values.Count == requested.Length
-            && requested.All(variable =>
-                composer.Values.TryGetValue(variable.Name, out long value)
-                && variable.Allows(value));
+        bool variablesSatisfied = DecisionAssessment.VariablesAllowed(cost, composer.Values);
         bool paymentSatisfied = composer.CostApplies(cost)
             && variablesSatisfied
             && ResourcePayment.Allows(

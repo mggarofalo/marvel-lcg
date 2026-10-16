@@ -12,22 +12,27 @@ namespace Marvel.Content.Tests.Play;
 public sealed class ActionAbilityCompiledTreeAContinuationFrameMustIdentifyAChildOfTheCompiledInstrucTests
 {
     [Theory]
-    [InlineData("choice:option:0")]
-    [InlineData("if:then")]
-    [InlineData("forEach:0:2")]
-    public void AContinuationFrameMustIdentifyAChildOfTheCompiledInstruction(string frame)
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void AContinuationFrameMustIdentifyAChildOfTheCompiledInstruction(int frame)
     {
-        // Continuation paths are an engine-owned format. A frame for a different
+        // Execution frames are engine-owned. A frame for a different
         // instruction must raise the supported failure before any sibling runs.
         var runner = Runner(AuthoredCards.AuntMay, "Action", """
             {"seq":[{"exhaust":"this"},{"heal":{"card":"you","amount":1}}]}
             """);
         var(world, source) = FixedCountBoard(runner);
         world.Seats[0].IdentityCard.TakeDamage(1);
-        var forged = new PhaseStep(Steps.ResumeAbility, 1, 2, Subject: source.ObjectId, Seat: 0, Tier: AbilityType.Action, AbilityOrdinal: 0, AbilityPath: [frame], AbilityFace: source.FaceId, AbilityHasContinuation: true);
+        AbilityStructuralFrame invalid = frame switch
+        {
+            0 => new ChoiceFrame(0, null),
+            1 => new ConditionalFrame(true),
+            _ => new ForEachFrame(1, 2),
+        };
+        var forged = AbilityContinuationFixtures.Step(source, invalid);
         var error = Assert.Throws<RulesNotImplementedException>(() => runner.ResumeAbility(world, forged));
-        Assert.Contains("continuation path", error.Message, StringComparison.Ordinal);
-        Assert.Contains(frame, error.Message, StringComparison.Ordinal);
+        Assert.Contains("continuation frame", error.Message, StringComparison.Ordinal);
         Assert.True(source.Ready);
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(0, world.Random.Generator.WordsConsumed);

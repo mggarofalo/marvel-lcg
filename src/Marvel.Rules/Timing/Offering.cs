@@ -104,7 +104,9 @@ public static class Offering
             var forced = Forced(tiers);
             if (forced.Count == 1)
             {
+                var owner = world.Agenda.Current;
                 ResolveForced(world, abilities, occurrence, kind, events, forced[0]);
+                if (!SameFrame(world.Agenda.Current, owner)) return null;
                 continue;
             }
 
@@ -124,6 +126,9 @@ public static class Offering
         }
     }
 
+    private static bool SameFrame(PhaseStep? current, PhaseStep? owner) =>
+        current is { } now && owner is { } before ? now.SameFrameAs(before) : current == owner;
+
     private static bool PriorityResolved(Func<bool>? resolve) => resolve is not null && resolve();
 
     private static IReadOnlyList<PendingAbility> WaitingInScope(
@@ -141,7 +146,7 @@ public static class Offering
         World world, IWindowAbilities abilities, Occurrence occurrence,
         WindowKind kind, List<GameEvent> events, PendingAbility ability)
     {
-        occurrence.Trigger(kind, ability.Card);
+        occurrence.Trigger(kind, ability);
         ActivityBatches.Append(events, abilities.Resolve(world, occurrence, ability, [], []));
     }
 

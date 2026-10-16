@@ -37,7 +37,7 @@ public sealed class NickFuryCommitmentTests
         Affordance draw = Assert.Single(prompt.Affordances, offer => offer.DisplayLabel == "Draw 3 cards");
         composer.SelectAffordance(draw.Id);
         Assert.True(DirectCommitment.IsReady(composer));
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.True(composer.TryBuild(out Decision? decision, out _));
         var events = new List<Marvel.Rules.Events.GameEvent>();
         Sequence.Answer(world, cards, runner, prompt, Decision.Take(decision!.Affordance), events);
         Sequence.Finish(world, cards, runner, events);

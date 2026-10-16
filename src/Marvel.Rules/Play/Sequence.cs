@@ -20,7 +20,7 @@ namespace Marvel.Rules.Play;
 /// When a window does have something to ask, this stops and the agenda stays
 /// exactly where it was: the step, which of its three parts it had reached, and
 /// the open window with whose opportunity it is. The next answer picks it up
-/// there. Nothing is on a call stack, so all of it survives a save.
+/// there. Suspended work stays game-owned; a saved ledger reconstructs it by replay.
 /// </para>
 /// </remarks>
 public static class Sequence
@@ -160,7 +160,8 @@ public static class Sequence
 
         using var attackEvents = new AttackEventScope(world, events);
 
-        if (world.Windows.Current is not { } window)
+        if (world.Agenda.Current is { Plan: true, Operation: AbilityContinuationAgendaOperation }
+            || world.Windows.Current is not { } window)
         {
             AnswerAgendaStep(world, facts, asked, input, events);
             return;
@@ -168,19 +169,13 @@ public static class Sequence
 
         if (input.IsDecline)
         {
-            if (!asked.Cancellable)
-            {
-                // `rr:forced.1` -- a forced ability must resolve, so an ordering
-                // question has no "none of them" answer.
-                throw new RulesNotImplementedException($"'{asked.Label}' cannot be declined");
-            }
-
-            Passed(world, window.Occurrence, world.Windows.Pass());
+            DeclineWindow(world, asked, window);
             return;
         }
 
         var taken = abilities
             .Waiting(world, window.Occurrence, window.Kind)
+            .Where(candidate => window.Occurrence.MayTrigger(window.Kind, candidate))
             .Select(ability => (Ability: ability, Offered: abilities.Describe(world, ability)))
             .Where(pair => pair.Offered.Id == input.Affordance
                 && (asked.Asking != Question.Opportunity
@@ -195,7 +190,7 @@ public static class Sequence
                 $"affordance {input.Affordance} is not on offer in '{asked.Label}'");
         }
 
-        window.Occurrence.Trigger(window.Kind, ability.Card);
+        window.Occurrence.Trigger(window.Kind, ability);
 
         // `rr:initiating-abilities.step.5` -- what the player spent is part of
         // the answer, not something the engine picks for them. Empty when the
@@ -220,6 +215,14 @@ public static class Sequence
         // Not a close: rr:interrupt.5 is about *further* abilities, so using one
         // gives everybody another opportunity and the step stays where it is.
         world.Windows.Used();
+    }
+
+    private static void DeclineWindow(World world, Prompt asked, Window window)
+    {
+        // "Forced Interrupt" and "Forced Response" abilities must resolve (rr:forced.1).
+        if (!asked.Cancellable)
+            throw new RulesNotImplementedException($"'{asked.Label}' cannot be declined");
+        Passed(world, window.Occurrence, world.Windows.Pass());
     }
 
     private static void AnswerAgendaStep(

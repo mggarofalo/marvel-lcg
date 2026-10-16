@@ -31,7 +31,6 @@ journey_sessions=$prefix-journey-sessions
 journey_diagnostics=$prefix-journey-diagnostics
 backup=$(mktemp)
 diagnostic_record=$(mktemp)
-schema_two_copy=$(mktemp -d)
 checkpoint_directory=$(mktemp -d)
 journey_log=$(mktemp)
 temporary_evidence=
@@ -54,7 +53,7 @@ cleanup() {
     >/dev/null 2>&1 || true
   docker image rm "$previous_image" >/dev/null 2>&1 || true
   rm -f "$backup" "$diagnostic_record" "$journey_log"
-  rm -rf "$schema_two_copy" "$checkpoint_directory"
+  rm -rf "$checkpoint_directory"
   [[ -z "$temporary_evidence" ]] || rm -rf "$temporary_evidence"
 }
 trap cleanup EXIT
@@ -177,7 +176,7 @@ incident="$evidence_directory/MarvelServer-$current_version-release-candidate-in
 docker run --rm \
   --volume "$journey_sessions:/sessions:ro" \
   --volume "$journey_diagnostics:/diagnostics:ro" \
-  --entrypoint dotnet "$current_image" Marvel.Server.dll \
+  --entrypoint dotnet "$current_image" Marvel.Server.Host.dll \
   --export-incident - \
   --data-root /app \
   --save-root /sessions \
@@ -210,53 +209,8 @@ start_server "$prefix-previous" "$previous_image" "$sessions" 41924
 run_game 41924
 stop_server "$prefix-previous"
 
-# The lower product uses the current protocol so the packaged client can drive
-# it, then its stopped generation is converted to the exact schema 2 prompt
-# shape that the release reader promises to migrate.
-docker cp "$prefix-previous:/var/lib/marvel/sessions/." "$schema_two_copy"
-mapfile -t predecessor_manifests < <(find "$schema_two_copy" -type f -name current)
-[[ ${#predecessor_manifests[@]} == 1 ]] || {
-  echo 'expected exactly one predecessor session manifest' >&2
-  exit 2
-}
-predecessor_manifest=${predecessor_manifests[0]}
-predecessor_generation=$(tr -d '\r\n' < "$predecessor_manifest")
-[[ $predecessor_generation =~ ^[0-9a-f]{32}$ ]] || {
-  echo 'predecessor session manifest names an invalid generation' >&2
-  exit 2
-}
-predecessor_directory=$(dirname "$predecessor_manifest")
-predecessor_save="$predecessor_directory/$predecessor_generation.session.json"
-predecessor_authority="$predecessor_directory/$predecessor_generation.authority.json"
-[[ -f "$predecessor_save" && -f "$predecessor_authority" ]] || {
-  echo 'selected predecessor generation is incomplete' >&2
-  exit 2
-}
-jq --compact-output '
-  def schema_two_prompt:
-    .affordances |= map(
-      del(.anchor_kind)
-      | (if .targets != null then
-        .targets.is_grouped = ((.targets.groups // []) | length > 0)
-      else . end)
-      | .costs |= map(
-        (if .components != null then .components |= map(del(.repeated_resource)) else . end)
-        | .has_alternative = ((.or_cost | length) > 0)
-        | .generators = (.sources // [])
-        | .variable_requests = (.variables // [])
-        | .resource_costs = (.components // [{cost: .cost, rule: .rule, printed: false}])));
-  .schema = 2
-  | (if .current_prompt != null then .current_prompt |= schema_two_prompt else . end)
-  | .units |= map(.decisions |= map(
-      .prompt |= schema_two_prompt
-      | .decision.selector |= del(.anchor_kind)))
-' "$predecessor_save" > "$predecessor_save.tmp"
-mv "$predecessor_save.tmp" "$predecessor_save"
-relative_save=${predecessor_save#"$schema_two_copy"/}
-docker cp "$predecessor_save" \
-  "$prefix-previous:/var/lib/marvel/sessions/$relative_save"
-jq -e '.schema == 2' "$predecessor_save" >/dev/null
-
+# Product-version upgrades preserve the one supported session schema and verify
+# the complete decision trace before publishing restored authority.
 docker run --rm --volume "$diagnostics:/diagnostics:ro" --entrypoint sh \
   "$current_image" -c 'head -n 1 /diagnostics/operational.jsonl' \
   > "$diagnostic_record"
@@ -288,8 +242,8 @@ stop_server "$prefix-rollback"
 # The exact release image restores the existing save and retains diagnostics.
 start_server "$prefix-current" "$current_image" "$sessions" 41924
 wait_for_container_log "$prefix-current" 'session.restore.completed'
-wait_for_container_log "$prefix-current" '"stage":"migration"'
-wait_for_container_log "$prefix-current" '"save_committed":true'
+wait_for_container_log "$prefix-current" '"stage":"restore"'
+wait_for_container_log "$prefix-current" '"replay_verified":true'
 docker run --rm --volume "$diagnostics:/diagnostics:ro" --entrypoint sh \
   "$current_image" -c 'cat /diagnostics/operational.jsonl' > "$backup.diagnostics"
 grep -F -x -f "$diagnostic_record" "$backup.diagnostics" >/dev/null
@@ -312,6 +266,6 @@ start_server "$prefix-downgraded" "$previous_image" "$downgrade" 41924
 wait_for_container_log "$prefix-downgraded" 'unsupported_downgrade'
 stop_server "$prefix-downgraded"
 
-docker run --rm --entrypoint dotnet "$current_image" Marvel.Server.dll --version |
-  grep -F "v$current_version · engine engine-replay-v16 · protocol 31 · save 5"
+docker run --rm --entrypoint dotnet "$current_image" Marvel.Server.Host.dll --version |
+  grep -F "v$current_version · engine engine-replay-v17 · protocol 32 · save 6"
 echo 'SERVER_COMMUNITY_UPGRADE_SMOKE_OK'

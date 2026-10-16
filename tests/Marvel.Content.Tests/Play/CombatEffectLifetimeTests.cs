@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -39,7 +40,7 @@ public sealed class CombatEffectLifetimeTests
         DamageAttacks.Attack(world, Cards, world.Seats[0].IdentityCard, villain,
             2, "test", "Attack", []);
         Assert.False(Statuses.Has(world, villain, Statuses.Stunned));
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 2, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 2, Number: 2, Subject: villain.ObjectId, Seat: 0));
         Run(world);
         Assert.True(world.Seats[0].IdentityCard.Damage > 0);
         Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Stunned));
@@ -69,7 +70,7 @@ public sealed class CombatEffectLifetimeTests
             1, "test", "Attack", []);
         Assert.False(Statuses.Has(world, villain, Statuses.Stunned));
         world.CreateCard("01106", world.AreaOf(DeckType.EncounterDeck));
-        world.Agenda.Add(new PhaseStep(Steps.Scheme, 2, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemySchemeOperation(), Round: 2, Number: 2, Subject: villain.ObjectId, Seat: 0));
         Run(world);
         Assert.Equal(2, scheme.Tokens.GetValueOrDefault("k_threat"));
     }
@@ -97,7 +98,7 @@ public sealed class CombatEffectLifetimeTests
         if (swoop)
         {
             world.CreateCard("01168", world.AreaOf(DeckType.EncounterDeck));
-            world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+            world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         }
         else Reveal(world, "01106");
         var events = Run(world, defender: ally);
@@ -148,7 +149,7 @@ public sealed class CombatEffectLifetimeTests
     private static void Reveal(World world, string face)
     {
         var card = world.CreateCard(face, world.AreaOf(DeckType.RevealingArea));
-        world.Agenda.Add(new PhaseStep(Steps.RevealEncounterCard, 1, 4, Subject: card.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId, Seat: 0));
     }
 
     private static List<GameEvent> Run(World world, Card? defender = null, Card? response = null)

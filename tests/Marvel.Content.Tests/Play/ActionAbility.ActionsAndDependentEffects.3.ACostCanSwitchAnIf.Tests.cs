@@ -1,3 +1,4 @@
+using Marvel.Cards.Run;
 using Marvel.Cards.Dsl;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
@@ -30,30 +31,30 @@ public sealed class ActionAbilityActionsAndDependentEffectsACostCanSwitchAnIfTes
     [Fact]
     public void ACostCannotSwitchAnIfIntoAnUnknownDependentOutcome()
     {
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """{ "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "then": { "effect": { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }, "then": { "draw": { "player": "you", "count": 1 } } } } } }""", cost: """{ "discard": "this" }""");
+        var runner = Runner(AuthoredCards.AuntMay, "Action", """{ "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "then": { "effect": { "gainSurge": 1 }, "then": { "draw": { "player": "you", "count": 1 } } } } } }""", cost: """{ "discard": "this" }""");
         Card? source = null;
         var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner));
-        Assert.Contains("none/partial/full resolution", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("gainSurge", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
     }
 
     [Fact]
     public void ACostCannotSwitchADependentPredecessorToAnUnknownOutcome()
     {
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """{ "then": { "effect": { "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } } } }, "then": { "draw": { "player": "you", "count": 1 } } } }""", cost: """{ "discard": "this" }""");
+        var runner = Runner(AuthoredCards.AuntMay, "Action", """{ "then": { "effect": { "if": { "test": { "titleInPlay": "Aunt May" }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "gainSurge": 1 } } }, "then": { "draw": { "player": "you", "count": 1 } } } }""", cost: """{ "discard": "this" }""");
         Card? source = null;
         var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner));
-        Assert.Contains("none/partial/full resolution", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("gainSurge", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(DeckType.SupportsArea, source!.Area.Type);
     }
 
     [Fact]
     public void AnEarlierStepCannotSwitchADependentPredecessorToAnUnknownOutcome()
     {
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """{ "seq": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "then": { "effect": { "if": { "test": { "inForm": { "player": "you", "form": "alter-ego" } }, "then": { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }, "else": { "draw": { "player": "you", "count": 1 } } } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""", cost: """{ "exhaust": "this" }""");
+        var runner = Runner(AuthoredCards.AuntMay, "Action", """{ "seq": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "then": { "effect": { "if": { "test": { "inForm": { "player": "you", "form": "alter-ego" } }, "then": { "gainSurge": 1 }, "else": { "draw": { "player": "you", "count": 1 } } } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""", cost: """{ "exhaust": "this" }""");
         Card? source = null;
         var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(board => source = InPlay(board, AuthoredCards.AuntMay), hero: true, abilities: runner));
-        Assert.Contains("none/partial/full resolution", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("gainSurge", thrown.Message, StringComparison.Ordinal);
         Assert.True(source!.Ready);
     }
 
@@ -110,7 +111,7 @@ public sealed class ActionAbilityActionsAndDependentEffectsACostCanSwitchAnIfTes
         Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(Steps.ChooseOption, waiting.What);
-        Assert.Equal(["seq:1"], waiting.AbilityPath);
+        Assert.Equal(2, Assert.IsType<SequenceFrame>(Assert.Single(Assert.IsType<AbilityContinuationState>(waiting.Require<AbilityContinuationAgendaOperation>().Continuation).Cursor.Frames)).Next);
     }
 
     [Rule("rr:and.1")]

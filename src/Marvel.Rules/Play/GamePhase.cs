@@ -13,6 +13,8 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public enum GamePhase
 {
+    /// <summary>Scenario setup abilities are awaiting a player decision.</summary>
+    ScenarioSetup,
     /// <summary>Before round one. Each player may mulligan their opening hand.</summary>
     Mulligan,
 

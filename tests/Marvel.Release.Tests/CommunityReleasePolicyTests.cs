@@ -79,22 +79,12 @@ public sealed class CommunityReleasePolicyTests
             workflow, StringComparison.Ordinal);
         Assert.Contains("needs: [identity, acceptance-record, server-sign]",
             workflow, StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v16 · protocol 31 · save 5", workflow,
+        Assert.Contains("engine-replay-v17 · protocol 32 · save 6", workflow,
             StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v16 · protocol 31 · save 5", serverUpgrade,
+        Assert.Contains("engine-replay-v17 · protocol 32 · save 6", serverUpgrade,
             StringComparison.Ordinal);
-        Assert.Contains("protocol:31,save_schema:5", workflow, StringComparison.Ordinal);
+        Assert.Contains("protocol:32,save_schema:6", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("protocol:14", workflow, StringComparison.Ordinal);
-        Assert.Contains("def schema_two_prompt", serverUpgrade, StringComparison.Ordinal);
-        Assert.Contains("jq --compact-output '", serverUpgrade, StringComparison.Ordinal);
-        Assert.Contains("find \"$schema_two_copy\" -type f -name current", serverUpgrade,
-            StringComparison.Ordinal);
-        Assert.Contains("$predecessor_generation.session.json", serverUpgrade,
-            StringComparison.Ordinal);
-        Assert.Contains("$predecessor_generation.authority.json", serverUpgrade,
-            StringComparison.Ordinal);
-        Assert.DoesNotContain("find \"$schema_two_copy\" -type f -name '*.session.json'",
-            serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("tar -C /source -czf - . > \"$backup\"", serverUpgrade,
             StringComparison.Ordinal);
         Assert.Contains("tar -C /target -xzf - < \"$backup\"", serverUpgrade,
@@ -105,8 +95,8 @@ public sealed class CommunityReleasePolicyTests
         Assert.Contains("did not log: $expected", serverUpgrade, StringComparison.Ordinal);
         Assert.DoesNotContain("docker logs \"$prefix-interrupted-recovery\" 2>&1 | grep",
             serverUpgrade, StringComparison.Ordinal);
-        Assert.Contains("\"stage\":\"migration\"", serverUpgrade, StringComparison.Ordinal);
-        Assert.Contains("\"save_committed\":true", serverUpgrade, StringComparison.Ordinal);
+        Assert.Contains("\"stage\":\"restore\"", serverUpgrade, StringComparison.Ordinal);
+        Assert.Contains("\"replay_verified\":true", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("MARVEL_HOSTED_SMOKE_CHECKPOINT_DIR", serverUpgrade,
             StringComparison.Ordinal);
         Assert.Contains("continue-after-restart", serverUpgrade, StringComparison.Ordinal);
@@ -119,16 +109,14 @@ public sealed class CommunityReleasePolicyTests
     }
 
     [Fact]
-    public void ReleaseMatrixPinsSchemaFiveAsTheCurrentMigrationDestination()
+    public void ReleaseMatrixRequiresTheCurrentSchemaAndPreservesUnsupportedSaves()
     {
         string matrix = File.ReadAllText(Path.Combine(
             RepositoryPaths.Root, "docs", "release-test-matrix.md"));
+        Assert.Contains("Empty schema `6` volume", matrix, StringComparison.Ordinal);
+        Assert.Contains("Unsupported save schema", matrix, StringComparison.Ordinal);
+        Assert.Contains("quarantine", matrix, StringComparison.Ordinal);
 
-        Assert.Contains("Empty schema `5` volume", matrix, StringComparison.Ordinal);
-        Assert.Contains("Existing schema `2`, `3` or `4` save", matrix, StringComparison.Ordinal);
-        Assert.Contains("migrate to schema `5`", matrix, StringComparison.Ordinal);
-        Assert.Contains("Newer schema `5` save preserved", matrix, StringComparison.Ordinal);
-        Assert.DoesNotContain("migrate to schema `3`", matrix, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -179,8 +167,8 @@ public sealed class CommunityReleasePolicyTests
             "Linux server interrupted candidate",
             "Linux server downgrade",
             "unsupported_downgrade",
-            "engine-replay-v16",
-            "protocol `31`",
+            "engine-replay-v17",
+            "protocol `32`",
             "TrustedPeople",
         })
         {

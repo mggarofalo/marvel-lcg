@@ -1,4 +1,4 @@
-using Marvel.Server;
+using Marvel.Protocol;
 using Marvel.View;
 
 namespace Marvel.Godot;

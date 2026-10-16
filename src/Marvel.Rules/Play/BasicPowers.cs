@@ -45,17 +45,9 @@ public static class BasicPowers
         BasicPowerInitiation.BasicAttackWithoutExhausting(
             world, facts, character, enemy, events);
 
-    /// <inheritdoc cref="BasicPowerResolution.ResolveCharacterThwart"/>
-    public static void ResolveCharacterThwart(
-        World world, ICardFacts facts, List<GameEvent> events,
-        CharacterThwart? scheduled = null) =>
-        BasicPowerResolution.ResolveCharacterThwart(world, facts, events, scheduled);
 
-    /// <inheritdoc cref="BasicPowerResolution.ResolveCharacterAttack"/>
-    public static void ResolveCharacterAttack(
-        World world, ICardFacts facts, List<GameEvent> events,
-        CharacterAttack? scheduled = null) =>
-        BasicPowerResolution.ResolveCharacterAttack(world, facts, events, scheduled);
+
+
 
     /// <inheritdoc cref="BasicPowerResolution.Consequential"/>
     public static void Consequential(

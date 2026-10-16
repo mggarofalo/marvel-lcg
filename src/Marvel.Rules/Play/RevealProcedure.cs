@@ -5,7 +5,7 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
-/// <summary>A read-only projection of a forced would-be-defeated interrupt.</summary>
+/// <summary>Resolves encounter entry and player-owned reveal ordering choices.</summary>
 
 internal static class RevealProcedure
 {
@@ -30,7 +30,7 @@ internal static class RevealProcedure
                     world, facts, step, events);
                 break;
             case Steps.ChooseAttachmentTarget:
-                return DefeatProcedure.ChooseAttachmentTarget(world, facts, step);
+                return AttachmentTargetPrompt.Describe(world, facts, step);
             case Steps.ChooseRevealAbility:
                 return ChooseRevealAbility(world, facts, step);
             case Steps.ResumeRevealAbility:
@@ -75,8 +75,8 @@ internal static class RevealProcedure
         World world, ICardFacts facts, PhaseStep step)
     {
         var card = world.Cards[step.Subject];
-        var handles = step.ProcedureCandidates ?? [];
-        var abilities = step.ProcedureAbilities ?? [];
+        var handles = step.Require<RevealAbilityOperation>().Candidates ?? [];
+        var abilities = step.Require<RevealAbilityOperation>().Abilities ?? [];
         if (handles.Count != abilities.Count || handles.Count < 2)
         {
             throw new InvalidOperationException("reveal ordering has no simultaneous abilities");
@@ -109,8 +109,8 @@ internal static class RevealProcedure
         World world, ICardFacts facts, IRevealCardAbilities abilities, PhaseStep step,
         Decision input, List<GameEvent> events)
     {
-        var pending = step.ProcedureAbilities ?? [];
-        var handles = step.ProcedureCandidates ?? [];
+        var pending = step.Require<RevealAbilityOperation>().Abilities ?? [];
+        var handles = step.Require<RevealAbilityOperation>().Candidates ?? [];
         int chosenIndex = Enumerable.Range(0, handles.Count)
             .FirstOrDefault(index => handles[index] == input.Affordance, -1);
         if (input.IsDecline || chosenIndex < 0 || chosenIndex >= pending.Count)
@@ -119,26 +119,26 @@ internal static class RevealProcedure
                 $"affordance {input.Affordance} was not offered for reveal ordering");
         }
 
-        var occurrence = step.ProcedureOccurrence
+        var occurrence = step.Require<RevealAbilityOperation>().Origin
             ?? throw new InvalidOperationException("reveal ordering has no occurrence");
         var containingOccurrence = world.Agenda.Occurrence
             ?? throw new InvalidOperationException("reveal ordering has no containing occurrence");
         ResolveOneRevealAbility(
-            world, facts, abilities, world.Cards[step.Subject], step.Seat,
-            pending[chosenIndex], occurrence, events);
+            world, facts, abilities, step, pending[chosenIndex], events);
 
         var remainingAbilities = pending.Where((_, index) => index != chosenIndex).ToList();
         var remainingHandles = handles.Where((_, index) => index != chosenIndex).ToList();
         var chosen = pending[chosenIndex];
         world.Agenda.ThenContinuation(step with
         {
-            What = Steps.ResumeRevealAbility,
-            ProcedureAbilities = remainingAbilities,
-            ProcedureCandidates = remainingHandles,
-            ProcedureSource = chosen.Card,
-            Tier = chosen.Type,
-            AbilityOrdinal = chosen.Ordinal,
-            OccurrenceId = null,
+            Operation = step.Require<RevealAbilityOperation>() with
+            {
+                Kind = RevealAbilityKind.ResumeRevealAbility,
+                Abilities = remainingAbilities,
+                Candidates = remainingHandles,
+                Completed = new PendingAbility(chosen.Card, chosen.Type, step.Seat, chosen.Ordinal)
+            },
+            OccurrenceId = null
         }, containingOccurrence);
     }
 
@@ -146,27 +146,23 @@ internal static class RevealProcedure
         World world, ICardFacts facts, IRevealCardAbilities abilities, PhaseStep step,
         List<GameEvent> events)
     {
-        var occurrence = step.ProcedureOccurrence
+        var occurrence = step.Require<RevealAbilityOperation>().Origin
             ?? throw new InvalidOperationException("reveal ordering has no occurrence");
-        if (step.ProcedureSource >= 0
-            && step.AbilityOrdinal >= 0
-            && step.Tier is { } completedType)
-        {
-            occurrence.Complete(new PendingAbility(
-                step.ProcedureSource, completedType, step.Seat, step.AbilityOrdinal));
-        }
+        if (step.Require<RevealAbilityOperation>().Completed is { } completed)
+            occurrence.Complete(completed);
 
-        var pending = step.ProcedureAbilities ?? [];
-        var handles = step.ProcedureCandidates ?? [];
+        var pending = step.Require<RevealAbilityOperation>().Abilities ?? [];
+        var handles = step.Require<RevealAbilityOperation>().Candidates ?? [];
         if (pending.Count > 1)
         {
             DefeatProcedure.ScheduleProcedureChoice(world, step with
             {
-                What = Steps.ChooseRevealAbility,
-                ProcedureSource = -1,
-                Tier = null,
-                AbilityOrdinal = -1,
-                OccurrenceId = null,
+                Operation = step.Require<RevealAbilityOperation>() with
+                {
+                    Kind = RevealAbilityKind.ChooseRevealAbility,
+                    Completed = null
+                },
+                OccurrenceId = null
             });
             return;
         }
@@ -178,34 +174,36 @@ internal static class RevealProcedure
                 ?? throw new InvalidOperationException(
                     "reveal continuation has no containing occurrence");
             ResolveOneRevealAbility(
-                world, facts, abilities, world.Cards[step.Subject], step.Seat,
-                next, occurrence, events);
+                world, facts, abilities, step, next, events);
             world.Agenda.ThenContinuation(step with
             {
-                What = Steps.ResumeRevealAbility,
-                ProcedureAbilities = [],
-                ProcedureCandidates = [],
-                ProcedureSource = next.Card,
-                Tier = next.Type,
-                AbilityOrdinal = next.Ordinal,
-                OccurrenceId = null,
+                Operation = step.Require<RevealAbilityOperation>() with
+                {
+                    Kind = RevealAbilityKind.ResumeRevealAbility,
+                    Abilities = [],
+                    Candidates = [],
+                    Completed = new PendingAbility(next.Card, next.Type, step.Seat, next.Ordinal)
+                },
+                OccurrenceId = null
             }, containingOccurrence);
             return;
         }
 
         EncounterRevealProcedure.FinishEncounterRevealTail(
-            world, world.Cards[step.Subject], step.Seat, step.Round,
+            world, world.Cards[step.Subject], step.Seat, step,
             occurrence, events, beforeResponses: false);
     }
 
     private static void ResolveOneRevealAbility(
-        World world, ICardFacts facts, IRevealCardAbilities abilities, Card card, int player,
-        PendingAbility ability, Occurrence occurrence, List<GameEvent> events)
+        World world, ICardFacts facts, IRevealCardAbilities abilities, PhaseStep step,
+        PendingAbility ability, List<GameEvent> events)
     {
+        Occurrence occurrence = step.Require<RevealAbilityOperation>().Origin
+            ?? throw new InvalidOperationException("a revealed ability has no occurrence");
         if (ability.Ordinal is Reveal.InciteResolutionOrdinal or Reveal.SurgeResolutionOrdinal)
         {
             RevealKeywords.ResolveKeyword(
-                world, facts, abilities, card, player, ability, events, occurrence);
+                world, facts, abilities, step.Seat, ability, events, occurrence);
             return;
         }
 
@@ -241,18 +239,18 @@ internal static class RevealProcedure
         var card = world.Cards[step.Subject];
         if (input.Affordance == 1)
         {
-            Reveal.Quickstrike(world, facts, card, step.Seat, step.Round);
-            Reveal.Teamwork(world, facts, card, step.Seat, step.Round);
+            MinionEntryActivations.Quickstrike(world, facts, card, step.Seat, step.Round);
+            MinionEntryActivations.Teamwork(world, facts, card, step.Seat, step.Round);
         }
         else
         {
-            Reveal.Teamwork(world, facts, card, step.Seat, step.Round);
-            Reveal.Quickstrike(world, facts, card, step.Seat, step.Round);
+            MinionEntryActivations.Teamwork(world, facts, card, step.Seat, step.Round);
+            MinionEntryActivations.Quickstrike(world, facts, card, step.Seat, step.Round);
         }
 
         EncounterRevealDiscard.Schedule(
-            world, facts, card, step.Seat, step.Round,
-            step.ProcedureOccurrence
+            world, facts, card, step.Seat, step,
+            step.Require<PostRevealOperation>().Origin
                 ?? throw new InvalidOperationException("post-reveal order has no occurrence"));
     }
 
@@ -260,7 +258,7 @@ internal static class RevealProcedure
         World world, ICardFacts facts, IRevealCardAbilities abilities, PhaseStep step,
         Decision input, List<GameEvent> events)
     {
-        var candidates = step.ProcedureCandidates ?? [];
+        var candidates = step.Require<AttachmentTargetOperation>().Candidates ?? [];
         if (input.IsDecline || !candidates.Contains(input.Affordance))
         {
             throw new RulesNotImplementedException(
@@ -268,13 +266,14 @@ internal static class RevealProcedure
         }
 
         var card = world.Cards[step.Subject];
-        var occurrence = step.AbilityOccurrence
+        var occurrence = step.Require<AttachmentTargetOperation>().Origin
             ?? world.Agenda.Occurrence
             ?? throw new InvalidOperationException("an attachment choice has no reveal occurrence");
         Reveal.Resolve(
-            world, facts, card, step.Seat, events, occurrence, input.Affordance);
+            world, facts, card, step.Seat, events, occurrence,
+            new CardEntryPlacement(AttachmentTarget: input.Affordance));
         EncounterRevealProcedure.FinishEncounterReveal(
-            world, abilities, card, step.Seat, step.Round, occurrence, events);
+            world, abilities, card, step.Seat, step, occurrence, events);
     }
 
     internal static void FinalizeAllyEntry(
@@ -288,5 +287,4 @@ internal static class RevealProcedure
             CardEntry.Entered(world, ally, player);
         }
     }
-
 }

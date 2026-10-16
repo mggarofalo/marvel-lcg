@@ -1,28 +1,11 @@
 namespace Marvel.Rules.State;
-/// <summary>
-/// Deals the opening board: the whole state model and none of the rules.
-/// </summary>
+/// <summary>Creates a seeded world and resolves scenario setup up to its first decision.</summary>
 /// <remarks>
-/// <para>
-/// The order of operations matters twice over: card creation order fixes every
-/// <c>object_id</c>, and the <b>two shuffles</b> draw from one seeded stream, so
-/// swapping them changes every card's position. The deterministic setup and
-/// digest tests pin the result, so treat any change here as changing every game.
-/// </para>
-/// <para>
-/// Exactly two RNG calls happen during setup, measured on
-/// <c>rhino / spider_man / 12345</c>: the player deck, then the encounter deck.
-/// Nothing else consumes randomness — not the opening hand, which is dealt off
-/// the top of an already-shuffled deck.
-/// </para>
-/// <para>
-/// <b>Card text runs here now.</b> <c>rr:appendix-ii-setup.step.12</c> resolves
-/// the scenario's "Setup" and "When Revealed" abilities as part of the deal, so
-/// a dealer that could not run a card could not deal a board that was correct —
-/// it could only deal one that looked correct on the scenarios whose first card
-/// happens to say nothing. The interpreter is a required parameter; tests that
-/// intentionally omit card text use <see cref="DealWithoutCardAbilities"/>.
-/// </para>
+/// Creation order fixes object ids. Player decks are shuffled in seat order,
+/// followed by the encounter deck, using the world's one seeded RNG stream.
+/// Scenario abilities resolve before opening hands; mandatory choices suspend
+/// through the normal game prompt boundary. Tests that intentionally omit card
+/// text use <see cref="DealWithoutCardAbilities"/>.
 /// </remarks>
 public static class WorldSetup
 {
@@ -57,13 +40,12 @@ public static class WorldSetup
         ArgumentNullException.ThrowIfNull(seats);
         ArgumentNullException.ThrowIfNull(abilities);
 
+        Setup.PlayerCountRules.Validate(seats.Count);
+
         RefuseUnsupportedKinds(facts, blueprints);
 
         int players = seats.Count;
         var happened = events ?? [];
-        int setupEventCursor = happened.Count;
-        var deferredReveals = new List<(int Card, int Incarnation)>();
-        var deferredRevealSet = new HashSet<(int Card, int Incarnation)>();
 
         // The seed goes to the world, not to a local generator: the reshuffle
         // in `rr:player-deck.1` draws from this same stream years of turns
@@ -136,167 +118,13 @@ public static class WorldSetup
 
         world.Shuffle(encounterDeck);
 
-        // 11. `rr:appendix-ii-setup.step.11`, "Put Setup Cards Into Play":
-        //     "search each deck and the set aside area for any cards with the
-        //     setup keyword and put them into play."
-        //
-        //     **Every deck, and that is not the same as the set-aside pile.**
-        //     Nothing in the pool puts a setup card in a player deck today, so
-        //     searching one finds nothing — but the rule says to search, and a
-        //     loop that only looked where cards happen to be would have to be
-        //     found and changed by whoever adds the first such card.
-        //
-        //     `rr:setup-keyword.1` names this step and nothing else about it,
-        //     so where each card goes is the ordinary question of a card
-        //     entering play, which `Play.Reveal` already answers.
-        var pendingSetupCards = SetupCards(world, facts, happened);
-        FinishSetupAgenda(world, facts, happened);
-        TrackSetupEntrants(
-            world, facts, happened, ref setupEventCursor,
-            deferredReveals, deferredRevealSet);
-
-        // 12. `rr:appendix-ii-setup.step.12`, "Resolve Scenario Setup and When
-        //     Revealed Abilities", which is three sub-steps in a stated order.
-        //     The order is the whole of the rule: 12a reads a face that 12b
-        //     then turns over.
-        if (scheme is not null)
-        {
-            // 12a. "Resolve any 'Setup' abilities on main scheme card 1A."
-            Play.ActivityBatches.Append(happened, world.SetupAbilities.Setup(world, scheme));
-            FinishSetupAgenda(world, facts, happened);
-            TrackSetupEntrants(
-                world, facts, happened, ref setupEventCursor,
-                deferredReveals, deferredRevealSet);
-
-            // Loki has no villain at step 11: its scheme's Setup instruction
-            // reveals one here. The Rules Reference and that scenario do not
-            // say how to reconcile the ordering with Infinity Gauntlet's
-            // "attach to the villain" Setup card. The engine chooses to retain
-            // an unplaceable Setup card and retry after each scenario setup
-            // sub-step, then refuse it below if no destination ever appears.
-            pendingSetupCards = SetupCards(
-                world, facts, happened, pendingSetupCards);
-            FinishSetupAgenda(world, facts, happened);
-            TrackSetupEntrants(
-                world, facts, happened, ref setupEventCursor,
-                deferredReveals, deferredRevealSet);
-
-            // 12b. "Flip the main scheme card to side 1B and resolve any 'When
-            //      Revealed' abilities on that side."
-            scheme.TurnTo(scheme.Faces[^1]);
-
-            // Starting threat is placed once, on entry, and it is the B side's
-            // number -- no A side in the pool prints one. Every scheme on a
-            // recorded opening board starts at zero, so this is invisible until
-            // a scenario that does not appears, which is the reason to place it
-            // rather than to leave the field derived from print.
-            scheme.PlaceTokens("k_threat",
-                facts.PrintedValue(scheme.FaceId, "StartingThreat", players));
-
-            Play.ActivityBatches.Append(happened, world.EncounterAbilities.WhenRevealed(world, scheme, world.FirstPlayer));
-            FinishSetupAgenda(world, facts, happened);
-            TrackSetupEntrants(
-                world, facts, happened, ref setupEventCursor,
-                deferredReveals, deferredRevealSet);
-
-            pendingSetupCards = SetupCards(
-                world, facts, happened, pendingSetupCards);
-            FinishSetupAgenda(world, facts, happened);
-            TrackSetupEntrants(
-                world, facts, happened, ref setupEventCursor,
-                deferredReveals, deferredRevealSet);
-        }
-
-        // 12c. "Resolve any 'Setup' and 'When Revealed' abilities on the
-        //      villain." After the scheme, and the appendix says so by
-        //      numbering it after -- a villain whose text reads the main scheme
-        //      reads the side the players will be playing against.
-        if (world.TheCardIn(DeckType.VillainArea) is { } villain)
-        {
-            Play.ActivityBatches.Append(happened, world.SetupAbilities.Setup(world, villain));
-            FinishSetupAgenda(world, facts, happened);
-            TrackSetupEntrants(
-                world, facts, happened, ref setupEventCursor,
-                deferredReveals, deferredRevealSet);
-            Play.ActivityBatches.Append(happened, world.EncounterAbilities.WhenRevealed(world, villain, world.FirstPlayer));
-            FinishSetupAgenda(world, facts, happened);
-            TrackSetupEntrants(
-                world, facts, happened, ref setupEventCursor,
-                deferredReveals, deferredRevealSet);
-        }
-
-        pendingSetupCards = SetupCards(
-            world, facts, happened, pendingSetupCards);
-        FinishSetupAgenda(world, facts, happened);
-        TrackSetupEntrants(
-            world, facts, happened, ref setupEventCursor,
-            deferredReveals, deferredRevealSet);
-        if (pendingSetupCards.Count > 0)
-        {
-            var card = pendingSetupCards[0];
-            throw new Play.RulesNotImplementedException(
-                $"card '{card.FaceId}' has the setup keyword and "
-                + "rr:appendix-ii-setup.step.11 puts it into play, and this engine has "
-                + "nowhere to put it");
-        }
-
-        // `rr:when-revealed-abilities.1`: encounter cards that entered play
-        // during setup wait for this step rather than firing at the moment they
-        // moved. Drain by recorded entry order; a deferred ability can itself
-        // put another encounter card into play, which joins the end of the same
-        // deterministic queue.
-        ResolveDeferredReveals(
-            world, facts, happened, ref setupEventCursor,
-            deferredReveals, deferredRevealSet);
-
-        // 14. "Draw Cards." Opening hands, off the top of an already-shuffled
-        //     deck. No draw, and after step 12 -- which is what lets a setup
-        //     ability that searches or shuffles the player decks matter.
-        DrawOpeningHands(world, facts, identities);
+        world.ScenarioSetup = new ScenarioSetup();
+        world.ScenarioSetup.Advance(world, happened, happened.Count);
 
         return world;
     }
 
     private sealed record OpeningCards(List<Card> Obligations, Card[] Identities);
-
-    private static void ResolveDeferredReveals(
-        World world, ICardFacts facts, List<Events.GameEvent> events,
-        ref int eventCursor, List<(int Card, int Incarnation)> reveals,
-        HashSet<(int Card, int Incarnation)> revealSet)
-    {
-        for (int next = 0; next < reveals.Count; next++)
-        {
-            var address = reveals[next];
-            var card = world.Cards[address.Card];
-            if (card.Incarnation != address.Incarnation
-                || !DeckTypes.IsInPlay(card.Area.Type))
-            {
-                continue;
-            }
-            Play.RevealKeywords.Keywords(
-                world, facts, world.ThreatAbilities, card, world.FirstPlayer, events);
-            Play.ActivityBatches.Append(events,
-                world.EncounterAbilities.WhenRevealed(world, card, world.FirstPlayer));
-            FinishSetupAgenda(world, facts, events);
-            TrackSetupEntrants(
-                world, facts, events, ref eventCursor, reveals, revealSet);
-        }
-    }
-
-    private static void DrawOpeningHands(World world, ICardFacts facts, Card[] identities)
-    {
-        for (int seat = 0; seat < identities.Length; seat++)
-        {
-            long handSize = facts.PrintedValue(
-                identities[seat].FaceId, "HS", identities.Length);
-            for (long drawn = 0; drawn < handSize; drawn++)
-            {
-                var card = world.Seats[seat].Deck.TakeTop();
-                if (card is null) break;
-                world.Seats[seat].Hand.Append(card);
-            }
-        }
-    }
 
     private static OpeningCards CreateOpeningCards(
         World world, IReadOnlyList<CardBlueprint> blueprints, int players,
@@ -375,125 +203,4 @@ public static class WorldSetup
         }
     }
 
-    /// <summary>Resolve everything one scenario setup ability scheduled.</summary>
-    private static void FinishSetupAgenda(
-        World world, ICardFacts facts, List<Events.GameEvent> happened)
-    {
-        // `rr:ability.6` excludes player-card abilities during game setup.
-        // The Setup ability itself has already resolved above; nested windows
-        // may therefore read encounter cards only. A question from one of
-        // those cards is still refused rather than answered on a player's
-        // behalf, because setup has no prompt channel.
-        if (Play.Sequence.WorkWithWorldAbilities(
-                world,
-                facts,
-                happened,
-                Timing.WindowAbilityScope.EncounterCardsOnly) is { } asked)
-        {
-            throw new Play.RulesNotImplementedException(
-                $"setup asked '{asked.Label}', and rr:appendix-ii-setup has nobody to ask");
-        }
-    }
-
-    /// <summary>Records encounter cards that entered play since the last setup step.</summary>
-    private static void TrackSetupEntrants(
-        World world,
-        ICardFacts facts,
-        List<Events.GameEvent> happened,
-        ref int cursor,
-        List<(int Card, int Incarnation)> pending,
-        HashSet<(int Card, int Incarnation)> seen)
-    {
-        foreach (var moved in happened.Skip(cursor).OfType<Events.CardsMoved>())
-        {
-            // A reveal procedure resolves its own When Revealed ability, and a
-            // card explicitly put into play does not trigger one —
-            // rr:when-revealed-abilities.2. This queue is only for setup entry
-            // that has not already taken either of those two paths.
-            if (moved.From.Zone == DeckType.RevealingArea.ToString()
-                || moved.Verb == "Put_Into_Play")
-            {
-                continue;
-            }
-
-            foreach (var landing in moved.Cards)
-            {
-                var card = world.Cards[landing.Card];
-                var address = (card.ObjectId, card.Incarnation);
-                if (moved.To.Zone == card.Area.Type.ToString()
-                    && DeckTypes.IsInPlay(card.Area.Type)
-                    && IsDeferredSetupEncounterCard(facts, card)
-                    && seen.Add(address))
-                {
-                    pending.Add(address);
-                }
-            }
-        }
-
-        cursor = happened.Count;
-    }
-
-    private static bool IsDeferredSetupEncounterCard(ICardFacts facts, Card card) =>
-        card.Owner == World.Scenario
-        && EffectiveCards.Kind(card, facts) is CardKind.Attachment or CardKind.Obligation
-            or CardKind.Treachery or CardKind.Minion or CardKind.EncounterSideScheme
-            or CardKind.Environment;
-
-    /// <summary>
-    /// Step 11 — every card with the setup keyword, put into play.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Put into play, not revealed.</b>
-    /// <c>rr:when-revealed-abilities.2</c>: "if an encounter card with a 'When
-    /// Revealed' ability is put into play <b>without being revealed</b>, the
-    /// 'When Revealed' ability does not trigger." So this places the card and
-    /// runs its keywords — <c>rr:enters-play</c> — and nothing else, which is
-    /// exactly what <see cref="Play.Reveal.Resolve"/> does.
-    /// </para>
-    /// <para>
-    /// <b>A card it cannot place after scenario setup stops the deal.</b> Where
-    /// a card goes comes from its type for a side scheme or an environment, and
-    /// from its own text for an attachment (<c>rr:attach-to</c>) or for a
-    /// scenario's ally or support (<c>rr:ownership-and-control.2.2</c>, "when a
-    /// player takes control of a […] player card with a player card back"). A card whose
-    /// text nobody has read is placed nowhere. Scenario setup may first create
-    /// the named destination, so unresolved cards are retried through step 12;
-    /// leaving one in the pile after that would deal a board quietly missing a
-    /// card the rules put on the table.
-    /// </para>
-    /// </remarks>
-    private static List<Card> SetupCards(
-        World world, ICardFacts facts, List<Events.GameEvent> happened,
-        IReadOnlyList<Card>? candidates = null)
-    {
-        var pending = new List<Card>();
-        // A copy, because putting a card into play moves it between areas and
-        // `World.Cards` is walked by object id rather than by place.
-        foreach (var card in candidates ?? world.Cards.ToList())
-        {
-            if (facts.PrintedValue(card.FaceId, "Setup", world.Players) <= 0
-                || DeckTypes.IsInPlay(card.Area.Type))
-            {
-                continue;
-            }
-
-            var from = card.Area;
-            int? controller = world.SetupAbilities.SetupController(world, card);
-            if (controller is { } player)
-            {
-                Play.CardControlTransfer.TakeScenarioCardOwnership(facts, card, player);
-            }
-            Play.Reveal.Resolve(
-                world, facts, card, world.FirstPlayer, happened,
-                setupController: controller);
-
-            if (card.Area == from)
-            {
-                pending.Add(card);
-            }
-        }
-
-        return pending;
-    }
 }

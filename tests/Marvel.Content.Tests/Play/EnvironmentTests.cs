@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -60,8 +61,7 @@ public sealed class EnvironmentTests
         var card = world.CreateCard(
             UltronDrones, world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
 
-        world.Agenda.Add(new PhaseStep(
-            Steps.RevealEncounterCard, 1, 4, Subject: card.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId, Seat: 0));
         Run(world);
 
         Assert.Equal(DeckType.EnvironmentArea, card.Area.Type);

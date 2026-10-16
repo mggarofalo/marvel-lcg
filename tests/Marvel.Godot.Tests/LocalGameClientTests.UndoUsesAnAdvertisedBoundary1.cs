@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -21,7 +23,7 @@ public sealed class LocalGameClientUndoUsesAnAdvertisedBoundaryTests : LocalGame
         ClientEntryResult opened = await client.OpenSessionAsync("undo-table", Specification(), TestContext.Current.CancellationToken);
         ClientResolutionResult kept = await client.ResolveAsync(opened.Session!, VisibleDecision(opened.Response!.Prompt!), TestContext.Current.CancellationToken);
         Affordance changeForm = Assert.Single(kept.Response!.Prompt!.Affordances, option => option.Verb == Game.ChangeForm);
-        ClientResolutionResult changed = await client.ResolveAsync(opened.Session!, new EngineDecision(changeForm.Id, []), TestContext.Current.CancellationToken);
+        ClientResolutionResult changed = await client.ResolveAsync(opened.Session!, new Decision(changeForm.Id, []), TestContext.Current.CancellationToken);
         ClientResolutionResult undone = await client.UndoAsync(opened.Session!, changed.Response!.History!.Cursor - 1, TestContext.Current.CancellationToken);
         Assert.True(undone.Succeeded, undone.Error?.Message);
         Assert.Empty(undone.Response!.Events);
@@ -99,7 +101,7 @@ public sealed class LocalGameClientUndoUsesAnAdvertisedBoundaryTests : LocalGame
     public async Task UnavailableInvitationIsMappedWithoutEchoingOrRetryingItsSecret()
     {
         const string secret = "expired-seat-secret";
-        var transport = new ScriptedTransport(new EngineResponse(EngineProtocol.Version, "local-attach", "shared-table", Capability: null, Prompt: null, Events: [], Error: new EngineError("session_not_found", secret)));
+        var transport = new ScriptedTransport(new EngineResponse(EngineProtocol.Version, "local-attach", "shared-table", Capability: null, Prompt: null, Events: [], Error: new EngineError("session_not_found", secret, EngineFailureDisposition.SessionUnavailable)));
         ClientEntryResult result = await new LocalGameClient(transport).AttachAsync("shared-table", secret, TestContext.Current.CancellationToken);
         Assert.False(result.Succeeded);
         Assert.Equal("invitation_unavailable", result.Error?.Code);
@@ -164,7 +166,7 @@ public sealed class LocalGameClientUndoUsesAnAdvertisedBoundaryTests : LocalGame
         EngineResponse current = Host().Exchange(EngineRequest.OpenGame("source", "shared-table", Specification()));
         var transport = new ScriptedTransport(current with { RequestId = "local-resolve", Capability = null, Error = new EngineError("stale_decision", "The prompt changed."), Prompt = null, World = null, Events = [], }, current with { RequestId = "local-recover", Capability = null, Events = [] });
         var session = new ClientSession("shared-table", current.Capability!);
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(session, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(session, Decision.Decline, TestContext.Current.CancellationToken);
         Assert.True(result.HasAuthoritativeView);
         Assert.Equal("stale_decision", result.Error?.Code);
         Assert.Equal(["shared-table", "shared-table"], transport.Requests.Select(request => request.GameId));
@@ -176,7 +178,7 @@ public sealed class LocalGameClientUndoUsesAnAdvertisedBoundaryTests : LocalGame
     {
         EngineResponse current = Host().Exchange(EngineRequest.OpenGame("source", "shared-table", Specification()));
         var transport = new ScriptedTransport(current with { RequestId = "local-resolve", Capability = null, Prompt = null, Revision = current.Revision + 1, });
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession("shared-table", current.Capability!), EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession("shared-table", current.Capability!), Decision.Decline, TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded, result.Error?.Message);
         Assert.True(result.HasAuthoritativeView);
         Assert.Null(result.Response?.Prompt);
@@ -189,7 +191,7 @@ public sealed class LocalGameClientUndoUsesAnAdvertisedBoundaryTests : LocalGame
     {
         EngineResponse current = Host().Exchange(EngineRequest.OpenGame("source", "shared-table", Specification()));
         var transport = new ScriptedTransport(new IOException("response lost"), current with { RequestId = "local-recover", Capability = null, Prompt = null, Events = [], });
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession("shared-table", current.Capability!), EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession("shared-table", current.Capability!), Decision.Decline, TestContext.Current.CancellationToken);
         Assert.False(result.Succeeded);
         Assert.True(result.HasAuthoritativeView);
         Assert.Null(result.Response?.Prompt);
@@ -201,17 +203,17 @@ public sealed class LocalGameClientUndoUsesAnAdvertisedBoundaryTests : LocalGame
     public async Task InvalidSessionIsRejectedBeforeResolveTransport()
     {
         var transport = new CapturingTransport();
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession("game", ""), EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession("game", ""), Decision.Decline, TestContext.Current.CancellationToken);
         Assert.Equal("invalid_session", result.Error?.Code);
         Assert.Empty(transport.Requests);
     }
 
     [Theory]
     [InlineData(0)]
-    [InlineData(3)]
+    [InlineData(5)]
     public async Task OpenRejectsUnsupportedPlayerCountsBeforeTransport(int playerCount)
     {
-        string[] heroes = ["spider_man", "captain_marvel", "black_panther"];
+        string[] heroes = ["spider_man", "captain_marvel", "black_panther", "iron_man", "she_hulk"];
         var transport = new CapturingTransport();
         ClientEntryResult result = await new LocalGameClient(transport).OpenSessionAsync("table", new GameSpecification("rhino", heroes.Take(playerCount).ToList(), null, Seed: 7), TestContext.Current.CancellationToken);
         Assert.Equal("invalid_selection", result.Error?.Code);

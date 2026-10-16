@@ -20,10 +20,10 @@ public sealed class KeywordATeamworkMinionAloneTests : KeywordTestBase
         world.Seats[0].IdentityCard.TurnTo("hero");
         var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0));
         var alone = world.CreateCard("acolyte", engaged);
-        Reveal.Teamwork(world, printed, alone, 0, round: 1);
+        MinionEntryActivations.Teamwork(world, printed, alone, 0, round: 1);
         Assert.False(world.Agenda.IsBusy);
         world.CreateCard("stranger", engaged);
-        Reveal.Teamwork(world, printed, alone, 0, round: 1);
+        MinionEntryActivations.Teamwork(world, printed, alone, 0, round: 1);
         Assert.False(world.Agenda.IsBusy);
     }
 
@@ -40,7 +40,7 @@ public sealed class KeywordATeamworkMinionAloneTests : KeywordTestBase
         world.CreateCard("friend", engaged);
         var arriving = world.CreateCard("acolyte", engaged);
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Characteristics.LossOf("teamwork"), Affects: arriving.ObjectId));
-        Reveal.Teamwork(world, printed, arriving, 0, round: 1);
+        MinionEntryActivations.Teamwork(world, printed, arriving, 0, round: 1);
         Assert.False(world.Agenda.IsBusy);
     }
 
@@ -58,7 +58,7 @@ public sealed class KeywordATeamworkMinionAloneTests : KeywordTestBase
         var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0));
         world.CreateCard("friend", engaged);
         var arriving = world.CreateCard("acolyte", engaged);
-        Reveal.Teamwork(world, printed, arriving, 0, round: 1);
+        MinionEntryActivations.Teamwork(world, printed, arriving, 0, round: 1);
         var step = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(Steps.Scheme, step.What);
         Assert.Equal(arriving.ObjectId, step.Subject);
@@ -75,7 +75,7 @@ public sealed class KeywordATeamworkMinionAloneTests : KeywordTestBase
         var world = Board(printed, players: 2);
         var arriving = world.CreateCard("acolyte", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.CreateCard("friend", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
-        Reveal.Teamwork(world, printed, arriving, 0, round: 1);
+        MinionEntryActivations.Teamwork(world, printed, arriving, 0, round: 1);
         Assert.Equal(arriving.ObjectId, Assert.Single(world.Agenda.Outstanding).Subject);
     }
 
@@ -89,7 +89,7 @@ public sealed class KeywordATeamworkMinionAloneTests : KeywordTestBase
         var world = Board(printed);
         world.Seats[0].IdentityCard.TurnTo("hero");
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-        Reveal.Quickstrike(world, printed, minion, 0, round: 1);
+        MinionEntryActivations.Quickstrike(world, printed, minion, 0, round: 1);
         Assert.False(world.Agenda.IsBusy);
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
     }

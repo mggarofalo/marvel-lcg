@@ -54,9 +54,9 @@ internal static class GamePhaseEnd
         }
 
         game.Phase = GamePhase.VillainPhase;
-        game.world.Agenda.Add(new PhaseStep(Steps.DrawToHandSize, game.Round, 2));
-        game.world.Agenda.Add(new PhaseStep(Steps.ReadyCards, game.Round, 3));
-        game.world.Agenda.Add(new PhaseStep(Steps.EndPlayerPhase, game.Round, 4));
+        game.world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.DrawToHandSize), game.Round, 2));
+        game.world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.ReadyCards), game.Round, 3));
+        game.world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndPlayerPhase), game.Round, 4));
         VillainPhase.Schedule(game.world.Agenda, game.Round);
         return game.Work(happened);
     }

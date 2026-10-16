@@ -53,7 +53,7 @@ public sealed class AttackOccurrenceTests
         Assert.Equal(-1, attacks[2].Player);
 
         world.CharacterAttack = new CharacterAttack(hero.ObjectId, minion.ObjectId, 0);
-        var characterAttack = new PhaseStep(Steps.CharacterAttacks, 1, 2)
+        var characterAttack = new PhaseStep(new CharacterAttackOperation(world.CharacterAttack), Round: 1, Number: 2)
             .OccurrenceOf(world, facts);
         Assert.Equal(0, characterAttack.Player);
         Assert.Equal(0, characterAttack.ActorFacts!.Controller);
@@ -103,8 +103,7 @@ public sealed class AttackOccurrenceTests
     {
         var (world, facts, hero, ally, villain, _) = Board();
         world.Attack = new EnemyAttack(villain.ObjectId, 0, hero.ObjectId);
-        world.Agenda.Add(new PhaseStep(
-            Steps.DealAttackDamage, 1, 4, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new AttackStageOperation(AttackStageKind.DealAttackDamage), Round: 1, Number: 4, Subject: villain.ObjectId, Seat: 0));
 
         // The defender window runs after the damage step is scheduled and
         // before its interrupt window begins. An ally defending becomes the
@@ -124,8 +123,7 @@ public sealed class AttackOccurrenceTests
     {
         var (world, facts, _, ally, villain, _) = Board();
         world.Attack = new EnemyAttack(villain.ObjectId, 0, ally.ObjectId);
-        world.Agenda.Add(new PhaseStep(
-            Steps.EndAttack, 1, 6, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new AttackCompletionOperation(), Round: 1, Number: 6, Subject: villain.ObjectId, Seat: 0));
 
         var occurrence = world.Agenda.Begin(world, facts);
 

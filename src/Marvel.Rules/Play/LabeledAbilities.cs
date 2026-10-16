@@ -6,6 +6,16 @@ namespace Marvel.Rules.Play;
 /// <summary>Who performs a labeled ability and whether it begins resolving.</summary>
 public static class LabeledAbilities
 {
+    /// <summary>The identity that performed a function, or -1 for another game element.</summary>
+    public static int IdentityPlayer(World world, Card performer)
+    {
+        // rr:you-your.6: an ally's function is not its controller's identity's
+        // function. Object identity also distinguishes a friendly attachment host.
+        int player = performer.Owner;
+        return player >= 0 && player < world.Players
+            && world.Seats[player].IdentityCard == performer ? player : -1;
+    }
+
     /// <summary>The labels whose rules the engine executes.</summary>
     public static IReadOnlySet<string> Known { get; } =
         new HashSet<string>(StringComparer.Ordinal)

@@ -152,9 +152,7 @@ public sealed class DecisionComposer
     public bool CostApplies(CostOption cost)
     {
         ArgumentNullException.ThrowIfNull(cost);
-        return cost.Target == 0
-            || cost.Target == Selected?.AnchorId
-            || targets.Contains(cost.Target);
+        return Selected is not null && DecisionAssessment.CostApplies(Selected, cost, targets);
     }
 
     /// <summary>Toggles one generator offered by the selected cost.</summary>
@@ -172,111 +170,32 @@ public sealed class DecisionComposer
     }
 
     /// <summary>Builds the wire decline only when this prompt permits it.</summary>
-    public bool TryDecline(out EngineDecision? decision, out string? error)
+    public bool TryDecline(out Decision? decision, out string? error)
     {
-        if (!Prompt.Cancellable)
-        {
-            decision = null;
-            error = "This decision cannot be declined.";
-            return false;
-        }
-
-        decision = EngineDecision.Decline;
-        error = null;
-        return true;
+        DecisionAssessmentResult result = DecisionAssessment.Assess(Prompt, Decision.Decline);
+        decision = result.IsAccepted ? Decision.Decline : null;
+        error = DecisionAssessmentPresentation.Error(result);
+        return result.IsAccepted;
     }
 
-    /// <summary>Builds a typed answer entirely from values on the current prompt.</summary>
-    public bool TryBuild(out EngineDecision? decision, out string? error)
-    {
-        decision = null;
-        if (!SelectedDraftIsValid(out error))
-        {
-            return false;
-        }
-        return Selected!.CostOptions.Count == 0
-            ? TryBuildFree(out decision, out error)
-            : TryBuildPaid(out decision, out error);
-    }
-
-    private bool SelectedDraftIsValid(out string? error)
+    /// <summary>Builds a typed answer assessed by the engine's current offer.</summary>
+    public bool TryBuild(out Decision? decision, out string? error)
     {
         if (Selected is null)
         {
+            decision = null;
             error = "Choose an action.";
             return false;
         }
-        if (!Selected.IsLegal)
-        {
-            error = Selected.Illegal;
-            return false;
-        }
-        bool targetsValid = Selected.Targets is null
-            ? targets.Count == 0
-            : Selected.Targets.Allows(targets);
-        error = targetsValid ? null : "Complete the offered target selection.";
-        return targetsValid;
-    }
-
-    private bool TryBuildFree(out EngineDecision? decision, out string? error)
-    {
-        if (allocation.Resources.Count > 0 || values.Count > 0)
-        {
-            decision = null;
-            error = "This action has no payment.";
-            return false;
-        }
-        decision = new EngineDecision(Selected!.Id, [.. targets]);
-        error = null;
-        return true;
-    }
-
-    private bool TryBuildPaid(out EngineDecision? decision, out string? error)
-    {
-        decision = null;
-        Affordance selected = Selected!;
-        if (selectedCost < 0 || selectedCost >= selected.CostOptions.Count)
-        {
-            error = "Choose an offered cost.";
-            return false;
-        }
-
-        CostOption cost = selected.CostOptions[selectedCost];
-        if (!CostApplies(cost))
-        {
-            error = "Choose the target associated with this cost.";
-            return false;
-        }
-
-        if (!VariablesAreValid(cost))
-        {
-            error = "Define every requested value inside its offered range.";
-            return false;
-        }
-
-        IReadOnlyList<ResourceAllocation> allocated = CollapseAssignments();
-        if (!ResourcePayment.Allows(cost, allocation.Resources, values, allocated))
-        {
-            error = "Assign generated icons to satisfy every offered cost component.";
-            return false;
-        }
-
-        decision = new EngineDecision(
-            selected.Id,
-            [.. targets],
-            [.. allocation.Resources],
+        var candidate = new Decision(
+            Selected.Id, [.. targets], [.. allocation.Resources],
             new Dictionary<string, long>(values, StringComparer.Ordinal),
-            [.. allocated]);
-        error = null;
-        return true;
-    }
-
-    private bool VariablesAreValid(CostOption cost)
-    {
-        VariableRequest[] requested = cost.VariableRequests.ToArray();
-        return values.Count == requested.Length
-            && requested.All(variable => values.TryGetValue(variable.Name, out long value)
-                && variable.Allows(value));
+            [.. CollapseAssignments()]);
+        DecisionAssessmentResult result = DecisionAssessment.Assess(
+            Prompt, candidate, costIndex: selectedCost);
+        decision = result.IsAccepted ? candidate : null;
+        error = DecisionAssessmentPresentation.Error(result);
+        return result.IsAccepted;
     }
 
     private void ResetPaymentIfTargetChanged()

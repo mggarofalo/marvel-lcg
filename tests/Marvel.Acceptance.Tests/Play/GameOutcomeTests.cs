@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;

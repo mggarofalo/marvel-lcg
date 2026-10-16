@@ -1,4 +1,4 @@
-using Marvel.Server;
+using Marvel.Protocol;
 using Marvel.Rules.Play;
 using Marvel.View;
 

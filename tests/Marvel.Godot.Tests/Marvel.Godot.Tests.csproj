@@ -26,4 +26,11 @@
     <Compile Include="../Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../../src/Marvel.Protocol/Marvel.Protocol.csproj" />
+    <ProjectReference Include="../../src/Marvel.Transport/Marvel.Transport.csproj" />
+    <ProjectReference Include="../../src/Marvel.Observability/Marvel.Observability.csproj" />
+    <ProjectReference Include="../../src/Marvel.Desktop/Marvel.Desktop.csproj" />
+    <ProjectReference Include="../../src/Marvel.Server/Marvel.Server.csproj" />
+  </ItemGroup>
 </Project>

@@ -69,12 +69,13 @@ public static class AgendaAdvancement
     /// A procedure continuation deliberately shares its parent's occurrence.
     /// Once such a continuation has moved in front of the parent, occurrence
     /// identity alone is no longer enough to identify which item just applied.
-    /// The step value is engine agenda data and supplies that missing address.
+    /// The scheduler-assigned frame identity supplies that missing address even
+    /// when the procedure payload changes.
     /// </remarks>
     public static bool Advance(this Agenda agenda, PhaseStep owner, Occurrence occurrence)
     {
         ArgumentNullException.ThrowIfNull(occurrence);
-        int at = agenda.items.FindIndex(item => item.Step.Equals(owner)
+        int at = agenda.items.FindIndex(item => item.Step.SameFrameAs(owner)
             && ReferenceEquals(item.Occurrence, occurrence));
         if (at < 0)
         {
@@ -104,12 +105,24 @@ public static class AgendaAdvancement
     public static void Cancel(this Agenda agenda, Occurrence occurrence)
     {
         ArgumentNullException.ThrowIfNull(occurrence);
-        int at = agenda.items.FindIndex(item => ReferenceEquals(item.Occurrence, occurrence));
+        var owner = agenda.items.Single(item => !item.Step.Plan
+            && ReferenceEquals(item.Occurrence, occurrence)).Step;
+        agenda.Cancel(owner, occurrence);
+    }
+
+    /// <summary>Cancel an exact occurrence owner without discarding suspended ability cleanup.</summary>
+    public static void Cancel(this Agenda agenda, PhaseStep owner, Occurrence occurrence)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        int at = agenda.items.FindIndex(item => item.Step.SameFrameAs(owner)
+            && ReferenceEquals(item.Occurrence, occurrence));
         if (at < 0)
         {
             throw new InvalidOperationException("the occurrence is not on the agenda");
         }
 
+        if (agenda.items[at].Step.Operation is ThreatPlacementOperation threat)
+            threat.Completion.Complete(threat.Part, 0);
         agenda.items.RemoveAt(at);
         if (at == 0)
         {
@@ -132,7 +145,8 @@ public static class AgendaAdvancement
         int at = agenda.items.FindIndex(item =>
             item.Step.What == what
             && item.Step.Subject == ally
-            && item.Step.Character == target);
+            && item.Step.Operation is ConsequentialDamageOperation { Character: var character }
+            && character == target);
         if (at >= 0)
         {
             agenda.items.RemoveAt(at);

@@ -46,20 +46,20 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `31` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
-| Session schema | `5` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v16` | The same setup and decision trace may resolve differently. |
+| Engine protocol | `32` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Session schema | `6` | The strict persisted JSON shape changes. |
+| Engine replay contract | `engine-replay-v17` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
 
-Replay v15 binds combat effects to their owning activation, includes all eligible
-attack-damage recipients, orders would interrupts before ordinary triggers, and
-preserves accurate attachment events and activity membership during event composition.
-Older replay contracts require their matching runtime. The session schema remains 5;
-the persisted decision envelope is unchanged. Protocol 30 carries current,
-visibility-safe attack participants through the owning resolution's final window.
-The wire shape, RNG contract and digest format are unchanged.
+Replay v17 binds setup, complete decision admission, typed continuation ownership
+and delayed-effect copy identity to one deterministic engine contract. Schema 6
+records each seat's ordered explicit deck recipe, or an authored starter default.
+Protocol 32 carries the engine-owned decision shape, durable entry claims and
+typed failure dispositions. Older protocol, replay and save identities are
+rejected; no legacy adapter supplies omitted meaning. The RNG and state-digest
+formats retain their existing identities.
 
 The product version belongs in desktop and server metadata. The protocol
 version belongs on every request and response. Save schema and replay identities
@@ -172,20 +172,15 @@ every compatibility identity still matches. A runtime may restore a save only
 when all of the following hold:
 
 - its product version is not lower than the saved application version;
-- the save schema is the current schema or a specifically implemented readable
-  predecessor;
+- the save schema is the current schema;
 - the engine replay, RNG and state-digest identities are supported;
 - the card, setup and ability dataset SHA-256 values match exactly; and
 - complete deterministic replay verifies every recorded prompt, event, RNG
   count and state fingerprint.
 
-Schema 5 is the current writer. Schemas 2, 3 and 4 are explicit readable
-predecessors. Reading one performs the implemented replay-verified, atomic
-migration and commits schema 5 before publishing the session. Schema 3 gains
-the historic card anchor namespace during decoding; schema 2 also uses its
-frozen prompt reader. All three predecessors gain a null repeated-resource
-requirement. Replay identity must still match before any migration. “Same final board” is never sufficient evidence for
-migration.
+Schema 6 is the only readable and writable session schema. It records ordered
+explicit player deck recipes. Other schemas are quarantined without alteration;
+no migration or inferred default reconstructs omitted gameplay meaning.
 
 An unknown schema, replay identity, RNG identity, digest identity or dataset
 hash is unsupported. The server quarantines that session and reports a bounded

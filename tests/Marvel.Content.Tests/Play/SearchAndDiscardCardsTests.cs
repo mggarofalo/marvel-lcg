@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -65,7 +66,7 @@ public sealed class SearchAndDiscardCardsTests
             AuthoredCards.CaughtOffGuard, world.AreaOf(DeckType.RevealingArea));
         runner.WhenRevealed(world, card, 0);
 
-        var asked = runner.Choosing(world, card, 0, stoppedAt: 1)!;
+        var asked = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, card))!;
         Assert.Equal(Question.Element, asked.Asking);
         Assert.Equal(
             [upgrade.ObjectId, support.ObjectId],
@@ -79,7 +80,7 @@ public sealed class SearchAndDiscardCardsTests
         Assert.Equal("Discard Avengers Mansion", asked.Affordances[1].CommitLabel);
         Assert.Equal("Discard Web-Shooter", asked.Affordances[0].CommitLabel);
 
-        runner.Chose(world, card, 0, 1, Decision.Take(support.ObjectId));
+        runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(support.ObjectId));
 
         Assert.Equal(DeckType.DiscardPile, support.Area.Type);
         Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);

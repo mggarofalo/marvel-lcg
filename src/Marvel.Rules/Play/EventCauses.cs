@@ -12,7 +12,7 @@ internal static class EventCauses
             return Create(world, activation.Id, EventCauseKind.Scheme, activation.Enemy,
                 world.Seats[activation.Player].IdentityCard.ObjectId);
         foreach (var (step, _, occurrence) in world.Agenda.items)
-            if (step.What == Steps.CharacterThwarts && step.CharacterThwart is { } thwart)
+            if (step.Operation is CharacterThwartOperation { Thwart: { } thwart })
                 return Create(world, occurrence?.Id ?? step.OccurrenceId ?? Moment.Id(step.Round, step.Number, step.Index),
                     EventCauseKind.Thwart, thwart.Thwarter, thwart.Scheme);
         return null;

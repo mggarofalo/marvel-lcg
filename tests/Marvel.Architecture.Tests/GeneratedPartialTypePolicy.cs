@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -29,7 +30,7 @@ internal static class GeneratedPartialTypePolicy
             "src/Marvel.Godot/smoke/ResourceFinalizerProbe.cs" => (Namespace: "Marvel.Godot", Type: "ResourceFinalizerProbe"),
             "src/Marvel.Godot/smoke/CardFaceReuseNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "CardFaceReuseNativeProbe"),
             "src/Marvel.Godot/smoke/TooltipPolicyProbe.cs" => (Namespace: "Marvel.Godot", Type: "TooltipPolicyProbe"),
-            "src/Marvel.Server/EngineJsonContext.cs" => (Namespace: "Marvel.Server", Type: "EngineJsonContext"),
+            "src/Marvel.Protocol/EngineJsonContext.cs" => (Namespace: "Marvel.Protocol", Type: "EngineJsonContext"),
             "tools/Marvel.Cards.Extract/Keywords.cs" => (Namespace: "Marvel.Cards.Extract", Type: "Keywords"),
             "tools/Marvel.Cards.Extract/Printed.cs" => (Namespace: "Marvel.Cards.Extract", Type: "Printed"),
             "tools/Marvel.MarvelCdb.Harvest/CanonicalJson.cs" => (Namespace: "Marvel.MarvelCdb.Harvest", Type: "CanonicalJson"),

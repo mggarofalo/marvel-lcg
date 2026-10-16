@@ -20,76 +20,10 @@ public static class JournalReplay
     /// <summary>Compares optional recorded prompts using their schema's recorded fields.</summary>
     public static void RequirePromptRecords(PromptRecord? expected, PromptRecord? actual, string context)
     {
-        PromptRecord? recorded = expected is not null && actual is not null
-            ? NormalizeUnrecordedSchemaTwoFields(expected, actual) : actual;
         RequireEqual(
             JsonSerializer.Serialize(expected, JournalJson.Options),
-            JsonSerializer.Serialize(recorded, JournalJson.Options),
+            JsonSerializer.Serialize(actual, JournalJson.Options),
             context);
-    }
-
-    private static PromptRecord NormalizeUnrecordedSchemaTwoFields(
-        PromptRecord expected, PromptRecord actual)
-    {
-        if (expected.Affordances is null
-            || expected.Affordances.Count != actual.Affordances.Count)
-        {
-            return actual;
-        }
-
-        var affordances = new List<AffordanceRecord>(actual.Affordances.Count);
-        for (int index = 0; index < actual.Affordances.Count; index++)
-        {
-            if (expected.Affordances[index] is not AffordanceRecord expectedAffordance
-                || expectedAffordance.Costs is null)
-            {
-                return actual;
-            }
-
-            AffordanceRecord actualAffordance = actual.Affordances[index];
-            affordances.Add(actualAffordance with
-            {
-                Targets = NormalizeTargets(expectedAffordance.Targets, actualAffordance.Targets),
-                Costs = NormalizeCosts(expectedAffordance.Costs, actualAffordance.Costs),
-            });
-        }
-
-        return actual with { Affordances = affordances };
-    }
-
-    private static TargetRequestRecord? NormalizeTargets(
-        TargetRequestRecord? expected, TargetRequestRecord? actual)
-    {
-        if (expected is null || actual is null)
-        {
-            return actual;
-        }
-        return actual with
-        {
-            AllowRepeated = expected.LegacyAllowRepeatedRecorded
-                ? actual.AllowRepeated : expected.AllowRepeated,
-            MaximumOccurrences = expected.LegacyMaximumOccurrencesRecorded
-                ? actual.MaximumOccurrences : expected.MaximumOccurrences,
-            Details = expected.LegacyDetailsRecorded ? actual.Details : expected.Details,
-        };
-    }
-
-    private static IReadOnlyList<CostOptionRecord> NormalizeCosts(
-        IReadOnlyList<CostOptionRecord> expected,
-        IReadOnlyList<CostOptionRecord> actual)
-    {
-        if (expected.Count != actual.Count)
-        {
-            return actual;
-        }
-        return [.. actual.Select((cost, index) => cost with
-        {
-            DeclarationSensitive = expected[index].LegacyDeclarationSensitiveRecorded
-                ? cost.DeclarationSensitive : expected[index].DeclarationSensitive,
-            Sources = expected[index].ResourceMeaningRecorded ? cost.Sources
-                : cost.Sources?.Select(source => source with
-                    { AbilityName = null, CostDescription = null }).ToArray(),
-        })];
     }
 
     /// <summary>Requires semantic events to retain their exact count, order and shape.</summary>

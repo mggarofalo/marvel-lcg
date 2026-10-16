@@ -1,3 +1,4 @@
+using Marvel.Rules.Play;
 using Marvel.Decisions;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.Timing;
@@ -21,7 +22,7 @@ public sealed class MinionOrderPresentationTests
         Assert.False(composer.TryBuild(out _, out _));
         var operations = new TableDraftOperations(composer);
         Assert.True(operations.TrySelectAffordance(30));
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.True(composer.TryBuild(out Decision? decision, out _));
         Assert.Equal(30, decision!.Affordance);
         Assert.Empty(decision.Targets);
         Assert.True(operations.TrySelectAffordance(10));

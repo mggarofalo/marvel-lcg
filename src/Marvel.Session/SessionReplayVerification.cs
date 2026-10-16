@@ -17,8 +17,7 @@ internal static class SessionReplayVerification
         int unitCount,
         Func<SessionSetup, ReplayOpenedGame> open,
         bool requireExposures,
-        List<HistoryUnitInspection>? history = null,
-        List<PromptRecord>? verifiedPrompts = null)
+        List<HistoryUnitInspection>? history = null)
     {
         ReplayOpenedGame opened = open(save.Setup);
         Game game = opened.Game;
@@ -27,7 +26,7 @@ internal static class SessionReplayVerification
         for (int unitIndex = 0; unitIndex < unitCount; unitIndex++)
         {
             derived.Add(ReplayUnit(
-                save.Units[unitIndex], unitIndex, game, requireExposures, history, verifiedPrompts));
+                save.Units[unitIndex], unitIndex, game, requireExposures, history));
         }
 
         RequireReplayFrontier(save, unitCount, requireExposures);
@@ -55,8 +54,7 @@ internal static class SessionReplayVerification
         int unitIndex,
         Game game,
         bool requireExposures,
-        List<HistoryUnitInspection>? history,
-        List<PromptRecord>? verifiedPrompts)
+        List<HistoryUnitInspection>? history)
     {
         RequireUnitPosition(unit, unitIndex, game);
         ReplayHistory? inspection = CreateReplayHistory(history, unit);
@@ -64,7 +62,7 @@ internal static class SessionReplayVerification
         string? derivedRole = null;
         for (int decisionIndex = 0; decisionIndex < unit.Decisions.Count; decisionIndex++)
         {
-            Prompt verified = ReplayUnitDecision(
+            _ = ReplayUnitDecision(
                 unit,
                 unitIndex,
                 decisionIndex,
@@ -72,7 +70,6 @@ internal static class SessionReplayVerification
                 inspection,
                 ref derivedRole,
                 ref exposures);
-            verifiedPrompts?.Add(PromptRecord.From(verified));
         }
 
         RequireUnitBoundary(unit, unitIndex, game, derivedRole);

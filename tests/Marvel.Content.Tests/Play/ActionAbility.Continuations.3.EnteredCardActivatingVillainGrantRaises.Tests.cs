@@ -228,7 +228,7 @@ public sealed class ActionAbilityContinuationsEnteredCardActivatingVillainGrantR
         }
 
         Assert.Equal(Steps.ResolveEachPlayer, world.Agenda.Current?.What);
-        runner.ResolveEachPlayer(world, identity, frame.Seat, frame.Index, frame.Tier, frame.FinalStep, frame.FinalPlayer);
+        runner.ResolveEachPlayer(world, frame);
         Assert.Equal("01001b", identity.FaceId);
         Assert.Equal(0, identity.Damage);
         Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);

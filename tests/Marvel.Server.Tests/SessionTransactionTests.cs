@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Rules.Play;
 using Marvel.Session;
 using Marvel.Tests;
@@ -88,7 +89,7 @@ public sealed class SessionTransactionTests
             opened.Game,
             opened.SetupEvents);
         var live = new HostedSession("transaction-table", opened.Game, save);
-        return (live, new SessionTransaction(opened.Game, save with { Revision = 1 }));
+        return (live, new SessionTransaction(opened.Game, save with { Revision = 1 }, []));
     }
 
     private static EngineResponse Response() => new(

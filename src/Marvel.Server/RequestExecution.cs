@@ -1,3 +1,5 @@
+using Marvel.Observability;
+using Marvel.Protocol;
 using System.Diagnostics;
 using Marvel.Session;
 

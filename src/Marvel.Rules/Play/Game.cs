@@ -9,35 +9,9 @@ namespace Marvel.Rules.Play;
 /// The engine: a world, where it is in the round, and what it will ask next.
 /// </summary>
 /// <remarks>
-/// <para>
-/// <b>What this implements.</b> The player phase for a player who declines. That
-/// is three prompt shapes — the mulligan, the main turn, and the end phase — and
-/// the transitions between them, which are exactly the transitions the recorded
-/// milestone game exercises before it needs a card ability. Measured against
-/// <c>rhino / spider_man / 12345</c>: the recording holds seven steps and those
-/// seven are three distinct boards, because the board only moves in the villain
-/// phase. Steps 0, 1 and 2 are one board and this reproduces all three of them.
-/// </para>
-/// <para>
-/// <b>What it does not implement, and how you find out.</b> Anything else throws
-/// <see cref="RulesNotImplementedException"/> before touching the world. Two
-/// boundaries exist today: taking an affordance rather than declining one, and
-/// the villain phase. Both are named in the message.
-/// </para>
-/// <para>
-/// <b>The affordances are the derivable ones.</b> <see cref="DerivedVerbs"/> is
-/// the set this builds from state alone. <c>Play</c> is the other one, and it
-/// needs a card's cost, its play restrictions and the resources every other
-/// card can generate — card abilities, in other words, which is why it lives in
-/// <see cref="CardPlay"/> and not here.
-/// </para>
-/// <para>
-/// <b>Not a hot path yet.</b> <c>docs/presentation-layer.md</c> asks for LINQ out
-/// of the engine and a flat array of cards. The flat array is already how
-/// <see cref="World"/> stores them; the LINQ here is in prompt construction,
-/// which runs once per decision rather than once per effect node, and it will be
-/// measured before it is optimised.
-/// </para>
+/// The game owns phase progression and the pending decision. Rules procedures
+/// and authored abilities share its agenda so a decision can suspend either
+/// operation without losing the surrounding timing window.
 /// </remarks>
 public sealed class Game
 {
@@ -109,8 +83,18 @@ public sealed class Game
         Phase = GamePhase.Mulligan;
         Active = world.FirstPlayer;
         Round = 0;
-        Pending = this.MulliganPrompt();
         asking = Asker.Game;
+        if (world.ScenarioSetup?.Pending is { } setupPrompt)
+        {
+            Phase = GamePhase.ScenarioSetup;
+            Pending = setupPrompt;
+            Active = setupPrompt.Player;
+            asking = Asker.Sequence;
+        }
+        else
+        {
+            Pending = this.MulliganPrompt();
+        }
     }
 
     /// <summary>The verbs this resolve derives from state alone.</summary>

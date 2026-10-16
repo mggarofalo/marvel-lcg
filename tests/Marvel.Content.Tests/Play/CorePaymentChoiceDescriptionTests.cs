@@ -32,7 +32,7 @@ public sealed class CorePaymentChoiceDescriptionTests
         var step = Assert.Single(world.Agenda.Outstanding);
         var before = world.Digest().Fingerprint();
 
-        Prompt prompt = runner.Choosing(world, boost, 0, step.Index, step.Tier)!;
+        Prompt prompt = runner.Choosing(world, step)!;
 
         Assert.False(prompt.Cancellable);
         Assert.Equal([boost.ObjectId], prompt.ContextCardIds);

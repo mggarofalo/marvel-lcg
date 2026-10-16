@@ -1,6 +1,6 @@
+using Marvel.Protocol;
 using Godot;
 using Marvel.Client;
-using Marvel.Server;
 
 namespace Marvel.Godot;
 

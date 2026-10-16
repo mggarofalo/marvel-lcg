@@ -43,6 +43,19 @@ jobs:
             8.0.424
             10.0.400
 
+      - name: Set up quality-tool Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install pinned complexity tools
+        run: python -m pip install --requirement tools/requirements-quality.txt
+
+      - name: Enforce the pre-commit complexity limit
+        run: |
+          dotnet tool restore
+          dotnet husky exec .husky/csx/complexity.csx
+
       - name: Restore
         run: dotnet restore
 
@@ -85,6 +98,22 @@ jobs:
           dotnet-version: |
             8.0.424
             10.0.400
+
+      - name: Set up quality-tool Python
+        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install pinned complexity tools
+        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        run: python -m pip install --requirement tools/requirements-quality.txt
+
+      - name: Enforce the pre-commit complexity limit
+        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        run: |
+          dotnet tool restore
+          dotnet husky exec .husky/csx/complexity.csx
 
       - name: Restore
         run: dotnet restore
@@ -199,8 +228,8 @@ jobs:
           grep -q 'name: marvel-sessions' <<<"$compose"
           grep -q 'name: marvel-diagnostics' <<<"$compose"
           [[ $(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$image") == 0.1.0-dev.0 ]]
-          docker run --rm --entrypoint dotnet "$image" Marvel.Server.dll --version |
-            grep -F 'v0.1.0-dev.0 · engine engine-replay-v16 · protocol 31 · save 5'
+          docker run --rm --entrypoint dotnet "$image" Marvel.Server.Host.dll --version |
+            grep -F 'v0.1.0-dev.0 · engine engine-replay-v17 · protocol 32 · save 6'
           docker volume create "$volume" >/dev/null
           docker volume create "$diagnostics" >/dev/null
           docker run --detach --name "$container" \

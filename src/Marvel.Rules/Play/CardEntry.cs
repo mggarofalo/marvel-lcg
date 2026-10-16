@@ -154,12 +154,13 @@ public static class CardEntry
                 step.What == Steps.ChooseAllyForLimit && step.Seat == player))
         {
             world.Agenda.Then(new PhaseStep(
-                Steps.ChooseAllyForLimit,
+                new PlayerLimitOperation(PlayerLimitKind.ChooseAllyForLimit),
                 world.Agenda.Current?.Round ?? 0,
                 0,
                 Subject: subject,
                 Seat: player,
-                Plan: true));
+                Plan: true
+            ));
         }
 
         return true;
@@ -167,12 +168,13 @@ public static class CardEntry
 
     internal static void FinalizeAllyEntry(World world, Card ally, int player) =>
         world.Agenda.Then(new PhaseStep(
-            Steps.FinalizeAllyEntry,
+            new RevealStageOperation(RevealStageKind.FinalizeAllyEntry),
             world.Agenda.Current?.Round ?? 0,
             0,
             Subject: ally.ObjectId,
             Seat: player,
-            Plan: true));
+            Plan: true
+        ));
 
     /// <summary>Schedules the response window for an ally put into play.</summary>
     internal static void Entered(World world, Card ally, int player)
@@ -182,11 +184,12 @@ public static class CardEntry
         // after-entry response window as a card played from hand, but not the
         // `WhenCardPlayed` condition that rr:play-put-into-play.3 excludes.
         world.Agenda.Then(new PhaseStep(
-            Steps.CardEntersPlay,
+            new LifecycleOperation(LifecycleKind.CardEntersPlay),
             world.Agenda.Current?.Round ?? 0,
             0,
             Subject: ally.ObjectId,
-            Seat: player));
+            Seat: player
+        ));
     }
 
     internal static void Played(World world, Seat seat, Card card)
@@ -196,12 +199,13 @@ public static class CardEntry
         // optional responses `rr:ability.11` says must be chosen rather than
         // silently resolved or refused.
         world.Agenda.Then(new PhaseStep(
-            Steps.CardPlayed,
+            new LifecycleOperation(LifecycleKind.CardPlayed),
             world.Agenda.Current?.Round ?? 0,
             0,
             Index: seat.Index,
             Subject: card.ObjectId,
-            Seat: seat.Index));
+            Seat: seat.Index
+        ));
     }
 
     /// <summary>
@@ -250,13 +254,16 @@ public static class CardEntry
         if (held.Count > StateFieldCatalog.RestrictedLimit)
         {
             var choice = new PhaseStep(
-                Steps.ChooseRestrictedCard,
+                new PlayerLimitOperation(
+                    PlayerLimitKind.ChooseRestrictedCard,
+                    Candidates: [.. held.Select(card => card.ObjectId)]
+                ),
                 world.Agenda.Current?.Round ?? 0,
                 0,
                 Subject: played.ObjectId,
                 Seat: seat.Index,
-                Plan: true,
-                ProcedureCandidates: [.. held.Select(card => card.ObjectId)]);
+                Plan: true
+            );
 
             if (world.Agenda.Occurrence is { } occurrence)
             {

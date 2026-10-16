@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Server;
 using Marvel.View;
 using Xunit;
@@ -26,7 +27,7 @@ public sealed class CardFactClientValidationTests : LocalGameClientTestBase
             _ => throw new ArgumentOutOfRangeException(nameof(problem)),
         };
 
-        ClientStartupResult result = await OpenWithPrintedFacts(values!);
+        ClientEntryResult result = await OpenWithPrintedFacts(values!);
 
         Assert.False(result.Succeeded);
         Assert.Equal("invalid_response", result.Error?.Code);
@@ -46,14 +47,14 @@ public sealed class CardFactClientValidationTests : LocalGameClientTestBase
         // Synthetic wire shapes exercise admission; they do not enable new game content.
         var value = new CardPrintedValue(numeral, specialStar, perPlayer, consequences);
 
-        ClientStartupResult result = await OpenWithPrintedFacts(
+        ClientEntryResult result = await OpenWithPrintedFacts(
             new Dictionary<string, CardPrintedValue> { ["ATK"] = value });
 
         Assert.True(result.Succeeded);
         Assert.Null(result.Error);
     }
 
-    private static async Task<ClientStartupResult> OpenWithPrintedFacts(
+    private static async Task<ClientEntryResult> OpenWithPrintedFacts(
         IReadOnlyDictionary<string, CardPrintedValue> values) =>
         await OpenWithFace(face => face with { PrintedValues = values });
 
@@ -84,7 +85,7 @@ public sealed class CardFactClientValidationTests : LocalGameClientTestBase
             _ => throw new ArgumentOutOfRangeException(nameof(problem)),
         };
 
-        ClientStartupResult result = await OpenWithFace(face => face with { EffectiveValues = values! });
+        ClientEntryResult result = await OpenWithFace(face => face with { EffectiveValues = values! });
 
         Assert.False(result.Succeeded);
         Assert.Equal("invalid_response", result.Error?.Code);
@@ -98,7 +99,7 @@ public sealed class CardFactClientValidationTests : LocalGameClientTestBase
         var value = new CardEffectiveValue(2, 5, "Printed", true,
             [new CardValueCalculation("Add", 1, source, new CardValueDuration("round", null, null, false))]);
 
-        ClientStartupResult result = await OpenWithFace(face => face with { EffectiveValues = Facts(value) });
+        ClientEntryResult result = await OpenWithFace(face => face with { EffectiveValues = Facts(value) });
 
         Assert.True(result.Succeeded);
         Assert.Null(result.Error);
@@ -107,7 +108,7 @@ public sealed class CardFactClientValidationTests : LocalGameClientTestBase
     private static Dictionary<string, CardEffectiveValue> Facts(CardEffectiveValue value) =>
         new Dictionary<string, CardEffectiveValue> { ["ATK"] = value };
 
-    private static async Task<ClientStartupResult> OpenWithFace(
+    private static async Task<ClientEntryResult> OpenWithFace(
         Func<CardFaceDescriptor, CardFaceDescriptor> change) =>
         await OpenWithCard(card => card with { Face = change(card.Face!) });
 
@@ -147,7 +148,7 @@ public sealed class CardFactClientValidationTests : LocalGameClientTestBase
                 { Effects = [ability.Effects[0] with { Condition = new("Source", null!, 5) }] }] },
         }[problem];
 
-        ClientStartupResult result = await OpenWithCard(card => card with { Persistent = invalid });
+        ClientEntryResult result = await OpenWithCard(card => card with { Persistent = invalid });
 
         Assert.False(result.Succeeded);
         Assert.Equal("invalid_response", result.Error?.Code);
@@ -156,7 +157,7 @@ public sealed class CardFactClientValidationTests : LocalGameClientTestBase
     [Fact]
     public async Task SignedContributionsAndCompletePersistentFactsAreAdmitted()
     {
-        ClientStartupResult result = await OpenWithCard(card => card with { Persistent = PersistentFacts() });
+        ClientEntryResult result = await OpenWithCard(card => card with { Persistent = PersistentFacts() });
 
         Assert.True(result.Succeeded);
         Assert.Null(result.Error);
@@ -169,11 +170,11 @@ public sealed class CardFactClientValidationTests : LocalGameClientTestBase
             [new("Exhaust", "Source", null, null, null, false)],
             [new("Ready", "ActingIdentity", null, null, null, null, null)])], false);
 
-    private static async Task<ClientStartupResult> OpenWithCard(
+    private static async Task<ClientEntryResult> OpenWithCard(
         Func<CardDescriptor, CardDescriptor> change)
     {
         EngineResponse opened = Host().Exchange(
-            EngineRequest.OpenGame("local-open", LocalGameSession.GameId, Specification()));
+            EngineRequest.OpenGame("local-open", "test-table", Specification()));
         WorldDescriptor world = opened.World!;
         CardDescriptor readable = world.Areas.SelectMany(area => area.Cards)
             .First(card => card.Face is not null);
@@ -186,6 +187,6 @@ public sealed class CardFactClientValidationTests : LocalGameClientTestBase
             }).ToArray(),
         };
         return await new LocalGameClient(new FixedTransport(opened with { World = changed }))
-            .OpenAsync(Specification(), TestContext.Current.CancellationToken);
+            .OpenSessionAsync("test-table", Specification(), TestContext.Current.CancellationToken);
     }
 }

@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Net;
 using Marvel.Decisions;
 using Marvel.Rules.Play;
@@ -52,7 +54,7 @@ public sealed class PublicPendingSituationTransportTests : TransportTestBase
 
         EngineResponse active = await Exchange(EngineRequest.SyncGame("active", game, opened.Capability!));
         EngineResponse ended = await Exchange(EngineRequest.ResolveGame("end", game,
-            opened.Capability!, EngineDecision.Decline, active.Revision));
+            opened.Capability!, Decision.Decline, active.Revision));
         Assert.Null(ended.Error);
         EngineResponse refreshed = await Exchange(EngineRequest.SyncGame("refresh", game, attached.Capability!));
         Assert.Equal(1, refreshed.Prompt!.Player);

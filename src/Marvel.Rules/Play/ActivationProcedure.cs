@@ -31,7 +31,7 @@ internal static class ActivationProcedure
     /// </summary>
     internal static Prompt? Plan(World world, ICardFacts facts, PhaseStep step)
     {
-        var playerOrder = step.ActivationPlayers ?? world.PlayerOrder.ToList();
+        var playerOrder = step.Require<ActivationPlanOperation>().Players ?? world.PlayerOrder.ToList();
         if (step.Index >= playerOrder.Count)
         {
             return null;
@@ -44,7 +44,7 @@ internal static class ActivationProcedure
         }
 
         int seat = playerOrder[step.Index];
-        var activated = step.ActivatedEnemies ?? [];
+        var activated = step.Require<ActivationPlanOperation>().ActivatedEnemies ?? [];
 
         // An eliminated seat remains in this procedure's stable order so its
         // removal cannot shift the next player under the current index. It has
@@ -53,10 +53,13 @@ internal static class ActivationProcedure
         {
             world.Agenda.Then(step with
             {
+                Operation = step.Require<ActivationPlanOperation>() with
+                {
+                    ActivatedEnemies = [],
+                    Players = playerOrder
+                },
                 Index = step.Index + 1,
-                ActivatedEnemies = [],
-                ActivationPlayers = playerOrder,
-                OccurrenceId = null,
+                OccurrenceId = null
             });
             return null;
         }
@@ -80,12 +83,15 @@ internal static class ActivationProcedure
         // again. The next choice sees every currently engaged, unactivated minion.
         world.Agenda.Then(step with
         {
+            Operation = step.Require<ActivationPlanOperation>() with
+            {
+                ActivatedEnemies = [],
+                Players = playerOrder,
+                Chosen = null,
+                Incarnations = null
+            },
             Index = step.Index + 1,
-            ActivatedEnemies = [],
-            ActivationPlayers = playerOrder,
-            ActivationOrder = null,
-            ProcedureAmounts = null,
-            OccurrenceId = null,
+            OccurrenceId = null
         });
         return null;
     }
@@ -100,32 +106,28 @@ internal static class ActivationProcedure
         bool attacking = EffectiveCards.Kind(identity, facts) != CardKind.AlterEgo;
 
         world.Agenda.Then(new PhaseStep(
-            attacking ? Steps.Attack : Steps.Scheme,
-            step.Round, 2, Index: seat, Subject: next, Seat: seat));
-        world.Agenda.Then(step with
-        {
-            ActivatedEnemies = [.. step.ActivatedEnemies ?? [], next],
-            // The engine records the in-play incarnation: rr:minion.4 also
-            // applies when a departed physical card engages again as a new instance.
-            ProcedureAmounts = new Dictionary<int, long>(step.ProcedureAmounts
-                ?? new Dictionary<int, long>()) { [next] = world.Cards[next].Incarnation },
-            ActivationPlayers = playerOrder,
-            ActivationOrder = null,
-            OccurrenceId = null,
-        });
+            attacking ? new EnemyAttackOperation() : new EnemySchemeOperation(),
+            step.Round,
+            2,
+            Index: seat,
+            Subject: next,
+            Seat: seat
+        ));
+        world.Agenda.Then(step with { Operation = step.Require<ActivationPlanOperation>() with { ActivatedEnemies = [.. step.Require<ActivationPlanOperation>().ActivatedEnemies ?? [], next], Incarnations = new Dictionary<int, long>(step.Require<ActivationPlanOperation>().Incarnations
+                ?? new Dictionary<int, long>()) { [next] = world.Cards[next].Incarnation }, Players = playerOrder, Chosen = null }, OccurrenceId = null });
     }
 
     private static bool NeedsOrder(
         PhaseStep step, Card villain, IReadOnlyList<int> activated, List<Card> remaining) =>
         activated.Contains(villain.ObjectId)
-        && step.ActivationOrder?.Any(id => remaining.Any(card => card.ObjectId == id)) != true
+        && step.Require<ActivationPlanOperation>().Chosen?.Any(id => remaining.Any(card => card.ObjectId == id)) != true
         && remaining.Count > 1;
 
     private static int? NextEnemy(
         PhaseStep step, Card villain, IReadOnlyList<int> activated, List<Card> remaining)
     {
         if (!activated.Contains(villain.ObjectId)) return villain.ObjectId;
-        return step.ActivationOrder?.Where(id => remaining.Any(card => card.ObjectId == id))
+        return step.Require<ActivationPlanOperation>().Chosen?.Where(id => remaining.Any(card => card.ObjectId == id))
             .Select(id => (int?)id).FirstOrDefault()
             ?? remaining.Select(card => (int?)card.ObjectId).FirstOrDefault();
     }

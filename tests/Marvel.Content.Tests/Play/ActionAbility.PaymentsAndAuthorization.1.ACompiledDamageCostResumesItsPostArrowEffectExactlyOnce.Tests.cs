@@ -1,3 +1,4 @@
+using Marvel.Cards.Run;
 using Marvel.Cards.Dsl;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
@@ -98,10 +99,10 @@ public sealed class ActionAbilityPaymentsAndAuthorizationACompiledDamageCostResu
         game.Resolve(Decision.Decline);
         Assert.Equal(Question.Option, game.Pending!.Asking);
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
-        // The engine chooses this persisted key as a one-shot transition
-        // marker. Consuming it before the next suspension prevents a later
-        // ResumeAbility continuation from restarting the paid-cost boundary.
-        Assert.False(world.Agenda.Current?.AbilityResults?.ContainsKey("costProcedurePending") ?? false);
+        // A later choice resumes the effect, after its cost has already resolved.
+        Assert.NotEqual(AbilityResumeReason.CostProcedure,
+            ((world.Agenda.Current?.Operation as AbilityContinuationAgendaOperation)?.Continuation
+                as AbilityContinuationState)?.Reason);
         game.Resolve(Decision.Take(0));
         Assert.Equal(Question.TurnOption, game.Pending!.Asking);
         Assert.Equal(DeckType.DiscardPile, source.Area.Type);

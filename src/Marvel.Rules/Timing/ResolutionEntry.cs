@@ -10,4 +10,8 @@ namespace Marvel.Rules.Timing;
 /// <param name="Applied">Whether at least one child effect has applied so far.</param>
 public sealed record ResolutionEntry(
     int Card, AbilityType? Ability, int Ordinal, ResolutionStatus Status,
-    bool Applied = false);
+    bool Applied = false)
+{
+    /// <summary>The particular defeat answered by this resolution.</summary>
+    public State.Defeated? TriggeringDefeat { get; init; }
+}

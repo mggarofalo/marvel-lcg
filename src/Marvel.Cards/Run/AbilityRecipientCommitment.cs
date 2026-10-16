@@ -56,14 +56,14 @@ internal static class AbilityRecipientCommitment
             && ability.Effect is AbilityEffect.ChooseCard choice ? choice : null;
 
     internal static TargetRequest? Targets(AbilityResolutionExecution execution, World world,
-        Card source, CompiledCardAbility ability, int player)
+        Card source, CompiledCardAbility ability, int player, Defeated? triggeringDefeat = null)
     {
         if (Choice(world, source, ability) is not { } choice
             || execution.InspectsConcealedPile(choice.From)) return null;
         var cast = new AbilityResolutionState(world, source,
             world.Windows.Current?.Occurrence
                 ?? new Occurrence(0, [Steps.TurnAction], Subject: source.ObjectId, Player: player), player, [])
-            { Tier = ability.Trigger.Timing };
+            { Tier = ability.Trigger.Timing, TriggeringDefeat = triggeringDefeat };
         var context = execution.StructuralContext(cast);
         var cards = AbilityAdmission.LegalCardChoices(choice, context.Admission());
         string cost = AbilityCostDescription.Summary(world, source, player, ability.Cost) ?? "";

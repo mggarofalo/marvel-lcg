@@ -45,13 +45,13 @@ internal static class AbilityPowerResolution
         execution.ResolvePower(cast, continuation);
     }
 
-    private static CardPowerContinuation RequireContinuation(CardPowerContinuation? continuation, string power) =>
-        continuation ?? throw new RulesNotImplementedException(
+    private static AbilityPowerContinuation RequireContinuation(CardPowerContinuation? continuation, string power) =>
+        continuation as AbilityPowerContinuation ?? throw new RulesNotImplementedException(
             $"card {power.ToLowerInvariant()} has no interpreter continuation");
 
     private static AbilityResolutionState CreatePowerState(
         World world, int sourceId, int player, string power,
-        CardPowerContinuation continuation, Occurrence occurrence, List<GameEvent> events)
+        AbilityPowerContinuation continuation, Occurrence occurrence, List<GameEvent> events)
     {
         if (sourceId < 0 || sourceId >= world.Cards.Count)
             throw new RulesNotImplementedException(
@@ -59,31 +59,31 @@ internal static class AbilityPowerResolution
 
         return new(world, world.Cards[sourceId], occurrence, player, events)
         {
-            FinalStep = continuation.FinalStep,
+            FinalStep = continuation.Capture.Cursor.FinalStep,
             Power = power,
             PowerTargets = [.. continuation.Targets.Select(id => world.Cards[id])],
-            EachPlayerFrame = continuation.EachPlayerFrame,
-            FinalPlayer = continuation.FinalPlayer,
-            AbilityPlayer = continuation.AbilityPlayer,
+            EachPlayerFrame = continuation.Capture.Cursor.EachPlayerFrame,
+            FinalPlayer = continuation.Capture.Cursor.FinalPlayer,
+            AbilityPlayer = continuation.Capture.Invocation.AbilityPlayer,
         };
     }
 
     private static void ResolvePower(
-        this AbilityResolutionExecution execution, AbilityResolutionState cast, CardPowerContinuation continuation)
+        this AbilityResolutionExecution execution, AbilityResolutionState cast, AbilityPowerContinuation continuation)
     {
         var world = cast.World;
         var source = cast.Source;
         string power = cast.Power!;
         int player = cast.Player;
-        var restored = AbilityContinuationCodec.DecodePower(
+        var restored = AbilityContinuations.DecodePower(
             execution.program, source, continuation, power);
         cast = cast with { Tier = restored.Ability.Trigger.Timing };
-        execution.RestorePersisted(cast, continuation.Discarded, continuation.AbilityResults);
+        execution.RestorePersisted(cast, continuation.Capture);
         if (execution.SuspendsPowerEffect(restored.Body, cast))
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' suspends inside a {power.ToLowerInvariant()}, which is not implemented");
 
-        cast.RestoreAbility(restored.Ordinal, restored.Frames, continuation.AbilityFace);
+        cast.RestoreAbility(restored.Ordinal, restored.Frames, continuation.Capture.Invocation.Address.Face);
         execution.RestoreAlteredFromFrames(cast, restored.Frames);
         cast.TrackResolution(restored.Ordinal);
         var attackModifiers = power == BasicPowers.AttackVerb
@@ -98,7 +98,7 @@ internal static class AbilityPowerResolution
 
         // The labelled power owns `chosen` while its effect runs. The outer
         // ability's selection becomes current when that ability resumes.
-        RestoreOuterChosen(continuation.AbilityResults, cast);
+        RestoreOuterChosen(continuation.Capture.Memory.Chosen, cast);
         execution.CompletePower(restored, cast);
     }
 
@@ -113,21 +113,18 @@ internal static class AbilityPowerResolution
     }
 
     private static void RestoreOuterChosen(
-        IReadOnlyDictionary<string, long> abilityResults, AbilityResolutionState cast)
+        AbilityContinuationCardBinding? binding, AbilityResolutionState cast)
     {
-        if (AbilityContinuationRestoration.ChosenBinding(
-            cast.World.Cards, abilityResults, cast.Source.FaceId) is not { } outerChosen) return;
-        cast.RestorePersistedSelection(
-            cast.World.Cards[outerChosen.ObjectId], outerChosen.AreaId,
-            outerChosen.Incarnation, overwriteChosen: true);
+        if (binding is not { } chosen) return;
+        cast.RestorePersistedSelection(cast.World.Cards[chosen.ObjectId], chosen.AreaId,
+            chosen.Incarnation, overwriteChosen: true);
     }
 
     private static void CompletePower(
         this AbilityResolutionExecution execution, DecodedPowerContinuation restored, AbilityResolutionState cast)
     {
-        var next = AbilityContinuationCodec.AfterPower(
-            execution.program, cast.Source, restored, execution.Capture(cast, restored.Ordinal),
-            cast.World.Agenda.Current?.Round ?? 0, cast.Suspended);
+        var next = AbilityContinuations.AfterPower(
+            restored, execution.Capture(cast, restored.Ordinal), cast.Suspended);
         if (next is not null)
         {
             _ = execution.ResumeContinuation(cast, cast.Source, next);

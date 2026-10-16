@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using static Marvel.Cards.Run.AbilityEffectStructure;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
@@ -13,13 +14,17 @@ internal static class AbilityResolutionEffectChoices
     /// <summary>Suspend an ability for one persisted player choice.</summary>
     internal static void SuspendForChoice(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast)
     {
-        // `Index` remains the legacy top-level resume point. New continuations
-        // use AbilityOrdinal and AbilityPath below.
         int abilityOrdinal = execution.AbilityOrdinal(node, cast);
-        var continuation = AbilityContinuationCodec.Step(
-            execution.Capture(cast, abilityOrdinal), Steps.ChooseOption,
+        var continuation = AbilityContinuations.Step(
+            execution.Capture(cast, abilityOrdinal), AbilityContinuationStage.Choose,
             cast.World.Agenda.Current?.Round ?? 0);
-        if (cast.Occurrence.Is(Steps.TurnAction))
+        if (cast.World.Agenda.Current is { } owner
+            && cast.World.Agenda.Occurrence is { } containing)
+        {
+            // A triggered ability must finish before the owning window offers another ability.
+            cast.World.Agenda.ContinueBeforeOwner(containing, owner, continuation, cast.Occurrence);
+        }
+        else if (cast.Occurrence.Is(Steps.TurnAction))
         {
             cast.World.Agenda.ThenContinuation(continuation, cast.Occurrence);
         }
@@ -72,8 +77,8 @@ internal static class AbilityResolutionEffectChoices
             Performer = cast.AbilityActor,
             Continuation = AbilityContinuationScheduling.Power(
                 capture, command.PowerOrdinal, [.. command.Targets.Select(card => card.ObjectId)]),
-            SurgeGained = capture.SurgeGained,
-            Origin = capture.Occurrence,
+            SurgeGained = capture.Memory.SurgeGained,
+            Origin = capture.Invocation.Occurrence,
         };
         bool scheduled = command.Verb == BasicPowers.AttackVerb
             ? BasicPowerInitiation.CardAttack(
@@ -121,12 +126,11 @@ internal static class AbilityResolutionEffectChoices
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Scheduled, not called.</b> <c>rr:attack-enemy-activation</c> is six
-    /// steps and one of them asks a player who is defending, so an activation
-    /// cannot resolve inside an ability that has to return. It goes on the
-    /// agenda, and <c>Agenda.Then</c> puts it after the step that is running —
-    /// which is what <c>rr:surge.2</c> wants anyway: finish resolving the card
-    /// before what it caused happens.
+    /// <c>rr:activation.7</c>: an effect initiating an activation resolves after
+    /// that activation fully resolves. Each scheduled activation therefore has
+    /// a completion sentinel, and the containing ability waits for every named
+    /// sentinel before continuing. Defender and interrupt choices may suspend
+    /// this work without completing the initiating effect.
     /// </para>
     /// <para>
     /// <b>Which activation is the card's to say.</b> <c>rr:activation.1</c>
@@ -150,9 +154,9 @@ internal static class AbilityResolutionEffectChoices
         foreach (var target in command.Targets)
         {
             activations.Add(new PhaseStep(
-                command.Effect.Attack ? Steps.Attack : Steps.Scheme,
+                command.Effect.Attack ? new EnemyAttackOperation(command.Against) : new EnemySchemeOperation(),
                 round, 2, Index: target.Seat, Subject: target.Enemy.ObjectId,
-                Seat: target.Seat, Character: command.Against));
+                Seat: target.Seat));
         }
 
         var activationIds = new List<int>();
@@ -179,14 +183,14 @@ internal static class AbilityResolutionEffectChoices
             int abilityOrdinal = execution.AbilityOrdinal(command.Effect, cast);
             var capture = AbilityContinuationScheduling.ForActivations(
                 execution.Capture(cast, abilityOrdinal), command.Dynamic);
-            cast.World.Agenda.AfterActivations(activationIds, AbilityContinuationCodec.Step(
-                capture, Steps.ResumeAbility, round, plan: true, activationIds: activationIds));
+            cast.World.Agenda.AfterActivations(activationIds, AbilityContinuations.Step(
+                capture, AbilityContinuationStage.Resume, round, plan: true, activationIds: activationIds));
             cast.WaitFor(activationIds);
             cast.Suspend();
         }
         else if (command.Dynamic)
         {
-            AbilityContinuationCodec.CompleteDynamicActivation(cast.Results);
+            AbilityContinuations.CompleteDynamicActivation(cast.Results);
         }
     }
 
@@ -198,8 +202,8 @@ internal static class AbilityResolutionEffectChoices
         int abilityOrdinal = execution.AbilityOrdinal(node, cast);
         var capture = AbilityContinuationScheduling.ForEffectProcedure(
             execution.Capture(cast, abilityOrdinal));
-        var continuation = AbilityContinuationCodec.Step(
-            capture, Steps.ResumeAbility, cast.World.Agenda.Current?.Round ?? 0, plan: true);
+        var continuation = AbilityContinuations.Step(
+            capture, AbilityContinuationStage.Resume, cast.World.Agenda.Current?.Round ?? 0, plan: true);
         if (agendaOwner is null)
         {
             cast.World.Agenda.Then(continuation);
@@ -222,8 +226,8 @@ internal static class AbilityResolutionEffectChoices
     {
         var capture = AbilityContinuationScheduling.ForCostProcedure(
             execution.Capture(cast, abilityOrdinal));
-        var continuation = AbilityContinuationCodec.Step(
-            capture, Steps.ResumeAbility, cast.World.Agenda.Current?.Round ?? 0, plan: true);
+        var continuation = AbilityContinuations.Step(
+            capture, AbilityContinuationStage.Resume, cast.World.Agenda.Current?.Round ?? 0, plan: true);
         if (owner is null)
         {
             cast.World.Agenda.Then(continuation);
@@ -237,27 +241,28 @@ internal static class AbilityResolutionEffectChoices
         }
     }
 
-    internal static AbilityContinuationCapture Capture(this AbilityResolutionExecution execution,
+    internal static AbilityContinuationState Capture(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, int ordinal, AbilityCardReference? chosen = null,
         IReadOnlyList<AbilityStructuralFrame>? frames = null)
     {
-        var results = new Dictionary<string, long>(cast.CaptureSourceState(), StringComparer.Ordinal);
-        var ability = execution.AbilityAt(
-            cast.Source, cast.Tier, ordinal, cast.AbilityFace);
-        var crisis = AbilityContinuationCodec.CrisisIgnoringThwartOrdinals(
-            ability, cast.ValidatedCrisisIgnoringThwarts,
-            cast.RestoredCrisisIgnoringThwarts);
-        var selection = chosen ?? cast.CaptureCurrentSelection();
-        var binding = selection is null ? null : new AbilityContinuationCardBinding(
-            selection.Card.ObjectId, selection.Area, selection.Incarnation);
-        return AbilityContinuationCodec.Capture(
-            cast.Source.ObjectId, cast.SourceBindingIncarnation,
-            new AbilityContinuationAddress(cast.AbilityFace, cast.Tier, ordinal),
-            frames ?? cast.StructuralPath, cast.Position, cast.Player, cast.AbilityPlayer,
-            cast.AbilityActor?.ObjectId ?? -1, cast.FinalStep, cast.FinalPlayer,
-            cast.EachPlayerFrame, cast.HasContinuation, cast.Trigger,
-            cast.GainedKeywords.Contains("surge"), cast.Occurrence,
-            cast.Discarded.Select(card => card.ObjectId), results, binding, crisis);
+        var ability = execution.AbilityAt(cast.Source, cast.Tier, ordinal, cast.AbilityFace);
+        var crisis = AbilityContinuations.CrisisIgnoringThwartOrdinals(
+            ability, cast.ValidatedCrisisIgnoringThwarts, cast.RestoredCrisisIgnoringThwarts);
+        var selected = chosen ?? cast.CaptureCurrentSelection();
+        var binding = selected is null ? null : new AbilityContinuationCardBinding(
+            selected.Card.ObjectId, selected.Area, selected.Incarnation);
+        return new AbilityContinuationState(
+            new AbilityInvocation(new(cast.AbilityFace, cast.Tier, ordinal),
+                new(cast.Source.ObjectId, cast.Source.Area.Id, cast.SourceBindingIncarnation),
+                cast.Occurrence, cast.Trigger, cast.AbilityPlayer, cast.AbilityActor?.ObjectId ?? -1)
+                { TriggeringDefeat = cast.TriggeringDefeat },
+            new AbilityCursor([.. frames ?? cast.StructuralPath], cast.Position, cast.Player,
+                cast.HasContinuation, cast.FinalStep, cast.FinalPlayer, cast.EachPlayerFrame),
+            new AbilityMemory(cast.Results.ToImmutableDictionary(StringComparer.Ordinal),
+                [.. cast.Discarded.Select(card => card.ObjectId)], binding, crisis,
+                cast.CaptureSourceState(), cast.GainedKeywords.Contains("surge")))
+        { Completion = cast.PendingCompletion, CompletedOutcome = cast.CompletedOutcome };
+
     }
 
 }

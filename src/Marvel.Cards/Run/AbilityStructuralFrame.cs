@@ -7,6 +7,8 @@ using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Run;
 
-// Live frames are typed. Their legacy string encoding is confined to the
-// continuation codec at the persistence boundary.
-internal abstract record AbilityStructuralFrame;
+// Each frame retains the authored parent position across an engine decision.
+internal abstract record AbilityStructuralFrame
+{
+    internal AbilityStructuralOutcome? CompletedOutcome { get; init; }
+}

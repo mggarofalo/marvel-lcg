@@ -23,10 +23,10 @@ public sealed record DurableDecision(
         return new(
             actor,
             DecisionSelector.From(prompt, decision),
-            [.. decision.Targets],
-            [.. decision.Spent],
-            new Dictionary<string, long>(decision.DefinedValues, StringComparer.Ordinal),
-            [.. decision.Allocated]);
+            JournalValues.List(decision.Targets),
+            JournalValues.List(decision.Spent),
+            JournalValues.Map(decision.DefinedValues)!,
+            JournalValues.List(decision.Allocated));
     }
 
     /// <summary>Validates actor and answer before returning an engine decision.</summary>

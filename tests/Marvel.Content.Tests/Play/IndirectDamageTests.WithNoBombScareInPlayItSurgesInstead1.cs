@@ -56,7 +56,7 @@ public sealed class IndirectDamageWithNoBombScareInPlayItSurgesInsteadTests : In
         var card = Reveal(world, AuthoredCards.Explosion);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(Steps.ChooseOption, waiting.What);
-        var asked = AuthoredCards.Runner().Choosing(world, card, 0, waiting.Index)!;
+        var asked = AuthoredCards.Runner().Choosing(world, waiting)!;
         Assert.Equal(Question.Element, asked.Asking);
         // One entry per point, so the same character may be named twice.
         var targets = Assert.Single(asked.Affordances).Targets!;
@@ -67,7 +67,7 @@ public sealed class IndirectDamageWithNoBombScareInPlayItSurgesInsteadTests : In
         // cause it to be defeated." These exact capacities travel with the
         // choice rather than being reconstructed by a client.
         Assert.Equal(new Dictionary<int, int> { [identity.ObjectId] = 10, [ally.ObjectId] = 3, }, targets.MaximumOccurrences);
-        AuthoredCards.Runner().Chose(world, card, 0, waiting.Index, Decision.Take(card.ObjectId, [ally.ObjectId, ally.ObjectId, identity.ObjectId], []));
+        AuthoredCards.Runner().Chose(world, waiting, Decision.Take(card.ObjectId, [ally.ObjectId, ally.ObjectId, identity.ObjectId], []));
         Assert.Equal(2, ally.Damage);
         Assert.Equal(1, identity.Damage);
     }
@@ -99,12 +99,12 @@ public sealed class IndirectDamageWithNoBombScareInPlayItSurgesInsteadTests : In
         var source = world.CreateCard("01111", world.AreaOf(DeckType.RevealingArea));
         runner.WhenRevealed(world, source, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, source, 0, waiting.Index, waiting.Tier)!;
+        var prompt = runner.Choosing(world, waiting)!;
         var targets = Assert.Single(prompt.Affordances).Targets!;
         Assert.Equal(1, targets.Min);
         Assert.Equal(1, targets.Max);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, source, 0, waiting.Index, Decision.Take(source.ObjectId, [], []), waiting.Tier));
-        runner.Chose(world, source, 0, waiting.Index, Decision.Take(source.ObjectId, [ally.ObjectId], []), waiting.Tier);
+        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, waiting, Decision.Take(source.ObjectId, [], [])));
+        runner.Chose(world, waiting, Decision.Take(source.ObjectId, [ally.ObjectId], []));
         Assert.Equal(1, ally.Damage);
         Assert.Contains(energy, world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0).Cards);
     }
@@ -145,12 +145,12 @@ public sealed class IndirectDamageWithNoBombScareInPlayItSurgesInsteadTests : In
         var card = Reveal(world, AuthoredCards.Explosion);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         var runner = AuthoredCards.Runner();
-        var prompt = runner.Choosing(world, card, 0, waiting.Index)!;
+        var prompt = runner.Choosing(world, waiting)!;
         var targets = Assert.Single(prompt.Affordances).Targets!;
         Assert.Equal(1, targets.MaximumOccurrences![ally.ObjectId]);
         Assert.Equal(10, targets.MaximumOccurrences[identity.ObjectId]);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, card, 0, waiting.Index, Decision.Take(card.ObjectId, [ally.ObjectId, ally.ObjectId, ally.ObjectId], [])));
-        var events = runner.Chose(world, card, 0, waiting.Index, Decision.Take(card.ObjectId, [ally.ObjectId, identity.ObjectId, identity.ObjectId], []));
+        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, waiting, Decision.Take(card.ObjectId, [ally.ObjectId, ally.ObjectId, ally.ObjectId], [])));
+        var events = runner.Chose(world, waiting, Decision.Take(card.ObjectId, [ally.ObjectId, identity.ObjectId, identity.ObjectId], []));
         Assert.Contains(events.OfType<Marvel.Rules.Events.FieldSet>(), change =>
             change.Card == ally.ObjectId && change.Field == "health" && change.From == 1 && change.To == 0);
         Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
@@ -171,7 +171,7 @@ public sealed class IndirectDamageWithNoBombScareInPlayItSurgesInsteadTests : In
         Statuses.Give(world, ally, Statuses.Tough);
         var card = Reveal(world, AuthoredCards.Explosion);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        AuthoredCards.Runner().Chose(world, card, 0, waiting.Index, Decision.Take(card.ObjectId, [ally.ObjectId, ally.ObjectId, ally.ObjectId], []));
+        AuthoredCards.Runner().Chose(world, waiting, Decision.Take(card.ObjectId, [ally.ObjectId, ally.ObjectId, ally.ObjectId], []));
         Assert.Equal(0, ally.Damage);
         Assert.False(Statuses.Has(world, ally, Statuses.Tough));
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
@@ -200,7 +200,7 @@ public sealed class IndirectDamageWithNoBombScareInPlayItSurgesInsteadTests : In
         ally.TakeDamage(DamagePlacement.Health(world, Cards, ally) - 1);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var events = new List<Marvel.Rules.Events.GameEvent>();
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         var defend = Sequence.Work(world, Cards, runner, events)!;
         Attack.MakeIndirect(world);
         Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
@@ -231,7 +231,7 @@ public sealed class IndirectDamageWithNoBombScareInPlayItSurgesInsteadTests : In
         second.TakeDamage(DamagePlacement.Health(world, Cards, second) - 1);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var events = new List<Marvel.Rules.Events.GameEvent>();
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         var defend = Sequence.Work(world, Cards, runner, events)!;
         Attack.MakeIndirect(world);
         Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
@@ -277,7 +277,7 @@ public sealed class IndirectDamageWithNoBombScareInPlayItSurgesInsteadTests : In
         long before = pool.Tokens.GetValueOrDefault("k_threat");
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var events = new List<Marvel.Rules.Events.GameEvent>();
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         var defend = Sequence.Work(world, Cards, runner, events)!;
         while (defend.Asking != Question.Defender)
         {

@@ -114,7 +114,7 @@
   <!-- Presentation projects receive an allowlist rather than a denylist. This
        catches a direct engine ProjectReference before compilation. Disabling
        transitive project references in each product .csproj prevents an
-       allowed reference such as Marvel.Server from making its own engine
+       allowed reference such as Marvel.Desktop from making its own engine
        dependencies available to presentation source. -->
   <Target Name="MarvelPresentationWall"
           BeforeTargets="ResolveReferences"
@@ -132,7 +132,7 @@
           Include="$(MSBuildThisFileDirectory)src/Marvel.Decisions/Marvel.Decisions.csproj"
           Condition="'$(MarvelPresentationRole)' == 'Client' or '$(MarvelPresentationRole)' == 'Godot'" />
       <MarvelAllowedPresentationReference
-          Include="$(MSBuildThisFileDirectory)src/Marvel.Server/Marvel.Server.csproj"
+          Include="$(MSBuildThisFileDirectory)src/Marvel.Protocol/Marvel.Protocol.csproj"
           Condition="'$(MarvelPresentationRole)' == 'Client' or '$(MarvelPresentationRole)' == 'Godot'" />
       <MarvelAllowedPresentationReference
           Include="$(MSBuildThisFileDirectory)src/Marvel.View/Marvel.View.csproj"
@@ -140,6 +140,10 @@
       <MarvelAllowedPresentationReference
           Include="$(MSBuildThisFileDirectory)src/Marvel.Client/Marvel.Client.csproj"
           Condition="'$(MarvelPresentationRole)' == 'Godot'" />
+
+      <MarvelAllowedPresentationReference Include="$(MSBuildThisFileDirectory)src/Marvel.Transport/Marvel.Transport.csproj" Condition="'$(MarvelPresentationRole)' == 'Client'" />
+      <MarvelAllowedPresentationReference Include="$(MSBuildThisFileDirectory)src/Marvel.Observability/Marvel.Observability.csproj" Condition="'$(MarvelPresentationRole)' == 'Client' or '$(MarvelPresentationRole)' == 'Godot'" />
+      <MarvelAllowedPresentationReference Include="$(MSBuildThisFileDirectory)src/Marvel.Desktop/Marvel.Desktop.csproj" Condition="'$(MarvelPresentationRole)' == 'Godot'" />
 
       <MarvelUnexpectedPresentationReference Include="@(ProjectReference)" />
       <MarvelUnexpectedPresentationReference
@@ -151,6 +155,17 @@
     <Error Code="MARVELPRESENTATION"
            Condition="'@(MarvelUnexpectedPresentationReference)' != ''"
            Text="$(MSBuildProjectName) has presentation role $(MarvelPresentationRole) and may not reference @(MarvelUnexpectedPresentationReference->'%(Filename)', ', '). Put authoritative behavior in the engine and expose a prompt, event, descriptor, or engine-owned legality function: see docs/presentation-layer.md." />
+  </Target>
+
+  <!-- Contract and infrastructure assemblies cannot acquire a host through a direct or transitive reference. -->
+  <Target Name="MarvelInfrastructureWall" AfterTargets="ResolveReferences"
+          Condition="'$(MSBuildProjectName)' == 'Marvel.Protocol' or '$(MSBuildProjectName)' == 'Marvel.Transport' or '$(MSBuildProjectName)' == 'Marvel.Observability' or '$(MarvelInfrastructureProbe)' == 'true'">
+    <ItemGroup>
+      <MarvelForbiddenInfrastructureReference Include="@(ReferencePath)"
+          Condition="'%(ReferencePath.Filename)' == 'Marvel.Server' or '%(ReferencePath.Filename)' == 'Marvel.Server.Host' or '%(ReferencePath.Filename)' == 'Marvel.Session' or '%(ReferencePath.Filename)' == 'Marvel.Cards' or '%(ReferencePath.Filename)' == 'Marvel.Content' or '%(ReferencePath.Filename)' == 'Marvel.Client' or '%(ReferencePath.Filename)' == 'Marvel.Desktop'" />
+    </ItemGroup>
+    <Error Code="MARVELINFRASTRUCTURE" Condition="'@(MarvelForbiddenInfrastructureReference)' != ''"
+           Text="$(MSBuildProjectName) resolves host or product implementation through its infrastructure boundary: @(MarvelForbiddenInfrastructureReference->'%(Filename)', ', ')." />
   </Target>
 
   <!-- The runtime floor.

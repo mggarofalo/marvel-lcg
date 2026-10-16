@@ -20,7 +20,7 @@ if ($LASTEXITCODE -ne 0 -or -not $version.StartsWith("4.7.")) {
 
 dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-dotnet build "$repoRoot/src/Marvel.Server/Marvel.Server.csproj" --nologo
+dotnet build "$repoRoot/src/Marvel.Server.Host/Marvel.Server.Host.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $serverOut = [System.IO.Path]::GetTempFileName()
@@ -37,7 +37,7 @@ $smokeMarker = if ($InvitationLayout) {
 try {
     $arguments = @(
         "run", "--no-build",
-        "--project", "$repoRoot/src/Marvel.Server/Marvel.Server.csproj",
+        "--project", "$repoRoot/src/Marvel.Server.Host/Marvel.Server.Host.csproj",
         "--", "--listen", "127.0.0.1", "--port", $Port,
         "--data-root", $repoRoot,
         "--save-root", $saveRoot,

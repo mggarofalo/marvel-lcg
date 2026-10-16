@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
@@ -184,7 +185,7 @@ public sealed class ActivationCardsTests
         var events = new List<Marvel.Rules.Events.GameEvent>();
         var card = world.CreateCard(
             AuthoredCards.Assault, world.AreaOf(DeckType.RevealingArea));
-        world.Agenda.Add(new PhaseStep(Steps.RevealEncounterCard, 1, 4, Subject: card.ObjectId));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId));
         AuthoredCards.Runner().WhenRevealed(world, card, 0);
 
         // Not a scratch on the identity yet, and an attack waiting behind the
@@ -217,9 +218,7 @@ public sealed class ActivationCardsTests
             world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        world.Agenda.Add(new PhaseStep(
-            Steps.RevealEncounterCard, 1, 4,
-            Subject: card.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId, Seat: 0));
         var events = new List<Marvel.Rules.Events.GameEvent>();
 
         var counterPunch = world.CreateCard("01077", world.Seats[0].Hand);

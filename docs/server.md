@@ -1,6 +1,6 @@
 # Standalone server
 
-`Marvel.Server` runs the same authoritative engine used by the embedded Godot
+`Marvel.Server.Host` runs the same authoritative engine used by the embedded Godot
 client. It serves one length-prefixed request and response per TCP connection.
 Use it for local development or on a trusted private network.
 
@@ -17,7 +17,7 @@ acknowledges the command.
 Run this command from the repository root:
 
 ```bash
-dotnet run --project src/Marvel.Server/Marvel.Server.csproj -- \
+dotnet run --project src/Marvel.Server.Host/Marvel.Server.Host.csproj -- \
   --listen 127.0.0.1 \
   --port 41923 \
   --data-root . \
@@ -34,7 +34,7 @@ MARVEL_ENGINE_ENDPOINT=tcp://127.0.0.1:41923 "$GODOT_BIN" --path src/Marvel.Godo
 The equivalent Windows PowerShell development launch is:
 
 ```powershell
-dotnet run --project src/Marvel.Server/Marvel.Server.csproj -- `
+dotnet run --project src/Marvel.Server.Host/Marvel.Server.Host.csproj -- `
   --listen 127.0.0.1 `
   --port 41923 `
   --data-root . `
@@ -68,7 +68,7 @@ The process accepts these options:
 For example, this server authorizes the opening client as seat 0:
 
 ```bash
-dotnet run --project src/Marvel.Server/Marvel.Server.csproj -- \
+dotnet run --project src/Marvel.Server.Host/Marvel.Server.Host.csproj -- \
   --listen 127.0.0.1 \
   --port 41923 \
   --data-root . \
@@ -199,7 +199,7 @@ image, commit, protocol, replay contracts and three runtime dataset hashes. To
 inspect a running build without opening or changing a game:
 
 ```bash
-docker exec marvel-server dotnet Marvel.Server.dll --version
+docker exec marvel-server dotnet Marvel.Server.Host.dll --version
 docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' marvel-server
 ```
 
@@ -232,10 +232,10 @@ variables, labels, health checks, backups of logs, or diagnostic bundles.
 ## Back up and restore the save volume
 
 Backups are consistent only while the server is stopped. `docker stop` sends
-`SIGTERM`; the server stops accepting work, lets the current request finish,
+`SIGTERM`; the server stops accepting work, lets admitted requests finish,
 and exits after its atomic save generation is durable. The supported run command
 sets a 40-second stop timeout. Shutdown closes an incomplete client read or
-response immediately; a decision already dispatched to the sequential engine
+response immediately; a decision already dispatched to a session engine
 still reaches its synchronous atomic commit before exit, and the final log
 flush has a three-second budget. Confirm exit code zero before archiving the
 named volume:
@@ -269,16 +269,15 @@ Never overlay a backup onto a populated volume. Keep the old volume until the
 restored server is healthy and its expected tables have synchronized.
 
 Before an upgrade, stop the server and preserve both the current image digest
-and a complete volume backup. A newer version replay-verifies each session and
-atomically migrates any supported older schema. A corrupt, divergent,
+and a complete volume backup. The selected runtime replay-verifies each session against save schema 6 and its
+exact replay contract. Older save schemas are not migrated. A corrupt, divergent,
 dataset-incompatible, or newer-last-writer session is quarantined and reported
 with a bounded `session.restore.failed` error code; it does not prevent other
 sessions or the listener from becoming ready. Recover that table from a known
 good backup or with a future runtime that explicitly supports its identity.
 
 Do not point an older runtime at a volume written by a newer product version.
-The last writer's SemVer is stamped on every gameplay, history, lifecycle and
-migration commit, and the older runtime quarantines that session as
+The last writer's SemVer is stamped on every gameplay, history, lifecycle commit, and the older runtime quarantines that session as
 `unsupported_downgrade`. Rolling back requires restoring the matching
 pre-upgrade backup into a fresh volume as well as restoring the prior image.
 
@@ -286,9 +285,10 @@ pre-upgrade backup into a fresh volume as well as restoring the prior image.
 
 Press `Ctrl+C` to stop the process. On macOS and Linux, `SIGTERM` follows the
 same path, including the signal sent by `docker stop`. The server stops
-accepting connections and allows the request it is currently serving to finish.
+accepting connections and allows admitted session requests to finish.
 A client that does not finish its frame cannot hold the server indefinitely;
-accepted connections use a 30-second receive and send timeout.
+at most 32 accepted connections frame asynchronously with a 30-second lifetime.
+Each game has its own serialization gate; incomplete network reads hold no game gate.
 
 Active games, hashed capability verifiers and unused invitation verifiers are
 restored from the last committed generation. Plaintext bearer credentials are
@@ -306,14 +306,14 @@ revision it answers, and the server rejects an older revision as
 ## Troubleshoot a hosted table
 
 Start with read-only evidence. Record the image digest, the output of
-`Marvel.Server.dll --version`, container health, and the relevant JSON lines
+`Marvel.Server.Host.dll --version`, container health, and the relevant JSON lines
 before changing a volume. The client status and server record distinguish the
 supported recovery paths:
 
 | Evidence | Meaning | Safe next action |
 |---|---|---|
 | `SERVICE UNAVAILABLE` | The endpoint could not be reached; this does not prove whether a sent mutation committed. | Check the bind address, published port, firewall and container health. Restart the service if needed, then use Synchronize. Never repeat a mutation marked unconfirmed. |
-| `VERSION MISMATCH` or `unsupported_version` | Client and server do not share the wire protocol. | Compare the client identity toolbar with `Marvel.Server.dll --version`; update one side to the intended release. |
+| `VERSION MISMATCH` or `unsupported_version` | Client and server do not share the wire protocol. | Compare the client identity toolbar with `Marvel.Server.Host.dll --version`; update one side to the intended release. |
 | `SESSION UNAVAILABLE` or `session_not_found` | The server established only that the held capability or invitation is not usable; it does not disclose whether it expired, was already used, or was never valid. | Check the game label. For an invitation, ask the host for a new one. For a previously working session, inspect restore records and recover a known-good volume backup if the table should exist. |
 | `STORAGE FAILURE`, `save_failed`, or `session.persistence.completed` with `rejected` | The requested state was not durably committed. | Stop new play, verify volume space, ownership and read/write status, and preserve logs. Synchronize the last authoritative revision; do not repair save files by hand. |
 | `session.restore.completed` | A saved session replay-verified and was published after startup. | Reconnect with the existing capability and Synchronize. |
@@ -325,7 +325,7 @@ Useful collection commands are read-only:
 ```bash
 docker inspect marvel-server > marvel-server.inspect.json
 docker logs --timestamps marvel-server > marvel-server.log.jsonl 2>&1
-docker exec marvel-server dotnet Marvel.Server.dll --version
+docker exec marvel-server dotnet Marvel.Server.Host.dll --version
 docker volume inspect marvel-sessions
 ```
 
@@ -358,7 +358,7 @@ docker run --rm \
   --volume marvel-sessions:/sessions:ro \
   --volume marvel-diagnostics:/diagnostics:ro \
   --entrypoint dotnet \
-  "$image" Marvel.Server.dll \
+  "$image" Marvel.Server.Host.dll \
   --export-incident - \
   --data-root /app \
   --save-root /sessions \

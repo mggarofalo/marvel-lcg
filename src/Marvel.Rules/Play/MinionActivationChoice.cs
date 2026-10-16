@@ -9,8 +9,8 @@ internal static class MinionActivationChoice
 {
     internal static List<Card> Remaining(World world, int seat, PhaseStep step) => world
         .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat)).Cards
-        .Where(minion => !(step.ActivatedEnemies ?? []).Contains(minion.ObjectId)
-            || step.ProcedureAmounts?.TryGetValue(minion.ObjectId, out long incarnation) == true
+        .Where(minion => !(step.Require<ActivationPlanOperation>().ActivatedEnemies ?? []).Contains(minion.ObjectId)
+            || step.Require<ActivationPlanOperation>().Incarnations?.TryGetValue(minion.ObjectId, out long incarnation) == true
                 && incarnation != minion.Incarnation)
         .OrderBy(minion => minion.ObjectId).ToList();
 
@@ -38,7 +38,7 @@ internal static class MinionActivationChoice
 
     internal static void Answer(World world, PhaseStep step, Decision input)
     {
-        IReadOnlyList<int> players = step.ActivationPlayers ?? world.PlayerOrder.ToList();
+        IReadOnlyList<int> players = step.Require<ActivationPlanOperation>().Players ?? world.PlayerOrder.ToList();
         if (step.Index < 0 || step.Index >= players.Count)
             throw new RulesNotImplementedException("the minion choice has no engaged player");
         List<Card> candidates = Remaining(world, players[step.Index], step);
@@ -49,9 +49,11 @@ internal static class MinionActivationChoice
         // next choice. rr:minion.4 makes newly engaged minions join that next read.
         world.Agenda.Then(step with
         {
-            ActivationOrder = [input.Affordance],
-            ProcedureCandidates = [.. candidates.Select(card => card.ObjectId)],
-            OccurrenceId = null,
+            Operation = step.Require<ActivationPlanOperation>() with
+            {
+                Chosen = [input.Affordance]
+            },
+            OccurrenceId = null
         });
     }
 }

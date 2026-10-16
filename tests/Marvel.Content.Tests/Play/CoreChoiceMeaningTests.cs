@@ -20,7 +20,7 @@ public sealed class CoreChoiceMeaningTests : ChoosingCardsTestBase
         // taking 2 damage or placing 1 threat on the main scheme.
         World world = Deal("spider_man", "she_hulk");
         var (bomber, _) = Reveal(world, AuthoredCards.HydraBomber, player: 1);
-        Prompt prompt = AuthoredCards.Runner().Choosing(world, bomber, 1, 1)!;
+        Prompt prompt = AuthoredCards.Runner().Choosing(world, AbilityContinuationFixtures.Pending(world, bomber))!;
         Affordance damage = prompt.Affordances.Single(option => option.Label == "dealDamage");
         Affordance threat = prompt.Affordances.Single(option => option.Label == "placeThreat");
         Assert.Equal([0, 1], prompt.Affordances.Select(option => option.Id));
@@ -52,7 +52,7 @@ public sealed class CoreChoiceMeaningTests : ChoosingCardsTestBase
         var action = Assert.Single(runner.Actions(world, 1), candidate => candidate.Card == source.ObjectId);
         runner.Act(world, action, [], []);
         PhaseStep waiting = Assert.Single(world.Agenda.Outstanding);
-        Prompt prompt = runner.Choosing(world, source, 1, waiting.Index, waiting.Tier)!;
+        Prompt prompt = runner.Choosing(world, waiting)!;
         Assert.Contains("choose a player to draw 1 card", prompt.DisplayQuestion);
         Affordance chosen = Assert.Single(prompt.Affordances,
             option => option.AnchorId == world.Seats[0].IdentityCard.ObjectId);
@@ -60,7 +60,7 @@ public sealed class CoreChoiceMeaningTests : ChoosingCardsTestBase
         Assert.Contains("Spider-Man draws 1 card", chosen.Description);
         int first = world.Seats[0].Hand.Cards.Count;
         int second = world.Seats[1].Hand.Cards.Count;
-        runner.Chose(world, source, 1, waiting.Index, Decision.Take(chosen.Id), waiting.Tier);
+        runner.Chose(world, waiting, Decision.Take(chosen.Id));
         Assert.Equal(first + 1, world.Seats[0].Hand.Cards.Count);
         Assert.Equal(second, world.Seats[1].Hand.Cards.Count);
     }
@@ -80,7 +80,7 @@ public sealed class CoreChoiceMeaningTests : ChoosingCardsTestBase
         Card source = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
         runner.WhenRevealed(world, source, 0);
         PhaseStep waiting = Assert.Single(world.Agenda.Outstanding);
-        Prompt prompt = runner.Choosing(world, source, 0, waiting.Index, waiting.Tier)!;
+        Prompt prompt = runner.Choosing(world, waiting)!;
         Assert.All(prompt.Affordances, option => Assert.DoesNotContain("draws", option.Description));
     }
 }

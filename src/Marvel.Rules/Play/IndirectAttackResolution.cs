@@ -16,20 +16,21 @@ internal static class IndirectAttackResolution
     public static long PrepareIndirectDamage(
         World world, PhaseStep step, List<GameEvent> events)
     {
-        if (step.ProcedureOccurrence is not { } procedure)
+        if (step.Require<IndirectDamageOperation>().Origin is not { } procedure)
         {
             throw new RulesNotImplementedException(
                 "indirect attack damage has no containing occurrence");
         }
-        if (step.ProcedureAmounts?.ContainsKey(step.Subject) == true)
+        if (step.Require<IndirectDamageOperation>().Amounts is { } amounts
+            && amounts.ContainsKey(step.Subject))
         {
-            return step.ProcedureAmounts[step.Subject];
+            return amounts[step.Subject];
         }
 
-        var attacker = world.Cards[step.ProcedureSource];
+        var attacker = world.Cards[step.Require<IndirectDamageOperation>().Source];
         var target = world.Cards[step.Subject];
         long amount = DamagePlacement.Replace(
-            world, target, attacker, step.ProcedureAmount, events);
+            world, target, attacker, step.Require<IndirectDamageOperation>().Amount, events);
         world.Agenda.RecordProcedureAmount(procedure, step.Subject, amount);
         return amount;
     }
@@ -38,10 +39,10 @@ internal static class IndirectAttackResolution
     public static void ApplyIndirectDamage(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
-        var occurrence = step.ProcedureOccurrence ?? world.Agenda.Occurrence
+        var occurrence = step.Require<IndirectDamageOperation>().Origin ?? world.Agenda.Occurrence
             ?? throw new RulesNotImplementedException(
                 "indirect attack damage has no containing occurrence");
-        var assigned = step.ProcedureAmounts
+        var assigned = step.Require<IndirectDamageOperation>().Amounts
             ?? throw new RulesNotImplementedException(
                 "indirect attack damage has no prepared recipient results");
 
@@ -74,7 +75,7 @@ internal static class IndirectAttackResolution
                     .OrderBy(damage => world.Seats.Any(seat =>
                         seat.IdentityCard.ObjectId == damage.Target.ObjectId))
                     .Select(damage => damage.Target.ObjectId)],
-                step.Character, occurrence, events))
+                step.Require<IndirectDamageOperation>().Character, occurrence, events))
         {
             return;
         }
@@ -83,7 +84,7 @@ internal static class IndirectAttackResolution
         // other recipients merely took damage from that attack.
         if (!Keywords.Has(world, attacker, Keywords.Ranged, facts))
         {
-            DamageAttacks.Retaliate(world, facts, world.Cards[step.Character], attacker,
+            DamageAttacks.Retaliate(world, facts, world.Cards[step.Require<IndirectDamageOperation>().Character], attacker,
                 Steps.AttackInitiated, events);
         }
     }
@@ -103,19 +104,19 @@ internal static class IndirectAttackResolution
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
         var attacker = world.Cards[step.Subject];
-        var occurrence = step.ProcedureOccurrence ?? world.Agenda.Occurrence
+        var occurrence = step.Require<IndirectDamageOperation>().Origin ?? world.Agenda.Occurrence
             ?? throw new RulesNotImplementedException(
                 "indirect attack damage continuation has no occurrence");
         if (FinishIndirectDefeats(
-                world, facts, attacker, step.ProcedureCandidates ?? [],
-                step.Character, occurrence, events))
+                world, facts, attacker, step.Require<IndirectDamageOperation>().Candidates ?? [],
+                step.Require<IndirectDamageOperation>().Character, occurrence, events))
         {
             return;
         }
 
         if (!Keywords.Has(world, attacker, Keywords.Ranged, facts))
         {
-            DamageAttacks.Retaliate(world, facts, world.Cards[step.Character], attacker,
+            DamageAttacks.Retaliate(world, facts, world.Cards[step.Require<IndirectDamageOperation>().Character], attacker,
                 Steps.AttackInitiated, events);
         }
     }
@@ -145,14 +146,17 @@ internal static class IndirectAttackResolution
 
             world.Agenda.ThenContinuation(
                 new PhaseStep(
-                    Steps.FinishIndirectAttackDamage,
+                    new IndirectDamageOperation(
+                        IndirectDamageKind.FinishIndirectAttackDamage,
+                        Character: attacked,
+                        Candidates: [.. recipients.Skip(index + 1)],
+                        Origin: occurrence
+                    ),
                     world.Agenda.Current?.Round ?? 0,
                     5,
                     Subject: attacker.ObjectId,
-                    Character: attacked,
-                    ProcedureCandidates: [.. recipients.Skip(index + 1)],
-                    ProcedureOccurrence: occurrence,
-                    Plan: true),
+                    Plan: true
+                ),
                 occurrence);
             return true;
         }

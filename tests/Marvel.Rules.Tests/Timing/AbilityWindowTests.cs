@@ -137,8 +137,8 @@ public sealed class AbilityWindowTests
         var occurrence = new Occurrence(1, "WhenAttacked");
         var pending = new[] { An(AbilityType.Interrupt), An(AbilityType.Response) };
 
-        Assert.True(occurrence.Trigger(WindowKind.Interrupt, card: 1));
-        Assert.False(occurrence.Trigger(WindowKind.Interrupt, card: 1));
+        Assert.True(occurrence.Trigger(WindowKind.Interrupt, An(AbilityType.Interrupt, card: 1)));
+        Assert.False(occurrence.Trigger(WindowKind.Interrupt, An(AbilityType.Interrupt, card: 1)));
 
         Assert.Empty(AbilityWindow.Tiers(pending, WindowKind.Interrupt, occurrence));
         Assert.Single(AbilityWindow.Tiers(pending, WindowKind.Response, occurrence));
@@ -156,7 +156,7 @@ public sealed class AbilityWindowTests
         // triggered by the same triggering condition." Keyed on the card in
         // play, so a second copy is a second card and not a spent one.
         var occurrence = new Occurrence(1, "WhenAttacked");
-        occurrence.Trigger(window, card: 1);
+        occurrence.Trigger(window, An(type, card: 1));
 
         var tier = Assert.Single(AbilityWindow.Tiers(
             [An(type, card: 1), An(type, card: 2)],
@@ -178,8 +178,25 @@ public sealed class AbilityWindowTests
         var occurrence = new Occurrence(1, ["WhenDamaged", "WhenDefeated"]);
         Assert.Equal(2, occurrence.Conditions.Count);
 
-        occurrence.Trigger(WindowKind.Interrupt, card: 1);
-        Assert.False(occurrence.MayTrigger(WindowKind.Interrupt, card: 1));
+        occurrence.Trigger(WindowKind.Interrupt, An(AbilityType.Interrupt, card: 1));
+        Assert.False(occurrence.MayTrigger(WindowKind.Interrupt, An(AbilityType.Interrupt, card: 1)));
+    }
+
+    [Rule("rr:triggering-condition.1")]
+    [Fact]
+    public void DistinctAbilitiesOnTheSameCardEachAnswerTheConditionOnce()
+    {
+        // "Each interrupt ability can only be triggered once" identifies the
+        // ability, not the entire card's text box.
+        var occurrence = new Occurrence(1, "WhenAttacked");
+        var first = An(AbilityType.Interrupt, card: 1);
+        var second = first with { Ordinal = 1 };
+        Assert.True(occurrence.Trigger(WindowKind.Interrupt, first));
+        Assert.False(occurrence.Trigger(WindowKind.Interrupt, first));
+        Assert.Equal(second, Assert.Single(Assert.Single(AbilityWindow.Tiers(
+            [first, second], WindowKind.Interrupt, occurrence)).Abilities));
+        Assert.True(occurrence.Trigger(WindowKind.Interrupt, second));
+        Assert.Empty(AbilityWindow.Tiers([first, second], WindowKind.Interrupt, occurrence));
     }
 
     [Rule("rr:ability.11")]

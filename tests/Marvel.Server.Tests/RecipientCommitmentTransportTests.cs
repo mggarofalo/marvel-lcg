@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.Timing;
 using Xunit;

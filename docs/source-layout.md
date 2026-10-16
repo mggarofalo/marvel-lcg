@@ -43,7 +43,8 @@ the engine's timing steps, with the meaning documented beside each name. Keeping
 that single vocabulary together makes timing references discoverable without
 introducing competing step namespaces. It owns no behavioral rule logic:
 `ConditionsOf` and `EveryCondition` delegate to `StepConditions`. It remains
-subject to the 500-line ceiling; its exact baseline is 484 lines.
+subject to the 500-line ceiling; its exact baseline is 487 lines, including the
+distinct response window of a nested card effect.
 
 Approaching the boundary is evidence that the type may own several decisions,
 state machines or infrastructure concerns. Prefer extracting collaborators

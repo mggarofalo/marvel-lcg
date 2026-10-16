@@ -2,14 +2,13 @@ using Marvel.Rules.State;
 
 namespace Marvel.Content.Setup;
 
-/// <summary>Classifies authored encounter sets by their printed set icon.</summary>
+/// <summary>Checks authored encounter-set roles and consistent printed membership.</summary>
 public static class ModularEncounterSets
 {
     /// <summary>Whether a named encounter set is selectable as a modular set.</summary>
     /// <remarks>
-    /// The setup dataset supplies composition and the card catalog supplies the
-    /// printed set icon. The engine chooses to use that joined fact as the one
-    /// classification shared by discovery and deal validation.
+    /// The authored role is shared by discovery and deal admission. Printed set
+    /// icons independently check that a named set has coherent membership.
     /// </remarks>
     public static bool IsModular(SetupCatalog catalog, ICardFacts facts, string name)
     {
@@ -29,8 +28,6 @@ public static class ModularEncounterSets
                 nameof(name));
         }
 
-        string icon = icons[0];
-        return !icon.StartsWith("standard", StringComparison.Ordinal)
-               && !icon.StartsWith("expert", StringComparison.Ordinal);
+        return catalog.EncounterRole(name) == EncounterSetRole.Modular;
     }
 }

@@ -36,13 +36,20 @@ public sealed class ActionAbilityActionsAndDependentEffectsThenIgnoresSchemesTha
     }
 
     [Fact]
-    public void AThreatPlacementBeforeThenRaisesBeforeChangingTheBoard()
+    public void AThreatPlacementCompletesBeforeItsDependentDraw()
     {
         var runner = Runner(AuthoredCards.AuntMay, "Action", """{ "then": { "effect": { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } }, "then": { "draw": { "player": "you", "count": 1 } } } }""");
         Card? source = null;
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(board => source = InPlay(board, AuthoredCards.AuntMay), hero: true, abilities: runner));
-        Assert.Contains("none/partial/full", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
+        var (game, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true, abilities: runner);
+        var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
+        long threat = scheme.Tokens.GetValueOrDefault("k_threat");
+        int held = world.Seats[0].Hand.Cards.Count;
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId).Id));
+        Assert.Equal(threat + 1, scheme.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.True(game.IsRootPrompt);
     }
 
     [Rule("rr:otherwise")]

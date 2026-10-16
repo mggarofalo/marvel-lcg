@@ -1,3 +1,4 @@
+using static Marvel.Sim.SimulationRecordContract;
 using System.Text.Json;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;

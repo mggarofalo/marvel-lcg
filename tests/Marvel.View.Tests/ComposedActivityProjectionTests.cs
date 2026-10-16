@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Cards.Run;
 using Marvel.Content;
 using Marvel.Content.Setup;
@@ -23,7 +24,11 @@ public sealed class ComposedActivityProjectionTests
         var (game, world, cat, strength, discarded) = BlackCatGame();
         Affordance play = Assert.Single(game.Pending!.Affordances,
             option => option.AnchorId == cat.ObjectId && option.Verb == CardPlay.Verb);
-        Resolution result = game.Resolve(Decision.Take(play.Id, [], [strength.ObjectId]));
+        int[] resources = [strength.ObjectId];
+        var allocation = ResourcePayment.Allocate(Assert.Single(play.CostOptions), resources);
+        Assert.NotNull(allocation);
+        int target = Assert.Single(Assert.IsType<TargetRequest>(play.Targets).Legal);
+        Resolution result = game.Resolve(new Decision(play.Id, [target], resources, Allocations: allocation));
         ActivityCompleted[] receipts = result.Events.OfType<ActivityCompleted>().ToArray();
         Assert.Equal(2, receipts.Length);
         Assert.NotEqual(receipts[0].Batch, receipts[1].Batch);
@@ -100,7 +105,7 @@ public sealed class ComposedActivityProjectionTests
         World.MoveToTop(shooter, seat.Deck);
         // Prepared Core hand/deck state; the play itself and its forced response use the public game loop.
         Game game = Game.Begin(world, PersistentFixture.Cards, runner);
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
         game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ChangeForm).Id));
         return (game, world, cat, strength, [shooter.ObjectId, helicarrier.ObjectId]);
     }

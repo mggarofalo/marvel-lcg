@@ -42,22 +42,11 @@ internal static class DefeatedCardAbilityResolution
                 + "ability that no ability data is written for");
         }
 
-        // **Two occurrences, and each is asked what only it can answer.**
-        //
-        // This one is built here because the matching needs the defeated card:
-        // "when **attached minion** is defeated" is a claim about which card
-        // died, while the occurrence the defeat joined keeps the cause. An
-        // attack carries its actor and target separately. This occurrence also
-        // carries the provenance because "the player who defeated this scheme"
-        // is on the card and not on the board.
-        //
-        // What it cannot answer is `rr:triggering-condition.1`, "each
-        // **Interrupt** ability can only be triggered once per occurrence of
-        // its triggering condition". The occurrence there is the one on the
-        // agenda: it is what lasts, it is what a still-open interrupt window is
-        // polling, and it is where a second defeat in the same moment would
-        // find an ability already spent. This one is made fresh on every call
-        // and would forget all of that.
+        // Damage step 7 evaluates this exact defeat while the card remains in
+        // play. Its local window carries the defeated subject; the containing
+        // occurrence retains the same triggering fact for response discovery.
+        // The spent key includes that fact, so separate defeats in one shared
+        // window each give an answering ability its own opportunity.
         var occurrence = new Occurrence(
             0, [Steps.CardDefeated], Subject: card.ObjectId, Player: card.Owner);
         occurrence.Also(defeated);
@@ -75,6 +64,7 @@ internal static class DefeatedCardAbilityResolution
                 var cast = new AbilityResolutionState(world, card, occurrence, card.Owner, events)
                 {
                     Tier = ability.Trigger.Timing,
+                    TriggeringDefeat = defeated,
                 };
                 execution.TrackResolution(cast, ability);
                 execution.Run(ability, cast);
@@ -84,7 +74,8 @@ internal static class DefeatedCardAbilityResolution
         }
 
         var own = written.Select((_, ordinal) => new PendingAbility(
-            card.ObjectId, AbilityType.WhenDefeated, card.Owner, ordinal));
+            card.ObjectId, AbilityType.WhenDefeated, card.Owner, ordinal)
+            { TriggeringDefeat = defeated });
         var waiting = own.Concat(elsewhere).ToList();
         while (waiting.Count > 0)
         {
@@ -102,8 +93,8 @@ internal static class DefeatedCardAbilityResolution
             }
 
             var next = offered[0];
-            occurrence.Trigger(WindowKind.Interrupt, next.Card);
-            spent?.Trigger(WindowKind.Interrupt, next.Card);
+            occurrence.Trigger(WindowKind.Interrupt, next);
+            spent?.Trigger(WindowKind.Interrupt, next);
             ActivityBatches.Append(events, execution.Resolve(world, occurrence, next, [], []));
             waiting.Remove(next);
         }
@@ -115,24 +106,22 @@ internal static class DefeatedCardAbilityResolution
         World world, Card card, string trigger, Occurrence occurrence,
         Defeated defeated, IReadOnlyList<PendingAbility> pending)
     {
-        occurrence.Also(defeated);
         var step = new PhaseStep(
-            Steps.ChooseCardDefeatedAbility,
+            new DefeatAbilityOperation(DefeatAbilityKind.ChooseCardDefeatedAbility,
+                new DefeatCause(Trigger: trigger, Verb: defeated.How, By: defeated.By),
+                new DefeatWindow(occurrence, [.. pending])),
             world.Agenda.Current?.Round ?? 0,
             7,
             Subject: card.ObjectId,
             Seat: card.Owner >= 0 ? card.Owner : world.FirstPlayer,
-            Plan: true,
-            ProcedureAbilities: [.. pending],
-            ProcedureOccurrence: occurrence,
-            ProcedureTrigger: trigger,
-            ProcedureVerb: defeated.How,
-            ProcedureBy: defeated.By);
+            Plan: true);
 
         if (world.Agenda.Occurrence is { } parent)
         {
+            var owner = world.Agenda.Current
+                ?? throw new InvalidOperationException("a defeat occurrence has no owning frame");
             world.Agenda.ThenContinuation(step, parent);
-            world.Agenda.BeforeResponses(parent);
+            world.Agenda.BeforeResponses(owner, parent);
         }
         else
         {

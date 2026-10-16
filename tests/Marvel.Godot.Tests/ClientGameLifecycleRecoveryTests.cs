@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using Marvel.Decisions;
 using Marvel.Rules.Play;
 using Marvel.Server;
@@ -16,7 +18,7 @@ public sealed class ClientGameLifecycleRecoveryTests : LocalGameClientTestBase
         Assert.True(lifecycle.Enter(lifecycle.BeginEntry(), client, opened));
         await lifecycle.ResolveAsync(0, VisibleDecision(lifecycle.CurrentGame!.Prompt!), TestContext.Current.CancellationToken);
         var change = Assert.Single(lifecycle.CurrentGame!.Prompt!.Affordances, option => option.Verb == Game.ChangeForm);
-        await lifecycle.ResolveAsync(lifecycle.CurrentGame.Revision, new EngineDecision(change.Id, []), TestContext.Current.CancellationToken);
+        await lifecycle.ResolveAsync(lifecycle.CurrentGame.Revision, new Decision(change.Id, []), TestContext.Current.CancellationToken);
         EngineResponse before = lifecycle.CurrentGame!;
         int cursor = before.History!.Cursor - 1;
         Assert.True(lifecycle.CanUndo(cursor));
@@ -39,12 +41,12 @@ public sealed class ClientGameLifecycleRecoveryTests : LocalGameClientTestBase
             Error = new("stale_decision", "The prompt changed.") }, new IOException("recovery lost"), new IOException("sync lost"));
         ClientGameLifecycle lifecycle = Enter(transport, original);
         ClientLifecycleUpdate rejected = Assert.IsType<ClientLifecycleUpdate>(
-            await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken));
+            await lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken));
         Assert.Equal(GameProgressKind.DecisionRejected, rejected.Progress.Kind);
         Assert.Equal(rejected.Progress.Description,
             HistoryUndoPresentation.Describe(false, original.History, rejected.Progress));
         Assert.False(lifecycle.CanResolve);
-        Assert.Null(await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken));
+        Assert.Null(await lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken));
         await lifecycle.SynchronizeAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(lifecycle.Progress!.LocksDecisions);
         Assert.Equal(lifecycle.Progress.Description,
@@ -62,7 +64,7 @@ public sealed class ClientGameLifecycleRecoveryTests : LocalGameClientTestBase
             original with { RequestId = "local-recover", Events = [] });
         ClientGameLifecycle lifecycle = Enter(transport, original);
         ClientLifecycleUpdate recovered = Assert.IsType<ClientLifecycleUpdate>(
-            await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken));
+            await lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken));
         Assert.False(recovered.MutationAccepted);
         Assert.Equal(ClientDraftDisposition.Replace, recovered.Draft);
         Assert.Equal(0, lifecycle.CurrentGame!.Revision);
@@ -79,7 +81,7 @@ public sealed class ClientGameLifecycleRecoveryTests : LocalGameClientTestBase
             new IOException("sync response lost"),
             original with { RequestId = "local-sync", Events = [] });
         ClientGameLifecycle lifecycle = Enter(transport, original);
-        await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        await lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken);
         lifecycle.PresentationFailed();
         Assert.NotNull(lifecycle.Progress!.OperationalLock);
         Assert.True(lifecycle.CanSynchronize);

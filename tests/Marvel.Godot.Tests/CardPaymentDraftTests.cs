@@ -1,3 +1,4 @@
+using Marvel.Rules.Play;
 using Marvel.Decisions;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.Timing;
@@ -56,7 +57,7 @@ public sealed class CardPaymentDraftTests
         Assert.True(binding.TryToggleGenerator(41));
         Assert.False(composer.TryBuild(out _, out _));
         Assert.True(binding.TryToggleGenerator(42));
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.True(composer.TryBuild(out Decision? decision, out _));
         Assert.Equal([41, 42], decision!.Resources);
         Assert.True(binding.TryToggleGenerator(41));
         Assert.False(composer.Progress().Payment.IsSatisfied);

@@ -82,9 +82,9 @@ that fails a gate.
 | [Places](docs/places.md) | Play areas, game areas, and anything resolving by where a card is |
 | [Event Stream](docs/event-stream.md) | What the engine tells a client changed |
 | [Affordances](docs/affordances.md) | What the engine tells a client the player can do |
-| [State Digest v2](docs/state-digest-v2.md) | The canonical serialisation of a board |
+| [State Digest v3](docs/state-digest-v3.md) | The canonical serialisation of a board |
 | [RNG Contract](docs/rng-contract.md) | The random number generator specification |
-| [Presentation Layer](docs/presentation-layer.md) | The plan for a client |
+| [Presentation Layer](docs/presentation-layer.md) | Engine, client, transport and host ownership |
 | [Release Policy](docs/release-policy.md) | Artifact versions, compatibility, signing and upgrade rules |
 | [Test Lanes](docs/testing.md) | Fast, integration and acceptance test commands |
 | [Plane](docs/plane.md) | How work is tracked |

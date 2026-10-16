@@ -69,8 +69,8 @@ public static class Attack
             return;
         }
 
-        var target = step.Character >= 0
-            ? world.Cards[step.Character]
+        var target = step.Require<EnemyAttackOperation>().Character >= 0
+            ? world.Cards[step.Require<EnemyAttackOperation>().Character]
             : world.Seats[step.Seat].IdentityCard;
         world.Attack = new EnemyAttack(step.Subject, step.Seat, target.ObjectId);
         world.Activation = new EnemyActivation(

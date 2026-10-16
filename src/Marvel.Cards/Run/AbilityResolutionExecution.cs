@@ -34,7 +34,6 @@ internal sealed class AbilityResolutionExecution
 {
     internal readonly AbilityProgram program;
     internal readonly AbilityOfferQueries offerQueries;
-    internal readonly AbilityGameRuntimes runtimes;
     internal readonly IEncounterCardAbilities encounterAbilities;
     internal readonly ICardPlayAbilities cardPlayAbilities;
     internal readonly ICardReadinessAbilities readinessAbilities;
@@ -43,7 +42,6 @@ internal sealed class AbilityResolutionExecution
 
     internal AbilityResolutionExecution(
         AbilityProgram program,
-        AbilityGameRuntimes runtimes,
         IEncounterCardAbilities encounterAbilities,
         ICardPlayAbilities cardPlayAbilities,
         ICardReadinessAbilities readinessAbilities,
@@ -53,7 +51,6 @@ internal sealed class AbilityResolutionExecution
     {
         ArgumentNullException.ThrowIfNull(program);
         this.program = program;
-        this.runtimes = runtimes;
         this.encounterAbilities = encounterAbilities;
         this.cardPlayAbilities = cardPlayAbilities;
         this.readinessAbilities = readinessAbilities;

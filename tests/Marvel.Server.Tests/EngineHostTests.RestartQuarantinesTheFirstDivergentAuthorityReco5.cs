@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Decisions;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
@@ -110,7 +111,7 @@ public sealed class EngineHostRestartQuarantinesTheFirstDivergentAuthorityRecoTe
         Prompt prompt = Assert.IsType<Prompt>(opened.Prompt);
         Affordance mulligan = Assert.Single(prompt.Affordances);
         int card = Assert.IsType<TargetRequest>(mulligan.Targets).Legal[0];
-        EngineResponse resolved = host.Exchange(EngineRequest.ResolveGame("mulligan", "frontier-table", opened.Capability!, new EngineDecision(mulligan.Id, [card]), opened.Revision));
+        EngineResponse resolved = host.Exchange(EngineRequest.ResolveGame("mulligan", "frontier-table", opened.Capability!, new Decision(mulligan.Id, [card]), opened.Revision));
         Assert.Null(resolved.Error);
         SessionSave save = Assert.Single(store.Load()).Save;
         Assert.Equal(1, save.EditFrontier);
@@ -121,73 +122,7 @@ public sealed class EngineHostRestartQuarantinesTheFirstDivergentAuthorityRecoTe
         IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         AssertQuarantined(factory, new StoredSession(save with { EditFrontier = 0 }, stored.Authorities), "frontier-table", "frontier-owner");
         AssertQuarantined(factory, stored with { Save = save with { Units = [unit with { Exposures = [new InformationExposure(InformationFrontier.Search, [0]), ], }, ], }, }, "frontier-table", "frontier-owner");
-        var migrationStore = new MigrationSessionStore(stored with { Save = save with { Schema = 2, }, });
-        var restarted = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root), store: migrationStore);
-        StoredSession migrated = Assert.Single(migrationStore.Load());
-        Assert.Equal(1, migrationStore.Commits);
-        Assert.Equal(SessionSave.CurrentSchema, migrated.Save.Schema);
-        Assert.Equal(1, migrated.Save.EditFrontier);
-        Assert.Equal(InformationFrontier.Draw, Assert.Single(Assert.Single(migrated.Save.Units).Exposures).Reason);
-        Assert.Null(restarted.Exchange(EngineRequest.SyncGame("sync", "frontier-table", opened.Capability!)).Error);
-    }
 
-    [Fact]
-    public void FailedSchemaTwoMigrationLeavesThePredecessorAuthoritative()
-    {
-        var source = new MemorySessionStore();
-        IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
-        var first = new EngineHost(factory, new SequenceCapabilities("migration-failure-owner"), store: source);
-        EngineResponse opened = first.Exchange(EngineRequest.OpenGame("open", "migration-failure-table", new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
-        StoredSession current = Assert.Single(source.Load());
-        var predecessor = new MigrationSessionStore(current with { Save = current.Save with { Schema = 2 }, });
-        var restarted = new EngineHost(factory, store: new FailingSessionStore(predecessor, failAtCommit: 1));
-        Assert.Equal(2, Assert.Single(predecessor.Load()).Save.Schema);
-        Assert.Equal(0, predecessor.Commits);
-        Assert.Equal("session_not_found", restarted.Exchange(EngineRequest.SyncGame("sync", "migration-failure-table", opened.Capability!)).Error?.Code);
-    }
-
-    [Fact]
-    public void DivergentSchemaTwoMigrationIsRejectedBeforeCommit()
-    {
-        var source = new MemorySessionStore();
-        IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
-        var first = new EngineHost(factory, new SequenceCapabilities("migration-divergence-owner"), store: source);
-        EngineResponse opened = first.Exchange(EngineRequest.OpenGame("open", "migration-divergence-table", new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
-        StoredSession current = Assert.Single(source.Load());
-        var predecessor = new MigrationSessionStore(current with { Save = current.Save with { Schema = 2, CurrentPrompt = current.Save.CurrentPrompt!with { Label = "changed" }, }, });
-        var restarted = new EngineHost(factory, store: predecessor);
-        Assert.Equal(0, predecessor.Commits);
-        Assert.Equal("session_not_found", restarted.Exchange(EngineRequest.SyncGame("sync", "migration-divergence-table", opened.Capability!)).Error?.Code);
-    }
-
-    [Fact]
-    public void InvalidAuthorityDoesNotDisplaceTheSchemaTwoGeneration()
-    {
-        var source = new MemorySessionStore();
-        IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
-        var first = new EngineHost(factory, new SequenceCapabilities("migration-authority-owner"), store: source);
-        _ = first.Exchange(EngineRequest.OpenGame("open", "migration-authority-table", new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
-        StoredSession current = Assert.Single(source.Load());
-        var predecessor = new MigrationSessionStore(current with { Save = current.Save with { Schema = 2 }, Authorities = [current.Authorities[0] with { Seats = [1] }], });
-        _ = new EngineHost(factory, store: predecessor);
-        Assert.Equal(0, predecessor.Commits);
-        Assert.Equal(2, Assert.Single(predecessor.Load()).Save.Schema);
-    }
-
-    [Fact]
-    public void DuplicateAuthorityDoesNotDisplaceTheSchemaTwoGeneration()
-    {
-        var source = new MemorySessionStore();
-        IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
-        var first = new EngineHost(factory, new SequenceCapabilities("migration-first-owner", "migration-second-owner"), store: source);
-        _ = first.Exchange(EngineRequest.OpenGame("open-first", "migration-first-table", new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
-        _ = first.Exchange(EngineRequest.OpenGame("open-second", "migration-second-table", new GameSpecification("rhino", ["spider_man"], [], Seed: 79)));
-        StoredSession restored = source.Load().Single(session => session.Save.Session.Label == "migration-first-table");
-        StoredSession current = source.Load().Single(session => session.Save.Session.Label == "migration-second-table");
-        var predecessor = new MigrationSessionStore(restored, current with { Save = current.Save with { Schema = 2 }, Authorities = [current.Authorities[0] with { Verifier = restored.Authorities[0].Verifier, }, ], });
-        _ = new EngineHost(factory, store: predecessor);
-        Assert.Equal(0, predecessor.Commits);
-        Assert.Equal(2, predecessor.Load().Single(session => session.Save.Session.Label == "migration-second-table").Save.Schema);
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
@@ -62,9 +63,7 @@ public sealed class StandardSetCardsTests
         var card = world.CreateCard(
             AuthoredCards.Exhaustion,
             world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
-        world.Agenda.Add(new PhaseStep(
-            Steps.RevealEncounterCard, 1, 4,
-            Subject: card.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId, Seat: 0));
         var runner = AuthoredCards.Runner();
         var events = new List<Marvel.Rules.Events.GameEvent>();
         int dealt = world.AreaOf(

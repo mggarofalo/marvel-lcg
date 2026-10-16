@@ -166,7 +166,7 @@ public sealed class AllyTests
         var events = new List<GameEvent>();
 
         Attack.Initiate(
-            world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: Villain(world), Seat: 0), []);
+            world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: Villain(world), Seat: 0), []);
         var asked = Sequence.Work(world, printed, new NoCardAbilities(), events);
         Sequence.Answer(
             world, printed, new NoCardAbilities(), asked!, Decision.Take(ally.ObjectId), events);

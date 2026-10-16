@@ -23,17 +23,17 @@ public sealed class ActionAbilityTypedFixedCountsTopCardChoiceKeepsItsCompiledCo
             fields["count"] = new AbilityValue.Number(0);
         runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, source, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         Assert.True(prompt.ExposesConcealedCandidates);
         Assert.Equal(bottomToTop.Skip(1).Reverse().Select(card => card.ObjectId), prompt.Affordances.Select(option => option.Id));
         // Widening the original map cannot admit the unoffered fourth card.
         fields["count"] = new AbilityValue.Number(4);
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, source, 0, choice.Index, Decision.Take(bottomToTop[0].ObjectId), choice.Tier));
+        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, choice, Decision.Take(bottomToTop[0].ObjectId)));
         Assert.Equal(bottomToTop, deck.Cards);
         Assert.Empty(world.Seats[0].Hand.Cards);
         // Narrowing it cannot invalidate an already offered third card either.
         fields["count"] = new AbilityValue.Number(1);
-        runner.Chose(world, source, 0, choice.Index, Decision.Take(bottomToTop[1].ObjectId), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(bottomToTop[1].ObjectId));
         Assert.Equal([bottomToTop[0]], deck.Cards);
         Assert.Equal([bottomToTop[1]], world.Seats[0].Hand.Cards);
         Assert.Equal([bottomToTop[3], bottomToTop[2]], world.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0).Cards);
@@ -54,13 +54,13 @@ public sealed class ActionAbilityTypedFixedCountsTopCardChoiceKeepsItsCompiledCo
             fields["max"] = new AbilityValue.Number(1);
         runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, source, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         var selection = Assert.Single(prompt.Affordances);
         Assert.Equal(1, selection.Targets!.Min);
         Assert.Equal(4, selection.Targets.Max);
         Assert.Equal(cards.Select(card => card.ObjectId), selection.Targets.Legal);
         fields["max"] = new AbilityValue.Number(1);
-        runner.Chose(world, source, 0, choice.Index, Decision.Take(selection.Id, cards.Select(card => card.ObjectId).ToArray(), []), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(selection.Id, cards.Select(card => card.ObjectId).ToArray(), []));
         // Engine contract: max is data, not a hard-coded three-card limit.
         // MT19937 seed 5489 starts 3499211612, 581869302, 3890346734.
         // Masked bounds 4, 3, 2 give swap indexes 0, 2, 0, without rejection.
@@ -88,9 +88,9 @@ public sealed class ActionAbilityTypedFixedCountsTopCardChoiceKeepsItsCompiledCo
         var choice = Assert.Single(world.Agenda.Outstanding);
         fields["max"] = new AbilityValue.Number(4);
         int[] targets = cards.Take(duplicateTitle ? 2 : 3).Select(card => card.ObjectId).ToArray();
-        var prompt = runner.Choosing(world, source, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         Assert.False(Assert.Single(prompt.Affordances).Targets!.Allows(targets));
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, source, 0, choice.Index, Decision.Take(source.ObjectId, targets, []), choice.Tier));
+        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, choice, Decision.Take(source.ObjectId, targets, [])));
         Assert.Equal(cards, discard.Cards);
         Assert.Empty(world.Seats[0].Deck.Cards);
         Assert.Equal(0, world.Random.Generator.WordsConsumed);

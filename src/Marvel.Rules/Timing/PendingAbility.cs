@@ -18,4 +18,10 @@ public readonly record struct PendingAbility(
 {
     /// <summary>Resolve before ordinary forced interrupts to the same condition.</summary>
     public bool Would { get; init; }
+
+    /// <summary>The exact defeat that satisfies this trigger within its shared window.</summary>
+    public State.Defeated? TriggeringDefeat { get; init; }
+
+    /// <summary>Prompt-local handle assigned when several instances share a source card.</summary>
+    public int? OfferId { get; init; }
 }

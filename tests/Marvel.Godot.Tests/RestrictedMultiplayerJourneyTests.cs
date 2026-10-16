@@ -1,3 +1,6 @@
+using Marvel.Observability;
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text.Json;
@@ -63,7 +66,7 @@ public abstract class RestrictedMultiplayerJourneyTestBase
         return prompted.Length == 2 ? Assert.Single(prompted, seat => views[seat].Prompt!.Cancellable) : Assert.Single(prompted);
     }
 
-    protected static async Task<EngineResponse[]> TestWrongSeat(LocalGameClient[] clients, ClientSession[] sessions, EngineResponse[] views, bool[] tested, int actor, int peer, EngineDecision decision)
+    protected static async Task<EngineResponse[]> TestWrongSeat(LocalGameClient[] clients, ClientSession[] sessions, EngineResponse[] views, bool[] tested, int actor, int peer, Decision decision)
     {
         if (tested[actor])
             return views;
@@ -78,7 +81,7 @@ public abstract class RestrictedMultiplayerJourneyTestBase
         return unchanged;
     }
 
-    protected static async Task<(EngineDecision? Baseline, bool Tested)> TestStaleDecision(LocalGameClient staleOwner, ClientSession owner, EngineResponse view, int actor, EngineDecision decision, EngineDecision? baseline, bool tested)
+    protected static async Task<(Decision? Baseline, bool Tested)> TestStaleDecision(LocalGameClient staleOwner, ClientSession owner, EngineResponse view, int actor, Decision decision, Decision? baseline, bool tested)
     {
         if (actor != 0)
             return (baseline, tested);
@@ -94,7 +97,7 @@ public abstract class RestrictedMultiplayerJourneyTestBase
         return (baseline, true);
     }
 
-    protected static async Task<bool> TestDroppedResponse(IPEndPoint endpoint, ClientSession session, EngineResponse view, EngineDecision decision, bool tested, int decisions)
+    protected static async Task<bool> TestDroppedResponse(IPEndPoint endpoint, ClientSession session, EngineResponse view, Decision decision, bool tested, int decisions)
     {
         if (tested || decisions < 2)
             return false;
@@ -108,7 +111,7 @@ public abstract class RestrictedMultiplayerJourneyTestBase
         return true;
     }
 
-    protected static async Task ResolveAccepted(LocalGameClient client, ClientSession session, EngineDecision decision)
+    protected static async Task ResolveAccepted(LocalGameClient client, ClientSession session, Decision decision)
     {
         var resolved = await client.ResolveAsync(session, decision, TestContext.Current.CancellationToken);
         Assert.Equal(ClientMutationDisposition.Accepted, resolved.MutationDisposition);
@@ -247,16 +250,16 @@ public abstract class RestrictedMultiplayerJourneyTestBase
         return hand.Cards.Concat(hand.Removed).ToArray();
     }
 
-    protected static EngineDecision VisibleDecision(Prompt prompt)
+    protected static Decision VisibleDecision(Prompt prompt)
     {
         if (prompt.Cancellable)
         {
-            return EngineDecision.Decline;
+            return Decision.Decline;
         }
 
         if (prompt.Affordances.SingleOrDefault(option => string.Equals(option.Verb, Game.ResolveMulligans, StringComparison.Ordinal))is { } mulligan)
         {
-            return new EngineDecision(mulligan.Id, []);
+            return new Decision(mulligan.Id, []);
         }
 
         foreach (Affordance offered in prompt.Affordances.Where(option => option.IsLegal).OrderByDescending(option => string.Equals(option.Verb, Game.EndPhaseVerb, StringComparison.Ordinal)))
@@ -268,7 +271,7 @@ public abstract class RestrictedMultiplayerJourneyTestBase
                 composer.SelectTargets(FirstLegalSelection(targets));
             }
 
-            if (composer.TryBuild(out EngineDecision? decision, out _))
+            if (composer.TryBuild(out Decision? decision, out _))
             {
                 return decision!;
             }

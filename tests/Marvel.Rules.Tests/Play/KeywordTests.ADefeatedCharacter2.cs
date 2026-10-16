@@ -93,7 +93,7 @@ public sealed class KeywordADefeatedCharacterTests : KeywordTestBase
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         KeepEncounterDeckLive(world);
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
-        Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
         Undefended(world, printed);
         Assert.Equal(3, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(2, villain.Damage);
@@ -131,7 +131,7 @@ public sealed class KeywordADefeatedCharacterTests : KeywordTestBase
         world.Seats[0].IdentityCard.TurnTo("hero");
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
-        Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: minion.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: minion.ObjectId, Seat: 0), []);
         Undefended(world, printed);
         Assert.Single(world.AreaOf(DeckType.EncounterDeck).Cards);
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
@@ -151,7 +151,7 @@ public sealed class KeywordADefeatedCharacterTests : KeywordTestBase
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Characteristics.LossOf("villainous"), Affects: minion.ObjectId));
-        Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: minion.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: minion.ObjectId, Seat: 0), []);
         Undefended(world, printed);
         Assert.Single(world.AreaOf(DeckType.EncounterDeck).Cards);
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);

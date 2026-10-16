@@ -234,7 +234,8 @@ internal static class AbilityDeckAndRevealExecution
         if (placement.PrintedDestination)
         {
             Reveal.Resolve(context.World, context.World.Facts, card,
-                context.World.FirstPlayer, context.Events, verb: "Put_Into_Play");
+                context.World.FirstPlayer, context.Events,
+                placement: new CardEntryPlacement(Verb: "Put_Into_Play"));
             return new(true, true, null, ImmutableDictionary<string, long>.Empty);
         }
         AbilityCardStateExecution.PutIntoPlay(card, context.Player, CardStateContext(context));

@@ -56,25 +56,19 @@ public static class RevealKeywords
         foreach (var ability in keywordAbilities)
         {
             ResolveKeyword(
-                world, facts, abilities, card, player, ability, events, occurrence);
+                world, facts, abilities, player, ability, events, occurrence);
         }
     }
 
     /// <summary>Resolve one keyword-provided When Revealed ability by address.</summary>
     public static void ResolveKeyword(
-        World world, ICardFacts facts, IThreatCardAbilities abilities, Card card, int player,
+        World world, ICardFacts facts, IThreatCardAbilities abilities, int player,
         PendingAbility ability, List<GameEvent> events, Occurrence? occurrence = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
-
-        if (ability.Card != card.ObjectId)
-        {
-            throw new RulesNotImplementedException(
-                $"keyword ability on card {ability.Card} cannot resolve for card {card.ObjectId}");
-        }
+        Card card = world.Cards[ability.Card];
 
         switch (ability.Ordinal)
         {

@@ -1,3 +1,7 @@
+using Marvel.Server.Host;
+using Marvel.Observability;
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Net;
 using System.Net.Sockets;
 using Marvel.View;
@@ -10,7 +14,7 @@ public sealed class ProgramTests
     [Fact]
     public void ServerOptionsHaveSafeLocalDefaults()
     {
-        Program.ServerOptions options = Program.ServerOptions.Parse([]);
+        ServerOptions options = ServerOptions.Parse([]);
 
         Assert.Equal(IPAddress.Loopback, options.Address);
         Assert.Equal(41923, options.Port);
@@ -29,7 +33,7 @@ public sealed class ProgramTests
     [Fact]
     public void ServerOptionsAcceptAnExplicitRestrictedSeatEndpointAndDataRoot()
     {
-        Program.ServerOptions options = Program.ServerOptions.Parse(
+        ServerOptions options = ServerOptions.Parse(
             [
                 "--listen", "::1",
                 "--port", "65535",
@@ -83,7 +87,7 @@ public sealed class ProgramTests
     [InlineData("--telemetry-endpoint", "https://telemetry.example.test/v1?token=secret")]
     public void InvalidServerOptionsAreRejected(params string[] args)
     {
-        Assert.Throws<ArgumentException>(() => Program.ServerOptions.Parse(args));
+        Assert.Throws<ArgumentException>(() => ServerOptions.Parse(args));
     }
 
     [Fact]
@@ -174,7 +178,7 @@ public sealed class ProgramTests
         try
         {
             int result = Program.Run(
-                new Program.ServerOptions(
+                new ServerOptions(
                     IPAddress.Loopback,
                     Port: 0,
                     Marvel.Tests.RepositoryPaths.Root,
@@ -231,7 +235,7 @@ public sealed class ProgramTests
             TaskCreationOptions.RunContinuationsAsynchronously);
         Task<int> running = Task.Factory.StartNew(
             () => Program.Run(
-                new Program.ServerOptions(
+                new ServerOptions(
                     IPAddress.Loopback,
                     Port: 0,
                     Marvel.Tests.RepositoryPaths.Root,
@@ -293,9 +297,7 @@ public sealed class ProgramTests
             new EngineHost(DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root)),
             IPAddress.Loopback,
             port: 0);
-        Task running = Task.Run(
-            () => server.Run(listening.SetResult, stopping.Token),
-            TestContext.Current.CancellationToken);
+        Task running = server.RunAsync(listening.SetResult, stopping.Token);
 
         IPEndPoint endpoint = await listening.Task.WaitAsync(
             TimeSpan.FromSeconds(10),

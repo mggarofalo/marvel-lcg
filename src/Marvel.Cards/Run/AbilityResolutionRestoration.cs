@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityContinuationFrames;
 using static Marvel.Cards.Run.AbilityEffectStructure;
 using static Marvel.Cards.Run.AbilityCostSelection;
 using System.Collections.Immutable;
@@ -19,13 +20,13 @@ internal static class AbilityResolutionRestoration
             return cast.AbilityOrdinal;
         }
 
-        return AbilityContinuationWireCodec.OrdinalForNode(
+        return AbilityContinuationFrames.OrdinalForNode(
             execution.program, cast.Source, cast.AbilityFace, cast.Tier,
             cast.StructuralPath, node);
     }
 
     internal static ImmutableArray<CompiledCardAbility> AbilitiesOn(this AbilityResolutionExecution execution, Card source, string? face) =>
-        AbilityContinuationWireCodec.AbilitiesOn(execution.program, source, face);
+        AbilityContinuationFrames.AbilitiesOn(execution.program, source, face);
 
     internal static void TrackResolution(this AbilityResolutionExecution execution, AbilityResolutionState cast, CompiledCardAbility ability)
     {
@@ -48,7 +49,7 @@ internal static class AbilityResolutionRestoration
 
     internal static CompiledCardAbility AbilityAt(this AbilityResolutionExecution execution,
         Card source, AbilityType? tier, int ordinal, string? face = null) =>
-        AbilityContinuationWireCodec.AbilityAt(execution.program, source, tier, ordinal, face);
+        AbilityContinuationFrames.AbilityAt(execution.program, source, tier, ordinal, face);
 
     internal static void RestorePersisted(this AbilityResolutionExecution execution, AbilityResolutionState cast, PhaseStep? continuation)
     {
@@ -56,17 +57,15 @@ internal static class AbilityResolutionRestoration
         {
             return;
         }
-        execution.ApplyRestored(cast, AbilityContinuationRestoration.RestoreState(
-            cast.World.Cards, step.Discarded, step.AbilityResults,
-            step.AbilityActor, cast.Source.FaceId));
+        execution.RestorePersisted(cast, StateOf(step)!);
     }
 
     internal static void RestorePersisted(this AbilityResolutionExecution execution,
-        AbilityResolutionState cast, IReadOnlyList<int>? discarded,
-        IReadOnlyDictionary<string, long>? results)
+        AbilityResolutionState cast, AbilityContinuationState state)
     {
-        execution.ApplyRestored(cast, AbilityContinuationRestoration.RestoreState(
-            cast.World.Cards, discarded, results, -1, cast.Source.FaceId));
+        cast.TriggeringDefeat = state.Invocation.TriggeringDefeat;
+        execution.ApplyRestored(cast,
+            AbilityContinuationRestoration.RestoreState(cast.World.Cards, state));
     }
 
     internal static void ApplyRestored(this AbilityResolutionExecution execution, AbilityResolutionState cast, RestoredContinuationState state)
@@ -89,6 +88,6 @@ internal static class AbilityResolutionRestoration
 
     internal static PhaseStep? ContinuationStep(this AbilityResolutionExecution execution,
         World world, Card source, int stoppedAt, AbilityType? tier)
-        => AbilityContinuationWireCodec.ContinuationStep(
+        => AbilityContinuationFrames.ContinuationStep(
             world.Agenda.Current, world.Agenda.Outstanding, source.ObjectId, stoppedAt, tier);
 }

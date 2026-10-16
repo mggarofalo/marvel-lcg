@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Decisions;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -27,7 +28,8 @@ public sealed class AncestralKnowledgeNativeJourneyTests
         Affordance action = game.Pending.Affordances.Single(offer => offer.AnchorId == 9);
         Assert.Equal("Ancestral Knowledge", action.Label);
         Assert.Equal("01043b", game.State.Cards[11].FaceId);
-        game.Resolve(Decision.Take(action.Id, [], [11]));
+        game.Resolve(new Decision(action.Id, [], [11], Allocations:
+            ResourcePayment.Allocate(Assert.Single(action.CostOptions), [11], null)));
 
         Assert.Equal(PublicDecisionKind.VisibleCardSelection, game.Pending!.PublicKind);
         Affordance choice = Assert.Single(game.Pending.Affordances);
@@ -41,7 +43,7 @@ public sealed class AncestralKnowledgeNativeJourneyTests
         Assert.Empty(composer.Targets);
         Assert.False(composer.Progress().IsReady);
         composer.SelectTargets([16, 31]);
-        Assert.True(composer.TryBuild(out EngineDecision? answer, out _));
+        Assert.True(composer.TryBuild(out Decision? answer, out _));
         Area discard = game.State.AreaOf(DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0);
         Assert.Equal(6, discard.Cards.Count);
         int deckBefore = seat.Deck.Cards.Count;

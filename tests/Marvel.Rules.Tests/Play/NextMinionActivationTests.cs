@@ -30,7 +30,7 @@ public sealed class NextMinionActivationTests : VillainPhaseTestBase
         Card remaining = world.CreateCard("minion", area);
         var abilities = new ChangeAfterActivation(first.ObjectId, removed.ObjectId, samePhysicalCard);
         var events = new List<GameEvent>();
-        world.Agenda.Add(new PhaseStep(Steps.EnemiesActivate, 1, 2, Plan: true));
+        world.Agenda.Add(new PhaseStep(new ActivationPlanOperation(), Round: 1, Number: 2, Plan: true));
         Prompt prompt = Sequence.Work(world, printed, abilities, events)!;
         Assert.Equal(3, prompt.Affordances.Count);
         Sequence.Answer(world, printed, abilities, prompt, Decision.Take(first.ObjectId), events);
@@ -59,7 +59,7 @@ public sealed class NextMinionActivationTests : VillainPhaseTestBase
         Card second = world.CreateCard("minion", area);
         var observer = new EnemyOrderObserver();
         var events = new List<GameEvent>();
-        world.Agenda.Add(new PhaseStep(Steps.EnemiesActivate, 1, 2, Plan: true));
+        world.Agenda.Add(new PhaseStep(new ActivationPlanOperation(), Round: 1, Number: 2, Plan: true));
         Prompt prompt = Sequence.Work(world, printed, observer, events)!;
         Decision answer = invented ? Decision.Take(999)
             : Decision.Take(first.ObjectId, [second.ObjectId], []);

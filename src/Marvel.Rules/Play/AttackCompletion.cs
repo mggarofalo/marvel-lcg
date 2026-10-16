@@ -113,8 +113,8 @@ internal static class AttackCompletion
     {
         // A temporary title belongs to the occurrence even after departure
         // restores the physical card's printed identity.
-        if (world.Agenda.Current?.ProcedureOwnerOccurrence is
-            { Actor: var actor, ActorFacts: { EffectiveTitle: { } title } }
+        if (world.Agenda.Current?.Operation is AttackCompletionOperation
+            { Owner: { Actor: var actor, ActorFacts: { EffectiveTitle: { } title } } }
             && actor == id)
         {
             return title;

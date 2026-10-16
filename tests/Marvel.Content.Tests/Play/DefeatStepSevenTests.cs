@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Setup;
@@ -122,17 +123,11 @@ public sealed class DefeatStepSevenTests
 
     [Rule("rr:triggering-condition.1")]
     [Fact]
-    public void ItIsSpentOnTheOccurrenceOnTheAgendaAndNotOnACopyOfIt()
+    public void EachDefeatInTheSharedOccurrenceTriggersTheInterruptOnce()
     {
-        // "Each **Interrupt** ability can only be triggered once per occurrence
-        // of its triggering condition." Two minions defeated by one occurrence
-        // is one `WhenCardDefeated` between them -- `Occurrence.Also` is
-        // idempotent for exactly that reason -- so a card answering "when a
-        // minion is defeated" answers once.
-        //
-        // Step 7 builds its own occurrence to carry the subject, and that one
-        // is made fresh on every defeat. If the bookkeeping lived there, this
-        // would fire twice.
+        // rr:triggering-condition.1: "each interrupt ability can only be
+        // triggered once per occurrence of its triggering condition." Each
+        // defeated minion is one instance; the two instances share a window.
         var world = Board(
             """
             {"cards":[{"card":"@card","abilities":[{
@@ -152,7 +147,7 @@ public sealed class DefeatStepSevenTests
         Defeat.Character(world, Cards, minion, "test", []);
 
         Assert.Equal(
-            1,
+            2,
             scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken) - before);
     }
 

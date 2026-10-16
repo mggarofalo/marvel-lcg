@@ -102,7 +102,7 @@ public sealed class DecisionComposerProgressResetsPaymentTests : DecisionCompose
     public void ADeclineIsBuiltOnlyFromTheCurrentCancellablePrompt()
     {
         var composer = new DecisionComposer(Prompt(cancellable: true, new Affordance(3, "Respond", 9, 0, "Optional response")));
-        Assert.True(composer.TryDecline(out EngineDecision? decision, out _));
-        Assert.Equal(EngineDecision.Decline, decision);
+        Assert.True(composer.TryDecline(out Decision? decision, out _));
+        Assert.Equal(Decision.Decline, decision);
     }
 }

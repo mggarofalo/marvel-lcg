@@ -1,3 +1,6 @@
+using Marvel.Observability;
+using Marvel.Desktop;
+using Marvel.Protocol;
 using System.Globalization;
 using System.Text;
 using Godot;
@@ -5,7 +8,6 @@ using Marvel.Client;
 using Marvel.Decisions;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
-using Marvel.Server;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -138,8 +140,8 @@ public sealed partial class Main : Control
         boardController = new MainBoardController(this);
         eventController = new MainEventController(this);
         BindNodes();
-        buildIdentity.Text = EngineBuildIdentity.Display;
-        buildIdentity.TooltipText = $"Source commit {EngineBuildIdentity.Commit}";
+        buildIdentity.Text = BuildIdentity.Display;
+        buildIdentity.TooltipText = $"Source commit {BuildIdentity.Commit}";
         interfaceScaleSlider.SetValueNoSignal((double)scale);
         interfaceScaleSlider.ValueChanged += value =>
             ApplyInterfaceScale((InterfaceScale)(Mathf.RoundToInt(value / 10) * 10));
@@ -367,7 +369,7 @@ public sealed partial class Main : Control
     internal void CopyInvitation() => setupController.CopyInvitation();
     internal void CopyInteractionReport() => setupController.CopyInteractionReport();
     internal void SaveInteractionReport() => setupController.SaveInteractionReport();
-    internal void OnDecisionSubmitted(EngineDecision decision) =>
+    internal void OnDecisionSubmitted(Decision decision) =>
         sessionController.OnDecisionSubmitted(decision);
     internal void OnUndoLastPressed() => sessionController.OnUndoLastPressed();
     internal void OnHistoryMetaClicked(Variant meta) => sessionController.OnHistoryMetaClicked(meta);

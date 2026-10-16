@@ -27,6 +27,6 @@ public sealed record PromptRecord(
             prompt.Trigger,
             prompt.Label,
             prompt.Cancellable,
-            [.. prompt.Affordances.Select(AffordanceRecord.From)]);
+            JournalValues.List(prompt.Affordances.Select(AffordanceRecord.From)));
     }
 }

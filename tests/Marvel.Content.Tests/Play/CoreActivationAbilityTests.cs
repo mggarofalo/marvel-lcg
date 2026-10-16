@@ -100,8 +100,8 @@ public sealed class CoreActivationAbilityTests
 
         var placement = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.PlaceThreatEffect);
-        Assert.Equal(scheme.ObjectId, placement.Placement!.Scheme);
-        Assert.Equal(1, placement.Placement.Assigned);
+        Assert.Equal(scheme.ObjectId, placement.Require<ThreatPlacementOperation>().Placement!.Scheme);
+        Assert.Equal(1, placement.Require<ThreatPlacementOperation>().Placement.Assigned);
     }
 
     [Rule("rr:activation.7")]
@@ -235,19 +235,16 @@ public sealed class CoreActivationAbilityTests
         second.AssignProfile(AuthoredCards.DroneProfile);
         second.TurnFaceDown();
         var card = world.CreateCard("01147", world.AreaOf(DeckType.RevealingArea));
-        world.Agenda.Add(new PhaseStep(
-            Steps.RevealEncounterCard, 1, 4, Subject: card.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId, Seat: 0));
 
         AuthoredCards.Runner().WhenRevealed(world, card, 0);
 
         var choice = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
         var runner = AuthoredCards.Runner();
-        var prompt = runner.Choosing(world, card, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         var order = Assert.Single(prompt.Affordances);
-        runner.Chose(
-            world, card, 0, choice.Index,
-            new Decision(order.Id, [first.ObjectId, second.ObjectId]), choice.Tier);
+        runner.Chose(world, choice, new Decision(order.Id, [first.ObjectId, second.ObjectId]));
 
         Assert.Equal(
             [first.ObjectId, second.ObjectId],
@@ -290,9 +287,7 @@ public sealed class CoreActivationAbilityTests
         var madame = world.CreateCard(
             "01181", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var runner = AuthoredCards.Runner();
-        world.Agenda.Add(new PhaseStep(
-            Steps.CompleteSchemeActivation, 1, 1,
-            Subject: madame.ObjectId, Seat: 0, ActivationId: 7));
+        world.Agenda.Add(new PhaseStep(new ActivationCompletionOperation(ActivationCompletionKind.CompleteSchemeActivation), Round: 1, Number: 1, Subject: madame.ObjectId, Seat: 0) { ActivationId = 7 });
 
         runner.ActivationCompleted(
             world, new EnemyActivation(
@@ -300,16 +295,14 @@ public sealed class CoreActivationAbilityTests
 
         var choice = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(Steps.ChooseOption, choice.What);
-        var prompt = runner.Choosing(world, madame, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         var order = Assert.Single(prompt.Affordances);
-        runner.Chose(
-            world, madame, 0, choice.Index,
-            Decision.Take(order.Id), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(order.Id));
 
         var placement = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.PlaceThreatEffect);
-        Assert.Equal(legions.ObjectId, placement.Placement!.Scheme);
-        Assert.Equal(2, placement.Placement.Assigned);
+        Assert.Equal(legions.ObjectId, placement.Require<ThreatPlacementOperation>().Placement!.Scheme);
+        Assert.Equal(2, placement.Require<ThreatPlacementOperation>().Placement.Assigned);
     }
 
     [Rule("rr:attack-enemy-activation.1.1")]
@@ -332,11 +325,9 @@ public sealed class CoreActivationAbilityTests
 
         var choice = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
-        var prompt = runner.Choosing(world, card, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         var order = Assert.Single(prompt.Affordances);
-        runner.Chose(
-            world, card, 0, choice.Index,
-            new Decision(order.Id, [attacks.ObjectId, other.ObjectId]), choice.Tier);
+        runner.Chose(world, choice, new Decision(order.Id, [attacks.ObjectId, other.ObjectId]));
 
         var activation = world.Agenda.Outstanding
             .First(step => step.What == Steps.Attack);
@@ -357,11 +348,9 @@ public sealed class CoreActivationAbilityTests
         runner.WhenRevealed(world, card, 0);
         var choice = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
-        Prompt prompt = runner.Choosing(
-            world, card, 0, choice.Index, choice.Tier)!;
+        Prompt prompt = runner.Choosing(world, choice)!;
         Assert.True(prompt.ExposesConcealedCandidates);
-        runner.Chose(
-            world, card, 0, choice.Index, Decision.Take(found.ObjectId), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(found.ObjectId));
 
         Assert.Contains(
             found,
@@ -381,10 +370,10 @@ public sealed class CoreActivationAbilityTests
 
         runner.WhenRevealed(world, card, 0);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, card, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         var exhaust = Assert.Single(prompt.Affordances);
         Assert.Equal(1, exhaust.Id);
-        runner.Chose(world, card, 0, choice.Index, Decision.Take(exhaust.Id), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(exhaust.Id));
 
         Assert.False(world.Seats[0].IdentityCard.Ready);
         Assert.False(ally.Ready);
@@ -425,8 +414,7 @@ public sealed class CoreActivationAbilityTests
         }
         var whirlwind = world.CreateCard(
             "01130", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-        world.Agenda.Add(new PhaseStep(
-            Steps.Attack, 1, 2, Subject: whirlwind.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: whirlwind.ObjectId, Seat: 0));
         var runner = AuthoredCards.Runner();
         var occurrence = Occurrence.ForAttack(
             1, [Steps.AttackInitiated], world, Cards,

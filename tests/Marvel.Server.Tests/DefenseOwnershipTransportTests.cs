@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Net;
 using Marvel.Decisions;
 using Marvel.Rules.Events;
@@ -57,22 +59,22 @@ public sealed class DefenseOwnershipTransportTests : TransportTestBase
         Assert.Equal(2, attacked.World.Table.PendingSituation!.SourceCardIds.Count);
         Assert.All(Hand(attacked, 1), card => Assert.Null(card.Face));
         EngineResponse stolen = await Exchange(EngineRequest.ResolveGame("stolen", game, capabilities[0],
-            new EngineDecision(defense.Id, []), helper.Revision));
+            new Decision(defense.Id, []), helper.Revision));
         Assert.Equal("not_your_turn", stolen.Error?.Code);
 
         host = new EngineHost(factory, visibility: new RestrictedVisibilityPolicy(0), store: store);
         EngineResponse restored = await Exchange(EngineRequest.SyncGame("restored", game, capabilities[1]));
         Assert.Equal(EngineJson.Write(helper with { RequestId = "same", Events = [] }),
             EngineJson.Write(restored with { RequestId = "same", Events = [] }));
-        EngineDecision answer = pass ? EngineDecision.Decline : new EngineDecision(defense.Id, []);
+        Decision answer = pass ? Decision.Decline : new Decision(defense.Id, []);
         EngineResponse accepted = await Exchange(EngineRequest.ResolveGame("answer", game,
             capabilities[1], answer, restored.Revision));
         Assert.Null(accepted.Error);
         EngineResponse repeated = await Exchange(EngineRequest.ResolveGame("repeat", game,
-            capabilities[1], new EngineDecision(defense.Id, []), restored.Revision));
+            capabilities[1], new Decision(defense.Id, []), restored.Revision));
         Assert.Equal("stale_decision", repeated.Error?.Code);
         EngineResponse competing = await Exchange(EngineRequest.ResolveGame("compete", game,
-            capabilities[0], EngineDecision.Decline, restored.Revision));
+            capabilities[0], Decision.Decline, restored.Revision));
         Assert.Equal("stale_decision", competing.Error?.Code);
         if (pass)
         {
@@ -95,7 +97,7 @@ public sealed class DefenseOwnershipTransportTests : TransportTestBase
             Assert.Contains("Captain Marvel", later.Prompt.Description);
             Assert.All(later.Prompt.Affordances, option => Assert.Equal(0, option.AnchorPlayer));
             EngineResponse laterDamage = await Exchange(EngineRequest.ResolveGame("pass-later", game,
-                capabilities[0], EngineDecision.Decline, later.Revision));
+                capabilities[0], Decision.Decline, later.Revision));
             Assert.Null(laterDamage.Error);
             AttackCompleted ownActivation = Assert.Single(laterDamage.Events.OfType<AttackCompleted>());
             Assert.Equal(defense.AnchorId, ownActivation.Target);
@@ -118,21 +120,21 @@ public sealed class DefenseOwnershipTransportTests : TransportTestBase
             current = await exchange(EngineRequest.SyncGame("owner", game, capabilities[owner]));
             Prompt prompt = Assert.IsType<Prompt>(current.Prompt);
             Affordance? change = prompt.Affordances.FirstOrDefault(option => option.Verb == Game.ChangeForm);
-            EngineDecision decision;
-            if (change is not null && changed.Add(owner)) decision = new EngineDecision(change.Id, []);
+            Decision decision;
+            if (change is not null && changed.Add(owner)) decision = new Decision(change.Id, []);
             else if (prompt.Asking == Question.Opportunity)
             {
                 Assert.Equal(0, owner);
                 Affordance sense = Assert.Single(prompt.Affordances);
                 Assert.Equal("Spider-Sense", sense.Label);
                 spiderSense = true;
-                decision = new EngineDecision(sense.Id, []);
+                decision = new Decision(sense.Id, []);
             }
-            else if (prompt.Cancellable) decision = EngineDecision.Decline;
+            else if (prompt.Cancellable) decision = Decision.Decline;
             else
             {
                 Affordance only = Assert.Single(prompt.Affordances);
-                decision = new EngineDecision(only.Id,
+                decision = new Decision(only.Id,
                     only.Targets?.Legal.Take(only.Targets.Min).ToArray() ?? []);
             }
             current = await exchange(EngineRequest.ResolveGame("advance", game,

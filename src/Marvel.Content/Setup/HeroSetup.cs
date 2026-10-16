@@ -6,12 +6,12 @@ namespace Marvel.Content.Setup;
 /// <param name="Name">The printed name, e.g. <c>Spider-Man</c>.</param>
 /// <param name="Hero">
 /// The identity. One entry, and that entry is one card with two faces:
-/// <c>01001a,01001b</c>. See <see cref="Dealer.MoveBToFront"/> for why the order
-/// the engine deals it in is not the order it is printed in.
+/// <c>01001a,01001b</c>. The engine selects its starting alter-ego face by kind.
 /// </param>
 /// <param name="HeroDeck">The identity's signature cards.</param>
 /// <param name="Obligations">Set aside into the player's nemesis pile.</param>
 /// <param name="NemesisSet">The rest of the nemesis set.</param>
+/// <param name="NemesisSetIcon">Authored association with the identity’s nemesis encounter set.</param>
 /// <param name="PlayerDeck">The aspect cards.</param>
 public sealed record HeroSetup(
     string Name,
@@ -19,4 +19,5 @@ public sealed record HeroSetup(
     IReadOnlyList<string> HeroDeck,
     IReadOnlyList<string> Obligations,
     IReadOnlyList<string> NemesisSet,
-    IReadOnlyList<string> PlayerDeck);
+    IReadOnlyList<string> PlayerDeck,
+    string NemesisSetIcon);

@@ -26,7 +26,7 @@ internal static class CoreTranscriptCardActions
         context.SceneRequired(step).Apply(new MoveSceneCard(
             SceneCard(match, step),
             new SceneDestination(SceneZone.EngagedMinion, seat)));
-        Reveal.Quickstrike(context.World, context.Cards, minion, seat, round: 1);
+        MinionEntryActivations.Quickstrike(context.World, context.Cards, minion, seat, round: 1);
         FinishAgenda(context, step);
     }
 
@@ -190,7 +190,12 @@ internal static class CoreTranscriptCardActions
                 $"{step.Location}: playing card {card.ObjectId} requires an explicit target"),
         };
         context.Events.Clear();
-        Resolution resolution = game.Resolve(Decision.Take(play.Id, targets, payment));
+        IReadOnlyList<ResourceAllocation>? allocation = play.CostOptions
+            .Where(cost => DecisionAssessment.CostApplies(play, cost, targets))
+            .Select(cost => ResourcePayment.Allocate(cost, payment))
+            .FirstOrDefault(candidate => candidate is not null);
+        Resolution resolution = game.Resolve(new Decision(play.Id, targets, payment,
+            Allocations: allocation));
         context.Events.AddRange(resolution.Events);
         SetPendingPrompt(context, resolution.Prompt);
     }

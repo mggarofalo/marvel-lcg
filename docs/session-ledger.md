@@ -27,7 +27,7 @@ The engine already has the determinism, stable decision selectors and replay
 checks needed by this design. `Marvel.Sim` records setup, prompts, decisions,
 events and digests, then deals and resolves the game again to find divergence.
 
-Schema 4 save, atomic generation commit, strict load, verified replay, the
+Schema 6 save, atomic generation commit, strict load, verified replay, the
 information frontier, linear undo and redo, legal action reordering, and the
 redacted structured operational-log boundary are implemented for hosted
 sessions. The embedded host uses the same ledger and replay path with an
@@ -43,15 +43,16 @@ other boundary.
 
 ## Boundary
 
-The ledger will live in a Godot-free shared project above `Marvel.Rules` and
+The ledger lives in a Godot-free shared project above `Marvel.Rules` and
 below its consumers. `Marvel.Server`, `Marvel.Sim` and the embedded local host
-will use the same records and replay implementation. Rules, cards, content and
+use the same records and replay implementation. Rules, cards, content and
 view projects must not reference the session layer.
 
 ```text
-Marvel.Godot ─┐
-Marvel.Server ├── Marvel.Session ── Marvel.Content / Marvel.Cards / Marvel.Rules
-Marvel.Sim ───┘
+Marvel.Godot → Marvel.Desktop → Marvel.Server ─┐
+Marvel.Server.Host → Marvel.Server ───────────┼→ Marvel.Session
+Marvel.Sim ──────────────────────────────────┘       ↓
+                                    Marvel.Content / Marvel.Cards / Marvel.Rules
 ```
 
 The server owns one ledger and one reconstructed `Game` for each game label.
@@ -76,13 +77,13 @@ server replay but must never cross the client boundary. A visibility-safe
 
 ## The save is a decision trace
 
-A save is one strict UTF-8 JSON document. Schema 5 has these top-level members
+A save is one strict UTF-8 JSON document. Schema 6 has these top-level members
 in this order:
 
 ```json
 {
   "format": "marvel-session",
-  "schema": 5,
+  "schema": 6,
   "compatibility": {},
   "session": {},
   "setup": {},
@@ -95,22 +96,11 @@ in this order:
 }
 ```
 
-Schemas 2, 3 and 4 are explicit readable predecessors. Schema 2 uses its frozen
-prompt shape and schema 3 predates the anchor namespace discriminator; their
-readers respectively validate aliases and assign the historic card namespace.
-Schemas 2–4 have fixed resource requirements; their readers assign null to the
-required `repeated_resource` component member. Schema 5 records a resource type
-when every unit of a quantity, including a variable quantity, requires that type.
-Replay compatibility is checked before migration; a predecessor format does not
-authorize replay under different payment semantics.
-The server then replays and verifies the complete trace and atomically commits
-a schema 5 generation before making the session available. It never rewrites
-the active generation in place and never publishes a partially migrated
-session. New saves and every later commit write schema 5 only.
-
-Unknown members fail loading. Missing members fail loading. A later schema uses
-a new number and an explicit migration; a reader never guesses how to interpret
-it.
+The runtime reads and writes schema 6 only. The setup record includes ordered
+explicit player deck recipes, or null to select each hero's authored starter.
+Unknown members, missing members and other schemas fail loading. Unsupported
+save generations remain untouched and quarantined; no compatibility adapter
+supplies missing gameplay meaning.
 
 `session` contains a server-generated storage id and the bounded display label
 used to open the table. The storage id uses operating-system entropy outside
@@ -154,7 +144,8 @@ looks plausible” is not a migration rule.
 - scenario key and mode;
 - ordered hero keys, which are seat order;
 - null, empty or ordered modular-set selection without collapsing those cases;
-- the unsigned 32-bit game seed; and
+- the unsigned 32-bit game seed;
+- ordered explicit deck recipes per seat, or null for authored starters; and
 - any later setup choice that can affect dealing or rules behavior.
 
 The ledger deals from this record. It does not deserialize card objects.
@@ -198,10 +189,9 @@ gameplay state. The session journal omits them, so adding or improving a safe
 description does not change deterministic replay or invalidate an older save.
 Fresh replay reconstructs that evidence for the response being presented.
 
-Schemas 2, 3 and 4 define the state fingerprint as `World.Digest()` plus the recorded
-engine result. `World.Digest()` alone contains card state and cannot distinguish
-a win from a loss on an otherwise identical terminal board. Replay verifies
-both parts after every decision.
+The state fingerprint combines `World.Digest()` with the recorded engine result.
+The card digest alone cannot distinguish a win from a loss on an otherwise
+identical terminal board. Replay verifies both parts after every decision.
 
 A decline records no selector. Replay resolves a taken selector against the
 newly generated prompt and requires exactly one legal match. It then validates
@@ -218,11 +208,9 @@ seat, round, phase, ordered decision records and derived frontier signals. The
 serializer pins each nested record's exact member set and order with schema
 tests.
 
-Schema 4 gives durable prompts a canonical engine-chosen persistence shape.
-Each affordance retains `anchor_kind` with its `anchor_id`; card and area ids
-have separate allocation namespaces, so replay never infers one by probing an
-id in either collection. Schema 3 records migrate their historic card-only
-anchors explicitly before replay.
+Durable prompts have one canonical engine-chosen persistence shape. Each
+affordance retains `anchor_kind` with its `anchor_id`; card and area ids have
+separate namespaces, so replay never infers one by probing either collection.
 Target records keep `legal`, `min`, `max`, `groups`, `must_include_traits`,
 `rule`, `is_search`, `allow_repeated`, `maximum_occurrences`, and `details`; the
 derived `is_grouped` alias is not stored. Cost records keep `target`, `cost`,
@@ -595,7 +583,7 @@ their respective interfaces. A client cache is not a backup.
 
 The subsystem requires executable examples for:
 
-- byte-stable schema 5 records and strict parsing;
+- byte-stable schema 6 records and strict parsing;
 - atomic open with its initial save and owner authority, including crashes at
   each persistence boundary;
 - durable attach, credential revocation and owner retirement, including restart

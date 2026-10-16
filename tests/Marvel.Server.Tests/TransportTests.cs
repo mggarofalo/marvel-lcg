@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -41,7 +43,7 @@ public abstract class TransportTestBase
     }
 
     protected static IReadOnlyList<Marvel.View.CardDescriptor> Hand(EngineResponse response, int seat) => Assert.Single(Assert.IsType<WorldDescriptor>(response.World).Areas, area => area.Zone == "HandsArea" && area.Owner == seat).Cards;
-    protected static EngineDecision TakeOnly(EngineResponse response) => new(Assert.Single(Assert.IsType<Marvel.Rules.Prompts.Prompt>(response.Prompt).Affordances).Id, []);
+    protected static Decision TakeOnly(EngineResponse response) => new(Assert.Single(Assert.IsType<Marvel.Rules.Prompts.Prompt>(response.Prompt).Affordances).Id, []);
     protected sealed class EchoEndpoint(EngineRequest expectedRequest, EngineResponse response) : IEngineEndpoint
     {
         public int Calls { get; private set; }
@@ -108,7 +110,7 @@ public abstract class TransportTestBase
             Card scheme = world.CreateCard("01166", world.AreaOf(DeckType.SideSchemesArea));
             events.AddRange(world.Abilities.WhenRevealed(world, scheme, player: 0));
             ReturnedForSeatOne = Assert.Single(world.Areas.Where(area => area.Host == scheme.ObjectId).SelectMany(area => area.Cards), card => card.Owner == 1).ObjectId;
-            world.Agenda.Add(new PhaseStep(Steps.DealAttackDamage, 1, 4, Plan: true));
+            world.Agenda.Add(new PhaseStep(new AttackStageOperation(AttackStageKind.DealAttackDamage), Round: 1, Number: 4, Plan: true));
             world.Agenda.Begin(world, world.Facts);
             Defeat.Scheme(world, world.Facts, scheme, "test", events);
             return opened with

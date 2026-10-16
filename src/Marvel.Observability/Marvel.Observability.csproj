@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Marvel.Observability</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Marvel.Protocol/Marvel.Protocol.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marvel.Server.Tests" />
+    <InternalsVisibleTo Include="Marvel.Godot.Tests" />
+    <InternalsVisibleTo Include="Marvel.Architecture.Tests" />
+    <InternalsVisibleTo Include="Marvel.Server" />
+    <InternalsVisibleTo Include="Marvel.Server.Host" />
+    <InternalsVisibleTo Include="Marvel.Transport" />
+    <InternalsVisibleTo Include="Marvel.Desktop" />
+    <InternalsVisibleTo Include="Marvel.Client" />
+  </ItemGroup>
+</Project>

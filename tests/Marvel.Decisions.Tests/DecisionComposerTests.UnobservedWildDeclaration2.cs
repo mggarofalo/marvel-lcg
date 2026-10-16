@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Decisions;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -18,7 +19,7 @@ public sealed class DecisionComposerUnobservedWildDeclarationTests : DecisionCom
         composer.SelectAffordance(7);
         composer.ToggleResource(41);
         Assert.True(composer.UsesAutomaticResourceAllocation);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.True(composer.TryBuild(out Decision? decision, out string? error), error);
         Assert.Equal([new ResourceAllocation(41, 0, "G")], decision!.Allocations);
     }
 
@@ -28,7 +29,7 @@ public sealed class DecisionComposerUnobservedWildDeclarationTests : DecisionCom
         var composer = new DecisionComposer(Prompt(cancellable: false, new Affordance(7, "Play", 20, 0, "Required resource", Costs: [new CostOption(20, "1", Rule: ["R"], Sources: [new ResourceSource(41, "G")]), ])));
         composer.SelectAffordance(7);
         composer.ToggleResource(41);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.True(composer.TryBuild(out Decision? decision, out string? error), error);
         Assert.Equal([new ResourceAllocation(41, 0, "R")], decision!.Allocations);
     }
 
@@ -42,7 +43,7 @@ public sealed class DecisionComposerUnobservedWildDeclarationTests : DecisionCom
         Assert.False(composer.TryBuild(out _, out string? mismatch));
         Assert.Contains("associated", mismatch);
         composer.SelectCost(1);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.True(composer.TryBuild(out Decision? decision, out _));
         Assert.Equal(7, decision!.Affordance);
     }
 
@@ -52,7 +53,7 @@ public sealed class DecisionComposerUnobservedWildDeclarationTests : DecisionCom
         var composer = new DecisionComposer(Prompt(cancellable: false, new Affordance(8, "Play", 20, 0, "Play support", Costs: [new CostOption(20, "0")])));
         composer.SelectAffordance(8);
         Assert.True(composer.CostApplies(composer.Selected!.CostOptions[0]));
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.True(composer.TryBuild(out Decision? decision, out _));
         Assert.Empty(decision!.Targets);
     }
 
@@ -86,7 +87,7 @@ public sealed class DecisionComposerUnobservedWildDeclarationTests : DecisionCom
         composer.ToggleResource(40);
         Assert.False(composer.TryBuild(out _, out _));
         composer.AssignResource(40, 0, 0, Resources.Physical);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.True(composer.TryBuild(out Decision? decision, out _));
         Assert.Equal([new ResourceAllocation(40, 0, "R")], decision!.Allocations);
     }
 
@@ -105,14 +106,14 @@ public sealed class DecisionComposerUnobservedWildDeclarationTests : DecisionCom
 
         Assert.False(composer.UsesAutomaticResourceAllocation);
         Assert.True(composer.TryBuild(
-            out EngineDecision? decision, out string? error), error);
+            out Decision? decision, out string? error), error);
         Assert.Equal([new ResourceAllocation(40, 0, "BG")], decision!.Allocations);
 
         composer.AssignResource(40, 0, 0, Resources.Physical);
         composer.AssignResource(40, 1, 0, Resources.Physical);
 
         Assert.True(composer.TryBuild(
-            out EngineDecision? overridden, out string? overrideError), overrideError);
+            out Decision? overridden, out string? overrideError), overrideError);
         Assert.Equal([new ResourceAllocation(40, 0, "RR")], overridden!.Allocations);
     }
 
@@ -130,7 +131,7 @@ public sealed class DecisionComposerUnobservedWildDeclarationTests : DecisionCom
         composer.ToggleResource(40);
 
         Assert.True(composer.TryBuild(
-            out EngineDecision? decision, out string? error), error);
+            out Decision? decision, out string? error), error);
         Assert.Equal([new ResourceAllocation(40, 0, "RR")], decision!.Allocations);
     }
 
@@ -161,7 +162,7 @@ public sealed class DecisionComposerUnobservedWildDeclarationTests : DecisionCom
         composer.SelectTargets([12, 11]);
         Assert.False(composer.TryBuild(out _, out _));
         composer.SelectTargets([11, 12]);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.True(composer.TryBuild(out Decision? decision, out _));
         Assert.Equal([11, 12], decision!.Targets);
     }
 
@@ -173,7 +174,7 @@ public sealed class DecisionComposerUnobservedWildDeclarationTests : DecisionCom
         composer.SelectTargets([11, 11, 12]);
         Assert.False(composer.TryBuild(out _, out _));
         composer.SelectTargets([12, 11, 12]);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.True(composer.TryBuild(out Decision? decision, out _));
         Assert.Equal([12, 11, 12], decision!.Targets);
     }
 

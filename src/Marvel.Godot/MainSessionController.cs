@@ -1,8 +1,9 @@
+using Marvel.Protocol;
+using Marvel.Rules.Play;
 using System.Globalization;
 using Godot;
 using Marvel.Client;
 using Marvel.Decisions;
-using Marvel.Server;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -19,7 +20,7 @@ internal sealed class MainSessionController
         recovery = new MainSessionLossRecovery(main);
     }
 
-    internal async void OnDecisionSubmitted(EngineDecision decision)
+    internal async void OnDecisionSubmitted(Decision decision)
     {
         if (main.boardController.ResponseStaged || !main.lifecycle.CanResolve) return;
         EngineResponse current = main.CurrentGame!;

@@ -81,6 +81,7 @@ public sealed class AttachmentEventIntegrityTests : ChoosingCardsTestBase
         var card = world.Cards[attachment.Card];
         Assert.Equal(scheme.ObjectId, card.Area.Host);
         var occurrence = new Occurrence(1, [Steps.CardDefeated], Subject: scheme.ObjectId, Player: 0);
+        occurrence.Also(new Defeated(scheme.ObjectId, 0, "Thwart") { Kind = CardKind.EncounterSideScheme });
         var ability = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Interrupt));
 
         var events = runner.Resolve(world, occurrence, ability, [], []);

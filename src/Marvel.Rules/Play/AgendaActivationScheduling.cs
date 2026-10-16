@@ -28,8 +28,8 @@ public static class AgendaActivationScheduling
         var completion = agenda.Completion(root);
         var pair = new[]
         {
-            (root, Stage.Interrupts, root.ScheduledOccurrence),
-            (completion, Stage.Interrupts, completion.ScheduledOccurrence),
+            agenda.Frame(root, Stage.Interrupts, root.ScheduledOccurrence),
+            agenda.Frame(completion, Stage.Interrupts, completion.ScheduledOccurrence),
         };
 
         if (agenda.items.Count == 0)
@@ -62,6 +62,7 @@ public static class AgendaActivationScheduling
 
         agenda.scheduled += pair.Length;
         agenda.items.InsertRange(Math.Min(agenda.scheduled - pair.Length + 1, agenda.items.Count), pair);
+        agenda.scheduledFrames.UnionWith(pair.Select(frame => frame.Step.FrameId));
         return id;
     }
 
@@ -104,10 +105,10 @@ public static class AgendaActivationScheduling
         ArgumentNullException.ThrowIfNull(steps);
         agenda.items.InsertRange(
             0,
-            steps.Select(step => (step, Stage.Interrupts, step.ScheduledOccurrence)));
+            steps.Select(step => agenda.Frame(step, Stage.Interrupts, step.ScheduledOccurrence)));
 
         // The inserted step is where `Then` now counts from, and it has
-        // agenda.scheduled nothing of its own yet.
+        // scheduled nothing of its own yet.
         agenda.scheduled = 0;
     }
 
@@ -127,7 +128,7 @@ public static class AgendaActivationScheduling
             throw new InvalidOperationException("the occurrence is not on the agenda");
         }
 
-        agenda.items.Insert(at, (step, Stage.Interrupts, step.ScheduledOccurrence));
+        agenda.items.Insert(at, agenda.Frame(step, Stage.Interrupts, step.ScheduledOccurrence));
     }
 
     internal static void AddActivation(this Agenda agenda, PhaseStep step)
@@ -135,8 +136,8 @@ public static class AgendaActivationScheduling
         int id = agenda.nextActivationId++;
         var root = step with { ActivationId = id };
         var completion = agenda.Completion(root);
-        agenda.items.Add((root, Stage.Interrupts, root.ScheduledOccurrence));
-        agenda.items.Add((completion, Stage.Interrupts, completion.ScheduledOccurrence));
+        agenda.items.Add(agenda.Frame(root, Stage.Interrupts, root.ScheduledOccurrence));
+        agenda.items.Add(agenda.Frame(completion, Stage.Interrupts, completion.ScheduledOccurrence));
     }
 
     /// <summary>Schedule an immediate activation and return its stable id.</summary>
@@ -151,8 +152,8 @@ public static class AgendaActivationScheduling
         var completion = agenda.Completion(root);
         agenda.items.InsertRange(0,
         [
-            (root, Stage.Interrupts, root.ScheduledOccurrence),
-            (completion, Stage.Interrupts, completion.ScheduledOccurrence),
+            agenda.Frame(root, Stage.Interrupts, root.ScheduledOccurrence),
+            agenda.Frame(completion, Stage.Interrupts, completion.ScheduledOccurrence),
         ]);
         agenda.scheduled = 0;
         return id;
@@ -167,10 +168,10 @@ public static class AgendaActivationScheduling
             throw new ArgumentException("at least one activation is required", nameof(activationIds));
         }
         int at = activationIds.Max(agenda.CompletionIndex) + 1;
-        agenda.items.Insert(at, (
+        agenda.items.Insert(at, agenda.Frame(
             continuation with { Plan = true },
             Stage.Apply,
-            continuation.AbilityOccurrence));
+            continuation.Require<AbilityContinuationAgendaOperation>().Origin));
     }
 
     /// <summary>Find a continuation waiting for one activation without interpreting its payload.</summary>
@@ -178,7 +179,7 @@ public static class AgendaActivationScheduling
     {
         int at = agenda.items.FindIndex(item =>
             item.Step.What == Steps.ResumeAbility
-            && item.Step.AbilityActivationIds?.Contains(activationId) == true);
+            && item.Step.Require<AbilityContinuationAgendaOperation>().AwaitedActivations.Contains(activationId));
         if (at < 0)
         {
             return null;
@@ -186,16 +187,16 @@ public static class AgendaActivationScheduling
         return agenda.items[at].Step;
     }
 
-    /// <summary>Replace one activation wait as opaque agenda.scheduled work.</summary>
+    /// <summary>Replace one activation wait as opaque scheduled work.</summary>
     public static void ReplaceActivationWait(this Agenda agenda, int activationId, PhaseStep replacement)
     {
         int at = agenda.ActivationWaitIndex(activationId);
         if (at < 0) throw new InvalidOperationException("the activation wait is not on the agenda");
         var item = agenda.items[at];
-        agenda.items[at] = (replacement, item.Stage, item.Occurrence);
+        agenda.items[at] = (replacement with { FrameId = item.Step.FrameId }, item.Stage, item.Occurrence);
     }
 
-    /// <summary>Take one activation wait as opaque agenda.scheduled work.</summary>
+    /// <summary>Take one activation wait as opaque scheduled work.</summary>
     public static PhaseStep TakeActivationWait(this Agenda agenda, int activationId)
     {
         int at = agenda.ActivationWaitIndex(activationId);
@@ -207,7 +208,7 @@ public static class AgendaActivationScheduling
 
     internal static int ActivationWaitIndex(this Agenda agenda, int activationId) => agenda.items.FindIndex(item =>
         item.Step.What == Steps.ResumeAbility
-        && item.Step.AbilityActivationIds?.Contains(activationId) == true);
+        && item.Step.Require<AbilityContinuationAgendaOperation>().AwaitedActivations.Contains(activationId));
 
     internal static int CompletionIndex(this Agenda agenda, int activationId)
     {
@@ -249,14 +250,13 @@ public static class AgendaActivationScheduling
         step.What is Steps.Attack or Steps.Scheme && step.ActivationId < 0;
 
     internal static PhaseStep Completion(this Agenda agenda, PhaseStep root) => new(
-        root.What == Steps.Attack
-            ? Steps.CompleteAttackActivation
-            : Steps.CompleteSchemeActivation,
+        new ActivationCompletionOperation(root.What == Steps.Attack
+            ? ActivationCompletionKind.CompleteAttackActivation
+            : ActivationCompletionKind.CompleteSchemeActivation),
         root.Round,
         root.Number,
         Index: root.Index,
         Subject: root.Subject,
         Seat: root.Seat,
-        Plan: true,
-        ActivationId: root.ActivationId);
+        Plan: true) { ActivationId = root.ActivationId };
 }

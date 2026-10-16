@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -26,10 +28,9 @@ public sealed class TransportACancelledInProcessExchangeNeverReachesGameStateTes
     }
 
     [Fact]
-    public async Task CallerCancellationStopsAtTheCompletedRequestWrite()
+    public async Task CallerCancellationAfterTheCompletedWriteReportsUncertainty()
     {
         var request = EngineRequest.CloseGame("commit", "game", "capability");
-        var response = new EngineResponse(EngineProtocol.Version, request.RequestId, request.GameId, Capability: null, Prompt: null, Events: [], Error: new EngineError("session_not_found", "missing"));
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
@@ -38,12 +39,14 @@ public sealed class TransportACancelledInProcessExchangeNeverReachesGameStateTes
             using TcpClient accepted = listener.AcceptTcpClient();
             using NetworkStream stream = accepted.GetStream();
             Assert.NotNull(SocketFrame.Read(stream));
-            SocketFrame.Write(stream, EngineJson.Write(response));
+
         }, TestContext.Current.CancellationToken);
         using var cancelled = new CancellationTokenSource();
         var socket = new SocketTransport(IPAddress.Loopback.ToString(), port, cancelled.Cancel);
         Task<EngineResponse> exchange = socket.ExchangeAsync(request, cancelled.Token).AsTask();
-        Assert.Equal(EngineJson.Write(response), EngineJson.Write(await exchange));
+        EngineTransportException failure = await Assert.ThrowsAsync<EngineTransportException>(() => exchange);
+        Assert.True(failure.RequestMayHaveCommitted);
+        Assert.IsAssignableFrom<OperationCanceledException>(failure.InnerException);
         await serving;
     }
 

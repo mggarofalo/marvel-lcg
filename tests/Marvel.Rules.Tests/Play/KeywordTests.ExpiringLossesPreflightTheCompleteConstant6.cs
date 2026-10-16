@@ -127,7 +127,7 @@ public sealed class KeywordExpiringLossesPreflightTheCompleteConstantTests : Key
         world.CreateCard("sideScheme", world.AreaOf(DeckType.SideSchemesArea));
         KeepEncounterDeckLive(world);
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
-        Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
         Undefended(world, printed);
         Assert.Equal(4, world.Seats[0].IdentityCard.Damage);
     }

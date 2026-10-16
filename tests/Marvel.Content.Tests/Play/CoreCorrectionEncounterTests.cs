@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Content.Setup;
 using Marvel.Rules.Events;
@@ -127,7 +128,7 @@ public sealed class CoreCorrectionEncounterTests : ChoosingCardsTestBase
         if (tough) Statuses.Give(world, identity, Statuses.Tough);
         world.Attack = new EnemyAttack(villain.ObjectId, 0, identityTarget ? identity.ObjectId : ally.ObjectId,
             Defender: identityTarget ? -1 : ally.ObjectId, CalculatedDamage: overkill ? 5 : 1);
-        world.Agenda.Add(new PhaseStep(Steps.DealAttackDamage, 1, 5, Subject: villain.ObjectId));
+        world.Agenda.Add(new PhaseStep(new AttackStageOperation(AttackStageKind.DealAttackDamage), Round: 1, Number: 5, Subject: villain.ObjectId));
         world.Agenda.Begin(world, Cards);
         Attack.DealDamage(world, Cards, []);
         EnemyActivation result = world.Activation!;

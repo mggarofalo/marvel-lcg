@@ -25,7 +25,7 @@ if [[ "$version" != 4.7.* ]]; then
 fi
 
 dotnet build "$repo_root/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
-dotnet build "$repo_root/src/Marvel.Server/Marvel.Server.csproj" --nologo
+dotnet build "$repo_root/src/Marvel.Server.Host/Marvel.Server.Host.csproj" --nologo
 server_log=$(mktemp)
 smoke_log=$(mktemp)
 save_root=$(mktemp -d)
@@ -41,7 +41,7 @@ cleanup() {
 trap cleanup EXIT
 
 if [[ "$external_server" != true ]]; then
-  dotnet run --no-build --project "$repo_root/src/Marvel.Server/Marvel.Server.csproj" -- \
+  dotnet run --no-build --project "$repo_root/src/Marvel.Server.Host/Marvel.Server.Host.csproj" -- \
     --listen 127.0.0.1 \
     --port "$smoke_port" \
     --data-root "$repo_root" \

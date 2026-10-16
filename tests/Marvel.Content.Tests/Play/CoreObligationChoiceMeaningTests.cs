@@ -29,7 +29,7 @@ public sealed class CoreObligationChoiceMeaningTests : ChoosingCardsTestBase
         var (source, _) = Reveal(world, obligation);
         var runner = AuthoredCards.Runner();
         string before = world.Digest().Fingerprint();
-        Prompt prompt = runner.Choosing(world, source, 0, 1)!;
+        Prompt prompt = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source))!;
 
         Assert.False(prompt.Cancellable);
         Assert.Equal([0, 1], prompt.Affordances.Select(offer => offer.Id));
@@ -43,7 +43,7 @@ public sealed class CoreObligationChoiceMeaningTests : ChoosingCardsTestBase
         });
         Assert.Equal(before, world.Digest().Fingerprint());
 
-        runner.Chose(world, source, 0, 1, Decision.Take(1));
+        runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(1));
         Assert.Equal(heroFace, identity.FaceId);
         Assert.Contains(world.Agenda.Outstanding, step => step.What == Steps.ChooseOption && step.Index == 2);
     }
@@ -61,10 +61,10 @@ public sealed class CoreObligationChoiceMeaningTests : ChoosingCardsTestBase
         Card source = world.CreateCard(obligation, world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
         var runner = AuthoredCards.Runner();
         runner.WhenRevealed(world, source, 0);
-        runner.Chose(world, source, 0, 1, Decision.Take(1));
+        runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(1));
         string before = world.Digest().Fingerprint();
 
-        Prompt prompt = runner.Choosing(world, source, 0, 2)!;
+        Prompt prompt = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source))!;
 
         string title = Cards.Title(source.FaceId);
         string identity = Cards.Title(world.Seats[0].IdentityCard.FaceId);
@@ -90,18 +90,18 @@ public sealed class CoreObligationChoiceMeaningTests : ChoosingCardsTestBase
         var runner = AuthoredCards.Runner();
         Card source = world.CreateCard("01155", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
         runner.WhenRevealed(world, source, 0);
-        runner.Chose(world, source, 0, 1, Decision.Take(1));
-        runner.Chose(world, source, 0, 2, Decision.Take(1));
-        PhaseStep next = world.Agenda.Outstanding.Last(step => step.What == Steps.ChooseOption);
+        runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(1));
+        runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(1));
+        PhaseStep next = world.Agenda.Outstanding.First(step => step.What == Steps.ChooseOption);
 
-        Prompt prompt = runner.Choosing(world, source, 0, next.Index, next.Tier)!;
+        Prompt prompt = runner.Choosing(world, next)!;
         Affordance choice = Assert.Single(prompt.Affordances);
         string expected = $"Discard {Cards.Title(upgrade.FaceId)}; then discard Affairs of State";
         Assert.Equal(upgrade.ObjectId, choice.AnchorId);
         Assert.Equal(expected, choice.Description);
         Assert.Equal(expected, choice.CommitLabel);
         Assert.DoesNotContain(Cards.Title(unrelated.FaceId), choice.Description);
-        runner.Chose(world, source, 0, next.Index, Decision.Take(choice.Id), next.Tier);
+        runner.Chose(world, next, Decision.Take(choice.Id));
         // "If a player card is discarded, it is placed faceup on top of the owning player's discard pile."
         // "If an encounter card is discarded, it is placed faceup on top of the encounter discard pile."
         Assert.Equal(DeckType.DiscardPile, upgrade.Area.Type);

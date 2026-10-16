@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -30,7 +32,7 @@ public sealed class TransportSetupDiscoveryTests : TransportTestBase
     [Fact]
     public async Task SocketAndInProcessTransportsExposeTheSameContract()
     {
-        var request = EngineRequest.ResolveGame("correlation", "game", "capability", new EngineDecision(4, [11], [7]));
+        var request = EngineRequest.ResolveGame("correlation", "game", "capability", new Decision(4, [11], [7]));
         var expected = new EngineResponse(EngineProtocol.Version, request.RequestId, request.GameId, Capability: null, new Prompt(0, Question.TurnOption, TimingPriority.Untimed, "WhenPlayerInTurn", "Choose", Cancellable: true, []), [new FieldSet(11, "damage", 0, 1) { Trigger = "WhenPlayerInTurn", Verb = "Attack" }]);
         var endpoint = new EchoEndpoint(request, expected);
         var inProcess = new InProcessTransport(endpoint);
@@ -94,7 +96,7 @@ public sealed class TransportSetupDiscoveryTests : TransportTestBase
     [Fact]
     public void DecisionsHaveFiveWireFieldsAndNoConvenienceGetters()
     {
-        var request = EngineRequest.ResolveGame("wire", "game", "capability", new EngineDecision(4, [11], [7], new Dictionary<string, long>(StringComparer.Ordinal) { ["X"] = 2 }, [new ResourceAllocation(7, 0, "M")]));
+        var request = EngineRequest.ResolveGame("wire", "game", "capability", new Decision(4, [11], [7], new Dictionary<string, long>(StringComparer.Ordinal) { ["X"] = 2 }, [new ResourceAllocation(7, 0, "M")]));
         using JsonDocument document = JsonDocument.Parse(EngineJson.Write(request));
         JsonElement decision = document.RootElement.GetProperty("decision");
         Assert.Equal(["affordance", "targets", "resources", "values", "allocations"], decision.EnumerateObject().Select(property => property.Name));

@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityContinuationFrames;
 using static Marvel.Cards.Run.AbilityEffectStructure;
 using static Marvel.Cards.Run.AbilityPaymentRules;
 using System.Collections.Immutable;
@@ -70,36 +71,11 @@ internal static class AbilityResolutionLifecycle
             }
         }
 
-        foreach (var effect in execution.runtimes.CompleteActivation(world, result.Id))
-        {
-            var delayedCast = new AbilityResolutionState(
-                world,
-                world.Cards[effect.Source],
-                new Occurrence(
-                    0, ["WhenActivationCompleted"],
-                    Actor: result.Enemy, Player: effect.Player),
-                effect.Player,
-                events)
-            {
-                Tier = effect.Tier,
-                AbilityActor = effect.AbilityActor >= 0
-                    ? world.Cards[effect.AbilityActor]
-                    : null,
-            };
-            AbilityContinuationCodec.RecordImmediateActivationResult(
-                delayedCast.Results, result);
-            delayedCast.Results["activationDamageToYou"] = result.DamageRecipients.Contains(
-                world.Seats[effect.Player].IdentityCard.ObjectId) ? 1 : 0;
-            if (effect.Altered >= 0)
-            {
-                delayedCast.BindAlteration(world.Cards[effect.Altered]);
-            }
-            execution.Run(effect.Effect, delayedCast);
-        }
+        AbilityDelayedExecution.CompleteActivation(execution, world, result, events);
 
         if (world.Agenda.ActivationWait(result.Id) is { } waiting)
         {
-            var updated = AbilityContinuationCodec.RecordActivationResult(waiting, result);
+            var updated = AbilityContinuations.RecordActivationResult(waiting, result);
             if (updated.Complete)
             {
                 _ = world.Agenda.TakeActivationWait(result.Id);
@@ -121,7 +97,7 @@ internal static class AbilityResolutionLifecycle
             ? world.Cards[continuation.Subject]
             : throw new RulesNotImplementedException(
                 $"activation continuation has no card at object id {continuation.Subject}");
-        var transition = AbilityContinuationCodec.BeginResume(execution.program, source, continuation);
+        var transition = AbilityContinuations.BeginResume(execution.program, source, continuation);
         var resumed = transition switch
         {
             RestartAfterPaidCost paid => paid.State,
@@ -131,22 +107,22 @@ internal static class AbilityResolutionLifecycle
             ResumeRejected rejected => throw new RulesNotImplementedException(rejected.Reason),
             _ => throw new InvalidOperationException("Unknown continuation transition"),
         };
-        continuation = AbilityContinuationCodec.WithResumedResults(continuation, resumed);
+        continuation = AbilityContinuations.WithResumedResults(continuation, resumed);
 
         var cast = execution.Resuming(
-            world, source, continuation.Seat, continuation.Tier, continuation.FinalStep,
-            continuation.AbilityOccurrence) with
+            world, source, continuation.Seat, resumed.Invocation.Address.Tier, resumed.Cursor.FinalStep,
+            resumed.Invocation.Occurrence) with
         {
-            EachPlayerFrame = continuation.EachPlayerFrame,
-            FinalPlayer = continuation.FinalPlayer,
-            AbilityPlayer = continuation.AbilityPlayer,
-            EventTrigger = continuation.Trigger,
-            GainedKeywords = continuation.SurgeGained
+            EachPlayerFrame = resumed.Cursor.EachPlayerFrame,
+            FinalPlayer = resumed.Cursor.FinalPlayer,
+            AbilityPlayer = StateOf(continuation)!.Invocation.AbilityPlayer,
+            EventTrigger = resumed.Invocation.Trigger,
+            GainedKeywords = resumed.Memory.SurgeGained
                 ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal),
         };
         execution.RestoreContinuationCursor(cast, resumed);
-        cast.TrackResolution(continuation.AbilityOrdinal);
+        cast.TrackResolution(resumed.Invocation.Address.Ordinal);
         execution.RestorePersisted(cast, continuation);
         if (transition is RestartAfterPaidCost paidCost)
         {
@@ -163,7 +139,7 @@ internal static class AbilityResolutionLifecycle
                         source.ObjectId,
                         ability.Trigger.Timing,
                         continuation.Seat,
-                        continuation.AbilityOrdinal)]);
+                        resumed.Invocation.Address.Ordinal)]);
             }
             if (!AbilityRecipientCommitment.Resume(execution, cast, ability))
                 execution.Run(ability, cast);
@@ -216,10 +192,15 @@ internal static class AbilityResolutionLifecycle
         ContinueAfterResumedNode completed)
     {
         execution.RestoreContinuationCursor(cast, completed.State);
-        if (completed.EffectApplied) cast.ResolveEffect();
-        return AbilityContinuationCodec.Advance(
+        cast.CompletedOutcome = completed.State.Completion is { } receipt
+            ? AbilityCompletion.Amount(receipt.Applied, receipt.Requested)
+            : completed.State.CompletedOutcome ?? cast.CompletedOutcome;
+        cast.PendingCompletion = null;
+        if (cast.CompletedOutcome is AbilityStructuralOutcome.Full or AbilityStructuralOutcome.Partial
+            || completed.EffectApplied && completed.State.Completion is null) cast.ResolveEffect();
+        return AbilityContinuations.Advance(
             execution.StructuralContext(cast), completed.Ability, completed.State,
-            new AbilityStructuralObservation(false));
+            new AbilityStructuralObservation(false, Outcome: cast.CompletedOutcome));
     }
 
     private static AbilityContinuationTransition? RunResumedNode(
@@ -228,16 +209,16 @@ internal static class AbilityResolutionLifecycle
     {
         execution.RestoreContinuationCursor(cast, run.State);
         if (run.EffectApplied) cast.ResolveEffect();
-        execution.RestoreAlteredFromFrames(cast, run.State.Frames);
+        execution.RestoreAlteredFromFrames(cast, run.State.Cursor.Frames);
         execution.Run(run.Effect, cast);
         if (cast.Suspended)
         {
             cast.CompleteResolution();
             return null;
         }
-        return AbilityContinuationCodec.Advance(
+        return AbilityContinuations.Advance(
             execution.StructuralContext(cast), run.Ability, run.State,
-            new AbilityStructuralObservation(false));
+            new AbilityStructuralObservation(false, Outcome: cast.CompletedOutcome));
     }
 
     private static AbilityContinuationTransition DiscardForResumedEachTime(
@@ -256,20 +237,21 @@ internal static class AbilityResolutionLifecycle
         }
         var discarded = cast.Discarded.Skip(before).SingleOrDefault();
         if (discarded is not null) cast.BindAlteration(discarded);
-        return AbilityContinuationCodec.AfterEachTimeDiscard(
+        return AbilityContinuations.AfterEachTimeDiscard(
             execution.StructuralContext(cast), discard, discarded);
     }
 
     internal static void RestoreContinuationCursor(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, AbilityContinuationState state)
     {
+        cast.TriggeringDefeat = state.Invocation.TriggeringDefeat;
         cast.RestoreAbility(
-            state.Address.Ordinal,
-            state.Frames,
-            state.Address.Face);
-        cast.At(state.Position);
-        cast.SetContinuation(state.HasContinuation);
-        cast.RestorePlayer(state.Player);
+            state.Invocation.Address.Ordinal,
+            state.Cursor.Frames,
+            state.Invocation.Address.Face);
+        cast.At(state.Cursor.Position);
+        cast.SetContinuation(state.Cursor.HasContinuation);
+        cast.RestorePlayer(state.Cursor.Player);
     }
 
     internal static void RestoreAlteredFromFrames(this AbilityResolutionExecution execution,

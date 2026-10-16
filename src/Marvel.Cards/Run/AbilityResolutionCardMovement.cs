@@ -28,7 +28,7 @@ internal static class AbilityResolutionCardMovement
 
     internal static void ScheduleReveal(this AbilityResolutionExecution execution, AbilityRevealRequest reveal, World world) =>
         world.Agenda.Then(new PhaseStep(
-            Steps.RevealEncounterCard,
+            new RevealStageOperation(RevealStageKind.RevealEncounterCard),
             world.Agenda.Current?.Round ?? 0,
             4,
             Index: reveal.Player,

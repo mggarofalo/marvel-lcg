@@ -1,3 +1,6 @@
+using Marvel.Transport;
+using Marvel.Protocol;
+using Marvel.Rules.Play;
 using System.Collections;
 using System.Text.Json;
 using Marvel.Decisions;
@@ -17,7 +20,7 @@ public sealed class EmbeddedTransportFailureTests
         await using var owner = queued ? new QueuedInProcessTransport(endpoint) : null;
         IEngineTransport transport = owner ?? (IEngineTransport)new InProcessTransport(endpoint);
         var request = EngineRequest.ResolveGame("request", "game", "authority",
-            new EngineDecision(7, new UnserializableList<int>()));
+            new Decision(7, new UnserializableList<int>()));
 
         var failure = await Assert.ThrowsAsync<EngineTransportException>(async () =>
             await transport.ExchangeAsync(request, TestContext.Current.CancellationToken));

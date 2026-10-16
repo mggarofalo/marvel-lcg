@@ -1,3 +1,4 @@
+using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -48,11 +49,11 @@ public sealed class ChoiceAmountAncestryTests
                 game.Resolve(Decision.Take(action.Id));
                 prompt = Assert.IsType<Prompt>(game.Pending);
                 PhaseStep current = Assert.IsType<PhaseStep>(world.Agenda.Current);
-                Assert.Contains(current.AbilityPath!, frame => frame.StartsWith("if:", StringComparison.Ordinal));
+                Assert.Contains(Assert.IsType<AbilityContinuationState>(current.Require<AbilityContinuationAgendaOperation>().Continuation).Cursor.Frames, frame => frame is ConditionalFrame);
             }
             else
             {
-                prompt = Assert.IsType<Prompt>(runner.Choosing(world, source!, 0, 0, null, false));
+                prompt = Assert.IsType<Prompt>(runner.PreviewChoice(world, source!, 0, 0, null, false));
             }
             string description = Assert.IsType<string>(Assert.Single(prompt.Affordances).Description);
             Assert.DoesNotContain(thwart ? "Current thwart amount" : "Current damage", description);
@@ -74,7 +75,7 @@ public sealed class ChoiceAmountAncestryTests
         Card? source = null;
         var (_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), hero: true, abilities: runner);
         world.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 1);
-        Prompt prompt = Assert.IsType<Prompt>(runner.Choosing(world, source!, 0, 0, null, true));
+        Prompt prompt = Assert.IsType<Prompt>(runner.PreviewChoice(world, source!, 0, 0, null, true));
         string description = Assert.IsType<string>(Assert.Single(prompt.Affordances).Description);
         Assert.Contains(thwart ? "Current thwart amount: 4 threat" : "Current damage: 4", description);
     }

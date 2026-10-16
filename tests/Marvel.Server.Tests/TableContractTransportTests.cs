@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using System.Text.Json;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -42,7 +43,7 @@ public sealed class TableContractTransportTests
         JsonElement table = document.RootElement.GetProperty("world").GetProperty("table");
         EngineResponse restored = EngineJson.ReadResponse(json);
 
-        Assert.Equal(31, response.Version);
+        Assert.Equal(32, response.Version);
         Assert.Equal(1, table.GetProperty("active_player").GetInt32());
         Assert.Equal([17, 23], restored.World!.Areas[0].Cards.Select(card => card.Id));
         Assert.Equal([17, 23], restored.World.Relationships.Select(relationship => relationship.Subject));
@@ -70,7 +71,7 @@ public sealed class TableContractTransportTests
         EngineResponse restored = EngineJson.ReadResponse(json);
         JsonElement encoded = document.RootElement.GetProperty("prompt");
 
-        Assert.Equal(31, response.Version);
+        Assert.Equal(32, response.Version);
         Assert.Equal("Opening hand", encoded.GetProperty("display_question").GetString());
         Assert.Equal((int)AffordanceAnchorKind.Area, encoded.GetProperty("affordances")[0]
             .GetProperty("anchor_kind").GetInt32());

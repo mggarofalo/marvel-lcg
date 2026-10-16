@@ -20,11 +20,14 @@ internal static class ActivationDeparture
         Occurrence? attackOwner = AttackOwner(world, activation.Id);
         world.Agenda.EndActivationEarly(activation.Id, preserveCurrentOccurrence: false);
         world.Agenda.Now(new PhaseStep(
-            activation.Attacking ? Steps.EndAttack : Steps.EndSchemeEarly,
-            step.Round, activation.Attacking ? 6 : 3,
-            Index: activation.Player, Subject: activation.Enemy,
-            Seat: activation.Player, ActivationId: activation.Id,
-            ProcedureOwnerOccurrence: attackOwner));
+            activation.Attacking ? new AttackCompletionOperation(attackOwner)
+                : new ThreatStageOperation(ThreatStageKind.EndSchemeEarly),
+            step.Round,
+            activation.Attacking ? 6 : 3,
+            Index: activation.Player,
+            Subject: activation.Enemy,
+            Seat: activation.Player
+        ) { ActivationId = activation.Id });
         return true;
     }
 
@@ -32,6 +35,6 @@ internal static class ActivationDeparture
         world.Agenda.Outstanding
             .Where(pending => pending.What == Steps.EndAttack
                 && pending.ActivationId == activationId)
-            .Select(pending => pending.ProcedureOwnerOccurrence).FirstOrDefault();
+            .Select(pending => pending.Require<AttackCompletionOperation>().Owner).FirstOrDefault();
 
 }

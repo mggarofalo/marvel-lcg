@@ -59,7 +59,7 @@ public sealed class ActionAbilityActionsAndDependentEffectsOffTurnActionsTests
         Assert.Equal("3", price.Cost);
         Assert.True(price.Generators.Count(source => source.Generates == "R") >= 3);
         int[] paying = [..world.Seats[0].Hand.Cards.Where(card => card.FaceId == Physicals).Take(3).Select(card => card.ObjectId)];
-        game.Resolve(Decision.Take(action.Id, [], paying));
+        game.Resolve(PaidDecision.Take(action, paying));
         Assert.Equal(DeckType.EncounterDiscardPile, horn!.Area.Type);
         Assert.All(paying, id => Assert.Equal(DeckType.DiscardPile, world.Cards[id].Area.Type));
     }

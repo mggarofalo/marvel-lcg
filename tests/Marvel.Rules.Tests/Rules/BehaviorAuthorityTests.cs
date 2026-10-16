@@ -11,7 +11,7 @@ public sealed class BehaviorAuthorityTests
 {
     [Theory]
     [InlineData("card", "01001a", "141d34bb4dde86154de845afad8526562ee296ada91bea42cd2c3fb2a24b0993")]
-    [InlineData("setup", "iron_man", "68764d8f0751996d173c63635b6a60ed31035a9de22795278320e7ff381e87b7")]
+    [InlineData("setup", "iron_man", "1542dab83883be8bf9db997d0018b340b21ed5e0972d43ef80ae841fb72a2b3e")]
     [InlineData("faq", "01001a", "50c91638ef5792206844d0232bf5d623242141daebaef1e9ea1f84c4270d883f")]
     public void JcsAuthorityVectorsArePinned(string kind, string id, string expected)
     {
@@ -116,10 +116,10 @@ public sealed class BehaviorAuthorityTests
 
         Assert.Equal(2, catalog.Version);
         Assert.Equal(2608, catalog.Sources.Count);
-        Assert.Equal(4356, catalog.Sources.Sum(source => source.Obligations.Count));
+        Assert.Equal(4368, catalog.Sources.Sum(source => source.Obligations.Count));
         Assert.All(catalog.Sources, source => Assert.NotEmpty(source.Obligations));
         Assert.Equal(
-            4356,
+            4368,
             catalog.Sources.SelectMany(source => source.Obligations)
                 .Select(obligation => obligation.Id)
                 .Distinct(StringComparer.Ordinal)

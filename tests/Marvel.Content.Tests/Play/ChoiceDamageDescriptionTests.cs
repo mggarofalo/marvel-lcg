@@ -27,7 +27,7 @@ public sealed class ChoiceDamageDescriptionTests
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "preventDamage",
             Amount: 3, Affects: villain.ObjectId, Lasts: new Duration(Uses: 1)));
         string before = world.Digest().Fingerprint();
-        Prompt prompt = Assert.IsType<Prompt>(runner.Choosing(world, source, 0, 0, null, false));
+        Prompt prompt = Assert.IsType<Prompt>(runner.PreviewChoice(world, source, 0, 0, null, false));
         string description = Assert.IsType<string>(Assert.Single(prompt.Affordances).Description);
         long hp = Damage.Health(world, world.Facts, villain);
 
@@ -57,7 +57,7 @@ public sealed class ChoiceDamageDescriptionTests
             for (int index = 0; index < count; index++) board.CreateCard("01047", board.Seats[0].Deck);
         }, hero: true, abilities: runner);
         string before = world.Digest().Fingerprint();
-        Prompt prompt = Assert.IsType<Prompt>(runner.Choosing(world, source!, 0, 0, null, false));
+        Prompt prompt = Assert.IsType<Prompt>(runner.PreviewChoice(world, source!, 0, 0, null, false));
         string description = Assert.IsType<string>(Assert.Single(prompt.Affordances).Description);
 
         Assert.DoesNotContain("Current damage", description);
@@ -91,7 +91,7 @@ public sealed class ChoiceDamageDescriptionTests
             world.CreateCard(hiddenFace, world.Seats[0].Deck);
             Assert.Equal(hiddenFace == "01047", world.Seats[0].Deck.Cards.Any(card => card.FaceId == "01047"));
             string before = world.Digest().Fingerprint();
-            Prompt prompt = Assert.IsType<Prompt>(runner.Choosing(world, source!, 0, 0, null, true));
+            Prompt prompt = Assert.IsType<Prompt>(runner.PreviewChoice(world, source!, 0, 0, null, true));
             string description = Assert.IsType<string>(Assert.Single(prompt.Affordances).Description);
             Assert.DoesNotContain("Current damage", description);
             Assert.Contains("HP", description);
@@ -115,7 +115,7 @@ public sealed class ChoiceDamageDescriptionTests
             """);
         Card? source = null;
         var (_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), hero: true, abilities: runner);
-        Prompt prompt = Assert.IsType<Prompt>(runner.Choosing(world, source!, 0, 0, null, finalStep));
+        Prompt prompt = Assert.IsType<Prompt>(runner.PreviewChoice(world, source!, 0, 0, null, finalStep));
         string description = Assert.IsType<string>(Assert.Single(prompt.Affordances).Description);
         Assert.Contains($"Current damage: {amount} before prevention and replacement", description);
         Assert.Equal(finalStep, description.Contains("Final step", StringComparison.Ordinal));

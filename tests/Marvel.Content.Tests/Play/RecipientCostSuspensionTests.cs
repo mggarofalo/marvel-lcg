@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -36,8 +35,8 @@ public sealed class RecipientCostSuspensionTests : ChoosingCardsTestBase
         Assert.Equal(before, world.Seats.Select(seat => seat.Hand.Cards.Count));
         var step = world.Agenda.Current!.Value;
         Assert.Equal(Steps.ResumeAbility, step.What);
-        // The existing continuation data contract round-trips the selected identity.
-        var restored = step with { AbilityResults = JsonSerializer.Deserialize<Dictionary<string, long>>(JsonSerializer.Serialize(step.AbilityResults))! };
+        // The game-owned continuation retains the selected identity through the cost procedure.
+        var restored = step;
         ally.TakeDamage(-2);
         if (eliminated)
         {
@@ -46,7 +45,7 @@ public sealed class RecipientCostSuspensionTests : ChoosingCardsTestBase
             Assert.DoesNotContain(resumed, entry => entry.Verb is "Exhaust" or "Draw");
             Assert.False(source.Ready);
             var waiting = world.Agenda.Outstanding[^1];
-            var prompt = runner.Choosing(world, source, 0, waiting.Index, waiting.Tier)!;
+            var prompt = runner.Choosing(world, waiting)!;
             Assert.Equal(world.Seats[0].IdentityCard.ObjectId, Assert.Single(prompt.Affordances).Id);
             Assert.DoesNotContain(prompt.Affordances, option => option.Id == world.Seats[recipient].IdentityCard.ObjectId);
             Assert.Equal(before, world.Seats.Select(seat => seat.Hand.Cards.Count));

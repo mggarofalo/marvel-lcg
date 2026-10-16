@@ -26,20 +26,27 @@ internal static class SequenceWindow
             world, offered, occurrence, kind, events, scope, status.Resolve);
         if (question is not null) return AttackPromptContext.WithAttackContext(world, facts, step, question);
 
+        if (WindowIsSuspended(world.Agenda, step, occurrence)) return null;
+
+        FinishWindow(world, step, occurrence, status);
+        return null;
+    }
+
+    // A suspended triggered ability owns the next work while its original
+    // window remains outstanding. Cancellation removes that window instead.
+    private static bool WindowIsSuspended(Agenda agenda, PhaseStep owner, Occurrence occurrence) =>
+        (agenda.Current is not { } current || !current.SameFrameAs(owner))
+        && agenda.IsOutstanding(owner, occurrence);
+
+    private static void FinishWindow(World world, PhaseStep step, Occurrence occurrence,
+        PriorityStatusResolution status)
+    {
         status.ObserveCancellation();
         if (status.CancelledByStatus)
-        {
             CancelAttackWindow(world, step, occurrence, cancelOccurrence: true);
-        }
         else if (status.CancelledOccurrence)
-        {
             CancelAttackWindow(world, step, occurrence, cancelOccurrence: false);
-        }
-        else
-        {
-            world.Agenda.Advance(occurrence);
-        }
-        return null;
+        else world.Agenda.Advance(occurrence);
     }
 
     private static bool PrepareIndirectWindow(
@@ -51,7 +58,7 @@ internal static class SequenceWindow
             return true;
         }
         if (world.Windows.Current is not null) world.Windows.Close();
-        world.Agenda.Cancel(occurrence);
+        world.Agenda.Cancel(step, occurrence);
         return false;
     }
 
@@ -61,7 +68,7 @@ internal static class SequenceWindow
         Attack.CancelPrepared(world, step.Subject);
         world.PendingAdditionalAttackPlayers = [];
         if (world.Windows.Current is not null) world.Windows.Close();
-        if (cancelOccurrence) world.Agenda.Cancel(occurrence);
+        if (cancelOccurrence) world.Agenda.Cancel(step, occurrence);
     }
 
     private sealed class PriorityStatusResolution(

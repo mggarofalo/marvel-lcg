@@ -32,7 +32,7 @@ public sealed class OverkillDefenseDescriptionTests
             Reveal.Resolve(world, world.Facts,
                 world.Cards.First(card => card.FaceId == AuthoredCards.Charge), 0, []);
         Card rhino = world.TheCardIn(DeckType.VillainArea)!;
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: rhino.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: rhino.ObjectId, Seat: 0));
         var events = new List<GameEvent>();
         Prompt sense = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, events));
         Assert.Equal(charged, sense.Description!.Contains("Overkill:", StringComparison.Ordinal));

@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using System.Text.Json;
 using Marvel.Content.Setup;
 using Marvel.Rules.Play;
@@ -191,7 +192,7 @@ public sealed class FormDataTests
 
         Assert.Equal([Forms.AlterEgo], Forms.Of(world, seat, Cards));
 
-        game.Resolve(Decision.Decline);   // keep the opening hand
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));   // keep the opening hand
         var change = game.Pending!.Affordances.Single(a => a.Verb == Game.ChangeForm);
         game.Resolve(Decision.Take(change.Id));
 
@@ -210,7 +211,7 @@ public sealed class FormDataTests
         var world = Deal();
         var game = Game.BeginWithoutCardAbilities(world, Cards);
 
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         var change = game.Pending!.Affordances.Single(a => a.Verb == Game.ChangeForm);
         game.Resolve(Decision.Take(change.Id));
 
@@ -256,7 +257,7 @@ public sealed class FormDataTests
     {
         var world = Deal();
         var game = Game.BeginWithoutCardAbilities(world, Cards);
-        game.Resolve(Decision.Decline);   // keep the opening hand
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));   // keep the opening hand
 
         if (changingForm)
         {

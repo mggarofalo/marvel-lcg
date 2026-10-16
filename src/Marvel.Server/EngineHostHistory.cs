@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Content.Setup;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -55,7 +56,8 @@ internal static class EngineHostHistory
             };
             Game verified = execution.ObserveReplay(() =>
                 SessionReplay.Verify(proposed, host.compatibility, host.ReplayOpen));
-            var transaction = new SessionTransaction(verified, proposed);
+            var history = host.projector.Inspect(proposed);
+            var transaction = new SessionTransaction(verified, proposed, history);
             return transaction.CommitAndPublish(
                 access.Session,
                 host.authority.Snapshot(access.Session),
@@ -67,7 +69,7 @@ internal static class EngineHostHistory
                     [],
                     access.Scope,
                     revision: committed.Revision,
-                    history: host.projector.History(committed, access.Scope, published)));
+                    history: AuthorizedSessionProjector.History(committed, access.Scope, published, history)));
         }
         catch (Exception failure)
         {
@@ -166,7 +168,8 @@ internal static class EngineHostHistory
             };
             Game verified = execution.ObserveReplay(() =>
                 SessionReplay.Verify(proposed, host.compatibility, host.ReplayOpen));
-            var transaction = new SessionTransaction(verified, proposed);
+            var history = host.projector.Inspect(proposed);
+            var transaction = new SessionTransaction(verified, proposed, history);
             return transaction.CommitAndPublish(
                 access.Session,
                 host.authority.Snapshot(access.Session),
@@ -178,7 +181,7 @@ internal static class EngineHostHistory
                     [],
                     access.Scope,
                     revision: committed.Revision,
-                    history: host.projector.History(committed, access.Scope, published)));
+                    history: AuthorizedSessionProjector.History(committed, access.Scope, published, history)));
         }
         catch (Exception failure)
         {

@@ -30,9 +30,24 @@ public sealed class Agenda
 {
     internal readonly List<(PhaseStep Step, Stage Stage, Occurrence? Occurrence)> items = [];
     internal readonly Dictionary<int, List<int>> queuedAfterActivation = [];
-    internal int scheduled;
+    private long nextFrameId;
+    private int scheduledCount;
+    internal readonly HashSet<long> scheduledFrames = [];
+    internal int scheduled
+    {
+        get => scheduledCount;
+        set
+        {
+            scheduledCount = value;
+            if (value == 0) scheduledFrames.Clear();
+        }
+    }
     internal int nextActivationId;
     internal int nextPlayerActionOccurrence = -1;
+
+    internal (PhaseStep Step, Stage Stage, Occurrence? Occurrence) Frame(
+        PhaseStep step, Stage stage, Occurrence? occurrence) =>
+        (step with { FrameId = checked(++nextFrameId) }, stage, occurrence);
 
     /// <summary>Whether the game is part-way through anything.</summary>
     public bool IsBusy => items.Count > 0;
@@ -102,7 +117,7 @@ public sealed class Agenda
     public bool IsOutstanding(PhaseStep owner, Occurrence occurrence)
     {
         ArgumentNullException.ThrowIfNull(occurrence);
-        return items.Any(item => item.Step.Equals(owner)
+        return items.Any(item => item.Step.SameFrameAs(owner)
             && ReferenceEquals(item.Occurrence, occurrence));
     }
 
@@ -113,40 +128,29 @@ public sealed class Agenda
         return items.Any(item => ReferenceEquals(item.Occurrence, occurrence));
     }
 
-    /// <summary>Remember gained Surge on every continuation of one revealed card.</summary>
-    /// <remarks>
-    /// A reveal can schedule a continuation and then resolve another printed
-    /// ability before that continuation resumes. Updating every frame keeps
-    /// the reveal-scoped non-numeric keyword state authoritative instead of
-    /// leaving the earlier frame with a stale by-value snapshot. The flag and
-    /// this propagation are engine representation choices.
-    /// </remarks>
-    /// <param name="source">The revealed card whose abilities share the gain.</param>
-    public void MarkSurgeGained(int source)
+    /// <summary>Remember gained Surge on continuations owned by one exact reveal.</summary>
+    /// <remarks>Pending authored abilities share the reveal's non-numeric keyword grant.
+    /// A later reveal of the same physical card has a distinct occurrence and grant.</remarks>
+    public void MarkSurgeGained(int source, Occurrence reveal)
     {
+        ArgumentNullException.ThrowIfNull(reveal);
         for (int index = 0; index < items.Count; index++)
         {
             var (step, stage, occurrence) = items[index];
-            bool ownsContinuation = step.Subject == source
-                && step.What is Steps.ChooseOption
-                    or Steps.OrderEachPlayer
-                    or Steps.ResolveEachPlayer
-                    or Steps.ResumeAbility;
-            ownsContinuation |= step.CharacterAttack?.Source == source
-                || step.CharacterThwart?.Source == source;
-            if (ownsContinuation)
+            AgendaOperation updated = step.Operation switch
             {
-                items[index] = (step with
-                {
-                    SurgeGained = true,
-                    CharacterAttack = step.CharacterAttack is { } attack
-                        ? attack with { SurgeGained = true }
-                        : null,
-                    CharacterThwart = step.CharacterThwart is { } thwart
-                        ? thwart with { SurgeGained = true }
-                        : null,
-                }, stage, occurrence);
-            }
+                AbilityContinuationAgendaOperation ability when step.Subject == source
+                    && ReferenceEquals(ability.Origin, reveal) =>
+                    ability with { SurgeGained = true },
+                CharacterAttackOperation { Attack: { } attack } operation when attack.Source == source
+                    && ReferenceEquals(attack.Origin, reveal) =>
+                    operation with { Attack = attack with { SurgeGained = true } },
+                CharacterThwartOperation { Thwart: { } thwart } operation when thwart.Source == source
+                    && ReferenceEquals(thwart.Origin, reveal) =>
+                    operation with { Thwart = thwart with { SurgeGained = true } },
+                _ => step.Operation,
+            };
+            items[index] = (step with { Operation = updated }, stage, occurrence);
         }
     }
 
@@ -162,16 +166,17 @@ public sealed class Agenda
         for (int index = 0; index < items.Count; index++)
         {
             var (step, stage, occurrence) = items[index];
-            if (step.ProcedureOccurrence?.Id != procedure.Id)
+            if (step.Operation is not IndirectDamageOperation operation
+                || !ReferenceEquals(operation.Origin, procedure))
             {
                 continue;
             }
 
-            var amounts = step.ProcedureAmounts is { } existing
+            var amounts = operation.Amounts is { } existing
                 ? new Dictionary<int, long>(existing)
                 : [];
             amounts[card] = amount;
-            items[index] = (step with { ProcedureAmounts = amounts }, stage, occurrence);
+            items[index] = (step with { Operation = operation with { Amounts = amounts } }, stage, occurrence);
         }
     }
 
@@ -185,7 +190,7 @@ public sealed class Agenda
             return;
         }
 
-        items.Add((step, Stage.Interrupts, step.ScheduledOccurrence));
+        items.Add(Frame(step, Stage.Interrupts, step.ScheduledOccurrence));
     }
 
     /// <summary>Schedule one accepted Action with a game-unique dynamic occurrence id.</summary>
@@ -193,24 +198,23 @@ public sealed class Agenda
     {
         ArgumentNullException.ThrowIfNull(action);
         Add(new PhaseStep(
-            Steps.TurnAction,
+            new PlayerActionOperation(Action: action),
             round,
-            Number: 0,
+            0,
             Subject: action.Ability.Card,
-            Seat: action.Ability.Player,
-            PlayerAction: action,
-            OccurrenceId: nextPlayerActionOccurrence--));
+            Seat: action.Ability.Player
+        ) { OccurrenceId = nextPlayerActionOccurrence-- });
     }
 
     /// <summary>Open the lifecycle occurrence for an event played inside another window.</summary>
     public void NowEventPlayed(int round, int subject, int player) =>
         this.Now(new PhaseStep(
-            Steps.EventPlayed,
+            new LifecycleOperation(LifecycleKind.EventPlayed),
             round,
-            Number: 0,
+            0,
             Subject: subject,
-            Seat: player,
-            OccurrenceId: nextPlayerActionOccurrence--));
+            Seat: player
+        ) { OccurrenceId = nextPlayerActionOccurrence-- });
 
     /// <summary>
     /// Move work scheduled by the applying occurrence ahead of its response window.
@@ -223,7 +227,7 @@ public sealed class Agenda
     /// <see cref="AgendaActivationScheduling.Now(Agenda, PhaseStep)"/> or
     /// <see cref="AgendaActivationScheduling.Before"/> is already ahead.
     /// </remarks>
-    public void BeforeResponses(Occurrence occurrence)
+    public void BeforeResponses(PhaseStep owner, Occurrence occurrence)
     {
         ArgumentNullException.ThrowIfNull(occurrence);
         if (scheduled == 0)
@@ -231,15 +235,19 @@ public sealed class Agenda
             return;
         }
 
-        int parent = items.FindIndex(item => ReferenceEquals(item.Occurrence, occurrence));
+        int parent = items.FindIndex(item => item.Step.SameFrameAs(owner)
+            && ReferenceEquals(item.Occurrence, occurrence));
         if (parent < 0)
         {
             throw new InvalidOperationException("the occurrence is not on the agenda");
         }
 
-        int count = Math.Min(scheduled, items.Count - parent - 1);
-        var children = items.GetRange(parent + 1, count);
-        items.RemoveRange(parent + 1, count);
+        // Nested work can move ahead of the owner while its effect is running.
+        // Track the frames enqueued by this batch rather than inferring them
+        // from a contiguous slice after the owner's current position.
+        var children = items.Where(item => scheduledFrames.Contains(item.Step.FrameId)).ToList();
+        items.RemoveAll(item => scheduledFrames.Contains(item.Step.FrameId));
+        parent = items.FindIndex(item => item.Step.SameFrameAs(owner));
         items.InsertRange(parent, children);
         scheduled = 0;
     }
@@ -263,93 +271,8 @@ public sealed class Agenda
         }
 
         scheduled += 1;
-        items.Insert(
-            Math.Min(scheduled, items.Count),
-            (step, Stage.Interrupts, step.ScheduledOccurrence));
-    }
-
-    /// <summary>Schedule a suspended ability continuation inside its occurrence.</summary>
-    /// <remarks>
-    /// A choice is an implementation suspension point, not a second game
-    /// occurrence. The continuation therefore asks during <paramref name="occurrence"/>
-    /// and opens no windows of its own; the owning occurrence reaches its one
-    /// response window only after the continuation finishes.
-    /// </remarks>
-    public void ThenContinuation(PhaseStep step, Occurrence occurrence)
-    {
-        ArgumentNullException.ThrowIfNull(occurrence);
-        scheduled += 1;
-        items.Insert(
-            Math.Min(scheduled, items.Count),
-            (step with { Plan = true, OccurrenceId = occurrence.Id }, Stage.Apply, occurrence));
-    }
-
-    /// <summary>Put every child and then a continuation before its exact owner.</summary>
-    /// <remarks>
-    /// Several nested procedure frames may share the owner's occurrence. The
-    /// step name distinguishes the original owner from those children, so the
-    /// continuation remains behind every child even when more than one of them
-    /// has already moved ahead of the owner.
-    /// </remarks>
-    public void BeforeOwnerAfterContinuations(
-        Occurrence occurrence, string owner, PhaseStep continuation)
-    {
-        ArgumentNullException.ThrowIfNull(occurrence);
-        int ownerAt = items.FindIndex(item =>
-            ReferenceEquals(item.Occurrence, occurrence)
-            && item.Step.What == owner);
-        if (ownerAt < 0)
-        {
-            throw new InvalidOperationException(
-                $"the '{owner}' occurrence owner is not on the agenda");
-        }
-
-        var children = items
-            .Where((item, index) =>
-                index != ownerAt && ReferenceEquals(item.Occurrence, occurrence))
-            .ToList();
-        items.RemoveAll(item =>
-            ReferenceEquals(item.Occurrence, occurrence)
-            && item.Step.What != owner);
-        ownerAt = items.FindIndex(item =>
-            ReferenceEquals(item.Occurrence, occurrence)
-            && item.Step.What == owner);
-        items.InsertRange(ownerAt, children);
-        items.Insert(
-            ownerAt + children.Count,
-            (continuation with
-            {
-                Plan = true,
-                OccurrenceId = occurrence.Id,
-            }, Stage.Apply, occurrence));
-        scheduled = 0;
-    }
-
-    /// <summary>Insert an ability continuation immediately before its exact owner.</summary>
-    /// <remarks>
-    /// A nested rules procedure has already moved its own frames ahead of the
-    /// owner. Inserting at the owner's current index leaves those frames first
-    /// while keeping pre-existing enclosing continuations behind the ability
-    /// that must finish before they resume.
-    /// </remarks>
-    public void ContinueBeforeOwner(
-        Occurrence occurrence, PhaseStep owner, PhaseStep continuation)
-    {
-        ArgumentNullException.ThrowIfNull(occurrence);
-        int ownerAt = items.FindIndex(item => item.Step.Equals(owner)
-            && ReferenceEquals(item.Occurrence, occurrence));
-        if (ownerAt < 0)
-        {
-            throw new InvalidOperationException("the continuation owner is not on the agenda");
-        }
-
-        items.Insert(
-            ownerAt,
-            (continuation with
-            {
-                Plan = true,
-                OccurrenceId = occurrence.Id,
-            }, Stage.Apply, occurrence));
-        scheduled = 0;
+        var frame = Frame(step, Stage.Interrupts, step.ScheduledOccurrence);
+        items.Insert(Math.Min(scheduled, items.Count), frame);
+        scheduledFrames.Add(frame.Step.FrameId);
     }
 }

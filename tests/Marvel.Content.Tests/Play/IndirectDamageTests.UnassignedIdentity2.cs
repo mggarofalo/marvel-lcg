@@ -24,7 +24,7 @@ public sealed class IndirectDamageUnassignedIdentityTests : IndirectDamageTestBa
         var ally = world.CreateCard(Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var events = new List<Marvel.Rules.Events.GameEvent>();
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         var defend = Sequence.Work(world, Cards, runner, events)!;
         Attack.MakeIndirect(world);
         Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);
@@ -50,7 +50,7 @@ public sealed class IndirectDamageUnassignedIdentityTests : IndirectDamageTestBa
         var ally = world.CreateCard(Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var events = new List<Marvel.Rules.Events.GameEvent>();
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         var defend = Sequence.Work(world, Cards, runner, events)!;
         Attack.MakeIndirect(world);
         var allyDefense = Assert.Single(defend.Affordances, option => option.AnchorId == ally.ObjectId);
@@ -98,7 +98,7 @@ public sealed class IndirectDamageUnassignedIdentityTests : IndirectDamageTestBa
         var soak = world.CreateCard("01098", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), host: identity.ObjectId));
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var events = new List<Marvel.Rules.Events.GameEvent>();
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         var defend = Sequence.Work(world, Cards, runner, events)!;
         Attack.MakeIndirect(world);
         Sequence.Answer(world, Cards, runner, defend, Decision.Decline, events);

@@ -60,7 +60,7 @@ internal static class AbilityCardQueries
         // "The player who defeated this scheme confuses their identity."
         // `rr:you-your.5` is why this answers an identity rather than a seat:
         // a status card placed on a player goes on their identity.
-        AbilityCardBinding.Defeater => cast.Occurrence.Defeat is { By: >= 0 } defeated
+        AbilityCardBinding.Defeater => cast.Defeat is { By: >= 0 } defeated
             ? cast.World.Seats[defeated.By].IdentityCard
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the player who defeated a card, and no player "
@@ -82,7 +82,7 @@ internal static class AbilityCardQueries
         // damage." The card the occurrence defeated, which is not its subject:
         // an attack keeps its participants in actor and target roles, and the
         // ally that died is a second thing the same moment did.
-        AbilityCardBinding.Defeated => cast.Occurrence.Defeat is { } killed
+        AbilityCardBinding.Defeated => cast.Defeat is { } killed
             ? cast.World.Cards[killed.Card]
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the defeated card, and nothing was defeated"),

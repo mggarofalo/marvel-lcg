@@ -159,7 +159,7 @@ public sealed class CoreFinalCardBatchTests
         var action = runner.Actions(world, 0).Single(ability => ability.Card == legalPractice.ObjectId);
         var events = runner.Act(world, action, [], []).ToList();
         var choice = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, legalPractice, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         Assert.Equal(1, Assert.Single(prompt.Affordances).Targets!.Min);
         var answer = Sequence.Work(world, Cards, runner, events)!;
         Sequence.Answer(world, Cards, runner, answer,

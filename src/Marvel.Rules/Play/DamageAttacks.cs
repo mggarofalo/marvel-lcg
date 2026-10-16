@@ -144,7 +144,7 @@ public static class DamageAttacks
 
         var outcome = FinishPlaced(
             world, facts, source, placed, trigger, verb, events,
-            by: attacker.Owner);
+            by: LabeledAbilities.IdentityPlayer(world, attacker));
         // Prevention changes what is taken without changing what was dealt,
         // but `rr:overkill.4` specifically withholds prevented excess. The
         // spill is therefore the taken amount beyond the former hit points.

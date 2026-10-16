@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Content.Setup;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -49,7 +50,7 @@ internal static class EngineHostResolution
             return Failed(request, "not_your_turn", "this capability cannot answer the pending prompt");
         }
 
-        Decision decision = request.Decision.ToDomain();
+        Decision decision = request.Decision;
         if (!TryActor(request, pending, decision, access,
                 out int actor, out EngineResponse? rejected))
             return rejected!;
@@ -68,8 +69,7 @@ internal static class EngineHostResolution
     {
         Affordance? selected = decision.IsDecline ? null
             : pending.Affordances.SingleOrDefault(option => option.Id == decision.Affordance);
-        actor = selected is not null && selected.Verb == Game.ActionVerb
-            ? selected.AnchorPlayer : pending.Player;
+        actor = selected is null ? pending.Player : DecisionAssessment.ActingSeat(pending, selected);
         if (!decision.IsDecline && selected is null)
             rejected = Failed(request, "invalid_decision", "the selected affordance is not pending");
         else if (!access.Scope.Includes(actor))
@@ -87,16 +87,8 @@ internal static class EngineHostResolution
             || authorized.Affordances.Any(option => option.Id == decision.Affordance));
     }
 
-    private static bool Legal(int actor, Prompt pending, Decision decision)
-    {
-        try
-        {
-            _ = DurableDecision.From(actor, pending, decision).Resolve(pending);
-            return true;
-        }
-        catch (Exception failure) when (failure is InvalidOperationException
-            or ReplayDivergenceException) { return false; }
-    }
+    private static bool Legal(int actor, Prompt pending, Decision decision) =>
+        DecisionAssessment.Assess(pending, decision, actor).IsAccepted;
 
     private static EngineResponse CommitResolution(
         EngineHost host, EngineRequest request, RequestExecution execution,
@@ -106,7 +98,7 @@ internal static class EngineHostResolution
         catch (Exception failure)
         {
             if (!PersistenceFailure(failure))
-                return Failed(request, "game_aborted",
+                return Failed(request, "candidate_failed",
                     "the candidate decision failed and the prior game remains authoritative");
             if (failure is ReplayDivergenceException) execution.MarkReplayDiverged();
             return Failed(request, "save_failed",
@@ -160,7 +152,8 @@ internal static class EngineHostResolution
                 phase,
                 candidate.Pending,
                 exposures));
-            var transaction = new SessionTransaction(candidate, proposed);
+            var history = host.projector.Inspect(proposed);
+            var transaction = new SessionTransaction(candidate, proposed, history);
             return transaction.CommitAndPublish(
                 access.Session,
                 host.authority.Snapshot(access.Session),
@@ -172,7 +165,7 @@ internal static class EngineHostResolution
                     resolved.Events,
                     access.Scope,
                     revision: committed.Revision,
-                    history: host.projector.History(committed, access.Scope, verified)));
+                    history: AuthorizedSessionProjector.History(committed, access.Scope, verified, history)));
     }
 
     private static bool PersistenceFailure(Exception failure) => failure is IOException

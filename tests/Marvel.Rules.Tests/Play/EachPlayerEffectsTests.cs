@@ -10,12 +10,15 @@ namespace Marvel.Rules.Tests.Play;
 
 public sealed class EachPlayerEffectsTests
 {
+    private sealed record TestFrame(AbilityType? Tier, bool FinalStep) : CardAbilityContinuation;
+
     private static void Schedule(
         World world, Card source, int stoppedAt, AbilityType? tier = null,
         bool finalStep = false) => EachPlayerEffects.Schedule(world, new PhaseStep(
-            Steps.ResolveEachPlayer, world.Agenda.Current?.Round ?? 0, 2,
-            Index: stoppedAt, Subject: source.ObjectId, Tier: tier,
-            FinalStep: finalStep, Plan: true));
+            new AbilityContinuationAgendaOperation(AbilityContinuationStage.ResolvePlayer)
+            { Continuation = new TestFrame(tier, finalStep) },
+            world.Agenda.Current?.Round ?? 0, 2,
+            Index: stoppedAt, Subject: source.ObjectId, Plan: true));
     [Rule("rr:each-player.1")]
     [Fact]
     public void FirstPlayerChoosesAnExactPermutationAndFramesPersistThatOrder()
@@ -128,8 +131,8 @@ public sealed class EachPlayerEffectsTests
         Assert.NotNull(first);
         Assert.Equal(0, first.Player);
         Assert.Equal(8, world.Agenda.Current!.Value.Index);
-        Assert.True(world.Agenda.Current.Value.EachPlayerFrame);
-        Assert.False(world.Agenda.Current.Value.FinalPlayer);
+        Assert.IsType<TestFrame>(world.Agenda.Current.Value.Require<AbilityContinuationAgendaOperation>().Continuation);
+        Assert.False(world.Agenda.Current.Value.Require<AbilityContinuationAgendaOperation>().FinalPlayer);
         Sequence.Answer(
             world, world.Facts, abilities, first, Decision.Take(ChoiceRecorder.Option), []);
 
@@ -137,8 +140,8 @@ public sealed class EachPlayerEffectsTests
         Assert.NotNull(second);
         Assert.Equal(1, second.Player);
         Assert.Equal(8, world.Agenda.Current!.Value.Index);
-        Assert.True(world.Agenda.Current.Value.EachPlayerFrame);
-        Assert.True(world.Agenda.Current.Value.FinalPlayer);
+        Assert.IsType<TestFrame>(world.Agenda.Current.Value.Require<AbilityContinuationAgendaOperation>().Continuation);
+        Assert.True(world.Agenda.Current.Value.Require<AbilityContinuationAgendaOperation>().FinalPlayer);
         Sequence.Answer(
             world, world.Facts, abilities, second, Decision.Take(ChoiceRecorder.Option), []);
         Assert.Null(Sequence.Work(world, world.Facts, abilities, []));
@@ -185,9 +188,16 @@ public sealed class EachPlayerEffectsTests
         public List<bool> FinalPlayers { get; } = [];
 
         public override IReadOnlyList<GameEvent> ResolveEachPlayer(
-            World world, Card source, int player, int stoppedAt,
-            AbilityType? tier, bool finalStep, bool finalPlayer)
+            World world, PhaseStep step)
         {
+            var operation = step.Require<AbilityContinuationAgendaOperation>();
+            var frame = Assert.IsType<TestFrame>(operation.Continuation);
+            int player = step.Seat;
+            int stoppedAt = step.Index;
+            var source = world.Cards[step.Subject];
+            var tier = frame.Tier;
+            bool finalStep = frame.FinalStep;
+            bool finalPlayer = operation.FinalPlayer;
             Players.Add(player);
             Positions.Add(stoppedAt);
             Tiers.Add(tier);
@@ -202,17 +212,23 @@ public sealed class EachPlayerEffectsTests
         public List<(int Player, CardKind Form)> Seen { get; } = [];
 
         public override IReadOnlyList<GameEvent> ResolveEachPlayer(
-            World world, Card source, int player, int stoppedAt,
-            AbilityType? tier, bool finalStep, bool finalPlayer)
+            World world, PhaseStep step)
         {
+            var operation = step.Require<AbilityContinuationAgendaOperation>();
+            var frame = Assert.IsType<TestFrame>(operation.Continuation);
+            int player = step.Seat;
+            int stoppedAt = step.Index;
+            var source = world.Cards[step.Subject];
+            var tier = frame.Tier;
+            bool finalStep = frame.FinalStep;
+            bool finalPlayer = operation.FinalPlayer;
             Seen.Add((player, world.Facts.Kind(world.Seats[player].IdentityCard.FaceId)));
             if (player != changeBefore)
             {
                 world.Seats[changeBefore].IdentityCard.TurnTo("hero");
             }
 
-            return base.ResolveEachPlayer(
-                world, source, player, stoppedAt, tier, finalStep, finalPlayer);
+            return base.ResolveEachPlayer(world, step);
         }
     }
 
@@ -224,28 +240,32 @@ public sealed class EachPlayerEffectsTests
         public List<(int Player, bool FinalPlayer)> Answered { get; } = [];
 
         public override IReadOnlyList<GameEvent> ResolveEachPlayer(
-            World world, Card source, int player, int stoppedAt,
-            AbilityType? tier, bool finalStep, bool finalPlayer)
+            World world, PhaseStep step)
         {
-            world.Agenda.Then(new PhaseStep(
-                Steps.ChooseOption,
-                world.Agenda.Current?.Round ?? 0,
-                2,
-                Index: stoppedAt + 1,
-                Subject: source.ObjectId,
-                Seat: player,
-                Tier: tier,
-                FinalStep: finalStep,
-                FinalPlayer: finalPlayer,
-                EachPlayerFrame: true));
+            var operation = step.Require<AbilityContinuationAgendaOperation>();
+            var frame = Assert.IsType<TestFrame>(operation.Continuation);
+            int player = step.Seat;
+            int stoppedAt = step.Index;
+            var source = world.Cards[step.Subject];
+            var tier = frame.Tier;
+            bool finalStep = frame.FinalStep;
+            bool finalPlayer = operation.FinalPlayer;
+            world.Agenda.Then(step with
+            {
+                Operation = operation with { Stage = AbilityContinuationStage.Choose },
+                Index = stoppedAt + 1,
+            });
             return [];
         }
 
         public override Prompt? Choosing(
-            World world, Card source, int player, int stoppedAt,
-            AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer)
+            World world, PhaseStep step)
         {
-            Assert.True(eachPlayerFrame);
+            var operation = step.Require<AbilityContinuationAgendaOperation>();
+            Assert.IsType<TestFrame>(operation.Continuation);
+            int player = step.Seat;
+            var source = world.Cards[step.Subject];
+            bool finalPlayer = operation.FinalPlayer;
             Asked.Add((player, finalPlayer));
             return new Prompt(
                 player,
@@ -258,10 +278,12 @@ public sealed class EachPlayerEffectsTests
         }
 
         public override IReadOnlyList<GameEvent> Chose(
-            World world, Card source, int player, int stoppedAt, Decision input,
-            AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer)
+            World world, PhaseStep step, Decision input)
         {
-            Assert.True(eachPlayerFrame);
+            var operation = step.Require<AbilityContinuationAgendaOperation>();
+            Assert.IsType<TestFrame>(operation.Continuation);
+            int player = step.Seat;
+            bool finalPlayer = operation.FinalPlayer;
             Assert.Equal(Option, input.Affordance);
             Answered.Add((player, finalPlayer));
             return [];

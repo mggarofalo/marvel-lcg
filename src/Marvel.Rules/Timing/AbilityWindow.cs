@@ -53,7 +53,7 @@ public static class AbilityWindow
                 continue;
             }
 
-            if (!occurrence.MayTrigger(window, ability.Card))
+            if (!occurrence.MayTrigger(window, ability))
             {
                 continue;
             }

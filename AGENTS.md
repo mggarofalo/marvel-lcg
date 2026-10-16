@@ -26,22 +26,27 @@ None of that code remains, and **none of it is an authority on anything.**
 
 ## Put presentation code in the right project
 
-The presentation boundary has five distinct jobs. Choose the project by what
+The presentation boundary has distinct jobs. Choose the project by what
 the code decides, not by which project currently calls it.
 
 | Project | Owns |
 |---|---|
 | `Marvel.View` | Visibility filtering and render-safe descriptions of authorized engine results. |
 | `Marvel.Decisions` | Drafting an answer from one prompt and calling engine-owned legality functions. |
-| `Marvel.Server` | The protocol, authoritative host and transport implementations. |
-| `Marvel.Client` | Transport selection, request lifecycle, response validation and recoverable client state. |
+| `Marvel.Protocol` | Versioned wire contracts and strict serialization. |
+| `Marvel.Transport` | Embedded value boundaries and bounded socket framing. |
+| `Marvel.Server` | Authoritative sessions, persistence, replay and scope. |
+| `Marvel.Server.Host` | Standalone process configuration and lifetime. |
+| `Marvel.Desktop` | Embedded/remote desktop composition. |
+| `Marvel.Observability` | Privacy-bounded operational records and sinks. |
+| `Marvel.Client` | Request lifecycle, response validation and recoverable client state. |
 | `Marvel.Godot` | Nodes, controls, gestures, animation, styling and other Godot-specific behavior. |
 
 If code decides whether a game action is legal or changes game state, it belongs
 in the engine. A client may ask an engine-owned function whether its current
 draft is accepted; it must not reproduce that rule from card text, counters or
 the visible board. Read [presentation-layer.md](docs/presentation-layer.md)
-before changing any of these five projects.
+before changing these boundary projects.
 
 ## Player intent and comprehension
 
@@ -184,7 +189,7 @@ Seven, all run by hand and none on any path a game takes.
 | what the engine tells a client the player can do | [affordances.md](docs/affordances.md) |
 | saves, deterministic replay, undo, redo, action reordering, session logs or telemetry | [session-ledger.md](docs/session-ledger.md) |
 | the supported product boundary | [scope.md](docs/scope.md) |
-| `Marvel.View`, `Marvel.Decisions`, `Marvel.Server`, `Marvel.Client` or `Marvel.Godot` | [presentation-layer.md](docs/presentation-layer.md) |
+| Presentation, protocol, transport, observability or host composition projects | [presentation-layer.md](docs/presentation-layer.md) |
 | launching or smoke-testing the Godot client | [godot-client.md](docs/godot-client.md) |
 | releases, artifact versions, signing, compatibility, installation or upgrades | [release-policy.md](docs/release-policy.md) |
 | adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#build-boundary) |

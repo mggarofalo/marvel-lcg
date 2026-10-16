@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using Marvel.Decisions;
 using Marvel.Rules.Play;
 using Marvel.Server;
@@ -16,16 +18,16 @@ public sealed class ClientGameLifecycleTests : LocalGameClientTestBase
             new EngineTransportException(requestMayHaveCommitted: false, new IOException("not delivered")),
             original with { RequestId = "local-resolve", Revision = 1, Capability = null });
         ClientGameLifecycle lifecycle = Enter(transport, original);
-        ClientLifecycleUpdate first = Assert.IsType<ClientLifecycleUpdate>(await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken));
+        ClientLifecycleUpdate first = Assert.IsType<ClientLifecycleUpdate>(await lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken));
         Assert.Equal(ClientDraftDisposition.Retry, first.Draft);
         Assert.Same(original, lifecycle.CurrentGame);
         Assert.True(lifecycle.CanResolve);
         Assert.Equal(GameProgressKind.DecisionNotSent, lifecycle.Progress!.Kind);
-        ClientLifecycleUpdate second = Assert.IsType<ClientLifecycleUpdate>(await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken));
+        ClientLifecycleUpdate second = Assert.IsType<ClientLifecycleUpdate>(await lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken));
         Assert.True(second.MutationAccepted);
         Assert.Equal(ClientDraftDisposition.Replace, second.Draft);
         Assert.Equal(1, lifecycle.CurrentGame!.Revision);
-        Assert.Null(await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken));
+        Assert.Null(await lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken));
         Assert.Equal(2, transport.Requests.Count);
     }
 
@@ -36,12 +38,12 @@ public sealed class ClientGameLifecycleTests : LocalGameClientTestBase
         var transport = new ScriptedTransport(new IOException("lost"), new IOException("recovery lost"),
             new IOException("sync lost"), original with { RequestId = "local-sync", Capability = null, Events = [], Revision = 1 });
         ClientGameLifecycle lifecycle = Enter(transport, original);
-        ClientLifecycleUpdate lost = Assert.IsType<ClientLifecycleUpdate>(await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken));
+        ClientLifecycleUpdate lost = Assert.IsType<ClientLifecycleUpdate>(await lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken));
         Assert.Equal(ClientDraftDisposition.Preserve, lost.Draft);
         Assert.Equal(GameProgressKind.Unconfirmed, lifecycle.Progress!.Kind);
         Assert.False(lifecycle.CanResolve);
         Assert.True(lifecycle.CanSynchronize);
-        Assert.Null(await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken));
+        Assert.Null(await lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken));
         await lifecycle.SynchronizeAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(GameProgressKind.Unconfirmed, lifecycle.Progress.Kind);
         Assert.False(lifecycle.CanResolve);
@@ -60,10 +62,10 @@ public sealed class ClientGameLifecycleTests : LocalGameClientTestBase
         EngineResponse original = Initial();
         var transport = new DelayedTransport();
         ClientGameLifecycle lifecycle = Enter(transport, original);
-        Task<ClientLifecycleUpdate?> pending = lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        Task<ClientLifecycleUpdate?> pending = lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken);
         Assert.Equal(GameProgressKind.Resolving, lifecycle.Progress!.Kind);
         Assert.False(lifecycle.CanSynchronize);
-        Assert.Null(await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken));
+        Assert.Null(await lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken));
         Assert.Null(await lifecycle.SynchronizeAsync(cancellationToken: TestContext.Current.CancellationToken));
         transport.Complete(original with { RequestId = "local-resolve", Revision = 1, Capability = null });
         Assert.NotNull(await pending);
@@ -78,7 +80,7 @@ public sealed class ClientGameLifecycleTests : LocalGameClientTestBase
         EngineResponse original = Initial();
         var transport = new DelayedTransport();
         ClientGameLifecycle lifecycle = Enter(transport, original);
-        Task<ClientLifecycleUpdate?> pending = lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        Task<ClientLifecycleUpdate?> pending = lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken);
         lifecycle.Detach();
         EngineResponse replacement = original with { GameId = replacementId, Revision = 9 };
         var replacementTransport = new CapturingTransport();
@@ -100,11 +102,11 @@ public sealed class ClientGameLifecycleTests : LocalGameClientTestBase
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
         ClientLifecycleUpdate notSent = Assert.IsType<ClientLifecycleUpdate>(
-            await lifecycle.ResolveAsync(0, EngineDecision.Decline, cancelled.Token));
+            await lifecycle.ResolveAsync(0, Decision.Decline, cancelled.Token));
         Assert.Equal(ClientDraftDisposition.Retry, notSent.Draft);
         Assert.Empty(transport.Requests);
         using var inFlight = new CancellationTokenSource();
-        Task<ClientLifecycleUpdate?> pending = lifecycle.ResolveAsync(0, EngineDecision.Decline, inFlight.Token);
+        Task<ClientLifecycleUpdate?> pending = lifecycle.ResolveAsync(0, Decision.Decline, inFlight.Token);
         inFlight.Cancel();
         transport.Cancel(inFlight.Token);
         ClientLifecycleUpdate uncertain = Assert.IsType<ClientLifecycleUpdate>(await pending);
@@ -121,7 +123,7 @@ public sealed class ClientGameLifecycleTests : LocalGameClientTestBase
         var transport = new ScriptedTransport(original with { RequestId = "local-resolve", Revision = 1, World = null },
             new IOException("recovery unavailable"));
         ClientGameLifecycle lifecycle = Enter(transport, original);
-        await lifecycle.ResolveAsync(0, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        await lifecycle.ResolveAsync(0, Decision.Decline, TestContext.Current.CancellationToken);
         Assert.Same(original, lifecycle.CurrentGame);
         Assert.False(lifecycle.CanResolve);
         Assert.Equal(GameProgressKind.Unconfirmed, lifecycle.Progress!.Kind);
@@ -133,7 +135,7 @@ public sealed class ClientGameLifecycleTests : LocalGameClientTestBase
         EngineResponse original = Initial();
         var transport = new ScriptedTransport(original with { RequestId = "local-sync", Capability = null,
             Events = [], Prompt = null, World = original.World! with { Outcome = Outcome.PlayersWin } },
-            original with { RequestId = "local-sync", Error = new("session_not_found", "unavailable") });
+            original with { RequestId = "local-sync", Error = new("session_not_found", "unavailable", EngineFailureDisposition.SessionUnavailable) });
         ClientGameLifecycle lifecycle = Enter(transport, original);
         await lifecycle.SynchronizeAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(Outcome.PlayersWin, lifecycle.CurrentGame!.World!.Outcome);

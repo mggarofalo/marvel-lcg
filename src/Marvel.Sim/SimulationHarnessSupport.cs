@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using System.Text.Json;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
@@ -18,9 +19,6 @@ namespace Marvel.Sim;
 
 internal static class SimulationHarnessSupport
 {
-    internal const int RecordSchema = 5;
-    internal const int PreviousRecordSchema = 3;
-    private const int OldestRecordSchema = 2;
     internal const int RecentEventLimit = 20;
 
     internal static OpenedGame Open(
@@ -183,144 +181,6 @@ internal static class SimulationHarnessSupport
         string.Equals(config.Difficulty, "expert", StringComparison.Ordinal)
             ? config.Scenario + "_expert"
             : config.Scenario;
-
-    internal static T Read<T>(string line, string expectedType, int schema = RecordSchema)
-    {
-        if (schema == OldestRecordSchema && typeof(T) == typeof(StepRecord))
-        {
-            return (T)(object)ReadSchemaTwoStep(line);
-        }
-
-        if (schema == OldestRecordSchema && typeof(T) == typeof(FailureRecord))
-        {
-            return (T)(object)ReadSchemaTwoFailure(line);
-        }
-
-        if (schema is PreviousRecordSchema or 4
-            && (typeof(T) == typeof(StepRecord) || typeof(T) == typeof(FailureRecord)))
-        {
-            return SimulationSchemaMigration.ReadPredecessor<T>(line, schema);
-        }
-
-        return JsonSerializer.Deserialize<T>(line, RecordJson.Options)
-            ?? throw new JsonException($"{expectedType} record was null");
-    }
-
-    internal static void ValidateRecordSchema(int schema)
-    {
-        if (schema is not (OldestRecordSchema or PreviousRecordSchema or 4 or RecordSchema))
-        {
-            throw new SimulationUsageException(
-                $"record schema {schema} is not supported; expected "
-                + $"{OldestRecordSchema}, {PreviousRecordSchema}, 4 or {RecordSchema}");
-        }
-    }
-
-    internal static StepRecord ReadSchemaTwoStep(string line)
-    {
-        var step = JsonSerializer.Deserialize<SchemaTwoStepRecord>(line, RecordJson.Options)
-            ?? throw new JsonException("schema 2 step record was null");
-        return ConvertSchemaTwoStep(step);
-    }
-
-    internal static StepRecord ConvertSchemaTwoStep(SchemaTwoStepRecord step) =>
-        new(
-            step.Type,
-            step.Game,
-            step.Step,
-            SchemaTwoPromptJson.Read(step.Prompt),
-            SimulationSchemaMigration.ReadSchemaTwoSelector(step.Decision),
-            step.Targets,
-            step.Resources,
-            step.Values,
-            step.Allocations,
-            step.Events,
-            step.Digest);
-
-    internal static FailureRecord ReadSchemaTwoFailure(string line)
-    {
-        var failure = JsonSerializer.Deserialize<SchemaTwoFailureRecord>(
-            line, RecordJson.Options)
-            ?? throw new JsonException("schema 2 failure record was null");
-        return new FailureRecord(
-            failure.Type,
-            failure.Category,
-            failure.Game,
-            failure.Seed,
-            failure.Step,
-            failure.Round,
-            failure.Metrics,
-            failure.Exception,
-            failure.Message,
-            failure.Prompt is null || failure.Prompt.Value.ValueKind == JsonValueKind.Null
-                ? null
-                : SchemaTwoPromptJson.Read(failure.Prompt.Value),
-            failure.Decision is null ? null : SimulationSchemaMigration.ReadSchemaTwoSelector(failure.Decision.Value),
-            failure.Targets,
-            failure.Resources,
-            failure.Values,
-            failure.Allocations,
-            failure.LastGoodDigest,
-            failure.PostFailureDigest,
-            [.. failure.RecentSteps.Select(ConvertSchemaTwoStep)],
-            failure.Reproduce);
-    }
-
-    internal static void ValidateHeaderSeeds(HeaderRecord header)
-    {
-        if (header.Seeds.Count == 0)
-        {
-            throw new ReplayDivergenceException("header contains no game seeds");
-        }
-
-        switch (header.SeedMode)
-        {
-            case "explicit": ValidateExplicitSeeds(header); break;
-            case "consecutive": ValidateConsecutiveSeeds(header); break;
-            case "random": ValidateRandomSeeds(header); break;
-            default:
-                throw new ReplayDivergenceException(
-                    $"unknown seed mode '{header.SeedMode}'");
-        }
-    }
-
-    private static void ValidateExplicitSeeds(HeaderRecord header)
-    {
-        if (header.SelectionSeed is not null)
-            throw new ReplayDivergenceException("explicit seed mode records a selection seed");
-    }
-
-    private static void ValidateConsecutiveSeeds(HeaderRecord header)
-    {
-        bool overflows = (ulong)header.Seeds[0] + (ulong)header.Seeds.Count - 1 > uint.MaxValue;
-        bool differs = header.Seeds.Where((seed, index) =>
-            index > 0 && seed != header.Seeds[0] + (uint)index).Any();
-        if (header.SelectionSeed is not null || overflows || differs)
-            throw new ReplayDivergenceException("consecutive seed plan does not match its mode");
-    }
-
-    private static void ValidateRandomSeeds(HeaderRecord header)
-    {
-        if (header.SelectionSeed is not { } selectionSeed)
-            throw new ReplayDivergenceException("random seed mode has no selection seed");
-        var planner = new MersenneTwister(selectionSeed);
-        var expected = Enumerable.Range(0, header.Seeds.Count)
-            .Select(_ => planner.NextUInt32()).ToList();
-        RequireSequence(expected, header.Seeds, "random seed plan");
-    }
-
-    internal static string RecordType(JsonElement record)
-    {
-        if (record.ValueKind != JsonValueKind.Object
-            || !record.TryGetProperty("type", out var type)
-            || type.ValueKind != JsonValueKind.String
-            || type.GetString() is not { Length: > 0 } value)
-        {
-            throw new JsonException("record has no string 'type'");
-        }
-
-        return value;
-    }
 
     internal static void RequireGame(Game? game, int current, int recorded)
     {

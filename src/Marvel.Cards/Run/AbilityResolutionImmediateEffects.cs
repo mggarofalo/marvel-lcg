@@ -11,6 +11,9 @@ internal static class AbilityResolutionImmediateEffects
             execution.AdmissionContext(cast), cast.Trigger, cast.Events, cast.GainedKeywords,
             execution.encounterAbilities));
         if (result.ResolveEffect) cast.ResolveEffect();
+        if (result.ResolveEffect && effect is AbilityEffect.CardAction
+            { Instruction: AbilityCardInstruction.DeclareDefender })
+            cast.CompletedOutcome = AbilityStructuralOutcome.Full;
         return result.Handled;
     }
 }

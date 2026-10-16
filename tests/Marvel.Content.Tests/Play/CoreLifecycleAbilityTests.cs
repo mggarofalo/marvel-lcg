@@ -30,8 +30,7 @@ public sealed class CoreLifecycleAbilityTests
             runner.Waiting(world, occurrence, WindowKind.Response));
         runner.Resolve(world, occurrence, response, [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(
-            world, hero, 0, choice.Index, Decision.Take(minion.ObjectId), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(minion.ObjectId));
 
         Assert.Equal(2, minion.Damage);
     }
@@ -54,11 +53,9 @@ public sealed class CoreLifecycleAbilityTests
             runner.Waiting(world, occurrence, WindowKind.Response));
         runner.Resolve(world, occurrence, response, [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        Prompt prompt = runner.Choosing(
-            world, shuri, 0, choice.Index, choice.Tier)!;
+        Prompt prompt = runner.Choosing(world, choice)!;
         Assert.True(prompt.ExposesConcealedCandidates);
-        runner.Chose(
-            world, shuri, 0, choice.Index, Decision.Take(upgrade.ObjectId), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(upgrade.ObjectId));
 
         Assert.Contains(upgrade, world.Seats[0].Hand.Cards);
     }

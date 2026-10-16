@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using System.Text.Json;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;

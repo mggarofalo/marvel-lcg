@@ -32,11 +32,8 @@ public sealed class CorePlayerSelectionTests
             world, new PendingAbility(card.ObjectId, AbilityType.Action, 0),
             [payment.ObjectId], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(
-            world, card, 0, choice.Index,
-            Decision.Take(card.ObjectId,
-                [first.ObjectId, second.ObjectId, third.ObjectId], []),
-            choice.Tier);
+        runner.Chose(world, choice, Decision.Take(card.ObjectId,
+                [first.ObjectId, second.ObjectId, third.ObjectId], []));
 
         Assert.Contains(left, discard.Cards);
         Assert.Contains(first, world.Seats[0].Deck.Cards);
@@ -66,7 +63,7 @@ public sealed class CorePlayerSelectionTests
             world, new PendingAbility(card.ObjectId, AbilityType.Action, 0),
             [payment.ObjectId], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, card, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         Assert.Equal(2, Assert.Single(prompt.Affordances).Targets!.Min);
         var answer = Sequence.Work(world, Cards, runner, [])!;
         Sequence.Answer(world, Cards, runner, answer,
@@ -99,7 +96,7 @@ public sealed class CorePlayerSelectionTests
         Assert.Single(runner.PlayerSetupCards(world, 0));
         var game = Game.Begin(world, Cards, runner);
 
-        var setup = game.Resolve(Decision.Decline);
+        var setup = game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
 
         Assert.Equal(GamePhase.PlayerSetup, game.Phase);
         Assert.Equal(Question.Element, setup.Prompt!.Asking);
@@ -134,7 +131,7 @@ public sealed class CorePlayerSelectionTests
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var runner = AuthoredCards.Runner();
         var game = Game.Begin(world, Cards, runner);
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
 
         var actions = game.Pending!.Affordances
             .Where(option => option.AnchorId == channel.ObjectId)
@@ -162,7 +159,7 @@ public sealed class CorePlayerSelectionTests
         Assert.NotEqual(charged[0].Ordinal, charged[1].Ordinal);
         runner.Act(world, charged.Single(action => action.Ordinal == 1), [], []);
         var step = Assert.Single(world.Agenda.Outstanding);
-        var target = runner.Choosing(world, channel, 0, step.Index, step.Tier)!;
+        var target = runner.Choosing(world, step)!;
         Assert.Equal(Question.Element, target.Asking);
         var answer = Sequence.Work(world, Cards, runner, [])!;
         Sequence.Answer(world, Cards, runner, answer, Decision.Take(villain.ObjectId), []);
@@ -189,7 +186,7 @@ public sealed class CorePlayerSelectionTests
         var mental = world.CreateCard("01015", world.Seats[0].Hand);
         var reserve = world.CreateCard("01014", world.Seats[0].Hand);
         var game = Game.Begin(world, Cards, AuthoredCards.Runner());
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         var offer = Assert.Single(game.Pending!.Affordances, option => option.AnchorId == channel.ObjectId);
         var cost = Assert.Single(offer.CostOptions);
         var values = new Dictionary<string, long> { ["X"] = 2 };
@@ -197,7 +194,7 @@ public sealed class CorePlayerSelectionTests
         Assert.Equal("YY", ResourcePayment.RequiredResources(Assert.Single(cost.ResourceCosts), values));
         Assert.Null(ResourcePayment.Allocate(cost, [energy.ObjectId, mental.ObjectId], values));
         string before = world.Digest().Canonical();
-        Assert.Throws<RulesNotImplementedException>(() => game.Resolve(
+        Assert.Throws<ArgumentException>(() => game.Resolve(
             Decision.Take(offer.Id, [], [energy.ObjectId, mental.ObjectId], values)));
         Assert.Equal(before, world.Digest().Canonical());
         var allocation = ResourcePayment.Allocate(cost, [reserve.ObjectId], values);

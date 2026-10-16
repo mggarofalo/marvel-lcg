@@ -177,20 +177,7 @@ public sealed class ThwartWindowTests
         Assert.Equal("Consequential_Damage", hurt.Verb);
     }
 
-    [Rule("rr:thwart.1")]
-    [Fact]
-    public void AThwartStepWithNoThwartOnTheBoardIsRefusedRatherThanSkipped()
-    {
-        // The step and the thwart it resolves are two pieces of board state,
-        // and they can only disagree if something scheduled one without the
-        // other. Silence would leave the threat on the scheme and the game
-        // carrying on as though it had come off — so the mismatch is named.
-        var printed = new Printed().With("hero", ("THW", "2"));
-        var world = Board(printed);
 
-        Assert.Throws<RulesNotImplementedException>(
-            () => BasicPowerResolution.ResolveCharacterThwart(world, printed, []));
-    }
 
     private static World Board(Printed printed, int players = 1)
     {

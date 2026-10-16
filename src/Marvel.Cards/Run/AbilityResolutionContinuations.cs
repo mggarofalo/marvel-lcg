@@ -32,21 +32,19 @@ internal static class AbilityResolutionContinuations
         {
             var ability = execution.AbilityAt(
                 source, cast.Tier, cast.AbilityOrdinal, cast.AbilityFace);
-            var persisted = AbilityContinuationCodec.Step(
-                execution.Capture(cast, cast.AbilityOrdinal), Steps.ResumeAbility,
+            var persisted = AbilityContinuations.Step(
+                execution.Capture(cast, cast.AbilityOrdinal), AbilityContinuationStage.Resume,
                 cast.World.Agenda.Current?.Round ?? 0);
-            var state = AbilityContinuationWireCodec.Decode(
+            var state = AbilityContinuationFrames.Decode(
                 execution.program, source, persisted, cast.Tier).State;
             return execution.ResumeContinuation(
                 cast, source,
                 new ContinueAfterResumedNode(ability, state, EffectApplied: false));
         }
 
-        var legacy = execution.ContinuationStep(cast.World, source, from, cast.Tier);
-        return execution.ResumeContinuation(cast, source,
-            AbilityContinuationCodec.BeginLegacyChoiceResume(
-                execution.program, source, legacy, cast.Tier, from,
-                cast.EachPlayerFrame, cast.FinalPlayer, execution.StructuralContext(cast)));
+        cast.CompleteResolution();
+        execution.DiscardEvent(source, cast);
+        return cast.Events;
     }
 
     /// <summary>A fresh resolution of one card's ability, by one player.</summary>
@@ -70,10 +68,6 @@ internal static class AbilityResolutionContinuations
         Occurrence? continuation = null)
     {
         var cast = execution.Resolving(world, source, player, tier, finalStep, continuation);
-        if (world.Agenda.Current?.Discarded is { } discarded)
-        {
-            cast.Discarded.AddRange(discarded.Select(id => world.Cards[id]));
-        }
         return cast;
     }
 

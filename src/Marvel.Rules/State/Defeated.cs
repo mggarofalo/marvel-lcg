@@ -23,10 +23,9 @@ namespace Marvel.Rules.State;
 /// </remarks>
 /// <param name="Card">The card that was defeated.</param>
 /// <param name="By">
-/// The seat whose character did it, or <c>-1</c> for the scenario.
-/// <c>rr:ownership-and-control.2</c> — a card enters play under its owner's
-/// control, so an ally's thwart is its owner's doing even though
-/// <c>rr:you-your.15</c> keeps it off that player's identity.
+/// The seat whose identity performed the defeating function, or <c>-1</c>
+/// when no identity did. <c>rr:you-your.15</c>: functions performed by allies
+/// are not considered to be performed by the controlling player's identity.
 /// </param>
 /// <param name="How">
 /// What kind of thing did it, in the verb the event stream records: an attack,
@@ -42,6 +41,10 @@ namespace Marvel.Rules.State;
 /// </param>
 public sealed record Defeated(int Card, int By, string How)
 {
+    /// <summary>The classification at defeat, before leaving play clears temporary profiles.</summary>
+    public required CardKind Kind { get; init; }
+    /// <summary>The public name at defeat, including temporary character names.</summary>
+    public string? Title { get; init; }
     /// <summary>The copy that was defeated, for response target provenance.</summary>
     public int Incarnation { get; init; } = -1;
     /// <summary>The temporary assignment that ended in this defeat.</summary>

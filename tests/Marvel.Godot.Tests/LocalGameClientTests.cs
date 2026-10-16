@@ -1,3 +1,5 @@
+using Marvel.Observability;
+using Marvel.Protocol;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -15,18 +17,18 @@ namespace Marvel.Godot.Tests;
 public abstract class LocalGameClientTestBase
 {
     protected static GameSetupSelection DefaultSelection(SetupChoices choices) => new([choices.Heroes.Single(choice => choice.Key == "spider_man").Key], choices.Scenarios.Single(choice => choice.Key == "rhino").Key, ModularConfiguration.Recommended, ModularKeys: [], Seed: "7");
-    protected static EngineDecision VisibleDecision(Prompt prompt)
+    protected static Decision VisibleDecision(Prompt prompt)
     {
         var composer = new DecisionComposer(prompt);
         if (prompt.Cancellable)
         {
-            Assert.True(composer.TryDecline(out EngineDecision? declined, out _));
+            Assert.True(composer.TryDecline(out Decision? declined, out _));
             return declined!;
         }
 
         Affordance offered = prompt.Affordances.First(option => option.IsLegal);
         composer.SelectAffordance(offered.Id);
-        Assert.True(composer.TryBuild(out EngineDecision? submitted, out string? error), error);
+        Assert.True(composer.TryBuild(out Decision? submitted, out string? error), error);
         return submitted!;
     }
 

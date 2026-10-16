@@ -45,9 +45,9 @@ public sealed class ActionAbilityContinuationBindingsALabelledPowerRestoresTheOu
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == source!.ObjectId);
         runner.Act(world, action, [], []);
         var choice = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
-        runner.Chose(world, source!, 0, choice.Index, Decision.Take(world.Seats[1].IdentityCard.ObjectId), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(world.Seats[1].IdentityCard.ObjectId));
         var attack = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.CharacterAttacks);
-        runner.ResolveCardAttack(world, attack.CharacterAttack!, attack.OccurrenceOf(world, CardCatalogData), []);
+        runner.ResolveCardAttack(world, attack.Require<CharacterAttackOperation>().Attack, attack.OccurrenceOf(world, CardCatalogData), []);
         Assert.Equal(damage + 1, villain.Damage);
         Assert.Equal(held + 1, world.Seats[1].Hand.Cards.Count);
     }

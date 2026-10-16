@@ -1,3 +1,4 @@
+using Marvel.Rules.Play;
 using Godot;
 using Marvel.Decisions;
 namespace Marvel.Godot;
@@ -115,7 +116,7 @@ internal static class BoardInteractionBinder
         DecisionPanel panel, DecisionComposer composer, int generation)
     {
         if (panel.PaymentModalOpen || !panel.IsCurrentDraft(composer, generation)
-            || !composer.TryBuild(out EngineDecision? decision, out _))
+            || !composer.TryBuild(out Decision? decision, out _))
         {
             return BoardDraftMutation.None;
         }
@@ -127,7 +128,7 @@ internal static class BoardInteractionBinder
         DecisionPanel panel, DecisionComposer composer, int generation)
     {
         if (panel.PaymentModalOpen || !panel.IsCurrentDraft(composer, generation)
-            || !composer.TryDecline(out EngineDecision? decision, out _))
+            || !composer.TryDecline(out Decision? decision, out _))
         {
             return BoardDraftMutation.None;
         }

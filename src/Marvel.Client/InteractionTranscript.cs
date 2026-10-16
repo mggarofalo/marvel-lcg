@@ -1,9 +1,9 @@
+using Marvel.Protocol;
+using Marvel.Rules.Play;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Marvel.Decisions;
 using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
-using Marvel.Server;
 using Marvel.View;
 
 namespace Marvel.Client;
@@ -48,7 +48,7 @@ public sealed class InteractionTranscript
     }
 
     /// <summary>Records one submitted answer exactly as the client sent it.</summary>
-    public void RecordDecision(long revision, EngineDecision decision) =>
+    public void RecordDecision(long revision, Decision decision) =>
         entries.Add(new InteractionTranscriptEntry("decision", revision, Decision: decision));
 
     /// <summary>Records one visibility-filtered authoritative response.</summary>
@@ -171,6 +171,6 @@ public sealed class InteractionTranscript
     private sealed record LegacyInteractionTranscriptEntry(
         string Kind,
         long Revision,
-        EngineDecision? Decision = null,
+        Decision? Decision = null,
         EngineResponse? Response = null);
 }

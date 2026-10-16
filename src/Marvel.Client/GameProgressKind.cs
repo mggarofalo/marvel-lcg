@@ -1,5 +1,4 @@
 using Marvel.Rules.Play;
-using Marvel.Server;
 
 namespace Marvel.Client;
 

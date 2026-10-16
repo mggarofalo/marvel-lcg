@@ -81,7 +81,7 @@ public sealed class SetupLifecycleTests
         WorldSetup.DealWithoutCardAbilities(
             new Facts(),
             [new CardBlueprint(faceId, slot, slot == SetupSlot.PlayerDeck ? 0 : -1)],
-            slot == SetupSlot.PlayerDeck ? ["p0"] : [],
+            ["p0"],
             seed: 13);
 
     private sealed class RecordingAbilities(Facts facts) : NoCardAbilities

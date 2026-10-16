@@ -320,14 +320,10 @@ Arrays retain domain order. The stream starts with one run header, then contains
 one `start`, zero or more `step` records, and one `result` or `failure` record
 per game. One final `summary` record makes the aggregate machine-readable.
 
-The current numeric `schema` is `5`. Replay and reporting read schemas 2–5. New runs
-write schema 5. Schema 4 predates quantity-dependent typed resource components;
-its reader assigns null to the required `repeated_resource` member. Older
-records still have to match every replayed prompt and result.
-Schema 2 keeps its frozen prompt shape with computed aliases; readers validate
-those aliases before converting the prompt to the canonical record used for
-replay. Schema 3 predates the anchor namespace discriminator, so its reader
-assigns its historic card namespace before replay.
+The current numeric `schema` is `5`. Replay and reporting accept only that
+schema and reject other versions before interpreting a decision. New runs write
+schema 5. Research records remain distinct from schema 6 session saves: their
+setup header records the simulation configuration, not an uploaded player save.
 
 ### Header record
 

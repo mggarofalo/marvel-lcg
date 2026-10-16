@@ -113,6 +113,8 @@ public sealed class WouldBeDefeatedLethalDamageTests : WouldBeDefeatedTestBase
               }]}
             ]}
             """);
+        var seat = world.Seats[0];
+        seat.IdentityCard = world.CreateCard("01001a", seat.Hero);
         var pool = world.CreateCard("45071", world.AreaOf(DeckType.SideSchemesArea));
         pool.PlaceTokens("k_threat", 9);
         var soldier = world.CreateCard("45069", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
@@ -202,7 +204,7 @@ public sealed class WouldBeDefeatedLethalDamageTests : WouldBeDefeatedTestBase
         world.CreateCard(Mercenary, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var minions = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards.ToList();
         var upgrade = world.CreateCard(AuthoredCards.BiomechanicalUpgrades, world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
-        world.Agenda.Add(new PhaseStep(Steps.RevealEncounterCard, 1, 4, Subject: upgrade.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: upgrade.ObjectId, Seat: 0));
         var events = new List<GameEvent>();
         var asked = Sequence.Work(world, Cards, world.Abilities, events);
         Assert.NotNull(asked);

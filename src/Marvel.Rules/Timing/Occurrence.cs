@@ -16,7 +16,7 @@ namespace Marvel.Rules.Timing;
 /// <b>Once each.</b> <c>rr:triggering-condition.1</c> — each interrupt and each
 /// response may be triggered only once per occurrence of its triggering
 /// condition, though <c>rr:triggering-condition.1.1</c> lets two copies of a
-/// card each trigger. So the bookkeeping is per card, not per printed face.
+/// card each trigger. Bookkeeping identifies the card, ability and exact triggering fact.
 /// </para>
 /// <para>
 /// <b>One window, however many conditions.</b>
@@ -24,7 +24,7 @@ namespace Marvel.Rules.Timing;
 /// several triggering conditions, such as one attack that both damages a
 /// character and defeats it, is handled with a single interrupt window and a
 /// single response window. An engine that opened a window per condition would
-/// let one interrupt fire twice against what the rules call one moment.
+/// lose the shared priority and ordering of abilities answering that moment.
 /// </para>
 /// </remarks>
 public sealed record Occurrence
@@ -90,7 +90,7 @@ public sealed record Occurrence
     /// <summary>The imminent threat placement, when this occurrence is one.</summary>
     public State.ThreatPlacement? Threat { get; }
 
-    private readonly HashSet<(WindowKind Window, int Card)> spent = [];
+    private readonly HashSet<(WindowKind Window, int Card, AbilityType Type, int Ordinal, State.Defeated? Defeat)> spent = [];
 
     // The positional parameter of the same name, copied. Inside this body
     // `Conditions` is the constructor's argument; outside it is the property
@@ -244,7 +244,7 @@ public sealed record Occurrence
                 ability.Card, ability.Type, ability.Ordinal,
                 ability.Type == AbilityType.Constant
                     ? ResolutionStatus.Unresolved
-                    : ResolutionStatus.Pending));
+                    : ResolutionStatus.Pending) { TriggeringDefeat = ability.TriggeringDefeat });
         }
     }
 
@@ -328,7 +328,8 @@ public sealed record Occurrence
     private int ResolutionIndex(PendingAbility ability) => resolutions.FindIndex(entry =>
         entry.Card == ability.Card
         && entry.Ability == ability.Type
-        && entry.Ordinal == ability.Ordinal);
+        && entry.Ordinal == ability.Ordinal
+        && entry.TriggeringDefeat == ability.TriggeringDefeat);
 
     private void Set(
         PendingAbility ability, ResolutionStatus status, bool applied = false)
@@ -341,7 +342,8 @@ public sealed record Occurrence
         if (found < 0)
         {
             resolutions.Add(new ResolutionEntry(
-                ability.Card, ability.Type, ability.Ordinal, status, applied));
+                ability.Card, ability.Type, ability.Ordinal, status, applied)
+                { TriggeringDefeat = ability.TriggeringDefeat });
         }
         else
         {
@@ -376,22 +378,16 @@ public sealed record Occurrence
     /// The one card this occurrence defeated, or null.
     /// </summary>
     /// <remarks>
-    /// <b>Refuses rather than picks</b> when there is more than one. A card
-    /// says "the defeated card" in the singular, and one effect that defeats
-    /// two characters at once leaves nothing in the rules to say which of them
-    /// a response is about — <c>rr:triggering-condition.1</c> would let the
-    /// ability trigger once, and once is the wrong number for two allies. That
-    /// is a real question and this engine has not answered it, so it says so
-    /// where the ambiguity actually bites rather than in every multiple defeat.
+    /// A window can contain several defeat instances. Callers evaluating a
+    /// singular defeated-card reference must bind the chosen triggering fact;
+    /// only an unambiguous singleton can be read without that binding.
     /// </remarks>
     public State.Defeated? Defeat => defeats.Count switch
     {
         0 => null,
         1 => defeats[0],
         _ => throw new Play.RulesNotImplementedException(
-            $"{defeats.Count} cards were defeated by one occurrence, and a card asking for "
-            + "'the defeated card' names one. rr:triggering-condition.2 gives them a single "
-            + "response window between them and nothing says which defeat it is about"),
+            "a singular defeated-card reference requires its exact triggering instance in a multiple-defeat window"),
     };
 
     /// <summary>Whether this occurrence creates a named triggering condition.</summary>
@@ -404,11 +400,9 @@ public sealed record Occurrence
     /// <c>rr:triggering-condition.2</c>.
     /// </summary>
     /// <remarks>
-    /// Idempotent, because the rule is about which conditions the occurrence
-    /// creates and not how many times it created them. Two allies defeated by
-    /// one blast is one <c>WhenCardDefeated</c> in the list, and
-    /// <c>rr:triggering-condition.1</c> then lets each answering ability
-    /// trigger once.
+    /// Condition names identify the shared window; individual defeats retain
+    /// their own facts in <see cref="Defeats"/>. Each ability can answer each
+    /// matching instance once (<c>rr:triggering-condition.1</c>).
     /// </remarks>
     /// <param name="condition">What else happened.</param>
     public void Also(string condition)
@@ -439,16 +433,18 @@ public sealed record Occurrence
 
     /// <summary>Whether a card's ability may still be triggered in this window.</summary>
     /// <param name="window">Which window.</param>
-    /// <param name="card">The object id of the card carrying the ability.</param>
-    public bool MayTrigger(WindowKind window, int card) => !spent.Contains((window, card));
+    /// <param name="ability">The ability and exact triggering fact.</param>
+    public bool MayTrigger(WindowKind window, PendingAbility ability) =>
+        !spent.Contains((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat));
 
     /// <summary>Record that a card's ability has been triggered in this window.</summary>
     /// <remarks>
-    /// Keyed on the card's object id, so two copies of the same printed card
-    /// each get a turn — <c>rr:triggering-condition.1.1</c>.
+    /// Each physical copy and authored ability can answer each matching
+    /// triggering fact once — <c>rr:triggering-condition.1-.1.1</c>.
     /// </remarks>
     /// <param name="window">Which window.</param>
-    /// <param name="card">The object id of the card carrying the ability.</param>
+    /// <param name="ability">The ability and exact triggering fact.</param>
     /// <returns>False when it had already been triggered.</returns>
-    public bool Trigger(WindowKind window, int card) => spent.Add((window, card));
+    public bool Trigger(WindowKind window, PendingAbility ability) =>
+        spent.Add((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat));
 }

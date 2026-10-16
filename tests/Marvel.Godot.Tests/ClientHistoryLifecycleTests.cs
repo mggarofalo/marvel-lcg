@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using Marvel.Decisions;
 using Marvel.Rules.Play;
 using Marvel.Server;
@@ -17,7 +19,7 @@ public sealed class ClientHistoryLifecycleTests : LocalGameClientTestBase
         Assert.True(lifecycle.Enter(lifecycle.BeginEntry(), client, opened));
         await lifecycle.ResolveAsync(0, VisibleDecision(lifecycle.CurrentGame!.Prompt!), TestContext.Current.CancellationToken);
         var form = Assert.Single(lifecycle.CurrentGame!.Prompt!.Affordances, option => option.Verb == Game.ChangeForm);
-        await lifecycle.ResolveAsync(lifecycle.CurrentGame.Revision, new EngineDecision(form.Id, []), TestContext.Current.CancellationToken);
+        await lifecycle.ResolveAsync(lifecycle.CurrentGame.Revision, new Decision(form.Id, []), TestContext.Current.CancellationToken);
         EngineResponse before = lifecycle.CurrentGame!;
         int cursor = before.History!.Cursor - 1;
         Task<ClientLifecycleUpdate?> pending = lifecycle.UndoAsync(cursor, TestContext.Current.CancellationToken);

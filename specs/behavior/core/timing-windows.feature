@@ -85,10 +85,12 @@ Feature: Core interrupt and response windows
   @covers:behavior:rr:response.2.1:published-result
   @covers:behavior:rr:triggering-condition.2:published-result
   @rr:response.2 @rr:response.2.1 @rr:triggering-condition.2 @card:01052
+  @rr:initiating-abilities.step.7
   Scenario: Two copies respond to the same hero attack
     # Multiple copies of a Response may each trigger from the same condition.
     # She-Hulk defeats Shocker once; each Chase Them Down resolves once and
-    # removes two threat from the same scheme.
+    # removes two threat from the same scheme. rr:initiating-abilities.step.7:
+    # "its effects resolve and it is then placed in its owner’s discard pile."
     Given a canonical Core scene is dealt
       | campaign | heroes   | seed |
       | rhino    | she_hulk | 835  |
@@ -104,10 +106,12 @@ Feature: Core interrupt and response windows
     Then card 01052 copy 0 is offered by the pending action
     And card 01052 copy 1 is offered by the pending action
     When seat 1 accepts card 01052 copy 0's pending opportunity
-    Then card 01052 copy 1 is offered by the pending action
-    When seat 1 accepts card 01052 copy 1's pending opportunity
     Then card 01097b copy 0 is offered by the pending action
     When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 3 threat counters
+    And card 01052 copy 0 is in seat 1's discard pile
+    And card 01052 copy 1 is offered by the pending action
+    When seat 1 accepts card 01052 copy 1's pending opportunity
     Then card 01097b copy 0 is offered by the pending action
     When seat 1 chooses card 01097b copy 0 for the pending action
     Then no opportunity is pending
@@ -116,12 +120,14 @@ Feature: Core interrupt and response windows
     And card 01052 copy 1 is in seat 1's discard pile
 
   @behavior:rr:response.3:published-result
-  @rr:response.3 @card:01024 @card:01052
+  @rr:response.3 @card:01024 @card:01052 @rr:initiating-abilities.step.7
   Scenario: Responses to attack and defeat conditions resolve in either order
     # She-Hulk's attack both completes a basic attack and defeats Hydra
     # Mercenary. Chase Them Down belongs to the attack-and-defeat condition;
     # One-Two Punch belongs to the basic-attack condition. The player chooses
-    # Chase Them Down first and One-Two Punch second.
+    # Chase Them Down first and One-Two Punch second. The event finishes
+    # rr:initiating-abilities.step.7 before the next response is chosen:
+    # "its effects resolve and it is then placed in its owner’s discard pile."
     Given a canonical Core scene is dealt
       | campaign | heroes   | seed |
       | rhino    | she_hulk | 839  |
@@ -137,12 +143,14 @@ Feature: Core interrupt and response windows
     Then card 01024 copy 0 is offered by the pending action
     And card 01052 copy 0 is offered by the pending action
     When seat 1 accepts card 01052 copy 0's pending opportunity
-    Then card 01024 copy 0 is offered by the pending action
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 0 threat counters
+    And card 01052 copy 0 is in seat 1's discard pile
+    And card 01024 copy 0 is offered by the pending action
     When seat 1 chooses card 01024 copy 0 paying with these cards for the pending action
       | card  | copy |
       | 01088 | 0    |
-    Then card 01097b copy 0 is offered by the pending action
-    When seat 1 chooses card 01097b copy 0 for the pending action
     Then no opportunity is pending
     And card 01097b copy 0 has 0 threat counters
     And card 01019a copy 0 is ready

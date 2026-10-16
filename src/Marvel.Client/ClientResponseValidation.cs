@@ -1,7 +1,7 @@
+using Marvel.Protocol;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
-using Marvel.Server;
 using Marvel.View;
 
 namespace Marvel.Client;
@@ -223,7 +223,7 @@ internal static class ClientResponseValidation
         events is not null && events.All(ClientEventValidation.Complete);
 
     internal static bool Complete(EngineError error) =>
-        error.Code is not null && error.Message is not null;
+        error.Code is not null && error.Message is not null && Enum.IsDefined(error.Disposition);
 
     internal static bool HasCompletePrompt(Prompt? prompt) =>
         prompt?.Trigger is not null && prompt.Label is not null

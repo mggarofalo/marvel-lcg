@@ -21,7 +21,7 @@ public sealed class BoostResolvedTests : AttackTestBase
         var world = Board(facts);
         Card enemy = world.TheCardIn(DeckType.VillainArea)!;
         world.Agenda.Abandon();
-        Attack.Initiate(world, facts, new PhaseStep(Steps.Attack, 1, 2, Subject: enemy.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, facts, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: enemy.ObjectId, Seat: 0), []);
         Attack.GiveAdditionalBoostCard(world, enemy, "test", []);
         Attack.GiveAdditionalBoostCard(world, enemy, "test", []);
         var events = new List<GameEvent>();
@@ -60,7 +60,7 @@ public sealed class BoostResolvedTests : AttackTestBase
         if (lost) world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
             Characteristics.LossOf("boost_const"), Affects: boost.ObjectId));
         world.Agenda.Abandon();
-        Attack.Initiate(world, facts, new PhaseStep(Steps.Attack, 1, 2, Subject: enemy.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, facts, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: enemy.ObjectId, Seat: 0), []);
         Attack.GiveAdditionalBoostCard(world, enemy, "test", []);
         var events = new List<GameEvent>();
         Attack.FlipBoostCards(world, facts, new NoCardAbilities(), events);

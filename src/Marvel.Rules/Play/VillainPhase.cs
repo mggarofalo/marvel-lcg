@@ -46,11 +46,11 @@ public static class VillainPhase
     public static void Schedule(Agenda agenda, int round)
     {
         ArgumentNullException.ThrowIfNull(agenda);
-        agenda.Add(new PhaseStep(Steps.PlaceThreat, round, 1));
-        agenda.Add(new PhaseStep(Steps.EnemiesActivate, round, 2, Plan: true));
-        agenda.Add(new PhaseStep(Steps.DealEncounterCards, round, 3));
-        agenda.Add(new PhaseStep(Steps.RevealEncounterCards, round, 4, Plan: true));
-        agenda.Add(new PhaseStep(Steps.PassFirstPlayerToken, round, 5));
-        agenda.Add(new PhaseStep(Steps.EndVillainPhase, round, 6));
+        agenda.Add(new PhaseStep(new ThreatStageOperation(ThreatStageKind.PlaceThreat), round, 1));
+        agenda.Add(new PhaseStep(new ActivationPlanOperation(), round, 2, Plan: true));
+        agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.DealEncounterCards), round, 3));
+        agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCards), round, 4, Plan: true));
+        agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.PassFirstPlayerToken), round, 5));
+        agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndVillainPhase), round, 6));
     }
 }

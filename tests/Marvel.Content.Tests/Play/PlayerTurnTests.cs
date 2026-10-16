@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -86,7 +87,7 @@ public sealed class PlayerTurnTests
         Assert.Equal(0, game.Pending!.Player);
         Assert.Equal(Question.TurnOption, game.Pending.Asking);
 
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending.Affordances.Single().Id));
 
         Assert.Equal(GamePhase.EndPhase, game.Phase);
         Assert.Equal(1, game.Pending!.Player);
@@ -127,7 +128,7 @@ public sealed class PlayerTurnTests
         for (int turn = 0; turn < 4; turn++) game.Resolve(Decision.Decline);
 
         Assert.Equal(3, game.Pending!.Player);
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending.Affordances.Single().Id));
 
         Assert.Equal(GamePhase.EndPhase, game.Phase);
         Assert.Equal(1, game.Pending!.Player);
@@ -245,7 +246,7 @@ public sealed class PlayerTurnTests
     {
         while (game.Phase == GamePhase.Mulligan)
         {
-            game.Resolve(Decision.Decline);
+            game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         }
     }
 }

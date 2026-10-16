@@ -172,9 +172,7 @@ public sealed class SimulationHarnessRandomSeedSelectionTests : SimulationHarnes
         {
             File.WriteAllText(path, record.ToString());
             Assert.Equal(1, SimulationReplayHarness.Replay(new ReplayConfig(path, RepositoryRoot()), TextWriter.Null).Games);
-            File.WriteAllLines(path, SchemaTwoLines(record.ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)));
-            Assert.Equal(1, SimulationReplayHarness.Replay(new ReplayConfig(path, RepositoryRoot()), TextWriter.Null).Games);
-            Assert.Equal(1, SimulationReportReader.Report(path).Games);
+
         }
         finally
         {

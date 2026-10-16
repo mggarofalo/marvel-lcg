@@ -163,14 +163,12 @@ public static class BasicPowerStatus
         World world, ICardFacts facts, Card character, Card scheme, List<GameEvent> events)
     {
         string power = Assaulted(world, facts, scheme) ? "attack" : "thwart";
-        // Who did it, for the cards that ask. `rr:ownership-and-control.2`
-        // puts a card under its owner's control, so an ally's thwart is still
-        // its owner's doing -- `rr:you-your.15` keeps it off that player's
-        // identity, which is a different question.
+        // rr:you-your.15: an ally's function is not performed by its
+        // controller's identity. Retain that distinction in defeat attribution.
         Threat.Remove(
-            world, facts, world.ThreatAbilities, scheme,
+            world, facts, world.ThreatAbilities, new ThreatRemovalRequest(scheme,
             StateFields.Modified(world, character, power, facts, world.Players),
-            ThwartVerb, ThwartVerb, events, by: character.Owner);
+            ThwartVerb, ThwartVerb, By: LabeledAbilities.IdentityPlayer(world, character)), events);
     }
 
     internal static void Exhaust(Card character, string verb, List<GameEvent> events)

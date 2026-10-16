@@ -24,7 +24,7 @@ public sealed class ActionAbilityTypedChoicePreviewsChoicePreviewDistinguishesAt
             source = InPlay(board, AuthoredCards.AuntMay);
             Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Stunned);
         }, hero: true, abilities: runner);
-        var prompt = Assert.IsType<Prompt>(runner.Choosing(world, source!, 0, 0, null, false));
+        var prompt = Assert.IsType<Prompt>(runner.PreviewChoice(world, source!, 0, 0, null, false));
         var choice = Assert.Single(prompt.Affordances);
         Assert.Equal(attack, choice.Description!.Contains("Stunned cancels this attack; no damage will be dealt", StringComparison.Ordinal));
         Assert.Equal(!attack, choice.Description.Contains("HP", StringComparison.Ordinal));
@@ -96,7 +96,7 @@ public sealed class ActionAbilityTypedChoicePreviewsChoicePreviewDistinguishesAt
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), hero: true, abilities: runner);
         // Reading the engine-owned choice directly also exercises the absent
         // branch, which is not offered as a state-changing action on its own.
-        var prompt = Assert.IsType<Prompt>(runner.Choosing(world, source!, 0, 0, null, false));
+        var prompt = Assert.IsType<Prompt>(runner.PreviewChoice(world, source!, 0, 0, null, false));
         var choice = Assert.Single(prompt.Affordances);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         string title = world.Facts.Title(villain.FaceId);

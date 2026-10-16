@@ -19,7 +19,7 @@ internal static class ContinuousEffectRegistry
     internal static ContinuousEffects.Registration RegisterCore(this ContinuousEffects effects, ContinuousEffect effect)
     {
         ArgumentNullException.ThrowIfNull(effect);
-        effect = effects.BindCurrentActivation(effect);
+        effect = DelayedEffects.CaptureTarget(effects.world, effects.BindCurrentActivation(effect));
         var entry = new ContinuousEffectEntry(effect, CardEffectSources.Capture(effects.world, effect));
         effects.entries.Add(entry);
         return new ContinuousEffects.Registration(effects, entry);

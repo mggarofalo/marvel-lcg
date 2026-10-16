@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -37,7 +38,7 @@ public sealed class PlayingCardsTests
 
         int mockingbird = play.AnchorId;
         var spent = Pay(play, cost: 3);
-        game.Resolve(Decision.Take(play.Id, [play.Targets!.Legal[0]], spent));
+        game.Resolve(PaidPlay(play, spent));
 
         var seat = world.Seats[0];
         Assert.Equal(DeckType.AlliesArea, world.Cards[mockingbird].Area.Type);
@@ -54,7 +55,7 @@ public sealed class PlayingCardsTests
         // is what is still affordable -- a hand three cards lighter.
         var (game, _) = Begin();
         var play = Offer(game, "01083");
-        game.Resolve(Decision.Take(play.Id, [play.Targets!.Legal[0]], Pay(play, cost: 3)));
+        game.Resolve(PaidPlay(play, Pay(play, cost: 3)));
 
         Assert.Equal(GamePhase.PlayerTurn, game.Phase);
         Assert.Equal(Question.TurnOption, game.Pending!.Asking);
@@ -81,7 +82,7 @@ public sealed class PlayingCardsTests
         Assert.Contains(game.Pending!.Affordances, Anchored("01091", game));
 
         var play = Offer(game, "01083");
-        game.Resolve(Decision.Take(play.Id, [play.Targets!.Legal[0]], Pay(play, cost: 3)));
+        game.Resolve(PaidPlay(play, Pay(play, cost: 3)));
 
         Assert.DoesNotContain(game.Pending!.Affordances, Anchored("01091", game));
     }
@@ -114,6 +115,13 @@ public sealed class PlayingCardsTests
     private static Predicate<Affordance> Anchored(string faceId, Game game) =>
         a => a.Verb == CardPlay.Verb && game.State.Cards[a.AnchorId].FaceId == faceId;
 
+    private static Decision PaidPlay(Affordance play, int[] spent)
+    {
+        var allocation = ResourcePayment.Allocate(play.CostOptions[0], spent);
+        Assert.NotNull(allocation);
+        return Decision.Take(play.Id, [play.Targets!.Legal[0]], spent, new Dictionary<string, long>(), allocation);
+    }
+
     /// <summary>The first few generators that cover a cost.</summary>
     private static int[] Pay(Affordance play, long cost)
     {
@@ -141,7 +149,7 @@ public sealed class PlayingCardsTests
             [Setup.Hero("spider_man").Name],
             12345);
         var game = Game.BeginWithoutCardAbilities(world, Cards);
-        game.Resolve(Decision.Decline);   // the mulligan
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));   // the mulligan
         return (game, world);
     }
 }

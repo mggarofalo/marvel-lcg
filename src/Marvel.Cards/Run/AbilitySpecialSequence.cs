@@ -12,7 +12,6 @@ internal static class AbilitySpecialSequence
     // These names are engine-chosen continuation data, scoped to one active
     // resolveSpecials node and removed when that sequence ends.
     internal const string ResolvedPrefix = "__special.resolved.";
-    internal const string Repeat = "__special.repeat";
 
     internal static List<Card> Remaining(AbilityStructuralContext context, AbilityEffect.CardAction effect) =>
         AbilityStructuralFlowExecution.Every(effect.Selection, context)

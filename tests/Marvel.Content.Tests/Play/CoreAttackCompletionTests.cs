@@ -31,8 +31,7 @@ public sealed class CoreAttackCompletionTests
         var events = new List<GameEvent>();
         var abilities = new NoCardAbilities();
         Card hero = world.Seats[0].IdentityCard;
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2,
-            Subject: minion!.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: minion!.ObjectId, Seat: 0));
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, abilities, events));
         Sequence.Answer(world, world.Facts, abilities, prompt,
             defend ? Decision.Take(hero.ObjectId) : Decision.Decline, events);
@@ -78,12 +77,11 @@ public sealed class CoreAttackCompletionTests
         }, heroes: ["black_panther"], scenario: "ultron");
         var events = new List<GameEvent>();
         var abilities = new NoCardAbilities();
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2,
-            Subject: drone!.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: drone!.ObjectId, Seat: 0));
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, abilities, events));
 
         Occurrence owner = Assert.IsType<Occurrence>(Assert.Single(world.Agenda.Outstanding,
-            step => step.What == Steps.EndAttack).ProcedureOwnerOccurrence);
+            step => step.What == Steps.EndAttack).Require<AttackCompletionOperation>().Owner);
         Assert.Equal(CardKind.Minion, owner.ActorFacts!.Kind);
         Assert.Equal(0, owner.ActorFacts.Owner);
         Assert.Empty(owner.Conditions);
@@ -122,7 +120,7 @@ public sealed class CoreAttackCompletionTests
         }, hero: true);
         var events = new List<GameEvent>();
         var abilities = new NoCardAbilities();
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: minion!.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: minion!.ObjectId, Seat: 0));
         Prompt defense = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, abilities, events));
         Sequence.Answer(world, world.Facts, abilities, defense, Decision.Decline, events);
         Sequence.Finish(world, world.Facts, abilities, events);
@@ -146,8 +144,7 @@ public sealed class CoreAttackCompletionTests
             hero: true, scenario: "ultron");
         var events = new List<GameEvent>();
         var abilities = new NoCardAbilities();
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2,
-            Subject: drone!.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: drone!.ObjectId, Seat: 0));
         Prompt defense = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, abilities, events));
         Sequence.Answer(world, world.Facts, abilities, defense, Decision.Decline, events);
 

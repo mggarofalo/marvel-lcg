@@ -68,17 +68,13 @@ public sealed record DecisionSelector(
         ArgumentNullException.ThrowIfNull(values);
         ArgumentNullException.ThrowIfNull(allocations);
 
-        if (Decline)
-        {
-            ValidateDecline(actor, prompt, targets, resources, values, allocations);
-            return Decision.Decline;
-        }
-        Affordance selected = SelectAffordance(prompt);
-        ValidateActor(actor, prompt, selected);
-        ValidateTargets(selected, targets);
-        ValidateValues(selected, values);
-        ValidatePayment(selected, resources, values, allocations);
-        return Decision.Take(selected.Id, targets, resources, values, allocations);
+        Decision answer = Decline
+            ? new Decision(-1, targets, resources, values, allocations)
+            : Decision.Take(SelectAffordance(prompt).Id, targets, resources, values, allocations);
+        DecisionAssessmentResult result = DecisionAssessment.Assess(prompt, answer, actor);
+        if (!result.IsAccepted)
+            throw new ReplayDivergenceException($"recorded decision rejected: {result.Rejection}");
+        return answer;
     }
 
     private Affordance SelectAffordance(Prompt prompt)
@@ -101,89 +97,6 @@ public sealed record DecisionSelector(
         return exact[Occurrence];
     }
 
-    private static void ValidateActor(int actor, Prompt prompt, Affordance selected)
-    {
-        int expectedActor = ActingSeat(prompt, selected);
-        if (actor != expectedActor)
-        {
-            throw new ReplayDivergenceException(
-                $"'{selected.Label}' belongs to player {expectedActor}, not recorded "
-                + $"player {actor}");
-        }
-    }
-
-    private static void ValidateTargets(Affordance selected, IReadOnlyList<int> targets)
-    {
-        bool allowed = selected.Targets is null
-            ? targets.Count == 0
-            : selected.Targets.Allows(targets);
-        if (!allowed)
-        {
-            throw new ReplayDivergenceException(
-                $"recorded targets are not allowed by '{selected.Label}'");
-        }
-    }
-
-    private static void ValidateValues(
-        Affordance selected, IReadOnlyDictionary<string, long> values)
-    {
-        Dictionary<string, VariableRequest> requested = selected.CostOptions
-            .SelectMany(cost => cost.VariableRequests)
-            .ToDictionary(variable => variable.Name, StringComparer.Ordinal);
-        if (values.Count != requested.Count
-            || values.Any(entry => !requested.TryGetValue(entry.Key, out var variable)
-                || !variable.Allows(entry.Value)))
-        {
-            throw new ReplayDivergenceException(
-                $"recorded variables are not allowed by '{selected.Label}'");
-        }
-    }
-
-    private static void ValidatePayment(
-        Affordance selected,
-        IReadOnlyList<int> resources,
-        IReadOnlyDictionary<string, long> values,
-        IReadOnlyList<ResourceAllocation> allocations)
-    {
-        bool paymentAllowed = selected.CostOptions.Count == 0
-            ? resources.Count == 0 && allocations.Count == 0
-            : selected.CostOptions.Any(cost =>
-                ResourcePayment.Allows(cost, resources, values, allocations));
-        if (!paymentAllowed)
-        {
-            throw new ReplayDivergenceException(
-                $"recorded resources or allocations do not pay an offered cost for "
-                + $"'{selected.Label}'");
-        }
-    }
-
-    private static void ValidateDecline(
-        int actor,
-        Prompt prompt,
-        IReadOnlyList<int> targets,
-        IReadOnlyList<int> resources,
-        IReadOnlyDictionary<string, long> values,
-        IReadOnlyList<ResourceAllocation> allocations)
-    {
-        if (actor != prompt.Player)
-        {
-            throw new ReplayDivergenceException(
-                $"prompt '{prompt.Label}' belongs to player {prompt.Player}, not recorded player {actor}");
-        }
-        if (!prompt.Cancellable)
-        {
-            throw new ReplayDivergenceException($"prompt '{prompt.Label}' cannot be declined");
-        }
-        if (targets.Count > 0 || resources.Count > 0 || values.Count > 0 || allocations.Count > 0)
-        {
-            throw new ReplayDivergenceException(
-                $"decline at prompt '{prompt.Label}' records answer data");
-        }
-    }
-
     internal static int ActingSeat(Prompt prompt, Affordance selected) =>
-        string.Equals(selected.Verb, Game.ActionVerb, StringComparison.Ordinal)
-            && selected.AnchorPlayer >= 0
-            ? selected.AnchorPlayer
-            : prompt.Player;
+        DecisionAssessment.ActingSeat(prompt, selected);
 }

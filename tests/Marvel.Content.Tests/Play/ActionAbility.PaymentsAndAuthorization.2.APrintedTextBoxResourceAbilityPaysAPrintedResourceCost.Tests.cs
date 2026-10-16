@@ -33,7 +33,7 @@ public sealed class ActionAbilityPaymentsAndAuthorizationAPrintedTextBoxResource
         var price = Assert.Single(action.CostOptions);
         Assert.Contains(price.Generators, generator => generator.Effect == peter);
         Assert.True(Assert.Single(price.ResourceCosts).Printed);
-        game.Resolve(Decision.Take(action.Id, [], [peter]));
+        game.Resolve(PaidDecision.Take(action, [peter]));
         Assert.DoesNotContain(runner.ResourceAbilities(world, 0), generator => generator.Effect == peter);
     }
 

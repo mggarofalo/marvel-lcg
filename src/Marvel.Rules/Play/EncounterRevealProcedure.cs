@@ -65,10 +65,20 @@ internal static class EncounterRevealProcedure
         // scheduled first; the other way round, this heading runs again with
         // the card still in the queue and schedules itself forever.
         world.Agenda.Then(new PhaseStep(
-            Steps.RevealEncounterCard, step.Round, 4,
-            Index: step.Index, Subject: next.Card.ObjectId, Seat: next.Player));
+            new RevealStageOperation(RevealStageKind.RevealEncounterCard),
+            step.Round,
+            4,
+            Index: step.Index,
+            Subject: next.Card.ObjectId,
+            Seat: next.Player
+        ));
         world.Agenda.Then(new PhaseStep(
-            Steps.RevealEncounterCards, step.Round, 4, Index: step.Index + 1, Plan: true));
+            new RevealStageOperation(RevealStageKind.RevealEncounterCards),
+            step.Round,
+            4,
+            Index: step.Index + 1,
+            Plan: true
+        ));
     }
 
     /// <summary>Step 4. Each player reveals their cards, in the order dealt.</summary>
@@ -76,6 +86,8 @@ internal static class EncounterRevealProcedure
         World world, ICardFacts facts, IRevealCardAbilities abilities, Card card, int player,
         int round, List<GameEvent> events)
     {
+        PhaseStep owner = world.Agenda.Current
+            ?? throw new InvalidOperationException("a revealing card has no agenda owner");
         var revealOccurrence = world.Agenda.Occurrence
             ?? throw new InvalidOperationException("a revealing card has no occurrence");
 
@@ -140,7 +152,7 @@ internal static class EncounterRevealProcedure
             Reveal.Resolve(world, facts, card, player, events, revealOccurrence);
             // Its own reveal/entry effects are ignored. The reveal occurrence
             // still reaches its response boundary before the queue continues.
-            world.Agenda.BeforeResponses(revealOccurrence);
+            world.Agenda.BeforeResponses(owner, revealOccurrence);
             return;
         }
 
@@ -148,15 +160,14 @@ internal static class EncounterRevealProcedure
             && abilities.AttachmentTargets(world, card) is { Count: > 1 } targets)
         {
             world.Agenda.ThenContinuation(new PhaseStep(
-                Steps.ChooseAttachmentTarget,
+                new AttachmentTargetOperation(Candidates: [.. targets], Origin: revealOccurrence),
                 round,
                 2,
                 Subject: card.ObjectId,
                 Seat: player,
-                Plan: true,
-                ProcedureCandidates: [.. targets],
-                AbilityOccurrence: revealOccurrence), revealOccurrence);
-            world.Agenda.BeforeResponses(revealOccurrence);
+                Plan: true
+            ), revealOccurrence);
+            world.Agenda.BeforeResponses(owner, revealOccurrence);
             return;
         }
 
@@ -166,13 +177,14 @@ internal static class EncounterRevealProcedure
         Reveal.Resolve(world, facts, card, player, events, world.Agenda.Occurrence);
 
         FinishEncounterReveal(
-            world, abilities, card, player, round, revealOccurrence, events);
+            world, abilities, card, player, owner, revealOccurrence, events);
     }
 
     internal static void FinishEncounterReveal(
         World world, IRevealCardAbilities abilities, Card card, int player,
-        int round, Occurrence revealOccurrence, List<GameEvent> events)
+        PhaseStep owner, Occurrence revealOccurrence, List<GameEvent> events)
     {
+        int round = owner.Round;
         ICardFacts facts = world.Facts;
 
         // Step 3. "Resolve each **When Revealed** ability on that card
@@ -200,16 +212,19 @@ internal static class EncounterRevealProcedure
                     .Select((_, index) => 1_000_000 + index)
                     .ToList();
                 world.Agenda.ThenContinuation(new PhaseStep(
-                    Steps.ChooseRevealAbility,
+                    new RevealAbilityOperation(
+                        RevealAbilityKind.ChooseRevealAbility,
+                        Abilities: simultaneous,
+                        Candidates: handles,
+                        Origin: occurrence
+                    ),
                     round,
                     3,
                     Subject: card.ObjectId,
                     Seat: player,
-                    Plan: true,
-                    ProcedureAbilities: simultaneous,
-                    ProcedureCandidates: handles,
-                    ProcedureOccurrence: occurrence), occurrence);
-                world.Agenda.BeforeResponses(occurrence);
+                    Plan: true
+                ), occurrence);
+                world.Agenda.BeforeResponses(owner, occurrence);
                 return;
             }
 
@@ -218,42 +233,43 @@ internal static class EncounterRevealProcedure
         }
 
         FinishEncounterRevealTail(
-            world, card, player, round, revealOccurrence, events);
+            world, card, player, owner, revealOccurrence, events);
     }
 
     internal static void FinishEncounterRevealTail(
-        World world, Card card, int player, int round,
+        World world, Card card, int player, PhaseStep owner,
         Occurrence revealOccurrence, List<GameEvent> events,
         bool beforeResponses = true)
     {
+        int round = owner.Round;
         ICardFacts facts = world.Facts;
         // `rr:quickstrike.2` puts this after the card's own abilities, and it
         // is the one keyword that does something *after* them rather than
         // beside them.
-        bool quickstrike = Reveal.QuickstrikeApplies(world, facts, card, player);
-        bool teamwork = Reveal.TeamworkApplies(world, facts, card);
+        bool quickstrike = MinionEntryActivations.QuickstrikeApplies(world, facts, card, player);
+        bool teamwork = MinionEntryActivations.TeamworkApplies(world, facts, card);
         if (quickstrike && teamwork)
         {
             world.Agenda.ThenContinuation(new PhaseStep(
-                Steps.ChoosePostRevealAbility,
+                new PostRevealOperation(Origin: revealOccurrence),
                 round,
                 3,
                 Subject: card.ObjectId,
                 Seat: player,
-                Plan: true,
-                ProcedureOccurrence: revealOccurrence), revealOccurrence);
+                Plan: true
+            ), revealOccurrence);
             if (beforeResponses)
             {
-                world.Agenda.BeforeResponses(revealOccurrence);
+                world.Agenda.BeforeResponses(owner, revealOccurrence);
             }
             return;
         }
 
-        Reveal.Quickstrike(world, facts, card, player, round);
-        Reveal.Teamwork(world, facts, card, player, round);
+        MinionEntryActivations.Quickstrike(world, facts, card, player, round);
+        MinionEntryActivations.Teamwork(world, facts, card, player, round);
 
         EncounterRevealDiscard.Schedule(
-            world, facts, card, player, round, revealOccurrence, beforeResponses);
+            world, facts, card, player, owner, revealOccurrence, beforeResponses);
     }
 
 }

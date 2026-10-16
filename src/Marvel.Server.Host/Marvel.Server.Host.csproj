@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Marvel.Server.Host</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Marvel.Server/Marvel.Server.csproj" />
+    <ProjectReference Include="../Marvel.Protocol/Marvel.Protocol.csproj" />
+    <ProjectReference Include="../Marvel.Transport/Marvel.Transport.csproj" />
+    <ProjectReference Include="../Marvel.Observability/Marvel.Observability.csproj" />
+    <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marvel.Server.Tests" />
+    <InternalsVisibleTo Include="Marvel.Godot.Tests" />
+    <InternalsVisibleTo Include="Marvel.Architecture.Tests" />
+  </ItemGroup>
+</Project>

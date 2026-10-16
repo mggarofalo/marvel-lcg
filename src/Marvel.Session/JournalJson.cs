@@ -9,7 +9,7 @@ namespace Marvel.Session;
 /// <summary>Canonical JSON settings for deterministic journal value records.</summary>
 public static class JournalJson
 {
-    /// <summary>Uses the snake-case spelling already pinned by simulation schema 2.</summary>
+    /// <summary>The deterministic snake-case spelling shared by journals and simulation records.</summary>
     public static JsonSerializerOptions Options { get; } = CreateOptions();
 
     private static JsonSerializerOptions CreateOptions()

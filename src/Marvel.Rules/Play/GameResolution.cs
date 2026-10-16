@@ -15,8 +15,9 @@ public static class GameResolution
     /// <param name="input">The answer. <see cref="Decision.Decline"/> takes nothing.</param>
     /// <exception cref="RulesNotImplementedException">
     /// The answer, or the phase it leads to, needs a rule this engine does not
-    /// have. Thrown before the world is touched.
+    /// have.
     /// </exception>
+    /// <exception cref="ArgumentException">The answer is rejected before the world is touched.</exception>
     /// <exception cref="InvalidOperationException">The game is already over.</exception>
     public static Resolution Resolve(this Game game, Decision input)
     {
@@ -29,40 +30,25 @@ public static class GameResolution
     private static Resolution ResolveInput(Game game, Decision input)
     {
         ArgumentNullException.ThrowIfNull(input);
-        game.world.ClearInformationSignals();
 
         if (game.Pending is null)
         {
             throw new InvalidOperationException("the game is over; there is nothing to answer");
         }
 
-        // A question the sequence asked during a player's own turn is answered
-        // the same way one in the villain phase is.
-        // `rr:attack-player-ability-type.step.7` and `.step.8` put windows
-        // around a character's attack, and a turn that could offer the question
-        // and not take the answer would be a turn where no card can speak.
-        //
-        // **And not only windows.** An activation can begin in a player's own
-        // turn — Speed Demon's forced interrupt attacks back the moment it is
-        // attacked — and `rr:attack-enemy-activation.step.2` is a step that
-        // asks who defends rather than a window that offers an ability. That
-        // answer was reaching the verb table below and being told that taking
-        // 'Defense' is not implemented, which was true only in the sense that
-        // it had nowhere to go: `Sequence.Answer` has handled a step's own
-        // question since it was written. the original investigation.
-        if (game.Phase is GamePhase.PlayerSetup or GamePhase.PlayerTurn
+        var assessment = DecisionAssessment.Assess(game.Pending, input);
+        if (!assessment.IsAccepted)
+            throw new ArgumentException(assessment.Reason ?? assessment.Rejection.ToString(), nameof(input));
+        game.world.ClearInformationSignals();
+
+        // Rules questions and windows retain their sequence owner across phases.
+        // rr:attack-player-ability-type.step.7-.8 puts windows around powers;
+        // rr:attack-enemy-activation.step.2 asks who defends an enemy attack.
+        if (game.Phase is GamePhase.ScenarioSetup or GamePhase.PlayerSetup or GamePhase.PlayerTurn
             && game.asking == Asker.Sequence) return ResolveSequence(game, input);
 
         if (!input.IsDecline && game.Phase != GamePhase.VillainPhase)
         {
-            // The turn prompts offer things that have to *do* something and
-            // most of them are still not written. Naming the verb rather than
-            // saying "not implemented" is the difference between a one-line
-            // diagnosis and a debugging session.
-            //
-            // Two exceptions. The villain phase offers an ability waiting in a
-            // window or a character declared as a defender, and both are
-            // implemented. `Change_Form` is the other, and it is below.
             return ResolveAffordance(game, input);
         }
 
@@ -73,18 +59,6 @@ public static class GameResolution
     {
         switch (game.Phase)
         {
-            case GamePhase.Mulligan:
-                // Declining a mulligan keeps the opening hand, so nothing moves
-                // -- which is `Mulligan` with an empty list, the same way
-                // declining the end-of-phase discard is.
-                //
-                // `game.Active` is read from the board here and not left as it was
-                // set at `Begin`: the first player is whoever holds the token
-                // when the phase starts, and a scenario or a card can move it
-                // between the deal and the first turn. Every later round does
-                // the same in `Work`.
-                return game.Mulligan(input);
-
             case GamePhase.PlayerSetup:
                 throw new RulesNotImplementedException(
                     "a player Setup ability can only be answered through its agenda question");
@@ -118,6 +92,7 @@ public static class GameResolution
     {
         var during = new List<GameEvent>();
         Sequence.AnswerWithWorldAbilities(game.world, game.facts, game.Pending!, input, during);
+        if (game.Phase == GamePhase.ScenarioSetup) return game.ContinueScenarioSetup(during);
         if (game.Phase == GamePhase.PlayerSetup) return game.ContinuePlayerSetup(during);
         return game.endingPlayerPhase ? game.ContinueForcedActions(during) : game.Turn(during);
     }

@@ -1,3 +1,4 @@
+using Marvel.Rules.Play;
 using Marvel.Decisions;
 using Marvel.Godot;
 using Marvel.Rules.Prompts;
@@ -76,7 +77,7 @@ public sealed class ContextualDraftMeaningTests
         Assert.DoesNotContain('\n', text);
         Assert.Equal(2, composer.Selected!.Id);
         Assert.Empty(composer.Targets);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.True(composer.TryBuild(out Decision? decision, out _));
         Assert.Equal(2, decision!.Affordance);
 
         composer.SelectAffordance(1);

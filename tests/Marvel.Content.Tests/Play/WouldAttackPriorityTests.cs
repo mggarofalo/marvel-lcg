@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Cards;
 using Marvel.Cards.Dsl;
 using Marvel.Content.Setup;
@@ -49,7 +50,7 @@ public sealed class WouldAttackPriorityTests
         if (stunned) Statuses.Give(world, villain, Statuses.Stunned);
         int drones = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards.Count;
         int hand = world.Seats[0].Hand.Cards.Count;
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         var events = new List<GameEvent>();
         Assert.Null(Sequence.Work(world, Cards, AuthoredCards.Runner(), events));
         Assert.Equal(stunned ? DeckType.UpgradesArea : DeckType.DiscardPile, web.Area.Type);

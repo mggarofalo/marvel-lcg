@@ -76,25 +76,33 @@ internal static class AbilityResolutionRevelation
             return events;
         }
 
-        // One reveal can contain several authored abilities. A non-numeric
-        // keyword gained by more than one of them is still one keyword, so the
-        // casts share which keyword grants have already resolved.
+        // Later abilities start only after every suspension of their predecessor completes.
+        var owner = world.Agenda.Current;
+        var containing = world.Agenda.Occurrence;
         var gainedKeywords = new HashSet<string>(StringComparer.Ordinal);
+        bool suspended = false;
         foreach (var (ability, ordinal) in reveals)
         {
-            // `rr:ability.step.3` -- "When Revealed" *is* the occurrence, not a
-            // window around it. An interrupt or a response to a card being
-            // revealed is a different ability and reaches the board through
-            // `Waiting`, so matching on the condition alone would run it twice.
             var cast = new AbilityResolutionState(world, card, occurrence, player, events)
             {
                 Tier = ability.Trigger.Timing,
                 GainedKeywords = gainedKeywords,
             };
             cast.RestoreAbility(ordinal, []);
+            if (suspended)
+            {
+                var continuation = AbilityContinuations.Step(
+                    execution.Capture(cast, ordinal) with { Reason = AbilityResumeReason.StartAbility },
+                    AbilityContinuationStage.Resume, owner?.Round ?? 0);
+                if (owner is { } step && containing is not null)
+                    world.Agenda.ContinueBeforeOwner(containing, step, continuation, occurrence);
+                else world.Agenda.Add(continuation);
+                continue;
+            }
             cast.TrackResolution(ordinal);
             execution.Run(ability, cast);
             cast.CompleteResolution();
+            suspended = cast.Suspended;
         }
 
         return events;

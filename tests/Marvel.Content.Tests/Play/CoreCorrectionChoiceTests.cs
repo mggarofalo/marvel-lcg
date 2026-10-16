@@ -34,20 +34,20 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
             var runner = AuthoredCards.Runner();
             Card source = world.CreateCard(obligation, world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
             runner.WhenRevealed(world, source, 0);
-            runner.Chose(world, source, 0, 1, Decision.Take(1));
-            Prompt? choices = runner.Choosing(world, source, 0, 2);
+            runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(1));
+            Prompt? choices = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source));
             bool mayRemove = !heroForm && !exhausted;
             Assert.Equal(mayRemove, choices?.Affordances.Any(offer => offer.Id == 0) == true);
             if (mayRemove)
             {
-                runner.Chose(world, source, 0, 2, Decision.Take(0));
+                runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(0));
                 Assert.False(identity.Ready);
                 Assert.Equal(DeckType.RemovedArea, source.Area.Type);
             }
             else
             {
                 string before = world.Digest().Fingerprint();
-                var rejected = Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, source, 0, 2, Decision.Take(0)));
+                var rejected = Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(0)));
                 Assert.Contains("cannot choose illegal option 0", rejected.Message);
                 Assert.Equal(before, world.Digest().Fingerprint());
                 Assert.NotEqual(DeckType.RemovedArea, source.Area.Type);
@@ -79,17 +79,17 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
             Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
             return;
         }
-        Prompt prompt = runner.Choosing(world, source, 0, 0)!;
+        Prompt prompt = runner.PreviewChoice(world, source, 0, 0)!;
         Assert.Equal(heroForm ? 2 : 1, prompt.Affordances.Count);
         Assert.Contains(prompt.Affordances, offer => offer.Id == 1);
         Assert.Equal(heroForm, prompt.Affordances.Any(offer => offer.Id == 0));
-        runner.Chose(world, source, 0, 0, Decision.Take(heroForm ? 0 : 1));
+        runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(heroForm ? 0 : 1));
         if (heroForm) Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
         else
         {
-            PhaseStep choice = world.Agenda.Outstanding.Last(step => step.What == Steps.ChooseOption);
-            Prompt pick = runner.Choosing(world, source, 0, choice.Index, choice.Tier)!;
-            runner.Chose(world, source, 0, choice.Index, Decision.Take(Assert.Single(pick.Affordances).Id), choice.Tier);
+            PhaseStep choice = world.Agenda.Outstanding.First(step => step.What == Steps.ChooseOption);
+            Prompt pick = runner.Choosing(world, choice)!;
+            runner.Chose(world, choice, Decision.Take(Assert.Single(pick.Affordances).Id));
             Assert.Equal(DeckType.DiscardPile, upgrade!.Area.Type);
             Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
         }
@@ -104,10 +104,10 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         Card source = world.CreateCard("01159", world.AreaOf(DeckType.RevealingArea));
         world.CreateCard("01186", world.AreaOf(DeckType.EncounterDeck));
         runner.WhenRevealed(world, source, 0);
-        PhaseStep step = world.Agenda.Outstanding.Last(item => item.What == Steps.ChooseOption);
-        Prompt prompt = runner.Choosing(world, source, 0, step.Index, step.Tier)!;
+        PhaseStep step = world.Agenda.Outstanding.First(item => item.What == Steps.ChooseOption);
+        Prompt prompt = runner.Choosing(world, step)!;
         Assert.Equal(1, Assert.Single(prompt.Affordances).Id);
-        runner.Chose(world, source, 0, step.Index, Decision.Take(1), step.Tier);
+        runner.Chose(world, step, Decision.Take(1));
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
         // "Abilities that interact with their hero do not interact with their identity."
         Assert.Contains(world.Agenda.Outstanding, item => item.What == Steps.PlaceThreatEffect);
@@ -126,10 +126,10 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         world.Abilities = runner;
         var action = Assert.Single(runner.Actions(world, 0), action => action.Card == source.ObjectId);
         runner.Act(world, action, [], []);
-        PhaseStep step = world.Agenda.Outstanding.Last(item => item.What == Steps.ChooseOption);
-        Prompt prompt = runner.Choosing(world, source, 0, step.Index, step.Tier)!;
+        PhaseStep step = world.Agenda.Outstanding.First(item => item.What == Steps.ChooseOption);
+        Prompt prompt = runner.Choosing(world, step)!;
         Assert.Equal(ally.ObjectId, Assert.Single(prompt.Affordances).AnchorId);
-        runner.Chose(world, source, 0, step.Index, Decision.Take(prompt.Affordances[0].Id), step.Tier);
+        runner.Chose(world, step, Decision.Take(prompt.Affordances[0].Id));
         Assert.True(ally.Ready);
     }
 
@@ -145,7 +145,7 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         Card source = world.CreateCard("01111", world.AreaOf(DeckType.RevealingArea));
         var runner = AuthoredCards.Runner();
         runner.WhenRevealed(world, source, 0);
-        Prompt prompt = runner.Choosing(world, source, 0, 0)!;
+        Prompt prompt = runner.PreviewChoice(world, source, 0, 0)!;
         int[] legal = [.. Assert.Single(prompt.Affordances).Targets!.Legal];
         // In alter-ego form, "card abilities that interact with their hero do not interact with their identity."
         Assert.DoesNotContain(world.Seats[0].IdentityCard.ObjectId, legal);
@@ -204,8 +204,8 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         var runner = AuthoredCards.Runner();
         var action = Assert.Single(runner.Actions(world, 0), action => action.Card == source.ObjectId);
         runner.Act(world, action, [world.Seats[0].Hand.Cards.First(card => card != source).ObjectId], []);
-        PhaseStep step = world.Agenda.Outstanding.Last(item => item.What == Steps.ChooseOption);
-        Prompt prompt = runner.Choosing(world, source, 0, step.Index, step.Tier)!;
+        PhaseStep step = world.Agenda.Outstanding.First(item => item.What == Steps.ChooseOption);
+        Prompt prompt = runner.Choosing(world, step)!;
         Assert.Equal(world.Seats[0].IdentityCard.ObjectId, Assert.Single(prompt.Affordances).AnchorId);
     }
 
@@ -221,17 +221,17 @@ public sealed class CoreCorrectionChoiceTests : ChoosingCardsTestBase
         Card source = world.CreateCard("01155", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0)));
         var runner = AuthoredCards.Runner();
         runner.WhenRevealed(world, source, 0);
-        Prompt prompt = runner.Choosing(world, source, 0, 1, Marvel.Rules.Timing.AbilityType.WhenRevealed)!;
+        Prompt prompt = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source))!;
         Assert.Equal(2, prompt.Affordances.Count);
         // "If a card ability causes a player to change forms, it does not count
         // against the one voluntary form change"; the choice precedes its cost.
         // An option cannot be chosen "if there are no valid targets for that option."
-        runner.Chose(world, source, 0, 1, Decision.Take(flip ? 0 : 1), Marvel.Rules.Timing.AbilityType.WhenRevealed);
+        runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(flip ? 0 : 1));
         if (flip)
         {
-            Prompt removal = runner.Choosing(world, source, 0, 2, Marvel.Rules.Timing.AbilityType.WhenRevealed)!;
+            Prompt removal = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source))!;
             Assert.Equal(0, Assert.Single(removal.Affordances).Id);
-            runner.Chose(world, source, 0, 2, Decision.Take(0), Marvel.Rules.Timing.AbilityType.WhenRevealed);
+            runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(0));
             Assert.Equal(DeckType.RemovedArea, source.Area.Type);
         }
         else

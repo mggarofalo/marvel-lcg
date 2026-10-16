@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Setup;
@@ -154,20 +155,18 @@ public sealed class ForEachTests
 
         runner.WhenRevealed(world, source, 0);
         var first = Assert.Single(world.Agenda.Outstanding);
-        var firstPrompt = runner.Choosing(world, source, 0, first.Index, first.Tier)!;
+        var firstPrompt = runner.Choosing(world, first)!;
         Assert.Equal([guard.ObjectId], firstPrompt.Affordances.Select(each => each.Id));
 
-        var firstEvents = runner.Chose(
-            world, source, 0, first.Index, Decision.Take(guard.ObjectId), first.Tier);
+        var firstEvents = runner.Chose(world, first, Decision.Take(guard.ObjectId));
         Assert.Equal(DeckType.EncounterDiscardPile, guard.Area.Type);
         Assert.Contains(firstEvents, gameEvent => gameEvent is CardsMoved);
 
         var second = world.Agenda.Outstanding[^1];
-        var secondPrompt = runner.Choosing(world, source, 0, second.Index, second.Tier)!;
+        var secondPrompt = runner.Choosing(world, second)!;
         Assert.Equal([villain.ObjectId], secondPrompt.Affordances.Select(each => each.Id));
 
-        runner.Chose(
-            world, source, 0, second.Index, Decision.Take(villain.ObjectId), second.Tier);
+        runner.Chose(world, second, Decision.Take(villain.ObjectId));
 
         Assert.Equal(3, villain.Damage);
     }
@@ -204,11 +203,9 @@ public sealed class ForEachTests
 
         runner.WhenRevealed(world, source, 0);
         var first = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(
-            world, source, 0, first.Index, Decision.Take(villain.ObjectId), first.Tier);
+        runner.Chose(world, first, Decision.Take(villain.ObjectId));
         var second = world.Agenda.Outstanding[^1];
-        runner.Chose(
-            world, source, 0, second.Index, Decision.Take(villain.ObjectId), second.Tier);
+        runner.Chose(world, second, Decision.Take(villain.ObjectId));
 
         Assert.Equal(6, villain.Damage);
     }

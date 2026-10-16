@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><MarvelInfrastructureProbe>true</MarvelInfrastructureProbe></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../../src/Marvel.Server/Marvel.Server.csproj" /></ItemGroup>
+</Project>

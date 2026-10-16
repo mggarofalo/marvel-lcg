@@ -1,7 +1,8 @@
+using Marvel.Desktop;
+using Marvel.Protocol;
 using System.Globalization;
 using Godot;
 using Marvel.Client;
-using Marvel.Server;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -60,7 +61,17 @@ internal sealed class MainSetupController
     internal void RefreshModularControl() => selection.RefreshModularControl();
     internal void RefreshBriefing() => selection.RefreshBriefing();
     internal void RefreshStartAvailability() => selection.RefreshStartAvailability();
-    internal void RefreshEntryAvailability() => selection.RefreshEntryAvailability();
+    internal void RefreshEntryAvailability()
+    {
+        selection.RefreshEntryAvailability();
+        if (main.lifecycle.EntryRecovery is not { } recovery) return;
+        main.SetSetupControlsEnabled(false);
+        bool pendingJoin = recovery.IsAttachment;
+        main.start.Text = pendingJoin ? "Start game" : "Recover table";
+        main.join.Text = pendingJoin ? "Recover seat" : "Join game";
+        main.start.Disabled = pendingJoin;
+        main.join.Disabled = !pendingJoin;
+    }
 
     internal async void OnStartPressed()
     {
@@ -79,36 +90,15 @@ internal sealed class MainSetupController
             }
 
             GameSetupSelection selection = main.SelectedSetup();
-            LocalClientConnection connection = ClientComposition.Connect(
-                DesktopDataRoot.Current(),
-                main.endpoint.Text);
-            if (!connection.Succeeded)
-            {
-                RestoreEntryAfterFailure(generation, connection.Error!);
-                return;
-            }
-
-            using var candidate = new SetupConnectionLease(connection.Client!);
-            ClientSetupResult available = await candidate.Client.ReadSetupAsync();
-            if (!IsCurrentSetupLoad(generation, requestedEndpoint)) return;
-            if (!available.Succeeded)
-            {
-                RestoreEntryAfterFailure(generation, available.Error!);
-                return;
-            }
-
-            ClientEntryResult startup = await candidate.Client.OpenSessionAsync(
-                main.gameId.Text, available.Choices!, selection);
-            if (!IsCurrentSetupLoad(generation, requestedEndpoint)) return;
-            if (!startup.Succeeded)
-            {
-                RestoreEntryAfterFailure(generation, startup.Error!);
-                return;
-            }
-
-            if (!main.lifecycle.Enter(generation, candidate.Client, startup)) return;
-            candidate.TransferToSession();
-            ShowStartedGame(startup, available.Choices!, selection);
+            var prepared = await PrepareEntryAsync(generation, requestedEndpoint);
+            if (prepared is null) return;
+            using SetupConnectionLease candidate = prepared.Value.Lease;
+            SetupChoices choices = prepared.Value.Choices;
+            ClientEntryResult startup = main.lifecycle.EntryRecovery is { } pending
+                ? await candidate.Client.RetryEntryAsync(pending)
+                : await candidate.Client.OpenSessionAsync(main.gameId.Text, choices, selection);
+            if (!InstallEntry(generation, requestedEndpoint, candidate, startup)) return;
+            ShowStartedGame(startup, choices, selection);
         }
         catch (Exception)
         {
@@ -116,6 +106,52 @@ internal sealed class MainSetupController
                 "startup_failed",
                 "The selected game could not be displayed. Check the assignment and try again."));
         }
+    }
+
+    private async Task<(SetupConnectionLease Lease, SetupChoices Choices)?> PrepareEntryAsync(
+        long generation, string requestedEndpoint)
+    {
+        LocalClientConnection connection = main.lifecycle.EntryRecoveryClient is { } retained
+            ? new LocalClientConnection(retained, null)
+            : ClientComposition.Connect(DesktopDataRoot.Current(), requestedEndpoint);
+        if (!connection.Succeeded)
+        {
+            RestoreEntryAfterFailure(generation, connection.Error!);
+            return null;
+        }
+        var candidate = new SetupConnectionLease(connection.Client!);
+        if (ReferenceEquals(candidate.Client, main.lifecycle.EntryRecoveryClient)) candidate.TransferToSession();
+        try
+        {
+            ClientSetupResult available = await candidate.Client.ReadSetupAsync();
+            if (IsCurrentSetupLoad(generation, requestedEndpoint))
+            {
+                if (available.Succeeded) return (candidate, available.Choices!);
+                RestoreEntryAfterFailure(generation, available.Error!);
+            }
+        }
+        catch
+        {
+            candidate.Dispose();
+            throw;
+        }
+        candidate.Dispose();
+        return null;
+    }
+
+    private bool InstallEntry(long generation, string requestedEndpoint, SetupConnectionLease candidate,
+        ClientEntryResult result)
+    {
+        if (main.lifecycle.RetainEntry(generation, candidate.Client, result)) candidate.TransferToSession();
+        if (!IsCurrentSetupLoad(generation, requestedEndpoint)) return false;
+        if (!result.Succeeded)
+        {
+            RestoreEntryAfterFailure(generation, result.Error!);
+            return false;
+        }
+        if (!main.lifecycle.Enter(generation, candidate.Client, result)) return false;
+        candidate.TransferToSession();
+        return true;
     }
 
     private void ShowStartedGame(ClientEntryResult startup, SetupChoices available, GameSetupSelection selection)
@@ -159,39 +195,20 @@ internal sealed class MainSetupController
             main.join.Disabled = true;
             main.SetSetupControlsEnabled(false);
             main.status.Text = "JOINING GAME  ·  ONE MOMENT";
-            LocalClientConnection connection = ClientComposition.Connect(
-                DesktopDataRoot.Current(),
-                main.endpoint.Text);
-            if (!connection.Succeeded)
-            {
-                RestoreEntryAfterFailure(generation, connection.Error!);
-                return;
-            }
-
-            using var candidate = new SetupConnectionLease(connection.Client!);
-            ClientSetupResult available = await candidate.Client.ReadSetupAsync();
-            if (!IsCurrentSetupLoad(generation, requestedEndpoint)) return;
-            if (!available.Succeeded)
-            {
-                RestoreEntryAfterFailure(generation, available.Error!);
-                return;
-            }
-            ClientEntryResult attached = await candidate.Client.AttachAsync(main.gameId.Text, secret);
+            var prepared = await PrepareEntryAsync(generation, requestedEndpoint);
+            if (prepared is null) return;
+            using SetupConnectionLease candidate = prepared.Value.Lease;
+            SetupChoices choices = prepared.Value.Choices;
+            ClientEntryResult attached = main.lifecycle.EntryRecovery is { } pending
+                ? await candidate.Client.RetryEntryAsync(pending)
+                : await candidate.Client.AttachAsync(main.gameId.Text, secret);
             secret = string.Empty;
-            if (!IsCurrentSetupLoad(generation, requestedEndpoint)) return;
-            if (!attached.Succeeded)
-            {
-                RestoreEntryAfterFailure(generation, attached.Error!);
-                return;
-            }
-
-            if (!main.lifecycle.Enter(generation, candidate.Client, attached)) return;
-            candidate.TransferToSession();
+            if (!InstallEntry(generation, requestedEndpoint, candidate, attached)) return;
             main.boardController.ResetForSession();
             main.currentProgress = null;
             main.transcript.Reset(
                 seed: null,
-                runtime: available.Choices!.Runtime,
+                runtime: choices.Runtime,
                 InteractionTranscriptSetup.Unavailable("unavailable_to_attached_viewer"));
             main.boardController.RenderGame(
                 attached.Response!,

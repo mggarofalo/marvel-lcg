@@ -32,17 +32,13 @@ public sealed class CoreBlackPantherSpecialTests
         var choice = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
 
-        runner.Chose(
-            world, eventCard, 0, choice.Index,
-            Decision.Take(claws.ObjectId),
-            choice.Tier,
-            choice.FinalStep);
+        runner.Chose(world, choice, Decision.Take(claws.ObjectId));
 
         var specials = world.Agenda.Outstanding
             .Where(step => step.What == Steps.ResolveSpecial)
             .ToList();
         Assert.Equal(claws.ObjectId, Assert.Single(specials).Subject);
-        Assert.False(specials[0].FinalStep);
+        Assert.False(specials[0].Require<AbilityContinuationAgendaOperation>().FinalSpecial);
     }
 
     [Rule("rr:special")]
@@ -115,10 +111,7 @@ public sealed class CoreBlackPantherSpecialTests
 
         runner.ResolveSpecial(world, daggers, 0, finalStep: true);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(
-            world, daggers, 0, choice.Index,
-            Decision.Take(world.Seats[0].IdentityCard.ObjectId),
-            AbilityType.Special, finalStep: true);
+        runner.Chose(world, choice, Decision.Take(world.Seats[0].IdentityCard.ObjectId));
 
         Assert.Equal(0, ultron.Damage);
         Assert.False(DeckTypes.IsInPlay(drone.Area.Type));

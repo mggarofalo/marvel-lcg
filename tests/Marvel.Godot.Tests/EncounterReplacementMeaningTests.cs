@@ -36,7 +36,7 @@ public sealed class EncounterReplacementMeaningTests
         Card current = world.CreateCard("01154", world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
         world.CreateCard("01110", world.AreaOf(DeckType.EncounterDeck));
         Card replacement = world.CreateCard(replacementFace, world.AreaOf(DeckType.EncounterDeck));
-        world.Agenda.Add(new PhaseStep(Steps.RevealEncounterCard, 1, 4, Subject: current.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: current.ObjectId, Seat: 0));
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, cards, runner, []));
         IVisibilityPolicy visibility = restricted ? new RestrictedVisibilityPolicy(0) : new PermissiveVisibilityPolicy();
         VisibleResult visible = WorldProjection.For(world, prompt, [], visibility.Authorize(null, 2));

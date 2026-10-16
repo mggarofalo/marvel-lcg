@@ -106,7 +106,7 @@ public static class Defeat
 
         if (!ReferenceEquals(world.Agenda.Occurrence, occurrence))
         {
-            Defer(world, occurrence, character, trigger, Steps.FinalizeCharacterDefeat);
+            Defer(world, occurrence, character, trigger, DefeatCompletionKind.FinalizeCharacterDefeat);
             return true;
         }
 
@@ -178,9 +178,10 @@ public static class Defeat
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="events">Where to record what happened.</param>
     /// <param name="by">The seat whose character did it, or -1.</param>
+    /// <param name="recordOn">The cause of this defeat, or the current occurrence.</param>
     public static void Scheme(
         World world, ICardFacts facts, Card scheme, string trigger, List<GameEvent> events,
-        int by = -1)
+        int by = -1, Timing.Occurrence? recordOn = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(scheme);
@@ -188,7 +189,7 @@ public static class Defeat
 
         ArgumentNullException.ThrowIfNull(facts);
 
-        var defeated = Record(world, scheme, by, BasicPowers.ThwartVerb);
+        var defeated = Record(world, scheme, by, BasicPowers.ThwartVerb, recordOn);
         var occurrence = world.Agenda.Occurrence!;
 
         // `rr:when-defeated-abilities.2` lists a side scheme among the cards
@@ -201,7 +202,7 @@ public static class Defeat
 
         if (!ReferenceEquals(world.Agenda.Occurrence, occurrence))
         {
-            Defer(world, occurrence, scheme, trigger, Steps.FinalizeSchemeDefeat);
+            Defer(world, occurrence, scheme, trigger, DefeatCompletionKind.FinalizeSchemeDefeat);
             return;
         }
 
@@ -222,20 +223,20 @@ public static class Defeat
 
     /// <summary>Put damage step 8 after nested step-7 agenda work.</summary>
     private static void Defer(
-        World world, Timing.Occurrence occurrence, Card card, string trigger, string step)
+        World world, Timing.Occurrence occurrence, Card card, string trigger, DefeatCompletionKind step)
     {
         var current = world.Agenda.Current
             ?? throw new InvalidOperationException("nested defeat work has no agenda step");
         world.Agenda.Before(
             occurrence,
             new PhaseStep(
-                step,
+                new DefeatCompletionOperation(step, trigger),
                 current.Round,
                 current.Number,
                 Index: current.Index,
                 Subject: card.ObjectId,
-                Plan: true,
-                Trigger: trigger));
+                Plan: true
+            ));
     }
 
     /// <summary>
@@ -270,6 +271,8 @@ public static class Defeat
     {
         var defeated = new Defeated(card.ObjectId, by, how)
         {
+            Kind = EffectiveCards.Kind(card, world.Facts),
+            Title = EffectiveCards.Title(card, world.Facts),
             Incarnation = card.Incarnation,
             ProfileId = card.InstanceState.Profile?.Id,
             WasFaceDown = !card.FaceUp,

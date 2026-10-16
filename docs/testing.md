@@ -3,6 +3,26 @@
 The test suite has three lanes. All block a merge in CI, but they answer different
 questions and run as separate steps.
 
+## Quality-tool setup
+
+The pre-commit and CI complexity gate uses the same Lizard 1.24.0 analyzer for
+C# and GDScript, with a maximum cyclomatic complexity of 10. Install its pinned
+runtime dependencies in an active Python 3.13 environment, with that environment's
+scripts directory on `PATH`:
+
+```bash
+python -m pip install --requirement tools/requirements-quality.txt
+dotnet tool restore
+dotnet husky exec .husky/csx/complexity.csx
+```
+
+The package and command-line options are documented by
+[Lizard on PyPI](https://pypi.org/project/lizard/1.24.0/). The checker analyzes all
+tracked and non-ignored source files; it does not limit inspection to staged edits.
+CI runs this same hook script once in the managed pull-request lane and on both
+Windows and Linux during exhaustive main/manual/release runs. Local execution on
+one operating system does not establish cross-platform CI success.
+
 ## Fast merge preparation
 
 Build once, then run the focused unit, contract and behavioral tests:
@@ -51,7 +71,7 @@ unit-test lane.
 ## CI assurance profiles
 
 Pull requests split assurance by what can vary. `Managed correctness` runs the
-unit, acceptance, behavioral-catalog, executable-specification and deterministic
+complexity, unit, acceptance, behavioral-catalog, executable-specification and deterministic
 dataset checks once on Linux. `Native integration` builds and runs integration,
 architecture-wall, native Godot, hosted-client and rendered-state checks on both
 Windows and Linux; Linux also proves the supported server container. Windows

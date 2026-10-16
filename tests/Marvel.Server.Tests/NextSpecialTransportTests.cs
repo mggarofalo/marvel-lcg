@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Net;
 using Marvel.Decisions;
 using Marvel.Rules.Play;
@@ -37,16 +39,16 @@ public sealed class NextSpecialTransportTests : TransportTestBase
         EngineResponse current = await Exchange(EngineRequest.SyncGame("setup", game, owner));
         Assert.Equal(PublicDecisionKind.CardSearch, current.Prompt!.PublicKind);
         current = await Exchange(EngineRequest.ResolveGame("search", game, owner,
-            new EngineDecision(current.Prompt.Affordances[0].Id, []), current.Revision));
+            new Decision(current.Prompt.Affordances[0].Id, []), current.Revision));
         Affordance change = Assert.Single(current.Prompt!.Affordances, offer => offer.Verb == Game.ChangeForm);
         current = await Exchange(EngineRequest.ResolveGame("hero", game, owner,
-            new EngineDecision(change.Id, []), current.Revision));
+            new Decision(change.Id, []), current.Revision));
         Affordance play = Assert.Single(current.Prompt!.Affordances,
             offer => offer.AnchorId == factory.Played && offer.PlaysCard);
         var draft = new DecisionComposer(current.Prompt);
         draft.SelectAffordance(play.Id);
         draft.ToggleResource(factory.Resource);
-        Assert.True(draft.TryBuild(out EngineDecision? payment, out string? error), error);
+        Assert.True(draft.TryBuild(out Decision? payment, out string? error), error);
         current = await Exchange(EngineRequest.ResolveGame("play", game, owner, payment!, current.Revision));
         Assert.Null(current.Error);
         Assert.Equal(PublicDecisionKind.SpecialAbilityNext, current.Prompt!.PublicKind);
@@ -59,7 +61,7 @@ public sealed class NextSpecialTransportTests : TransportTestBase
         Assert.Contains("next Special ability", PendingSituationPresentation.Heading(waiting.World));
         Affordance claws = Assert.Single(current.Prompt.Affordances, offer => offer.AnchorId == factory.Claws);
         current = await Exchange(EngineRequest.ResolveGame("claws", game, owner,
-            new EngineDecision(claws.Id, []), current.Revision));
+            new Decision(claws.Id, []), current.Revision));
         Assert.Null(current.Error);
         Assert.NotEqual(PublicDecisionKind.SpecialAbilityNext, current.Prompt!.PublicKind);
         EngineResponse pendingTarget = current;
@@ -70,10 +72,10 @@ public sealed class NextSpecialTransportTests : TransportTestBase
         Affordance target = Assert.Single(current.Prompt!.Affordances,
             offer => offer.AnchorId == factory.Villain);
         EngineResponse stale = await Exchange(EngineRequest.ResolveGame("stale", game, owner,
-            new EngineDecision(target.Id, []), current.Revision - 1));
+            new Decision(target.Id, []), current.Revision - 1));
         Assert.Equal("stale_decision", stale.Error?.Code);
         current = await Exchange(EngineRequest.ResolveGame("target", game, owner,
-            new EngineDecision(target.Id, []), current.Revision));
+            new Decision(target.Id, []), current.Revision));
         Assert.Null(current.Error);
         Assert.Equal(PublicDecisionKind.SpecialAbilityNext, current.Prompt!.PublicKind);
         Assert.Equal(2, current.Prompt.Affordances.Count);

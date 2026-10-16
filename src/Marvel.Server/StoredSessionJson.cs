@@ -26,7 +26,7 @@ internal static class StoredSessionJson
         {
             var session = JsonSerializer.Deserialize<StoredSession>(json, Options)
                 ?? throw new SessionSaveException("stored generation is empty");
-            Validate(session, readable: true);
+            Validate(session);
             return session;
         }
         catch (JsonException failure)
@@ -36,9 +36,9 @@ internal static class StoredSessionJson
     }
 
     public static void ValidateLoaded(StoredSession session) =>
-        Validate(session, readable: true);
+        Validate(session);
 
-    private static void Validate(StoredSession session, bool readable = false)
+    private static void Validate(StoredSession session)
     {
         ArgumentNullException.ThrowIfNull(session);
         if (session.Save is null)
@@ -46,14 +46,7 @@ internal static class StoredSessionJson
             throw new SessionSaveException("stored generation has no save");
         }
 
-        if (readable)
-        {
-            SessionSaveJson.ValidateReadable(session.Save);
-        }
-        else
-        {
-            SessionSaveJson.Validate(session.Save);
-        }
+        SessionSaveJson.Validate(session.Save);
         if (session.Authorities is null || session.Authorities.Any(InvalidAuthority))
         {
             throw new SessionSaveException("stored authority is invalid");
@@ -75,15 +68,17 @@ internal static class StoredSessionJson
         authority is null || authority.Verifier is not { Length: 64 }
         || authority.Verifier.Any(character => character is not (>= '0' and <= '9')
             and not (>= 'a' and <= 'f'))
-        || authority.Seats is null || authority.Seats.Any(seat => seat < 0);
+        || authority.Seats is null || authority.Seats.Any(seat => seat < 0)
+        || !EntryReceipts.Valid(authority.Entry)
+        || authority.Invitation && (authority.Entry is not null || authority.Revoked);
 
     private static bool ValidLifecycle(StoredSession session)
     {
         if (session.Authorities.Any(authority => authority.Owner && authority.Invitation))
             return false;
-        int owners = session.Authorities.Count(authority => authority.Owner);
+        int owners = session.Authorities.Count(authority => authority.Owner && !authority.Revoked);
         if (session.Save.Session.Lifecycle == "active") return owners == 1;
-        return session.Save.Session.Lifecycle != "retired" || session.Authorities.Count == 0;
+        return session.Save.Session.Lifecycle != "retired" || session.Authorities.All(authority => authority.Revoked && !authority.Invitation);
     }
 
     private static JsonSerializerOptions CreateOptions()

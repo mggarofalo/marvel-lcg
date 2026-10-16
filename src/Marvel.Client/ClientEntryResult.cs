@@ -1,11 +1,10 @@
+using Marvel.Protocol;
 using System.Buffers.Binary;
 using System.Globalization;
 using System.Security.Cryptography;
-using Marvel.Decisions;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
-using Marvel.Server;
 using Marvel.View;
 
 namespace Marvel.Client;
@@ -18,7 +17,8 @@ public sealed record ClientEntryResult(
     ClientSession? Session,
     EngineResponse? Response,
     IReadOnlyList<SeatInvitation> Invitations,
-    ClientStartupError? Error)
+    ClientStartupError? Error,
+    ClientEntryAttempt? PendingEntry = null)
 {
     /// <summary>Whether a complete authorized game view was returned.</summary>
     public bool Succeeded => Session is not null && Response is not null && Error is null;

@@ -61,7 +61,9 @@ Feature: Core Standard and Expert encounter cards
     And card 01036 copy 0 is an upgrade attached to seat 1's identity
     And card 01029b copy 0 has 9 damage
     When card 01188 copy 0 is revealed to seat 1
-    Then card 01036 copy 0 is offered by the pending action
+    # rr:treachery.2: "After resolving the effects" place it in the discard pile.
+    Then card 01188 copy 0 is still being revealed
+    And card 01036 copy 0 is offered by the pending action
     When seat 1 chooses card 01036 copy 0 for the pending action
     Then seat 1 is eliminated
 

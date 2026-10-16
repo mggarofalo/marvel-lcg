@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Decisions;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
@@ -44,11 +45,11 @@ public sealed class EngineHostRestrictedSeatsReceiveOnlyTheirTurnOptionsTests : 
         });
         Affordance auntMay = Assert.Single(otherMenu.Affordances, option => option.AnchorId == factory.AuntMay.ObjectId);
         Affordance activeOnly = Assert.Single(activeMenu.Affordances, option => option.Verb == Game.ChangeForm);
-        EngineResponse forgedTurnOption = host.Exchange(EngineRequest.ResolveGame("forged-basic", "actions", RequiredCapability(attached), new EngineDecision(activeOnly.Id, []), active.Revision));
-        EngineResponse stolenAction = host.Exchange(EngineRequest.ResolveGame("stolen-action", "actions", RequiredCapability(opened), new EngineDecision(auntMay.Id, []), active.Revision));
+        EngineResponse forgedTurnOption = host.Exchange(EngineRequest.ResolveGame("forged-basic", "actions", RequiredCapability(attached), new Decision(activeOnly.Id, []), active.Revision));
+        EngineResponse stolenAction = host.Exchange(EngineRequest.ResolveGame("stolen-action", "actions", RequiredCapability(opened), new Decision(auntMay.Id, []), active.Revision));
         Assert.Equal("not_your_turn", forgedTurnOption.Error?.Code);
         Assert.Equal("not_your_turn", stolenAction.Error?.Code);
-        EngineResponse acted = host.Exchange(EngineRequest.ResolveGame("act", "actions", RequiredCapability(attached), new EngineDecision(auntMay.Id, []), other.Revision));
+        EngineResponse acted = host.Exchange(EngineRequest.ResolveGame("act", "actions", RequiredCapability(attached), new Decision(auntMay.Id, []), other.Revision));
         Assert.Null(acted.Error);
         Assert.False(factory.AuntMay.Ready);
         Assert.Equal(1, factory.Game.State.Seats[1].IdentityCard.Damage);
@@ -58,7 +59,7 @@ public sealed class EngineHostRestrictedSeatsReceiveOnlyTheirTurnOptionsTests : 
         EngineResponse otherAuthority = host.Exchange(EngineRequest.SyncGame(
             "history-authority", "actions", RequiredCapability(opened)));
         Assert.Equal(HistoryUndoStatus.OtherPlayer, otherAuthority.History!.UndoStatus);
-        EngineResponse staleActive = host.Exchange(EngineRequest.ResolveGame("stale-active", "actions", RequiredCapability(opened), new EngineDecision(activeOnly.Id, []), active.Revision));
+        EngineResponse staleActive = host.Exchange(EngineRequest.ResolveGame("stale-active", "actions", RequiredCapability(opened), new Decision(activeOnly.Id, []), active.Revision));
         Assert.Equal("stale_decision", staleActive.Error?.Code);
     }
 
@@ -81,8 +82,8 @@ public sealed class EngineHostRestrictedSeatsReceiveOnlyTheirTurnOptionsTests : 
         Affordance healing = Assert.Single(active.Prompt!.Affordances, option => option.AnchorId == factory.ActiveSource.ObjectId);
         Affordance disappearing = Assert.Single(offTurn.Prompt!.Affordances, option => option.AnchorId == factory.OffTurnSource.ObjectId);
         Assert.Equal(active.Revision, offTurn.Revision);
-        EngineResponse won = host.Exchange(EngineRequest.ResolveGame("winner", "race", RequiredCapability(opened), new EngineDecision(healing.Id, []), active.Revision));
-        EngineResponse lost = host.Exchange(EngineRequest.ResolveGame("loser", "race", RequiredCapability(attached), new EngineDecision(disappearing.Id, []), offTurn.Revision));
+        EngineResponse won = host.Exchange(EngineRequest.ResolveGame("winner", "race", RequiredCapability(opened), new Decision(healing.Id, []), active.Revision));
+        EngineResponse lost = host.Exchange(EngineRequest.ResolveGame("loser", "race", RequiredCapability(attached), new Decision(disappearing.Id, []), offTurn.Revision));
         Assert.Null(won.Error);
         Assert.Equal(0, factory.Game.State.Seats[1].IdentityCard.Damage);
         Assert.Equal(winningCommandEndsGame, won.Prompt is null);
@@ -131,7 +132,7 @@ public sealed class EngineHostRestrictedSeatsReceiveOnlyTheirTurnOptionsTests : 
         EngineResponse opened = first.Exchange(EngineRequest.OpenGame("open", "continuation-replay", new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
         EngineResponse kept = first.Exchange(EngineRequest.ResolveGame("keep", "continuation-replay", RequiredCapability(opened), TakeOnly(opened), opened.Revision));
         Affordance action = Assert.Single(kept.Prompt!.Affordances, option => option.AnchorId == factory.Source.ObjectId && string.Equals(option.Verb, Game.ActionVerb, StringComparison.Ordinal));
-        EngineResponse waiting = first.Exchange(EngineRequest.ResolveGame("act", "continuation-replay", RequiredCapability(opened), new EngineDecision(action.Id, []), kept.Revision));
+        EngineResponse waiting = first.Exchange(EngineRequest.ResolveGame("act", "continuation-replay", RequiredCapability(opened), new Decision(action.Id, []), kept.Revision));
         StoredSession open = Assert.Single(store.Load());
         JournalUnit openUnit = open.Save.Units[^1];
         JournalStep beforeRestart = Assert.Single(openUnit.Decisions);
@@ -150,7 +151,7 @@ public sealed class EngineHostRestrictedSeatsReceiveOnlyTheirTurnOptionsTests : 
         Assert.Equal(beforeRestart.RngWords, afterRestart.RngWords);
         Assert.Equal(beforeRestart.StateFingerprint, afterRestart.StateFingerprint);
         Affordance choice = restored.Prompt!.Affordances[0];
-        EngineResponse answered = restarted.Exchange(EngineRequest.ResolveGame("answer", "continuation-replay", RequiredCapability(opened), new EngineDecision(choice.Id, []), restored.Revision));
+        EngineResponse answered = restarted.Exchange(EngineRequest.ResolveGame("answer", "continuation-replay", RequiredCapability(opened), new Decision(choice.Id, []), restored.Revision));
         StoredSession completed = Assert.Single(store.Load());
         JournalUnit completedUnit = completed.Save.Units[^1];
         JournalStep answeredStep = completedUnit.Decisions[^1];

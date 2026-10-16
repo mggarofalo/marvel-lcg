@@ -160,12 +160,13 @@ public static class Forms
             Verb = "Change_Form",
         });
         world.Agenda.Then(new PhaseStep(
-            Steps.FormChanged,
+            new LifecycleOperation(LifecycleKind.FormChanged),
             round,
             0,
             Index: seat.Index,
             Subject: formCard.ObjectId,
-            Seat: seat.Index));
+            Seat: seat.Index
+        ));
     }
 
     /// <summary>
@@ -229,12 +230,13 @@ public static class Forms
         ArgumentNullException.ThrowIfNull(world);
         string was = Change(seat, facts);
         world.Agenda.Then(new PhaseStep(
-            Steps.FormChanged,
+            new LifecycleOperation(LifecycleKind.FormChanged),
             round,
             0,
             Index: seat.Index,
             Subject: seat.IdentityCard.ObjectId,
-            Seat: seat.Index));
+            Seat: seat.Index
+        ));
         return was;
     }
 }

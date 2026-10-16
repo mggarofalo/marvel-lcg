@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Decisions;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -25,7 +26,7 @@ public sealed class CoreDecisionMeaningTransportTests : EngineHostTestBase
         Assert.Equal("End turn", turn.Prompt!.DeclineLabel);
         Affordance change = Assert.Single(turn.Prompt.Affordances, option => option.Verb == Game.ChangeForm);
         EngineResponse hero = host.Exchange(EngineRequest.ResolveGame("form", gameId,
-            RequiredCapability(opened), new EngineDecision(change.Id, []), turn.Revision));
+            RequiredCapability(opened), new Decision(change.Id, []), turn.Revision));
         EngineResponse transported = EngineJson.ReadResponse(EngineJson.Write(hero));
         Affordance attack = Assert.Single(transported.Prompt!.Affordances,
             option => option.Verb == BasicPowers.AttackVerb);
@@ -35,7 +36,7 @@ public sealed class CoreDecisionMeaningTransportTests : EngineHostTestBase
         Assert.Equal("End turn", PromptPresentation.From(transported.Prompt, transported.World!).DeclineLabel);
 
         EngineResponse ended = host.Exchange(EngineRequest.ResolveGame("end", gameId,
-            RequiredCapability(opened), EngineDecision.Decline, hero.Revision));
+            RequiredCapability(opened), Decision.Decline, hero.Revision));
         Assert.Null(ended.Error);
         Assert.False(ended.Prompt!.Cancellable);
         Affordance discards = Assert.Single(ended.Prompt.Affordances);
@@ -56,20 +57,20 @@ public sealed class CoreDecisionMeaningTransportTests : EngineHostTestBase
             capability, TakeOnly(opened), opened.Revision));
         Affordance change = Assert.Single(current.Prompt!.Affordances, option => option.Verb == Game.ChangeForm);
         current = host.Exchange(EngineRequest.ResolveGame("form", gameId, capability,
-            new EngineDecision(change.Id, []), current.Revision));
+            new Decision(change.Id, []), current.Revision));
         current = host.Exchange(EngineRequest.ResolveGame("end-turn", gameId, capability,
-            EngineDecision.Decline, current.Revision));
+            Decision.Decline, current.Revision));
         Affordance phase = Assert.Single(current.Prompt!.Affordances);
         current = host.Exchange(EngineRequest.ResolveGame("phase-discards", gameId, capability,
-            new EngineDecision(phase.Id, phase.Targets!.Legal.Take(phase.Targets.Min).ToArray()), current.Revision));
+            new Decision(phase.Id, phase.Targets!.Legal.Take(phase.Targets.Min).ToArray()), current.Revision));
         Assert.Null(current.Error);
         Assert.Equal(Question.Opportunity, current.Prompt!.Asking);
         current = host.Exchange(EngineRequest.ResolveGame("pass-interrupt", gameId, capability,
-            EngineDecision.Decline, current.Revision));
+            Decision.Decline, current.Revision));
         Assert.Equal(Question.Defender, current.Prompt!.Asking);
         Affordance defender = Assert.Single(current.Prompt.Affordances);
         current = host.Exchange(EngineRequest.ResolveGame("defend", gameId, capability,
-            new EngineDecision(defender.Id, []), current.Revision));
+            new Decision(defender.Id, []), current.Revision));
         EngineResponse transported = EngineJson.ReadResponse(EngineJson.Write(current));
 
         Assert.Null(transported.Error);

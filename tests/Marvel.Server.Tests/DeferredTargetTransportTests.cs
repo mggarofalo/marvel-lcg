@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Net;
 using System.Text.Json;
 using Marvel.Decisions;
@@ -28,7 +30,7 @@ public sealed class DeferredTargetTransportTests : TransportTestBase
         var prompt = new Prompt(0, Question.TurnOption, TimingPriority.Untimed,
             "Turn", "Choose", false, [offer]);
         var world = new WorldDescriptor([], [], [], Outcome.Unfinished);
-        var request = EngineRequest.ResolveGame("boundary", "game", "capability", new EngineDecision(7, []));
+        var request = EngineRequest.ResolveGame("boundary", "game", "capability", new Decision(7, []));
         var response = new EngineResponse(EngineProtocol.Version, request.RequestId,
             request.GameId, Capability: null, prompt, Events: [], world);
         var endpoint = new EchoEndpoint(request, response);

@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Rules.State;
 
 namespace Marvel.Content.Setup;
@@ -25,13 +26,6 @@ namespace Marvel.Content.Setup;
 /// pile and <i>moved</i> onto the encounter deck before the shuffle; both are
 /// true and only the first one is an id.
 /// </para>
-/// <para>
-/// <b>Not covered yet.</b> Measured over 48 boards, 38 reproduce this exactly.
-/// The rest need one of three things, and only the first is data: linked cards
-/// (a <c>Linked</c> attribute in <c>datasets/cards/</c>, which allocates the
-/// linked card <i>before</i> the card naming it), setup abilities on a card, and
-/// status cards allocated mid-setup. See <c>docs/setup-dataset.md</c>.
-/// </para>
 /// </remarks>
 public static class Dealer
 {
@@ -50,25 +44,21 @@ public static class Dealer
     /// Optional published starter names whose 25-card customization blocks
     /// replace the selected heroes' blocks, one per seat.
     /// </param>
+    /// <param name="playerDecks">Explicit full decks, one per seat; null uses published decks.</param>
     /// <exception cref="KeyNotFoundException">A name the dataset does not hold.</exception>
     public static IReadOnlyList<Creation> DealOrder(
         SetupCatalog catalog, string campaignName, IReadOnlyList<string> heroNames,
         IReadOnlyList<string>? modularSetNames = null, ICardFacts? facts = null,
-        IReadOnlyList<string>? playerDeckNames = null)
+        IReadOnlyList<string>? playerDeckNames = null, IReadOnlyList<PlayerDeckRecipe>? playerDecks = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(heroNames);
-        if (playerDeckNames is not null && playerDeckNames.Count != heroNames.Count)
-        {
-            throw new ArgumentException(
-                "a customization source must be named for every selected hero",
-                nameof(playerDeckNames));
-        }
+        ValidateDeckSelections(heroNames, facts, playerDeckNames, playerDecks);
 
         var campaign = catalog.Campaign(campaignName);
-        if (facts is not null && modularSetNames is not null)
+        if (facts is not null)
         {
-            ValidateModularSets(catalog, facts, modularSetNames);
+            ValidateModularSets(catalog, facts, modularSetNames ?? campaign.ModularSets);
         }
         var dealt = new List<Creation>
         {
@@ -89,14 +79,20 @@ public static class Dealer
             var customization = playerDeckNames is null
                 ? hero
                 : catalog.Hero(playerDeckNames[seat]);
-            Add(hero.Hero.Select(MoveBToFront), CreationSource.Identity, seat);
+            Add(hero.Hero, CreationSource.Identity, seat);
             Add(hero.Obligations, CreationSource.Obligation, seat);
-            Add(hero.NemesisSet, CreationSource.Nemesis, seat);
+            foreach (string spec in hero.NemesisSet)
+                dealt.Add(new(spec, CreationSource.Nemesis, seat, hero.NemesisSetIcon));
 
             // One call over the concatenation in the engine, so the two lists
             // are a single unbroken run of ids rather than two.
-            Add(hero.HeroDeck, CreationSource.HeroDeck, seat);
-            Add(customization.PlayerDeck, CreationSource.PlayerDeck, seat);
+            if (playerDecks is not null)
+                dealt.AddRange(PlayerDeckAdmission.Admit(playerDecks[seat], hero.HeroDeck, seat, facts!));
+            else
+            {
+                Add(hero.HeroDeck, CreationSource.HeroDeck, seat);
+                Add(customization.PlayerDeck, CreationSource.PlayerDeck, seat);
+            }
         }
 
         Add(campaign.Schemes, CreationSource.MainScheme, Creation.Scenario);
@@ -130,9 +126,26 @@ public static class Dealer
         }
     }
 
+    private static void ValidateDeckSelections(
+        IReadOnlyList<string> heroNames, ICardFacts? facts,
+        IReadOnlyList<string>? playerDeckNames, IReadOnlyList<PlayerDeckRecipe>? playerDecks)
+    {
+        if (playerDecks is not null
+            && (playerDecks.Count != heroNames.Count || playerDeckNames is not null || facts is null))
+            throw new ArgumentException("explicit decks require facts and one recipe per seat, without starter substitutions", nameof(playerDecks));
+        if (playerDeckNames is not null && playerDeckNames.Count != heroNames.Count)
+        {
+            throw new ArgumentException(
+                "a customization source must be named for every selected hero",
+                nameof(playerDeckNames));
+        }
+    }
+
     private static void ValidateModularSets(
         SetupCatalog catalog, ICardFacts facts, IReadOnlyList<string> selected)
     {
+        if (selected.Distinct(StringComparer.Ordinal).Count() != selected.Count)
+            throw new ArgumentException("a modular encounter set may be selected only once", nameof(selected));
         foreach (string name in selected)
         {
             if (!ModularEncounterSets.IsModular(catalog, facts, name))
@@ -171,23 +184,4 @@ public static class Dealer
         return [.. campaign.EncounterSets, .. (modularSetNames ?? campaign.ModularSets)];
     }
 
-    /// <summary>
-    /// Puts the alter-ego face first, as the engine's <c>move_b_to_front</c> does.
-    /// </summary>
-    /// <remarks>
-    /// An identity is printed <c>a,b</c> — hero side, alter-ego side — and the
-    /// game begins in alter-ego form. The engine reorders the spec rather than
-    /// flipping the card afterwards, which is why the digest's <c>card</c> for a
-    /// hero at step 0 is the <c>b</c> id. Faces that do not end in <c>b</c> keep
-    /// their printed order.
-    /// </remarks>
-    /// <param name="spec">A comma-separated face list.</param>
-    public static string MoveBToFront(string spec)
-    {
-        ArgumentNullException.ThrowIfNull(spec);
-        var faces = spec.Split(',');
-        return string.Join(
-            ',',
-            faces.Where(face => face.EndsWith('b')).Concat(faces.Where(face => !face.EndsWith('b'))));
-    }
 }

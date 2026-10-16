@@ -17,9 +17,9 @@ public sealed class PublicInstructionChoiceMeaningTests : ChoosingCardsTestBase
         var runner = AuthoredCards.Runner();
         Card source = world.CreateCard("01155", world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(1)));
         runner.WhenRevealed(world, source, 1);
-        runner.Chose(world, source, 1, 1, Decision.Take(1));
+        runner.Chose(world, AbilityContinuationFixtures.Pending(world, source), Decision.Take(1));
 
-        Prompt prompt = runner.Choosing(world, source, 1, 2)!;
+        Prompt prompt = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source))!;
 
         Assert.Equal("Exhaust T'Challa; if completed, remove Affairs of State from the game",
             prompt.Affordances[0].DisplayLabel);
@@ -51,7 +51,7 @@ public sealed class PublicInstructionChoiceMeaningTests : ChoosingCardsTestBase
         runner.WhenRevealed(world, source, 0);
         string before = world.Digest().Fingerprint();
 
-        Prompt prompt = runner.Choosing(world, source, 0, 1)!;
+        Prompt prompt = runner.Choosing(world, AbilityContinuationFixtures.Pending(world, source))!;
 
         Affordance unknown = prompt.Affordances.Single(offer => offer.Id == 0);
         Assert.Null(unknown.DisplayLabel);

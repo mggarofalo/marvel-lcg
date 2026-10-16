@@ -11,8 +11,7 @@ internal sealed class AbilityResolutionBindings(Card source)
     private int sourceIncarnation = source.Incarnation;
     private CardInstanceState sourceState = source.InstanceState;
 
-    public IReadOnlyDictionary<string, long> CaptureSourceState(IReadOnlyDictionary<string, long> results) =>
-        AbilitySourceStateFacts.Capture(results, sourceState);
+    public CardInstanceState CaptureSourceState() => sourceState;
 
     public void RestoreSourceState(CardInstanceState? restored)
     {
@@ -84,5 +83,5 @@ internal sealed class AbilityResolutionBindings(Card source)
     internal AbilityQueryContext QueryContext(AbilityResolutionState resolution) => new(
         resolution.World, source, resolution.Occurrence, resolution.Player, sourceIncarnation,
         chosenBinding, playerSelectionBinding, resolution.Altered, [.. resolution.PowerTargets])
-        { SourceState = sourceState };
+        { SourceState = sourceState, TriggeringDefeat = resolution.TriggeringDefeat };
 }

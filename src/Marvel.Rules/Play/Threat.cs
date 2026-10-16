@@ -17,13 +17,6 @@ namespace Marvel.Rules.Play;
 /// place.
 /// </para>
 /// <para>
-/// They were not. The villain phase placed threat and looked; the incite
-/// keyword placed threat inline and did not. A scenario one threat short of
-/// its target would carry on past its own ending — every later round a round
-/// that should never have been played — and thirty-three cards in the pool
-/// carry incite.
-/// </para>
-/// <para>
 /// <b>Checked after each placement rather than at the end of a step.</b> A
 /// scheme completed halfway through the villain's activation ends the game
 /// there, and the encounter cards that would have followed are never dealt.
@@ -32,78 +25,31 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class Threat
 {
-    /// <summary>Schedule one imminent placement with its own windows.</summary>
-    /// <remarks>
-    /// This is a suspension point. A card interpreter may call it only after
-    /// preserving any continuation that follows the placement; silently
-    /// continuing the effect tree would resolve later text before interrupts to
-    /// this assignment. The current card corpus places threat only at the end
-    /// of its branch, so the integration can refuse every other shape loudly.
-    /// </remarks>
-    public static void Schedule(
-        World world, Card scheme, Card? source, long amount, ThreatCause cause,
-        string trigger, int player = -1, PendingAbility? resolution = null,
-        Occurrence? abilityOccurrence = null) =>
-        Schedule(
-            world, [scheme], source, amount, cause, trigger, player,
-            resolution, abilityOccurrence);
-
-    /// <summary>Schedule the same assignment on several schemes in board order.</summary>
-    public static void Schedule(
-        World world, IReadOnlyList<Card> schemes, Card? source, long amount,
-        ThreatCause cause, string trigger, int player = -1,
-        PendingAbility? resolution = null, Occurrence? abilityOccurrence = null)
+    /// <summary>Schedule all assignments and then resume their containing ability.</summary>
+    public static EffectCompletion Schedule(World world, ThreatBatch batch,
+        EffectCompletion? completion = null, PhaseStep? continuation = null)
     {
         ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(schemes);
-        ArgumentOutOfRangeException.ThrowIfNegative(amount);
-        ArgumentException.ThrowIfNullOrWhiteSpace(trigger);
-
-        if (amount == 0)
-        {
-            return;
-        }
-
+        ArgumentNullException.ThrowIfNull(batch);
+        ArgumentOutOfRangeException.ThrowIfNegative(batch.Amount);
+        var receipt = completion ?? new EffectCompletion(batch.Amount, batch.Schemes.Count);
         var current = world.Agenda.Current;
-        int round = current?.Round ?? 0;
-        int number = current?.Number ?? 0;
-        int index = current?.Index ?? 0;
-        PhaseStep[] placements =
-        [
-            .. schemes.Select((scheme, offset) => Placement(
-                scheme, source, amount, cause, trigger, player, resolution,
-                abilityOccurrence, round, number, index + offset)),
-        ];
-
-        if (current is not null)
-        {
-            world.Agenda.Now(placements);
-            return;
-        }
-
-        // A mandatory occurrence-tier ability can be called before any phase
-        // is on the agenda -- scenario setup is the production case. It still
-        // creates ordinary interrupt/apply/response occurrences; its caller
-        // drains them through Sequence rather than applying threat inline.
-        foreach (var placement in placements)
-        {
-            world.Agenda.Add(placement);
-        }
+        var scheduled = batch.Schemes.Select((scheme, index) => Placement(
+            batch, scheme, receipt, index, current)).ToList();
+        if (continuation is { } resume) scheduled.Add(resume);
+        if (current is not null) world.Agenda.Now(scheduled);
+        else foreach (var operation in scheduled) world.Agenda.Add(operation);
+        return receipt;
     }
 
-    private static PhaseStep Placement(
-        Card scheme, Card? source, long amount, ThreatCause cause, string trigger,
-        int player, PendingAbility? resolution, Occurrence? abilityOccurrence,
-        int round, int number, int index)
-    {
-        ArgumentNullException.ThrowIfNull(scheme);
-        return new PhaseStep(Steps.PlaceThreatEffect, round, number, Index: index,
-            Subject: scheme.ObjectId, Seat: player,
-            Placement: new ThreatPlacement(
-                scheme.ObjectId, source?.ObjectId ?? -1, amount, cause, trigger, player),
-            Tier: resolution?.Type, AbilityOrdinal: resolution?.Ordinal ?? -1,
-            AbilityOccurrence: abilityOccurrence);
-    }
+    private static PhaseStep Placement(ThreatBatch batch, Card scheme,
+        EffectCompletion completion, int part, PhaseStep? current) =>
+        new(new ThreatPlacementOperation(new ThreatPlacement(
+                scheme.ObjectId, batch.Source?.ObjectId ?? -1,
+                batch.Amount, batch.Cause, batch.Trigger, batch.Player), completion, part),
+            current?.Round ?? 0, current?.Number ?? 0,
+            Index: (current?.Index ?? 0) + part,
+            Subject: scheme.ObjectId, Seat: batch.Player);
 
     /// <summary>Apply the threat assignment on an agenda occurrence.</summary>
     /// <returns>The amount actually placed.</returns>
@@ -163,32 +109,24 @@ public static class Threat
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
     /// <param name="abilities">What cards continuously permit or prohibit.</param>
-    /// <param name="scheme">Which scheme.</param>
-    /// <param name="amount">How much to remove.</param>
-    /// <param name="trigger">What caused it, for the event stream.</param>
-    /// <param name="verb">What kind of change the event stream records.</param>
+    /// <param name="request">The removal and its causal occurrence.</param>
     /// <param name="events">Where to record what happened.</param>
-    /// <param name="by">The seat whose character did it, or -1.</param>
-    /// <param name="overridesCannotFrom">
-    /// The source of the exact prohibition this instruction explicitly
-    /// overrides, or -1. Unrelated prohibitions remain in force.
-    /// </param>
     /// <returns>How much threat was removed.</returns>
     public static long Remove(
-        World world, ICardFacts facts, IThreatCardAbilities abilities, Card scheme, long amount,
-        string trigger, string verb, List<GameEvent> events, int by = -1,
-        int overridesCannotFrom = -1)
+        World world, ICardFacts facts, IThreatCardAbilities abilities,
+        ThreatRemovalRequest request, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(abilities);
-        ArgumentNullException.ThrowIfNull(scheme);
+        ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(events);
 
+        var scheme = request.Scheme;
         long held = scheme.Tokens.GetValueOrDefault("k_threat");
-        long removed = Math.Min(held, Math.Max(0, amount));
+        long removed = Math.Min(held, Math.Max(0, request.Amount));
         if (removed == 0
-            || !abilities.CanRemoveThreat(world, scheme, overridesCannotFrom))
+            || !abilities.CanRemoveThreat(world, scheme, request.OverridesCannotFrom))
         {
             return 0;
         }
@@ -196,14 +134,15 @@ public static class Threat
         scheme.PlaceTokens("k_threat", -removed);
         events.Add(new FieldSet(scheme.ObjectId, "k_threat", held, held - removed)
         {
-            Trigger = trigger,
-            Verb = verb,
+            Trigger = request.Trigger,
+            Verb = request.Verb,
         });
 
         if (scheme.Area.Type == DeckType.SideSchemesArea
             && scheme.Tokens.GetValueOrDefault("k_threat") == 0)
         {
-            Defeat.Scheme(world, facts, scheme, trigger, events, by);
+            Defeat.Scheme(world, facts, scheme, request.Trigger, events, request.By,
+                request.RecordDefeatOn);
         }
 
         return removed;

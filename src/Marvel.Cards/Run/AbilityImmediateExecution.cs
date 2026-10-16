@@ -132,7 +132,7 @@ internal static class AbilityImmediateExecution
         if (surge.Instances <= 0
             || StateFields.Modified(world, source, "surge", world.Facts, world.Players) > 0
             || !context.GainedKeywords.Add("surge")) return;
-        RememberGainedSurge(world, source.ObjectId);
+        RememberGainedSurge(world, source.ObjectId, context.Admission.Query.Occurrence);
         Deal.EncounterCard(
             world, context.Admission.Query.Player, context.Trigger, context.Events);
     }
@@ -248,12 +248,14 @@ internal static class AbilityImmediateExecution
         _ => throw new InvalidOperationException("Unknown compiled player selection"),
     };
 
-    private static void RememberGainedSurge(World world, int source)
+    private static void RememberGainedSurge(World world, int source, Occurrence reveal)
     {
-        world.Agenda.MarkSurgeGained(source);
-        if (world.CharacterAttack is { Source: var attackSource } attack && attackSource == source)
+        world.Agenda.MarkSurgeGained(source, reveal);
+        if (world.CharacterAttack is { Source: var attackSource } attack && attackSource == source
+            && ReferenceEquals(attack.Origin, reveal))
             world.CharacterAttack = attack with { SurgeGained = true };
-        if (world.CharacterThwart is { Source: var thwartSource } thwart && thwartSource == source)
+        if (world.CharacterThwart is { Source: var thwartSource } thwart && thwartSource == source
+            && ReferenceEquals(thwart.Origin, reveal))
             world.CharacterThwart = thwart with { SurgeGained = true };
     }
 }

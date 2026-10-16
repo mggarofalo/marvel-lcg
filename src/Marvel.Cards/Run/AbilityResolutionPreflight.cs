@@ -17,13 +17,6 @@ internal static class AbilityResolutionPreflight
     internal static ResolutionOutcome ResolutionOf(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast) =>
         (ResolutionOutcome)(int)AbilityResolutionAdmission.ResolutionOf(node, execution.AdmissionContext(cast));
 
-    internal static ResolutionOutcome EnsureDependentSupported(this AbilityResolutionExecution execution,
-        AbilityEffect node, AbilityResolutionState cast, AbilityEffect effect,
-        AbilityEffect dependent, ResolutionOutcome required) =>
-        (ResolutionOutcome)(int)AbilityResolutionAdmission.EnsureDependentSupported(
-            node, execution.AdmissionContext(cast), effect, dependent,
-            (AbilityAdmission.AdmissionResolution)(int)required);
-
     internal static void PreflightAnsweredOutcome(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast) =>
         AbilityResolutionAdmission.PreflightAnsweredOutcome(node, execution.AdmissionContext(cast));
 
@@ -56,7 +49,7 @@ internal static class AbilityResolutionPreflight
             && leaf.Frames[^1] is DependentFrame frame)
         {
             execution.RunStructuralLeaf(leaf, cast);
-            var observation = new AbilityStructuralObservation(cast.Suspended);
+            var observation = new AbilityStructuralObservation(cast.Suspended, Outcome: cast.CompletedOutcome);
             if (!cast.Suspended)
                 cast.SetContinuation(outerContinuation);
             transition = AbilityStructuralFlowExecution.AfterDependentLeaf(
@@ -65,6 +58,7 @@ internal static class AbilityResolutionPreflight
             if (cast.Suspended)
                 return;
         }
+        execution.ApplyStructuralCompletion(transition, cast);
         cast.SetContinuation(outerContinuation);
     }
 

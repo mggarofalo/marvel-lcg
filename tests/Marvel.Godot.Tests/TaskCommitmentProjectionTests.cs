@@ -112,7 +112,7 @@ public sealed class TaskCommitmentProjectionTests
         Assert.Same(composer.Prompt, cleared.Prompt);
         Assert.Equal(3, cleared.Selected!.Id);
         Assert.Empty(cleared.Targets);
-        Assert.True(cleared.TryBuild(out EngineDecision? answer, out _));
+        Assert.True(cleared.TryBuild(out Decision? answer, out _));
         Assert.Empty(answer!.Targets);
         Assert.Equal([1, 2], composer.Targets);
         Assert.True(BoardContextualInteractionControls.CanClearDraft(composer));
@@ -155,7 +155,7 @@ public sealed class TaskCommitmentProjectionTests
 
         Assert.Equal(3, composer.Selected!.Id);
         Assert.Empty(composer.Targets);
-        Assert.True(composer.TryBuild(out EngineDecision? proposed, out _));
+        Assert.True(composer.TryBuild(out Decision? proposed, out _));
         Assert.Empty(proposed!.Targets);
         Assert.False(BoardContextualInteractionControls.CanClearDraft(composer));
         composer.SelectTargets([1]);

@@ -43,7 +43,7 @@ public sealed class PlayerEffectExplanationTests
         if (face is "01091" or "01092") Assert.Contains("Exhaust", offer.CostDescription);
         runner.Act(world, action, paying, []);
         var step = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, source, 0, step.Index, step.Tier)!;
+        var prompt = runner.Choosing(world, step)!;
         Assert.Contains(effect, prompt.Description!, StringComparison.OrdinalIgnoreCase);
         var choice = Assert.Single(prompt.Affordances, option => option.Id == peter.IdentityCard.ObjectId);
         Assert.Contains(commitment, choice.CommitLabel);
@@ -55,7 +55,7 @@ public sealed class PlayerEffectExplanationTests
             // "If a card enters play ... after the creation of a lasting effect, it is still affected by that lasting effect."
             Assert.Contains("characters they control later", choice.Description);
         }
-        runner.Chose(world, source, 0, step.Index, Decision.Take(choice.Id), step.Tier);
+        runner.Chose(world, step, Decision.Take(choice.Id));
         if (face is "01010b" or "01091")
         {
             Assert.Single(peter.Hand.Cards);

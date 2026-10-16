@@ -110,8 +110,6 @@ internal static class AbilityStructuralCommands
     {
         _ = execution.ApplyAdmission(choice.Admission, cast);
         if (choice.BindsPlayerSelection) cast.ChooseSelection(choice.Selection);
-        if (choice.PendingOutcome is { } outcome)
-            cast.CompletePendingDependency((ResolutionOutcome)(int)outcome);
         execution.RunStructuralLeaf(new RunLeaf(
             choice.Effect, [.. cast.StructuralPath, choice.Frame],
             cast.Position, cast.HasContinuation), cast);
@@ -122,8 +120,8 @@ internal static class AbilityStructuralCommands
         AbilityResolutionState cast)
     {
         int ordinal = execution.AbilityOrdinal(schedule.Effect, cast);
-        EachPlayerEffects.Schedule(cast.World, AbilityContinuationCodec.Step(
-            execution.Capture(cast, ordinal), Steps.ResolveEachPlayer,
+        EachPlayerEffects.Schedule(cast.World, AbilityContinuations.Step(
+            execution.Capture(cast, ordinal), AbilityContinuationStage.ResolvePlayer,
             cast.World.Agenda.Current?.Round ?? 0));
         cast.Suspend();
     }
@@ -134,10 +132,10 @@ internal static class AbilityStructuralCommands
     {
         var activation = cast.World.Activation
             ?? throw new InvalidOperationException("Structural owner admitted no activation");
-        execution.runtimes.AfterActivation(
-            cast.World, activation.Id, new ActivationEffect(
-                cast.Source.ObjectId, cast.Player, cast.Tier, delay.Effect.Effect,
-                cast.Altered?.ObjectId ?? -1, cast.AbilityActor?.ObjectId ?? -1));
+        AbilityGameRuntime.For(cast.World, execution.program).AfterActivation(
+            activation.Id, new ActivationEffect(
+                execution.Capture(cast, execution.AbilityOrdinal(delay.Effect, cast)),
+                cast.Altered?.ObjectId ?? -1));
         cast.ResolveEffect();
     }
 
@@ -145,9 +143,10 @@ internal static class AbilityStructuralCommands
         this AbilityResolutionExecution execution, RunOrdered ordered,
         AbilityResolutionState cast)
     {
+        AbilityStructuralOutcome? completed = null;
         for (int position = 0; position < ordered.Effects.Length; position++)
         {
-            var frame = ordered.Frames[position];
+            var frame = ordered.Frames[position] with { CompletedOutcome = completed };
             cast.StructuralPath.Add(frame);
             try
             {
@@ -160,7 +159,9 @@ internal static class AbilityStructuralCommands
                 cast.StructuralPath.RemoveAt(cast.StructuralPath.Count - 1);
             }
             if (cast.Suspended) return;
+            completed = AbilityCompletion.Combine(completed, cast.CompletedOutcome);
         }
+        cast.CompletedOutcome = completed ?? AbilityStructuralOutcome.None;
     }
 
 }

@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Rules.Events;
 using Marvel.Server;
 using Xunit;
@@ -16,7 +17,7 @@ public sealed class DeckReturnClientValidationTests : LocalGameClientTestBase
     {
         // Synthetic wire shapes exercise admission, not a played card ability.
         var receipt = new CardsShuffledIntoDeck(player, count, [title]);
-        ClientStartupResult result = await OpenWithReceipt(receipt);
+        ClientEntryResult result = await OpenWithReceipt(receipt);
         Assert.Equal(accepted, result.Succeeded);
     }
 
@@ -27,11 +28,11 @@ public sealed class DeckReturnClientValidationTests : LocalGameClientTestBase
         Assert.True((await OpenWithReceipt(new CardsShuffledIntoDeck(0, 2, []))).Succeeded);
     }
 
-    private static async Task<ClientStartupResult> OpenWithReceipt(CardsShuffledIntoDeck receipt)
+    private static async Task<ClientEntryResult> OpenWithReceipt(CardsShuffledIntoDeck receipt)
     {
         EngineResponse opened = Host().Exchange(
-            EngineRequest.OpenGame("local-open", LocalGameSession.GameId, Specification()));
+            EngineRequest.OpenGame("local-open", "test-table", Specification()));
         return await new LocalGameClient(new FixedTransport(opened with { Events = [receipt] }))
-            .OpenAsync(Specification(), TestContext.Current.CancellationToken);
+            .OpenSessionAsync("test-table", Specification(), TestContext.Current.CancellationToken);
     }
 }

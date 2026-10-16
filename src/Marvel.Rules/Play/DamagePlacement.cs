@@ -26,13 +26,11 @@ public static class DamagePlacement
     /// <param name="by">
     /// The seat whose character is dealing it, or <c>-1</c>.
     /// <para>
-    /// <b>Filled in only where it is unambiguous</b>, which today is an attack:
-    /// <c>rr:ownership-and-control.2</c> puts the attacking character under its
-    /// owner's control, so the attacker's seat is who did it, and an enemy's
-    /// attacker has no seat. Damage from a card ability is left at <c>-1</c> on
-    /// purpose — the player resolving an encounter card is the seat it was
-    /// dealt to, and calling that "the player who defeated your ally" would be
-    /// a plausible answer to a question nobody asked.
+    /// The caller supplies causal attribution. For card effects,
+    /// <c>rr:you-your.12</c> and <c>.14</c> credit events and eligible upgrades
+    /// to the identity; <c>.15</c> and <c>.18</c> exclude allies and supports.
+    /// Resolving an encounter card does not make its damage the resolving
+    /// identity's damage. Its assignment therefore carries <c>-1</c>.
     /// </para>
     /// </param>
     /// <returns>Whether the target was defeated.</returns>
@@ -77,7 +75,7 @@ public static class DamagePlacement
         var placed = Place(world, facts, request.Source, request.Target,
             request.Amount, request.Trigger, request.Verb, events);
         var outcome = FinishPlaced(world, facts, request.Source, placed,
-            request.Trigger, request.Verb, events, request.By);
+            request.Trigger, request.Verb, events, request.By, request.RecordDefeatOn);
         return new DamageResult(outcome, placed.Dealt, placed.Taken);
     }
 

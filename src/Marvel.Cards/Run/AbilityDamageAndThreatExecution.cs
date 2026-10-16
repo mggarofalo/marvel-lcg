@@ -1,3 +1,5 @@
+using static Marvel.Cards.Run.AbilityDamageAndThreatQueries;
+using static Marvel.Cards.Run.AbilityThreatExecution;
 using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
@@ -45,8 +47,10 @@ internal static class AbilityDamageAndThreatExecution
         AbilityEffect.RemoveThreat removal, AbilityDamageAndThreatContext context,
         long multiplier)
     {
-        ExecuteRemoveThreat(removal, context, multiplier);
-        return new AbilityDamageAndThreatState().ToResult();
+        var state = new AbilityDamageAndThreatState();
+        AbilityEffectBoundary.Begin(context, state);
+        state.Outcome = ExecuteRemoveThreat(removal, context, multiplier);
+        return state.ToResult();
     }
 
     internal static AbilityDamageAndThreatResult Run(
@@ -98,7 +102,8 @@ internal static class AbilityDamageAndThreatExecution
             case AbilityEffect.PlaceThreat threat:
                 PlaceThreat(threat, context, state); return true;
             case AbilityEffect.RemoveThreat removal:
-                ExecuteRemoveThreat(removal, context); return true;
+                AbilityEffectBoundary.Begin(context, state);
+                state.Outcome = ExecuteRemoveThreat(removal, context); return true;
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.SoakDamage } soak:
                 Soak(soak.Selection, context, state); return true;
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ReplaceThreatWithDamage } replacement:
@@ -115,6 +120,7 @@ internal static class AbilityDamageAndThreatExecution
             ? DamageRecovery.Heal(context.World, context.World.Facts, target, Amount(heal.Amount, context),
                 context.Trigger, "Heal", context.Events)
             : 0;
+        state.Outcome = AbilityCompletion.Amount(state.Healed.Value, Amount(heal.Amount, context));
     }
 
     private static void Indirect(AbilityEffect.IndirectDamage damage, AbilityEffect node,
@@ -162,12 +168,16 @@ internal static class AbilityDamageAndThreatExecution
     private static void ResolveAssigned(AbilityEffect node, AbilityDamageAndThreatContext context,
         AbilityDamageAndThreatState state, IReadOnlyDictionary<int, long> assigned)
     {
+        AbilityEffectBoundary.Begin(context, state);
         bool suspended = false;
+        var occurrence = context.World.Agenda.Occurrence;
         foreach (var (card, damage) in assigned.OrderBy(each => each.Key))
         {
-            suspended |= DamagePlacement.DealOutcome(context.World, context.World.Facts, context.Source,
-                context.World.Cards[card], damage, context.Trigger, "Indirect_Damage", context.Events)
-                == Damage.Outcome.Suspended;
+            var request = new DamageRequest(context.Source, context.World.Cards[card], damage,
+                context.Trigger, "Indirect_Damage", AbilityEffectAttribution.IdentityPlayer(context))
+                { RecordDefeatOn = occurrence };
+            suspended |= DamagePlacement.Resolve(context.World, context.World.Facts, request,
+                context.Events).Outcome == Damage.Outcome.Suspended;
         }
         if (suspended) state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
     }
@@ -175,15 +185,21 @@ internal static class AbilityDamageAndThreatExecution
     private static void DealDamage(AbilityEffect.Damage damage, AbilityEffect node,
         AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state, long multiplier = 1)
     {
+        AbilityEffectBoundary.Begin(context, state);
         long amount = ModifiedAbilityDamage(AbilityAmounts.SaturatingMultiply(
             Amount(damage.Amount, context), multiplier), context);
         string verb = damage.AttackVerb ? "Attack" : "Deal_Damage";
         bool suspended = false;
+        var occurrence = context.World.Agenda.Occurrence;
         foreach (var target in Every(damage.Cards, context))
         {
             var result = DamagePlacement.Resolve(context.World, context.World.Facts,
-                new DamageRequest(context.Source, target, amount, context.Trigger, verb), context.Events);
+                new DamageRequest(context.Source, target, amount, context.Trigger, verb,
+                    AbilityEffectAttribution.IdentityPlayer(context))
+                    { RecordDefeatOn = occurrence }, context.Events);
             suspended |= result.Outcome == Damage.Outcome.Suspended;
+            state.Outcome = AbilityCompletion.Combine(state.Outcome,
+                AbilityCompletion.Amount(result.Dealt, amount));
             if (context.Power == BasicPowers.AttackVerb && result.Taken > 0)
                 context.Occurrence.Also(Steps.DamageDealt);
         }
@@ -201,6 +217,7 @@ internal static class AbilityDamageAndThreatExecution
     private static void MoveDamage(AbilityEffect.MoveDamage movement, AbilityEffect node,
         AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state)
     {
+        AbilityEffectBoundary.Begin(context, state);
         var from = Find(movement.From, context) ?? throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' cannot find the character damage moves from");
         var to = Find(movement.To, context) ?? throw new RulesNotImplementedException(
@@ -209,14 +226,18 @@ internal static class AbilityDamageAndThreatExecution
         if (amount <= 0 || !AbilityProgramQueries.CanTakeDamage(
                 context.World, context.Program, to, context.Source)) return;
         DamageRecovery.Heal(context.World, context.World.Facts, from, amount, context.Trigger, "Move_Damage", context.Events);
-        if (DamagePlacement.DealOutcome(context.World, context.World.Facts, context.Source, to, amount,
-            context.Trigger, "Attack", context.Events) == Damage.Outcome.Suspended)
+        var request = new DamageRequest(context.Source, to, amount,
+            context.Trigger, "Attack", AbilityEffectAttribution.IdentityPlayer(context))
+            { RecordDefeatOn = context.World.Agenda.Occurrence };
+        if (DamagePlacement.Resolve(context.World, context.World.Facts, request,
+            context.Events).Outcome == Damage.Outcome.Suspended)
             state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
     }
 
     private static void DealAttackDamage(AbilityEffect.AttackDamage damage, AbilityEffect node,
         AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state)
     {
+        AbilityEffectBoundary.Begin(context, state);
         var attacker = context.PowerActor ?? context.AbilityActor
             ?? context.World.Seats[Resolver(context)].IdentityCard;
         ContinuousEffect? temporaryOverkill = null;
@@ -249,6 +270,7 @@ internal static class AbilityDamageAndThreatExecution
     private static void MoveAttackDamage(AbilityEffect.MoveDamage movement, AbilityEffect node,
         AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state)
     {
+        AbilityEffectBoundary.Begin(context, state);
         var from = Find(movement.From, context) ?? throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' cannot find the character damage moves from");
         var to = Find(movement.To, context) ?? throw new RulesNotImplementedException(
@@ -263,66 +285,6 @@ internal static class AbilityDamageAndThreatExecution
             context.Source, to, amount, context.Trigger, BasicPowers.AttackVerb, context.Events, retaliate: false);
         if (damaged.Characters.Count > 0) context.Occurrence.Also(Steps.DamageDealt);
         if (damaged.Suspended) state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
-    }
-
-    private static void PlaceThreat(AbilityEffect.PlaceThreat threat,
-        AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state)
-    {
-        var schemes = Every(threat.Schemes, context);
-        if (schemes.Count == 0) return;
-        long amount = Amount(threat.Amount, context);
-        if (amount <= 0) return;
-        if (context.HasContinuation) throw new RulesNotImplementedException(
-            $"'{context.Source.FaceId}' places threat before its ability has finished; the continuation must be preserved across the threat interrupt window");
-        Threat.Schedule(context.World, schemes, context.Source, amount, ThreatCause.CardAbility,
-            context.Trigger, context.Player, context.ResolutionAbility, context.Occurrence);
-        state.Suspension = AbilityDamageAndThreatSuspension.ScheduledThreat;
-    }
-
-    private static void PreventThreat(AbilityEffect.PreventThreat prevention, AbilityDamageAndThreatContext context)
-    {
-        var placement = context.ImminentThreat ?? context.Occurrence.Threat
-            ?? throw new RulesNotImplementedException($"'{context.Source.FaceId}' would prevent threat that is not imminent");
-        placement.Prevent(Amount(prevention.Amount, context));
-    }
-
-    private static void ReplaceThreatWithDamage(AbilityCardSelection selection, AbilityEffect node,
-        AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state)
-    {
-        var placement = context.Occurrence.Threat
-            ?? throw new RulesNotImplementedException($"'{context.Source.FaceId}' would replace threat that is not imminent");
-        long damage = placement.Remaining;
-        var target = Find(selection, context) ?? throw new RulesNotImplementedException(
-            $"'{context.Source.FaceId}' replaces threat with damage to a card that is not there");
-        placement.Replace();
-        // The replacement has applied before the nested damage procedure can
-        // open a defeat window. This is the one resolution-ledger fact this
-        // domain procedure must commit mid-handler.
-        context.ResolveEffect();
-        if (DamagePlacement.DealOutcome(context.World, context.World.Facts, context.Source, target, damage,
-            context.Trigger, "Deal_Damage", context.Events) == Damage.Outcome.Suspended)
-            state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
-    }
-
-    private static void ExecuteRemoveThreat(AbilityEffect.RemoveThreat removal,
-        AbilityDamageAndThreatContext context, long multiplier = 1)
-    {
-        var schemes = Every(removal.Schemes, context);
-        if (schemes.Count == 0) throw new RulesNotImplementedException(
-            $"'{context.Source.FaceId}' would remove threat from a scheme that is not there");
-        foreach (var scheme in schemes)
-        {
-            if (!removal.IgnoresCrisis && scheme.Area.Type == DeckType.MainSchemesArea
-                && EffectiveCards.Kind(context.Source, context.World.Facts) is CardKind.Event or CardKind.Ally or CardKind.Hero or CardKind.AlterEgo or CardKind.Upgrade or CardKind.Support
-                && MainScheme.Crisis(context.World, context.World.Facts)) continue;
-            Threat.Remove(context.World, context.World.Facts, context.ThreatAbilities, scheme,
-                AbilityAmounts.SaturatingSum(AbilityAmounts.SaturatingMultiply(
-                    Amount(removal.Amount, context), multiplier),
-                    [AbilityEventModifiers.Amount(context.World, context.Source, "eventThreatRemoval")]),
-                context.Trigger, "Remove_Threat", context.Events, by: Resolver(context),
-                overridesCannotFrom: removal.OverridesCannotFrom is { } source
-                    ? Find(source, context)?.ObjectId ?? -1 : -1);
-        }
     }
 
     private static void Soak(AbilityCardSelection selection, AbilityDamageAndThreatContext context,
@@ -345,39 +307,5 @@ internal static class AbilityDamageAndThreatExecution
             Affects: target, Lasts: new Duration(Uses: 1)));
     }
 
-    private static long Amount(AbilityNumber number, AbilityDamageAndThreatContext context)
-    {
-        var selectors = new AbilitySelectorEvaluation(
-            context.Expressions.Bindings, null, context.Program);
-        var evaluation = new AbilityExpressionEvaluation(context.Expressions, selectors);
-        var result = evaluation.Result(evaluation.Amount(number));
-        Publish(result, context.World);
-        return result.Value;
-    }
 
-    private static Card? Find(AbilityCardSelection selection, AbilityDamageAndThreatContext context)
-    {
-        var evaluation = new AbilitySelectorEvaluation(
-            context.Expressions.Bindings, null, context.Program);
-        var result = evaluation.Result(evaluation.Find(selection));
-        Publish(result, context.World);
-        return result.Value;
-    }
-
-    private static IReadOnlyList<Card> Every(AbilityCardSelection selection, AbilityDamageAndThreatContext context)
-    {
-        var evaluation = new AbilitySelectorEvaluation(
-            context.Expressions.Bindings, null, context.Program);
-        var result = evaluation.Result(evaluation.Every(selection));
-        Publish(result, context.World);
-        return result.Value;
-    }
-
-    private static void Publish<T>(AbilityQueryResult<T> result, World world)
-    {
-        foreach (var observation in result.Information) world.RecordInformation(observation);
-    }
-
-    private static int Resolver(AbilityDamageAndThreatContext context) =>
-        AbilityCardQueries.Resolver(context.Expressions.Bindings);
 }

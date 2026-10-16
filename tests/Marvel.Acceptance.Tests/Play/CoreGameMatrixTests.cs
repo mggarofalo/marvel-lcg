@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
@@ -52,12 +53,6 @@ public sealed class CoreGameMatrixTests
                     seed = (Heroes[heroIndex], Campaigns[campaignIndex]) switch
                     {
                         ("spider_man", "klaw") => 1268,
-                        // This matrix exercises complete games, not setup's
-                        // prompt boundary. Seed 285 puts Hydra Bomber into play
-                        // during Klaw setup; rr:when-revealed-abilities.1 now
-                        // correctly defers its mandatory choice to setup, where
-                        // the original investigation owns making that choice resumable.
-                        ("iron_man", "klaw") => 1285,
                         ("she_hulk", "ultron") => 1281,
                         ("she_hulk", "ultron_expert") => 1282,
                         _ => seed,
