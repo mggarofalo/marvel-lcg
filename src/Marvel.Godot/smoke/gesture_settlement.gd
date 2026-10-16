@@ -73,3 +73,34 @@ static func _hand_is_resting(cards: Array[Node]) -> bool:
 		var card := candidate as Control
 		if not _local_resting_pose(card, card.position, card.rotation): return false
 	return true
+
+
+# Synthetic native geometry: a fractional parent correction is visually bounded,
+# while an altered authored local pose or rotated basis remains a failed return.
+static func fractional_parent_probe(tree: SceneTree) -> bool:
+	var parent := Control.new()
+	var card := Control.new()
+	tree.root.add_child(parent)
+	parent.add_child(card)
+	parent.position = Vector2(0.25, 0.25)
+	parent.scale = Vector2(0.8, 0.8)
+	card.rotation = PI / 2.0
+	card.set_meta("spatial_resting_position", card.position)
+	card.set_meta("spatial_resting_rotation", card.rotation)
+	card.force_update_transform()
+	var expected := card.get_global_transform()
+	parent.position += Vector2(0.03125, 0.0)
+	card.force_update_transform()
+	var distinguishes_coordinate_tolerance := not card.get_global_transform().is_equal_approx(expected)
+	var bounded_parent := await global_pose(tree, card, expected)
+	card.position = Vector2(0.25, 0.0)
+	var rejects_local := not _authored_pose_matches(card)
+	card.position = Vector2.ZERO
+	card.rotation += 0.01
+	var rejects_rotation := not _global_matches(card, expected)
+	card.rotation = PI / 2.0
+	parent.position += Vector2(0.125, 0.0)
+	var rejects_displacement := not _global_matches(card, expected)
+	parent.queue_free()
+	return distinguishes_coordinate_tolerance and bounded_parent and rejects_local \
+			and rejects_rotation and rejects_displacement

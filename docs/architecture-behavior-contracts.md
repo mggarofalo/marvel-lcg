@@ -317,3 +317,20 @@ Four further mutations compiled and failed behavioral assertions:
 Each mutation was restored byte-for-byte. The restored attribution and causal
 ownership focus passed all seven cases; the stable-kind mutation was separately
 restored and all three Ground Stomp cases passed.
+
+## Native gesture settlement predicate
+
+The exhausted-card smoke now relies on the same completed-return predicate for
+cancelled and invalid drags: restored local pose, inactive return motion, strict
+transform basis, and less than 0.1 rendered pixel of global origin displacement.
+It separately retains exact revision and commitment checks. A second,
+coordinate-relative whole-transform comparison contradicted that predicate.
+
+The normal local-game smoke runs a synthetic native fractional-parent probe.
+A 0.03125-pixel parent translation distinguishes the two predicates; changed local
+position, rotation, and excessive global displacement remain rejected. Replacing
+the canonical comparison with the stricter whole-transform comparison produced
+`FRACTIONAL_PARENT_PROBE accepted=false`; restored source passed. The corrected
+scale-80 full journey passed. The original intermittent failure was not reproduced
+in the initial full journey and five bounded focused repeats; this evidence proves
+the predicate contradiction, not an independently reproduced production race.
