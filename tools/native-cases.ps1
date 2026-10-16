@@ -5,7 +5,9 @@ param(
     [string[]]$Case = @('*'),
     [switch]$List,
     [switch]$NoBuild,
-    [string]$ResultsDirectory
+    [string]$ResultsDirectory,
+    [int]$ShardIndex = 0,
+    [int]$ShardCount = 1
 )
 
 $ErrorActionPreference = 'Stop'
@@ -25,7 +27,9 @@ if ($selected.Count -eq 0) { throw 'No native cases match this profile and selec
 foreach ($selector in $Case) {
     if (@($selected | Where-Object { $_.id -like $selector }).Count -eq 0) { throw "Unknown native case selector: $selector" }
 }
-if ($List) { $selected | ConvertTo-Json -Depth 12; return }
+$selected = @(Select-NativeShard $selected $ShardIndex $ShardCount)
+if ($List) { ConvertTo-Json -InputObject @($selected) -Depth 12; return }
+if ($selected.Count -eq 0) { throw 'No native cases in the selected shard.' }
 if ([string]::IsNullOrWhiteSpace($GodotBin)) { throw 'Set GODOT_BIN or pass -GodotBin.' }
 if ([string]::IsNullOrWhiteSpace($ResultsDirectory)) {
     $ResultsDirectory = $env:MARVEL_NATIVE_RESULTS_DIRECTORY
@@ -41,7 +45,7 @@ if ($ResultsDirectory.Equals([IO.Path]::GetFullPath($repoRoot), [StringCompariso
 }
 Assert-NativeEvidenceFresh $ResultsDirectory
 [IO.Directory]::CreateDirectory($ResultsDirectory) | Out-Null
-Write-Host "Native profile ${Profile}: $($selected.Count) cases. Evidence: $ResultsDirectory"
+Write-Host "Native profile ${Profile}, shard ${ShardIndex}/${ShardCount}: $($selected.Count) cases. Evidence: $ResultsDirectory"
 $version = Invoke-NativeProcess $GodotBin @('--version') @{} 15 "$ResultsDirectory/version.log" $repoRoot
 if ($version.ExitCode -ne 0 -or $version.TimedOut -or -not $version.Output.StartsWith('4.7.')) { throw 'Godot 4.7 .NET is required.' }
 if (-not $NoBuild) {
@@ -95,4 +99,4 @@ foreach ($entry in $selected) {
     if (-not $passed) { throw "Native case failed: $($entry.id). Evidence: $log; missing markers: $($missing -join ', ')" }
     Write-Host "NATIVE_CASE_OK $($entry.id) seconds=$($run.ElapsedSeconds)"
 }
-Write-Host "NATIVE_PROFILE_OK profile=$Profile cases=$($selected.Count) evidence=$results"
+Write-Host "NATIVE_PROFILE_OK profile=$Profile shard=$ShardIndex/$ShardCount cases=$($selected.Count) evidence=$results"

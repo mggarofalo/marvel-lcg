@@ -64,6 +64,7 @@ Inspect it without building or launching Godot, then select a focused case:
 
 ```powershell
 pwsh tools/native-cases.ps1 -Profile representative -List
+pwsh tools/native-cases.ps1 -Profile representative -ShardCount 2 -ShardIndex 0 -List
 pwsh tools/native-cases.ps1 -GodotBin $env:GODOT_BIN -Case card-face-sample-100-motion
 ```
 
@@ -218,20 +219,32 @@ unit-test lane.
 
 Routine pull-request, main and default manual runs execute `Managed correctness`
 once on Linux: complexity, unit, acceptance, behavioral-catalog,
-executable-specification and deterministic dataset checks. `Native integration`
-runs integration tests, architecture walls, representative Godot journeys,
-hosted-client and invitation-layout checks on both Windows and Linux; Linux also
-proves the supported server container. Windows desktop packaging remains an
-independent job. Routine native jobs have a 40-minute deadline. The preceding Windows run took
-46.6 minutes, including 13 minutes of rendered checks now assigned to
-certification. This budget preserves the remaining checks with headroom; it is
-not a completion-time guarantee or a substitute for measuring later changes.
+executable-specification and deterministic dataset checks. `Platform gates`
+runs integration tests, architecture walls, hosted-client and invitation-layout
+checks on both Windows and Linux; Linux also proves the supported server container.
+`Native journeys` runs the representative manifest in two isolated shards per OS.
+The required `Native integration (windows-latest)` and
+`Native integration (ubuntu-latest)` checks succeed only when every platform gate
+and every journey shard succeeds. Failure, cancellation, skipped work or missing
+results cannot satisfy either check. Windows desktop packaging remains independent.
+
+Routine platform-gate and native-journey jobs retain a 40-minute deadline. CI run 38869380422 completed all 129
+representative cases on Windows in 31.7 minutes and Linux in 21.3 minutes; Windows
+then reached the whole-job deadline during hosted checks. Sorting selected case IDs
+ordinally and alternating them between two shards preserves all cases and their
+inputs. That Windows measurement divides into 65 cases taking 14.2 minutes and
+64 taking 17.5 minutes, before each shard's independent setup. This is measured
+partition evidence, not a guarantee of future runner speed. Each shard builds its
+own binaries, regenerates its required fixtures and uploads separate evidence.
+Executable controls prove disjoint, exact unions for every profile and filtered
+case selection. Unsharded hooks retain manifest order; empty execution shards fail.
 
 Exhaustive certification repeats the managed checks on both platforms, runs the
 complete viewport and scale matrix, and adds rendered visual and contextual-table
 acceptance. Request it explicitly with the manual `exhaustive` input; protected
 release automation also requires it from the exact release tag. It has a
-90-minute per-platform deadline. Do not dispatch certification alongside routine
+90-minute deadline per job, with the exhaustive manifest partitioned by the same
+two-shard rule and all platform gates retained. Do not dispatch certification alongside routine
 PR CI by default. Routine success does not certify every scale or rendered state.
 
 ## Behavioral evidence for refactoring

@@ -9,7 +9,8 @@ rule or that passing tests establish product acceptance.
 
 `Architecture` below means
 `dotnet test tests/Marvel.Architecture.Tests/Marvel.Architecture.Tests.csproj -c Release`.
-These tests run in both required **Native integration** jobs. Unit and content
+These tests run in both **Platform gates** jobs, which the required
+**Native integration** checks depend on along with every native journey shard. Unit and content
 behavior runs once in required **Managed correctness** on routine PRs. Explicit
 certification and releases repeat managed behavior on Windows and Linux.
 

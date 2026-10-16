@@ -27,6 +27,22 @@ function Read-NativeManifest {
     return $manifest
 }
 
+function Select-NativeShard {
+    param([object[]]$Cases, [int]$ShardIndex, [int]$ShardCount)
+    if ($ShardCount -lt 1 -or $ShardIndex -lt 0 -or $ShardIndex -ge $ShardCount) {
+        throw 'Native shard requires count >= 1 and 0 <= index < count.'
+    }
+    # The unsharded hook keeps manifest order. Shards use ordinal ID order on every OS.
+    if ($ShardCount -eq 1) { return $Cases }
+    $byId = @{}
+    foreach ($entry in $Cases) { $byId[$entry.id] = $entry }
+    [string[]]$ids = @($Cases | ForEach-Object { $_.id })
+    [Array]::Sort($ids, [StringComparer]::Ordinal)
+    for ($index = 0; $index -lt $ids.Length; $index++) {
+        if ($index % $ShardCount -eq $ShardIndex) { $byId[$ids[$index]] }
+    }
+}
+
 function Resolve-NativeArguments {
     param([hashtable]$Entry, [hashtable]$FixturePaths)
     foreach ($argument in $Entry.arguments) {
