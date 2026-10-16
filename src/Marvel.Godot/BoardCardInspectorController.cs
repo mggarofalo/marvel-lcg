@@ -120,7 +120,7 @@ internal sealed class BoardCardInspectorController
     private Control CreateFittedDetail(BoardCardPresentation card, Control? source, bool pinned, int? maximumScale)
     {
         InterfaceScale scale = CardInspectorFocus.FittedScale(card, main.interfaceScale, layout.AvailableHeight());
-        if (maximumScale is { } maximum) scale = (InterfaceScale)Math.Min((int)scale, Math.Max(80, maximum));
+        if (maximumScale is { } maximum) scale = (InterfaceScale)Math.Min((int)scale, Math.Max(50, maximum));
         while (true)
         {
             ClearContent();
@@ -129,14 +129,13 @@ internal sealed class BoardCardInspectorController
             detail.SetMeta("inspection_scale", (int)scale);
             main.cardInspectorContent.AddChild(detail);
             layout.Position(card, source, pinned);
-            if (maximumScale is not < 80 && layout.PreservesSituation()) return detail;
-            if ((int)scale <= 80)
+            if (maximumScale is not < 50 && layout.PreservesSituation()) return detail;
+            if ((int)scale <= 50)
             {
                 main.cardInspectorFrame.SetMeta("bounded_inspection", true);
-                main.cardInspectorTitle.Text = pinned ? "Scroll to read the full card" : "Pin to read the full card";
+                main.cardInspectorTitle.Text = "Pin to read the full card";
                 main.cardInspectorTitle.Visible = true;
                 main.cardInspectorTitle.GetParent<HBoxContainer>().Visible = true;
-                main.cardInspectorScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Auto;
                 layout.Position(card, source, pinned);
                 return detail;
             }
@@ -193,7 +192,9 @@ internal sealed class BoardCardInspectorController
     private void ConfigureFrame()
     {
         main.cardInspectorScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever;
-        main.cardInspectorScroll.VerticalScrollMode = ScrollContainer.ScrollMode.Auto;
+        main.cardInspectorScroll.VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever;
+        main.cardInspectorScroll.ScrollHorizontal = 0;
+        main.cardInspectorScroll.ScrollVertical = 0;
         using var empty = new StyleBoxEmpty();
         main.cardInspectorFrame.AddThemeStyleboxOverride("panel", empty);
     }

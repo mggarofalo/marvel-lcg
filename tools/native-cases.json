@@ -40,6 +40,7 @@
     }
   },
   "cases": [
+    {"id":"whole-card-preview-100-motion","script":"res://smoke/whole_card_preview_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["WHOLE_CARD_PREVIEW_OK"]},
     {"id":"card-face-sample-50-motion","script":"res://smoke/card_face_sample_smoke.gd","profiles":["representative","exhaustive"],"scale":50,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["B1_FACES_OK"],"fixture":"faces","arguments":["--marvel-b1-faces={fixture}"],"evidenceKind":"synthetic-component"},
     {"id":"card-face-sample-80-motion","script":"res://smoke/card_face_sample_smoke.gd","profiles":["representative","exhaustive"],"scale":80,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["B1_FACES_OK"],"fixture":"faces","arguments":["--marvel-b1-faces={fixture}"],"evidenceKind":"synthetic-component"},
     {"id":"card-face-sample-100-motion","script":"res://smoke/card_face_sample_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["B1_FACES_OK"],"fixture":"faces","arguments":["--marvel-b1-faces={fixture}"],"evidenceKind":"synthetic-component"},

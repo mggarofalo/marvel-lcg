@@ -30,13 +30,21 @@ public sealed class CardInspectorFreeSpaceTests
     }
 
     [Fact]
-    public void BoundedDetailKeepsNativeWidthAndScrollsWithoutCoveringParticipants()
+    public void SpaceForOnlyPartOfTheCardDoesNotBecomeAClippedPreview()
     {
         Rect2[] protectedRegions = [new(0, 0, 200, 800), new(600, 0, 680, 800),
             new(200, 500, 400, 300), new(200, 0, 400, 100)];
         Rect2 frame = CardInspectorFreeSpace.Fit(new(1280, 800), new(340, 600), protectedRegions);
-        Assert.Equal(340, frame.Size.X);
-        Assert.InRange(frame.Size.Y, 350, 400);
+        Assert.False(frame.HasArea());
+    }
+
+    [Fact]
+    public void CompleteDetailFitsWithoutCoveringParticipants()
+    {
+        Rect2[] protectedRegions = [new(0, 0, 200, 800), new(600, 0, 680, 800),
+            new(200, 500, 400, 300), new(200, 0, 400, 100)];
+        Rect2 frame = CardInspectorFreeSpace.Fit(new(1280, 800), new(280, 350), protectedRegions);
+        Assert.Equal(new Vector2(280, 350), frame.Size);
         Assert.All(protectedRegions, region => Assert.False(frame.Intersects(region)));
     }
 
