@@ -19,9 +19,9 @@ dotnet husky exec .husky/csx/complexity.csx
 The package and command-line options are documented by
 [Lizard on PyPI](https://pypi.org/project/lizard/1.24.0/). The checker analyzes all
 tracked and non-ignored source files; it does not limit inspection to staged edits.
-CI runs this same hook script once in the managed pull-request lane and on both
-Windows and Linux during exhaustive main/manual/release runs. Local execution on
-one operating system does not establish cross-platform CI success.
+CI runs this same hook script once in the routine managed lane and on both
+Windows and Linux during explicit certification and release runs. Local execution
+on one operating system does not establish cross-platform CI success.
 
 ## Fast merge preparation
 
@@ -36,13 +36,25 @@ dotnet test tests/Marvel.UnitTests.slnx -c Release --no-build
 assembly. Tests that exercise a particular transcript call the single-scenario
 runner and do not execute the corpus as a side effect.
 
-The local pre-commit gate is deliberately broader than this fast lane. It builds
-the complete solution in Release before running every managed test project with
-`--no-build`, so neither a project nor a slower managed test lane can be omitted
-before Git accepts a commit. It then runs the native Godot journey at every
-supported UI scale, with the reduced-motion checkpoint and
-two-player desktop scale variants. CI remains authoritative for the second
-operating system and packaging.
+Pre-commit runs source-layout, complexity and file-length policy checks. It does
+not rerun complete managed or native suites on every commit. Required PR CI owns
+the managed and platform assurance below; bypassing a local hook cannot bypass
+those required checks.
+
+For an explicit broad local check, run:
+
+```bash
+dotnet husky run --group validation
+```
+
+That group builds the complete Release solution, runs every managed test project
+with `--no-build`, then runs the representative native profile. The profile
+includes focused probes, six complete game journeys, reduced motion and the three
+two-player scale variants. Its local timeout is 25 minutes; the preceding full
+suite log implies approximately 18 minutes for this membership on this machine.
+The complete scale matrix remains available through the default
+`tools/godot-smoke.ps1` or `tools/godot-smoke.sh` invocation. CI remains
+authoritative for the second operating system and packaging.
 
 ## Integration
 
@@ -70,20 +82,21 @@ unit-test lane.
 
 ## CI assurance profiles
 
-Pull requests split assurance by what can vary. `Managed correctness` runs the
-complexity, unit, acceptance, behavioral-catalog, executable-specification and deterministic
-dataset checks once on Linux. `Native integration` builds and runs integration,
-architecture-wall, native Godot, hosted-client and rendered-state checks on both
-Windows and Linux; Linux also proves the supported server container. Windows
-desktop packaging remains an independent job.
+Routine pull-request, main and default manual runs execute `Managed correctness`
+once on Linux: complexity, unit, acceptance, behavioral-catalog,
+executable-specification and deterministic dataset checks. `Native integration`
+runs integration tests, architecture walls, representative Godot journeys,
+hosted-client and invitation-layout checks on both Windows and Linux; Linux also
+proves the supported server container. Windows desktop packaging remains an
+independent job. Routine native jobs have a 30-minute deadline; this is a failure
+bound, not a measured completion-time guarantee.
 
-The pull-request native game uses one representative viewport at the default
-scale with both motion preferences. Pushes to `main`, manual runs and protected
-release calls replace it with the complete viewport and scale matrix and repeat
-the platform-neutral checks on both operating systems. A merged change therefore
-gets exhaustive cross-platform evidence, while a pull request gets an earlier
-answer from the same platform boundaries. Release automation explicitly requests
-the exhaustive profile from the exact protected tag.
+Exhaustive certification repeats the managed checks on both platforms, runs the
+complete viewport and scale matrix, and adds rendered visual and contextual-table
+acceptance. Request it explicitly with the manual `exhaustive` input; protected
+release automation also requires it from the exact release tag. It has a
+90-minute per-platform deadline. Do not dispatch certification alongside routine
+PR CI by default. Routine success does not certify every scale or rendered state.
 
 ## Behavioral evidence for refactoring
 

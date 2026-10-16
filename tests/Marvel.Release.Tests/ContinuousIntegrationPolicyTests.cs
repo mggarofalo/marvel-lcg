@@ -6,7 +6,7 @@ namespace Marvel.Release.Tests;
 public sealed class ContinuousIntegrationPolicyTests
 {
     [Fact]
-    public void PullRequestsSeparateManagedAndPlatformAssurance()
+    public void RoutineRunsSeparateManagedAndPlatformAssurance()
     {
         string workflow = Read(".github", "workflows", "ci.yml");
 
@@ -14,7 +14,7 @@ public sealed class ContinuousIntegrationPolicyTests
             StringComparison.Ordinal);
         Assert.Contains("platform:\n    name: Native integration (${{ matrix.os }})", workflow,
             StringComparison.Ordinal);
-        Assert.Contains("github.event_name == 'pull_request' && !inputs.exhaustive", workflow,
+        Assert.Contains("if: ${{ !inputs.exhaustive }}", workflow,
             StringComparison.Ordinal);
         Assert.Contains("godot-smoke.sh \"$GODOT_BIN\" --representative", workflow,
             StringComparison.Ordinal);
@@ -26,12 +26,12 @@ public sealed class ContinuousIntegrationPolicyTests
     }
 
     [Fact]
-    public void MasterAndReleaseRetainExhaustiveCrossPlatformCertification()
+    public void ExplicitCertificationAndReleaseRetainExhaustiveCrossPlatformChecks()
     {
         string workflow = Read(".github", "workflows", "ci.yml");
         string release = Read(".github", "workflows", "release-desktop.yml");
 
-        Assert.Contains("github.event_name != 'pull_request' || inputs.exhaustive", workflow,
+        Assert.Contains("if: ${{ inputs.exhaustive }}", workflow,
             StringComparison.Ordinal);
         Assert.Contains("The local viewport and scale matrix passes (Linux)", workflow,
             StringComparison.Ordinal);

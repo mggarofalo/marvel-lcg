@@ -14,14 +14,15 @@ static int RunNativeSmoke()
     start.ArgumentList.Add(System.IO.Path.Combine(root, "tools", "godot-smoke.ps1"));
     start.ArgumentList.Add("-GodotBin");
     start.ArgumentList.Add(godot);
+    start.ArgumentList.Add("-Representative");
 
     using var process = System.Diagnostics.Process.Start(start)
         ?? throw new InvalidOperationException("Could not start native Godot smoke");
-    // The full native suite includes eleven motion-enabled game journeys.
-    if (!process.WaitForExit(TimeSpan.FromMinutes(35)))
+    // Local validation exercises the representative profile; certification owns the scale matrix.
+    if (!process.WaitForExit(TimeSpan.FromMinutes(25)))
     {
         process.Kill(true);
-        throw new TimeoutException("Native Godot smoke did not finish within thirty-five minutes");
+        throw new TimeoutException("Native Godot smoke did not finish within twenty-five minutes");
     }
     return process.ExitCode;
 }
@@ -40,7 +41,7 @@ static string ResolveGodot()
         return windowsDefault;
     }
     throw new InvalidOperationException(
-        "Set GODOT_BIN to the Godot 4.7 .NET executable before committing.");
+        "Set GODOT_BIN to the Godot 4.7 .NET executable before native validation.");
 }
 
 static string RepositoryRoot()

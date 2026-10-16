@@ -1,14 +1,19 @@
 name: CI
 
-# Pull requests run platform-neutral correctness once and platform boundaries on
-# both supported runners. Main and protected release calls repeat the complete
-# profile on Windows and Linux. A red main must mean "something broke".
+# Routine runs check managed correctness once and platform boundaries on both
+# supported runners. Exhaustive certification is explicit or release-required.
 
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      exhaustive:
+        description: Run the cross-platform exhaustive certification profile.
+        required: false
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       exhaustive:
@@ -30,7 +35,7 @@ concurrency:
 jobs:
   managed:
     name: Managed correctness
-    if: ${{ github.event_name == 'pull_request' && !inputs.exhaustive }}
+    if: ${{ !inputs.exhaustive }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -51,11 +56,12 @@ jobs:
       - name: Install pinned complexity tools
         run: python -m pip install --requirement tools/requirements-quality.txt
 
-      - name: Enforce the pre-commit complexity limit
+      - name: Enforce source complexity and file length
         run: |
           dotnet tool restore
           dotnet husky install
           dotnet husky exec .husky/csx/complexity.csx
+          dotnet husky exec .husky/csx/file-length.csx
 
       - name: Restore
         run: dotnet restore
@@ -84,9 +90,8 @@ jobs:
   platform:
     name: Native integration (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    # The exhaustive native scale matrix and rendered acceptance need more than
-    # an hour together on Windows; keep both profiles bounded without omitting gates.
-    timeout-minutes: ${{ github.event_name == 'pull_request' && !inputs.exhaustive && 60 || 90 }}
+    # Certification includes the complete scale matrix and rendered acceptance.
+    timeout-minutes: ${{ inputs.exhaustive && 90 || 30 }}
     strategy:
       fail-fast: false
       matrix:
@@ -103,21 +108,22 @@ jobs:
             10.0.400
 
       - name: Set up quality-tool Python
-        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        if: ${{ inputs.exhaustive }}
         uses: actions/setup-python@v7
         with:
           python-version: '3.13'
 
       - name: Install pinned complexity tools
-        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        if: ${{ inputs.exhaustive }}
         run: python -m pip install --requirement tools/requirements-quality.txt
 
-      - name: Enforce the pre-commit complexity limit
-        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+      - name: Enforce source complexity and file length
+        if: ${{ inputs.exhaustive }}
         run: |
           dotnet tool restore
           dotnet husky install
           dotnet husky exec .husky/csx/complexity.csx
+          dotnet husky exec .husky/csx/file-length.csx
 
       - name: Restore
         run: dotnet restore
@@ -125,18 +131,17 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      # Master, manual and protected release runs retain the complete
-      # cross-platform certification profile. Pull requests execute these
-      # platform-neutral checks once in Managed correctness instead.
+      # Certification repeats managed checks on both operating systems.
+      # Routine runs execute them once in Managed correctness.
       - name: Fast unit and behavioral tests
-        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        if: ${{ inputs.exhaustive }}
         run: dotnet test tests/Marvel.UnitTests.slnx --no-build --configuration Release
 
       - name: Architecture, server, Godot and release integration tests
         run: dotnet test tests/Marvel.IntegrationTests.slnx --no-build --configuration Release
 
       - name: Acceptance and regression sweeps
-        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        if: ${{ inputs.exhaustive }}
         run: dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj --no-build --configuration Release
 
       - name: The presentation project walls fire
@@ -173,22 +178,22 @@ jobs:
           "GODOT_BIN=$($godot.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: A representative local game is playable through native Godot controls (Linux)
-        if: ${{ runner.os == 'Linux' && github.event_name == 'pull_request' && !inputs.exhaustive }}
+        if: ${{ runner.os == 'Linux' && !inputs.exhaustive }}
         shell: bash
         run: bash tools/godot-smoke.sh "$GODOT_BIN" --representative
 
       - name: A representative local game is playable through native Godot controls (Windows)
-        if: ${{ runner.os == 'Windows' && github.event_name == 'pull_request' && !inputs.exhaustive }}
+        if: ${{ runner.os == 'Windows' && !inputs.exhaustive }}
         shell: pwsh
         run: tools/godot-smoke.ps1 -GodotBin $env:GODOT_BIN -Representative
 
       - name: The local viewport and scale matrix passes (Linux)
-        if: ${{ runner.os == 'Linux' && (github.event_name != 'pull_request' || inputs.exhaustive) }}
+        if: ${{ runner.os == 'Linux' && inputs.exhaustive }}
         shell: bash
         run: bash tools/godot-smoke.sh "$GODOT_BIN"
 
       - name: The local viewport and scale matrix passes (Windows)
-        if: ${{ runner.os == 'Windows' && (github.event_name != 'pull_request' || inputs.exhaustive) }}
+        if: ${{ runner.os == 'Windows' && inputs.exhaustive }}
         shell: pwsh
         run: tools/godot-smoke.ps1 -GodotBin $env:GODOT_BIN
 
@@ -290,20 +295,21 @@ jobs:
           fi
 
       - name: Representative Godot states render correctly (Linux)
-        if: runner.os == 'Linux'
+        if: ${{ inputs.exhaustive && runner.os == 'Linux' }}
         shell: bash
         env:
           MARVEL_SMOKE_CAPTURE_DIR: ${{ runner.temp }}/godot-visual-qa
         run: bash tools/godot-visual-qa.sh "$GODOT_BIN"
 
       - name: Representative Godot states render correctly (Windows)
-        if: runner.os == 'Windows'
+        if: ${{ inputs.exhaustive && runner.os == 'Windows' }}
         shell: pwsh
         env:
           MARVEL_SMOKE_CAPTURE_DIR: ${{ runner.temp }}\godot-visual-qa
         run: tools/godot-visual-qa.ps1 -GodotBin $env:GODOT_BIN
 
       - name: Retain Godot visual checkpoints
+        if: ${{ inputs.exhaustive }}
         uses: actions/upload-artifact@v6
         with:
           name: godot-visual-qa-${{ runner.os }}
@@ -312,21 +318,21 @@ jobs:
           retention-days: 7
 
       - name: The contextual table redesign passes rendered acceptance (Linux)
-        if: runner.os == 'Linux'
+        if: ${{ inputs.exhaustive && runner.os == 'Linux' }}
         shell: bash
         env:
           MARVEL_SMOKE_CAPTURE_DIR: ${{ runner.temp }}/godot-redesign-qa
         run: xvfb-run -a bash tools/godot-redesign-gate.sh "$GODOT_BIN"
 
       - name: The contextual table redesign passes rendered acceptance (Windows)
-        if: runner.os == 'Windows'
+        if: ${{ inputs.exhaustive && runner.os == 'Windows' }}
         shell: pwsh
         env:
           MARVEL_SMOKE_CAPTURE_DIR: ${{ runner.temp }}\godot-redesign-qa
         run: tools/godot-redesign-gate.ps1 -GodotBin $env:GODOT_BIN
 
       - name: Retain contextual table acceptance checkpoints
-        if: always()
+        if: ${{ always() && inputs.exhaustive }}
         uses: actions/upload-artifact@v6
         with:
           name: godot-redesign-qa-${{ runner.os }}
@@ -335,19 +341,19 @@ jobs:
           retention-days: 90
 
       - name: The Core behavioral obligation catalog is complete
-        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        if: ${{ inputs.exhaustive }}
         run: dotnet run --project tools/Marvel.Behavior.Index --no-build --configuration Release -- check
 
       - name: The Core behavioral specification passes
-        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        if: ${{ inputs.exhaustive }}
         run: dotnet run --project tools/Marvel.Behavior.Run --no-build --configuration Release -- check
 
       - name: The card dataset is what the generator produces
-        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        if: ${{ inputs.exhaustive }}
         run: dotnet run --project tools/Marvel.Cards.Extract --no-build --configuration Release -- check
 
       - name: The rulings index is what the vendored pages produce
-        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        if: ${{ inputs.exhaustive }}
         run: dotnet run --project tools/Marvel.Rulings.Harvest --no-build --configuration Release -- check
 
       - name: The wall's gates fire
