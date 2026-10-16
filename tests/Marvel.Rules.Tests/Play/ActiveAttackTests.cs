@@ -66,12 +66,12 @@ public sealed class ActiveAttackTests : AttackTestBase
         int hero = world.Seats[0].IdentityCard.ObjectId;
         int villain = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
         world.Attack = new EnemyAttack(villain, 0, hero);
-        world.Agenda.Add(new PhaseStep(Steps.EndAttack, 1, 6));
+        world.Agenda.Add(new PhaseStep(new AttackCompletionOperation(), Round: 1, Number: 6));
         world.Agenda.Begin(world, world.Facts);
         world.Agenda.Advance();
         Attack.End(world, []);
         world.Agenda.Advance();
-        world.Agenda.Now(new PhaseStep(Steps.ChooseOption, 1, 7));
+        world.Agenda.Now(new PhaseStep(new AbilityContinuationAgendaOperation(AbilityContinuationStage.Choose), 1, 7));
         Assert.Equal(new ActiveAttack(villain, hero), ActiveAttack.From(world));
         world.Agenda.Abandon();
         Assert.NotNull(world.FinishedAttack);
@@ -87,8 +87,7 @@ public sealed class ActiveAttackTests : AttackTestBase
         int villain = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
         world.Attack = new EnemyAttack(villain, 0, hero);
         world.CharacterAttack = new CharacterAttack(hero, villain, 0);
-        var step = new PhaseStep(Steps.CharacterAttacks, 1, 3,
-            CharacterAttack: world.CharacterAttack);
+        var step = new PhaseStep(new CharacterAttackOperation(Attack: world.CharacterAttack), Round: 1, Number: 3);
         world.Agenda.Now(step);
         world.Agenda.Begin(world, world.Facts);
         Assert.Equal(new ActiveAttack(hero, villain) { Identity = new(Moment.Id(step.Round, step.Number, step.Index), false) }, ActiveAttack.From(world));

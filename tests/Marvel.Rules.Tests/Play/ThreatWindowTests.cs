@@ -19,7 +19,7 @@ public sealed class ThreatWindowTests
         // assigned before it is placed on the scheme." The prompt therefore
         // sees the assignment and the scheme still has no tokens.
         var (world, facts, scheme, source) = Board(escalation: 3);
-        world.Agenda.Add(new PhaseStep(Steps.PlaceThreat, 1, 1));
+        world.Agenda.Add(new PhaseStep(new ThreatStageOperation(ThreatStageKind.PlaceThreat), Round: 1, Number: 1));
         var cards = new Interrupter(source.ObjectId, occurrence =>
             occurrence.Threat!.Prevent(1));
         var events = new List<GameEvent>();
@@ -54,7 +54,7 @@ public sealed class ThreatWindowTests
         // the same question again; moving it to Responses would be just as
         // wrong.
         var (world, facts, scheme, source) = Board(escalation: 3);
-        world.Agenda.Add(new PhaseStep(Steps.PlaceThreat, 1, 1));
+        world.Agenda.Add(new PhaseStep(new ThreatStageOperation(ThreatStageKind.PlaceThreat), Round: 1, Number: 1));
         var cards = new Interrupter(source.ObjectId, occurrence =>
             occurrence.Threat!.Replace());
 
@@ -72,7 +72,7 @@ public sealed class ThreatWindowTests
     public void PreventingAllThreatCreatesNoPlacedThreatCondition()
     {
         var (world, facts, scheme, source) = Board(escalation: 1);
-        world.Agenda.Add(new PhaseStep(Steps.PlaceThreat, 1, 1));
+        world.Agenda.Add(new PhaseStep(new ThreatStageOperation(ThreatStageKind.PlaceThreat), Round: 1, Number: 1));
         var cards = new Interrupter(source.ObjectId, occurrence =>
             occurrence.Threat!.Prevent(99));
 
@@ -92,8 +92,7 @@ public sealed class ThreatWindowTests
     public void SchemeThreatFreezesItsSourceTargetAndAmountAtTheWindow()
     {
         var (world, facts, scheme, enemy) = Board(escalation: 0, schemeValue: 4);
-        world.Agenda.Add(new PhaseStep(
-            Steps.SchemeThreat, 1, 3, Subject: enemy.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new ThreatStageOperation(ThreatStageKind.SchemeThreat), Round: 1, Number: 3, Subject: enemy.ObjectId, Seat: 0));
 
         var occurrence = world.Agenda.Begin(world, facts);
 
@@ -114,10 +113,10 @@ public sealed class ThreatWindowTests
         // interrupt window and leave the outer item on Apply.
         var (world, facts, scheme, source) = Board(escalation: 3);
         var side = world.CreateCard("side", world.AreaOf(DeckType.SideSchemesArea));
-        world.Agenda.Add(new PhaseStep(Steps.PlaceThreat, 1, 1));
+        world.Agenda.Add(new PhaseStep(new ThreatStageOperation(ThreatStageKind.PlaceThreat), Round: 1, Number: 1));
         var cards = new Interrupter(source.ObjectId, _ =>
             Threat.Schedule(
-                world, side, source, 1, ThreatCause.CardAbility, "test", player: 0));
+                world, new ThreatBatch([side], source, 1, ThreatCause.CardAbility, "test", Player: 0)));
 
         var asked = Sequence.Work(world, facts, cards, []);
         Sequence.Answer(
@@ -138,7 +137,7 @@ public sealed class ThreatWindowTests
         var (world, facts, scheme, source) = Board(escalation: 0);
 
         Threat.Schedule(
-            world, scheme, source, 2, ThreatCause.CardAbility, "setup", player: 0);
+            world, new ThreatBatch([scheme], source, 2, ThreatCause.CardAbility, "setup", Player: 0));
 
         Assert.False(scheme.Tokens.ContainsKey("k_threat"));
         Assert.Equal(Steps.PlaceThreatEffect, world.Agenda.Current?.What);
@@ -159,7 +158,7 @@ public sealed class ThreatWindowTests
         var events = new List<GameEvent>();
 
         Threat.Schedule(
-            world, [first, second], source, 1, ThreatCause.CardAbility, "setup", player: 0);
+            world, new ThreatBatch([first, second], source, 1, ThreatCause.CardAbility, "setup", Player: 0));
         Sequence.Finish(world, facts, new NoCardAbilities(), events);
 
         Assert.Equal(
@@ -185,7 +184,7 @@ public sealed class ThreatWindowTests
             world.Seats[0].IdentityCard.ObjectId, _ => resolved = true, type);
 
         Threat.Schedule(
-            world, scheme, source, 2, ThreatCause.VillainPhase, "setup", player: 0);
+            world, new ThreatBatch([scheme], source, 2, ThreatCause.VillainPhase, "setup", Player: 0));
         Sequence.Finish(
             world, facts, cards, [], WindowAbilityScope.EncounterCardsOnly);
 
@@ -211,7 +210,7 @@ public sealed class ThreatWindowTests
             AbilityType.ForcedInterrupt);
 
         Threat.Schedule(
-            world, scheme, source, 2, ThreatCause.VillainPhase, "setup", player: 0);
+            world, new ThreatBatch([scheme], source, 2, ThreatCause.VillainPhase, "setup", Player: 0));
         Sequence.Finish(
             world, facts, cards, [], WindowAbilityScope.EncounterCardsOnly);
 

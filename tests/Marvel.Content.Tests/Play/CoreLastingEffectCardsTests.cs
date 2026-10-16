@@ -65,7 +65,7 @@ public sealed class CoreLastingEffectCardsTests
         runner.Act(
             world, new PendingAbility(support.ObjectId, AbilityType.Action, 0), [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, support, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         Assert.Equal(
             "Spider-Man · p1: next card −1 resource cost this phase. Applies once, when that player plays their next card.",
             prompt.Affordances.Single(option =>
@@ -94,7 +94,7 @@ public sealed class CoreLastingEffectCardsTests
         runner.Act(
             world, new PendingAbility(team.ObjectId, AbilityType.Action, 0), [], []);
         var step = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, team, 0, step.Index, step.Tier)!;
+        var prompt = runner.Choosing(world, step)!;
 
         Assert.Contains("2/14 → 1/14 threat", Assert.Single(prompt.Affordances).Description,
             StringComparison.Ordinal);
@@ -180,16 +180,13 @@ public sealed class CoreLastingEffectCardsTests
         runner.Act(
             world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
         var step = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, source, 0, step.Index, step.Tier)!;
+        var prompt = runner.Choosing(world, step)!;
         var offer = Assert.Single(prompt.Affordances);
         Assert.Equal(chosen.ObjectId, offer.AnchorId);
         Assert.Equal("3", Assert.Single(offer.CostOptions).Cost);
 
-        runner.Chose(
-            world, source, 0, step.Index,
-            Decision.Take(
-                chosen.ObjectId, [], [doubleResource.ObjectId, singleResource.ObjectId]),
-            step.Tier);
+        runner.Chose(world, step, Decision.Take(
+                chosen.ObjectId, [], [doubleResource.ObjectId, singleResource.ObjectId]));
 
         Assert.Equal(1, chosen.Owner);
         Assert.Equal(PlayArea.Of(0), chosen.Area.PlayArea);
@@ -218,7 +215,7 @@ public sealed class CoreLastingEffectCardsTests
         runner.Act(
             world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
         var step = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, source, 0, step.Index, step.Tier)!;
+        var prompt = runner.Choosing(world, step)!;
         var offer = Assert.Single(prompt.Affordances);
         var price = Assert.Single(offer.CostOptions);
 
@@ -226,13 +223,7 @@ public sealed class CoreLastingEffectCardsTests
         Assert.Equal("2", price.Cost);
         Assert.Equal("GG", Assert.Single(price.Generators).Generates);
 
-        runner.Chose(
-            world,
-            source,
-            0,
-            step.Index,
-            Decision.Take(maria.ObjectId, [], [power.ObjectId]),
-            step.Tier);
+        runner.Chose(world, step, Decision.Take(maria.ObjectId, [], [power.ObjectId]));
 
         Assert.Equal(DeckType.AlliesArea, maria.Area.Type);
         Assert.Equal(PlayArea.Of(0), maria.Area.PlayArea);
@@ -244,9 +235,7 @@ public sealed class CoreLastingEffectCardsTests
         World world, Marvel.Cards.Run.AbilityRunner runner, Card source, Card chosen)
     {
         var step = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(
-            world, source, player: 0, step.Index,
-            Decision.Take(chosen.ObjectId), step.Tier);
+        runner.Chose(world, step, Decision.Take(chosen.ObjectId));
     }
 
     private static World Board()

@@ -102,9 +102,7 @@ public sealed class CoreCardDslTests
 
         runner.Act(world, action, [], []);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(
-            world, mansion, 0, waiting.Index,
-            Decision.Take(world.Seats[1].IdentityCard.ObjectId), waiting.Tier);
+        runner.Chose(world, waiting, Decision.Take(world.Seats[1].IdentityCard.ObjectId));
 
         Assert.Equal(DeckType.HandsArea, drawn.Area.Type);
         Assert.Equal(1, drawn.Owner);

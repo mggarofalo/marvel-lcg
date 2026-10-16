@@ -49,7 +49,7 @@ public static class Agendas
         // when a test later drains nested work. Begin materialises the lazy
         // damage occurrence even though a direct unit-test call has no live
         // EnemyAttack from which to capture actor and target roles.
-        world.Agenda.Add(new PhaseStep(Steps.DealAttackDamage, 1, 4, Plan: true));
+        world.Agenda.Add(new PhaseStep(new AttackStageOperation(AttackStageKind.DealAttackDamage), Round: 1, Number: 4, Plan: true));
         world.Agenda.Begin(world, world.Facts);
     }
 

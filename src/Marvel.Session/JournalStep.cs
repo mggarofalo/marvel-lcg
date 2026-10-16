@@ -30,7 +30,7 @@ public sealed record JournalStep(
         return new(
             PromptRecord.From(prompt),
             DurableDecision.From(actor, prompt, decision),
-            [.. events.Select(JournalJson.Event)],
+            JournalValues.List(events.Select(JournalJson.Event)),
             rngWords,
             stateFingerprint,
             result);

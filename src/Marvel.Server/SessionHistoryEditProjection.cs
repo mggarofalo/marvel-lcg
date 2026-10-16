@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Session;
 using Marvel.View;
 

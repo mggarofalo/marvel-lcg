@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Setup;
@@ -52,7 +53,7 @@ public abstract class TargetReferenceTestBase
         var game = Game.Begin(world, Cards, runner);
         while (game.Pending is { } pending && pending.Affordances.Any(option => option.Verb == Game.ResolveMulligans))
         {
-            game.Resolve(Decision.Decline);
+            game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         }
 
         return (game, world);

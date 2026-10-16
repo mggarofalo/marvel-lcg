@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Cards.Dsl;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
@@ -15,11 +16,9 @@ public sealed class ActionAbilityContinuationBindingsANestedDependentChoiceTests
     [Rule("rr:then")]
     [Rule("rr:target.2.2")]
     [Fact]
-    public void ANestedDependentChoiceIsRejectedBeforeItsCost()
+    public void ANestedDependentChoiceCompletesBeforeItsDependentEffect()
     {
-        // The outer answer does not determine whether the complete predecessor
-        // resolved: its nested choice and any later siblings still have to run.
-        // Until that aggregate outcome is modelled, fail before paying a cost.
+        // "Then" waits for the nested selection and uses its completed draw.
         var runner = Runner(AuthoredCards.AuntMay, "Action", """
             { "then": {
               "effect": { "chooseCard": {
@@ -35,19 +34,28 @@ public sealed class ActionAbilityContinuationBindingsANestedDependentChoiceTests
             } }
             """, cost: """{ "exhaust": "this" }""");
         Card? source = null;
-        var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(board => source = InPlay(board, AuthoredCards.AuntMay), heroes: ["spider_man", "captain_marvel"], abilities: runner));
-        Assert.Contains("multiple-stage player choices", refused.Message);
-        Assert.True(source!.Ready);
+        var (game, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"], abilities: runner);
+        int firstHeld = world.Seats[0].Hand.Cards.Count;
+        int secondHeld = world.Seats[1].Hand.Cards.Count;
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId).Id));
+        Assert.False(source!.Ready);
+        game.Resolve(Decision.Take(world.Seats[0].IdentityCard.ObjectId));
+        Assert.Equal(firstHeld, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(secondHeld, world.Seats[1].Hand.Cards.Count);
+        game.Resolve(Decision.Take(world.Seats[1].IdentityCard.ObjectId));
+        Assert.Equal(firstHeld + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(secondHeld + 1, world.Seats[1].Hand.Cards.Count);
+        Assert.True(game.IsRootPrompt);
     }
 
     [Rule("rr:then")]
     [Rule("rr:initiating-abilities.step.5")]
     [Fact]
-    public void SiblingChoicesBeforeDependentTextAreRejectedBeforeTheirCost()
+    public void SiblingChoicesAccumulateBeforeDependentText()
     {
-        // The first answer cannot classify the complete predecessor while a
-        // sibling choice and a later effect remain unresolved. Fail closed
-        // before exhaustion rather than recording the first leaf's outcome.
+        // Every predecessor must resolve fully, including the heal after both choices.
         var runner = Runner(AuthoredCards.AuntMay, "Action", """
             { "then": {
               "effect": { "seq": [
@@ -65,9 +73,22 @@ public sealed class ActionAbilityContinuationBindingsANestedDependentChoiceTests
             } }
             """, cost: """{ "exhaust": "this" }""");
         Card? source = null;
-        var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner));
-        Assert.Contains("multiple-stage player choices", refused.Message);
-        Assert.True(source!.Ready);
+        var (game, world) = Playing(board =>
+        {
+            source = InPlay(board, AuthoredCards.AuntMay);
+            board.Seats[0].IdentityCard.TakeDamage(1);
+        }, abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId).Id));
+        Assert.False(source!.Ready);
+        game.Resolve(Decision.Take(world.Seats[0].IdentityCard.ObjectId));
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+        game.Resolve(Decision.Take(world.Seats[0].IdentityCard.ObjectId));
+        Assert.Equal(held + 3, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.True(game.IsRootPrompt);
     }
 
     [Rule("rr:each-player.1")]
@@ -220,7 +241,7 @@ public sealed class ActionAbilityContinuationBindingsANestedDependentChoiceTests
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == source!.ObjectId);
         runner.Act(world, action, [], []);
         var choice = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
-        runner.Chose(world, source!, 0, choice.Index, Decision.Take(world.Seats[1].IdentityCard.ObjectId), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(world.Seats[1].IdentityCard.ObjectId));
         var attack = Assert.Single(world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
         runner.ActivationCompleted(world, new EnemyActivation(attack.Subject, attack.Seat, Attacking: true, attack.ActivationId, Made: false));
         Assert.Equal(held + 1, world.Seats[1].Hand.Cards.Count);

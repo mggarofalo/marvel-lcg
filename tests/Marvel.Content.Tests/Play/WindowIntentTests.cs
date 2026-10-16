@@ -66,11 +66,10 @@ public sealed class WindowIntentTests : ChoosingCardsTestBase
         Assert.Equal(source.ObjectId, receipt.Source);
         Assert.Equal(occurrence.Id, receipt.Occurrence);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, source, 0, waiting.Index, waiting.Tier)!;
+        var prompt = runner.Choosing(world, waiting)!;
         Assert.False(prompt.Cancellable);
         Assert.Contains(source.ObjectId, prompt.ContextCardIds);
-        var resumed = runner.Chose(world, source, 0, waiting.Index,
-            Decision.Take(world.TheCardIn(DeckType.VillainArea)!.ObjectId), waiting.Tier);
+        var resumed = runner.Chose(world, waiting, Decision.Take(world.TheCardIn(DeckType.VillainArea)!.ObjectId));
         Assert.Empty(resumed.OfType<AbilityWindowResult>());
         Assert.True(Statuses.Has(world, world.TheCardIn(DeckType.VillainArea)!, Statuses.Stunned));
     }
@@ -114,7 +113,7 @@ public sealed class WindowIntentTests : ChoosingCardsTestBase
         Assert.Contains(events, item => item.Verb == "Discard");
         Assert.False(Statuses.Has(world, remaining, Statuses.Tough));
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        var asked = runner.Choosing(world, source, 0, waiting.Index, waiting.Tier)!;
+        var asked = runner.Choosing(world, waiting)!;
         Assert.Equal(remaining.ObjectId, Assert.Single(asked.Affordances).Id);
         Assert.False(asked.Cancellable);
     }
@@ -128,8 +127,7 @@ public sealed class WindowIntentTests : ChoosingCardsTestBase
         var (deferred, other, same, sameOccurrence, _) = Bird(true);
         other.Resolve(deferred, sameOccurrence, new PendingAbility(same.ObjectId, AbilityType.Response, 0), [], []);
         var waiting = Assert.Single(deferred.Agenda.Outstanding);
-        other.Chose(deferred, same, 0, waiting.Index,
-            Decision.Take(deferred.TheCardIn(DeckType.VillainArea)!.ObjectId), waiting.Tier);
+        other.Chose(deferred, waiting, Decision.Take(deferred.TheCardIn(DeckType.VillainArea)!.ObjectId));
         Assert.Equal(direct.Digest().Canonical(), deferred.Digest().Canonical());
         Assert.Equal(occurrence.Resolutions, sameOccurrence.Resolutions);
     }

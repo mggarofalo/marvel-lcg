@@ -21,6 +21,8 @@ internal sealed record AbilityResolutionState(
     /// <summary>The seat whose perspective the current structural frame uses.</summary>
     public int Player { get; private set; } = InitialPlayer;
 
+    public Defeated? TriggeringDefeat { get; set; }
+
     /// <summary>The resolver to restore after leaving an each-player frame.</summary>
     public int AbilityPlayer { get; init; } = InitialPlayer;
 
@@ -113,6 +115,10 @@ internal sealed record AbilityResolutionState(
 
     public List<AbilityStructuralFrame> StructuralPath { get; } = [];
 
+    public AbilityStructuralOutcome? CompletedOutcome { get; set; }
+    public EffectCompletion? PendingCompletion { get; set; }
+
+
     public void RestoreAbility(
         int ordinal, IEnumerable<AbilityStructuralFrame> frames, string? face = null)
     {
@@ -137,7 +143,8 @@ internal sealed record AbilityResolutionState(
         {
             return;
         }
-        resolutionAbility = new PendingAbility(Source.ObjectId, tier, Player, ordinal);
+        resolutionAbility = new PendingAbility(Source.ObjectId, tier, Player, ordinal)
+            { TriggeringDefeat = TriggeringDefeat };
         Occurrence.Begin(resolutionAbility.Value);
     }
 
@@ -159,27 +166,12 @@ internal sealed record AbilityResolutionState(
         }
     }
 
-    public void CompletePendingDependency(ResolutionOutcome outcome)
-    {
-        int pending = StructuralPath.FindLastIndex(frame =>
-            frame is DependentFrame { Predecessor: true, Outcome: null });
-        if (pending >= 0)
-        {
-            var frame = (DependentFrame)StructuralPath[pending];
-            StructuralPath[pending] = frame with
-            {
-                Outcome = (AbilityStructuralOutcome)(int)outcome,
-            };
-        }
-    }
-
     public bool HasPendingDependency => StructuralPath.Any(frame =>
         frame is DependentFrame { Predecessor: true, Outcome: null });
 
     private AbilityResolutionBindings Bindings { get; } = new(Source);
 
-    public IReadOnlyDictionary<string, long> CaptureSourceState() =>
-        Bindings.CaptureSourceState(Results);
+    public CardInstanceState CaptureSourceState() => Bindings.CaptureSourceState();
     public void RestoreSourceState(CardInstanceState? restored) => Bindings.RestoreSourceState(restored);
     public Card? Chosen => Bindings.Chosen;
     public Card? PlayerSelection => Bindings.PlayerSelection;

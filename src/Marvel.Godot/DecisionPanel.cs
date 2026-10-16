@@ -2,7 +2,6 @@ using Godot;
 using Marvel.Decisions;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
-using Marvel.Server;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -69,7 +68,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         cardPreview.Changed += id => CardHovered?.Invoke(id);
     }
     /// <summary>Raised with one answer built from the current prompt.</summary>
-    public event Action<EngineDecision>? Submitted;
+    public event Action<Decision>? Submitted;
     /// <summary>Raised when an affordance or target points at a board object.</summary>
     public event Action<IReadOnlyList<int>>? AnchorFocused;
     /// <summary>Raised with the visible card whose action or target is under the pointer.</summary>
@@ -145,7 +144,7 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     internal int GetRenderGeneration() => lifecycle.RenderGeneration;
 
-    internal void NotifySubmitted(EngineDecision decision, int generation) =>
+    internal void NotifySubmitted(Decision decision, int generation) =>
         lifecycle.NotifySubmitted(decision, generation);
 
     internal void SelectAffordance(int id, int generation) => lifecycle.SelectAffordance(id, generation);
@@ -174,7 +173,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         ReferenceEquals(composer, expected)
         && lifecycle.CanMutate(generation, lifecycle.Revision);
 
-    internal void RaiseSubmitted(EngineDecision decision) => Submitted?.Invoke(decision);
+    internal void RaiseSubmitted(Decision decision) => Submitted?.Invoke(decision);
 
     internal void RaiseDraftStarted() => DraftStarted?.Invoke();
 

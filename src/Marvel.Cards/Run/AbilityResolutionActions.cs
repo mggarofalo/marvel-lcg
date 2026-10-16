@@ -18,7 +18,7 @@ internal static class AbilityResolutionActions
         var tiers = AbilityWindow.Tiers(
             execution.Waiting(world, occurrence, WindowKind.Interrupt)
                 .Where(pending => pending.Card != card.ObjectId)
-                .Where(pending => spent?.MayTrigger(WindowKind.Interrupt, pending.Card) ?? true),
+                .Where(pending => spent?.MayTrigger(WindowKind.Interrupt, pending) ?? true),
             WindowKind.Interrupt,
             occurrence);
 

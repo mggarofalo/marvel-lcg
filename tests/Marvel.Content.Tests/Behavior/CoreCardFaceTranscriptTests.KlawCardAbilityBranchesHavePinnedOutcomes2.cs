@@ -121,7 +121,7 @@ public sealed class CoreCardFaceTranscriptKlawCardAbilityBranchesHavePinnedOutco
         Assert.Equal("0ec7759298f8ea52b3b90f63f5891d6262e1df49c044eefbe377695866c045cd", results["behavior:card:01146:ultron-heals-1-damage-for-each-drone-zero"].Digest);
         Assert.Equal("77a944bb1081d7daf2caac38080b705873f7bd8dff738685cf2ebc674730740e", results["behavior:card:01146:ultron-heals-1-damage-for-each-drone-one"].Digest);
         Assert.Equal("bda52293055150b3fd1f77b8952b68bd5cf7026efaa9a144e2377fb93b906234", results["behavior:card:01146:ultron-heals-1-damage-for-each-drone-multiple"].Digest);
-        Assert.Equal("f2be67f1ca4f44d1621c7eeae253d3e65714fccce5c8c2a28d24ba2969c9060a", results["behavior:card:01147:each-drone-minion-engaged-with-your-hero"].Digest);
+        Assert.Equal("249ef6bf8633944fc84733179c1c91f9eb2c9792f797ba171a22292108f25253", results["behavior:card:01147:each-drone-minion-engaged-with-your-hero"].Digest);
         Assert.Equal("1fcb7872775bcc15e87c831a4d5eedec51c2f5df162dc0a573e7ebff868f2411", results["behavior:card:01147:if-no-attack-was-made-way-put-condition-met"].Digest);
     }
 }

@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -101,8 +102,7 @@ public sealed class SweepingSwoopTests
 
 
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        world.Agenda.Add(new PhaseStep(
-            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         Run(world);
 
         Assert.True(identity.Damage > 0, "the attack landed");
@@ -125,15 +125,13 @@ public sealed class SweepingSwoopTests
 
 
         // The alter-ego is schemed at, so the activation ends without damage.
-        world.Agenda.Add(new PhaseStep(
-            Steps.Scheme, 1, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemySchemeOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         Run(world);
 
         // Now a real attack, in a later round and nothing to do with the boost
         // card. It must damage and must not stun.
         identity.TurnTo(AuthoredCards.SpiderMan);
-        world.Agenda.Add(new PhaseStep(
-            Steps.Attack, 2, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 2, Number: 2, Subject: villain.ObjectId, Seat: 0));
         Run(world);
 
         Assert.True(identity.Damage > 0, "the second attack landed");

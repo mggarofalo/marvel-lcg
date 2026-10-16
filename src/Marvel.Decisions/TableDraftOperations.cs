@@ -1,3 +1,4 @@
+using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 
 namespace Marvel.Decisions;
@@ -8,7 +9,7 @@ namespace Marvel.Decisions;
 /// <remarks>
 /// This presentation operation accepts only identifiers carried by the prompt.
 /// It updates a draft, never submits an answer; the authoritative host still
-/// validates the completed <see cref="EngineDecision"/>.
+/// validates the completed <see cref="Decision"/>.
 /// </remarks>
 public sealed class TableDraftOperations
 {

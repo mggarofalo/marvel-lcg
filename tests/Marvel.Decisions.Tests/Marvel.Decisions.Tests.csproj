@@ -22,4 +22,10 @@
     <Compile Include="../Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../../src/Marvel.Protocol/Marvel.Protocol.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Marvel.Session/Marvel.Session.csproj" />
+  </ItemGroup>
 </Project>

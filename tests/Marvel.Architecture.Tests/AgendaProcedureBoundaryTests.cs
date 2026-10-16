@@ -1,157 +1,130 @@
 using System.Reflection;
 using Marvel.Rules.Play;
-using Marvel.Rules.Timing;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
 namespace Marvel.Architecture.Tests;
 
 public sealed class AgendaProcedureBoundaryTests
 {
+    private static readonly Lazy<CSharpCompilation> RulesSource = new(() =>
+        PresentationSourceCompilation.Compile(Path.Combine(
+            Marvel.Tests.RepositoryPaths.Root, "src", "Marvel.Rules")));
+
     [Fact]
     public void VillainPhaseOnlyPlansTheVillainPhase()
     {
         string[] methods = typeof(VillainPhase)
             .GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
-            .Select(method => method.Name)
-            .Order(StringComparer.Ordinal)
-            .ToArray();
-
+            .Select(method => method.Name).Order(StringComparer.Ordinal).ToArray();
         Assert.Equal([nameof(VillainPhase.Schedule)], methods);
     }
 
     [Fact]
-    public void SequenceRoutesAgendaOperationsThroughTheNeutralDispatcher()
+    public void SequenceDispatchesThroughTheNeutralOwner()
     {
-        string source = File.ReadAllText(Path.Combine(
-            Marvel.Tests.RepositoryPaths.Root,
-            "src", "Marvel.Rules", "Play", "Sequence.cs"));
-
-        Assert.Contains("AgendaProcedures.ApplyWithWorldAbilities", source, StringComparison.Ordinal);
-        Assert.Contains("AgendaProcedures.AnswerWithWorldAbilities", source, StringComparison.Ordinal);
-        Assert.DoesNotContain("VillainPhase.Take", source, StringComparison.Ordinal);
-        Assert.DoesNotContain("VillainPhase.Answer", source, StringComparison.Ordinal);
+        string[] calls = CalledMembers("Sequence.cs");
+        Assert.Contains("Marvel.Rules.Play.AgendaProcedures.ApplyWithWorldAbilities", calls);
+        Assert.Contains("Marvel.Rules.Play.AgendaProcedures.AnswerWithWorldAbilities", calls);
+        Assert.DoesNotContain(calls, call => call.StartsWith("Marvel.Rules.Play.VillainPhase.", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void NeutralDispatcherDelegatesAttackOperationsToTheirOwner()
+    public void DispatcherUsesProcedureOwnersInsteadOfImplementingTheirRules()
     {
-        string dispatcher = File.ReadAllText(Path.Combine(
-            Marvel.Tests.RepositoryPaths.Root,
-            "src", "Marvel.Rules", "Play", "AgendaProcedures.cs"));
+        string[] calls = CalledMembers("AgendaProcedures.cs");
+        foreach (string owner in new[] { "AttackProcedure", "ThreatProcedure", "RevealProcedure",
+                     "DefeatProcedure", "PlayerActionProcedure", "AbilityContinuationProcedure" })
+            Assert.Contains($"Marvel.Rules.Play.{owner}.Apply", calls);
+        Assert.Contains("Marvel.Rules.Play.AttackProcedure.Answer", calls);
+        Assert.DoesNotContain(calls, call => call.StartsWith("Marvel.Rules.Play.Attack.", StringComparison.Ordinal));
+    }
 
-        Assert.Contains("AttackProcedure.Apply", dispatcher, StringComparison.Ordinal);
-        Assert.Contains("AttackProcedure.Answer", dispatcher, StringComparison.Ordinal);
-        Assert.DoesNotContain("Attack.Initiate", dispatcher, StringComparison.Ordinal);
-        Assert.DoesNotContain("Attack.DeclareDefender", dispatcher, StringComparison.Ordinal);
+    [Theory]
+    [InlineData("var step = new PhaseStep(\"InventedOperation\", 1, 1);", "CS1503")]
+    [InlineData("var step = new PhaseStep(new EnemyAttackOperation(ProcedureAbilities: []), 1, 1);", "CS1739")]
+    [InlineData("var step = new PhaseStep(new EnemyAttackOperation(), 1, 1) with { What = Steps.RevealEncounterCard };", "CS0200")]
+    [InlineData("var step = new PhaseStep(new EnemyAttackOperation(), 1, 1) with { ProcedureAbilities = new PendingAbility[0] };", "CS0117")]
+    public void InvalidOperationShapesAreRejectedByTheCompiler(string statement, string diagnostic)
+    {
+        // Engine API choice: invalid combinations cannot be represented by a
+        // normal consumer. Compile a valid control before trusting a rejection.
+        Assert.Empty(CompileConsumer("var step = new PhaseStep(new EnemyAttackOperation(), 1, 1);"));
+        Diagnostic[] errors = CompileConsumer(statement);
+        Assert.NotEmpty(errors);
+        Assert.All(errors, error => Assert.Equal(diagnostic, error.Id));
+    }
+
+    [Theory]
+    [InlineData("CharacterAttackOperation", "CharacterAttack")]
+    [InlineData("CharacterThwartOperation", "CharacterThwart")]
+    public void CharacterPowerOperationsRequireTheirOwnedPayload(string operation, string payload)
+    {
+        Assert.Empty(CompileConsumer($"var step = new {operation}(new {payload}(1, 2, 0));"));
+        Diagnostic[] errors = CompileConsumer($"var step = new {operation}();");
+        Assert.NotEmpty(errors);
+        Assert.All(errors, error => Assert.Equal("CS7036", error.Id));
     }
 
     [Fact]
-    public void NeutralDispatcherHasExplicitRequiredProcedureOwners()
+    public void OperationKindsCannotBeInventedOutsideTheEngineAssembly()
     {
-        string source = File.ReadAllText(Path.Combine(
-            Marvel.Tests.RepositoryPaths.Root,
-            "src", "Marvel.Rules", "Play", "AgendaProcedures.cs"));
-
-        string[] owners =
-        [
-            "AttackProcedure",
-            "ThreatProcedure",
-            "RevealProcedure",
-            "DefeatProcedure",
-            "PlayerActionProcedure",
-            "AbilityContinuationProcedure",
-        ];
-
-        foreach (string owner in owners)
-        {
-            Assert.Contains(owner, source, StringComparison.Ordinal);
-        }
-
-        Assert.Contains("step.Operation.Procedure switch", source, StringComparison.Ordinal);
-        Assert.Matches(@"AgendaProcedureKind\.Attack\s*=>\s*AttackProcedure\.Apply", source);
-        Assert.Matches(@"AgendaProcedureKind\.Threat\s*=>\s*ThreatProcedure\.Apply", source);
-        Assert.Matches(@"AgendaProcedureKind\.Reveal\s*=>\s*RevealProcedure\.Apply", source);
-        Assert.Matches(@"AgendaProcedureKind\.Defeat\s*=>\s*DefeatProcedure\.Apply", source);
-        Assert.Matches(
-            @"AgendaProcedureKind\.PlayerAction\s*=>\s*PlayerActionProcedure\.Apply", source);
-        Assert.Matches(
-            @"AgendaProcedureKind\.AbilityContinuation\s*=>\s*AbilityContinuationProcedure\.Apply",
-            source);
+        const string declaration = """
+            public sealed record Invented : AgendaOperation
+            {
+                public override string What => "Invented";
+            }
+            """;
+        Assert.Empty(CompileConsumer("var step = new PhaseStep(new EnemyAttackOperation(), 1, 1);"));
+        Diagnostic[] errors = CompileConsumer("", declaration);
+        Assert.NotEmpty(errors);
+        Assert.Contains(errors, error => error.Id == "CS0122");
+        Assert.Contains(errors, error => error.Id == "CS0534");
     }
 
     [Fact]
-    public void AgendaStepsStoreClosedProcedureSpecificOperations()
+    public void RecordCopyConstructorsCannotForgeNewOperationKinds()
     {
-        var attack = new PhaseStep(Steps.Attack, 1, 2, Subject: 7, Seat: 0);
-        var reveal = new PhaseStep(Steps.RevealEncounterCard, 1, 4, Subject: 8, Seat: 0);
-        var continuation = new PhaseStep(
-            Steps.ChooseOption,
-            1,
-            0,
-            Subject: 9,
-            Seat: 0,
-            AbilityPath: ["sequence:0"]);
-
-        Assert.Equal(AgendaProcedureKind.Attack, attack.Operation.Procedure);
-        Assert.Equal(AgendaProcedureKind.Reveal, reveal.Operation.Procedure);
-        Assert.Equal(AgendaProcedureKind.AbilityContinuation, continuation.Operation.Procedure);
-        Assert.NotEqual(attack.Operation.GetType(), reveal.Operation.GetType());
-        Assert.NotEqual(reveal.Operation.GetType(), continuation.Operation.GetType());
+        const string declaration = """
+            public sealed record Forged : AgendaOperation
+            {
+                public Forged(AgendaOperation original) : base(original) { }
+                public override string What => "Invented";
+            }
+            """;
+        Assert.Empty(CompileConsumer("var copied = new EnemyAttackOperation() with { Character = 4 };"));
+        Diagnostic[] errors = CompileConsumer("", declaration);
+        Assert.NotEmpty(errors);
+        Assert.All(errors, error => Assert.Equal("CS0534", error.Id));
     }
 
-    [Fact]
-    public void UnknownAgendaOperationCannotBeConstructed()
+    private static Diagnostic[] CompileConsumer(string statement, string declaration = "")
     {
-        Assert.Throws<RulesNotImplementedException>(() =>
-            new PhaseStep("InventedOperation", 1, 1));
+        string source = $$"""
+            using Marvel.Rules.Play;
+            using Marvel.Rules.Timing;
+            using Marvel.Rules.State;
+            public static class Consumer { public static void Use() { {{statement}} } }
+            {{declaration}}
+            """;
+        return CSharpCompilation.Create("Agenda.Consumer.Probe",
+                [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest))],
+                PresentationSourceCompilation.References(),
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .GetDiagnostics().Where(item => item.Severity == DiagnosticSeverity.Error).ToArray();
     }
 
-    [Fact]
-    public void OneClosedOperationCannotBeRetaggedAsAnotherProceduresPayload()
+    private static string[] CalledMembers(string file)
     {
-        var attack = new PhaseStep(Steps.Attack, 1, 2, Subject: 7, Seat: 0);
-
-        Assert.Throws<InvalidOperationException>(() =>
-            attack with { What = Steps.RevealEncounterCard });
-    }
-
-    [Fact]
-    public void ClosedOperationCannotBeReplacedDirectly()
-    {
-        MethodInfo? setter = typeof(PhaseStep)
-            .GetProperty(nameof(PhaseStep.Operation))!
-            .SetMethod;
-
-        Assert.NotNull(setter);
-        Assert.True(setter.IsPrivate);
-    }
-
-    [Fact]
-    public void AttackOperationCannotCarryARevealProcedurePayload()
-    {
-        Assert.Throws<ArgumentException>(() => new PhaseStep(
-            Steps.Attack,
-            1,
-            2,
-            Subject: 7,
-            Seat: 0,
-            ProcedureAbilities:
-            [
-                new PendingAbility(8, AbilityType.WhenRevealed, 0),
-            ]));
-    }
-
-    [Fact]
-    public void AttackOperationCannotGainARevealProcedurePayloadWhenCopied()
-    {
-        var attack = new PhaseStep(Steps.Attack, 1, 2, Subject: 7, Seat: 0);
-
-        Assert.Throws<ArgumentException>(() => attack with
-        {
-            ProcedureAbilities =
-            [
-                new PendingAbility(8, AbilityType.WhenRevealed, 0),
-            ],
-        });
+        CSharpCompilation compilation = RulesSource.Value;
+        SyntaxTree tree = Assert.Single(compilation.SyntaxTrees,
+            item => Path.GetFileName(item.FilePath) == file);
+        SemanticModel model = compilation.GetSemanticModel(tree);
+        return tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Select(call => model.GetSymbolInfo(call).Symbol).OfType<IMethodSymbol>()
+            .Select(method => $"{method.ContainingType.ToDisplayString()}.{method.Name}")
+            .Distinct(StringComparer.Ordinal).ToArray();
     }
 }

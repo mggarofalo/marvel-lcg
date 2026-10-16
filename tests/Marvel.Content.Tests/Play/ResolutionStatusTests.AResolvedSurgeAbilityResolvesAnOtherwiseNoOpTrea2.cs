@@ -24,7 +24,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         world.Seats[0].IdentityCard.Exhaust();
         var card = world.CreateCard(AuthoredCards.Exhaustion, world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
         card.TurnFaceDown();
-        world.Agenda.Add(new PhaseStep(Steps.RevealEncounterCard, 1, 4, Subject: card.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId, Seat: 0));
         var occurrence = world.Agenda.Begin(world, Cards);
         var events = new List<GameEvent>();
         var asked = Sequence.Work(world, Cards, runner, events);
@@ -48,7 +48,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         var card = world.CreateCard(AuthoredCards.Exhaustion, world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
         card.TurnFaceDown();
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "cancelWhenRevealed", Affects: card.ObjectId, Lasts: new Duration(Uses: 1)));
-        world.Agenda.Add(new PhaseStep(Steps.RevealEncounterCard, 1, 4, Subject: card.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId, Seat: 0));
         var occurrence = world.Agenda.Begin(world, Cards);
         var events = new List<GameEvent>();
         Sequence.Finish(world, Cards, runner, events);
@@ -192,7 +192,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         world.Abilities = runner;
         var card = world.CreateCard(AuthoredCards.ImTough, world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
         card.TurnFaceDown();
-        world.Agenda.Add(new PhaseStep(Steps.RevealEncounterCard, 1, 4, Subject: card.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId, Seat: 0));
         var occurrence = world.Agenda.Begin(world, Cards);
         var events = new List<GameEvent>();
         Sequence.Finish(world, Cards, runner, events);

@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Client;
 using Marvel.Decisions;
 using Marvel.Rules.Events;
@@ -19,7 +20,7 @@ public sealed class InteractionTranscriptTests
             Invitations: [new SeatInvitation(1, "invitation-secret")], Revision: 7);
         var transcript = new InteractionTranscript();
         transcript.Reset(12345, Runtime());
-        transcript.RecordDecision(6, new EngineDecision(9, [42]));
+        transcript.RecordDecision(6, new Decision(9, [42]));
         transcript.RecordResponse(EngineProtocol.Resolve, response, []);
 
         string report = transcript.Export();
@@ -174,7 +175,7 @@ public sealed class InteractionTranscriptTests
     {
         var transcript = new InteractionTranscript();
         transcript.Reset(1, runtime: null);
-        transcript.RecordDecision(0, new EngineDecision(1, []));
+        transcript.RecordDecision(0, new Decision(1, []));
         transcript.Reset(2, runtime: null);
 
         Assert.Empty(transcript.Entries);

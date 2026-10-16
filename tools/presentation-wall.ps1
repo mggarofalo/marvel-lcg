@@ -61,6 +61,11 @@ try {
         -ExpectedError 'MARVELPRESENTATIONCONFIG' `
         -Project (Join-Path $probes 'Marvel.PresentationProbe.Transitive/Marvel.PresentationProbe.Transitive.csproj')
 
+    Test-PresentationWall -Role "Client cannot depend on authoritative host" -ExpectedError 'MARVELPRESENTATION' `
+        -Project (Join-Path $probes 'Marvel.PresentationProbe.ClientHost/Marvel.PresentationProbe.ClientHost.csproj')
+    Test-PresentationWall -Role "Infrastructure cannot transitively depend on host" -ExpectedError 'MARVELINFRASTRUCTURE' `
+        -Project (Join-Path $probes 'Marvel.PresentationProbe.Infrastructure/Marvel.PresentationProbe.Infrastructure.csproj')
+
     if ($failures -ne 0) {
         Write-Host
         Write-Host "$failures presentation project gates did not behave as specified."

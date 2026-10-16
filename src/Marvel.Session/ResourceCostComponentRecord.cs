@@ -17,6 +17,6 @@ public sealed record ResourceCostComponentRecord(
     public static ResourceCostComponentRecord From(ResourceCost component)
     {
         ArgumentNullException.ThrowIfNull(component);
-        return new(component.Cost, component.Rule, component.Printed, component.RepeatedResource);
+        return new(component.Cost, JournalValues.OptionalList(component.Rule), component.Printed, component.RepeatedResource);
     }
 }

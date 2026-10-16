@@ -9,14 +9,14 @@ namespace Marvel.Cards.Run;
 internal static class AbilityWindowChoiceDescription
 {
     internal static IReadOnlyList<WindowChoice> Describe(AbilityResolutionExecution execution,
-        World world, Card source, CompiledCardAbility ability, int player)
+        World world, Card source, CompiledCardAbility ability, int player, Defeated? triggeringDefeat = null)
     {
         if (ability.Trigger.Timing is not (AbilityType.Interrupt or AbilityType.Response)
             || ability.Cost is not null || ability.Labels.Length != 0
             || EffectiveCards.Kind(source, world.Facts) == CardKind.Event
             || world.Windows.Current?.Occurrence is not { } occurrence) return [];
         var cast = new AbilityResolutionState(world, source, occurrence, player, [])
-            { Tier = ability.Trigger.Timing };
+            { Tier = ability.Trigger.Timing, TriggeringDefeat = triggeringDefeat };
         if (AbilityRecipientCommitment.Choice(world, source, ability) is { } choice)
             return Recipients(execution, cast, choice);
         if (ability.Effect is AbilityEffect.Draw

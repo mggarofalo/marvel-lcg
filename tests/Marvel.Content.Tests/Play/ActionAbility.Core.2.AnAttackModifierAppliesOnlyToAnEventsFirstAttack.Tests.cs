@@ -80,7 +80,7 @@ public sealed class ActionAbilityCoreAnAttackModifierAppliesOnlyToAnEventsFirstA
         }, hero: true, abilities: runner);
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "attackDamage", Amount: 2, Card: played!.ObjectId, Affects: played.ObjectId, Lasts: new Duration(Uses: 1)));
         var action = Assert.Single(game.Pending!.Affordances, option => option.AnchorId == played.ObjectId);
-        game.Resolve(Decision.Take(action.Id, [], [..payments.Select(card => card.ObjectId)]));
+        game.Resolve(PaidDecision.Take(action, [..payments.Select(card => card.ObjectId)]));
         Assert.Equal(4, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
@@ -118,7 +118,7 @@ public sealed class ActionAbilityCoreAnAttackModifierAppliesOnlyToAnEventsFirstA
         }, hero: true, abilities: runner);
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, "attackDamage", Amount: 2, Card: played!.ObjectId, Affects: played.ObjectId, Lasts: new Duration(Uses: 1)));
         var action = Assert.Single(game.Pending!.Affordances, option => option.AnchorId == played.ObjectId);
-        game.Resolve(Decision.Take(action.Id, [], [..payments.Select(card => card.ObjectId)]));
+        game.Resolve(PaidDecision.Take(action, [..payments.Select(card => card.ObjectId)]));
         Assert.Equal(6, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
@@ -182,7 +182,7 @@ public sealed class ActionAbilityCoreAnAttackModifierAppliesOnlyToAnEventsFirstA
             genius!.ObjectId,
             energy!.ObjectId
         };
-        var suspended = game.Resolve(Decision.Take(action.Id, [], paying));
+        var suspended = game.Resolve(PaidDecision.Take(action, paying));
         Assert.Equal(Question.Element, suspended.Prompt!.Asking);
         Assert.Equal(DeckType.RevealingArea, kick!.Area.Type);
         Assert.Equal(PlayArea.Of(0), kick.Area.PlayArea);
@@ -251,12 +251,12 @@ public sealed class ActionAbilityCoreAnAttackModifierAppliesOnlyToAnEventsFirstA
             energy = board.CreateCard("01088", board.Seats[0].Hand);
         }, hero: true);
         var action = Assert.Single(game.Pending!.Affordances, option => option.Verb == Game.ActionVerb && option.AnchorId == kick!.ObjectId);
-        Assert.Throws<RulesNotImplementedException>(() => game.Resolve(Decision.Take(action.Id)));
+        Assert.Throws<ArgumentException>(() => game.Resolve(Decision.Take(action.Id)));
         Assert.False(world.Agenda.IsBusy);
         Assert.Equal(DeckType.HandsArea, kick!.Area.Type);
         Assert.Equal(DeckType.HandsArea, genius!.Area.Type);
         Assert.Equal(DeckType.HandsArea, energy!.Area.Type);
-        var retry = game.Resolve(Decision.Take(action.Id, [], [genius.ObjectId, energy.ObjectId]));
+        var retry = game.Resolve(PaidDecision.Take(action, [genius.ObjectId, energy.ObjectId]));
         Assert.Equal(Question.Element, retry.Prompt!.Asking);
     }
 }

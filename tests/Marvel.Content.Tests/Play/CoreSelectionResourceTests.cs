@@ -29,15 +29,14 @@ public sealed class CoreSelectionResourceTests
         runner.Act(
             world, new PendingAbility(tony.ObjectId, AbilityType.Action, 0), [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, tony, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         Assert.Equal(
             [top.ObjectId, second.ObjectId, third.ObjectId],
             prompt.Affordances.Select(option => option.Id));
         Assert.True(prompt.ExposesConcealedCandidates);
         Assert.Equal(PublicDecisionKind.CardLook, prompt.PublicKind);
 
-        var events = runner.Chose(
-            world, tony, 0, choice.Index, Decision.Take(second.ObjectId), choice.Tier);
+        var events = runner.Chose(world, choice, Decision.Take(second.ObjectId));
 
         // Printed Futurist: "Add 1 to your hand and discard the others".
         // Engine-choice receipt groups only that explicit discard instruction.
@@ -93,9 +92,7 @@ public sealed class CoreSelectionResourceTests
         runner.Act(
             world, new PendingAbility(tower.ObjectId, AbilityType.Action, 0), [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(
-            world, tower, 0, choice.Index,
-            Decision.Take(second.IdentityCard.ObjectId), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(second.IdentityCard.ObjectId));
 
         Assert.Contains(topTech, second.Hand.Cards);
         Assert.Contains(lowerTech, discard.Cards);

@@ -12,7 +12,7 @@ public sealed class AbilityRuntimeBoundaryTests
         RepositoryPaths.Root, "src", "Marvel.Cards", "Run");
 
     [Fact]
-    public void RuntimeSourcesDoNotRecoverTheCompatibilityFacade()
+    public void RuntimeSourcesUseNarrowCardCapabilities()
     {
         string[] violations = Sources()
             .Where(source => Path.GetFileName(source.Path) != "AbilityRunner.cs")
@@ -25,14 +25,14 @@ public sealed class AbilityRuntimeBoundaryTests
     }
 
     [Fact]
-    public void OnlyGameRuntimeConstructsTheWeakWorldRegistry()
+    public void RuntimeStateDoesNotLiveInAnExternalWorldRegistry()
     {
         string[] constructors = Sources()
             .Where(source => source.Text.Contains("ConditionalWeakTable", StringComparison.Ordinal))
             .Select(source => Path.GetFileName(source.Path))
             .ToArray();
 
-        Assert.Equal(["AbilityGameRuntimes.cs"], constructors);
+        Assert.Empty(constructors);
     }
 
     [Fact]
@@ -51,7 +51,6 @@ public sealed class AbilityRuntimeBoundaryTests
 
         Assert.Equal(
         [
-            "AbilityGameRuntimes",
             "AbilityOfferQueries",
             "AbilityProgram",
             "ICardPlayAbilities",
@@ -60,6 +59,23 @@ public sealed class AbilityRuntimeBoundaryTests
             "IResourceCardAbilities",
             "IThreatCardAbilities",
         ], dependencies);
+    }
+
+    [Fact]
+    public void WorldOwnsItsBoundRuntimeAndContinuationPortsAreOpaque()
+    {
+        var runtime = typeof(Marvel.Rules.State.World).GetProperty("AbilityRuntime")!;
+        Assert.Equal(typeof(Marvel.Rules.State.AbilityRuntime), runtime.PropertyType);
+        Assert.False(runtime.SetMethod!.IsPublic);
+        var parameters = typeof(ICardContinuationAbilities).GetMethods()
+            .Where(method => method.Name is "Choosing" or "Chose" or "ResolveEachPlayer" or "ResumeAbility")
+            .Select(method => method.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
+        Assert.All(parameters, types =>
+        {
+            Assert.Equal(typeof(Marvel.Rules.State.World), types[0]);
+            Assert.Equal(typeof(PhaseStep), types[1]);
+            Assert.InRange(types.Length, 2, 3);
+        });
     }
 
     [Fact]

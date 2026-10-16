@@ -11,7 +11,7 @@ namespace Marvel.Session;
 /// <summary>Strict, deterministic JSON for the canonical save document.</summary>
 public static class SessionSaveJson
 {
-    /// <summary>The strict snake-case serialization contract for schema 5.</summary>
+    /// <summary>The strict snake-case serialization contract for schema 6.</summary>
     public static JsonSerializerOptions Options { get; } = CreateOptions();
 
     /// <summary>Validates and writes one canonical save document.</summary>
@@ -27,17 +27,6 @@ public static class SessionSaveJson
         ArgumentNullException.ThrowIfNull(json);
         try
         {
-            int? schema = ReadSchema(json);
-            if (schema == 2)
-            {
-                return ReadSchemaTwo(json);
-            }
-            if (schema == 3)
-            {
-                return ReadSchemaThree(json);
-            }
-            if (schema == 4) return ReadSchemaFour(json);
-
             var save = JsonSerializer.Deserialize<SessionSave>(json, Options)
                 ?? throw new SessionSaveException("save contains no session document");
             Validate(save);
@@ -46,140 +35,15 @@ public static class SessionSaveJson
         catch (Exception failure) when (failure is JsonException
             or FormatException
             or InvalidOperationException
-            or NotSupportedException)
+            or NotSupportedException
+            or ArgumentException)
         {
             throw new SessionSaveException("save is not valid schema JSON", failure);
         }
     }
 
-    private static int? ReadSchema(string json)
-    {
-        using JsonDocument document = JsonDocument.Parse(json);
-        return document.RootElement.ValueKind == JsonValueKind.Object
-            && document.RootElement.TryGetProperty("schema", out JsonElement value)
-            && value.ValueKind == JsonValueKind.Number
-            ? value.GetInt32()
-            : null;
-    }
-
-    /// <summary>Validates the current schema or a supported predecessor.</summary>
-    public static void ValidateReadable(SessionSave save)
-    {
-        ArgumentNullException.ThrowIfNull(save);
-        if (save.Schema is 2 or 3 or 4)
-        {
-            ValidatePredecessor(save);
-            return;
-        }
-
-        Validate(save);
-    }
-
     /// <summary>Rejects unsupported identities and structurally invalid history.</summary>
-    public static void Validate(SessionSave save)
-        => SessionSaveValidation.Validate(save);
-
-    private static SessionSave ReadSchemaTwo(string json)
-    {
-        var legacy = JsonSerializer.Deserialize<SchemaTwoSessionSave>(json, Options)
-            ?? throw new SessionSaveException("save contains no session document");
-        if (legacy.Units is null)
-        {
-            throw new JsonException("schema 2 units are null");
-        }
-
-        var save = new SessionSave(
-            legacy.Format,
-            legacy.Schema,
-            legacy.Compatibility,
-            legacy.Session,
-            legacy.Setup,
-            legacy.Initial,
-            legacy.Revision,
-            legacy.Cursor,
-            legacy.EditFrontier,
-            ReadSchemaTwoPrompt(legacy.CurrentPrompt),
-            [.. legacy.Units.Select(unit => ConvertSchemaTwoUnit(
-                unit ?? throw new JsonException("schema 2 unit is null")))]);
-        ValidatePredecessor(save);
-        return save;
-    }
-
-    private static JournalUnit ConvertSchemaTwoUnit(SchemaTwoJournalUnit unit)
-    {
-        if (unit.Decisions is null)
-        {
-            throw new JsonException("schema 2 unit decisions are null");
-        }
-
-        return new JournalUnit(
-            unit.Role,
-            unit.Status,
-            unit.InitiatingSeat,
-            unit.ActiveSeat,
-            unit.Round,
-            unit.Phase,
-            [.. unit.Decisions.Select(step => ConvertSchemaTwoStep(
-                step ?? throw new JsonException("schema 2 step is null")))],
-            unit.Exposures);
-    }
-
-    private static JournalStep ConvertSchemaTwoStep(SchemaTwoJournalStep step) =>
-        new(
-            SchemaTwoPromptJson.Read(step.Prompt),
-            ReadSchemaTwoDecision(step.Decision),
-            step.Events,
-            step.RngWords,
-            step.StateFingerprint,
-            step.Result);
-
-    private static PromptRecord? ReadSchemaTwoPrompt(JsonElement? prompt) =>
-        prompt is null || prompt.Value.ValueKind == JsonValueKind.Null
-            ? null
-            : SchemaTwoPromptJson.Read(prompt.Value);
-
-    private static DurableDecision ReadSchemaTwoDecision(JsonElement decision)
-    {
-        JsonObject root = JsonNode.Parse(decision.GetRawText())?.AsObject()
-            ?? throw new JsonException("schema 2 decision is null");
-        PredecessorPromptJson.AddCardAnchorKind(root["selector"]?.AsObject()
-            ?? throw new JsonException("schema 2 decision selector is null"));
-        return root.Deserialize<DurableDecision>(Options)
-            ?? throw new JsonException("schema 2 decision is null");
-    }
-
-    private static SessionSave ReadSchemaThree(string json)
-    {
-        JsonObject root = JsonNode.Parse(json)?.AsObject()
-            ?? throw new JsonException("schema 3 save is null");
-        PredecessorPromptJson.AddCardAnchorKinds(root);
-        PredecessorPromptJson.AddFixedResourceCosts(root);
-        SessionSave save = root.Deserialize<SessionSave>(Options)
-            ?? throw new JsonException("schema 3 save is null");
-        ValidatePredecessor(save);
-        return save;
-    }
-
-    private static SessionSave ReadSchemaFour(string json)
-    {
-        JsonObject root = JsonNode.Parse(json)?.AsObject()
-            ?? throw new JsonException("schema 4 save is null");
-        PredecessorPromptJson.AddFixedResourceCosts(root);
-        SessionSave save = root.Deserialize<SessionSave>(Options)
-            ?? throw new JsonException("schema 4 save is null");
-        ValidatePredecessor(save);
-        return save;
-    }
-
-    private static void ValidatePredecessor(SessionSave save)
-    {
-        if (save.Schema is not (2 or 3 or 4))
-        {
-            throw new SessionSaveException("save schema is not migratable");
-        }
-
-        Validate(save with { Schema = SessionSave.CurrentSchema });
-    }
+    public static void Validate(SessionSave save) => SessionSaveValidation.Validate(save);
 
     private static JsonSerializerOptions CreateOptions()
     {

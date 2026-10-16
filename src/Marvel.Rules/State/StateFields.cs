@@ -40,10 +40,6 @@ public static class StateFields
         ICardFacts facts, string faceId, string attribute) =>
         StateFieldCatalog.HasUsablePrintedPower(facts, faceId, attribute);
 
-    /// <summary>Printed attributes that supply registered state fields.</summary>
-    public static IReadOnlyDictionary<string, string> FilledFrom =>
-        StateFieldCatalog.FilledFrom;
-
     /// <summary>The default number of allies a player may control.</summary>
     public const long AllyLimit = StateFieldCatalog.AllyLimit;
 

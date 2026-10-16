@@ -1,11 +1,11 @@
+using Marvel.Observability;
+using Marvel.Protocol;
 using System.Buffers.Binary;
 using System.Globalization;
 using System.Security.Cryptography;
-using Marvel.Decisions;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
-using Marvel.Server;
 using Marvel.View;
 
 using static Marvel.Client.ClientResponseValidation;
@@ -21,8 +21,7 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
     private const string SetupRequestId = "local-setup";
     internal const string SynchronizeRequestId = "local-sync";
     internal const string UndoRequestId = "local-undo";
-    internal readonly Dictionary<ClientSession, HistoryDescriptor> histories = [];
-    private readonly Dictionary<ClientSession, long> revisions = [];
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<ClientSession, ClientSessionSnapshot> snapshots = new();
     internal readonly IEngineTransport transport;
     internal readonly OperationalLog log;
     private readonly string? requestNonce;
@@ -47,8 +46,13 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
             : Guid.NewGuid().ToString("N", System.Globalization.CultureInfo.InvariantCulture);
     }
 
-    /// <summary>Composes the local host while keeping dataset access at its boundary.</summary>
-    public static LocalClientConnection ConnectLocal(string dataRoot) => LocalClientConnectionFactory.Connect(dataRoot);
+    /// <summary>Retries the exact entry claim retained after an uncertain open or attach response.</summary>
+    public ValueTask<ClientEntryResult> RetryEntryAsync(ClientEntryAttempt attempt,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(attempt);
+        return entry.SendAttemptAsync(attempt, cancellationToken);
+    }
 
     /// <summary>Requests transport shutdown without blocking the presentation thread.</summary>
     public void Dispose()
@@ -64,17 +68,10 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
         return ValueTask.CompletedTask;
     }
 
-    /// <summary>Submits one answer without retrying an uncertain mutation.</summary>
-    public ValueTask<ClientResolutionResult> ResolveAsync(
-        string capability,
-        EngineDecision decision,
-        CancellationToken cancellationToken = default) =>
-        LocalGameMutationClient.ResolveAsync(this, capability, decision, cancellationToken);
-
     /// <summary>Submits one answer for an explicit client session.</summary>
     public ValueTask<ClientResolutionResult> ResolveAsync(
         ClientSession session,
-        EngineDecision decision,
+        Decision decision,
         CancellationToken cancellationToken = default) =>
         LocalGameMutationClient.ResolveAsync(this, session, decision, cancellationToken);
 
@@ -89,7 +86,7 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
     public ValueTask<ClientSynchronizationResult> SynchronizeAsync(
         ClientSession session,
         CancellationToken cancellationToken = default) =>
-        LocalGameMutationClient.SynchronizeAsync(this, session, cancellationToken);
+        LocalGameSynchronizationClient.SynchronizeAsync(this, session, cancellationToken);
 
     /// <summary>Reads the exact product choices accepted by the host.</summary>
     public async ValueTask<ClientSetupResult> ReadSetupAsync(
@@ -139,60 +136,8 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
             .Any(recommended => !choices.ModularSets.Any(modular => modular.Key == recommended));
     }
 
-    /// <summary>Validates a screen selection and sends exactly one open request.</summary>
-    public ValueTask<ClientStartupResult> OpenAsync(
-        SetupChoices available,
-        GameSetupSelection selection,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(available);
-        ArgumentNullException.ThrowIfNull(selection);
-
-        if (!ValidHeroSelection(available, selection.HeroKeys)
-            || !available.Scenarios.Any(scenario => scenario.Key == selection.ScenarioKey))
-        {
-            return ValueTask.FromResult(Failed(
-                "invalid_selection",
-                "Choose a hero and scenario offered by this game service."));
-        }
-
-        if (!TryResolveModularSets(available, selection, out IReadOnlyList<string>? modularSets))
-        {
-            return ValueTask.FromResult(Failed(
-                "invalid_selection",
-                "Choose modular sets offered by this game service."));
-        }
-
-        if (!uint.TryParse(
-                selection.Seed?.Trim(),
-                NumberStyles.None,
-                CultureInfo.InvariantCulture,
-                out uint seed))
-        {
-            if (selection.Seed is not null && string.IsNullOrWhiteSpace(selection.Seed))
-            {
-                seed = seedSource();
-            }
-            else
-            {
-                return ValueTask.FromResult(Failed(
-                    "invalid_seed",
-                    "Enter a whole-number seed from 0 through 4294967295, or leave it blank."));
-            }
-        }
-
-        return OpenAsync(
-            new GameSpecification(
-                selection.ScenarioKey,
-                selection.HeroKeys,
-                modularSets,
-                seed),
-            cancellationToken);
-    }
-
     /// <summary>
-    /// Validates a setup selection and opens the explicitly named one- or
-    /// two-seat game with exactly one mutation request.
+    /// Validates a setup selection and opens the explicitly named game with exactly one mutation request.
     /// </summary>
     public ValueTask<ClientEntryResult> OpenSessionAsync(
         string gameId,
@@ -215,7 +160,7 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
         {
             return ValueTask.FromResult(LocalGameEntryClient.EntryFailed(Error(
                 "invalid_selection",
-                "Choose one or two distinct heroes and a scenario offered by this game service.")));
+                "Choose one through four distinct heroes and a scenario offered by this game service.")));
         }
 
         if (!TryResolveModularSets(available, selection, out IReadOnlyList<string>? modularSets))
@@ -259,29 +204,8 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
         string gameId, string invitation, CancellationToken cancellationToken = default) =>
         entry.AttachAsync(gameId, invitation, cancellationToken);
 
-    /// <summary>Sends the canonical open request through the configured transport.</summary>
-    public async ValueTask<ClientStartupResult> OpenAsync(
-        GameSpecification specification,
-        CancellationToken cancellationToken = default)
-    {
-        ClientEntryResult entry = await OpenSessionAsync(
-            LocalGameSession.GameId, specification, cancellationToken).ConfigureAwait(false);
-        EngineResponse? legacyResponse = entry.Response is null || entry.Session is null
-            ? null
-            : entry.Response with
-            {
-                Capability = entry.Session.Capability,
-                Invitations = entry.Invitations,
-            };
-        return new ClientStartupResult(legacyResponse, entry.Error);
-    }
-
-
     private static ClientSetupResult SetupFailed(string code, string message) =>
         new(Choices: null, Error(code, message));
-
-    private static ClientStartupResult Failed(string code, string message) =>
-        new(Response: null, Error(code, message));
 
     internal string NextRequestId(string prefix) => requestNonce is null
         ? prefix
@@ -289,15 +213,15 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
 
 
     internal long RevisionFor(ClientSession session) =>
-        revisions.TryGetValue(session, out long revision) ? revision : 0;
+        snapshots.TryGetValue(session, out var snapshot) ? snapshot.Revision : 0;
+
+    internal HistoryDescriptor? HistoryFor(ClientSession session) =>
+        snapshots.TryGetValue(session, out var snapshot) ? snapshot.History : null;
 
     internal void RememberRevision(ClientSession session, EngineResponse response)
     {
-        revisions[session] = response.Revision;
-        if (response.History is not null)
-        {
-            histories[session] = response.History;
-        }
+        var incoming = new ClientSessionSnapshot(response.Revision, response.History);
+        snapshots.AddOrUpdate(session, incoming,
+            (_, current) => incoming.Revision >= current.Revision ? incoming : current);
     }
-
 }

@@ -1,3 +1,4 @@
+using Marvel.Rules.Events;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Setup;
@@ -21,7 +22,7 @@ public sealed class ChoosingCardsTakingTheDamageDamagesTheResolvingPlayersIdenti
         // identity." Second player again, and the first is left alone.
         var world = Deal("spider_man", "she_hulk");
         var(card, _) = Reveal(world, AuthoredCards.HydraBomber, player: 1);
-        AuthoredCards.Runner().Chose(world, card, 1, 1, Decision.Take(0));
+        AuthoredCards.Runner().Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(0));
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(2, world.Seats[1].IdentityCard.Damage);
         Assert.Equal(0, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
@@ -52,8 +53,8 @@ public sealed class ChoosingCardsTakingTheDamageDamagesTheResolvingPlayersIdenti
         var world = Deal();
         var(card, _) = Reveal(world, AuthoredCards.HydraBomber);
         var runner = AuthoredCards.Runner();
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, card, 0, 1, Decision.Decline));
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, card, 0, 1, Decision.Take(2)));
+        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Decline));
+        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(2)));
     }
 
     [Rule("rr:surge.2")]
@@ -72,7 +73,7 @@ public sealed class ChoosingCardsTakingTheDamageDamagesTheResolvingPlayersIdenti
         var abilities = AuthoredCards.Runner();
         var events = new List<Marvel.Rules.Events.GameEvent>();
         var card = world.CreateCard(AuthoredCards.HydraBomber, world.AreaOf(DeckType.RevealingArea));
-        world.Agenda.Add(new PhaseStep(Steps.RevealEncounterCard, 1, 4, Subject: card.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId, Seat: 0));
         var asked = Sequence.Work(world, Cards, abilities, events);
         Assert.NotNull(asked);
         Assert.Equal(Question.Option, asked.Asking);
@@ -118,7 +119,7 @@ public sealed class ChoosingCardsTakingTheDamageDamagesTheResolvingPlayersIdenti
         Assert.Equal(Steps.ChooseOption, waiting.What);
         Assert.False(Statuses.Has(world, identity, Statuses.Stunned));
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
-        runner.Chose(world, card, 0, waiting.Index, Decision.Take(1));
+        runner.Chose(world, waiting, Decision.Take(1));
         // The option ran, and then the rest of the sequence did.
         Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
         Assert.True(Statuses.Has(world, identity, Statuses.Stunned));
@@ -149,12 +150,12 @@ public sealed class ChoosingCardsTakingTheDamageDamagesTheResolvingPlayersIdenti
         var first = Assert.Single(world.Agenda.Outstanding);
         Assert.Equal(1, first.Index);
         // Answering the first asks the second, at the next index.
-        runner.Chose(world, card, 0, first.Index, Decision.Take(0));
+        runner.Chose(world, first, Decision.Take(0));
         Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
-        var second = world.Agenda.Outstanding[^1];
+        var second = AbilityContinuationFixtures.Pending(world, card);
         Assert.Equal(Steps.ChooseOption, second.What);
         Assert.Equal(2, second.Index);
-        runner.Chose(world, card, 0, second.Index, Decision.Take(1));
+        runner.Chose(world, second, Decision.Take(1));
         Assert.True(Statuses.Has(world, identity, Statuses.Confused));
         Assert.False(Statuses.Has(world, identity, Statuses.Stunned));
     }
@@ -182,15 +183,15 @@ public sealed class ChoosingCardsTakingTheDamageDamagesTheResolvingPlayersIdenti
         var card = world.CreateCard(AuthoredCards.HydraBomber, world.AreaOf(DeckType.RevealingArea));
         int held = world.Seats[0].Hand.Cards.Count;
         runner.WhenRevealed(world, card, 0);
-        Assert.Equal([0, 1], world.Agenda.Outstanding.Select(step => step.AbilityOrdinal));
-        var first = world.Agenda.Current!.Value;
-        runner.Chose(world, card, 0, first.Index, Decision.Take(1), first.Tier);
+        Assert.Equal([0], world.Agenda.Outstanding.Select(step => Assert.IsType<AbilityContinuationState>(step.Require<AbilityContinuationAgendaOperation>().Continuation).Invocation.Address.Ordinal));
+        var events = new List<GameEvent>();
+        var first = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
+        Sequence.Answer(world, Cards, runner, first, Decision.Take(1), events);
         Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
-        world.Agenda.Advance();
-        world.Agenda.Advance();
-        world.Agenda.Advance();
-        var second = world.Agenda.Current!.Value;
-        runner.Chose(world, card, 0, second.Index, Decision.Take(1), second.Tier);
+        Assert.False(Statuses.Has(world, identity, Statuses.Confused));
+        var second = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
+        Sequence.Answer(world, Cards, runner, second, Decision.Take(1), events);
+        Assert.Null(Sequence.Work(world, Cards, runner, events));
         Assert.True(Statuses.Has(world, identity, Statuses.Confused));
         Assert.False(Statuses.Has(world, identity, Statuses.Stunned));
     }

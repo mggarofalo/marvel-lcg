@@ -149,6 +149,8 @@ internal static class AbilityResolutionInterpreter
     internal static void Run(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast)
     {
         int eventsBefore = cast.Events.Count;
+        long requested = AbilityCompletion.Requested(execution, node, cast);
+        cast.CompletedOutcome = null;
         var agendaOwner = cast.World.Agenda.Current;
         var agendaOccurrence = cast.World.Agenda.Occurrence;
         var healthBefore = cast.World.Effects.CaptureCharacterHealth();
@@ -165,6 +167,8 @@ internal static class AbilityResolutionInterpreter
         {
             cast.ResolveEffect();
         }
+
+        cast.CompletedOutcome ??= AbilityCompletion.Observe(node, cast.Events, eventsBefore, requested);
 
         // A conditional constant can become Stalwart because this node changed
         // threat, counters, traits, or another dependency. `rr:stalwart.2`

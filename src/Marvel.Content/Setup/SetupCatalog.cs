@@ -61,6 +61,9 @@ public sealed class SetupCatalog
     public string EncounterSetDisplayName(string name) =>
         Get(encounterSets, name, "encounter set").Name;
 
+    /// <summary>The authored classification used by setup selection.</summary>
+    public EncounterSetRole EncounterRole(string name) => Get(encounterSets, name, "encounter set").Role;
+
     private static T Get<T>(IReadOnlyDictionary<string, T> from, string name, string what)
     {
         ArgumentNullException.ThrowIfNull(name);
@@ -95,7 +98,7 @@ public sealed class SetupCatalog
         foreach (var entry in Section(root, "encounter_sets"))
         {
             if (!sets.TryAdd(entry.Name, new EncounterSetSetup(
-                    Text(entry.Value, "name"), Strings(entry.Value, "encounters"))))
+                    Text(entry.Value, "name"), Strings(entry.Value, "encounters"), Role(entry.Value))))
                 throw new JsonException($"duplicate encounter set identity '{entry.Name}'");
         }
 
@@ -110,8 +113,7 @@ public sealed class SetupCatalog
     private static CampaignSetup ReadCampaign(JsonElement element) => new(
         Name: Text(element, "name"),
         Villain: Strings(element, "villain"),
-        Expert: element.TryGetProperty("expert", out var expert)
-                && expert.ValueKind == JsonValueKind.True,
+        Expert: Boolean(element, "expert"),
         Challenges: Strings(element, "challenges"),
         Schemes: Strings(element, "schemes"),
         SetAside: Strings(element, "set_aside"),
@@ -125,12 +127,29 @@ public sealed class SetupCatalog
         HeroDeck: Strings(element, "hero_deck"),
         Obligations: Strings(element, "obligations"),
         NemesisSet: Strings(element, "nemesis_set"),
-        PlayerDeck: Strings(element, "player_deck"));
+        PlayerDeck: Strings(element, "player_deck"),
+        NemesisSetIcon: Text(element, "nemesis_set_icon"));
 
     private static string Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()!
             : throw new JsonException($"expected a string '{name}'");
+
+    private static bool Boolean(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value)
+        && value.ValueKind is JsonValueKind.True or JsonValueKind.False
+            ? value.GetBoolean()
+            : throw new JsonException($"expected a boolean '{name}'");
+
+    private static EncounterSetRole Role(JsonElement element) => Text(element, "role") switch
+    {
+        "modular" => EncounterSetRole.Modular,
+        "standard" => EncounterSetRole.Standard,
+        "expert" => EncounterSetRole.Expert,
+        "scenario" => EncounterSetRole.Scenario,
+        "nemesis" => EncounterSetRole.Nemesis,
+        var role => throw new JsonException($"unknown encounter set role '{role}'"),
+    };
 
     // A missing list is an error rather than an empty one. Every record the
     // emitter writes carries every field its dataclass declares, including the

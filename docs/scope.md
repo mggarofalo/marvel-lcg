@@ -6,7 +6,8 @@ The executable product is the Marvel Champions Core Set. The runtime supports:
 - Rhino, Klaw and Ultron in Standard and Expert modes;
 - Bomb Scare, Masters of Evil, Under Attack, Legions of Hydra and The Doomsday
   Chair; and
-- all 209 Core Set card faces.
+- all 209 Core Set card faces; and
+- one through four seats using authored starters or validated, ordered Core decks.
 
 `datasets/setup/setup.json` defines which products the runtime can start.
 `datasets/abilities/abilities.json` defines which printed faces have executable

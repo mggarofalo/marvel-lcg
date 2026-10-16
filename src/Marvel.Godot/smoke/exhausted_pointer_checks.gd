@@ -34,10 +34,18 @@ static func _invalid_drops(driver, card: Control, pose: Transform2D, revision: S
 		if not await preload("res://smoke/gesture_settlement.gd").global_pose(driver, card, pose):
 			driver._fail("invalid exhausted drop did not settle at its saved physical pose")
 			return false
+		# global_pose already established the authored local pose and bounded global
+		# transform above. No frame elapses before these independent state checks.
+		if card.is_set_as_top_level():
+			driver._fail("invalid exhausted drop retained its lifted presentation")
+			return false
+		var actual_revision := str(driver._node("Toolbar/SyncStatus").get_meta("response_revision", -1))
+		if actual_revision != revision:
+			driver._fail("invalid exhausted drop changed revision: expected=%s actual=%s" % [revision, actual_revision])
+			return false
 		var commit: Button = driver._task_commit()
-		if card.is_set_as_top_level() or not card.get_global_transform().is_equal_approx(pose) \
-				or str(driver._node("Toolbar/SyncStatus").get_meta("response_revision", -1)) != revision \
-				or (commit.text if commit != null else "") != commitment:
-			driver._fail("invalid exhausted drop changed pose, revision or commitment")
+		var actual_commitment: String = commit.text if commit != null else ""
+		if actual_commitment != commitment:
+			driver._fail("invalid exhausted drop changed commitment: expected=%s actual=%s" % [commitment, actual_commitment])
 			return false
 	return true

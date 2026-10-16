@@ -1,3 +1,6 @@
+using Marvel.Observability;
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text.Json;
@@ -54,7 +57,7 @@ public sealed class RestrictedMultiplayerJourneyTwoRestrictedSocketClientsComple
             bool testedStale = false;
             bool testedDroppedResponse = false;
             bool restarted = false;
-            EngineDecision? ownerRevisionZeroDecision = null;
+            Decision? ownerRevisionZeroDecision = null;
             int decisions = 0;
             while (views[0].World!.Outcome == Outcome.Unfinished)
             {
@@ -72,7 +75,7 @@ public sealed class RestrictedMultiplayerJourneyTwoRestrictedSocketClientsComple
                 Assert.Equal(actor, prompt.Player);
                 AssertOffTurnPrompt(views[peer], peer);
                 ObservePrivateSearch(views[actor], actor, prompt, sawPrivateSearch);
-                EngineDecision decision = VisibleDecision(prompt);
+                Decision decision = VisibleDecision(prompt);
                 views = await TestWrongSeat(clients, sessions, views, testedWrongSeat, actor, peer, decision);
                 (ownerRevisionZeroDecision, testedStale) = await TestStaleDecision(staleOwner, sessions[0], views[0], actor, decision, ownerRevisionZeroDecision, testedStale);
                 if (await TestDroppedResponse(endpoint, sessions[actor], views[actor], decision, testedDroppedResponse, decisions))

@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Decisions;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
@@ -17,21 +18,21 @@ public abstract class EngineHostTestBase
     protected static EngineResponse ResolveAction(EngineHost host, EngineResponse opened, EngineResponse current, int source, string requestId)
     {
         Affordance action = Assert.Single(Assert.IsType<Prompt>(current.Prompt).Affordances, option => option.AnchorId == source);
-        EngineResponse resolved = host.Exchange(EngineRequest.ResolveGame(requestId, "rewrite-example", RequiredCapability(opened), new EngineDecision(action.Id, []), current.Revision));
+        EngineResponse resolved = host.Exchange(EngineRequest.ResolveGame(requestId, "rewrite-example", RequiredCapability(opened), new Decision(action.Id, []), current.Revision));
         Assert.Null(resolved.Error);
         return resolved;
     }
 
     protected static IReadOnlyList<Marvel.View.CardDescriptor> Hand(EngineResponse response, int seat) => Assert.Single(Assert.IsType<WorldDescriptor>(response.World).Areas, area => area.Zone == "HandsArea" && area.Owner == seat).Cards;
     protected static string RequiredCapability(EngineResponse response) => Assert.IsType<string>(response.Capability);
-    protected static EngineDecision TakeOnly(EngineResponse response) => new(Assert.Single(Assert.IsType<Marvel.Rules.Prompts.Prompt>(response.Prompt).Affordances).Id, []);
+    protected static Decision TakeOnly(EngineResponse response) => new(Assert.Single(Assert.IsType<Marvel.Rules.Prompts.Prompt>(response.Prompt).Affordances).Id, []);
     protected static void AssertQuarantined(IDurableGameFactory factory, StoredSession stored, string gameId, string capability)
     {
         var restarted = new EngineHost(factory, store: new FixedSessionStore(stored));
         Assert.Equal("session_not_found", restarted.Exchange(EngineRequest.SyncGame("quarantined", gameId, capability)).Error?.Code);
     }
 
-    protected static EngineDecision PayFirstPlayableCard(Prompt prompt)
+    protected static Decision PayFirstPlayableCard(Prompt prompt)
     {
         foreach (Affordance option in prompt.Affordances.Where(option => string.Equals(option.Verb, "Play", StringComparison.Ordinal)))
         {
@@ -43,7 +44,7 @@ public abstract class EngineHostTestBase
                 IReadOnlyList<ResourceAllocation>? allocations = ResourcePayment.Allocate(cost, generators, values);
                 if (allocations is not null && ResourcePayment.Allows(cost, generators, values, allocations))
                 {
-                    return new EngineDecision(option.Id, targets, generators, values, allocations);
+                    return new Decision(option.Id, targets, generators, values, allocations);
                 }
             }
         }
@@ -51,7 +52,7 @@ public abstract class EngineHostTestBase
         throw new Xunit.Sdk.XunitException("the deterministic hand has no payable card play");
     }
 
-    protected static EngineDecision PayCard(Prompt prompt, int anchor)
+    protected static Decision PayCard(Prompt prompt, int anchor)
     {
         Affordance option = Assert.Single(prompt.Affordances, option => string.Equals(option.Verb, "Play", StringComparison.Ordinal) && option.AnchorId == anchor);
         IReadOnlyList<int> targets = option.Targets is null ? [] : option.Targets.Legal.Take(option.Targets.Min).ToList();
@@ -62,7 +63,7 @@ public abstract class EngineHostTestBase
             IReadOnlyList<ResourceAllocation>? allocations = ResourcePayment.Allocate(cost, generators, values);
             if (allocations is not null && ResourcePayment.Allows(cost, generators, values, allocations))
             {
-                return new EngineDecision(option.Id, targets, generators, values, allocations);
+                return new Decision(option.Id, targets, generators, values, allocations);
             }
         }
 
@@ -112,26 +113,7 @@ public abstract class EngineHostTestBase
         public OpenedGame Create(GameSpecification specification) => inner.Create(specification);
     }
 
-    protected sealed class MigrationSessionStore(params StoredSession[] sessions) : ISessionStore
-    {
-        private readonly List<StoredSession> sessions = [..sessions];
-        public int Commits { get; private set; }
 
-        public IReadOnlyList<StoredSession> Load() => [..sessions];
-        public string? Commit(StoredSession session)
-        {
-            SessionSaveJson.Validate(session.Save);
-            int index = sessions.FindIndex(existing => existing.Save.Session.StorageId == session.Save.Session.StorageId);
-            if (index < 0)
-            {
-                throw new InvalidOperationException("replacement session was not loaded");
-            }
-
-            sessions[index] = session;
-            Commits++;
-            return null;
-        }
-    }
 
     protected sealed class SequenceCapabilities(params string[] capabilities) : ISessionCapabilityIssuer
     {

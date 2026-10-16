@@ -1,15 +1,24 @@
 # Presentation layer
 
-The presentation architecture has 5 layers:
+Ownership follows the decision each assembly makes:
 
-1. `Marvel.View` projects engine truth into visibility-safe descriptors and
-   transport-neutral board and event presentations.
-2. `Marvel.Decisions` composes prompt-bound answers and assesses their legality
-   through engine-owned prompt functions.
-3. `Marvel.Server` hosts games behind one transport-neutral protocol.
-4. `Marvel.Client` owns transport selection, response validation and reusable
-   client progress state.
-5. `Marvel.Godot` implements the desktop controls on macOS and Windows.
+| Assembly | Responsibility |
+|---|---|
+| `Marvel.View` | Visibility-safe descriptions of authorized engine results. |
+| `Marvel.Decisions` | Prompt-bound drafts assessed by engine-owned legality. |
+| `Marvel.Protocol` | Versioned requests, responses and their strict serialization. |
+| `Marvel.Transport` | Embedded value boundaries and bounded socket framing. |
+| `Marvel.Observability` | Privacy-bounded operational records and sinks. |
+| `Marvel.Server` | Authoritative session lifecycle, persistence, replay and scope. |
+| `Marvel.Server.Host` | Standalone process configuration and lifetime. |
+| `Marvel.Client` | Explicit session identities, response validation and recovery. |
+| `Marvel.Desktop` | Embedded/remote desktop composition and owned host lifetime. |
+| `Marvel.Godot` | Native controls, gestures, layout and animation. |
+
+A remote client has no dependency on the server, content loader or session replay.
+The desktop composition root explicitly owns its embedded host. Protocol, transport
+and observability cannot resolve server, content, session or product assemblies;
+negative build probes exercise that boundary.
 
 Godot is an implementation concern, not the whole presentation layer. Reusable
 presentation code must not reference Godot assemblies. Decision composition
@@ -68,7 +77,7 @@ Session capabilities remain outside renderable progress.
 The Godot project reads the authored Core Set setup surface through
 `IEngineTransport`. Its Start flow opens one or 2 ordered hero seats under an
 explicit game label. Its Join flow attaches once with a masked seat invitation.
-The embedded `InProcessTransport` remains the default. An explicit
+The embedded `QueuedInProcessTransport` remains the desktop default. An explicit
 `tcp://host:port` endpoint selects `SocketTransport` at the same composition
 boundary. Each complete response replaces the prior visibility-safe snapshot,
 while its semantic events are appended in engine order to a diagnostic
@@ -76,10 +85,29 @@ chronology. The client renders the board, waiting state and every admitted
 prompt shape from those contracts. Tests run a complete deterministic journey
 through both compositions and compare every authoritative response.
 
-The planned deterministic session layer sits behind both transports. It makes
+The deterministic session layer sits behind both transports. It makes
 the server-owned setup and accepted decision trace authoritative for save,
 restore, undo, redo and legal action reordering. Clients continue to submit
 decisions rather than state. See [session-ledger.md](session-ledger.md).
+
+Protocol 32 uses the engine's `Rules.Play.Decision` as the one submitted answer type.
+`DecisionAssessment` owns complete target, variable and resource legality for both
+composition and acceptance. The protocol codec emits only its five answer fields.
+
+Each open or attach retains an `EntryClaim` before transmission. An uncertain
+reply returns `ClientEntryAttempt`; retry sends the exact same claim and intent.
+The host atomically persists an encrypted receipt with the authority. The client
+secret decrypts that receipt after a host restart, and a changed intent is rejected.
+Recovery returns the current scoped view and only still-unused invitations. Revoked
+and retired claims remain unusable. Godot offers Recover table or Recover seat;
+it never manufactures a second entry when recovering an uncertain result.
+
+Failure disposition is typed independently of diagnostic codes. A rejected candidate
+preserves the prior authoritative session; a lost response requires synchronization;
+only explicit unavailable authority removes the capability. Committed history
+inspection is cached with its hosted session and projected separately for each scope.
+Network framing never holds a game gate. Session requests serialize per game, so an
+incomplete peer or another game's durable commit cannot stall every table.
 
 Protocol 25 adds completed deck-shuffle receipts containing only destination
 seat, count and previously public titles. No returned card's hidden identity or
@@ -111,9 +139,8 @@ presentation facts do not change the saved prompt record or replay identity.
 Quantity-dependent typed payments retain
 the protocol 20 resource contract. The engine resolves the
 required resource slots from the offered component and chosen variable; the
-composer uses that same function for readiness and icon declarations. Saves
-use schema 5 and replay contract v8; prior replay contracts fail compatibility
-before migration.
+composer uses that same function for readiness and icon declarations. Saves use schema 6 and replay contract v17. Other schema and replay identities
+are rejected; there is no migration adapter.
 
 Readable faces carry `printed_values` separately from `effective_values`.
 Printed values preserve the numeral or symbol, the special-rule star, the
@@ -155,7 +182,7 @@ content, view, decision, client or server project may reference Godot assemblies
 The same targets give each presentation project an exact project-reference
 allowlist. They also disable transitive project references, so `Marvel.Client`
 cannot compile against `Marvel.Core`, `Marvel.Cards`, `Marvel.Content` or
-`Marvel.Session` merely because `Marvel.Server` uses them. The projects under
+`Marvel.Session` merely because the desktop composition uses them. The projects under
 `tests/presentation-wall/` prove that every role rejects a forbidden reference.
 `PresentationAssemblyPolicyTests` check the assemblies that the compiler emits,
 including references introduced through a package or a DLL.
@@ -308,13 +335,13 @@ visibility configuration, durable sessions and shutdown behavior.
 
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
-unknown JSON members fail before they reach the engine. Protocol 19 adds
-engine-authored decline commitments to prompts (ending a turn, passing an
-opportunity, or leaving an attack undefended), readable card-choice names, and
-an explicit visibility-safe attack completion event. Both endpoints must use the
-current protocol version (31). Protocol 30 adds the visibility-safe active attack
-participants, maintained through nested decisions and the attack's end response
-window. This is a read-only projection; replay v14 and the state digest are unchanged.
+unknown JSON members fail before they reach the engine. Both endpoints must use
+protocol 32. Setup and decisions replay under engine-replay-v17, with session
+schema 6 retaining the exact ordered decks. Requests carry engine-authored
+commitments and explicit payment allocations; authorized responses include
+readable choices, active attack participants and attack completion events.
+Neither hidden state nor interpreter continuation payloads cross this boundary.
+
 Protocol 29 adds exact optional-window choices,
 forced-ability receipts and authorized event-face references; it requires replay v14.
 Protocol 28 adds explicit activity operation receipts,
@@ -367,9 +394,13 @@ removes capabilities and invitations from responses before those responses
 reach rendering code. A host may copy one returned invitation once; an attaching
 client masks and clears the invitation field before sending the request.
 
-Once a complete mutation request has been sent, cancelling the response read
-cannot imply that the mutation was rolled back. The client must consume the
-authoritative response unless a future protocol adds idempotent retries.
+Once a complete gameplay mutation request has been sent, cancelling the response
+read cannot imply rollback. The client synchronizes the current state without
+resubmitting that decision. Open and attach instead retry their retained entry
+claim, which durably identifies the authority already issued. Each socket exchange
+uses a 30-second deadline, including recovery synchronization. Caller cancellation
+stops a response read promptly while preserving the same uncertainty and recovery
+contract.
 
 The socket transport reports whether request transmission began. Only a failure
 before writing begins is safe to retry. Once writing begins the result is

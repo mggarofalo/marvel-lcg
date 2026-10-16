@@ -1,3 +1,5 @@
+using Marvel.Observability;
+using Marvel.Protocol;
 using Marvel.Content.Setup;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -12,19 +14,12 @@ using static Marvel.Server.EngineHostLifecycle;
 
 namespace Marvel.Server;
 
-/// <summary>A single-threaded collection of deterministic engine sessions.</summary>
-/// <remarks>
-/// The host is deliberately synchronous and has no lock. Socket I/O finishes
-/// before a request reaches this type, and the standalone server handles one
-/// request at a time. Threading or async must never become a path into game
-/// state; see <c>AGENTS.md</c>, “Determinism is load-bearing”.
-/// Operation-specific validation stays here. <see cref="SessionAuthorityRegistry"/>,
-/// <see cref="SessionTransaction"/>, <see cref="AuthorizedSessionProjector"/>,
-/// and <see cref="RequestExecution"/> own authorization, durable publication,
-/// visibility-safe projection, and request telemetry respectively.
-/// </remarks>
+/// <summary>Hosts independent deterministic sessions with serialized access to each game.</summary>
+/// <remarks>Network I/O takes place outside session gates. Every request reauthorizes
+/// after acquiring its session gate, so concurrent revocation cannot admit a stale capability.</remarks>
 public sealed class EngineHost : IEngineEndpoint
 {
+    private readonly object[] entryGates = Enumerable.Range(0, 64).Select(_ => new object()).ToArray();
     internal readonly IGameFactory factory;
     internal readonly IVisibilityPolicy visibility;
     internal readonly ISessionStore store;
@@ -75,7 +70,12 @@ public sealed class EngineHost : IEngineEndpoint
 
         try
         {
-            response = Handle(request, execution);
+            if (request.Operation is EngineProtocol.Open or EngineProtocol.Attach && EntryReceipts.Valid(request.Entry))
+            {
+                int stripe = Convert.ToInt32(EntryReceipts.Verifier(request.Entry!)[..2], 16) % entryGates.Length;
+                lock (entryGates[stripe]) response = HandleSerialized(request, execution);
+            }
+            else response = HandleSerialized(request, execution);
         }
         catch (PersistenceFailureException)
         {
@@ -99,7 +99,55 @@ public sealed class EngineHost : IEngineEndpoint
         return execution.Complete(response);
     }
 
+    private EngineResponse HandleSerialized(EngineRequest request, RequestExecution execution)
+    {
+        object? sessionGate = authority.SessionGate(request);
+        if (sessionGate is null) return Handle(request, execution);
+        lock (sessionGate) return Handle(request, execution);
+    }
+
     private EngineResponse Handle(EngineRequest request, RequestExecution execution)
+    {
+        EngineResponse? envelopeFailure = ValidateEnvelope(request);
+        if (envelopeFailure is not null) return envelopeFailure;
+
+        if (request.Operation == EngineProtocol.Setup)
+        {
+            return Setup(request);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.GameId))
+        {
+            return Failed(request, "invalid_request", "game_id is required");
+        }
+
+        if (request.GameId.Length > EngineProtocol.MaximumIdentifierLength)
+        {
+            return Failed(
+                request, "invalid_request",
+                $"game_id exceeds {EngineProtocol.MaximumIdentifierLength} characters");
+        }
+
+        EngineResponse? entryResponse = RecoverOrRejectEntry(request);
+        if (entryResponse is not null) return entryResponse;
+
+        return request.Operation switch
+        {
+            EngineProtocol.Open => this.Open(request, execution),
+            EngineProtocol.Attach => this.Attach(request, execution),
+            EngineProtocol.Sync => Sync(request),
+            EngineProtocol.Resolve => this.Resolve(request, execution),
+            EngineProtocol.Undo => this.MoveHistory(request, execution, undo: true),
+            EngineProtocol.Redo => this.MoveHistory(request, execution, undo: false),
+            EngineProtocol.Reorder => this.ReorderHistory(request, execution),
+            EngineProtocol.Close => this.Close(request, execution),
+            _ => Failed(
+                request, "invalid_request",
+                $"operation '{request.Operation}' is not supported"),
+        };
+    }
+
+    private static EngineResponse? ValidateEnvelope(EngineRequest request)
     {
         if (request.Version != EngineProtocol.Version)
         {
@@ -120,54 +168,27 @@ public sealed class EngineHost : IEngineEndpoint
                 $"request_id exceeds {EngineProtocol.MaximumIdentifierLength} characters");
         }
 
-        if (request.Operation == EngineProtocol.Setup)
-        {
-            return Setup(request);
-        }
+        return null;
+    }
 
-        if (string.IsNullOrWhiteSpace(request.GameId))
+    private EngineResponse? RecoverOrRejectEntry(EngineRequest request)
+    {
+        if (request.Operation is EngineProtocol.Open or EngineProtocol.Attach)
         {
-            return Failed(request, "invalid_request", "game_id is required");
+            if (!EntryReceipts.Valid(request.Entry)) return Failed(request, "invalid_request", "entry requires a valid recovery claim");
+            if (authority.RetiredEntry(request.Entry!)) return Failed(request, "session_not_found", "the entry authority has been retired");
+            if (authority.TryEntry(request.Entry!, out var existing))
+                return this.RecoverEntry(request, existing);
         }
+        else if (request.Entry is not null) return Failed(request, "invalid_request", "only entry operations accept a recovery claim");
 
-        if (request.GameId.Length > EngineProtocol.MaximumIdentifierLength)
-        {
-            return Failed(
-                request, "invalid_request",
-                $"game_id exceeds {EngineProtocol.MaximumIdentifierLength} characters");
-        }
-
-        return request.Operation switch
-        {
-            EngineProtocol.Open => Open(request, execution),
-            EngineProtocol.Attach => Attach(request, execution),
-            EngineProtocol.Sync => Sync(request),
-            EngineProtocol.Resolve => this.Resolve(request, execution),
-            EngineProtocol.Undo => this.MoveHistory(request, execution, undo: true),
-            EngineProtocol.Redo => this.MoveHistory(request, execution, undo: false),
-            EngineProtocol.Reorder => this.ReorderHistory(request, execution),
-            EngineProtocol.Close => this.Close(request, execution),
-            _ => Failed(
-                request, "invalid_request",
-                $"operation '{request.Operation}' is not supported"),
-        };
+        return null;
     }
 
     private EngineResponse Setup(EngineRequest request)
     {
-        if (request.GameId is not ""
-            || request.Capability is not null
-            || request.Game is not null
-            || request.Decision is not null
-            || request.Viewer is not null
-            || request.ExpectedRevision is not null
-            || request.Cursor is not null
-            || request.Order is not null)
-        {
-            return Failed(
-                request, "invalid_request",
-                "setup accepts only a request id");
-        }
+        if (!SetupRequest(request))
+            return Failed(request, "invalid_request", "setup accepts only a request id");
 
         if (factory is not ISetupDiscovery discovery)
         {
@@ -187,187 +208,11 @@ public sealed class EngineHost : IEngineEndpoint
             Setup: choices);
     }
 
-    private EngineResponse Open(EngineRequest request, RequestExecution execution)
+    private static bool SetupRequest(EngineRequest request) => request is
     {
-        EngineResponse? invalid = OpenRequestError(request);
-        if (invalid is not null) return invalid;
-
-        if (!TryAuthorizeOpen(request, out ViewScope scope,
-                out IReadOnlyList<SeatScope> additionalScopes, out EngineResponse? failure))
-            return failure!;
-
-        var opened = factory.Create(request.Game!);
-        string storageId = NewStorageId();
-        SessionSave save = SessionSave.Open(
-            compatibility,
-            storageId,
-            request.GameId,
-            ToSessionSetup(request.Game!),
-            opened.Game,
-            opened.SetupEvents);
-        var session = new HostedSession(request.GameId, opened.Game, save);
-        string capability = authority.Issue();
-        var reserved = new HashSet<string>(StringComparer.Ordinal) { capability };
-        var issuedInvitations = additionalScopes
-            .Select(grant =>
-            {
-                string token = authority.Issue(reserved);
-                reserved.Add(token);
-                return (grant, token);
-            })
-            .ToList();
-        EngineResponse response = AuthorizedSessionProjector.Succeeded(
-            request,
-            opened.Game,
-            opened.Game.Pending,
-            opened.SetupEvents,
-            scope,
-            capability,
-            issuedInvitations.Select(pair =>
-                new SeatInvitation(pair.grant.Seat, pair.token)).ToList(),
-            history: projector.History(save, scope, opened.Game));
-        List<StoredAuthority> proposedAuthorities =
-            SessionAuthorityRegistry.OpenAuthorities(
-                capability,
-                scope,
-                request.Game!.Heroes.Count,
-                issuedInvitations.Select(pair => (pair.grant, pair.token)).ToList());
-        execution.ObservePersistence(() =>
-            store.Commit(new StoredSession(save, proposedAuthorities)));
-        authority.PublishOpen(
-            session,
-            capability,
-            scope,
-            issuedInvitations.Select(pair => (pair.grant, pair.token)).ToList());
-
-        return response;
-    }
-
-    private static EngineResponse? OpenRequestError(EngineRequest request)
-    {
-        if (request.Game is null || request.Decision is not null
-            || request.ExpectedRevision is not null || request.Cursor is not null
-            || request.Order is not null)
-            return Failed(request, "invalid_request",
-                "open requires game and does not accept decision");
-        if (request.Capability is not null)
-            return Failed(request, "invalid_request", "open does not accept capability");
-        if (string.IsNullOrWhiteSpace(request.Game.Scenario))
-            return Failed(request, "invalid_request", "a game requires a scenario");
-        if (request.Game.Heroes is not { Count: > 0 }
-            || request.Game.Heroes.Any(string.IsNullOrWhiteSpace))
-            return Failed(request, "invalid_request", "a game requires at least one hero");
-        return null;
-    }
-
-    private bool TryAuthorizeOpen(
-        EngineRequest request, out ViewScope scope,
-        out IReadOnlyList<SeatScope> additionalScopes, out EngineResponse? failure)
-    {
-        try
-        {
-            scope = visibility.Authorize(request.Viewer, request.Game!.Heroes.Count)
-                ?? throw new ArgumentException("visibility policy returned no primary scope");
-            additionalScopes = visibility.AdditionalScopes(
-                request.Viewer, request.Game.Heroes.Count)?.ToList()
-                ?? throw new ArgumentException(
-                    "visibility policy returned no additional-scope collection");
-            ValidateAdditionalScopes(scope, additionalScopes, request.Game.Heroes.Count);
-            failure = null;
-            return true;
-        }
-        catch (Exception error) when (error is ArgumentException or InvalidOperationException)
-        {
-            scope = null!;
-            additionalScopes = [];
-            failure = Failed(request, "invalid_request", error.Message);
-            return false;
-        }
-    }
-
-    private static void ValidateAdditionalScopes(
-        ViewScope primary, IReadOnlyList<SeatScope>? grants, int players)
-    {
-        if (grants is null)
-        {
-            throw new ArgumentException("visibility policy returned no additional-scope collection");
-        }
-
-        var seats = new HashSet<int>();
-        foreach (SeatScope? grant in grants)
-        {
-            if (grant is null)
-            {
-                throw new ArgumentException("visibility policy returned an empty seat grant");
-            }
-
-            if (grant.Seat < 0 || grant.Seat >= players)
-            {
-                throw new ArgumentException(
-                    $"visibility policy seat {grant.Seat} is outside this game");
-            }
-
-            if (!seats.Add(grant.Seat))
-            {
-                throw new ArgumentException(
-                    $"visibility policy returned seat {grant.Seat} more than once");
-            }
-
-            if (primary.Includes(grant.Seat))
-            {
-                throw new ArgumentException(
-                    $"visibility policy returned primary seat {grant.Seat} as an additional grant");
-            }
-
-            if (grant.Scope is null || !grant.Scope.IsExactly(grant.Seat))
-            {
-                throw new ArgumentException(
-                    $"visibility policy grant for seat {grant.Seat} must authorize exactly that seat");
-            }
-        }
-    }
-
-    private EngineResponse Attach(EngineRequest request, RequestExecution execution)
-    {
-        if (request.Game is not null
-            || request.Decision is not null
-            || request.Viewer is not null
-            || request.ExpectedRevision is not null
-            || request.Cursor is not null
-            || request.Order is not null)
-        {
-            return Failed(
-                request, "invalid_request",
-                "attach accepts only a server-issued invitation");
-        }
-
-        string invitation = request.Capability ?? string.Empty;
-        if (!authority.TryInvitation(
-                invitation, request.GameId, out string invitationVerifier, out var pending))
-        {
-            return Failed(request, "session_not_found", "the seat invitation is not valid");
-        }
-
-        string capability = authority.Issue();
-        EngineResponse response = AuthorizedSessionProjector.Succeeded(
-            request,
-            pending.Session.Game,
-            pending.Session.Game.Pending,
-            [],
-            pending.Scope,
-            capability,
-            revision: pending.Session.Revision,
-            history: projector.History(
-                pending.Session.Save, pending.Scope, pending.Session.Game));
-        List<StoredAuthority> authorities = authority.AttachmentAuthorities(
-            pending.Session, invitationVerifier, capability, pending.Scope);
-        SessionSave stamped = this.Stamp(pending.Session.Save);
-        execution.ObservePersistence(() =>
-            store.Commit(new StoredSession(stamped, authorities)));
-        pending.Session.Publish(stamped);
-        authority.PublishAttachment(invitationVerifier, capability, pending);
-        return response;
-    }
+        GameId: "", Entry: null, Capability: null, Game: null, Decision: null,
+        Viewer: null, ExpectedRevision: null, Cursor: null, Order: null,
+    };
 
     private EngineResponse Sync(EngineRequest request)
     {
@@ -393,8 +238,7 @@ public sealed class EngineHost : IEngineEndpoint
             [],
             access.Scope,
             revision: access.Session.Revision,
-            history: projector.History(
-                access.Session.Save, access.Scope, access.Session.Game));
+            history: projector.History(access.Session, access.Scope));
     }
 
 }

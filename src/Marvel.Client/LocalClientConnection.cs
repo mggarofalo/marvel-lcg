@@ -1,11 +1,9 @@
 using System.Buffers.Binary;
 using System.Globalization;
 using System.Security.Cryptography;
-using Marvel.Decisions;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
-using Marvel.Server;
 using Marvel.View;
 
 namespace Marvel.Client;

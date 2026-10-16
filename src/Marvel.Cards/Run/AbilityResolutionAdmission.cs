@@ -1,7 +1,6 @@
 using static Marvel.Cards.Run.AbilityCardStateAdmission;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
-using static Marvel.Cards.Run.AbilityDelayedReachability;
 using static Marvel.Cards.Run.AbilityPowerProjection;
 using static Marvel.Cards.Run.AbilityPowerTrace;
 using static Marvel.Cards.Run.AbilityInitiationPrimitives;
@@ -26,12 +25,6 @@ internal static class AbilityResolutionAdmission
     internal static AdmissionResolution ResolutionOf(
         AbilityEffect node, AbilityAdmissionContext context) =>
         ResolutionOf(node, new AbilityAdmissionScope(context, []));
-
-    internal static AdmissionResolution EnsureDependentSupported(
-        AbilityEffect node, AbilityAdmissionContext context,
-        AbilityEffect effect, AbilityEffect dependent, AdmissionResolution required) =>
-        EnsureDependentSupported(
-            node, new AbilityAdmissionScope(context, []), effect, dependent, required);
 
     internal static void PreflightAnsweredOutcome(
         AbilityEffect node, AbilityAdmissionContext context) =>
@@ -166,7 +159,7 @@ internal static class AbilityResolutionAdmission
                 + "suspends for a player choice");
         }
 
-        return StructuralResolutionOf(node, cast) ?? LeafResolutionOf(node, cast);
+        return StructuralResolutionOf(node, cast) ?? CardResolutionOf(node, cast) ?? LeafResolutionOf(node, cast);
     }
 
     private static AdmissionResolution? StructuralResolutionOf(
@@ -185,7 +178,7 @@ internal static class AbilityResolutionAdmission
             _ => null,
         };
 
-    private static AdmissionResolution LeafResolutionOf(
+    private static AdmissionResolution? CardResolutionOf(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
             "exhaust" => ResolutionOfCards(
@@ -204,6 +197,12 @@ internal static class AbilityResolutionAdmission
                 && CanRemoveByEffect(discardTarget, cast, discarded)
                     ? AdmissionResolution.Full
                     : AdmissionResolution.None,
+            _ => null,
+        };
+
+    private static AdmissionResolution LeafResolutionOf(
+        AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
+        {
             "draw" => CombinedOutcomes(Seats(EffectOf<AbilityEffect.Draw>(node, cast).Players, cast).Select(player =>
                 ResolutionOfAmount(
                     cast.World.Seats[player].Deck.Cards.Count
@@ -214,6 +213,9 @@ internal static class AbilityResolutionAdmission
                 Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast)?.Damage ?? 0,
                 Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast)),
             "removeThreat" => ResolutionOfThreat(node, cast),
+            "placeThreat" => Every(((AbilityEffect.PlaceThreat)node).Schemes, cast).Count > 0
+                && Amount(((AbilityEffect.PlaceThreat)node).Amount, cast) > 0
+                    ? AdmissionResolution.Full : AdmissionResolution.None,
             _ => throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' uses '{node.OperationName()}' before dependent text, whose "
                 + "none/partial/full resolution is not implemented"),
@@ -272,68 +274,6 @@ internal static class AbilityResolutionAdmission
             scheme.Tokens.GetValueOrDefault("k_threat"), wanted)));
     }
 
-    internal static AdmissionResolution EnsureDependentSupported(
-        AbilityEffect node,
-        AbilityAdmissionScope cast,
-        AbilityEffect effect,
-        AbilityEffect dependent,
-        AdmissionResolution required)
-    {
-        AbilityAdmissionResolutionPreflight.PreflightResolutionBranches(effect, cast);
-
-        var outcome = ResolutionOf(effect, cast);
-        bool stateMayChange = cast.Reachability.PaymentMayMutate || cast.Reachability.PriorStepMayMutate;
-        if ((outcome == required || stateMayChange)
-            && AbilityAdmissionResolutionPreflight.ContainsNode(
-                dependent, "placeThreat", cast))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' uses '{node.OperationName()}' before dependent text that "
-                + "needs a nested continuation");
-        }
-
-        return outcome;
-    }
-
-    internal static void PreflightAnsweredOutcome(AbilityEffect node, AbilityAdmissionScope cast)
-    {
-        void PreflightEffect(AbilityEffect effect)
-        {
-            if (ActiveChoices(effect, cast).Any())
-            {
-                PreflightAnsweredOutcome(effect, cast);
-            }
-            else
-            {
-                _ = ResolutionOf(effect, cast);
-            }
-        }
-
-        if (node.OperationName() == "choose")
-        {
-            foreach (var option in ((AbilityEffect.Choose)node).Options)
-            {
-                PreflightEffect(option);
-            }
-            return;
-        }
-        if (node.OperationName() == "chooseCard")
-        {
-            PreflightEffect(EffectBody(node));
-            return;
-        }
-        var choices = ActiveChoices(node, cast).ToList();
-        if (choices.Count > 0)
-        {
-            foreach (var choice in choices)
-            {
-                PreflightAnsweredOutcome(choice, cast);
-            }
-            return;
-        }
-        throw new RulesNotImplementedException(
-            $"'{cast.Source.FaceId}' uses '{node.OperationName()}' before dependent text, whose "
-            + "answered resolution outcome is not implemented");
-    }
-
+    internal static void PreflightAnsweredOutcome(AbilityEffect node, AbilityAdmissionScope cast) =>
+        AbilityCompletionSupport.Validate(node, cast.Source.FaceId);
 }

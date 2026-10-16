@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -18,8 +20,8 @@ public sealed class LocalGameClientEngineRejectionsTests : LocalGameClientTestBa
     public async Task EngineRejectionsAreBoundedBeforeDisplay()
     {
         string diagnostic = new('x', 400);
-        var response = new EngineResponse(EngineProtocol.Version, "local-open", LocalGameSession.GameId, Capability: null, Prompt: null, Events: [], Error: new EngineError(diagnostic, diagnostic));
-        ClientStartupResult startup = await new LocalGameClient(new FixedTransport(response)).OpenAsync(Specification(), TestContext.Current.CancellationToken);
+        var response = new EngineResponse(EngineProtocol.Version, "local-open", "test-table", Capability: null, Prompt: null, Events: [], Error: new EngineError(diagnostic, diagnostic));
+        ClientEntryResult startup = await new LocalGameClient(new FixedTransport(response)).OpenSessionAsync("test-table", Specification(), TestContext.Current.CancellationToken);
         Assert.False(startup.Succeeded);
         Assert.Equal(240, startup.Error?.Code.Length);
         Assert.Equal(240, startup.Error?.Message.Length);
@@ -28,39 +30,39 @@ public sealed class LocalGameClientEngineRejectionsTests : LocalGameClientTestBa
     [Fact]
     public async Task IncompleteSuccessfulOpenResponsesAreRejected()
     {
-        var response = new EngineResponse(EngineProtocol.Version, "local-open", LocalGameSession.GameId, "capability", Prompt: null, Events: []);
-        ClientStartupResult startup = await new LocalGameClient(new FixedTransport(response)).OpenAsync(Specification(), TestContext.Current.CancellationToken);
+        var response = new EngineResponse(EngineProtocol.Version, "local-open", "test-table", "capability", Prompt: null, Events: []);
+        ClientEntryResult startup = await new LocalGameClient(new FixedTransport(response)).OpenSessionAsync("test-table", Specification(), TestContext.Current.CancellationToken);
         Assert.Equal("invalid_response", startup.Error?.Code);
     }
 
     [Fact]
     public async Task ASuccessfulResponseWithoutEventsIsRejectedBeforeRendering()
     {
-        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("local-open", LocalGameSession.GameId, Specification()));
-        ClientStartupResult startup = await new LocalGameClient(new FixedTransport(complete with { Events = null! })).OpenAsync(Specification(), TestContext.Current.CancellationToken);
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("local-open", "test-table", Specification()));
+        ClientEntryResult startup = await new LocalGameClient(new FixedTransport(complete with { Events = null! })).OpenSessionAsync("test-table", Specification(), TestContext.Current.CancellationToken);
         Assert.Equal("invalid_response", startup.Error?.Code);
     }
 
     [Fact]
     public async Task AnIncompletePromptIsRejectedBeforeRendering()
     {
-        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("local-open", LocalGameSession.GameId, Specification()));
-        ClientStartupResult startup = await new LocalGameClient(new FixedTransport(complete with { Prompt = complete.Prompt!with { Affordances = null! }, })).OpenAsync(Specification(), TestContext.Current.CancellationToken);
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("local-open", "test-table", Specification()));
+        ClientEntryResult startup = await new LocalGameClient(new FixedTransport(complete with { Prompt = complete.Prompt!with { Affordances = null! }, })).OpenSessionAsync("test-table", Specification(), TestContext.Current.CancellationToken);
         Assert.Equal("invalid_response", startup.Error?.Code);
     }
 
     [Fact]
     public async Task AnEmptyPromptIsRejectedBeforeRendering()
     {
-        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("local-open", LocalGameSession.GameId, Specification()));
-        ClientStartupResult startup = await new LocalGameClient(new FixedTransport(complete with { Prompt = complete.Prompt!with { Affordances = [] }, })).OpenAsync(Specification(), TestContext.Current.CancellationToken);
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("local-open", "test-table", Specification()));
+        ClientEntryResult startup = await new LocalGameClient(new FixedTransport(complete with { Prompt = complete.Prompt!with { Affordances = [] }, })).OpenSessionAsync("test-table", Specification(), TestContext.Current.CancellationToken);
         Assert.Equal("invalid_response", startup.Error?.Code);
     }
 
     [Fact]
     public async Task ATerminalWorldWithAStalePromptIsNeverRenderedAsAuthoritative()
     {
-        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("local-open", LocalGameSession.GameId, Specification()));
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("local-open", "test-table", Specification()));
         EngineResponse malformed = complete with
         {
             Capability = null,
@@ -70,7 +72,7 @@ public sealed class LocalGameClientEngineRejectionsTests : LocalGameClientTestBa
             },
         };
         var transport = new ScriptedTransport(malformed, malformed);
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(complete.Capability!, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession(complete.GameId, complete.Capability!), Decision.Decline, TestContext.Current.CancellationToken);
         Assert.False(result.HasAuthoritativeView);
         Assert.Equal("invalid_response", result.Error?.Code);
         Assert.Equal([EngineProtocol.Resolve, EngineProtocol.Sync], transport.Requests.Select(request => request.Operation));
@@ -79,7 +81,7 @@ public sealed class LocalGameClientEngineRejectionsTests : LocalGameClientTestBa
     [Fact]
     public async Task IncompleteBoardCollectionsAreRejectedBeforeRendering()
     {
-        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("local-open", LocalGameSession.GameId, Specification()));
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("local-open", "test-table", Specification()));
         WorldDescriptor world = Assert.IsType<WorldDescriptor>(complete.World);
         AreaDescriptor area = world.Areas[0];
         CardDescriptor readable = world.Areas.SelectMany(candidate => candidate.Cards.Concat(candidate.Removed)).First(card => card.Face is not null);
@@ -132,7 +134,7 @@ public sealed class LocalGameClientEngineRejectionsTests : LocalGameClientTestBa
         }, ];
         foreach (WorldDescriptor malformed in incomplete)
         {
-            ClientStartupResult startup = await new LocalGameClient(new FixedTransport(complete with { World = malformed })).OpenAsync(Specification(), TestContext.Current.CancellationToken);
+            ClientEntryResult startup = await new LocalGameClient(new FixedTransport(complete with { World = malformed })).OpenSessionAsync("test-table", Specification(), TestContext.Current.CancellationToken);
             Assert.Equal("invalid_response", startup.Error?.Code);
         }
     }
@@ -143,12 +145,12 @@ public sealed class LocalGameClientEngineRejectionsTests : LocalGameClientTestBa
         SetupChoices choices = Choices();
         var transport = new CapturingTransport();
         var client = new LocalGameClient(transport);
-        ClientStartupResult invalidHero = await client.OpenAsync(choices, DefaultSelection(choices)with { HeroKeys = ["wolverine"] }, TestContext.Current.CancellationToken);
-        ClientStartupResult invalidModular = await client.OpenAsync(choices, DefaultSelection(choices)with { Modular = ModularConfiguration.Selected, ModularKeys = ["mojo_mania"], }, TestContext.Current.CancellationToken);
-        ClientStartupResult invalidSeed = await client.OpenAsync(choices, DefaultSelection(choices)with { Seed = "-1" }, TestContext.Current.CancellationToken);
-        ClientStartupResult duplicateModular = await client.OpenAsync(choices, DefaultSelection(choices)with { Modular = ModularConfiguration.Selected, ModularKeys = ["bomb_scare", "bomb_scare"], }, TestContext.Current.CancellationToken);
-        ClientStartupResult nullModular = await client.OpenAsync(choices, DefaultSelection(choices)with { ModularKeys = null! }, TestContext.Current.CancellationToken);
-        ClientStartupResult nullSeed = await client.OpenAsync(choices, DefaultSelection(choices)with { Seed = null! }, TestContext.Current.CancellationToken);
+        ClientEntryResult invalidHero = await client.OpenSessionAsync("test-table", choices, DefaultSelection(choices)with { HeroKeys = ["wolverine"] }, TestContext.Current.CancellationToken);
+        ClientEntryResult invalidModular = await client.OpenSessionAsync("test-table", choices, DefaultSelection(choices)with { Modular = ModularConfiguration.Selected, ModularKeys = ["mojo_mania"], }, TestContext.Current.CancellationToken);
+        ClientEntryResult invalidSeed = await client.OpenSessionAsync("test-table", choices, DefaultSelection(choices)with { Seed = "-1" }, TestContext.Current.CancellationToken);
+        ClientEntryResult duplicateModular = await client.OpenSessionAsync("test-table", choices, DefaultSelection(choices)with { Modular = ModularConfiguration.Selected, ModularKeys = ["bomb_scare", "bomb_scare"], }, TestContext.Current.CancellationToken);
+        ClientEntryResult nullModular = await client.OpenSessionAsync("test-table", choices, DefaultSelection(choices)with { ModularKeys = null! }, TestContext.Current.CancellationToken);
+        ClientEntryResult nullSeed = await client.OpenSessionAsync("test-table", choices, DefaultSelection(choices)with { Seed = null! }, TestContext.Current.CancellationToken);
         Assert.Equal("invalid_selection", invalidHero.Error?.Code);
         Assert.Equal("invalid_selection", invalidModular.Error?.Code);
         Assert.Equal("invalid_seed", invalidSeed.Error?.Code);
@@ -166,7 +168,7 @@ public sealed class LocalGameClientEngineRejectionsTests : LocalGameClientTestBa
     {
         SetupChoices choices = Choices();
         var transport = new CapturingTransport();
-        await new LocalGameClient(transport).OpenAsync(choices, DefaultSelection(choices)with { Modular = configuration, ModularKeys = expected is { Length: > 0 } ? Enumerable.Reverse(expected.Split(',')).ToArray() : [], Seed = uint.MaxValue.ToString(), }, TestContext.Current.CancellationToken);
+        await new LocalGameClient(transport).OpenSessionAsync("test-table", choices, DefaultSelection(choices)with { Modular = configuration, ModularKeys = expected is { Length: > 0 } ? Enumerable.Reverse(expected.Split(',')).ToArray() : [], Seed = uint.MaxValue.ToString(), }, TestContext.Current.CancellationToken);
         EngineRequest request = Assert.Single(transport.Requests);
         Assert.Equal(EngineProtocol.Open, request.Operation);
         Assert.Equal(uint.MaxValue, request.Game?.Seed);
@@ -190,7 +192,7 @@ public sealed class LocalGameClientEngineRejectionsTests : LocalGameClientTestBa
         SetupChoices choices = Choices();
         var transport = new CapturingTransport();
         var client = new LocalGameClient(transport, seedSource: () => 4294967290);
-        await client.OpenAsync(choices, DefaultSelection(choices)with { Seed = "  " }, TestContext.Current.CancellationToken);
+        await client.OpenSessionAsync("test-table", choices, DefaultSelection(choices)with { Seed = "  " }, TestContext.Current.CancellationToken);
         Assert.Equal(4294967290u, Assert.Single(transport.Requests).Game?.Seed);
     }
 
@@ -217,18 +219,18 @@ public sealed class LocalGameClientEngineRejectionsTests : LocalGameClientTestBa
         cancelled.Cancel();
         var transport = new CapturingTransport();
         var client = new LocalGameClient(transport);
-        await Assert.ThrowsAsync<OperationCanceledException>(async () => await client.OpenAsync(Specification(), cancelled.Token));
-        await Assert.ThrowsAsync<OperationCanceledException>(async () => await client.ResolveAsync("capability", EngineDecision.Decline, cancelled.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(async () => await client.OpenSessionAsync("test-table", Specification(), cancelled.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(async () => await client.ResolveAsync(new ClientSession("test-table", "capability"), Decision.Decline, cancelled.Token));
         Assert.Empty(transport.Requests);
     }
 
     [Fact]
     public async Task CancellationAfterMutationDispatchStillConsumesItsResponse()
     {
-        EngineResponse opened = Host().Exchange(EngineRequest.OpenGame("local-open", LocalGameSession.GameId, Specification()));
+        EngineResponse opened = Host().Exchange(EngineRequest.OpenGame("local-open", "test-table", Specification()));
         using var cancellation = new CancellationTokenSource();
         var transport = new CommitAwareCancellingTransport(opened with { RequestId = "local-resolve", Capability = null, Revision = opened.Revision + 1, }, cancellation);
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(opened.Capability!, EngineDecision.Decline, cancellation.Token);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession(opened.GameId, opened.Capability!), Decision.Decline, cancellation.Token);
         Assert.True(result.Succeeded);
         Assert.True(cancellation.IsCancellationRequested);
         Assert.True(transport.ReceivedToken.CanBeCanceled);
@@ -236,13 +238,13 @@ public sealed class LocalGameClientEngineRejectionsTests : LocalGameClientTestBa
     }
 
     [Theory]
-    [InlineData(999, "local-open", "local-core-game", "unsupported_version")]
-    [InlineData(EngineProtocol.Version, "other", "local-core-game", "invalid_response")]
+    [InlineData(999, "local-open", "test-table", "unsupported_version")]
+    [InlineData(EngineProtocol.Version, "other", "test-table", "invalid_response")]
     [InlineData(EngineProtocol.Version, "local-open", "other-game", "invalid_response")]
     public async Task OpenRejectsMismatchedResponseEnvelopes(int version, string requestId, string gameId, string expectedCode)
     {
-        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("local-open", LocalGameSession.GameId, Specification()));
-        ClientStartupResult result = await new LocalGameClient(new FixedTransport(complete with { Version = version, RequestId = requestId, GameId = gameId })).OpenAsync(Specification(), TestContext.Current.CancellationToken);
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("local-open", "test-table", Specification()));
+        ClientEntryResult result = await new LocalGameClient(new FixedTransport(complete with { Version = version, RequestId = requestId, GameId = gameId })).OpenSessionAsync("test-table", Specification(), TestContext.Current.CancellationToken);
         Assert.Equal(expectedCode, result.Error?.Code);
         Assert.Null(result.Response);
     }
@@ -250,9 +252,9 @@ public sealed class LocalGameClientEngineRejectionsTests : LocalGameClientTestBa
     [Fact]
     public async Task MismatchedResolveEnvelopeRecoversBySync()
     {
-        EngineResponse current = Host().Exchange(EngineRequest.OpenGame("local-open", LocalGameSession.GameId, Specification()));
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame("local-open", "test-table", Specification()));
         var transport = new ScriptedTransport(current with { RequestId = "wrong", Capability = null }, current with { RequestId = "local-recover", Capability = null, Events = [] });
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(current.Capability!, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession(current.GameId, current.Capability!), Decision.Decline, TestContext.Current.CancellationToken);
         Assert.True(result.HasAuthoritativeView);
         Assert.Equal(ClientMutationDisposition.Uncertain, result.MutationDisposition);
         Assert.Equal("invalid_response", result.Error?.Code);

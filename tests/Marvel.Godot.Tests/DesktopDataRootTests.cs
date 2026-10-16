@@ -62,7 +62,7 @@ public sealed class DesktopDataRootTests
         Assert.Equal("0.1.0-dev.0", EngineBuildIdentity.ProductVersion);
         Assert.Equal("local", EngineBuildIdentity.Commit);
         Assert.Equal(
-            "v0.1.0-dev.0 · engine engine-replay-v16 · protocol 31 · save 5",
+            "v0.1.0-dev.0 · engine engine-replay-v17 · protocol 32 · save 6",
             EngineBuildIdentity.Display);
     }
 
@@ -75,7 +75,7 @@ public sealed class DesktopDataRootTests
         Assert.DoesNotContain("engine-replay-v", scene, StringComparison.Ordinal);
         string startup = File.ReadAllText(Path.Combine(
             RepositoryPaths.Root, "src", "Marvel.Godot", "Main.cs"));
-        Assert.Contains("buildIdentity.Text = EngineBuildIdentity.Display;", startup, StringComparison.Ordinal);
+        Assert.Contains("buildIdentity.Text = BuildIdentity.Display;", startup, StringComparison.Ordinal);
     }
 
     [Fact]

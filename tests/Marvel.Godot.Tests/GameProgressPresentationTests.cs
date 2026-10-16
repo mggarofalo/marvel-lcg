@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.Timing;
@@ -275,7 +276,7 @@ public sealed class GameProgressPresentationTests
         return new EngineResponse(
             EngineProtocol.Version,
             "request",
-            LocalGameSession.GameId,
+            "test-table",
             Capability: null,
             prompt,
             Events: [],

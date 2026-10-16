@@ -14,6 +14,9 @@ internal sealed record AbilityQueryContext(
     AbilityCardReference? PlayerSelectionBinding, Card? Altered,
     ImmutableArray<Card> PowerTargets)
 {
+    internal Defeated? TriggeringDefeat { get; init; }
+    internal Defeated? Defeat => TriggeringDefeat ?? Occurrence.Defeat;
+
     internal CardInstanceState SourceState { get; init; } = Source.InstanceState;
 
     internal CardInstanceState Quantities(Card card) => SourceBindingIsCurrent(card)

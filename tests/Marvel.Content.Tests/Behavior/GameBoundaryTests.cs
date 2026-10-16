@@ -207,7 +207,7 @@ public sealed class GameBoundaryTests
         {
             Assert.Equal(GamePhase.Mulligan, game.Phase);
             Assert.Equal(player, game.Pending!.Player);
-            game.Resolve(Decision.Decline);
+            game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         }
         Assert.Equal(GamePhase.PlayerTurn, game.Phase);
         Assert.True(game.IsRootPrompt);

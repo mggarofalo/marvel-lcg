@@ -10,6 +10,12 @@
     <Project Path="src/Marvel.Sim/Marvel.Sim.csproj" />
     <Project Path="src/Marvel.View/Marvel.View.csproj" />
     <Project Path="src/Marvel.Server/Marvel.Server.csproj" />
+    <Project Path="src/Marvel.Protocol/Marvel.Protocol.csproj" />
+    <Project Path="src/Marvel.Transport/Marvel.Transport.csproj" />
+    <Project Path="src/Marvel.Observability/Marvel.Observability.csproj" />
+    <Project Path="src/Marvel.Desktop/Marvel.Desktop.csproj" />
+    <Project Path="src/Marvel.Server.Host/Marvel.Server.Host.csproj" />
+
     <Project Path="src/Marvel.Godot/Marvel.Godot.csproj" />
   </Folder>
   <Folder Name="/tools/">

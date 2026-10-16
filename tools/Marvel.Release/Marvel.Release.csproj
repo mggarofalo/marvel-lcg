@@ -14,4 +14,7 @@
     <InternalsVisibleTo Include="Marvel.Release.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../../src/Marvel.Protocol/Marvel.Protocol.csproj" />
+  </ItemGroup>
 </Project>

@@ -1,3 +1,6 @@
+using Marvel.Desktop;
+using Marvel.Protocol;
+using Marvel.Rules.Play;
 using Marvel.Testing;
 using Xunit;
 
@@ -13,7 +16,9 @@ public sealed class PresentationBoundaryTests
             "Marvel.Client",
             "Marvel.Decisions",
             "Marvel.Rules",
-            "Marvel.Server",
+            "Marvel.Protocol",
+            "Marvel.Desktop",
+            "Marvel.Observability",
             "Marvel.View");
         PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(Main).Assembly,
@@ -40,9 +45,10 @@ public sealed class PresentationBoundaryTests
             "Marvel.Rules.Prompts.ResourceSource",
             "Marvel.Rules.Prompts.TargetRequest",
             "Marvel.Rules.Prompts.VariableRequest",
-            "Marvel.Client.ClientComposition",
+            "Marvel.Desktop.ClientComposition",
             "Marvel.Client.ClientDraftDisposition",
             "Marvel.Client.ClientEntryResult",
+            "Marvel.Client.ClientEntryAttempt",
             // Client-owned request/recovery state and its explicit draft instruction.
             "Marvel.Client.ClientGameLifecycle",
             "Marvel.Client.ClientLifecycleUpdate",
@@ -64,7 +70,7 @@ public sealed class PresentationBoundaryTests
             // Decisions asks engine payment validation whether this draft needs another choice.
             "Marvel.Decisions.DecisionCommitmentAssessment",
             "Marvel.Decisions.DecisionProgressPresentation",
-            "Marvel.Decisions.EngineDecision",
+            "Marvel.Rules.Play.Decision",
             "Marvel.Decisions.PaymentProgress",
             // Guided source selection delegates slot matching to the engine.
             "Marvel.Decisions.DecisionResourceEligibility",
@@ -74,18 +80,18 @@ public sealed class PresentationBoundaryTests
             "Marvel.Decisions.TableDraftOperations",
             "Marvel.Decisions.TargetSelectionMode",
             "Marvel.Decisions.TargetSelectionProgress",
-            "Marvel.Server.EngineBuildIdentity",
+            "Marvel.Observability.BuildIdentity",
             // Only an accepted transport response may enqueue semantic receipts.
-            "Marvel.Server.EngineError",
-            "Marvel.Server.EngineResponse",
-            "Marvel.Server.HeroSetupChoice",
-            "Marvel.Server.HistoryDescriptor",
-            "Marvel.Server.HistoryEntryDescriptor",
-            "Marvel.Server.ModularSetupChoice",
-            "Marvel.Server.RuntimeIdentity",
-            "Marvel.Server.ScenarioSetupChoice",
-            "Marvel.Server.SeatInvitation",
-            "Marvel.Server.SetupChoices",
+            "Marvel.Protocol.EngineError",
+            "Marvel.Protocol.EngineResponse",
+            "Marvel.Protocol.HeroSetupChoice",
+            "Marvel.Protocol.HistoryDescriptor",
+            "Marvel.Protocol.HistoryEntryDescriptor",
+            "Marvel.Protocol.ModularSetupChoice",
+            "Marvel.Protocol.RuntimeIdentity",
+            "Marvel.Protocol.ScenarioSetupChoice",
+            "Marvel.Protocol.SeatInvitation",
+            "Marvel.Protocol.SetupChoices",
             "Marvel.View.AffordancePresentation",
             // Authorized attack participants; the engine owns their resolution lifetime.
             "Marvel.View.ActiveAttackDescriptor",

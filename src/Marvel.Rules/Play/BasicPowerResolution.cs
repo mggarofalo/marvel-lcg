@@ -29,18 +29,14 @@ public static class BasicPowerResolution
     /// <param name="scheduled">The thwart carried by the current agenda step.</param>
     public static void ResolveCharacterThwart(
         World world, ICardFacts facts, List<GameEvent> events,
-        CharacterThwart? scheduled = null)
+        CharacterThwart scheduled)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(events);
 
-        var thwart = scheduled ?? world.CharacterThwart;
-        if (thwart is null)
-        {
-            throw new RulesNotImplementedException(
-                "a character thwart is resolving and the board holds none");
-        }
+        ArgumentNullException.ThrowIfNull(scheduled);
+        var thwart = scheduled;
 
         if (thwart.Continuation is null
             && (!DeckTypes.IsInPlay(world.Cards[thwart.Scheme].Area.Type)
@@ -66,12 +62,9 @@ public static class BasicPowerResolution
                 world,
                 facts,
                 world.ThreatAbilities,
-                world.Cards[thwart.Scheme],
-                thwart.Amount,
-                thwart.Trigger,
-                ThwartVerb,
-                events,
-                thwart.Player);
+                new ThreatRemovalRequest(world.Cards[thwart.Scheme],
+                    thwart.Amount, thwart.Trigger, ThwartVerb,
+                    LabeledAbilities.IdentityPlayer(world, world.Cards[thwart.Thwarter])), events);
             return;
         }
 
@@ -94,18 +87,14 @@ public static class BasicPowerResolution
     /// <param name="scheduled">The attack carried by the current agenda step.</param>
     public static void ResolveCharacterAttack(
         World world, ICardFacts facts, List<GameEvent> events,
-        CharacterAttack? scheduled = null)
+        CharacterAttack scheduled)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(events);
 
-        var attack = scheduled ?? world.CharacterAttack;
-        if (attack is null)
-        {
-            throw new RulesNotImplementedException(
-                "a character attack is resolving and the board holds none");
-        }
+        ArgumentNullException.ThrowIfNull(scheduled);
+        var attack = scheduled;
 
         var occurrence = world.Agenda.Occurrence
             ?? throw new RulesNotImplementedException(

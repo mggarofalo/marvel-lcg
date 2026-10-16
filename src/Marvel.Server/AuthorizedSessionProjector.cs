@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -51,14 +52,23 @@ internal sealed class AuthorizedSessionProjector(
             History: history);
     }
 
-    public HistoryDescriptor History(SessionSave save, ViewScope scope, Game game)
+    public IReadOnlyList<HistoryUnitInspection> Inspect(SessionSave save) =>
+        SessionReplay.InspectActiveHistory(save, compatibility, replayOpen).ToArray();
+
+    public HistoryDescriptor History(HostedSession session, ViewScope scope)
+    {
+        session.History ??= Inspect(session.Save);
+        return History(session.Save, scope, session.Game, session.History);
+    }
+
+    public static HistoryDescriptor History(SessionSave save, ViewScope scope, Game game,
+        IReadOnlyList<HistoryUnitInspection> inspection)
     {
         ArgumentNullException.ThrowIfNull(game);
         WorldDescriptor world = WorldProjection.For(
             game.State, null, [], scope, game.Active).World;
         var entries = new List<HistoryEntryDescriptor>(save.Cursor);
-        foreach (HistoryUnitInspection unit in SessionReplay.InspectActiveHistory(
-                     save, compatibility, replayOpen))
+        foreach (HistoryUnitInspection unit in inspection)
         {
             Outcome? outcome = Enum.TryParse(unit.Outcome, out Outcome parsed)
                 ? parsed

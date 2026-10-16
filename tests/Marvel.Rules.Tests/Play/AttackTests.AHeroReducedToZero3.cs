@@ -115,7 +115,7 @@ public sealed class AttackAHeroReducedToZeroTests : AttackTestBase
         // A second attack, absorbed. The record is the new attack's own -- the
         // first one's `true` must not still be standing when this window opens.
         Statuses.Give(world, world.Seats[0].IdentityCard, Statuses.Tough);
-        world.Agenda.Add(new PhaseStep(Steps.Attack, Round: 2, Number: 2, Index: 0, Subject: world.TheCardIn(DeckType.VillainArea)!.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 2, Number: 2, Index: 0, Subject: world.TheCardIn(DeckType.VillainArea)!.ObjectId, Seat: 0));
         Finish(world, facts);
         Assert.False(world.FinishedAttack!.Damaged);
     }
@@ -198,7 +198,7 @@ public sealed class AttackAHeroReducedToZeroTests : AttackTestBase
         var world = Board(facts);
         Finish(world, facts);
         Assert.NotNull(world.FinishedAttack);
-        Attack.Initiate(world, facts, new PhaseStep(Steps.Attack, 2, 2, Subject: world.TheCardIn(DeckType.VillainArea)!.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, facts, new PhaseStep(new EnemyAttackOperation(), Round: 2, Number: 2, Subject: world.TheCardIn(DeckType.VillainArea)!.ObjectId, Seat: 0), []);
         Assert.Null(world.FinishedAttack);
     }
 
@@ -219,7 +219,7 @@ public sealed class AttackAHeroReducedToZeroTests : AttackTestBase
         var world = Board(facts);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         int deck = world.AreaOf(DeckType.EncounterDeck).Cards.Count;
-        Attack.Initiate(world, facts, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, facts, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
         World.MoveToTop(villain, world.AreaOf(DeckType.RemovedArea));
         Finish(world, facts);
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
@@ -242,7 +242,7 @@ public sealed class AttackAHeroReducedToZeroTests : AttackTestBase
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var minion = world.CreateCard("villain", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.Agenda.Abandon();
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: minion.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: minion.ObjectId, Seat: 0));
         var events = new List<GameEvent>();
         var abilities = new CombatWindowObserver();
         var defend = Sequence.Work(world, facts, abilities, events)!;

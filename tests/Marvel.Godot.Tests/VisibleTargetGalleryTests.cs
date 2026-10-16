@@ -31,7 +31,7 @@ public sealed class VisibleTargetGalleryTests
         Card[] cards = [.. Enumerable.Range(0, 17).Select(index => world.CreateCard(faces[index % 4], discard))];
         runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [payment.ObjectId], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        Prompt prompt = runner.Choosing(world, source, 0, choice.Index, choice.Tier)!;
+        Prompt prompt = runner.Choosing(world, choice)!;
         Assert.Equal(PublicDecisionKind.VisibleCardSelection, prompt.PublicKind);
         Assert.Contains("different titles", prompt.Description);
         Affordance offer = Assert.Single(prompt.Affordances);
@@ -66,7 +66,7 @@ public sealed class VisibleTargetGalleryTests
         composer.SelectTargets([cards[0].ObjectId, cards[5].ObjectId]);
         Assert.Equal(before, world.Digest().Fingerprint());
         Assert.Equal(words, world.Random.Generator.WordsConsumed);
-        runner.Chose(world, source, 0, choice.Index, Decision.Take(offer.Id, composer.Targets.ToArray(), []), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(offer.Id, composer.Targets.ToArray(), []));
         Assert.Contains(cards[0], seat.Deck.Cards);
         Assert.Contains(cards[5], seat.Deck.Cards);
         Assert.Contains(cards[4], discard.Cards);

@@ -1,3 +1,5 @@
+using Marvel.Observability;
+using Marvel.Protocol;
 using Marvel.Content.Setup;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -44,7 +46,8 @@ internal static class EngineHostLifecycle
                 Session = access.Session.Save.Session with { Lifecycle = "retired" },
             };
             execution.ObservePersistence(() =>
-                host.store.Commit(new StoredSession(retired, [])));
+                host.store.Commit(new StoredSession(retired, host.authority.Snapshot(access.Session)
+                    .Where(item => !item.Invitation).Select(item => item with { Revoked = true }).ToArray())));
             host.authority.Remove(access.Session);
             execution.MarkSessionRetired();
         }
@@ -74,6 +77,7 @@ internal static class EngineHostLifecycle
             }
 
             if (stored.Save.Session.Lifecycle != "retired") RestoreCandidate(host, candidate, stored);
+            else host.authority.RetireClaims(stored.Authorities);
         }
     }
 
@@ -97,7 +101,7 @@ internal static class EngineHostLifecycle
     internal static ReplayOpenedGame ReplayOpen(this EngineHost host, SessionSetup setup)
     {
         OpenedGame opened = host.factory.Create(new GameSpecification(
-            setup.Scenario, setup.Heroes, setup.ModularSets, setup.Seed));
+            setup.Scenario, setup.Heroes, setup.ModularSets, setup.Seed, setup.PlayerDecks));
         return new ReplayOpenedGame(opened.Game, opened.SetupEvents);
     }
 
@@ -106,7 +110,8 @@ internal static class EngineHostLifecycle
 
     internal static SessionSetup ToSessionSetup(GameSpecification setup) =>
         new(setup.Scenario, [.. setup.Heroes],
-            setup.ModularSets is null ? null : [.. setup.ModularSets], setup.Seed);
+            setup.ModularSets is null ? null : [.. setup.ModularSets], setup.Seed,
+            setup.PlayerDecks is null ? null : [.. setup.PlayerDecks]);
 
     internal static SessionSave Append(
         SessionSave save,
@@ -190,7 +195,9 @@ internal static class EngineHostLifecycle
             World: null,
             Error: new EngineError(
                 Bounded(code, EngineProtocol.MaximumIdentifierLength),
-                Bounded(message, EngineProtocol.MaximumErrorLength)));
+                Bounded(message, EngineProtocol.MaximumErrorLength),
+                code == "session_not_found" ? EngineFailureDisposition.SessionUnavailable
+                    : EngineFailureDisposition.Rejected));
 
     internal static string Bounded(string? value, int maximum) => value switch
     {

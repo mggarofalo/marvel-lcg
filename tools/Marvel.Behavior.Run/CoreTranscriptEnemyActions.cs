@@ -18,7 +18,7 @@ internal static class CoreTranscriptEnemyActions
             ?? throw new TranscriptException($"{step.Location}: no villain is in play");
         int seat = Seat(match, step);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            new EnemyAttackOperation(), Round: 1, Number: 2, Index: seat,
             Subject: villain.ObjectId, Seat: seat));
 
         FinishWithDefender(
@@ -35,7 +35,7 @@ internal static class CoreTranscriptEnemyActions
             ?? throw new TranscriptException($"{step.Location}: no villain is in play");
         int seat = Seat(match, step);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            new EnemyAttackOperation(), Round: 1, Number: 2, Index: seat,
             Subject: villain.ObjectId, Seat: seat));
         FinishAgenda(context, step);
     }
@@ -49,7 +49,7 @@ internal static class CoreTranscriptEnemyActions
             ?? throw new TranscriptException($"{step.Location}: no villain is in play");
         int seat = Seat(match, step);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            new EnemyAttackOperation(), Round: 1, Number: 2, Index: seat,
             Subject: villain.ObjectId, Seat: seat));
 
         Prompt? asked = Sequence.Work(
@@ -86,7 +86,7 @@ internal static class CoreTranscriptEnemyActions
         Card enemy = context.SceneRequired(step).Find(SceneCard(match, step));
         int seat = Seat(match, step);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            new EnemyAttackOperation(), Round: 1, Number: 2, Index: seat,
             Subject: enemy.ObjectId, Seat: seat));
         FinishAgenda(context, step);
     }
@@ -99,7 +99,7 @@ internal static class CoreTranscriptEnemyActions
         Card enemy = context.SceneRequired(step).Find(SceneCard(match, step));
         int seat = Seat(match, step);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            new EnemyAttackOperation(), Round: 1, Number: 2, Index: seat,
             Subject: enemy.ObjectId, Seat: seat));
         FinishUntilRequired(context, step);
     }
@@ -115,7 +115,7 @@ internal static class CoreTranscriptEnemyActions
             Number(match, "defenderCopy", step)));
         int seat = Seat(match, step);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            new EnemyAttackOperation(), Round: 1, Number: 2, Index: seat,
             Subject: enemy.ObjectId, Seat: seat));
         FinishWithDefender(context, step, defender, acceptedLabel: null);
     }
@@ -129,7 +129,7 @@ internal static class CoreTranscriptEnemyActions
             ?? throw new TranscriptException($"{step.Location}: no villain is in play");
         int seat = Seat(match, step);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.Scheme, Round: 1, Number: 2, Index: seat,
+            new EnemySchemeOperation(), Round: 1, Number: 2, Index: seat,
             Subject: villain.ObjectId, Seat: seat));
         FinishAgenda(context, step);
     }
@@ -144,7 +144,7 @@ internal static class CoreTranscriptEnemyActions
             ?? throw new TranscriptException($"{step.Location}: no villain is in play");
         int seat = Seat(match, step);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            new EnemyAttackOperation(), Round: 1, Number: 2, Index: seat,
             Subject: villain.ObjectId, Seat: seat));
 
         FinishWithDefender(context, step, defender, match.Groups["label"].Value);
@@ -159,7 +159,7 @@ internal static class CoreTranscriptEnemyActions
             ?? throw new TranscriptException($"{step.Location}: no villain is in play");
         int seat = Seat(match, step);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            new EnemyAttackOperation(), Round: 1, Number: 2, Index: seat,
             Subject: villain.ObjectId, Seat: seat));
         FinishAgendaAccepting(context, step, match.Groups["label"].Value);
     }
@@ -173,7 +173,7 @@ internal static class CoreTranscriptEnemyActions
             ?? throw new TranscriptException($"{step.Location}: no villain is in play");
         int seat = Seat(match, step);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            new EnemyAttackOperation(), Round: 1, Number: 2, Index: seat,
             Subject: villain.ObjectId, Seat: seat));
         FinishAgendaAccepting(
             context, step,

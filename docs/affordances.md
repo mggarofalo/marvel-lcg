@@ -6,6 +6,26 @@ the board object it belongs to, legal targets and ways to pay.
 The client renders affordances. It does not derive legal moves from printed card
 text or duplicate engine rules.
 
+## Answer authority
+
+`DecisionAssessment` in `Marvel.Rules` validates a complete answer against one
+prompt. It checks the answering seat, the exact offered handle, legality, ordered
+targets, declared variables and resource allocation. A payment must satisfy one
+complete applicable cost option; sources and variables cannot be combined across
+alternative prices. A draft can require its selected cost option explicitly.
+
+`Game.Resolve` runs this assessment before changing the world, clearing information
+signals or advancing timing. `Marvel.Decisions` uses the same assessment to compose
+a draft, and session replay uses it after identifying the recorded offer. Hosts
+still authorize the connection's seat; prompt legality does not grant a capability.
+Malformed answers raise `ArgumentException` and leave the current decision intact.
+An unimplemented game rule raises `RulesNotImplementedException` separately.
+
+A cancellable prompt admits an empty decline. Keeping a mulligan hand is an
+explicit offered action with no selected cards. Simulation and transcript policies
+can use `ResourcePayment.Allocate` to choose an allocation; that helper is an
+explicit policy choice, not a missing-answer default in the engine.
+
 ## Wire shape
 
 `Marvel.Rules.Prompts.Affordance` contains:

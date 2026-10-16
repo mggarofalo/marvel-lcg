@@ -18,7 +18,7 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         composer.SelectAffordance(7);
         Assert.True(composer.UsesAutomaticTargetSelection);
         Assert.Equal([11], composer.Targets);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.True(composer.TryBuild(out Decision? decision, out string? error), error);
         Assert.Equal([11], decision!.Targets);
     }
 
@@ -125,9 +125,9 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         composer.SelectTargets([12]);
         Assert.False(composer.TryBuild(out _, out _));
         composer.AddTarget(11);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.True(composer.TryBuild(out Decision? decision, out _));
         Assert.Equal([12, 11], decision!.Targets);
-        Assert.Null(decision.Resources);
+        Assert.Empty(decision.Spent);
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         composer.AddTarget(11);
         composer.AddTarget(12);
         Assert.Equal([12], composer.Targets);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.True(composer.TryBuild(out Decision? decision, out _));
         Assert.Equal([12], decision!.Targets);
     }
 
@@ -153,7 +153,7 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         composer.Define("X", 2);
         composer.AssignResource(40, 0, 0, Resources.Energy);
         composer.AssignResource(40, 1, 1, Resources.Energy);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.True(composer.TryBuild(out Decision? decision, out string? error), error);
         Assert.Equal([40], decision!.Resources);
         Assert.Equal(2, decision.Values!["X"]);
         Assert.Equal([new ResourceAllocation(40, 0, "Y"), new ResourceAllocation(40, 1, "Y")], decision.Allocations);
@@ -166,7 +166,7 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         composer.SelectAffordance(7);
         composer.ToggleResource(40);
         Assert.True(composer.UsesAutomaticResourceAllocation);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.True(composer.TryBuild(out Decision? decision, out string? error), error);
         Assert.Equal([40], decision!.Resources);
         Assert.Equal([new ResourceAllocation(40, 0, "Y")], decision.Allocations);
         composer.ToggleResource(41);
@@ -185,7 +185,7 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         Assert.Single(composer.Assignments);
         composer.Define("X", 2);
         Assert.Equal(2, composer.Assignments.Count);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.True(composer.TryBuild(out Decision? decision, out string? error), error);
         Assert.Equal([new ResourceAllocation(40, 0, "YY")], decision!.Allocations);
         composer.Define("X", 1);
         Assert.Single(composer.Assignments);

@@ -137,7 +137,7 @@ internal static class AbilityResolutionPreventionAndDefeat
 
         while (AbilityWindow.Tiers(
             execution.Waiting(world, occurrence, WindowKind.Interrupt)
-                .Where(pending => spent?.MayTrigger(WindowKind.Interrupt, pending.Card) ?? true),
+                .Where(pending => spent?.MayTrigger(WindowKind.Interrupt, pending) ?? true),
             WindowKind.Interrupt,
             occurrence) is { Count: > 0 } tiers)
         {
@@ -158,8 +158,8 @@ internal static class AbilityResolutionPreventionAndDefeat
                 return false;
             }
 
-            occurrence.Trigger(WindowKind.Interrupt, mandatory[0].Card);
-            spent?.Trigger(WindowKind.Interrupt, mandatory[0].Card);
+            occurrence.Trigger(WindowKind.Interrupt, mandatory[0]);
+            spent?.Trigger(WindowKind.Interrupt, mandatory[0]);
             ActivityBatches.Append(events, execution.Resolve(world, occurrence, mandatory[0], [], []));
 
             // `rr:would.1`: once the interrupt changes the imminent defeat,
@@ -179,24 +179,21 @@ internal static class AbilityResolutionPreventionAndDefeat
         Occurrence? recordDefeatOn)
     {
         var step = new PhaseStep(
-            Steps.ChooseWouldBeDefeated,
+            new DefeatAbilityOperation(DefeatAbilityKind.ChooseWouldBeDefeated,
+                new DefeatCause(source.ObjectId, trigger, verb, by, recordDefeatOn),
+                new DefeatWindow(occurrence, [.. pending])),
             world.Agenda.Current?.Round ?? 0,
             6,
             Subject: target.ObjectId,
             Seat: target.Owner >= 0 ? target.Owner : world.FirstPlayer,
-            Plan: true,
-            ProcedureAbilities: [.. pending],
-            ProcedureOccurrence: occurrence,
-            ProcedureOwnerOccurrence: recordDefeatOn,
-            ProcedureSource: source.ObjectId,
-            ProcedureTrigger: trigger,
-            ProcedureVerb: verb,
-            ProcedureBy: by);
+            Plan: true);
 
         if (world.Agenda.Occurrence is { } parent)
         {
+            var owner = world.Agenda.Current
+                ?? throw new InvalidOperationException("a defeat occurrence has no owning frame");
             world.Agenda.ThenContinuation(step, parent);
-            world.Agenda.BeforeResponses(parent);
+            world.Agenda.BeforeResponses(owner, parent);
         }
         else
         {

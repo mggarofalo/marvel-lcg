@@ -32,8 +32,7 @@ public sealed class CoreInterruptContextTests
         var current = world.CreateCard(AuthoredCards.ImTough, dealt);
         var next = world.CreateCard("01109", dealt);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        world.Agenda.Add(new PhaseStep(
-            Steps.RevealEncounterCard, 1, 4, Subject: current.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: current.ObjectId, Seat: 0));
         var events = new List<GameEvent>();
 
         var prompt = Sequence.Work(world, Cards, runner, events)!;
@@ -83,7 +82,7 @@ public sealed class CoreInterruptContextTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
         world.CreateCard("01061", world.Seats[0].Hand);
-        world.Agenda.Add(new PhaseStep(Steps.PlaceThreat, 1, 1));
+        world.Agenda.Add(new PhaseStep(new ThreatStageOperation(ThreatStageKind.PlaceThreat), Round: 1, Number: 1));
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
 
         var prompt = Sequence.Work(world, Cards, runner, [])!;
@@ -153,8 +152,7 @@ public sealed class CoreInterruptContextTests
         jennifer.IdentityCard = world.CreateCard("01019a,01019b", jennifer.Hero);
         var obligation = world.CreateCard("01165",
             world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(1)));
-        world.Agenda.Add(new PhaseStep(
-            Steps.RevealEncounterCard, 1, 4, Subject: obligation.ObjectId, Seat: 1));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: obligation.ObjectId, Seat: 1));
 
         var occurrence = world.Agenda.Begin(world, Cards);
 

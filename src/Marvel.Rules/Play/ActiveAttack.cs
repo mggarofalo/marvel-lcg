@@ -32,13 +32,13 @@ public sealed record ActiveAttack(int Source, int Target)
         if (step.What == Steps.EndAttack && world.Attack is { } pending)
             yield return new ActiveAttack(pending.Enemy, pending.Target) { Identity = new(step.ActivationId, true) };
         if (FinishedOwner(world, occurrence) is { } finished) yield return finished;
-        if (FinishedOwner(world, step.CharacterAttack?.Origin ?? step.AbilityOccurrence) is { } enclosing)
+        if (FinishedOwner(world, (step.Operation as CharacterAttackOperation)?.Attack?.Origin ?? (step.Operation as AbilityContinuationAgendaOperation)?.Origin) is { } enclosing)
             yield return enclosing;
     }
 
     private static ActiveAttack? CharacterOwner(PhaseStep step, Occurrence? occurrence)
     {
-        if (step.What != Steps.CharacterAttacks || step.CharacterAttack is not { } attack) return null;
+        if (step.Operation is not CharacterAttackOperation { Attack: { } attack }) return null;
         return occurrence is not null
             ? new ActiveAttack(attack.Attacker, attack.Enemy)
                 { Identity = new(occurrence?.Id ?? step.OccurrenceId ?? Moment.Id(step.Round, step.Number, step.Index), false) } : null;

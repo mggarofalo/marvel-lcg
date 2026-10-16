@@ -7,6 +7,5 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-// Typed facts reconstructed at the legacy continuation boundary. These carry
-// authored nodes and cursor values, not the string wire that encoded them.
+// Query facts derived from the game-owned structural frames.
 internal abstract record AbilityContinuationFrame;

@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -140,8 +141,7 @@ public sealed class ObligationTests
     {
         var card = world.CreateCard(
             faceId, world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(to)));
-        world.Agenda.Add(new PhaseStep(
-            Steps.RevealEncounterCard, 1, 4, Subject: card.ObjectId, Seat: to));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId, Seat: to));
         return card;
     }
 

@@ -171,11 +171,15 @@ public class NoCardAbilities : ICardAbilities
             $"card '{card.FaceId}' has no implemented Special ability");
 
     /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> ResolveEachPlayer(
-        World world, Card source, int player, int stoppedAt,
-        Timing.AbilityType? tier, bool finalStep, bool finalPlayer) =>
-        throw new RulesNotImplementedException(
-            $"card '{source.FaceId}' has no implemented each-player continuation");
+    public virtual IReadOnlyList<GameEvent> ResolveEachPlayer(World world, PhaseStep continuation) =>
+        throw new RulesNotImplementedException("no authored each-player ability is installed");
+
+    /// <inheritdoc/>
+    public virtual Prompts.Prompt? Choosing(World world, PhaseStep continuation) => null;
+
+    /// <inheritdoc/>
+    public virtual IReadOnlyList<GameEvent> Chose(World world, PhaseStep continuation, Decision input) =>
+        throw new RulesNotImplementedException("no authored choice is installed");
 
     /// <inheritdoc/>
     public virtual int? AttachesTo(World world, Card card) => null;
@@ -184,9 +188,7 @@ public class NoCardAbilities : ICardAbilities
     public virtual int? SetupController(World world, Card card) => null;
 
     /// <inheritdoc/>
-    public virtual void ValidateForPlay(World world)
-    {
-    }
+    public virtual void ValidateForPlay(World world) { }
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<int>? AttachmentTargets(World world, Card card) => null;
@@ -199,49 +201,6 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<Timing.ContinuousEffect> Constant(World world, Card card) => [];
-
-    /// <inheritdoc/>
-    public virtual Prompts.Prompt? Choosing(
-        World world, Card source, int player, int stoppedAt,
-        Timing.AbilityType? tier = null) => null;
-
-    /// <inheritdoc/>
-    public virtual Prompts.Prompt? Choosing(
-        World world, Card source, int player, int stoppedAt,
-        Timing.AbilityType? tier, bool finalStep) =>
-        Choosing(world, source, player, stoppedAt, tier);
-
-    /// <inheritdoc/>
-    public virtual Prompts.Prompt? Choosing(
-        World world, Card source, int player, int stoppedAt,
-        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
-        Choosing(world, source, player, stoppedAt, tier, finalStep);
-
-    /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> Chose(
-        World world, Card source, int player, int stoppedAt, Decision input,
-        Timing.AbilityType? tier = null) =>
-        throw new RulesNotImplementedException(
-            "no card has an ability, so none of them is waiting on a choice");
-
-    /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> Chose(
-        World world, Card source, int player, int stoppedAt, Decision input,
-        Timing.AbilityType? tier, bool finalStep) =>
-        Chose(world, source, player, stoppedAt, input, tier);
-
-    /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> Chose(
-        World world, Card source, int player, int stoppedAt, Decision input,
-        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
-        Chose(world, source, player, stoppedAt, input, tier, finalStep);
-
-    /// <inheritdoc/>
-    public virtual IReadOnlyList<GameEvent> Chose(
-        World world, Card source, int player, int stoppedAt, Decision input,
-        Timing.AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer,
-        string trigger) =>
-        Chose(world, source, player, stoppedAt, input, tier, finalStep, eachPlayerFrame, finalPlayer);
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<PendingAbility> Waiting(

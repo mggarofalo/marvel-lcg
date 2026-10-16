@@ -18,12 +18,6 @@ public sealed record CostOptionRecord(
     [property: JsonRequired] IReadOnlyList<ResourceCostComponentRecord>? Components,
     [property: JsonRequired] bool DeclarationSensitive)
 {
-    [JsonIgnore]
-    internal bool LegacyDeclarationSensitiveRecorded { get; init; } = true;
-
-    [JsonIgnore]
-    internal bool ResourceMeaningRecorded { get; init; } = true;
-
     /// <summary>Captures source fields without computed cost aliases.</summary>
     public static CostOptionRecord From(CostOption option)
     {
@@ -31,18 +25,18 @@ public sealed record CostOptionRecord(
         return new(
             option.Target,
             option.Cost,
-            option.Rule,
+            JournalValues.OptionalList(option.Rule),
             option.OrCost,
-            option.OrRule,
+            JournalValues.OptionalList(option.OrRule),
             option.Sources is null
                 ? null
-                : [.. option.Sources.Select(ResourceSourceRecord.From)],
+                : JournalValues.List(option.Sources.Select(ResourceSourceRecord.From)),
             option.Variables is null
                 ? null
-                : [.. option.Variables.Select(VariableRequestRecord.From)],
+                : JournalValues.List(option.Variables.Select(VariableRequestRecord.From)),
             option.Components is null
                 ? null
-                : [.. option.Components.Select(ResourceCostComponentRecord.From)],
+                : JournalValues.List(option.Components.Select(ResourceCostComponentRecord.From)),
             option.DeclarationSensitive);
     }
 }

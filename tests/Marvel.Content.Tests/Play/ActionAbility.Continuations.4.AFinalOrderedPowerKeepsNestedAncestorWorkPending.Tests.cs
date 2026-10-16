@@ -1,3 +1,4 @@
+using Marvel.Cards.Run;
 using Marvel.Cards.Dsl;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
@@ -36,40 +37,36 @@ public sealed class ActionAbilityContinuationsAFinalOrderedPowerKeepsNestedAnces
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
         int held = world.Seats[0].Hand.Cards.Count;
-        var forged = new PhaseStep(Steps.ResumeAbility, 1, 2, Subject: source!.ObjectId, Seat: 0, Tier: AbilityType.Action, AbilityOrdinal: 0, AbilityPath: ["and:0:0,1:"], AbilityFace: source.FaceId, AbilityHasContinuation: true);
+        var forged = AbilityContinuationFixtures.Step(source!, new SimultaneousFrame(0, [0, 1], []));
         Assert.Throws<RulesNotImplementedException>(() => runner.ResumeAbility(world, forged));
-        Assert.True(source.Ready);
+        Assert.True(source!.Ready);
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
     public void MalformedStructuralContinuationIsRejectedBeforeRunningAnySibling()
     {
-        // The continuation path is engine wire data. A malformed cursor must
-        // fail while decoding the compiled tree, before it can select a
-        // plausible sibling and mutate the board.
+        // An invalid typed cursor must fail before a sibling can mutate the board.
         var runner = Runner(AuthoredCards.AuntMay, "Action", """{ "seq": [ { "exhaust": "this" }, { "draw": { "player": "you", "count": 1 } } ] }""");
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
         int held = world.Seats[0].Hand.Cards.Count;
-        var forged = new PhaseStep(Steps.ResumeAbility, 1, 2, Subject: source!.ObjectId, Seat: 0, Tier: AbilityType.Action, AbilityOrdinal: 0, AbilityPath: ["seq:not-an-index"], AbilityFace: source.FaceId, AbilityHasContinuation: true);
+        var forged = AbilityContinuationFixtures.Step(source!, new SequenceFrame(-1, 2));
         Assert.Throws<RulesNotImplementedException>(() => runner.ResumeAbility(world, forged));
-        Assert.True(source.Ready);
+        Assert.True(source!.Ready);
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]
-    public void LegacyContinuationWithoutSourceProvenanceRaisesInsteadOfSkipping()
+    public void AnAbsentInterpreterFrameCannotResumeAnAbility()
     {
-        // Continuation metadata from before card-incarnation bindings cannot
-        // prove that `this` still means the same copy. That ambiguity raises;
-        // it must not silently turn the remaining discard into a no-op.
+        // A rules operation cannot invent an interpreter execution frame.
         var runner = Runner(AuthoredCards.AuntMay, "Action", """{ "seq": [ { "draw": { "player": "you", "count": 1 } }, { "discard": "this" } ] }""");
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
-        var legacy = new PhaseStep(Steps.ResumeAbility, 1, 2, Subject: source!.ObjectId, Seat: 0, Tier: AbilityType.Action, AbilityOrdinal: 0, AbilityPath: ["seq:0"], AbilityFace: source.FaceId, AbilityHasContinuation: false);
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => runner.ResumeAbility(world, legacy));
-        Assert.Contains("source-card provenance", thrown.Message, StringComparison.Ordinal);
+        var absent = new PhaseStep(new AbilityContinuationAgendaOperation(AbilityContinuationStage.Resume), 1, 2, Subject: source!.ObjectId, Seat: 0);
+        var thrown = Assert.Throws<InvalidOperationException>(() => runner.ResumeAbility(world, absent));
+        Assert.Contains("typed ability continuation", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(DeckType.SupportsArea, source.Area.Type);
     }
 
@@ -137,19 +134,26 @@ public sealed class ActionAbilityContinuationsAFinalOrderedPowerKeepsNestedAnces
         var attack = Assert.Single(world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
         runner.ActivationCompleted(world, new EnemyActivation(attack.Subject, attack.Seat, Attacking: true, attack.ActivationId, Made: true));
         var placement = Assert.Single(world.Agenda.Outstanding, pending => pending.What == Steps.PlaceThreatEffect);
-        Assert.Equal(world.TheCardIn(DeckType.MainSchemesArea)!.ObjectId, placement.Placement!.Scheme);
-        Assert.Equal(1, placement.Placement.Assigned);
+        Assert.Equal(world.TheCardIn(DeckType.MainSchemesArea)!.ObjectId, placement.Require<ThreatPlacementOperation>().Placement.Scheme);
+        Assert.Equal(1, placement.Require<ThreatPlacementOperation>().Placement.Assigned);
     }
 
     [Fact]
-    public void LegacyNonFinalEachPlayerFrameDoesNotClaimTheOuterSuffix()
+    public void NonFinalEachPlayerFrameDoesNotClaimTheOuterSuffix()
     {
         var runner = Runner(AuthoredCards.AuntMay, "WhenRevealed", """{ "seq": [ { "eachPlayer": { "effect": { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } } } }, { "draw": { "player": "you", "count": 1 } } ] }""", eventName: Steps.CardRevealed);
         Card? source = null;
-        var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), abilities: runner);
+        var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"], abilities: runner);
         int held = world.Seats[0].Hand.Cards.Count;
-        runner.ResolveEachPlayer(world, source!, player: 0, stoppedAt: 1, AbilityType.WhenRevealed, finalStep: false, finalPlayer: false);
-        Assert.Single(world.Agenda.Outstanding, pending => pending.What == Steps.PlaceThreatEffect);
+        runner.WhenRevealed(world, source!, 0);
+        var ordering = Sequence.Work(world, world.Facts, runner, [])!;
+        Sequence.Answer(world, world.Facts, runner, ordering,
+            new Decision(ordering.Affordances.Single().Id,
+                world.Seats.Select(seat => seat.IdentityCard.ObjectId).ToArray()), []);
+        var first = world.Agenda.Outstanding.First(step => step.What == Steps.ResolveEachPlayer);
+        runner.ResolveEachPlayer(world, first);
+        Assert.Contains(world.Agenda.Outstanding, pending => pending.What == Steps.PlaceThreatEffect);
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
     }
 

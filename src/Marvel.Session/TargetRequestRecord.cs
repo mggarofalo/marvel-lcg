@@ -23,29 +23,20 @@ public sealed record TargetRequestRecord(
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<IReadOnlyList<int>>? ExclusiveSets { get; init; }
 
-    [JsonIgnore]
-    internal bool LegacyAllowRepeatedRecorded { get; init; } = true;
-
-    [JsonIgnore]
-    internal bool LegacyMaximumOccurrencesRecorded { get; init; } = true;
-
-    [JsonIgnore]
-    internal bool LegacyDetailsRecorded { get; init; } = true;
-
     /// <summary>Captures source fields without the derived grouped alias.</summary>
     public static TargetRequestRecord From(TargetRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         return new(
-            request.Legal,
+            JournalValues.List(request.Legal),
             request.Min,
             request.Max,
-            request.Groups,
-            request.MustIncludeTraits,
+            JournalValues.Groups(request.Groups),
+            JournalValues.OptionalList(request.MustIncludeTraits),
             request.Rule,
             request.IsSearch,
             request.AllowRepeated,
-            request.MaximumOccurrences,
-            request.Details) { ExclusiveSets = request.ExclusiveSets };
+            JournalValues.Map(request.MaximumOccurrences),
+            JournalValues.Map(request.Details)) { ExclusiveSets = JournalValues.Groups(request.ExclusiveSets) };
     }
 }

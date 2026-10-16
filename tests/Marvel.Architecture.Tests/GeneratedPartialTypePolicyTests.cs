@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -9,7 +10,7 @@ public sealed class GeneratedPartialTypePolicyTests
 {
     [Theory]
     [InlineData("src/Marvel.Godot/Main.cs", "namespace Marvel.Godot; public partial class Main { }", true)]
-    [InlineData("src/Marvel.Server/EngineJsonContext.cs", "namespace Marvel.Server; partial class EngineJsonContext { }", true)]
+    [InlineData("src/Marvel.Protocol/EngineJsonContext.cs", "namespace Marvel.Protocol; partial class EngineJsonContext { }", true)]
     [InlineData("tools/Marvel.Cards.Extract/Printed.cs", "namespace Marvel.Cards.Extract; partial class Printed { }", true)]
     [InlineData("src/Marvel.Godot/Other.cs", "namespace Marvel.Godot; public partial class Main { }", false)]
     [InlineData("src/Marvel.Godot/Main.cs", "namespace Wrong; public partial class Main { }", false)]

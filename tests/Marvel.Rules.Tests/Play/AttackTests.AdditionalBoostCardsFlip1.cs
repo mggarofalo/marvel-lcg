@@ -21,7 +21,7 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         var world = Board(printed);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         world.Agenda.Abandon();
-        Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
         Attack.GiveAdditionalBoostCard(world, villain, "test", []);
         Attack.GiveAdditionalBoostCard(world, villain, "test", []);
         var abilities = new BoostOrderRecorder();
@@ -41,7 +41,7 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         var world = Board(printed);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         world.Agenda.Abandon();
-        Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
         Attack.GiveAdditionalBoostCard(world, villain, "test", []);
         Attack.FlipBoostCards(world, printed, new DamagingBoost(), []);
         Attack.CalculateDamage(world, printed);
@@ -62,7 +62,7 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         var world = Board(printed);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         world.Agenda.Abandon();
-        Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
         Attack.GiveAdditionalBoostCard(world, villain, "test", []);
         var boostEvents = new List<GameEvent>();
         Attack.FlipBoostCards(world, printed, new IconChangingBoost(), boostEvents);
@@ -84,7 +84,7 @@ public sealed class AttackAdditionalBoostCardsFlipTests : AttackTestBase
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         world.Seats[0].IdentityCard.TakeDamage(9);
         world.Agenda.Abandon();
-        Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
         Attack.GiveAdditionalBoostCard(world, villain, "test", []);
         var boostEvents = new List<GameEvent>();
         Attack.FlipBoostCards(world, printed, new DamagingBoost(), boostEvents);

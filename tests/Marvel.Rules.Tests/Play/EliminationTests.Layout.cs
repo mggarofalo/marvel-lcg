@@ -34,7 +34,7 @@ public sealed partial class EliminationTests
             world,
             facts,
             new NoCardAbilities(),
-            new PhaseStep(Steps.PassFirstPlayerToken, 1, 5),
+            new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.PassFirstPlayerToken), Round: 1, Number: 5),
             []));
 
         Assert.Equal(expected, world.FirstPlayer);

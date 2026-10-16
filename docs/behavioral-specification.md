@@ -87,7 +87,7 @@ named subtrees in the current committed datasets, not their surrounding files:
 | Source unit | SHA-256 of JCS bytes |
 |---|---|
 | card face `cards[card_id = 01001a]` | `141d34bb4dde86154de845afad8526562ee296ada91bea42cd2c3fb2a24b0993` |
-| setup hero `heroes.iron_man` | `68764d8f0751996d173c63635b6a60ed31035a9de22795278320e7ff381e87b7` |
+| setup hero `heroes.iron_man` | `1542dab83883be8bf9db997d0018b340b21ed5e0972d43ef80ae841fb72a2b3e` |
 | FAQ record `entries[code = 01001a]` | `50c91638ef5792206844d0232bf5d623242141daebaef1e9ea1f84c4270d883f` |
 
 ## From a source unit to obligations

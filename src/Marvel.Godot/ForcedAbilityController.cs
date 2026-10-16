@@ -1,6 +1,6 @@
+using Marvel.Protocol;
 using Godot;
 using Marvel.Rules.Prompts;
-using Marvel.Server;
 using Marvel.View;
 
 namespace Marvel.Godot;

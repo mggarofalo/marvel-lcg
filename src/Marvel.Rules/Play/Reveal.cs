@@ -29,13 +29,6 @@ public static class Reveal
         List<GameEvent> events, Occurrence? occurrence = null) =>
         RevealKeywords.Keywords(world, facts, abilities, card, player, events, occurrence);
 
-    /// <summary>Resolves one printed keyword.</summary>
-    public static void ResolveKeyword(
-        World world, ICardFacts facts, IThreatCardAbilities abilities, Card card, int player,
-        PendingAbility ability, List<GameEvent> events, Occurrence? occurrence = null) =>
-        RevealKeywords.ResolveKeyword(
-            world, facts, abilities, card, player, ability, events, occurrence);
-
     /// <summary>Keyword-created abilities waiting on a revealed card.</summary>
     public static IReadOnlyList<PendingAbility> KeywordAbilities(
         World world, ICardFacts facts, Card card, int player) =>
@@ -89,22 +82,10 @@ public static class Reveal
     /// <param name="player">The seat revealing it.</param>
     /// <param name="events">Where to record what happened.</param>
     /// <param name="occurrence">The reveal occurrence, when this move is part of one.</param>
-    /// <param name="attachmentTarget">
-    /// The host selected by a suspended reveal procedure, or null when the
-    /// attachment phrase can resolve without asking.
-    /// </param>
-    /// <param name="setupController">
-    /// The player named by a setup card's control instruction, or null when
-    /// ordinary reveal placement applies.
-    /// </param>
-    /// <param name="verb">
-    /// The event-stream spelling for the move. The engine chooses this wire
-    /// vocabulary; callers use <c>Put_Into_Play</c> when no reveal occurred.
-    /// </param>
+    /// <param name="placement">An explicit attachment host, setup controller or placement event.</param>
     public static void Resolve(
         World world, ICardFacts facts, Card card, int player, List<GameEvent> events,
-        Occurrence? occurrence = null, int? attachmentTarget = null,
-        int? setupController = null, string verb = "Reveal")
+        Occurrence? occurrence = null, CardEntryPlacement? placement = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -125,61 +106,8 @@ public static class Reveal
             return;
         }
 
-        var into = EffectiveCards.Kind(card, facts) switch
-        {
-            CardKind.Ally when setupController is { } controller => world.AreaOf(
-                DeckType.AlliesArea, PlayArea.Of(controller), cardOwner: controller),
-
-            CardKind.Support when setupController is { } controller => world.AreaOf(
-                DeckType.SupportsArea, PlayArea.Of(controller), cardOwner: controller),
-
-            // `rr:reveal.3` and `rr:minion`: "it enters play in the play area of
-            // the player revealing it. **It is considered to engage that
-            // player.**" Engagement is not a flag beside the minion -- it is
-            // which area the minion is in, which is what `rr:engage` describes.
-            CardKind.Minion => world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player)),
-
-            // `rr:reveal.5`: "it enters play in the villain's play area."
-            CardKind.EncounterSideScheme => world.AreaOf(DeckType.SideSchemesArea),
-
-            // `rr:reveal.2`: the same place, and an area of its own because
-            // `rr:environment` makes an environment "active so long as it
-            // remains in play" rather than something that resolves and goes.
-            CardKind.Environment => world.AreaOf(DeckType.EnvironmentArea),
-
-            // `rr:reveal.4`: "it enters play in the play area of the player
-            // revealing it."
-            CardKind.Obligation => world.AreaOf(DeckType.ObligationsArea, PlayArea.Of(player)),
-
-            // `rr:attach-to`: "if a card uses the phrase 'attach to', it must
-            // be attached to *(placed beneath and slightly overlapped by)* the
-            // specified game element **as it enters play**." A rule about the
-            // phrase rather than an ability, so it is answered here on the way
-            // in and not by a "When Revealed" — `rr:when-revealed-abilities.2`
-            // does not trigger one on a card put into play without being
-            // revealed, and a setup attachment is exactly that.
-            //
-            // `rr:attach-to.3.1` is the case this does not reach: "the 'attach
-            // to' phrase on a card is not resolved if another ability causes
-            // that card to attach to a specific game element." An ability that
-            // attaches says so with the `attachTo` node instead, and it moves
-            // the card itself rather than coming through here.
-            CardKind.Attachment when (attachmentTarget
-                ?? world.PlacementAbilities.AttachesTo(world, card)) is { } element
-                => world.AreaOf(
-                    DeckType.UpgradesArea,
-                    world.Cards[element].Area.PlayArea,
-                    element,
-                    world.Cards[element].Area.CardOwner),
-
-            // `rr:reveal.6` and `.7`, and `rr:attach-to.3` for an attachment
-            // whose phrase found nothing — "it remains in its prior state or
-            // game area", which here is the table in front of the player and is
-            // not in play. Step 4 discards it from there, which is the rest of
-            // that clause: "if such a card cannot remain in its prior state or
-            // game area, discard it."
-            _ => null,
-        };
+        placement ??= new CardEntryPlacement();
+        Area? into = CardEntryDestination.For(world, facts, card, player, placement);
 
         if (into is null)
         {
@@ -193,7 +121,7 @@ public static class Reveal
             [new Landing(card.ObjectId, into.Cards.Count - 1)])
         {
             Trigger = "villain phase",
-            Verb = verb,
+            Verb = placement.Verb,
         });
 
         if (into.Host >= 0)
@@ -201,7 +129,7 @@ public static class Reveal
             events.Add(new CardAttached(card.ObjectId, into.Host)
             {
                 Trigger = "villain phase",
-                Verb = verb,
+                Verb = placement.Verb,
             });
         }
         EnterPlay(world, facts, card, events, occurrence);
@@ -236,146 +164,6 @@ public static class Reveal
             ? (count, parts[1])
             : throw new RulesNotImplementedException(
                 $"the uses keyword '{uses}' is not a count and a type");
-    }
-
-    /// <summary>
-    /// A minion that brings its friends in — <c>rr:teamwork</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// "After a minion with teamwork enters play and engages a player, <b>if
-    /// there is at least one other minion that shares the specified trait in
-    /// play</b>, the minion that just entered play activates against the player
-    /// it is engaged with."
-    /// </para>
-    /// <para>
-    /// <b>The trait is the keyword's argument, and it is a word rather than a
-    /// number.</b> <c>Teamwork ([[ACOLYTE]])</c> prints as the attribute
-    /// <c>Teamwork = "ACOLYTE"</c>, so this reads the raw attribute table:
-    /// <c>PrintedValue</c> would answer zero, which is what it answers for a
-    /// card with no teamwork at all. Thirty-one minions carry one.
-    /// </para>
-    /// <para>
-    /// <b>The Rules Reference states this twice and the two differ.</b> The
-    /// entry says "at least one other minion <i>that shares the specified
-    /// trait</i>"; <c>rr:teamwork.1</c>'s equivalent ability says only "another
-    /// minion in play". The trait is followed, because it is what the keyword
-    /// prints and what the entry says — a reading that ignored it would
-    /// activate an Acolyte beside an unrelated Hydra trooper.
-    /// </para>
-    /// <para>
-    /// <b>It activates; it does not attack.</b> That is the difference from
-    /// <see cref="Quickstrike"/>, which says outright that the player must be
-    /// in hero form. <c>rr:activation.1</c> reads the form to choose between
-    /// attacking and scheming, so a teamwork minion engaging an alter-ego
-    /// schemes rather than doing nothing.
-    /// </para>
-    /// <para>
-    /// <c>rr:teamwork.2</c> puts it after the minion's own "When Revealed"
-    /// abilities, which is where <see cref="Quickstrike"/> sits too.
-    /// </para>
-    /// </remarks>
-    /// <param name="world">The board.</param>
-    /// <param name="facts">The printed card data.</param>
-    /// <param name="card">The minion that just entered play.</param>
-    /// <param name="player">The seat it engaged.</param>
-    /// <param name="round">Which round, for the step it schedules.</param>
-    public static void Teamwork(
-        World world, ICardFacts facts, Card card, int player, int round)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(card);
-
-        if (!TeamworkApplies(world, facts, card))
-        {
-            return;
-        }
-
-        string trait = facts.Attributes(card.FaceId)["Teamwork"];
-
-        world.Agenda.Then(new PhaseStep(
-            Forms.In(world, world.Seats[player], facts, Forms.Hero) ? Steps.Attack : Steps.Scheme,
-            round, 2, Index: player, Subject: card.ObjectId, Seat: player));
-    }
-
-    /// <summary>Whether Teamwork's forced response is currently eligible.</summary>
-    public static bool TeamworkApplies(World world, ICardFacts facts, Card card)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(card);
-
-        if (card.Area.Type != DeckType.EngagedEnemiesArea
-            || Characteristics.IsLost(world, card, "teamwork")
-            || !facts.Attributes(card.FaceId).TryGetValue("Teamwork", out string? trait))
-        {
-            return false;
-        }
-
-        // "In play" and not "engaged with you": a minion in another player's
-        // area is in play, and `rr:engage` is about which area it sits in
-        // rather than whether it counts.
-        bool company = world.Areas
-            .Where(area => area.Type == DeckType.EngagedEnemiesArea)
-            .SelectMany(area => area.Cards)
-            .Any(other => other.ObjectId != card.ObjectId
-                && State.Traits.Has(world, other, trait, facts));
-
-        return company;
-    }
-
-    /// <summary>
-    /// A minion that attacks the moment it engages — <c>rr:quickstrike</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// "<b>Forced Response (Hero)</b>: after this minion engages a player, it
-    /// attacks that player." The <i>(Hero)</i> is the gate: <c>rr:quickstrike</c>
-    /// says "a player <b>whose identity is in hero form</b>", so a minion
-    /// engaging an alter-ego does nothing.
-    /// </para>
-    /// <para>
-    /// <c>rr:quickstrike.2</c>: "if a minion with the quickstrike keyword is
-    /// being revealed, the quickstrike keyword resolves <b>after</b> any 'When
-    /// Revealed' abilities on that minion are resolved" — which is why this is
-    /// called from step 3's tail rather than from <see cref="Resolve"/>.
-    /// </para>
-    /// </remarks>
-    /// <param name="world">The board.</param>
-    /// <param name="facts">The printed card data.</param>
-    /// <param name="card">The card that was revealed.</param>
-    /// <param name="player">The seat it engaged.</param>
-    /// <param name="round">Which round this is.</param>
-    public static void Quickstrike(
-        World world, ICardFacts facts, Card card, int player, int round)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(card);
-
-        if (!QuickstrikeApplies(world, facts, card, player))
-        {
-            return;
-        }
-
-        // Scheduled rather than resolved, because an attack is six steps and
-        // one of them asks a player something. The reveal that caused it is
-        // finished by the time this runs.
-        world.Agenda.Then(new PhaseStep(
-            Steps.Attack, round, 2, Index: player, Subject: card.ObjectId, Seat: player));
-    }
-
-    /// <summary>Whether Quickstrike's forced response is currently eligible.</summary>
-    public static bool QuickstrikeApplies(
-        World world, ICardFacts facts, Card card, int player)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(card);
-        return card.Area.Type == DeckType.EngagedEnemiesArea
-            && StateFields.Modified(world, card, "quickstrike", facts, world.Players) > 0
-            && Forms.In(world, world.Seats[player], facts, Forms.Hero);
     }
 
     /// <summary>

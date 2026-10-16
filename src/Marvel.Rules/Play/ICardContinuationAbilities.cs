@@ -12,15 +12,8 @@ public interface ICardContinuationAbilities
 {
     IReadOnlyList<GameEvent> ResumeAbility(World world, PhaseStep continuation);
     IReadOnlyList<GameEvent> ResolveSpecial(World world, Card card, int player, bool finalStep);
-    IReadOnlyList<GameEvent> ResolveEachPlayer(World world, Card source, int player, int stoppedAt,
-        AbilityType? tier, bool finalStep, bool finalPlayer);
-    Prompt? Choosing(World world, Card source, int player, int stoppedAt, AbilityType? tier = null);
-    Prompt? Choosing(World world, Card source, int player, int stoppedAt, AbilityType? tier, bool finalStep);
-    Prompt? Choosing(World world, Card source, int player, int stoppedAt, AbilityType? tier,
-        bool finalStep, bool eachPlayerFrame, bool finalPlayer);
-    IReadOnlyList<GameEvent> Chose(World world, Card source, int player, int stoppedAt, Decision input,
-        AbilityType? tier = null);
-    IReadOnlyList<GameEvent> Chose(World world, Card source, int player, int stoppedAt, Decision input,
-        AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer, string trigger);
+    IReadOnlyList<GameEvent> ResolveEachPlayer(World world, PhaseStep continuation);
+    Prompt? Choosing(World world, PhaseStep continuation);
+    IReadOnlyList<GameEvent> Chose(World world, PhaseStep continuation, Decision input);
 }
 #pragma warning restore CS1591

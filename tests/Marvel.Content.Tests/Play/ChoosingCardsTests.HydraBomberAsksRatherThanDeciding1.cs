@@ -61,18 +61,16 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         var card = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
         runner.Boost(world, card, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        Assert.Equal(AbilityType.Boost, waiting.Tier);
-        var asked = runner.Choosing(world, card, 0, waiting.Index, waiting.Tier)!;
+        Assert.Equal(AbilityType.Boost, Assert.IsType<AbilityContinuationState>(waiting.Require<AbilityContinuationAgendaOperation>().Continuation).Invocation.Address.Tier);
+        var asked = runner.Choosing(world, waiting)!;
         Assert.Equal(["placeThreat", "dealDamage"], asked.Affordances.Select(option => option.Label));
     }
 
     [Rule("rr:choose-option")]
     [Fact]
-    public void TwoAbilitiesAtOneTierWithAChoiceInEachAreRefused()
+    public void AnAmbiguousChoicePreviewRequiresAnExecutionFrame()
     {
-        // The tier is as fine as the step gets, so this is the next thing it
-        // would have to carry rather than something to guess at. No printed card
-        // needs it; the refusal names what is missing.
+        // A read-only preview cannot choose which independently authored ability is executing.
         var world = Deal();
         var runner = new AbilityRunner(AbilityCatalog.Parse("""
             { "cards": [ { "card": "01110", "abilities": [
@@ -87,8 +85,8 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
             ] } ] }
             """));
         var card = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
-        var refused = Assert.Throws<RulesNotImplementedException>(() => runner.Choosing(world, card, 0, 1, AbilityType.WhenRevealed));
-        Assert.Contains("choice in more than one 'WhenRevealed' ability", refused.Message, StringComparison.Ordinal);
+        var refused = Assert.Throws<RulesNotImplementedException>(() => runner.PreviewChoice(world, card, 0, 0, AbilityType.WhenRevealed, false));
+        Assert.Contains("exactly one active choice", refused.Message, StringComparison.Ordinal);
     }
 
     [Rule("rr:choose-game-element.1")]
@@ -101,7 +99,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         // the second player of two so that the claim can be wrong.
         var world = Deal("spider_man", "she_hulk");
         var(card, _) = Reveal(world, AuthoredCards.HydraBomber, player: 1);
-        var asked = AuthoredCards.Runner().Choosing(world, card, player: 1, stoppedAt: 1)!;
+        var asked = AuthoredCards.Runner().Choosing(world, AbilityContinuationFixtures.Pending(world, card))!;
         Assert.Equal(1, asked.Player);
         Assert.Equal(Question.Option, asked.Asking);
         // Two options, and no way out of them: `rr:choose-option` offers a
@@ -137,7 +135,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         var card = world.CreateCard("01173", world.AreaOf(DeckType.RevealingArea));
         runner.WhenRevealed(world, card, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        var asked = runner.Choosing(world, card, 0, waiting.Index, waiting.Tier)!;
+        var asked = runner.Choosing(world, waiting)!;
         var damage = Assert.Single(asked.Affordances);
         Assert.Equal(0, damage.Id);
         Assert.Equal("dealDamage", damage.Label);
@@ -176,14 +174,14 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         var fury = world.CreateCard("01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         runner.WhenRevealed(world, fury, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        var asked = runner.Choosing(world, fury, 0, waiting.Index, waiting.Tier)!;
+        var asked = runner.Choosing(world, waiting)!;
         var draw = Assert.Single(asked.Affordances);
         Assert.Equal(1, draw.Id);
         Assert.Equal("draw", draw.Label);
         Assert.Equal("Draw 3 cards", draw.Description);
         // Prompt filtering is not the authority boundary: a forged answer for
         // the unavailable original index is refused too.
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, fury, 0, waiting.Index, Decision.Take(0), waiting.Tier));
+        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, waiting, Decision.Take(0)));
     }
 
     [Rule("rr:choose-option.2")]
@@ -202,9 +200,9 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         var fury = world.CreateCard("01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         runner.WhenRevealed(world, fury, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        var asked = runner.Choosing(world, fury, 0, waiting.Index, waiting.Tier)!;
+        var asked = runner.Choosing(world, waiting)!;
         Assert.Equal([1], asked.Affordances.Select(option => option.Id));
-        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, fury, 0, waiting.Index, Decision.Take(0), waiting.Tier));
+        Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, waiting, Decision.Take(0)));
     }
 
     [Rule("rr:crisis-icon.1")]
@@ -286,7 +284,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         var fury = world.CreateCard("01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         runner.WhenRevealed(world, fury, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        var asked = runner.Choosing(world, fury, 0, waiting.Index, waiting.Tier)!;
+        var asked = runner.Choosing(world, waiting)!;
         Assert.Equal([1], asked.Affordances.Select(option => option.Id));
     }
 
@@ -315,7 +313,7 @@ public sealed class ChoosingCardsHydraBomberAsksRatherThanDecidingTests : Choosi
         var fury = world.CreateCard("01084", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         runner.WhenRevealed(world, fury, 0);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        var asked = runner.Choosing(world, fury, 0, waiting.Index, waiting.Tier)!;
+        var asked = runner.Choosing(world, waiting)!;
         Assert.Equal([0, 1], asked.Affordances.Select(option => option.Id));
     }
 }

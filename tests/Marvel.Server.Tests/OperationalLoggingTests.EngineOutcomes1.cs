@@ -1,3 +1,7 @@
+using Marvel.Observability;
+using Marvel.Transport;
+using Marvel.Protocol;
+using Marvel.Rules.Play;
 using System.Text.Json;
 using System.Collections.Concurrent;
 using System.Net;
@@ -18,8 +22,8 @@ public sealed class OperationalLoggingEngineOutcomesTests : OperationalLoggingTe
         var host = new EngineHost(DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root), new SequenceCapabilities("owner-secret", "invitation-secret"), new RestrictedVisibilityPolicy(0), new MemorySessionStore(), log);
         EngineResponse opened = host.Exchange(EngineRequest.OpenGame("open-request", "logged-table", new GameSpecification("rhino", ["captain_marvel", "spider_man"], [], Seed: 73)));
         var mulligan = Assert.IsType<Prompt>(opened.Prompt);
-        EngineResponse resolved = host.Exchange(EngineRequest.ResolveGame("resolve-request", "logged-table", Assert.IsType<string>(opened.Capability), new EngineDecision(Assert.Single(mulligan.Affordances).Id, []), opened.Revision));
-        EngineResponse stale = host.Exchange(EngineRequest.ResolveGame("owner-secret", "logged-table", Assert.IsType<string>(opened.Capability), new EngineDecision(Assert.Single(mulligan.Affordances).Id, []), opened.Revision));
+        EngineResponse resolved = host.Exchange(EngineRequest.ResolveGame("resolve-request", "logged-table", Assert.IsType<string>(opened.Capability), new Decision(Assert.Single(mulligan.Affordances).Id, []), opened.Revision));
+        EngineResponse stale = host.Exchange(EngineRequest.ResolveGame("owner-secret", "logged-table", Assert.IsType<string>(opened.Capability), new Decision(Assert.Single(mulligan.Affordances).Id, []), opened.Revision));
         EngineResponse invalid = host.Exchange(new EngineRequest(EngineProtocol.Version, "owner-secret", "owner-secret", "owner-secret", "owner-secret"));
         Assert.Null(resolved.Error);
         Assert.Equal("stale_decision", stale.Error?.Code);
@@ -88,7 +92,7 @@ public sealed class OperationalLoggingEngineOutcomesTests : OperationalLoggingTe
     }
 
     [Theory]
-    [InlineData("game_aborted")]
+    [InlineData("candidate_failed")]
     [InlineData("history_authority")]
     [InlineData("history_direction")]
     [InlineData("history_frontier")]

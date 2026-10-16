@@ -75,7 +75,7 @@ public sealed class RecipientCommitmentTests : ChoosingCardsTestBase
         runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
         Assert.False(source.Ready);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        Assert.Equal(2, runner.Choosing(world, source, 0, waiting.Index, waiting.Tier)!.Affordances.Count);
+        Assert.Equal(2, runner.Choosing(world, waiting)!.Affordances.Count);
     }
 
     [Fact]
@@ -87,8 +87,7 @@ public sealed class RecipientCommitmentTests : ChoosingCardsTestBase
         var (deferred, other, sameSource) = Board(2, "01091");
         var cost = other.Act(deferred, new PendingAbility(sameSource.ObjectId, AbilityType.Action, 0), [], []);
         var waiting = Assert.Single(deferred.Agenda.Outstanding);
-        var effect = other.Chose(deferred, sameSource, 0, waiting.Index,
-            Decision.Take(deferred.Seats[1].IdentityCard.ObjectId), waiting.Tier);
+        var effect = other.Chose(deferred, waiting, Decision.Take(deferred.Seats[1].IdentityCard.ObjectId));
         // Instruction ids are response-local: the direct route includes the cost
         // in its response; the separate effect begins a new response at offset zero.
         Assert.Equal(expected.Select(SemanticEvent), cost.Concat(effect).Select(SemanticEvent));

@@ -216,7 +216,7 @@ public sealed class StatusASteadyCharacterNeedsTwoStatusCardsToBeAfflictedTests 
         world.CreateCard("encounter", world.AreaOf(DeckType.EncounterDeck));
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
         Grant(world, villain, Marvel.Rules.Timing.Keywords.Overkill);
-        Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
         var asked = Sequence.Work(world, printed, new NoCardAbilities(), []);
         Sequence.Answer(world, printed, new NoCardAbilities(), asked!, Decision.Take(ally.ObjectId), []);
         Sequence.Finish(world, printed, new NoCardAbilities(), []);
@@ -240,7 +240,7 @@ public sealed class StatusASteadyCharacterNeedsTwoStatusCardsToBeAfflictedTests 
         world.CreateCard("encounter", world.AreaOf(DeckType.EncounterDeck));
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
         Grant(world, villain, Marvel.Rules.Timing.Keywords.Overkill);
-        Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 1), []);
+        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 1), []);
         var asked = Sequence.Work(world, printed, new NoCardAbilities(), []);
         Sequence.Answer(world, printed, new NoCardAbilities(), asked!, Decision.Take(ally.ObjectId), []);
         // The ally's controller becomes the target player; ownership only

@@ -8,7 +8,7 @@ namespace Marvel.Rules.Play;
 internal static class EncounterRevealDiscard
 {
     internal static void Schedule(
-        World world, ICardFacts facts, Card card, int player, int round,
+        World world, ICardFacts facts, Card card, int player, PhaseStep owner,
         Occurrence revealOccurrence, bool beforeResponses = true)
     {
 
@@ -20,19 +20,20 @@ internal static class EncounterRevealDiscard
         if (EffectiveCards.Kind(card, facts) == CardKind.Treachery)
         {
             world.Agenda.Then(new PhaseStep(
-                Steps.DiscardRevealedTreachery,
-                round,
+                new RevealStageOperation(RevealStageKind.DiscardRevealedTreachery),
+                owner.Round,
                 4,
                 Subject: card.ObjectId,
                 Seat: player,
-                Plan: true));
+                Plan: true
+            ));
 
             // Reveal responses wait for all four reveal steps. Move both the
             // work initiated by the final effect and this discard continuation
             // ahead of that response window, preserving their scheduled order.
             if (beforeResponses)
             {
-                world.Agenda.BeforeResponses(revealOccurrence);
+                world.Agenda.BeforeResponses(owner, revealOccurrence);
             }
         }
     }

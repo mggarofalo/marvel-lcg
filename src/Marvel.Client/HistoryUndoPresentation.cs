@@ -1,4 +1,4 @@
-using Marvel.Server;
+using Marvel.Protocol;
 
 namespace Marvel.Client;
 

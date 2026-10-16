@@ -16,8 +16,10 @@
     <ProjectReference Include="../Marvel.Client/Marvel.Client.csproj" />
     <ProjectReference Include="../Marvel.Decisions/Marvel.Decisions.csproj" />
     <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
-    <ProjectReference Include="../Marvel.Server/Marvel.Server.csproj"
-                      AdditionalProperties="MarvelServerOutputType=Library" />
+    <ProjectReference Include="../Marvel.Protocol/Marvel.Protocol.csproj" />
+    <ProjectReference Include="../Marvel.Desktop/Marvel.Desktop.csproj" />
+    <ProjectReference Include="../Marvel.Observability/Marvel.Observability.csproj" />
+
     <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
   </ItemGroup>
 

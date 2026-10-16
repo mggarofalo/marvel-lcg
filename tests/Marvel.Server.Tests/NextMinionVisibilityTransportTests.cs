@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Net;
 using Marvel.Decisions;
 using Marvel.Rules.Events;
@@ -35,7 +37,7 @@ public sealed class NextMinionVisibilityTransportTests : TransportTestBase
             Prompt prompt = Assert.IsType<Prompt>(current.Prompt);
             // Explicit fixture policy keeps the opening hand and ends the turn,
             // declining optional opportunities on the way to the minion decision.
-            EngineDecision answer = prompt.Cancellable ? EngineDecision.Decline : TakeOnly(current);
+            Decision answer = prompt.Cancellable ? Decision.Decline : TakeOnly(current);
             current = await Exchange(EngineRequest.ResolveGame($"step-{step}", "drones", capability,
                 answer, current.Revision));
             Assert.Null(current.Error);

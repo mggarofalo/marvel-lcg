@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Rules.Prompts;
 using Marvel.Server;
 using Marvel.View;
@@ -14,7 +15,7 @@ public sealed class PublicPendingSituationClientTests : LocalGameClientTestBase
     [InlineData("unknown-seat")]
     public async Task MalformedPublicMetadataIsRejectedBeforeItCanReachTheRenderer(string problem)
     {
-        EngineResponse opened = Host().Exchange(EngineRequest.OpenGame("local-open", LocalGameSession.GameId, Specification()));
+        EngineResponse opened = Host().Exchange(EngineRequest.OpenGame("local-open", "test-table", Specification()));
         WorldDescriptor world = opened.World!;
         TableContextDescriptor table = world.Table!;
         PendingSituationDescriptor pending = table.PendingSituation!;
@@ -27,8 +28,8 @@ public sealed class PublicPendingSituationClientTests : LocalGameClientTestBase
             _ => throw new ArgumentOutOfRangeException(nameof(problem)),
         };
 
-        ClientStartupResult result = await new LocalGameClient(new FixedTransport(opened with
-            { World = world with { Table = malformed } })).OpenAsync(Specification(), TestContext.Current.CancellationToken);
+        ClientEntryResult result = await new LocalGameClient(new FixedTransport(opened with
+            { World = world with { Table = malformed } })).OpenSessionAsync("test-table", Specification(), TestContext.Current.CancellationToken);
 
         Assert.False(result.Succeeded);
         Assert.Equal("invalid_response", result.Error!.Code);

@@ -43,7 +43,7 @@ public sealed class CoreGamePolicy(ICardFacts facts)
         Answered++;
 
         ObserveVillain(world);
-        if (IsMulligan(asked)) return Decision.Decline;
+        if (IsMulligan(asked)) return Decision.Take(asked.Affordances.Single().Id);
         if (asked.Asking == Question.Defender) return Defender(game, asked);
         if (asked.Asking is Question.Element or Question.Option or Question.Order)
             return RequiredChoice(game, asked);

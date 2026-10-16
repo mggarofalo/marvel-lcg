@@ -19,8 +19,11 @@ by themselves provide a usable game.
   them without independently calculating legality or simulating consequences.
 - `Marvel.Decisions` owns the single draft for one prompt and obtains validity
   and progress through engine-owned functions.
-- `Marvel.Server` owns authorization, protocol compatibility and authoritative
-  validation/publication. `Marvel.Client` owns request and recovery lifecycle.
+- `Marvel.Protocol` owns wire contracts; `Marvel.Transport` carries them without
+  hosting game state. `Marvel.Server` owns authorization, protocol admission and
+  authoritative publication. `Marvel.Client` owns request and recovery lifecycle.
+  `Marvel.Desktop` composes local or remote connections; `Marvel.Server.Host`
+  owns standalone process lifetime.
 - `Marvel.Godot` owns interaction, layout, focus and readable presentation. It
   matches gestures to explicit offers; it does not invent their meaning.
 

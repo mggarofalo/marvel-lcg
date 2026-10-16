@@ -1,12 +1,10 @@
 using Marvel.Cards.Dsl;
+using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Run;
 
 internal static class AbilityResolutionDamageAndThreat
 {
-    // MARVEL-375: syntax identifies the suspended procedure until continuations
-    // use execution.program addresses directly. Only the compiled instruction supplies
-    // the operation's arguments.
     internal static bool TryRunDamageAndThreat(this AbilityResolutionExecution execution, AbilityEffect instruction, AbilityEffect syntax, AbilityResolutionState cast)
     {
         var result = AbilityDamageAndThreatExecution.Run(instruction, syntax, execution.DamageAndThreatContext(cast));
@@ -26,6 +24,7 @@ internal static class AbilityResolutionDamageAndThreat
     internal static void ApplyDamageAndThreat(this AbilityResolutionExecution execution,
         AbilityDamageAndThreatResult result, AbilityEffect syntax, AbilityResolutionState cast)
     {
+        cast.CompletedOutcome = result.Outcome;
         if (result.Healed is { } healed) cast.Results["healed"] = healed;
         if (result.Remaining is { } remaining) cast.Replace(remaining);
         cast.Attacked.AddRange(result.Attacked);
@@ -36,11 +35,25 @@ internal static class AbilityResolutionDamageAndThreat
                 execution.SuspendForChoice(syntax, cast);
                 break;
             case AbilityDamageAndThreatSuspension.Procedure:
-                execution.SuspendAfterProcedure(syntax, cast);
+                execution.SuspendAfterProcedure(syntax, cast,
+                    result.Boundary?.Owner, result.Boundary?.Occurrence);
                 break;
             case AbilityDamageAndThreatSuspension.ScheduledThreat:
-                cast.Suspend();
+                execution.ScheduleThreat(result.Threat!, syntax, cast);
                 break;
         }
     }
+    private static void ScheduleThreat(this AbilityResolutionExecution execution,
+        ThreatBatch batch, AbilityEffect effect, AbilityResolutionState cast)
+    {
+        var completion = new EffectCompletion(batch.Amount, batch.Schemes.Count);
+        cast.PendingCompletion = completion;
+        var capture = AbilityContinuationScheduling.ForEffectProcedure(
+            execution.Capture(cast, execution.AbilityOrdinal(effect, cast)));
+        var continuation = AbilityContinuations.Step(capture,
+            AbilityContinuationStage.Resume, cast.World.Agenda.Current?.Round ?? 0, plan: true);
+        Threat.Schedule(cast.World, batch, completion, continuation);
+        cast.Suspend();
+    }
+
 }

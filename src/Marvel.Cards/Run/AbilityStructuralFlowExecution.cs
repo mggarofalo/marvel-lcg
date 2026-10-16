@@ -82,13 +82,14 @@ internal static class AbilityStructuralFlowExecution
     {
         if (observation.Suspended)
             return new Complete(context.Frames.Add(frame), admission);
+        frame = frame with { CompletedOutcome = AbilityCompletion.Combine(frame.CompletedOutcome, observation.Outcome) };
         if (frame.Next < 0 || frame.Count != sequence.Effects.Length || frame.Next > frame.Count)
             return new Rejected("invalid sequence cursor");
         if (frame.Next == frame.Count)
-            return new Complete(context.Frames.Add(frame), admission);
+            return new Complete(context.Frames.Add(frame), admission, frame.CompletedOutcome);
 
         int position = frame.Next;
-        var next = new SequenceFrame(position + 1, frame.Count);
+        var next = frame with { Next = position + 1 };
         return new RunLeaf(
             sequence.Effects[position], context.Frames.Add(next), position,
             context.HasContinuation || position < frame.Count - 1, admission);
@@ -100,14 +101,16 @@ internal static class AbilityStructuralFlowExecution
     {
         if (observation.Suspended)
             return new Complete(context.Frames.Add(frame));
+        frame = frame with { CompletedOutcome = AbilityCompletion.Combine(frame.CompletedOutcome, observation.Outcome) };
         if (!ValidSimultaneousCursor(frame, simultaneous.Effects.Length))
             return new Rejected("invalid simultaneous cursor");
         if (frame.Remaining.IsEmpty)
-            return new Complete(context.Frames.Add(frame));
+            return new Complete(context.Frames.Add(frame), Outcome: frame.CompletedOutcome);
 
         int current = frame.Remaining[0];
         var next = new SimultaneousFrame(
-            current, frame.Remaining.RemoveAt(0), frame.Completed.Add(frame.Current));
+            current, frame.Remaining.RemoveAt(0), frame.Completed.Add(frame.Current))
+            { CompletedOutcome = frame.CompletedOutcome };
         return new RunLeaf(
             simultaneous.Effects[current], context.Frames.Add(next), context.Position,
             context.HasContinuation || next.Remaining.Length > 0);
@@ -115,6 +118,7 @@ internal static class AbilityStructuralFlowExecution
 
     private static bool ValidSimultaneousCursor(SimultaneousFrame frame, int count) =>
         frame.Current >= 0 && frame.Current < count
+        && frame.Completed.Length + frame.Remaining.Length + 1 == count
         && frame.Remaining.All(index => index >= 0 && index < count)
         && frame.Completed.All(index => index >= 0 && index < count)
         && frame.Completed.Append(frame.Current).Concat(frame.Remaining).Distinct().Count()
@@ -134,49 +138,27 @@ internal static class AbilityStructuralFlowExecution
     internal static AbilityStructuralTransition Dependent(
         AbilityStructuralContext context, AbilityEffect.Dependent dependent)
     {
-        var admission = context.Admission();
-        var effect = dependent.Effect;
-        if (AbilityChoiceAnalysis.ActiveChoices(effect, admission).Any())
-        {
-            AbilityResolutionAdmission.PreflightAnsweredOutcome(effect, admission);
-            AbilityAdmission.PreflightContinuationBoundaries(dependent.Continuation, admission);
-            return DependentLeaf(context, dependent, effect,
-                predecessor: true, outcome: null,
-                hasContinuation: context.HasContinuation);
-        }
-
-        var required = dependent.OnFull
-            ? AbilityAdmission.AdmissionResolution.Full
-            : AbilityAdmission.AdmissionResolution.None;
-        var outcome = AbilityResolutionAdmission.EnsureDependentSupported(
-            dependent, admission, effect, dependent.Continuation, required);
-        var structural = (AbilityStructuralOutcome)(int)outcome;
-        if (outcome == AbilityAdmission.AdmissionResolution.None)
-        {
-            return outcome == required
-                ? DependentLeaf(context, dependent, dependent.Continuation,
-                    predecessor: false, structural, context.HasContinuation)
-                : new Complete(context.Frames);
-        }
-
-        return DependentLeaf(context, dependent, effect,
-            predecessor: true, structural,
-            hasContinuation: context.HasContinuation);
+        AbilityCompletionSupport.Validate(dependent.Effect, context.SourceFace);
+        return DependentLeaf(context, dependent, dependent.Effect,
+            predecessor: true, outcome: null, hasContinuation: context.HasContinuation);
     }
 
     internal static AbilityStructuralTransition AfterDependentLeaf(
         AbilityStructuralContext context, AbilityEffect.Dependent dependent,
         DependentFrame frame, AbilityStructuralObservation observation)
     {
-        if (observation.Suspended || !frame.Predecessor)
-            return new Complete(context.Frames);
+        if (observation.Suspended) return new Complete(context.Frames);
+        if (!frame.Predecessor)
+            return new Complete(context.Frames, Outcome: AbilityCompletion.Combine(frame.Outcome, observation.Outcome));
         var required = dependent.OnFull
             ? AbilityStructuralOutcome.Full
             : AbilityStructuralOutcome.None;
-        return frame.Outcome == required
+        var outcome = observation.Outcome ?? throw new InvalidOperationException(
+            "a dependent predecessor completed without a resolution result");
+        return outcome == required
             ? DependentLeaf(context, dependent, dependent.Continuation,
-                predecessor: false, frame.Outcome, context.HasContinuation)
-            : new Complete(context.Frames);
+                predecessor: false, outcome, context.HasContinuation)
+            : new Complete(context.Frames, Outcome: outcome);
     }
 
     internal static AbilityStructuralTransition ForEachStart(
@@ -205,11 +187,13 @@ internal static class AbilityStructuralFlowExecution
         AbilityStructuralContext context, AbilityEffect.ForEach repeated,
         ForEachFrame frame, AbilityStructuralObservation observation)
     {
-        if (observation.Suspended || frame.Next >= frame.Count)
-            return new Complete(context.Frames.Add(frame));
+        if (observation.Suspended) return new Complete(context.Frames.Add(frame));
+        frame = frame with { CompletedOutcome = AbilityCompletion.Combine(frame.CompletedOutcome, observation.Outcome) };
+        if (frame.Next >= frame.Count)
+            return new Complete(context.Frames.Add(frame), Outcome: frame.CompletedOutcome);
 
         long iteration = frame.Next;
-        var next = new ForEachFrame(iteration + 1, frame.Count);
+        var next = frame with { Next = iteration + 1 };
         return new RunLeaf(
             repeated.Effect, context.Frames.Add(next), context.Position,
             context.HasContinuation || iteration < frame.Count - 1);
@@ -229,8 +213,6 @@ internal static class AbilityStructuralFlowExecution
             return new Rejected("'eachTime' needs a non-negative discard count");
         if (requested == 0)
             return new Complete(context.Frames);
-        if (persistedCount is null)
-            AbilityDelayedReachability.ValidateEachTimeBody(repeated, context.Admission());
 
         long count = requested;
         if (persistedCount is null)
@@ -248,8 +230,10 @@ internal static class AbilityStructuralFlowExecution
         AbilityStructuralContext context, AbilityEffect.EachTime repeated,
         EachTimeFrame frame, AbilityStructuralObservation observation)
     {
-        if (observation.Suspended || frame.Next >= frame.Count)
-            return new Complete(context.Frames.Add(frame));
+        if (observation.Suspended) return new Complete(context.Frames.Add(frame));
+        frame = frame with { CompletedOutcome = AbilityCompletion.Combine(frame.CompletedOutcome, observation.Outcome) };
+        if (frame.Next >= frame.Count)
+            return new Complete(context.Frames.Add(frame), Outcome: frame.CompletedOutcome);
 
         return new DiscardEachTime(
             new AbilityEffect.DiscardTop(
@@ -264,7 +248,7 @@ internal static class AbilityStructuralFlowExecution
         if (observation.Discarded is not { } discarded)
             return new Complete(context.Frames.Add(frame));
 
-        var next = new EachTimeFrame(frame.Next + 1, frame.Count, discarded.ObjectId);
+        var next = frame with { Next = frame.Next + 1, DiscardedCard = discarded.ObjectId };
         if (!Test(repeated.When, context))
             return NextEachTime(context, repeated, next,
                 new AbilityStructuralObservation(false));

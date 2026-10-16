@@ -24,8 +24,7 @@ public sealed class NestedAttackActivityTests
         world.Abilities = runner;
         world.Activation = new(enemy.ObjectId, 0, true, 7);
         world.Attack = new(enemy.ObjectId, 0, hero.ObjectId, Defender: hero.ObjectId, BasicDefense: true);
-        world.Agenda.Add(new PhaseStep(Steps.EndAttack, 1, 2, Subject: enemy.ObjectId, Seat: 0,
-            Character: hero.ObjectId) { ActivationId = 7 });
+        world.Agenda.Add(new PhaseStep(new AttackCompletionOperation(), Round: 1, Number: 2, Subject: enemy.ObjectId, Seat: 0) { ActivationId = 7 });
         List<GameEvent> events = [];
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, cards, runner, events));
         var offered = Assert.Single(prompt.Affordances, option => option.AnchorId == counterPunch.ObjectId);

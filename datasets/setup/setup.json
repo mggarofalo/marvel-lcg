@@ -256,6 +256,7 @@
   },
   "encounter_sets": {
     "standard": {
+      "role": "standard",
       "encounters": [
         "01186",
         "01186",
@@ -268,6 +269,7 @@
       "name": "Standard"
     },
     "expert": {
+      "role": "expert",
       "encounters": [
         "01191",
         "01192",
@@ -276,6 +278,7 @@
       "name": "Expert"
     },
     "bomb_scare": {
+      "role": "modular",
       "encounters": [
         "01109",
         "01110",
@@ -287,6 +290,7 @@
       "name": "Bomb Scare"
     },
     "masters_of_evil": {
+      "role": "modular",
       "encounters": [
         "01128",
         "01129",
@@ -299,6 +303,7 @@
       "name": "Masters of Evil"
     },
     "under_attack": {
+      "role": "modular",
       "encounters": [
         "01151",
         "01152",
@@ -309,6 +314,7 @@
       "name": "Under Attack"
     },
     "legions_of_hydra": {
+      "role": "modular",
       "encounters": [
         "01180",
         "01180",
@@ -320,6 +326,7 @@
       "name": "Legions of Hydra"
     },
     "the_doomsday_chair": {
+      "role": "modular",
       "encounters": [
         "01183",
         "01183",
@@ -354,6 +361,7 @@
         "01009"
       ],
       "name": "Spider-Man",
+      "nemesis_set_icon": "spider_man_nemesis",
       "nemesis_set": [
         "01166",
         "01167",
@@ -414,6 +422,7 @@
         "01018"
       ],
       "name": "Captain Marvel",
+      "nemesis_set_icon": "captain_marvel_nemesis",
       "nemesis_set": [
         "01176",
         "01177",
@@ -474,6 +483,7 @@
         "01028"
       ],
       "name": "She-Hulk",
+      "nemesis_set_icon": "she_hulk_nemesis",
       "nemesis_set": [
         "01161",
         "01162",
@@ -534,6 +544,7 @@
         "01039"
       ],
       "name": "Iron Man",
+      "nemesis_set_icon": "iron_man_nemesis",
       "nemesis_set": [
         "01171",
         "01172",
@@ -594,6 +605,7 @@
         "01049"
       ],
       "name": "Black Panther",
+      "nemesis_set_icon": "black_panther_nemesis",
       "nemesis_set": [
         "01156",
         "01157",

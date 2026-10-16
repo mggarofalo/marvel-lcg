@@ -1,3 +1,5 @@
+using Marvel.Protocol;
+using Marvel.Rules.Play;
 using Marvel.Decisions;
 using Marvel.Rules.Events;
 using Marvel.Rules.Prompts;
@@ -50,7 +52,7 @@ public sealed class RecipientLegalGameTests(ITestOutputHelper output) : EngineHo
     }
 
     private static EngineResponse Resolve(EngineHost host, EngineResponse current, string capability,
-        EngineDecision answer, string request)
+        Decision answer, string request)
     {
         var response = host.Exchange(EngineRequest.ResolveGame(request, "recipient-game", capability, answer, current.Revision));
         Assert.Null(response.Error);

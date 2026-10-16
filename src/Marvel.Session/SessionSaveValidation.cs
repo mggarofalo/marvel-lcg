@@ -78,6 +78,9 @@ internal static class SessionSaveValidation
         {
             throw new SessionSaveException("save setup is invalid");
         }
+        if (setup.PlayerDecks is { } decks
+            && (decks.Count != setup.Heroes.Count || decks.Any(deck => deck is null)))
+            throw new SessionSaveException("explicit decks must contain one recipe per seat");
     }
 
     private static void RequireSessionIdentity(SessionIdentity session)

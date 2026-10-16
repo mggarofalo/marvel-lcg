@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Setup;
@@ -157,8 +158,7 @@ public sealed class BoostAbilityTests
         world.CreateCard(SonicBoom, world.AreaOf(DeckType.EncounterDeck));
         world.Agenda.Abandon();
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        world.Agenda.Add(new PhaseStep(
-            Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         var events = new List<Marvel.Rules.Events.GameEvent>();
 
         var defend = Sequence.Work(world, Cards, runner, events)!;

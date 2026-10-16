@@ -59,7 +59,7 @@ public sealed class CoreSearchDescriptionTests
         runner.Resolve(world, occurrence, response, [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
 
-        Prompt prompt = runner.Choosing(world, shuri, 0, choice.Index, choice.Tier)!;
+        Prompt prompt = runner.Choosing(world, choice)!;
 
         Assert.True(prompt.ExposesConcealedCandidates);
         Assert.Equal(PublicDecisionKind.CardSearch, prompt.PublicKind);
@@ -69,7 +69,7 @@ public sealed class CoreSearchDescriptionTests
         Assert.All(prompt.Affordances, option => Assert.StartsWith("Add ", option.CommitLabel));
         Assert.Contains("shuffle your deck", prompt.Description);
         long before = world.Random.Generator.WordsConsumed;
-        runner.Chose(world, shuri, 0, choice.Index, Decision.Take(claws.ObjectId), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(claws.ObjectId));
 
         Assert.Contains(claws, world.Seats[0].Hand.Cards);
         Assert.Contains(suit, world.Seats[0].Deck.Cards);

@@ -1,3 +1,4 @@
+using Marvel.Cards.Run;
 using Marvel.Cards.Dsl;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -26,7 +27,7 @@ public sealed class ActionAbilityTypedActivationsActivationKeepsCompiledPriority
         }, abilities: runner);
         var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == source!.ObjectId);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        world.Agenda.NowActivation(new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.NowActivation(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         var occurrence = new Occurrence(17, [Steps.TurnAction], Player: 0);
         fields["first"] = new AbilityValue.Word(first ? "false" : "true");
         runner.Resolve(world, occurrence, action, [], []);
@@ -34,10 +35,10 @@ public sealed class ActionAbilityTypedActivationsActivationKeepsCompiledPriority
         var scheduled = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.Attack && step.Subject == minion.ObjectId);
         var continuation = world.Agenda.ActivationWait(scheduled.ActivationId);
         Assert.NotNull(continuation);
-        Assert.Same(occurrence, continuation.Value.AbilityOccurrence);
+        Assert.Same(occurrence, continuation.Value.Require<AbilityContinuationAgendaOperation>().Origin);
         Assert.Equal(source!.ObjectId, continuation.Value.Subject);
-        Assert.Equal(0, continuation.Value.AbilityOrdinal);
-        Assert.Empty(continuation.Value.AbilityPath!);
+        Assert.Equal(0, Assert.IsType<AbilityContinuationState>(continuation.Value.Require<AbilityContinuationAgendaOperation>().Continuation).Invocation.Address.Ordinal);
+        Assert.Empty(Assert.IsType<AbilityContinuationState>(continuation.Value.Require<AbilityContinuationAgendaOperation>().Continuation).Cursor.Frames);
     }
 
     [Theory]
@@ -63,7 +64,7 @@ public sealed class ActionAbilityTypedActivationsActivationKeepsCompiledPriority
         fields["against"] = new AbilityValue.Word("you");
         runner.Resolve(world, occurrence, action, [], []);
         var attack = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.Attack);
-        Assert.Equal(role == "trigger.actor" ? ally.ObjectId : world.Seats[1].IdentityCard.ObjectId, attack.Character);
+        Assert.Equal(role == "trigger.actor" ? ally.ObjectId : world.Seats[1].IdentityCard.ObjectId, attack.Require<EnemyAttackOperation>().Character);
         Assert.Equal(1, attack.Seat);
         Assert.Equal(1, attack.Index);
         Assert.Equal(world.TheCardIn(DeckType.VillainArea)!.ObjectId, attack.Subject);
@@ -93,7 +94,7 @@ public sealed class ActionAbilityTypedActivationsActivationKeepsCompiledPriority
             var attack = Assert.Single(attacks);
             Assert.Equal(minion!.ObjectId, attack.Subject);
             Assert.Equal(1, attack.Seat);
-            Assert.Equal(-1, attack.Character);
+            Assert.Equal(-1, attack.Require<EnemyAttackOperation>().Character);
         }
         else
             Assert.Empty(attacks);

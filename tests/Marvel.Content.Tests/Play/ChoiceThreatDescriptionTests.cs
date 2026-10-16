@@ -37,7 +37,7 @@ public sealed class ChoiceThreatDescriptionTests
         var (_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), hero: true, abilities: runner);
         world.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 1);
         string before = world.Digest().Fingerprint();
-        Prompt prompt = Assert.IsType<Prompt>(runner.Choosing(world, source!, 0, 0, null, false));
+        Prompt prompt = Assert.IsType<Prompt>(runner.PreviewChoice(world, source!, 0, 0, null, false));
         string description = Assert.IsType<string>(Assert.Single(prompt.Affordances).Description);
         Assert.Equal(described, description.Contains("Current thwart amount: 2 threat", StringComparison.Ordinal));
         Assert.DoesNotContain("Final step", description);

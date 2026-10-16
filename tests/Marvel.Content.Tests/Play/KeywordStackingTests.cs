@@ -94,7 +94,7 @@ public sealed class KeywordStackingTests
         ResolveReveal(world, card, runner);
         var waiting = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
-        runner.Chose(world, card, 0, waiting.Index, Decision.Take(0), waiting.Tier);
+        runner.Chose(world, waiting, Decision.Take(0));
 
         AssertOneAdditionalCard(world);
     }
@@ -129,11 +129,10 @@ public sealed class KeywordStackingTests
     [Rule("rr:keywords.1")]
     [Rule("rr:surge")]
     [Fact]
-    public void LaterAbilityUpdatesAnEarlierChoiceContinuation()
+    public void LaterAbilityWaitsForAnEarlierChoiceAndSharesItsSurgeGrant()
     {
-        // The first ability suspends before Surge is gained. The second
-        // ability still belongs to the same reveal, so its gain must update
-        // the already-scheduled continuation rather than leave a stale copy.
+        // The first ability finishes its choice before the next ability starts.
+        // Both gains belong to one reveal, so only one extra card is dealt.
         var runner = new AbilityRunner(AbilityCatalog.Parse(
             """
             { "cards": [ { "card": "01110", "abilities": [
@@ -152,8 +151,11 @@ public sealed class KeywordStackingTests
         ResolveReveal(world, card, runner);
         var waiting = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
-        Assert.True(waiting.SurgeGained);
-        runner.Chose(world, card, 0, waiting.Index, Decision.Take(0), waiting.Tier);
+        Assert.False(waiting.Require<AbilityContinuationAgendaOperation>().SurgeGained);
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(0), events);
+        Assert.Null(Sequence.Work(world, Cards, runner, events));
 
         AssertOneAdditionalCard(world);
     }
@@ -211,9 +213,7 @@ public sealed class KeywordStackingTests
         ResolveReveal(world, card, runner);
         var frame = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.ResolveEachPlayer);
-        runner.ResolveEachPlayer(
-            world, card, frame.Seat, frame.Index, frame.Tier,
-            frame.FinalStep, frame.FinalPlayer);
+        runner.ResolveEachPlayer(world, frame);
 
         AssertOneAdditionalCard(world);
     }
@@ -235,26 +235,17 @@ public sealed class KeywordStackingTests
         var card = world.CreateCard("01110", world.AreaOf(DeckType.RevealingArea));
         world.CreateCard("01122", world.AreaOf(DeckType.EncounterDeck));
         world.CreateCard("01123", world.AreaOf(DeckType.EncounterDeck));
-        world.Agenda.Add(new PhaseStep(
-            Steps.ResolveEachPlayer, 1, 2, Index: 1, Subject: card.ObjectId,
-            Seat: 0, Plan: true, Tier: Marvel.Rules.Timing.AbilityType.WhenRevealed,
-            EachPlayerFrame: true));
-        world.Agenda.Add(new PhaseStep(
-            Steps.ResolveEachPlayer, 1, 2, Index: 1, Subject: card.ObjectId,
-            Seat: 1, Plan: true, Tier: Marvel.Rules.Timing.AbilityType.WhenRevealed,
-            FinalPlayer: true, EachPlayerFrame: true));
-
-        var first = world.Agenda.Current!.Value;
-        runner.ResolveEachPlayer(
-            world, card, first.Seat, first.Index, first.Tier,
-            first.FinalStep, first.FinalPlayer);
-        world.Agenda.Advance();
-        world.Agenda.Advance();
-        world.Agenda.Advance();
-        var second = world.Agenda.Current!.Value;
-        runner.ResolveEachPlayer(
-            world, card, second.Seat, second.Index, second.Tier,
-            second.FinalStep, second.FinalPlayer);
+        ResolveReveal(world, card, runner);
+        var order = Assert.Single(world.Agenda.Outstanding,
+            item => item.What == Steps.OrderEachPlayer);
+        var operation = order.Require<AbilityContinuationAgendaOperation>() with
+            { Stage = AbilityContinuationStage.ResolvePlayer };
+        world.Agenda.Add(order with { Operation = operation, Seat = 0 });
+        world.Agenda.Add(order with { Operation = operation with { FinalPlayer = true }, Seat = 1 });
+        var first = world.Agenda.Outstanding.First(item => item.What == Steps.ResolveEachPlayer);
+        runner.ResolveEachPlayer(world, first);
+        var second = world.Agenda.Outstanding.Last(item => item.What == Steps.ResolveEachPlayer);
+        runner.ResolveEachPlayer(world, second);
 
         AssertOneAdditionalCard(world);
     }
@@ -279,7 +270,7 @@ public sealed class KeywordStackingTests
         var step = Assert.Single(
             world.Agenda.Outstanding, item => item.What == Steps.CharacterAttacks);
         runner.ResolveCardAttack(
-            world, step.CharacterAttack!, step.OccurrenceOf(world, Cards), []);
+            world, step.Require<CharacterAttackOperation>().Attack, step.OccurrenceOf(world, Cards), []);
 
         AssertOneAdditionalCard(world);
     }
@@ -304,7 +295,7 @@ public sealed class KeywordStackingTests
         var step = Assert.Single(
             world.Agenda.Outstanding, item => item.What == Steps.CharacterThwarts);
         runner.ResolveCardThwart(
-            world, step.CharacterThwart!, step.OccurrenceOf(world, Cards), []);
+            world, step.Require<CharacterThwartOperation>().Thwart, step.OccurrenceOf(world, Cards), []);
 
         AssertOneAdditionalCard(world);
     }
@@ -312,11 +303,9 @@ public sealed class KeywordStackingTests
     [Rule("rr:keywords.1")]
     [Rule("rr:surge")]
     [Fact]
-    public void LaterAbilityUpdatesAnEarlierPowerContinuation()
+    public void LaterAbilityWaitsForAnEarlierPowerAndSharesItsSurgeGrant()
     {
-        // A sibling ability can gain Surge after the attack record was queued.
-        // The queued record must be advanced along with choice, activation and
-        // each-player continuations before its sequence resumes.
+        // An attack and its suffix finish before a later ability begins.
         var runner = new AbilityRunner(AbilityCatalog.Parse(
             """
             { "cards": [ { "card": "01110", "abilities": [
@@ -339,10 +328,9 @@ public sealed class KeywordStackingTests
         ResolveReveal(world, card, runner);
         var step = Assert.Single(
             world.Agenda.Outstanding, item => item.What == Steps.CharacterAttacks);
-        Assert.True(step.CharacterAttack!.SurgeGained);
-        Assert.True(world.CharacterAttack!.SurgeGained);
-        runner.ResolveCardAttack(
-            world, step.CharacterAttack, step.OccurrenceOf(world, Cards), []);
+        Assert.False(step.Require<CharacterAttackOperation>().Attack.SurgeGained);
+        Assert.False(world.CharacterAttack!.SurgeGained);
+        Assert.Null(Sequence.Work(world, Cards, runner, []));
 
         AssertOneAdditionalCard(world);
     }

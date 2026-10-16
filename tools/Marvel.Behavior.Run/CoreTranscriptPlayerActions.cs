@@ -119,16 +119,15 @@ internal static class CoreTranscriptPlayerActions
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
         context.World.Agenda.Add(new PhaseStep(
-            Steps.DealAttackDamage, Round: 1, Number: 4, Plan: true));
+            new AttackStageOperation(AttackStageKind.DealAttackDamage), Round: 1, Number: 4, Plan: true));
         _ = context.World.Agenda.Begin(context.World, context.Cards);
         _ = Threat.Remove(
             context.World,
             context.Cards,
             context.World.Abilities,
-            scheme,
-            Number(match, "count", step),
-            "behavioral transcript",
-            "Remove_Threat",
+            new ThreatRemovalRequest(
+                scheme, Number(match, "count", step),
+                "behavioral transcript", "Remove_Threat"),
             context.Events);
         FinishAgenda(context, step);
     }

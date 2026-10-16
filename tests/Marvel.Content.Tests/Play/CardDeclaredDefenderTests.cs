@@ -15,6 +15,30 @@ public sealed class CardDeclaredDefenderTests
     private static readonly CardCatalog Cards = CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Rule("rr:then.1")]
+    [Rule("rr:defend-defense.2.1")]
+    [Fact]
+    public void CompletedDefenderDeclarationResolvesItsDependentDraw()
+    {
+        // Synthetic contract: the text before "then" must resolve fully.
+        // Declaring a defender commits attack state even without a card event.
+        var (world, villain) = Board();
+        world.CreateCard("01087", world.Seats[0].Deck);
+        var drawn = world.CreateCard("01088", world.Seats[0].Deck);
+        var runner = Runner("01001a", """
+            {"defense":{"effect":{"then":{
+              "effect":{"declareDefender":{"card":"you"}},
+              "then":{"draw":{"player":"you","count":1}}}}}}
+            """);
+
+        ResolveInitiationInterrupt(world, runner, villain);
+
+        Assert.Equal(world.Seats[0].IdentityCard.ObjectId, world.FinishedAttack!.Defender);
+        Assert.True(world.FinishedAttack.BasicDefense);
+        Assert.Contains(drawn, world.Seats[0].Hand.Cards);
+        Assert.Single(world.Seats[0].Hand.Cards);
+    }
+
     [Rule("rr:defend-defense.2.1")]
     [Rule("rr:defend-defense.2.2")]
     [Fact]
@@ -150,9 +174,7 @@ public sealed class CardDeclaredDefenderTests
         World world, AbilityRunner runner, Card villain)
     {
         world.Abilities = runner;
-        world.Agenda.Add(new PhaseStep(
-            Steps.Attack, Round: 1, Number: 2, Index: 0,
-            Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Index: 0, Subject: villain.ObjectId, Seat: 0));
         var events = new List<Marvel.Rules.Events.GameEvent>();
 
         var asked = Sequence.Work(world, Cards, runner, events);

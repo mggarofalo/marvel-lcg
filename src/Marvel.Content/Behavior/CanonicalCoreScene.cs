@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using static Marvel.Content.Behavior.CoreSceneStateMutation;
@@ -88,7 +89,7 @@ public sealed class CanonicalCoreScene
             request.PlayerDecks);
         var world = WorldSetup.Deal(
             facts,
-            Setup.Blueprints.From(order, facts),
+            Blueprints.From(order, facts),
             request.Heroes.Select(hero => setup.Hero(hero).Name).ToList(),
             request.Seed,
             abilities,

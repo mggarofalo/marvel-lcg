@@ -83,12 +83,18 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityCondition.InForm form => Forms.In(context.World, context.World.Seats[Seat(form.Player)], context.World.Facts, form.Form),
         AbilityCondition.ActivationIs activation => context.World.Activation is { } current && current.Attacking == activation.Attack,
         AbilityCondition.CardText text => TestCardText(text),
-        AbilityCondition.IsKind kind => selectors.Find(kind.Card) is { } card && EffectiveCards.Kind(card, context.World.Facts) == kind.Kind,
+        AbilityCondition.IsKind kind => IsKind(kind),
         AbilityCondition.WasDefeated defeated => selectors.Find(defeated.Card) is { } card
             && context.Occurrence.Defeats.Any(defeat => defeat.Card == card.ObjectId),
         AbilityCondition.IsYourIdentity identity => selectors.Find(identity.Card)?.ObjectId == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,
         _ => throw new InvalidOperationException("Unknown compiled condition"),
     };
+
+    private bool IsKind(AbilityCondition.IsKind condition) => condition.Card is
+        AbilityCardSelection.Bound { Binding: AbilityCardBinding.Defeated }
+        ? context.Bindings.Defeat?.Kind == condition.Kind
+        : selectors.Find(condition.Card) is { } card
+            && EffectiveCards.Kind(card, context.World.Facts) == condition.Kind;
 
     private bool TestCardText(AbilityCondition.CardText text)
     {
@@ -110,11 +116,11 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityConditionFact.AttackDamaged => context.World.FinishedAttack is { Damaged: true } attack
             && attack.Enemy == context.Occurrence.Actor && attack.Target == context.Occurrence.Target,
         AbilityConditionFact.InExpertMode => context.World.Expert,
-        AbilityConditionFact.DefeatedByYou => context.Occurrence.Defeat is { By: >= 0 } defeat && defeat.By == AbilityCardQueries.Resolver(context.Bindings),
+        AbilityConditionFact.DefeatedByYou => context.Bindings.Defeat is { By: >= 0 } defeat && defeat.By == AbilityCardQueries.Resolver(context.Bindings),
         AbilityConditionFact.HeroDefended => context.World.FinishedAttack is { } attack
             && attack.Defender == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,
         AbilityConditionFact.UndefendedAttack => context.World.Attack is { IsDefended: false },
-        AbilityConditionFact.DefeatedByConsequentialDamage => context.Occurrence.Defeat is { } defeat
+        AbilityConditionFact.DefeatedByConsequentialDamage => context.Bindings.Defeat is { } defeat
             && string.Equals(defeat.How, "Consequential_Damage", StringComparison.Ordinal),
         _ => throw new InvalidOperationException("Unknown compiled condition fact"),
     };

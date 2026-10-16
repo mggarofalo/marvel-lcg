@@ -11,7 +11,7 @@ namespace Marvel.Server;
 /// <summary>An isolated store used when a host has no filesystem authority.</summary>
 public sealed class MemorySessionStore : ISessionStore
 {
-    private readonly Dictionary<string, string> generations = new(StringComparer.Ordinal);
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> generations = new(StringComparer.Ordinal);
 
     /// <inheritdoc />
     public IReadOnlyList<StoredSession> Load() =>

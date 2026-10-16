@@ -1,3 +1,4 @@
+using Marvel.Rules.Play;
 using Godot;
 using Marvel.Decisions;
 using Marvel.Rules.Prompts;
@@ -92,7 +93,7 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
     private void Commit(DecisionComposer draft, int generation, int offer, int? target)
     {
         if (panel.IsCurrentDraft(draft, generation) && draft.SelectWindowChoice(offer, target)
-            && draft.TryBuild(out EngineDecision? decision, out _))
+            && draft.TryBuild(out Decision? decision, out _))
             panel.NotifySubmitted(decision!, generation);
     }
 
@@ -106,7 +107,7 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
 
     private void Decline(DecisionComposer draft, int generation)
     {
-        if (panel.IsCurrentDraft(draft, generation) && draft.TryDecline(out EngineDecision? decision, out _))
+        if (panel.IsCurrentDraft(draft, generation) && draft.TryDecline(out Decision? decision, out _))
             panel.NotifySubmitted(decision!, generation);
     }
 

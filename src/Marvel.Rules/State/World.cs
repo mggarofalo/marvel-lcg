@@ -16,6 +16,7 @@ namespace Marvel.Rules.State;
 /// </remarks>
 public sealed class World
 {
+    internal ScenarioSetup? ScenarioSetup { get; set; }
     internal readonly List<Card> _cards = [];
     internal readonly List<Area> _areas = [];
     internal readonly List<Seat> _seats = [];
@@ -23,6 +24,18 @@ public sealed class World
     private readonly List<InformationSignal> informationSignals = [];
     private readonly ICardFacts facts;
     private readonly GameConclusion conclusion = new();
+
+    /// <summary>The interpreter state owned exclusively by this game.</summary>
+    public AbilityRuntime? AbilityRuntime { get; private set; }
+
+    /// <summary>Binds the game's interpreter state once.</summary>
+    public void BindAbilityRuntime(AbilityRuntime runtime)
+    {
+        ArgumentNullException.ThrowIfNull(runtime);
+        if (AbilityRuntime is not null && !ReferenceEquals(AbilityRuntime, runtime))
+            throw new InvalidOperationException("the game already owns an ability runtime");
+        AbilityRuntime = runtime;
+    }
 
     /// <summary>Records concealed knowledge without putting identities on the event wire.</summary>
     public void RecordInformation(InformationKind kind) =>
@@ -261,9 +274,9 @@ public sealed class World
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The public aggregate is retained for compatibility at construction and
-    /// direct engine entry points. Rules procedures read the typed capability
-    /// properties below, so each consumer sees only the card behavior it uses.
+    /// Construction binds the game's card interpreter through this aggregate.
+    /// Rules procedures read the typed capability properties below, so each
+    /// consumer sees only the card behavior it uses.
     /// </para>
     /// <para>
     /// <b>Defeat is the caller that needed it.</b>
@@ -280,8 +293,8 @@ public sealed class World
     /// </remarks>
     public Play.ICardAbilities Abilities { get; set; } = new Play.NoCardAbilities();
 
-    // The aggregate is retained for host compatibility. Rules code reaches card
-    // text through the smallest port that expresses the operation it performs.
+    // Rules code reaches card text through the smallest capability port that
+    // expresses the operation it performs.
     /// <summary>The damage-specific card capability.</summary>
     public Play.ICardDamageAbilities DamageAbilities => (Play.ICardDamageAbilities)Abilities;
     /// <summary>The threat-specific card capability.</summary>
@@ -362,35 +375,6 @@ public sealed class World
     /// </para>
     /// </remarks>
     public EngineRandom Random { get; }
-
-    /// <inheritdoc cref="WorldTopology.Shuffle"/>
-    public bool Shuffle(Area area) => WorldTopology.Shuffle(this, area);
-    /// <inheritdoc cref="WorldTopology.CreateGameArea"/>
-    public GameArea CreateGameArea() => WorldTopology.CreateGameArea(this);
-    /// <inheritdoc cref="WorldTopology.Join"/>
-    public void Join(
-        PlayArea area, GameArea destination, string trigger, List<GameEvent> events) =>
-        WorldTopology.Join(this, area, destination, trigger, events);
-    /// <inheritdoc cref="WorldTopology.Detach"/>
-    public void Detach(PlayArea area, string trigger, List<GameEvent> events) =>
-        WorldTopology.Detach(this, area, trigger, events);
-    /// <inheritdoc cref="WorldTopology.GameAreaOf"/>
-    public GameArea? GameAreaOf(PlayArea area) => WorldTopology.GameAreaOf(this, area);
-    /// <inheritdoc cref="WorldTopology.CreateSeat"/>
-    public Seat CreateSeat(string name) => WorldTopology.CreateSeat(this, name);
-    /// <inheritdoc cref="WorldTopology.AreaOf"/>
-    public Area AreaOf(
-        DeckType type, PlayArea? playArea = null, int host = -1, int cardOwner = Scenario) =>
-        WorldTopology.AreaOf(this, type, playArea, host, cardOwner);
-    /// <inheritdoc cref="WorldTopology.TheCardIn"/>
-    public Card? TheCardIn(DeckType type) => WorldTopology.TheCardIn(this, type);
-    /// <inheritdoc cref="WorldTopology.CreateArea"/>
-    public Area CreateArea(
-        DeckType type, int cardOwner = -1, PlayArea? playArea = null, int host = -1) =>
-        WorldTopology.CreateArea(this, type, cardOwner, playArea, host);
-    /// <inheritdoc cref="WorldTopology.CreateCard"/>
-    public Card CreateCard(string spec, Area into) =>
-        WorldTopology.CreateCard(this, spec, into);
 
     /// <summary>
     /// The seats in player order — <c>rr:in-player-order</c>.

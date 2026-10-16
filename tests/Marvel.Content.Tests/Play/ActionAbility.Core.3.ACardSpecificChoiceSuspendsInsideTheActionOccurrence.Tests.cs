@@ -140,7 +140,7 @@ public sealed class ActionAbilityCoreACardSpecificChoiceSuspendsInsideTheActionO
         Assert.Equal(1, action.AnchorPlayer);
         Assert.Contains(price.Generators, source => source.Effect == energy!.ObjectId);
         Assert.DoesNotContain(price.Generators, source => world.Seats[0].Hand.Cards.Any(card => card.ObjectId == source.Effect));
-        game.Resolve(Decision.Take(action.Id, [], [energy!.ObjectId]));
+        game.Resolve(PaidDecision.Take(action, [energy!.ObjectId]));
         Assert.Equal(1, world.Seats[1].IdentityCard.Damage);
         Assert.Equal(DeckType.DiscardPile, energy.Area.Type);
         Assert.DoesNotContain(game.Pending!.Affordances, option => option.Verb == Game.ActionVerb && option.AnchorId == captain);
@@ -175,7 +175,7 @@ public sealed class ActionAbilityCoreACardSpecificChoiceSuspendsInsideTheActionO
         Assert.Contains(price.Generators, source => source.Effect == theirs!.ObjectId);
         int playerZeroHand = world.Seats[0].Hand.Cards.Count;
         int playerOneHand = world.Seats[1].Hand.Cards.Count;
-        game.Resolve(Decision.Take(action.Id, [], [mine!.ObjectId, theirs!.ObjectId]));
+        game.Resolve(PaidDecision.Take(action, [mine!.ObjectId, theirs!.ObjectId]));
         Assert.Equal(DeckType.DiscardPile, card!.Area.Type);
         Assert.Equal(DeckType.DiscardPile, mine.Area.Type);
         Assert.Equal(DeckType.DiscardPile, theirs.Area.Type);
@@ -206,7 +206,7 @@ public sealed class ActionAbilityCoreACardSpecificChoiceSuspendsInsideTheActionO
         var action = Assert.Single(game.Pending!.Affordances, option => option.Verb == Game.ActionVerb && option.AnchorId == card!.ObjectId);
         var price = Assert.Single(action.CostOptions);
         Assert.Contains(price.Generators, source => source.Effect == scientist);
-        game.Resolve(Decision.Take(action.Id, [], [doubleEnergy!.ObjectId, scientist]));
+        game.Resolve(PaidDecision.Take(action, [doubleEnergy!.ObjectId, scientist]));
         Assert.Equal(DeckType.DiscardPile, card!.Area.Type);
         Assert.Equal(DeckType.DiscardPile, doubleEnergy.Area.Type);
         Assert.DoesNotContain(runner.ResourceAbilities(world, 1), source => source.Effect == scientist);

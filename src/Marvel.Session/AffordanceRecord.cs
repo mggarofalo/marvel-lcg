@@ -28,7 +28,7 @@ public sealed record AffordanceRecord(
             affordance.AnchorPlayer,
             affordance.Label,
             affordance.Targets is null ? null : TargetRequestRecord.From(affordance.Targets),
-            [.. affordance.CostOptions.Select(CostOptionRecord.From)],
+            JournalValues.List(affordance.CostOptions.Select(CostOptionRecord.From)),
             affordance.Illegal);
     }
 }

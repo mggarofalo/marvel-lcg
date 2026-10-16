@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Server;
 using Marvel.View;
 using Xunit;

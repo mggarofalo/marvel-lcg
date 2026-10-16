@@ -1,0 +1,32 @@
+namespace Marvel.Rules.Setup;
+
+/// <summary>
+/// One card, at the moment the engine allocates its id.
+/// </summary>
+/// <param name="Spec">
+/// Comma-separated face ids exactly as the card data spells them —
+/// <c>01001b,01001a</c> is <b>one card with two faces</b>, not two cards.
+/// </param>
+/// <param name="Source">Which setup step asked for it.</param>
+/// <param name="Player">
+/// The seat it was created for, or <see cref="Scenario"/>.
+/// </param>
+/// <param name="AssociationSet">Declared encounter-set association for identity-linked encounter cards.</param>
+/// <remarks>
+/// The position of a <see cref="Creation"/> in the dealt sequence <b>is</b> the
+/// card's <c>object_id</c>, and <c>object_id</c> is on the wire in every state
+/// digest — checklist item 1 of <c>docs/state-digest-v3.md</c>, "everything else
+/// depends on this". So this order is a wire format, not an implementation
+/// detail.
+/// </remarks>
+public sealed record Creation(string Spec, CreationSource Source, int Player, string? AssociationSet = null)
+{
+    /// <summary>The seat value for a card that belongs to the scenario.</summary>
+    public const int Scenario = -1;
+
+    /// <summary>
+    /// The authored face order. The engine selects an identity's alter-ego by
+    /// kind; a main scheme starts on its first face and flips during setup.
+    /// </summary>
+    public IReadOnlyList<string> Faces => Spec.Split(',');
+}

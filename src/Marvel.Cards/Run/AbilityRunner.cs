@@ -7,12 +7,12 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-#pragma warning disable CS1591 // Compatibility members inherit their port contracts.
+#pragma warning disable CS1591 // Engine port implementations inherit their contracts.
 
-/// <summary>Public compatibility facade for the authored card-ability program.</summary>
+/// <summary>Composes immutable authored programs with engine ability ports.</summary>
 /// <remarks>
 /// Construction lowers immutable authored data and composes focused readers,
-/// resource commitment, and live ability resolution. The facade supplies the
+/// resource commitment, and live ability resolution. The runner supplies the
 /// two nested-entry views required by card play and encounter reveal; it does
 /// not resolve card text.
 /// </remarks>
@@ -23,7 +23,6 @@ public sealed class AbilityRunner : ICardAbilities
     private readonly AbilityDamageProjection damageProjection;
     private readonly AbilityOfferQueries offerQueries;
     private readonly AbilityResourceExecution resourceExecution;
-    private readonly AbilityGameRuntimes runtimes;
     private readonly AbilityResolutionExecution resolution;
 
     public AbilityRunner(AbilityBook book) : this(AbilityLowering.Book(book)) { }
@@ -36,9 +35,8 @@ public sealed class AbilityRunner : ICardAbilities
         damageProjection = new AbilityDamageProjection(program, this);
         offerQueries = new AbilityOfferQueries(program, this);
         resourceExecution = new AbilityResourceExecution(program, offerQueries);
-        runtimes = new AbilityGameRuntimes();
         resolution = new AbilityResolutionExecution(
-            program, runtimes, this, this, this, this, this, offerQueries);
+            program, this, this, this, this, this, offerQueries);
     }
 
     public const string ChooseVerb = AbilityStructuralExecution.ChooseVerb;
@@ -84,18 +82,15 @@ public sealed class AbilityRunner : ICardAbilities
     public void WouldBeDefeated(World world, Card target, List<GameEvent> events) => resolution.WouldBeDefeated(world, target, events);
     public bool WouldBeDefeated(World world, Card target, Card source, string trigger, string verb, int by, List<GameEvent> events, Occurrence? recordDefeatOn = null) => resolution.WouldBeDefeated(world, target, source, trigger, verb, by, events, recordDefeatOn);
     public IReadOnlyList<GameEvent> Setup(World world, Card card) => resolution.Setup(world, card);
-    public IReadOnlyList<GameEvent> ResolveEachPlayer(World world, Card source, int player, int stoppedAt, AbilityType? tier, bool finalStep, bool finalPlayer) => new EachPlayerAbilityResolution(resolution).Resolve(world, source, player, stoppedAt, tier, finalStep, finalPlayer);
+    public IReadOnlyList<GameEvent> ResolveEachPlayer(World world, PhaseStep continuation) => new EachPlayerAbilityResolution(resolution).Resolve(world, continuation);
     public IReadOnlyList<GameEvent> WhenCardDefeated(World world, Card card, Defeated defeated) => resolution.WhenCardDefeated(world, card, defeated);
     public bool WhenCardDefeated(World world, Card card, Defeated defeated, string trigger, List<GameEvent> events) => resolution.WhenCardDefeated(world, card, defeated, trigger, events);
     public IReadOnlyList<GameEvent> Act(World world, PendingAbility ability, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, IReadOnlyDictionary<string, long>? values = null, IReadOnlyList<ResourceAllocation>? allocations = null) => resolution.Act(world, ability, paying, chosen, values, allocations);
     public IReadOnlyList<GameEvent> Act(World world, PendingAbility ability, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, Occurrence occurrence, IReadOnlyDictionary<string, long>? values = null, IReadOnlyList<ResourceAllocation>? allocations = null) => resolution.Act(world, ability, paying, chosen, occurrence, values, allocations);
-    public Prompt? Choosing(World world, Card source, int player, int stoppedAt, AbilityType? tier = null) => resolution.Choosing(world, source, player, stoppedAt, tier);
-    public Prompt? Choosing(World world, Card source, int player, int stoppedAt, AbilityType? tier, bool finalStep) => resolution.Choosing(world, source, player, stoppedAt, tier, finalStep);
-    public Prompt? Choosing(World world, Card source, int player, int stoppedAt, AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) => resolution.Choosing(world, source, player, stoppedAt, tier, finalStep, eachPlayerFrame, finalPlayer);
-    public IReadOnlyList<GameEvent> Chose(World world, Card source, int player, int stoppedAt, Decision input, AbilityType? tier = null) => resolution.Chose(world, source, player, stoppedAt, input, tier);
-    public IReadOnlyList<GameEvent> Chose(World world, Card source, int player, int stoppedAt, Decision input, AbilityType? tier, bool finalStep) => resolution.Chose(world, source, player, stoppedAt, input, tier, finalStep);
-    public IReadOnlyList<GameEvent> Chose(World world, Card source, int player, int stoppedAt, Decision input, AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer) => resolution.Chose(world, source, player, stoppedAt, input, tier, finalStep, eachPlayerFrame, finalPlayer);
-    public IReadOnlyList<GameEvent> Chose(World world, Card source, int player, int stoppedAt, Decision input, AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer, string trigger) => resolution.Chose(world, source, player, stoppedAt, input, tier, finalStep, eachPlayerFrame, finalPlayer, trigger);
+    public Prompt? Choosing(World world, PhaseStep continuation) => resolution.Choosing(world, continuation);
+    public Prompt? PreviewChoice(World world, Card source, int player, int position, AbilityType? tier = null, bool finalStep = false) =>
+        AbilityChoicePreview.Describe(resolution, world, source, player, position, tier, finalStep);
+    public IReadOnlyList<GameEvent> Chose(World world, PhaseStep continuation, Decision input) => resolution.Chose(world, continuation, input);
     public PersistentAbilityDescription DescribePersistent(Card card) => AbilityPersistentQueries.Describe(program, card);
 }
 

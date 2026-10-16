@@ -39,7 +39,7 @@ public sealed class LifecycleOccurrenceTests
         var world = Board(facts);
         var abilities = new FormResponse(world.Seats[0].IdentityCard.ObjectId);
         var game = Game.Begin(world, facts, abilities);
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
         int change = game.Pending!.Affordances.Single(option => option.Verb == Game.ChangeForm).Id;
 
         var result = game.Resolve(Decision.Take(change));

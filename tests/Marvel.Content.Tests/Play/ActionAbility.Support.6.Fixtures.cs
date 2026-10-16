@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Cards.Dsl;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
@@ -243,11 +244,11 @@ internal static class ActionAbilitySupportFixtures6
 
         prepare(world);
         // The mulligan is asked as a turn option too, so the loop watches the
-        // verb rather than the question: declining it keeps the opening hand.
+        // verb rather than the question: an empty selection keeps the opening hand.
         var game = Game.Begin(world, CardCatalogData, abilities ?? AuthoredCards.Runner());
         while (game.Pending is { } asked && asked.Affordances.Any(option => option.Verb == Game.ResolveMulligans))
         {
-            game.Resolve(Decision.Decline);
+            game.Resolve(Decision.Take(asked.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         }
 
         return (game, world);

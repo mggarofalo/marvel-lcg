@@ -1,0 +1,5 @@
+# Lizard and its runtime dependencies, matching the reviewed complexity checker.
+# Install from https://pypi.org/project/lizard/1.24.0/.
+lizard==1.24.0
+pathspec==1.1.1
+Pygments==2.21.0

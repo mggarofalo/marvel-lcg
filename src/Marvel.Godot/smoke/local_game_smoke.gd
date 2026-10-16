@@ -19,6 +19,9 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	if not await preload("res://smoke/gesture_settlement.gd").fractional_parent_probe(self):
+		_fail("gesture settlement must bound fractional parent drift and reject changed local poses")
+		return
 	var packed := load("res://Main.tscn") as PackedScene
 	if packed == null:
 		_fail("Main.tscn could not be loaded")

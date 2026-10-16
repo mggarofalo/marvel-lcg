@@ -1,4 +1,4 @@
-using Marvel.Server;
+using Marvel.Protocol;
 using static Marvel.Client.ClientResponseValidation;
 
 namespace Marvel.Client;
@@ -27,7 +27,7 @@ internal sealed class LocalGameEntryClient(LocalGameClient client)
         {
             return EntryFailed(Error(
                 "invalid_selection",
-                "Choose one or two distinct heroes in seat order."));
+                "Choose one through four distinct heroes in seat order."));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -35,31 +35,43 @@ internal sealed class LocalGameEntryClient(LocalGameClient client)
             .ConfigureAwait(false);
     }
 
-    private async ValueTask<ClientEntryResult> SendOpenSessionAsync(
-        string gameId, GameSpecification specification, CancellationToken cancellationToken)
+    private ValueTask<ClientEntryResult> SendOpenSessionAsync(
+        string gameId, GameSpecification specification, CancellationToken cancellationToken) =>
+        SendAttemptAsync(new ClientEntryAttempt(EngineRequest.OpenGame(
+            client.NextRequestId(OpenRequestId), gameId, specification)), cancellationToken);
+
+    internal async ValueTask<ClientEntryResult> SendAttemptAsync(
+        ClientEntryAttempt attempt, CancellationToken cancellationToken)
     {
+        EngineRequest request = attempt.Request;
+        cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            string requestId = client.NextRequestId(OpenRequestId);
-            EngineResponse response = await client.transport.ExchangeAsync(
-                EngineRequest.OpenGame(requestId, gameId, specification),
-                cancellationToken).ConfigureAwait(false);
-            return EntryResponse(response, requestId, gameId, allowWaiting: false);
+            EngineResponse response = await client.transport.ExchangeAsync(request, cancellationToken).ConfigureAwait(false);
+            ClientEntryResult result = EntryResponse(response, request.RequestId, request.GameId,
+                allowWaiting: request.Operation == EngineProtocol.Attach);
+            return result.Succeeded || DefinitiveFailure(response, request) ? result : result with { PendingEntry = attempt };
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            throw;
+            return EntryFailed(Error("entry_uncertain", "Entry was interrupted. Recover this attempt before starting another."))
+                with { PendingEntry = attempt };
         }
         catch (Exception)
         {
-            return EntryFailed(Error(
-                "transport_unavailable",
-                "The game service could not be reached. Try starting the game again."));
+            return EntryFailed(Error("transport_unavailable", "The entry response was lost. Retry this same attempt to recover it."))
+                with { PendingEntry = attempt };
         }
     }
 
+    private static bool DefinitiveFailure(EngineResponse response, EngineRequest request) =>
+        EnvelopeError(response, request.RequestId, request.GameId) is null
+        && response.Error is { } error && Complete(error)
+        && error.Disposition != EngineFailureDisposition.CommitUncertain;
+
     private static bool ValidSpecification(GameSpecification specification) =>
-        specification.Heroes is { Count: 1 or 2 }
+        specification.Heroes is not null
+        && specification.Heroes.Count is >= Marvel.Rules.Setup.PlayerCountRules.Minimum and <= Marvel.Rules.Setup.PlayerCountRules.Maximum
         && !specification.Heroes.Any(string.IsNullOrWhiteSpace)
         && specification.Heroes.Distinct(StringComparer.Ordinal).Count()
             == specification.Heroes.Count;
@@ -87,24 +99,8 @@ internal sealed class LocalGameEntryClient(LocalGameClient client)
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        try
-        {
-            string requestId = client.NextRequestId(AttachRequestId);
-            EngineResponse response = await client.transport.ExchangeAsync(
-                EngineRequest.AttachGame(requestId, gameId, invitation),
-                cancellationToken).ConfigureAwait(false);
-            return EntryResponse(response, requestId, gameId, allowWaiting: true);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception)
-        {
-            return EntryFailed(Error(
-                "transport_unavailable",
-                "The game service could not be reached. The invitation was not retried."));
-        }
+        return await SendAttemptAsync(new ClientEntryAttempt(EngineRequest.AttachGame(
+            client.NextRequestId(AttachRequestId), gameId, invitation)), cancellationToken).ConfigureAwait(false);
     }
 
     internal static ClientEntryResult EntryFailed(ClientStartupError error) =>
@@ -163,7 +159,6 @@ internal sealed class LocalGameEntryClient(LocalGameClient client)
         EngineResponse response, string requestId, bool allowWaiting) =>
         HasCompleteGameplayResponse(response, allowWaiting)
         && (allowWaiting || response.Prompt is not null)
-        && (!HasRequestPrefix(requestId, OpenRequestId) || response.Revision == 0)
         && ValidIdentifier(response.Capability)
         && CompleteInvitations(response.Invitations)
         && (!allowWaiting || response.Invitations is not { Count: > 0 });

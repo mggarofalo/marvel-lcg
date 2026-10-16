@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -439,11 +440,12 @@ public sealed class SpiderManCardsTests
         scheme.PlaceTokens("k_threat", 4);
         var occurrence = new Occurrence(
             1, [Steps.CardDefeated], Subject: minion.ObjectId, Player: 0);
+        occurrence.Also(new Defeated(minion.ObjectId, 0, "Attack") { Kind = CardKind.Minion });
         var ability = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Interrupt));
 
         runner.Resolve(world, occurrence, ability, [], []);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(world, tracer, 0, waiting.Index, Decision.Take(scheme.ObjectId), waiting.Tier);
+        runner.Chose(world, waiting, Decision.Take(scheme.ObjectId));
 
         Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat"));
     }

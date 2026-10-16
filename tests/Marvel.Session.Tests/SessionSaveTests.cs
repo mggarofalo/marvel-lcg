@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
+using Marvel.Rules.Setup;
 using Marvel.Rules.Timing;
 using Marvel.Session;
 using Xunit;
@@ -45,7 +46,7 @@ public sealed class SessionSaveTests
     }
 
     [Fact]
-    public void SchemaFiveHasAStableStrictTopLevelDocument()
+    public void CurrentSchemaHasAStableStrictTopLevelDocument()
     {
         SessionSave save = Save();
 
@@ -54,7 +55,7 @@ public sealed class SessionSaveTests
 
         Assert.Equal(json, SessionSaveJson.Write(parsed));
         Assert.StartsWith(
-            "{\"format\":\"marvel-session\",\"schema\":5,\"compatibility\":",
+            "{\"format\":\"marvel-session\",\"schema\":6,\"compatibility\":",
             json,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -81,8 +82,8 @@ public sealed class SessionSaveTests
                 "\"format\":\"future-session\"",
                 StringComparison.Ordinal),
             "schema" => json.Replace(
-                "\"schema\":5",
                 "\"schema\":6",
+                "\"schema\":7",
                 StringComparison.Ordinal),
             _ => throw new InvalidOperationException(change),
         };
@@ -126,83 +127,6 @@ public sealed class SessionSaveTests
             JsonSerializer.Deserialize<DurableDecision>(changed, SessionSaveJson.Options));
     }
 
-    [Fact]
-    public void SchemaTwoCanBeReadStrictlyButCannotBeWrittenAsCurrent()
-    {
-        string legacyJson = SessionSaveJson.Write(Save()).Replace(
-            "\"schema\":5",
-            "\"schema\":2",
-            StringComparison.Ordinal);
-
-        SessionSave legacy = SessionSaveJson.Read(legacyJson);
-
-        Assert.Equal(2, legacy.Schema);
-        Assert.Throws<SessionSaveException>(() => SessionSaveJson.Write(legacy));
-    }
-
-    [Fact]
-    public void SchemaThreeReaderAssignsTheHistoricCardNamespaceBeforeMigration()
-    {
-        PromptRecord prompt = PromptRecord.From(new Prompt(
-            0,
-            Question.TurnOption,
-            TimingPriority.Untimed,
-            string.Empty,
-            "Choose",
-            false,
-            [new Affordance(7, "Use", 4, 0, "Choose")]));
-        JsonObject predecessor = Assert.IsType<JsonObject>(JsonSerializer.SerializeToNode(
-            Save() with { CurrentPrompt = prompt }, SessionSaveJson.Options));
-        predecessor["schema"] = 3;
-        _ = predecessor["current_prompt"]!["affordances"]![0]!.AsObject().Remove("anchor_kind");
-
-        SessionSave parsed = SessionSaveJson.Read(predecessor.ToJsonString(SessionSaveJson.Options));
-
-        Assert.Equal(3, parsed.Schema);
-        Assert.Equal(AffordanceAnchorKind.Card, parsed.CurrentPrompt!.Affordances[0].AnchorKind);
-        Assert.Throws<SessionSaveException>(() => SessionSaveJson.Write(parsed));
-        predecessor["current_prompt"]!["affordances"]![0]!["anchor_kind"] =
-            (int)AffordanceAnchorKind.Area;
-        Assert.Throws<SessionSaveException>(() =>
-            SessionSaveJson.Read(predecessor.ToJsonString(SessionSaveJson.Options)));
-    }
-
-    [Fact]
-    public void SchemaTwoPromptsUseTheirFrozenShapeBeforeConversion()
-    {
-        Prompt prompt = new(
-            0,
-            Question.TurnOption,
-            TimingPriority.Untimed,
-            string.Empty,
-            "Pay",
-            false,
-            [new Affordance(
-                7,
-                "Play",
-                20,
-                0,
-                "Pay",
-                new TargetRequest([20], 1, 1),
-                [new CostOption(20, "1", Sources: [new ResourceSource(8, "M")])])]);
-        PromptRecord currentPrompt = PromptRecord.From(prompt);
-        JsonObject legacy = Assert.IsType<JsonObject>(JsonSerializer.SerializeToNode(
-            Save() with { CurrentPrompt = currentPrompt }, SessionSaveJson.Options));
-        legacy["schema"] = 2;
-        _ = legacy["current_prompt"]!["affordances"]![0]!.AsObject().Remove("anchor_kind");
-        legacy["current_prompt"] = JournalRecordsTests.SchemaTwoPrompt(currentPrompt);
-
-        SessionSave parsed = SessionSaveJson.Read(legacy.ToJsonString(SessionSaveJson.Options));
-
-        Assert.Equal(2, parsed.Schema);
-        Assert.Equal(
-            JsonSerializer.Serialize(currentPrompt, JournalJson.Options),
-            JsonSerializer.Serialize(parsed.CurrentPrompt, JournalJson.Options));
-        legacy["current_prompt"]!["affordances"]![0]!["targets"]!["is_grouped"] = true;
-        Assert.Throws<SessionSaveException>(() =>
-            SessionSaveJson.Read(legacy.ToJsonString(SessionSaveJson.Options)));
-    }
-
     [Theory]
     [InlineData(null)]
     [InlineData('Y')]
@@ -223,23 +147,51 @@ public sealed class SessionSaveTests
         _ = component.Remove("repeated_resource");
         Assert.Throws<SessionSaveException>(() => SessionSaveJson.Read(legacy.ToJsonString()));
         legacy["schema"] = 4;
-        SessionSave predecessor = SessionSaveJson.Read(legacy.ToJsonString());
-        Assert.Equal(4, predecessor.Schema);
-        Assert.Null(predecessor.CurrentPrompt!.Affordances[0].Costs![0].Components![0].RepeatedResource);
-        component["repeated_resource"] = "Y";
         Assert.Throws<SessionSaveException>(() => SessionSaveJson.Read(legacy.ToJsonString()));
     }
 
-    [Fact]
-    public void SchemaFourCannotMigrateAcrossTheTypedPaymentReplayBoundary()
+    [Theory]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(7)]
+    public void OtherSchemasAreRejectedBeforeOpeningAGame(int schema)
     {
-        SessionSave save = Save() with { Schema = 4 };
-        save = save with { Compatibility = save.Compatibility with { ReplayContract = "engine-replay-v6" } };
-        SessionCompatibility expected = save.Compatibility with { ReplayContract = "engine-replay-v7" };
-        SessionCompatibilityException error = Assert.Throws<SessionCompatibilityException>(() =>
-            SessionReplay.MigrateSchemaFour(save, expected,
-                _ => throw new InvalidOperationException("incompatible history must not be opened")));
-        Assert.Equal("replay_identity_mismatch", error.Category);
+        SessionSave save = Save() with { Schema = schema };
+        string json = JsonSerializer.Serialize(save, SessionSaveJson.Options);
+        Assert.Throws<SessionSaveException>(() => SessionSaveJson.Read(json));
+        Assert.Throws<SessionSaveException>(() => SessionReplay.Verify(save, save.Compatibility,
+            _ => throw new InvalidOperationException("Unsupported saves must not deal a game")));
+    }
+
+    [Fact]
+    public void ExplicitDeckOrderRoundTripsAndItsPresenceIsRequired()
+    {
+        var cards = new List<string> { "01008", "01009", "01008" };
+        SessionSave save = Save();
+        save = save with { Setup = save.Setup with { PlayerDecks = [new PlayerDeckRecipe(cards)] } };
+        cards.Clear();
+        string json = SessionSaveJson.Write(save);
+        SessionSave restored = SessionSaveJson.Read(json);
+        Assert.Equal(["01008", "01009", "01008"], restored.Setup.PlayerDecks![0].Cards);
+        Assert.Equal(json, SessionSaveJson.Write(restored));
+        JsonObject missing = JsonNode.Parse(json)!.AsObject();
+        Assert.True(missing["setup"]!.AsObject().Remove("player_decks"));
+        Assert.Throws<SessionSaveException>(() => SessionSaveJson.Read(missing.ToJsonString()));
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"cards\":null}")]
+    [InlineData("{\"cards\":[null]}")]
+    [InlineData("{\"cards\":[\" \"]}")]
+    [InlineData("null")]
+    public void MalformedDeckRecipesAreReportedAsInvalidSaves(string recipe)
+    {
+        JsonObject document = JsonNode.Parse(SessionSaveJson.Write(Save()))!.AsObject();
+        document["setup"]!["player_decks"] = new JsonArray(JsonNode.Parse(recipe));
+        Assert.Throws<SessionSaveException>(() => SessionSaveJson.Read(document.ToJsonString()));
     }
 
     private static SessionSave Save() => new(

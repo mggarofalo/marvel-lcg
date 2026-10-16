@@ -1,3 +1,6 @@
+using Marvel.Desktop;
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Buffers.Binary;
 using System.Net;
 using System.Net.Sockets;

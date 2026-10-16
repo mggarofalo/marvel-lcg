@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -41,14 +43,14 @@ public sealed class TransportRestrictedSeatsAdvanceOneSharedGameTests : Transpor
         Assert.Null(attached.Prompt);
         Assert.All(Hand(attached, 0), card => Assert.Null(card.Face));
         Assert.All(Hand(attached, 1), card => Assert.NotNull(card.Face));
-        EngineResponse guestCannotAnswerOwner = await ExchangeOverSocket(server, EngineRequest.ResolveGame("guest-steal-owner", "shared", attached.Capability!, EngineDecision.Decline));
+        EngineResponse guestCannotAnswerOwner = await ExchangeOverSocket(server, EngineRequest.ResolveGame("guest-steal-owner", "shared", attached.Capability!, Decision.Decline));
         EngineResponse ownerPromptRemains = await ExchangeOverSocket(server, EngineRequest.SyncGame("owner-still-pending", "shared", opened.Capability!));
         Assert.Equal("not_your_turn", ErrorCode(guestCannotAnswerOwner));
         Assert.Equal(0, PromptPlayer(ownerPromptRemains));
         EngineResponse forZero = await ExchangeOverSocket(server, EngineRequest.ResolveGame("zero-mulligan", "shared", opened.Capability!, TakeOnly(opened)));
         Assert.Null(forZero.Error);
         Assert.Null(forZero.Prompt);
-        EngineResponse forbidden = await ExchangeOverSocket(server, EngineRequest.ResolveGame("steal-one", "shared", opened.Capability!, EngineDecision.Decline));
+        EngineResponse forbidden = await ExchangeOverSocket(server, EngineRequest.ResolveGame("steal-one", "shared", opened.Capability!, Decision.Decline));
         Assert.Equal("stale_decision", ErrorCode(forbidden));
         EngineResponse forOne = await ExchangeOverSocket(server, EngineRequest.SyncGame("sync-one", "shared", attached.Capability!));
         Assert.Equal(1, PromptPlayer(forOne));

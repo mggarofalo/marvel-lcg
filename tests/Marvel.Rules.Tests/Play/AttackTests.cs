@@ -41,7 +41,7 @@ public abstract class AttackTestBase
         var villain = world.CreateCard("villain", world.AreaOf(DeckType.VillainArea));
         world.CreateCard("filler", world.AreaOf(DeckType.EncounterDeck));
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
-        world.Agenda.Add(new PhaseStep(Steps.Attack, Round: 1, Number: 2, Index: 0, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Index: 0, Subject: villain.ObjectId, Seat: 0));
         return world;
     }
 

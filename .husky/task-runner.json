@@ -33,7 +33,7 @@
     },
     {
       "name": "release-build",
-      "group": "pre-commit",
+      "group": "validation",
       "command": "dotnet",
       "args": [
         "husky",
@@ -43,7 +43,7 @@
     },
     {
       "name": "all-tests",
-      "group": "pre-commit",
+      "group": "validation",
       "command": "dotnet",
       "args": [
         "husky",
@@ -53,7 +53,7 @@
     },
     {
       "name": "native-smoke",
-      "group": "pre-commit",
+      "group": "validation",
       "command": "dotnet",
       "args": [
         "husky",

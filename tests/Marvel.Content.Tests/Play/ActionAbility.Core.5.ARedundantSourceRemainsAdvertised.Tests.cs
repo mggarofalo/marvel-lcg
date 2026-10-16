@@ -92,7 +92,7 @@ public sealed class ActionAbilityCoreARedundantSourceRemainsAdvertisedTests
         var price = Assert.Single(action.CostOptions);
         Assert.Equal("2", price.Cost);
         Assert.Equal(["YY"], price.Rule);
-        game.Resolve(Decision.Take(action.Id, [], [doubleEnergy!.ObjectId]));
+        game.Resolve(PaidDecision.Take(action, [doubleEnergy!.ObjectId]));
         Assert.Equal(DeckType.DiscardPile, doubleEnergy.Area.Type);
         Assert.NotNull(game.Pending);
         Assert.Equal(Question.TurnOption, game.Pending.Asking);

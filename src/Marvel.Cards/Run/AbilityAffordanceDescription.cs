@@ -22,12 +22,11 @@ internal static class AbilityAffordanceDescription
         // because the engine carries one -- see the remarks on `Affordance.Id`.
         var price = AbilityPaymentPricing.CombinedPrice(
             world, card, ability.Player, found, execution.resourceAbilities);
-        TargetRequest? recipients = AbilityRecipientCommitment.Targets(execution, world, card, found, ability.Player);
+        TargetRequest? recipients = AbilityRecipientCommitment.Targets(execution, world, card, found, ability.Player, ability.TriggeringDefeat);
         string? contextual = AbilityReplacementDescription.Caption(execution, world, card, found, ability.Player);
-        string? caption = contextual ?? AbilitySourceActionDescription.Caption(found.Effect)
-            ?? AbilitySearchDescription.Action(found.Effect);
+        string? caption = Caption(world, found, ability, contextual);
         return new Affordance(
-            Id: ability.Card,
+            Id: ability.OfferId ?? ability.Card,
             Verb: found.Name,
             AnchorId: ability.Card,
             AnchorPlayer: ability.Player,
@@ -36,7 +35,7 @@ internal static class AbilityAffordanceDescription
             Costs: price is null ? null : [price], Description: Description(found.Effect, contextual))
         {
             Timing = found.Trigger.Timing,
-            WindowChoices = AbilityWindowChoiceDescription.Describe(execution, world, card, found, ability.Player),
+            WindowChoices = AbilityWindowChoiceDescription.Describe(execution, world, card, found, ability.Player, ability.TriggeringDefeat),
             DisplayLabel = caption,
             CommitLabel = caption,
             PlaysCard = EffectiveCards.Kind(card, world.Facts) == CardKind.Event,
@@ -44,6 +43,16 @@ internal static class AbilityAffordanceDescription
             DirectRecipientCommit = CanCommitRecipient(recipients, EffectiveCards.Kind(card, world.Facts), found.Trigger.Timing),
             CostDescription = AbilityCostDescription.Summary(world, card, ability.Player, found.Cost),
         };
+    }
+
+    private static string? Caption(World world, CompiledCardAbility found,
+        PendingAbility ability, string? contextual)
+    {
+        string? caption = contextual ?? AbilitySourceActionDescription.Caption(found.Effect)
+            ?? AbilitySearchDescription.Action(found.Effect);
+        return ability.TriggeringDefeat is { } defeat && world.Windows.Current?.Occurrence.Defeats.Count > 1
+            ? $"{caption ?? found.Name} after {defeat.Title ?? EffectiveCards.Title(world.Cards[defeat.Card], world.Facts)} is defeated"
+            : caption;
     }
 
     private static string? Description(AbilityEffect effect, string? contextual) => contextual is not null

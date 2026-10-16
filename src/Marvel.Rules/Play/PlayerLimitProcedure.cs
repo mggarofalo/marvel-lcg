@@ -49,11 +49,12 @@ internal static class PlayerLimitProcedure
         if (ControlledAllies(world, player).Count > limit)
         {
             world.Agenda.Then(new PhaseStep(
-                Steps.ChooseAllyForLimit,
+                new PlayerLimitOperation(PlayerLimitKind.ChooseAllyForLimit),
                 world.Agenda.Current?.Round ?? 0,
                 0,
                 Seat: player,
-                Plan: true));
+                Plan: true
+            ));
         }
     }
 
@@ -94,7 +95,7 @@ internal static class PlayerLimitProcedure
         World world, ICardFacts facts, PhaseStep step, Decision input,
         List<GameEvent> events)
     {
-        var offered = step.ProcedureCandidates ?? [];
+        var offered = step.Require<PlayerLimitOperation>().Candidates ?? [];
         var card = RestrictedCards(world, facts, step.Seat)
             .FirstOrDefault(candidate => candidate.ObjectId == input.Affordance
                 && offered.Contains(candidate.ObjectId))
@@ -108,8 +109,11 @@ internal static class PlayerLimitProcedure
         {
             DefeatProcedure.ScheduleProcedureChoice(world, step with
             {
-                ProcedureCandidates = [.. remaining.Select(candidate => candidate.ObjectId)],
-                OccurrenceId = null,
+                Operation = step.Require<PlayerLimitOperation>() with
+                {
+                    Candidates = [.. remaining.Select(candidate => candidate.ObjectId)]
+                },
+                OccurrenceId = null
             });
         }
     }

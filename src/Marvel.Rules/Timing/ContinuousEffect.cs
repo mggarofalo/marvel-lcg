@@ -42,6 +42,9 @@ public sealed record ContinuousEffect(
     Duration? Lasts = null,
     string Scope = "")
 {
+    /// <summary>The original in-play copy named by a delayed discard.</summary>
+    public int? TargetIncarnation { get; init; }
+
     /// <summary>Whether the numeric amount defines the base or modifies it.</summary>
     public ContinuousValueRole ValueRole { get; init; }
 

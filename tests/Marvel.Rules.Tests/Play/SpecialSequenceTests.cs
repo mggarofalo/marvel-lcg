@@ -27,10 +27,9 @@ public sealed class SpecialSequenceTests
         var abilities = new Recorder();
 
         world.Agenda.Add(new PhaseStep(
-            Steps.ResolveSpecial, 1, 1, Subject: first.ObjectId, Seat: 0, Plan: true));
+            new AbilityContinuationAgendaOperation(AbilityContinuationStage.Special), 1, 1, Subject: first.ObjectId, Seat: 0, Plan: true));
         world.Agenda.Add(new PhaseStep(
-            Steps.ResolveSpecial, 1, 2, Subject: second.ObjectId, Seat: 0, Plan: true,
-            FinalStep: true));
+            new AbilityContinuationAgendaOperation(AbilityContinuationStage.Special) { FinalSpecial = true }, 1, 2, Subject: second.ObjectId, Seat: 0, Plan: true));
 
         Assert.Null(Sequence.Work(world, facts, abilities, []));
 
@@ -50,8 +49,7 @@ public sealed class SpecialSequenceTests
             "first", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         var abilities = new Recorder();
         var step = new PhaseStep(
-            Steps.ChooseOption, 1, 1, Index: 1, Subject: source.ObjectId, Seat: 0,
-            Tier: AbilityType.Special, FinalStep: true);
+            new AbilityContinuationAgendaOperation(AbilityContinuationStage.Choose) { FinalSpecial = true }, 1, 1, Index: 1, Subject: source.ObjectId, Seat: 0);
 
         AgendaProcedures.Apply(world, facts, abilities, step, []);
         AgendaProcedures.Answer(
@@ -85,18 +83,16 @@ public sealed class SpecialSequenceTests
         }
 
         public override Prompt? Choosing(
-            World world, Card source, int player, int stoppedAt,
-            AbilityType? tier, bool finalStep)
+            World world, PhaseStep step)
         {
-            ChoosingWasFinal = finalStep;
+            ChoosingWasFinal = step.Require<AbilityContinuationAgendaOperation>().FinalSpecial;
             return null;
         }
 
         public override IReadOnlyList<GameEvent> Chose(
-            World world, Card source, int player, int stoppedAt, Decision input,
-            AbilityType? tier, bool finalStep)
+            World world, PhaseStep step, Decision input)
         {
-            ChoseWasFinal = finalStep;
+            ChoseWasFinal = step.Require<AbilityContinuationAgendaOperation>().FinalSpecial;
             return [];
         }
     }

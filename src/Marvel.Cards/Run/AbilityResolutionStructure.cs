@@ -108,7 +108,7 @@ internal static class AbilityResolutionStructure
             && leaf.Frames[^1] is SequenceFrame frame)
         {
             execution.RunStructuralLeaf(leaf, cast);
-            var observation = new AbilityStructuralObservation(cast.Suspended);
+            var observation = new AbilityStructuralObservation(cast.Suspended, Outcome: cast.CompletedOutcome);
             if (!cast.Suspended)
                 cast.SetContinuation(outerContinuation);
             transition = AbilityStructuralFlowExecution.NextSequence(
@@ -154,7 +154,7 @@ internal static class AbilityResolutionStructure
             && leaf.Frames[^1] is ForEachFrame frame)
         {
             execution.RunStructuralLeaf(leaf, cast);
-            var observation = new AbilityStructuralObservation(cast.Suspended);
+            var observation = new AbilityStructuralObservation(cast.Suspended, Outcome: cast.CompletedOutcome);
             if (!cast.Suspended)
                 cast.SetContinuation(outerContinuation);
             transition = AbilityStructuralFlowExecution.NextForEach(
@@ -202,7 +202,7 @@ internal static class AbilityResolutionStructure
             }
 
             execution.RunStructuralLeaf(leaf, cast);
-            var observation = new AbilityStructuralObservation(cast.Suspended);
+            var observation = new AbilityStructuralObservation(cast.Suspended, Outcome: cast.CompletedOutcome);
             if (!cast.Suspended)
                 cast.SetContinuation(outerContinuation);
             transition = AbilityStructuralFlowExecution.NextEachTime(
@@ -248,6 +248,8 @@ internal static class AbilityResolutionStructure
     internal static void ApplyStructuralCompletion(this AbilityResolutionExecution execution,
         AbilityStructuralTransition transition, AbilityResolutionState cast)
     {
+        if (transition is Complete completion)
+            cast.CompletedOutcome = completion.Outcome ?? AbilityStructuralOutcome.None;
         switch (transition)
         {
             case Complete { Admission: { } admission }:

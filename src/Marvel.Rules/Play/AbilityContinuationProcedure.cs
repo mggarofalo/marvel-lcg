@@ -16,12 +16,10 @@ internal static class AbilityContinuationProcedure
                 break;
             case Steps.ResolveSpecial:
                 ActivityBatches.Append(events, world.ContinuationAbilities.ResolveSpecial(
-                    world, world.Cards[step.Subject], step.Seat, step.FinalStep));
+                    world, world.Cards[step.Subject], step.Seat, step.Require<AbilityContinuationAgendaOperation>().FinalSpecial));
                 break;
             case Steps.ChooseOption:
-                return world.ContinuationAbilities.Choosing(
-                    world, world.Cards[step.Subject], step.Seat, step.Index, step.Tier,
-                    step.FinalStep, step.EachPlayerFrame, step.FinalPlayer);
+                return world.ContinuationAbilities.Choosing(world, step);
             case Steps.OrderEachPlayer:
                 return EachPlayerEffects.Ordering(world, step);
             case Steps.ResolveEachPlayer:
@@ -42,9 +40,7 @@ internal static class AbilityContinuationProcedure
         switch (step.What)
         {
             case Steps.ChooseOption:
-                ActivityBatches.Append(events, world.ContinuationAbilities.Chose(
-                    world, world.Cards[step.Subject], step.Seat, step.Index, input, step.Tier,
-                    step.FinalStep, step.EachPlayerFrame, step.FinalPlayer, step.Trigger));
+                ActivityBatches.Append(events, world.ContinuationAbilities.Chose(world, step, input));
                 break;
             case Steps.OrderEachPlayer:
                 EachPlayerEffects.Ordered(world, step, input);

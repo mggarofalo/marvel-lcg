@@ -13,4 +13,6 @@ public sealed record StoredAuthority(
     [property: JsonRequired] string Verifier,
     [property: JsonRequired] IReadOnlyList<int> Seats,
     [property: JsonRequired] bool Owner,
-    [property: JsonRequired] bool Invitation);
+    [property: JsonRequired] bool Invitation,
+    [property: JsonRequired] StoredEntryReceipt? Entry = null,
+    [property: JsonRequired] bool Revoked = false);

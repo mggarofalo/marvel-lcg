@@ -1,5 +1,5 @@
+using Marvel.Protocol;
 using Godot;
-using Marvel.Server;
 using Marvel.View;
 
 namespace Marvel.Godot;

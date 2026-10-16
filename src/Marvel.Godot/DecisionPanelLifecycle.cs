@@ -1,3 +1,4 @@
+using Marvel.Rules.Play;
 using Marvel.Decisions;
 using Marvel.Rules.Prompts;
 using Marvel.View;
@@ -66,7 +67,7 @@ internal sealed class DecisionPanelLifecycle
     internal TableDraftBinding Bind(DecisionComposer composer, int generation) =>
         new(composer, generation, revision, CanMutate);
 
-    internal void NotifySubmitted(EngineDecision decision, int generation)
+    internal void NotifySubmitted(Decision decision, int generation)
     {
         if (CanMutate(generation, revision) && TrySubmit())
         {
@@ -86,7 +87,7 @@ internal sealed class DecisionPanelLifecycle
         panel.RaiseDraftStarted();
         panel.NotifyAnchorFocused([option.AnchorId]);
         if (DirectCommitment.IsReady(composer)
-            && composer.TryBuild(out EngineDecision? decision, out _))
+            && composer.TryBuild(out Decision? decision, out _))
         {
             NotifySubmitted(decision!, generation);
             return;

@@ -21,19 +21,21 @@ internal sealed record AttackDamageAftermath(
         if (outcome == Damage.Outcome.Suspended)
         {
             world.Agenda.Then(new PhaseStep(
-                Steps.FinishAttackDamage,
+                new AttackAftermathOperation(
+                    Attacker: Attacker.ObjectId,
+                    Source: Source.ObjectId,
+                    Trigger: Trigger,
+                    TargetKind: TargetKind,
+                    Excess: Excess,
+                    Overkill: Overkill,
+                    CanRetaliate: CanRetaliate
+                ),
                 world.Agenda.Current?.Round ?? 0,
                 5,
                 Subject: Target.ObjectId,
                 Seat: ControllingPlayer,
-                Plan: true,
-                Character: Attacker.ObjectId,
-                ProcedureSource: Source.ObjectId,
-                ProcedureTrigger: Trigger,
-                ProcedureVerb: TargetKind.ToString(),
-                ProcedureAmount: Excess,
-                ProcedureFlag: Overkill,
-                FinalStep: CanRetaliate, ActivationId: ActivationId ?? -1));
+                Plan: true
+            ) { ActivationId = ActivationId ?? -1 });
         }
         else if (CanRetaliate)
             DamageAttacks.Retaliate(world, facts, Target, Attacker, Trigger, events);
@@ -43,19 +45,19 @@ internal sealed record AttackDamageAftermath(
         PhaseStep step, List<GameEvent> events)
     {
         var target = world.Cards[step.Subject];
-        var attacker = world.Cards[step.Character];
-        var source = world.Cards[step.ProcedureSource];
+        var attacker = world.Cards[step.Require<AttackAftermathOperation>().Attacker];
+        var source = world.Cards[step.Require<AttackAftermathOperation>().Source];
         bool defeated = !DeckTypes.IsInPlay(target.Area.Type);
-        if (defeated && step.ProcedureFlag && step.ProcedureAmount > 0)
+        if (defeated && step.Require<AttackAftermathOperation>().Overkill && step.Require<AttackAftermathOperation>().Excess > 0)
         {
             var aftermath = new AttackDamageAftermath(attacker, source, target,
-                Enum.Parse<CardKind>(step.ProcedureVerb, ignoreCase: false),
-                step.Seat, step.ProcedureAmount, step.ProcedureFlag,
-                step.FinalStep, step.ProcedureTrigger, step.ActivationId < 0 ? null : step.ActivationId);
+                step.Require<AttackAftermathOperation>().TargetKind,
+                step.Seat, step.Require<AttackAftermathOperation>().Excess, step.Require<AttackAftermathOperation>().Overkill,
+                step.Require<AttackAftermathOperation>().CanRetaliate, step.Require<AttackAftermathOperation>().Trigger, step.ActivationId < 0 ? null : step.ActivationId);
             aftermath.Spill(world, facts, events);
         }
-        if (step.FinalStep)
-            DamageAttacks.Retaliate(world, facts, target, attacker, step.ProcedureTrigger, events);
+        if (step.Require<AttackAftermathOperation>().CanRetaliate)
+            DamageAttacks.Retaliate(world, facts, target, attacker, step.Require<AttackAftermathOperation>().Trigger, events);
     }
 
     /// <summary>Excess damage goes to the defeated ally's controller or the villain.</summary>

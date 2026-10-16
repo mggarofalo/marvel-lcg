@@ -24,40 +24,10 @@ namespace Marvel.Rules.Play;
 /// when no rule can distinguish the allocation.
 /// </param>
 /// <remarks>
-/// <para>
-/// Five fields and no more: <c>id</c>, <c>targets</c>, <c>resources</c>,
-/// <c>values</c> and <c>allocations</c>.
-/// A decline is the absence of an id rather than another field, because
-/// declining is choosing nothing and not a choice of its own kind.
-/// </para>
-/// <para>
-/// <b>Paying is a decision, and it is not the targeting decision.</b>
-/// <c>rr:initiating-abilities</c> separates them into different steps — step 2
-/// checks play restrictions, step 3 determines the cost, step 5 pays it — and
-/// the numbers say the same: <c>docs/affordances.md</c> measures 22.1% of priced
-/// affordances offering five ways to pay and 21.6% offering six, against 7.3%
-/// offering exactly one. <c>CostOption.Sources</c> has modelled the menu since
-/// the original investigation; this is where the answer goes.
-/// </para>
-/// <para>
-/// It is also not new information. <c>tools/affordances/verify.py</c> already
-/// holds every recorded payment against that menu — "every generator it spent is
-/// in <c>CostOption.Sources</c>" — so a C# engine without this field could not
-/// replay a recorded payment at all, whatever else changed.
-/// </para>
-/// <para>
-/// <b>The order of <paramref name="Targets"/> is kept.</b> Several rules care
-/// which was chosen first — the order minions activate in, the order cards go
-/// back on top of a deck — so collapsing this to a set would lose a decision the
-/// player made.
-/// </para>
-/// <para>
-/// <b>Declining is not nothing.</b> Answering the main-turn prompt with a
-/// decline ends the turn, which is progress in the game's terms even though the
-/// board is untouched at the instant the next prompt is asked. Measured over
-/// 2,966 recorded transitions, 1,031 left the digest unchanged and 320 of those
-/// were declines. See <c>docs/no-op-decisions.md</c>.
-/// </para>
+/// Handles are valid only for their issuing prompt. Targets retain player order;
+/// payment names generators and the allocation of their icons to cost components.
+/// The engine chooses a negative handle to represent decline. A decline carries
+/// no selections or payment and is accepted only by a cancellable prompt.
 /// </remarks>
 public sealed record Decision(
     int Affordance,
@@ -83,7 +53,7 @@ public sealed record Decision(
     public IReadOnlyList<ResourceAllocation> Allocated => Allocations ?? [];
 
     private static IReadOnlyDictionary<string, long> EmptyValues { get; } =
-        new Dictionary<string, long>(StringComparer.Ordinal);
+        System.Collections.Immutable.ImmutableDictionary<string, long>.Empty;
 
     /// <summary>Takes an affordance with no targets.</summary>
     /// <param name="affordance">The affordance's id, from the prompt that offered it.</param>

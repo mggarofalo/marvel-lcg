@@ -26,7 +26,7 @@ public sealed class FreeInterruptCommitmentTests
         Card scheme = world.CreateCard("01097b", world.AreaOf(DeckType.MainSchemesArea));
         world.CreateCard("01087", seat.Deck);
         Card interrupt = world.CreateCard("01061", seat.Hand);
-        world.Agenda.Add(new PhaseStep(Steps.PlaceThreat, 1, 1));
+        world.Agenda.Add(new PhaseStep(new ThreatStageOperation(ThreatStageKind.PlaceThreat), Round: 1, Number: 1));
         Prompt prompt = Sequence.Work(world, cards, runner, [])!;
         var composer = new DecisionComposer(prompt);
         Affordance offer = Assert.Single(prompt.Affordances);
@@ -36,11 +36,15 @@ public sealed class FreeInterruptCommitmentTests
         composer.SelectAffordance(offer.Id);
 
         Assert.True(DirectCommitment.IsReady(composer));
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.True(composer.TryBuild(out Decision? decision, out _));
         Assert.Empty(composer.Resources);
         Sequence.Answer(world, cards, runner, prompt, Decision.Take(decision!.Affordance), []);
         Assert.Equal(1, seat.IdentityCard.Damage);
         Assert.False(scheme.Tokens.ContainsKey("k_threat"));
+        // The replacement damage owns its response window. Walk it before
+        // the event's continuation completes and discards the played card.
+        Assert.Null(Sequence.Work(world, cards, runner, []));
         Assert.Equal(DeckType.DiscardPile, interrupt.Area.Type);
+        Assert.False(world.Agenda.IsBusy);
     }
 }

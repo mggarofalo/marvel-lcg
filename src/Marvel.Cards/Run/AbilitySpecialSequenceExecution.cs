@@ -19,13 +19,15 @@ internal static class AbilitySpecialSequenceExecution
         // resolving the final Special ends it before any new upgrade joins.
         // No effect-legality filter removes an unresolved upgrade from that sequence.
         if (command.Card is { } id)
-            cast.World.Agenda.Then(new PhaseStep(Steps.ResolveSpecial, round, 1,
-                Subject: id, Seat: cast.Player, Plan: true, FinalStep: command.FinalStep));
+            cast.World.Agenda.Then(new PhaseStep(new AbilityContinuationAgendaOperation(AbilityContinuationStage.Special)
+                { FinalSpecial = command.FinalStep }, round, 1, Subject: id, Seat: cast.Player, Plan: true));
         if (command.FinalStep) Clear(cast);
-        else cast.Results[AbilitySpecialSequence.Repeat] = 1;
-        var capture = execution.Capture(cast, cast.AbilityOrdinal);
-        var continuation = AbilityContinuationCodec.Step(
-            AbilityContinuationScheduling.ForEffectProcedure(capture), Steps.ResumeAbility, round, plan: true);
+        var capture = execution.Capture(cast, cast.AbilityOrdinal) with
+        {
+            Reason = command.FinalStep ? AbilityResumeReason.EffectProcedure : AbilityResumeReason.RepeatSpecial,
+        };
+        var continuation = AbilityContinuations.Step(
+            capture, AbilityContinuationStage.Resume, round, plan: true);
         cast.World.Agenda.Then(continuation);
         cast.ResolveEffect();
         cast.Suspend();
@@ -34,8 +36,7 @@ internal static class AbilitySpecialSequenceExecution
     private static void Clear(AbilityResolutionState cast)
     {
         foreach (string key in cast.Results.Keys.Where(key =>
-                     key.StartsWith(AbilitySpecialSequence.ResolvedPrefix, StringComparison.Ordinal)
-                     || key == AbilitySpecialSequence.Repeat).ToArray())
+                     key.StartsWith(AbilitySpecialSequence.ResolvedPrefix, StringComparison.Ordinal)).ToArray())
             cast.Results.Remove(key);
     }
 }

@@ -99,7 +99,7 @@ internal static class CoreTranscriptDeckAndReveal
             DeckType.DealtEncounterCardsDeck, PlayArea.Of(seat));
         World.MoveToTop(card, queue);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.RevealEncounterCard, Round: 1, Number: 4,
+            new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4,
             Subject: card.ObjectId, Seat: seat));
         context.Events.Clear();
         SetPendingPrompt(context, Sequence.Work(
@@ -118,7 +118,7 @@ internal static class CoreTranscriptDeckAndReveal
             DeckType.DealtEncounterCardsDeck, PlayArea.Of(seat));
         World.MoveToTop(card, queue);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.RevealEncounterCard, Round: 1, Number: 4,
+            new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4,
             Subject: card.ObjectId, Seat: seat));
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
@@ -139,7 +139,7 @@ internal static class CoreTranscriptDeckAndReveal
             DeckType.DealtEncounterCardsDeck, PlayArea.Of(seat));
         World.MoveToTop(card, queue);
         context.World.Agenda.Add(new PhaseStep(
-            Steps.RevealEncounterCard, Round: 1, Number: 4,
+            new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4,
             Subject: card.ObjectId, Seat: seat));
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
@@ -157,12 +157,11 @@ internal static class CoreTranscriptDeckAndReveal
         context.CurrentPrompt = "<none>";
         Threat.Schedule(
             context.World,
-            scheme,
-            villain,
+            new ThreatBatch([scheme], villain,
             Number(match, "count", step),
             ThreatCause.CardAbility,
             "behavioral transcript",
-            Seat(match, step));
+            Seat(match, step)));
         FinishAgendaAccepting(context, step, match.Groups["label"].Value);
     }
 
@@ -177,12 +176,11 @@ internal static class CoreTranscriptDeckAndReveal
         context.CurrentPrompt = "<none>";
         Threat.Schedule(
             context.World,
-            scheme,
-            villain,
+            new ThreatBatch([scheme], villain,
             Number(match, "count", step),
             ThreatCause.EnemyScheme,
             "behavioral transcript",
-            Seat(match, step));
+            Seat(match, step)));
         SetPendingPrompt(context, Sequence.Work(
             context.World, context.Cards, context.World.Abilities, context.Events));
     }

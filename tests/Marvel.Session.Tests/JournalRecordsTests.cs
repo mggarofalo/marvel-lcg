@@ -242,47 +242,6 @@ public sealed class JournalRecordsTests
     }
 
     [Fact]
-    public void SchemaTwoPromptReaderVerifiesAliasesBeforeCanonicalizing()
-    {
-        PromptRecord current = PromptRecord.From(Prompt(new Affordance(
-            4,
-            "Action",
-            3,
-            1,
-            "Pay",
-            new TargetRequest([20], 1, 1, Groups: [[20]]),
-            [new CostOption(
-                20,
-                "1",
-                Sources: [new ResourceSource(8, "M")],
-                Components: [new ResourceCost("1", ["mental"], Printed: true)])])));
-        JsonObject legacy = SchemaTwoPrompt(current);
-
-        PromptRecord parsed = SchemaTwoPromptJson.Read(
-            JsonSerializer.SerializeToElement(legacy, JournalJson.Options));
-
-        Assert.Equal(
-            JsonSerializer.Serialize(current, JournalJson.Options),
-            JsonSerializer.Serialize(parsed, JournalJson.Options));
-        JsonObject oldestSchemaTwo = Assert.IsType<JsonObject>(legacy.DeepClone());
-        JsonObject oldestAffordance = oldestSchemaTwo["affordances"]![0]!.AsObject();
-        JsonObject oldestTarget = oldestAffordance["targets"]!.AsObject();
-        _ = oldestTarget.Remove("allow_repeated");
-        _ = oldestTarget.Remove("maximum_occurrences");
-        _ = oldestTarget.Remove("details");
-        _ = oldestAffordance["costs"]![0]!.AsObject().Remove("declaration_sensitive");
-        PromptRecord oldestParsed = SchemaTwoPromptJson.Read(
-            JsonSerializer.SerializeToElement(oldestSchemaTwo, JournalJson.Options));
-        Assert.Equal(
-            JsonSerializer.Serialize(current, JournalJson.Options),
-            JsonSerializer.Serialize(oldestParsed, JournalJson.Options));
-
-        legacy["affordances"]![0]!["costs"]![0]!["generators"] = new JsonArray();
-        Assert.Throws<JsonException>(() => SchemaTwoPromptJson.Read(
-            JsonSerializer.SerializeToElement(legacy, JournalJson.Options)));
-    }
-
-    [Fact]
     public void ReplayPinsIndependentTargetCostAndUnchosenAffordanceFields()
     {
         var asked = Prompt(
@@ -357,48 +316,6 @@ public sealed class JournalRecordsTests
             Assert.Throws<ReplayDivergenceException>(() =>
                 JournalReplay.RequirePrompt(mutation, asked, "prompt"));
         }
-    }
-
-    internal static JsonObject SchemaTwoPrompt(PromptRecord prompt)
-    {
-        JsonObject root = Assert.IsType<JsonObject>(JsonSerializer.SerializeToNode(
-            prompt, JournalJson.Options));
-        foreach (JsonNode? affordanceNode in root["affordances"]!.AsArray())
-        {
-            AddSchemaTwoAffordance(affordanceNode!.AsObject());
-        }
-
-        return root;
-    }
-
-    private static void AddSchemaTwoAffordance(JsonObject affordance)
-    {
-        _ = affordance.Remove("anchor_kind");
-        if (affordance["targets"] is JsonObject target)
-            target["is_grouped"] = target["groups"] is JsonArray { Count: > 0 };
-        foreach (JsonNode? cost in affordance["costs"]!.AsArray())
-            AddSchemaTwoCost(cost!.AsObject());
-    }
-
-    private static void AddSchemaTwoCost(JsonObject cost)
-    {
-        RemoveRepeatedResources(cost);
-        cost["has_alternative"] = cost["or_cost"]!.GetValue<string>().Length > 0;
-        cost["generators"] = cost["sources"]?.DeepClone() ?? new JsonArray();
-        cost["variable_requests"] = cost["variables"]?.DeepClone() ?? new JsonArray();
-        cost["resource_costs"] = cost["components"]?.DeepClone()
-            ?? new JsonArray(new JsonObject
-            {
-                ["cost"] = cost["cost"]!.GetValue<string>(),
-                ["rule"] = cost["rule"]?.DeepClone(),
-                ["printed"] = false,
-            });
-    }
-
-    private static void RemoveRepeatedResources(JsonObject cost)
-    {
-        foreach (JsonNode? component in cost["components"]?.AsArray() ?? [])
-            _ = component!.AsObject().Remove("repeated_resource");
     }
 
     private static int Count(string value, string needle) =>

@@ -18,11 +18,18 @@ internal static class AbilityWindowResolution
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(occurrence);
+        var seen = new HashSet<int>();
+        int next = world.Cards.Count;
         return [.. AbilityWindowAdmission.Waiting(
                 execution.program, world, occurrence, window, execution.resourceAbilities)
             .Select(candidate => new PendingAbility(
                 candidate.Card.ObjectId, candidate.Ability.Trigger.Timing,
-                candidate.Controller, candidate.Ordinal) { Would = candidate.Ability.Trigger.Would })];
+                candidate.Controller, candidate.Ordinal)
+            {
+                Would = candidate.Ability.Trigger.Would,
+                TriggeringDefeat = candidate.TriggeringDefeat,
+                OfferId = seen.Add(candidate.Card.ObjectId) ? null : next++,
+            })];
     }
 
     /// <inheritdoc/>
@@ -58,7 +65,8 @@ internal static class AbilityWindowResolution
         // that player's identity, which is about who acts, not about who the
         // word points at.
         int resolving = ability.Player >= 0 ? ability.Player : occurrence.Player;
-        var cast = CreateAbilityState(world, card, occurrence, resolving, events, found);
+        var cast = CreateAbilityState(world, card, occurrence, resolving, events, found)
+            with { TriggeringDefeat = ability.TriggeringDefeat };
         EnsureAvailable(execution, world, card, found, occurrence);
         if (!CanPayAbility(execution, world, card, found, resolving)) return events;
         if (!CanInitiateAbility(execution, card, found, resolving, cast)) return events;

@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using Marvel.Decisions;
 using Marvel.Rules.Play;
 using Xunit;
@@ -29,7 +31,7 @@ public sealed class QueuedRequestIsolationTests
             ResourceAllocation[] allocations = [new(2, 0, "E")];
             var request = new EngineRequest(EngineProtocol.Version, "second", "synthetic", "game",
                 Game: new GameSpecification("rhino", heroes, modularSets, 7),
-                Decision: new EngineDecision(7, targets, resources, values, allocations), Order: order);
+                Decision: new Decision(7, targets, resources, values, allocations), Order: order);
             byte[] original = EngineJson.Write(request);
 
             var second = transport.ExchangeAsync(request, TestContext.Current.CancellationToken).AsTask();

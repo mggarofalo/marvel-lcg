@@ -140,8 +140,7 @@ public sealed class PhaseEndTests
         var waiting = new Offering(
             new PendingAbility(0, AbilityType.ForcedResponse, 0));
 
-        world.Agenda.Add(new PhaseStep(
-            Steps.EndPlayerPhase, Round: 1, Number: 5));
+        world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndPlayerPhase), Round: 1, Number: 5));
         Sequence.Finish(world, new Facts(), waiting, []);
 
         Assert.Equal(1, waiting.Resolved);
@@ -202,7 +201,7 @@ public sealed class PhaseEndTests
     /// <summary>Schedules step 6 and walks it, windows and all.</summary>
     private static void EndRound(World world, ICardAbilities abilities)
     {
-        world.Agenda.Add(new PhaseStep(Steps.EndVillainPhase, Round: 1, Number: 6));
+        world.Agenda.Add(new PhaseStep(new PhaseTransitionOperation(PhaseTransitionKind.EndVillainPhase), Round: 1, Number: 6));
         Sequence.Finish(world, new Facts(), abilities, []);
     }
 

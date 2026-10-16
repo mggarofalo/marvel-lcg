@@ -206,7 +206,7 @@ public sealed class KeywordVictorySiblingTests : KeywordTestBase
         world.Seats[0].IdentityCard.TurnTo("hero");
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
-        Reveal.Quickstrike(world, printed, minion, 0, round: 1);
+        MinionEntryActivations.Quickstrike(world, printed, minion, 0, round: 1);
         Undefended(world, printed);
         Assert.Equal(3, world.Seats[0].IdentityCard.Damage);
     }
@@ -221,7 +221,7 @@ public sealed class KeywordVictorySiblingTests : KeywordTestBase
         var printed = new Printed().With("minion", ("Quickstrike", "1"), ("ATK", "3"), ("HP", "3"));
         var world = Board(printed);
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-        Reveal.Quickstrike(world, printed, minion, 0, round: 1);
+        MinionEntryActivations.Quickstrike(world, printed, minion, 0, round: 1);
         Assert.False(world.Agenda.IsBusy);
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
     }
@@ -242,7 +242,7 @@ public sealed class KeywordVictorySiblingTests : KeywordTestBase
         var arriving = world.CreateCard("acolyte", engaged);
         KeepEncounterDeckLive(world);
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
-        Reveal.Teamwork(world, printed, arriving, 0, round: 1);
+        MinionEntryActivations.Teamwork(world, printed, arriving, 0, round: 1);
         Undefended(world, printed);
         Assert.Equal(2, world.Seats[0].IdentityCard.Damage);
     }

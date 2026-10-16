@@ -78,7 +78,8 @@ internal static class CoreTranscriptTurnActions
         }
 
         context.Events.Clear();
-        Resolution resolution = game.Resolve(Decision.Decline);
+        Resolution resolution = game.Resolve(Decision.Take(
+            game.Pending!.Affordances.Single(offer => offer.Verb == Game.ResolveMulligans).Id));
         context.Events.AddRange(resolution.Events);
         SetPendingPrompt(context, resolution.Prompt);
     }

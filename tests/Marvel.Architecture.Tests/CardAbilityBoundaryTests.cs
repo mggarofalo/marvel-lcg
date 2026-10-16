@@ -75,7 +75,7 @@ public sealed class CardAbilityBoundaryTests
     }
 
     [Fact]
-    public void CompatibilityAggregateAppearsOnlyAtCompositionAndPublicAdapters()
+    public void AbilityAggregateAppearsOnlyAtCompositionAndPublicAdapters()
     {
         string[] actual = typeof(Game).Assembly.GetTypes()
             .SelectMany(type => type.GetMethods(

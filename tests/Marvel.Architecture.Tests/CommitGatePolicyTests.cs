@@ -7,12 +7,17 @@ namespace Marvel.Architecture.Tests;
 public sealed class CommitGatePolicyTests
 {
     [Fact]
-    public void CompleteReleaseBuildPrecedesTestsThatConsumeIt()
+    public void LocalValidationBuildsBeforeTestsWhileCommitsRunPolicyChecks()
     {
         using JsonDocument configuration = JsonDocument.Parse(File.ReadAllText(
             RepositoryPaths.Repository(".husky", "task-runner.json")));
         JsonElement[] tasks = configuration.RootElement.GetProperty("tasks")
             .EnumerateArray().ToArray();
+        Assert.Equal(["source-layout", "cyclomatic-complexity", "file-length"],
+            tasks.Where(task => task.GetProperty("group").GetString() == "pre-commit")
+                .Select(Name));
+        tasks = tasks.Where(task => task.GetProperty("group").GetString() == "validation")
+            .ToArray();
         int build = Array.FindIndex(tasks, task => Name(task) == "release-build");
         int tests = Array.FindIndex(tasks, task => Name(task) == "all-tests");
         int native = Array.FindIndex(tasks, task => Name(task) == "native-smoke");
@@ -28,7 +33,7 @@ public sealed class CommitGatePolicyTests
         Assert.Contains("start.ArgumentList.Add(\"Marvel.slnx\");", Script("all-tests"));
         Assert.Contains("start.ArgumentList.Add(\"--no-build\");", Script("all-tests"));
         Assert.Contains("godot-smoke.ps1", Script("native-smoke"));
-        Assert.DoesNotContain("Representative", Script("native-smoke"),
+        Assert.Contains("start.ArgumentList.Add(\"-Representative\");", Script("native-smoke"),
             StringComparison.Ordinal);
     }
 

@@ -222,6 +222,9 @@ public static class Steps
     /// <summary>Resume persisted card text after its enemy activations complete.</summary>
     public const string ResumeAbility = "ResumeAbility";
 
+    /// <summary>A nested card effect's resulting response window.</summary>
+    public const string CardEffectResolved = "CardEffectResolved";
+
     /// <summary>
     /// The first player orders the frames of an effect that resolves for each
     /// player — <c>rr:each-player.1</c>.

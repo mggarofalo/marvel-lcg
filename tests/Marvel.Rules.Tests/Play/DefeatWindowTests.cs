@@ -148,20 +148,18 @@ public sealed class DefeatWindowTests
 
     [Rule("rr:triggering-condition.1")]
     [Fact]
-    public void TwoDefeatsInOneOccurrenceRefuseToNameTheDefeatedCard()
+    public void MultipleDefeatsRequireAnExplicitSingularBinding()
     {
-        // One effect that defeats two characters leaves nothing in the rules to
-        // say which of them a response is about: `rr:triggering-condition.1`
-        // lets the ability trigger once, and once is the wrong number for two.
-        // Refused where the ambiguity bites, so that the multiple defeat itself
-        // still resolves.
+        // Each defeat is a separate triggering instance in the shared window.
+        // A singular reference requires the chosen instance; reading the window
+        // alone cannot select it on behalf of the resolving ability.
         var occurrence = new Occurrence(1, [Steps.CardDefeated]);
-        occurrence.Also(new Defeated(7, -1, "test"));
-        occurrence.Also(new Defeated(8, -1, "test"));
+        occurrence.Also(new Defeated(7, -1, "test") { Kind = CardKind.Minion });
+        occurrence.Also(new Defeated(8, -1, "test") { Kind = CardKind.Minion });
 
         Assert.Equal(2, occurrence.Defeats.Count);
         var thrown = Assert.Throws<RulesNotImplementedException>(() => occurrence.Defeat);
-        Assert.Contains("2 cards were defeated", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("requires its exact triggering instance", thrown.Message, StringComparison.Ordinal);
     }
 
     [Rule("rr:triggering-condition.2")]
@@ -190,8 +188,8 @@ public sealed class DefeatWindowTests
         // and `rr:triggering-condition.1` then lets each answering ability
         // trigger once.
         var occurrence = new Occurrence(1, ["WhenDamageDealt"]);
-        occurrence.Also(new Defeated(7, -1, "test"));
-        occurrence.Also(new Defeated(8, -1, "test"));
+        occurrence.Also(new Defeated(7, -1, "test") { Kind = CardKind.Minion });
+        occurrence.Also(new Defeated(8, -1, "test") { Kind = CardKind.Minion });
 
         Assert.Equal(["WhenDamageDealt", Steps.CardDefeated], occurrence.Conditions);
     }

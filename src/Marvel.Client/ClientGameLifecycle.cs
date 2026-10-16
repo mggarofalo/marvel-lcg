@@ -1,5 +1,5 @@
-using Marvel.Decisions;
-using Marvel.Server;
+using Marvel.Protocol;
+using Marvel.Rules.Play;
 
 namespace Marvel.Client;
 
@@ -15,6 +15,8 @@ public sealed class ClientGameLifecycle
     private long generation;
     private bool busy;
     private ClientStartupError? uncertain;
+    private LocalGameClient? entryRecoveryClient;
+    private ClientEntryAttempt? entryRecovery;
 
     /// <summary>The latest complete authorized table, including its revision and history.</summary>
     public EngineResponse? CurrentGame { get; private set; }
@@ -27,12 +29,45 @@ public sealed class ClientGameLifecycle
     /// <summary>Whether setup discovery or entry is in progress.</summary>
     public bool EntryPending { get; private set; }
 
+    /// <summary>The connection retained while an entry response remains uncertain.</summary>
+    public LocalGameClient? EntryRecoveryClient => entryRecoveryClient;
+    /// <summary>The exact entry claim retained for retry.</summary>
+    public ClientEntryAttempt? EntryRecovery => entryRecovery;
+
+    /// <summary>Takes ownership of a connection only when an uncertain entry can be recovered.</summary>
+    public bool RetainEntry(long ticket, LocalGameClient connection, ClientEntryResult result)
+    {
+        lock (gate)
+        {
+            if (!IsCurrentEntry(ticket)) return false;
+            if (result.PendingEntry is null)
+            {
+                if (!result.Succeeded)
+                {
+                    entryRecoveryClient?.Dispose();
+                    entryRecoveryClient = null;
+                    entryRecovery = null;
+                }
+                return false;
+            }
+            entryRecoveryClient = connection;
+            entryRecovery = result.PendingEntry;
+            return true;
+        }
+    }
+
     /// <summary>Invalidates old requests before beginning a new setup or entry attempt.</summary>
     public long BeginEntry()
     {
         lock (gate)
         {
+            LocalGameClient? retained = entryRecoveryClient;
+            ClientEntryAttempt? attempt = entryRecovery;
+            entryRecoveryClient = null;
+            entryRecovery = null;
             Detach();
+            entryRecoveryClient = retained;
+            entryRecovery = attempt;
             EntryPending = true;
             return generation;
         }
@@ -63,6 +98,8 @@ public sealed class ClientGameLifecycle
         lock (gate)
         {
             if (!IsCurrentEntry(ticket) || !entry.Succeeded) return false;
+            entryRecoveryClient = null;
+            entryRecovery = null;
             client = connection;
             session = entry.Session!;
             CurrentGame = entry.Response!;
@@ -78,6 +115,9 @@ public sealed class ClientGameLifecycle
         lock (gate)
         {
             generation = checked(generation + 1);
+            entryRecoveryClient?.Dispose();
+            entryRecoveryClient = null;
+            entryRecovery = null;
             client?.Dispose();
             client = null;
             session = null;
@@ -97,7 +137,7 @@ public sealed class ClientGameLifecycle
 
     /// <summary>Submits once, preserving a proven not-sent draft and never retrying uncertainty.</summary>
     public Task<ClientLifecycleUpdate?> ResolveAsync(
-        long revision, EngineDecision decision, CancellationToken cancellationToken = default) =>
+        long revision, Decision decision, CancellationToken cancellationToken = default) =>
         MutateAsync(revision, decision, cursor: null, cancellationToken);
 
     /// <summary>Submits one advertised undo without replaying an uncertain mutation.</summary>
@@ -106,7 +146,7 @@ public sealed class ClientGameLifecycle
         MutateAsync(CurrentGame?.Revision ?? -1, decision: null, cursor, cancellationToken);
 
     private async Task<ClientLifecycleUpdate?> MutateAsync(
-        long revision, EngineDecision? decision, int? cursor, CancellationToken cancellationToken)
+        long revision, Decision? decision, int? cursor, CancellationToken cancellationToken)
     {
         LocalGameClient connection;
         ClientSession authority;

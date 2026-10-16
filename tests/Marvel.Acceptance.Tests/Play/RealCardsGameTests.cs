@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
@@ -115,30 +116,11 @@ public sealed class RealCardsGameTests
     /// <summary>
     /// Declines everything that can be declined, and answers what cannot.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <c>Prompt.Cancellable</c> is the whole rule, rather than a list of
-    /// question kinds. A card resolving a <c>chooseCard</c> is not cancellable
-    /// -- <c>rr:choose-game-element</c> gives no way out, the ability is
-    /// resolving and one of the things it offers is going to happen -- and an
-    /// earlier version of this policy declined it because <c>Question.Element</c>
-    /// was not on its list. Crime Pays found that on seed 6.
-    /// </para>
-    /// <para>
-    /// The mulligan is the exception, and it is one because the engine has a
-    /// hole rather than because the rules do: the prompt is offered
-    /// non-cancellable and taking it is unimplemented, so declining is the
-    /// only answer it accepts. the original investigation.
-    /// </para>
-    /// </remarks>
     private static Decision Answer(Prompt asked)
     {
-        if (asked.Cancellable
-            || string.Equals(
-                asked.Affordances[0].Verb, Game.ResolveMulligans, StringComparison.Ordinal))
-        {
-            return Decision.Decline;
-        }
+        if (asked.Cancellable) return Decision.Decline;
+        if (asked.Affordances[0].Verb == Game.ResolveMulligans)
+            return Decision.Take(asked.Affordances[0].Id);
 
         var taken = asked.Affordances[0];
         return Decision.Take(

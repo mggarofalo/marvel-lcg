@@ -31,7 +31,7 @@ public sealed class ActionAbilityDynamicHealthATargetlessConfusedThwartTests
         Assert.Empty(thwart.Targets!.Legal);
         Assert.Equal(0, thwart.Targets.Min);
         Assert.Equal(0, thwart.Targets.Max);
-        Assert.Throws<RulesNotImplementedException>(() => game.Resolve(Decision.Take(thwart.Id, [world.TheCardIn(DeckType.VillainArea)!.ObjectId], [])));
+        Assert.Throws<ArgumentException>(() => game.Resolve(Decision.Take(thwart.Id, [world.TheCardIn(DeckType.VillainArea)!.ObjectId], [])));
         Assert.True(world.Seats[0].IdentityCard.Ready);
         Assert.True(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Confused));
         game.Resolve(Decision.Take(thwart.Id));

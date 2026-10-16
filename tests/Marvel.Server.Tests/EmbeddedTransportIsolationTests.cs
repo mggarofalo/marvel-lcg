@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using Marvel.Decisions;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -86,7 +88,7 @@ public sealed class EmbeddedTransportIsolationTests : TransportTestBase
             "sync", "isolated", opened.Capability!), TestContext.Current.CancellationToken);
         Assert.Equal(originalTargets, Assert.Single(synchronized.Prompt!.Affordances).Targets!.Legal);
         EngineResponse rejected = await transport.ExchangeAsync(EngineRequest.ResolveGame(
-            "inject", "isolated", opened.Capability!, new EngineDecision(option.Id, [injected]), opened.Revision),
+            "inject", "isolated", opened.Capability!, new Decision(option.Id, [injected]), opened.Revision),
             TestContext.Current.CancellationToken);
         Assert.Equal("invalid_decision", rejected.Error?.Code);
         EngineResponse unchanged = await transport.ExchangeAsync(EngineRequest.SyncGame(
@@ -100,7 +102,7 @@ public sealed class EmbeddedTransportIsolationTests : TransportTestBase
     [InlineData(true)]
     public async Task EndpointEditsCannotChangeTheCallersSubmittedDecision(bool queued)
     {
-        var decision = new EngineDecision(7, [1], [2], new Dictionary<string, long> { ["X"] = 3 });
+        var decision = new Decision(7, [1], [2], new Dictionary<string, long> { ["X"] = 3 });
         var request = EngineRequest.ResolveGame("request", "game", "authority", decision);
         byte[] original = EngineJson.Write(request);
         var endpoint = new EditingEndpoint();

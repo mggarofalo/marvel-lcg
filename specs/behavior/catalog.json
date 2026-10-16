@@ -82678,10 +82678,22 @@
       "id": "setup:encounter-set:bomb_scare",
       "kind": "setup",
       "title": "Bomb Scare",
-      "fingerprint": "sha256:ea6bd418b997ad5af51c887e66dc8784ee5e0182a6770fccad6e9d22083196fe",
+      "fingerprint": "sha256:7a64d598e2ac8dd9e60bcd8c7cd1718c4d6a2a6b33ca6009fa16c2573af2efe3",
       "scope": "encounter-set",
       "disposition": "mixed",
       "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:bomb_scare:setup-role",
+          "summary": "role: \"modular\"",
+          "disposition": "narrower",
+          "reason": "The authored role records the published encounter-set classification; the referenced rule carries its setup-selection semantics.",
+          "target": "behavior:rr:modular-encounter-set.1:published-result",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
         {
           "id": "behavior:setup:encounter-set:bomb_scare:setup-encounters",
           "summary": "encounters: [\"01109\",\"01110\",\"01110\",\"01111\",\"01112\",\"01112\"]",
@@ -82714,10 +82726,22 @@
       "id": "setup:encounter-set:expert",
       "kind": "setup",
       "title": "Expert",
-      "fingerprint": "sha256:0048560248825fc389a034a1d2e7950136f7fab38ed05789f69a0c77f5b1a815",
+      "fingerprint": "sha256:0df84982fe0b47aacc8005b38f4e9802a78ed3e6c2aa27d19bda01c04698aff0",
       "scope": "encounter-set",
       "disposition": "mixed",
       "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:expert:setup-role",
+          "summary": "role: \"expert\"",
+          "disposition": "no-independent-behavior",
+          "reason": "The authored role records the printed Expert classification. Its exclusion from modular choices is an admission constraint, independently tested at the setup boundary, rather than a distinct in-game transition.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
         {
           "id": "behavior:setup:encounter-set:expert:setup-encounters",
           "summary": "encounters: [\"01191\",\"01192\",\"01193\"]",
@@ -82750,10 +82774,22 @@
       "id": "setup:encounter-set:legions_of_hydra",
       "kind": "setup",
       "title": "Legions of Hydra",
-      "fingerprint": "sha256:4e16f3fe8006166a281ddeb4d156ae7904af37a7a661eab0ade871e93c7e3a50",
+      "fingerprint": "sha256:014bf242aad62f8794e3aa34e6017d6178c2488136e3d22faa378da6272e45b4",
       "scope": "encounter-set",
       "disposition": "mixed",
       "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:legions_of_hydra:setup-role",
+          "summary": "role: \"modular\"",
+          "disposition": "narrower",
+          "reason": "The authored role records the published encounter-set classification; the referenced rule carries its setup-selection semantics.",
+          "target": "behavior:rr:modular-encounter-set.1:published-result",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
         {
           "id": "behavior:setup:encounter-set:legions_of_hydra:setup-encounters",
           "summary": "encounters: [\"01180\",\"01180\",\"01181\",\"01182\",\"01182\",\"01182\"]",
@@ -82786,10 +82822,22 @@
       "id": "setup:encounter-set:masters_of_evil",
       "kind": "setup",
       "title": "Masters of Evil",
-      "fingerprint": "sha256:7c4a0746832b1c93da3a5fbbfc756f2c13466a1c7fe69ab0488e6b6d04f6731b",
+      "fingerprint": "sha256:046e7db018252e6b9119a098b640228718f297fc8eabeadd68328c3db7939943",
       "scope": "encounter-set",
       "disposition": "mixed",
       "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:masters_of_evil:setup-role",
+          "summary": "role: \"modular\"",
+          "disposition": "narrower",
+          "reason": "The authored role records the published encounter-set classification; the referenced rule carries its setup-selection semantics.",
+          "target": "behavior:rr:modular-encounter-set.1:published-result",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
         {
           "id": "behavior:setup:encounter-set:masters_of_evil:setup-encounters",
           "summary": "encounters: [\"01128\",\"01129\",\"01130\",\"01131\",\"01132\",\"01133\",\"01133\"]",
@@ -82822,10 +82870,22 @@
       "id": "setup:encounter-set:standard",
       "kind": "setup",
       "title": "Standard",
-      "fingerprint": "sha256:fa7ce834c827a5d865e9c31ae4392c4dc353104253dfa84f86e627c43111c243",
+      "fingerprint": "sha256:1ce8f495f8dc6ff30b623e89d6d4e38e11cdf0ec9c8cfc2fedf2f2c0207de2c0",
       "scope": "encounter-set",
       "disposition": "mixed",
       "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:standard:setup-role",
+          "summary": "role: \"standard\"",
+          "disposition": "no-independent-behavior",
+          "reason": "The authored role records the printed Standard classification. Its exclusion from modular choices is an admission constraint, independently tested at the setup boundary, rather than a distinct in-game transition.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
         {
           "id": "behavior:setup:encounter-set:standard:setup-encounters",
           "summary": "encounters: [\"01186\",\"01186\",\"01187\",\"01187\",\"01188\",\"01189\",\"01190\"]",
@@ -82858,10 +82918,22 @@
       "id": "setup:encounter-set:the_doomsday_chair",
       "kind": "setup",
       "title": "The Doomsday Chair",
-      "fingerprint": "sha256:b48c3aff40c424008877e259efa7fb5ea1d14a4cf166afd06e47593fb9f6c723",
+      "fingerprint": "sha256:0f7fbe14ad1520d73cb92a602452e37640a99bb1dafa8103080bcca18bc46809",
       "scope": "encounter-set",
       "disposition": "mixed",
       "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:the_doomsday_chair:setup-role",
+          "summary": "role: \"modular\"",
+          "disposition": "narrower",
+          "reason": "The authored role records the published encounter-set classification; the referenced rule carries its setup-selection semantics.",
+          "target": "behavior:rr:modular-encounter-set.1:published-result",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
         {
           "id": "behavior:setup:encounter-set:the_doomsday_chair:setup-encounters",
           "summary": "encounters: [\"01183\",\"01183\",\"01184\",\"01185\",\"01185\",\"01185\"]",
@@ -82894,10 +82966,22 @@
       "id": "setup:encounter-set:under_attack",
       "kind": "setup",
       "title": "Under Attack",
-      "fingerprint": "sha256:42a7d3b18394195aea1d6eb63bf70bd09e8501cbc95dd7806e4da6616646f34c",
+      "fingerprint": "sha256:0565ce0be46e99d6997b88b7a3073d2de0c820a951a6edab062c7d78f8b33b3e",
       "scope": "encounter-set",
       "disposition": "mixed",
       "obligations": [
+        {
+          "id": "behavior:setup:encounter-set:under_attack:setup-role",
+          "summary": "role: \"modular\"",
+          "disposition": "narrower",
+          "reason": "The authored role records the published encounter-set classification; the referenced rule carries its setup-selection semantics.",
+          "target": "behavior:rr:modular-encounter-set.1:published-result",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
         {
           "id": "behavior:setup:encounter-set:under_attack:setup-encounters",
           "summary": "encounters: [\"01151\",\"01152\",\"01153\",\"01154\",\"01154\"]",
@@ -82930,10 +83014,22 @@
       "id": "setup:hero:black_panther",
       "kind": "setup",
       "title": "Black Panther",
-      "fingerprint": "sha256:45b540a1a08ffc8fa8ab2409a7940b18d2b7ca448ecbbfa046a9acffa0778d37",
+      "fingerprint": "sha256:cfb64a5ec8edef779f2d799cac67681fb366909edd25bc117c144e2fe79ddb42",
       "scope": "hero",
       "disposition": "mixed",
       "obligations": [
+        {
+          "id": "behavior:setup:hero:black_panther:setup-nemesis-set-icon",
+          "summary": "nemesis_set_icon: \"black_panther_nemesis\"",
+          "disposition": "narrower",
+          "reason": "The authored icon explicitly identifies the same printed nemesis-set membership carried by this hero’s nemesis inventory.",
+          "target": "behavior:setup:hero:black_panther:setup-nemesis-set",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
         {
           "id": "behavior:setup:hero:black_panther:setup-hero",
           "summary": "hero: [\"01040a,01040b\"]",
@@ -83022,10 +83118,22 @@
       "id": "setup:hero:captain_marvel",
       "kind": "setup",
       "title": "Captain Marvel",
-      "fingerprint": "sha256:16f61a1e298bbcb5ebe17c9bfe308cce72da802d972aecac1f060c4fc2576f05",
+      "fingerprint": "sha256:e5b51e34b96a76c34e69c0d719b272d6456046a7e36d41934aa99e1fd907cefe",
       "scope": "hero",
       "disposition": "mixed",
       "obligations": [
+        {
+          "id": "behavior:setup:hero:captain_marvel:setup-nemesis-set-icon",
+          "summary": "nemesis_set_icon: \"captain_marvel_nemesis\"",
+          "disposition": "narrower",
+          "reason": "The authored icon explicitly identifies the same printed nemesis-set membership carried by this hero’s nemesis inventory.",
+          "target": "behavior:setup:hero:captain_marvel:setup-nemesis-set",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
         {
           "id": "behavior:setup:hero:captain_marvel:setup-hero",
           "summary": "hero: [\"01010a,01010b\"]",
@@ -83114,10 +83222,22 @@
       "id": "setup:hero:iron_man",
       "kind": "setup",
       "title": "Iron Man",
-      "fingerprint": "sha256:68764d8f0751996d173c63635b6a60ed31035a9de22795278320e7ff381e87b7",
+      "fingerprint": "sha256:1542dab83883be8bf9db997d0018b340b21ed5e0972d43ef80ae841fb72a2b3e",
       "scope": "hero",
       "disposition": "mixed",
       "obligations": [
+        {
+          "id": "behavior:setup:hero:iron_man:setup-nemesis-set-icon",
+          "summary": "nemesis_set_icon: \"iron_man_nemesis\"",
+          "disposition": "narrower",
+          "reason": "The authored icon explicitly identifies the same printed nemesis-set membership carried by this hero’s nemesis inventory.",
+          "target": "behavior:setup:hero:iron_man:setup-nemesis-set",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
         {
           "id": "behavior:setup:hero:iron_man:setup-hero",
           "summary": "hero: [\"01029a,01029b\"]",
@@ -83206,10 +83326,22 @@
       "id": "setup:hero:she_hulk",
       "kind": "setup",
       "title": "She-Hulk",
-      "fingerprint": "sha256:2d5b34b715ced643eaaf6673cebd53e736334ecdb17ef6aec53624b97da8ba03",
+      "fingerprint": "sha256:90799e4e30e609a426df0df7323314ba3c4f17c0f2bfda53581ed32b2d99547d",
       "scope": "hero",
       "disposition": "mixed",
       "obligations": [
+        {
+          "id": "behavior:setup:hero:she_hulk:setup-nemesis-set-icon",
+          "summary": "nemesis_set_icon: \"she_hulk_nemesis\"",
+          "disposition": "narrower",
+          "reason": "The authored icon explicitly identifies the same printed nemesis-set membership carried by this hero’s nemesis inventory.",
+          "target": "behavior:setup:hero:she_hulk:setup-nemesis-set",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
         {
           "id": "behavior:setup:hero:she_hulk:setup-hero",
           "summary": "hero: [\"01019a,01019b\"]",
@@ -83298,10 +83430,22 @@
       "id": "setup:hero:spider_man",
       "kind": "setup",
       "title": "Spider-Man",
-      "fingerprint": "sha256:64d71b109cd3285b7229b17bb948840265c1501314bd93065903ba4e25168dfe",
+      "fingerprint": "sha256:aa02acf7d524d7911fbe58a55b219de31de06cbe63f9b690c2aff3b93e46f2a1",
       "scope": "hero",
       "disposition": "mixed",
       "obligations": [
+        {
+          "id": "behavior:setup:hero:spider_man:setup-nemesis-set-icon",
+          "summary": "nemesis_set_icon: \"spider_man_nemesis\"",
+          "disposition": "narrower",
+          "reason": "The authored icon explicitly identifies the same printed nemesis-set membership carried by this hero’s nemesis inventory.",
+          "target": "behavior:setup:hero:spider_man:setup-nemesis-set",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
         {
           "id": "behavior:setup:hero:spider_man:setup-hero",
           "summary": "hero: [\"01001a,01001b\"]",

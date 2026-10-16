@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Net;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -14,12 +16,12 @@ public sealed class ActivityTransportTests : TransportTestBase
         // Marker shape is an engine choice; rr:game-round orders player then villain phase.
         Game game = DatasetGameFactory.Load(RepositoryPaths.Root)
             .Create(new GameSpecification("rhino", ["spider_man"], [], Seed: 1)).Game;
-        Resolution opening = game.Resolve(Decision.Decline);
+        Resolution opening = game.Resolve(new Decision(Assert.Single(game.Pending!.Affordances).Id, []));
         PhaseStarted player = Assert.Single(opening.Events.OfType<PhaseStarted>());
         Assert.Equal("Player", player.Phase);
         Assert.Equal(1, player.Round);
         game.Resolve(Decision.Decline);
-        Resolution ending = game.Resolve(Decision.Decline);
+        Resolution ending = game.Resolve(new Decision(Assert.Single(game.Pending!.Affordances).Id, []));
         PhaseStarted villain = Assert.Single(ending.Events.OfType<PhaseStarted>(), phase => phase.Phase == "Villain");
         Assert.Equal(1, villain.Round);
         Assert.All(ending.Events.OfType<ActivityCompleted>(), activity => Assert.Equal(1, activity.Round));

@@ -136,6 +136,8 @@ internal static class AttackBoost
         var occurrence = world.Agenda.Occurrence
             ?? throw new RulesNotImplementedException(
                 "a boost ability has no activation occurrence");
+        PhaseStep owner = world.Agenda.Current
+            ?? throw new InvalidOperationException("a boost ability has no agenda owner");
         int beforeAbility = world.Agenda.Count;
         ActivityBatches.Append(events, abilities.Boost(world, boost, activation.Player));
         if (world.Agenda.Count > beforeAbility)
@@ -145,30 +147,30 @@ internal static class AttackBoost
             // already done this for itself and made its child current.
             if (world.Agenda.Current is { What: Steps.FlipBoostCards })
             {
-                world.Agenda.BeforeResponses(occurrence);
+                world.Agenda.BeforeResponses(owner, occurrence);
             }
             world.Agenda.BeforeOwnerAfterContinuations(
                 occurrence,
-                Steps.FlipBoostCards,
+                owner,
                 new PhaseStep(
-                    Steps.FinishBoostCard,
+                    new BoostCompletionOperation(Enemy: activation.Enemy, Attacking: activation.Attacking),
                     world.Agenda.Current?.Round ?? 0,
                     3,
                     Subject: boost.ObjectId,
-                    Seat: activation.Player,
-                    Character: activation.Enemy,
-                    ProcedureFlag: activation.Attacking));
+                    Seat: activation.Player
+                ));
             return;
         }
 
         FinishBoostCard(
             world, facts, abilities,
             new PhaseStep(
-                Steps.FinishBoostCard, 0, 3,
+                new BoostCompletionOperation(Enemy: activation.Enemy, Attacking: activation.Attacking),
+                0,
+                3,
                 Subject: boost.ObjectId,
-                Seat: activation.Player,
-                Character: activation.Enemy,
-                ProcedureFlag: activation.Attacking),
+                Seat: activation.Player
+            ),
             events);
     }
 
@@ -178,7 +180,7 @@ internal static class AttackBoost
         List<GameEvent> events)
     {
         var boost = world.Cards[step.Subject];
-        string trigger = step.ProcedureFlag ? Steps.AttackInitiated : Steps.EnemySchemes;
+        string trigger = step.Require<BoostCompletionOperation>().Attacking ? Steps.AttackInitiated : Steps.EnemySchemes;
 
         // A Boost ability can end the activation. Its assigned boost card is
         // still cleaned up, but rr:activation.6 permits no icon application,
@@ -237,9 +239,9 @@ internal static class AttackBoost
         World world, PhaseStep step, out EnemyActivation activation)
     {
         activation = world.Activation!;
-        return activation is not null && activation.Enemy == step.Character
-            && activation.Player == step.Seat && activation.Attacking == step.ProcedureFlag
-            && DeckTypes.IsInPlay(world.Cards[step.Character].Area.Type);
+        return activation is not null && activation.Enemy == step.Require<BoostCompletionOperation>().Enemy
+            && activation.Player == step.Seat && activation.Attacking == step.Require<BoostCompletionOperation>().Attacking
+            && DeckTypes.IsInPlay(world.Cards[step.Require<BoostCompletionOperation>().Enemy].Area.Type);
     }
 
     internal static void DiscardBoostCard(

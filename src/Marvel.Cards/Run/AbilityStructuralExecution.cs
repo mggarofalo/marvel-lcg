@@ -44,7 +44,9 @@ internal static class AbilityStructuralExecution
             AbilityEffect.EachPlayer each => EachPlayer(context, each),
             AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ResolveSpecials } specials =>
                 AbilitySpecialSequence.Start(context, specials),
-            AbilityEffect.PayOrEffect payment => AskFor(context, payment),
+            AbilityEffect.PayOrEffect payment =>
+                AbilityPaymentChoiceDescription.Describe(context, payment).Affordances.Count == 0
+                    ? new Complete(context.Frames) : AskFor(context, payment),
             AbilityEffect.ChooseTopForHand top => ChooseTopForHand(context, top),
             AbilityEffect.ChooseDiscardToShuffle discard => AskFor(context, discard),
             AbilityEffect.ThwartGroup group when group.OperationName() == "thwartDifferentSchemes" =>

@@ -1,7 +1,7 @@
+using Marvel.Protocol;
 using System.Globalization;
 using Godot;
 using Marvel.Client;
-using Marvel.Server;
 
 namespace Marvel.Godot;
 

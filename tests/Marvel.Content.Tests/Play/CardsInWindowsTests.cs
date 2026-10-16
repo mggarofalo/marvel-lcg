@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Content.Setup;
@@ -355,7 +356,7 @@ public sealed class CardsInWindowsTests
         // one out compulsory.
         var game = Playing();
 
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         game.Resolve(Decision.Decline);
         var result = EndPhase(game);
 
@@ -406,8 +407,7 @@ public sealed class CardsInWindowsTests
         // Only the attack, so the encounter cards after it are not dealt: what
         // this file is about is the window, and the rest of the phase is
         // `PlayerPhaseTests`' business.
-        board.World.Agenda.Add(new PhaseStep(
-            Steps.Attack, Round: 1, Number: 2, Index: 0, Subject: rhino.ObjectId, Seat: 0));
+        board.World.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Index: 0, Subject: rhino.ObjectId, Seat: 0));
         return board;
     }
 

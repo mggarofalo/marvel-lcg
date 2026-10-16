@@ -1,32 +1,16 @@
-using Marvel.Rules.State;
-using Marvel.Rules.Timing;
-
 namespace Marvel.Rules.Play;
 
-/// <summary>A closed operation payload stored by one agenda step.</summary>
-/// <remarks>
-/// The operation vocabulary and its grouping are engine choices. Rules clauses
-/// determine what each operation does and when it occurs; they do not prescribe
-/// a software payload format.
-/// </remarks>
+/// <summary>Closed, operation-specific state for one scheduled rules procedure.</summary>
+/// <remarks>Payload shape is an engine choice; rules determine resolution and timing.</remarks>
 public abstract record AgendaOperation
 {
-    private protected AgendaOperation(
-        string what, AgendaProcedureKind procedure, AgendaOperationData data)
-    {
-        What = what;
-        Procedure = procedure;
-        Data = data;
-    }
+    private protected AgendaOperation() { }
+    /// <summary>The timing vocabulary name of this operation.</summary>
+    public abstract string What { get; }
+    /// <summary>The rules procedure responsible for this operation.</summary>
+    public AgendaProcedureKind Procedure => ProcedureOwner;
 
-    /// <summary>The operation name used by timing conditions.</summary>
-    public string What { get; }
-
-    /// <summary>The procedure owner category.</summary>
-    public AgendaProcedureKind Procedure { get; }
-
-    internal AgendaOperationData Data { get; }
-
-    internal AgendaOperation Changed(AgendaOperationData data) =>
-        AgendaOperations.Create(What, data);
+    // A private protected abstract member closes concrete derivation even through
+    // the protected copy constructor synthesized for an abstract record.
+    private protected abstract AgendaProcedureKind ProcedureOwner { get; }
 }

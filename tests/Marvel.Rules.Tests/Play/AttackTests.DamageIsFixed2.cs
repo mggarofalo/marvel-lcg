@@ -21,7 +21,7 @@ public sealed class AttackDamageIsFixedTests : AttackTestBase
         var printed = Printed(atk: 2, boost: 0);
         var world = Board(printed);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
         Attack.CalculateDamage(world, printed);
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "attack", Amount: 5, Affects: villain.ObjectId));
         Attack.DealDamage(world, printed, []);

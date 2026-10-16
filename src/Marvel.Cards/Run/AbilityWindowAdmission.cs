@@ -12,7 +12,10 @@ namespace Marvel.Cards.Run;
 internal static class AbilityWindowAdmission
 {
     internal sealed record Candidate(
-        Card Card, CompiledCardAbility Ability, int Controller, int Ordinal);
+        Card Card, CompiledCardAbility Ability, int Controller, int Ordinal)
+    {
+        internal Defeated? TriggeringDefeat { get; init; }
+    }
 
     internal static ImmutableHashSet<int> WaitingCards(
         AbilityProgram program, World world, Occurrence occurrence,
@@ -45,14 +48,12 @@ internal static class AbilityWindowAdmission
             var ability = written[index];
             foreach (int controller in Players(program, world, ability, card, occurrence))
             {
-                if (IsWaitingCandidate(
-                    program, world, card, ability, index, controller, occurrence,
-                    window, resourceAbilities))
-                {
-                    int ordinal = written.Take(index).Count(candidate =>
-                        candidate.Trigger.Timing == ability.Trigger.Timing);
-                    yield return new Candidate(card, ability, controller, ordinal);
-                }
+                int ordinal = written.Take(index).Count(candidate =>
+                    candidate.Trigger.Timing == ability.Trigger.Timing);
+                var candidate = new Candidate(card, ability, controller, ordinal);
+                foreach (var instance in AbilityTriggerInstances.For(candidate, occurrence))
+                    if (IsWaitingCandidate(program, world, instance, occurrence, window, resourceAbilities))
+                        yield return instance;
             }
         }
     }
@@ -67,27 +68,21 @@ internal static class AbilityWindowAdmission
     }
 
     private static bool IsWaitingCandidate(
-        AbilityProgram program, World world, Card card, CompiledCardAbility ability,
-        int index, int controller, Occurrence occurrence, WindowKind window,
-        IResourceCardAbilities resourceAbilities)
+        AbilityProgram program, World world, Candidate candidate,
+        Occurrence occurrence, WindowKind window, IResourceCardAbilities resourceAbilities)
     {
-        if (!Answers(
-                program, world, ability, card, occurrence, window,
+        var (card, ability, controller, _) = candidate;
+        if (!Answers(program, world, candidate, occurrence, window,
                 ability.AnyPlayer ? controller : null)
-            || !InForm(world, controller, ability.Trigger.Form, card))
-        {
-            return false;
-        }
-        var context = Context(
-            program, world, card, occurrence, controller, ability.Cost,
-            resourceAbilities);
+            || !InForm(world, controller, ability.Trigger.Form, card)) return false;
+        var context = Context(program, world, card, occurrence, controller, ability.Cost, resourceAbilities);
+        context = context.WithQuery(context.Query with { TriggeringDefeat = candidate.TriggeringDefeat });
         return WhenHolds(ability, context)
             && (controller < 0 || CanInitiate(ability, context))
-            && AbilityPaymentRules.Payable(
-                world, card, controller, ability.Cost, program, resourceAbilities)
-            && AbilityPaymentRules.EventPayable(
-                world, card, controller, ability, resourceAbilities)
-            && AbilityAvailability.Available(world, card, ability, index, occurrence);
+            && AbilityPaymentRules.Payable(world, card, controller, ability.Cost, program, resourceAbilities)
+            && AbilityPaymentRules.EventPayable(world, card, controller, ability, resourceAbilities)
+            && AbilityAvailability.Available(world, card, ability,
+                AbilityAvailability.IndexOf(program, card, ability), occurrence);
     }
 
     private static AbilityAdmissionContext Context(
@@ -162,10 +157,11 @@ internal static class AbilityWindowAdmission
                     : AbilityCardQueries.ControllerOf(world, card);
 
     private static bool Answers(
-        AbilityProgram program, World world, CompiledCardAbility ability,
-        Card card, Occurrence occurrence, WindowKind window,
+        AbilityProgram program, World world, Candidate candidate,
+        Occurrence occurrence, WindowKind window,
         int? initiatingPlayer)
     {
+        var (card, ability, _, _) = candidate;
         if (!TriggerMatches(ability, occurrence))
         {
             return false;
@@ -178,7 +174,7 @@ internal static class AbilityWindowAdmission
         };
         int? restricted = initiatingPlayer
             ?? RestrictedPlayer(program, world, ability, card);
-        return belongs && RolesMatch(world, ability, card, occurrence, restricted);
+        return belongs && RolesMatch(world, candidate, occurrence, restricted);
     }
 
     private static bool TriggerMatches(CompiledCardAbility ability, Occurrence occurrence) =>
@@ -187,13 +183,15 @@ internal static class AbilityWindowAdmission
         && (ability.Trigger.Also is not { } also || occurrence.Is(also));
 
     private static bool RolesMatch(
-        World world, CompiledCardAbility ability, Card card,
-        Occurrence occurrence, int? restricted) =>
-        Subject(world, ability.Trigger.Subject, card, occurrence, restricted)
+        World world, Candidate candidate, Occurrence occurrence, int? restricted)
+    {
+        var (card, ability, _, _) = candidate;
+        return Subject(world, ability.Trigger.Subject, card, occurrence, restricted, candidate.TriggeringDefeat)
             && (ability.Trigger.Actor != AbilityRoles.You || occurrence.ActorFacts?.Kind is CardKind.Hero or CardKind.AlterEgo)
             && Role(world, ability.Trigger.Actor, card, occurrence.ActorFacts, restricted)
             && Role(world, ability.Trigger.Target, card, occurrence.TargetFacts, restricted)
             && Player(world, ability.Trigger.Player, card, occurrence, restricted);
+    }
 
     private static int? RestrictedPlayer(
         AbilityProgram program, World world, CompiledCardAbility ability, Card card)
@@ -221,12 +219,12 @@ internal static class AbilityWindowAdmission
 
     private static bool Subject(
         World world, string? subject, Card card, Occurrence occurrence,
-        int? restricted) => subject switch
+        int? restricted, Defeated? defeat) => subject switch
         {
             null => true,
-            AbilitySubjects.This => occurrence.Subject == card.ObjectId,
+            AbilitySubjects.This => (defeat?.Card ?? occurrence.Subject) == card.ObjectId,
             AbilitySubjects.AttachedTo =>
-                card.Area.Host >= 0 && occurrence.Subject == card.Area.Host,
+                card.Area.Host >= 0 && (defeat?.Card ?? occurrence.Subject) == card.Area.Host,
             AbilitySubjects.You => occurrence.Player >= 0
                 && occurrence.Player
                     == (restricted ?? AbilityCardQueries.ControllerOf(world, card)),

@@ -8,4 +8,4 @@ using Marvel.Rules.Play;
 namespace Marvel.Cards.Run;
 internal sealed record Complete(
     ImmutableArray<AbilityStructuralFrame> Frames,
-    AbilityAdmissionResult? Admission = null) : AbilityStructuralTransition;
+    AbilityAdmissionResult? Admission = null, AbilityStructuralOutcome? Outcome = null) : AbilityStructuralTransition;

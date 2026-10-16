@@ -46,44 +46,91 @@ internal static class AttackInitiation
             step.Subject, step.Seat, Attacking: true, Id: step.ActivationId);
 
         world.Agenda.Then(new PhaseStep(
-            Steps.GiveBoostCard, step.Round, 1, Index: step.Seat, Subject: step.Subject,
-            ActivationId: step.ActivationId));
+            new AttackStageOperation(AttackStageKind.GiveBoostCard),
+            step.Round,
+            1,
+            Index: step.Seat,
+            Subject: step.Subject
+        ) { ActivationId = step.ActivationId });
         world.Agenda.Then(new PhaseStep(
-            Steps.DeclareDefender, step.Round, 2, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat, ActivationId: step.ActivationId));
+            new AttackStageOperation(AttackStageKind.DeclareDefender),
+            step.Round,
+            2,
+            Index: step.Seat,
+            Subject: step.Subject,
+            Seat: step.Seat
+        ) { ActivationId = step.ActivationId });
         world.Agenda.Then(new PhaseStep(
-            Steps.FlipBoostCards, step.Round, 3, Index: step.Seat, Subject: step.Subject,
-            ActivationId: step.ActivationId));
+            new AttackStageOperation(AttackStageKind.FlipBoostCards),
+            step.Round,
+            3,
+            Index: step.Seat,
+            Subject: step.Subject
+        ) { ActivationId = step.ActivationId });
         world.Agenda.Then(new PhaseStep(
-            Steps.CalculateAttackDamage, step.Round, 4, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat, ActivationId: step.ActivationId));
+            new AttackStageOperation(AttackStageKind.CalculateAttackDamage),
+            step.Round,
+            4,
+            Index: step.Seat,
+            Subject: step.Subject,
+            Seat: step.Seat
+        ) { ActivationId = step.ActivationId });
         world.Agenda.Then(new PhaseStep(
-            Steps.DealAttackDamage, step.Round, 5, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat, ActivationId: step.ActivationId));
+            new AttackStageOperation(AttackStageKind.DealAttackDamage),
+            step.Round,
+            5,
+            Index: step.Seat,
+            Subject: step.Subject,
+            Seat: step.Seat
+        ) { ActivationId = step.ActivationId });
         foreach (int player in additional)
         {
             world.Agenda.Then(new PhaseStep(
-                Steps.NextAttackTarget, step.Round, 5, Index: player, Subject: step.Subject,
-                Seat: player, Plan: true, ActivationId: step.ActivationId));
+                new AttackStageOperation(AttackStageKind.NextAttackTarget),
+                step.Round,
+                5,
+                Index: player,
+                Subject: step.Subject,
+                Seat: player,
+                Plan: true
+            ) { ActivationId = step.ActivationId });
             world.Agenda.Then(new PhaseStep(
-                Steps.DeclareDefender, step.Round, 2, Index: player, Subject: step.Subject,
-                Seat: player, ActivationId: step.ActivationId));
+                new AttackStageOperation(AttackStageKind.DeclareDefender),
+                step.Round,
+                2,
+                Index: player,
+                Subject: step.Subject,
+                Seat: player
+            ) { ActivationId = step.ActivationId });
             world.Agenda.Then(new PhaseStep(
-                Steps.CalculateAttackDamage, step.Round, 4, Index: player, Subject: step.Subject,
-                Seat: player, ActivationId: step.ActivationId));
+                new AttackStageOperation(AttackStageKind.CalculateAttackDamage),
+                step.Round,
+                4,
+                Index: player,
+                Subject: step.Subject,
+                Seat: player
+            ) { ActivationId = step.ActivationId });
             world.Agenda.Then(new PhaseStep(
-                Steps.DealAttackDamage, step.Round, 5, Index: player, Subject: step.Subject,
-                Seat: player, ActivationId: step.ActivationId));
+                new AttackStageOperation(AttackStageKind.DealAttackDamage),
+                step.Round,
+                5,
+                Index: player,
+                Subject: step.Subject,
+                Seat: player
+            ) { ActivationId = step.ActivationId });
         }
         world.Agenda.Then(new PhaseStep(
-            Steps.EndAttack, step.Round, 6, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat, ActivationId: step.ActivationId,
-            // A fresh envelope retains immutable actor and target facts, not spent
-            // windows or mutable resolution history. EndAttack opens its own
-            // occurrence; this owner evidence is used only for completion names.
-            ProcedureOwnerOccurrence: Occurrence.ForAttack(
+            new AttackCompletionOperation(
+                Owner: Occurrence.ForAttack(
                 world.Agenda.Occurrence?.Id ?? Moment.Id(step.Round, step.Number, step.Index),
-                [], world, facts, step.Subject, world.Attack.Target, step.Seat)));
+                [], world, facts, step.Subject, world.Attack.Target, step.Seat)
+            ),
+            step.Round,
+            6,
+            Index: step.Seat,
+            Subject: step.Subject,
+            Seat: step.Seat
+        ) { ActivationId = step.ActivationId });
     }
 
 }

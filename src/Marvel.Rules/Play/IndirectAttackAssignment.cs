@@ -26,16 +26,18 @@ internal static class IndirectAttackAssignment
         }
 
         var assignment = new PhaseStep(
-            Steps.AssignIndirectAttackDamage,
+            new IndirectDamageOperation(
+                IndirectDamageKind.AssignIndirectAttackDamage,
+                Character: attack.Target,
+                Amount: assign,
+                Origin: world.Agenda.Occurrence,
+                Candidates: [.. candidates.Select(card => card.ObjectId)]
+            ),
             world.Agenda.Current?.Round ?? 0,
             5,
             Subject: attack.Enemy,
-            Seat: attack.Player,
-            Character: attack.Target,
-            ActivationId: world.Agenda.Current?.ActivationId ?? -1,
-            ProcedureAmount: assign,
-            ProcedureOccurrence: world.Agenda.Occurrence,
-            ProcedureCandidates: [.. candidates.Select(card => card.ObjectId)]);
+            Seat: attack.Player
+        ) { ActivationId = world.Agenda.Current?.ActivationId ?? -1 };
         if (candidates.Count == 1)
         {
             AssignIndirectDamage(
@@ -51,8 +53,9 @@ internal static class IndirectAttackAssignment
         var occurrence = world.Agenda.Occurrence
             ?? throw new RulesNotImplementedException(
                 "indirect attack damage has no containing occurrence");
+        PhaseStep owner = world.Agenda.Current!.Value;
         world.Agenda.ThenContinuation(assignment, occurrence);
-        world.Agenda.BeforeResponses(occurrence);
+        world.Agenda.BeforeResponses(owner, occurrence);
     }
 
     /// <summary>Ask the attacked player to assign one indirect attack's damage.</summary>
@@ -60,10 +63,10 @@ internal static class IndirectAttackAssignment
         World world, ICardFacts facts, PhaseStep step)
     {
         var candidates = IndirectCandidates(world, facts, step.Seat)
-            .Where(card => (step.ProcedureCandidates ?? []).Contains(card.ObjectId))
+            .Where(card => (step.Require<IndirectDamageOperation>().Candidates ?? []).Contains(card.ObjectId))
             .ToList();
         int amount = checked((int)Math.Min(
-            step.ProcedureAmount,
+            step.Require<IndirectDamageOperation>().Amount,
             candidates.Sum(card => DamagePlacement.Health(world, facts, card) - card.Damage)));
         var maximumOccurrences = candidates.ToDictionary(
             card => card.ObjectId,
@@ -92,14 +95,14 @@ internal static class IndirectAttackAssignment
     {
         ValidateIndirectAnswerShape(input, step.Subject);
 
-        var occurrence = step.ProcedureOccurrence ?? world.Agenda.Occurrence
+        var occurrence = step.Require<IndirectDamageOperation>().Origin ?? world.Agenda.Occurrence
             ?? throw new RulesNotImplementedException(
                 "indirect attack damage has no containing occurrence");
         var eligible = IndirectCandidates(world, facts, step.Seat)
-            .Where(card => (step.ProcedureCandidates ?? []).Contains(card.ObjectId))
+            .Where(card => (step.Require<IndirectDamageOperation>().Candidates ?? []).Contains(card.ObjectId))
             .ToDictionary(card => card.ObjectId);
         int expected = checked((int)Math.Min(
-            step.ProcedureAmount,
+            step.Require<IndirectDamageOperation>().Amount,
             eligible.Values.Sum(card => DamagePlacement.Health(world, facts, card) - card.Damage)));
         if (input.Targets.Count != expected)
         {
@@ -113,30 +116,34 @@ internal static class IndirectAttackAssignment
         var windows = assigned
             .OrderBy(pair => pair.Key)
             .Select((pair, index) => new PhaseStep(
-                Steps.PrepareIndirectAttackDamage,
+                new IndirectDamageOperation(
+                    IndirectDamageKind.PrepareIndirectAttackDamage,
+                    Source: step.Subject,
+                    Amount: pair.Value,
+                    Amounts: new Dictionary<int, long>(),
+                    Origin: occurrence
+                ),
                 round,
                 5,
                 Index: index,
                 Subject: pair.Key,
-                Seat: step.Seat,
-                ActivationId: step.ActivationId,
-                ProcedureSource: step.Subject,
-                ProcedureAmount: pair.Value,
-                ProcedureAmounts: new Dictionary<int, long>(),
-                ProcedureOccurrence: occurrence))
+                Seat: step.Seat
+            ) { ActivationId = step.ActivationId })
             .ToList();
         windows.Add(new PhaseStep(
-            Steps.ApplyIndirectAttackDamage,
+            new IndirectDamageOperation(
+                IndirectDamageKind.ApplyIndirectAttackDamage,
+                Character: step.Require<IndirectDamageOperation>().Character,
+                Candidates: [.. input.Targets],
+                Origin: occurrence,
+                Amounts: new Dictionary<int, long>()
+            ),
             round,
             5,
             Subject: step.Subject,
             Seat: step.Seat,
-            Character: step.Character,
-            ActivationId: step.ActivationId,
-            Plan: true,
-            ProcedureCandidates: [.. input.Targets],
-            ProcedureOccurrence: occurrence,
-            ProcedureAmounts: new Dictionary<int, long>()));
+            Plan: true
+        ) { ActivationId = step.ActivationId });
         world.Agenda.Now(windows);
     }
 

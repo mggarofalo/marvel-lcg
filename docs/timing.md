@@ -2,6 +2,26 @@
 
 The order everything in the game happens in, and where the engine stops to ask.
 
+## Scheduled operations
+
+The engine chooses a closed family of typed `AgendaOperation` records for pending
+work. Each operation owns the data its procedure needs: an attack carries its
+attack context, a threat placement carries its placement, and a defeat window
+carries its cause and pending abilities. The operation determines its timing
+condition and procedure. Callers cannot retag an operation by assigning a string
+or attach another procedure's payload.
+
+`PhaseStep` holds scheduling coordinates, subject, seat and occurrence identity
+around that operation. Each enqueued frame has a game-local scheduler identity
+that survives payload updates; nested frames sharing an occurrence advance
+independently. `Require<T>` checks the procedure's expected operation
+type. The compiler rejects unknown operations and mismatched payloads; architecture
+probes compile these invalid programs and require them to fail.
+
+Card interpreter continuations are opaque to the Rules scheduler. Their typed
+state belongs to the compiled card execution and the current world. A shared
+compiled program can serve several worlds; it does not own their pending choices.
+
 ## The spine
 
 `rr:ability` opens with a list, and that list is the whole ordering the engine is
@@ -55,15 +75,18 @@ cancel the attack the status card was there to change.
 and cannot be written without one.
 
 `rr:triggering-condition.1` — each interrupt and response may be triggered once
-per occurrence of its triggering condition. Keyed on the card in play, not the
-printed face, because `rr:triggering-condition.1.1` lets two copies each have a
-turn.
+per occurrence of its triggering condition. The key includes the card in play,
+the ability, and its triggering instance. Separate defeats retain their own
+card, cause, and responsible-player facts through admission and suspended
+choices; predicates must all match the same defeat. Two printed copies also
+remain distinct under `rr:triggering-condition.1.1`.
 
 `rr:triggering-condition.2` — a single game occurrence that creates several
 triggering conditions, such as one attack that both damages a character and
 defeats it, gets **a single interrupt window and a single response window**. An
-engine opening a window per condition would let one interrupt fire twice against
-what the rules call one moment.
+engine opening a window per condition would duplicate that timing opportunity.
+One shared window does not collapse separate triggering instances: an ability
+can respond separately to two defeats when its text and costs permit it.
 
 ## A tier is a decision, not a sort
 
@@ -390,10 +413,17 @@ and nobody is using an ability when it is asked. So the phase-neutral
 `AgendaProcedures.Apply` returns a `Prompt?`, the agenda stays on that step's
 `Apply`, and the answer is what makes the step happen.
 
-Which of the two answered a prompt is read off the board rather than off the
-prompt: a window open means the window absorbs the answer, no window open means
-the step does. A window that has finished polling has already closed itself, so
-the two never overlap.
+Routing reads the current agenda operation and window. A suspended ability's
+choice is answered by its continuation even while the enclosing window remains
+open. Otherwise an open window receives the answer, or the current procedure
+does when no window is open.
+
+A triggered ability's direct damage or threat removal owns a separate effect
+occurrence. Its defeats belong to that effect, not to the attack or other event
+that triggered the ability. The effect's response window finishes before the
+ability resumes and before the enclosing window offers another response.
+Cancelling a replaced occurrence removes its owning frame while preserving the
+accepted ability's continuation, including event disposal.
 
 Being asked follows the same rule either way — **only where there is something
 to ask**. A player with no ready character cannot defend (`rr:defend-defense.2`

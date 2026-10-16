@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
@@ -42,7 +43,7 @@ public sealed class EvictionNoticeTests
         var seat = world.Seats[0];
         int before = seat.FormChangedInRound;
 
-        AuthoredCards.Runner().Chose(world, card, 0, First, Decision.Take(0));
+        AuthoredCards.Runner().Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(0));
         var resolved = new Resolution(world, Prompt: null, Events: []);
 
         Assert.True(Forms.In(world, seat, Cards, Forms.AlterEgo));
@@ -62,7 +63,7 @@ public sealed class EvictionNoticeTests
         // question that is not optional.
         var (world, card) = Reveal(hero: true);
 
-        AuthoredCards.Runner().Chose(world, card, 0, First, Decision.Take(1));
+        AuthoredCards.Runner().Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(1));
 
         Assert.True(Forms.In(world, world.Seats[0], Cards, Forms.Hero));
 
@@ -84,8 +85,7 @@ public sealed class EvictionNoticeTests
         var waiting = Assert.Single(world.Agenda.Outstanding, step =>
             step.What == Steps.ChooseOption);
 
-        var prompt = AuthoredCards.Runner().Choosing(
-            world, card, 0, waiting.Index, waiting.Tier)!;
+        var prompt = AuthoredCards.Runner().Choosing(world, waiting)!;
 
         var remain = Assert.Single(prompt.Affordances);
         Assert.Equal(1, remain.Id);
@@ -103,8 +103,8 @@ public sealed class EvictionNoticeTests
         var identity = world.Seats[0].IdentityCard;
 
         var runner = AuthoredCards.Runner();
-        runner.Chose(world, card, 0, First, Decision.Take(1));
-        runner.Chose(world, card, 0, Second, Decision.Take(0));
+        runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(1));
+        runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(0));
 
         Assert.False(identity.Ready);
         Assert.Equal(DeckType.RemovedArea, card.Area.Type);
@@ -121,8 +121,8 @@ public sealed class EvictionNoticeTests
         int queued = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count;
 
         var runner = AuthoredCards.Runner();
-        runner.Chose(world, card, 0, First, Decision.Take(1));
-        runner.Chose(world, card, 0, Second, Decision.Take(1));
+        runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(1));
+        runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(1));
 
         Assert.Equal(held - 1, world.Seats[0].Hand.Cards.Count);
         Assert.Equal(

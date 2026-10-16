@@ -1,3 +1,6 @@
+using Marvel.Desktop;
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -43,7 +46,7 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
             composer.SelectAffordance(currentOffer.Id);
             composer.SelectTargets(currentCandidates.Take(count));
 
-            Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+            Assert.True(composer.TryBuild(out Decision? decision, out string? error), error);
             Assert.Equal(currentOffer.Id, decision!.Affordance);
             Assert.Equal(currentCandidates.Take(count), decision.Targets);
 
@@ -76,18 +79,21 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
     [Fact]
     public async Task CommittedCoreChoicesOpenACompleteVisibleGame()
     {
-        LocalClientConnection connection = LocalGameClient.ConnectLocal(RepositoryPaths.Root);
+        LocalClientConnection connection = ClientComposition.Connect(RepositoryPaths.Root, null);
         Assert.True(connection.Succeeded);
         ClientSetupResult setup = await connection.Client!.ReadSetupAsync(TestContext.Current.CancellationToken);
-        ClientStartupResult startup = await connection.Client.OpenAsync(Assert.IsType<SetupChoices>(setup.Choices), DefaultSelection(setup.Choices!), TestContext.Current.CancellationToken);
+        ClientEntryResult startup = await connection.Client.OpenSessionAsync("test-table", Assert.IsType<SetupChoices>(setup.Choices), DefaultSelection(setup.Choices!), TestContext.Current.CancellationToken);
         EngineResponse opened = Assert.IsType<EngineResponse>(startup.Response);
         Assert.True(startup.Succeeded);
+        Assert.Equal("test-table", Assert.IsType<ClientSession>(startup.Session).GameId);
+        Assert.Null(opened.Capability);
+        Assert.Null(opened.Invitations);
         Assert.Null(startup.Error);
         Assert.NotNull(opened.World);
         Assert.NotNull(opened.Prompt);
         Assert.NotNull(opened.Events);
         Assert.Equal(Outcome.Unfinished, opened.World.Outcome);
-        Assert.Equal(LocalGameSession.GameId, opened.GameId);
+        Assert.Equal("test-table", opened.GameId);
         BoardPresentation board = BoardPresentation.From(opened.World);
         Assert.Equal(opened.World.Areas.Sum(area => area.Cards.Count), board.Areas.Sum(area => area.Cards.Sum(card => card.Count)));
         Assert.Equal(opened.World.Areas.Sum(area => area.Removed.Count), board.Areas.Sum(area => area.Removed.Sum(card => card.Count)));
@@ -102,8 +108,8 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
     public async Task ALocalDecisionReturnsTheNextAuthoritativePromptAndBoard()
     {
         var client = new LocalGameClient(new InProcessTransport(Host()));
-        ClientStartupResult opened = await client.OpenAsync(Specification(), TestContext.Current.CancellationToken);
-        ClientResolutionResult resolved = await client.ResolveAsync(opened.Response!.Capability!, new EngineDecision(Assert.Single(opened.Response.Prompt!.Affordances).Id, []), TestContext.Current.CancellationToken);
+        ClientEntryResult opened = await client.OpenSessionAsync("test-table", Specification(), TestContext.Current.CancellationToken);
+        ClientResolutionResult resolved = await client.ResolveAsync(opened.Session!, new Decision(Assert.Single(opened.Response!.Prompt!.Affordances).Id, []), TestContext.Current.CancellationToken);
         Assert.True(resolved.Succeeded);
         Assert.NotNull(resolved.Response?.World);
         Assert.NotNull(resolved.Response?.Prompt);
@@ -115,9 +121,9 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
     {
         var client = new LocalGameClient(new InProcessTransport(Host()));
         ClientSetupResult setup = await client.ReadSetupAsync(TestContext.Current.CancellationToken);
-        ClientStartupResult opened = await client.OpenAsync(setup.Choices!, DefaultSelection(setup.Choices!)with { Seed = "1" }, TestContext.Current.CancellationToken);
+        ClientEntryResult opened = await client.OpenSessionAsync("test-table", setup.Choices!, DefaultSelection(setup.Choices!)with { Seed = "1" }, TestContext.Current.CancellationToken);
         EngineResponse current = Assert.IsType<EngineResponse>(opened.Response);
-        string capability = Assert.IsType<string>(current.Capability);
+        ClientSession session = Assert.IsType<ClientSession>(opened.Session);
         var labels = new List<string>();
         bool passed = false;
         int decisions = 0;
@@ -126,22 +132,22 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
             Assert.True(decisions < 20, $"local UI journey is still playing at '{current.Prompt.Label}'");
             labels.Add(current.Prompt.Label);
             var composer = new DecisionComposer(current.Prompt);
-            EngineDecision decision;
+            Decision decision;
             if (current.Prompt.Cancellable)
             {
                 passed = true;
-                Assert.True(composer.TryDecline(out EngineDecision? declined, out _));
+                Assert.True(composer.TryDecline(out Decision? declined, out _));
                 decision = declined!;
             }
             else
             {
                 Affordance offered = current.Prompt.Affordances.First(option => option.IsLegal);
                 composer.SelectAffordance(offered.Id);
-                Assert.True(composer.TryBuild(out EngineDecision? submitted, out string? error), error);
+                Assert.True(composer.TryBuild(out Decision? submitted, out string? error), error);
                 decision = submitted!;
             }
 
-            ClientResolutionResult resolved = await client.ResolveAsync(capability, decision, TestContext.Current.CancellationToken);
+            ClientResolutionResult resolved = await client.ResolveAsync(session, decision, TestContext.Current.CancellationToken);
             Assert.True(resolved.Succeeded, resolved.Error?.Message);
             current = Assert.IsType<EngineResponse>(resolved.Response);
             decisions++;
@@ -158,10 +164,10 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
     [Fact]
     public async Task ARejectedDecisionSynchronizesWithoutRepeatingTheMutation()
     {
-        EngineResponse current = Host().Exchange(EngineRequest.OpenGame("open", LocalGameSession.GameId, Specification()));
-        var rejected = new EngineResponse(EngineProtocol.Version, "local-resolve", LocalGameSession.GameId, Capability: null, Prompt: null, Events: [], Error: new EngineError("stale_decision", "The prompt changed."));
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame("open", "test-table", Specification()));
+        var rejected = new EngineResponse(EngineProtocol.Version, "local-resolve", "test-table", Capability: null, Prompt: null, Events: [], Error: new EngineError("stale_decision", "The prompt changed."));
         var transport = new ScriptedTransport(rejected, current with { RequestId = "local-recover", Capability = null, Events = [] });
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(current.Capability!, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession(current.GameId, current.Capability!), Decision.Decline, TestContext.Current.CancellationToken);
         Assert.False(result.Succeeded);
         Assert.True(result.HasAuthoritativeView);
         Assert.Equal(ClientMutationDisposition.Rejected, result.MutationDisposition);
@@ -174,9 +180,9 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
     [Fact]
     public async Task AnUncertainResolveReadsStateAndNeverRetriesTheDecision()
     {
-        EngineResponse current = Host().Exchange(EngineRequest.OpenGame("open", LocalGameSession.GameId, Specification()));
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame("open", "test-table", Specification()));
         var transport = new ScriptedTransport(new IOException("response lost"), current with { RequestId = "local-recover", Capability = null, Events = [] });
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(current.Capability!, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession(current.GameId, current.Capability!), Decision.Decline, TestContext.Current.CancellationToken);
         Assert.True(result.HasAuthoritativeView);
         Assert.Equal(ClientMutationDisposition.Uncertain, result.MutationDisposition);
         Assert.Equal("transport_unavailable", result.Error?.Code);
@@ -186,9 +192,9 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
     [Fact]
     public async Task AMalformedResolveReadsStateAndNeverRetriesTheDecision()
     {
-        EngineResponse current = Host().Exchange(EngineRequest.OpenGame("open", LocalGameSession.GameId, Specification()));
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame("open", "test-table", Specification()));
         var transport = new ScriptedTransport(current with { RequestId = "local-resolve", Prompt = current.Prompt!with { Affordances = null! }, }, current with { RequestId = "local-recover", Capability = null, Events = [] });
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(current.Capability!, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession(current.GameId, current.Capability!), Decision.Decline, TestContext.Current.CancellationToken);
         Assert.True(result.HasAuthoritativeView);
         Assert.Equal(ClientMutationDisposition.Uncertain, result.MutationDisposition);
         Assert.Equal("invalid_response", result.Error?.Code);
@@ -200,7 +206,7 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
     {
         LocalGameClient local = ClientComposition.Connect(RepositoryPaths.Root, configuredEndpoint: null).Client!;
         ClientSetupResult localSetup = await local.ReadSetupAsync(TestContext.Current.CancellationToken);
-        ClientStartupResult localOpen = await local.OpenAsync(localSetup.Choices!, DefaultSelection(localSetup.Choices!)with { Seed = "1" }, TestContext.Current.CancellationToken);
+        ClientEntryResult localOpen = await local.OpenSessionAsync("test-table", localSetup.Choices!, DefaultSelection(localSetup.Choices!)with { Seed = "1" }, TestContext.Current.CancellationToken);
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
@@ -220,20 +226,20 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
             LocalGameClient remote = ClientComposition.Connect(dataRoot: "content-must-not-be-read-for-remote-composition", $"tcp://127.0.0.1:{port}").Client!;
             ClientSetupResult remoteSetup = await remote.ReadSetupAsync(TestContext.Current.CancellationToken);
             Assert.Equal(localSetup.Choices!.Heroes.Select(choice => (choice.Key, choice.Name)), remoteSetup.Choices!.Heroes.Select(choice => (choice.Key, choice.Name)));
-            ClientStartupResult remoteOpen = await remote.OpenAsync(remoteSetup.Choices, DefaultSelection(remoteSetup.Choices)with { Seed = "1" }, TestContext.Current.CancellationToken);
+            ClientEntryResult remoteOpen = await remote.OpenSessionAsync("test-table", remoteSetup.Choices, DefaultSelection(remoteSetup.Choices)with { Seed = "1" }, TestContext.Current.CancellationToken);
             Assert.True(localOpen.Succeeded);
             Assert.True(remoteOpen.Succeeded);
             EngineResponse localCurrent = localOpen.Response!;
             EngineResponse remoteCurrent = remoteOpen.Response!;
-            string localCapability = localCurrent.Capability!;
-            string remoteCapability = remoteCurrent.Capability!;
+            ClientSession localSession = Assert.IsType<ClientSession>(localOpen.Session);
+            ClientSession remoteSession = Assert.IsType<ClientSession>(remoteOpen.Session);
             AssertEquivalentResponses(localCurrent, remoteCurrent);
             int decisions = 0;
             while (localCurrent.Prompt is not null)
             {
-                EngineDecision decision = VisibleDecision(localCurrent.Prompt);
-                ClientResolutionResult localResolved = await local.ResolveAsync(localCapability, decision, TestContext.Current.CancellationToken);
-                ClientResolutionResult remoteResolved = await remote.ResolveAsync(remoteCapability, decision, TestContext.Current.CancellationToken);
+                Decision decision = VisibleDecision(localCurrent.Prompt);
+                ClientResolutionResult localResolved = await local.ResolveAsync(localSession, decision, TestContext.Current.CancellationToken);
+                ClientResolutionResult remoteResolved = await remote.ResolveAsync(remoteSession, decision, TestContext.Current.CancellationToken);
                 localCurrent = Assert.IsType<EngineResponse>(localResolved.Response);
                 remoteCurrent = Assert.IsType<EngineResponse>(remoteResolved.Response);
                 AssertEquivalentResponses(localCurrent, remoteCurrent);
@@ -265,7 +271,7 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
     public void MissingContentBecomesABoundedProductError()
     {
         string missing = Path.Combine(Path.GetTempPath(), "marvel-missing-content", Guid.NewGuid().ToString("N"));
-        LocalClientConnection connection = LocalGameClient.ConnectLocal(missing);
+        LocalClientConnection connection = ClientComposition.Connect(missing, null);
         Assert.False(connection.Succeeded);
         Assert.Null(connection.Client);
         Assert.Equal("content_unavailable", connection.Error?.Code);

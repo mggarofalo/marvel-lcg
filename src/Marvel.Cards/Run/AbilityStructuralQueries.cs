@@ -36,13 +36,9 @@ internal static class AbilityStructuralQueries
                 $"'{context.SourceFace}' cannot choose illegal option {answer.Affordance}");
         }
 
-        AbilityStructuralOutcome? optionOutcome = context.HasPendingDependency
-            ? Outcome(AbilityResolutionAdmission.ResolutionOf(
-                selectedOption, context.Admission()))
-            : null;
         return new RunChoice(
             selectedOption, new ChoiceFrame(answer.Affordance, null), null,
-            BindsPlayerSelection: false, optionOutcome, Admission(evidence));
+            BindsPlayerSelection: false, Admission(evidence));
     }
 
     private static AbilityStructuralTransition AnswerCardChoice(
@@ -55,17 +51,9 @@ internal static class AbilityStructuralQueries
         if (selected is null)
             return new Unsupported(
                 $"'{context.SourceFace}' did not offer card {answer.Affordance} to choose");
-        var selectedContext = WithSelection(context, selected);
-        AbilityStructuralOutcome? pending = null;
-        if (context.HasPendingDependency
-            && !AbilityChoiceAnalysis.ActiveChoices(choice.Effect, selectedContext.Admission()).Any())
-        {
-            pending = Outcome(AbilityResolutionAdmission.ResolutionOf(
-                choice.Effect, selectedContext.Admission()));
-        }
         return new RunChoice(
             choice.Effect, new ChoiceFrame(null, selected.ObjectId), selected,
-            BindsPlayerSelection: true, pending, Admission(evidence));
+            BindsPlayerSelection: true, Admission(evidence));
     }
 
     /// <summary>Whether one listed option may be chosen and leaves its suffix resolvable.</summary>
@@ -80,9 +68,7 @@ internal static class AbilityStructuralQueries
         HashSet<AbilityEffect> evidence)
     {
         var admission = context.Admission();
-        bool local = AbilityAdmission.IsOptionLegal(option, admission)
-            && (!requireStateChange || IsExplicitDecline(option)
-                || AbilityResolutionAdmission.CanPartiallyResolve(option, admission));
+        bool local = LocallyLegal(option, admission, requireStateChange);
         // Mandatory encounter instructions resolve as much as possible. A later
         // choice without targets cannot invalidate this option, including an
         // optional form change that supplies the later alter-ego target.
@@ -90,7 +76,7 @@ internal static class AbilityStructuralQueries
             return local;
 
         var prior = admission.Query.ChosenBinding;
-        AbilityAdmission.AdmissionResolution? pending = context.HasPendingDependency
+        AbilityAdmission.AdmissionResolution? pending = context.HasPendingDependency && !AbilityChoiceAnalysis.ActiveChoices(option, admission).Any()
             ? AbilityResolutionAdmission.ResolutionOf(option, admission)
             : null;
         var outcomes = AbilityAdmission.BindingCandidates(
@@ -105,6 +91,12 @@ internal static class AbilityStructuralQueries
         return ContinuationCanResolve(
             context, continuation, outcomes, after, pending, evidence);
     }
+
+    private static bool LocallyLegal(AbilityEffect option, AbilityAdmissionContext admission,
+        bool requireStateChange) =>
+        AbilityAdmission.IsOptionLegal(option, admission)
+        && (!requireStateChange || IsExplicitDecline(option)
+            || AbilityResolutionAdmission.CanPartiallyResolve(option, admission));
 
     /// <summary>Targets meeting both the selector, nested effect, and remaining suffix.</summary>
     /// <remarks>

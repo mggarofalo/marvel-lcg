@@ -125,9 +125,16 @@ public static class BasicPowerInitiation
     private static void ScheduleConsequentialDamage(
         World world, Card character, Card enemy, int player) =>
         world.Agenda.Then(new PhaseStep(
-            Steps.AllyConsequentialDamage, world.Agenda.Current?.Round ?? 0, 9,
-            Index: player, Subject: character.ObjectId, Seat: player,
-            Character: enemy.ObjectId));
+            new ConsequentialDamageOperation(
+                ConsequentialDamageKind.AllyConsequentialDamage,
+                Character: enemy.ObjectId
+            ),
+            world.Agenda.Current?.Round ?? 0,
+            9,
+            Index: player,
+            Subject: character.ObjectId,
+            Seat: player
+        ));
 
     /// <summary>
     /// Puts a character's attack on the agenda —
@@ -155,9 +162,13 @@ public static class BasicPowerInitiation
     {
         world.CharacterAttack = attack;
         var step = new PhaseStep(
-            Steps.CharacterAttacks, world.Agenda.Current?.Round ?? 0, 2,
-            Index: attack.Player, Subject: attack.Enemy, Seat: attack.Player,
-            CharacterAttack: attack, SurgeGained: attack.SurgeGained);
+            new CharacterAttackOperation(Attack: attack),
+            world.Agenda.Current?.Round ?? 0,
+            2,
+            Index: attack.Player,
+            Subject: attack.Enemy,
+            Seat: attack.Player
+        );
         if (nested) world.Agenda.Now(step);
         else world.Agenda.Then(step);
     }
@@ -223,9 +234,13 @@ public static class BasicPowerInitiation
     {
         world.CharacterThwart = thwart;
         var step = new PhaseStep(
-            Steps.CharacterThwarts, world.Agenda.Current?.Round ?? 0, 3,
-            Index: thwart.Player, Subject: thwart.Scheme, Seat: thwart.Player,
-            CharacterThwart: thwart, SurgeGained: thwart.SurgeGained);
+            new CharacterThwartOperation(Thwart: thwart),
+            world.Agenda.Current?.Round ?? 0,
+            3,
+            Index: thwart.Player,
+            Subject: thwart.Scheme,
+            Seat: thwart.Player
+        );
         if (nested) world.Agenda.Now(step);
         else world.Agenda.Then(step);
     }

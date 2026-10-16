@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using Marvel.Protocol;
 using System.Security.Cryptography;
 using Marvel.Rules.Play;
 using Marvel.Session;
@@ -8,10 +10,37 @@ namespace Marvel.Server;
 /// <summary>Owns live capabilities, invitations, and their durable authority records.</summary>
 internal sealed class SessionAuthorityRegistry(ISessionCapabilityIssuer issuer)
 {
-    private readonly Dictionary<string, SessionAccess> sessions =
+    private readonly ConcurrentDictionary<string, SessionAccess> sessions =
         new(StringComparer.Ordinal);
-    private readonly Dictionary<string, PendingInvitation> invitations =
+    private readonly ConcurrentDictionary<string, PendingInvitation> invitations =
         new(StringComparer.Ordinal);
+
+    private readonly ConcurrentDictionary<string, byte> retiredClaims = new(StringComparer.Ordinal);
+
+    public bool RetiredEntry(EntryClaim claim) => retiredClaims.ContainsKey(EntryReceipts.Verifier(claim));
+
+    public void RetireClaims(IEnumerable<StoredAuthority> authorities)
+    {
+        foreach (StoredEntryReceipt receipt in authorities.Select(item => item.Entry).OfType<StoredEntryReceipt>())
+            retiredClaims.TryAdd(receipt.Verifier, 0);
+    }
+
+    private readonly SessionCapabilityPool capabilities = new(issuer);
+
+    public bool TryEntry(EntryClaim claim, out SessionAccess access)
+    {
+        string verifier = EntryReceipts.Verifier(claim);
+        access = sessions.Values.FirstOrDefault(value => value.Entry?.Verifier == verifier)!;
+        return access is not null;
+    }
+
+    public object? SessionGate(EngineRequest request)
+    {
+        if (EntryReceipts.Valid(request.Entry) && TryEntry(request.Entry!, out var claimed)) return claimed.Session.Gate;
+        if (TrySession(request, out _, out var access)) return access.Session.Gate;
+        return TryInvitation(request.Capability ?? string.Empty, request.GameId, out _, out var invitation)
+            ? invitation.Session.Gate : null;
+    }
 
     public int? AuthorizedSeat(EngineRequest request)
     {
@@ -47,7 +76,7 @@ internal sealed class SessionAuthorityRegistry(ISessionCapabilityIssuer issuer)
         access = null!;
         if (capability.Length is <= 0 or > EngineProtocol.MaximumIdentifierLength
             || !sessions.TryGetValue(verifier, out SessionAccess? found)
-            || !Matches(found.Session, request.GameId))
+            || found.Revoked || !Matches(found.Session, request.GameId))
         {
             return false;
         }
@@ -72,46 +101,32 @@ internal sealed class SessionAuthorityRegistry(ISessionCapabilityIssuer issuer)
         return true;
     }
 
-    public string Issue(HashSet<string>? reserved = null)
-    {
-        for (int attempt = 0; attempt < 16; attempt++)
-        {
-            string capability = issuer.Issue();
-            string verifier = Verifier(capability);
-            if (capability.Length is > 0 and <= EngineProtocol.MaximumIdentifierLength
-                && !sessions.ContainsKey(verifier)
-                && !invitations.ContainsKey(verifier)
-                && !(reserved?.Contains(capability) ?? false))
-            {
-                return capability;
-            }
-        }
-
-        throw new InvalidOperationException("could not issue a unique session capability");
-    }
+    public string Issue(HashSet<string>? reserved = null) => capabilities.Issue(
+        verifier => sessions.ContainsKey(verifier) || invitations.ContainsKey(verifier), reserved);
 
     public void PublishOpen(
         HostedSession session,
         string capability,
         ViewScope scope,
-        IReadOnlyList<(SeatScope Grant, string Token)> issuedInvitations)
+        IReadOnlyList<(SeatScope Grant, string Token)> issuedInvitations,
+        StoredEntryReceipt entry)
     {
-        sessions.Add(Verifier(capability), new SessionAccess(session, scope, Owner: true));
+        sessions.TryAdd(Verifier(capability), new SessionAccess(session, scope, Owner: true, entry));
         foreach (var (grant, token) in issuedInvitations)
         {
-            invitations.Add(Verifier(token), new PendingInvitation(session, grant.Scope));
+            invitations.TryAdd(Verifier(token), new PendingInvitation(session, grant.Scope));
         }
     }
 
     public void PublishAttachment(
         string invitationVerifier,
         string capability,
-        PendingInvitation pending)
+        PendingInvitation pending, StoredEntryReceipt entry)
     {
-        invitations.Remove(invitationVerifier);
-        sessions.Add(
+        invitations.TryRemove(invitationVerifier, out _);
+        sessions.TryAdd(
             Verifier(capability),
-            new SessionAccess(pending.Session, pending.Scope, Owner: false));
+            new SessionAccess(pending.Session, pending.Scope, Owner: false, entry));
     }
 
     public static List<StoredAuthority> OpenAuthorities(
@@ -151,18 +166,23 @@ internal sealed class SessionAuthorityRegistry(ISessionCapabilityIssuer issuer)
 
     public List<StoredAuthority> RevokedAuthorities(
         HostedSession session, string verifier) =>
-        [.. Snapshot(session).Where(authority => authority.Verifier != verifier)];
+        [.. Snapshot(session).Select(authority => authority.Verifier == verifier
+            ? authority with { Revoked = true } : authority)];
 
-    public void Revoke(string verifier) => sessions.Remove(verifier);
+    public void Revoke(string verifier)
+    {
+        if (sessions.TryGetValue(verifier, out var access)) sessions[verifier] = access with { Revoked = true };
+    }
 
     public void Remove(HostedSession session)
     {
+        RetireClaims(Snapshot(session));
         foreach (string capability in sessions
                      .Where(pair => ReferenceEquals(pair.Value.Session, session))
                      .Select(pair => pair.Key)
                      .ToList())
         {
-            sessions.Remove(capability);
+            sessions.TryRemove(capability, out _);
         }
 
         foreach (string invitation in invitations
@@ -170,7 +190,7 @@ internal sealed class SessionAuthorityRegistry(ISessionCapabilityIssuer issuer)
                      .Select(pair => pair.Key)
                      .ToList())
         {
-            invitations.Remove(invitation);
+            invitations.TryRemove(invitation, out _);
         }
     }
 
@@ -178,8 +198,13 @@ internal sealed class SessionAuthorityRegistry(ISessionCapabilityIssuer issuer)
     {
         StoredSessionJson.ValidateLoaded(stored);
         var authorityVerifiers = new HashSet<string>(StringComparer.Ordinal);
+        var claimVerifiers = new HashSet<string>(StringComparer.Ordinal);
         foreach (StoredAuthority authority in stored.Authorities)
         {
+            if (authority.Entry is { } receipt && (!claimVerifiers.Add(receipt.Verifier)
+                || retiredClaims.ContainsKey(receipt.Verifier)
+                || sessions.Values.Any(access => access.Entry?.Verifier == receipt.Verifier)))
+                throw new SessionSaveException("stored entry claim is duplicated");
             if (authority.Seats.Any(seat => seat >= game.State.Players))
             {
                 throw new SessionSaveException(
@@ -206,14 +231,14 @@ internal sealed class SessionAuthorityRegistry(ISessionCapabilityIssuer issuer)
                 var scope = new ViewScope(authority.Seats);
                 if (authority.Invitation)
                 {
-                    invitations.Add(
+                    invitations.TryAdd(
                         authority.Verifier, new PendingInvitation(session, scope));
                 }
                 else
                 {
-                    sessions.Add(
+                    sessions.TryAdd(
                         authority.Verifier,
-                        new SessionAccess(session, scope, authority.Owner));
+                        new SessionAccess(session, scope, authority.Owner, authority.Entry, authority.Revoked));
                 }
             }
 
@@ -234,7 +259,7 @@ internal sealed class SessionAuthorityRegistry(ISessionCapabilityIssuer issuer)
                     pair.Key,
                     ScopeSeats(pair.Value.Scope, session.Game.State.Players),
                     pair.Value.Owner,
-                    Invitation: false))
+                    Invitation: false, pair.Value.Entry, pair.Value.Revoked))
                 .Concat(invitations
                     .Where(pair => ReferenceEquals(pair.Value.Session, session))
                     .Select(pair => new StoredAuthority(

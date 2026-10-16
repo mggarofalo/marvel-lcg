@@ -167,7 +167,7 @@ public sealed class CoreCombatResponseTests
 
         Assert.Empty(runner.Waiting(world, occurrence, WindowKind.Response));
 
-        occurrence.Also(new Defeated(minion.ObjectId, tigra.ObjectId, "Attack"));
+        occurrence.Also(new Defeated(minion.ObjectId, tigra.ObjectId, "Attack") { Kind = CardKind.Minion });
         var pending = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
         runner.Resolve(world, occurrence, pending, [], []);
 
@@ -192,8 +192,7 @@ public sealed class CoreCombatResponseTests
         var pending = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
         runner.Resolve(world, occurrence, pending, [], []);
         var waiting = Assert.Single(world.Agenda.Outstanding);
-        runner.Chose(
-            world, daredevil, 0, waiting.Index, Decision.Take(minion.ObjectId), waiting.Tier);
+        runner.Chose(world, waiting, Decision.Take(minion.ObjectId));
 
         Assert.Equal(1, minion.Damage);
     }
@@ -240,9 +239,7 @@ public sealed class CoreCombatResponseTests
         world.Attack = new EnemyAttack(
             enemy.ObjectId, 0, hero.ObjectId, Defender: hero.ObjectId,
             BasicDefense: true, Damaged: true, CalculatedDamage: 3);
-        world.Agenda.Add(new PhaseStep(
-            Steps.EndAttack, 1, 2, Subject: enemy.ObjectId, Seat: 0,
-            Character: hero.ObjectId));
+        world.Agenda.Add(new PhaseStep(new AttackCompletionOperation(), Round: 1, Number: 2, Subject: enemy.ObjectId, Seat: 0));
 
         Prompt prompt = Assert.IsType<Prompt>(
             Sequence.Work(world, Cards, runner, []));

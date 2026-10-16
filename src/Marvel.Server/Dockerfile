@@ -11,7 +11,7 @@ ARG MARVEL_COMMIT=local
 ARG MARVEL_VERSION_MAJOR=0
 ARG MARVEL_VERSION_MINOR=1
 ARG MARVEL_VERSION_PATCH=0
-RUN dotnet publish src/Marvel.Server/Marvel.Server.csproj \
+RUN dotnet publish src/Marvel.Server.Host/Marvel.Server.Host.csproj \
     --configuration Release \
     --output /out \
     --no-self-contained \
@@ -42,6 +42,6 @@ VOLUME ["/var/lib/marvel/sessions", "/var/lib/marvel/diagnostics"]
 EXPOSE 41923
 STOPSIGNAL SIGTERM
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["dotnet", "Marvel.Server.dll", "--health-check"]
+    CMD ["dotnet", "Marvel.Server.Host.dll", "--health-check"]
 USER $APP_UID
-ENTRYPOINT ["dotnet", "Marvel.Server.dll", "--listen", "0.0.0.0", "--port", "41923", "--data-root", "/app", "--save-root", "/var/lib/marvel/sessions", "--diagnostics-root", "/var/lib/marvel/diagnostics"]
+ENTRYPOINT ["dotnet", "Marvel.Server.Host.dll", "--listen", "0.0.0.0", "--port", "41923", "--data-root", "/app", "--save-root", "/var/lib/marvel/sessions", "--diagnostics-root", "/var/lib/marvel/diagnostics"]

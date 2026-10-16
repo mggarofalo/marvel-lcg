@@ -184,7 +184,7 @@ internal static class AbilityPowerStateMutation
     private static AbilityPowerState DefeatSideScheme(
         AbilityPowerState state, Card scheme, AbilityAdmissionScope cast)
     {
-        if (PowerDefeatHasTriggeredWork(state, scheme, cast))
+        if (AbilityProjectedDefeatWindows.HasWork(state, scheme, cast))
         {
             throw new RulesNotImplementedException(
                 $"side scheme '{scheme.FaceId}' is defeated before a "

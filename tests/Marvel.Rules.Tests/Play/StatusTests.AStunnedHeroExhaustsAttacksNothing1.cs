@@ -231,7 +231,7 @@ public sealed class StatusAStunnedHeroExhaustsAttacksNothingTests : StatusTestBa
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         world.CreateCard("boost", world.AreaOf(DeckType.EncounterDeck));
         Statuses.Give(world, villain, Statuses.Stunned);
-        Attack.Initiate(world, printed, new PhaseStep(Steps.Attack, 1, 2, Subject: villain.ObjectId, Seat: 0), []);
+        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
         Sequence.Finish(world, printed, new NoCardAbilities(), []);
         Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
         Assert.Single(world.AreaOf(DeckType.EncounterDeck).Cards);

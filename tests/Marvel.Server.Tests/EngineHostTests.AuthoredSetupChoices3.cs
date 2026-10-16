@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Decisions;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
@@ -75,7 +76,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
             },
             valid with
             {
-                Decision = EngineDecision.Decline
+                Decision = Decision.Decline
             },
             valid with
             {
@@ -140,7 +141,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root), new SequenceCapabilities("first-capability", "second-capability"));
         var request = EngineRequest.OpenGame("first", "chosen-id", new GameSpecification("rhino", ["spider_man"], [], Seed: 7));
         var first = host.Exchange(request);
-        var duplicate = host.Exchange(request with { RequestId = "again" });
+        var duplicate = host.Exchange(request with { RequestId = "again", Entry = EntryClaim.Create() });
         Assert.Null(first.Error);
         Assert.Null(duplicate.Error);
         Assert.NotEqual(first.Capability, duplicate.Capability);
@@ -152,7 +153,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         var factory = new UnusedFactory();
         var host = new EngineHost(factory);
         var wrongVersion = host.Exchange(new EngineRequest(99, "version", EngineProtocol.Open, "game", Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
-        var unknownGame = host.Exchange(EngineRequest.ResolveGame("resolve", "missing", "missing-capability", EngineDecision.Decline));
+        var unknownGame = host.Exchange(EngineRequest.ResolveGame("resolve", "missing", "missing-capability", Decision.Decline));
         Assert.Equal("unsupported_version", wrongVersion.Error?.Code);
         Assert.Equal("session_not_found", unknownGame.Error?.Code);
         Assert.Equal(0, factory.Calls);
@@ -227,7 +228,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         var factory = new UnusedFactory();
         var host = new EngineHost(factory);
         var rejected = host.Exchange(new EngineRequest(version, "old-client", EngineProtocol.Open, "game", Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
-        Assert.Equal(31, EngineProtocol.Version);
+        Assert.Equal(32, EngineProtocol.Version);
         Assert.Equal(EngineProtocol.Version, rejected.Version);
         Assert.Equal("unsupported_version", rejected.Error?.Code);
         Assert.Equal(0, factory.Calls);
@@ -251,7 +252,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         var opened = host.Exchange(EngineRequest.OpenGame("open", "fail-closed", new GameSpecification("rhino", ["spider_man"], [], Seed: 7)));
         Assert.Null(opened.Error);
         string capability = RequiredCapability(opened);
-        var rejected = host.Exchange(EngineRequest.ResolveGame("bad", "fail-closed", capability, new EngineDecision(999, [])));
+        var rejected = host.Exchange(EngineRequest.ResolveGame("bad", "fail-closed", capability, new Decision(999, [])));
         var after = host.Exchange(EngineRequest.ResolveGame("after", "fail-closed", capability, TakeOnly(opened)));
         Assert.Equal("invalid_decision", rejected.Error?.Code);
         Assert.Null(after.Error);

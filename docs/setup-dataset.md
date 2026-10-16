@@ -53,10 +53,17 @@ recommended modular sets, set-aside cards and mode:
 ```
 
 A hero names its 2 identity faces, obligation, nemesis set, 15 signature cards
-and the 25-card customization block from one printed starter deck. The runtime
-does not accept an arbitrary user-built deck.
+and the 25-card customization block from one printed starter deck. An optional
+ordered `PlayerDeckRecipe` per seat supplies a complete validated Core deck.
+Omitting recipes selects the authored starter defaults. Identities, obligations
+and nemesis sets always come from the selected hero record. Each hero declares
+`nemesis_set_icon` explicitly; the engine checks that association without
+constructing a set name from the identity’s name.
 
-An encounter-set row names its cards in printed composition order. Recommended
+An encounter-set row names its cards in printed composition order and declares
+its `role`: `modular`, `standard`, `expert`, `scenario` or `nemesis`. Roles are
+authored composition metadata; no card-id or set-name spelling determines them.
+The `expert` campaign flag must be a JSON boolean. Recommended
 modular sets remain separate from fixed sets so the caller can make the setup
 choice the scenario permits.
 
@@ -89,34 +96,44 @@ in the ability dataset. A change to printed card text has one executable source.
 10. chosen modular encounter cards.
 
 Player groups are created in seat order. Every player group finishes before the
-scenario group begins.
+scenario group begins. Explicit decks replace steps 5 and 6 with the supplied
+full recipe order. The engine orients identity faces by their card kind, placing
+Alter-Ego first regardless of id spelling.
 
 Creation order is a wire-format choice made by this engine. It allocates card
 object ids, so changing it changes `World.Digest()` and every seeded game.
 
 The Rules Reference decides where cards go after creation. The deal moves cards
 to those areas, shuffles the player decks and encounter deck with the game’s one
-seeded RNG stream, draws opening hands, and resolves supported setup abilities.
+seeded RNG stream, resolves scenario setup abilities, then draws opening hands.
+Scenario setup decisions suspend at `GamePhase.ScenarioSetup` and resume through
+the same `Game.Resolve` prompt boundary as later decisions; opening hands and
+mulligans wait until those effects finish.
 
 ## Deck-construction checks
 
-`Marvel.Content.Setup.DeckConstruction` validates product-independent rules for
-the supplied starter decks:
+`Marvel.Rules.Setup.DeckConstruction` and `PlayerDeckAdmission` validate engine
+deck rules using the supplied structured card facts:
 
 - exactly one identity per player;
 - identity-specific cards share the identity set icon;
 - obligations and nemesis cards match the selected identity;
 - customization cards have an allowed player classification;
 - team-up requirements match the identity where applicable;
+- full recipes contain exactly their identity’s signature-card quantities;
+- full recipes contain 40–50 cards, one aspect plus Basic, and obey copy limits;
 - deck size excludes Permanent cards where the rules require it; and
 - matching unique cards are rejected at deck and identity selection boundaries.
 
 These checks use structured facts from `datasets/cards/`. They do not parse
 printed prose at runtime.
 
-The runtime still selects one of the 5 published Core starter decks. Supplying a
-general deck-building interface would open a new product boundary and would need
-its own complete validation contract.
+`DatasetGameFactory` admits the complete setup catalog against the executable
+ability pool before publishing it and compiles that immutable program once.
+Every game receives its own execution state. Research-only card faces cannot
+enter a recipe. Recipes are immutable snapshots and are persisted in session
+setup so replay reconstructs their exact allocation order. The engine supports
+one through four seats. There is no deck editor yet.
 
 ## Ownership and placement
 
@@ -154,7 +171,7 @@ The runtime does not currently accept:
 
 - campaign state or campaign logs;
 - Heroic, Skirmish or combined modes;
-- arbitrary deck construction;
+- deck construction outside the admitted executable Core pool;
 - later heroes, scenarios or encounter sets;
 - player-side-scheme deck construction;
 - challenge or evidence setup; or

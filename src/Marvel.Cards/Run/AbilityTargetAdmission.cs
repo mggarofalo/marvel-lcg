@@ -2,7 +2,6 @@ using static Marvel.Cards.Run.AbilityEffectTargetAdmission;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityCardActionTargetAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
-using static Marvel.Cards.Run.AbilityDelayedReachability;
 using static Marvel.Cards.Run.AbilityPowerProjection;
 using static Marvel.Cards.Run.AbilityPowerTrace;
 using static Marvel.Cards.Run.AbilityInitiationPrimitives;
@@ -272,10 +271,6 @@ internal static class AbilityTargetAdmission
         if (requested < 0)
         {
             throw new AbilityException("'eachTime' needs a non-negative discard count");
-        }
-        if (requested > 0)
-        {
-            ValidateEachTimeBody(node, cast);
         }
         return true;
     }

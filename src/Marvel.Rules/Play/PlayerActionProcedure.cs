@@ -23,7 +23,7 @@ internal static class PlayerActionProcedure
             throw new RulesNotImplementedException(
                 $"the player-action procedure has no step '{step.What}'");
         }
-        if (step.PlayerAction is not { } action)
+        if (step.Require<PlayerActionOperation>().Action is not { } action)
         {
             throw new InvalidOperationException(
                 "a player Action agenda step has no accepted action");
@@ -43,13 +43,13 @@ internal static class PlayerActionProcedure
             // A refused command must not become permanent agenda work. These
             // command failure semantics are an engine choice: the open turn
             // prompt remains retryable.
-            world.Agenda.Cancel(occurrence);
+            world.Agenda.Cancel(step, occurrence);
             throw;
         }
 
         // Children share the Action occurrence and resolve before responses.
         world.Agenda.Advance(step, occurrence);
-        world.Agenda.BeforeResponses(occurrence);
+        world.Agenda.BeforeResponses(step, occurrence);
         return null;
     }
 

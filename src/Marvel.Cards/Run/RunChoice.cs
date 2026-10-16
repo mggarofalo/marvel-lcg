@@ -8,5 +8,5 @@ using Marvel.Rules.Play;
 namespace Marvel.Cards.Run;
 internal sealed record RunChoice(
     AbilityEffect Effect, ChoiceFrame Frame, Card? Selection,
-    bool BindsPlayerSelection, AbilityStructuralOutcome? PendingOutcome,
+    bool BindsPlayerSelection,
     AbilityAdmissionResult Admission) : AbilityStructuralTransition;

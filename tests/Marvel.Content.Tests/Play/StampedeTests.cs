@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -155,8 +156,7 @@ public sealed class StampedeTests
 
         // A second attack from the same villain, nothing else revealed.
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        world.Agenda.Add(new PhaseStep(
-            Steps.Attack, 2, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 2, Number: 2, Subject: villain.ObjectId, Seat: 0));
         Run(world);
 
         Assert.False(Statuses.Has(world, identity, Statuses.Stunned));
@@ -185,8 +185,7 @@ public sealed class StampedeTests
         // A second attack, with nothing to prevent it. It damages, and it must
         // not stun.
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        world.Agenda.Add(new PhaseStep(
-            Steps.Attack, 2, 2, Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 2, Number: 2, Subject: villain.ObjectId, Seat: 0));
         Run(world);
 
         Assert.True(identity.Damage > 0, "the second attack landed");
@@ -198,8 +197,7 @@ public sealed class StampedeTests
         World world, string faceId, Card? defender = null)
     {
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
-        world.Agenda.Add(new PhaseStep(
-            Steps.RevealEncounterCard, 1, 4, Subject: card.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: card.ObjectId, Seat: 0));
         return Run(world, defender);
     }
 

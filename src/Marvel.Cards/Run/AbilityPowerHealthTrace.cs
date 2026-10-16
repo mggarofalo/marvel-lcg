@@ -1,6 +1,5 @@
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
-using static Marvel.Cards.Run.AbilityDelayedReachability;
 using static Marvel.Cards.Run.AbilityPowerProjection;
 using static Marvel.Cards.Run.AbilityPowerTrace;
 using static Marvel.Cards.Run.AbilityInitiationPrimitives;
@@ -72,14 +71,14 @@ internal static class AbilityPowerHealthTrace
         {
             return state;
         }
-        if (PowerWouldBeDefeatedHasTriggeredWork(state, damaged, cast))
+        if (AbilityProjectedDefeatWindows.HasWork(state, damaged, cast, would: true))
         {
             throw new RulesNotImplementedException(
                 $"character '{damaged.FaceId}' would be defeated before a "
                 + "labelled-power continuation reads a step-6 interrupt, "
                 + "which is not implemented");
         }
-        if (PowerDefeatHasTriggeredWork(state, damaged, cast))
+        if (AbilityProjectedDefeatWindows.HasWork(state, damaged, cast))
         {
             throw new RulesNotImplementedException(
                 $"character '{damaged.FaceId}' is defeated before a "
@@ -368,36 +367,6 @@ internal static class AbilityPowerHealthTrace
                 || ReadsChangedThreat(comparison.Count, schemeThreat, cast),
             _ => false,
         };
-
-    internal static bool PowerWouldBeDefeatedHasTriggeredWork(
-        AbilityPowerState state, Card defeated, AbilityAdmissionScope cast) =>
-        PowerHasMatchingInterrupt(
-            state, defeated, cast, Steps.CardWouldBeDefeated);
-
-    internal static bool PowerDefeatHasTriggeredWork(
-        AbilityPowerState state, Card defeated, AbilityAdmissionScope cast) =>
-        PowerHasMatchingInterrupt(state, defeated, cast, Steps.CardDefeated);
-
-    internal static bool PowerHasMatchingInterrupt(
-        AbilityPowerState state, Card subject, AbilityAdmissionScope cast, string condition)
-    {
-        if (string.Equals(condition, Steps.CardDefeated, StringComparison.Ordinal)
-            && cast.World.Facts.HasWhenDefeated(subject.FaceId)
-            && !AbilityProgramQueries.On(cast.Context.Program, subject).Any(ability =>
-                ability.Trigger.Timing == AbilityType.WhenDefeated))
-        {
-            // Runtime refuses printed defeat text with no authored behavior.
-            // Eligibility must make the same refusal before a labelled cost.
-            return true;
-        }
-
-        return AbilityWindowAdmission.WaitingCards(
-                cast.Context.Program, cast.World,
-                new Occurrence(
-                    0, [condition], Subject: subject.ObjectId, Player: subject.Owner),
-                WindowKind.Interrupt, cast.Context.ResourceAbilities)
-            .Any(card => !state.Discarded.Contains(card));
-    }
 
     internal static List<int> PowerLeavingTree(Card host, AbilityAdmissionScope cast)
     {

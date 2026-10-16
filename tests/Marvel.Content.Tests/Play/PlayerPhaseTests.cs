@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using System.Text.Json;
 using Marvel.Content.Tests.Cards;
 using Marvel.Content.Setup;
@@ -70,7 +71,7 @@ public sealed class PlayerPhaseTests
         // state changes; ending the turn emits no additional occurrence.
         var game = Begin();
         string before = game.State.Digest().Canonical();
-        var started = game.Resolve(Decision.Decline);
+        var started = game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         PhaseStarted phase = Assert.IsType<PhaseStarted>(Assert.Single(started.Events));
         Assert.Equal("Player", phase.Phase);
         Assert.Equal(1, phase.Round);
@@ -92,7 +93,9 @@ public sealed class PlayerPhaseTests
         var game = Begin();
         while (game.Pending is not null)
         {
-            game.Resolve(Decision.Decline);
+            game.Resolve(game.Phase is GamePhase.Mulligan or GamePhase.EndPhase
+                ? Decision.Take(game.Pending.Affordances.Single().Id)
+                : Decision.Decline);
         }
 
         var scheme = game.State.TheCardIn(DeckType.MainSchemesArea)!;
@@ -108,11 +111,11 @@ public sealed class PlayerPhaseTests
         // where the game first changes anything -- and where four things that
         // setup cannot exercise first happen at once.
         var game = Begin();
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         game.Resolve(Decision.Decline);
 
         int before = game.State.Cards.Count;
-        var result = game.Resolve(Decision.Decline);
+        var result = game.Resolve(Decision.Take(game.Pending!.Affordances.Single().Id));
 
         // A card made mid-game, which is the append-only id contract tested by
         // something other than dealing. The Tough is id 81 on a board of 81.
@@ -145,9 +148,9 @@ public sealed class PlayerPhaseTests
         // dealt. Drawing them the other way round shifts every card left in the
         // encounter deck and every board after this one.
         var game = Begin();
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         game.Resolve(Decision.Decline);
-        game.Resolve(Decision.Decline);
-        var result = game.Resolve(Decision.Decline);
+        var result = game.Resolve(Decision.Take(game.Pending!.Affordances.Single().Id));
 
         var discard = result.State.AreaOf(DeckType.EncounterDiscardPile);
         Assert.Equal(["01186", "01105"], discard.Cards.Select(card => card.FaceId));
@@ -164,9 +167,9 @@ public sealed class PlayerPhaseTests
         // boost card worth nothing). Either alone gives 1, which is why the
         // total is checked against the parts.
         var game = Begin();
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         game.Resolve(Decision.Decline);
-        game.Resolve(Decision.Decline);
-        var result = game.Resolve(Decision.Decline);
+        var result = game.Resolve(Decision.Take(game.Pending!.Affordances.Single().Id));
 
         var scheme = result.State.TheCardIn(DeckType.MainSchemesArea)!;
         Assert.Equal(2, scheme.Tokens["k_threat"]);
@@ -190,9 +193,9 @@ public sealed class PlayerPhaseTests
         // card." Dealt, not revealed: `.2` finishes the original card first,
         // and the villain phase's reveal queue is what makes that happen.
         var game = Begin();
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         game.Resolve(Decision.Decline);
-        game.Resolve(Decision.Decline);
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single().Id));
 
         var world = game.State;
         var villain = world.TheCardIn(DeckType.VillainArea)!;
@@ -201,7 +204,7 @@ public sealed class PlayerPhaseTests
         var queue = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0));
         int before = queue.Cards.Count;
 
-        AuthoredCards.Runner().WhenRevealed(
+        world.EncounterAbilities.WhenRevealed(
             world, world.Cards.First(card => card.FaceId == AuthoredCards.ImTough), 0);
 
         // One card dealt, and Rhino is no more Tough than he already was --
@@ -217,7 +220,9 @@ public sealed class PlayerPhaseTests
         var game = Begin();
         while (game.Pending is not null)
         {
-            game.Resolve(Decision.Decline);
+            game.Resolve(game.Phase is GamePhase.Mulligan or GamePhase.EndPhase
+                ? Decision.Take(game.Pending.Affordances.Single().Id)
+                : Decision.Decline);
         }
 
         Assert.Throws<InvalidOperationException>(() => game.Resolve(Decision.Decline));
@@ -232,9 +237,9 @@ public sealed class PlayerPhaseTests
         // incremented would put the token on a seat that does not exist -- and
         // `k_first_player_token` would vanish from the digest.
         var game = Begin();
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         game.Resolve(Decision.Decline);
-        game.Resolve(Decision.Decline);
-        var result = game.Resolve(Decision.Decline);
+        var result = game.Resolve(Decision.Take(game.Pending!.Affordances.Single().Id));
 
         Assert.Equal(0, result.State.FirstPlayer);
         Assert.Contains("\"k_first_player_token\":1", result.State.Digest().Canonical());
@@ -252,9 +257,9 @@ public sealed class PlayerPhaseTests
         // swallowing it would produce a board that is plausible and wrong.
         var game = Begin();
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(
+        var thrown = Assert.Throws<ArgumentException>(
             () => game.Resolve(Decision.Take(999)));
-        Assert.Contains("999", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal("input", thrown.ParamName);
     }
 
     [Rule("rr:appendix-ii-setup.step.15")]
@@ -299,15 +304,14 @@ public sealed class PlayerPhaseTests
 
     [Rule("rr:appendix-ii-setup.step.15")]
     [Fact]
-    public void DecliningAMulliganKeepsTheHandExactlyAsItWas()
+    public void SelectingNoMulliganCardsKeepsTheHandExactlyAsItWas()
     {
-        // "**May** discard." Declining and taking it with an empty list are
-        // the same answer, which is why the prompt is not cancellable and why
-        // this is the same code path.
+        // "**May** discard." Taking the mulligan offer with no selected cards
+        // commits the decision to keep the entire opening hand.
         var game = Begin(out var world);
         var before = world.Seats[0].Hand.Cards.Select(card => card.ObjectId).ToList();
 
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
 
         Assert.Equal(before, world.Seats[0].Hand.Cards.Select(card => card.ObjectId));
     }
@@ -327,7 +331,7 @@ public sealed class PlayerPhaseTests
         // wrong: two different options must not collide onto one handle.
         var game = Begin();
         int mulligan = game.Pending!.Affordances.Single().Id;
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         int changeForm = game.Pending!.Affordances.Single(a => a.Verb == Game.ChangeForm).Id;
         game.Resolve(Decision.Decline);
         int endPhase = game.Pending!.Affordances.Single().Id;
@@ -350,7 +354,7 @@ public sealed class PlayerPhaseTests
         // nothing, flips down, and ends their turn is holding one too many
         // without anything unusual having happened.
         var game = Begin(out var world);
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         int size = (int)PhaseEnd.HandSize(world, world.Seats[0], Cards);
 
         Draw.Cards(world, 0, 2, "test", []);
@@ -373,7 +377,7 @@ public sealed class PlayerPhaseTests
         // whenever the hand is not over its size, so a minimum that was always
         // the hand's length would forbid what the rule permits.
         var game = Begin(out var world);
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
         game.Resolve(Decision.Decline);
 
         var offered = Assert.Single(game.Pending!.Affordances);
@@ -405,7 +409,7 @@ public sealed class PlayerPhaseTests
             [.. Heroes.Select(hero => Setup.Hero(hero).Name)],
             Seed);
         var game = Game.Begin(world, Cards, new Colliding(world));
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(option => option.Verb == Game.ResolveMulligans).Id));
 
         var offered = game.Pending!.Affordances;
 

@@ -137,13 +137,18 @@ public static class AllyBasicPowers
         else InitiateThwart(world, ally, target, ally.Owner);
 
         world.Agenda.Then(new PhaseStep(
-            attacking ? Steps.AllyConsequentialDamage : Steps.AllyThwartConsequentialDamage,
+            new ConsequentialDamageOperation(
+                attacking
+                ? ConsequentialDamageKind.AllyConsequentialDamage
+                : ConsequentialDamageKind.AllyThwartConsequentialDamage,
+                target.ObjectId
+            ),
             world.Agenda.Current?.Round ?? 0,
             9,
             Index: ally.Owner,
             Subject: ally.ObjectId,
-            Seat: ally.Owner,
-            Character: target.ObjectId));
+            Seat: ally.Owner
+        ));
     }
 
     private static void ValidateAllyPower(

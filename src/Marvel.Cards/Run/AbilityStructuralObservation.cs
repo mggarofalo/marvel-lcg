@@ -7,4 +7,4 @@ using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Run;
 
-internal sealed record AbilityStructuralObservation(bool Suspended, Card? Discarded = null);
+internal sealed record AbilityStructuralObservation(bool Suspended, Card? Discarded = null, AbilityStructuralOutcome? Outcome = null);

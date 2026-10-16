@@ -257,10 +257,13 @@ Feature: Core Ultron treacheries
 
   @behavior:card:01147:each-drone-minion-engaged-with-your-hero
   @covers:behavior:rr:activation.5:published-result
-  @card:01147 @rr:activation.5
+  @card:01147 @rr:activation.5 @rr:activation.7 @rr:treachery.2.1
   Scenario: Swarm Attack requires the first player to order multiple Drone activations
     # The two engaged Drones activate simultaneously. The first player chooses
     # their complete order before either attack changes the game state.
+    # rr:activation.7: an initiating effect resolves only after the activation
+    # fully resolves. rr:treachery.2.1: it is discarded "after all of those
+    # activations have resolved", so it remains revealing through both attacks.
     Given a canonical Core scene is dealt
       | campaign | heroes     | seed |
       | ultron   | spider_man | 1014 |
@@ -275,7 +278,18 @@ Feature: Core Ultron treacheries
       | card  | copy |
       | 01003 | 0    |
       | 01002 | 0    |
-    Then the game is unfinished
+    Then card 01147 copy 0 is still being revealed
+    And card 01003 copy 0 is attacking seat 1
+    And card 01001a copy 0 has 0 damage
+    When seat 1 declines the pending opportunity
+    Then card 01147 copy 0 is still being revealed
+    And card 01002 copy 0 is attacking seat 1
+    And card 01001a copy 0 has 1 damage
+    When seat 1 declines the pending opportunity
+    Then card 01147 copy 0 is in the encounter discard pile
+    And card 01001a copy 0 has 2 damage
+    And the attack has ended
+    And the game is unfinished
 
   @behavior:card:01147:if-no-attack-was-made-way-put-condition-met
   @card:01147

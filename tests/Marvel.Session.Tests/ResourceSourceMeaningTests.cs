@@ -9,24 +9,13 @@ namespace Marvel.Session.Tests;
 public sealed class ResourceSourceMeaningTests
 {
     [Fact]
-    public void HistoricalPromptOmitsOnlyMeaningWhileCurrentPromptVerifiesIt()
+    public void ReplayVerifiesResourceTypesAndTheirMeaning()
     {
         var source = new ResourceSource(8, "G") { AbilityName = "Scientist", CostDescription = "" };
         Prompt asked = Payment(source);
         PromptRecord current = PromptRecord.From(asked);
-        JsonObject legacy = JournalRecordsTests.SchemaTwoPrompt(current);
-        JsonObject cost = legacy["affordances"]![0]!["costs"]![0]!.AsObject();
-        foreach (string field in new[] { "sources", "generators" })
-        {
-            JsonObject generator = cost[field]![0]!.AsObject();
-            _ = generator.Remove("ability_name");
-            _ = generator.Remove("cost_description");
-        }
-        using JsonDocument document = JsonDocument.Parse(legacy.ToJsonString());
-        PromptRecord historical = SchemaTwoPromptJson.Read(document.RootElement);
-        JournalReplay.RequirePrompt(historical, asked, "historical payment");
         Assert.Throws<ReplayDivergenceException>(() => JournalReplay.RequirePrompt(
-            historical, Payment(source with { Generates = "B" }), "changed resources"));
+            current, Payment(source with { Generates = "B" }), "changed resources"));
         Assert.Throws<ReplayDivergenceException>(() => JournalReplay.RequirePrompt(
             current, Payment(source with { AbilityName = "Different ability" }), "changed meaning"));
     }

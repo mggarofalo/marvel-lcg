@@ -54,7 +54,7 @@ public sealed class ModularEncounterSetTests
               "campaigns": {},
               "heroes": {},
               "encounter_sets": {
-                "broken": { "name": "Broken", "encounters": [] }
+                "broken": { "name": "Broken", "role": "modular", "encounters": [] }
               }
             }
             """);

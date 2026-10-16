@@ -36,9 +36,6 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 	if not await preload("res://smoke/gesture_settlement.gd").global_pose(self, card, original):
 		_fail("cancelled exhausted drag did not settle at its saved physical pose")
 		return false
-	if not card.get_global_transform().is_equal_approx(original):
-		_fail("cancelled exhausted drag did not restore the exact physical pose")
-		return false
 	if not await preload("res://smoke/exhausted_pointer_checks.gd").perform(self, card, anchor): return false
 	if anchor == IDENTITY and not _hero_clears_player_piles(card): return false
 	if not await _capture_checkpoint("exhausted-" + str(anchor)): return false

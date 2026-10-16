@@ -18,7 +18,7 @@ public sealed class TableDraftOperationsTests : DecisionComposerTestBase
         Assert.True(operations.TrySelectAffordance(29));
 
         Assert.Equal(29, composer.Selected?.Id);
-        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.True(composer.TryBuild(out Decision? decision, out string? error), error);
         Assert.Equal(29, decision?.Affordance);
     }
 

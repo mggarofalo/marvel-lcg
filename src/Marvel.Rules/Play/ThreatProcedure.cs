@@ -69,19 +69,8 @@ internal static class ThreatProcedure
         var occurrence = world.Agenda.Occurrence
             ?? throw new InvalidOperationException("a threat step has no occurrence");
         long placed = Threat.Apply(world, facts, abilities, occurrence, events);
-        if (step.AbilityOccurrence is { } abilityOccurrence
-            && step.Tier is { } tier
-            && step.AbilityOrdinal >= 0
-            && step.Placement is { Source: >= 0 } placement)
-        {
-            var ability = new PendingAbility(
-                placement.Source, tier, step.Seat, step.AbilityOrdinal);
-            if (placed > 0)
-            {
-                abilityOccurrence.Resolve(ability);
-            }
-            abilityOccurrence.Complete(ability);
-        }
+        var operation = step.Require<ThreatPlacementOperation>();
+        operation.Completion.Complete(operation.Part, placed);
     }
 
     /// <summary>An enemy schemes. <c>rr:scheme-enemy-activation</c>.</summary>
@@ -136,11 +125,19 @@ internal static class ThreatProcedure
         // sub-step, differing only in naming SCH where the attack names ATK.
         int round = world.Agenda.Current?.Round ?? 0;
         world.Agenda.Then(new PhaseStep(
-            Steps.GiveBoostCard, round, 1, Index: seat, Subject: villain.ObjectId,
-            ActivationId: world.Activation.Id));
+            new AttackStageOperation(AttackStageKind.GiveBoostCard),
+            round,
+            1,
+            Index: seat,
+            Subject: villain.ObjectId
+        ) { ActivationId = world.Activation.Id });
         world.Agenda.Then(new PhaseStep(
-            Steps.FlipBoostCards, round, 2, Index: seat, Subject: villain.ObjectId,
-            ActivationId: world.Activation.Id));
+            new AttackStageOperation(AttackStageKind.FlipBoostCards),
+            round,
+            2,
+            Index: seat,
+            Subject: villain.ObjectId
+        ) { ActivationId = world.Activation.Id });
 
         // **Step 3 is a step, because step 2 can stop and ask.** A `Boost`
         // ability that offers the player a choice suspends, and the threat used
@@ -149,13 +146,13 @@ internal static class ThreatProcedure
         // change. The attack activation has the same shape:
         // `FlipBoostCards` is step 3 and `CalculateAttackDamage` is step 4.
         world.Agenda.Then(new PhaseStep(
-            Steps.SchemeThreat,
+            new ThreatStageOperation(ThreatStageKind.SchemeThreat),
             round,
             3,
             Index: seat,
             Subject: villain.ObjectId,
-            Seat: seat,
-            ActivationId: world.Activation.Id));
+            Seat: seat
+        ) { ActivationId = world.Activation.Id });
     }
 
     /// <summary>

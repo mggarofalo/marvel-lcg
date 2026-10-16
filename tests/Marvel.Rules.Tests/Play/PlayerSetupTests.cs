@@ -27,7 +27,7 @@ public sealed class PlayerSetupTests
         Assert.Equal(GamePhase.Mulligan, game.Phase);
         Assert.Equal(0, game.Round);
 
-        var result = game.Resolve(Decision.Decline);
+        var result = game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
 
         Assert.Equal([identity.ObjectId], abilities.Resolved);
         Assert.Equal(GamePhase.PlayerTurn, game.Phase);
@@ -47,13 +47,13 @@ public sealed class PlayerSetupTests
             (1, [world.Seats[1].IdentityCard]));
         var game = Game.Begin(world, facts, abilities);
 
-        var afterFirst = game.Resolve(Decision.Decline);
+        var afterFirst = game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
 
         Assert.Equal(GamePhase.Mulligan, game.Phase);
         Assert.Equal(1, afterFirst.Prompt!.Player);
         Assert.Empty(abilities.Resolved);
 
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
 
         Assert.Equal(GamePhase.PlayerTurn, game.Phase);
         Assert.Equal(2, abilities.Resolved.Count);
@@ -81,8 +81,8 @@ public sealed class PlayerSetupTests
             (1, [p1High, p1Low]));
         var game = Game.Begin(world, facts, abilities);
 
-        game.Resolve(Decision.Decline);
-        game.Resolve(Decision.Decline);
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
 
         Assert.Equal([1, 0], abilities.DiscoveredFor);
         Assert.Equal(
@@ -112,7 +112,7 @@ public sealed class PlayerSetupTests
         var abilities = new ChoosingSetup(first.ObjectId, (0, [first, second]));
         var game = Game.Begin(world, facts, abilities);
 
-        var stopped = game.Resolve(Decision.Decline);
+        var stopped = game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
 
         Assert.Equal(GamePhase.PlayerSetup, game.Phase);
         Assert.Equal(0, game.Round);
@@ -176,27 +176,25 @@ public sealed class PlayerSetupTests
             if (card.ObjectId == choosing)
             {
                 world.Agenda.Then(new PhaseStep(
-                    Steps.ChooseOption, 0, 16, Subject: card.ObjectId, Seat: 0));
+                    new AbilityContinuationAgendaOperation(AbilityContinuationStage.Choose), 0, 16, Subject: card.ObjectId, Seat: 0));
             }
 
             return events;
         }
 
         public override Prompt? Choosing(
-            World world, Card source, int player, int stoppedAt,
-            AbilityType? tier, bool finalStep) =>
+            World world, PhaseStep step) =>
             new(
-                player,
+                step.Seat,
                 Question.Element,
                 TimingPriority.Untimed,
                 "Setup",
                 "choose setup card",
                 Cancellable: false,
-                [new Affordance(77, "Choose", source.ObjectId, player, "choose")]);
+                [new Affordance(77, "Choose", step.Subject, step.Seat, "choose")]);
 
         public override IReadOnlyList<GameEvent> Chose(
-            World world, Card source, int player, int stoppedAt, Decision input,
-            AbilityType? tier, bool finalStep)
+            World world, PhaseStep step, Decision input)
         {
             AnsweredChoice = true;
             return [];

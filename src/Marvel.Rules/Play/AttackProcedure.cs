@@ -95,10 +95,10 @@ internal static class AttackProcedure
         switch (step.What)
         {
             case Steps.CharacterAttacks:
-                BasicPowerResolution.ResolveCharacterAttack(world, facts, events, step.CharacterAttack);
+                BasicPowerResolution.ResolveCharacterAttack(world, facts, events, step.Require<CharacterAttackOperation>().Attack);
                 return true;
             case Steps.CharacterThwarts:
-                BasicPowerResolution.ResolveCharacterThwart(world, facts, events, step.CharacterThwart);
+                BasicPowerResolution.ResolveCharacterThwart(world, facts, events, step.Require<CharacterThwartOperation>().Thwart);
                 return true;
             case Steps.AllyConsequentialDamage:
             case Steps.AllyThwartConsequentialDamage:
@@ -155,7 +155,7 @@ internal static class AttackProcedure
             world,
             facts,
             world.Cards[step.Subject],
-            byAttack: attacked || BasicPowerStatus.Assaulted(world, facts, world.Cards[step.Character]),
+            byAttack: attacked || BasicPowerStatus.Assaulted(world, facts, world.Cards[step.Require<ConsequentialDamageOperation>().Character]),
             attacked ? BasicPowers.AttackVerb : BasicPowers.ThwartVerb,
             events);
     }

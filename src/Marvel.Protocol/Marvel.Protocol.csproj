@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Marvel.Protocol</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
+    <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marvel.Server.Tests" />
+    <InternalsVisibleTo Include="Marvel.Godot.Tests" />
+    <InternalsVisibleTo Include="Marvel.Architecture.Tests" />
+    <InternalsVisibleTo Include="Marvel.Transport" />
+    <InternalsVisibleTo Include="Marvel.Client" />
+  </ItemGroup>
+</Project>

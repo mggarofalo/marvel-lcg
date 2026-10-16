@@ -1,3 +1,5 @@
+using Marvel.Protocol;
+using Marvel.Rules.Play;
 using Marvel.Decisions;
 using Marvel.Rules.Prompts;
 using Marvel.Tests;
@@ -18,7 +20,7 @@ public sealed class RecipientPersistenceTests : EngineHostTestBase
         var current = host.Exchange(EngineRequest.OpenGame("open", "recipient-restart",
             new GameSpecification("rhino", ["spider_man", "captain_marvel"], [], Seed: 1)));
         string capability = RequiredCapability(current);
-        EngineResponse Answer(EngineDecision answer)
+        EngineResponse Answer(Decision answer)
         {
             var next = host.Exchange(EngineRequest.ResolveGame("answer", "recipient-restart", capability, answer, current.Revision));
             Assert.Null(next.Error);
@@ -29,12 +31,12 @@ public sealed class RecipientPersistenceTests : EngineHostTestBase
         int support = Hand(current, 0).Single(card => card.Face?.Id == "01091").Id!.Value;
         current = Answer(PayCard(current.Prompt!, support));
         var action = Assert.Single(current.Prompt!.Affordances, offer => offer.AnchorId == support && offer.DirectRecipientCommit);
-        current = Answer(new EngineDecision(action.Id, legacyEmpty ? [] : [action.Targets!.Legal[^1]]));
+        current = Answer(new Decision(action.Id, legacyEmpty ? [] : [action.Targets!.Legal[^1]]));
         host = Restart(factory, store, capability, current);
         if (legacyEmpty)
         {
             Assert.NotEqual(PublicDecisionKind.PlayerAction, current.Prompt!.PublicKind);
-            current = Answer(new EngineDecision(current.Prompt.Affordances[^1].Id, []));
+            current = Answer(new Decision(current.Prompt.Affordances[^1].Id, []));
         }
         Assert.Equal(PublicDecisionKind.PlayerAction, current.Prompt!.PublicKind);
         Restart(factory, store, capability, current);

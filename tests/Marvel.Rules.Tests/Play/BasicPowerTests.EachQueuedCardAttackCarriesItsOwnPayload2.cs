@@ -8,6 +8,8 @@ using Xunit;
 namespace Marvel.Rules.Tests.Play;
 public sealed class BasicPowerEachQueuedCardAttackCarriesItsOwnPayloadTests : BasicPowerTestBase
 {
+    private sealed record TestPowerContinuation(int Id) : CardPowerContinuation;
+
     [Fact]
     public void EachQueuedCardAttackCarriesItsOwnPayload()
     {
@@ -21,10 +23,8 @@ public sealed class BasicPowerEachQueuedCardAttackCarriesItsOwnPayloadTests : Ba
         var source = world.CreateCard("event", world.Seats[0].Hand);
         var abilities = new RecordingCardPowers();
         world.Abilities = abilities;
-        var first = new CardPowerContinuation(
-            0, 0, false, [villain.ObjectId], [], "event", new Dictionary<string, long>(),
-            [], false, false, 0);
-        var second = first with { Targets = [minion.ObjectId], PowerOrdinal = 1 };
+        var first = new TestPowerContinuation(1);
+        var second = new TestPowerContinuation(2);
         Assert.True(BasicPowerInitiation.CardAttack(world, printed,
             new(0, source, villain, 5, "first") { Continuation = first }, []));
         Assert.True(BasicPowerInitiation.CardAttack(world, printed,
@@ -145,7 +145,7 @@ public sealed class BasicPowerEachQueuedCardAttackCarriesItsOwnPayloadTests : Ba
         var abilities = new ProtectedScheme(scheme.ObjectId, prohibition.ObjectId);
         world.Abilities = abilities;
         var events = new List<GameEvent>();
-        long removed = Threat.Remove(world, printed, abilities, scheme, 2, "test", "Remove_Threat", events);
+        long removed = Threat.Remove(world, printed, abilities, new ThreatRemovalRequest(scheme, 2, "test", "Remove_Threat"), events);
         Assert.Equal(0, removed);
         Assert.Equal(3, scheme.Tokens["k_threat"]);
         Assert.Empty(events);
@@ -165,7 +165,7 @@ public sealed class BasicPowerEachQueuedCardAttackCarriesItsOwnPayloadTests : Ba
         scheme.PlaceTokens("k_threat", 3);
         var prohibition = world.CreateCard("upgrade", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         var abilities = new ProtectedScheme(scheme.ObjectId, prohibition.ObjectId);
-        long removed = Threat.Remove(world, printed, abilities, scheme, 2, "test", "Remove_Threat", [], overridesCannotFrom: prohibition.ObjectId);
+        long removed = Threat.Remove(world, printed, abilities, new ThreatRemovalRequest(scheme, 2, "test", "Remove_Threat", OverridesCannotFrom: prohibition.ObjectId), []);
         Assert.Equal(2, removed);
         Assert.Equal(1, scheme.Tokens["k_threat"]);
     }
@@ -184,7 +184,7 @@ public sealed class BasicPowerEachQueuedCardAttackCarriesItsOwnPayloadTests : Ba
         var first = world.CreateCard("upgrade", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         var second = world.CreateCard("upgrade", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         var abilities = new ProtectedScheme(scheme.ObjectId, first.ObjectId, second.ObjectId);
-        long removed = Threat.Remove(world, printed, abilities, scheme, 2, "test", "Remove_Threat", [], overridesCannotFrom: first.ObjectId);
+        long removed = Threat.Remove(world, printed, abilities, new ThreatRemovalRequest(scheme, 2, "test", "Remove_Threat", OverridesCannotFrom: first.ObjectId), []);
         Assert.Equal(0, removed);
         Assert.Equal(3, scheme.Tokens["k_threat"]);
     }

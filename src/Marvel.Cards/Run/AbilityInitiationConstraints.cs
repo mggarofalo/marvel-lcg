@@ -2,7 +2,6 @@ using static Marvel.Cards.Run.AbilityPowerTargetAdmission;
 using static Marvel.Cards.Run.AbilityPlayerSelectorRelations;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
-using static Marvel.Cards.Run.AbilityDelayedReachability;
 using static Marvel.Cards.Run.AbilityPowerProjection;
 using static Marvel.Cards.Run.AbilityPowerTrace;
 using static Marvel.Cards.Run.AbilityInitiationPrimitives;
@@ -92,21 +91,9 @@ internal static class AbilityInitiationConstraints
         AbilityEffect node, AbilityAdmissionScope cast, AdmissionResolution required, string branch)
     {
         var effect = EffectBody(node);
-        if (ActiveChoices(effect, cast).Any())
-        {
-            var choices = ActiveChoices(effect, cast).ToList();
-            if (effect.OperationName() is not ("choose" or "chooseCard")
-                || choices.Any(ChoiceHasNestedChoice))
-            {
-                throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' has multiple-stage player choices before "
-                    + $"'{node.OperationName()}', whose combined resolution outcome is not implemented");
-            }
-            PreflightAnsweredOutcome(effect, cast);
-            return CanInitiate(effect, cast);
-        }
-        var outcome = EnsureDependentSupported(
-            node, cast, effect, ContinuationChild(node, branch), required);
+        AbilityCompletionSupport.Validate(effect, cast.Source.FaceId);
+        if (ActiveChoices(effect, cast).Any()) return CanInitiate(effect, cast);
+        var outcome = ResolutionOf(effect, cast);
         return outcome == required
             ? CanInitiate(ContinuationChild(node, branch), cast)
             : CanInitiate(effect, cast);

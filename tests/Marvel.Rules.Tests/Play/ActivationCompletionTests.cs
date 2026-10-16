@@ -9,40 +9,35 @@ namespace Marvel.Rules.Tests.Play;
 
 public sealed class ActivationCompletionTests
 {
+    private sealed record TestContinuation(int Earlier) : CardAbilityContinuation;
+
     [Fact]
     public void AbilityContinuationAggregatesEveryActivationInAgendaData()
     {
-        // The field names and structural path are engine save-format choices.
-        // Nothing lives only in an AbilityRunner instance while the attacks wait.
+        // The game owns the opaque interpreter frame while the activations wait.
         var agenda = new Agenda();
         int first = agenda.ThenActivation(
-            new PhaseStep(Steps.Attack, 1, 2, Subject: 1, Seat: 0));
+            new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: 1, Seat: 0));
         int second = agenda.ThenActivation(
-            new PhaseStep(Steps.Attack, 1, 2, Subject: 2, Seat: 0));
+            new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: 2, Seat: 0));
         agenda.AfterActivations([first, second], new PhaseStep(
-            Steps.ResumeAbility, 1, 2, Subject: 9, Seat: 0,
-            AbilityOrdinal: 3,
-            AbilityPath: ["seq:1", "then:then"],
-            AbilityActivationIds: [first, second],
-            AbilityResults: new Dictionary<string, long> { ["earlier"] = 4 }));
+            new AbilityContinuationAgendaOperation(AbilityContinuationStage.Resume)
+            { AwaitedActivations = [first, second], Continuation = new TestContinuation(4) }, 1, 2, Subject: 9, Seat: 0));
 
         Assert.Equal(
             [Steps.Attack, Steps.Attack],
             agenda.Outstanding.Select(step => step.What));
         var waiting = agenda.ActivationWait(first);
         Assert.NotNull(waiting);
-        Assert.Equal(3, waiting.Value.AbilityOrdinal);
-        Assert.Equal(["seq:1", "then:then"], waiting.Value.AbilityPath);
-        Assert.Equal(4, waiting.Value.AbilityResults!["earlier"]);
+        Assert.Equal(4, Assert.IsType<TestContinuation>(waiting.Value.Require<AbilityContinuationAgendaOperation>().Continuation).Earlier);
 
         // Agenda stores and replaces a continuation opaquely. Cards owns the
         // activation-result keys and decides whether an updated wait is done.
         agenda.ReplaceActivationWait(first, waiting.Value with
-        { AbilityActivationIds = [second] });
+        { Operation = waiting.Value.Require<AbilityContinuationAgendaOperation>() with { AwaitedActivations = [second] } });
         Assert.Null(agenda.ActivationWait(first));
         var resumed = agenda.TakeActivationWait(second);
-        Assert.Equal(3, resumed.AbilityOrdinal);
-        Assert.Equal(["seq:1", "then:then"], resumed.AbilityPath);
+        Assert.Same(waiting.Value.Require<AbilityContinuationAgendaOperation>().Continuation, resumed.Require<AbilityContinuationAgendaOperation>().Continuation);
     }
 
     [Rule("rr:activation.8")]
@@ -53,10 +48,9 @@ public sealed class ActivationCompletionTests
         // activation has finished resolving." An activation is several agenda
         // steps, so "after the current step" is observably too early.
         var agenda = new Agenda();
-        agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: 1, Seat: 0));
+        agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: 1, Seat: 0));
         int first = agenda.Outstanding[0].ActivationId;
-        agenda.Then(new PhaseStep(
-            Steps.GiveBoostCard, 1, 1, Subject: 1, ActivationId: first));
+        agenda.Then(new PhaseStep(new AttackStageOperation(AttackStageKind.GiveBoostCard), Round: 1, Number: 1, Subject: 1) { ActivationId = first });
 
         agenda.Advance();
         agenda.Advance();
@@ -64,7 +58,7 @@ public sealed class ActivationCompletionTests
         Assert.Equal(Steps.GiveBoostCard, agenda.Current!.Value.What);
 
         int second = agenda.ThenActivation(
-            new PhaseStep(Steps.Attack, 1, 2, Subject: 2, Seat: 0));
+            new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: 2, Seat: 0));
 
         Assert.Equal(
             [Steps.GiveBoostCard, Steps.Attack],
@@ -90,8 +84,7 @@ public sealed class ActivationCompletionTests
     {
         var (world, facts, enemy) = Board(attacking: true, value: 3);
         var abilities = new CompletionRecorder();
-        world.Agenda.Add(new PhaseStep(
-            Steps.Attack, 1, 2, Subject: enemy.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: enemy.ObjectId, Seat: 0));
 
         Sequence.Finish(world, facts, abilities, []);
 
@@ -118,8 +111,7 @@ public sealed class ActivationCompletionTests
         // sits beyond the attack's response window, not inside it.
         var (world, facts, enemy) = Board(attacking: true, value: 1);
         var abilities = new OrderedCompletionRecorder(enemy.ObjectId);
-        world.Agenda.Add(new PhaseStep(
-            Steps.Attack, 1, 2, Subject: enemy.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: enemy.ObjectId, Seat: 0));
 
         Sequence.Finish(world, facts, abilities, []);
 
@@ -133,8 +125,7 @@ public sealed class ActivationCompletionTests
     {
         var (world, facts, enemy) = Board(attacking: false, value: 2);
         var abilities = new CompletionRecorder();
-        world.Agenda.Add(new PhaseStep(
-            Steps.Scheme, 1, 2, Subject: enemy.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemySchemeOperation(), Round: 1, Number: 2, Subject: enemy.ObjectId, Seat: 0));
 
         // Reach the scheme's final step and inspect the occurrence before it
         // applies. Its actor is the scheming enemy and its target is the main
@@ -176,8 +167,7 @@ public sealed class ActivationCompletionTests
         var (world, facts, enemy) = Board(attacking: false, value: 2);
         Statuses.Give(world, enemy, Statuses.Confused);
         var abilities = new CompletionRecorder();
-        world.Agenda.Add(new PhaseStep(
-            Steps.Scheme, 1, 2, Subject: enemy.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemySchemeOperation(), Round: 1, Number: 2, Subject: enemy.ObjectId, Seat: 0));
 
         Sequence.Finish(world, facts, abilities, []);
 

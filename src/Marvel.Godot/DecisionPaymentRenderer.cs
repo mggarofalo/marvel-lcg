@@ -2,7 +2,6 @@ using Godot;
 using Marvel.Decisions;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
-using Marvel.Server;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -239,7 +238,7 @@ internal sealed class DecisionPaymentRenderer
     private void TrySubmit()
     {
         if (panel.IsCurrentDraft(composer, generation)
-            && composer.TryBuild(out EngineDecision? decision, out _))
+            && composer.TryBuild(out Decision? decision, out _))
         {
             panel.NotifySubmitted(decision!, generation);
         }

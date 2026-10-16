@@ -1,3 +1,4 @@
+using Marvel.Rules.Play;
 using Godot;
 using Marvel.Decisions;
 using Marvel.Rules.Prompts;
@@ -41,7 +42,7 @@ internal static class DecisionPanelSurface
         pass.SetMeta("table_mutation", true);
         pass.Pressed += () =>
         {
-            if (panel.IsCurrentDraft(composer, generation) && composer.TryDecline(out EngineDecision? decision, out _))
+            if (panel.IsCurrentDraft(composer, generation) && composer.TryDecline(out Decision? decision, out _))
                 panel.NotifySubmitted(decision!, generation);
         };
         panel.AddCommit(pass);

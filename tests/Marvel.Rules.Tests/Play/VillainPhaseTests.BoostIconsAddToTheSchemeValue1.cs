@@ -240,7 +240,7 @@ public sealed class VillainPhaseBoostIconsAddToTheSchemeValueTests : VillainPhas
         var world = Board(printed, players: 1);
         var minion = world.CreateCard("minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.Agenda.Abandon();
-        world.Agenda.Add(new PhaseStep(Steps.Scheme, 1, 2, Subject: minion.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemySchemeOperation(), Round: 1, Number: 2, Subject: minion.ObjectId, Seat: 0));
         var abilities = new BoostWindowOffer(minion.ObjectId);
         var events = new List<GameEvent>();
         var asked = Sequence.Work(world, printed, abilities, events)!;

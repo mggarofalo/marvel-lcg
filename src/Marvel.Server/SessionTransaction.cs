@@ -1,3 +1,4 @@
+using Marvel.Protocol;
 using Marvel.Rules.Play;
 using Marvel.Session;
 
@@ -11,7 +12,8 @@ namespace Marvel.Server;
 /// bundle commits before the live game is published. A failure at either
 /// earlier boundary therefore leaves the live session unchanged.
 /// </remarks>
-internal sealed record SessionTransaction(Game Candidate, SessionSave Proposed)
+internal sealed record SessionTransaction(
+    Game Candidate, SessionSave Proposed, IReadOnlyList<HistoryUnitInspection> History)
 {
     public EngineResponse CommitAndPublish(
         HostedSession live,
@@ -26,7 +28,7 @@ internal sealed record SessionTransaction(Game Candidate, SessionSave Proposed)
 
         EngineResponse response = project(Candidate, Proposed);
         _ = commit(new StoredSession(Proposed, authorities));
-        live.Publish(Candidate, Proposed);
+        live.Publish(Candidate, Proposed, History);
         return response;
     }
 }

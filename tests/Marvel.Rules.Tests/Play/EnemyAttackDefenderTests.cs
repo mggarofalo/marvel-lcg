@@ -246,9 +246,7 @@ public sealed class EnemyAttackDefenderTests
             Defender = ally.ObjectId,
             CalculatedDamage = damage,
         };
-        world.Agenda.Add(new PhaseStep(
-            Steps.DealAttackDamage, Round: 1, Number: 5,
-            Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new AttackStageOperation(AttackStageKind.DealAttackDamage), Round: 1, Number: 5, Subject: villain.ObjectId, Seat: 0));
         var occurrence = world.Agenda.Begin(world, facts);
         world.Agenda.Advance(occurrence);
 
@@ -281,9 +279,7 @@ public sealed class EnemyAttackDefenderTests
             CalculatedDamage = 0,
             AdditionalPlayers = [1],
         };
-        world.Agenda.Add(new PhaseStep(
-            Steps.DealAttackDamage, Round: 1, Number: 5,
-            Subject: villain.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new AttackStageOperation(AttackStageKind.DealAttackDamage), Round: 1, Number: 5, Subject: villain.ObjectId, Seat: 0));
         var occurrence = world.Agenda.Begin(world, facts);
         world.Agenda.Advance(occurrence);
         Attack.DealDamage(world, facts, []);
@@ -367,9 +363,7 @@ public sealed class EnemyAttackDefenderTests
         world.Activation = new EnemyActivation(villain.ObjectId, 0, Attacking: true);
     }
 
-    private static PhaseStep AttackStep(Card villain, Card? target = null) => new(
-        Steps.Attack, Round: 1, Number: 2, Index: 0,
-        Subject: villain.ObjectId, Seat: 0, Character: target?.ObjectId ?? -1);
+    private static PhaseStep AttackStep(Card villain, Card? target = null) => new PhaseStep(new EnemyAttackOperation(Character: target?.ObjectId ?? -1), Round: 1, Number: 2, Index: 0, Subject: villain.ObjectId, Seat: 0);
 
     private static (World World, Facts Facts, Card Villain) Board(
         int players = 1, int attack = 5, int defense = 0)

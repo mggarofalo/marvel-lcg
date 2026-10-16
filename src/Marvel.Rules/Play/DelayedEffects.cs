@@ -26,6 +26,19 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class DelayedEffects
 {
+    /// <summary>Captures the copy named when a direct delayed discard is created.</summary>
+    internal static ContinuousEffect CaptureTarget(World world, ContinuousEffect effect)
+    {
+        if (effect.Source == EffectSource.DelayedEffect
+            && effect.Kind == DiscardFromPlay
+            && effect.Affects is int target && target >= 0 && target < world.Cards.Count)
+        {
+            // rr:leaves-play.1: a card returning to play is a new copy.
+            return effect with { TargetIncarnation = world.Cards[target].Incarnation };
+        }
+        return effect;
+    }
+
     /// <summary>
     /// Discard the effect's own card from play — the shape "at the end of this
     /// attack, discard [this]".
@@ -133,6 +146,14 @@ public static class DelayedEffects
                 $"a delayed effect due at '{condition}' would discard a card it does not name");
         }
 
-        Play.Discard.Card(world, world.Cards[id], condition, events);
+        var target = world.Cards[id];
+        // rr:leaves-play.1: "there is no memory of its previous state and it
+        // is considered to be a new copy of the card."
+        if (!DeckTypes.IsInPlay(target.Area.Type)
+            || target.Incarnation != effect.TargetIncarnation)
+        {
+            return;
+        }
+        Play.Discard.Card(world, target, condition, events);
     }
 }

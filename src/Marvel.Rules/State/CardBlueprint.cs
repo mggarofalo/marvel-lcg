@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 
 namespace Marvel.Rules.State;
 

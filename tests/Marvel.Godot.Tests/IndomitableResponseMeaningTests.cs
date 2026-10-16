@@ -35,8 +35,7 @@ public sealed class IndomitableResponseMeaningTests
         hero.Exhaust();
         world.Attack = new EnemyAttack(villain.ObjectId, 0, hero.ObjectId,
             Defender: hero.ObjectId, BasicDefense: true, CalculatedDamage: 0);
-        world.Agenda.Add(new PhaseStep(Steps.EndAttack, 1, 2,
-            Subject: villain.ObjectId, Seat: 0, Character: hero.ObjectId));
+        world.Agenda.Add(new PhaseStep(new AttackCompletionOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0));
         Prompt prompt = Assert.IsType<Prompt>(Sequence.Work(world, cards, runner, []));
         Assert.Equal(PublicDecisionKind.Response, prompt.PublicKind);
         Assert.True(prompt.Cancellable);
@@ -65,7 +64,7 @@ public sealed class IndomitableResponseMeaningTests
             Assert.Null(hidden.Face);
         }
 
-        Assert.True(draft.TryBuild(out EngineDecision? answer, out string? error), error);
+        Assert.True(draft.TryBuild(out Decision? answer, out string? error), error);
         Assert.Empty(answer!.Targets);
         Assert.Empty(answer.Resources ?? []);
         Sequence.Answer(world, cards, runner, prompt, Decision.Take(answer.Affordance), []);

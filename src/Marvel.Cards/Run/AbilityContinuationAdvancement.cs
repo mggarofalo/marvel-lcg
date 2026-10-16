@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
-using static Marvel.Cards.Run.AbilityContinuationCodec;
-using static Marvel.Cards.Run.AbilityContinuationWireCodec;
+using static Marvel.Cards.Run.AbilityContinuations;
+using static Marvel.Cards.Run.AbilityContinuationFrames;
 
 namespace Marvel.Cards.Run;
 
@@ -12,23 +12,22 @@ internal static class AbilityContinuationAdvancement
         AbilityContinuationState state, AbilityStructuralObservation observation)
     {
         if (observation.Suspended) return new ResumeComplete(state);
-        var frames = state.Frames;
+        var frames = state.Cursor.Frames;
         while (!frames.IsEmpty)
         {
             var frame = frames[^1];
             var prefix = frames.RemoveAt(frames.Length - 1);
+            if (frame is AfterActivationFrame)
+                return new ResumeComplete(state with { Cursor = state.Cursor with { Frames = [], HasContinuation = false } });
             if (PausesForNextPlayer(frame, state))
             {
                 return new ResumeComplete(state with
-                {
-                    Frames = prefix,
-                    HasContinuation = true,
-                });
+                { Cursor = state.Cursor with { Frames = prefix, HasContinuation = true } });
             }
             var parent = NodeAtTypedPath(ability.Effect, prefix);
             var structural = context with
             {
-                Position = state.Position,
+                Position = state.Cursor.Position,
                 HasContinuation = HasRemaining(prefix),
                 Frames = prefix,
             };
@@ -42,30 +41,29 @@ internal static class AbilityContinuationAdvancement
                     return new DiscardForResumedEachTime(
                         ability, repeated, discard.Frame,
                         state with
-                        {
-                            Frames = prefix,
-                            HasContinuation = structural.HasContinuation,
-                        });
-                case Complete:
+                        { Cursor = state.Cursor with { Frames = prefix, HasContinuation = structural.HasContinuation } });
+                case Complete completed:
                     frames = prefix;
                     state = AfterCompletedFrame(state, frame, prefix);
-                    observation = new AbilityStructuralObservation(false);
+                    observation = new AbilityStructuralObservation(false, Outcome: completed.Outcome ?? observation.Outcome);
                     continue;
-                case Rejected rejected:
-                    return new ResumeRejected(rejected.Reason);
-                case Unsupported unsupported:
-                    return new ResumeRejected(unsupported.Reason);
                 default:
-                    return new ResumeRejected(
-                        $"structural continuation returned {transition.GetType().Name}");
+                    return new ResumeRejected(Rejection(transition));
             }
         }
-        return new ResumeComplete(state with { Frames = [], HasContinuation = false });
+        return new ResumeComplete(state with { Cursor = state.Cursor with { Frames = [], HasContinuation = false } });
     }
+
+    private static string Rejection(AbilityStructuralTransition transition) => transition switch
+    {
+        Rejected rejected => rejected.Reason,
+        Unsupported unsupported => unsupported.Reason,
+        _ => $"structural continuation returned {transition.GetType().Name}",
+    };
 
     private static bool PausesForNextPlayer(
         AbilityStructuralFrame frame, AbilityContinuationState state) =>
-        frame is EachPlayerFrame && state.EachPlayerFrame && !state.FinalPlayer;
+        frame is EachPlayerFrame && state.Cursor.EachPlayerFrame && !state.Cursor.FinalPlayer;
 
     private static AbilityStructuralTransition NextTransition(
         AbilityStructuralFrame frame, AbilityEffect parent,
@@ -89,7 +87,7 @@ internal static class AbilityContinuationAdvancement
                 AbilityStructuralFlowExecution.NextEachTime(
                     structural, node, repeated, observation),
             ConditionalFrame or ChoiceFrame or ChoiceOtherwiseFrame
-                or DefenseFrame or EachPlayerFrame => new Complete(prefix),
+                or DefenseFrame or EachPlayerFrame => new Complete(prefix, Outcome: observation.Outcome),
             _ => new Rejected(
                 $"ability continuation frame '{frame.GetType().Name}' does not match its authored parent"),
         };
@@ -97,21 +95,13 @@ internal static class AbilityContinuationAdvancement
     private static RunResumedNode ResumedLeaf(
         CompiledCardAbility ability, AbilityContinuationState state, RunLeaf leaf) =>
         new(ability, leaf.Effect, state with
-        {
-            Frames = leaf.Frames,
-            Position = leaf.Position,
-            HasContinuation = leaf.HasContinuation,
-        });
+        { Cursor = state.Cursor with { Frames = leaf.Frames, Position = leaf.Position, HasContinuation = leaf.HasContinuation } });
 
     private static AbilityContinuationState AfterCompletedFrame(
         AbilityContinuationState state, AbilityStructuralFrame frame,
         ImmutableArray<AbilityStructuralFrame> prefix) =>
         state with
-        {
-            Frames = prefix,
-            HasContinuation = HasRemaining(prefix),
-            Player = frame is EachPlayerFrame && state.AbilityPlayer >= 0
-                ? state.AbilityPlayer
-                : state.Player,
-        };
+        { Cursor = state.Cursor with { Frames = prefix, HasContinuation = HasRemaining(prefix), Player = frame is EachPlayerFrame && state.Invocation.AbilityPlayer >= 0
+                ? state.Invocation.AbilityPlayer
+                : state.Cursor.Player } };
 }

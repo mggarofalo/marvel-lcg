@@ -1,3 +1,5 @@
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Net;
 using Marvel.Decisions;
 using Marvel.Rules.Prompts;
@@ -34,7 +36,9 @@ public sealed class ShuffleReceiptTransportTests : TransportTestBase
             .Create(new GameSpecification("rhino", ["black_panther"], null, 4)).Game;
         game.Resolve(Decision.Take(game.Pending!.Affordances[0].Id, [13, 31, 16, 17, 38], []));
         game.Resolve(Decision.Take(game.Pending!.Affordances.Single(a => a.Label == "01048").Id));
-        game.Resolve(Decision.Take(game.Pending!.Affordances.Single(a => a.AnchorId == 9).Id, [], [11]));
+        var play = game.Pending!.Affordances.Single(a => a.AnchorId == 9);
+        var cost = Assert.Single(play.CostOptions);
+        game.Resolve(new Decision(play.Id, [], [11], Allocations: ResourcePayment.Allocate(cost, [11], null)));
         // Synthetic privacy variation on the legal opening: a concealed discard
         // must not acquire a public name merely because it is being returned.
         game.State.Cards[16].TurnFaceDown();
@@ -59,18 +63,18 @@ public sealed class ShuffleReceiptTransportTests : TransportTestBase
         EngineResponse current = await Exchange(EngineRequest.OpenGame("open", game,
             new GameSpecification("rhino", ["black_panther"], null, 4)));
         string capability = current.Capability!;
-        async Task<EngineResponse> Choose(string request, EngineDecision answer) =>
+        async Task<EngineResponse> Choose(string request, Decision answer) =>
             await Exchange(EngineRequest.ResolveGame(request, game, capability, answer, current.Revision));
-        current = await Choose("mulligan", new EngineDecision(current.Prompt!.Affordances[0].Id, [13, 31, 16, 17, 38]));
-        current = await Choose("setup", new EngineDecision(current.Prompt!.Affordances.Single(a => a.Label == "01048").Id, []));
+        current = await Choose("mulligan", new Decision(current.Prompt!.Affordances[0].Id, [13, 31, 16, 17, 38]));
+        current = await Choose("setup", new Decision(current.Prompt!.Affordances.Single(a => a.Label == "01048").Id, []));
         var draft = new DecisionComposer(current.Prompt!);
         draft.SelectAffordance(current.Prompt!.Affordances.Single(a => a.AnchorId == 9).Id);
         draft.ToggleResource(11);
-        Assert.True(draft.TryBuild(out EngineDecision? payment, out string? error), error);
+        Assert.True(draft.TryBuild(out Decision? payment, out string? error), error);
         current = await Choose("play", payment!);
         Assert.Null(current.Error);
         Assert.DoesNotContain(current.Events!, item => item is CardsShuffledIntoDeck);
-        current = await Choose("shuffle", new EngineDecision(current.Prompt!.Affordances[0].Id, [16, 13, 31]));
+        current = await Choose("shuffle", new Decision(current.Prompt!.Affordances[0].Id, [16, 13, 31]));
         Assert.Null(current.Error);
         CardsShuffledIntoDeck receipt = Assert.Single(current.Events!.OfType<CardsShuffledIntoDeck>());
         Assert.Equal(0, receipt.Player);

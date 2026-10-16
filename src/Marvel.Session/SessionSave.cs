@@ -7,7 +7,7 @@ using Marvel.Rules.State;
 
 namespace Marvel.Session;
 
-/// <summary>Schema 5's complete, capability-free deterministic session authority.</summary>
+/// <summary>The complete, capability-free deterministic session authority.</summary>
 public sealed record SessionSave(
     [property: JsonRequired] string Format,
     [property: JsonRequired] int Schema,
@@ -24,8 +24,8 @@ public sealed record SessionSave(
     /// <summary>The required schema family marker.</summary>
     public const string FormatName = "marvel-session";
 
-    /// <summary>The schema this runtime writes; schemas 2–4 are read only for migration.</summary>
-    public const int CurrentSchema = 5;
+    /// <summary>The single schema this runtime reads and writes.</summary>
+    public const int CurrentSchema = 6;
 
     /// <summary>Creates the zero-decision authority for a freshly dealt game.</summary>
     public static SessionSave Open(
@@ -40,9 +40,9 @@ public sealed record SessionSave(
             CurrentSchema,
             compatibility,
             new SessionIdentity(storageId, label, "active"),
-            setup,
+            setup.Snapshot(),
             new InitialRecord(
-                [.. setupEvents.Select(JournalJson.Event)],
+                JournalValues.List(setupEvents.Select(JournalJson.Event)),
                 game.State.Random.Generator.WordsConsumed,
                 game.State.Digest().Canonical()),
             Revision: 0,

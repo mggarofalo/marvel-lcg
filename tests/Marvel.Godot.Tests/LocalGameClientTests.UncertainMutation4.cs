@@ -1,3 +1,6 @@
+using Marvel.Observability;
+using Marvel.Transport;
+using Marvel.Protocol;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -21,7 +24,7 @@ public sealed class LocalGameClientUncertainMutationTests : LocalGameClientTestB
         var transport = new RecoveringTransport(current);
         var sink = new CollectingOperationalSink();
         var log = new OperationalLog(sink, "client-test");
-        ClientResolutionResult result = await new LocalGameClient(transport, log).ResolveAsync(new ClientSession("shared-table", current.Capability!), EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport, log).ResolveAsync(new ClientSession("shared-table", current.Capability!), Decision.Decline, TestContext.Current.CancellationToken);
         log.Flush(TimeSpan.FromSeconds(2));
         Assert.True(result.HasAuthoritativeView);
         Assert.Equal(2, transport.Requests.Count);
@@ -53,10 +56,10 @@ public sealed class LocalGameClientUncertainMutationTests : LocalGameClientTestB
     [Fact]
     public async Task ResolveAcceptsACancellablePromptWithNoLegalActions()
     {
-        EngineResponse current = Host().Exchange(EngineRequest.OpenGame("source", LocalGameSession.GameId, Specification()));
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame("source", "test-table", Specification()));
         var emptyTurn = new Prompt(0, Question.TurnOption, TimingPriority.Untimed, "WhenPlayerInTurn", "Player turn", Cancellable: true, Affordances: []);
         var transport = new ScriptedTransport(current with { RequestId = "local-resolve", Revision = 1, Capability = null, Prompt = emptyTurn, Events = [], });
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(current.Capability!, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession(current.GameId, current.Capability!), Decision.Decline, TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded, result.Error?.Message);
         Assert.Equal(ClientMutationDisposition.Accepted, result.MutationDisposition);
         Assert.Empty(result.Response!.Prompt!.Affordances);
@@ -116,7 +119,7 @@ public sealed class LocalGameClientUncertainMutationTests : LocalGameClientTestB
         var client = new LocalGameClient(transport);
         ClientEntryResult attached = await client.AttachAsync("shared-table", "invitation", TestContext.Current.CancellationToken);
         ClientSynchronizationResult old = await client.SynchronizeAsync(attached.Session!, TestContext.Current.CancellationToken);
-        ClientResolutionResult resolved = await client.ResolveAsync(attached.Session!, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult resolved = await client.ResolveAsync(attached.Session!, Decision.Decline, TestContext.Current.CancellationToken);
         Assert.Equal("invalid_response", old.Error?.Code);
         Assert.Null(old.Response);
         Assert.Equal(ClientMutationDisposition.Accepted, resolved.MutationDisposition);
@@ -130,7 +133,7 @@ public sealed class LocalGameClientUncertainMutationTests : LocalGameClientTestB
         var transport = new ScriptedTransport(current with { RequestId = "local-attach", Capability = "session", Revision = 3, }, current with { RequestId = "local-resolve", Capability = null, Revision = 3, }, current with { RequestId = "local-recover", Capability = null, Events = [], Revision = 3, });
         var client = new LocalGameClient(transport);
         ClientEntryResult attached = await client.AttachAsync("shared-table", "invitation", TestContext.Current.CancellationToken);
-        ClientResolutionResult result = await client.ResolveAsync(attached.Session!, EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await client.ResolveAsync(attached.Session!, Decision.Decline, TestContext.Current.CancellationToken);
         Assert.Equal(ClientMutationDisposition.Uncertain, result.MutationDisposition);
         Assert.Equal("invalid_response", result.Error?.Code);
         Assert.Equal(3, result.Response?.Revision);
@@ -147,7 +150,7 @@ public sealed class LocalGameClientUncertainMutationTests : LocalGameClientTestB
             Verb = "Attack",
         };
         var transport = new ScriptedTransport(new IOException("response lost"), current with { RequestId = "local-recover", Capability = null, Events = [replayed], });
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession("shared-table", current.Capability!), EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession("shared-table", current.Capability!), Decision.Decline, TestContext.Current.CancellationToken);
         Assert.False(result.HasAuthoritativeView);
         Assert.Equal(ClientMutationDisposition.Uncertain, result.MutationDisposition);
         Assert.Equal(ClientSessionDisposition.Active, result.SessionDisposition);
@@ -178,7 +181,7 @@ public sealed class LocalGameClientUncertainMutationTests : LocalGameClientTestB
         EngineResponse current = Host().Exchange(EngineRequest.OpenGame("source", "shared-table", Specification()));
         ClientSynchronizationResult malformed = await new LocalGameClient(new FixedTransport(current with { RequestId = "local-sync", Capability = null, Prompt = current.Prompt!with { Affordances = null! }, })).SynchronizeAsync(new ClientSession("shared-table", secret), TestContext.Current.CancellationToken);
         ClientSynchronizationResult lost = await new LocalGameClient(new FailingTransport(secret)).SynchronizeAsync(new ClientSession("shared-table", secret), TestContext.Current.CancellationToken);
-        ClientSynchronizationResult expired = await new LocalGameClient(new FixedTransport(new EngineResponse(EngineProtocol.Version, "local-sync", "shared-table", Capability: null, Prompt: null, Events: [], Error: new EngineError("session_not_found", secret)))).SynchronizeAsync(new ClientSession("shared-table", secret), TestContext.Current.CancellationToken);
+        ClientSynchronizationResult expired = await new LocalGameClient(new FixedTransport(new EngineResponse(EngineProtocol.Version, "local-sync", "shared-table", Capability: null, Prompt: null, Events: [], Error: new EngineError("session_not_found", secret, EngineFailureDisposition.SessionUnavailable)))).SynchronizeAsync(new ClientSession("shared-table", secret), TestContext.Current.CancellationToken);
         Assert.Equal("invalid_response", malformed.Error?.Code);
         Assert.Equal(ClientSessionDisposition.Active, malformed.SessionDisposition);
         Assert.Equal("transport_unavailable", lost.Error?.Code);
@@ -193,7 +196,7 @@ public sealed class LocalGameClientUncertainMutationTests : LocalGameClientTestB
     public async Task PrecommitResolveFailureIsNotSentAndDoesNotSynchronize()
     {
         var transport = new ScriptedTransport(new EngineTransportException(requestMayHaveCommitted: false, new IOException("private diagnostic")));
-        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession("shared-table", "secret"), EngineDecision.Decline, TestContext.Current.CancellationToken);
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(new ClientSession("shared-table", "secret"), Decision.Decline, TestContext.Current.CancellationToken);
         Assert.Equal(ClientMutationDisposition.NotSent, result.MutationDisposition);
         Assert.Equal(ClientSessionDisposition.Active, result.SessionDisposition);
         Assert.Equal("transport_unavailable", result.Error?.Code);

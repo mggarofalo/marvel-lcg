@@ -1,3 +1,4 @@
+using Marvel.Rules.Setup;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Setup;
@@ -232,7 +233,8 @@ public sealed class WhenDefeatedTests
     /// encounter card's own doing. A test that wants "the player who defeated
     /// this" to answer says which seat instead.
     /// </remarks>
-    private static Defeated Killed(Card card) => new(card.ObjectId, -1, "test");
+    private static Defeated Killed(Card card) => new(card.ObjectId, -1, "test")
+        { Kind = EffectiveCards.Kind(card, Cards) };
 
     private static World Board(string json, out AbilityRunner runner)
     {

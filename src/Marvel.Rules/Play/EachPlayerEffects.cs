@@ -21,7 +21,7 @@ public static class EachPlayerEffects
         }
         world.Agenda.Then(template with
         {
-            What = Steps.OrderEachPlayer,
+            Operation = template.Require<AbilityContinuationAgendaOperation>() with { Stage = AbilityContinuationStage.OrderPlayers },
             Round = world.Agenda.Current?.Round ?? 0,
             Number = 2,
             Seat = world.FirstPlayer,
@@ -95,14 +95,7 @@ public static class EachPlayerEffects
             return [];
         }
 
-        return abilities.ResolveEachPlayer(
-            world,
-            source,
-            step.Seat,
-            step.Index,
-            step.Tier,
-            step.FinalStep,
-            step.FinalPlayer);
+        return abilities.ResolveEachPlayer(world, step);
     }
 
     private static void ScheduleFrames(World world, PhaseStep template, List<int> players)
@@ -112,13 +105,12 @@ public static class EachPlayerEffects
         {
             world.Agenda.Then(template with
             {
-                What = Steps.ResolveEachPlayer,
+                Operation = template.Require<AbilityContinuationAgendaOperation>() with
+                { Stage = AbilityContinuationStage.ResolvePlayer, FinalPlayer = position == players.Count - 1 },
                 Round = round,
                 Number = 2,
                 Seat = players[position],
                 Plan = true,
-                FinalPlayer = position == players.Count - 1,
-                EachPlayerFrame = true,
             });
         }
     }

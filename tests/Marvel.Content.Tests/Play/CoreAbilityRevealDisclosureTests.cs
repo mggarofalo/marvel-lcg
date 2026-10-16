@@ -36,8 +36,7 @@ public sealed class CoreAbilityRevealDisclosureTests
         var replacement = world.CreateCard("01101", world.AreaOf(DeckType.EncounterDeck));
         var runner = AuthoredCards.Runner();
         var events = new List<GameEvent>();
-        world.Agenda.Add(new PhaseStep(
-            Steps.RevealEncounterCard, 1, 4, Subject: original.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: original.ObjectId, Seat: 0));
         var first = Sequence.Work(world, Cards, runner, events)!;
         Assert.Single(new Resolution(world, first, events).Information,
             signal => signal.Kind == InformationKind.Reveal);

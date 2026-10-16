@@ -1,3 +1,5 @@
+using Marvel.Protocol;
+using Marvel.Rules.Setup;
 using System.Security.Cryptography;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
@@ -15,14 +17,15 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
 {
     private readonly SetupCatalog setup;
     private readonly CardCatalog cards;
-    private readonly AbilityBook abilities;
+    private readonly AbilityProgram abilities;
 
     private DatasetGameFactory(
         SetupCatalog setup,
         CardCatalog cards,
-        AbilityBook abilities,
+        AbilityProgram abilities,
         SessionCompatibility compatibility)
     {
+        SetupCatalogAdmission.Validate(setup, cards, abilities.Authored);
         this.setup = setup;
         this.cards = cards;
         this.abilities = abilities;
@@ -43,7 +46,7 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
         return new DatasetGameFactory(
             SetupCatalog.Parse(System.Text.Encoding.UTF8.GetString(setupBytes)),
             CardCatalog.Parse(System.Text.Encoding.UTF8.GetString(cardBytes)),
-            AbilityCatalog.Parse(System.Text.Encoding.UTF8.GetString(abilityBytes)),
+            AbilityLowering.Book(AbilityCatalog.Parse(System.Text.Encoding.UTF8.GetString(abilityBytes))),
             new SessionCompatibility(
                 EngineBuildIdentity.ProductVersion,
                 EngineBuildIdentity.ReplayContract,
@@ -58,6 +61,10 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
     public OpenedGame Create(GameSpecification specification)
     {
         ArgumentNullException.ThrowIfNull(specification);
+        PlayerCountRules.Validate(specification.Heroes.Count);
+        if (specification.PlayerDecks is not null)
+            foreach (PlayerDeckRecipe deck in specification.PlayerDecks)
+                SetupCatalogAdmission.ValidateFaces(deck.Cards, cards, abilities.Authored);
         var runner = new AbilityRunner(abilities);
         var setupEvents = new List<GameEvent>();
         var campaign = setup.Campaign(specification.Scenario);
@@ -69,7 +76,7 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
                     specification.Scenario,
                     specification.Heroes,
                     specification.ModularSets,
-                    cards),
+                    cards, playerDecks: specification.PlayerDecks),
                 cards),
             [.. specification.Heroes.Select(hero => setup.Hero(hero).Name)],
             specification.Seed,

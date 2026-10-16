@@ -177,10 +177,10 @@ The program holds definitions, not game state. `AbilityRunner` is the public
 composition facade: focused query and resource-discovery owners answer read-only
 ports, `AbilityResourceExecution` commits a resource ability and records its use,
 and `AbilityResolutionExecution` sequences live ability resolution through narrow
-encounter and card-play entry ports. `AbilityGameRuntimes` associates delayed
-activation work with the exact `World` that registered it. Activation ids and
-card ids cannot identify work in another game. The association uses weak keys,
-so retaining a runner does not retain abandoned worlds.
+encounter and card-play entry ports. Each `World.AbilityRuntime` owns its
+`AbilityGameRuntime`, including pending delayed activation work. Activation ids
+and card ids cannot identify work in another game. Runners retain the immutable
+program; the world retains mutable execution state and verifies its program owner.
 
 The internal vocabulary has closed types for effects, costs, selectors,
 conditions and numbers. Lowering rejects unknown names, missing arguments and

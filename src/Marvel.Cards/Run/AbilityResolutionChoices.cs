@@ -1,67 +1,59 @@
-using static Marvel.Cards.Run.AbilityEffectStructure;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
+using static Marvel.Cards.Run.AbilityContinuationFrames;
 
 namespace Marvel.Cards.Run;
 
 internal static class AbilityResolutionChoices
 {
     private static readonly HashSet<string> SpecialChoiceOperations =
-    [
-        "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle",
-    ];
+        ["resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle"];
 
-    /// <inheritdoc/>
-    internal static Prompt? Choosing(this AbilityResolutionExecution execution,
-        World world, Card source, int player, int stoppedAt, AbilityType? tier = null)
-        => execution.Choosing(world, source, player, stoppedAt, tier, finalStep: false);
-
-    /// <inheritdoc/>
-    internal static Prompt? Choosing(this AbilityResolutionExecution execution,
-        World world, Card source, int player, int stoppedAt, AbilityType? tier, bool finalStep)
+    internal static Prompt? Choosing(this AbilityResolutionExecution execution, World world, PhaseStep step)
     {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(source);
-
-        var persisted = execution.ContinuationStep(world, source, stoppedAt, tier);
-        var cast = ChoiceResolutionState(
-            execution, world, source, player, tier, finalStep, persisted);
-        execution.RestorePersisted(cast, persisted);
-        execution.RestoreChoiceCursor(source, tier, persisted, cast);
-        var choice = AbilityContinuationCodec.Choice(
-            execution.program, source, tier, stoppedAt, persisted, execution.AdmissionContext(cast));
-        return execution.DescribeChoice(source, tier, persisted, choice, cast);
+        var cast = RestoreChoice(execution, world, step);
+        var choice = AbilityContinuations.Choice(execution.program, cast.Source, cast.Tier,
+            step.Index, step, execution.AdmissionContext(cast));
+        return execution.DescribeChoice(cast.Source, cast.Tier, step, choice, cast);
     }
 
-    private static AbilityResolutionState ChoiceResolutionState(
-        AbilityResolutionExecution execution, World world, Card source, int player,
-        AbilityType? tier, bool finalStep, PhaseStep? persisted) =>
-        execution.Resuming(
-            world, source, player, tier, finalStep,
-            persisted?.AbilityOccurrence) with
+    internal static IReadOnlyList<GameEvent> Chose(
+        this AbilityResolutionExecution execution, World world, PhaseStep step, Decision input)
+    {
+        var cast = RestoreChoice(execution, world, step);
+        var choice = AbilityContinuations.Choice(execution.program, cast.Source, cast.Tier,
+            step.Index, step, execution.AdmissionContext(cast));
+        cast.TrackResolution(cast.AbilityOrdinal);
+        cast.At(Math.Max(0, step.Index - 1));
+        return new AbilityChoiceAnswer(execution, step.Seat, step.Index, input, step, cast).Apply(choice);
+    }
+
+    private static AbilityResolutionState RestoreChoice(
+        AbilityResolutionExecution execution, World world, PhaseStep step)
+    {
+        var source = world.Cards[step.Subject];
+        var decoded = Decode(execution.program, source, step, null);
+        var state = decoded.State;
+        var cast = execution.Resuming(world, source, step.Seat, state.Invocation.Address.Tier,
+            state.Cursor.FinalStep, state.Invocation.Occurrence) with
         {
-            EachPlayerFrame = persisted?.EachPlayerFrame ?? false,
-            FinalPlayer = persisted?.FinalPlayer ?? false,
-            AbilityPlayer = persisted?.AbilityPlayer ?? player,
+            EachPlayerFrame = state.Cursor.EachPlayerFrame,
+            FinalPlayer = state.Cursor.FinalPlayer,
+            AbilityPlayer = state.Invocation.AbilityPlayer,
+            EventTrigger = state.Invocation.Trigger,
+            GainedKeywords = state.Memory.SurgeGained ? new(["surge"], StringComparer.Ordinal) : new(StringComparer.Ordinal),
         };
-
-    private static void RestoreChoiceCursor(
-        this AbilityResolutionExecution execution, Card source, AbilityType? tier,
-        PhaseStep? persisted, AbilityResolutionState cast)
-    {
-        if (persisted is not
-            { AbilityOrdinal: >= 0, AbilityPath: { } } current) return;
-        var decoded = AbilityContinuationWireCodec.Decode(
-            execution.program, source, current, tier);
-        execution.RestoreContinuationCursor(cast, decoded.State);
-        execution.RestoreAlteredFromFrames(cast, decoded.State.Frames);
+        execution.RestorePersisted(cast, step);
+        execution.RestoreContinuationCursor(cast, state);
+        execution.RestoreAlteredFromFrames(cast, state.Cursor.Frames);
+        return cast;
     }
 
-    private static Prompt? DescribeChoice(
+    internal static Prompt? DescribeChoice(
         this AbilityResolutionExecution execution, Card source, AbilityType? tier,
         PhaseStep? persisted, AbilityEffect choice, AbilityResolutionState cast)
     {
@@ -95,108 +87,12 @@ internal static class AbilityResolutionChoices
         return described.Prompt;
     }
 
-    /// <inheritdoc/>
-    internal static Prompt? Choosing(this AbilityResolutionExecution execution,
-        World world, Card source, int player, int stoppedAt, AbilityType? tier,
-        bool finalStep, bool eachPlayerFrame, bool finalPlayer) =>
-        execution.Choosing(world, source, player, stoppedAt, tier, finalStep);
-
-    /// <inheritdoc/>
-    internal static IReadOnlyList<GameEvent> Chose(this AbilityResolutionExecution execution,
-        World world, Card source, int player, int stoppedAt, Decision input,
-        AbilityType? tier = null)
-        => execution.Chose(world, source, player, stoppedAt, input, tier, finalStep: false);
-
-    /// <inheritdoc/>
-    internal static IReadOnlyList<GameEvent> Chose(this AbilityResolutionExecution execution,
-        World world, Card source, int player, int stoppedAt, Decision input,
-        AbilityType? tier, bool finalStep)
-        => execution.ChoseCore(
-            world, source, player, stoppedAt, input, tier, finalStep,
-            eachPlayerFrame: false, finalPlayer: false);
-
-    /// <inheritdoc/>
-    internal static IReadOnlyList<GameEvent> Chose(this AbilityResolutionExecution execution,
-        World world, Card source, int player, int stoppedAt, Decision input,
-        AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer)
-        => execution.ChoseCore(
-            world, source, player, stoppedAt, input, tier, finalStep,
-            eachPlayerFrame, finalPlayer, eventTrigger: null);
-
-    /// <inheritdoc/>
-    internal static IReadOnlyList<GameEvent> Chose(this AbilityResolutionExecution execution,
-        World world, Card source, int player, int stoppedAt, Decision input,
-        AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer,
-        string trigger)
-        => execution.ChoseCore(
-            world, source, player, stoppedAt, input, tier, finalStep,
-            eachPlayerFrame, finalPlayer, trigger);
-
-    internal static List<GameEvent> ChoseCore(this AbilityResolutionExecution execution,
-        World world, Card source, int player, int stoppedAt, Decision input,
-        AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer,
-        string? eventTrigger = null)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(input);
-
-        var persisted = execution.ContinuationStep(world, source, stoppedAt, tier);
-        var cast = AnswerResolutionState(
-            execution, world, source, player, tier, finalStep, eachPlayerFrame,
-            finalPlayer, eventTrigger, persisted);
-        execution.RestorePersisted(cast, persisted);
-        execution.RestoreChoiceCursor(source, tier, persisted, cast);
-        var choice = AbilityContinuationCodec.Choice(
-            execution.program, source, tier, stoppedAt, persisted, execution.AdmissionContext(cast));
-        if (cast.AbilityOrdinal >= 0) cast.TrackResolution(cast.AbilityOrdinal);
-        cast.At(Math.Max(0, stoppedAt - 1));
-        cast.SetContinuation(persisted?.AbilityHasContinuation
-            ?? HasAuthoredContinuation(execution, source, tier, stoppedAt));
-        return new AbilityChoiceAnswer(
-            execution, player, stoppedAt, input, persisted, cast)
-            .Apply(choice);
-    }
-
-    private static AbilityResolutionState AnswerResolutionState(
-        AbilityResolutionExecution execution, World world, Card source, int player,
-        AbilityType? tier, bool finalStep, bool eachPlayerFrame, bool finalPlayer,
-        string? eventTrigger, PhaseStep? persisted)
-    {
-        var continuation = world.Agenda.Current is
-            { What: Steps.ChooseOption, Plan: true }
-            && world.Agenda.Occurrence is { } live
-            && live.Is(Steps.TurnAction) ? live : null;
-        return execution.Resuming(
-            world, source, player, tier, finalStep,
-            persisted?.AbilityOccurrence ?? continuation) with
-        {
-            EachPlayerFrame = eachPlayerFrame,
-            FinalPlayer = finalPlayer,
-            AbilityPlayer = persisted?.AbilityPlayer ?? player,
-            EventTrigger = eventTrigger,
-            GainedKeywords = world.Agenda.Current is
-                { What: Steps.ChooseOption, SurgeGained: true }
-                    ? new HashSet<string>(["surge"], StringComparer.Ordinal)
-                    : new HashSet<string>(StringComparer.Ordinal),
-        };
-    }
-
-    private static bool HasAuthoredContinuation(
-        AbilityResolutionExecution execution, Card source, AbilityType? tier,
-        int stoppedAt) =>
-        execution.On(source).Any(ability =>
-            (tier is null || ability.Trigger.Timing == tier)
-            && ability.Effect.OperationName() == "seq"
-            && OrderedEffects(ability.Effect).Length > stoppedAt);
 
     internal static AbilityContinuationFacts ContinuationFacts(this AbilityResolutionExecution execution,
-        Card source, PhaseStep? step, AbilityType? tier)
-    {
-        if (step is not { AbilityOrdinal: >= 0, AbilityPath: not null } persisted)
-            return AbilityContinuationFacts.Empty;
-        return AbilityContinuationWireCodec.Decode(execution.program, source, persisted, tier).Facts;
-    }
+        Card source, PhaseStep? step, AbilityType? tier) =>
+        step is { } current && StateOf(current) is not null
+            ? Decode(execution.program, source, current, tier).Facts
+            : AbilityContinuationFacts.Empty;
 
     /// <summary>Whether the source has a player-card face.</summary>
     internal static bool IsPlayerCard(this AbilityResolutionExecution execution, AbilityResolutionState cast) =>

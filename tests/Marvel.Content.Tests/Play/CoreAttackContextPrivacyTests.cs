@@ -29,7 +29,7 @@ public sealed class CoreAttackContextPrivacyTests
         }, scenario: "ultron");
         var runner = AuthoredCards.Runner();
         var events = new List<GameEvent>();
-        world.Agenda.Add(new PhaseStep(Steps.Attack, 1, 2, Subject: drone!.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: drone!.ObjectId, Seat: 0));
         Prompt defense = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, events));
         Assert.Equal(Question.Defender, defense.Asking);
         Sequence.Answer(world, world.Facts, runner, defense, Decision.Decline, events);

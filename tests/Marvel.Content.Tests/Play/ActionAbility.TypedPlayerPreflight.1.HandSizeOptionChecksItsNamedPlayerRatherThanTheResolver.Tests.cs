@@ -31,20 +31,20 @@ public sealed class ActionAbilityTypedPlayerPreflightHandSizeOptionChecksItsName
         world.TheCardIn(DeckType.VillainArea)!.TakeDamage(1);
         runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, source, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         int[] expected = full ? [1] : [0, 1];
         Assert.Equal(expected, prompt.Affordances.Select(option => option.Id));
         Assert.Equal(0, prompt.Player);
         if (!full)
         {
-            runner.Chose(world, source, 0, choice.Index, Decision.Take(0), choice.Tier);
+            runner.Chose(world, choice, Decision.Take(0));
             Assert.Equal(size, recipient.Hand.Cards.Count);
             Assert.Contains(top, recipient.Hand.Cards);
             Assert.Empty(recipient.Deck.Cards);
         }
         else
         {
-            Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, source, 0, choice.Index, Decision.Take(0), choice.Tier));
+            Assert.Throws<RulesNotImplementedException>(() => runner.Chose(world, choice, Decision.Take(0)));
             Assert.Equal(size, recipient.Hand.Cards.Count);
             Assert.Equal([top], recipient.Deck.Cards);
         }
@@ -68,9 +68,9 @@ public sealed class ActionAbilityTypedPlayerPreflightHandSizeOptionChecksItsName
         fields["player"] = new AbilityValue.Word("you");
         runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
-        var prompt = runner.Choosing(world, source, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         Assert.Equal(0, Assert.Single(prompt.Affordances).Id);
-        runner.Chose(world, source, 0, choice.Index, Decision.Take(0), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(0));
         Assert.Empty(world.Seats[1].Hand.Cards);
         Assert.Equal([card], world.AreaOf(DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1).Cards);
         Assert.Equal([remaining], world.Seats[1].Deck.Cards);
@@ -97,11 +97,11 @@ public sealed class ActionAbilityTypedPlayerPreflightHandSizeOptionChecksItsName
         runner.Act(world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
         fields["chooser"] = new AbilityValue.Word("firstPlayer");
-        var prompt = runner.Choosing(world, source, 0, choice.Index, choice.Tier)!;
+        var prompt = runner.Choosing(world, choice)!;
         // Engine contract: admitted choices belong to their resolving player.
         Assert.Equal(0, prompt.Player);
         var offered = Assert.Single(prompt.Affordances);
-        runner.Chose(world, source, 0, choice.Index, Decision.Take(offered.Id), choice.Tier);
+        runner.Chose(world, choice, Decision.Take(offered.Id));
         Assert.Equal(0, villain.Damage);
         Assert.False(source.Ready);
     }

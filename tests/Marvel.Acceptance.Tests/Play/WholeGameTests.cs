@@ -1,3 +1,6 @@
+using System.Text.Json;
+using Marvel.Session;
+using Marvel.Rules.Setup;
 using Marvel.Content;
 using Marvel.Content.Setup;
 using Marvel.Rules.Play;
@@ -96,22 +99,40 @@ public sealed class WholeGameTests
     [Fact]
     public void TheSameSeedPlaysTheSameGame()
     {
-        // Non-negotiable 1: a seed names a game. Two deals of one seed, driven
-        // by one policy, must agree about everything -- including the shuffles
-        // a reshuffled deck consumed. This is the only determinism check the
-        // engine has, and it compares a game against a second run of itself.
         var (first, firstWorld) = Deal(2026, "spider_man");
         var (second, secondWorld) = Deal(2026, "spider_man");
-
-        Run(first, firstWorld);
-        Run(second, secondWorld);
-
-        Assert.Equal(firstWorld.Result, secondWorld.Result);
-        Assert.Equal(first.Round, second.Round);
-        Assert.Equal(
-            firstWorld.Digest().Canonical(),
-            secondWorld.Digest().Canonical());
+        int firstPlayed = 0;
+        int secondPlayed = 0;
+        Assert.Equal(Observe(first), Observe(second));
+        for (int step = 0; first.Pending is not null; step++)
+        {
+            Assert.True(step < 600, $"still playing after {step} decisions");
+            Assert.NotNull(second.Pending);
+            Resolution firstResult = ResolvePrompt(first, firstWorld, ref firstPlayed);
+            string expected = Observe(first, firstResult);
+            Resolution secondResult = ResolvePrompt(second, secondWorld, ref secondPlayed);
+            Assert.Equal(expected, Observe(second, secondResult));
+        }
+        Assert.Null(second.Pending);
+        Assert.NotEqual(Outcome.Unfinished, firstWorld.Result);
+        Assert.True(firstPlayed > 0);
+        Assert.Equal(firstPlayed, secondPlayed);
     }
+
+    // Compare intermediate contracts, including event identity and knowledge grants.
+    // Final board equality alone misses a transient prompt or random-stream divergence.
+    private static string Observe(Game game, Resolution? result = null) =>
+        JsonSerializer.Serialize(new
+        {
+            State = game.State.Digest().Canonical(),
+            RngWords = game.State.Random.Generator.WordsConsumed,
+            game.State.Result,
+            game.Phase,
+            game.Round,
+            Prompt = game.Pending is { } prompt ? PromptRecord.From(prompt) : null,
+            result?.Events,
+            result?.Information,
+        });
 
     /// <summary>Plays the game out, and answers how many cards were played.</summary>
     private static int Run(Game game, World world)
@@ -126,51 +147,49 @@ public sealed class WholeGameTests
         return played;
     }
 
-    private static void ResolvePrompt(Game game, World world, ref int played)
+    private static Resolution ResolvePrompt(Game game, World world, ref int played)
     {
         var prompt = game.Pending!;
         var options = prompt.Affordances;
+        if (game.Phase == GamePhase.Mulligan)
+            return game.Resolve(Decision.Take(options.Single().Id));
         var ending = options.FirstOrDefault(option => option.Verb == Game.EndPhaseVerb);
         if (ending is not null)
         {
-            game.Resolve(Decision.Take(ending.Id, Excess(world, game), []));
-            return;
+            return game.Resolve(Decision.Take(ending.Id, Excess(world, game), []));
         }
         if (prompt.Asking == Question.Order)
         {
             var ordered = options[0];
-            game.Resolve(new Decision(
+            return game.Resolve(new Decision(
                 ordered.Id,
                 ordered.Targets is { } targets ? [.. targets.Legal] : []));
-            return;
         }
         if (prompt.Asking == Question.Defender)
         {
             // The last candidate is an ally when one is available --
             // `rr:defend-defense.3`.
-            game.Resolve(Decision.Take(options[^1].Id));
-            return;
+            return game.Resolve(Decision.Take(options[^1].Id));
         }
-        ResolvePlayerChoice(game, world, options, ref played);
+        return ResolvePlayerChoice(game, world, options, ref played);
     }
 
-    private static void ResolvePlayerChoice(
+    private static Resolution ResolvePlayerChoice(
         Game game, World world, IReadOnlyList<Affordance> options, ref int played)
     {
         var play = options.FirstOrDefault(option => option.Verb == CardPlay.Verb);
         if (play is { } card && Payment(card) is { } paying)
         {
-            game.Resolve(Decision.Take(card.Id, [card.Targets!.Legal[0]], paying));
             played++;
-            return;
+            return game.Resolve(Decision.Take(card.Id, [card.Targets!.Legal[0]], paying,
+                new Dictionary<string, long>(), ResourcePayment.Allocate(card.CostOptions[0], paying)!));
         }
         var power = PreferredPower(world, options);
         if (power is null)
         {
-            game.Resolve(Decision.Decline);
-            return;
+            return game.Resolve(Decision.Decline);
         }
-        game.Resolve(power.Targets is { } targets && targets.Legal.Count > 0
+        return game.Resolve(power.Targets is { } targets && targets.Legal.Count > 0
             ? Decision.Take(power.Id, [targets.Legal[0]], [])
             : Decision.Take(power.Id));
     }

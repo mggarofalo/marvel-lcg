@@ -53,7 +53,7 @@ public sealed class VillainPhaseAnAttachmentModifiesItsHostOnlyWhileInPlayTests 
         world.CreateCard("friend", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var encounter = world.AreaOf(DeckType.EncounterDeck).Cards.Single(card => card.FaceId == "encounter");
         World.MoveToTop(encounter, world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
-        world.Agenda.Add(new PhaseStep(Steps.RevealEncounterCard, 1, 4, Subject: encounter.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: encounter.ObjectId, Seat: 0));
         var events = new List<GameEvent>();
         var abilities = new NoCardAbilities();
         var asked = Assert.IsType<Prompt>(Sequence.Work(world, printed, abilities, events));
@@ -74,7 +74,7 @@ public sealed class VillainPhaseAnAttachmentModifiesItsHostOnlyWhileInPlayTests 
         var world = Board(printed, players: 1);
         var encounter = world.AreaOf(DeckType.EncounterDeck).Cards.Single(card => card.FaceId == "encounter");
         World.MoveToTop(encounter, world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
-        world.Agenda.Add(new PhaseStep(Steps.RevealEncounterCard, 1, 4, Subject: encounter.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: encounter.ObjectId, Seat: 0));
         var asked = Sequence.Work(world, printed, new NoCardAbilities(), new List<GameEvent>());
         Assert.NotNull(asked);
         Assert.Equal(Question.Order, asked.Asking);

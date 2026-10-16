@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><MarvelPresentationRole>Client</MarvelPresentationRole><DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../../src/Marvel.Server/Marvel.Server.csproj" /></ItemGroup>
+</Project>
