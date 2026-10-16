@@ -54,6 +54,7 @@ jobs:
       - name: Enforce the pre-commit complexity limit
         run: |
           dotnet tool restore
+          dotnet husky install
           dotnet husky exec .husky/csx/complexity.csx
 
       - name: Restore
@@ -113,6 +114,7 @@ jobs:
         if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
         run: |
           dotnet tool restore
+          dotnet husky install
           dotnet husky exec .husky/csx/complexity.csx
 
       - name: Restore
