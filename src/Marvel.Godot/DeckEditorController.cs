@@ -12,6 +12,7 @@ internal sealed class DeckEditorController : IDisposable
     private readonly LocalDeckStore store;
     private readonly Action<DeckDraft, int> assign;
     private readonly DeckBrowserPresentation browser;
+    private readonly DeckEditingActions editing;
     private readonly CancellationTokenSource lifetime = new();
     private readonly MarvelCdbDeckImporter importer = new();
     private CancellationTokenSource? validation;
@@ -30,6 +31,7 @@ internal sealed class DeckEditorController : IDisposable
         this.store = store;
         this.assign = assign;
         browser = new(ui, workspace);
+        editing = new(ui, workspace, client, browser, () => DisplayDraft(false));
         Bind();
     }
 
@@ -60,8 +62,6 @@ internal sealed class DeckEditorController : IDisposable
         ui.Save.Pressed += Save;
         ui.Load.Pressed += () => PreserveThen(Load);
         ui.Delete.Pressed += Delete;
-        ui.Add.Pressed += () => Change(browser.BrowserFace, true);
-        ui.Remove.Pressed += () => Change(browser.DeckFace, false);
         ui.SeatOne.Pressed += () => Use(0);
         ui.SeatTwo.Pressed += () => Use(1);
         ui.Close.Pressed += Close;
@@ -89,7 +89,7 @@ internal sealed class DeckEditorController : IDisposable
         DisplayDraft();
     }
 
-    private void DisplayDraft()
+    private void DisplayDraft(bool inspectIdentity = true)
     {
         var draft = workspace.Draft!;
         rendering = true;
@@ -99,7 +99,7 @@ internal sealed class DeckEditorController : IDisposable
         rendering = false;
         ui.Status.Text = hero < 0 ? "This imported identity is outside the playable Core set. All cards have been retained." : "";
         Changed();
-        browser.InspectIdentity();
+        if (inspectIdentity) browser.InspectIdentity();
     }
 
     private void ChooseIdentity()
@@ -118,15 +118,10 @@ internal sealed class DeckEditorController : IDisposable
         Changed();
     }
 
-    private void Change(string? face, bool add)
-    {
-        if (face is null) { ui.Status.Text = "Select a card first."; return; }
-        Try(() => { workspace.ChangeCard(face, add); Changed(); });
-    }
-
     private async void Changed()
     {
         browser.Render();
+        editing.Refresh();
         validation?.Cancel();
         validation?.Dispose();
         validation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
@@ -256,6 +251,7 @@ internal sealed class DeckEditorController : IDisposable
     {
         if (disposed) return;
         disposed = true;
+        editing.Dispose();
         lifetime.Cancel();
         validation?.Cancel();
         acquisition?.Cancel();

@@ -18,14 +18,10 @@ func _run() -> void:
 	if not await _wait(func(): return _button(root, "Use for seat 1") != null and not _button(root, "Use for seat 1").disabled): return
 	var library := main.get_node("DeckLibrary") as Window
 	if not await _check_library_discovery(library): return
-	var draft := library.find_child("DraftCards", true, false) as ItemList
-	if draft == null or draft.item_count == 0:
-		_fail("starter deck was not visible")
-		return
-	draft.select(0)
-	await _activate(_button(library, "Remove selected copy −1"))
+	if not await _check_bulk_edits(library): return
+	await _activate(_button(library, "Clear deck"))
 	if not await _wait(func(): return _button(library, "Use for seat 1").disabled): return
-	if not await _wait(func(): return _text_contains(library, "Include exactly")): return
+	if not await _wait(func(): return _text_contains(library, "40 through 50")): return
 	await _activate(_button(library, "Save draft"))
 	if not await _wait(func(): return _text_contains(library, "Draft saved locally")): return
 	await _activate(_button(library, "New starter"))
@@ -35,6 +31,10 @@ func _run() -> void:
 	await _start_captured_game(library)
 
 func _check_library_discovery(library: Window) -> bool:
+	var draft := library.find_child("DraftCards", true, false) as ItemList
+	if draft == null or draft.item_count == 0:
+		_fail("starter deck was not visible")
+		return false
 	var identity := library.find_child("DeckIdentity", true, false) as OptionButton
 	if identity == null or not _text_contains(library, "1. Choose identity"):
 		_fail("identity selection was not labelled")
@@ -52,6 +52,85 @@ func _check_library_discovery(library: Window) -> bool:
 			_fail("card index codes were exposed in browser labels")
 			return false
 	return true
+
+func _check_bulk_edits(library: Window) -> bool:
+	await _activate(_button(library, "Clear deck"))
+	var search := library.find_child("CardSearch", true, false) as LineEdit
+	search.text = 'Haymaker|"First Aid"'
+	search.text_changed.emit(search.text)
+	await _activate(_button(library, "Select all results"))
+	var three := library.find_child("DeckQuantity3", true, false) as Button
+	if not await _wait(func(): return not three.disabled): return false
+	await _activate(three)
+	if not await _wait(func(): return _text_contains(library, "21 cards in draft")): return false
+	await _activate(_button(library, "Undo"))
+	if not await _wait(func(): return _text_contains(library, "15 cards in draft")): return false
+	await _activate(_button(library, "Redo"))
+	if not await _wait(func(): return _text_contains(library, "21 cards in draft")): return false
+	search.text = "Nick Fury"
+	search.text_changed.emit(search.text)
+	var one := library.find_child("DeckQuantity1", true, false) as Button
+	if not await _wait(func(): return not one.disabled): return false
+	if not three.disabled:
+		_fail("unique card offered three copies")
+		return false
+	await _activate(one)
+	if not await _wait(func(): return _text_contains(library, "22 cards in draft")): return false
+	await _activate(_button(library, "Undo"))
+	await _activate(_button(library, "Undo"))
+	if not await _wait(func(): return _text_contains(library, "15 cards in draft")): return false
+	return await _check_drag(library, search)
+
+func _check_drag(library: Window, search: LineEdit) -> bool:
+	search.text = 'Haymaker|"First Aid"'
+	search.text_changed.emit(search.text)
+	await _activate(_button(library, "Select all results"))
+	if not await _wait(func(): return not _button(library, "Add selected +1").disabled): return false
+	var browser := library.find_child("CardBrowser", true, false) as ItemList
+	var deck := library.find_child("DraftCards", true, false) as ItemList
+	if not await _drag_to(library, browser): return false
+	if not _text_contains(library, "15 cards in draft"):
+		_fail("invalid drop changed the deck")
+		return false
+	if not await _drag_to(library, deck): return false
+	return await _wait(func(): return _text_contains(library, "17 cards in draft"))
+
+func _drag_to(library: Window, destination: Control) -> bool:
+	var browser := library.find_child("CardBrowser", true, false) as ItemList
+	browser.grab_focus()
+	await process_frame
+	var origin := browser.global_position + Vector2(library.position) + Vector2(60, 12)
+	var target := destination.global_position + Vector2(library.position) + Vector2(60, 40)
+	_mouse(origin, true)
+	await process_frame
+	var motion := InputEventMouseMotion.new()
+	motion.position = origin + Vector2(30, 0)
+	motion.global_position = motion.position
+	motion.relative = Vector2(30, 0)
+	motion.button_mask = MOUSE_BUTTON_MASK_LEFT
+	root.push_input(motion, true)
+	await process_frame
+	target = destination.global_position + Vector2(library.position) + Vector2(60, 40)
+	motion.position = target
+	motion.global_position = motion.position
+	motion.relative = target - origin
+	root.push_input(motion, true)
+	await process_frame
+	if not library.gui_is_dragging():
+		_fail("native result drag did not start")
+		return false
+	_mouse(target, false)
+	await process_frame
+	await process_frame
+	return true
+
+func _mouse(position: Vector2, pressed: bool) -> void:
+	var event := InputEventMouseButton.new()
+	event.position = position
+	event.global_position = position
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.pressed = pressed
+	root.push_input(event, true)
 
 func _start_captured_game(library: Window) -> void:
 	var screenshot := OS.get_environment("MARVEL_DECK_SCREENSHOT")
@@ -112,5 +191,6 @@ func _fail(message: String) -> void:
 
 func _dump(node: Node) -> void:
 	if node is Button: print("BUTTON ", node.text, " visible=", node.is_visible_in_tree())
+	if node is Label: print("LABEL ", node.text)
 	if node is Window: print("WINDOW ", node.title, " visible=", node.visible)
 	for child in node.get_children(true): _dump(child)

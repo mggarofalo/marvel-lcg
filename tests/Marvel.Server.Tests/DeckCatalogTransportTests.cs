@@ -61,6 +61,24 @@ public sealed class DeckCatalogTransportTests : TransportTestBase
         Assert.Contains(page.Cards, card => !card.RuntimeSupported);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PartialDeckPermissionCrossesBothTransportsWithoutEnablingPlay(bool socket)
+    {
+        var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var host = new EngineHost(factory);
+        var hero = factory.DiscoverDecks().Heroes[0];
+        var request = EngineRequest.ReadDecks("partial", new(hero.Key, hero.Signature));
+        var response = socket
+            ? await ExchangeOverSocket(new SocketEngineServer(host, IPAddress.Loopback, 0), request)
+            : await new InProcessTransport(host).ExchangeAsync(request, TestContext.Current.CancellationToken);
+        Assert.True(response.Decks!.Assessment!.CanExtend);
+        Assert.Contains(response.Decks.Assessment.Diagnostics, item => item.Code == "deck-size");
+        Assert.False(factory.AssessDeck(hero.Key, hero.Signature.Skip(1).ToArray()).CanExtend);
+        Assert.False(factory.AssessDeck(hero.Key, [.. hero.Signature, "unknown"]).CanExtend);
+    }
+
     [Fact]
     public void DeckRequestsRejectGameCapabilitiesOversizedDraftsAndWrongOperations()
     {

@@ -34,6 +34,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.Client.ClientDeckResult",
             "Marvel.Client.DeckDraft",
             "Marvel.Client.DeckWorkspace",
+            // Host-assessed bulk proposals; stale and illegal quantities are rejected by DeckEditingTests.
+            "Marvel.Client.DeckEditProposal",
             "Marvel.Client.LocalDeckStore",
             "Marvel.Client.MarvelCdbDeckImporter",
             "Marvel.Client.MarvelCdbDeckJson",

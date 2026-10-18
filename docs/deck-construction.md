@@ -124,3 +124,22 @@ both embedded and socket connections. Manual mutations cover numeric boundaries,
 exclusion, signature replacement, preview authority and public response admission.
 Rendered search-to-import probes additionally exercise the live public site; these
 are manual acceptance evidence, never network-dependent CI tests.
+
+### Fast local editing
+
+Results and deck rows support Ctrl/Shift multiselection, with visible Select all
+and Deselect controls. The 1/2/3 buttons set each selected face's total quantity.
+A read-only host assessment supplies `CanExtend`: the engine accepts a partial
+deck below 40 cards but requires every other construction constraint, including
+the 50-card maximum. This is an additive field in this unreleased protocol 33
+increment; matching hosts and clients remain required. Unavailable quantities
+are disabled. Imports with other construction errors must be corrected or cleared
+before positive quantity edits become available.
+
+Add selected and drag from results into the deck add one copy per selected face
+using the same checked proposal. Edits and identity changes invalidate pending
+proposals and drags. Clear selected retains required signature copies; Clear deck
+restores the identity's complete signature recipe. Both are immediate and undoable.
+Undo/Redo restore whole local edits, including bulk quantities and identity changes,
+with up to 100 undo steps. Opening another deck starts a separate history. Saving
+does not clear history; captured setup seats and running games remain independent.

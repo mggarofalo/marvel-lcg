@@ -20,4 +20,9 @@ public sealed record DeckAssessment
 
     /// <summary>Whether the assessed construction constraints are satisfied.</summary>
     public bool IsValid => Diagnostics.IsEmpty;
+
+    /// <summary>Whether this construction may be extended to a complete deck.</summary>
+    /// <remarks>Product editing policy permits fewer than the required 40 cards;
+    /// all other construction constraints, including the maximum, remain enforced.</remarks>
+    public bool CanExtend => Size is <= 50 && Diagnostics.All(item => item.Code == "deck-size");
 }

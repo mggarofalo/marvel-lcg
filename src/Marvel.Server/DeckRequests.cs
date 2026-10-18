@@ -30,7 +30,7 @@ internal static class DeckRequests
             if (!discovery.DiscoverDecks().Heroes.Any(hero => hero.Key == draft.Hero))
                 return Failed(request, "invalid_request", "choose a hero offered by this host");
             var assessment = discovery.AssessDeck(draft.Hero, draft.Cards);
-            result = new(null, new(assessment.Size, assessment.Diagnostics));
+            result = new(null, new(assessment.Size, assessment.Diagnostics) { CanExtend = assessment.CanExtend });
         }
         return new(EngineProtocol.Version, request.RequestId, "", null, null, []) { Decks = result };
     }

@@ -5,6 +5,13 @@ namespace Marvel.Client;
 /// <summary>An editable draft and its revision-bound host assessment.</summary>
 public sealed class DeckWorkspace(DeckCatalog catalog)
 {
+    private readonly List<DeckDraft> undo = [];
+    private readonly List<DeckDraft> redo = [];
+    /// <summary>Whether a local deck edit can be undone.</summary>
+    public bool CanUndo => undo.Count > 0;
+    /// <summary>Whether an undone local edit can be restored.</summary>
+    public bool CanRedo => redo.Count > 0;
+
     /// <summary>Public admitted facts used for display and exact identity selection.</summary>
     public DeckCatalog Catalog { get; } = catalog;
     /// <summary>The currently edited value, independent of saved files and games.</summary>
@@ -25,6 +32,8 @@ public sealed class DeckWorkspace(DeckCatalog catalog)
     {
         Draft = draft;
         Saved = saved;
+        undo.Clear();
+        redo.Clear();
         Dirty = saved is null;
         Revision++;
         Assessment = null;
@@ -99,7 +108,57 @@ public sealed class DeckWorkspace(DeckCatalog catalog)
         Dirty = false;
     }
 
+    /// <summary>Commits a captured bulk edit only to its originating draft revision.</summary>
+    public bool Apply(DeckDraft draft, long revision)
+    {
+        if (revision != Revision) return false;
+        Edit(draft);
+        return true;
+    }
+
+    /// <summary>Clears selected optional cards, restoring the supplied signature quantities.</summary>
+    public void ClearCards(IEnumerable<string> faces)
+    {
+        var selected = faces.ToHashSet(StringComparer.Ordinal);
+        var signature = Catalog.Heroes.FirstOrDefault(hero => hero.IdentityFaces.Contains(Draft!.HeroCode))?.Signature ?? [];
+        Edit(new(Draft!.Name, Draft.HeroCode, Draft.Cards.Where(face => !selected.Contains(face))
+            .Concat(signature.Where(selected.Contains)).ToArray()));
+    }
+
+    /// <summary>Resets to the host-supplied required cards, including missing imported signatures.</summary>
+    public void ClearDeck()
+    {
+        var signature = Catalog.Heroes.FirstOrDefault(hero => hero.IdentityFaces.Contains(Draft!.HeroCode))?.Signature ?? [];
+        Edit(new(Draft!.Name, Draft.HeroCode, signature));
+    }
+
+    /// <summary>Restores the preceding local draft; saved files and captured seats are unchanged.</summary>
+    public void Undo() => Restore(undo, redo);
+    /// <summary>Restores the next local draft.</summary>
+    public void Redo() => Restore(redo, undo);
+
+    private void Restore(List<DeckDraft> source, List<DeckDraft> destination)
+    {
+        if (source.Count == 0) return;
+        destination.Add(Draft!);
+        var draft = source[^1];
+        source.RemoveAt(source.Count - 1);
+        SetDraft(draft);
+    }
+
     private void Edit(DeckDraft draft)
+    {
+        if (Draft is { } previous)
+        {
+            if (previous.Name == draft.Name && previous.HeroCode == draft.HeroCode && previous.Cards.SequenceEqual(draft.Cards)) return;
+            undo.Add(previous);
+            if (undo.Count > 100) undo.RemoveAt(0);
+        }
+        redo.Clear();
+        SetDraft(draft);
+    }
+
+    private void SetDraft(DeckDraft draft)
     {
         Draft = draft;
         Dirty = true;

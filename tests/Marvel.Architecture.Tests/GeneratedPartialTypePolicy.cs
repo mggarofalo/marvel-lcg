@@ -14,6 +14,8 @@ internal static class GeneratedPartialTypePolicy
         // Exact paths and sole declarations prevent an exemption from admitting split logic.
         var required = path switch
         {
+            // Godot requires partial generation for the native ItemList drag overrides.
+            "src/Marvel.Godot/DeckTransferList.cs" => (Namespace: "Marvel.Godot", Type: "DeckTransferList"),
             "src/Marvel.Godot/Main.cs" => (Namespace: "Marvel.Godot", Type: "Main"),
             "src/Marvel.Godot/CardControl.cs" => (Namespace: "Marvel.Godot", Type: "CardControl"),
             "src/Marvel.Godot/DecisionPanel.cs" => (Namespace: "Marvel.Godot", Type: "DecisionPanel"),

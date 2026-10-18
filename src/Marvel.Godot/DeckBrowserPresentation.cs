@@ -7,6 +7,7 @@ namespace Marvel.Godot;
 /// <summary>Filters public facts and renders exact draft copies without deciding legality.</summary>
 internal sealed class DeckBrowserPresentation(DeckEditorControls ui, DeckWorkspace workspace)
 {
+    internal Action<bool>? SelectionChanged { get; set; }
     private DeckCard[] visible = [];
     private string[] selected = [];
 
@@ -33,23 +34,28 @@ internal sealed class DeckBrowserPresentation(DeckEditorControls ui, DeckWorkspa
         ui.Search.TextChanged += _ => Filter();
         ui.Aspect.ItemSelected += _ => Filter();
         ui.Kind.ItemSelected += _ => Filter();
-        ui.Cards.ItemSelected += index => Inspect(visible[(int)index].Face);
-        ui.Deck.ItemSelected += index => Inspect(selected[(int)index]);
+        ui.Cards.MultiSelected += (index, _) => { Inspect(visible[(int)index].Face); SelectionChanged?.Invoke(true); };
+        ui.Deck.MultiSelected += (index, _) => { Inspect(selected[(int)index]); SelectionChanged?.Invoke(false); };
+        ui.ClearSearch.Pressed += () => { ui.Search.Text = ""; ui.CardScope.Select(0); ui.Aspect.Select(0); ui.Kind.Select(0); Filter(); };
         Filter();
     }
+
+    internal string[] SelectedFaces(bool browse) => browse
+        ? ui.Cards.GetSelectedItems().Select(index => visible[index].Face).ToArray()
+        : ui.Deck.GetSelectedItems().Select(index => selected[index]).ToArray();
 
     internal string? BrowserFace => ui.Cards.GetSelectedItems() is { Length: > 0 } items ? visible[items[0]].Face : null;
     internal string? DeckFace => ui.Deck.GetSelectedItems() is { Length: > 0 } items ? selected[items[0]] : null;
 
     internal void Render()
     {
-        string? retained = DeckFace;
+        var retained = SelectedFaces(false);
         var draft = workspace.Draft!;
         selected = draft.Cards.Distinct(StringComparer.Ordinal).OrderBy(Title, StringComparer.Ordinal).ToArray();
         ui.Deck.Clear();
         foreach (string face in selected) ui.Deck.AddItem($"{draft.Cards.Count(item => item == face)} × {Title(face)}");
-        int index = selected.ToList().IndexOf(retained ?? "");
-        if (index >= 0) ui.Deck.Select(index);
+        for (int index = 0; index < selected.Length; index++)
+            if (retained.Contains(selected[index], StringComparer.Ordinal)) ui.Deck.Select(index, false);
         ui.Count.Text = $"{draft.Cards.Length} cards in draft · {(workspace.Dirty ? "unsaved changes" : workspace.Saved is null ? "draft" : "saved")}";
         ui.SeatOne.Disabled = ui.SeatTwo.Disabled = !workspace.CanUse;
         ui.Diagnostics.Text = workspace.Assessment is not { } assessment ? "Checking this draft with the game service…"
@@ -74,6 +80,7 @@ internal sealed class DeckBrowserPresentation(DeckEditorControls ui, DeckWorkspa
         foreach (var card in visible) ui.Cards.AddItem($"{card.Title} · {card.Aspect} · {card.Cost ?? "—"}");
         if (visible.Length > 0) { ui.Cards.Select(0); Inspect(visible[0].Face); }
         else ShowPreview(null, "No cards match these filters.");
+        SelectionChanged?.Invoke(true);
     }
 
     private IOrderedEnumerable<DeckCard> Sorted(IEnumerable<DeckCard> cards) => ui.Sort.Selected switch
