@@ -1,16 +1,35 @@
 # Deck browser, builder and import
 
-Open **Deck library · browse, build, import** from desktop setup. Search the
-host's admitted Core player cards by title, trait or cost, filter aspect and
-type, and inspect their printed text. Start from a starter or empty draft,
-choose an identity, and add or remove exact card copies. Changing identity
-retains the cards and asks the engine for fresh diagnostics.
+Open **Deck library · browse, build, import** from desktop setup. The labelled
+identity selector comes first. Changing identity replaces the supplied signature
+recipe and retains all other draft cards. A new deck starts with that
+identity's signature cards. Select **Preview identity** to inspect both forms.
+Card lists show names and quantities; their full procedural previews retain
+printed rules, symbols, traits and stats.
+
+Card search supports MarvelCDB field keys, quoted phrases, pipe alternatives,
+AND clauses and numeric comparisons. A field/operator/value row builds queries
+without memorizing keys. Search defaults to playable Core cards. The scope selector also exposes all
+research cards, player cards or encounter cards from the complete offline snapshot.
+Research presence never admits a card to gameplay. Search-only metadata is generated offline
+in `datasets/cards/search.json`; gameplay card bytes and compatibility hashes
+remain unchanged. The extractor's existing `check` verifies both outputs.
+
+**Find published decks** searches MarvelCDB online by hero, aspect, tag, author,
+name, included cards and allowed packs, with popularity/date/activity/likes/
+author-reputation ordering and pagination. The site supplies current heroes and
+pack choices. Selecting a result imports a local snapshot through the same
+bounded importer as URL import. Account-specific favorites and private decks
+are not part of public search. The search adapter parses HTML without executing
+scripts; unexpected pages produce an error rather than replacing a draft.
 
 Save, reopen, duplicate and delete local drafts, including unfinished or
 invalid decks. Files live in Godot's `user://decks` directory; an explicit
 `MARVEL_DECK_LIBRARY_DIRECTORY` overrides it for isolated tests. Saves replace
 one file atomically and reject stale revisions. A failed save retains the open
-draft. Library files are independent of server saves and replay.
+draft. Switching decks or returning to setup saves edits automatically; no
+discard confirmation is required. An untouched initial starter is not an edit.
+Library files are independent of server saves and replay.
 
 **Import JSON** accepts MarvelCDB's `hero_code` and `slots` format; **Export JSON**
 writes those exact face quantities. **Import URL** accepts public HTTPS
@@ -53,7 +72,10 @@ remain setup constraints in `DeckConstruction`.
 ordering. The host assesses explicit decks before allocating a world. Existing
 session recipes capture their own immutable card sequence; assessing or editing
 a draft does not modify a game or consume its randomness. Protocol 33 requires
-matching clients and hosts. Save, RNG, allocation-order and digest formats are
+matching clients and hosts. This unmerged protocol 33 increment also adds
+public catalog previews, bounded 200-card research pages and search metadata.
+It requires matching hosts and clients; earlier PR builds are not compatible.
+Save, RNG, allocation-order and digest formats are
 unchanged. JSON slots are expanded in ordinal face-code order because objects
 have no sequence contract; local library files preserve exact recipe order.
 
@@ -85,3 +107,20 @@ The native `deck-library` cases at 50%, 100% and 150% use keyboard activation to
 edit, save an invalid draft, capture a valid deck and start a game. These are
 regression checks, not independent player acceptance. Owner review of browsing,
 import recovery, corrections and seat assignment remains required.
+
+## Search verification and sources
+
+The field vocabulary and query operators follow the public
+[MarvelCDB card search](https://marvelcdb.com/search) and its
+[search implementation](https://github.com/zzorba/marvelsdb/blob/master/src/AppBundle/Services/CardsData.php).
+Published search uses the public [deck search form](https://marvelcdb.com/decklists/find).
+The included-card picker uses this repository's offline snapshot; current online
+hero and pack choices can include newer content absent from that snapshot.
+
+`CardSearchTests`, `PublishedDeckSearchTests`, `DeckResearchTests` and
+`DeckPreviewResponseTests` cover query syntax, response bounds, preview admission
+and the research/runtime boundary. Transport tests carry research pages over
+both embedded and socket connections. Manual mutations cover numeric boundaries,
+exclusion, signature replacement, preview authority and public response admission.
+Rendered search-to-import probes additionally exercise the live public site; these
+are manual acceptance evidence, never network-dependent CI tests.

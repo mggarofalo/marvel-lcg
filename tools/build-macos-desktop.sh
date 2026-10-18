@@ -94,6 +94,7 @@ find "$app/Contents/Resources" -type f -name 'Marvel.Godot.dll' -print -quit \
 resources="$app/Contents/Resources"
 mkdir -p "$resources/datasets/cards" "$resources/datasets/setup" "$resources/datasets/abilities"
 cp "$repository/datasets/cards/cards.json" "$resources/datasets/cards/cards.json"
+cp "$repository/datasets/cards/search.json" "$resources/datasets/cards/search.json"
 cp "$repository/datasets/setup/setup.json" "$resources/datasets/setup/setup.json"
 cp "$repository/datasets/abilities/abilities.json" "$resources/datasets/abilities/abilities.json"
 

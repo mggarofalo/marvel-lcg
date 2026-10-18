@@ -152,6 +152,12 @@ public sealed class PresentationAssemblyPolicyTests
             // DeckCatalogTransportTests proves admission remains at the host.
             "Marvel.Protocol.DeckAssessmentResult",
             "Marvel.Protocol.DeckCard",
+            // Bounded public research pages; research admission tests keep expansions unplayable.
+            "Marvel.Protocol.DeckCardPage",
+            // Printed-only preview validation rejects live handles and missing render fields.
+            "Marvel.View.BoardCardPresentation",
+            "Marvel.View.BoardFieldPresentation",
+            "Marvel.View.BoardPrintedValueMark",
             "Marvel.Protocol.DeckCatalog",
             "Marvel.Protocol.DeckHero",
             "Marvel.Protocol.DeckQuery",

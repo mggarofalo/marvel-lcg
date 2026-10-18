@@ -15,7 +15,7 @@ public sealed class DeckWorkspace(DeckCatalog catalog)
     public DeckAssessmentResult? Assessment { get; private set; }
     /// <summary>The latest library snapshot from which this draft was edited.</summary>
     public SavedDeck? Saved { get; private set; }
-    /// <summary>Whether edits require a save or explicit discard.</summary>
+    /// <summary>Whether edits have not yet been persisted.</summary>
     public bool Dirty { get; private set; }
     /// <summary>Whether the host has accepted this exact draft for construction.</summary>
     public bool CanUse => Assessment is { Size: not null, Diagnostics.Count: 0 };
@@ -30,8 +30,25 @@ public sealed class DeckWorkspace(DeckCatalog catalog)
         Assessment = null;
     }
 
+    /// <summary>Displays an untouched starting deck without inventing an edit.</summary>
+    public void Initialize(DeckDraft draft)
+    {
+        Replace(draft);
+        Dirty = false;
+    }
+
     /// <summary>Changes only the name and selected identity; all existing cards remain.</summary>
     public void Describe(string name, string heroCode) => Edit(new(name, heroCode, Draft!.Cards));
+
+    /// <summary>Uses the supplied identity recipe while retaining all non-signature draft cards.</summary>
+    public void ChooseIdentity(string key)
+    {
+        var next = Catalog.Heroes.Single(hero => hero.Key == key);
+        if (next.IdentityFaces.Contains(Draft!.HeroCode, StringComparer.Ordinal)) return;
+        var previous = Catalog.Heroes.SingleOrDefault(hero => hero.IdentityFaces.Contains(Draft.HeroCode, StringComparer.Ordinal));
+        var replaced = (previous?.Signature ?? []).Concat(next.Signature).ToHashSet(StringComparer.Ordinal);
+        Edit(new(Draft.Name, next.IdentityFaces[0], next.Signature.Concat(Draft.Cards.Where(face => !replaced.Contains(face))).ToArray()));
+    }
 
     /// <summary>Adds or removes one exact face without reproducing deckbuilding rules.</summary>
     public void ChangeCard(string face, bool add)
@@ -67,11 +84,19 @@ public sealed class DeckWorkspace(DeckCatalog catalog)
         Dirty = false;
     }
 
-    /// <summary>Retains the open draft after deletion of its saved source.</summary>
+    /// <summary>Persists edits before leaving a draft, without inventing a file for an untouched preview.</summary>
+    public void Preserve(LocalDeckStore store)
+    {
+        if (!Dirty) return;
+        if (string.IsNullOrWhiteSpace(Draft!.Name)) Describe("Untitled deck", Draft.HeroCode);
+        Save(store);
+    }
+
+    /// <summary>Retains a deleted source in memory; only a further edit or explicit save writes it again.</summary>
     public void ForgetSaved()
     {
         Saved = null;
-        Dirty = true;
+        Dirty = false;
     }
 
     private void Edit(DeckDraft draft)

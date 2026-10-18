@@ -8,6 +8,7 @@
 !datasets/
 !datasets/cards/
 !datasets/cards/cards.json
+!datasets/cards/search.json
 !datasets/setup/
 !datasets/setup/setup.json
 !datasets/abilities/

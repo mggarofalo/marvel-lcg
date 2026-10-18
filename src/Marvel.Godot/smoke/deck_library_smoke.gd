@@ -17,6 +17,7 @@ func _run() -> void:
 	await _activate(_button(root, "Deck library · browse, build, import"))
 	if not await _wait(func(): return _button(root, "Use for seat 1") != null and not _button(root, "Use for seat 1").disabled): return
 	var library := main.get_node("DeckLibrary") as Window
+	if not await _check_library_discovery(library): return
 	var draft := library.find_child("DraftCards", true, false) as ItemList
 	if draft == null or draft.item_count == 0:
 		_fail("starter deck was not visible")
@@ -33,14 +34,31 @@ func _run() -> void:
 	if not await _wait(func(): return _text_contains(library, "Deck captured for seat 1")): return
 	await _start_captured_game(library)
 
+func _check_library_discovery(library: Window) -> bool:
+	var identity := library.find_child("DeckIdentity", true, false) as OptionButton
+	if identity == null or not _text_contains(library, "1. Choose identity"):
+		_fail("identity selection was not labelled")
+		return false
+	var original := identity.selected
+	identity.select(2 if original != 2 else 1)
+	identity.item_selected.emit(identity.selected)
+	if not await _wait(func(): return library.find_child("DeckCardPreview", true, false).get_child_count() > 1): return false
+	identity.select(original)
+	identity.item_selected.emit(original)
+	if not await _wait(func(): return not _button(library, "Use for seat 1").disabled): return false
+	var browser := library.find_child("CardBrowser", true, false) as ItemList
+	for index in range(browser.item_count):
+		if "[" in browser.get_item_text(index):
+			_fail("card index codes were exposed in browser labels")
+			return false
+	return true
+
 func _start_captured_game(library: Window) -> void:
 	var screenshot := OS.get_environment("MARVEL_DECK_SCREENSHOT")
 	if not screenshot.is_empty() and DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(screenshot)
 	await _activate(_button(library, "Back to setup"))
-	if not await _wait(func(): return _button(root, "Discard changes") != null): return
-	await _activate(_button(root, "Discard changes"))
 	if not await _wait(func(): return main.get_node_or_null("DeckLibrary") == null): return
 	var seed := main.get_node("Margin/Shell/Content/Setup/Selections/Fields/Grid/Seed") as LineEdit
 	seed.text = "7"

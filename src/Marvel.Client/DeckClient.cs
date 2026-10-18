@@ -19,7 +19,7 @@ internal static class DeckClient
                 return ClientResponseValidation.Complete(response.Error)
                     ? new(null, ClientResponseValidation.Error(response.Error.Code, response.Error.Message))
                     : new(null, new("invalid_response", "The game service returned an incomplete error."));
-            if (!PublicOnly(response) || !Complete(response.Decks, draft is not null))
+            if (!PublicOnly(response) || !Complete(response.Decks, draft))
                 return new(null, new("invalid_response", "The game service returned incomplete deck data."));
             return new(response.Decks, null);
         }
@@ -36,7 +36,15 @@ internal static class DeckClient
         Invitations: null, Revision: 0, Events.Count: 0,
     };
 
-    private static bool Complete(DeckResponse? response, bool assessment) => assessment
+    private static bool Complete(DeckResponse? response, DeckQuery? query)
+    {
+        if (query?.CatalogPage is not { } page) return response?.Page is null && CompleteDraft(response, query is not null);
+        return response is { Catalog: null, Assessment: null, Page.Cards.Count: <= 200 }
+            && (response.Page.NextPage is null || response.Page.NextPage == page + 1)
+            && response.Page.Cards.All(CompleteCard);
+    }
+
+    private static bool CompleteDraft(DeckResponse? response, bool assessment) => assessment
         ? response is { Catalog: null, Assessment.Diagnostics: not null }
             && response.Assessment.Diagnostics.All(item => item is not null
                 && !string.IsNullOrWhiteSpace(item.Code) && item.Face is not null && item.Message is not null)
@@ -54,10 +62,20 @@ internal static class DeckClient
 
     private static bool CompleteCard(DeckCard card) => card is not null
         && !string.IsNullOrWhiteSpace(card.Face) && card.Title is not null && card.Kind is not null
-        && card.Aspect is not null && card.Traits is not null && card.Text is not null;
+        && card.Aspect is not null && card.Traits is not null && card.Text is not null
+        && CompleteCardPresentation(card);
+
+    private static bool CompleteCardPresentation(DeckCard card) => card.SearchFields is not null
+        && card.SearchFields.Values.All(value => value is not null)
+        && DeckPreviewValidation.Complete(card.Preview, card.Face);
 
     private static bool CompleteHero(DeckHero hero) => hero is not null
         && !string.IsNullOrWhiteSpace(hero.Key) && hero.Name is not null
         && hero.IdentityFaces is { Count: > 0 } && hero.IdentityFaces.All(face => !string.IsNullOrWhiteSpace(face))
-        && hero.Signature is not null && hero.Starter is not null;
+        && hero.Signature is not null && hero.Starter is not null
+        && CompleteIdentityPreviews(hero);
+
+    private static bool CompleteIdentityPreviews(DeckHero hero) => hero.Previews is not null
+        && hero.Previews.Count == hero.IdentityFaces.Count
+        && hero.Previews.Select((face, index) => DeckPreviewValidation.Complete(face, hero.IdentityFaces[index])).All(valid => valid);
 }

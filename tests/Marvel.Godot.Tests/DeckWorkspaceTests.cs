@@ -48,6 +48,38 @@ public sealed class DeckWorkspaceTests
         Assert.Contains("unknown", workspace.Draft!.Cards);
     }
 
+    [Fact]
+    public void IdentitySelectionReplacesOnlySuppliedSignatureCards()
+    {
+        var catalog = DatasetGameFactory.Load(RepositoryPaths.Root).DiscoverDecks();
+        var workspace = new DeckWorkspace(catalog);
+        var first = catalog.Heroes[0];
+        var next = catalog.Heroes[1];
+        workspace.Initialize(new("My deck", first.IdentityFaces[0], first.Starter));
+        Assert.False(workspace.Dirty);
+        workspace.ChangeCard("unknown-import", true);
+        workspace.ChooseIdentity(next.Key);
+        Assert.Equal(next.IdentityFaces[0], workspace.Draft!.HeroCode);
+        Assert.Equal("My deck", workspace.Draft.Name);
+        Assert.Equal(next.Signature.Concat(first.Starter.Where(face => !first.Signature.Contains(face))).Append("unknown-import"), workspace.Draft.Cards);
+        Assert.True(workspace.Dirty);
+        long revision = workspace.Revision;
+        workspace.ChooseIdentity(next.Key);
+        Assert.Equal(revision, workspace.Revision);
+    }
+
+    [Fact]
+    public void CatalogPreviewsCarryFullPrintedTextWithoutLiveTargets()
+    {
+        var catalog = DatasetGameFactory.Load(RepositoryPaths.Root).DiscoverDecks();
+        var kick = catalog.Cards.Single(card => card.Face == "01005");
+        Assert.Contains("8 damage", kick.Preview!.RulesText);
+        Assert.Null(kick.Preview.TargetId);
+        Assert.Equal(kick.Face, kick.Preview.FaceId);
+        Assert.All(catalog.Heroes, hero => Assert.Equal(hero.IdentityFaces, hero.Previews.Select(face => face.FaceId)));
+        Assert.All(catalog.Heroes.SelectMany(hero => hero.Previews), face => Assert.Null(face.TargetId));
+    }
+
     private sealed class DelayedTransport : IEngineTransport
     {
         private readonly TaskCompletionSource<EngineResponse> completion = new(TaskCreationOptions.RunContinuationsAsynchronously);

@@ -39,20 +39,26 @@ internal sealed class DeckEditorController : IDisposable
         foreach (var hero in workspace.Catalog.Heroes) ui.Hero.AddItem(hero.Name);
         browser.Initialize();
         ReloadLibrary();
-        New(starter: true);
-        ui.Window.PopupCenteredClamped(new(1080, 760), 0.95f);
-        ui.Name.GrabFocus();
+        if (workspace.Draft is null)
+        {
+            var hero = workspace.Catalog.Heroes[0];
+            workspace.Initialize(new(hero.Name + " starter", hero.IdentityFaces[0], hero.Starter));
+        }
+        DisplayDraft();
+        ui.Window.PopupCenteredClamped(new(1240, 900), 0.95f);
+        ui.Hero.GrabFocus();
     }
 
     private void Bind()
     {
         ui.Name.TextChanged += _ => Describe();
-        ui.Hero.ItemSelected += _ => Describe();
-        ui.Starter.Pressed += () => ConfirmReplacement(() => New(starter: true));
-        ui.Empty.Pressed += () => ConfirmReplacement(() => New(starter: false));
-        ui.Copy.Pressed += () => Replace(new(workspace.Draft!.Name + " copy", workspace.Draft.HeroCode, workspace.Draft.Cards));
+        ui.Hero.ItemSelected += _ => ChooseIdentity();
+        ui.InspectIdentity.Pressed += browser.InspectIdentity;
+        ui.Starter.Pressed += () => PreserveThen(() => New(starter: true));
+        ui.Empty.Pressed += () => PreserveThen(() => New(starter: false));
+        ui.Copy.Pressed += () => PreserveThen(() => Replace(new(workspace.Draft!.Name + " copy", workspace.Draft.HeroCode, workspace.Draft.Cards)));
         ui.Save.Pressed += Save;
-        ui.Load.Pressed += () => ConfirmReplacement(Load);
+        ui.Load.Pressed += () => PreserveThen(Load);
         ui.Delete.Pressed += Delete;
         ui.Add.Pressed += () => Change(browser.BrowserFace, true);
         ui.Remove.Pressed += () => Change(browser.DeckFace, false);
@@ -65,6 +71,7 @@ internal sealed class DeckEditorController : IDisposable
         ui.Export.Pressed += () => PickFile(true);
         ui.File.FileSelected += FileSelected;
         ui.Fetch.Pressed += ImportUrl;
+        ui.Published.Pressed += () => _ = new PublishedDeckBrowser(ui.Window, workspace.Catalog, url => { ui.Url.Text = url; ImportUrl(); });
         ui.CancelFetch.Pressed += () => acquisition?.Cancel();
         ui.Window.TreeExiting += Dispose;
     }
@@ -73,19 +80,34 @@ internal sealed class DeckEditorController : IDisposable
     {
         int index = Math.Max(0, ui.Hero.Selected - 1);
         var hero = workspace.Catalog.Heroes[index];
-        Replace(new(hero.Name + (starter ? " starter" : " deck"), hero.IdentityFaces[0], starter ? hero.Starter : []));
+        Replace(new(hero.Name + (starter ? " starter" : " deck"), hero.IdentityFaces[0], starter ? hero.Starter : hero.Signature));
     }
 
     private void Replace(DeckDraft draft, SavedDeck? from = null)
     {
         workspace.Replace(draft, from);
+        DisplayDraft();
+    }
+
+    private void DisplayDraft()
+    {
+        var draft = workspace.Draft!;
         rendering = true;
         ui.Name.Text = draft.Name;
         int hero = workspace.Catalog.Heroes.ToList().FindIndex(item => item.IdentityFaces.Contains(draft.HeroCode, StringComparer.Ordinal));
         ui.Hero.Select(hero + 1);
         rendering = false;
-        ui.Status.Text = hero < 0 ? $"Imported identity {draft.HeroCode} is unsupported. All cards have been retained." : "";
+        ui.Status.Text = hero < 0 ? "This imported identity is outside the playable Core set. All cards have been retained." : "";
         Changed();
+        browser.InspectIdentity();
+    }
+
+    private void ChooseIdentity()
+    {
+        if (rendering || ui.Hero.Selected <= 0) return;
+        workspace.ChooseIdentity(workspace.Catalog.Heroes[ui.Hero.Selected - 1].Key);
+        Changed();
+        browser.InspectIdentity();
     }
 
     private void Describe()
@@ -130,9 +152,12 @@ internal sealed class DeckEditorController : IDisposable
 
     private void ReloadLibrary() => Try(() =>
     {
+        string? selectedId = workspace.Saved?.Id;
         saved = store.List();
         ui.Library.Clear();
         foreach (var item in saved) ui.Library.AddItem(item.Draft.Name);
+        int selectedIndex = saved.ToList().FindIndex(item => item.Id == selectedId);
+        if (selectedIndex >= 0) ui.Library.Select(selectedIndex);
         ui.Load.Disabled = ui.Delete.Disabled = saved.Count == 0;
     });
 
@@ -153,7 +178,7 @@ internal sealed class DeckEditorController : IDisposable
             if (workspace.Saved?.Id == item.Id) workspace.ForgetSaved();
             ReloadLibrary();
             browser.Render();
-            ui.Status.Text = "Saved deck deleted; the open draft is retained as an unsaved copy.";
+            ui.Status.Text = "Saved deck deleted. The open copy stays in memory; edit or Save draft to keep it again.";
         });
         ui.Confirm.DialogText = $"Delete saved deck \"{item.Draft.Name}\"? Running games retain their captured decks.";
         ui.Confirm.OkButtonText = "Delete saved deck";
@@ -184,7 +209,7 @@ internal sealed class DeckEditorController : IDisposable
         }
         if (new FileInfo(path).Length > MarvelCdbDeckJson.MaximumBytes) throw new InvalidDataException("The deck file exceeds 1 MiB.");
         var draft = MarvelCdbDeckJson.Read(System.IO.File.ReadAllBytes(path));
-        ConfirmReplacement(() => Replace(draft));
+        PreserveThen(() => Replace(draft));
     });
 
     private async void ImportUrl()
@@ -202,7 +227,7 @@ internal sealed class DeckEditorController : IDisposable
             var draft = await importer.ImportAsync(ui.Url.Text, attempt.Token);
             if (attempt.IsCancellationRequested) return;
             if (revision != workspace.Revision) { ui.Status.Text = "Your draft changed during import. Import again when ready to replace it."; return; }
-            ConfirmReplacement(() => Replace(draft));
+            PreserveThen(() => Replace(draft));
         }
         catch (OperationCanceledException) { if (!lifetime.IsCancellationRequested) ui.Status.Text = "Import cancelled or timed out. Your draft is unchanged."; }
         catch (Exception error) { if (!lifetime.IsCancellationRequested) ui.Status.Text = "Import failed: " + error.Message; }
@@ -212,16 +237,14 @@ internal sealed class DeckEditorController : IDisposable
         }
     }
 
-    private void ConfirmReplacement(Action action)
+    private void PreserveThen(Action action) => Try(() =>
     {
-        if (!workspace.Dirty) { action(); return; }
-        confirmed = action;
-        ui.Confirm.DialogText = "Discard unsaved changes to this draft? Choose Cancel to keep editing or save it first.";
-        ui.Confirm.OkButtonText = "Discard changes";
-        ui.Confirm.PopupCentered();
-    }
+        workspace.Preserve(store);
+        action();
+        ReloadLibrary();
+    });
 
-    private void Close() => ConfirmReplacement(() => ui.Window.QueueFree());
+    private void Close() => PreserveThen(() => ui.Window.QueueFree());
 
     private void Try(Action action)
     {

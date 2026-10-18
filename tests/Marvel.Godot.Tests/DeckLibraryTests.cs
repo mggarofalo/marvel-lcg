@@ -12,6 +12,29 @@ public sealed class DeckLibraryTests : IDisposable
     private readonly string directory = Path.Combine(Path.GetTempPath(), "marvel-decks-" + Guid.NewGuid().ToString("N"));
 
     [Fact]
+    public void AutomaticPreservationKeepsEditsWithoutRecreatingAnExplicitlyDeletedDeck()
+    {
+        var store = new LocalDeckStore(directory);
+        var workspace = new DeckWorkspace(new([], []));
+        workspace.Initialize(new("", "01001a", []));
+        workspace.Preserve(store);
+        Assert.Empty(store.List());
+        workspace.ChangeCard("01005", true);
+        workspace.Preserve(store);
+        var saved = Assert.Single(store.List());
+        Assert.Equal("Untitled deck", saved.Draft.Name);
+        Assert.Equal(["01005"], saved.Draft.Cards);
+        store.Delete(saved.Id, saved.Revision);
+        workspace.ForgetSaved();
+        workspace.Preserve(store);
+        Assert.Empty(store.List());
+        Assert.Equal(["01005"], workspace.Draft!.Cards);
+        workspace.ChangeCard("01005", true);
+        workspace.Preserve(store);
+        Assert.Equal(["01005", "01005"], Assert.Single(store.List()).Draft.Cards);
+    }
+
+    [Fact]
     public void InvalidDraftsPreserveOrderAndRevisionsAcrossSaveAndReopen()
     {
         var store = new LocalDeckStore(directory);

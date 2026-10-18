@@ -14,6 +14,7 @@ internal sealed class DeckSetupController
     private readonly Label summary = new() { Text = "Published starter decks", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     private readonly Dictionary<string, DeckDraft> chosen = new(StringComparer.Ordinal);
     private DeckCatalog? catalog;
+    private DeckWorkspace? workspace;
 
     internal DeckSetupController(Main main)
     {
@@ -24,7 +25,7 @@ internal sealed class DeckSetupController
         parent.MoveChild(open, main.start.GetIndex());
         parent.MoveChild(summary, main.start.GetIndex());
         open.Pressed += Open;
-        main.endpoint.TextChanged += _ => { chosen.Clear(); catalog = null; Refresh(); };
+        main.endpoint.TextChanged += _ => { chosen.Clear(); catalog = null; workspace = null; Refresh(); };
         main.hero.ItemSelected += _ => Refresh();
         main.secondHero.ItemSelected += _ => Refresh();
     }
@@ -43,6 +44,7 @@ internal sealed class DeckSetupController
     {
         if (!CanOpen()) return;
         open.Disabled = true;
+        summary.Text = "Loading card library…";
         string endpoint = main.endpoint.Text;
         LocalGameClient? client = null;
         try
@@ -50,16 +52,16 @@ internal sealed class DeckSetupController
             var connection = ClientComposition.Connect(DesktopDataRoot.Current(), endpoint);
             if (!connection.Succeeded) { summary.Text = connection.Error!.Message; return; }
             client = connection.Client!;
-            var result = await client.ReadDecksAsync();
-            if (!Current(endpoint)) return;
-            if (!result.Succeeded) { summary.Text = result.Error!.Message; return; }
-            catalog = result.Decks!.Catalog!;
+            catalog = await ReadCatalog(client, endpoint);
+            if (catalog is null) return;
             var controls = new DeckEditorControls(main);
             var store = new LocalDeckStore(System.Environment.GetEnvironmentVariable("MARVEL_DECK_LIBRARY_DIRECTORY")
                 ?? ProjectSettings.GlobalizePath("user://decks"));
-            var controller = new DeckEditorController(controls, client, new(catalog), store, Assign);
+            workspace ??= new(catalog);
+            var controller = new DeckEditorController(controls, client, workspace, store, Assign);
             client = null; // The window owns this independent read-only connection.
             controller.Show();
+            Refresh();
         }
         catch (Exception) { summary.Text = "The deck library could not open. Your selected decks have not changed."; }
         finally
@@ -67,6 +69,15 @@ internal sealed class DeckSetupController
             client?.Dispose();
             if (GodotObject.IsInstanceValid(open)) open.Disabled = false;
         }
+    }
+
+    private async Task<DeckCatalog?> ReadCatalog(LocalGameClient client, string endpoint)
+    {
+        var result = await client.ReadDecksAsync();
+        if (!Current(endpoint)) return null;
+        if (!result.Succeeded) { summary.Text = result.Error!.Message; return null; }
+        var loaded = await DeckResearchCatalog.LoadAsync(client, result.Decks!.Catalog!);
+        return Current(endpoint) ? loaded : null;
     }
 
     private bool Current(string endpoint) => GodotObject.IsInstanceValid(main)

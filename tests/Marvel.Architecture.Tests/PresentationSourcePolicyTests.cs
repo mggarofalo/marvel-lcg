@@ -254,6 +254,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.CardKind.Insert",
             "Marvel.Rules.State.CardKind.MainScheme",
             "Marvel.Rules.State.CardKind.Minion",
+            // Printed research preview back; presence never implies gameplay admission.
+            "Marvel.Rules.State.CardKind.PlayerSideScheme",
             "Marvel.Rules.State.CardKind.Resource",
             "Marvel.Rules.State.CardKind.Support",
             "Marvel.Rules.State.CardKind.Upgrade",

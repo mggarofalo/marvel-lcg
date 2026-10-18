@@ -25,6 +25,8 @@ public sealed class DeckCatalogTransportTests : TransportTestBase
         Assert.Equal(5, catalog.Heroes.Count);
         var kick = Assert.Single(catalog.Cards, card => card.Face == "01005");
         Assert.Equal("3", kick.Cost);
+        Assert.Null(kick.Preview!.TargetId);
+        Assert.Contains("8 damage", kick.Preview.RulesText);
         Assert.Contains("8 damage", kick.Text);
         Assert.DoesNotContain(catalog.Cards, card => card.Face == "02001a");
         var hero = catalog.Heroes.Single(item => item.Key == "black_panther");
@@ -37,6 +39,26 @@ public sealed class DeckCatalogTransportTests : TransportTestBase
         Assert.Equal(39, response.Decks.Assessment!.Size);
         Assert.Contains(response.Decks.Assessment.Diagnostics, item => item.Code == "signature-quantity");
         Assert.Contains(response.Decks.Assessment.Diagnostics, item => item.Code == "deck-size");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ResearchPagesPreservePreviewsAndRemainBounded(bool socket)
+    {
+        var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root));
+        var request = EngineRequest.ReadDecks("research", new("", []) { CatalogPage = 1 });
+        var response = socket
+            ? await ExchangeOverSocket(new SocketEngineServer(host, IPAddress.Loopback, 0), request)
+            : await new InProcessTransport(host).ExchangeAsync(request, TestContext.Current.CancellationToken);
+        Assert.Null(response.Error);
+        Assert.Null(response.Capability);
+        Assert.Null(response.World);
+        var page = response.Decks!.Page!;
+        Assert.Equal(200, page.Cards.Count);
+        Assert.Equal(2, page.NextPage);
+        Assert.All(page.Cards, card => Assert.Equal(card.Face, card.Preview!.FaceId));
+        Assert.Contains(page.Cards, card => !card.RuntimeSupported);
     }
 
     [Fact]

@@ -195,6 +195,8 @@ try {
             -Destination (Join-Path $destination "$dataset.json")
     }
 
+    Copy-Item -LiteralPath (Join-Path $repository 'datasets/cards/search.json') -Destination (Join-Path $payload 'datasets/cards/search.json')
+
     $releaseProject = Join-Path $sourceRoot 'tools\Marvel.Release\Marvel.Release.csproj'
     Invoke-Checked { dotnet restore $releaseProject }
     Invoke-Checked {

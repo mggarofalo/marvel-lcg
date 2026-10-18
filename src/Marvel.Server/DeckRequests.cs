@@ -15,6 +15,12 @@ internal static class DeckRequests
             return Failed(request, "decks_unavailable", "deck construction is unavailable from this host");
         DeckResponse result;
         if (request.Deck is null) result = new(discovery.DiscoverDecks(), null);
+        else if (request.Deck.CatalogPage is { } page)
+        {
+            if (page is < 0 or > 1000 || request.Deck.Hero != "" || request.Deck.Cards is not { Count: 0 })
+                return Failed(request, "invalid_request", "research pages require an empty draft and a bounded page number");
+            result = new(null, null) { Page = discovery.BrowseCards(page) };
+        }
         else
         {
             var draft = request.Deck;

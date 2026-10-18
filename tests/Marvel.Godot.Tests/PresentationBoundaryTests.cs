@@ -25,6 +25,12 @@ public sealed class PresentationBoundaryTests
             // Library values and public printed facts have no live-card authority.
             // Legality arrives only as host-authored diagnostics; unknown faces
             // remain rejected by DeckCatalogTransportTests and DeckAssessmentTests.
+            // Public research and acquisition only; DeckResearchTests proves gameplay admission stays at the host.
+            "Marvel.Client.CardSearch",
+            "Marvel.Client.DeckResearchCatalog",
+            "Marvel.Client.MarvelCdbDeckSearch",
+            "Marvel.Client.PublishedDeck",
+            "Marvel.Client.PublishedDeckPage",
             "Marvel.Client.ClientDeckResult",
             "Marvel.Client.DeckDraft",
             "Marvel.Client.DeckWorkspace",
