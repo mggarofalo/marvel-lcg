@@ -13,7 +13,7 @@ one file atomically and reject stale revisions. A failed save retains the open
 draft. Library files are independent of server saves and replay.
 
 **Import JSON** accepts MarvelCDB's `hero_code` and `slots` format; **Export JSON**
-writes those exact face quantities. **Fetch URL** accepts public HTTPS
+writes those exact face quantities. **Import URL** accepts public HTTPS
 `marvelcdb.com/decklist/view/{id}` links and public decklist API links. Private
 `/deck/view` links require a JSON export. Requests are cancellable, limited to
 20 seconds and 1 MiB, and reject redirects. Acquisition never runs in gameplay.
