@@ -24,7 +24,7 @@ public static class SetupCatalogAdmission
             ValidateFaces(hero.Hero.Concat(hero.HeroDeck).Concat(hero.PlayerDeck)
                 .Concat(hero.Obligations).Concat(hero.NemesisSet), cards, authored);
             _ = IdentityFaces.StartingSpec(hero.Hero[0], cards);
-            _ = PlayerDeckAdmission.Admit(new PlayerDeckRecipe([.. hero.HeroDeck, .. hero.PlayerDeck]), hero.HeroDeck, 0, cards);
+            _ = PlayerDeckAdmission.Admit(new PlayerDeckRecipe([.. hero.HeroDeck, .. hero.PlayerDeck]), hero.HeroDeck, 0, cards, hero.Hero[0]);
         }
         foreach (string scenario in setup.CampaignNames)
         {

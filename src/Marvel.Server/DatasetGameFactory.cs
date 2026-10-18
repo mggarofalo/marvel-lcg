@@ -63,8 +63,16 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
         ArgumentNullException.ThrowIfNull(specification);
         PlayerCountRules.Validate(specification.Heroes.Count);
         if (specification.PlayerDecks is not null)
-            foreach (PlayerDeckRecipe deck in specification.PlayerDecks)
-                SetupCatalogAdmission.ValidateFaces(deck.Cards, cards, abilities.Authored);
+        {
+            if (specification.PlayerDecks.Count != specification.Heroes.Count)
+                throw new ArgumentException("an explicit deck is required for every seat", nameof(specification));
+            for (int seat = 0; seat < specification.Heroes.Count; seat++)
+            {
+                var assessment = AssessDeck(specification.Heroes[seat], specification.PlayerDecks[seat].Cards);
+                if (!assessment.IsValid)
+                    throw new ArgumentException(string.Join("; ", assessment.Diagnostics.Select(item => item.Message)), nameof(specification));
+            }
+        }
         var runner = new AbilityRunner(abilities);
         var setupEvents = new List<GameEvent>();
         var campaign = setup.Campaign(specification.Scenario);
@@ -85,6 +93,10 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
             campaign.Expert);
         return new OpenedGame(Game.Begin(world, cards, runner), setupEvents);
     }
+
+    /// <summary>Previews a draft against the same content and construction checks used at game creation.</summary>
+    public DeckAssessment AssessDeck(string hero, IReadOnlyList<string> draft) =>
+        CoreDeckAssessment.Assess(draft, setup.Hero(hero), cards, abilities.Authored);
 
     /// <inheritdoc />
     public SetupChoices DiscoverSetup() => new(
