@@ -18,6 +18,8 @@ public sealed class DeckWorkspace(DeckCatalog catalog)
     public DeckDraft? Draft { get; private set; }
     /// <summary>A local edit generation, used to reject stale read-only responses.</summary>
     public long Revision { get; private set; }
+    /// <summary>Identifies replacement by another draft independently of local edits.</summary>
+    public long Generation { get; private set; }
     /// <summary>The assessment for precisely the current revision, or null.</summary>
     public DeckAssessmentResult? Assessment { get; private set; }
     /// <summary>The latest library snapshot from which this draft was edited.</summary>
@@ -32,6 +34,7 @@ public sealed class DeckWorkspace(DeckCatalog catalog)
     {
         Draft = draft;
         Saved = saved;
+        Generation++;
         undo.Clear();
         redo.Clear();
         Dirty = saved is null;
@@ -79,7 +82,7 @@ public sealed class DeckWorkspace(DeckCatalog catalog)
         var draft = Draft ?? throw new InvalidOperationException("Choose or create a deck first.");
         var hero = Catalog.Heroes.SingleOrDefault(item => item.IdentityFaces.Contains(draft.HeroCode, StringComparer.Ordinal));
         if (hero is null) return "This identity is outside the host's supported Core content. Choose a Core identity; imported cards will be retained.";
-        var result = await client.ReadDecksAsync(new(hero.Key, draft.Cards), cancellationToken);
+        var result = await client.ReadDecksAsync(new(hero.Key, draft.Cards) { IncludeQuantities = true }, cancellationToken);
         if (revision != Revision) return null;
         if (!result.Succeeded) return result.Error!.Message;
         Assessment = result.Decks!.Assessment;
@@ -123,6 +126,14 @@ public sealed class DeckWorkspace(DeckCatalog catalog)
         var signature = Catalog.Heroes.FirstOrDefault(hero => hero.IdentityFaces.Contains(Draft!.HeroCode))?.Signature ?? [];
         Edit(new(Draft!.Name, Draft.HeroCode, Draft.Cards.Where(face => !selected.Contains(face))
             .Concat(signature.Where(selected.Contains)).ToArray()));
+    }
+
+    /// <summary>Repairs an imported signature recipe while retaining every optional card.</summary>
+    public void RestoreRequiredCards()
+    {
+        var signature = Catalog.Heroes.FirstOrDefault(hero => hero.IdentityFaces.Contains(Draft!.HeroCode))?.Signature;
+        if (signature is null) return;
+        Edit(new(Draft!.Name, Draft.HeroCode, signature.Concat(Draft.Cards.Where(face => !signature.Contains(face))).ToArray()));
     }
 
     /// <summary>Resets to the host-supplied required cards, including missing imported signatures.</summary>

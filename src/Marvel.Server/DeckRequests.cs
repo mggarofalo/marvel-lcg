@@ -17,7 +17,7 @@ internal static class DeckRequests
         if (request.Deck is null) result = new(discovery.DiscoverDecks(), null);
         else if (request.Deck.CatalogPage is { } page)
         {
-            if (page is < 0 or > 1000 || request.Deck.Hero != "" || request.Deck.Cards is not { Count: 0 })
+            if (!ResearchPageWithinBounds(request.Deck, page))
                 return Failed(request, "invalid_request", "research pages require an empty draft and a bounded page number");
             result = new(null, null) { Page = discovery.BrowseCards(page) };
         }
@@ -30,9 +30,18 @@ internal static class DeckRequests
             if (!discovery.DiscoverDecks().Heroes.Any(hero => hero.Key == draft.Hero))
                 return Failed(request, "invalid_request", "choose a hero offered by this host");
             var assessment = discovery.AssessDeck(draft.Hero, draft.Cards);
-            result = new(null, new(assessment.Size, assessment.Diagnostics) { CanExtend = assessment.CanExtend });
+            result = new(null, new(assessment.Size, assessment.Diagnostics)
+            {
+                CanExtend = assessment.CanExtend,
+                Quantities = draft.IncludeQuantities ? discovery.DeckQuantities(draft.Hero, draft.Cards) : new Dictionary<string, int[]>(),
+            });
         }
         return new(EngineProtocol.Version, request.RequestId, "", null, null, []) { Decks = result };
+    }
+
+    private static bool ResearchPageWithinBounds(DeckQuery query, int page)
+    {
+        return page is >= 0 and <= 1000 && query.Hero == "" && query.Cards is { Count: 0 } && !query.IncludeQuantities;
     }
 
     private static bool WithinBounds(DeckQuery draft) => draft.Hero is { Length: <= 80 }

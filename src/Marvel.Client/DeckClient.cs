@@ -44,11 +44,18 @@ internal static class DeckClient
             && response.Page.Cards.All(CompleteCard);
     }
 
-    private static bool CompleteDraft(DeckResponse? response, bool assessment) => assessment
-        ? response is { Catalog: null, Assessment.Diagnostics: not null }
-            && response.Assessment.Diagnostics.All(item => item is not null
-                && !string.IsNullOrWhiteSpace(item.Code) && item.Face is not null && item.Message is not null)
-        : response is { Assessment: null, Catalog: not null } && CompleteCatalog(response.Catalog);
+    private static bool CompleteDraft(DeckResponse? response, bool assessment)
+    {
+        if (!assessment) return response is { Assessment: null, Catalog: not null } && CompleteCatalog(response.Catalog);
+        return response is { Catalog: null, Assessment.Diagnostics: not null } && CompleteAssessment(response.Assessment);
+    }
+
+    private static bool CompleteAssessment(DeckAssessmentResult assessment)
+    {
+        return DeckQuantityValidation.Complete(assessment.Quantities)
+            && assessment.Diagnostics.All(item => item is not null && !string.IsNullOrWhiteSpace(item.Code)
+                && item.Face is not null && item.Message is not null);
+    }
 
     private static bool CompleteCatalog(DeckCatalog catalog)
     {

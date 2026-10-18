@@ -14,4 +14,7 @@ public interface IDeckDiscovery
 
     /// <summary>Assess a draft without creating or changing a game.</summary>
     DeckAssessment AssessDeck(string hero, IReadOnlyList<string> draft);
+
+    /// <summary>Engine-checked total quantities for optional cards; required recipes are immutable.</summary>
+    IReadOnlyDictionary<string, int[]> DeckQuantities(string hero, IReadOnlyList<string> draft);
 }

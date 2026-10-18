@@ -18,9 +18,9 @@ public sealed class GeneratedPartialTypePolicyTests
     [InlineData("src/Marvel.Godot/Main.cs", "namespace Marvel.Godot; partial class Main { } partial class Other { }", false)]
     [InlineData("src/Marvel.Godot/Main.cs", "namespace Marvel.Godot; class Owner { partial class Main { } }", false)]
     [InlineData("src/Marvel.Godot/Main.cs", "namespace Marvel.Godot { partial class Main { } }", false)]
-    [InlineData("src/Marvel.Godot/DeckTransferList.cs", "namespace Marvel.Godot; partial class DeckTransferList { }", true)]
-    [InlineData("src/Marvel.Godot/DeckTransferList.cs", "namespace Marvel.Godot; partial class Other { }", false)]
-    [InlineData("src/Marvel.Godot/DeckTransferList.More.cs", "namespace Marvel.Godot; partial class DeckTransferList { }", false)]
+    [InlineData("src/Marvel.Godot/DeckCardTable.cs", "namespace Marvel.Godot; partial class DeckCardTable { }", true)]
+    [InlineData("src/Marvel.Godot/DeckCardTable.cs", "namespace Marvel.Godot; partial class Other { }", false)]
+    [InlineData("src/Marvel.Godot/DeckCardTable.More.cs", "namespace Marvel.Godot; partial class DeckCardTable { }", false)]
     public void OnlyExactGeneratorDeclarationsAreExempt(string path, string source, bool expected)
     {
         CompilationUnitSyntax root = CSharpSyntaxTree.ParseText(

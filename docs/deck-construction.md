@@ -127,19 +127,33 @@ are manual acceptance evidence, never network-dependent CI tests.
 
 ### Fast local editing
 
-Results and deck rows support Ctrl/Shift multiselection, with visible Select all
-and Deselect controls. The 1/2/3 buttons set each selected face's total quantity.
-A read-only host assessment supplies `CanExtend`: the engine accepts a partial
-deck below 40 cards but requires every other construction constraint, including
-the 50-card maximum. This is an additive field in this unreleased protocol 33
+Results and deck rows support Ctrl/Shift multiselection. Ctrl+Shift adds the
+anchor-to-click range to the existing selection: click 0, Ctrl-click 2,
+Ctrl+Shift-click 4 selects 0, 2, 3 and 4. Search pages contain up to 50 rows;
+Select page selects that page. Each optional row offers its accepted total
+quantities, including zero: 0/1, 0/1/2 or 0/1/2/3. Required identity cards are
+absent from the pool and fixed in the deck. Their full previews remain available.
+Persistent row controls preserve focus and avoid rebuilding the table on clicks.
+Rapid quantity edits retain independent row intentions and the latest pending
+choice for each face.
+
+A read-only host assessment supplies `CanExtend` and, when `IncludeQuantities`
+is requested, accepted per-face quantities. The engine accepts a partial deck
+below 40 cards but requires every other construction constraint, including the
+50-card maximum. These are additive fields in this unreleased protocol 33
 increment; matching hosts and clients remain required. Unavailable quantities
-are disabled. Imports with other construction errors must be corrected or cleared
-before positive quantity edits become available.
+are hidden. Zero remains available to correct optional imported cards.
+Restore required cards repairs a malformed signature recipe while retaining
+optional imports; other construction errors must be corrected before positive
+quantity edits become available.
 
 Add selected and drag from results into the deck add one copy per selected face
-using the same checked proposal. Edits and identity changes invalidate pending
-proposals and drags. Clear selected retains required signature copies; Clear deck
-restores the identity's complete signature recipe. Both are immediate and undoable.
-Undo/Redo restore whole local edits, including bulk quantities and identity changes,
+using the same checked proposal. Drag previews name cards and show resulting
+counts; the target explains pending validation, and completion reports added
+quantities. Dropping during validation waits for the checked proposal. Edits and
+identity changes invalidate pending proposals and drags. Clear selected retains
+required signature copies; Clear deck restores the identity's complete signature
+recipe. Both are immediate and undoable.
+Undo/Redo restore whole local edits, including bulk edits and identity changes,
 with up to 100 undo steps. Opening another deck starts a separate history. Saving
 does not clear history; captured setup seats and running games remain independent.

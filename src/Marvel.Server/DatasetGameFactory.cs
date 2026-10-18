@@ -105,6 +105,10 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery, I
         CoreDeckAssessment.Assess(draft, setup.Hero(hero), cards, abilities.Authored);
 
     /// <inheritdoc />
+    public IReadOnlyDictionary<string, int[]> DeckQuantities(string hero, IReadOnlyList<string> draft) =>
+        CoreDeckQuantities.Assess(draft, setup.Hero(hero), cards, abilities.Authored);
+
+    /// <inheritdoc />
     public DeckCatalog DiscoverDecks() => new(
         setup.HeroNames.Select(key =>
         {

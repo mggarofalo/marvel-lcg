@@ -31,8 +31,8 @@ func _run() -> void:
 	await _start_captured_game(library)
 
 func _check_library_discovery(library: Window) -> bool:
-	var draft := library.find_child("DraftCards", true, false) as ItemList
-	if draft == null or draft.item_count == 0:
+	var draft := library.find_child("DraftCards", true, false) as ScrollContainer
+	if draft == null or draft.get_node("Rows").get_child_count() == 0:
 		_fail("starter deck was not visible")
 		return false
 	var identity := library.find_child("DeckIdentity", true, false) as OptionButton
@@ -46,48 +46,127 @@ func _check_library_discovery(library: Window) -> bool:
 	identity.select(original)
 	identity.item_selected.emit(original)
 	if not await _wait(func(): return not _button(library, "Use for seat 1").disabled): return false
-	var browser := library.find_child("CardBrowser", true, false) as ItemList
-	for index in range(browser.item_count):
-		if "[" in browser.get_item_text(index):
-			_fail("card index codes were exposed in browser labels")
+	var browser := library.find_child("CardBrowser", true, false) as ScrollContainer
+	if browser.find_child("Card_01005", true, false) != null:
+		_fail("signature cards appeared in the card pool")
+		return false
+	var required := draft.find_child("Card_01005", true, false)
+	if required == null or required.find_child("Quantity0", true, false).visible:
+		_fail("required signature row exposed removal")
+		return false
+	if not await _check_range_selection(library, browser): return false
+	return await _check_research_paging(library, browser)
+
+func _check_research_paging(library: Window, browser: ScrollContainer) -> bool:
+	var scope := library.find_child("CardScope", true, false) as OptionButton
+	var started := Time.get_ticks_msec()
+	scope.select(1)
+	scope.item_selected.emit(1)
+	await process_frame
+	var rows := browser.get_node("Rows")
+	if rows.get_child_count() != 50 or _button(library, "Next cards").disabled:
+		_fail("research scope was not bounded to a navigable page")
+		return false
+	var first := rows.get_child(0).name
+	await _activate(_button(library, "Next cards"))
+	if rows.get_child(0).name == first:
+		_fail("research page did not advance")
+		return false
+	print("DECK_RESEARCH_PAGING_MS ", Time.get_ticks_msec() - started)
+	scope.select(0)
+	scope.item_selected.emit(0)
+	return true
+
+func _check_range_selection(library: Window, browser: ScrollContainer) -> bool:
+	var rows := browser.get_node("Rows")
+	await _click_row(library, rows.get_child(0), false, false)
+	await _click_row(library, rows.get_child(2), true, false)
+	await _click_row(library, rows.get_child(4), true, true)
+	if not _text_contains(library, "4 pool cards selected"):
+		_fail("Ctrl+Shift range did not retain the separate selected row")
+		return false
+	for index in range(5):
+		var selected: bool = rows.get_child(index).get_theme_stylebox("panel").bg_color.r > 0.1
+		if selected != (index in [0, 2, 3, 4]):
+			_fail("range selection selected wrong row %d" % index)
 			return false
 	return true
+
+func _click_row(library: Window, row: Control, ctrl: bool, shift: bool) -> void:
+	row.grab_focus()
+	await process_frame
+	await process_frame
+	var event := InputEventMouseButton.new()
+	event.position = row.global_position + Vector2(library.position) + Vector2(12, 12)
+	event.global_position = event.position
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.ctrl_pressed = ctrl
+	event.shift_pressed = shift
+	event.pressed = true
+	root.push_input(event, true)
+	await process_frame
+	event.pressed = false
+	root.push_input(event, true)
+	await process_frame
 
 func _check_bulk_edits(library: Window) -> bool:
 	await _activate(_button(library, "Clear deck"))
 	var search := library.find_child("CardSearch", true, false) as LineEdit
 	search.text = 'Haymaker|"First Aid"'
 	search.text_changed.emit(search.text)
-	await _activate(_button(library, "Select all results"))
-	var three := library.find_child("DeckQuantity3", true, false) as Button
-	if not await _wait(func(): return not three.disabled): return false
-	await _activate(three)
-	if not await _wait(func(): return _text_contains(library, "21 cards in draft")): return false
+	await _activate(_button(library, "Select page"))
+	if not await _wait(func(): return not _button(library, "Add selected +1").disabled): return false
+	await _activate(_button(library, "Add selected +1"))
+	if not await _wait(func(): return _text_contains(library, "17 cards in draft")): return false
 	await _activate(_button(library, "Undo"))
 	if not await _wait(func(): return _text_contains(library, "15 cards in draft")): return false
 	await _activate(_button(library, "Redo"))
-	if not await _wait(func(): return _text_contains(library, "21 cards in draft")): return false
-	search.text = "Nick Fury"
-	search.text_changed.emit(search.text)
-	var one := library.find_child("DeckQuantity1", true, false) as Button
-	if not await _wait(func(): return not one.disabled): return false
-	if not three.disabled:
-		_fail("unique card offered three copies")
-		return false
-	await _activate(one)
-	if not await _wait(func(): return _text_contains(library, "22 cards in draft")): return false
-	await _activate(_button(library, "Undo"))
-	await _activate(_button(library, "Undo"))
-	if not await _wait(func(): return _text_contains(library, "15 cards in draft")): return false
+	if not await _wait(func(): return _text_contains(library, "17 cards in draft")): return false
+	if not await _check_row_quantities(library): return false
+	await _activate(_button(library, "Clear deck"))
+	if not await _check_unique_row(library, search): return false
 	return await _check_drag(library, search)
+
+func _check_row_quantities(library: Window) -> bool:
+	var pool := library.find_child("CardBrowser", true, false)
+	var row := pool.find_child("Card_01086", true, false) as Control
+	var three := row.find_child("Quantity3", true, false) as Button
+	if not await _wait(func(): return three.visible): return false
+	var row_id := row.get_instance_id()
+	var button_id := three.get_instance_id()
+	await _activate(three)
+	if not await _wait(func(): return _text_contains(library, "19 cards in draft")): return false
+	for frame in range(10):
+		await process_frame
+		if not is_instance_valid(row) or not is_instance_valid(three):
+			_fail("quantity edit destroyed the active row")
+			return false
+		if row.get_instance_id() != row_id or three.get_instance_id() != button_id or not three.visible:
+			_fail("quantity controls flickered or changed identity")
+			return false
+	await _activate(row.find_child("Quantity0", true, false))
+	if not await _wait(func(): return _text_contains(library, "16 cards in draft")): return false
+	return true
+
+func _check_unique_row(library: Window, search: LineEdit) -> bool:
+	search.text = '"Nick Fury"'
+	search.text_changed.emit(search.text)
+	var row := library.find_child("CardBrowser", true, false).find_child("Card_01084", true, false)
+	if not await _wait(func(): return row.find_child("Quantity1", true, false).visible): return false
+	if row.find_child("Quantity2", true, false).visible or row.find_child("Quantity3", true, false).visible:
+		_fail("unique card exposed excess quantities")
+		return false
+	await _activate(row.find_child("Quantity1", true, false))
+	if not await _wait(func(): return _text_contains(library, "16 cards in draft")): return false
+	await _activate(row.find_child("Quantity0", true, false))
+	return await _wait(func(): return _text_contains(library, "15 cards in draft"))
 
 func _check_drag(library: Window, search: LineEdit) -> bool:
 	search.text = 'Haymaker|"First Aid"'
 	search.text_changed.emit(search.text)
-	await _activate(_button(library, "Select all results"))
-	if not await _wait(func(): return not _button(library, "Add selected +1").disabled): return false
-	var browser := library.find_child("CardBrowser", true, false) as ItemList
-	var deck := library.find_child("DraftCards", true, false) as ItemList
+	await _activate(_button(library, "Select page"))
+	var browser := library.find_child("CardBrowser", true, false) as ScrollContainer
+	var deck := library.find_child("DraftCards", true, false) as ScrollContainer
 	if not await _drag_to(library, browser): return false
 	if not _text_contains(library, "15 cards in draft"):
 		_fail("invalid drop changed the deck")
@@ -96,7 +175,7 @@ func _check_drag(library: Window, search: LineEdit) -> bool:
 	return await _wait(func(): return _text_contains(library, "17 cards in draft"))
 
 func _drag_to(library: Window, destination: Control) -> bool:
-	var browser := library.find_child("CardBrowser", true, false) as ItemList
+	var browser := library.find_child("CardBrowser", true, false).get_node("Rows").get_child(0) as Control
 	browser.grab_focus()
 	await process_frame
 	var origin := browser.global_position + Vector2(library.position) + Vector2(60, 12)

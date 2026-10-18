@@ -79,6 +79,26 @@ public sealed class DeckCatalogTransportTests : TransportTestBase
         Assert.False(factory.AssessDeck(hero.Key, [.. hero.Signature, "unknown"]).CanExtend);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RowQuantitiesRespectPrintedLimitsAndExcludeRequiredCards(bool socket)
+    {
+        var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var host = new EngineHost(factory);
+        var hero = factory.DiscoverDecks().Heroes.Single(item => item.Key == "spider_man");
+        var request = EngineRequest.ReadDecks("rows", new(hero.Key, hero.Signature) { IncludeQuantities = true });
+        var response = socket
+            ? await ExchangeOverSocket(new SocketEngineServer(host, IPAddress.Loopback, 0), request)
+            : await new InProcessTransport(host).ExchangeAsync(request, TestContext.Current.CancellationToken);
+        var quantities = response.Decks!.Assessment!.Quantities;
+        Assert.Equal([0, 1], quantities["01084"]);
+        Assert.Equal([0, 1], quantities["01088"]);
+        Assert.Equal([0, 1, 2, 3], quantities["01087"]);
+        Assert.All(hero.Signature, face => Assert.False(quantities.ContainsKey(face)));
+        Assert.False(quantities.ContainsKey("03001a"));
+    }
+
     [Fact]
     public void DeckRequestsRejectGameCapabilitiesOversizedDraftsAndWrongOperations()
     {

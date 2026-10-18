@@ -7,4 +7,6 @@ public sealed record DeckAssessmentResult(int? Size, IReadOnlyList<DeckDiagnosti
 {
     /// <summary>Engine acceptance of a partial deck, allowing only the unfinished minimum size.</summary>
     public bool CanExtend { get; init; }
+    /// <summary>Allowed total quantities by face; omitted unless requested.</summary>
+    public IReadOnlyDictionary<string, int[]> Quantities { get; init; } = new Dictionary<string, int[]>();
 }

@@ -141,6 +141,20 @@ public sealed class DeckEditingTests
         });
     }
 
+    [Fact]
+    public void RepairRequiredCardsPreservesOptionalImportsAndIsUndoable()
+    {
+        var workspace = Workspace(DatasetGameFactory.Load(RepositoryPaths.Root));
+        workspace.Replace(new("Imported", "01001a", ["01005", "01087", "01087", "unknown"]));
+        var imported = workspace.Draft!;
+        workspace.RestoreRequiredCards();
+        Assert.Equal(18, workspace.Draft!.Cards.Length);
+        Assert.Equal(3, workspace.Draft.Cards.Count(face => face == "01005"));
+        Assert.Equal(["01087", "01087", "unknown"], workspace.Draft.Cards.TakeLast(3));
+        workspace.Undo();
+        Assert.Equal(imported, workspace.Draft);
+    }
+
     private static DeckWorkspace Workspace(DatasetGameFactory factory)
     {
         var catalog = factory.DiscoverDecks();

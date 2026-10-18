@@ -31,22 +31,26 @@ internal sealed class DeckEditorControls
     internal Button AddFilter { get; } = new() { Text = "Add filter" };
     internal Label SearchError { get; } = new() { AutowrapMode = TextServer.AutowrapMode.WordSmart };
     internal OptionButton Sort { get; } = new();
-    internal OptionButton CardScope { get; } = new();
+    internal OptionButton CardScope { get; } = new() { Name = "CardScope" };
     internal OptionButton Aspect { get; } = new();
     internal OptionButton Kind { get; } = new();
-    internal DeckTransferList Cards { get; } = new() { Name = "CardBrowser", SelectMode = ItemList.SelectModeEnum.Multi, SizeFlagsVertical = Control.SizeFlags.ExpandFill, CustomMinimumSize = new(230, 160) };
-    internal DeckTransferList Deck { get; } = new() { Name = "DraftCards", SelectMode = ItemList.SelectModeEnum.Multi, SizeFlagsVertical = Control.SizeFlags.ExpandFill, CustomMinimumSize = new(230, 160) };
+    internal DeckCardTable Cards { get; } = new() { Name = "CardBrowser", SizeFlagsVertical = Control.SizeFlags.ExpandFill, CustomMinimumSize = new(230, 280) };
+    internal DeckCardTable Deck { get; } = new() { Name = "DraftCards", SizeFlagsVertical = Control.SizeFlags.ExpandFill, CustomMinimumSize = new(230, 280) };
     internal Button Add { get; } = new() { Text = "Add selected +1", Disabled = true };
     internal Button Remove { get; } = new() { Text = "Clear selected" };
     internal Button Undo { get; } = new() { Text = "Undo", Name = "DeckUndo" };
     internal Button Redo { get; } = new() { Text = "Redo", Name = "DeckRedo" };
     internal Button Clear { get; } = new() { Text = "Clear deck", TooltipText = "Keep only this identity's required signature cards. Undo restores your cards." };
     internal Button ClearSearch { get; } = new() { Text = "Reset filters" };
-    internal Button SelectAll { get; } = new() { Text = "Select all results" };
+    internal Button SelectAll { get; } = new() { Text = "Select page" };
+    internal Button RestoreRequired { get; } = new() { Text = "Restore required cards", TooltipText = "Repair imported signature quantities, preserving all optional cards. Undo restores the import." };
+    internal Button PreviousPage { get; } = new() { Text = "Previous cards" };
+    internal Button NextPage { get; } = new() { Text = "Next cards" };
+    internal Label Page { get; } = new();
     internal Button SelectDeck { get; } = new() { Text = "Select entire deck" };
     internal Button Deselect { get; } = new() { Text = "Deselect all" };
-    internal Button[] Quantities { get; } = [new() { Text = "1", Name = "DeckQuantity1" }, new() { Text = "2", Name = "DeckQuantity2" }, new() { Text = "3", Name = "DeckQuantity3" }];
     internal Label Selection { get; } = new() { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    internal Label DropHint { get; } = new() { Text = "Drop cards here to add +1 each", AutowrapMode = TextServer.AutowrapMode.WordSmart };
     internal Label Count { get; } = new() { Text = "Choose a deck" };
     internal TextEdit Inspector { get; } = new() { Editable = false, WrapMode = TextEdit.LineWrappingMode.Boundary, CustomMinimumSize = new(0, 100) };
     internal TextEdit Diagnostics { get; } = new() { Editable = false, WrapMode = TextEdit.LineWrappingMode.Boundary, CustomMinimumSize = new(0, 60) };
@@ -88,22 +92,23 @@ internal sealed class DeckEditorControls
         scroll.AddChild(stack);
         Row(stack, new Label { Text = "Saved decks" }, Library, Load, Delete);
         Row(stack, new Label { Text = "1. Choose identity" }, Hero, InspectIdentity);
-        stack.AddChild(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = "Changing identity replaces its signature cards and keeps your other cards." });
+        stack.AddChild(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = "Identity cards are added automatically and locked in the deck. Changing identity keeps your optional cards." });
         Row(stack, new Label { Text = "2. Build your deck" }, Name);
-        stack.AddChild(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = "Drafts are saved locally when you switch decks or return to setup." });
+        stack.AddChild(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = "Drafts save automatically when you leave." });
         var actions = new HFlowContainer();
         stack.AddChild(actions);
         foreach (var button in new[] { Starter, Empty, Copy, Save, Import, Export }) actions.AddChild(button);
-        Row(stack, Url, Fetch, CancelFetch, Published);
+        var imports = Collapsible(stack, "URL import & published decks");
+        Row(imports, Url, Fetch, CancelFetch, Published);
         Row(stack, Search, ClearSearch);
         Row(stack, CardScope, Aspect, Kind);
-        Row(stack, SearchField, SearchOperator, SearchValue, AddFilter, Sort);
-        stack.AddChild(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = "Spaces combine filters · | means either · quote phrases · : matches · ! excludes · < and > compare numbers" });
+        var advanced = Collapsible(stack, "Advanced search fields");
+        Row(advanced, SearchField, SearchOperator, SearchValue, AddFilter, Sort);
+        advanced.AddChild(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = "Spaces combine filters · | means either · quote phrases · : matches · ! excludes · < and > compare numbers" });
         stack.AddChild(SearchError);
-        stack.AddChild(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = "Ctrl-click to select several · Shift-click for a range · drag selected results into your deck to add one each" });
+        stack.AddChild(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = "Numbers set copies · Ctrl+Shift adds a range · drag adds +1 each" });
         stack.AddChild(Selection);
-        Row(stack, new Label { Text = "Copies of each selected card" }, Quantities[0], Quantities[1], Quantities[2], Undo, Redo);
-        Row(stack, Clear, Deselect);
+        Row(stack, Undo, Redo, Clear, RestoreRequired, Deselect);
         var content = new HBoxContainer();
         stack.AddChild(content);
         var columns = new HSplitContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new(0, 230) };
@@ -112,11 +117,13 @@ internal sealed class DeckEditorControls
         var chosen = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         columns.AddChild(browse);
         columns.AddChild(chosen);
-        browse.AddChild(new Label { Text = "Cards — select to preview" });
+        browse.AddChild(new Label { Text = "Card pool" });
         Row(browse, Add, SelectAll);
         browse.AddChild(Cards);
+        Row(browse, PreviousPage, Page, NextPage);
         chosen.AddChild(Count);
         Row(chosen, Remove, SelectDeck);
+        chosen.AddChild(DropHint);
         chosen.AddChild(Deck);
         var previewScroll = new ScrollContainer { CustomMinimumSize = new(420, 0), SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         body.AddChild(previewScroll);
@@ -128,6 +135,16 @@ internal sealed class DeckEditorControls
         Window.AddChild(Confirm);
         Window.AddChild(File);
         main.AddChild(Window);
+    }
+
+    private static VBoxContainer Collapsible(VBoxContainer parent, string title)
+    {
+        var button = new Button { Text = title + " ▸", ToggleMode = true, Alignment = HorizontalAlignment.Left };
+        var content = new VBoxContainer { Visible = false };
+        button.Toggled += expanded => { content.Visible = expanded; button.Text = title + (expanded ? " ▾" : " ▸"); };
+        parent.AddChild(button);
+        parent.AddChild(content);
+        return content;
     }
 
     private static void Row(VBoxContainer parent, params Control[] controls)
