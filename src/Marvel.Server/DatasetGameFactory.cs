@@ -13,7 +13,7 @@ using Marvel.Session;
 namespace Marvel.Server;
 
 /// <summary>Loads the repository's canonical datasets and deals games from them.</summary>
-public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
+public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery, IDeckDiscovery
 {
     private readonly SetupCatalog setup;
     private readonly CardCatalog cards;
@@ -97,6 +97,20 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
     /// <summary>Previews a draft against the same content and construction checks used at game creation.</summary>
     public DeckAssessment AssessDeck(string hero, IReadOnlyList<string> draft) =>
         CoreDeckAssessment.Assess(draft, setup.Hero(hero), cards, abilities.Authored);
+
+    /// <inheritdoc />
+    public DeckCatalog DiscoverDecks() => new(
+        setup.HeroNames.Select(key =>
+        {
+            var hero = setup.Hero(key);
+            return new DeckHero(key, hero.Name, hero.Hero.Single().Split(','), hero.HeroDeck,
+                [.. hero.HeroDeck, .. hero.PlayerDeck]);
+        }).ToArray(),
+        abilities.Authored.Order(StringComparer.Ordinal).Where(face => cards.Kind(face) is
+            CardKind.Ally or CardKind.Event or CardKind.Resource or CardKind.Support or CardKind.Upgrade)
+            .Select(face => new DeckCard(face, cards.Title(face), cards.Kind(face).ToString(),
+                cards.Attributes(face).GetValueOrDefault("Class", ""), cards.PrintedTraits(face), cards.Text(face),
+                cards.Attributes(face).GetValueOrDefault("Cost")) { Subtitle = cards.Subtitle(face) }).ToArray());
 
     /// <inheritdoc />
     public SetupChoices DiscoverSetup() => new(

@@ -90,7 +90,7 @@ the server-owned setup and accepted decision trace authoritative for save,
 restore, undo, redo and legal action reordering. Clients continue to submit
 decisions rather than state. See [session-ledger.md](session-ledger.md).
 
-Protocol 32 uses the engine's `Rules.Play.Decision` as the one submitted answer type.
+Protocol 33 uses the engine's `Rules.Play.Decision` as the one submitted answer type.
 `DecisionAssessment` owns complete target, variable and resource legality for both
 composition and acceptance. The protocol codec emits only its five answer fields.
 
@@ -336,7 +336,7 @@ visibility configuration, durable sessions and shutdown behavior.
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Both endpoints must use
-protocol 32. Setup and decisions replay under engine-replay-v18, with session
+protocol 33. Setup and decisions replay under engine-replay-v18, with session
 schema 6 retaining the exact ordered decks. Requests carry engine-authored
 commitments and explicit payment allocations; authorized responses include
 readable choices, active attack participants and attack completion events.
@@ -498,7 +498,7 @@ search, reveal or randomness signal, its objects, or any concealed result.
 Another player's operation is classified by authority before protection.
 Replay and save identities remain unchanged.
 
-Protocol 32 carries engine-authored attack identities and lifetime boundaries,
+Protocol 33 carries engine-authored attack identities and lifetime boundaries,
 exact scheme/thwart occurrence causes, resource-ability costs and player-loss
 reasons. Attack identities distinguish enemy activation ids from character
 occurrence ids. Replay v18 owns their nested completion order; its compatibility

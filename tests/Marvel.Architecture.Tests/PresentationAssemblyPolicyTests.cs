@@ -148,6 +148,15 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View");
         PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(LocalGameClient).Assembly,
+            // Read-only public deck contracts and engine-authored corrections;
+            // DeckCatalogTransportTests proves admission remains at the host.
+            "Marvel.Protocol.DeckAssessmentResult",
+            "Marvel.Protocol.DeckCard",
+            "Marvel.Protocol.DeckCatalog",
+            "Marvel.Protocol.DeckHero",
+            "Marvel.Protocol.DeckQuery",
+            "Marvel.Protocol.DeckResponse",
+            "Marvel.Rules.Setup.DeckDiagnostic",
             // Passive forced-window resolution evidence, with no decision authority.
             "Marvel.Rules.Events.AbilityWindowResult",
             "Marvel.Rules.Events.ActivityCompleted",

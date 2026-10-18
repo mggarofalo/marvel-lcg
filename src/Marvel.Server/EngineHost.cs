@@ -111,6 +111,10 @@ public sealed class EngineHost : IEngineEndpoint
         EngineResponse? envelopeFailure = ValidateEnvelope(request);
         if (envelopeFailure is not null) return envelopeFailure;
 
+        if (request.Operation == EngineProtocol.Decks) return DeckRequests.Handle(request, factory);
+        if (request.Deck is not null)
+            return Failed(request, "invalid_request", "only deck queries accept an editable draft");
+
         if (request.Operation == EngineProtocol.Setup)
         {
             return Setup(request);

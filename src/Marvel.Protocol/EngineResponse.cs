@@ -36,4 +36,8 @@ public sealed record EngineResponse(
     IReadOnlyList<SeatInvitation>? Invitations = null,
     SetupChoices? Setup = null,
     long Revision = 0,
-    HistoryDescriptor? History = null);
+    HistoryDescriptor? History = null)
+{
+    /// <summary>Read-only deck data, absent from game responses.</summary>
+    public DeckResponse? Decks { get; init; }
+}

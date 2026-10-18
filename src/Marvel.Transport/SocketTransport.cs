@@ -129,7 +129,7 @@ public sealed class SocketTransport(
         EngineResponse parsed = EngineJson.ReadResponse(response);
         string disposition = Disposition(parsed);
         long? revision = parsed.Error is null
-            && request.Operation is not (EngineProtocol.Setup or EngineProtocol.Close)
+            && request.Operation is not (EngineProtocol.Setup or EngineProtocol.Decks or EngineProtocol.Close)
             ? parsed.Revision : null;
         Observe(request, elapsed, disposition, parsed.Error?.Code, revision);
         return parsed;

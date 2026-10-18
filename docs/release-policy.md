@@ -46,7 +46,7 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `32` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `33` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `6` | The strict persisted JSON shape changes. |
 | Engine replay contract | `engine-replay-v18` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
@@ -58,7 +58,7 @@ activation effects and exact completion dependencies to one deterministic engine
 contract. Internal execution permits are reconstructed by replay and are never
 persisted as authority. Schema 6
 records each seat's ordered explicit deck recipe, or an authored starter default.
-Protocol 32 carries the engine-owned decision shape, durable entry claims and
+Protocol 33 carries the engine-owned decision shape, durable entry claims and
 typed failure dispositions. Older protocol, replay and save identities are
 rejected; no legacy adapter supplies omitted meaning. The RNG and state-digest
 formats retain their existing identities.

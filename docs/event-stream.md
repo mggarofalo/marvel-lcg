@@ -300,7 +300,7 @@ authorized source-face reference retains the printed rules for inspection. When
 no associated visible result exists, the engine's existing explanation remains;
 absence of a visible result does not assert that hidden state stayed unchanged.
 
-Protocol 32 carries engine-authored attack identities and lifetime boundaries,
+Protocol 33 carries engine-authored attack identities and lifetime boundaries,
 exact scheme/thwart occurrence causes, resource-ability costs and player-loss
 reasons. Attack identities distinguish enemy activation ids from character
 occurrence ids. Replay v18 owns their nested completion order; its compatibility

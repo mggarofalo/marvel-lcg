@@ -119,7 +119,7 @@ public sealed class OperationalLog
     internal static string? SafeOperation(string? value) => value switch
     {
         null => null,
-        EngineProtocol.Setup or EngineProtocol.Open or EngineProtocol.Attach
+        EngineProtocol.Setup or EngineProtocol.Decks or EngineProtocol.Open or EngineProtocol.Attach
             or EngineProtocol.Sync or EngineProtocol.Resolve or EngineProtocol.Undo
             or EngineProtocol.Redo or EngineProtocol.Reorder or EngineProtocol.Close
             or "listen" or "start" or "embedded_start" or "reconnect"
