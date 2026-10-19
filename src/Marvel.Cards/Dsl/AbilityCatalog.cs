@@ -36,7 +36,7 @@ public static class AbilityCatalog
         }.ToFrozenSet(StringComparer.Ordinal);
 
     internal static readonly FrozenSet<string> StartingCounterKeys =
-        new[] { "type", "count", "uses" }.ToFrozenSet(StringComparer.Ordinal);
+        new[] { "type", "count", "uses", "perPlayer" }.ToFrozenSet(StringComparer.Ordinal);
 
     internal static readonly FrozenSet<string> AbilityKeys =
         new[]

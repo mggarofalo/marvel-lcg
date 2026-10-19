@@ -38,7 +38,8 @@ internal static class AbilityJsonReader
                 $"starting counters on '{card}' need a boolean 'uses'");
         }
 
-        return new CardCounterPool(type, count, Flag(element, "uses", card));
+        return new CardCounterPool(type, count, Flag(element, "uses", card))
+        { PerPlayer = Flag(element, "perPlayer", card) };
     }
 
     internal static JsonDocument Read(string json)

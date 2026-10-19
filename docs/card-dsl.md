@@ -1,5 +1,9 @@
 # The card DSL
 
+`startingCounters` accepts optional boolean `perPlayer` (default false). Its
+positive `count` is multiplied by the number of players who started the scenario
+when the card enters play; later eliminations do not reduce that multiplier.
+
 `cardClass: { card, class }` tests the selected card's printed classification
 (`Aggression`, `Justice`, `Leadership`, `Protection`, `Basic`, `Hero`, or `'Pool`).
 Identity-specific cards retain their printed aspect classification for this test.
