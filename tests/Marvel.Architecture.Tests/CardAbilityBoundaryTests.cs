@@ -97,6 +97,7 @@ public sealed class CardAbilityBoundaryTests
             "Marvel.Rules.Play.Sequence.Work",
             "Marvel.Rules.State.World.set_Abilities",
             "Marvel.Rules.State.WorldSetup.Deal",
+            "Marvel.Rules.State.WorldSetup.DealConfigured",
         ], actual);
     }
 }

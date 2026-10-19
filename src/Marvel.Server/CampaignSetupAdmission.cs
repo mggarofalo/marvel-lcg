@@ -25,7 +25,7 @@ internal static class CampaignSetupAdmission
     private static void ValidateStage(GameSpecification specification, CampaignGameSetup campaign, CampaignDefinition definition)
     {
         int stage = (int)campaign.Stage;
-        if (stage < 0 || stage >= definition.Scenarios.Length || campaign.Attempt < 1)
+        if (stage < 0 || stage >= definition.Scenarios.Length || campaign.Attempt < 0)
             throw new ArgumentException("invalid campaign stage or attempt", nameof(specification));
         var scenario = definition.Scenarios[stage];
         if (specification.Scenario != scenario.Standard && specification.Scenario != scenario.Expert)

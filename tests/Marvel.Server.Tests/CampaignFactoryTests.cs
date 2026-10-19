@@ -13,6 +13,23 @@ namespace Marvel.Server.Tests;
 public sealed class CampaignFactoryTests
 {
     [Fact]
+    public void NewlyCreatedCampaignCanAdmitItsFirstAttempt()
+    {
+        var definition = RiseOfRedSkullCampaign.Definition;
+        var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
+        var recipe = new PlayerDeckRecipe(["01002"]);
+        var state = CampaignRules.Create(definition, [new("spider_man", recipe, 10)], true, 7);
+        var specification = new GameSpecification("crossbones", ["spider_man"], [], 7,
+            [recipe], CampaignRules.Setup(state));
+        CampaignSetupAdmission.Validate(specification, definition, cards,
+            cards.Faces.ToHashSet(StringComparer.Ordinal));
+        Assert.Equal(0, specification.Campaign!.Attempt);
+        Assert.Throws<ArgumentException>(() => CampaignSetupAdmission.Validate(
+            specification with { Campaign = specification.Campaign with { Attempt = -1 } },
+            definition, cards, cards.Faces.ToHashSet(StringComparer.Ordinal)));
+    }
+
+    [Fact]
     public void CampaignAssessmentAndQuantityOffersPermitOnlyAuthorizedSignatureRemoval()
     {
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
