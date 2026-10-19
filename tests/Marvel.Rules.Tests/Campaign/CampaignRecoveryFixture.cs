@@ -80,6 +80,6 @@ internal static class CampaignRecoveryFixture
         public IReadOnlyDictionary<string, string> Attributes(string faceId) => new Dictionary<string, string>
             { ["name"] = faceId, ["HP"] = "10", ["HS"] = "3" };
         public long PrintedValue(string faceId, string attribute, int players, long fallback = 0) => attribute switch
-            { "HP" => 10, "HS" => 3, "StartingThreat" => faceId.StartsWith("scheme", StringComparison.Ordinal) ? 1 : 0, "Threat" => 99, _ => fallback };
+            { "HP" => 10, "HS" => 3, "StartingThreat" => faceId.StartsWith("scheme", StringComparison.Ordinal) ? 1 : 0, "TargetThreat" => 99, _ => fallback };
     }
 }

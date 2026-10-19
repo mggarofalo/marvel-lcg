@@ -13,7 +13,7 @@ internal static class CampaignSetupProcedure
         CampaignGameSetup setup = campaign.Setup;
         ShuffleWeapons(world, setup, events);
         PlaceThreat(world, setup, events);
-        if (!setup.ExpertCampaign || setup.Stage == CampaignStage.Crossbones) return;
+        if (world.IsOver || !setup.ExpertCampaign || setup.Stage == CampaignStage.Crossbones) return;
         // rr:appendix-ii-setup.step.13: resolve campaign Setup instructions.
         // pack:mc10:absorbing-man-campaign-instructions#setup: restore recorded HP,
         // then each player may add one random obligation to heal to full.
@@ -51,9 +51,7 @@ internal static class CampaignSetupProcedure
         if (setup.AdditionalThreat == 0) return;
         Card scheme = world.TheCardIn(DeckType.MainSchemesArea)
             ?? throw new RulesNotImplementedException("campaign threat requires a main scheme");
-        long before = scheme.Tokens.GetValueOrDefault("k_threat");
-        scheme.PlaceTokens("k_threat", setup.AdditionalThreat);
-        events.Add(new FieldSet(scheme.ObjectId, "k_threat", before, before + setup.AdditionalThreat)
-            { Trigger = "CampaignSetup", Verb = "PlaceThreat" });
+        Threat.Place(world, world.Facts, world.ThreatAbilities, scheme, setup.AdditionalThreat,
+            "CampaignSetup", events);
     }
 }

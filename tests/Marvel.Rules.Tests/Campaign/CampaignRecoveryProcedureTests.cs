@@ -173,4 +173,19 @@ public sealed class CampaignRecoveryProcedureTests
         Assert.Equal(0, game.State.Seats[0].IdentityCard.Damage); // capped13 rather than14
     }
 
+    [Fact]
+    [Rule("rr:main-scheme-main-scheme-deck.2.1")]
+    public void CampaignThreatCompletingFinalSchemeEndsSetupBeforeRecoveryOrHands()
+    {
+        // If the villain completes the final stage, the villain wins the game.
+        var setup = CampaignRecoveryFixture.Setup(stage: CampaignStage.RedSkull) with { AdditionalThreat = 98 };
+        var game = CampaignRecoveryFixture.Start(setup);
+        Assert.Equal(GamePhase.Over, game.Phase);
+        Assert.Null(game.Pending);
+        Assert.Equal(Outcome.VillainWins, game.State.Result);
+        Assert.Equal(1, game.State.TheCardIn(DeckType.MainSchemesArea)!.Tokens["is_completed"]);
+        Assert.Empty(game.State.Seats[0].Hand.Cards);
+        Assert.DoesNotContain(game.State.Campaign!.Cards, value => value.Assigned);
+    }
+
 }

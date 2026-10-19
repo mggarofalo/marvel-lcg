@@ -85,7 +85,12 @@ public sealed class Game
         Active = world.FirstPlayer;
         Round = 0;
         asking = Asker.Game;
-        if (world.ScenarioSetup?.Pending is { } setupPrompt)
+        if (world.IsOver)
+        {
+            Phase = GamePhase.Over;
+            Pending = null;
+        }
+        else if (world.ScenarioSetup?.Pending is { } setupPrompt)
         {
             Phase = GamePhase.ScenarioSetup;
             Pending = setupPrompt;

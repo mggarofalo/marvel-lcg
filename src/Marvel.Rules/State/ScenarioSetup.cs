@@ -22,6 +22,11 @@ internal sealed class ScenarioSetup
         {
             Pending = Sequence.WorkWithWorldAbilities(
                 world, world.Facts, events, WindowAbilityScope.EncounterCardsOnly);
+            if (world.IsOver)
+            {
+                world.ScenarioSetup = null;
+                return;
+            }
             SetupCardPlacement.TrackSetupEntrants(world, world.Facts, events, ref cursor, reveals, seen);
             if (Pending is not null) return;
             if (stage == 9)
