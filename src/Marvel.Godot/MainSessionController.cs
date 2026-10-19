@@ -120,6 +120,9 @@ internal sealed class MainSessionController
         }
         if (update.Error is not null && update.MutationDisposition is { } disposition)
             main.transcript.RecordFailure(kind, main.CurrentGame!.Revision, update.Error, disposition);
+        if (update.MutationAccepted && kind == EngineProtocol.Resolve && update.Response is { } accepted)
+            main.decisions.LocalDecision.Continuity.Accept(accepted.Revision);
+        else if (update.Response is not null) main.decisions.LocalDecision.Continuity.Reject();
         RenderResponse(update, kind, receipt);
         PresentDraftState(update);
     }

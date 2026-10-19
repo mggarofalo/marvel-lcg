@@ -38,8 +38,8 @@ internal static class AbilityChoiceDamageDescription
         // A capped HP preview is not permission to expose a concealed count.
         if (!publicPath || !AbilityPublicAmounts.IsCurrentStep(instruction)) return string.Empty;
         string kind = attack ? "attack damage" : "damage";
-        return $"Current {kind}: {amount} before prevention and replacement. "
-            + "Later effects can change the result. ";
+        return $"Current {kind}: {amount} before prevention/replacement. "
+            + "Later effects may change it. ";
     }
 
     private static (AbilityNumber Amount, bool IsAttack, bool Overkill, bool PublicPath)? ProjectedDamage(

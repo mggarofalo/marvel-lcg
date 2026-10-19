@@ -54,6 +54,7 @@ internal sealed class DecisionPanelLifecycle
             return false;
         }
 
+        panel.LocalDecision.Continuity.Submit();
         panel.submitting = true;
         panel.Rebuild();
         return true;

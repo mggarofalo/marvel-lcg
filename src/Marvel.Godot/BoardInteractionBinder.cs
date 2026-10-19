@@ -20,6 +20,7 @@ internal static class BoardInteractionBinder
             gesture => CanUseTable(panel)
                 && BoardDragInteractionBinder.Drag(panel, composer, board, gesture));
         board.BindDragPreview(gesture => BoardDragInteractionBinder.PreviewDrag(panel, composer, board, gesture));
+        board.SetInlinePayment(panel.LocalDecision.IsOpen);
         board.SetCompleteChoicesOpen(panel.CompleteChoicesOpen);
         board.BindCompleteChoices(source =>
         {

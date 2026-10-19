@@ -151,3 +151,7 @@ func _context_point(source: Control) -> Vector2:
             var point: Vector2 = source.get_global_transform() * (source.size * fraction)
             if await _control_owns_point(source, point): return point
     return Vector2.INF
+
+func _payment_modal() -> Control:
+    var local := main.find_child("LocalDecisionWorkspace", true, false) as Control
+    return local if local != null and local.is_visible_in_tree() else super._payment_modal()

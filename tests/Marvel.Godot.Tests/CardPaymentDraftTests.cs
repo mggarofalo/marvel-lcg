@@ -47,6 +47,18 @@ public sealed class CardPaymentDraftTests
     }
 
     [Fact]
+    public void LocalPaymentExposesTheSameOfferedGeneratorsToTableGestures()
+    {
+        var composer = Composer();
+        composer.SelectAffordance(3);
+        var prompt = new PromptPresentation("", "", "", "", "", []);
+        Assert.Empty(BoardInteractionControlProjection.From(composer, prompt));
+        var controls = BoardInteractionControlProjection.From(composer, prompt, inlinePayment: true);
+        Assert.Equal([41, 42], controls.Select(control => control.CardId));
+        Assert.All(controls, control => Assert.Equal(CardInteractionIntent.Generator, control.Intent));
+    }
+
+    [Fact]
     public void MixedAbilityAndDiscardSelectionsAreReversibleAndRequireTheWholeCost()
     {
         // Synthetic offered sources prove composition without inventing card rules.

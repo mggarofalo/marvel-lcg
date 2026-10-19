@@ -31,7 +31,7 @@ public sealed class ChoiceDamageDescriptionTests
         string description = Assert.IsType<string>(Assert.Single(prompt.Affordances).Description);
         long hp = Damage.Health(world, world.Facts, villain);
 
-        Assert.Contains("Current attack damage: 4 before prevention and replacement", description);
+        Assert.Contains("Current attack damage: 4 before prevention/replacement", description);
         Assert.Contains("prevents 3 damage", description);
         Assert.Contains($"{hp}/{hp} → {hp - 1}/{hp} HP", description);
         Assert.DoesNotContain("Final step", description);
@@ -117,7 +117,7 @@ public sealed class ChoiceDamageDescriptionTests
         var (_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), hero: true, abilities: runner);
         Prompt prompt = Assert.IsType<Prompt>(runner.PreviewChoice(world, source!, 0, 0, null, finalStep));
         string description = Assert.IsType<string>(Assert.Single(prompt.Affordances).Description);
-        Assert.Contains($"Current damage: {amount} before prevention and replacement", description);
+        Assert.Contains($"Current damage: {amount} before prevention/replacement", description);
         Assert.Equal(finalStep, description.Contains("Final step", StringComparison.Ordinal));
     }
 
