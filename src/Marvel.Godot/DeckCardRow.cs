@@ -21,20 +21,30 @@ internal sealed partial class DeckCardRow : PanelContainer
         Name = "Card_" + face;
         FocusMode = FocusModeEnum.All;
         MouseFilter = MouseFilterEnum.Stop;
-        CustomMinimumSize = new(0, 52);
+        CustomMinimumSize = new(0, 42);
         var body = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         AddChild(body);
         var words = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore, SizeFlagsHorizontal = SizeFlags.ExpandFill, CustomMinimumSize = new(110, 0) };
+        words.AddThemeConstantOverride("separation", 0);
+        detail.AddThemeFontSizeOverride("font_size", Math.Max(11, VisualSystem.Type(table.UiScale).Body - 2));
+        detail.AddThemeColorOverride("font_color", new Color(0.61f, 0.68f, 0.71f));
+        locked.AddThemeFontSizeOverride("font_size", Math.Max(11, VisualSystem.Type(table.UiScale).Body - 2));
         body.AddChild(words);
         words.AddChild(title);
         words.AddChild(detail);
-        var controls = new HBoxContainer { MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = new(132, 0) };
-        body.AddChild(controls);
+        int size = DeckEditorTheme.QuantitySize(table.UiScale);
+        var slot = new MarginContainer { Name = "QuantityColumn", MouseFilter = MouseFilterEnum.Ignore,
+            CustomMinimumSize = new(size * 4 + 6, 0), SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        var controls = new HBoxContainer { Name = "QuantityChoices", MouseFilter = MouseFilterEnum.Ignore,
+            SizeFlagsHorizontal = SizeFlags.ShrinkBegin, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        controls.AddThemeConstantOverride("separation", 2);
+        body.AddChild(slot);
+        slot.AddChild(controls);
         controls.AddChild(locked);
         for (int quantity = 0; quantity <= 3; quantity++)
         {
             int captured = quantity;
-            var button = new Button { Name = "Quantity" + quantity, Text = quantity.ToString(System.Globalization.CultureInfo.InvariantCulture), ToggleMode = true, CustomMinimumSize = new(30, 0) };
+            var button = new Button { Name = "Quantity" + quantity, Text = quantity.ToString(System.Globalization.CultureInfo.InvariantCulture), ThemeTypeVariation = "DeckQuantity", ToggleMode = true, CustomMinimumSize = new(size, size), SizeFlagsVertical = SizeFlags.ShrinkCenter };
             quantities[quantity] = button;
             controls.AddChild(button);
             button.FocusEntered += () => table.Inspected?.Invoke(Face);
@@ -45,7 +55,7 @@ internal sealed partial class DeckCardRow : PanelContainer
 
     internal void Update(DeckTableEntry entry)
     {
-        title.Text = $"{entry.Count} × {entry.Title}";
+        title.Text = entry.Count == 0 ? entry.Title : $"{entry.Count} × {entry.Title}";
         detail.Text = entry.Detail;
         TooltipText = entry.Title;
         locked.Visible = entry.Required;

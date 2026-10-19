@@ -8,6 +8,7 @@ internal sealed partial class DeckCardTable : ScrollContainer
     private readonly VBoxContainer rows = new() { Name = "Rows", SizeFlagsHorizontal = SizeFlags.ExpandFill };
     private readonly Dictionary<string, DeckCardRow> byFace = new(StringComparer.Ordinal);
     private string[] order = [];
+    internal InterfaceScale UiScale { get; set; } = InterfaceScale.Standard;
     internal DeckRowSelection Selection { get; } = new();
     internal Action? SelectionChanged { get; set; }
     internal Action<string>? Inspected { get; set; }

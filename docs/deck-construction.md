@@ -3,13 +3,12 @@
 Open **Deck library · browse, build, import** from desktop setup. The labelled
 identity selector comes first. Changing identity replaces the supplied signature
 recipe and retains all other draft cards. A new deck starts with that
-identity's signature cards. Select **Preview identity** to inspect both forms.
+identity's signature cards. Select **Preview identity** to inspect either form using the Hero / Alter ego tabs.
 Card lists show names and quantities; their full procedural previews retain
 printed rules, symbols, traits and stats.
 
 Card search supports MarvelCDB field keys, quoted phrases, pipe alternatives,
-AND clauses and numeric comparisons. A field/operator/value row builds queries
-without memorizing keys. Search defaults to playable Core cards. The scope selector also exposes all
+AND clauses and numeric comparisons. **Filters** contains aspect/type/sort controls and a field/operator/value query builder. Search defaults to playable Core cards. The scope selector also exposes all
 research cards, player cards or encounter cards from the complete offline snapshot.
 Research presence never admits a card to gameplay. Search-only metadata is generated offline
 in `datasets/cards/search.json`; gameplay card bytes and compatibility hashes
@@ -40,7 +39,7 @@ Malformed JSON or quantities fail without replacing the draft. Unknown and
 unsupported card codes remain visible for correction. Nonempty special
 deck-limit slots are rejected explicitly; expansion exceptions are unsupported.
 
-**Use for seat 1/2** captures a valid immutable recipe for setup. Subsequent edits
+The seat selector and **Use deck** capture a valid immutable recipe for setup. Subsequent edits
 or deletion of the library file cannot change that selection or a started game.
 The host validates the captured recipe again when opening the game.
 
@@ -126,6 +125,19 @@ Rendered search-to-import probes additionally exercise the live public site; the
 are manual acceptance evidence, never network-dependent CI tests.
 
 ### Fast local editing
+
+The editor keeps deck name, identity, count and validation in a fixed header.
+The pool, deck and full card preview occupy independent full-height panes;
+editing never scrolls the identity out of view. Small quantity segments sit left
+aligned in a fixed-width column at the right of every row. Bulk actions appear
+with selection; a drag shows its proposal in the deck pane.
+
+**Decks** opens saved drafts. **Deck** contains new/duplicate/save/import/export
+and clear commands; **Filters** holds advanced search controls. Command menus
+open at their trigger; task dialogs support Done/Escape and restore focus.
+Import progress and errors stay inside the import dialog. The validity summary
+opens complete diagnostics and signature repair. One seat selector and **Use
+deck** capture the recipe for setup.
 
 Results and deck rows support Ctrl/Shift multiselection. Ctrl+Shift adds the
 anchor-to-click range to the existing selection: click 0, Ctrl-click 2,

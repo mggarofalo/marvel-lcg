@@ -67,7 +67,15 @@ internal sealed class DeckEditingActions : IDisposable
         ui.Redo.Disabled = !workspace.CanRedo;
         ui.Remove.Disabled = RemovableSelection().Length == 0;
         var faces = browser.SelectedFaces(true);
-        ui.Selection.Text = $"{faces.Length} pool cards selected · {RemovableSelection().Length} removable deck cards selected";
+        ui.Selection.Text = string.Join(" · ", new[]
+        {
+            faces.Length > 0 ? $"{faces.Length} pool cards selected" : null,
+            browser.SelectedFaces(false).Length > 0 ? $"{browser.SelectedFaces(false).Length} deck cards selected" : null,
+        }.Where(text => text is not null));
+        ui.Selection.Visible = ui.Deselect.Visible = faces.Length + browser.SelectedFaces(false).Length > 0;
+        ui.Add.Text = $"Add {faces.Length} cards +1";
+        ui.Add.Visible = faces.Length > 1;
+        ui.Remove.Visible = browser.SelectedFaces(false).Length > 0;
         if (workspace.Draft is null) return;
         try
         {

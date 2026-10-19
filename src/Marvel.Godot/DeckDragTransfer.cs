@@ -35,6 +35,7 @@ internal sealed class DeckDragTransfer : IDisposable
         var attempt = new DeckDragAttempt(Guid.NewGuid().ToString("N"), workspace.Revision, faces,
             DeckEditProposal.CheckAsync(workspace, client, faces, null, lifetime.Token));
         current = attempt;
+        ui.DropHint.Visible = true;
         string changes = string.Join("\n", faces.Take(6).Select(face =>
         {
             int before = workspace.Draft!.Cards.Count(item => item == face);
@@ -100,6 +101,7 @@ internal sealed class DeckDragTransfer : IDisposable
         if (current is null) return;
         if (!current.Dropped) ui.Status.Text = "No cards added. The drag was cancelled or released outside the deck.";
         current = null;
+        ui.DropHint.Visible = false;
         ui.DropHint.Text = "Drop cards here to add +1 each";
         ui.Deck.Modulate = Colors.White;
     }

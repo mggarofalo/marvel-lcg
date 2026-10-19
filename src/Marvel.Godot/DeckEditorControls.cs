@@ -5,7 +5,7 @@ namespace Marvel.Godot;
 /// <summary>The deck library's native controls and keyboard-accessible editing surface.</summary>
 internal sealed class DeckEditorControls
 {
-    internal Window Window { get; } = new() { Name = "DeckLibrary", Title = "Core deck library", Size = new(1240, 900), MinSize = new(1000, 650), Transient = true, Exclusive = true };
+    internal Window Window { get; } = new() { Name = "DeckLibrary", Title = "Core deck library", Size = new(1720, 940), MinSize = new(1000, 600), Transient = true, Exclusive = true, GuiEmbedSubwindows = true };
     internal LineEdit Name { get; } = new() { PlaceholderText = "Deck name", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
     internal OptionButton Hero { get; } = new() { Name = "DeckIdentity", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
     internal Button InspectIdentity { get; } = new() { Text = "Preview identity" };
@@ -20,11 +20,11 @@ internal sealed class DeckEditorControls
     internal Button Save { get; } = new() { Text = "Save draft" };
     internal Button Import { get; } = new() { Text = "Import JSON…" };
     internal Button Export { get; } = new() { Text = "Export JSON…" };
-    internal LineEdit Url { get; } = new() { PlaceholderText = "https://marvelcdb.com/decklist/view/…", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+    internal LineEdit Url { get; } = new() { Name = "DeckImportUrl", PlaceholderText = "https://marvelcdb.com/decklist/view/…", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
     internal Button Published { get; } = new() { Text = "Find published decks…" };
     internal Button Fetch { get; } = new() { Text = "Import URL" };
     internal Button CancelFetch { get; } = new() { Text = "Cancel import", Disabled = true };
-    internal LineEdit Search { get; } = new() { Name = "CardSearch", PlaceholderText = "Search cards — e.g. t:event f:justice o<3", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+    internal LineEdit Search { get; } = new() { Name = "CardSearch", PlaceholderText = "Search cards", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
     internal OptionButton SearchField { get; } = new();
     internal OptionButton SearchOperator { get; } = new();
     internal LineEdit SearchValue { get; } = new() { PlaceholderText = "Filter value", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
@@ -34,18 +34,18 @@ internal sealed class DeckEditorControls
     internal OptionButton CardScope { get; } = new() { Name = "CardScope" };
     internal OptionButton Aspect { get; } = new();
     internal OptionButton Kind { get; } = new();
-    internal DeckCardTable Cards { get; } = new() { Name = "CardBrowser", SizeFlagsVertical = Control.SizeFlags.ExpandFill, CustomMinimumSize = new(230, 280) };
-    internal DeckCardTable Deck { get; } = new() { Name = "DraftCards", SizeFlagsVertical = Control.SizeFlags.ExpandFill, CustomMinimumSize = new(230, 280) };
-    internal Button Add { get; } = new() { Text = "Add selected +1", Disabled = true };
+    internal DeckCardTable Cards { get; } = new() { Name = "CardBrowser", SizeFlagsVertical = Control.SizeFlags.ExpandFill, CustomMinimumSize = new(260, 150) };
+    internal DeckCardTable Deck { get; } = new() { Name = "DraftCards", SizeFlagsVertical = Control.SizeFlags.ExpandFill, CustomMinimumSize = new(260, 150) };
+    internal Button Add { get; } = new() { Name = "DeckAdd", Text = "Add selected +1", Disabled = true };
     internal Button Remove { get; } = new() { Text = "Clear selected" };
     internal Button Undo { get; } = new() { Text = "Undo", Name = "DeckUndo" };
     internal Button Redo { get; } = new() { Text = "Redo", Name = "DeckRedo" };
     internal Button Clear { get; } = new() { Text = "Clear deck", TooltipText = "Keep only this identity's required signature cards. Undo restores your cards." };
-    internal Button ClearSearch { get; } = new() { Text = "Reset filters" };
+    internal Button ClearSearch { get; } = new() { Text = "×", TooltipText = "Clear search and filters" };
     internal Button SelectAll { get; } = new() { Text = "Select page" };
     internal Button RestoreRequired { get; } = new() { Text = "Restore required cards", TooltipText = "Repair imported signature quantities, preserving all optional cards. Undo restores the import." };
-    internal Button PreviousPage { get; } = new() { Text = "Previous cards" };
-    internal Button NextPage { get; } = new() { Text = "Next cards" };
+    internal Button PreviousPage { get; } = new() { Text = "‹", TooltipText = "Previous cards" };
+    internal Button NextPage { get; } = new() { Text = "›", TooltipText = "Next cards" };
     internal Label Page { get; } = new();
     internal Button SelectDeck { get; } = new() { Text = "Select entire deck" };
     internal Button Deselect { get; } = new() { Text = "Deselect all" };
@@ -55,102 +55,22 @@ internal sealed class DeckEditorControls
     internal TextEdit Inspector { get; } = new() { Editable = false, WrapMode = TextEdit.LineWrappingMode.Boundary, CustomMinimumSize = new(0, 100) };
     internal TextEdit Diagnostics { get; } = new() { Editable = false, WrapMode = TextEdit.LineWrappingMode.Boundary, CustomMinimumSize = new(0, 60) };
     internal Label Status { get; } = new() { AutowrapMode = TextServer.AutowrapMode.WordSmart };
-    internal Button SeatOne { get; } = new() { Text = "Use for seat 1", Disabled = true };
-    internal Button SeatTwo { get; } = new() { Text = "Use for seat 2", Disabled = true };
     internal Button Close { get; } = new() { Text = "Back to setup" };
     internal ConfirmationDialog Confirm { get; } = new() { Title = "Delete saved deck", OkButtonText = "Delete saved deck" };
     internal FileDialog File { get; } = new() { Access = FileDialog.AccessEnum.Filesystem, Filters = ["*.json ; JSON deck files"], UseNativeDialog = true };
 
+    internal OptionButton Seat { get; } = new() { Name = "DeckSeat" };
+    internal Button UseDeck { get; } = new() { Name = "UseDeck", Text = "Use deck", Disabled = true };
+    internal Button Validity { get; } = new() { Text = "Checking…" };
+    internal Label ImportStatus { get; } = new() { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    internal Window? ImportDialog { get; set; }
+    internal Label SaveState { get; } = new();
+
     internal DeckEditorControls(Main main)
     {
-        Window.Theme = main.Theme;
         Scale = main.interfaceScale;
-        foreach (var control in new Control[] { Cards, Deck, Inspector, Diagnostics })
-        {
-            control.AddThemeFontOverride("font", CardTypography.Body);
-            control.AddThemeFontSizeOverride("font_size", VisualSystem.Type(main.interfaceScale).Body);
-            control.AddThemeColorOverride("font_color", ClientTheme.ToGodot(VisualSystem.Palette.Text));
-            control.AddThemeColorOverride("font_readonly_color", ClientTheme.ToGodot(VisualSystem.Palette.Text));
-        }
-        var margin = new MarginContainer();
-        margin.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        foreach (string edge in new[] { "left", "top", "right", "bottom" }) margin.AddThemeConstantOverride("margin_" + edge, 14);
-        Window.AddChild(margin);
-        var outer = new VBoxContainer();
-        margin.AddChild(outer);
-        var scroll = new ScrollContainer
-        {
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            FollowFocus = true,
-        };
-        var body = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
-        outer.AddChild(body);
-        scroll.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        body.AddChild(scroll);
-        var stack = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill };
-        scroll.AddChild(stack);
-        Row(stack, new Label { Text = "Saved decks" }, Library, Load, Delete);
-        Row(stack, new Label { Text = "1. Choose identity" }, Hero, InspectIdentity);
-        stack.AddChild(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = "Identity cards are added automatically and locked in the deck. Changing identity keeps your optional cards." });
-        Row(stack, new Label { Text = "2. Build your deck" }, Name);
-        stack.AddChild(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = "Drafts save automatically when you leave." });
-        var actions = new HFlowContainer();
-        stack.AddChild(actions);
-        foreach (var button in new[] { Starter, Empty, Copy, Save, Import, Export }) actions.AddChild(button);
-        var imports = Collapsible(stack, "URL import & published decks");
-        Row(imports, Url, Fetch, CancelFetch, Published);
-        Row(stack, Search, ClearSearch);
-        Row(stack, CardScope, Aspect, Kind);
-        var advanced = Collapsible(stack, "Advanced search fields");
-        Row(advanced, SearchField, SearchOperator, SearchValue, AddFilter, Sort);
-        advanced.AddChild(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = "Spaces combine filters · | means either · quote phrases · : matches · ! excludes · < and > compare numbers" });
-        stack.AddChild(SearchError);
-        stack.AddChild(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, Text = "Numbers set copies · Ctrl+Shift adds a range · drag adds +1 each" });
-        stack.AddChild(Selection);
-        Row(stack, Undo, Redo, Clear, RestoreRequired, Deselect);
-        var content = new HBoxContainer();
-        stack.AddChild(content);
-        var columns = new HSplitContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new(0, 230) };
-        content.AddChild(columns);
-        var browse = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        var chosen = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        columns.AddChild(browse);
-        columns.AddChild(chosen);
-        browse.AddChild(new Label { Text = "Card pool" });
-        Row(browse, Add, SelectAll);
-        browse.AddChild(Cards);
-        Row(browse, PreviousPage, Page, NextPage);
-        chosen.AddChild(Count);
-        Row(chosen, Remove, SelectDeck);
-        chosen.AddChild(DropHint);
-        chosen.AddChild(Deck);
-        var previewScroll = new ScrollContainer { CustomMinimumSize = new(420, 0), SizeFlagsVertical = Control.SizeFlags.ExpandFill };
-        body.AddChild(previewScroll);
-        previewScroll.AddChild(Preview);
-        Preview.AddChild(Inspector);
-        outer.AddChild(Diagnostics);
-        outer.AddChild(Status);
-        Row(outer, SeatOne, SeatTwo, Close);
-        Window.AddChild(Confirm);
-        Window.AddChild(File);
-        main.AddChild(Window);
-    }
-
-    private static VBoxContainer Collapsible(VBoxContainer parent, string title)
-    {
-        var button = new Button { Text = title + " ▸", ToggleMode = true, Alignment = HorizontalAlignment.Left };
-        var content = new VBoxContainer { Visible = false };
-        button.Toggled += expanded => { content.Visible = expanded; button.Text = title + (expanded ? " ▾" : " ▸"); };
-        parent.AddChild(button);
-        parent.AddChild(content);
-        return content;
-    }
-
-    private static void Row(VBoxContainer parent, params Control[] controls)
-    {
-        var row = new HBoxContainer();
-        parent.AddChild(row);
-        foreach (var control in controls) row.AddChild(control);
+        Window.Theme = DeckEditorTheme.Create(Scale);
+        Cards.UiScale = Deck.UiScale = Scale;
+        DeckEditorLayout.Build(this, main);
     }
 }

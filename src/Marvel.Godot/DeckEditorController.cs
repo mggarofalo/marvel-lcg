@@ -47,7 +47,7 @@ internal sealed class DeckEditorController : IDisposable
             workspace.Initialize(new(hero.Name + " starter", hero.IdentityFaces[0], hero.Starter));
         }
         DisplayDraft();
-        ui.Window.PopupCenteredClamped(new(1240, 900), 0.95f);
+        DeckEditorLayout.ShowCentered(ui.Window, ui.Window.GetParent().GetWindow(), new(1720, 940));
         ui.Hero.GrabFocus();
     }
 
@@ -62,8 +62,7 @@ internal sealed class DeckEditorController : IDisposable
         ui.Save.Pressed += Save;
         ui.Load.Pressed += () => PreserveThen(Load);
         ui.Delete.Pressed += Delete;
-        ui.SeatOne.Pressed += () => Use(0);
-        ui.SeatTwo.Pressed += () => Use(1);
+        ui.UseDeck.Pressed += () => Use(ui.Seat.Selected);
         ui.Close.Pressed += Close;
         ui.Window.CloseRequested += Close;
         ui.Confirm.Confirmed += () => { var action = confirmed; confirmed = null; action?.Invoke(); };
@@ -214,6 +213,7 @@ internal sealed class DeckEditorController : IDisposable
         acquisition = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
         var attempt = acquisition;
         long revision = workspace.Revision;
+        ui.ImportStatus.Text = "Downloading and checking the deck…";
         ui.Fetch.Disabled = true;
         ui.CancelFetch.Disabled = false;
         ui.Status.Text = "Downloading a deck snapshot… Your current draft remains open.";
@@ -221,15 +221,21 @@ internal sealed class DeckEditorController : IDisposable
         {
             var draft = await importer.ImportAsync(ui.Url.Text, attempt.Token);
             if (attempt.IsCancellationRequested) return;
-            if (revision != workspace.Revision) { ui.Status.Text = "Your draft changed during import. Import again when ready to replace it."; return; }
+            if (revision != workspace.Revision) { ui.ImportStatus.Text = ui.Status.Text = "Your draft changed during import. Import again when ready to replace it."; return; }
             PreserveThen(() => Replace(draft));
+            ui.ImportDialog?.Hide();
         }
-        catch (OperationCanceledException) { if (!lifetime.IsCancellationRequested) ui.Status.Text = "Import cancelled or timed out. Your draft is unchanged."; }
-        catch (Exception error) { if (!lifetime.IsCancellationRequested) ui.Status.Text = "Import failed: " + error.Message; }
+        catch (OperationCanceledException) { ReportImportFailure("Import cancelled or timed out. Your draft is unchanged."); }
+        catch (Exception error) { ReportImportFailure("Import failed: " + error.Message); }
         finally
         {
             if (!lifetime.IsCancellationRequested) { ui.Fetch.Disabled = false; ui.CancelFetch.Disabled = true; }
         }
+    }
+
+    private void ReportImportFailure(string message)
+    {
+        if (!lifetime.IsCancellationRequested) ui.ImportStatus.Text = ui.Status.Text = message;
     }
 
     private void PreserveThen(Action action) => Try(() =>

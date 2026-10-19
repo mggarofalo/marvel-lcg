@@ -66,8 +66,15 @@ internal sealed class DeckBrowserPresentation(DeckEditorControls ui, DeckWorkspa
         if (workspace.Assessment is { } assessed) quantities = assessed.Quantities;
         ui.Deck.Render(draft.Cards.Distinct(StringComparer.Ordinal).OrderBy(Title, StringComparer.Ordinal).Select(Entry).ToArray());
         RenderPool();
-        ui.Count.Text = $"{draft.Cards.Length} cards in draft · {(workspace.Dirty ? "unsaved changes" : workspace.Saved is null ? "draft" : "saved")}";
-        ui.SeatOne.Disabled = ui.SeatTwo.Disabled = !workspace.CanUse;
+        ui.Count.Text = $"{draft.Cards.Length} cards";
+        ui.SaveState.Text = workspace.Dirty ? "Unsaved" : workspace.Saved is null ? "Draft" : "Saved";
+        RenderAssessment();
+    }
+
+    private void RenderAssessment()
+    {
+        ui.Validity.Text = workspace.Assessment is not { } checkedDraft ? "Checking…" : checkedDraft.Diagnostics.Count == 0 ? "Ready ✓" : $"{checkedDraft.Diagnostics.Count} issue{(checkedDraft.Diagnostics.Count == 1 ? "" : "s")}…";
+        ui.UseDeck.Disabled = !workspace.CanUse;
         ui.Diagnostics.Text = workspace.Assessment is not { } assessment ? ui.Diagnostics.Text
             : assessment.Diagnostics.Count == 0 ? $"Ready to use · {assessment.Size} counted cards. Choosing a seat captures this deck for setup."
             : string.Join("\n", assessment.Diagnostics.Select(item =>
@@ -88,8 +95,7 @@ internal sealed class DeckBrowserPresentation(DeckEditorControls ui, DeckWorkspa
         }
         catch (FormatException error) { ui.SearchError.Text = error.Message; return; }
         RenderPool();
-        if (visible.Length > 0 && ui.Cards.SelectedFaces.Length == 0) ui.Cards.SelectRow(0, false, false);
-        else if (visible.Length == 0) { inspected = null; ShowPreview(null, "No cards match these filters."); }
+        if (visible.Length == 0) { inspected = null; ShowPreview(null, "No cards match these filters."); }
         SelectionChanged?.Invoke(true);
     }
 
@@ -107,6 +113,7 @@ internal sealed class DeckBrowserPresentation(DeckEditorControls ui, DeckWorkspa
         ui.Cards.Render(visible.Skip(page * pageSize).Take(pageSize).Select(card => Entry(card.Face)).ToArray());
         ui.PreviousPage.Disabled = page == 0;
         ui.NextPage.Disabled = (page + 1) * pageSize >= visible.Length;
+        ui.Page.GetParent<Control>().Visible = visible.Length > pageSize;
         ui.Page.Text = $"{page + 1} / {Math.Max(1, (visible.Length + pageSize - 1) / pageSize)}";
     }
 
@@ -142,7 +149,14 @@ internal sealed class DeckBrowserPresentation(DeckEditorControls ui, DeckWorkspa
         }
         ClearPreview();
         ui.Inspector.Visible = false;
-        foreach (var face in hero?.Previews ?? []) ui.Preview.AddChild(DeckCardPreview.Create(face));
+        var forms = new TabContainer { Name = "IdentityForms", CustomMinimumSize = new(410, 0) };
+        ui.Preview.AddChild(forms);
+        foreach (var face in hero.Previews)
+        {
+            var preview = DeckCardPreview.Create(face);
+            preview.Name = face.Kind;
+            forms.AddChild(preview);
+        }
     }
 
     private void ClearPreview()
