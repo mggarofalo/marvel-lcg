@@ -44,7 +44,7 @@ internal sealed class AbilitySelectorEvaluation(
         }
         if (selector is AbilityCardSelection.InAreas areas)
         {
-            if (admitSingularArea is not null && !admitSingularArea(areas.Areas.Select(AreaType).ToHashSet()))
+            if (admitSingularArea is not null && !admitSingularArea(AbilitySelectionAreaReads.For(areas)))
                 return null;
             var found = CardsIn(areas);
             return found.Count switch
@@ -144,6 +144,9 @@ internal sealed class AbilitySelectorEvaluation(
     {
         if (area == AbilitySearchArea.YourDeck) return context.World.Seats[context.Player].Deck.Cards;
         if (area == AbilitySearchArea.YourHand) return context.World.Seats[context.Player].Hand.Cards;
+        if (area == AbilitySearchArea.YourPlayArea)
+            return [.. context.World.Areas.Where(candidate => DeckTypes.IsInPlay(candidate.Type)
+                && candidate.PlayArea == PlayArea.Of(context.Player)).SelectMany(candidate => candidate.Cards)];
         var playArea = area == AbilitySearchArea.YourDiscardPile ? PlayArea.Of(context.Player) : PlayArea.Villains;
         return context.World.Areas.FirstOrDefault(candidate => candidate.Type == AreaType(area)
             && candidate.PlayArea == playArea && candidate.Host == -1)?.Cards ?? [];

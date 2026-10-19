@@ -206,7 +206,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCardSelection.Discardable discardable => Contains(discardable.Cards),
         AbilityCardSelection.Ranked ranked => Contains(ranked.Cards),
         AbilityCardSelection.InPlayerArea area => area.Player is AbilityPlayer.You or AbilityPlayer.Controller,
-        AbilityCardSelection.InAreas areas => areas.Areas.Any(area => area is AbilitySearchArea.YourDeck or AbilitySearchArea.YourDiscardPile or AbilitySearchArea.YourHand),
+        AbilityCardSelection.InAreas areas => areas.Areas.Any(area => area is AbilitySearchArea.YourDeck or AbilitySearchArea.YourDiscardPile or AbilitySearchArea.YourHand or AbilitySearchArea.YourPlayArea),
         AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled selector in player-binding analysis"),

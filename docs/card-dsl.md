@@ -554,6 +554,9 @@ deck from its selected cards. `revealAuxiliaryTop` resolves its top card through
 ordinary encounter reveal procedure. Deck exhaustion and recycling are owned by
 the engine's auxiliary-deck rules.
 
+`cardsIn` also accepts `yourPlayArea`, including the resolver's in-play areas
+and attached cards, with the same printed filters. This aggregate is a selection
+boundary, not a shuffleable deck. It excludes other players and out-of-play cards.
 `cardsIn` accepts `yourDiscardPile` as well as the named decks. Its optional
 positive `top` bound examines the top of one deck before applying kind, trait,
 title, or `aspectOnly` filters. `aspectOnly: "true"` selects printed Aggression,

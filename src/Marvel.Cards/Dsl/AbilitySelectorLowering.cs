@@ -166,7 +166,7 @@ internal static class AbilitySelectorLowering
         ImmutableArray<AbilitySearchArea> areas;
         if (fields.TryGetValue("area", out var area))
         {
-            areas = [SearchArea(area, location.Child("area"))];
+            areas = [SearchArea(area, location.Child("area"), allowPlayArea: true)];
         }
         else
         {
@@ -178,7 +178,7 @@ internal static class AbilitySelectorLowering
             var builder = ImmutableArray.CreateBuilder<AbilitySearchArea>(list.Values.Count);
             for (int index = 0; index < list.Values.Count; index++)
             {
-                builder.Add(SearchArea(list.Values[index], location.Child("areas").Item(index)));
+                builder.Add(SearchArea(list.Values[index], location.Child("areas").Item(index), allowPlayArea: true));
             }
             areas = builder.MoveToImmutable();
         }
@@ -196,7 +196,7 @@ internal static class AbilitySelectorLowering
         return AbilitySearchFilters.Lower(new(areas, kind, OptionalText(fields, "trait", location), OptionalText(fields, "title", location)), fields, location);
     }
 
-    internal static AbilitySearchArea SearchArea(AbilityValue value, AbilityLocation location) =>
+    internal static AbilitySearchArea SearchArea(AbilityValue value, AbilityLocation location, bool allowPlayArea = false) =>
         Text(value, location) switch
         {
             "encounterDeck" => AbilitySearchArea.EncounterDeck,
@@ -205,6 +205,7 @@ internal static class AbilitySelectorLowering
             "yourDeck" => AbilitySearchArea.YourDeck,
             "yourDiscardPile" => AbilitySearchArea.YourDiscardPile,
             "yourHand" => AbilitySearchArea.YourHand,
+            "yourPlayArea" when allowPlayArea => AbilitySearchArea.YourPlayArea,
             var name => throw location.Error($"'{name}' is not a supported search area"),
         };
 

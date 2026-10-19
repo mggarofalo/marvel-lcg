@@ -18,4 +18,6 @@ public enum AbilitySearchArea
     YourDiscardPile,
     /// <summary>The resolving player's hand.</summary>
     YourHand,
+    /// <summary>In-play areas controlled by the resolving player, for card selection only.</summary>
+    YourPlayArea,
 }
