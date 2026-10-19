@@ -101,6 +101,28 @@ public sealed class CrossbonesAbilityTests
         Assert.Equal(DeckType.EncounterDiscardPile, scheme.Area.Type);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void FullAutoOnlyDiscardsBoostCardsInHeroForm(bool hero)
+    {
+        // 04067's alter-ego branch gains surge; only its hero branch discards Crossbones' ATK cards.
+        var (world, _) = Board("04058");
+        if (!hero) Forms.Change(world.Seats[0], world.Facts);
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        world.CreateCard("01104", deck);
+        var boost = world.CreateCard("04064", deck);
+        var treachery = world.CreateCard("04067", world.AreaOf(DeckType.RevealingArea));
+        var runner = AuthoredCards.Runner();
+
+        Assert.Single(runner.WhenRevealedAbilities(world, treachery, 0));
+        runner.ExecuteReveal(world, treachery, 0);
+
+        Assert.Equal(hero ? DeckType.EncounterDiscardPile : DeckType.DealtEncounterCardsDeck, boost.Area.Type);
+        Assert.Single(deck.Cards);
+        Assert.Equal(hero ? 0 : 1, world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count);
+    }
+
     private static (World World, Card Villain) Board(string face, int players = 1)
     {
         var facts = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));

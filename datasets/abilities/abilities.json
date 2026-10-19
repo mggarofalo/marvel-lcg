@@ -6895,6 +6895,1195 @@
           }
         }
       ]
+    },
+    {
+      "card": "04076",
+      "name": "Absorbing Man",
+      "note": "Absorbing Man gains the trait of each environment in play.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "gainEnvironmentTraits": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04077",
+      "name": "Absorbing Man",
+      "note": "Absorbing Man gains the trait of each environment in play.\nWhen Revealed: If Super Absorbing Power is in play, deal 1 encounter card to each player. Otherwise, search the encounter deck and discard pile for Super Absorbing Power and reveal it. Shuffle the encounter deck if it was searched this way.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "gainEnvironmentTraits": "this"
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "titleInPlay": "Super Absorbing Power"
+              },
+              "then": {
+                "dealEncounterCards": {
+                  "count": 1
+                }
+              },
+              "else": {
+                "search": {
+                  "in": [
+                    {
+                      "encounterDeck": 1
+                    },
+                    {
+                      "encounterDiscardPile": 1
+                    }
+                  ],
+                  "for": "04092"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04078",
+      "name": "Absorbing Man",
+      "note": "Absorbing Man gains the trait of each environment in play.\nstar Forced Response: After Absorbing Man activates against you, if he has the:\n• Ice or Stone trait, place 1 threat on the main scheme.\n• Metal or Wood trait, take 1 indirect damage.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "gainEnvironmentTraits": "this"
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "or": [
+                      {
+                        "hasTrait": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "trait": "ICE"
+                        }
+                      },
+                      {
+                        "hasTrait": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "trait": "STONE"
+                        }
+                      }
+                    ]
+                  },
+                  "then": {
+                    "placeThreat": {
+                      "scheme": {
+                        "query": "mainScheme"
+                      },
+                      "amount": 1
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "or": [
+                      {
+                        "hasTrait": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "trait": "METAL"
+                        }
+                      },
+                      {
+                        "hasTrait": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "trait": "WOOD"
+                        }
+                      }
+                    ]
+                  },
+                  "then": {
+                    "indirectDamage": {
+                      "among": {
+                        "query": "charactersYouControl"
+                      },
+                      "amount": 1
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenSchemeEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "or": [
+                      {
+                        "hasTrait": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "trait": "ICE"
+                        }
+                      },
+                      {
+                        "hasTrait": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "trait": "STONE"
+                        }
+                      }
+                    ]
+                  },
+                  "then": {
+                    "placeThreat": {
+                      "scheme": {
+                        "query": "mainScheme"
+                      },
+                      "amount": 1
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "or": [
+                      {
+                        "hasTrait": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "trait": "METAL"
+                        }
+                      },
+                      {
+                        "hasTrait": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "trait": "WOOD"
+                        }
+                      }
+                    ]
+                  },
+                  "then": {
+                    "indirectDamage": {
+                      "among": {
+                        "query": "charactersYouControl"
+                      },
+                      "amount": 1
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04079a",
+      "name": "None Shall Pass",
+      "note": "Contents: Absorbing Man (I) and Absorbing Man (II). Absorbing Man and Standard encounter sets. One modular encounter set (Hydra Patrol).\nSetup: Discard cards from the encounter deck until an environment is discarded. Put that card into play and shuffle the encounter discard pile into the encounter deck.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Setup",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardUntil": {
+                  "from": "encounterDeck",
+                  "kind": "environment",
+                  "then": "putIntoPlay"
+                }
+              },
+              {
+                "shuffleInto": {
+                  "cards": {
+                    "cardsIn": {
+                      "area": "encounterDiscardPile"
+                    }
+                  },
+                  "deck": "encounterDeck"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04079b",
+      "name": "None Shall Pass",
+      "note": "star Forced Response: After resolving step one of the villain phase, place 1 delay counter here.\nForced Interrupt: When an environment enters play, discard each other environment card in play.\nIf this stage is completed, the players lose the game.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenVillainPhaseStepOneEnds",
+            "timing": "ForcedResponse",
+            "subject": "game"
+          },
+          "effect": {
+            "placeCounters": {
+              "card": "this",
+              "counter": "delay",
+              "count": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "ForcedInterrupt",
+            "subject": "game"
+          },
+          "when": {
+            "isKind": {
+              "card": "trigger.subject",
+              "kind": "environment"
+            }
+          },
+          "effect": {
+            "discardOtherEnvironments": "game"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04080",
+      "name": "Dense Forest",
+      "note": "Surge.\nForced Response: After Absorbing Man makes an undefended attack against you, take 1 indirect damage (2 indirect damage instead if there are 5 or more delay counters on the main scheme).\n\nstar Boost: Put this card into play.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "villain",
+            "player": "trigger.player"
+          },
+          "when": {
+            "and": [
+              {
+                "isTitle": {
+                  "card": "trigger.actor",
+                  "title": "Absorbing Man"
+                }
+              },
+              {
+                "undefendedAttack": "you"
+              }
+            ]
+          },
+          "effect": {
+            "indirectDamage": {
+              "among": {
+                "query": "charactersYouControl"
+              },
+              "amount": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "countersOn": {
+                          "card": {
+                            "query": "mainScheme"
+                          },
+                          "counter": "delay"
+                        }
+                      },
+                      "count": 5
+                    }
+                  },
+                  "then": 2,
+                  "else": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "printedDestination"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04081",
+      "name": "Snowy Hillside",
+      "note": "Surge.\nForced Response: After Absorbing Man makes an undefended attack against you, place 1 threat on the main scheme (2 threat instead if there are 5 or more delay counters on the main scheme).\n\nstar Boost: Put this card into play.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "villain",
+            "player": "trigger.player"
+          },
+          "when": {
+            "and": [
+              {
+                "isTitle": {
+                  "card": "trigger.actor",
+                  "title": "Absorbing Man"
+                }
+              },
+              {
+                "undefendedAttack": "you"
+              }
+            ]
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "mainScheme"
+              },
+              "amount": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "countersOn": {
+                          "card": {
+                            "query": "mainScheme"
+                          },
+                          "counter": "delay"
+                        }
+                      },
+                      "count": 5
+                    }
+                  },
+                  "then": 2,
+                  "else": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "printedDestination"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04082",
+      "name": "Rocky Outcrop",
+      "note": "Surge.\nForced Response: After Absorbing Man makes an undefended attack against you, heal 1 damage from him (2 damage instead if there are 5 or more delay counters on the main scheme).\n\nstar Boost: Put this card into play.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "villain",
+            "player": "trigger.player"
+          },
+          "when": {
+            "and": [
+              {
+                "isTitle": {
+                  "card": "trigger.actor",
+                  "title": "Absorbing Man"
+                }
+              },
+              {
+                "undefendedAttack": "you"
+              }
+            ]
+          },
+          "effect": {
+            "heal": {
+              "card": {
+                "query": "villain"
+              },
+              "amount": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "countersOn": {
+                          "card": {
+                            "query": "mainScheme"
+                          },
+                          "counter": "delay"
+                        }
+                      },
+                      "count": 5
+                    }
+                  },
+                  "then": 2,
+                  "else": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "printedDestination"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04083",
+      "name": "Abandoned Facility",
+      "note": "Surge.\nForced Response: After Absorbing Man makes an undefended attack against you, discard 1 resource icon from your hand (2 resources instead if there are 5 or more delay counters on the main scheme).\n\nstar Boost: Put this card into play.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "villain",
+            "player": "trigger.player"
+          },
+          "when": {
+            "and": [
+              {
+                "isTitle": {
+                  "card": "trigger.actor",
+                  "title": "Absorbing Man"
+                }
+              },
+              {
+                "undefendedAttack": "you"
+              }
+            ]
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "atLeast": {
+                  "value": {
+                    "countersOn": {
+                      "card": {
+                        "query": "mainScheme"
+                      },
+                      "counter": "delay"
+                    }
+                  },
+                  "count": 5
+                }
+              },
+              "then": {
+                "discardResourceIcons": 2
+              },
+              "else": {
+                "discardResourceIcons": 1
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "printedDestination"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04084",
+      "name": "Ball and Chain",
+      "note": "Attach to Absorbing Man.\nHero Action: Spend a physical resource → shuffle this card into the encounter deck.\n\nstar Boost: Reveal this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "R"
+          },
+          "effect": {
+            "shuffleInto": {
+              "cards": "this",
+              "deck": "encounterDeck"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "reveal": "this"
+          }
+        }
+      ],
+      "attachTo": {
+        "titled": "Absorbing Man"
+      }
+    },
+    {
+      "card": "04085",
+      "name": "Stall Tactics",
+      "note": "When Revealed: Place 1 threat on the main scheme for every 2 delay counters on the main scheme. If no threat was placed this way, this card gains surge.\n\nstar Boost: If there are 5 or more delay counters on the main scheme, take 1 indirect damage.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "otherwise": {
+              "effect": {
+                "placeThreat": {
+                  "scheme": {
+                    "query": "mainScheme"
+                  },
+                  "amount": {
+                    "floorDiv": {
+                      "value": {
+                        "countersOn": {
+                          "card": {
+                            "query": "mainScheme"
+                          },
+                          "counter": "delay"
+                        }
+                      },
+                      "divisor": 2
+                    }
+                  }
+                }
+              },
+              "otherwise": {
+                "gainSurge": 1
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "atLeast": {
+                  "value": {
+                    "countersOn": {
+                      "card": {
+                        "query": "mainScheme"
+                      },
+                      "counter": "delay"
+                    }
+                  },
+                  "count": 5
+                }
+              },
+              "then": {
+                "indirectDamage": {
+                  "among": {
+                    "query": "charactersYouControl"
+                  },
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04086",
+      "name": "Swinging Stone",
+      "note": "When Revealed (Alter-Ego): Absorbing Man schemes. If Absorbing Man has the Stone trait, he gets +1 SCH for this activation.\nWhen Revealed (Hero): Absorbing Man attacks you. If Absorbing Man has the Stone trait, he gets +1 ATK for this activation.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed",
+            "form": "hero"
+          },
+          "effect": {
+            "enemyAttacks": {
+              "enemies": {
+                "query": "villain"
+              },
+              "against": "you",
+              "modifier": {
+                "if": {
+                  "test": {
+                    "hasTrait": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "trait": "STONE"
+                    }
+                  },
+                  "then": 1,
+                  "else": 0
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "enemySchemes": {
+              "enemies": {
+                "query": "villain"
+              },
+              "against": "you",
+              "modifier": {
+                "if": {
+                  "test": {
+                    "hasTrait": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "trait": "STONE"
+                    }
+                  },
+                  "then": 1,
+                  "else": 0
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04087",
+      "name": "Steel Kick",
+      "note": "When Revealed (Alter-Ego): Place 2 threat on the main scheme (3 threat instead if Absorbing Man has the Metal trait.)\nWhen Revealed (Hero): Take 3 indirect damage (4 indirect damage instead if Absorbing Man has the Metal trait.)",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "you",
+                  "form": "hero"
+                }
+              },
+              "then": {
+                "indirectDamage": {
+                  "among": {
+                    "query": "charactersYouControl"
+                  },
+                  "amount": {
+                    "if": {
+                      "test": {
+                        "hasTrait": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "trait": "METAL"
+                        }
+                      },
+                      "then": 4,
+                      "else": 3
+                    }
+                  }
+                }
+              },
+              "else": {
+                "placeThreat": {
+                  "scheme": {
+                    "query": "mainScheme"
+                  },
+                  "amount": {
+                    "if": {
+                      "test": {
+                        "hasTrait": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "trait": "METAL"
+                        }
+                      },
+                      "then": 3,
+                      "else": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04088",
+      "name": "Piercing Thorns",
+      "note": "When Revealed: Discard 1 card at random from your hand. If Absorbing Man has the Wood trait, discard 1 card you control.\n\nstar Boost: If Absorbing Man has the Stone or Wood trait, you are stunned.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardAtRandom": {
+                  "player": "you",
+                  "count": 1
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "hasTrait": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "trait": "WOOD"
+                    }
+                  },
+                  "then": {
+                    "chooseCard": {
+                      "from": {
+                        "discardable": {
+                          "query": "cardsYouControl"
+                        }
+                      },
+                      "effect": {
+                        "discard": "chosen"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "or": [
+                  {
+                    "hasTrait": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "trait": "STONE"
+                    }
+                  },
+                  {
+                    "hasTrait": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "trait": "WOOD"
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "giveStatus": {
+                  "card": "you",
+                  "status": "stunned"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04089",
+      "name": "Omni-Morph Duplication",
+      "note": "When Revealed: If Absorbing Man has the:\n- Ice trait, exhaust your identity.\n- Metal trait, give Absorbing Man a tough status card and heal 1 damage from him.\n- Stone trait, give Absorbing Man 1 facedown boost card.\n- Wood trait, discard 1 card at random from your hand.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "hasTrait": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "trait": "ICE"
+                    }
+                  },
+                  "then": {
+                    "exhaust": "you"
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "hasTrait": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "trait": "METAL"
+                    }
+                  },
+                  "then": {
+                    "seq": [
+                      {
+                        "giveStatus": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "status": "tough"
+                        }
+                      },
+                      {
+                        "heal": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "amount": 1
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "hasTrait": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "trait": "STONE"
+                    }
+                  },
+                  "then": {
+                    "giveAdditionalBoost": {
+                      "enemy": {
+                        "query": "villain"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "hasTrait": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "trait": "WOOD"
+                    }
+                  },
+                  "then": {
+                    "discardAtRandom": {
+                      "player": "you",
+                      "count": 1
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04090",
+      "name": "Icy Grip",
+      "note": "When Revealed: You are stunned. If Absorbing Man has the Ice trait, take 2 indirect damage.\n\nstar Boost: If Absorbing Man has the Ice or Metal trait, give him a tough status card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "seq": [
+              {
+                "giveStatus": {
+                  "card": "you",
+                  "status": "stunned"
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "hasTrait": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "trait": "ICE"
+                    }
+                  },
+                  "then": {
+                    "indirectDamage": {
+                      "among": {
+                        "query": "charactersYouControl"
+                      },
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "or": [
+                  {
+                    "hasTrait": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "trait": "ICE"
+                    }
+                  },
+                  {
+                    "hasTrait": {
+                      "card": {
+                        "query": "villain"
+                      },
+                      "trait": "METAL"
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "giveStatus": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "status": "tough"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04091",
+      "name": "Avalanche!",
+      "note": "When Revealed: Each Player must choose to either spend a energy resource or take 2 indirect damage (3 indirect damage instead if there are 5 or more delay counters on the main scheme.)",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "payOrEffect": {
+                  "resources": "Y",
+                  "otherwise": {
+                    "indirectDamage": {
+                      "among": {
+                        "query": "charactersYouControl"
+                      },
+                      "amount": {
+                        "if": {
+                          "test": {
+                            "atLeast": {
+                              "value": {
+                                "countersOn": {
+                                  "card": {
+                                    "query": "mainScheme"
+                                  },
+                                  "counter": "delay"
+                                }
+                              },
+                              "count": 5
+                            }
+                          },
+                          "then": 3,
+                          "else": 2
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04092",
+      "name": "Super Absorbing Power",
+      "note": "Absorbing Man gains the Ice, Metal, Stone, and Wood traits.\n\nstar Boost: Reveal this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": {
+                    "titled": "Absorbing Man"
+                  },
+                  "trait": "ICE"
+                }
+              },
+              {
+                "grant": {
+                  "card": {
+                    "titled": "Absorbing Man"
+                  },
+                  "trait": "METAL"
+                }
+              },
+              {
+                "grant": {
+                  "card": {
+                    "titled": "Absorbing Man"
+                  },
+                  "trait": "STONE"
+                }
+              },
+              {
+                "grant": {
+                  "card": {
+                    "titled": "Absorbing Man"
+                  },
+                  "trait": "WOOD"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "reveal": "this"
+          }
+        }
+      ]
     }
   ]
 }
