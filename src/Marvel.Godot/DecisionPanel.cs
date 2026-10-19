@@ -185,6 +185,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         Action<BoardRenderResult>? restoreChoice = BoardChoices.Capture();
         BoardActionChoiceSurface.Close();
+        CardContextMenu.Close();
         int generation = lifecycle.NextRenderGeneration();
         string? focusName = DecisionFocus.CurrentKey(this);
         int? paymentScroll = paymentModal?.ScrollPosition(composer);

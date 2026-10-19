@@ -36,6 +36,16 @@ trying the working build.
 
 ### Table interactions
 
+Right-click a visible game card, or focus it and press Menu / Shift+F10, to open
+its currently offered actions. The compact cascading menu keeps known costs and
+effects beside the source. Single-target actions list only current offered targets;
+engaged enemies are grouped by player, and recipient support actions name each
+player. A leaf marked **Commit** submits that complete current choice; actions
+needing payment or a more involved selection continue through the same composer.
+Opening a branch never commits. Escape or Left returns one menu level; Escape at
+the root dismisses it. Existing click, drag and complete-choice paths remain available.
+
+
 Minions and allies use continuous collections; side schemes expose landscape
 faces and named headers in a scrollable stack. Upgrades and supports share
 compact named source strips, including controlled upgrades attached to another
