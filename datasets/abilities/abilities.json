@@ -5781,6 +5781,1118 @@
       "attachTo": {
         "query": "villain"
       }
+    },
+    {
+      "card": "04109",
+      "name": "Zola",
+      "note": "Executable interpretation of datasets/cards/cards.json 04109. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": []
+    },
+    {
+      "card": "04110",
+      "name": "Zola",
+      "note": "Executable interpretation of datasets/cards/cards.json 04110. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "cardsIn": {
+                        "areas": [
+                          "encounterDeck",
+                          "encounterDiscardPile"
+                        ],
+                        "title": "Test Subjects"
+                      }
+                    }
+                  },
+                  "then": {
+                    "chooseCard": {
+                      "from": {
+                        "cardsIn": {
+                          "areas": [
+                            "encounterDeck",
+                            "encounterDiscardPile"
+                          ],
+                          "title": "Test Subjects"
+                        }
+                      },
+                      "effect": {
+                        "reveal": "chosen"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "shuffle": "encounterDeck"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04111",
+      "name": "Zola",
+      "note": "Executable interpretation of datasets/cards/cards.json 04111. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "seq": [
+              {
+                "eachPlayer": {
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "exists": {
+                          "cardsIn": {
+                            "areas": [
+                              "encounterDeck",
+                              "encounterDiscardPile"
+                            ],
+                            "kind": "Minion"
+                          }
+                        }
+                      },
+                      "then": {
+                        "chooseCard": {
+                          "from": {
+                            "cardsIn": {
+                              "areas": [
+                                "encounterDeck",
+                                "encounterDiscardPile"
+                              ],
+                              "kind": "Minion"
+                            }
+                          },
+                          "effect": {
+                            "reveal": "chosen"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "shuffle": "encounterDeck"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04112a",
+      "name": "The Island of Dr. Zola",
+      "note": "Executable interpretation of datasets/cards/cards.json 04112a. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Setup",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "cardsIn": {
+                        "area": "encounterDeck",
+                        "title": "Hydra Prison"
+                      }
+                    }
+                  },
+                  "then": {
+                    "chooseCard": {
+                      "from": {
+                        "cardsIn": {
+                          "area": "encounterDeck",
+                          "title": "Hydra Prison"
+                        }
+                      },
+                      "effect": {
+                        "reveal": "chosen"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "eachPlayer": {
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "exists": {
+                          "cardsIn": {
+                            "area": "encounterDeck",
+                            "title": "Ultimate Bio-Servant"
+                          }
+                        }
+                      },
+                      "then": {
+                        "chooseCard": {
+                          "from": {
+                            "cardsIn": {
+                              "area": "encounterDeck",
+                              "title": "Ultimate Bio-Servant"
+                            }
+                          },
+                          "effect": {
+                            "putIntoPlay": {
+                              "card": "chosen",
+                              "where": "engagedWithYou"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "shuffle": "encounterDeck"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04112b",
+      "name": "The Island of Dr. Zola",
+      "note": "Executable interpretation of datasets/cards/cards.json 04112b. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "subject": "game",
+            "event": "WhenVillainPhaseStepOneEnds"
+          },
+          "effect": {
+            "seq": [
+              {
+                "placeCounters": {
+                  "card": "this",
+                  "counter": "test",
+                  "count": 1
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "countersOn": {
+                          "card": "this",
+                          "counter": "test"
+                        }
+                      },
+                      "count": 3
+                    }
+                  },
+                  "then": {
+                    "seq": [
+                      {
+                        "discardUntil": {
+                          "from": "encounterDeck",
+                          "kind": "minion",
+                          "then": "putIntoPlayFirstPlayer"
+                        }
+                      },
+                      {
+                        "removeCounters": {
+                          "card": "this",
+                          "counter": "test",
+                          "count": 3
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04113a",
+      "name": "The Mad Doctor",
+      "note": "Executable interpretation of datasets/cards/cards.json 04113a. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "seq": [
+              {
+                "eachPlayer": {
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "exists": {
+                          "cardsIn": {
+                            "areas": [
+                              "encounterDeck",
+                              "encounterDiscardPile"
+                            ],
+                            "kind": "Minion"
+                          }
+                        }
+                      },
+                      "then": {
+                        "chooseCard": {
+                          "from": {
+                            "cardsIn": {
+                              "areas": [
+                                "encounterDeck",
+                                "encounterDiscardPile"
+                              ],
+                              "kind": "Minion"
+                            }
+                          },
+                          "effect": {
+                            "reveal": "chosen"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "shuffle": "encounterDeck"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04113b",
+      "name": "The Mad Doctor",
+      "note": "Executable interpretation of datasets/cards/cards.json 04113b. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "subject": "game",
+            "event": "WhenVillainPhaseStepOneEnds"
+          },
+          "effect": {
+            "seq": [
+              {
+                "placeCounters": {
+                  "card": "this",
+                  "counter": "test",
+                  "count": 1
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "countersOn": {
+                          "card": "this",
+                          "counter": "test"
+                        }
+                      },
+                      "count": 3
+                    }
+                  },
+                  "then": {
+                    "seq": [
+                      {
+                        "discardUntil": {
+                          "from": "encounterDeck",
+                          "kind": "minion",
+                          "then": "putIntoPlayFirstPlayer"
+                        }
+                      },
+                      {
+                        "removeCounters": {
+                          "card": "this",
+                          "counter": "test",
+                          "count": 3
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04114",
+      "name": "Ultimate Bio-Servant",
+      "note": "Executable interpretation of datasets/cards/cards.json 04114. Printed keywords and numeric attributes remain generic engine data. ruling:81bce25b60d865d5: upgrades are not attachments and provide no attack bonus.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "attack",
+              "amount": {
+                "count": {
+                  "query": "attachmentsOnThis"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "giveStatus": {
+              "card": {
+                "query": "villain"
+              },
+              "status": "tough"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04115",
+      "name": "Zola's Mutate",
+      "note": "Executable interpretation of datasets/cards/cards.json 04115. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "discardUntil": {
+              "from": "encounterDeck",
+              "kind": "attachment",
+              "trait": "TECH",
+              "then": "attachToThis"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "shuffleInto": {
+              "cards": "this",
+              "deck": "encounterDeck"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04116",
+      "name": "Berserk Mutate",
+      "note": "Executable interpretation of datasets/cards/cards.json 04116. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "seq": [
+              {
+                "placeCounters": {
+                  "card": {
+                    "query": "mainScheme"
+                  },
+                  "counter": "test",
+                  "count": 1
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "keyword": "scheme",
+                  "amount": {
+                    "countersOn": {
+                      "card": {
+                        "query": "mainScheme"
+                      },
+                      "counter": "test"
+                    }
+                  },
+                  "until": "EndOfActivation"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "keyword": "attack",
+                  "amount": {
+                    "countersOn": {
+                      "card": {
+                        "query": "mainScheme"
+                      },
+                      "counter": "test"
+                    }
+                  },
+                  "until": "EndOfActivation"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04117",
+      "name": "Defensive Programming",
+      "note": "Executable interpretation of datasets/cards/cards.json 04117. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "attachedTo",
+                  "keyword": "health",
+                  "amount": 2
+                }
+              },
+              {
+                "grant": {
+                  "card": "attachedTo",
+                  "keyword": "guard",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "not": {
+                  "exists": "attachedTo"
+                }
+              },
+              "then": {
+                "gainSurge": 1
+              }
+            }
+          }
+        }
+      ],
+      "attachTo": {
+        "maxBy": {
+          "of": {
+            "withoutAnotherCopyAttached": {
+              "query": "minions"
+            }
+          },
+          "by": "remainingHealth"
+        }
+      }
+    },
+    {
+      "card": "04118",
+      "name": "Pain Inhibitors",
+      "note": "Executable interpretation of datasets/cards/cards.json 04118. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "attachedTo",
+                  "keyword": "health",
+                  "amount": 2
+                }
+              },
+              {
+                "grant": {
+                  "card": "attachedTo",
+                  "keyword": "retaliate",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "not": {
+                  "exists": "attachedTo"
+                }
+              },
+              "then": {
+                "gainSurge": 1
+              }
+            }
+          }
+        }
+      ],
+      "attachTo": {
+        "maxBy": {
+          "of": {
+            "withoutAnotherCopyAttached": {
+              "query": "minions"
+            }
+          },
+          "by": "remainingHealth"
+        }
+      }
+    },
+    {
+      "card": "04119",
+      "name": "Neurological Implants",
+      "note": "Executable interpretation of datasets/cards/cards.json 04119. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "attachedTo",
+                  "keyword": "health",
+                  "amount": 2
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "not": {
+                  "exists": "attachedTo"
+                }
+              },
+              "then": {
+                "gainSurge": 1
+              }
+            }
+          }
+        }
+      ],
+      "attachTo": {
+        "maxBy": {
+          "of": {
+            "withoutAnotherCopyAttached": {
+              "query": "minions"
+            }
+          },
+          "by": "remainingHealth"
+        }
+      }
+    },
+    {
+      "card": "04120",
+      "name": "Mind Ray",
+      "note": "Executable interpretation of datasets/cards/cards.json 04120. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "you",
+                  "form": "alter-ego"
+                }
+              },
+              "then": {
+                "seq": [
+                  {
+                    "enemySchemes": {
+                      "enemies": {
+                        "query": "villain"
+                      }
+                    }
+                  },
+                  {
+                    "giveStatus": {
+                      "card": "you",
+                      "status": "confused"
+                    }
+                  }
+                ]
+              },
+              "else": {
+                "seq": [
+                  {
+                    "enemyAttacks": {
+                      "enemies": {
+                        "query": "villain"
+                      }
+                    }
+                  },
+                  {
+                    "giveStatus": {
+                      "card": "you",
+                      "status": "stunned"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04121",
+      "name": "Technological Enhancements",
+      "note": "Executable interpretation of datasets/cards/cards.json 04121. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "placeCounters": {
+              "card": {
+                "query": "mainScheme"
+              },
+              "counter": "test",
+              "count": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "placeCounters": {
+              "card": {
+                "query": "mainScheme"
+              },
+              "counter": "test",
+              "count": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04122",
+      "name": "Hydra Prison",
+      "note": "Executable interpretation of datasets/cards/cards.json 04122. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "seq": [
+              {
+                "eachPlayer": {
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "exists": {
+                          "cardsIn": {
+                            "areas": [
+                              "yourDeck",
+                              "yourDiscardPile",
+                              "yourHand"
+                            ],
+                            "kind": "Ally",
+                            "cardClass": "Hero"
+                          }
+                        }
+                      },
+                      "then": {
+                        "chooseCard": {
+                          "from": {
+                            "cardsIn": {
+                              "areas": [
+                                "yourDeck",
+                                "yourDiscardPile",
+                                "yourHand"
+                              ],
+                              "kind": "Ally",
+                              "cardClass": "Hero"
+                            }
+                          },
+                          "effect": {
+                            "storeBeneath": {
+                              "cards": "chosen",
+                              "host": "this",
+                              "faceUp": "false"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "placeThreat": {
+                  "scheme": "this",
+                  "amount": {
+                    "sumPrintedCost": {
+                      "query": "beneathThis"
+                    }
+                  }
+                }
+              },
+              {
+                "eachPlayer": {
+                  "effect": {
+                    "shuffle": "yourDeck"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenDefeated",
+            "subject": "this",
+            "event": "WhenCardDefeated"
+          },
+          "effect": {
+            "releaseBeneath": {
+              "removeHost": "true"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04123",
+      "name": "Test Subjects",
+      "note": "Executable interpretation of datasets/cards/cards.json 04123. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenDefeated",
+            "subject": "this",
+            "event": "WhenCardDefeated"
+          },
+          "effect": {
+            "discardUntil": {
+              "from": "encounterDeck",
+              "kind": "minion",
+              "then": "reveal",
+              "player": "firstPlayer"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04124",
+      "name": "Zola's Experiments",
+      "note": "Executable interpretation of datasets/cards/cards.json 04124. Printed keywords and numeric attributes remain generic engine data.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "subject": "game",
+            "event": "WhenCardEntersPlay"
+          },
+          "effect": {
+            "attachCards": {
+              "cards": {
+                "last": {
+                  "cardsIn": {
+                    "area": "encounterDiscardPile",
+                    "kind": "Attachment",
+                    "trait": "TECH"
+                  }
+                }
+              },
+              "host": "trigger.subject"
+            }
+          },
+          "when": {
+            "isKind": {
+              "card": "trigger.subject",
+              "kind": "minion"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04004",
+      "name": "Mockingbird",
+      "note": "Interrupt: When the villain initiates an attack against you, spend 1 resource of any type and return Mockingbird to your hand → prevent all damage from this attack. Prevention changes damage taken at rr:damage.step.3, after Tough, and remains attached to this attack rather than the ally's in-play incarnation. The ally returns to its owner's hand under rr:ownership-and-control.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "Interrupt",
+            "actor": "villain",
+            "player": "you"
+          },
+          "cost": {
+            "seq": [
+              {
+                "spendAny": 1
+              },
+              {
+                "returnToHand": "this"
+              }
+            ]
+          },
+          "effect": {
+            "preventAttackDamage": "attack"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04005",
+      "name": "Sonic Arrow",
+      "note": "Hero Action (attack): Exhaust Hawkeye's Bow → confuse an enemy and deal 3 damage to it (5 damage instead if it is already confused)",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "attack"
+          ],
+          "cost": {
+            "exhaustTitled": "Hawkeye's Bow"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "hasStatus": {
+                          "card": "chosen",
+                          "status": "confused"
+                        }
+                      },
+                      "then": {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 5
+                        }
+                      },
+                      "else": {
+                        "seq": [
+                          {
+                            "giveStatus": {
+                              "card": "chosen",
+                              "status": "confused"
+                            }
+                          },
+                          {
+                            "dealAttackDamage": {
+                              "cards": "chosen",
+                              "amount": 3
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04007",
+      "name": "Electric Arrow",
+      "note": "Hero Action (attack): Exhaust Hawkeye's Bow → stun an enemy and deal 3 damage to it (5 damage instead if it is already stunned).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "attack"
+          ],
+          "cost": {
+            "exhaustTitled": "Hawkeye's Bow"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "hasStatus": {
+                          "card": "chosen",
+                          "status": "stunned"
+                        }
+                      },
+                      "then": {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 5
+                        }
+                      },
+                      "else": {
+                        "seq": [
+                          {
+                            "giveStatus": {
+                              "card": "chosen",
+                              "status": "stunned"
+                            }
+                          },
+                          {
+                            "dealAttackDamage": {
+                              "cards": "chosen",
+                              "amount": 3
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04008",
+      "name": "Cable Arrow",
+      "note": "Hero Action (thwart): Exhaust Hawkeye's Bow → remove 3 threat from a scheme, ignoring any crisis icons in play.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "thwart"
+          ],
+          "cost": {
+            "exhaustTitled": "Hawkeye's Bow"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "schemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 3,
+                      "ignoresCrisis": "true"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

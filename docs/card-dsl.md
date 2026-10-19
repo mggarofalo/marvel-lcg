@@ -618,3 +618,4 @@ returns stored cards to their physical owners' hands before host departure can
 discard them, and removes the host. Omit `removeHost` or use false when ordinary
 defeat should discard the host. `attachmentsOnThis` selects encounter attachment
 cards only; upgrades and status cards are different types (ruling:81bce25b60d865d5).
+`ignoresCrisis` is a scoped thwart modifier: it permits that ability to remove main-scheme threat while a crisis side scheme is in play, without removing the crisis icon or changing other thwarts.
