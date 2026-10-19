@@ -227,6 +227,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityNumber.SumPrintedCost sum => Contains(sum.Cards),
         AbilityNumber.Conditional conditional => Contains(conditional.Test)
             || Contains(conditional.Then) || Contains(conditional.Else),
+        AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.ActivationAttacksAgainstYou } => true,
         AbilityNumber.Constant or AbilityNumber.PerPlayer or AbilityNumber.Result
             or AbilityNumber.PrintedResourcesDiscarded
             or AbilityNumber.DiscardedWithResource or AbilityNumber.ResolutionValue => false,

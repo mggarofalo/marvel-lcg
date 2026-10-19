@@ -241,6 +241,10 @@ expires with its activation identity, including cancellation and nested activati
 attack. This suppresses normal and additional deals for that activation only;
 boost cards assigned before the activation still resolve. The field defaults to
 `"true"` and is rejected on `enemySchemes`.
+`activationAttacksAgainstYou: "game"` counts completed attacks against the current
+player in the most recent scheduled activation collection. Canceled attacks do
+not count; a different defending player receives the attack receipt. Each-player
+continuations retain these receipts, and an empty new collection resets them.
 `undefendedAttack` reads the matching completed attack in an attack-end window.
 Form-qualified `WhenRevealed` abilities retain their authored ordinals while only
 the revealing player's current form is offered and resolved.

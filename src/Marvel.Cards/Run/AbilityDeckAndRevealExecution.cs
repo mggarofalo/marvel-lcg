@@ -195,6 +195,12 @@ internal static class AbilityDeckAndRevealExecution
                     new CardEntryPlacement(Verb: "Put_Into_Play")),
             };
         }
+        if (!DeckTypes.IsInPlay(card.Area.Type) && EffectiveCards.Kind(card, context.World.Facts) == CardKind.Minion)
+            return AbilityDeckAndRevealResult.Handled with
+            {
+                Entry = EncounterEntryRequest.For(card, context.Player,
+                    new CardEntryPlacement(Verb: "Put_Into_Play")),
+            };
         AbilityCardStateExecution.PutIntoPlay(card, context.Player, CardStateContext(context));
         return AbilityDeckAndRevealResult.Handled;
     }

@@ -151,6 +151,7 @@ internal static class AbilityResolutionEffectChoices
     {
         int round = cast.World.Agenda.Current?.Round ?? 0;
         bool duringActivation = cast.World.Agenda.Current?.ActivationId >= 0;
+        AbilityActivationReceipts.Begin(cast.Results, command.Dynamic);
         var activationIds = EnqueueActivations(execution, command, cast, round);
 
         cast.World.Effects.BindScheduledActivations(
