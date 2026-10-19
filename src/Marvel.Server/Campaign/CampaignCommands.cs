@@ -11,6 +11,7 @@ internal static class CampaignCommands
     {
         if (request.Version != EngineProtocol.Version || request.Campaign is not { } query)
             return CampaignHost.Failure(request, "invalid_request", "A current campaign request is required.");
+        if (!ValidQuery(request, query)) return CampaignHost.Failure(request, "invalid_request", "The campaign request has invalid fields or bounds.");
         if (host.Factory.CampaignDefinition is null)
             return CampaignHost.Failure(request, "campaign_unavailable", "This campaign is not admitted by the installed content.");
         if (query.Action == "create") return Create(host, request, query);
@@ -19,6 +20,23 @@ internal static class CampaignCommands
             return CampaignHost.Failure(request, "campaign_not_found", "The campaign owner capability is not valid.");
         return Authorized(host, request, query, campaign);
     }
+
+    private static bool ValidQuery(EngineRequest request, CampaignQuery query)
+    {
+        if (request.GameId is not { Length: > 0 and <= EngineProtocol.MaximumIdentifierLength }
+            || !OnlyCampaign(request)) return false;
+        if (query.Deck is { } deck && !ValidDeck(deck)) return false;
+        return query.Action != "create" || (!query.Decks.IsDefault && query.Decks.Length <= 4 && query.Decks.All(ValidDeck));
+    }
+
+    private static bool OnlyCampaign(EngineRequest request)
+    {
+        return request.Game is null && request.Deck is null && request.Decision is null
+            && request.Cursor is null && request.Order is null;
+    }
+
+    private static bool ValidDeck(Marvel.Rules.Setup.PlayerDeckRecipe? deck) =>
+        deck?.Cards is { Count: <= 500 } cards && cards.All(face => face is { Length: > 0 and <= 80 });
 
     private static EngineResponse Authorized(CampaignHost host, EngineRequest request, CampaignQuery query, StoredCampaign campaign)
     {

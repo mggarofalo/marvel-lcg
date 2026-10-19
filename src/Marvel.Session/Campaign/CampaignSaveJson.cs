@@ -63,7 +63,19 @@ public static class CampaignSaveJson
             throw new SessionSaveException("campaign save lacks required records");
         ValidateDimensions(save);
         ValidateState(save);
-        foreach (SessionSave attempt in save.Attempts) SessionSaveJson.Validate(attempt);
+        ValidateHistory(save);
+    }
+
+    private static void ValidateHistory(CampaignSave save)
+    {
+        if (save.Journal.Any(entry => entry is null) || save.Attempts.Any(attempt => attempt is null))
+            throw new SessionSaveException("campaign history contains an empty record");
+        if (save.Configuration.Players.Any(player => player is null || player.Deck is null))
+            throw new SessionSaveException("campaign roster contains an empty record");
+        foreach (var attempt in save.Attempts) SessionSaveJson.Validate(attempt);
+        if (save.Attempts.Select(attempt => attempt.Session.StorageId).Distinct(StringComparer.Ordinal).Count() != save.Attempts.Length
+            || save.Attempts.Select(attempt => attempt.Setup.Campaign?.Attempt).Distinct().Count() != save.Attempts.Length)
+            throw new SessionSaveException("campaign history contains a duplicate attempt");
     }
 
     private static void ValidateDimensions(CampaignSave save)

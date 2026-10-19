@@ -40,6 +40,20 @@ public sealed class CampaignSaveTests
         Assert.Throws<SessionSaveException>(() => CampaignSaveJson.Read(Encoding.UTF8.GetBytes(modified)));
     }
 
+    [Theory]
+    [InlineData("journal")]
+    [InlineData("attempts")]
+    [InlineData("roster")]
+    [InlineData("players")]
+    public void ExplicitNullRecordsFailAsSaveErrors(string location)
+    {
+        var root = JsonNode.Parse(CampaignSaveJson.Write(Save()))!;
+        if (location == "roster") root["configuration"]!["players"] = new JsonArray((JsonNode?)null);
+        else if (location == "players") root["state"]!["players"] = new JsonArray((JsonNode?)null);
+        else root[location] = new JsonArray((JsonNode?)null);
+        Assert.Throws<SessionSaveException>(() => CampaignSaveJson.Read(Encoding.UTF8.GetBytes(root.ToJsonString())));
+    }
+
     [Fact]
     public void ReplayRejectsAnEditedCampaignEvenWhenJsonAndChecksumsCouldBeValid()
     {

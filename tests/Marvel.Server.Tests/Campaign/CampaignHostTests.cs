@@ -127,6 +127,30 @@ public sealed class CampaignHostTests
         Assert.Equal("invalid_request", host.Exchange(request with { RequestId = "" }).Error!.Code);
     }
 
+    [Fact]
+    public void MalformedCreationDoesNotPublishAnUnrecoverableCampaign()
+    {
+        var store = new MemoryCampaignStore();
+        var host = new CampaignHost(new SyntheticCampaignFactory(), store, new MemorySessionStore());
+        var request = Create();
+        var malformed = request with { Campaign = request.Campaign! with { Decks = [null!] } };
+        Assert.Equal("invalid_request", host.Exchange(malformed).Error!.Code);
+        Assert.Empty(store.Load());
+        Assert.Null(host.Exchange(request).Error);
+    }
+
+    [Fact]
+    public void ArchiveCannotSubstituteADuplicateForAnotherAttempt()
+    {
+        var store = new MemoryCampaignStore();
+        var host = new CampaignHost(new SyntheticCampaignFactory(), store, new MemorySessionStore());
+        var created = host.Exchange(Create());
+        Assert.Null(host.Exchange(Command(created, "start", 0) with { Entry = EntryClaim.Create() }).Error);
+        var save = store.Load()[0].Campaign!.Save;
+        Assert.Throws<Marvel.Session.SessionSaveException>(() => Marvel.Session.CampaignSaveJson.Write(
+            save with { Attempts = [save.Attempts[0], save.Attempts[0]] }));
+    }
+
     internal static EngineRequest Create() => new(EngineProtocol.Version, "create", EngineProtocol.Campaign, "campaign",
         Entry: EntryClaim.Create()) { Campaign = new("create") { Product = "synthetic", Seed = 42,
             Heroes = ["spider_man"], Decks = [new([])] } };
