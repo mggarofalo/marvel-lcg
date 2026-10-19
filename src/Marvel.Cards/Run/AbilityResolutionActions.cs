@@ -70,7 +70,7 @@ internal static class AbilityResolutionActions
         // game element. `rr:cost.6` and `rr:event.3` make target availability
         // part of whether the cost may be paid at all.
         var admission = execution.offerQueries.ActionAdmission(
-            world, card, found, ability.Player, occurrence);
+            world, card, found, ability.Player, occurrence, chosen);
         if (admission is null)
         {
             throw new RulesNotImplementedException(
