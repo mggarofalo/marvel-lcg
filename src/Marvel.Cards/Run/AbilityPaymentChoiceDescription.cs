@@ -15,7 +15,7 @@ internal static class AbilityPaymentChoiceDescription
     {
         var world = context.Expressions.World;
         var sources = CardPayment.Generators(
-            world, world.Facts, world.Seats[context.Player], context.ResourceAbilities);
+            world, world.Facts, world.Seats[context.Player], context.ResourceAbilities, abilitySource: context.Expressions.Source);
         bool payable = Resources.Pays(string.Concat(sources.SelectMany(source => source.Generates)),
             payment.Resources.Length, payment.Resources);
         var offers = new List<Affordance>();

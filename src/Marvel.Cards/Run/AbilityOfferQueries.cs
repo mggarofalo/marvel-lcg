@@ -90,6 +90,7 @@ internal sealed class AbilityOfferQueries
             if (generated.Length > 0) sources.Add(new ResourceSource(card.ObjectId, generated)
             {
                 AbilityName = ability.Name,
+                Restriction = ability.ResourceRestriction,
                 CostDescription = AbilityCostDescription.Summary(world, card, player, ability.Cost),
             });
         }

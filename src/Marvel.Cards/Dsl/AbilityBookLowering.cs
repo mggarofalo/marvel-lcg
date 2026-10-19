@@ -51,7 +51,10 @@ internal static class AbilityBookLowering
             ability.Cost is { } cost ? LowerCost(Syntax(cost), location with { Path = "cost" }) : null,
             ability.When is { } when ? LowerCondition(Syntax(when), location with { Path = "when" }) : null,
             ability.Limit, ability.AnyPlayer, ability.Labels?.ToImmutableArray() ?? [],
-            ability.PrintedResources, ability.Maximum, address);
+            ability.PrintedResources, ability.Maximum, address)
+        {
+            ResourceRestriction = AbilityResourceRestriction.Validate(ability),
+        };
     }
 
     private static ImmutableDictionary<string, AbilityCardSelection> LowerAttachments(

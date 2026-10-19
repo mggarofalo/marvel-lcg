@@ -94,10 +94,10 @@ public static class CardPayment
         World world, ICardFacts facts, Seat seat, Card? payingFor = null)
         => Generators(world, facts, seat, world.ResourceAbilities, payingFor);
 
-    /// <summary>Every resource source supplied by one explicit card capability.</summary>
+    /// <summary>Every eligible source from one card capability. Ability source restricts generators without applying card-play multipliers.</summary>
     public static IReadOnlyList<ResourceSource> Generators(
         World world, ICardFacts facts, Seat seat,
-        IResourceCardAbilities resourceAbilities, Card? payingFor = null)
+        IResourceCardAbilities resourceAbilities, Card? payingFor = null, Card? abilitySource = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -111,7 +111,8 @@ public static class CardPayment
         // recorded prompt carries, and it is why that prompt lists six
         // generators for five payable cards.
         var sources = new List<ResourceSource>(resourceAbilities.ResourceAbilities(
-            world, seat.Index));
+            world, seat.Index).Where(source => ResourceSourceEligibility.Allows(
+                world, facts, source, payingFor ?? abilitySource)));
 
         foreach (var card in seat.Hand.Cards)
         {

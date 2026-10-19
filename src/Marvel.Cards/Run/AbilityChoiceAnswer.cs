@@ -75,10 +75,8 @@ internal sealed class AbilityChoiceAnswer(
             string required = ((AbilityEffect.PayOrEffect)choice).Resources;
             var owner = cast.World.Agenda.Current;
             var occurrence = cast.World.Agenda.Occurrence;
-            var payment = CardPlay.Spend(
-                cast.World, cast.World.Facts, execution.resourceAbilities,
-                [cast.World.Seats[player].Hand], input.Spent, required.Length,
-                required, -1, player, cast.Events);
+            var payment = AbilityResourcePayment.Spend(cast.World, execution.resourceAbilities,
+                new(cast.Source, player, input.Spent, required.Length, required), cast.Events);
             if (!payment.IsComplete)
             {
                 cast.PendingPayment = new AbilityChoicePayment(payment);

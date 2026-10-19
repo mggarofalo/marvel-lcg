@@ -92,9 +92,8 @@ internal sealed class AbilityCostPayment
         switch (step)
         {
             case Spend spend:
-                resourcePayment = CardPlay.Spend(
-                    world, world.Facts, resourceAbilities, [world.Seats[player].Hand],
-                    paying, spend.Required.Length, spend.Required, -1, player, events);
+                resourcePayment = AbilityResourcePayment.Spend(world, resourceAbilities,
+                    new(source, player, paying, spend.Required.Length, spend.Required), events);
                 outcome.Suspended = !resourcePayment.IsComplete;
                 if (spend.Energy is { } x) outcome.Energy = x;
                 return true;

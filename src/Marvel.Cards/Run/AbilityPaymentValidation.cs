@@ -58,9 +58,9 @@ internal sealed class AbilityPaymentValidation(
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' mixes printed and ordinary simultaneous resource costs, whose allocation is not implemented");
         var generators = printed
-            ? PrintedGenerators(world, player, resourceAbilities)
+            ? PrintedGenerators(world, player, resourceAbilities, source)
             : CardPayment.Generators(
-                world, world.Facts, world.Seats[player], resourceAbilities).ToList();
+                world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: source).ToList();
         if (paying.Any(id => generators.All(candidate => candidate.Effect != id)))
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' names a resource source that is not available");
@@ -107,7 +107,7 @@ internal sealed class AbilityPaymentValidation(
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' defines X as {x}, outside the offered range {request.Min}..{request.Max}");
         var generators = CardPayment.Generators(
-            world, world.Facts, world.Seats[player], resourceAbilities).ToList();
+            world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: source).ToList();
         if (paying.Count == 0 || paying.Distinct().Count() != paying.Count
             || paying.Any(id => generators.All(candidate => candidate.Effect != id)))
             throw new RulesNotImplementedException($"'{source.FaceId}' names an invalid generator for X");

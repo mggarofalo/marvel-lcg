@@ -52,18 +52,18 @@ internal static class AbilityPaymentRules
             // can, and if it can then spending it all is a payment.
             AbilityCost.Spend { PrintedOnly: false } spend => Resources.Pays(
                 string.Concat(CardPayment.Generators(
-                        world, world.Facts, world.Seats[player], resourceAbilities)
+                        world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card)
                     .SelectMany(source => source.Generates)),
                 spend.Resources.Length,
                 spend.Resources),
             AbilityCost.Spend { PrintedOnly: true } spend => Resources.PaysPrinted(
-                string.Concat(AbilityPaymentPricing.PrintedGenerators(world, player, resourceAbilities)
+                string.Concat(AbilityPaymentPricing.PrintedGenerators(world, player, resourceAbilities, card)
                     .SelectMany(source => source.Generates)),
                 spend.Resources.Length,
                 spend.Resources),
             AbilityCost.SpendEnergy => Resources.Pays(
                 string.Concat(CardPayment.Generators(
-                        world, world.Facts, world.Seats[player], resourceAbilities)
+                        world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card)
                     .SelectMany(source => source.Generates)),
                 1,
                 "Y"),
@@ -138,9 +138,9 @@ internal static class AbilityPaymentRules
 
             string required = string.Concat(spends.Select(step => step.Resources));
             string pool = string.Concat((printed
-                    ? AbilityPaymentPricing.PrintedGenerators(world, player, resourceAbilities)
+                    ? AbilityPaymentPricing.PrintedGenerators(world, player, resourceAbilities, card)
                     : CardPayment.Generators(
-                        world, world.Facts, world.Seats[player], resourceAbilities))
+                        world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card))
                 .SelectMany(source => source.Generates));
             bool pays = printed
                 ? Resources.PaysPrinted(pool, required.Length, required)

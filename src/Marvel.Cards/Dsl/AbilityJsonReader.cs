@@ -71,7 +71,10 @@ internal static class AbilityJsonReader
             Flag(element, "anyPlayer", card),
             Labels(element, card),
             printedResources,
-            Maximum(element, card));
+            Maximum(element, card))
+        {
+            ResourceRestriction = AbilityResourceRestriction.Read(element, trigger.Timing),
+        };
     }
 
     private static AbilityNode Effect(JsonElement element, string card)

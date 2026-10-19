@@ -12,5 +12,6 @@ internal sealed record CardResourcePaymentRequest
     internal required int Itself { get; init; }
     internal required int Payer { get; init; }
     internal Card? PayingFor { get; init; }
+    internal Card? AbilitySource { get; init; }
     internal IReadOnlyDictionary<int, int>? ResourcePayers { get; init; }
 }

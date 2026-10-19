@@ -54,4 +54,8 @@ public sealed record CardAbility(
     string Card, string Name, AbilityTrigger Trigger, AbilityNode Effect,
     AbilityNode? Cost = null, long? Limit = null, AbilityNode? When = null,
     bool AnyPlayer = false, IReadOnlyList<string>? Labels = null,
-    string PrintedResources = "", AbilityMaximum? Maximum = null);
+    string PrintedResources = "", AbilityMaximum? Maximum = null)
+{
+    /// <summary>Printed limitation on the cost that consumes this ability's resources.</summary>
+    public Marvel.Rules.Prompts.ResourceRestriction ResourceRestriction { get; init; }
+}

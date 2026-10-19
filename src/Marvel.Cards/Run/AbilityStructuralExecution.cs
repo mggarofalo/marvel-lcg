@@ -149,7 +149,7 @@ internal static class AbilityStructuralExecution
 
         var sources = CardPayment.Generators(context.Expressions.World,
             context.Expressions.World.Facts, context.Expressions.World.Seats[context.Player],
-            context.ResourceAbilities);
+            context.ResourceAbilities, abilitySource: context.Expressions.Source);
         return Resources.Pays(string.Concat(sources.SelectMany(source => source.Generates)),
             payment.Resources.Length, payment.Resources)
             ? new PayOrCommand(true)

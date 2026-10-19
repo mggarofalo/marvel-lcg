@@ -554,3 +554,13 @@ Justice, Leadership, or Protection cards; identity and Basic cards do not match.
 `allowPlayBeneath` is a Constant permission with printed `kind: "Event"` and a
 `trait`. The engine may play matching owned cards stored under the live controlled
 host as if in hand; the query never moves them to hand or makes them resources.
+
+### Restricted resource abilities
+
+A resource ability may declare `"resourceRestriction": "arrowEvent"` (Expert
+Marksman) or `"resourceRestriction": "aspectCard"` (Finesse). The payment engine
+checks the cost's actual card before offering or spending the source. Finesse
+can pay an aspect card's printed cost or a cost within its ability
+(`ruling:6800619dc41a043c`); ability-cost context does not activate card-play-only
+resource multipliers. The restriction is valid only on a Resource ability and
+unknown values fail admission. Printed wild icons use `G` as elsewhere in this DSL.

@@ -26,13 +26,13 @@ internal static class AbilityPaymentPricing
         if (cost is AbilityCost.SpendEnergy)
         {
             long maximum = CardPayment.Generators(
-                    world, world.Facts, world.Seats[player], resourceAbilities)
+                    world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card)
                 .Sum(source => source.Generates.LongCount(resource =>
                     resource is Resources.Energy or Resources.Wild));
             return new CostOption(
                 card.ObjectId, "X",
                 Sources: CardPayment.Generators(
-                    world, world.Facts, world.Seats[player], resourceAbilities),
+                    world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card),
                 Variables: [new VariableRequest("X", 1, maximum)],
                 Components: [new ResourceCost("X") { RepeatedResource = Resources.Energy }]);
         }
@@ -45,7 +45,7 @@ internal static class AbilityPaymentPricing
                 Cost: printedLetters.Length.ToString(
                     System.Globalization.CultureInfo.InvariantCulture),
                 Rule: [printedLetters],
-                Sources: PrintedGenerators(world, player, resourceAbilities),
+                Sources: PrintedGenerators(world, player, resourceAbilities, card),
                 Components: [new ResourceCost(
                     printedLetters.Length.ToString(
                         System.Globalization.CultureInfo.InvariantCulture),
@@ -64,7 +64,7 @@ internal static class AbilityPaymentPricing
             Cost: letters.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
             Rule: [letters],
             Sources: CardPayment.Generators(
-                world, world.Facts, world.Seats[player], resourceAbilities));
+                world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card));
     }
 
     private static CostOption? SequencePrice(
@@ -187,7 +187,7 @@ internal static class AbilityPaymentPricing
     }
 
     internal static List<ResourceSource> PrintedGenerators(
-        World world, int player, IResourceCardAbilities resourceAbilities)
+        World world, int player, IResourceCardAbilities resourceAbilities, Card source)
     {
         var hand = world.Seats[player].Hand.Cards
             .Select(card => new ResourceSource(
@@ -195,7 +195,8 @@ internal static class AbilityPaymentPricing
                 Resources.GeneratedBy(card.FaceId, world.Facts)))
             .Where(source => source.Generates.Length > 0);
         return hand
-            .Concat(resourceAbilities.PrintedResourceAbilities(world, player))
+            .Concat(resourceAbilities.PrintedResourceAbilities(world, player)
+                .Where(generator => ResourceSourceEligibility.Allows(world, world.Facts, generator, source)))
             .GroupBy(source => source.Effect)
             .Select(group => group.First())
             .ToList();
