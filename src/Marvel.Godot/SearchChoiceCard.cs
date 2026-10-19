@@ -31,6 +31,11 @@ internal static class SearchChoiceCard
         row.AddChild(CardStateDetails.Wrap(face, card, beside: false));
         face.SetInteractionCue(selected ? CardInteractionCue.SelectedTarget : CardInteractionCue.LegalTarget);
         face.HideInteractionCue();
+        if (InitialTableDraft.IsInspectionAcknowledgement(panel.composer.Prompt))
+        {
+            choice.Free();
+            return;
+        }
         face.GetNode<Control>("CardSurface").AddChild(choice);
         choice.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight);
         choice.Position = new Vector2(face.Size.X - 48, 4);

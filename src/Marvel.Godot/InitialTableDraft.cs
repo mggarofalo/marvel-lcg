@@ -10,10 +10,15 @@ internal static class InitialTableDraft
     internal static DecisionComposer Create(Prompt prompt)
     {
         var composer = new DecisionComposer(prompt);
-        if (MulliganPrompt.IsOpening(prompt) || IsRequiredEndPhase(prompt) || IsVisibleCardChoice(prompt))
+        if (MulliganPrompt.IsOpening(prompt) || IsRequiredEndPhase(prompt) || IsVisibleCardChoice(prompt)
+            || IsInspectionAcknowledgement(prompt))
             composer.SelectAffordance(prompt.Affordances[0].Id);
         return composer;
     }
+
+    internal static bool IsInspectionAcknowledgement(Prompt prompt) => !prompt.Cancellable
+        && prompt.PublicKind == PublicDecisionKind.CardLook && prompt.Affordances.Count == 1
+        && prompt.Affordances[0] is { Verb: "Acknowledge", IsLegal: true, Targets: null };
 
     internal static bool IsVisibleCardChoice(Prompt prompt) => !prompt.Cancellable
         && VisibleTargetCardGallery.IsChoice(prompt) && prompt.Affordances.Count == 1

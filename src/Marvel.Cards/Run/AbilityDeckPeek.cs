@@ -38,6 +38,7 @@ internal static class AbilityDeckPeek
                 DisplayQuestion = "Top card of " + Name(world, card.Area),
                 Description = "Look at this card. It stays on top of its deck; nothing is shuffled.",
                 ContextCardIds = [card.ObjectId],
+                CauseCardIds = [context.Expressions.Source.ObjectId],
                 ExposesConcealedCandidates = !card.FaceUp,
             };
         }
