@@ -182,6 +182,7 @@ internal sealed class VillainConditionTrace(
             HealthCanDiffer(value.Card, depth),
         AbilityNumber.Count count => CountCanDiffer(count.Cards),
         AbilityNumber.Modified modified => ModifiedCanDiffer(modified, depth),
+        AbilityNumber.FloorDivide division => division.Operands.Any(child => AmountCanDiffer(child, depth)),
         AbilityNumber.Minimum minimum => minimum.Operands.Any(child => AmountCanDiffer(child, depth)),
         AbilityNumber.Sum sum => sum.Operands.Any(child => AmountCanDiffer(child, depth)),
         AbilityNumber.Product product => product.Operands.Any(child => AmountCanDiffer(child, depth)),

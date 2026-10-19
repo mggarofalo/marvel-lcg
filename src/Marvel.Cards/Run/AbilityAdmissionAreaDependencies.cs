@@ -283,7 +283,7 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.DealEncounterCards or AbilityEffect.EngageTopAsMinion
                 or AbilityEffect.DiscardUntil or AbilityEffect.ShuffleInto
                 or AbilityEffect.ChooseTopForHand
-                or AbilityEffect.ChooseDiscardToShuffle
+                or AbilityEffect.ChooseDiscardToShuffle or AbilityEffect.DiscardResourceIcons
                 or AbilityEffect.DiscardHandWithResource
                 or AbilityEffect.RecoverDiscardedByResource
                 or AbilityEffect.ActivateEnemies => true,

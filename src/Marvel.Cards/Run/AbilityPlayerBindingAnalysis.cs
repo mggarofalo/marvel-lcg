@@ -169,7 +169,7 @@ internal static class AbilityPlayerBindingAnalysis
             or AbilityEffect.AllowPlayBeneath or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
-            or AbilityEffect.DiscardHandWithResource
+            or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardResourceIcons
             or AbilityEffect.RecoverDiscardedByResource => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled effect in player-binding analysis"),
@@ -191,7 +191,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCardSelection.Query query => query.Kind is
             AbilityCardQuery.YourAsideMinion or AbilityCardQuery.YourAsideSideScheme
             or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.YourAsidePile
-            or AbilityCardQuery.UpgradesAndSupportsYouControl
+            or AbilityCardQuery.UpgradesAndSupportsYouControl or AbilityCardQuery.CardsYouControl
             or AbilityCardQuery.IdentitySpecificInYourHand
             or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.CharactersYouControl
             or AbilityCardQuery.UpgradesYouControl or AbilityCardQuery.AlliesYouControl
@@ -215,6 +215,7 @@ internal static class AbilityPlayerBindingAnalysis
     {
         AbilityNumber.Sum sum => sum.Operands.Any(Contains),
         AbilityNumber.Product product => product.Operands.Any(Contains),
+        AbilityNumber.FloorDivide division => division.Operands.Any(Contains),
         AbilityNumber.Minimum minimum => minimum.Operands.Any(Contains),
         AbilityNumber.CardValue value => Contains(value.Card),
         AbilityNumber.Counters counters => Contains(counters.Card),

@@ -87,7 +87,7 @@ internal sealed class AbilitySelectorEvaluation(
                 .SelectMany(area => area.Cards)
                 .Any(attached => attached.ObjectId != context.Source.ObjectId
                     && string.Equals(context.World.Facts.Title(attached.FaceId), context.World.Facts.Title(context.Source.FaceId), StringComparison.Ordinal)))],
-        AbilityCardSelection.Discardable discardable => [.. Every(discardable.Cards).Where(card => CanRemove(discardable.Cards, card))],
+        AbilityCardSelection.Discardable discardable => [.. Every(discardable.Cards).Where(card => Rules.Play.Discard.CanDiscardFromPlay(card, context.World.Facts) && CanRemove(discardable.Cards, card))],
         AbilityCardSelection.Ranked ranked => Ranked(ranked),
         AbilityCardSelection.InAreas areas => CardsIn(areas),
         _ => throw new InvalidOperationException("Unknown compiled card selection"),

@@ -104,6 +104,7 @@ internal static class AbilityEffectLowering
             "putIntoPlay" => PutIntoPlayEffect(argument, child),
             "chooseTopForHand" or "chooseDiscardToShuffle" => ChoiceFromPile(argument, child, node.Kind == "chooseTopForHand"),
             "placeCounters" or "removeCounters" => CountersEffect(argument, child, node.Kind == "removeCounters"),
+            "discardResourceIcons" => AbilityResourceIconDiscardLowering.Lower(argument, child),
             "discardHandWithResource" => new AbilityEffect.DiscardHandWithResource(Resource(argument, child)),
             "recoverDiscardedByResource" => new AbilityEffect.RecoverDiscardedByResource(Resource(argument, child)),
             "reduceNextCardCost" => ReduceCostEffect(argument, child),

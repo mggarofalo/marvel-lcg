@@ -92,6 +92,8 @@ internal static class AbilitySelectorLowering
         "heroes" => AbilityCardQuery.Heroes,
         "identities" => AbilityCardQuery.Identities,
         "characters" => AbilityCardQuery.Characters,
+        "otherEnvironments" => AbilityCardQuery.OtherEnvironments,
+        "cardsYouControl" => AbilityCardQuery.CardsYouControl,
         _ => throw location.Error($"'{name}' is not a card query"),
     };
 

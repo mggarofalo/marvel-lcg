@@ -13,7 +13,7 @@ internal sealed class AbilityChoiceAnswer(
 {
     private static readonly ImmutableArray<string> SpecialOperations =
     [
-        "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle",
+        "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardResourceIcons",
     ];
 
     internal List<Marvel.Rules.Events.GameEvent> Apply(AbilityEffect choice)
@@ -53,6 +53,7 @@ internal sealed class AbilityChoiceAnswer(
             "resolveSpecials" => ApplyResolveSpecials(choice),
             "chooseTopForHand" => ApplyChooseTopForHand(choice),
             "chooseDiscardToShuffle" => ApplyChooseDiscardToShuffle(choice),
+            "discardResourceIcons" => ApplyDiscardResourceIcons(choice),
             _ => throw new InvalidOperationException("Unknown special choice"),
         };
 
@@ -128,6 +129,15 @@ internal sealed class AbilityChoiceAnswer(
         AbilityCardStateExecution.ShuffleDiscardIntoDeck(
             command.Targets.Select(id => cast.World.Cards[id]).ToList(),
             CardStateContext());
+        cast.ResolveEffect();
+        return Continue();
+    }
+
+    private List<Marvel.Rules.Events.GameEvent> ApplyDiscardResourceIcons(AbilityEffect choice)
+    {
+        var answer = AbilityStructuralExecution.AnswerSpecialChoice(execution.StructuralContext(cast), choice, input);
+        ThrowIfUnsupported(answer);
+        AbilityResourceIconDiscard.Commit(cast, ((DiscardResourceIconsCommand)answer).Targets);
         cast.ResolveEffect();
         return Continue();
     }

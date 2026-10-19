@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityRepeatedCharacteristicTrace;
 using static Marvel.Cards.Run.AbilityAdmission;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.State;
@@ -28,6 +29,9 @@ internal static class AbilitySelectorTrace
                 or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.EnemiesEngagedWithChosenPlayer
         } => [.. cast.World.Areas.SelectMany(area => area.Cards)
             .Where(card => CardKinds.IsEnemy(EffectiveCards.Kind(card, cast.World.Facts)))],
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.CardsYouControl } =>
+            [.. cast.World.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type)
+                && CardControl.IsPlayerCard(cast.World.Facts, card))],
         AbilityCardSelection.Query
         {
             Kind: AbilityCardQuery.UpgradesYouControl or AbilityCardQuery.SupportsYouControl
@@ -54,6 +58,7 @@ internal static class AbilitySelectorTrace
         AbilityCardSelection.WithoutAnotherCopyAttached filtered => TraceSelectorMatches(filtered.Cards, candidate, trace)
             && !AnotherCopyAttachedInTrace(candidate, trace.Cast, trace.Discarded),
         AbilityCardSelection.Discardable filtered => TraceSelectorMatches(filtered.Cards, candidate, trace)
+            && Rules.Play.Discard.CanDiscardFromPlay(candidate, trace.Cast.World.Facts)
             && Removable(candidate, trace),
         AbilityCardSelection.Ranked ranked => RankedIncludes(ranked, candidate, trace),
         AbilityCardSelection.InPlayerArea { Area: DeckType.EngagedEnemiesArea } area =>

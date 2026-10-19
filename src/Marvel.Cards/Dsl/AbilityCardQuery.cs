@@ -66,4 +66,8 @@ public enum AbilityCardQuery
     Identities,
     /// <summary>The authored characters relation.</summary>
     Characters,
+    /// <summary>In-play environments other than the card entering in this occurrence.</summary>
+    OtherEnvironments,
+    /// <summary>Every in-play card controlled by the resolving player.</summary>
+    CardsYouControl,
 }

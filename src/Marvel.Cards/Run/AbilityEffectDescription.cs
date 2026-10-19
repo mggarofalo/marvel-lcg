@@ -102,6 +102,8 @@ internal static class AbilityEffectDescription
     private static string Noun(AbilityCardSelection selection) => selection switch
     {
         AbilityCardSelection.Discardable discardable => Noun(discardable.Cards),
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.CardsYouControl } => "card you control",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.OtherEnvironments } => "other environment",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.UpgradesAndSupportsYouControl } =>
             "upgrade or support",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.UpgradesYouControl } => "upgrade",

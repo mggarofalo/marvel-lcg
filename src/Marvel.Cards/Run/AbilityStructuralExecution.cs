@@ -22,7 +22,7 @@ internal static class AbilityStructuralExecution
             "seq" or "and" or "then" or "otherwise" or "eachPlayer" or "if"
             or "forEach" or "eachTime" or "choose" or "chooseCard"
             or "resolveSpecials" or "payOrExhaust" or "payOrEffect"
-            or "chooseTopForHand" or "chooseDiscardToShuffle"
+            or "chooseTopForHand" or "discardResourceIcons" or "chooseDiscardToShuffle"
             or "thwartDifferentSchemes" or "makeTheCall" or "legalPractice"
             or "attack" or "defense" or "thwart" or "thwartSchemes"
             or "placeThreat" or "enemyAttacks" or "enemySchemes");
@@ -48,6 +48,8 @@ internal static class AbilityStructuralExecution
                 AbilityPaymentChoiceDescription.Describe(context, payment).Affordances.Count == 0
                     ? new Complete(context.Frames) : AskFor(context, payment),
             AbilityEffect.ChooseTopForHand top => ChooseTopForHand(context, top),
+            AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.HasCards(context)
+                ? AskFor(context, discard) : new Complete(context.Frames),
             AbilityEffect.ChooseDiscardToShuffle discard => AskFor(context, discard),
             AbilityEffect.ThwartGroup group when group.OperationName() == "thwartDifferentSchemes" =>
                 AskFor(context, group),
@@ -125,6 +127,7 @@ internal static class AbilityStructuralExecution
             AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ResolveSpecials } specials =>
                 AbilitySpecialSequence.Describe(context, specials),
             AbilityEffect.ChooseTopForHand top => DescribeTopForHand(context, top),
+            AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.Describe(context, discard),
             AbilityEffect.ChooseDiscardToShuffle discard => DescribeDiscardShuffle(context, discard),
             _ => throw new InvalidOperationException($"'{context.SourceFace}' has no special prompt for '{choice.OperationName()}'"),
         };
@@ -135,6 +138,7 @@ internal static class AbilityStructuralExecution
             AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ResolveSpecials } specials =>
                 AbilitySpecialSequence.Answer(context, specials, answer),
             AbilityEffect.ChooseTopForHand top => AnswerTopForHand(context, top, answer),
+            AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.Answer(context, discard, answer),
             AbilityEffect.ChooseDiscardToShuffle discard => AnswerDiscardShuffle(context, discard, answer),
             _ => new Unsupported($"'{context.SourceFace}' has no special answer for '{choice.OperationName()}'"),
         };

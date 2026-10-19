@@ -49,6 +49,9 @@ internal static class AbilityExpressionAreaDependencies
             case AbilityNumber.Product product:
                 foreach (var operand in product.Operands) CollectSingularAreaDependencies(operand, cast, areas);
                 break;
+            case AbilityNumber.FloorDivide division:
+                foreach (var operand in division.Operands) CollectSingularAreaDependencies(operand, cast, areas);
+                break;
             case AbilityNumber.Minimum minimum:
                 foreach (var operand in minimum.Operands) CollectSingularAreaDependencies(operand, cast, areas);
                 break;

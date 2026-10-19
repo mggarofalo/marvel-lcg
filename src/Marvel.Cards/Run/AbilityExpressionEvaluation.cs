@@ -25,6 +25,7 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityNumber.Result result => context.Results.GetValueOrDefault(result.Name),
         AbilityNumber.Sum sum => sum.Operands.Sum(operand => Amount(operand)),
         AbilityNumber.Product product => product.Operands.Aggregate(1L, (value, operand) => value * Amount(operand)),
+        AbilityNumber.FloorDivide division => IntegerQuotients.Floor(Amount(division.Operands[0]), Amount(division.Operands[1])),
         AbilityNumber.Minimum minimum => minimum.Operands.Min(operand => Amount(operand)),
         AbilityNumber.CardValue value => CardNumber(value),
         AbilityNumber.Counters counters => selectors.Find(counters.Card) is { } holder

@@ -129,6 +129,8 @@ public abstract record AbilityEffect
     public sealed record ChooseTopForHand(int Count) : AbilityEffect;
     /// <summary>Choose differently titled discarded cards to shuffle into the deck.</summary>
     public sealed record ChooseDiscardToShuffle(int Maximum) : AbilityEffect;
+    /// <summary>Discard hand cards providing one or two printed resource icons, as far as possible.</summary>
+    public sealed record DiscardResourceIcons(int Count) : AbilityEffect;
     /// <summary>Place named counters on a card.</summary>
     public sealed record PlaceCounters(AbilityCardSelection Card, string Counter, AbilityNumber Count) : AbilityEffect;
     /// <summary>Remove named counters from a card.</summary>

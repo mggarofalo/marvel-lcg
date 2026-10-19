@@ -204,7 +204,8 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.DoubleResourceFor
             or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
-            or AbilityEffect.DiscardHandWithResource or AbilityEffect.RecoverDiscardedByResource => false,
+            or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardResourceIcons
+            or AbilityEffect.RecoverDiscardedByResource => false,
         _ => throw new InvalidOperationException("Unknown compiled effect in player-binding analysis"),
     };
 

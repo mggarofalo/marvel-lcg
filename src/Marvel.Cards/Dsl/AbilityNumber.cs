@@ -29,6 +29,9 @@ public abstract record AbilityNumber
     /// <summary>The least of a nonempty ordered collection of operands.</summary>
     public sealed record Minimum(ImmutableArray<AbilityNumber> Operands) : AbilityNumber;
 
+    /// <summary>Integer division rounded down by a positive fixed divisor.</summary>
+    public sealed record FloorDivide(ImmutableArray<AbilityNumber> Operands) : AbilityNumber;
+
     /// <summary>A value read from a selected card.</summary>
     public sealed record CardValue(AbilityCardSelection Card, AbilityCardNumberProperty Property) : AbilityNumber;
     /// <summary>A named counter pool on a selected card.</summary>

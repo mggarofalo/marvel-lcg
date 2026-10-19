@@ -598,3 +598,12 @@ Deck arrow costs use `discardTop: { from: "yourDeck" | "encounterDeck", count: N
 recipient differs from the resolving player. `attachCards: {cards, host}` attaches
 selected encounter attachments to the specified host without revealing them or
 re-running their printed host selection.
+
+`floorDiv` takes a numeric `value` and a positive integer `divisor`, returning
+mathematical floor division. Stall Tactics uses complete pairs of delay counters.
+`discardResourceIcons: 1` or `2` asks the resolving player to discard a minimal
+hand-card group containing that many printed icons, or all available icons when
+fewer exist. It does not generate resources or permit resource abilities.
+`cardsYouControl` selects in-play controlled player cards; `discardable` filters
+identity/main-scheme and permanent restrictions. `otherEnvironments` selects live
+environments other than the triggering occurrence's subject.

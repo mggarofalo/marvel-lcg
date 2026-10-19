@@ -45,7 +45,8 @@ internal static class AbilityProjection
         AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.AttackableEnemies
             or AbilityCardQuery.MinionsEngagedWithYou
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer or AbilityCardQuery.UpgradesYouControl
-            or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.UpgradesAndSupportsYouControl,
+            or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.UpgradesAndSupportsYouControl
+            or AbilityCardQuery.CardsYouControl,
         _ => false,
     };
 
@@ -196,6 +197,7 @@ internal static class AbilityProjection
     private static System.Collections.Immutable.ImmutableArray<AbilityNumber> CompositeOperands(
         AbilityNumber number) => number switch
         {
+            AbilityNumber.FloorDivide division => division.Operands,
             AbilityNumber.Minimum minimum => minimum.Operands,
             AbilityNumber.Sum sum => sum.Operands,
             AbilityNumber.Product product => product.Operands,
@@ -223,6 +225,7 @@ internal static class AbilityProjection
         }
         amount = number switch
         {
+            AbilityNumber.FloorDivide => IntegerQuotients.Floor(values[0], values[1]),
             AbilityNumber.Minimum => values.Min(),
             AbilityNumber.Sum => values.Sum(),
             _ => values.Aggregate(1L, (product, value) => product * value),

@@ -102,6 +102,7 @@ internal static class AbilityEffectStructure
             .Concat(PaidResourceQueries(conditional.Then)).Concat(PaidResourceQueries(conditional.Else)),
         AbilityNumber.Sum sum => sum.Operands.SelectMany(PaidResourceQueries),
         AbilityNumber.Product product => product.Operands.SelectMany(PaidResourceQueries),
+        AbilityNumber.FloorDivide division => division.Operands.SelectMany(PaidResourceQueries),
         AbilityNumber.Minimum minimum => minimum.Operands.SelectMany(PaidResourceQueries),
         _ => [],
     };
@@ -136,6 +137,7 @@ internal static class AbilityEffectStructure
             AbilityNumber.Conditional conditional => [conditional.Then, conditional.Else],
             AbilityNumber.Sum sum => sum.Operands,
             AbilityNumber.Product product => product.Operands,
+            AbilityNumber.FloorDivide division => division.Operands,
             AbilityNumber.Minimum minimum => minimum.Operands,
             _ => [],
         };

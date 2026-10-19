@@ -13,7 +13,7 @@ internal sealed class CardQueryEvaluator(
     [
         AbilityCardQuery.AttachedToThis, AbilityCardQuery.BeneathThis, AbilityCardQuery.SideSchemes,
         AbilityCardQuery.Schemes, AbilityCardQuery.PowerTargets,
-        AbilityCardQuery.YourAsidePile,
+        AbilityCardQuery.YourAsidePile, AbilityCardQuery.OtherEnvironments,
         AbilityCardQuery.Villain, AbilityCardQuery.MainScheme,
         AbilityCardQuery.YourAsideMinion, AbilityCardQuery.YourAsideSideScheme,
     ];
@@ -26,7 +26,7 @@ internal sealed class CardQueryEvaluator(
     ];
     private static readonly ImmutableArray<AbilityCardQuery> ControlledQueries =
     [
-        AbilityCardQuery.UpgradesAndSupportsYouControl,
+        AbilityCardQuery.UpgradesAndSupportsYouControl, AbilityCardQuery.CardsYouControl,
         AbilityCardQuery.IdentitySpecificInYourHand,
         AbilityCardQuery.SupportsYouControl,
         AbilityCardQuery.CharactersYouControl,
@@ -56,6 +56,9 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.AttachedToThis =>
             [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId && !BeneathCards.IsStored(area.Type))
                 .SelectMany(area => area.Cards)],
+        AbilityCardQuery.OtherEnvironments => [.. cast.World.Cards.Where(card =>
+            DeckTypes.IsInPlay(card.Area.Type) && card.ObjectId != cast.Occurrence.Subject
+            && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Environment)],
         AbilityCardQuery.BeneathThis => BeneathCards.Of(cast.World, cast.Source),
         // rr:player-side-scheme.1 puts both kinds of side scheme together.
         AbilityCardQuery.SideSchemes =>
@@ -119,6 +122,8 @@ internal sealed class CardQueryEvaluator(
     private IReadOnlyList<Card> EvaluateControlled(AbilityCardQuery query) => query switch
     {
         // rr:play-area.1: cards in a player's play area are under their control.
+        AbilityCardQuery.CardsYouControl => [.. cast.World.Cards.Where(card =>
+            DeckTypes.IsInPlay(card.Area.Type) && CardControl.ControllerOf(cast.World, card) == cast.Player)],
         AbilityCardQuery.UpgradesAndSupportsYouControl =>
             [.. ControlledAreas(DeckType.UpgradesArea, DeckType.SupportsArea)],
         // rr:identity-specific-card.3: the identity icon is extracted as Hero class.

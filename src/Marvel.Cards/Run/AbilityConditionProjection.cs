@@ -73,6 +73,7 @@ internal static class AbilityConditionProjection
             AbilityNumber.Modified modified => ValueReadsVillain(modified.Card, cast),
             AbilityNumber.Count count => ValueReadsVillain(count.Cards, cast),
             AbilityNumber.Sum sum => sum.Operands.Any(value => ValueReadsVillain(value, cast)),
+            AbilityNumber.FloorDivide division => division.Operands.Any(value => ValueReadsVillain(value, cast)),
             AbilityNumber.Minimum minimum => minimum.Operands.Any(value => ValueReadsVillain(value, cast)),
             AbilityNumber.Product product => product.Operands.Any(value => ValueReadsVillain(value, cast)),
             AbilityNumber.Conditional conditional => ValueReadsVillain(conditional.Test, cast)

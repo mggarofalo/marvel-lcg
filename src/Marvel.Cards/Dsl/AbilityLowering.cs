@@ -62,6 +62,7 @@ public static class AbilityLowering
             "result" => new AbilityNumber.Result(ResultName(argument, child)),
             "add" => new AbilityNumber.Sum(Operands(argument, child, nonempty: false)),
             "mul" => new AbilityNumber.Product(Operands(argument, child, nonempty: false)),
+            "floorDiv" => AbilityFloorDivision.Lower(argument, child),
             "min" => new AbilityNumber.Minimum(Operands(argument, child, nonempty: true)),
             "tokensOn" => CardNumber(argument, child, AbilityCardNumberProperty.Threat),
             "damageOn" => CardNumber(argument, child, AbilityCardNumberProperty.Damage),
