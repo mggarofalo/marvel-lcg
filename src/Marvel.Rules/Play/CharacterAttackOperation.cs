@@ -6,6 +6,8 @@ namespace Marvel.Rules.Play;
 /// <summary>State owned by the CharacterAttack procedure.</summary>
 public sealed record CharacterAttackOperation(CharacterAttack Attack) : AgendaOperation
 {
+    internal AttackDamageReflection? Reflection { get; set; }
+
     /// <inheritdoc/>
     public override string What => Steps.CharacterAttacks;
     /// <inheritdoc/>

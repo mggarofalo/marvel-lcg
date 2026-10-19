@@ -688,3 +688,5 @@ This schedules only that player's resumable frame, without an ordering choice;
 `you`, searches, and choices within the body use that player. Missing defeat
 credit raises instead of selecting a default seat. An eliminated recipient is
 not scheduled. Omitting `player` retains the all-player frame behavior.
+
+`reflectAttackDamage: "attack"` installs a replacement on the active player attack for this attachment's host. Every damage instance against that target during the attack is prevented and dealt to the attacking player's identity instead. The replacement survives the attachment leaving play and ends with the owning attack.

@@ -141,6 +141,7 @@ internal static class AbilityOperationNames
             AbilityFixedInstruction.CancelWhenRevealed => "cancelWhenRevealed",
             AbilityFixedInstruction.AlsoAttackEachOtherHero => "alsoAttackEachOtherHero",
             AbilityFixedInstruction.MakeAttackIndirect => "makeAttackIndirect",
+            AbilityFixedInstruction.ReflectAttackDamage => "reflectAttackDamage",
             AbilityFixedInstruction.PreventAttackDamage => "preventAttackDamage",
             AbilityFixedInstruction.RevealTop => "revealTop",
             AbilityFixedInstruction.PlaceAccelerationToken => "placeAccelerationToken",

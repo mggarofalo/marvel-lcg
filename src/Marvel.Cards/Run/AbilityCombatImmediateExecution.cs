@@ -16,6 +16,9 @@ internal static class AbilityCombatImmediateExecution
             case AbilityFixedInstruction.AlsoAttackEachOtherHero:
                 Attack.AlsoResolveAgainstEachOtherHero(world);
                 return new(true, false);
+            case AbilityFixedInstruction.ReflectAttackDamage:
+                PlayerAttackReflection.Install(world, context.Admission.Source, context.Trigger);
+                return new(true, true);
             case AbilityFixedInstruction.MakeAttackIndirect:
                 Attack.MakeIndirect(world);
                 return new(true, false);

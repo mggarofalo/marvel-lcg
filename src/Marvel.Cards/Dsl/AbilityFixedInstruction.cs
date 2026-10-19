@@ -20,6 +20,8 @@ public enum AbilityFixedInstruction
     MakeAttackIndirect,
     /// <summary>Prevent all damage from the current enemy attack.</summary>
     PreventAttackDamage,
+    /// <summary>Reflect damage to this attachment host during the active player attack.</summary>
+    ReflectAttackDamage,
     /// <summary>Reveal the top encounter card.</summary>
     RevealTop,
     /// <summary>Place one acceleration token.</summary>

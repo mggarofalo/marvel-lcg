@@ -111,6 +111,7 @@ internal static class AbilityResolutionAdmission
         {
             "preventThreat" => cast.Occurrence.Threat is { Remaining: > 0 }
                 && Amount(EffectOf<AbilityEffect.PreventThreat>(node, cast).Amount, cast) > 0,
+            "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source),
             "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false },
             "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
             "grantCharactersControlledBy" or "reduceNextCardCost" => true,

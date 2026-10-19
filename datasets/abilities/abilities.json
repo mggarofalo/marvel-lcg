@@ -8980,6 +8980,34 @@
           }
         }
       ]
+    },
+    {
+      "card": "04104",
+      "name": "Photographic Reflexes",
+      "attachTo": {
+        "titled": "Taskmaster"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedInterrupt",
+            "event": "WhenAttackInitiated",
+            "target": "attachedTo",
+            "player": "trigger.player"
+          },
+          "maxPerAttack": 1,
+          "effect": {
+            "seq": [
+              {
+                "reflectAttackDamage": "attack"
+              },
+              {
+                "discard": "this"
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

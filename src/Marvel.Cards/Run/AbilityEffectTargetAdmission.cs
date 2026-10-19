@@ -138,6 +138,8 @@ internal static class AbilityEffectTargetAdmission
         {
             "enemyAttacks" or "enemySchemes" =>
                 CardsLegality(Every(ActivationOf(node, cast).Enemies, cast)),
+            "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source)
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false }
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "attachCards" => AbilityAttachmentExecution.Target((AbilityEffect.AttachCards)node, cast),

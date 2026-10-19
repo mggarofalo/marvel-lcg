@@ -74,6 +74,7 @@ internal static class AbilityEffectLowering
             "cancelWhenRevealed" => FixedEffect(argument, child, "trigger.subject", AbilityFixedInstruction.CancelWhenRevealed),
             "alsoAttackEachOtherHero" => FixedEffect(argument, child, "this", AbilityFixedInstruction.AlsoAttackEachOtherHero),
             "makeAttackIndirect" => FixedEffect(argument, child, 1, AbilityFixedInstruction.MakeAttackIndirect),
+            "reflectAttackDamage" => FixedEffect(argument, child, "attack", AbilityFixedInstruction.ReflectAttackDamage),
             "preventAttackDamage" => FixedEffect(argument, child, "attack", AbilityFixedInstruction.PreventAttackDamage),
             "revealTop" => FixedEffect(argument, child, 1, AbilityFixedInstruction.RevealTop),
             "placeAccelerationToken" => FixedEffect(argument, child, 1, AbilityFixedInstruction.PlaceAccelerationToken),
