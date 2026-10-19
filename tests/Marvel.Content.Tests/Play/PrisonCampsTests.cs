@@ -126,23 +126,6 @@ public sealed class PrisonCampsTests : CoreCardTestBase
         Assert.Equal(DeckType.EncounterDiscardPile, scheme.Area.Type);
     }
 
-    internal static AbilityRunner Runner()
-    {
-        var prison = AbilityCatalog.Parse("""
-        {"cards":[{"card":"04141","abilities":[{
-          "trigger":{"timing":"WhenDefeated","event":"WhenCardDefeated","subject":"this"},
-          "effect":{"eachPlayer":{"player":"defeater","effect":{"seq":[
-            {"chooseCard":{"from":{"cardsIn":{"areas":["yourDeck","yourDiscardPile"],"kind":"Ally"}},
-              "effect":{"putIntoPlay":{"card":"chosen","where":"yourPlayArea"}}}},
-            {"shuffle":"yourDeck"}
-          ]}}}
-        }]}]}
-        """);
-        return new(AuthoredCards.Book with
-        {
-            Abilities = [.. AuthoredCards.Book.Abilities.Where(ability => ability.Card != "04141"),
-                .. prison.Abilities],
-            Authored = AuthoredCards.Book.Authored.Concat(prison.Authored).ToHashSet(StringComparer.Ordinal),
-        });
-    }
+    internal static AbilityRunner Runner() => AuthoredCards.Runner();
 }
+

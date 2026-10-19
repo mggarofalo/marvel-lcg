@@ -1,3 +1,4 @@
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
@@ -131,7 +132,7 @@ public sealed class InconspicuousTests
     {
         Card? card = null;
         Card? side = null;
-        var runner = new AbilityRunner(AbilityCatalog.Parse(Json));
+        var runner = AuthoredCards.Runner();
         var (game, world) = Playing(board =>
         {
             card = board.CreateCard("04038", board.Seats[0].Hand);
@@ -143,10 +144,5 @@ public sealed class InconspicuousTests
         return (game, world, card!, world.AreaOf(DeckType.MainSchemesArea).Cards[0], side!);
     }
 
-    private const string Json = """
-        {"cards":[{"card":"04038","name":"Inconspicuous","abilities":[{
-          "trigger":{"timing":"Action","event":"WhenActionTriggered","subject":"this","form":"hero"},
-          "effect":{"distributeThreat":{"schemes":{"query":"schemes"},"amount":3}}
-        }]}]}
-        """;
 }
+

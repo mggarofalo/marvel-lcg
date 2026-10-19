@@ -9355,6 +9355,74 @@
           }
         }
       ]
+    },
+    {
+      "card": "04141",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenDefeated",
+            "event": "WhenCardDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "player": "defeater",
+              "effect": {
+                "seq": [
+                  {
+                    "chooseCard": {
+                      "from": {
+                        "cardsIn": {
+                          "areas": [
+                            "yourDeck",
+                            "yourDiscardPile"
+                          ],
+                          "kind": "Ally"
+                        }
+                      },
+                      "effect": {
+                        "putIntoPlay": {
+                          "card": "chosen",
+                          "where": "yourPlayArea"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "shuffle": "yourDeck"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "name": "Prison Camps",
+      "note": "When Defeated: The player who defeated this scheme searches their deck and discard pile for an ally, puts it into play, and shuffles their deck."
+    },
+    {
+      "card": "04038",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "distributeThreat": {
+              "schemes": {
+                "query": "schemes"
+              },
+              "amount": 3
+            }
+          }
+        }
+      ],
+      "name": "Inconspicuous",
+      "note": "Hero Action (thwart): Remove a total of 3 threat from among schemes in play."
     }
   ]
 }
