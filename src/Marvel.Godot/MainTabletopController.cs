@@ -12,6 +12,7 @@ internal sealed class MainTabletopController
     private int? renderedExpandedSeat;
     private bool? renderedHistoryExpanded;
     private Vector2? renderedViewport;
+    private float renderedTableHeight;
     private bool renderedPayment;
     private bool reuseFaces;
 
@@ -38,6 +39,7 @@ internal sealed class MainTabletopController
         renderedDesktopTabletop = desktop;
         renderedHistoryExpanded = desktop && HasReviewSpace();
         renderedViewport = viewport;
+        renderedTableHeight = desktop ? TableCanvasBounds.Height(main) : 0;
         renderedPayment = CardPaymentWorkspaceLayout.Active(main);
         if (!desktop) reuseFaces = false;
         return desktop ? RenderDesktop(prompt) : null;
@@ -60,7 +62,8 @@ internal sealed class MainTabletopController
     {
         bool desktop = DesktopTabletop.Uses(viewport);
         bool geometryChanged = renderedViewport is not { } previous
-            || !previous.IsEqualApprox(viewport);
+            || !previous.IsEqualApprox(viewport)
+            || desktop && !Mathf.IsEqualApprox(renderedTableHeight, TableCanvasBounds.Height(main));
         bool historyChanged = desktop
             && renderedHistoryExpanded != HasReviewSpace();
         // Sending closes the draft workspace. Preserve its authored card slots

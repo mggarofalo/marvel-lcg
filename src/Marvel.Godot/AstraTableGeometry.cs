@@ -69,7 +69,7 @@ internal sealed record AstraTableGeometry(
         return region.Position + new Vector2(index * step, 0);
     }
 
-    private float HandTop => Height - 58 - Math.Clamp(MathF.Floor(Height / ReferenceHeight * 10) / 10, 0.8f, 1) * 218 - 14;
+    private float HandTop => Height - 58 - (int)SpatialCardMetrics.TableScale(InterfaceScale.Percent100, Height) / 100f * 218 - 14;
     private Rect2 Scale(Rect2 value) => new(ScaleX(value.Position.X), ScaleY(value.Position.Y), ScaleX(value.Size.X), ScaleY(value.Size.Y));
     private float ScaleX(float value) => value * Width / ReferenceWidth;
     private float ScaleY(float value) => value * Height / ReferenceHeight;

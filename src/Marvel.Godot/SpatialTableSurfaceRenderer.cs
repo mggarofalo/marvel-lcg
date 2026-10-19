@@ -47,7 +47,7 @@ internal static class SpatialTableSurfaceRenderer
                 expanded ? TableHistoryDrawer.ExpandedWidth(main) : 0) + 40
             : expanded ? TableHistoryDrawer.ExpandedWidth(main) + 40 : 56;
         float width = Math.Max(expanded ? 920 : 1060, viewport.X - reserved);
-        float height = Math.Min(AstraTableGeometry.ReferenceHeight, Math.Max(820, viewport.Y - 118));
+        float height = TableCanvasBounds.Height(main);
         return ActivityGeometry(new(width, height), main.interfaceScale, main.boardPresentation!,
             selection.ExpandedSeat, Context(main, prompt));
     }
@@ -82,9 +82,9 @@ internal static class SpatialTableSurfaceRenderer
             ? new Vector2(Math.Max(installed.X, revealing.X), Math.Max(installed.Y, revealing.Y)) : installed;
     }
 
-    private static Control CreateSurface(Main main, AstraTableGeometry geometry)
+    private static TableCanvasSurface CreateSurface(Main main, AstraTableGeometry geometry)
     {
-        var surface = new Control
+        var surface = new TableCanvasSurface
         {
             Name = "AstraTableSurface",
             Size = new Vector2(geometry.Width, geometry.Height),
@@ -95,6 +95,7 @@ internal static class SpatialTableSurfaceRenderer
             MouseFilter = Control.MouseFilterEnum.Pass,
         };
         main.boardAreas.AddChild(surface);
+        TableCanvasBounds.Observe(main, surface);
         TableMaterialLighting.Add(surface);
         return surface;
     }
@@ -239,8 +240,8 @@ internal static class SpatialTableSurfaceRenderer
         Control seats = MulliganSeatStripRenderer.CreateCompact(board, selection, switchSeat);
         seats.Name = "SpatialSeatSummaries";
         seats.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        var viewport = new ScrollContainer { Name = "SeatSummaryViewport", Position = geometry.SeatStrip.Position,
-            Size = geometry.SeatStrip.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+        var viewport = new ScrollContainer { Name = "SeatSummaryViewport", Position = geometry.SeatStrip.Position.Round(),
+            Size = geometry.SeatStrip.Size.Floor(), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto, FollowFocus = true, ZIndex = 24 };
         viewport.AddChild(seats);
         surface.AddChild(viewport);
