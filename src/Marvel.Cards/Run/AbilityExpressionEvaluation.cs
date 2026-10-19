@@ -36,16 +36,22 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityNumber.PrintedResourcesDiscarded resource => Resources.PrintedCount(context.Discarded, resource.Resource, context.World.Facts),
         AbilityNumber.DiscardedWithResource resource => context.Discarded.Count(card =>
             Resources.GeneratedBy(card.FaceId, context.World.Facts).Contains(resource.Resource)),
-        AbilityNumber.ResolutionValue value => value.Kind switch
-        {
-            AbilityResolutionNumber.PowerAmount => context.PowerAmount,
-            AbilityResolutionNumber.PrintedBoostIconsDiscarded => context.Discarded.Sum(card =>
-                context.World.Facts.PrintedValue(card.FaceId, "Boost", context.World.Players)),
-            AbilityResolutionNumber.TopEncounterDiscardBoostPlusOne => 1 + (context.Discarded.LastOrDefault() is { } card
-                ? context.World.Facts.PrintedValue(card.FaceId, "Boost", context.World.Players) : 0),
-            _ => throw new InvalidOperationException("Unknown compiled resolution number"),
-        },
+        AbilityNumber.ResolutionValue value => ResolutionAmount(value.Kind),
         _ => throw new InvalidOperationException("Unknown compiled numeric expression"),
+    };
+
+    private long ResolutionAmount(AbilityResolutionNumber kind) => kind switch
+    {
+        AbilityResolutionNumber.PowerAmount => context.PowerAmount,
+        AbilityResolutionNumber.PrintedBoostIconsDiscarded => context.Discarded.Sum(card =>
+            context.World.Facts.PrintedValue(card.FaceId, "Boost", context.World.Players)),
+        AbilityResolutionNumber.PrintedResourceIconsDiscarded => context.Discarded.Sum(card =>
+            (long)Resources.GeneratedBy(card.FaceId, context.World.Facts).Length),
+        AbilityResolutionNumber.DistinctPrintedResourceTypesDiscarded => context.Discarded.SelectMany(card =>
+            Resources.GeneratedBy(card.FaceId, context.World.Facts)).Distinct().LongCount(),
+        AbilityResolutionNumber.TopEncounterDiscardBoostPlusOne => 1 + (context.Discarded.LastOrDefault() is { } card
+            ? context.World.Facts.PrintedValue(card.FaceId, "Boost", context.World.Players) : 0),
+        _ => throw new InvalidOperationException("Unknown compiled resolution number"),
     };
 
     private long CardNumber(AbilityNumber.CardValue value)

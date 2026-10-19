@@ -75,6 +75,8 @@ public static class AbilityLowering
             "discardedWithResource" => new AbilityNumber.DiscardedWithResource(Resource(argument, child)),
             "powerAmount" => FixedNumber(argument, child, "cardsDiscarded", AbilityResolutionNumber.PowerAmount),
             "printedBoostIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedBoostIconsDiscarded),
+            "printedResourceIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedResourceIconsDiscarded),
+            "distinctPrintedResourceTypesDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.DistinctPrintedResourceTypesDiscarded),
             "topEncounterDiscardBoostPlusOne" => FixedNumber(argument, child, "game", AbilityResolutionNumber.TopEncounterDiscardBoostPlusOne),
             _ => throw child.Error($"'{kind}' is not a numeric operation"),
         };

@@ -564,3 +564,5 @@ can pay an aspect card's printed cost or a cost within its ability
 (`ruling:6800619dc41a043c`); ability-cost context does not activate card-play-only
 resource multipliers. The restriction is valid only on a Resource ability and
 unknown values fail admission. Printed wild icons use `G` as elsewhere in this DSL.
+
+Discard receipts expose `printedResourceIconsDiscarded` and `distinctPrintedResourceTypesDiscarded` numeric expressions (value `"game"`). They count printed resource icons, including wild as its own type, without payment multipliers. `printedBoostIconsDiscarded` counts numeric boost icons and excludes boost stars. Empty receipts yield zero.

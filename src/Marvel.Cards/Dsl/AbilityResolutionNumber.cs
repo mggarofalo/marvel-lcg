@@ -9,6 +9,10 @@ public enum AbilityResolutionNumber
     PowerAmount,
     /// <summary>Printed boost icons on all cards discarded this way.</summary>
     PrintedBoostIconsDiscarded,
+    /// <summary>All printed resource icons on cards discarded this way, without generator multipliers.</summary>
+    PrintedResourceIconsDiscarded,
+    /// <summary>Distinct printed resource types on cards discarded this way; wild is its own printed type.</summary>
+    DistinctPrintedResourceTypesDiscarded,
     /// <summary>One plus printed boost icons on the last card discarded this way.</summary>
     TopEncounterDiscardBoostPlusOne,
 }
