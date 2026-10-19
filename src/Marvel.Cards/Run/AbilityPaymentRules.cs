@@ -29,6 +29,8 @@ internal static class AbilityPaymentRules
         {
             null => true,
             AbilityCost.ReturnSourceToHand => AbilityPhysicalPayment.CanReturnToHand(world, card),
+            AbilityCost.DiscardTop discard => AbilityDeckCosts.CanDiscard(world, player, discard),
+            AbilityCost.DealEncounterToYou => player >= 0 && AbilityDeckCosts.EncounterAvailable(world) > 0,
             AbilityCost.Sequence sequence => SequencePayable(
                 world, card, player, sequence, program, resourceAbilities),
             AbilityCost.ExhaustTitled named => NamedAbilityCost.Target(world, player, named.Title)?.Ready == true,
@@ -104,6 +106,7 @@ internal static class AbilityPaymentRules
     /// </remarks>
     internal static bool MandatoryCostIsAutomatic(AbilityCost cost) => cost switch
     {
+        AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou => true,
         AbilityCost.Sequence sequence => sequence.Costs.All(MandatoryCostIsAutomatic),
         AbilityCost.ReturnSourceToHand or AbilityCost.ConsumeCampaignCard or AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.ExhaustTitled or AbilityCost.RemoveCounters => true,
         _ => false,
@@ -114,7 +117,8 @@ internal static class AbilityPaymentRules
         AbilityProgram program, IResourceCardAbilities resourceAbilities)
     {
         var steps = cost.Costs;
-        if (!CounterCostsPayable(world, card, player, cost))
+        if (!CounterCostsPayable(world, card, player, cost)
+            || !AbilityDeckCosts.CanPayTogether(world, player, cost.Costs))
         {
             return false;
         }

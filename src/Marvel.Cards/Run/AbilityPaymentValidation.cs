@@ -23,6 +23,8 @@ internal sealed class AbilityPaymentValidation(
         }
 
         IReadOnlyList<AbilityCost> steps = cost is AbilityCost.Sequence sequence ? sequence.Costs : [cost];
+        if (!AbilityDeckCosts.CanPayTogether(world, player, steps))
+            throw new RulesNotImplementedException("the combined deck costs cannot be paid in full");
         if (EffectiveCards.Kind(source, world.Facts) == CardKind.Event
             && steps.Any(step => step is AbilityCost.Damage { MustTakeAll: true }))
         {

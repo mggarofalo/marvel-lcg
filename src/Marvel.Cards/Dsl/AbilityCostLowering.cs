@@ -28,6 +28,8 @@ internal static class AbilityCostLowering
             "exhaustTitled" => ExhaustTitledCost(argument, child),
             "discard" => DiscardCost(argument, child),
             "returnToHand" => ReturnCost(argument, child),
+            "discardTop" => DeckDiscardCost(argument, child),
+            "dealEncounterCard" => EncounterCardCost(argument, child),
             "consumeCampaignCard" => new AbilityCost.ConsumeCampaignCard(CostCard(argument, child)),
             "removeCounters" => RemoveCounterCost(argument, child),
             "spend" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: false),
@@ -55,6 +57,21 @@ internal static class AbilityCostLowering
     private static AbilityCost.ReturnSourceToHand ReturnCost(AbilityValue value, AbilityLocation location)
     {
         FixedWord(value, location, "this");
+        return new();
+    }
+
+    private static AbilityCost.DiscardTop DeckDiscardCost(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "from", "count");
+        var area = SearchArea(Required(fields, "from", location), location.Child("from"));
+        if (area is not (AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck))
+            throw location.Error("a deck discard cost requires yourDeck or encounterDeck");
+        return new(area, PositiveCount(Required(fields, "count", location), location.Child("count")));
+    }
+
+    private static AbilityCost.DealEncounterToYou EncounterCardCost(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "you");
         return new();
     }
 

@@ -588,3 +588,4 @@ and preserves all ties for the printed chooser. `cardsIn` accepts `yourHand` and
 an optional `cardClass` printed classification filter, such as `Hero` for a
 hero-specific card. These spellings are authored DSL choices; the printed card
 and Rules Reference determine which criteria an ability must use.
+Deck arrow costs use `discardTop: { from: "yourDeck" | "encounterDeck", count: N }` or `dealEncounterCard: "you"`. The complete cost is admitted before payment, movement uses ordinary deck-reset rules, and physical discard receipts are available to the post-arrow numeric expressions. Resource-payment discards are excluded from those receipts.

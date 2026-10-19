@@ -23,6 +23,7 @@ internal static class AbilityPaymentInstructions
     internal sealed record Exhaust(BoundCard Target) : Step;
     internal sealed record DiscardBound(BoundCard Target) : Step;
     internal sealed record ReturnBound(BoundCard Target) : Step;
+    internal sealed record DeckCost(Marvel.Cards.Dsl.AbilityCost Cost) : Step;
     internal sealed record ConsumeCampaignBound(BoundCard Target) : Step;
     internal sealed record RemoveCounters(BoundCard Target, string Counter, long Count) : Step;
     internal sealed record Heal(BoundCard Target, long Amount) : Step;

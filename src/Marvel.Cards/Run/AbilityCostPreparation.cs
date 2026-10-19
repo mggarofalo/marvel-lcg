@@ -112,6 +112,9 @@ internal sealed class AbilityCostPreparation
     {
         switch (component)
         {
+            case AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou:
+                ordered.Add(new DeckCost(component));
+                break;
             case AbilityCost.DiscardFromHand:
                 ordered.Add(new DiscardHand(world.Seats[player].Hand,
                     [.. selected.Select(id => new BoundCard(world.Cards[id], world.Cards[id].Incarnation))]));

@@ -92,6 +92,9 @@ internal sealed class AbilityCostPayment
     {
         switch (step)
         {
+            case DeckCost deck:
+                outcome.Discarded.AddRange(AbilityDeckCosts.Pay(world, player, deck.Cost, trigger, events));
+                return true;
             case Spend spend:
                 resourcePayment = AbilityResourcePayment.Spend(world, resourceAbilities,
                     new(source, player, paying, spend.Required.Length + spend.Generic, spend.Required), events);

@@ -17,6 +17,10 @@ public abstract record AbilityCost
     public sealed record Discard(AbilityCostCard Card) : AbilityCost;
     /// <summary>Return the source from play to its owner's hand.</summary>
     public sealed record ReturnSourceToHand : AbilityCost;
+    /// <summary>Discard an exact number from the top of the specified deck.</summary>
+    public sealed record DiscardTop(AbilitySearchArea From, int Count) : AbilityCost;
+    /// <summary>Deal one facedown encounter card to the resolving player.</summary>
+    public sealed record DealEncounterToYou : AbilityCost;
     /// <summary>Discard a campaign TECH reward and permanently remove its saved instance.</summary>
     public sealed record ConsumeCampaignCard(AbilityCostCard Card) : AbilityCost;
     /// <summary>Remove a positive number of named counters.</summary>
