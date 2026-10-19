@@ -53,6 +53,7 @@ internal static class AbilityThreatExecution
     internal static AbilityStructuralOutcome ExecuteRemoveThreat(AbilityEffect.RemoveThreat removal,
         AbilityDamageAndThreatContext context, long multiplier = 1)
     {
+        if (removal.Assigned) return AbilityThreatDistribution.Remove(context);
         var schemes = Every(removal.Schemes, context);
         if (schemes.Count == 0) throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' would remove threat from a scheme that is not there");

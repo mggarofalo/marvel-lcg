@@ -73,7 +73,11 @@ public abstract record AbilityEffect
     public sealed record PlaceThreat(AbilityCardSelection Schemes, AbilityNumber Amount) : AbilityEffect;
     /// <summary>Remove threat, with only the explicitly authored exceptions.</summary>
     public sealed record RemoveThreat(AbilityCardSelection Schemes, AbilityNumber Amount, bool IgnoresCrisis,
-        AbilityCardSelection? OverridesCannotFrom) : AbilityEffect;
+        AbilityCardSelection? OverridesCannotFrom) : AbilityEffect
+    {
+        /// <summary>Remove the quantity assigned to each power target.</summary>
+        public bool Assigned { get; init; }
+    }
     /// <summary>Prevent an amount of the imminent threat.</summary>
     public sealed record PreventThreat(AbilityNumber Amount) : AbilityEffect;
     /// <summary>Prevent damage to the interrupted occurrence's recipient.</summary>
@@ -165,7 +169,11 @@ public abstract record AbilityEffect
     /// <summary>A labeled attack, defense, or thwart containing an effect.</summary>
     public sealed record Power(AbilityPowerKind Kind, AbilityCardSelection? Target, AbilityEffect Effect, bool AutomaticTarget) : AbilityEffect;
     /// <summary>A rule-specific way to select schemes and run a thwart power.</summary>
-    public sealed record ThwartGroup(AbilityThwartSelection Selection, AbilityCardSelection Schemes, Power Thwart) : AbilityEffect;
+    public sealed record ThwartGroup(AbilityThwartSelection Selection, AbilityCardSelection Schemes, Power Thwart) : AbilityEffect
+    {
+        /// <summary>The total threat allocated by a distributed thwart.</summary>
+        public int DistributionTotal { get; init; }
+    }
     /// <summary>Schedule attacks or schemes by the selected enemies.</summary>
     public sealed record ActivateEnemies(bool Attack, AbilityCardSelection Enemies, AbilityCardSelection? Against,
         bool EngagedHero, bool First, bool Dynamic) : AbilityEffect

@@ -707,3 +707,4 @@ A `chosen` ally retains its new entry provenance for a later instruction; if it
 leaves during entry responses, that instruction cannot affect a returned copy.
 
 `WhenPlayerTurnEnds` is the active player's end-of-turn occurrence, before advancing to the next player. Its player binding identifies that player. `inPlayerArea` accepts `identity` for the identity occupying the selected player's play area; encounter constants can select `engagedPlayer` without assuming player ownership.
+`distributeThreat` takes `schemes` and a positive integer `amount`. It allocates a total threat removal through the engine repeated-target contract, caps each scheme at its removable threat, applies event modifiers to the total once, and schedules one thwart with one removal instance per assigned scheme. Its ordered assignments remain in the existing power continuation for deterministic replay.

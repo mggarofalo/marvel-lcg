@@ -158,6 +158,19 @@ internal static class AbilityProcedureLowering
             LowerEffect(Required(fields, "effect", location), location.Child("effect")), automatic);
     }
 
+    internal static AbilityEffect.ThwartGroup DistributedThwart(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "schemes", "amount");
+        int total = checked((int)PositiveInteger(Required(fields, "amount", location), location.Child("amount")));
+        var targets = new AbilityCardSelection.Query(AbilityCardQuery.PowerTargets);
+        var removal = new AbilityEffect.RemoveThreat(targets, new AbilityNumber.Constant(1), false, null)
+            { Assigned = true };
+        var power = new AbilityEffect.Power(AbilityPowerKind.Thwart,
+            new AbilityCardSelection.Bound(AbilityCardBinding.Chosen), removal, false);
+        return new(AbilityThwartSelection.Distributed, Selected(fields, "schemes", location), power)
+            { DistributionTotal = total };
+    }
+
     internal static AbilityEffect.ThwartGroup GroupThwartEffect(AbilityValue value, AbilityLocation location, AbilityThwartSelection selection)
     {
         var fields = Fields(value, location, "schemes", "power");

@@ -108,6 +108,7 @@ internal static class AbilityOperationNames
         AbilityEffect.ThwartGroup group => group.Selection switch
         {
             AbilityThwartSelection.All => "thwartSchemes",
+            AbilityThwartSelection.Distributed => "distributeThreat",
             AbilityThwartSelection.Different => "thwartDifferentSchemes",
             AbilityThwartSelection.LegalPractice => "legalPractice",
             _ => throw new InvalidOperationException("Unknown thwart selection"),

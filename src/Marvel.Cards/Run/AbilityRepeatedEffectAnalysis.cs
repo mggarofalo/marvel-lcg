@@ -31,7 +31,7 @@ internal static class AbilityRepeatedEffectAnalysis
     ];
     private static readonly ImmutableArray<string> BindingOperations =
     [
-        "chooseCard", "thwartSchemes", "thwartDifferentSchemes", "legalPractice",
+        "chooseCard", "thwartSchemes", "distributeThreat", "thwartDifferentSchemes", "legalPractice",
     ];
 
     internal static bool RepeatedEffectCanChange(

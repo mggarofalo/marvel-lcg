@@ -20,7 +20,7 @@ internal static class AbilityAdmissionResolutionPreflight
 {
     private static readonly ImmutableArray<string> BindingChangingGuardOperations =
     [
-        "chooseCard", "thwartSchemes", "thwartDifferentSchemes", "legalPractice",
+        "chooseCard", "thwartSchemes", "distributeThreat", "thwartDifferentSchemes", "legalPractice",
     ];
 
     private static readonly ImmutableArray<string> StateChangingGuardOperations =

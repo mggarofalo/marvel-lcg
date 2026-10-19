@@ -138,7 +138,7 @@ internal static class AbilityAdmissionMutation
         ulong state = before;
         bool childBindingMayChange = bindingMayChange
             || node.OperationName() is "chooseCard" or "thwartSchemes"
-                or "thwartDifferentSchemes" or "legalPractice";
+                or "distributeThreat" or "thwartDifferentSchemes" or "legalPractice";
         foreach (var child in MutationChildren(node))
         {
             cast = cast.ForReachability(cast.Reachability with { PriorFormsMayChange = state });
@@ -245,7 +245,7 @@ internal static class AbilityAdmissionMutation
         AbilityEffect node, AbilityAdmissionScope cast, bool before)
     {
         if (node.OperationName() is "chooseCard" or "thwartSchemes"
-            or "thwartDifferentSchemes" or "legalPractice")
+            or "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")
         {
             return true;
         }

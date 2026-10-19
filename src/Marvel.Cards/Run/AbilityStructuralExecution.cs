@@ -23,7 +23,7 @@ internal static class AbilityStructuralExecution
             or "forEach" or "eachTime" or "choose" or "chooseCard"
             or "resolveSpecials" or "payOrExhaust" or "payOrEffect"
             or "chooseTopForHand" or "discardResourceIcons" or "chooseDiscardToShuffle"
-            or "thwartDifferentSchemes" or "makeTheCall" or "legalPractice"
+            or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall" or "legalPractice"
             or "attack" or "defense" or "thwart" or "thwartSchemes"
             or "placeThreat" or "enemyAttacks" or "enemySchemes");
 
@@ -51,7 +51,7 @@ internal static class AbilityStructuralExecution
             AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.HasCards(context)
                 ? AskFor(context, discard) : new Complete(context.Frames),
             AbilityEffect.ChooseDiscardToShuffle discard => AskFor(context, discard),
-            AbilityEffect.ThwartGroup group when group.OperationName() == "thwartDifferentSchemes" =>
+            AbilityEffect.ThwartGroup group when group.Selection is AbilityThwartSelection.Different or AbilityThwartSelection.Distributed =>
                 AskFor(context, group),
             AbilityEffect.AfterActivation after => AfterActivation(context, after),
             AbilityEffect.ActivateEnemies activation => Activation(context, activation),
@@ -202,6 +202,7 @@ internal static class AbilityStructuralExecution
 
     internal static Prompt DescribeThwartChoice(AbilityStructuralContext context, AbilityEffect.ThwartGroup group)
     {
+        if (group.Selection == AbilityThwartSelection.Distributed) return AbilityThreatDistribution.Describe(context, group);
         var schemes = Every(group.Schemes, context);
         bool aerial = Traits.Has(context.Expressions.World, context.Expressions.World.Seats[context.Player].IdentityCard,
             "AERIAL", context.Expressions.World.Facts);
@@ -226,6 +227,7 @@ internal static class AbilityStructuralExecution
     internal static AbilityStructuralTransition AnswerThwartChoice(
         AbilityStructuralContext context, AbilityEffect.ThwartGroup group, Decision answer)
     {
+        if (group.Selection == AbilityThwartSelection.Distributed) return AbilityThreatDistribution.Answer(context, group, answer);
         var schemes = Every(group.Schemes, context);
         if (group.Selection == AbilityThwartSelection.LegalPractice)
             return AnswerLegalPractice(context, schemes, answer);

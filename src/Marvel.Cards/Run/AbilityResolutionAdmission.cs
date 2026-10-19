@@ -154,7 +154,7 @@ internal static class AbilityResolutionAdmission
     {
         if (node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
             or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand"
-            or "discardResourceIcons" or "chooseDiscardToShuffle" or "thwartDifferentSchemes" or "makeTheCall"
+            or "discardResourceIcons" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
             or "legalPractice" or "payOrEffect")
         {
             throw new RulesNotImplementedException(

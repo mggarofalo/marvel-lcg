@@ -217,7 +217,7 @@ internal static class AbilityRepeatedStatusTrace
             ],
             "afterActivation" => [EffectBody(node)],
             "payOrEffect" or "payOrExhaust" => [EffectFollowing(node)],
-            "thwartSchemes" or "thwartDifferentSchemes" or "legalPractice" =>
+            "thwartSchemes" or "distributeThreat" or "thwartDifferentSchemes" or "legalPractice" =>
                 [((AbilityEffect.ThwartGroup)node).Thwart],
             _ => ResolutionChildren(node),
         };

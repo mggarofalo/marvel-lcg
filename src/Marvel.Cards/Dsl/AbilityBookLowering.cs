@@ -164,6 +164,7 @@ internal static class AbilityBookLowering
                 string groupKind = group.Selection switch
                 {
                     AbilityThwartSelection.All => "thwartSchemes",
+                    AbilityThwartSelection.Distributed => "distributeThreat",
                     AbilityThwartSelection.Different => "thwartDifferentSchemes",
                     AbilityThwartSelection.LegalPractice => "legalPractice",
                     _ => throw new AbilityException("unknown compiled thwart selection"),

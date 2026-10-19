@@ -24,7 +24,7 @@ internal sealed class AbilityChoiceAnswer(
         if (SpecialOperations.Contains(operation)) return ApplySpecial(choice);
         if (operation is "payOrEffect" or "payOrExhaust")
             return ApplyPayment(choice);
-        if (operation is "thwartDifferentSchemes" or "legalPractice")
+        if (operation is "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")
             return ApplyThwartChoice(choice);
         if (operation == "makeTheCall") return ApplyMakeTheCall(choice);
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);

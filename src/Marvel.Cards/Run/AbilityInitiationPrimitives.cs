@@ -248,6 +248,6 @@ internal static class AbilityInitiationPrimitives
             or "dealAttackDamage" or "moveAttackDamage" or "placeThreat"
             or "removeThreat" or "replaceThreatWithDamage" or "enemyAttacks"
             or "enemySchemes" or "putIntoPlay" or "placeAtRandom" or "thwartSchemes"
-            or "thwartDifferentSchemes" or "legalPractice"
+            or "distributeThreat" or "thwartDifferentSchemes" or "legalPractice"
         || ContinuationChildren(node).Any(ContainsForEachTarget);
 }

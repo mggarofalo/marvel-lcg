@@ -8,6 +8,8 @@ public enum AbilityThwartSelection
 {
     /// <summary>Thwart all selected schemes.</summary>
     All,
+    /// <summary>Allocate a fixed total among selected schemes.</summary>
+    Distributed,
     /// <summary>Choose different schemes with the operation's Aerial allowance.</summary>
     Different,
     /// <summary>Discard cards from hand to determine the thwart amount.</summary>

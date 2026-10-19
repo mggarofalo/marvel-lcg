@@ -117,6 +117,7 @@ internal static class AbilityEffectLowering
             "attack" => PowerEffect(argument, child, AbilityPowerKind.Attack),
             "defense" => PowerEffect(argument, child, AbilityPowerKind.Defense),
             "thwart" => PowerEffect(argument, child, AbilityPowerKind.Thwart),
+            "distributeThreat" => DistributedThwart(argument, child),
             "thwartSchemes" => GroupThwartEffect(argument, child, AbilityThwartSelection.All),
             "thwartDifferentSchemes" => GroupThwartEffect(argument, child, AbilityThwartSelection.Different),
             "legalPractice" => GroupThwartEffect(argument, child, AbilityThwartSelection.LegalPractice),
