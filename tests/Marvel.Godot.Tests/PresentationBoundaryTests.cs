@@ -30,6 +30,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.Desktop.CampaignConnectionStore",
             "Marvel.Protocol.CampaignDeckAccess",
             "Marvel.Protocol.CampaignDescriptor",
+            // The synthetic native tracker fixture reads a wire response; it never submits state.
+            "Marvel.Protocol.EngineJson",
             "Marvel.Protocol.CampaignQuery",
             "Marvel.Protocol.EngineRequest",
             "Marvel.Protocol.EntryClaim",

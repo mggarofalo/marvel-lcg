@@ -6,7 +6,7 @@ namespace Marvel.Godot;
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001", Justification = "Preview controls are owned and freed by the Main scene tree.")]
 internal sealed class CampaignControls
 {
-    internal Window Window { get; } = new() { Name = "CampaignTracker", Title = "Campaigns", Size = new(1200, 800),
+    internal Window Window { get; } = new() { Name = "CampaignTracker", Title = "Campaigns", Visible = false, Size = new(1200, 800),
         MinSize = new(1000, 620), Transient = true, Exclusive = true, GuiEmbedSubwindows = true };
     internal VBoxContainer Content { get; } = new() { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
     internal HBoxContainer Navigation { get; } = new();
@@ -29,6 +29,7 @@ internal sealed class CampaignControls
         Window.AddChild(margin);
         margin.AddChild(Content);
         Content.AddThemeConstantOverride("separation", 16);
+        Body.AddThemeConstantOverride("separation", 8);
         Navigation.AddChild(Saved); Navigation.AddChild(Open); Navigation.AddChild(New); Navigation.AddChild(Refresh);
         Content.AddChild(Navigation);
         var scroll = new ScrollContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill,
@@ -72,11 +73,17 @@ internal sealed class CampaignControls
         foreach (Node child in Body.GetChildren()) { Body.RemoveChild(child); child.QueueFree(); }
     }
 
-    internal static Label Text(string value) => new() { Text = value, AutowrapMode = TextServer.AutowrapMode.WordSmart,
-        SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+    internal static Label Text(string value)
+    {
+        var label = new Label { Text = value, AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        label.AddThemeFontSizeOverride("font_size", 20);
+        return label;
+    }
     internal static Button Action(VBoxContainer parent, string text, Action action)
     {
         var button = new Button { Text = text, Alignment = HorizontalAlignment.Left };
+        button.AddThemeFontSizeOverride("font_size", 18);
         button.Pressed += action;
         parent.AddChild(button);
         return button;

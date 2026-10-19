@@ -17,6 +17,7 @@ internal static class CampaignCardLinks
         {
             var card = catalog.Cards.FirstOrDefault(candidate => candidate.Face == face);
             var link = new LinkButton { Text = card?.Title ?? "Unavailable card", FocusMode = Control.FocusModeEnum.All };
+            link.AddThemeFontSizeOverride("font_size", 20);
             links.AddChild(link);
             if (card is null) continue;
             Bind(ui, link, card);
