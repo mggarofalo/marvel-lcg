@@ -12,4 +12,9 @@ public sealed record CampaignPlayerState(
     bool RequiresRecovery,
     ImmutableArray<CampaignCard> Cards,
     ImmutableArray<CampaignCard> AvailableObligations,
-    bool EngagedWithEnemy);
+    bool EngagedWithEnemy)
+{
+    /// <summary>Printed permanent HP bonus from the awarded campaign Condition, independent of temporary effects.</summary>
+    public int ConditionHitPointBonus { get; init; }
+}
+

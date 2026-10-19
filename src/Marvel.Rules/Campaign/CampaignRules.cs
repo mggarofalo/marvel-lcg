@@ -57,7 +57,8 @@ public static class CampaignRules
             [.. state.Players.Select((player, seat) => new CampaignSeatSetup(seat,
                 player.Cards, state.Expert ? player.RecordedHitPoints : null,
                 state.Expert && player.RequiresRecovery, player.AvailableObligations,
-                state.Expert && state.Stage == CampaignStage.RedSkull && player.EngagedWithEnemy))],
+                state.Expert && state.Stage == CampaignStage.RedSkull && player.EngagedWithEnemy)
+                { ConditionHitPointBonus = player.ConditionHitPointBonus })],
             state.ExperimentalWeapons, threat) { BannedAllyFaces = state.BannedAllyFaces };
     }
 

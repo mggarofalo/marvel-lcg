@@ -62,13 +62,15 @@ public static class CampaignRewardRules
             ? player.Cards.Select(existing => existing.Key == card.Key ? card : existing).ToImmutableArray()
             : player.Cards.Add(card);
         int? hp = player.RecordedHitPoints;
+        int conditionBonus = choice.Kind == CampaignRewardKind.Condition
+            ? definition.Conditions.Single(condition => condition.Basic.Key == card.Key).HitPointBonus
+            : player.ConditionHitPointBonus;
         if (state.Expert && choice.Kind == CampaignRewardKind.Condition)
         {
             // pack:mc10:absorbing-man-campaign-instructions.victory attaches the Condition before recording HP.
-            int bonus = definition.Conditions.Single(condition => condition.Basic.Key == card.Key).HitPointBonus;
-            hp = Math.Min(player.BaseHitPoints, checked(hp!.Value + bonus));
+            hp = Math.Min(player.BaseHitPoints, checked(hp!.Value + conditionBonus));
         }
         return state with { Players = state.Players.SetItem(choice.Seat,
-            player with { Cards = cards, RecordedHitPoints = hp }) };
+            player with { Cards = cards, RecordedHitPoints = hp, ConditionHitPointBonus = conditionBonus }) };
     }
 }

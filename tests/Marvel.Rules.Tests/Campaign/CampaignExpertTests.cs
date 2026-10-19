@@ -39,6 +39,8 @@ public sealed class CampaignExpertTests
         state = CampaignRewardRules.Choose(state, CampaignFixture.Definition, 0, "condition3");
         Assert.Equal(10, state.Players[0].RecordedHitPoints);
         Assert.Equal(10, CampaignRules.Setup(state).Seats[0].RecordedHitPoints);
+        Assert.Equal(4, state.Players[0].ConditionHitPointBonus);
+        Assert.Equal(4, CampaignRules.Setup(state).Seats[0].ConditionHitPointBonus);
     }
 
     [Theory]
@@ -65,6 +67,7 @@ public sealed class CampaignExpertTests
         state = CampaignOutcomeRules.Finish(state, CampaignFixture.Definition, outcome);
         Assert.Equal(CampaignStage.RedSkull, state.Stage);
         Assert.Contains("captive0", state.BannedAllyFaces);
+        Assert.Contains("captive0", CampaignRules.Setup(state).BannedAllyFaces);
         Assert.Equal("basic0", Assert.Single(state.Players[0].Cards).Face);
         Assert.DoesNotContain("captive0", state.Players[0].Deck.Cards);
         Assert.Throws<ArgumentException>(() => CampaignRules.ReplaceDeck(state, 0, new(["captive0"])));

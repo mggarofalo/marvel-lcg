@@ -9,4 +9,9 @@ public sealed record CampaignSeatSetup(
     int? RecordedHitPoints,
     bool RequiresRecovery,
     ImmutableArray<CampaignCard> AvailableObligations,
-    bool DealEncounterCard);
+    bool DealEncounterCard)
+{
+    /// <summary>Printed permanent HP bonus from the awarded campaign Condition, independent of temporary effects.</summary>
+    public int ConditionHitPointBonus { get; init; }
+}
+
