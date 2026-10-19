@@ -129,6 +129,8 @@ public static class Discard
         // discard pile, **then** the player deals themself one facedown
         // encounter card". This is *then* -- a card has just landed there.
         if (card.Owner >= 0) PlayerDeck.Reset(world, card.Owner, events);
+        if (pile.Type == DeckType.SideSchemeDiscardPile)
+            AuxiliaryDeck.ResetSideSchemes(world, trigger, events);
 
         if (host >= 0)
         {
@@ -153,6 +155,8 @@ public static class Discard
     private static Area DiscardPile(World world, State.Card card)
     {
         if (card.Area.Type == DeckType.StatusArea) return world.AreaOf(DeckType.RemovedArea);
+        if (AuxiliaryDeck.UsesSideSchemeDiscard(world, card))
+            return world.AreaOf(DeckType.SideSchemeDiscardPile);
         if (card.Owner < 0) return world.AreaOf(DeckType.EncounterDiscardPile);
         return world.AreaOf(DeckType.DiscardPile,
             PlayArea.Of(card.Owner), cardOwner: card.Owner);

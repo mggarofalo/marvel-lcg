@@ -226,6 +226,13 @@ named comparison policy outside the digest format.
 
 ## Validation
 
+Rise of Red Skull uses three additional zone names: `ExperimentalWeaponsDeck`,
+`SideSchemeDeck`, and `SideSchemeDiscardPile`. They are engine-chosen spellings
+for the separate piles required by `pack:mc10:experimental-weapons-deck` and
+`pack:mc10:side-scheme-deck`. They use the existing v3 zone and index fields;
+Core games create none of these areas and retain their existing digest bytes.
+Both draw piles are concealed and the discard pile is face up.
+
 The digest tests hold:
 
 - exact empty and populated canonical strings;
