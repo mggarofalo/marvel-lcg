@@ -46,6 +46,7 @@ public sealed class RecipientPersistenceTests : EngineHostTestBase
     [InlineData("engine-replay-v11")]
     [InlineData("engine-replay-v14")]
     [InlineData("engine-replay-v17")]
+    [InlineData("engine-replay-v18")]
     public void PreviousReplayContractIsRejectedWithoutOverwritingItsSave(string previousContract)
     {
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);

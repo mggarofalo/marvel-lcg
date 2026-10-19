@@ -617,7 +617,7 @@ The final native journey uses 2 clients and one persistent server. It plays,
 saves, disconnects, restarts, restores, reconnects, edits reversible history
 and reaches an engine-reported terminal result.
 
-Protocol 33 carries engine-authored decision shapes, attack identities and lifetime
+Protocol 34 carries engine-authored decision shapes, attack identities and lifetime
 boundaries, scheme/thwart occurrence causes, resource-ability costs, typed failure
 dispositions and player-loss reasons. Replay v18 reconstructs invocation-owned
 payments and nested interrupt continuations with their completion dependencies.
@@ -668,3 +668,12 @@ completed attempt cannot be edited into a different campaign outcome.
 Campaign schema 1 and protocol 34 are strict compatibility boundaries. No
 migration invents missing campaign meaning. Complete content admission is
 required before the host advertises a campaign or starts its first attempt.
+
+The current replay identity is `engine-replay-v19`. Attack reflection, typed
+thwart-stat use, no-boost activation instructions and activation-local receipts
+live in reconstructed agenda state. Session saves persist setup and decisions,
+not these internal operation objects. A restart rebuilds them by replaying the
+complete active prefix and verifies every recorded prompt, event, RNG count and
+state digest before publication. Earlier replay identities are rejected even if
+the Core dataset hashes are unchanged; protocol 34 and schema 7 remain unchanged
+by these internal operation additions.

@@ -11,7 +11,7 @@ namespace Marvel.Session;
 /// <summary>Strict, deterministic JSON for the canonical save document.</summary>
 public static class SessionSaveJson
 {
-    /// <summary>The strict snake-case serialization contract for schema 6.</summary>
+    /// <summary>The strict snake-case serialization contract for schema 7.</summary>
     public static JsonSerializerOptions Options { get; } = CreateOptions();
 
     /// <summary>Validates and writes one canonical save document.</summary>

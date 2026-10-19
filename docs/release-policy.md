@@ -46,22 +46,23 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `33` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
-| Session schema | `6` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v18` | The same setup and decision trace may resolve differently. |
+| Engine protocol | `34` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Session schema | `7` | The strict persisted JSON shape changes. |
+| Engine replay contract | `engine-replay-v19` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
 
-Replay v18 binds invocation-owned payment, nested interrupt decisions, deferred
-activation effects and exact completion dependencies to one deterministic engine
-contract. Internal execution permits are reconstructed by replay and are never
-persisted as authority. Schema 6
-records each seat's ordered explicit deck recipe, or an authored starter default.
-Protocol 33 carries the engine-owned decision shape, durable entry claims and
-typed failure dispositions. Older protocol, replay and save identities are
-rejected; no legacy adapter supplies omitted meaning. The RNG and state-digest
-formats retain their existing identities.
+Replay v19 includes encounter-entry timing, activation-local effects and receipts,
+attack damage reflection, actor-specific thwart-stat substitution, and campaign
+setup and recovery. The same Core setup and decisions can resolve differently
+under these mechanics, independently of expansion dataset admission. Internal
+agenda operations are reconstructed by full replay; they are not serialized as
+save authority. Schema 7 records ordered explicit decks and the exact campaign
+setup, including stable campaign seats and overlays. Protocol 34 carries campaign
+commands and the engine-owned decision contracts. Older replay, protocol and save
+identities are rejected; no adapter invents omitted meaning. The RNG and
+state-digest formats retain their existing identities.
 
 The product version belongs in desktop and server metadata. The protocol
 version belongs on every request and response. Save schema and replay identities
@@ -180,8 +181,8 @@ when all of the following hold:
 - complete deterministic replay verifies every recorded prompt, event, RNG
   count and state fingerprint.
 
-Schema 6 is the only readable and writable session schema. It records ordered
-explicit player deck recipes. Other schemas are quarantined without alteration;
+Schema 7 is the only readable and writable session schema. It records ordered
+explicit player deck recipes and campaign setup. Other schemas are quarantined without alteration;
 no migration or inferred default reconstructs omitted gameplay meaning.
 
 An unknown schema, replay identity, RNG identity, digest identity or dataset
