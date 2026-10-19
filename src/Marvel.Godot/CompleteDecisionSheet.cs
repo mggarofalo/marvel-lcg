@@ -101,7 +101,8 @@ internal sealed class CompleteDecisionSheet : IDisposable
         {
             Marvel.View.PromptPresentation prompt = Marvel.View.PromptPresentation.From(composer.Prompt, world);
             content.AddChild(DecisionPanel.Text(
-                $"{prompt.Heading}\n{prompt.Context}\n{prompt.Resolution}",
+                (DecisionCardChoices.IsChoice(composer.Prompt) ? "" : prompt.Heading + "\n")
+                    + $"{prompt.Context}\n{prompt.Resolution}",
                 GodotThemeVariations.Caption, wrap: true));
         }
         panel.Reparent(content);
