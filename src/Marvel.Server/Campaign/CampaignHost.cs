@@ -47,6 +47,7 @@ public sealed class CampaignHost : IEngineEndpoint
     {
         lock (gate)
         {
+            if (EngineHost.ValidateEnvelope(request) is { } failure) return failure;
             if (uncertain) return Failure(request, "campaign_recovery_required", "The save result is uncertain. Restart to verify durable state.");
             try
             {

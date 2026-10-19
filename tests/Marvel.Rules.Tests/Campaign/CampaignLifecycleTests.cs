@@ -7,6 +7,15 @@ namespace Marvel.Rules.Tests.Campaign;
 
 public sealed class CampaignLifecycleTests
 {
+    [Fact]
+    [Rule("rr:unique-icon.3")]
+    public void CampaignCannotLockTwoSeatsToTheSameIdentity()
+    {
+        // "When choosing identities during setup, players cannot choose identities that match."
+        var player = new CampaignRosterEntry("hero0", new PlayerDeckRecipe([]), 10);
+        Assert.Throws<ArgumentException>(() => CampaignRules.Create(CampaignFixture.Definition, [player, player], false, 42));
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(false, true)]

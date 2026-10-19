@@ -18,6 +18,9 @@ public static class CampaignRules
             throw new ArgumentException("the complete Rise of Red Skull composition is required", nameof(definition));
         if (roster.Any(player => string.IsNullOrWhiteSpace(player.Hero) || player.BaseHitPoints <= 0))
             throw new ArgumentException("every campaign seat requires an admitted identity", nameof(roster));
+        // rr:unique-icon.3: "players cannot choose identities that match." Admitted hero keys identify fixed identities.
+        if (roster.Select(player => player.Hero).Distinct(StringComparer.Ordinal).Count() != roster.Count)
+            throw new ArgumentException("campaign identities must be distinct", nameof(roster));
         // pack:mc10:campaign-mode-rules: "Each player must use their chosen identity for the entire campaign."
         var players = roster.Select((entry, seat) => new CampaignPlayerState(
             entry.Hero, new PlayerDeckRecipe(entry.Deck.Cards), entry.BaseHitPoints,

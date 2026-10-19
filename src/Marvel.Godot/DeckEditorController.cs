@@ -37,7 +37,7 @@ internal sealed class DeckEditorController : IDisposable
 
     internal void Show()
     {
-        ui.Hero.AddItem("Choose a Core identity");
+        ui.Hero.AddItem("Choose an identity");
         foreach (var hero in workspace.Catalog.Heroes) ui.Hero.AddItem(hero.Name);
         browser.Initialize();
         ReloadLibrary();
@@ -96,7 +96,7 @@ internal sealed class DeckEditorController : IDisposable
         int hero = workspace.Catalog.Heroes.ToList().FindIndex(item => item.IdentityFaces.Contains(draft.HeroCode, StringComparer.Ordinal));
         ui.Hero.Select(hero + 1);
         rendering = false;
-        ui.Status.Text = hero < 0 ? "This imported identity is outside the playable Core set. All cards have been retained." : "";
+        ui.Status.Text = hero < 0 ? "This imported identity is outside the installed playable content. All cards have been retained." : "";
         Changed();
         if (inspectIdentity) browser.InspectIdentity();
     }

@@ -13,14 +13,19 @@ internal static class CampaignTableEntry
         var connected = ClientComposition.Connect(DesktopDataRoot.Current(), connection.Endpoint);
         if (!connected.Succeeded) return connected.Error!.Message;
         var client = connected.Client!;
-        var synchronized = await client.SynchronizeAsync(game);
-        if (synchronized.Response is not { } response || synchronized.Error is not null)
-        { client.Dispose(); return synchronized.Error?.Message ?? "The campaign table could not be loaded."; }
         long ticket = main.lifecycle.BeginEntry();
+        var synchronized = await client.SynchronizeAsync(game);
+        if (!GodotObject.IsInstanceValid(main)) { client.Dispose(); return "The table was closed."; }
+        if (synchronized.Response is not { } response || synchronized.Error is not null)
+        { client.Dispose(); main.lifecycle.FinishEntry(ticket); return synchronized.Error?.Message ?? "The campaign table could not be loaded."; }
         var entry = new ClientEntryResult(game, response, [], null);
         if (!main.lifecycle.Enter(ticket, client, entry)) { client.Dispose(); return "The table changed while this game was loading."; }
         main.boardController.ResetForSession();
         main.currentProgress = null;
+        main.transcript.Reset(null, main.setupChoices?.Runtime,
+            InteractionTranscriptSetup.Unavailable("campaign_archive"));
+        main.transientInvitation = null;
+        main.invitationOffer.Visible = false;
         main.boardController.RenderGame(response, resetEvents: true, operation: EngineProtocol.Sync);
         main.setupPanel.Visible = false;
         main.board.Visible = true;

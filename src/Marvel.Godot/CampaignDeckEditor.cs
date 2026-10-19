@@ -35,7 +35,10 @@ internal static class CampaignDeckEditor
             choose(new("deck") { Seat = seat, Deck = new(draft.Cards) });
         });
         tracker.Window.Hide();
-        ui.Window.TreeExiting += () => tracker.Window.PopupCentered();
+        ui.Window.TreeExiting += () =>
+        {
+            if (GodotObject.IsInstanceValid(tracker.Window) && !main.IsQueuedForDeletion()) tracker.Window.PopupCentered();
+        };
         editor.Show();
         ui.Hero.Disabled = true;
     }

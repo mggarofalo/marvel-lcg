@@ -94,6 +94,39 @@ public sealed class CampaignHostTests
         Assert.Equal(1, verified.Campaign.Revision);
     }
 
+    [Fact]
+    public void ClosingTheTablePreservesTheCampaignAttemptAcrossRestart()
+    {
+        var store = new MemoryCampaignStore();
+        var factory = new SyntheticCampaignFactory();
+        var host = new CampaignHost(factory, store, new MemorySessionStore());
+        var created = host.Exchange(Create());
+        var opened = host.Exchange(Command(created, "start", 0) with { Entry = EntryClaim.Create() });
+        Assert.Null(opened.Error);
+        var closed = host.Exchange(EngineRequest.CloseGame("leave", opened.GameId, opened.Capability!));
+        Assert.Null(closed.Error);
+        var restarted = new CampaignHost(factory, store, new MemorySessionStore());
+        var resumed = restarted.Exchange(EngineRequest.SyncGame("resume", opened.GameId, opened.Capability!));
+        Assert.Null(resumed.Error);
+        Assert.NotNull(resumed.World);
+        Assert.Single(store.Load()[0].Campaign!.Save.Attempts);
+    }
+
+    [Fact]
+    public void CampaignDeckAssessmentRequiresOwnerAndCurrentEnvelope()
+    {
+        var host = new CampaignHost(new SyntheticCampaignFactory(), new MemoryCampaignStore(), new MemorySessionStore());
+        var created = host.Exchange(Create());
+        var query = new DeckQuery("spider_man", []) { Campaign = new(created.Campaign!.Id, created.Capability!) };
+        var request = EngineRequest.ReadDecks("assess", query);
+        Assert.Null(host.Exchange(request).Error);
+        Assert.Equal("unsupported_version", host.Exchange(request with { Version = 1 }).Error!.Code);
+        Assert.Equal("campaign_not_found", host.Exchange(request with
+            { Deck = query with { Campaign = query.Campaign with { Capability = "incorrect" } } }).Error!.Code);
+        Assert.Equal("invalid_request", host.Exchange(request with { Deck = query with { Hero = "iron_man" } }).Error!.Code);
+        Assert.Equal("invalid_request", host.Exchange(request with { RequestId = "" }).Error!.Code);
+    }
+
     internal static EngineRequest Create() => new(EngineProtocol.Version, "create", EngineProtocol.Campaign, "campaign",
         Entry: EntryClaim.Create()) { Campaign = new("create") { Product = "synthetic", Seed = 42,
             Heroes = ["spider_man"], Decks = [new([])] } };

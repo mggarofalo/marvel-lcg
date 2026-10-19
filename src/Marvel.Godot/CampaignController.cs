@@ -18,6 +18,7 @@ internal sealed class CampaignController
     private LocalGameClient? client;
     private DeckCatalog? catalog;
     private bool busy;
+    private bool disposed;
 
     internal CampaignController(Main main)
     {
@@ -33,7 +34,7 @@ internal sealed class CampaignController
         var timer = new global::Godot.Timer { WaitTime = 0.5, Autostart = true };
         timer.Timeout += () => open.Visible = main.setupChoices?.Campaigns.Count > 0 || saved.Count > 0;
         main.AddChild(timer);
-        main.TreeExiting += () => { client?.Dispose(); store?.Dispose(); };
+        main.TreeExiting += () => { disposed = true; client?.Dispose(); store?.Dispose(); };
     }
 
     private void Show()
@@ -57,14 +58,26 @@ internal sealed class CampaignController
 
     private async Task<bool> Connect(string endpoint)
     {
-        client?.Dispose();
-        var connected = ClientComposition.Connect(DesktopDataRoot.Current(), endpoint);
-        if (!connected.Succeeded) { ui.Status.Text = connected.Error!.Message; return false; }
-        client = connected.Client!;
-        var result = await client.ReadDecksAsync();
-        if (!result.Succeeded) { ui.Status.Text = result.Error!.Message; return false; }
-        catalog = await DeckResearchCatalog.LoadAsync(client, result.Decks!.Catalog!);
-        return true;
+        busy = true;
+        RefreshRecovery();
+        try
+        {
+            client?.Dispose();
+            var connected = ClientComposition.Connect(DesktopDataRoot.Current(), endpoint);
+            if (!connected.Succeeded) { ui.Status.Text = connected.Error!.Message; return false; }
+            client = connected.Client!;
+            var result = await client.ReadDecksAsync();
+            if (disposed) return false;
+            if (!result.Succeeded) { ui.Status.Text = result.Error!.Message; return false; }
+            catalog = await DeckResearchCatalog.LoadAsync(client, result.Decks!.Catalog!);
+            return !disposed;
+        }
+        catch (Exception)
+        {
+            if (!disposed) ui.Status.Text = "The campaign service could not be reached. Saved campaigns are preserved.";
+            return false;
+        }
+        finally { busy = false; if (!disposed) RefreshRecovery(); }
     }
 
     private async void New()
@@ -123,20 +136,26 @@ internal sealed class CampaignController
             connection = connection with { Pending = request };
             store.Save(connection);
             var result = await client.ExchangeCampaignAsync(request);
+            if (disposed) return;
             if (result.Succeeded)
             {
                 await Accept(result, request);
             }
             else
             {
-                connection = connection with { Pending = result.Pending };
-                store.Save(connection);
-                if (result.Response?.Campaign is { } latest) { campaign = latest; Render(); }
-                ui.Status.Text = result.Error!.Message;
+                Reject(result);
             }
         }
-        catch (Exception) { ui.Status.Text = "The campaign result could not be saved locally. Recover this exact choice before continuing."; }
-        finally { busy = false; RefreshRecovery(); }
+        catch (Exception) { if (!disposed) ui.Status.Text = "The campaign result could not be saved locally. Recover this exact choice before continuing."; }
+        finally { busy = false; if (!disposed) RefreshRecovery(); }
+    }
+
+    private void Reject(ClientCampaignResult result)
+    {
+        connection = connection! with { Pending = result.Pending };
+        store!.Save(connection);
+        if (result.Response?.Campaign is { } latest) { campaign = latest; Render(); }
+        ui.Status.Text = result.Error!.Message;
     }
 
     private async Task Accept(ClientCampaignResult result, EngineRequest request)
@@ -162,13 +181,18 @@ internal sealed class CampaignController
 
     private async void ResumeTable()
     {
-        if (!busy) await OpenTable();
+        if (busy) return;
+        busy = true; RefreshRecovery();
+        try { await OpenTable(); }
+        catch (Exception) { if (!disposed) ui.Status.Text = "The campaign table could not be opened. Its saved attempt is preserved."; }
+        finally { busy = false; if (!disposed) RefreshRecovery(); }
     }
 
     private async Task OpenTable()
     {
         if (connection is null || campaign is null) return;
         string? error = await CampaignTableEntry.OpenAsync(main, connection, campaign);
+        if (disposed) return;
         if (error is null) ui.Window.Hide(); else ui.Status.Text = error;
     }
 
