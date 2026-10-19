@@ -36,6 +36,16 @@ trying the working build.
 
 ### Table interactions
 
+Right-click a visible game card, or focus it and press Menu / Shift+F10, to open
+its currently offered actions. The compact cascading menu keeps known costs and
+effects beside the source. Single-target actions list only current offered targets;
+engaged enemies are grouped by player, and recipient support actions name each
+player. A leaf marked **Commit** submits that complete current choice; actions
+needing payment or a more involved selection continue through the same composer.
+Opening a branch never commits. Escape or Left returns one menu level; Escape at
+the root dismisses it. Existing click, drag and complete-choice paths remain available.
+
+
 Minions and allies use continuous collections; side schemes expose landscape
 faces and named headers in a scrollable stack. Upgrades and supports share
 compact named source strips, including controlled upgrades attached to another
@@ -702,3 +712,18 @@ and invalid images silently use the complete procedural face. Concealed cards
 carry no face id, and the renderer never asks the art pack about them. This
 repository intentionally bundles no card images; an image may be committed only
 with its redistribution rights documented alongside it.
+
+### Source-local actions
+
+Right-click a visible card, or focus it and use Menu/Shift+F10, to inspect it or
+choose a currently offered action. Short target choices nest by engaged player
+where relevant. An action requiring payment, allocation, ordering or a later
+choice continues in an adjacent editor using the same draft as table controls.
+Escape/Return to table preserves the current draft; Resume current choice opens
+it again. Clear current draft clears only uncommitted selections. Already paid
+costs are never refunded by closing a later choice. Every later prompt requires
+its own explicit answer. Accepted results remain beside the originating card;
+synchronization and unrelated changes invalidate context rather than guessing
+a new target. Pointer, keyboard and table resource controls share one submission
+latch. The eight `context-*` native cases cover source actions, player recipients,
+engaged minions, paid-event continuation at 50/100/150% and looked-at card choices.

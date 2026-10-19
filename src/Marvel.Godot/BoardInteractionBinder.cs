@@ -20,6 +20,7 @@ internal static class BoardInteractionBinder
             gesture => CanUseTable(panel)
                 && BoardDragInteractionBinder.Drag(panel, composer, board, gesture));
         board.BindDragPreview(gesture => BoardDragInteractionBinder.PreviewDrag(panel, composer, board, gesture));
+        board.SetInlinePayment(panel.LocalDecision.IsOpen);
         board.SetCompleteChoicesOpen(panel.CompleteChoicesOpen);
         board.BindCompleteChoices(source =>
         {
@@ -80,6 +81,8 @@ internal static class BoardInteractionBinder
             return false;
         }
 
+        if (gesture.Intent == CardInteractionIntent.ContextMenu)
+            return CardContextMenuBinding.Show(panel, composer, gesture);
         int generation = panel.GetRenderGeneration();
         var interaction = new BoardDraftInteraction(
             composer, CurrentOperations(panel, composer), Affordances(panel, composer));

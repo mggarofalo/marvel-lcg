@@ -70,7 +70,7 @@ internal sealed class BoardPointerInteractions
 
     internal bool Route(InputEvent input)
     {
-        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left or MouseButton.Right, Pressed: true })
         {
             CancelCaptured();
             return false;

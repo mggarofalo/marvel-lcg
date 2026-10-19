@@ -13,6 +13,7 @@ internal sealed class BoardCardInteractionControls
     private readonly Func<bool> isCurrent;
     private Func<CardPointerGesture, bool>? activate;
     private readonly BoardContextualInteractionControls contextual;
+    internal bool InlinePayment { get; set; }
     private int focusGeneration;
     private BoardInteractionFocusKey? requestedFocus;
 
@@ -22,8 +23,11 @@ internal sealed class BoardCardInteractionControls
         contextual = new BoardContextualInteractionControls(isCurrent);
     }
 
-    internal void Track(CardControl card, BoardCardPresentation presentation, bool isHand) =>
+    internal void Track(CardControl card, BoardCardPresentation presentation, bool isHand)
+    {
         presentations[card] = (presentation, isHand);
+        CardContextGesture.Bind(card, () => Activate(card, CardInteractionIntent.ContextMenu, null));
+    }
 
     internal void Bind(Func<CardPointerGesture, bool> handler) =>
         activate = handler ?? throw new ArgumentNullException(nameof(handler));
@@ -66,8 +70,8 @@ internal sealed class BoardCardInteractionControls
         }
         Clear();
         contextual.Clear();
-        if (CardPaymentPresentation.UsesModal(composer)) return;
-        var descriptors = BoardInteractionControlProjection.From(composer, prompt).ToList();
+        if (UsesSeparatePayment(composer)) return;
+        var descriptors = BoardInteractionControlProjection.From(composer, prompt, InlinePayment).ToList();
         var installedActions = new HashSet<int>();
         foreach (CardInteractionControlDescriptor descriptor in descriptors)
         {
@@ -77,6 +81,9 @@ internal sealed class BoardCardInteractionControls
         contextual.Present(composer, prompt, installedActions);
         RestoreFocus(focused ?? UnclaimedActionFocus(), generation);
     }
+
+    private bool UsesSeparatePayment(DecisionComposer composer) =>
+        !InlinePayment && CardPaymentPresentation.UsesModal(composer);
 
     private BoardInteractionFocusKey? UnclaimedActionFocus()
     {

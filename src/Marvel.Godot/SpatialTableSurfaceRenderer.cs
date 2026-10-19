@@ -32,6 +32,7 @@ internal static class SpatialTableSurfaceRenderer
     {
         TabletopPileInspector.Close();
         BoardActionChoiceSurface.Close();
+        CardContextMenu.Close();
         BoardRenderCleanup.Clear(main.boardAreas);
         BoardRenderCleanup.Clear(main.handRail);
         main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").Visible = false;
