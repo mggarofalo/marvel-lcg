@@ -29,12 +29,7 @@ internal static class AbilityProjectedDefeatWindows
     internal static bool CanProjectEncounterDeal(AbilityPowerState state, Card subject, AbilityAdmissionScope cast)
     {
         if (MissingAuthoredDefeat(subject, cast)) return false;
-        var occurrence = new Occurrence(0, [Steps.CardDefeated], Subject: subject.ObjectId, Player: subject.Owner);
-        occurrence.Also(new Defeated(subject.ObjectId,
-            AbilityEffectAttribution.IdentityPlayer(cast.World, cast.Source, cast.Player), cast.Power ?? "Deal_Damage")
-            { Incarnation = subject.Incarnation, Kind = EffectiveCards.Kind(subject, cast.World.Facts) });
-        var candidates = AbilityWindowAdmission.Waiting(cast.Context.Program, cast.World, occurrence,
-            WindowKind.Interrupt, cast.Context.ResourceAbilities).Where(candidate => !state.Discarded.Contains(candidate.Card.ObjectId)).ToArray();
+        var candidates = OwnDefeatCandidates(state, subject, cast);
         // Facedown encounter dealing cannot alter the character/status projection. Its pile changes remain unknown.
         return candidates.Length > 0 && candidates.All(candidate => candidate.Card == subject
             && candidate.Ability.Trigger.Timing == AbilityType.WhenDefeated
@@ -42,8 +37,30 @@ internal static class AbilityProjectedDefeatWindows
             && candidate.Ability.Effect is AbilityEffect.DealEncounterCards);
     }
 
+    internal static bool CanDeferOwnDefeat(AbilityPowerState state, Card subject, AbilityAdmissionScope cast)
+    {
+        if (MissingAuthoredDefeat(subject, cast)) return false;
+        var candidates = OwnDefeatCandidates(state, subject, cast);
+        return candidates.Length > 0 && candidates.All(candidate => candidate.Card == subject
+            && candidate.Ability.Trigger.Timing == AbilityType.WhenDefeated
+            && candidate.Ability.When is null && candidate.Ability.Cost is null);
+    }
+
+    private static AbilityWindowAdmission.Candidate[] OwnDefeatCandidates(
+        AbilityPowerState state, Card subject, AbilityAdmissionScope cast)
+    {
+        var occurrence = new Occurrence(0, [Steps.CardDefeated], Subject: subject.ObjectId, Player: subject.Owner);
+        occurrence.Also(new Defeated(subject.ObjectId,
+            AbilityEffectAttribution.IdentityPlayer(cast.World, cast.Source, cast.Player), cast.Power ?? "Deal_Damage")
+            { Incarnation = subject.Incarnation, Kind = EffectiveCards.Kind(subject, cast.World.Facts) });
+        return AbilityWindowAdmission.Waiting(cast.Context.Program, cast.World, occurrence,
+            WindowKind.Interrupt, cast.Context.ResourceAbilities).Where(candidate => !state.Discarded.Contains(candidate.Card.ObjectId)).ToArray();
+    }
+
     internal static void ValidateContinuation(AbilityEffect node, AbilityPowerState state, AbilityAdmissionScope cast)
     {
+        if (state.DefeatWindowDeferred && !AbilityDefeatReceiptProjection.PreservesReads(node))
+            throw new RulesNotImplementedException("A labelled-power continuation reads the board after an unprojected defeat window.");
         if (!state.EncounterCardsChanged) return;
         if (!AbilityEncounterDealProjection.PreservesReads(node))
             throw new RulesNotImplementedException("A labelled-power continuation has an unprojected read after a defeat-triggered encounter deal.");

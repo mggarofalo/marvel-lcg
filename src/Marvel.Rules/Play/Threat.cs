@@ -115,6 +115,12 @@ public static class Threat
     public static long Remove(
         World world, ICardFacts facts, IThreatCardAbilities abilities,
         ThreatRemovalRequest request, List<GameEvent> events)
+        => RemoveWithOutcome(world, facts, abilities, request, events).Removed;
+
+    /// <summary>Removes threat and reports whether a defeat procedure must finish before the containing effect resumes.</summary>
+    public static ThreatRemovalResult RemoveWithOutcome(
+        World world, ICardFacts facts, IThreatCardAbilities abilities,
+        ThreatRemovalRequest request, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -128,7 +134,7 @@ public static class Threat
         if (removed == 0
             || !abilities.CanRemoveThreat(world, scheme, request.OverridesCannotFrom))
         {
-            return 0;
+            return new(0, false);
         }
 
         scheme.PlaceTokens("k_threat", -removed);
@@ -138,14 +144,15 @@ public static class Threat
             Verb = request.Verb,
         });
 
+        bool suspended = false;
         if (scheme.Area.Type == DeckType.SideSchemesArea
             && scheme.Tokens.GetValueOrDefault("k_threat") == 0)
         {
-            Defeat.Scheme(world, facts, scheme, request.Trigger, events, request.By,
-                request.RecordDefeatOn);
+            suspended = Defeat.Scheme(world, facts, scheme, request.Trigger, events, request.By,
+                request.RecordDefeatOn) == Damage.Outcome.Suspended;
         }
 
-        return removed;
+        return new(removed, suspended);
     }
 
     /// <summary>

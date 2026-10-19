@@ -110,7 +110,8 @@ internal static class AbilityPowerAlternatives
         && left.CurrentVillain == right.CurrentVillain
         && left.VillainStagesDrawn == right.VillainStagesDrawn
         && left.Finished == right.Finished
-        && left.EncounterCardsChanged == right.EncounterCardsChanged;
+        && left.EncounterCardsChanged == right.EncounterCardsChanged
+        && left.DefeatWindowDeferred == right.DefeatWindowDeferred;
 
     private static bool SameTraits(AbilityPowerState left, AbilityPowerState right) =>
         left.Traits.Count == right.Traits.Count && left.Traits.All(pair =>

@@ -75,13 +75,25 @@ internal static class AbilityThreatExecution
     {
         if (BlockedByCrisis(removal, context, scheme)) return null;
         long held = scheme.Tokens.GetValueOrDefault("k_threat");
-        long removed = Threat.Remove(context.World, context.World.Facts, context.ThreatAbilities,
+        var owner = context.World.Agenda.Current;
+        var occurrence = context.World.Agenda.Occurrence;
+        var removalResult = Threat.RemoveWithOutcome(context.World, context.World.Facts, context.ThreatAbilities,
             new ThreatRemovalRequest(scheme, requested, context.Trigger, "Remove_Threat",
                 AbilityEffectAttribution.IdentityPlayer(context),
                 removal.OverridesCannotFrom is { } source ? Find(source, context)?.ObjectId ?? -1 : -1)
                 { RecordDefeatOn = context.World.Agenda.Occurrence }, context.Events);
+        RetainSuspension(state, removalResult, owner, occurrence);
+        long removed = removalResult.Removed;
         if (removed > 0 && removed == held) state.SchemesCleared++;
         return removed > 0 ? AbilityCompletion.Amount(removed, requested) : null;
+    }
+
+    internal static void RetainSuspension(AbilityDamageAndThreatState state, ThreatRemovalResult result, PhaseStep? owner, Occurrence? occurrence)
+    {
+        if (!result.Suspended) return;
+        if (state.Boundary is null && owner is { } frame && occurrence is not null)
+            state.Boundary = new(frame, occurrence);
+        state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
     }
 
     private static bool BlockedByCrisis(AbilityEffect.RemoveThreat removal,

@@ -174,7 +174,7 @@ public static class Defeat
     /// <param name="events">Where to record what happened.</param>
     /// <param name="by">The seat whose character did it, or -1.</param>
     /// <param name="recordOn">The cause of this defeat, or the current occurrence.</param>
-    public static void Scheme(
+    public static Damage.Outcome Scheme(
         World world, ICardFacts facts, Card scheme, string trigger, List<GameEvent> events,
         int by = -1, Timing.Occurrence? recordOn = null)
     {
@@ -185,7 +185,7 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(facts);
 
         // ruling:25a8a46bc9925963: "If a side scheme cannot leave play, then it cannot be defeated."
-        if (!SideSchemeDeparture.Allowed(world, scheme)) return;
+        if (!SideSchemeDeparture.Allowed(world, scheme)) return Damage.Outcome.NotDefeated;
         var defeated = Record(world, scheme, by, BasicPowers.ThwartVerb, recordOn);
         var owner = world.Agenda.Current;
         var containing = world.Agenda.Occurrence;
@@ -198,10 +198,11 @@ public static class Defeat
         {
             DefeatScheduling.Finalize(world, owner, containing, scheme,
                 new DefeatCompletionOperation(DefeatCompletionKind.FinalizeSchemeDefeat, trigger, scheme.Incarnation), result.Invocation);
-            return;
+            return Damage.Outcome.Suspended;
         }
 
         FinalizeScheme(world, facts, scheme, trigger, events);
+        return Damage.Outcome.Defeated;
     }
 
     /// <summary>Move a defeated side scheme after its step-7 abilities resolve.</summary>

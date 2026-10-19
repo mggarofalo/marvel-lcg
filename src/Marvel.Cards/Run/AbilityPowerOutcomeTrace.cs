@@ -52,6 +52,8 @@ internal static class AbilityPowerOutcomeTrace
     private static HashSet<AdmissionResolution> DrawOutcomes(
         AbilityEffect node, AbilityAdmissionScope cast, AbilityPowerState state)
     {
+        if (state.DefeatWindowDeferred)
+            return [AdmissionResolution.None, AdmissionResolution.Partial, AdmissionResolution.Full];
         var draw = EffectOf<AbilityEffect.Draw>(node, cast);
         return [CombinedOutcomes(Seats(draw.Players, cast).Select(player =>
             ResolutionOfAmount(PowerCardsAvailable(state, player, cast), draw.Count)))];

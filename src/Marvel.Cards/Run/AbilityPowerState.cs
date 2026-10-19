@@ -14,5 +14,6 @@ internal readonly record struct AbilityPowerState(
     Dictionary<int, int> Engagement,
     int CurrentVillain, int VillainStagesDrawn, bool Finished)
 {
+    internal bool DefeatWindowDeferred { get; init; }
     internal bool EncounterCardsChanged { get; init; }
 }

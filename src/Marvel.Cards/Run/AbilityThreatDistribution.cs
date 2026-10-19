@@ -66,10 +66,14 @@ internal static class AbilityThreatDistribution
         {
             if (!legal.Contains(group.Key)) continue;
             long held = group.First().Tokens.GetValueOrDefault("k_threat");
-            long taken = Threat.Remove(context.World, context.World.Facts, context.ThreatAbilities,
+            var owner = context.World.Agenda.Current;
+            var occurrence = context.World.Agenda.Occurrence;
+            var removal = Threat.RemoveWithOutcome(context.World, context.World.Facts, context.ThreatAbilities,
                 new ThreatRemovalRequest(group.First(), group.Count(), context.Trigger, "Remove_Threat",
                     AbilityEffectAttribution.IdentityPlayer(context))
                 { RecordDefeatOn = context.World.Agenda.Occurrence }, context.Events);
+            AbilityThreatExecution.RetainSuspension(state, removal, owner, occurrence);
+            long taken = removal.Removed;
             removed += taken;
             if (taken > 0 && taken == held) state.SchemesCleared++;
         }
