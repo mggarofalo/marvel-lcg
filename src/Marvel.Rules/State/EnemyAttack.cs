@@ -71,6 +71,9 @@ public sealed record EnemyAttack(
     /// </remarks>
     public IReadOnlyList<int> DefensePlayersPassed { get; init; } = [];
 
+    /// <summary>Whether an ability prevents all damage from this attack, including after a defender changes.</summary>
+    public bool PreventAllDamage { get; init; }
+
     /// <summary>Whether any character was declared the defender.</summary>
     public bool IsDefended => Defender >= 0;
 

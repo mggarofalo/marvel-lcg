@@ -16,6 +16,8 @@ public enum AbilityFixedInstruction
     AlsoAttackEachOtherHero,
     /// <summary>Make the current attack indirect.</summary>
     MakeAttackIndirect,
+    /// <summary>Prevent all damage from the current enemy attack.</summary>
+    PreventAttackDamage,
     /// <summary>Reveal the top encounter card.</summary>
     RevealTop,
     /// <summary>Place one acceleration token.</summary>

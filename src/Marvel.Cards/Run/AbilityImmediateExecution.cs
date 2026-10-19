@@ -49,6 +49,9 @@ internal static class AbilityImmediateExecution
             case AbilityFixedInstruction.MakeAttackIndirect:
                 Attack.MakeIndirect(world);
                 return new(true, false);
+            case AbilityFixedInstruction.PreventAttackDamage:
+                Attack.PreventDamage(world);
+                return new(true, true);
             case AbilityFixedInstruction.PlaceAccelerationToken:
                 EncounterDeck.PlaceAccelerationToken(world, context.Trigger, context.Events);
                 return new(true, false);

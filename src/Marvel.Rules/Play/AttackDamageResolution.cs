@@ -79,8 +79,9 @@ internal sealed class AttackDamageResolution
         remaining = Math.Max(0, DamagePlacement.Health(world, facts, request.Target) - request.Target.Damage);
         kind = EffectiveCards.Kind(request.Target, facts);
         controller = kind == CardKind.Ally ? request.Target.Area.PlayArea.Player : -1;
-        placed = DamagePlacement.PrepareAfterReplacement(world, facts, request.Source, request.Target,
-            replacement.ResolvedAmount, request.Trigger, events);
+        placed = DamagePlacement.PrepareAfterReplacement(world, facts,
+            new DamageRequest(request.Source, request.Target, replacement.ResolvedAmount, request.Trigger, request.Verb)
+            { PreventAllDamage = request.EnemyAttack?.PreventAllDamage == true }, events);
         DamagePlacement.ApplyPlaced(world, facts, placed, request.Trigger, request.Verb, events);
         if (placed.Landed) Execution.Occurrence.Also(Steps.DamageDealt);
         if (!spillOnly && request.EnemyAttack is { } attack)

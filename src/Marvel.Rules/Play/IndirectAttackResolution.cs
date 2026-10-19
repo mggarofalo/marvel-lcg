@@ -113,8 +113,9 @@ internal static class IndirectAttackResolution
         [
             .. assigned.OrderBy(pair => pair.Key).Select(pair =>
                 DamagePlacement.PrepareAfterReplacement(
-                    world, facts, attacker, world.Cards[pair.Key], pair.Value,
-                    Steps.AttackInitiated, events)),
+                    world, facts, new DamageRequest(attacker, world.Cards[pair.Key], pair.Value,
+                        Steps.AttackInitiated, "Attack")
+                    { PreventAllDamage = world.Attack?.PreventAllDamage == true }, events)),
         ];
 
     /// <summary>Resolve retaliation after an indirect-damage defeat decision.</summary>

@@ -29,7 +29,7 @@ internal static class AttackPromptContext
             situation = AttackOverkillDescription.Context(world, facts, enemy) + situation;
         situation += AttackedPlayerContext(world, attack);
         string[] attachments = AttackAttachments(world, facts, enemy);
-        situation = AppendAttackContext(situation, attachments, prompt.Description);
+        situation = AppendAttackContext(situation, attachments, prompt.Description, attack.PreventAllDamage);
         IReadOnlyList<int> causes = ActivationCausalCards.For(world, step);
 
         return prompt with
@@ -53,8 +53,10 @@ internal static class AttackPromptContext
             : $"Player {player + 1}";
 
     private static string AppendAttackContext(
-        string situation, string[] attachments, string? description)
+        string situation, string[] attachments, string? description, bool prevented)
     {
+        if (prevented)
+            situation += " All damage from this attack is prevented; boost effects still resolve.";
         if (attachments.Length > 0)
         {
             situation += $" Attacker attachments: {string.Join(", ", attachments)}.";
@@ -91,6 +93,8 @@ internal static class AttackPromptContext
         }
         if (attack.CalculatedDamage is { } damage)
         {
+            if (attack.PreventAllDamage)
+                return $"{AttackCompletion.SubjectTitle(world, facts, enemy.ObjectId)} is attacking {EffectiveCards.Title(target, facts)} for {damage} damage.";
             return $"{AttackCompletion.SubjectTitle(world, facts, enemy.ObjectId)} is attacking {EffectiveCards.Title(target, facts)} "
                 + $"for {damage} damage. "
                 + Damage.PreviewAttack(world, facts, enemy, enemy, target, damage);

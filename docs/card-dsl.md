@@ -607,3 +607,8 @@ fewer exist. It does not generate resources or permit resource abilities.
 `cardsYouControl` selects in-play controlled player cards; `discardable` filters
 identity/main-scheme and permanent restrictions. `otherEnvironments` selects live
 environments other than the triggering occurrence's subject.
+
+`preventAttackDamage: "attack"` prevents all damage taken from the current enemy
+attack, including assigned indirect shares. It preserves damage dealt, Tough's
+priority, boost effects and attack completion. The state belongs to that attack,
+survives source departure and defender changes, and does not apply to later attacks.

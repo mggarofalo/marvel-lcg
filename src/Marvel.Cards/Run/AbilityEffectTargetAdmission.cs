@@ -138,26 +138,30 @@ internal static class AbilityEffectTargetAdmission
         {
             "enemyAttacks" or "enemySchemes" =>
                 CardsLegality(Every(ActivationOf(node, cast).Enemies, cast)),
+            "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false }
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             "attachCards" => AbilityAttachmentExecution.Target((AbilityEffect.AttachCards)node, cast),
             "storeBeneath" => AbilityBeneathAdmission.Target((AbilityEffect.StoreBeneath)node, cast),
             "putIntoPlay" => Find(EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "placeAtRandom" => Find(EffectOf<AbilityEffect.PlaceAtRandom>(node, cast).Host, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
-            "draw" when cast.Chosen is null
-                    && bindingMayChange
-                    && BindingCanChange(((AbilityEffect.Draw)node).Players) =>
-                CanInitiateDraw(node, cast)
-                    ? TargetLegality.Valid : TargetLegality.Invalid,
-            "draw" when BindingCanChange(((AbilityEffect.Draw)node).Players)
-                    && (cast.PlayerSelection ?? cast.Chosen) is { Owner: < 0 } =>
-                TargetLegality.Invalid,
-            "draw" => AbilityRepeatedStatusTrace.CanDraw(node, cast)
-                ? TargetLegality.Valid : TargetLegality.Invalid,
+            "draw" => DrawTargetLegality((AbilityEffect.Draw)node, cast, bindingMayChange),
             "search" => HasSearchableArea(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             _ => TargetLegality.None,
         };
+
+    private static TargetLegality DrawTargetLegality(
+        AbilityEffect.Draw draw, AbilityAdmissionScope cast, bool bindingMayChange)
+    {
+        bool variablePlayer = BindingCanChange(draw.Players);
+        if (cast.Chosen is null && bindingMayChange && variablePlayer)
+            return CanInitiateDraw(draw, cast) ? TargetLegality.Valid : TargetLegality.Invalid;
+        if (variablePlayer && (cast.PlayerSelection ?? cast.Chosen) is { Owner: < 0 })
+            return TargetLegality.Invalid;
+        return AbilityRepeatedStatusTrace.CanDraw(draw, cast) ? TargetLegality.Valid : TargetLegality.Invalid;
+    }
 
     private static TargetLegality MoveDamageTargetLegality(
         AbilityEffect.MoveDamage move, AbilityAdmissionScope cast)
