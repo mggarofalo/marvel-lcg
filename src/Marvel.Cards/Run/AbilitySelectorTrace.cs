@@ -14,6 +14,7 @@ internal static class AbilitySelectorTrace
     {
         AbilityCardSelection.Ranked ranked => TraceCandidateCards(ranked.Cards, cast),
         AbilityCardSelection.WithTrait filtered => TraceCandidateCards(filtered.Cards, cast),
+        AbilityCardSelection.FirstAvailable fallback => [.. fallback.Options.SelectMany(option => TraceCandidateCards(option, cast)).Distinct()],
         AbilityCardSelection.Last filtered => TraceCandidateCards(filtered.Cards, cast),
         AbilityCardSelection.FaceDown filtered => TraceCandidateCards(filtered.Cards, cast),
         AbilityCardSelection.InObjectIdOrder ordered => [.. TraceCandidateCards(ordered.Cards, cast).OrderBy(card => card.ObjectId)],
@@ -54,6 +55,7 @@ internal static class AbilitySelectorTrace
         AbilityCardSelection.FaceDown filtered => !candidate.FaceUp
             && TraceSelectorMatches(filtered.Cards, candidate, trace),
         AbilityCardSelection.InObjectIdOrder ordered => TraceSelectorMatches(ordered.Cards, candidate, trace),
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Select(option => MatchingCandidates(option, trace).ToList()).FirstOrDefault(cards => cards.Count > 0)?.Contains(candidate) == true,
         AbilityCardSelection.Last last => MatchingCandidates(last.Cards, trace).LastOrDefault() == candidate,
         AbilityCardSelection.WithoutAnotherCopyAttached filtered => TraceSelectorMatches(filtered.Cards, candidate, trace)
             && !AnotherCopyAttachedInTrace(candidate, trace.Cast, trace.Discarded),

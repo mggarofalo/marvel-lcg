@@ -57,6 +57,7 @@ internal static class AbilityBindingAnalysis
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
         AbilityCardSelection.WithTrait trait => BindingCanChange(trait.Cards),
         AbilityCardSelection.FaceDown trait => BindingCanChange(trait.Cards),
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(BindingCanChange),
         AbilityCardSelection.Last trait => BindingCanChange(trait.Cards),
         AbilityCardSelection.InObjectIdOrder trait => BindingCanChange(trait.Cards),
         AbilityCardSelection.WithMatchingPlayerArea trait => BindingCanChange(trait.Cards),

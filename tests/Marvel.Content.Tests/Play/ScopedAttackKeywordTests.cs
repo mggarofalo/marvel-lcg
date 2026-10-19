@@ -1,3 +1,4 @@
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
@@ -26,7 +27,7 @@ public sealed class ScopedAttackKeywordTests
     public void BlackKnightPiercesOnlyWithHisBasicAttack(bool basic, int damage)
     {
         // "Before this attack deals damage ... discard each tough status card."
-        var runner = new AbilityRunner(AbilityCatalog.Parse(Book));
+        var runner = AuthoredCards.Runner();
         var (_, world) = Playing(_ => { }, abilities: runner);
         var ally = InPlay(world, "04012");
         var target = world.TheCardIn(DeckType.VillainArea)!;
@@ -53,7 +54,7 @@ public sealed class ScopedAttackKeywordTests
     public void WarMachineIgnoresRetaliateOnlyOnBasicAttack(bool basic, int damage)
     {
         // "This attack ignores the retaliate keyword."
-        var runner = new AbilityRunner(AbilityCatalog.Parse(Book));
+        var runner = AuthoredCards.Runner();
         var (_, world) = Playing(_ => { }, abilities: runner);
         var ally = InPlay(world, "04020");
         var target = world.TheCardIn(DeckType.VillainArea)!;
@@ -74,7 +75,7 @@ public sealed class ScopedAttackKeywordTests
     [InlineData("01005", false)]
     public void BowRangedFollowsArrowSourceAndEndsWhenBowLeaves(string face, bool ranged)
     {
-        var runner = new AbilityRunner(AbilityCatalog.Parse(Book));
+        var runner = AuthoredCards.Runner();
         var (_, world) = Playing(_ => { }, abilities: runner);
         var hero = world.Seats[0].IdentityCard;
         var bow = InPlay(world, "04002");
@@ -93,7 +94,7 @@ public sealed class ScopedAttackKeywordTests
     [Fact]
     public void VibraniumPiercingBelongsToItsOwnEventInPreviewAndDamage()
     {
-        var runner = new AbilityRunner(AbilityCatalog.Parse(Book));
+        var runner = AuthoredCards.Runner();
         var (_, world) = Playing(_ => { }, abilities: runner);
         var hero = world.Seats[0].IdentityCard;
         var source = world.CreateCard("04009", world.Seats[0].Hand);

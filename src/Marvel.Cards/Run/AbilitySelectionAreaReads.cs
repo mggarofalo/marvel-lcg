@@ -18,6 +18,9 @@ internal static class AbilitySelectionAreaReads
         if (Operand(selection) is { } child) Collect(child, areas);
         switch (selection)
         {
+            case AbilityCardSelection.FirstAvailable fallback:
+                foreach (var option in fallback.Options) Collect(option, areas);
+                break;
             case AbilityCardSelection.InAreas searched:
                 areas.UnionWith(searched.Areas.SelectMany(SearchTypes)); break;
             case AbilityCardSelection.InPlayerArea named: areas.Add(named.Area); break;

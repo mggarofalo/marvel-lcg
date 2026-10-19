@@ -1,3 +1,4 @@
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
@@ -10,20 +11,10 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class EncounterAttackKeywordTests
 {
-    private const string Book = """
-        {"cards":[
-          {"card":"04027","abilities":[
-            {"trigger":{"timing":"Constant"},"effect":{"grant":{"card":"this","keyword":"piercing"}}},
-            {"trigger":{"timing":"Boost","event":"WhenCardRevealed","subject":"this"},"effect":{"if":{"test":{"activationIs":"attack"},"then":{"grantUntil":{"card":"activatingEnemy","keyword":"piercing","amount":1,"until":"EndOfAttack"}}}}}]},
-          {"card":"04029","abilities":[{"trigger":{"timing":"ForcedInterrupt","event":"WhenAttackInitiated","actor":"attachedTo"},"effect":{"grantUntil":{"card":"attachedTo","keyword":"ranged","amount":1,"until":"EndOfAttack"}}}]},
-          {"card":"04072","abilities":[{"trigger":{"timing":"ForcedInterrupt","event":"WhenAttackInitiated","actor":"attachedTo"},"effect":{"grantUntil":{"card":"attachedTo","keyword":"ranged","amount":1,"until":"EndOfAttack"}}}]}
-        ]}
-        """;
-
     [Fact]
     public void CrossfireBoostPiercesOnlyTheCurrentAttack()
     {
-        var runner = new AbilityRunner(AbilityCatalog.Parse(Book));
+        var runner = AuthoredCards.Runner();
         var (_, world) = Playing(_ => { }, hero: true, abilities: runner);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var hero = world.Seats[0].IdentityCard;
@@ -42,7 +33,7 @@ public sealed class EncounterAttackKeywordTests
     [Fact]
     public void CrossfireOwnAttacksRetainPiercing()
     {
-        var runner = new AbilityRunner(AbilityCatalog.Parse(Book));
+        var runner = AuthoredCards.Runner();
         var (_, world) = Playing(_ => { }, hero: true, abilities: runner);
         var crossfire = world.CreateCard("04027", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         Statuses.Give(world, world.Seats[0].IdentityCard, Statuses.Tough);
@@ -56,7 +47,7 @@ public sealed class EncounterAttackKeywordTests
     [InlineData("04072")]
     public void AttachedRifleSuppressesRetaliateForItsAttackAndDoesNotLeak(string face)
     {
-        var runner = new AbilityRunner(AbilityCatalog.Parse(Book));
+        var runner = AuthoredCards.Runner();
         var (_, world) = Playing(_ => { }, hero: true, abilities: runner);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var attachment = world.CreateCard(face, world.AreaOf(DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId));

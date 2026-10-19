@@ -20,6 +20,8 @@ public abstract record AbilityCardSelection
     public sealed record WithTrait(AbilityCardSelection Cards, string Trait) : AbilityCardSelection;
     /// <summary>Selected cards whose physical face is down.</summary>
     public sealed record FaceDown(AbilityCardSelection Cards) : AbilityCardSelection;
+    /// <summary>The first nonempty ordered selection.</summary>
+    public sealed record FirstAvailable(ImmutableArray<AbilityCardSelection> Options) : AbilityCardSelection;
     /// <summary>The last card in an explicitly ordered selection.</summary>
     public sealed record Last(AbilityCardSelection Cards) : AbilityCardSelection;
     /// <summary>Cards in one player's explicitly named public area.</summary>

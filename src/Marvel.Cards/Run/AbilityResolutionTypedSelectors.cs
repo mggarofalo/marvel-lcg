@@ -12,6 +12,7 @@ internal static class AbilityResolutionTypedSelectors
             AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck),
         AbilityCardSelection.WithTrait filtered => execution.InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.FaceDown filtered => execution.InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(execution.InspectsConcealedPile),
         AbilityCardSelection.Last filtered => execution.InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.InObjectIdOrder filtered => execution.InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.WithMatchingPlayerArea filtered => execution.InspectsConcealedPile(filtered.Cards),

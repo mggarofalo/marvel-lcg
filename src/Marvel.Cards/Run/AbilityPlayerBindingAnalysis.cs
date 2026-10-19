@@ -201,6 +201,7 @@ internal static class AbilityPlayerBindingAnalysis
            ,
         AbilityCardSelection.WithTrait trait => Contains(trait.Cards),
         AbilityCardSelection.FaceDown trait => Contains(trait.Cards),
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(Contains),
         AbilityCardSelection.Last trait => Contains(trait.Cards),
         AbilityCardSelection.InObjectIdOrder trait => Contains(trait.Cards),
         AbilityCardSelection.WithMatchingPlayerArea trait => Contains(trait.Cards),

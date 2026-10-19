@@ -17,18 +17,9 @@ internal sealed class AbilitySelectorEvaluation(
 
     internal Card? Find(AbilityCardSelection selector)
     {
+        if (selector is AbilityCardSelection.FirstAvailable fallback) return FindFirstAvailable(fallback);
         if (selector is AbilityCardSelection.Bound bound) return AbilityCardQueries.Named(bound.Binding, context);
-        if (selector is AbilityCardSelection.Titled titled)
-        {
-            var found = AbilityCardQueries.ReferencedByTitle(titled.Title, context);
-            return found.Count switch
-            {
-                0 => null,
-                1 => found[0],
-                _ => throw new RulesNotImplementedException(
-                    $"'{context.Source.FaceId}' refers to {found.Count} cards titled '{titled.Title}' where one card is required"),
-            };
-        }
+        if (selector is AbilityCardSelection.Titled titled) return FindTitle(titled);
         if (selector is AbilityCardSelection.Query
             {
                 Kind:
@@ -42,26 +33,48 @@ internal sealed class AbilitySelectorEvaluation(
                 return null;
             return LastCard(Every(last.Cards));
         }
-        if (selector is AbilityCardSelection.InAreas areas)
-        {
-            if (admitSingularArea is not null && !admitSingularArea(AbilitySelectionAreaReads.For(areas)))
-                return null;
-            var found = CardsIn(areas);
-            return found.Count switch
-            {
-                0 => null,
-                1 => found[0],
-                _ => throw new RulesNotImplementedException(
-                    $"'{context.Source.FaceId}' searched and found {found.Count} matching cards; "
-                    + "rr:search.1 gives the player that choice and asking is not implemented"),
-            };
-        }
+        if (selector is AbilityCardSelection.InAreas areas) return FindInAreas(areas);
         throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' uses a selector whose single-card resolution is not implemented");
     }
 
+    private Card? FindInAreas(AbilityCardSelection.InAreas areas)
+    {
+        if (admitSingularArea is not null && !admitSingularArea(AbilitySelectionAreaReads.For(areas)))
+            return null;
+        var found = CardsIn(areas);
+        return found.Count switch
+        {
+            0 => null,
+            1 => found[0],
+            _ => throw new RulesNotImplementedException(
+                $"'{context.Source.FaceId}' searched and found {found.Count} matching cards; "
+                + "rr:search.1 gives the player that choice and asking is not implemented"),
+        };
+    }
+
+    private Card? FindTitle(AbilityCardSelection.Titled titled)
+    {
+        var found = AbilityCardQueries.ReferencedByTitle(titled.Title, context);
+        return found.Count switch
+        {
+            0 => null,
+            1 => found[0],
+            _ => throw new RulesNotImplementedException(
+                $"'{context.Source.FaceId}' refers to {found.Count} cards titled '{titled.Title}' where one card is required"),
+        };
+    }
+
+    private Card? FindFirstAvailable(AbilityCardSelection.FirstAvailable fallback)
+    {
+        foreach (var option in fallback.Options)
+            if (Every(option).Count > 0) return Find(option);
+        return null;
+    }
+
     internal IReadOnlyList<Card> Every(AbilityCardSelection selector) => selector switch
     {
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Select(Every).FirstOrDefault(cards => cards.Count > 0) ?? [],
         AbilityCardSelection.Bound bound => AbilityCardQueries.Named(bound.Binding, context) is { } card ? [card] : [],
         AbilityCardSelection.Query query => AbilityCardQueries.Cards(query.Kind, context, program),
         AbilityCardSelection.Titled titled => AbilityCardQueries.ReferencedByTitle(titled.Title, context),
@@ -212,6 +225,7 @@ internal sealed class AbilitySelectorEvaluation(
         AbilityCardSelection.InObjectIdOrder ordered => ExplicitlySelectsOutOfPlayCard(ordered.Cards, target),
         AbilityCardSelection.DefeatedWithProfile defeated => Every(defeated).Contains(target),
         AbilityCardSelection.FaceDown filtered => ExplicitlySelectsOutOfPlayCard(filtered.Cards, target),
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => ExplicitlySelectsOutOfPlayCard(option, target)),
         AbilityCardSelection.Last last => ExplicitlySelectsOutOfPlayCard(last.Cards, target),
         AbilityCardSelection.InPlayerArea area => !DeckTypes.IsInPlay(area.Area)
             && Every(area).Any(card => card == target),

@@ -37,7 +37,7 @@ internal static class AbilityProjection
 
     internal static bool SelectorMembershipCanChange(AbilityCardSelection selector) => selector switch
     {
-        AbilityCardSelection.FaceDown or AbilityCardSelection.Last or AbilityCardSelection.WithMatchingPlayerArea => true,
+        AbilityCardSelection.FirstAvailable or AbilityCardSelection.FaceDown or AbilityCardSelection.Last or AbilityCardSelection.WithMatchingPlayerArea => true,
         AbilityCardSelection.InObjectIdOrder ordered => SelectorMembershipCanChange(ordered.Cards),
         AbilityCardSelection.InPlayerArea { Area: DeckType.EngagedEnemiesArea } => true,
         AbilityCardSelection.WithTrait or AbilityCardSelection.EnemiesWithTrait
@@ -63,6 +63,7 @@ internal static class AbilityProjection
             AbilityCardSelection.EnemiesWithTrait => true,
             AbilityCardSelection.WithTrait filtered => PotentialVillainSelector(filtered.Cards, cast),
 
+            AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => PotentialVillainSelector(option, cast)),
             AbilityCardSelection.Last filtered => PotentialVillainSelector(filtered.Cards, cast),
 
             AbilityCardSelection.FaceDown filtered => PotentialVillainSelector(filtered.Cards, cast),
@@ -242,6 +243,7 @@ internal static class AbilityProjection
                 Enumerable.Range(0, cast.World.Seats.Count).Any(seat => SeatMayChange(formsMayChange, seat)),
             AbilityCardSelection.WithTrait filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
 
+            AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => CountSelectorFormsMayChange(option, cast, formsMayChange)),
             AbilityCardSelection.Last filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
 
             AbilityCardSelection.FaceDown filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),

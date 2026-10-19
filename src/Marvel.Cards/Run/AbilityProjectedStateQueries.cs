@@ -24,6 +24,7 @@ internal static class AbilityProjectedStateQueries
                 ProjectedEnemiesWithTrait(enemies, state, context),
             AbilityCardSelection.Ranked ranked =>
                 ProjectedRanked(ranked, state, context),
+            AbilityCardSelection.FirstAvailable fallback => fallback.Options.Select(option => ProjectedEvery(option, state, context)).FirstOrDefault(cards => cards.Count > 0) ?? [],
             AbilityCardSelection.Last last => [.. ProjectedEvery(last.Cards, state, context).TakeLast(1)],
             AbilityCardSelection.FaceDown filtered => [.. ProjectedEvery(filtered.Cards, state, context).Where(card => !card.FaceUp)],
             AbilityCardSelection.InObjectIdOrder ordered => [.. ProjectedEvery(ordered.Cards, state, context).OrderBy(card => card.ObjectId)],

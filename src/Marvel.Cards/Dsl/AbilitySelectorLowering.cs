@@ -49,6 +49,7 @@ internal static class AbilitySelectorLowering
             "inObjectIdOrder" => new AbilityCardSelection.InObjectIdOrder(SelectCards(node.Argument, child)),
             "defeatedWithProfile" => DefeatedProfile(node.Argument, child),
             "faceDown" => new AbilityCardSelection.FaceDown(SelectCards(node.Argument, child)),
+            "firstAvailable" => FirstAvailable(node.Argument, child),
             "last" => new AbilityCardSelection.Last(SelectCards(node.Argument, child)),
             "inPlayerArea" => PlayerArea(node.Argument, child),
             "withMatchingPlayerArea" => MatchingPlayerArea(node.Argument, child),
@@ -58,6 +59,17 @@ internal static class AbilitySelectorLowering
             "cardsIn" => InAreas(node.Argument, child),
             _ => throw child.Error($"'{node.Kind}' is not a card selector"),
         };
+    }
+
+    private static AbilityCardSelection.FirstAvailable FirstAvailable(AbilityValue value, AbilityLocation location)
+    {
+        if (value is not AbilityValue.List { Values.Count: >= 2 and <= 8 } list)
+            throw location.Error("expected two to eight ordered card selections");
+        var options = list.Values.Select(item => SelectCards(item, location)).ToImmutableArray();
+        if (options.Any(option => option is not AbilityCardSelection.Titled
+            and not AbilityCardSelection.Query { Kind: AbilityCardQuery.Villain or AbilityCardQuery.MainScheme }))
+            throw location.Error("fallback options must name a public title, villain, or main scheme");
+        return new(options);
     }
 
     internal static AbilityCardQuery Query(string name, AbilityLocation location) => name switch
@@ -248,3 +260,4 @@ internal static class AbilitySelectorLowering
         IReadOnlyDictionary<string, AbilityValue> fields, string name, AbilityLocation location) =>
         fields.TryGetValue(name, out var value) ? Text(value, location.Child(name)) : null;
 }
+

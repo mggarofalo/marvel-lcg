@@ -9423,6 +9423,221 @@
       ],
       "name": "Inconspicuous",
       "note": "Hero Action (thwart): Remove a total of 3 threat from among schemes in play."
+    },
+    {
+      "card": "04002",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grant": {
+              "card": "yourHero",
+              "keyword": "attack",
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grant": {
+              "card": "you",
+              "keyword": "ranged",
+              "attackScope": {
+                "sourceTrait": "ARROW"
+              }
+            }
+          }
+        }
+      ],
+      "name": "Hawkeye's Bow",
+      "note": "Restricted.\nYour hero gets +1 ATK and each of your Arrow attacks gain ranged."
+    },
+    {
+      "card": "04009",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "piercing",
+              "attackScope": "source"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "attack"
+          ],
+          "cost": {
+            "exhaustTitled": "Hawkeye's Bow"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "dealAttackDamage": {
+                      "cards": "chosen",
+                      "amount": 6
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "name": "Vibranium Arrow",
+      "note": "Hero Action (attack): Exhaust Hawkeye's Bow → deal 6 damage to an enemy. This attack gains piercing."
+    },
+    {
+      "card": "04012",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "piercing",
+              "attackScope": "basic"
+            }
+          }
+        }
+      ],
+      "name": "Black Knight",
+      "note": "star Black Knight's basic attack gains piercing."
+    },
+    {
+      "card": "04020",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "ranged",
+              "attackScope": "basic"
+            }
+          }
+        }
+      ],
+      "name": "War Machine",
+      "note": "Toughness. (This character enters play with a tough status card.)\nstar War Machine's basic attack gains ranged. (Ranged attacks ignore retaliate.)"
+    },
+    {
+      "card": "04027",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "piercing"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "activationIs": "attack"
+              },
+              "then": {
+                "grantUntil": {
+                  "card": "activatingEnemy",
+                  "keyword": "piercing",
+                  "amount": 1,
+                  "until": "EndOfAttack"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "name": "Crossfire",
+      "note": "Quickstrike.\nCrossfire's attacks gain piercing.\n\nstar Boost: If this boost resolves during an attack, the attack gains piercing."
+    },
+    {
+      "card": "04029",
+      "name": "Crossfire's Rifle",
+      "note": "Attach to Crossfire. Otherwise, attach to the villain.\nstar When attached enemy attacks, the attack gains ranged.\nHero Action: Exhaust your hero and spend a wild resource → discard Crossfire's Rifle.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "ForcedInterrupt",
+            "actor": "attachedTo"
+          },
+          "effect": {
+            "grantUntil": {
+              "card": "attachedTo",
+              "keyword": "ranged",
+              "amount": 1,
+              "until": "EndOfAttack"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered",
+            "form": "hero"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "you"
+              },
+              {
+                "spend": "G"
+              }
+            ]
+          }
+        }
+      ],
+      "attachTo": {
+        "firstAvailable": [
+          {
+            "titled": "Crossfire"
+          },
+          {
+            "query": "villain"
+          }
+        ]
+      }
     }
   ]
 }
