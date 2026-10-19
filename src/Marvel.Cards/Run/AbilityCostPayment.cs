@@ -54,6 +54,7 @@ internal sealed class AbilityCostPayment
         world.Agenda.Executions.RequireActive(owner);
         outcome.Suspended = false;
         outcome.Discarded.Clear();
+        outcome.Exhausted.Clear();
         if (resourcePayment is { IsComplete: false })
             throw new InvalidOperationException("resource payment resumed before its owned work completed");
         resourcePayment = null;
@@ -84,7 +85,7 @@ internal sealed class AbilityCostPayment
             DamageCostSettlement.Settle(world, owner, damageCosts, events);
         }
         outcome.Suspended |= damageCosts.Any(damage => !damage.IsComplete);
-        return new(outcome.Healed, outcome.Energy, outcome.Suspended) { Discarded = [.. outcome.Discarded] };
+        return new(outcome.Healed, outcome.Energy, outcome.Suspended) { Discarded = [.. outcome.Discarded], Exhausted = [.. outcome.Exhausted] };
     }
 
     private bool CommitImmediate(
@@ -108,6 +109,7 @@ internal sealed class AbilityCostPayment
                 var selected = exhaust.Cards.Select(card => card.RequireCurrent()).ToArray();
                 foreach (var card in selected) AbilityPhysicalPayment.RequireReady(card);
                 foreach (var card in selected) AbilityCardOperations.Exhaust(card, trigger, events);
+                outcome.Exhausted.AddRange(selected.Select(card => card.ObjectId));
                 return true;
             case TakeDamage damage:
                 CommitTakeDamage(damage, owner, trigger, events);
@@ -212,6 +214,7 @@ internal sealed class AbilityCostPayment
 
     private sealed class CommitOutcome
     {
+        internal List<int> Exhausted { get; } = [];
         internal long? Healed { get; set; }
         internal long? Energy { get; set; }
         internal bool Suspended { get; set; }

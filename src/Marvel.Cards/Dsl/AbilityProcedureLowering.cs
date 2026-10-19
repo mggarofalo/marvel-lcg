@@ -133,8 +133,16 @@ internal static class AbilityProcedureLowering
 
     internal static AbilityEffect.ReduceNextCardCost ReduceCostEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "player", "amount");
-        return new(LowerPlayer(Required(fields, "player", location), location.Child("player")), Numeric(fields, "amount", location));
+        var fields = Fields(value, location, "player", "amount", "kind", "trait");
+        bool any = Required(fields, "player", location) is AbilityValue.Word { Value: "any" };
+        var kind = fields.TryGetValue("kind", out var cardKind)
+            ? ConditionCardKind(cardKind, location.Child("kind")) : (Marvel.Rules.State.CardKind?)null;
+        string? trait = OptionalText(fields, "trait", location);
+        if (!any && (kind is not null || trait is not null))
+            throw location.Error("filtered reductions currently require player any");
+        return new(any ? AbilityPlayer.You : LowerPlayer(fields["player"], location.Child("player")),
+            Numeric(fields, "amount", location))
+        { AnyPlayer = any, Filter = any ? new(kind, trait) : null };
     }
 
     internal static AbilityEffect.Power PowerEffect(AbilityValue value, AbilityLocation location, AbilityPowerKind kind)

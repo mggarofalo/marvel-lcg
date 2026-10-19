@@ -6,7 +6,8 @@ namespace Marvel.Cards.Run;
 /// <summary>Readable effect vocabulary derived from checked ability instructions.</summary>
 internal static class AbilityEffectDescription
 {
-    internal static string? Summary(AbilityEffect effect) => AbilitySearchDescription.Summary(effect)
+    internal static string? Summary(AbilityEffect effect) => AbilityCostReductionDescription.Summary(effect)
+        ?? AbilitySearchDescription.Summary(effect)
         ?? AbilityRevealDescription.Summary(effect)
         ?? AbilityReadinessDescription.Summary(effect) ?? (effect switch
     {
@@ -102,6 +103,9 @@ internal static class AbilityEffectDescription
     private static string Noun(AbilityCardSelection selection) => selection switch
     {
         AbilityCardSelection.Discardable discardable => Noun(discardable.Cards),
+        AbilityCardSelection.WithTrait trait => $"{trait.Trait} {Noun(trait.Cards)}",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.CharactersYouControlExceptCost } =>
+            "character you control other than the character exhausted for this cost",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.CardsYouControl } => "card you control",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.OtherEnvironments } => "other environment",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.UpgradesAndSupportsYouControl } =>

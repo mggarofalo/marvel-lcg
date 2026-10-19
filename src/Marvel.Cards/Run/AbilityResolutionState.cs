@@ -83,6 +83,9 @@ internal sealed record AbilityResolutionState(
     /// <summary>Cards discarded earlier in this resolution, in order.</summary>
     public List<Card> Discarded { get; } = [];
 
+    /// <summary>Physical cards exhausted to pay this ability, retained across choices.</summary>
+    internal HashSet<int> ExhaustedForCost { get; } = [];
+
     /// <summary>The game element bound by the current alteration frame.</summary>
     public Card? Altered { get; private set; }
 

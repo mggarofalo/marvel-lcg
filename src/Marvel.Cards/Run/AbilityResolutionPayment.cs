@@ -42,6 +42,7 @@ internal static class AbilityResolutionPayment
     internal static void ApplyPayment(this AbilityResolutionExecution execution, AbilityPaymentResult result, AbilityResolutionState cast)
     {
         cast.Discarded.AddRange(result.Discarded);
+        cast.ExhaustedForCost.UnionWith(result.Exhausted);
         if (result.Healed is { } healed) cast.Results["healed"] = healed;
         if (result.Energy is { } energy) cast.Results["energy"] = energy;
         if (result.Suspended)

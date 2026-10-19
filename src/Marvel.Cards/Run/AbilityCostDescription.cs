@@ -44,7 +44,7 @@ internal static class AbilityCostDescription
     private static string Chosen(AbilityCost cost) => cost switch
     {
         AbilityCost.DiscardFromHand discard => $"Discard {Range(discard.Range)} cards from your hand",
-        AbilityCost.ExhaustChosen exhaust => $"Exhaust {Range(exhaust.Range)} {Relation(exhaust.From)}",
+        AbilityCost.ExhaustChosen exhaust => $"Exhaust {Range(exhaust.Range)} {exhaust.Trait + (exhaust.Trait is null ? "" : " ")}{Relation(exhaust.From)}",
         _ => throw new RulesNotImplementedException($"Cost description for {cost.GetType().Name}"),
     };
 

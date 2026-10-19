@@ -157,7 +157,10 @@ internal static class AbilityImmediateExecution
                         evaluator.Amount(grant.Amount), grant.Until);
                 return new(true, true);
             case AbilityEffect.ReduceNextCardCost reduction:
-                CardPayment.ReduceNextCardCost(
+                if (reduction.AnyPlayer)
+                    CardPayment.ReduceNextMatchingCardCost(world, source,
+                        evaluator.Amount(reduction.Amount), reduction.Filter!);
+                else CardPayment.ReduceNextCardCost(
                     world, source, evaluator.Seat(reduction.Player),
                     evaluator.Amount(reduction.Amount));
                 return new(true, true);

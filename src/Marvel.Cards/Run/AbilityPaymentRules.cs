@@ -78,7 +78,7 @@ internal static class AbilityPaymentRules
             // a sum, and a card with no printed `RES` pays it.
             AbilityCost.DiscardFromHand discard => world.Seats[player].Hand.Cards.Count
                 >= AbilityCostSelection.Range(discard.Range, int.MaxValue).Min,
-            AbilityCost.ExhaustChosen exhaust => AbilityCostSelection.Choices(world, player, exhaust.From)
+            AbilityCost.ExhaustChosen exhaust => AbilityCostSelection.Choices(world, player, exhaust)
                 .Count(card => card.Ready) >= AbilityCostSelection.Range(exhaust.Range, int.MaxValue).Min,
 
             AbilityCost.Heal heal => CostTarget(world, card, player, heal.Card) is { Damage: > 0 },

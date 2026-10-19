@@ -133,7 +133,7 @@ internal static class AbilityCostLowering
 
     internal static AbilityCost.ExhaustChosen ExhaustChosenCost(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "from", "count", "upTo", "anyNumber");
+        var fields = Fields(value, location, "from", "count", "upTo", "anyNumber", "trait");
         var from = SelectCards(Required(fields, "from", location), location.Child("from"));
         if (from is not AbilityCardSelection.Query
             { Kind: AbilityCardQuery.HeroesAndAllies or AbilityCardQuery.CharactersYouControl or AbilityCardQuery.AlliesYouControl } query)
@@ -156,7 +156,7 @@ internal static class AbilityCostLowering
             FixedWord(any, location.Child("anyNumber"), "true");
             range = new AbilityCostRange.Any();
         }
-        return new(query.Kind, range);
+        return new(query.Kind, range) { Trait = OptionalText(fields, "trait", location) };
     }
 
     internal static AbilityCost.Heal HealCost(AbilityValue value, AbilityLocation location)

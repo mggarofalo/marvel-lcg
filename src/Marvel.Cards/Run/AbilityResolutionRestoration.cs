@@ -72,6 +72,7 @@ internal static class AbilityResolutionRestoration
 
     internal static void ApplyRestored(this AbilityResolutionExecution execution, AbilityResolutionState cast, RestoredContinuationState state)
     {
+        cast.ExhaustedForCost.UnionWith(state.ExhaustedForCost);
         cast.Discarded.Clear();
         cast.Discarded.AddRange(state.Discarded);
         foreach (var (name, value) in state.Results)

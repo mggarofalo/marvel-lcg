@@ -143,7 +143,13 @@ public abstract record AbilityEffect
     /// <summary>Recover cards discarded this way with a printed resource.</summary>
     public sealed record RecoverDiscardedByResource(char Resource) : AbilityEffect;
     /// <summary>Reduce the next card cost paid by a player.</summary>
-    public sealed record ReduceNextCardCost(AbilityPlayer Player, AbilityNumber Amount) : AbilityEffect;
+    public sealed record ReduceNextCardCost(AbilityPlayer Player, AbilityNumber Amount) : AbilityEffect
+    {
+        /// <summary>Any player may use the next matching card reduction.</summary>
+        public bool AnyPlayer { get; init; }
+        /// <summary>Optional printed card kind and trait restriction.</summary>
+        public Marvel.Rules.Play.CardCostFilter? Filter { get; init; }
+    }
     /// <summary>A labeled attack, defense, or thwart containing an effect.</summary>
     public sealed record Power(AbilityPowerKind Kind, AbilityCardSelection? Target, AbilityEffect Effect, bool AutomaticTarget) : AbilityEffect;
     /// <summary>A rule-specific way to select schemes and run a thwart power.</summary>

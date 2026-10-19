@@ -140,7 +140,7 @@ internal sealed class AbilityPaymentValidation(
     private void ValidateChosenExhaust(
         AbilityCost.ExhaustChosen exhaust, IReadOnlyList<int> chosen)
     {
-        var legal = AbilityCostSelection.Choices(world, player, exhaust.From)
+        var legal = AbilityCostSelection.Choices(world, player, exhaust)
             .Where(card => card.Ready).Select(card => card.ObjectId).ToHashSet();
         var range = AbilityCostSelection.Range(exhaust.Range, legal.Count);
         if (chosen.Count < range.Min || chosen.Count > range.Max

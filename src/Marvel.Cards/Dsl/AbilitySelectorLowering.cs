@@ -86,6 +86,7 @@ internal static class AbilitySelectorLowering
         "identitySpecificInYourHand" => AbilityCardQuery.IdentitySpecificInYourHand,
         "supportsYouControl" => AbilityCardQuery.SupportsYouControl,
         "charactersYouControl" => AbilityCardQuery.CharactersYouControl,
+        "charactersYouControlExceptCost" => AbilityCardQuery.CharactersYouControlExceptCost,
         "upgradesYouControl" => AbilityCardQuery.UpgradesYouControl,
         "enemiesEngagedWithChosenPlayer" => AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
         "alliesYouControl" => AbilityCardQuery.AlliesYouControl,

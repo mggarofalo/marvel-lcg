@@ -42,6 +42,9 @@ public sealed record ContinuousEffect(
     Duration? Lasts = null,
     string Scope = "")
 {
+    /// <summary>Only matching played cards may consume this cost reduction.</summary>
+    public CardCostFilter? CostFilter { get; init; }
+
     /// <summary>The original in-play copy named by a delayed discard.</summary>
     public int? TargetIncarnation { get; init; }
 

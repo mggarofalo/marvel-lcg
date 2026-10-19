@@ -38,7 +38,11 @@ public abstract record AbilityCost
     /// <summary>Discard selected cards from the resolving player's hand.</summary>
     public sealed record DiscardFromHand(AbilityCostRange Range) : AbilityCost;
     /// <summary>Exhaust selected cards from a supported payment relation.</summary>
-    public sealed record ExhaustChosen(AbilityCardQuery From, AbilityCostRange Range) : AbilityCost;
+    public sealed record ExhaustChosen(AbilityCardQuery From, AbilityCostRange Range) : AbilityCost
+    {
+        /// <summary>Required current trait of the character paying this cost.</summary>
+        public string? Trait { get; init; }
+    }
     /// <summary>Heal a positive amount of damage from the cost's card.</summary>
     public sealed record Heal(AbilityCostCard Card, long Amount) : AbilityCost;
     /// <summary>Deal damage, or require that all of it be taken to pay the cost.</summary>

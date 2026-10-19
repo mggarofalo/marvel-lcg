@@ -639,3 +639,20 @@ cards only; upgrades and status cards are different types (ruling:81bce25b60d865
 `releaseBeneath` optionally takes `rescue: "true"` for CAPTIVE allies: the player credited with the triggering defeat becomes their physical owner, the campaign records that rescue when present, and they enter that player's hand before host removal. Ordinary release preserves each card's existing owner.
 
 The player relation `defeater` reads the triggering defeat's credited seat, including when a scenario-owned When Defeated ability has no resolving player. It refuses an uncredited defeat rather than choosing the first player.
+
+### Trait-qualified Avengers costs
+
+`exhaustChosen` accepts an optional `trait`, matched against the selected ready
+character's current traits as well as its declared control relation. Both the
+offer and payment validation use the same restriction.
+`charactersYouControlExceptCost` selects controlled characters excluding the
+physical cards exhausted for this ability's chosen-card cost. This evidence is
+retained across later target choices and continuations, so an effect saying
+“another” cannot ready the character that paid it.
+
+`reduceNextCardCost` retains its existing selected-player form. The form
+`{ "player": "any", "kind": "ally", "trait": "AVENGER", "amount": 1 }`
+creates one reduction usable by the next matching played card across all players
+until the end of the phase. Nonmatching cards and price queries do not consume
+it. Kind and trait restrictions are typed effect data; they are not inferred
+from card names.

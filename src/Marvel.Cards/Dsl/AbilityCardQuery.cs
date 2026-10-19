@@ -54,6 +54,8 @@ public enum AbilityCardQuery
     SupportsYouControl,
     /// <summary>The authored charactersYouControl relation.</summary>
     CharactersYouControl,
+    /// <summary>Controlled characters other than those exhausted for this ability cost.</summary>
+    CharactersYouControlExceptCost,
     /// <summary>The authored upgradesYouControl relation.</summary>
     UpgradesYouControl,
     /// <summary>The authored enemiesEngagedWithChosenPlayer relation.</summary>

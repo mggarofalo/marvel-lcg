@@ -196,6 +196,7 @@ internal static class AbilityPlayerBindingAnalysis
             or AbilityCardQuery.UpgradesAndSupportsYouControl or AbilityCardQuery.CardsYouControl
             or AbilityCardQuery.IdentitySpecificInYourHand
             or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.CharactersYouControl
+            or AbilityCardQuery.CharactersYouControlExceptCost
             or AbilityCardQuery.UpgradesYouControl or AbilityCardQuery.AlliesYouControl
            ,
         AbilityCardSelection.WithTrait trait => Contains(trait.Cards),

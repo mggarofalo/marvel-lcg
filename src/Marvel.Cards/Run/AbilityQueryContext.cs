@@ -14,6 +14,8 @@ internal sealed record AbilityQueryContext(
     AbilityCardReference? PlayerSelectionBinding, Card? Altered,
     ImmutableArray<Card> PowerTargets)
 {
+    internal ImmutableHashSet<int> ExhaustedForCost { get; init; } = [];
+
     internal Defeated? TriggeringDefeat { get; init; }
     internal Defeated? Defeat => TriggeringDefeat ?? Occurrence.Defeat;
 

@@ -29,7 +29,7 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.UpgradesAndSupportsYouControl, AbilityCardQuery.CardsYouControl,
         AbilityCardQuery.IdentitySpecificInYourHand,
         AbilityCardQuery.SupportsYouControl,
-        AbilityCardQuery.CharactersYouControl,
+        AbilityCardQuery.CharactersYouControl, AbilityCardQuery.CharactersYouControlExceptCost,
         AbilityCardQuery.UpgradesYouControl,
         AbilityCardQuery.AlliesYouControl,
     ];
@@ -134,6 +134,8 @@ internal sealed class CardQueryEvaluator(
             [.. cast.World.Seats[cast.Player].Hand.Cards.Where(IsIdentitySpecific)],
         AbilityCardQuery.SupportsYouControl =>
             [.. InArea(cast.World, DeckType.SupportsArea, PlayArea.Of(cast.Player))],
+        AbilityCardQuery.CharactersYouControlExceptCost => [.. EvaluateControlled(AbilityCardQuery.CharactersYouControl)
+            .Where(card => !cast.ExhaustedForCost.Contains(card.ObjectId))],
         AbilityCardQuery.CharactersYouControl =>
             [cast.World.Seats[cast.Player].IdentityCard,
              .. InArea(cast.World, DeckType.AlliesArea, PlayArea.Of(cast.Player))],
