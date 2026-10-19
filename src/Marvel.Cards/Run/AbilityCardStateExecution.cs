@@ -257,6 +257,7 @@ internal static class AbilityCardStateExecution
         AbilitySearchArea.EncounterDiscardPile => context.World.AreaOf(DeckType.EncounterDiscardPile),
         AbilitySearchArea.ScenarioSetAside => context.World.AreaOf(DeckType.AsideDeck),
         AbilitySearchArea.YourDeck => context.World.Seats[context.Player].Deck,
+        AbilitySearchArea.YourDiscardPile => context.World.AreaOf(DeckType.DiscardPile, PlayArea.Of(context.Player), cardOwner: context.Player),
         _ => throw new InvalidOperationException("Unknown compiled search area"),
     };
     internal static IEnumerable<int> Players(AbilityPlayerSelection players, AbilityCardStateContext context) => players switch

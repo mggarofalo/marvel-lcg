@@ -219,6 +219,7 @@ internal static class AbilityInitiationPrimitives
             AbilitySearchArea.EncounterDiscardPile => scope.World.AreaOf(DeckType.EncounterDiscardPile),
             AbilitySearchArea.ScenarioSetAside => scope.World.AreaOf(DeckType.AsideDeck),
             AbilitySearchArea.YourDeck => scope.World.Seats[scope.Player].Deck,
+        AbilitySearchArea.YourDiscardPile => scope.World.AreaOf(DeckType.DiscardPile, PlayArea.Of(scope.Player), cardOwner: scope.Player),
             _ => throw new InvalidOperationException("Unknown compiled search area"),
         };
 

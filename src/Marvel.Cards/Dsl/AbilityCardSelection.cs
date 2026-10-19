@@ -39,5 +39,11 @@ public abstract record AbilityCardSelection
     public sealed record Ranked(AbilityCardSelection Cards, AbilityCardRank By, bool Maximum) : AbilityCardSelection;
     /// <summary>Cards matching printed criteria in an ordered collection of areas.</summary>
     public sealed record InAreas(ImmutableArray<AbilitySearchArea> Areas, CardKind? Kind,
-        string? Trait, string? Title) : AbilityCardSelection;
+        string? Trait, string? Title) : AbilityCardSelection
+    {
+        /// <summary>Inspect this many top cards before applying printed filters.</summary>
+        public int? Top { get; init; }
+        /// <summary>Match cards from any of the four aspects.</summary>
+        public bool AspectOnly { get; init; }
+    }
 }

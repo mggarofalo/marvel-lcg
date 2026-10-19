@@ -14,4 +14,6 @@ public enum AbilitySearchArea
     ScenarioSetAside,
     /// <summary>The resolving player's deck.</summary>
     YourDeck,
+    /// <summary>The resolving player's discard pile.</summary>
+    YourDiscardPile,
 }

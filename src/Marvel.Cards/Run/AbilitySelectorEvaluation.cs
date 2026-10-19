@@ -125,16 +125,26 @@ internal sealed class AbilitySelectorEvaluation(
         // searched area." Exposure is an output, never a write to the board.
         if (selection.Areas.Any(area => area is AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck))
             information.Add(InformationKind.Search);
-        return [.. selection.Areas.SelectMany(AreaCards)
+        return [.. selection.Areas.SelectMany(area => SearchRange(area, selection.Top))
+            .Where(card => !selection.AspectOnly || IsAspect(card))
             .Where(card => selection.Kind is null || EffectiveCards.Kind(card, context.World.Facts) == selection.Kind)
             .Where(card => selection.Trait is null || Rules.State.Traits.Has(context.World, card, selection.Trait, context.World.Facts))
             .Where(card => selection.Title is null || string.Equals(context.World.Facts.Title(card.FaceId), selection.Title, StringComparison.Ordinal))];
     }
 
-    private IReadOnlyList<Card> AreaCards(AbilitySearchArea area) => area == AbilitySearchArea.YourDeck
-        ? context.World.Seats[context.Player].Deck.Cards
-        : context.World.Areas.FirstOrDefault(candidate => candidate.Type == AreaType(area)
-            && candidate.PlayArea == PlayArea.Villains && candidate.Host == -1)?.Cards ?? [];
+    private IEnumerable<Card> SearchRange(AbilitySearchArea area, int? top) => top is { } count
+        ? AreaCards(area).Reverse().Take(count) : AreaCards(area);
+
+    private bool IsAspect(Card card) => context.World.Facts.Attributes(card.FaceId).GetValueOrDefault("Class")
+        is "Aggression" or "Justice" or "Leadership" or "Protection";
+
+    private IReadOnlyList<Card> AreaCards(AbilitySearchArea area)
+    {
+        if (area == AbilitySearchArea.YourDeck) return context.World.Seats[context.Player].Deck.Cards;
+        var playArea = area == AbilitySearchArea.YourDiscardPile ? PlayArea.Of(context.Player) : PlayArea.Villains;
+        return context.World.Areas.FirstOrDefault(candidate => candidate.Type == AreaType(area)
+            && candidate.PlayArea == playArea && candidate.Host == -1)?.Cards ?? [];
+    }
 
     internal static DeckType AreaType(AbilitySearchArea area) => area switch
     {
@@ -142,6 +152,7 @@ internal sealed class AbilitySelectorEvaluation(
         AbilitySearchArea.EncounterDiscardPile => DeckType.EncounterDiscardPile,
         AbilitySearchArea.ScenarioSetAside => DeckType.AsideDeck,
         AbilitySearchArea.YourDeck => DeckType.PlayerDeck,
+        AbilitySearchArea.YourDiscardPile => DeckType.DiscardPile,
         _ => throw new InvalidOperationException("Unknown compiled search area"),
     };
 

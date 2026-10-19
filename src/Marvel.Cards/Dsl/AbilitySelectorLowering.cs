@@ -154,7 +154,7 @@ internal static class AbilitySelectorLowering
 
     internal static AbilityCardSelection.InAreas InAreas(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "area", "areas", "kind", "trait", "title");
+        var fields = Fields(value, location, "area", "areas", "kind", "trait", "title", "top", "aspectOnly");
         if (fields.ContainsKey("area") == fields.ContainsKey("areas"))
         {
             throw location.Error("expected exactly one of 'area' and 'areas'");
@@ -189,7 +189,7 @@ internal static class AbilitySelectorLowering
             }
             kind = parsed;
         }
-        return new(areas, kind, OptionalText(fields, "trait", location), OptionalText(fields, "title", location));
+        return AbilitySearchFilters.Lower(new(areas, kind, OptionalText(fields, "trait", location), OptionalText(fields, "title", location)), fields, location);
     }
 
     internal static AbilitySearchArea SearchArea(AbilityValue value, AbilityLocation location) =>
@@ -199,6 +199,7 @@ internal static class AbilitySelectorLowering
             "encounterDiscardPile" => AbilitySearchArea.EncounterDiscardPile,
             "scenarioSetAside" => AbilitySearchArea.ScenarioSetAside,
             "yourDeck" => AbilitySearchArea.YourDeck,
+            "yourDiscardPile" => AbilitySearchArea.YourDiscardPile,
             var name => throw location.Error($"'{name}' is not a supported search area"),
         };
 
