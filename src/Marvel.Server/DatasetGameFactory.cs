@@ -10,11 +10,12 @@ using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Session;
+using Marvel.Rules.Campaign;
 
 namespace Marvel.Server;
 
 /// <summary>Loads the repository's canonical datasets and deals games from them.</summary>
-public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery, IDeckDiscovery
+public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, IDeckDiscovery
 {
     private readonly SetupCatalog setup;
     private readonly CardCatalog cards;
@@ -32,10 +33,31 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery, I
         this.cards = cards;
         this.abilities = abilities;
         Compatibility = compatibility;
+        CampaignDefinition = RiseOfRedSkullAdmission.Discover(setup, cards, abilities.Authored);
     }
 
     /// <inheritdoc />
     public SessionCompatibility Compatibility { get; }
+
+    /// <inheritdoc />
+    public CampaignDefinition? CampaignDefinition { get; }
+
+    /// <inheritdoc />
+    public DeckAssessment AssessCampaignDeck(string hero, IReadOnlyList<string> cards, IReadOnlyList<string> bannedAllies) =>
+        CampaignDecks.Assess(cards, setup.Hero(hero), this.cards, abilities.Authored, bannedAllies);
+
+    /// <summary>Offers campaign deck quantities through the same construction rules as creation.</summary>
+    public IReadOnlyDictionary<string, int[]> CampaignDeckQuantities(
+        string hero, IReadOnlyList<string> draft, IReadOnlyList<string> bannedAllies) =>
+        CampaignDecks.Quantities(draft, setup.Hero(hero), cards, abilities.Authored, bannedAllies);
+
+    /// <inheritdoc />
+    public int CampaignBaseHitPoints(string hero) => checked((int)cards.PrintedValue(
+        setup.Hero(hero).Hero.Single().Split(',')[0], "HP", 1));
+
+    /// <inheritdoc />
+    public CampaignGameProgress InspectCampaign(Game game) => CampaignInspection.Read(game,
+        CampaignDefinition ?? throw new InvalidOperationException("the complete campaign is not admitted"));
 
     /// <summary>Loads the three datasets beneath <paramref name="dataRoot"/>.</summary>
     public static DatasetGameFactory Load(string dataRoot)
@@ -68,13 +90,16 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery, I
     {
         ArgumentNullException.ThrowIfNull(specification);
         PlayerCountRules.Validate(specification.Heroes.Count);
+        CampaignSetupAdmission.Validate(specification, CampaignDefinition, cards, abilities.Authored);
         if (specification.PlayerDecks is not null)
         {
             if (specification.PlayerDecks.Count != specification.Heroes.Count)
                 throw new ArgumentException("an explicit deck is required for every seat", nameof(specification));
             for (int seat = 0; seat < specification.Heroes.Count; seat++)
             {
-                var assessment = AssessDeck(specification.Heroes[seat], specification.PlayerDecks[seat].Cards);
+                var assessment = specification.Campaign is { } campaignSetup
+                    ? AssessCampaignDeck(specification.Heroes[seat], specification.PlayerDecks[seat].Cards, campaignSetup.BannedAllyFaces)
+                    : AssessDeck(specification.Heroes[seat], specification.PlayerDecks[seat].Cards);
                 if (!assessment.IsValid)
                     throw new ArgumentException(string.Join("; ", assessment.Diagnostics.Select(item => item.Message)), nameof(specification));
             }
@@ -82,21 +107,19 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery, I
         var runner = new AbilityRunner(abilities);
         var setupEvents = new List<GameEvent>();
         var campaign = setup.Campaign(specification.Scenario);
-        var world = WorldSetup.Deal(
-            cards,
-            Blueprints.From(
-                Dealer.DealOrder(
-                    setup,
-                    specification.Scenario,
-                    specification.Heroes,
-                    specification.ModularSets,
-                    cards, playerDecks: specification.PlayerDecks),
-                cards),
+        var ordinary = Blueprints.From(Dealer.Deal(setup,
+            new DealRequest(specification.Scenario, specification.Heroes, specification.ModularSets,
+                PlayerDecks: specification.PlayerDecks)
+            { CampaignExcludedAllies = specification.Campaign?.BannedAllyFaces ?? [] }, cards), cards);
+        var plan = specification.Campaign is { } input
+            ? CampaignBlueprints.From(ordinary, input, CampaignDefinition!) : new CampaignDealPlan(ordinary, [], []);
+        var world = WorldSetup.DealConfigured(
+            cards, plan.Blueprints,
             [.. specification.Heroes.Select(hero => setup.Hero(hero).Name)],
             specification.Seed,
             runner,
-            setupEvents,
-            campaign.Expert);
+            new WorldSetupOptions(campaign.Expert, specification.Campaign, plan.Bindings, plan.ExperimentalWeapons),
+            setupEvents);
         return new OpenedGame(Game.Begin(world, cards, runner), setupEvents);
     }
 

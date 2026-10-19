@@ -8,13 +8,16 @@ public sealed class CampaignAttemptState
 {
     private readonly Dictionary<int, CampaignCardProgress> cards;
     private World? owner;
+    private readonly HashSet<int> weapons;
 
     /// <summary>Binds the exact saved setup and deterministic physical-card mapping once.</summary>
-    public CampaignAttemptState(CampaignGameSetup setup, IReadOnlyList<CampaignCardBinding> bindings)
+    public CampaignAttemptState(CampaignGameSetup setup, IReadOnlyList<CampaignCardBinding> bindings,
+        IReadOnlyList<int>? experimentalWeapons = null)
     {
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(bindings);
         Setup = setup;
+        weapons = (experimentalWeapons ?? []).ToHashSet();
         if (bindings.Select(binding => binding.Card.Key).Distinct(StringComparer.Ordinal).Count() != bindings.Count)
             throw new ArgumentException("campaign card keys must be unique", nameof(bindings));
         cards = bindings.ToDictionary(binding => binding.ObjectId,
@@ -30,6 +33,8 @@ public sealed class CampaignAttemptState
         ArgumentNullException.ThrowIfNull(world);
         if (owner is not null || world.Campaign is not null)
             throw new InvalidOperationException("campaign attempts bind to exactly one world");
+        if (weapons.Any(id => id < 0 || id >= world.Cards.Count))
+            throw new ArgumentException("campaign weapon binding is outside this world", nameof(world));
         foreach (var progress in Cards)
         {
             int id = progress.Binding.ObjectId;
@@ -42,6 +47,10 @@ public sealed class CampaignAttemptState
 
     /// <summary>Cumulative facts in deterministic object-id order.</summary>
     public IReadOnlyList<CampaignCardProgress> Cards => [.. cards.Values.OrderBy(value => value.Binding.ObjectId)];
+
+    /// <summary>Experimental attachments that actually entered play, retained after leaving it.</summary>
+    public IReadOnlyList<Card> EnteredExperimentalWeapons => owner is null ? [] :
+        [.. weapons.Order().Select(id => owner.Cards[id]).Where(card => card.HasEnteredPlay)];
 
     /// <summary>Records a printed removal from the campaign, independently of the card's current zone.</summary>
     public void Remove(Card card, string trigger, List<GameEvent> events)
@@ -80,25 +89,29 @@ public sealed class CampaignAttemptState
     public IReadOnlyDictionary<string, long> Fields(Card card)
     {
         if (!cards.TryGetValue(card.ObjectId, out var progress))
-            return new Dictionary<string, long>();
+            return weapons.Contains(card.ObjectId)
+                ? new Dictionary<string, long> { ["campaign_entered_play"] = card.HasEnteredPlay ? 1 : 0 }
+                : new Dictionary<string, long>();
         // These names and numeric role assignments are engine-owned wire choices.
         // The immutable setup plus content hash fixes the object-id/key mapping.
         return new Dictionary<string, long>(StringComparer.Ordinal)
         {
-            ["campaign_role"] = progress.Binding.Card.Role switch
-            {
-                CampaignCardRole.Tech => 1,
-                CampaignCardRole.Condition => 2,
-                CampaignCardRole.RescuedAlly => 3,
-                CampaignCardRole.Obligation => 4,
-                _ => throw new InvalidOperationException("unknown campaign card role"),
-            },
+            ["campaign_role"] = RoleValue(progress.Binding.Card.Role),
             ["campaign_seat"] = progress.Binding.Seat,
             ["campaign_removed"] = progress.Removed ? 1 : 0,
             ["campaign_rescued"] = progress.Rescued ? 1 : 0,
             ["campaign_assigned"] = progress.Assigned ? 1 : 0,
         };
     }
+
+    private static long RoleValue(CampaignCardRole role) => role switch
+    {
+        CampaignCardRole.Tech => 1,
+        CampaignCardRole.Condition => 2,
+        CampaignCardRole.RescuedAlly => 3,
+        CampaignCardRole.Obligation => 4,
+        _ => throw new InvalidOperationException("unknown campaign card role"),
+    };
 
     private CampaignCardProgress Get(Card card) => owner is not null && owner.Cards.Contains(card)
         && cards.TryGetValue(card.ObjectId, out var progress)

@@ -82,7 +82,7 @@ public static class WorldSetup
         var obligations = created.Obligations;
         var identities = created.Identities;
         if (options.Campaign is { } campaign)
-            new Campaign.CampaignAttemptState(campaign, options.CampaignCards ?? []).Bind(world);
+            new Campaign.CampaignAttemptState(campaign, options.CampaignCards ?? [], options.ExperimentalWeapons).Bind(world);
 
         // 2. Each identity enters play. The alter-ego side is already first --
         //    the deal order put it there -- so nothing is flipped here.

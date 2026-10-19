@@ -9,13 +9,29 @@ namespace Marvel.Rules.Tests.Campaign;
 public sealed class CampaignAttemptStateTests
 {
     [Fact]
+    public void RevealingAnExperimentalWeaponDoesNotRecordEntryUntilItActuallyEntersPlay()
+    {
+        var world = new World(new Printed(), 1);
+        var card = world.CreateCard("weapon", world.AreaOf(DeckType.ExperimentalWeaponsDeck));
+        var setup = new CampaignGameSetup("synthetic", false, CampaignStage.Crossbones, 1, [], [], 0);
+        new CampaignAttemptState(setup, [], [card.ObjectId]).Bind(world);
+        World.MoveToTop(card, world.AreaOf(DeckType.RevealingArea));
+        Assert.Empty(world.Campaign!.EnteredExperimentalWeapons);
+        Assert.Equal(0, Fields(world, card)["campaign_entered_play"]);
+        World.MoveToTop(card, world.AreaOf(DeckType.UpgradesArea));
+        World.MoveToTop(card, world.AreaOf(DeckType.EncounterDiscardPile));
+        Assert.Equal([card], world.Campaign.EnteredExperimentalWeapons);
+        Assert.Equal(1, Fields(world, card)["campaign_entered_play"]);
+    }
+
+    [Fact]
     public void CampaignRemovalChangesTheDigestEvenWhenTheCardIsAlreadyOutOfPlay()
     {
         var (world, card) = Board(CampaignCardRole.Tech);
-        var before = world.Digest();
+        var before = world.Digest().Canonical();
         var events = new List<GameEvent>();
         world.Campaign!.Remove(card, "ability", events);
-        Assert.NotEqual(before, world.Digest());
+        Assert.NotEqual(before, world.Digest().Canonical());
         Assert.True(Assert.Single(world.Campaign.Cards).Removed);
         Assert.Equal(1, Fields(world, card)["campaign_removed"]);
         Assert.Single(events.OfType<FieldSet>());

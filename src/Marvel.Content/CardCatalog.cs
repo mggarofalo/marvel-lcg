@@ -32,6 +32,9 @@ public sealed class CardCatalog : ICardFacts
     /// <summary>Every research face in stable code order; presence does not admit it to runtime.</summary>
     public IReadOnlyList<string> Faces => cards.Keys.Order(StringComparer.Ordinal).ToArray();
 
+    /// <summary>Printed product membership, independent of runtime ability admission.</summary>
+    public string Pack(string faceId) => cards[faceId].Pack;
+
     /// <summary>Parses the canonical <c>cards.json</c> text.</summary>
     /// <param name="json">The dataset.</param>
     /// <exception cref="JsonException">The text is not a card dataset.</exception>

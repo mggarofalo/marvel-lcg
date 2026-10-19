@@ -14,7 +14,11 @@ public static class RiseOfRedSkullCampaign
         [Condition("04159", 2), Condition("04160", 1), Condition("04161", 3), Condition("04162", 4)],
         ["04163", "04164", "04165", "04166"],
         ["04072", "04073", "04074", "04075"],
-        ["04097", "04098", "04099", "04100"]);
+        ["04097", "04098", "04099", "04100"])
+    {
+        HydraPrisonFace = "04122",
+        DelayCounterField = "k_delay",
+    };
 
     // Engine choice: stable keys identify physical campaign cards independently of per-game object ids.
     private static CampaignCard Tech(string face) => new("tech:" + face, face, CampaignCardRole.Tech);

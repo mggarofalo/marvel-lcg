@@ -58,7 +58,7 @@ public static class CampaignRules
                 player.Cards, state.Expert ? player.RecordedHitPoints : null,
                 state.Expert && player.RequiresRecovery, player.AvailableObligations,
                 state.Expert && state.Stage == CampaignStage.RedSkull && player.EngagedWithEnemy))],
-            state.ExperimentalWeapons, threat);
+            state.ExperimentalWeapons, threat) { BannedAllyFaces = state.BannedAllyFaces };
     }
 
     /// <summary>Marks the attempt active in the same transaction as the initial game save.</summary>

@@ -6,4 +6,5 @@ namespace Marvel.Rules.State;
 public sealed record WorldSetupOptions(
     bool Expert = false,
     CampaignGameSetup? Campaign = null,
-    IReadOnlyList<CampaignCardBinding>? CampaignCards = null);
+    IReadOnlyList<CampaignCardBinding>? CampaignCards = null,
+    IReadOnlyList<int>? ExperimentalWeapons = null);

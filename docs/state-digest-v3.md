@@ -242,6 +242,12 @@ the mapping from physical object ids to persistent campaign keys. Ordinary
 cards register none of these fields; a generic token dictionary is not a
 substitute for registered campaign state.
 
+Campaign Experimental Weapons additionally register `campaign_entered_play`
+(0 or 1). It records actual entry, remains set after departure, and is not set
+by revealing or boosting alone. This is the cumulative fact required by
+Crossbones' campaign victory instruction; emptying the auxiliary deck does not
+establish that an attachment entered play.
+
 The digest tests hold:
 
 - exact empty and populated canonical strings;

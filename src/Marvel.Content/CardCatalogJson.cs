@@ -40,6 +40,7 @@ public static class CardCatalogJson
             CounterTypesOf(printed, attributes).ToImmutableArray(),
             CounterMaximumsOf(printed).ToImmutableDictionary(StringComparer.Ordinal))
         {
+            Pack = ReadString(element, "pack"),
             PrintedStats = CardCatalogPrintedStats.Read(element, kind, attributes)
                 .ToImmutableDictionary(StringComparer.Ordinal),
         };

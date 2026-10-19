@@ -103,6 +103,9 @@ public sealed class Card
     /// </remarks>
     public bool HasRegisteredTokens { get; private set; }
 
+    /// <summary>Whether this physical card has entered play during this game.</summary>
+    public bool HasEnteredPlay { get; private set; }
+
     /// <summary>Whether the card is ready. <c>is_exhaust</c> is its negation.</summary>
     public bool Ready => state.Ready;
 
@@ -203,6 +206,7 @@ public sealed class Card
         Area = area;
         if (!movesWithinPlay) FaceUp = !DeckTypes.FaceDownOnEntry(area.Type);
         HasRegisteredTokens |= DeckTypes.GrantsTokenPool(area.Type);
+        HasEnteredPlay |= entersPlay;
     }
 
     // Preflight can project a departure without creating a new incarnation,

@@ -10,4 +10,8 @@ public sealed record CampaignGameSetup(
     int Attempt,
     ImmutableArray<CampaignSeatSetup> Seats,
     ImmutableArray<string> ExperimentalWeapons,
-    int AdditionalThreat);
+    int AdditionalThreat)
+{
+    /// <summary>Allies permanently removed by campaign instructions, including signature allies.</summary>
+    public ImmutableArray<string> BannedAllyFaces { get; init; } = [];
+}
