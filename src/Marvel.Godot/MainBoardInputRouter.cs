@@ -10,6 +10,7 @@ internal static class MainBoardInputRouter
         CardInspectorFocus inspector,
         InputEvent input)
     {
+        if (CardContextMenu.RouteInput()) return;
         inspector.ObservePreviewPointer(input);
         if (main.decisions.CompleteChoicesOpen)
         {

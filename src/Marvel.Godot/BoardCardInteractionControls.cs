@@ -22,8 +22,11 @@ internal sealed class BoardCardInteractionControls
         contextual = new BoardContextualInteractionControls(isCurrent);
     }
 
-    internal void Track(CardControl card, BoardCardPresentation presentation, bool isHand) =>
+    internal void Track(CardControl card, BoardCardPresentation presentation, bool isHand)
+    {
         presentations[card] = (presentation, isHand);
+        CardContextGesture.Bind(card, () => Activate(card, CardInteractionIntent.ContextMenu, null));
+    }
 
     internal void Bind(Func<CardPointerGesture, bool> handler) =>
         activate = handler ?? throw new ArgumentNullException(nameof(handler));

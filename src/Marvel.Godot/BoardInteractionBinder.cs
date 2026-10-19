@@ -80,6 +80,8 @@ internal static class BoardInteractionBinder
             return false;
         }
 
+        if (gesture.Intent == CardInteractionIntent.ContextMenu)
+            return CardContextMenuBinding.Show(panel, composer, gesture);
         int generation = panel.GetRenderGeneration();
         var interaction = new BoardDraftInteraction(
             composer, CurrentOperations(panel, composer), Affordances(panel, composer));

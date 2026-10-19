@@ -43,6 +43,14 @@ public sealed class BoardRenderResult
     /// <summary>Raised with the card under the pointer, or null when it leaves.</summary>
     public event Action<BoardCardPresentation, Control>? CardActivated;
 
+    internal void PreviewMenuCard(int? id, Control source)
+    {
+        if (id is { } target && Inspector.Current(target) is { } card) CardPreviewEntered?.Invoke(card, source);
+        else CardPreviewExited?.Invoke(source);
+    }
+
+    internal void InspectCard(BoardCardPresentation card, Control source) => CardActivated?.Invoke(card, source);
+
     /// <summary>Raised after a readable card body becomes the pointer's preview source.</summary>
     internal event Action<BoardCardPresentation, Control>? CardPreviewEntered;
 
