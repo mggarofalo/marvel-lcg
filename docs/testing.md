@@ -85,7 +85,7 @@ is changed; choose a fresh directory for each run. This applies equally to
 
 The manifest preserves the reviewed baseline union of 125 exhaustive and 115
 representative cases, including each helper's fixture and environment settings.
-Fourteen additional contracts bring those profiles to 139 and 129 cases. Seven
+Seventeen additional contracts bring those profiles to 142 and 132 cases. Seven
 optional inspection cases are separate from both profiles. The manifest is the
 membership authority; shell wrappers only select it.
 

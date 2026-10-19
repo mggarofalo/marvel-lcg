@@ -16,6 +16,9 @@ public sealed record GameSetupSelection(
     IReadOnlyList<string> ModularKeys,
     string Seed)
 {
+    /// <summary>Captured complete decks in seat order, or null for published starters.</summary>
+    public IReadOnlyList<DeckDraft>? Decks { get; init; }
+
     /// <summary>Creates the single-hero selection used by the local-play screen.</summary>
     public GameSetupSelection(
         string heroKey,

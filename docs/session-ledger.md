@@ -615,7 +615,7 @@ The final native journey uses 2 clients and one persistent server. It plays,
 saves, disconnects, restarts, restores, reconnects, edits reversible history
 and reaches an engine-reported terminal result.
 
-Protocol 32 carries engine-authored decision shapes, attack identities and lifetime
+Protocol 33 carries engine-authored decision shapes, attack identities and lifetime
 boundaries, scheme/thwart occurrence causes, resource-ability costs, typed failure
 dispositions and player-loss reasons. Replay v18 reconstructs invocation-owned
 payments and nested interrupt continuations with their completion dependencies.

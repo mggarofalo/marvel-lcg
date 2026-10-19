@@ -169,3 +169,11 @@ begins.
 - **Arbitrary deck building.** The runtime validates the 5 published Core Set
   starter decks. It does not accept a user-built deck, so identity-specific
   deck-building exceptions are outside the current product boundary.
+
+## Search metadata
+
+`datasets/cards/search.json` is a generated companion built from the same pinned
+MarvelSDB snapshot by `Marvel.Cards.Extract write` and verified by `check`. It
+contains acquisition metadata (pack, quantity, flavor, illustrator and search
+attributes). It is not engine rule authority and is excluded from gameplay
+compatibility hashes. Desktop and server packages include it for public search.

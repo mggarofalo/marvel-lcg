@@ -22,6 +22,10 @@ For local play on Windows, run `pwsh ./tools/run-game.ps1` from the repository
 root. It discovers the installed .NET Godot editor and builds before launching.
 Use `-NoBuild` only when the current source has already been built.
 
+Setup includes a [Core deck browser, builder and local library](deck-construction.md)
+with MarvelCDB JSON and published URL import. Open **Deck library · browse, build,
+import**, then capture a valid deck for a seat before starting the game.
+
 For a short current-decision check, start Iron Man against Rhino on Standard
 with seed `7`. Keep the opening hand, end the turn and finish the player phase.
 Business Problems should remain visible through its form and consequence

@@ -53,7 +53,9 @@ internal static class Program
 
     private static int Write()
     {
-        File.WriteAllText(Path(), Build(), new UTF8Encoding(false));
+        string built = Build();
+        File.WriteAllText(Path(), built, new UTF8Encoding(false));
+        File.WriteAllText(SearchMetadata.Path, SearchMetadata.Build(built), new UTF8Encoding(false));
         Console.Error.WriteLine($"wrote {Path()}");
         return 0;
     }
@@ -62,14 +64,15 @@ internal static class Program
     {
         string built = Build();
         string committed = File.ReadAllText(Path());
-        if (string.Equals(built, committed, StringComparison.Ordinal))
+        if (string.Equals(built, committed, StringComparison.Ordinal)
+            && File.Exists(SearchMetadata.Path) && File.ReadAllText(SearchMetadata.Path) == SearchMetadata.Build(built))
         {
-            Console.Error.WriteLine("datasets/cards/cards.json is what the generator produces");
+            Console.Error.WriteLine("datasets/cards/cards.json and search.json match the generator");
             return 0;
         }
 
         Console.Error.WriteLine(
-            "datasets/cards/cards.json differs from what the generator produces. "
+            "datasets/cards/cards.json or search.json differs from what the generator produces. "
             + "Run `dotnet run --project tools/Marvel.Cards.Extract -- write`.");
         return 1;
     }

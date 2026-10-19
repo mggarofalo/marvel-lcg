@@ -45,6 +45,13 @@ public sealed record EngineRequest(
     IReadOnlyList<int>? Order = null,
     EntryClaim? Entry = null)
 {
+    /// <summary>An optional editable draft, accepted only by the read-only deck operation.</summary>
+    public DeckQuery? Deck { get; init; }
+
+    /// <summary>Reads the public catalog, or assesses the supplied draft.</summary>
+    public static EngineRequest ReadDecks(string requestId, DeckQuery? draft = null) =>
+        new(EngineProtocol.Version, requestId, EngineProtocol.Decks, "") { Deck = draft };
+
     /// <summary>Builds a read-only setup-discovery request.</summary>
     public static EngineRequest ReadSetup(string requestId) =>
         new(EngineProtocol.Version, requestId, EngineProtocol.Setup, GameId: string.Empty);

@@ -427,7 +427,7 @@ public sealed partial class Main : Control
             heroes.Add(secondHero.GetItemMetadata(secondHero.Selected).AsString());
         }
 
-        return new GameSetupSelection(
+        return setupController.SelectDecks(new GameSetupSelection(
             heroes,
             SelectedCampaign().Key,
             modularConfiguration,
@@ -435,7 +435,7 @@ public sealed partial class Main : Control
                 .Where(set => selectedModularKeys.Contains(set.Key))
                 .Select(set => set.Key)
                 .ToArray(),
-            seed.Text);
+            seed.Text));
     }
 
     internal ScenarioSetupChoice SelectedCampaign() => visibleModes[mode.Selected];

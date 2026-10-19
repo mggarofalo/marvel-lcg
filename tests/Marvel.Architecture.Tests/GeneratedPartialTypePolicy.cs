@@ -14,6 +14,9 @@ internal static class GeneratedPartialTypePolicy
         // Exact paths and sole declarations prevent an exemption from admitting split logic.
         var required = path switch
         {
+            // Native row input and drop callbacks require Godot source generation.
+            "src/Marvel.Godot/DeckCardTable.cs" => (Namespace: "Marvel.Godot", Type: "DeckCardTable"),
+            "src/Marvel.Godot/DeckCardRow.cs" => (Namespace: "Marvel.Godot", Type: "DeckCardRow"),
             "src/Marvel.Godot/Main.cs" => (Namespace: "Marvel.Godot", Type: "Main"),
             "src/Marvel.Godot/CardControl.cs" => (Namespace: "Marvel.Godot", Type: "CardControl"),
             "src/Marvel.Godot/DecisionPanel.cs" => (Namespace: "Marvel.Godot", Type: "DecisionPanel"),

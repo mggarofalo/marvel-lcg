@@ -9,6 +9,9 @@ namespace Marvel.Godot;
 internal sealed class SetupSelectionControls
 {
     private readonly Main main;
+    private DeckSetupController? decks;
+
+    internal GameSetupSelection ApplyDecks(GameSetupSelection setup) => decks?.Apply(setup) ?? setup;
 
     internal SetupSelectionControls(Main main) => this.main = main;
 
@@ -34,6 +37,7 @@ internal sealed class SetupSelectionControls
 
         main.SetAssignmentControlsEnabled(true);
         OnScenarioSelected(0);
+        decks ??= new DeckSetupController(main);
     }
 
     internal void PopulateSecondHeroChoices()

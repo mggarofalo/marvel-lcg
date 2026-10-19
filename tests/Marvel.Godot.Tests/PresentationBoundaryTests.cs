@@ -22,6 +22,32 @@ public sealed class PresentationBoundaryTests
             "Marvel.View");
         PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(Main).Assembly,
+            // Library values and public printed facts have no live-card authority.
+            // Legality arrives only as host-authored diagnostics; unknown faces
+            // remain rejected by DeckCatalogTransportTests and DeckAssessmentTests.
+            // Public research and acquisition only; DeckResearchTests proves gameplay admission stays at the host.
+            "Marvel.Client.CardSearch",
+            "Marvel.Client.DeckResearchCatalog",
+            "Marvel.Client.MarvelCdbDeckSearch",
+            "Marvel.Client.PublishedDeck",
+            "Marvel.Client.PublishedDeckPage",
+            "Marvel.Client.ClientDeckResult",
+            "Marvel.Client.DeckDraft",
+            "Marvel.Client.DeckWorkspace",
+            // Host-assessed bulk proposals; stale and illegal quantities are rejected by DeckEditingTests.
+            "Marvel.Client.DeckEditProposal",
+            "Marvel.Client.DeckQuantityEditor",
+            "Marvel.Client.LocalDeckStore",
+            "Marvel.Client.MarvelCdbDeckImporter",
+            "Marvel.Client.MarvelCdbDeckJson",
+            "Marvel.Client.SavedDeck",
+            "Marvel.Protocol.DeckAssessmentResult",
+            "Marvel.Protocol.DeckCard",
+            "Marvel.Protocol.DeckCatalog",
+            "Marvel.Protocol.DeckHero",
+            "Marvel.Protocol.DeckQuery",
+            "Marvel.Protocol.DeckResponse",
+            "Marvel.Rules.Setup.DeckDiagnostic",
             // Current offered tuples and timing select controls; legality remains in Decisions.
             "Marvel.Decisions.WindowChoiceComposition",
             "Marvel.Rules.Prompts.WindowChoice",

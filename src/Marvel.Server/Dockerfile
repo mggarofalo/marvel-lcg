@@ -33,6 +33,7 @@ LABEL org.opencontainers.image.title="Marvel Champions server" \
 WORKDIR /app
 COPY --from=build /out/ ./
 COPY datasets/cards/cards.json datasets/cards/cards.json
+COPY datasets/cards/search.json datasets/cards/search.json
 COPY datasets/setup/setup.json datasets/setup/setup.json
 COPY datasets/abilities/abilities.json datasets/abilities/abilities.json
 

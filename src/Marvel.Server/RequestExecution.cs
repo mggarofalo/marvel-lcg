@@ -110,7 +110,7 @@ internal sealed class RequestExecution
                 : "rejected";
         long? observedRevision = request.Operation switch
         {
-            EngineProtocol.Setup => null,
+            EngineProtocol.Setup or EngineProtocol.Decks => null,
             EngineProtocol.Close => priorRevision,
             _ when accepted => response.Revision,
             _ => priorRevision,

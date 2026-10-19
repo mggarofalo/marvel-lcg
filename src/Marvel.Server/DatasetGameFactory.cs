@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Protocol;
 using Marvel.Rules.Setup;
 using System.Security.Cryptography;
@@ -13,11 +14,12 @@ using Marvel.Session;
 namespace Marvel.Server;
 
 /// <summary>Loads the repository's canonical datasets and deals games from them.</summary>
-public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
+public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery, IDeckDiscovery
 {
     private readonly SetupCatalog setup;
     private readonly CardCatalog cards;
     private readonly AbilityProgram abilities;
+    private IReadOnlyDictionary<string, Dictionary<string, string>> search = new Dictionary<string, Dictionary<string, string>>();
 
     private DatasetGameFactory(
         SetupCatalog setup,
@@ -54,7 +56,11 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
                 EngineBuildIdentity.StateDigest,
                 Hash(cardBytes),
                 Hash(setupBytes),
-                Hash(abilityBytes)));
+                Hash(abilityBytes)))
+        {
+            search = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(
+                ReadBytes(root, "cards", "search.json"))!,
+        };
     }
 
     /// <inheritdoc />
@@ -63,8 +69,16 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
         ArgumentNullException.ThrowIfNull(specification);
         PlayerCountRules.Validate(specification.Heroes.Count);
         if (specification.PlayerDecks is not null)
-            foreach (PlayerDeckRecipe deck in specification.PlayerDecks)
-                SetupCatalogAdmission.ValidateFaces(deck.Cards, cards, abilities.Authored);
+        {
+            if (specification.PlayerDecks.Count != specification.Heroes.Count)
+                throw new ArgumentException("an explicit deck is required for every seat", nameof(specification));
+            for (int seat = 0; seat < specification.Heroes.Count; seat++)
+            {
+                var assessment = AssessDeck(specification.Heroes[seat], specification.PlayerDecks[seat].Cards);
+                if (!assessment.IsValid)
+                    throw new ArgumentException(string.Join("; ", assessment.Diagnostics.Select(item => item.Message)), nameof(specification));
+            }
+        }
         var runner = new AbilityRunner(abilities);
         var setupEvents = new List<GameEvent>();
         var campaign = setup.Campaign(specification.Scenario);
@@ -85,6 +99,50 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
             campaign.Expert);
         return new OpenedGame(Game.Begin(world, cards, runner), setupEvents);
     }
+
+    /// <summary>Previews a draft against the same content and construction checks used at game creation.</summary>
+    public DeckAssessment AssessDeck(string hero, IReadOnlyList<string> draft) =>
+        CoreDeckAssessment.Assess(draft, setup.Hero(hero), cards, abilities.Authored);
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, int[]> DeckQuantities(string hero, IReadOnlyList<string> draft) =>
+        CoreDeckQuantities.Assess(draft, setup.Hero(hero), cards, abilities.Authored);
+
+    /// <inheritdoc />
+    public DeckCatalog DiscoverDecks() => new(
+        setup.HeroNames.Select(key =>
+        {
+            var hero = setup.Hero(key);
+            return new DeckHero(key, hero.Name, hero.Hero.Single().Split(','), hero.HeroDeck,
+                [.. hero.HeroDeck, .. hero.PlayerDeck])
+            {
+                Previews = hero.Hero.Single().Split(',').Select(face => Marvel.View.CatalogCardProjection.From(cards, face)).ToArray(),
+            };
+        }).ToArray(),
+        abilities.Authored.Order(StringComparer.Ordinal).Where(face => cards.Kind(face) is
+            CardKind.Ally or CardKind.Event or CardKind.Resource or CardKind.Support or CardKind.Upgrade)
+            .Select(PresentCard).ToArray());
+
+    /// <inheritdoc />
+    public DeckCardPage BrowseCards(int page)
+    {
+        const int pageSize = 200;
+        if (page is < 0 or > 1000) throw new ArgumentOutOfRangeException(nameof(page));
+        var faces = cards.Faces;
+        int offset = page * pageSize;
+        return new(faces.Skip(offset).Take(pageSize).Select(PresentCard).ToArray(),
+            offset + pageSize < faces.Count ? page + 1 : null);
+    }
+
+    private DeckCard PresentCard(string face) => new(face, cards.Title(face), cards.Kind(face).ToString(),
+        cards.Attributes(face).GetValueOrDefault("Class", ""), cards.PrintedTraits(face), cards.Text(face),
+        cards.Attributes(face).GetValueOrDefault("Cost"))
+    {
+        SearchFields = (search.GetValueOrDefault(face) ?? new Dictionary<string, string>()).ToImmutableDictionary(StringComparer.Ordinal),
+        RuntimeSupported = abilities.Authored.Contains(face) && cards.Kind(face) is
+            CardKind.Ally or CardKind.Event or CardKind.Resource or CardKind.Support or CardKind.Upgrade,
+        Subtitle = cards.Subtitle(face), Preview = Marvel.View.CatalogCardProjection.From(cards, face),
+    };
 
     /// <inheritdoc />
     public SetupChoices DiscoverSetup() => new(

@@ -5,6 +5,7 @@
     <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="AngleSharp" />
     <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
     <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
     <ProjectReference Include="../Marvel.Protocol/Marvel.Protocol.csproj" />

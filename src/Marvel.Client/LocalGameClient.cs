@@ -29,6 +29,10 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
     private long requestSequence;
     private readonly LocalGameEntryClient entry;
 
+    /// <summary>Reads the public deck catalog or assesses a draft without creating a session.</summary>
+    public ValueTask<ClientDeckResult> ReadDecksAsync(DeckQuery? draft = null,
+        CancellationToken cancellationToken = default) => DeckClient.QueryAsync(this, draft, cancellationToken);
+
     /// <summary>Creates an app client over an embedded or remote transport.</summary>
     public LocalGameClient(
         IEngineTransport transport,
@@ -181,7 +185,8 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
                 selection.ScenarioKey,
                 selection.HeroKeys,
                 modularSets,
-                seed),
+                seed, PlayerDecks: selection.Decks?.Select(draft =>
+                    new Marvel.Rules.Setup.PlayerDeckRecipe(draft.Cards)).ToArray()),
             cancellationToken);
     }
 

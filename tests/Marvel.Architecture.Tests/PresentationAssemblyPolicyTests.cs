@@ -148,6 +148,21 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View");
         PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(LocalGameClient).Assembly,
+            // Read-only public deck contracts and engine-authored corrections;
+            // DeckCatalogTransportTests proves admission remains at the host.
+            "Marvel.Protocol.DeckAssessmentResult",
+            "Marvel.Protocol.DeckCard",
+            // Bounded public research pages; research admission tests keep expansions unplayable.
+            "Marvel.Protocol.DeckCardPage",
+            // Printed-only preview validation rejects live handles and missing render fields.
+            "Marvel.View.BoardCardPresentation",
+            "Marvel.View.BoardFieldPresentation",
+            "Marvel.View.BoardPrintedValueMark",
+            "Marvel.Protocol.DeckCatalog",
+            "Marvel.Protocol.DeckHero",
+            "Marvel.Protocol.DeckQuery",
+            "Marvel.Protocol.DeckResponse",
+            "Marvel.Rules.Setup.DeckDiagnostic",
             // Passive forced-window resolution evidence, with no decision authority.
             "Marvel.Rules.Events.AbilityWindowResult",
             "Marvel.Rules.Events.ActivityCompleted",

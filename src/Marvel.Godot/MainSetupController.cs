@@ -23,6 +23,8 @@ internal sealed class MainSetupController
     }
     internal Task LoadSetupAsync() => discovery.LoadAsync();
 
+    internal GameSetupSelection SelectDecks(GameSetupSelection setup) => selection.ApplyDecks(setup);
+
     internal bool IsCurrentSetupLoad(long generation, string requestedEndpoint) =>
         InteractionControl.IsUsable(main) && main.lifecycle.IsCurrentEntry(generation)
         && main.endpoint.Text == requestedEndpoint;
