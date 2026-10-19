@@ -21,7 +21,7 @@ public static class CoreDeckAssessment
             else if (!cards.Has(face))
                 diagnostics.Add(new("unknown-face", face, "This printed card face is not recognized."));
             else if (!authored.Contains(face))
-                diagnostics.Add(new("unsupported-face", face, "This card is outside the supported Core content."));
+                diagnostics.Add(new("unsupported-face", face, "This card is outside the supported content."));
         }
         // Product choice: never assess a reduced substitute for the submitted deck.
         // Resolve admission defects first so unknown facts cannot produce false legality.

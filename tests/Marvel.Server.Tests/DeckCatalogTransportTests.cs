@@ -22,7 +22,8 @@ public sealed class DeckCatalogTransportTests : TransportTestBase
         Assert.Null(response.World);
         Assert.Null(response.Capability);
         var catalog = response.Decks!.Catalog!;
-        Assert.Equal(5, catalog.Heroes.Count);
+        Assert.Equal(["spider_man", "captain_marvel", "she_hulk", "iron_man", "black_panther", "hawkeye", "spider_woman"],
+            catalog.Heroes.Select(hero => hero.Key));
         var kick = Assert.Single(catalog.Cards, card => card.Face == "01005");
         Assert.Equal("3", kick.Cost);
         Assert.Null(kick.Preview!.TargetId);

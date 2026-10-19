@@ -18,7 +18,7 @@ internal static class PolicyTargetSelection
         return Allocate(wanted, ordered);
     }
 
-    private static IReadOnlyList<int> Allocate(TargetRequest wanted, IEnumerable<int> ordered)
+    private static List<int> Allocate(TargetRequest wanted, IEnumerable<int> ordered)
     {
         var selected = new List<int>();
         foreach (int id in ordered)

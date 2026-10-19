@@ -81,7 +81,7 @@ public sealed class DeckWorkspace(DeckCatalog catalog)
         long revision = Revision;
         var draft = Draft ?? throw new InvalidOperationException("Choose or create a deck first.");
         var hero = Catalog.Heroes.SingleOrDefault(item => item.IdentityFaces.Contains(draft.HeroCode, StringComparer.Ordinal));
-        if (hero is null) return "This identity is outside the host's supported Core content. Choose a Core identity; imported cards will be retained.";
+        if (hero is null) return "This identity is outside the host's supported content. Choose a supported identity; imported cards will be retained.";
         var result = await client.ReadDecksAsync(new(hero.Key, draft.Cards) { IncludeQuantities = true }, cancellationToken);
         if (revision != Revision) return null;
         if (!result.Succeeded) return result.Error!.Message;

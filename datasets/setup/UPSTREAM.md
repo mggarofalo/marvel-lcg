@@ -18,8 +18,8 @@ vendor, and the values cannot be regenerated from `datasets/cards/`.
 
 The Rise of Red Skull recipes follow the vendored `pack:mc10` scenario and
 starter-deck entries. Physical copy counts are checked against the pinned
-MarvelSDB pack snapshot. Declared expansion records remain unavailable at runtime
-until the complete-product admission gate accepts every required printed face.
+MarvelSDB pack snapshot. The complete-product admission gate requires all 181
+Rise of Red Skull printed faces before exposing its runtime recipes.
 
 ## What the gate holds
 

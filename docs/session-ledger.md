@@ -651,6 +651,15 @@ A process lease prevents competing writers. A failed pre-publication write leave
 the old state authoritative. An uncertain publication freezes mutations until
 restart establishes which complete generation the manifest names.
 
+The storage design applies the commit-point and failure-model reasoning in
+[SQLite's atomic commit analysis](https://www.sqlite.org/atomiccommit.html)
+to the existing file store. It keeps campaign progress and its game attempt in
+one publication rather than independently replacing two files. Windows publication
+uses the documented replacement and write-through options of
+[MoveFileExW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexw).
+Durability depends on the filesystem and device honoring their flush contracts;
+the archive format does not promise power-loss immunity on arbitrary storage.
+
 The previous generation is retained for diagnosis, never silently substituted.
 Bad checksums, incompatible identities, malformed authorities or receipts, and
 replay disagreement quarantine that campaign without deleting the original files

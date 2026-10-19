@@ -25,14 +25,17 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         Assert.Null(response.World);
         Assert.Empty(response.Events);
         SetupChoices choices = Assert.IsType<SetupChoices>(response.Setup);
-        Assert.Equal(["spider_man", "captain_marvel", "she_hulk", "iron_man", "black_panther"], choices.Heroes.Select(choice => choice.Key));
+        Assert.Equal(["spider_man", "captain_marvel", "she_hulk", "iron_man", "black_panther", "hawkeye", "spider_woman"], choices.Heroes.Select(choice => choice.Key));
         Assert.Equal("Spider-Man", choices.Heroes[0].Name);
-        Assert.Equal(["rhino", "rhino_expert", "klaw", "klaw_expert", "ultron", "ultron_expert"], choices.Scenarios.Select(choice => choice.Key));
+        Assert.Equal(["rhino", "rhino_expert", "klaw", "klaw_expert", "ultron", "ultron_expert",
+            "crossbones", "crossbones_expert", "absorbing_man", "absorbing_man_expert", "taskmaster", "taskmaster_expert",
+            "zola", "zola_expert", "red_skull", "red_skull_expert"], choices.Scenarios.Select(choice => choice.Key));
         Assert.False(choices.Scenarios[0].Expert);
         Assert.True(choices.Scenarios[1].Expert);
         Assert.Equal(["bomb_scare"], choices.Scenarios[0].RecommendedModularSets);
-        Assert.Equal(["bomb_scare", "masters_of_evil", "under_attack", "legions_of_hydra", "the_doomsday_chair", ], choices.ModularSets.Select(choice => choice.Key));
-        Assert.Equal("The Doomsday Chair", choices.ModularSets[^1].Name);
+        Assert.Equal(["bomb_scare", "masters_of_evil", "under_attack", "legions_of_hydra", "the_doomsday_chair",
+            "hydra_assault", "weapon_master", "hydra_patrol"], choices.ModularSets.Select(choice => choice.Key));
+        Assert.Equal("The Doomsday Chair", choices.ModularSets.Single(choice => choice.Key == "the_doomsday_chair").Name);
         Assert.Equal(EngineBuildIdentity.ProductVersion, choices.Runtime.ProductVersion);
         Assert.Equal(EngineBuildIdentity.Commit, choices.Runtime.Commit);
         Assert.Equal(EngineProtocol.Version, choices.Runtime.Protocol);
