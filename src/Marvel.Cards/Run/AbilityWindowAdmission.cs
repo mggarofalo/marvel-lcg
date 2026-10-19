@@ -61,10 +61,8 @@ internal static class AbilityWindowAdmission
     private static bool CanHostWindowAbility(World world, Card card)
     {
         if (EffectiveCards.HasProfile(card)) return false;
-        bool eventInHand = EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-            && card.Owner >= 0
-            && card.Area == world.Seats[card.Owner].Hand;
-        return DeckTypes.IsInPlay(card.Area.Type) || eventInHand;
+        bool playableEvent = CardPlayOrigin.CanPlayEvent(world, card, card.Owner);
+        return DeckTypes.IsInPlay(card.Area.Type) || playableEvent;
     }
 
     private static bool IsWaitingCandidate(

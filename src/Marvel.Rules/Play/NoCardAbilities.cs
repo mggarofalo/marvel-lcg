@@ -16,6 +16,9 @@ namespace Marvel.Rules.Play;
 public class NoCardAbilities : ICardAbilities
 {
     /// <inheritdoc/>
+    public virtual bool CanPlayFromStorage(World world, Card card, int player) => false;
+
+    /// <inheritdoc/>
     public virtual AbilityExecutionResult EntersPlay(World world, AbilityExecution entry, Card card) => world.Agenda.Executions.FinishBatch(entry, []);
 
     /// <inheritdoc/>

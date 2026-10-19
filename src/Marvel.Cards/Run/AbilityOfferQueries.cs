@@ -155,6 +155,8 @@ internal sealed class AbilityOfferQueries
 
         foreach (var card in world.Seats[player].Hand.Cards)
             if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event) yield return card;
+        foreach (var card in world.Areas.Where(area => BeneathCards.IsStored(area.Type)).SelectMany(area => area.Cards))
+            if (CardPlayOrigin.CanPlayEvent(world, card, player)) yield return card;
     }
 
     private AbilityAdmissionContext TurnAction(
@@ -182,6 +184,8 @@ internal sealed class AbilityOfferQueries
 
     private bool MayInitiate(World world, CompiledCardAbility ability, Card card, int player)
     {
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event
+            && !CardPlayOrigin.CanPlayEvent(world, card, player)) return false;
         bool cardPermits = AbilityCardQueries.ControllerOf(world, card) == player
             || card.Owner == World.Scenario || ability.AnyPlayer;
         return cardPermits && (RestrictedPlayer(world, ability, card) is not { } restricted
