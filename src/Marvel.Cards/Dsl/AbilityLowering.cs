@@ -71,6 +71,7 @@ public static class AbilityLowering
             "countersOn" => Counters(argument, child),
             "modified" => Modified(argument, child),
             "count" => new AbilityNumber.Count(SelectCards(argument, child)),
+            "sumPrintedCost" => new AbilityNumber.SumPrintedCost(SelectCards(argument, child)),
             "if" => ConditionalNumber(argument, child),
             "printedResourceCountDiscarded" => new AbilityNumber.PrintedResourcesDiscarded(Resource(argument, child)),
             "discardedWithResource" => new AbilityNumber.DiscardedWithResource(Resource(argument, child)),

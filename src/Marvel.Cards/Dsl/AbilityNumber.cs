@@ -40,6 +40,8 @@ public abstract record AbilityNumber
     public sealed record Modified(AbilityCardSelection Card, string Field) : AbilityNumber;
     /// <summary>The number of selected cards.</summary>
     public sealed record Count(AbilityCardSelection Cards) : AbilityNumber;
+    /// <summary>The sum of selected cards' printed resource costs.</summary>
+    public sealed record SumPrintedCost(AbilityCardSelection Cards) : AbilityNumber;
     /// <summary>A conditional number with both branches validated.</summary>
     public sealed record Conditional(AbilityCondition Test, AbilityNumber Then, AbilityNumber Else) : AbilityNumber;
     /// <summary>The number of printed resource icons on cards discarded this way.</summary>

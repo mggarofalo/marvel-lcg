@@ -612,3 +612,9 @@ environments other than the triggering occurrence's subject.
 attack, including assigned indirect shares. It preserves damage dealt, Tough's
 priority, boost effects and attack completion. The state belongs to that attack,
 survives source departure and defender changes, and does not apply to later attacks.
+`sumPrintedCost` totals the printed costs of a selected set, allowing one threat
+placement after a group of captive choices. `releaseBeneath: {removeHost: true}`
+returns stored cards to their physical owners' hands before host departure can
+discard them, and removes the host. Omit `removeHost` or use false when ordinary
+defeat should discard the host. `attachmentsOnThis` selects encounter attachment
+cards only; upgrades and status cards are different types (ruling:81bce25b60d865d5).

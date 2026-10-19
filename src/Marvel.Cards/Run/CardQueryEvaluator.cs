@@ -11,7 +11,7 @@ internal sealed class CardQueryEvaluator(
 {
     private static readonly ImmutableArray<AbilityCardQuery> ScenarioQueries =
     [
-        AbilityCardQuery.AttachedToThis, AbilityCardQuery.BeneathThis, AbilityCardQuery.SideSchemes,
+        AbilityCardQuery.AttachedToThis, AbilityCardQuery.AttachmentsOnThis, AbilityCardQuery.BeneathThis, AbilityCardQuery.SideSchemes,
         AbilityCardQuery.Schemes, AbilityCardQuery.PowerTargets,
         AbilityCardQuery.YourAsidePile, AbilityCardQuery.OtherEnvironments,
         AbilityCardQuery.Villain, AbilityCardQuery.MainScheme,
@@ -56,6 +56,9 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.AttachedToThis =>
             [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId && !BeneathCards.IsStored(area.Type))
                 .SelectMany(area => area.Cards)],
+        AbilityCardQuery.AttachmentsOnThis =>
+            [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId && DeckTypes.IsInPlay(area.Type))
+                .SelectMany(area => area.Cards).Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Attachment)],
         AbilityCardQuery.OtherEnvironments => [.. cast.World.Cards.Where(card =>
             DeckTypes.IsInPlay(card.Area.Type) && card.ObjectId != cast.Occurrence.Subject
             && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Environment)],

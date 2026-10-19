@@ -60,6 +60,9 @@ internal static class AbilityExpressionAreaDependencies
                 CollectSingularAreaDependencies(conditional.Then, cast, areas);
                 CollectSingularAreaDependencies(conditional.Else, cast, areas);
                 break;
+            case AbilityNumber.SumPrintedCost sum:
+                CollectCardsInDependencies(sum.Cards, cast, areas);
+                break;
             case AbilityNumber.Constant or AbilityNumber.PerPlayer or AbilityNumber.Result
                 or AbilityNumber.CardValue or AbilityNumber.Counters or AbilityNumber.Modified
                 or AbilityNumber.Count or AbilityNumber.PrintedResourcesDiscarded

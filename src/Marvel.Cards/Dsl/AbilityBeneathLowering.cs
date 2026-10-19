@@ -7,6 +7,12 @@ namespace Marvel.Cards.Dsl;
 
 internal static class AbilityBeneathLowering
 {
+    internal static AbilityEffect.ReleaseBeneath Release(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "removeHost");
+        return new(Boolean(fields, "removeHost", location));
+    }
+
     internal static AbilityEffect.StoreBeneath Store(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "cards", "host", "faceUp", "randomCount");

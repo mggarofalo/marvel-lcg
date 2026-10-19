@@ -9,6 +9,10 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilityBeneathAdmission
 {
+    internal static TargetLegality Target(AbilityEffect.ReleaseBeneath release, AbilityAdmissionScope context) =>
+        release.RemoveHost || BeneathCards.Of(context.World, context.Source).Count > 0
+            ? TargetLegality.Valid : TargetLegality.None;
+
     internal static TargetLegality Target(AbilityEffect.StoreBeneath store, AbilityAdmissionScope context)
     {
         var host = Find(store.Host, context);

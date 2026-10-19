@@ -26,6 +26,7 @@ internal static class AbilityDeckAndRevealExecution
             AbilityEffect.RecoverDiscardedByResource recovery =>
                 RecoverDiscardedByResource(recovery, context),
             AbilityEffect.AttachCards attach => AbilityAttachmentExecution.Run(attach, context),
+            AbilityEffect.ReleaseBeneath release => AbilityBeneathReleaseExecution.Run(release, context),
             AbilityEffect.StoreBeneath store => AbilityBeneathExecution.Run(store, context),
             AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop =>
                 AbilityAuxiliaryDeckExecution.Run(effect, context),

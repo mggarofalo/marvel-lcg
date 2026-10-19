@@ -160,6 +160,7 @@ internal static class AbilityPlayerBindingAnalysis
     {
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.You,
         AbilityEffect.AttachCards attach => Contains(attach.Cards) || Contains(attach.Host),
+        AbilityEffect.ReleaseBeneath => false,
         AbilityEffect.StoreBeneath store => Contains(store.Cards) || Contains(store.Host),
         AbilityEffect.InitializeAuxiliaryDeck initialize => Contains(initialize.Cards),
         AbilityEffect.RevealAuxiliaryTop => false,
@@ -221,6 +222,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityNumber.Counters counters => Contains(counters.Card),
         AbilityNumber.Modified modified => Contains(modified.Card),
         AbilityNumber.Count count => Contains(count.Cards),
+        AbilityNumber.SumPrintedCost sum => Contains(sum.Cards),
         AbilityNumber.Conditional conditional => Contains(conditional.Test)
             || Contains(conditional.Then) || Contains(conditional.Else),
         AbilityNumber.Constant or AbilityNumber.PerPlayer or AbilityNumber.Result

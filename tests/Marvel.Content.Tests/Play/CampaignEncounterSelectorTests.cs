@@ -73,6 +73,23 @@ public sealed class CampaignEncounterSelectorTests
         Assert.Equal(random, world.Random.Generator.WordsConsumed);
     }
 
+    [Rule("rr:attachment")]
+    [Fact]
+    public void AttachmentCountExcludesPlayerUpgradesAndStatusCards()
+    {
+        // rr:attachment: "Attachment is an encounter card type."
+        // ruling:81bce25b60d865d5: "Upgrades are not attachments. They are two different card types."
+        var world = Board();
+        var minion = world.CreateCard("04114", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var hosted = world.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId);
+        var attachment = world.CreateCard("04117", hosted);
+        world.CreateCard("01007", hosted);
+        Statuses.Give(world, minion, Statuses.Tough);
+        var selector = Selection("""{"query":"attachmentsOnThis"}""");
+
+        Assert.Equal([attachment], new AbilitySelectorEvaluation(Context(world, minion)).Every(selector));
+    }
+
     private static AbilityCardSelection Selection(string json)
     {
         var effect = AbilityCatalog.Parse($$$"""

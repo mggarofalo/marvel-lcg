@@ -40,6 +40,7 @@ internal static class AbilityBindingAnalysis
         AbilityNumber.Counters counters => BindingCanChange(counters.Card),
         AbilityNumber.Modified modified => BindingCanChange(modified.Card),
         AbilityNumber.Count count => BindingCanChange(count.Cards),
+        AbilityNumber.SumPrintedCost sum => BindingCanChange(sum.Cards),
         AbilityNumber.Conditional conditional => BindingCanChange(conditional.Test)
             || BindingCanChange(conditional.Then) || BindingCanChange(conditional.Else),
         AbilityNumber.ResolutionValue value => value.Kind == AbilityResolutionNumber.PowerAmount,
@@ -75,7 +76,7 @@ internal static class AbilityBindingAnalysis
         AbilityNumber.FloorDivide division => division.Operands.Any(AmountMayChange),
         AbilityNumber.Minimum minimum => minimum.Operands.Any(AmountMayChange),
         AbilityNumber.Result or AbilityNumber.CardValue or AbilityNumber.Counters
-            or AbilityNumber.Modified or AbilityNumber.Count or AbilityNumber.Conditional
+            or AbilityNumber.Modified or AbilityNumber.Count or AbilityNumber.SumPrintedCost or AbilityNumber.Conditional
             or AbilityNumber.PrintedResourcesDiscarded or AbilityNumber.DiscardedWithResource
             or AbilityNumber.ResolutionValue => true,
         _ => throw new InvalidOperationException("Unknown compiled number in mutation analysis"),
@@ -92,7 +93,7 @@ internal static class AbilityBindingAnalysis
             || ContainsPowerAmount(conditional.Then) || ContainsPowerAmount(conditional.Else),
         AbilityNumber.Constant or AbilityNumber.PerPlayer or AbilityNumber.Result
             or AbilityNumber.CardValue or AbilityNumber.Counters or AbilityNumber.Modified
-            or AbilityNumber.Count or AbilityNumber.PrintedResourcesDiscarded
+            or AbilityNumber.Count or AbilityNumber.SumPrintedCost or AbilityNumber.PrintedResourcesDiscarded
             or AbilityNumber.DiscardedWithResource => false,
         _ => throw new InvalidOperationException("Unknown compiled number in power-binding analysis"),
     };

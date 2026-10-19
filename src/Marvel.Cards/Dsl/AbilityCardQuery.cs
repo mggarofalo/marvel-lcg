@@ -20,6 +20,8 @@ public enum AbilityCardQuery
     IdentitiesWithinPerPlayerLimit,
     /// <summary>The authored attachedToThis relation.</summary>
     AttachedToThis,
+    /// <summary>Encounter attachment cards attached to the source, excluding upgrades and statuses.</summary>
+    AttachmentsOnThis,
     /// <summary>Out-of-play cards explicitly stored beneath this source.</summary>
     BeneathThis,
     /// <summary>The authored heroesAndAllies relation.</summary>

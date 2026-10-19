@@ -33,6 +33,8 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityNumber.Modified modified => selectors.Find(modified.Card) is { } holder
             ? StateFields.Modified(context.World, holder, modified.Field, context.World.Facts, context.World.Players) : 0,
         AbilityNumber.Count count => selectors.Every(count.Cards).Count,
+        AbilityNumber.SumPrintedCost sum => AbilityAmounts.SaturatingSum(0,
+            selectors.Every(sum.Cards).Select(card => context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players))),
         AbilityNumber.Conditional conditional => Amount(Test(conditional.Test) ? conditional.Then : conditional.Else),
         AbilityNumber.PrintedResourcesDiscarded resource => Resources.PrintedCount(context.Discarded, resource.Resource, context.World.Facts),
         AbilityNumber.DiscardedWithResource resource => context.Discarded.Count(card =>

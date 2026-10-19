@@ -181,6 +181,7 @@ internal sealed class VillainConditionTrace(
             { Property: AbilityCardNumberProperty.RemainingHealth } value =>
             HealthCanDiffer(value.Card, depth),
         AbilityNumber.Count count => CountCanDiffer(count.Cards),
+        AbilityNumber.SumPrintedCost sum => CountCanDiffer(sum.Cards),
         AbilityNumber.Modified modified => ModifiedCanDiffer(modified, depth),
         AbilityNumber.FloorDivide division => division.Operands.Any(child => AmountCanDiffer(child, depth)),
         AbilityNumber.Minimum minimum => minimum.Operands.Any(child => AmountCanDiffer(child, depth)),
