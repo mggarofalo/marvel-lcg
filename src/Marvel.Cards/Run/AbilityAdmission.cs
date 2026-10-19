@@ -374,7 +374,7 @@ internal static class AbilityAdmission
         int priorPlayer = cast.Player;
         try
         {
-            return cast.World.PlayerOrder.All(player =>
+            return AbilityEachPlayerSelection.Players(effect, cast.Context.Expressions).All(player =>
             {
                 cast.RestorePlayer(player);
                 return ChoicesAreStable(EffectBody(effect), sensitiveAreas, cast);

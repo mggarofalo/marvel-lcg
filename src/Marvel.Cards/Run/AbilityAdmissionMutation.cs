@@ -202,7 +202,7 @@ internal static class AbilityAdmissionMutation
         try
         {
             ulong possible = 0;
-            foreach (var order in PlayerPermutations(cast.World.PlayerOrder.ToList()))
+            foreach (var order in PlayerPermutations(AbilityEachPlayerSelection.Players(node, cast.Context.Expressions)))
             {
                 ulong after = before;
                 foreach (int player in order)

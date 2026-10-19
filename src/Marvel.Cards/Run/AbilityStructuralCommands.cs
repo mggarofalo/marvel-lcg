@@ -121,9 +121,15 @@ internal static class AbilityStructuralCommands
         AbilityResolutionState cast)
     {
         int ordinal = execution.AbilityOrdinal(schedule.Effect, cast);
+        var players = AbilityEachPlayerSelection.Players(schedule.Effect, cast.ExpressionContext());
+        if (players.Count == 0)
+        {
+            cast.ResolveEffect();
+            return;
+        }
         EachPlayerEffects.Schedule(cast.World, AbilityContinuations.Step(
             execution.Capture(cast, ordinal), AbilityContinuationStage.ResolvePlayer,
-            cast.World.Agenda.Current?.Round ?? 0));
+            cast.World.Agenda.Current?.Round ?? 0), schedule.Effect.DefeaterOnly ? players[0] : null);
         cast.Suspend();
     }
 

@@ -681,3 +681,10 @@ consequential icons for an ally. It does not grant permission to initiate a
 basic thwart with a dash THW, alter fixed card-effect amounts, or change a later
 thwart. A card ability's THW expressions are substituted only while that power
 body resolves; unrelated interrupts retain their ordinary stat reads.
+
+`eachPlayer` may specify `player: "defeater"` for a body explicitly assigned
+by printed text to the player credited with defeating the triggering card.
+This schedules only that player's resumable frame, without an ordering choice;
+`you`, searches, and choices within the body use that player. Missing defeat
+credit raises instead of selecting a default seat. An eliminated recipient is
+not scheduled. Omitting `player` retains the all-player frame behavior.

@@ -28,7 +28,7 @@ internal static class AbilityEffectLowering
             "and" => new AbilityEffect.Simultaneous(Effects(argument, child)),
             "if" => ConditionalEffect(argument, child),
             "then" or "otherwise" => DependentEffect(argument, child, node.Kind),
-            "eachPlayer" => new AbilityEffect.EachPlayer(OnlyEffect(argument, child)),
+            "eachPlayer" => AbilityEachPlayerLowering.Lower(argument, child),
             "afterActivation" => new AbilityEffect.AfterActivation(OnlyEffect(argument, child)),
             "forEach" => RepeatedEffect(argument, child),
             "eachTime" => EachTimeEffect(argument, child),

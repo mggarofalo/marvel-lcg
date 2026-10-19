@@ -9,10 +9,10 @@ namespace Marvel.Rules.Play;
 public static class EachPlayerEffects
 {
     /// <summary>Schedule frames from an opaque continuation template built by Cards.</summary>
-    public static void Schedule(World world, PhaseStep template)
+    public static void Schedule(World world, PhaseStep template, int? onlyPlayer = null)
     {
         ArgumentNullException.ThrowIfNull(world);
-        var players = world.PlayerOrder.ToList();
+        var players = world.PlayerOrder.Where(player => onlyPlayer is null || player == onlyPlayer).ToList();
         if (players.Count == 0) return;
         if (players.Count == 1)
         {

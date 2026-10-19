@@ -65,12 +65,14 @@ internal static class AbilityBindingReachability
     private static BindingCandidateState EachPlayerBindingCandidatesAfter(
         AbilityEffect node, AbilityAdmissionScope cast, BindingCandidateState before)
     {
+        var players = AbilityEachPlayerSelection.Players(node, cast.Context.Expressions);
+        if (players.Count == 0) return before;
         int original = cast.Player;
         try
         {
             var possible = new List<Card>();
             bool mayBeEmpty = false;
-            foreach (var order in PlayerPermutations(cast.World.PlayerOrder.ToList()))
+            foreach (var order in PlayerPermutations(players))
             {
                 // Each scheduled frame restores the same persisted outer binding.
                 // Only the final frame supplies the continuation's binding.

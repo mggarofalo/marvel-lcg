@@ -81,7 +81,7 @@ internal static class AbilityAdmissionResolutionPreflight
             int original = cast.Player;
             try
             {
-                var players = cast.World.PlayerOrder.ToList();
+                var players = AbilityEachPlayerSelection.Players(node, cast.Context.Expressions);
                 foreach (int player in players)
                 {
                     cast.RestorePlayer(player);
@@ -117,7 +117,7 @@ internal static class AbilityAdmissionResolutionPreflight
             int original = cast.Player;
             try
             {
-                var players = cast.World.PlayerOrder.ToList();
+                var players = AbilityEachPlayerSelection.Players(node, cast.Context.Expressions);
                 foreach (int player in players)
                 {
                     cast.RestorePlayer(player);

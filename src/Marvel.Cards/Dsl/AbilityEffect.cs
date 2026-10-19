@@ -32,7 +32,11 @@ public abstract record AbilityEffect
     /// <summary>Resolve the continuation only after full success, or after no application.</summary>
     public sealed record Dependent(AbilityEffect Effect, AbilityEffect Continuation, bool OnFull) : AbilityEffect;
     /// <summary>Resolve an effect separately for each active player.</summary>
-    public sealed record EachPlayer(AbilityEffect Effect) : AbilityEffect;
+    public sealed record EachPlayer(AbilityEffect Effect) : AbilityEffect
+    {
+        /// <summary>Resolve only for the credited defeating player when specified.</summary>
+        public bool DefeaterOnly { get; init; }
+    }
     /// <summary>Repeat an effect according to a numeric expression.</summary>
     public sealed record ForEach(AbilityNumber Count, AbilityEffect Effect) : AbilityEffect;
     /// <summary>Resolve a follow-up for each matching result of the preceding effect.</summary>

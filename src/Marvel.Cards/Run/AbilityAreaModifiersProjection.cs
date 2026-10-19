@@ -114,7 +114,7 @@ internal static class AbilityAreaModifiersProjection
             var prior = projection.context;
             try
             {
-                foreach (int player in projection.context.World.PlayerOrder)
+                foreach (int player in AbilityEachPlayerSelection.Players(effect, projection.context.Expressions))
                 {
                     projection.context = projection.context.WithPlayer(player);
                     states = projection.Trace(EffectBody(effect), states,
