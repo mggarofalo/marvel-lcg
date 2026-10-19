@@ -9,10 +9,12 @@ namespace Marvel.Content.Tests.Play;
 public sealed class CampaignTechAbilityTests
 {
     [Theory]
-    [InlineData("04155", 0, 1, true)]
-    [InlineData("04156", 5, 6, false)]
+    [InlineData("04155", 0, 1, true, true)]
+    [InlineData("04155", 0, 6, false, false)]
+    [InlineData("04156", 5, 6, false, true)]
+    [InlineData("04156", 0, 6, false, false)]
     public void PrintedTechRewardPaysItsPermanentCostAndResolvesItsOwnEffect(
-        string face, int cardsDrawn, int remainingDamage, bool ready)
+        string face, int cardsDrawn, int remainingDamage, bool ready, bool hero)
     {
         // Printed text: Adrenaline Stims readies and heals 5; Tactical Scanner draws 5.
         Card? reward = null;
@@ -25,8 +27,15 @@ public sealed class CampaignTechAbilityTests
                 [new CampaignCardBinding(reward.ObjectId, 0, new CampaignCard("tech:" + face, face, CampaignCardRole.Tech))]).Bind(board);
             board.Seats[0].IdentityCard.TakeDamage(6);
             board.Seats[0].IdentityCard.Exhaust();
-        }, abilities: AuthoredCards.Runner());
+        }, hero: hero, abilities: AuthoredCards.Runner());
         int held = world.Seats[0].Hand.Cards.Count;
+        if (!hero)
+        {
+            Assert.DoesNotContain(game.Pending!.Affordances, offer => offer.AnchorId == reward!.ObjectId);
+            Assert.False(Assert.Single(world.Campaign!.Cards).Removed);
+            Assert.Equal(6, world.Seats[0].IdentityCard.Damage);
+            return;
+        }
         var action = Assert.Single(game.Pending!.Affordances, offer => offer.AnchorId == reward!.ObjectId);
 
         game.Resolve(Decision.Take(action.Id));

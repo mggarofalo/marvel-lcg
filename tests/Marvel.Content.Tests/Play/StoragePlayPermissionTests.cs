@@ -10,6 +10,24 @@ namespace Marvel.Content.Tests.Play;
 public sealed class StoragePlayPermissionTests
 {
     [Theory]
+    [InlineData("when")]
+    [InlineData("form")]
+    [InlineData("nested")]
+    public void UnsupportedConditionalPermissionFailsAtCompilation(string variant)
+    {
+        const string permission = """{"allowPlayBeneath":{"kind":"Event","trait":"ARROW"}}""";
+        string effect = variant == "nested" ? "{\"seq\":[" + permission + "]}" : permission;
+        string form = variant == "form" ? ",\"form\":\"hero\"" : string.Empty;
+        string condition = variant == "when" ? ",\"when\":{\"exists\":\"yourHero\"}" : string.Empty;
+        var book = AbilityCatalog.Parse("{\"cards\":[{\"card\":\"01006\",\"abilities\":[{\"trigger\":{\"timing\":\"Constant\",\"subject\":\"this\""
+            + form + "},\"effect\":" + effect + condition + "}]}]}");
+
+        var failure = Assert.Throws<AbilityException>(() => AbilityLowering.Book(book));
+
+        Assert.Contains("direct unconditional Constant", failure.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
     [InlineData("matching", true)]
     [InlineData("wrong-trait", false)]
     [InlineData("wrong-owner", false)]

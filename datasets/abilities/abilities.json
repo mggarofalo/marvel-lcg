@@ -3760,16 +3760,17 @@
           "trigger": {
             "event": "WhenActionTriggered",
             "timing": "Action",
-            "subject": "this"
+            "subject": "this",
+            "form": "hero"
           },
           "effect": {
             "seq": [
               {
-                "ready": "you"
+                "ready": "yourHero"
               },
               {
                 "heal": {
-                  "card": "you",
+                  "card": "yourHero",
                   "amount": 5
                 }
               }
@@ -3790,13 +3791,217 @@
           "trigger": {
             "event": "WhenActionTriggered",
             "timing": "Action",
-            "subject": "this"
+            "subject": "this",
+            "form": "hero"
           },
           "effect": {
             "draw": {
               "player": "you",
               "count": 5
             }
+          },
+          "cost": {
+            "consumeCampaignCard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04001a",
+      "name": "Hawkeye",
+      "note": "\"Quick Draw\" — Action: Exhaust Hawkeye → ready Hawkeye's bow. ",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "ready": {
+              "titled": "Hawkeye's Bow"
+            }
+          },
+          "cost": {
+            "exhaust": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04003",
+      "name": "Hawkeye's Quiver",
+      "note": "You may play Arrow events attached to this card as if they were in your hand.\nHero Action: Exhaust Hawkeye's Quiver → search the top 5 cards of your deck for an Arrow event and attach it faceup to this card. ruling:b216c9af67e04d26 requires shuffling the entire deck after the top-five search; ruling:3bdad6b3608ce352 permits the search without a known match if the deck is nonempty. Stored arrows are out of play under ruling:6768213a7e0f4606.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "allowPlayBeneath": {
+              "kind": "Event",
+              "trait": "ARROW"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "area": "yourDeck",
+                    "top": 5,
+                    "kind": "Event",
+                    "trait": "ARROW"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "area": "yourDeck",
+                      "top": 5,
+                      "kind": "Event",
+                      "trait": "ARROW"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "storeBeneath": {
+                          "cards": "chosen",
+                          "host": "this",
+                          "faceUp": "true"
+                        }
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "shuffle": "yourDeck"
+              }
+            }
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "when": {
+            "exists": {
+              "cardsIn": {
+                "area": "yourDeck"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04034",
+      "name": "Jessica Drew's Apartment",
+      "note": "Alter-Ego Action: Exhaust Jessica Drew's Apartment → search the top 5 cards of your deck for an aspect card and add it to your hand. Shuffle your deck. ",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "area": "yourDeck",
+                    "top": 5,
+                    "aspectOnly": "true"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "area": "yourDeck",
+                      "top": 5,
+                      "aspectOnly": "true"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "addToHand": "chosen"
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "shuffle": "yourDeck"
+              }
+            }
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "when": {
+            "exists": {
+              "cardsIn": {
+                "area": "yourDeck"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04158",
+      "name": "Laser Cannon",
+      "note": "Setup.\nHero Action: Discard this card and remove it from the campaign log → deal 5 damage to the villain and each enemy engaged with you. ",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "dealDamage": {
+                  "cards": {
+                    "query": "villain"
+                  },
+                  "amount": 5
+                }
+              },
+              {
+                "dealDamage": {
+                  "cards": {
+                    "query": "minionsEngagedWithYou"
+                  },
+                  "amount": 5
+                }
+              }
+            ]
           },
           "cost": {
             "consumeCampaignCard": "this"
