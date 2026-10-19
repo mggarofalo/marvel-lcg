@@ -49,7 +49,7 @@ internal static class AbilityDamageAndThreatExecution
     {
         var state = new AbilityDamageAndThreatState();
         AbilityEffectBoundary.Begin(context, state);
-        state.Outcome = ExecuteRemoveThreat(removal, context, multiplier);
+        state.Outcome = ExecuteRemoveThreat(removal, context, state, multiplier);
         return state.ToResult();
     }
 
@@ -103,7 +103,7 @@ internal static class AbilityDamageAndThreatExecution
                 PlaceThreat(threat, context, state); return true;
             case AbilityEffect.RemoveThreat removal:
                 AbilityEffectBoundary.Begin(context, state);
-                state.Outcome = ExecuteRemoveThreat(removal, context); return true;
+                state.Outcome = ExecuteRemoveThreat(removal, context, state); return true;
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.SoakDamage } soak:
                 Soak(soak.Selection, context, state); return true;
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ReplaceThreatWithDamage } replacement:

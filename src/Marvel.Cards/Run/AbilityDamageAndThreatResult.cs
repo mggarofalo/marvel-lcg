@@ -12,6 +12,7 @@ internal sealed record AbilityDamageAndThreatResult(
     AbilityDamageAndThreatSuspension Suspension, ImmutableArray<Card> Attacked)
 {
     internal AbilityStructuralOutcome? Outcome { get; init; }
+    internal long? SchemesCleared { get; init; }
     internal AbilityDamageCompletion? Damage { get; init; }
     internal ThreatBatch? Threat { get; init; }
     internal AbilityEffectBoundary? Boundary { get; init; }

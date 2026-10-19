@@ -53,7 +53,8 @@ internal static class AbilityThreatDistribution
         return new ThwartSelectionCommand(answer.Targets[0], [.. answer.Targets], [], -1);
     }
 
-    internal static AbilityStructuralOutcome Remove(AbilityDamageAndThreatContext context)
+    internal static AbilityStructuralOutcome Remove(AbilityDamageAndThreatContext context,
+        AbilityDamageAndThreatState state)
     {
         // Printed total allocation is one thwart, with one removal instance per scheme.
         // Stable object-id order is an engine event-stream choice for simultaneous shares.
@@ -64,10 +65,13 @@ internal static class AbilityThreatDistribution
         foreach (var group in targets.GroupBy(card => card.ObjectId).OrderBy(group => group.Key))
         {
             if (!legal.Contains(group.Key)) continue;
-            removed += Threat.Remove(context.World, context.World.Facts, context.ThreatAbilities,
+            long held = group.First().Tokens.GetValueOrDefault("k_threat");
+            long taken = Threat.Remove(context.World, context.World.Facts, context.ThreatAbilities,
                 new ThreatRemovalRequest(group.First(), group.Count(), context.Trigger, "Remove_Threat",
                     AbilityEffectAttribution.IdentityPlayer(context))
                 { RecordDefeatOn = context.World.Agenda.Occurrence }, context.Events);
+            removed += taken;
+            if (taken > 0 && taken == held) state.SchemesCleared++;
         }
         return AbilityCompletion.Amount(removed, targets.Length);
     }

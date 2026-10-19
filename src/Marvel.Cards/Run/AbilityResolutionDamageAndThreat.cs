@@ -26,6 +26,7 @@ internal static class AbilityResolutionDamageAndThreat
     {
         RetainDamageCompletion(result, cast);
         if (result.Healed is { } healed) cast.Results["healed"] = healed;
+        if (result.SchemesCleared is { } cleared) cast.Results["schemesCleared"] = cleared;
         if (result.Remaining is { } remaining) cast.Replace(remaining);
         cast.Attacked.AddRange(result.Attacked);
         if (result.ResolveEffect) cast.ResolveEffect();

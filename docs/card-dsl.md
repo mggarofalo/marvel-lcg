@@ -719,3 +719,9 @@ leaves during entry responses, that instruction cannot affect a returned copy.
 
 `firstAvailable` selects the first nonempty option in an ordered list of two to eight public title, villain, or main-scheme selectors. It preserves every candidate from that option and never consults later options when the preferred host exists. Attachment placement uses the same selection for reveal and put-into-play entry.
 `activationIs: "attack"` or `"scheme"` tests the currently resolving enemy activation; boost effects can restrict a grant to that activation kind.
+
+`result: "schemesCleared"` is the number of schemes whose last threat was
+actually removed by the most recent removal instruction. It records committed
+removal against the threat held before that instruction, so a defeated side
+scheme's departure cannot erase the result. A removal that takes nothing records
+zero; later conditional text cannot inherit an earlier removal's success.
