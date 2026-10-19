@@ -20,6 +20,7 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
     private readonly SetupCatalog setup;
     private readonly CardCatalog cards;
     private readonly AbilityProgram abilities;
+    private readonly ImmutableHashSet<string> playable;
     private IReadOnlyDictionary<string, Dictionary<string, string>> search = new Dictionary<string, Dictionary<string, string>>();
 
     private DatasetGameFactory(
@@ -28,12 +29,15 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
         AbilityProgram abilities,
         SessionCompatibility compatibility)
     {
-        SetupCatalogAdmission.Validate(setup, cards, abilities.Authored);
+        CampaignDefinition = RiseOfRedSkullAdmission.Discover(setup, cards, abilities.Authored);
+        playable = abilities.Authored.Where(face => CampaignDefinition is not null || cards.Pack(face) != "trors")
+            .ToImmutableHashSet(StringComparer.Ordinal);
+        if (CampaignDefinition is null) setup = setup.WithoutPack(cards, "trors");
+        SetupCatalogAdmission.Validate(setup, cards, playable);
         this.setup = setup;
         this.cards = cards;
         this.abilities = abilities;
         Compatibility = compatibility;
-        CampaignDefinition = RiseOfRedSkullAdmission.Discover(setup, cards, abilities.Authored);
     }
 
     /// <inheritdoc />
@@ -44,12 +48,12 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
 
     /// <inheritdoc />
     public DeckAssessment AssessCampaignDeck(string hero, IReadOnlyList<string> cards, IReadOnlyList<string> bannedAllies) =>
-        CampaignDecks.Assess(cards, setup.Hero(hero), this.cards, abilities.Authored, bannedAllies);
+        CampaignDecks.Assess(cards, setup.Hero(hero), this.cards, playable, bannedAllies);
 
     /// <summary>Offers campaign deck quantities through the same construction rules as creation.</summary>
     public IReadOnlyDictionary<string, int[]> CampaignDeckQuantities(
         string hero, IReadOnlyList<string> draft, IReadOnlyList<string> bannedAllies) =>
-        CampaignDecks.Quantities(draft, setup.Hero(hero), cards, abilities.Authored, bannedAllies);
+        CampaignDecks.Quantities(draft, setup.Hero(hero), cards, playable, bannedAllies);
 
     /// <inheritdoc />
     public int CampaignBaseHitPoints(string hero) => checked((int)cards.PrintedValue(
@@ -90,7 +94,7 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
     {
         ArgumentNullException.ThrowIfNull(specification);
         PlayerCountRules.Validate(specification.Heroes.Count);
-        CampaignSetupAdmission.Validate(specification, CampaignDefinition, cards, abilities.Authored);
+        CampaignSetupAdmission.Validate(specification, CampaignDefinition, cards, playable);
         if (specification.PlayerDecks is not null)
         {
             if (specification.PlayerDecks.Count != specification.Heroes.Count)
@@ -125,11 +129,11 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
 
     /// <summary>Previews a draft against the same content and construction checks used at game creation.</summary>
     public DeckAssessment AssessDeck(string hero, IReadOnlyList<string> draft) =>
-        CoreDeckAssessment.Assess(draft, setup.Hero(hero), cards, abilities.Authored);
+        CoreDeckAssessment.Assess(draft, setup.Hero(hero), cards, playable);
 
     /// <inheritdoc />
     public IReadOnlyDictionary<string, int[]> DeckQuantities(string hero, IReadOnlyList<string> draft) =>
-        CoreDeckQuantities.Assess(draft, setup.Hero(hero), cards, abilities.Authored);
+        CoreDeckQuantities.Assess(draft, setup.Hero(hero), cards, playable);
 
     /// <inheritdoc />
     public DeckCatalog DiscoverDecks() => new(
@@ -142,7 +146,7 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
                 Previews = hero.Hero.Single().Split(',').Select(face => Marvel.View.CatalogCardProjection.From(cards, face)).ToArray(),
             };
         }).ToArray(),
-        abilities.Authored.Order(StringComparer.Ordinal).Where(face => cards.Kind(face) is
+        playable.Order(StringComparer.Ordinal).Where(face => cards.Kind(face) is
             CardKind.Ally or CardKind.Event or CardKind.Resource or CardKind.Support or CardKind.Upgrade)
             .Select(PresentCard).ToArray());
 
@@ -162,7 +166,7 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
         cards.Attributes(face).GetValueOrDefault("Cost"))
     {
         SearchFields = (search.GetValueOrDefault(face) ?? new Dictionary<string, string>()).ToImmutableDictionary(StringComparer.Ordinal),
-        RuntimeSupported = abilities.Authored.Contains(face) && cards.Kind(face) is
+        RuntimeSupported = playable.Contains(face) && cards.Kind(face) is
             CardKind.Ally or CardKind.Event or CardKind.Resource or CardKind.Support or CardKind.Upgrade,
         Subtitle = cards.Subtitle(face), Preview = Marvel.View.CatalogCardProjection.From(cards, face),
     };

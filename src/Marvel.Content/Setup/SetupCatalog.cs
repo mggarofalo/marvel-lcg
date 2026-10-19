@@ -64,6 +64,22 @@ public sealed class SetupCatalog
     /// <summary>The authored classification used by setup selection.</summary>
     public EncounterSetRole EncounterRole(string name) => Get(encounterSets, name, "encounter set").Role;
 
+    /// <summary>Excludes one unavailable product while preserving validation of retained recipes.</summary>
+    public SetupCatalog WithoutPack(CardCatalog cards, string pack)
+    {
+        bool ContainsPack(IEnumerable<string> specs) => specs.SelectMany(spec => spec.Split(','))
+            .Any(face => cards.Has(face) && cards.Pack(face) == pack);
+        // Product ownership follows identities and villains. A Core recipe that
+        // accidentally references an unavailable expansion still fails admission.
+        return new SetupCatalog(
+            campaigns.Where(item => !ContainsPack(item.Value.Villain))
+                .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal),
+            heroes.Where(item => !ContainsPack(item.Value.Hero))
+                .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal),
+            encounterSets.Where(item => !ContainsPack(item.Value.Cards))
+                .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal));
+    }
+
     private static T Get<T>(IReadOnlyDictionary<string, T> from, string name, string what)
     {
         ArgumentNullException.ThrowIfNull(name);
