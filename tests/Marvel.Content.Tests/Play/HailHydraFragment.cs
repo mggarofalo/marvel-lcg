@@ -1,9 +1,23 @@
+using System.Text.Json.Nodes;
+using Marvel.Cards.Dsl;
+using Marvel.Cards.Run;
+using Marvel.Tests;
+
 namespace Marvel.Content.Tests.Play;
 
-// Printed expansion interpretation on synthetic boards until canonical admission.
 internal static class HailHydraFragment
 {
-    internal const string Json = """
-    {"cards":[{"card":"04057","abilities":[{"trigger":{"timing":"WhenRevealed","event":"WhenCardRevealed","subject":"this"},"effect":{"seq":[{"enemyAttacks":{"enemies":{"withTrait":{"cards":{"query":"minions"},"trait":"HYDRA"}},"against":"engagedHero"}},{"eachPlayer":{"effect":{"if":{"test":{"not":{"atLeast":{"value":{"activationAttacksAgainstYou":"game"},"count":1}}},"then":{"seq":[{"chooseCard":{"from":{"cardsIn":{"areas":["encounterDeck","encounterDiscardPile"],"kind":"Minion","trait":"HYDRA"}},"effect":{"putIntoPlay":{"card":"chosen","where":"engagedWithYou"}}}},{"shuffle":"encounterDeck"}]}}}}}]}}]},{"card":"04147","abilities":[{"trigger":{"timing":"WhenRevealed","event":"WhenCardRevealed","subject":"this"},"effect":{"seq":[{"enemyAttacks":{"enemies":{"withTrait":{"cards":{"query":"minions"},"trait":"HYDRA"}},"against":"engagedHero"}},{"eachPlayer":{"effect":{"if":{"test":{"not":{"atLeast":{"value":{"activationAttacksAgainstYou":"game"},"count":1}}},"then":{"seq":[{"chooseCard":{"from":{"cardsIn":{"areas":["encounterDeck","encounterDiscardPile"],"kind":"Minion","trait":"HYDRA"}},"effect":{"putIntoPlay":{"card":"chosen","where":"engagedWithYou"}}}},{"shuffle":"encounterDeck"}]}}}}}]}}]}]}
-    """;
+    internal static AbilityRunner Runner() => new(AbilityCatalog.Parse(Json));
+    internal static readonly string Json = Read();
+
+    private static string Read()
+    {
+        var book = JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
+        var cards = new JsonArray();
+        foreach (var row in book["cards"]!.AsArray())
+            if (row!["card"]!.GetValue<string>() is "04057" or "04147")
+                cards.Add(row.DeepClone());
+        return new JsonObject { ["cards"] = cards }.ToJsonString();
+    }
 }
+
