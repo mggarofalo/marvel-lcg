@@ -78,6 +78,7 @@ internal static class AbilityEffectLowering
             "placeAccelerationToken" => FixedEffect(argument, child, 1, AbilityFixedInstruction.PlaceAccelerationToken),
             "generateTopDiscard" => FixedEffect(argument, child, "printed", AbilityFixedInstruction.GenerateTopDiscard),
             "makeTheCall" => FixedEffect(argument, child, "game", AbilityFixedInstruction.MakeTheCall),
+            "discardOtherEnvironments" => FixedEffect(argument, child, "game", AbilityFixedInstruction.DiscardOtherEnvironments),
             "gainEnvironmentTraits" => FixedEffect(argument, child, "this", AbilityFixedInstruction.GainEnvironmentTraits),
             "requireAllyDefender" => FixedEffect(argument, child, "engagedPlayer", AbilityFixedInstruction.RequireAllyDefender),
             "generate" => new AbilityEffect.Generate(ResourceString(argument, child)),

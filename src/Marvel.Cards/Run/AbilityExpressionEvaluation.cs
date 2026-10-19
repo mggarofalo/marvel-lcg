@@ -129,7 +129,10 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityConditionFact.DefeatedByYou => context.Bindings.Defeat is { By: >= 0 } defeat && defeat.By == AbilityCardQueries.Resolver(context.Bindings),
         AbilityConditionFact.HeroDefended => context.World.FinishedAttack is { } attack
             && attack.Defender == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,
-        AbilityConditionFact.UndefendedAttack => context.World.Attack is { IsDefended: false },
+        AbilityConditionFact.UndefendedAttack => context.Occurrence.Is(Steps.AttackEnds)
+            ? context.World.FinishedAttack is { IsDefended: false } ended
+                && ended.Enemy == context.Occurrence.Actor && ended.Target == context.Occurrence.Target
+            : context.World.Attack is { IsDefended: false },
         AbilityConditionFact.DefeatedByConsequentialDamage => context.Bindings.Defeat is { } defeat
             && string.Equals(defeat.How, "Consequential_Damage", StringComparison.Ordinal),
         _ => throw new InvalidOperationException("Unknown compiled condition fact"),

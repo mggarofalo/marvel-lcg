@@ -28,15 +28,18 @@ internal static class AbilityDiscardUntilExecution
             case AbilityDiscardUntilResult.AttachToThis:
                 // rr:attach-to.3.1: another ability's specified host replaces the
                 // attachment's printed "attach to" selection. This is not a reveal.
-                Reveal.Resolve(context.World, context.World.Facts, found, context.World.FirstPlayer,
-                    context.Events, placement: new CardEntryPlacement(context.Source.ObjectId, Verb: "Attach"));
-                break;
+                return AbilityDeckAndRevealResult.Handled with
+                {
+                    Entry = EncounterEntryRequest.For(found, context.World.FirstPlayer,
+                        new CardEntryPlacement(context.Source.ObjectId, Verb: "Attach")),
+                };
             case AbilityDiscardUntilResult.PutIntoPlay:
-                // rr:when-revealed-abilities.2: putting a card into play does not
-                // resolve its When Revealed ability.
-                Reveal.Resolve(context.World, context.World.Facts, found, context.World.FirstPlayer,
-                    context.Events, placement: new CardEntryPlacement(Verb: "Put_Into_Play"));
-                break;
+                // rr:when-revealed-abilities.2: entry does not resolve When Revealed text.
+                return AbilityDeckAndRevealResult.Handled with
+                {
+                    Entry = EncounterEntryRequest.For(found, context.World.FirstPlayer,
+                        new CardEntryPlacement(Verb: "Put_Into_Play")),
+                };
             default:
                 throw new InvalidOperationException("Unknown compiled discard-until result");
         }

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Events;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 using Marvel.Tests;
@@ -33,6 +34,7 @@ public sealed class EncounterDiscardInstructionTests
 
         var result = AbilityDiscardUntilExecution.Run(Lower("attachment", "attachToThis", "TECH"), context);
 
+        context.Events.AddRange(CompleteEntry(result, world));
         Assert.Equal(source.ObjectId, attachment.Area.Host);
         Assert.Equal(DeckType.EncounterDiscardPile, skipped.Area.Type);
         Assert.Null(result.Reveal);
@@ -53,6 +55,7 @@ public sealed class EncounterDiscardInstructionTests
         var environment = world.CreateCard("04082", deck);
         var result = AbilityDiscardUntilExecution.Run(Lower("environment", instruction), Context(world, source));
 
+        CompleteEntry(result, world);
         Assert.Equal(revealed ? DeckType.RevealingArea : DeckType.EnvironmentArea, environment.Area.Type);
         Assert.Equal(revealed, result.Reveal is not null);
         if (revealed) Assert.Equal(environment.ObjectId, result.Reveal!.Card);
@@ -68,6 +71,13 @@ public sealed class EncounterDiscardInstructionTests
         Assert.Null(result.Reveal);
         Assert.DoesNotContain(world.Cards, card => card.Area.Host == source.ObjectId);
         Assert.Single(world.AreaOf(DeckType.EncounterDeck).Cards);
+    }
+
+    private static List<GameEvent> CompleteEntry(AbilityDeckAndRevealResult result, World world)
+    {
+        if (result.Entry is not { } entry) return [];
+        EncounterEntry.Schedule(world, entry, new EffectCompletion(1, 1));
+        return Agendas.Finish(world, world.Facts);
     }
 
     [Fact]

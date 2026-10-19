@@ -227,6 +227,20 @@ A `choose` node may carry a `descriptions` string list parallel to `options`.
 Those strings are engine-authored affordance descriptions: clients display
 them and do not reconstruct printed choices from effect-node names.
 
+Encounter `putIntoPlay` with `printedDestination` and `discardUntil` placement
+open entry interrupts before moving the retained card, then entry responses before
+continuing later text. Cancellation, a moved entrant, or a departed explicit
+attachment host completes the instruction with zero applied entries.
+`discardOtherEnvironments: "game"` discards the existing environment set while
+retaining the triggering environment.
+
+`enemyAttacks` and `enemySchemes` accept an optional numeric `modifier`, evaluated
+when each activation is scheduled. It modifies that activation's ATK or SCH and
+expires with its activation identity, including cancellation and nested activations.
+`undefendedAttack` reads the matching completed attack in an attack-end window.
+Form-qualified `WhenRevealed` abilities retain their authored ordinals while only
+the revealing player's current form is offered and resolved.
+
 The implemented vocabulary covers these groups:
 
 - control flow such as sequences, conditions, alternatives and repetition;

@@ -160,7 +160,7 @@ internal static class AbilityProcedureLowering
 
     internal static AbilityEffect.ActivateEnemies ActivationEffect(AbilityValue value, AbilityLocation location, bool attack)
     {
-        var fields = Fields(value, location, "enemies", "against", "first", "dynamic");
+        var fields = Fields(value, location, "enemies", "against", "first", "dynamic", "modifier");
         AbilityCardSelection? against = null;
         bool engagedHero = false;
         if (fields.TryGetValue("against", out var target))
@@ -172,6 +172,10 @@ internal static class AbilityProcedureLowering
             }
         }
         return new(attack, Selected(fields, "enemies", location), against, engagedHero,
-            Boolean(fields, "first", location), Boolean(fields, "dynamic", location));
+            Boolean(fields, "first", location), Boolean(fields, "dynamic", location))
+        {
+            Modifier = fields.TryGetValue("modifier", out var modifier)
+                ? Number(modifier, location.Child("modifier")) : null,
+        };
     }
 }

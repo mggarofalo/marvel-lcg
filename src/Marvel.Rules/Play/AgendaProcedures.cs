@@ -65,6 +65,7 @@ public static class AgendaProcedures
             AgendaProcedureKind.CardEntry => EventCardEntry.Apply(world, step, events),
             AgendaProcedureKind.ResourcePayment => ResourcePaymentProcedure.Apply(world, step, events),
             AgendaProcedureKind.Campaign => CampaignRecoveryProcedure.Apply(world, step, events),
+            AgendaProcedureKind.EncounterEntry => EncounterEntry.Apply(world, step, events),
             AgendaProcedureKind.Lifecycle => null,
             _ => throw new RulesNotImplementedException(
                 $"the agenda has no procedure for '{step.What}'"),

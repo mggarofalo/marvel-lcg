@@ -33,6 +33,8 @@ internal static class AbilityImmediateExecution
         var world = context.Admission.World;
         switch (effect.Instruction)
         {
+            case AbilityFixedInstruction.DiscardOtherEnvironments:
+                return new(true, EnvironmentReplacement.DiscardOthers(context));
             case AbilityFixedInstruction.AdvanceMainScheme:
                 AdvanceMainScheme(context);
                 return new(true, false);

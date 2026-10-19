@@ -152,7 +152,8 @@ internal static class AbilityPlayerBindingAnalysis
             power.Target is { } target && Contains(target) || Contains(power.Effect),
         AbilityEffect.ThwartGroup thwart => Contains(thwart.Schemes) || Contains(thwart.Thwart),
         AbilityEffect.ActivateEnemies activate => Contains(activate.Enemies)
-            || activate.Against is { } target && Contains(target),
+            || activate.Against is { } target && Contains(target)
+            || activate.Modifier is { } modifier && Contains(modifier),
         _ => throw new InvalidOperationException("Unknown power player-binding effect"),
     };
 

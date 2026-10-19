@@ -189,7 +189,8 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.Power power => (power.Target is { } target && BindingCanChange(target)) || BindingCanChange(power.Effect),
         AbilityEffect.ThwartGroup thwart => BindingCanChange(thwart.Schemes) || BindingCanChange(thwart.Thwart),
         AbilityEffect.ActivateEnemies activate => BindingCanChange(activate.Enemies)
-            || (activate.Against is { } target && BindingCanChange(target)),
+            || (activate.Against is { } target && BindingCanChange(target))
+            || (activate.Modifier is { } modifier && BindingCanChange(modifier)),
         _ => throw new InvalidOperationException("Unknown power binding effect"),
     };
 

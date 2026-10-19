@@ -150,5 +150,9 @@ public abstract record AbilityEffect
     public sealed record ThwartGroup(AbilityThwartSelection Selection, AbilityCardSelection Schemes, Power Thwart) : AbilityEffect;
     /// <summary>Schedule attacks or schemes by the selected enemies.</summary>
     public sealed record ActivateEnemies(bool Attack, AbilityCardSelection Enemies, AbilityCardSelection? Against,
-        bool EngagedHero, bool First, bool Dynamic) : AbilityEffect;
+        bool EngagedHero, bool First, bool Dynamic) : AbilityEffect
+    {
+        /// <summary>Modify ATK or SCH only for the activations scheduled by this instruction.</summary>
+        public AbilityNumber? Modifier { get; init; }
+    }
 }

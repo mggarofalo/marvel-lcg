@@ -32,4 +32,6 @@ public enum AgendaProcedureKind
     CardEntry,
     /// <summary>Campaign setup and expert recovery before opening hands.</summary>
     Campaign,
+    /// <summary>Encounter placement with entry windows and no reveal text.</summary>
+    EncounterEntry,
 }

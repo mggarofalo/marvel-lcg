@@ -148,6 +148,8 @@ public static class AgendaAdvancement
 
         if (agenda.items[at].Step.Operation is ThreatPlacementOperation threat)
             threat.Completion.Complete(threat.Part, 0);
+        if (agenda.items[at].Step.Operation is EncounterEntryOperation entry && !entry.Completion.IsComplete)
+            entry.Completion.Complete(0, 0);
         agenda.Executions.Removed(agenda.items[at].Step, cancelled: true);
         agenda.items.RemoveAt(at);
         if (at == 0)
@@ -175,7 +177,9 @@ public static class AgendaAdvancement
             && character == target);
         if (at >= 0)
         {
-            agenda.Executions.Removed(agenda.items[at].Step, cancelled: true);
+            if (agenda.items[at].Step.Operation is EncounterEntryOperation entry && !entry.Completion.IsComplete)
+            entry.Completion.Complete(0, 0);
+        agenda.Executions.Removed(agenda.items[at].Step, cancelled: true);
             agenda.items.RemoveAt(at);
             if (at <= agenda.scheduled)
             {

@@ -19,6 +19,17 @@ internal static class AbilityResolutionCardMovement
         }
         foreach (var (key, value) in result.Values)
             cast.Results[key] = value;
+        if (result.Entry is { } entry)
+        {
+            var completion = new EffectCompletion(1, 1);
+            cast.PendingCompletion = completion;
+            var capture = AbilityContinuationScheduling.ForEffectProcedure(
+                execution.Capture(cast, execution.AbilityOrdinal(instruction, cast)));
+            var continuation = AbilityContinuations.Step(capture,
+                AbilityContinuationStage.Resume, cast.World.Agenda.Current?.Round ?? 0, plan: true);
+            EncounterEntry.Schedule(cast.World, entry, completion, continuation);
+            cast.Suspend();
+        }
         if (result.Reveal is { } reveal)
             execution.ScheduleReveal(reveal, cast.World);
         if (result.ResolveEffect)

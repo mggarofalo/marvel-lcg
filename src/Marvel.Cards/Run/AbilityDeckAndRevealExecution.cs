@@ -188,10 +188,11 @@ internal static class AbilityDeckAndRevealExecution
             $"'{context.Source.FaceId}' would put a card into play that is not there");
         if (placement.PrintedDestination)
         {
-            Reveal.Resolve(context.World, context.World.Facts, card,
-                context.World.FirstPlayer, context.Events,
-                placement: new CardEntryPlacement(Verb: "Put_Into_Play"));
-            return new(true, true, null, ImmutableDictionary<string, long>.Empty);
+            return AbilityDeckAndRevealResult.Handled with
+            {
+                Entry = EncounterEntryRequest.For(card, context.World.FirstPlayer,
+                    new CardEntryPlacement(Verb: "Put_Into_Play")),
+            };
         }
         AbilityCardStateExecution.PutIntoPlay(card, context.Player, CardStateContext(context));
         return AbilityDeckAndRevealResult.Handled;

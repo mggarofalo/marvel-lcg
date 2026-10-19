@@ -151,7 +151,7 @@ internal static class AbilityResolutionEffectChoices
     {
         int round = cast.World.Agenda.Current?.Round ?? 0;
         bool duringActivation = cast.World.Agenda.Current?.ActivationId >= 0;
-        var activationIds = EnqueueActivations(command, cast, round);
+        var activationIds = EnqueueActivations(execution, command, cast, round);
 
         cast.World.Effects.BindScheduledActivations(
             cast.Occurrence.Id, cast.Source.ObjectId, activationIds);
@@ -173,7 +173,7 @@ internal static class AbilityResolutionEffectChoices
         }
     }
 
-    private static List<int> EnqueueActivations(ScheduleActivationsCommand command,
+    private static List<int> EnqueueActivations(AbilityResolutionExecution execution, ScheduleActivationsCommand command,
         AbilityResolutionState cast, int round)
     {
         var activationIds = new List<int>();
@@ -183,9 +183,16 @@ internal static class AbilityResolutionEffectChoices
                 command.Effect.Attack ? new EnemyAttackOperation(command.Against) : new EnemySchemeOperation(),
                 round, 2, Index: target.Seat, Subject: target.Enemy.ObjectId, Seat: target.Seat);
             if (command.Dynamic) cast.Results[$"dynamicActivation:{activation.Subject}"] = 1;
-            activationIds.Add(command.First
+            int activationId = command.First
                 ? cast.World.Agenda.NowActivation(activation)
-                : cast.World.Agenda.ThenActivation(activation));
+                : cast.World.Agenda.ThenActivation(activation);
+            activationIds.Add(activationId);
+            if (command.Effect.Modifier is { } modifier)
+                cast.World.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
+                    Kind: command.Effect.Attack ? "attack" : "scheme",
+                    Amount: execution.Amount(modifier, cast), Card: cast.Source.ObjectId,
+                    Affects: target.Enemy.ObjectId, Lasts: Duration.UntilEndOf(TimingPoints.EndOfActivation))
+                { ActivationId = activationId });
         }
         return activationIds;
     }

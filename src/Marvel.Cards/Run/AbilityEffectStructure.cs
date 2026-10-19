@@ -42,6 +42,7 @@ internal static class AbilityEffectStructure
 
     internal static AbilityNumber? EffectAmount(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.ActivateEnemies activation => activation.Modifier,
         AbilityEffect.Heal heal => heal.Amount,
         AbilityEffect.Damage damage => damage.Amount,
         AbilityEffect.AttackDamage damage => damage.Amount,

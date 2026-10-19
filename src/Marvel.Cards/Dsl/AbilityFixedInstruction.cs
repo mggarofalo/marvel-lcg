@@ -30,4 +30,6 @@ public enum AbilityFixedInstruction
     RequireAllyDefender,
     /// <summary>Continuously gain the effective traits of every environment in play.</summary>
     GainEnvironmentTraits,
+    /// <summary>Discard every live environment except the triggering entrant.</summary>
+    DiscardOtherEnvironments,
 }
