@@ -114,6 +114,10 @@ public static class PhaseEnd
             [TimingPoints.EndOfPlayerPhase, TimingPoints.EndOfPhase],
             events);
 
+    /// <summary>Expire effects whose stated duration is the active player's turn.</summary>
+    public static void EndPlayerTurn(World world, int player, List<GameEvent> events) =>
+        End(world, new Occurrence(0, [PlayerTurnTiming.Ends], Player: player), [TimingPoints.EndOfTurn], events);
+
     /// <summary>
     /// Step 1 — one player discards from hand.
     /// </summary>

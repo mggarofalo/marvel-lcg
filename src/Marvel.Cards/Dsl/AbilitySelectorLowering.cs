@@ -126,6 +126,7 @@ internal static class AbilitySelectorLowering
 
     private static DeckType PublicPlayerArea(AbilityValue value, AbilityLocation location) => Text(value, location) switch
     {
+        "identity" => DeckType.HeroArea,
         "discardPile" => DeckType.DiscardPile,
         "upgrades" => DeckType.UpgradesArea,
         "allies" => DeckType.AlliesArea,

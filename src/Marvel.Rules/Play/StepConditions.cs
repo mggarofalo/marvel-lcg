@@ -51,6 +51,7 @@ public static class StepConditions
         [EventPlayed] = [CardPlayed],
         [CardEntersPlay] = [CardEntersPlay],
         [FormChanged] = [FormChanged],
+        [PlayerTurnTiming.Ends] = [PlayerTurnTiming.Ends],
         [BasicPowerTiming.RecoveryUsed] = [BasicPowerTiming.RecoveryUsed],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],

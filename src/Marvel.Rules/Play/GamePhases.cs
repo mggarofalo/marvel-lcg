@@ -94,6 +94,7 @@ internal static class GamePhases
     /// </remarks>
     internal static Resolution Turn(this Game game, List<GameEvent> happened)
     {
+        if (game.endingTurn) return game.ContinueTurnEnd(happened);
         if (Sequence.WorkWithWorldAbilities(game.world, game.facts, happened) is { } asked)
         {
             game.Pending = asked;
@@ -159,7 +160,7 @@ internal static class GamePhases
     /// player no longer participates. Remembering completed seats avoids
     /// relying on the first-player token, which elimination itself may pass.
     /// </remarks>
-    internal static Resolution FinishTurn(this Game game, List<GameEvent> happened)
+    internal static Resolution AdvanceTurn(this Game game, List<GameEvent> happened)
     {
         game.finishedTurns.Add(game.Active);
         for (int offset = 1; offset < game.world.Players; offset++)

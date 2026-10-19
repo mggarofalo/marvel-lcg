@@ -9008,6 +9008,205 @@
           }
         }
       ]
+    },
+    {
+      "card": "04163",
+      "name": "Zola's Algorithm",
+      "note": "Alter-Ego Action Exhaust your alter-ego and spend a mental resource → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "form": "alter-ego",
+            "subject": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "you"
+              },
+              {
+                "spend": "B"
+              }
+            ]
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04164",
+      "name": "Medical Emergency",
+      "note": "Forced Response: At the end of your turn, take 1 damage if you are in hero form.\nAlter-Ego Action: Discard the top 5 cards of your deck and spend a physical resource → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "event": "WhenPlayerTurnEnds",
+            "subject": "you",
+            "form": "hero"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": "you",
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "form": "alter-ego",
+            "subject": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "yourDeck",
+                  "count": 5
+                }
+              },
+              {
+                "spend": "R"
+              }
+            ]
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04165",
+      "name": "Martial Law",
+      "note": "Your hand size is reduced by 1.\nAlter-Ego Action: Deal yourself an encounter card and spend a energy resource → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grantEach": {
+              "cards": { "inPlayerArea": { "area": "identity", "player": "engagedPlayer" } },
+              "keyword": "hand_size",
+              "amount": -1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "form": "alter-ego",
+            "subject": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "dealEncounterCard": "you"
+              },
+              {
+                "spend": "Y"
+              }
+            ]
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04166",
+      "name": "Anti-Hero Propaganda",
+      "note": "Your hero gets -1 THW, -1 ATK, and -1 DEF.\nAlter-Ego Action: Take 2 damage and spend a wild resource → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "engagedPlayer",
+                  "form": "hero"
+                }
+              },
+              "then": {
+                "seq": [
+                  {
+                    "grantEach": {
+                      "cards": {
+                        "inPlayerArea": {
+                          "area": "identity",
+                          "player": "engagedPlayer"
+                        }
+                      },
+                      "keyword": "attack",
+                      "amount": -1
+                    }
+                  },
+                  {
+                    "grantEach": {
+                      "cards": {
+                        "inPlayerArea": {
+                          "area": "identity",
+                          "player": "engagedPlayer"
+                        }
+                      },
+                      "keyword": "thwart",
+                      "amount": -1
+                    }
+                  },
+                  {
+                    "grantEach": {
+                      "cards": {
+                        "inPlayerArea": {
+                          "area": "identity",
+                          "player": "engagedPlayer"
+                        }
+                      },
+                      "keyword": "defense",
+                      "amount": -1
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "form": "alter-ego",
+            "subject": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "takeDamage": {
+                  "cards": "you",
+                  "amount": 2
+                }
+              },
+              {
+                "spend": "G"
+              }
+            ]
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
     }
   ]
 }

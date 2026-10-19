@@ -27,6 +27,9 @@ internal static class PhaseTransitionProcedure
             case Steps.ReadyCards:
                 PhaseEnd.ReadyCards(world, events);
                 break;
+            case PlayerTurnTiming.Ends:
+                PhaseEnd.EndPlayerTurn(world, step.Seat, events);
+                break;
             case Steps.EndPlayerPhase:
                 PhaseEnd.EndPlayerPhase(world, events);
                 break;

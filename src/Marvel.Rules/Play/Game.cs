@@ -76,6 +76,7 @@ public sealed class Game
 
     internal Asker asking = Asker.Game;
     internal bool endingPlayerPhase;
+    internal bool endingTurn;
 
     private Game(World world, ICardFacts facts)
     {

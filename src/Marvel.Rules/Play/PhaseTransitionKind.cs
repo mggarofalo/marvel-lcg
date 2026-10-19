@@ -13,4 +13,6 @@ public enum PhaseTransitionKind
     ReadyCards,
     /// <summary>EndPlayerPhase procedure stage.</summary>
     EndPlayerPhase,
+    /// <summary>EndPlayerTurn procedure stage.</summary>
+    EndPlayerTurn,
 }
