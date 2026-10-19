@@ -128,7 +128,18 @@ public sealed class SetupCatalog
         Obligations: Strings(element, "obligations"),
         NemesisSet: Strings(element, "nemesis_set"),
         PlayerDeck: Strings(element, "player_deck"),
-        NemesisSetIcon: Text(element, "nemesis_set_icon"));
+        NemesisSetIcon: Text(element, "nemesis_set_icon"))
+    {
+        AspectRule = AspectRule(element),
+    };
+
+    private static Marvel.Rules.Setup.DeckAspectRule AspectRule(JsonElement element) =>
+        !element.TryGetProperty("aspect_rule", out _) ? Marvel.Rules.Setup.DeckAspectRule.Standard
+        : Text(element, "aspect_rule") switch
+        {
+            "equal_two_aspects" => Marvel.Rules.Setup.DeckAspectRule.EqualTwoAspects,
+            _ => throw new JsonException("unknown identity aspect rule"),
+        };
 
     private static string Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String

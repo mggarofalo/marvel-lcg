@@ -23,6 +23,7 @@ public sealed record DeckAssessment
 
     /// <summary>Whether this construction may be extended to a complete deck.</summary>
     /// <remarks>Product editing policy permits fewer than the required 40 cards;
-    /// all other construction constraints, including the maximum, remain enforced.</remarks>
-    public bool CanExtend => Size is <= 50 && Diagnostics.All(item => item.Code == "deck-size");
+    /// an aspect imbalance is extendable only when balancing cards fit below the maximum.</remarks>
+    public bool CanExtend => Size is <= 50 && Diagnostics.All(item => item.Code == "deck-size"
+        || item.Code == "aspect-balance" && item.Actual is >= 0 && Size + item.Actual <= 50);
 }

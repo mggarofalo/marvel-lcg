@@ -20,4 +20,8 @@ public sealed record HeroSetup(
     IReadOnlyList<string> Obligations,
     IReadOnlyList<string> NemesisSet,
     IReadOnlyList<string> PlayerDeck,
-    string NemesisSetIcon);
+    string NemesisSetIcon)
+{
+    /// <summary>Printed identity exception to ordinary aspect construction.</summary>
+    public Marvel.Rules.Setup.DeckAspectRule AspectRule { get; init; }
+}

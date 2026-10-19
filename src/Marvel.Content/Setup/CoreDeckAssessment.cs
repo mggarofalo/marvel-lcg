@@ -26,6 +26,6 @@ public static class CoreDeckAssessment
         // Product choice: never assess a reduced substitute for the submitted deck.
         // Resolve admission defects first so unknown facts cannot produce false legality.
         return diagnostics.Count > 0 ? new(null, diagnostics)
-            : PlayerDeckAssessment.Assess(new(draft), hero.HeroDeck, hero.Hero.Single(), cards);
+            : PlayerDeckAssessment.Assess(new(draft), hero.HeroDeck, hero.Hero.Single(), cards, hero.AspectRule);
     }
 }

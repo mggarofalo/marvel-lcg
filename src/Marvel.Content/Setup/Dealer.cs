@@ -99,9 +99,12 @@ public static class Dealer
             // One call over the concatenation in the engine, so the two lists
             // are a single unbroken run of ids rather than two.
             if (playerDecks is not null)
-                dealt.AddRange(PlayerDeckAdmission.Admit(playerDecks[seat], hero.HeroDeck, seat, facts!, hero.Hero[0]));
+                dealt.AddRange(PlayerDeckAdmission.Admit(playerDecks[seat], hero.HeroDeck, seat, facts!, hero.Hero[0], hero.AspectRule));
             else
             {
+                if (facts is not null)
+                    _ = PlayerDeckAdmission.Admit(new([.. hero.HeroDeck, .. customization.PlayerDeck]),
+                        hero.HeroDeck, seat, facts, hero.Hero[0], hero.AspectRule);
                 Add(hero.HeroDeck, CreationSource.HeroDeck, seat);
                 Add(customization.PlayerDeck, CreationSource.PlayerDeck, seat);
             }

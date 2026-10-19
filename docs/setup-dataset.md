@@ -60,6 +60,12 @@ and nemesis sets always come from the selected hero record. Each hero declares
 `nemesis_set_icon` explicitly; the engine checks that association without
 constructing a set name from the identity’s name.
 
+An optional `aspect_rule: "equal_two_aspects"` records Jessica Drew's printed
+Double Agent construction instruction (04031b). The engine requires equal totals
+for the two chosen aspects, including their signature cards, while allowing the
+required signature cards from other aspects. Omission retains ordinary one-aspect
+construction. Both explicit recipes and starter substitutions use this rule.
+
 An encounter-set row names its cards in printed composition order and declares
 its `role`: `modular`, `standard`, `expert`, `scenario` or `nemesis`. Roles are
 authored composition metadata; no card-id or set-name spelling determines them.
