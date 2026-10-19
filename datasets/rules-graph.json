@@ -22,6 +22,13 @@
       "ruling_hash": "sha256:837e515443fb2ec5c0dc6c745b4a4681196556edebcd96773879da933536cee5",
       "absorbed_in": null,
       "why": "Cost clause 4 permits generating resources beyond a cost. This ruling resolves conflicting earlier guidance by establishing that overpaid resources are still spent for abilities that care about spending, while remaining not paid for that cost."
+    },
+    "ruling:1516351f87fc4382": {
+      "base": "pack:mc10:persistent-damage",
+      "supersedes_hash": "sha256:131fbca14b2545c3ffdfb16d8b516b18f9e78574f9af00750bd465698eeb7f66",
+      "ruling_hash": "sha256:55664daa1d3d398b10d72fda0757b55fabd55d41fd18ebcc121c1d2254d35fee",
+      "absorbed_in": null,
+      "why": "The RoRS persistent-damage rule records at most printed starting hit points. This correction clarifies that the next game still grants the Condition upgrade hit-point increase when it enters play; restoring the recorded dial must not erase that increase. RR 1.8 hit-points.2.3 retains the increase when a gets +X hit points ability takes effect."
     }
   },
   "edges": {

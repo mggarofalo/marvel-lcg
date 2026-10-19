@@ -70,5 +70,4 @@ tools/Marvel.Cards.Extract/Keywords.cs:24: SL003: Keywords=336
 tools/Marvel.Release/ReleaseAcceptanceRecord.cs:8: SL003: ReleaseAcceptanceRecord=350
 tools/Marvel.Rules.Harvest/Emit.cs:19: SL003: Emit=308
 tools/Marvel.Rules.Harvest/Pages.cs:30: SL003: Pages=418
-tools/Marvel.Rules.Index/Corpus.cs:29: SL003: Corpus=329
 tools/Marvel.Rules.Packs.Harvest/Emit.cs:11: SL003: Emit=430
