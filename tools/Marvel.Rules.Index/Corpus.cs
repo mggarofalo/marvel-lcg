@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 // `RepositoryPaths` is linked in from `tests/Shared/`. It answers "where is
 // this repository" and not "where is this test", and one copy of that answer
 // is the reason it lives in one file.
@@ -8,7 +6,7 @@ using Marvel.Tests;
 namespace Marvel.Rules.Index;
 
 /// <summary>
-/// The vendored Rules Reference index, and the authored graph over it.
+/// The vendored Rules Reference and product indexes, and their authored relationships.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -32,7 +30,7 @@ internal sealed class Corpus
     private readonly List<Edge> edges;
     private readonly List<Modification> modifications;
 
-    private Corpus(
+    internal Corpus(
         Dictionary<string, RuleRecord> records,
         List<Edge> edges,
         List<Modification> modifications)
@@ -43,7 +41,7 @@ internal sealed class Corpus
     }
 
     /// <summary>The Rules Reference version the index was harvested from.</summary>
-    public string Version { get; private set; } = "unknown";
+    public string Version { get; internal init; } = "unknown";
 
     /// <summary>Every citable record, in the document's order.</summary>
     public IReadOnlyCollection<RuleRecord> Records => records.Values;
@@ -60,169 +58,10 @@ internal sealed class Corpus
         RepositoryPaths.Dataset("rules-graph.json"),
         RepositoryPaths.Dataset("rulings", "rulings.json"));
 
-    /// <summary>Reads the three corpus inputs from explicit paths.</summary>
-    internal static Corpus Read(string indexPath, string graphPath, string rulingsPath)
-    {
-        var found = new Dictionary<string, RuleRecord>(StringComparer.Ordinal);
-        using var index = JsonDocument.Parse(File.ReadAllBytes(indexPath));
-        var root = index.RootElement;
-        ReadBase(root, found);
-        using var graph = JsonDocument.Parse(File.ReadAllBytes(graphPath));
-        if (graph.RootElement.GetProperty("version").GetInt32() != 2)
-            throw new InvalidDataException("rules-graph.json is not relationship schema version 2");
-        var authored = ReadEdges(graph.RootElement);
-        using var rulings = JsonDocument.Parse(File.ReadAllBytes(rulingsPath));
-        var published = ReadPublished(rulings.RootElement);
-        var modifications = ReadModifications(
-            graph.RootElement, published, found);
-        return new Corpus(found, authored, modifications)
-        {
-            Version = root.TryGetProperty("version", out var version)
-                ? version.GetString() ?? "unknown" : "unknown",
-        };
-    }
-
-    private static void ReadBase(
-        JsonElement root, Dictionary<string, RuleRecord> found)
-    {
-        var entries = root.GetProperty("entries");
-        var clauses = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var entry in entries.EnumerateArray())
-        {
-            string owner = EntryOf(entry.GetProperty("id").GetString()!);
-            clauses[owner] = clauses.GetValueOrDefault(owner) + 1;
-        }
-        foreach (var entry in entries.EnumerateArray())
-        {
-            string id = entry.GetProperty("id").GetString()!;
-            found[id] = new RuleRecord(
-                id, Optional(entry, "title"), Optional(entry, "fragment"),
-                Optional(entry, "hash"), id == EntryOf(id) ? clauses[id] : 0,
-                "base", null);
-        }
-    }
-
-    private static string Optional(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) ? value.GetString() ?? "" : "";
-
-    private static List<Edge> ReadEdges(JsonElement graph)
-    {
-        var result = new List<Edge>();
-        foreach (var from in graph.GetProperty("edges").EnumerateObject())
-        {
-            string why = Optional(from.Value, "why");
-            foreach (var to in from.Value.GetProperty("references").EnumerateArray())
-                result.Add(new Edge(from.Name, to.GetString()!, why));
-        }
-        return result;
-    }
-
-    private static Dictionary<string, JsonElement> ReadPublished(JsonElement root)
-    {
-        var published = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-        foreach (var ruling in root.GetProperty("rulings").EnumerateArray())
-        {
-            string rulingId = ruling.GetProperty("id").GetString()!;
-            if (!published.TryAdd(rulingId, ruling.Clone()))
-                throw new InvalidDataException($"rulings.json contains duplicate id {rulingId}");
-        }
-        return published;
-    }
-
-    private static List<Modification> ReadModifications(
-        JsonElement graph, Dictionary<string, JsonElement> published,
-        Dictionary<string, RuleRecord> found)
-    {
-        var modifications = new List<Modification>();
-        foreach (var mapped in graph.GetProperty("modifications").EnumerateObject())
-        {
-            var modification = ReadModification(mapped, published, found);
-            modifications.Add(modification);
-            var ruling = published[mapped.Name];
-            var baseRecord = found[modification.BaseId];
-            found.Add(mapped.Name, new RuleRecord(
-                mapped.Name,
-                $"RULING — {baseRecord.Title}",
-                ruling.GetProperty("answer").GetString()!,
-                modification.Hash,
-                0,
-                "modification",
-                modification.BaseId));
-        }
-        return modifications;
-    }
-
-    private static Modification ReadModification(
-        JsonProperty mapped,
-        Dictionary<string, JsonElement> published,
-        Dictionary<string, RuleRecord> found)
-    {
-        if (!published.TryGetValue(mapped.Name, out var ruling))
-            throw new InvalidDataException(
-                $"rules modification {mapped.Name} has no published ruling");
-        RequireRulesRuling(mapped.Name, ruling);
-        string baseId = mapped.Value.GetProperty("base").GetString()!;
-        if (!found.TryGetValue(baseId, out var baseRecord))
-            throw new InvalidDataException(
-                $"rules modification {mapped.Name} names no base rule {baseId}");
-        string supersedes = mapped.Value.GetProperty("supersedes_hash").GetString()!;
-        RequireHash(mapped.Name, baseId, supersedes, baseRecord.Hash);
-        string rulingHash = ruling.GetProperty("hash").GetString()!;
-        string expected = mapped.Value.GetProperty("ruling_hash").GetString()!;
-        RequireRulingHash(mapped.Name, expected, rulingHash);
-        string why = mapped.Value.GetProperty("why").GetString()!;
-        string source = ruling.GetProperty("source").GetString()!;
-        string via = ruling.GetProperty("via").GetString()!;
-        string scope = ruling.GetProperty("rrg_scope").GetString()!;
-        RequireProvenance(mapped.Name, why, source, via, scope);
-        string? absorbed = mapped.Value.GetProperty("absorbed_in").GetString();
-        RequireAbsorption(mapped.Name, absorbed, scope);
-        return new Modification(
-            mapped.Name, baseId, supersedes, absorbed, why, source, via, scope,
-            ruling.GetProperty("observed").GetString(), rulingHash);
-    }
-
-    private static void RequireRulesRuling(string id, JsonElement ruling)
-    {
-        if (!string.Equals(
-            ruling.GetProperty("kind").GetString(), "rules", StringComparison.Ordinal))
-            throw new InvalidDataException(
-                $"rules modification {id} is a card ruling, not a rules ruling");
-    }
-
-    private static void RequireHash(
-        string id, string baseId, string pinned, string actual)
-    {
-        if (!string.Equals(pinned, actual, StringComparison.Ordinal))
-            throw new InvalidDataException(
-                $"rules modification {id} pins {pinned}, not {actual} for {baseId}");
-    }
-
-    private static void RequireRulingHash(
-        string id, string pinned, string actual)
-    {
-        if (!string.Equals(pinned, actual, StringComparison.Ordinal))
-            throw new InvalidDataException(
-                $"rules modification {id} pins ruling {pinned}, not {actual}");
-    }
-
-    private static void RequireProvenance(
-        string id, string why, string source, string via, string scope)
-    {
-        if (string.IsNullOrWhiteSpace(why) || string.IsNullOrWhiteSpace(source)
-            || string.IsNullOrWhiteSpace(via) || string.IsNullOrWhiteSpace(scope))
-            throw new InvalidDataException(
-                $"rules modification {id} has incomplete provenance");
-    }
-
-    private static void RequireAbsorption(
-        string id, string? absorbed, string scope)
-    {
-        if (absorbed is not null
-            && CompareVersions(absorbed, EffectiveVersion(scope)) < 0)
-            throw new InvalidDataException(
-                $"rules modification {id} is absorbed before its RRG scope");
-    }
+    /// <summary>Reads explicit RR, graph and ruling inputs alongside the pinned product-rule index.</summary>
+    internal static Corpus Read(string indexPath, string graphPath, string rulingsPath) =>
+        CorpusReader.Read(indexPath, graphPath, rulingsPath,
+            RepositoryPaths.Dataset("rules-packs", "index.json"));
 
     /// <summary>The entry a citation belongs to.</summary>
     /// <remarks>
@@ -294,7 +133,7 @@ internal sealed class Corpus
                 $"Rules Reference v{Version} is the only vendored base; cannot resolve v{version}");
         }
 
-        if (!records.TryGetValue(id, out var current) || current.Kind != "base")
+        if (!records.TryGetValue(id, out var current) || current.Kind is not ("base" or "pack"))
         {
             throw new KeyNotFoundException($"Rules Reference v{Version} has no base rule '{id}'");
         }
@@ -345,13 +184,13 @@ internal sealed class Corpus
         return unabsorbed.Count == 0 ? null : unabsorbed[0].Id;
     }
 
-    private static string EffectiveVersion(string scope) => scope switch
+    internal static string EffectiveVersion(string scope) => scope switch
     {
         "pre-1.5" => "0.0",
         "1.7-1.8" => "1.7",
         _ => scope,
     };
 
-    private static int CompareVersions(string left, string right) =>
+    internal static int CompareVersions(string left, string right) =>
         System.Version.Parse(left).CompareTo(System.Version.Parse(right));
 }

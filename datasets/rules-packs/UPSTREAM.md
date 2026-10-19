@@ -7,17 +7,17 @@ is the first.
 
 | | |
 |---|---|
-| Upstream | 61 booklets published by FFG/Asmodee alongside each product |
+| Upstream | 62 booklets published by FFG/Asmodee alongside each product |
 | Harvested with | `tools/Marvel.Rules.Packs.Harvest` |
 | Harvested | 2026-08-24 |
 | Pinned by | `sources.manifest.json`: every local PDF byte and the committed snapshot |
 | Tier | `pack:<code>:<section>[.<rule>]` |
 
-**61 documents → 525 sections → 859 citable rules.**
+**62 documents → 553 sections → 902 citable rules.**
 
 | Kind | Documents | Records |
 |---|---|---|
-| Expansion rulebook | 10 | 486 |
+| Expansion rulebook | 11 | 529 |
 | Scenario insert | 20 | 229 |
 | Hero rulesheet | 30 | 76 |
 | Learn to Play | 1 | 68 |
@@ -29,7 +29,7 @@ state between sessions, not statements of rules.
 
 They are different kinds of document. The Rules Reference is one alphabetical
 glossary with a rigid, parseable shape and the standing of an authority. These
-are 61 heterogeneous booklets that share a publisher's template and nothing
+are 62 heterogeneous booklets that share a publisher's template and nothing
 else — and they are where **new keywords and scenario-specific rules actually
 arrive**, months before the Rules Reference absorbs them.
 
@@ -70,7 +70,7 @@ pack:mc02:new-rules.when-the-villain-changes-form    one rule
 pack:mc32:featured-keywords.hinder-x                 a keyword definition
 ```
 
-334 of the 859 records are named rules found this way.
+349 of the 902 records are named rules found this way.
 
 ## References are authored, and live somewhere else
 
@@ -122,3 +122,38 @@ alongside the actual source change, then write the reviewed result into this
 directory. `write` updates the PDF and snapshot pins with the output. `pin`
 exists only for adopting an already-reviewed snapshot whose original writer is
 unavailable; it must not be used to bless an unexplained source change.
+
+## Rise of Red Skull admission (2026-10-19)
+
+The official FFG booklet was retrieved directly from
+[FFG's support CDN](https://images-cdn.fantasyflightgames.com/filer_public/92/1d/921ddef8-c28c-4096-a9e9-63142230a602/mc10_the_rise_of_red_skull_rules_web.pdf).
+Its 20-page PDF is pinned as `mc10_the_rise_of_red_skull_rules_web.pdf`,
+2,864,641 bytes, SHA-256
+`9e783e8cc325009f44d1cf0a9f5b845c7b41b50d0e88d4e5a7c05ae5816a88c6`.
+Copyright Marvel / Fantasy Flight Games, 2020; no open-content license is asserted.
+The original PDF remains in the local document library, outside Git.
+
+The 28 `mc10/` sections and 15 anchored rules are a reviewed transcription of
+rules-bearing regions on printed pages 2, 3, 5, 7, 10, 12, 15, 17 and 18.
+This vendored snapshot retains italic expert-stage/customization instructions,
+trait names, ordered campaign instructions and their Expert Campaign qualifiers.
+`[per-player]` transcribes the player icon on page 15. Scenario names qualify
+repeated Campaign Instructions and Rules Clarification headings for stable ids;
+whitespace and line-end hyphenation are normalized. Card illustrations, story,
+strategy prose, credits and the blank page-20 log are not rules records. Printed
+card authority remains `datasets/cards/`; the original page-20 log is the tracker
+field reference, not an executable rule.
+
+The generic typography harvester does not reproduce this reviewed transcription:
+it omits Exo2-Regular headings, italic rules and Komika trait words and can mix
+card illustrations into rule text. Run it into a candidate directory and review
+against the PDF, never directly over this snapshot. Adoption preserves every
+pre-existing source pin and record byte; only `mc10`, the combined index and
+snapshot pin change. Offline index/manifest and RoRS authority tests gate the
+committed corpus without downloading or requiring the source PDF.
+
+Read `ruling:1516351f87fc4382` through `datasets/rules-graph.json` when interpreting
+persistent damage and Condition upgrades. Current RR `modes-of-play.10` preserves
+campaign removals on retries; clauses 11–12 separate campaign difficulty from
+scenario modes. The PDF is preserved as published, not silently rewritten to
+incorporate later authorities.
