@@ -140,8 +140,10 @@ internal static class AbilityEffectTargetAdmission
                 CardsLegality(Every(ActivationOf(node, cast).Enemies, cast)),
             "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
-            "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false }
+            "useAttackForThwart" => ThwartStatSubstitution.CanUseAttack(cast.World, cast.Occurrence)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
+            "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false }
+            ? TargetLegality.Valid : TargetLegality.Invalid,
             "attachCards" => AbilityAttachmentExecution.Target((AbilityEffect.AttachCards)node, cast),
             "releaseBeneath" => AbilityBeneathAdmission.Target((AbilityEffect.ReleaseBeneath)node, cast),
             "storeBeneath" => AbilityBeneathAdmission.Target((AbilityEffect.StoreBeneath)node, cast),

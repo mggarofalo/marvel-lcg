@@ -6,11 +6,23 @@ namespace Marvel.Rules.Play;
 /// <summary>Applies an optional statistic replacement to one initiated thwart.</summary>
 public static class ThwartStatSubstitution
 {
+    /// <summary>Whether the exact pending power has an acting-character THW read to replace.</summary>
+    public static bool CanUseAttack(World world, Occurrence occurrence)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(occurrence);
+        return world.Agenda.items.Any(item => ReferenceEquals(item.Occurrence, occurrence)
+            && item.Step.Operation is CharacterThwartOperation
+                { Thwart: { UsesThwartStat: true, UsesAttack: false } });
+    }
+
     /// <summary>Replace THW only after initiation and its costs have succeeded.</summary>
     public static void UseAttack(World world, Occurrence occurrence)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(occurrence);
+        if (!CanUseAttack(world, occurrence))
+            throw new RulesNotImplementedException("this thwart does not use a replaceable THW statistic");
         var agenda = world.Agenda;
         int at = agenda.items.FindIndex(item => ReferenceEquals(item.Occurrence, occurrence)
             && item.Step.Operation is CharacterThwartOperation);

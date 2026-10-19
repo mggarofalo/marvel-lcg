@@ -694,3 +694,7 @@ credit raises instead of selecting a default seat. An eliminated recipient is
 not scheduled. Omitting `player` retains the all-player frame behavior.
 
 `reflectAttackDamage: "attack"` installs a replacement on the active player attack for this attachment's host. Every damage instance against that target during the attack is prevented and dealt to the attacking player's identity instead. The replacement survives the attachment leaving play and ends with the owning attack.
+The card interpreter supplies `UsesThwartStat` on each scheduled power from its
+compiled numeric dependencies and resolved actor bindings. Stat substitution
+is offered only when that exact power reads its acting character's THW; a
+fixed-number effect or a reference to another character's THW offers no choice.

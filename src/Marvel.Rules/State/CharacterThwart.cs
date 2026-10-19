@@ -60,4 +60,7 @@ public sealed record CharacterThwart(
 {
     /// <summary>Whether an interrupt substitutes ATK for this thwart's THW.</summary>
     public bool UsesAttack { get; init; }
+
+    /// <summary>Whether this power reads its acting character's THW statistic.</summary>
+    public bool UsesThwartStat { get; init; } = true;
 }

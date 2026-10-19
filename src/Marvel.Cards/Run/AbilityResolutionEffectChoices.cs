@@ -75,6 +75,9 @@ internal static class AbilityResolutionEffectChoices
             execution.Resolver(cast), cast.Source, command.Target, command.Amount, cast.Trigger)
         {
             Performer = cast.AbilityActor,
+            UsesThwartStat = command.Verb == BasicPowers.ThwartVerb
+                && AbilityThwartStatUsage.ReadsActor(command.Effect.Effect, cast.QueryContext(),
+                    cast.AbilityActor ?? cast.World.Seats[execution.Resolver(cast)].IdentityCard),
             Continuation = AbilityContinuationScheduling.Power(
                 capture, command.PowerOrdinal, [.. command.Targets.Select(card => card.ObjectId)]),
             SurgeGained = capture.Memory.SurgeGained,

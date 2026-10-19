@@ -23,4 +23,7 @@ public sealed record CardPowerInvocation(
 
     /// <summary>Whether the containing reveal has already gained Surge.</summary>
     public bool SurgeGained { get; init; }
+
+    /// <summary>Interpreter-owned evidence that the power reads the performer's THW.</summary>
+    public bool UsesThwartStat { get; init; }
 }

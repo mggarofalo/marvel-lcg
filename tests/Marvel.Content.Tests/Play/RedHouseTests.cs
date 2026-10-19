@@ -90,14 +90,15 @@ public sealed class RedHouseTests
     }
 
     [Theory]
-    [InlineData(false, false, 1)]
-    [InlineData(true, false, 2)]
-    [InlineData(true, true, 4)]
+    [InlineData(false, false, 1, false)]
+    [InlineData(true, false, 2, false)]
+    [InlineData(true, true, 4, false)]
+    [InlineData(false, false, 1, true)]
     [Rule("rr:interrupt.1")]
-    public void CardThwartsSubstituteOnlyTheActorsThwExpression(bool accept, bool fixedAmount, int removed)
+    public void CardThwartsSubstituteOnlyTheActorsThwExpression(bool accept, bool fixedAmount, int removed, bool otherCharacter)
     {
         // Synthetic card ability probes the generic card-power contract; Red House is printed 04139.
-        string amount = fixedAmount ? "4" : "{\"modified\":{\"card\":\"you\",\"field\":\"thwart\"}}";
+        string amount = ThwartAmount(fixedAmount, otherCharacter);
         var runner = new AbilityRunner(AbilityCatalog.Parse(RedHouseJson.Replace("EVENT", """
             ,{"card":"01007","name":"Synthetic THW action","abilities":[{
               "trigger":{"timing":"Action","event":"WhenActionTriggered","subject":"this"},
@@ -112,16 +113,30 @@ public sealed class RedHouseTests
         var (game, world) = Playing(board =>
         {
             scheme = Scheme(board);
+            if (otherCharacter) board.CreateCard("01002", board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
             eventCard = board.CreateCard("01007", board.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
         }, hero: true, abilities: runner);
         var action = Assert.Single(game.Pending!.Affordances, offer => offer.AnchorId == eventCard!.ObjectId);
         game.Resolve(Decision.Take(action.Id));
         var target = Assert.Single(game.Pending!.Affordances, offer => offer.AnchorId == scheme!.ObjectId);
         game.Resolve(Decision.Take(target.Id));
-        var interrupt = Assert.Single(game.Pending!.Affordances);
-        game.Resolve(accept ? Decision.Take(interrupt.Id) : Decision.Decline);
+        if (!fixedAmount && !otherCharacter)
+        {
+            var interrupt = Assert.Single(game.Pending!.Affordances);
+            game.Resolve(accept ? Decision.Take(interrupt.Id) : Decision.Decline);
+        }
+        else Assert.DoesNotContain(game.Pending!.Affordances, offer => offer.AnchorId == scheme!.ObjectId
+            && offer.Description?.Contains("ATK", StringComparison.Ordinal) == true);
         Assert.Equal(10 - removed, scheme!.Tokens["k_threat"]);
         Assert.Equal(1, eventCard!.Tokens["c_energy"]);
+    }
+
+    private static string ThwartAmount(bool fixedAmount, bool otherCharacter)
+    {
+        if (fixedAmount) return "4";
+        return otherCharacter
+            ? """{"modified":{"card":{"titled":"Black Cat"},"field":"thwart"}}"""
+            : """{"modified":{"card":"you","field":"thwart"}}""";
     }
 
     [Fact]
