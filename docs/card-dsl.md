@@ -241,6 +241,14 @@ expires with its activation identity, including cancellation and nested activati
 Form-qualified `WhenRevealed` abilities retain their authored ordinals while only
 the revealing player's current form is offered and resolved.
 
+Constant keyword grants accept `attackScope: "basic"` for basic ATK only,
+`attackScope: {"sourceTrait": "ARROW"}` for attacks with a matching source trait,
+and `attackScope: "source"` when the card itself supplies the attack. The last
+form must grant to `this`; an event's source grant is read for its own attack
+preview and resolution even while it is in hand. Scoped grants do not become
+unrestricted character keywords. Damage, retaliation and consequence previews
+share the engine's attacker/source/basic-power query.
+
 The implemented vocabulary covers these groups:
 
 - control flow such as sequences, conditions, alternatives and repetition;

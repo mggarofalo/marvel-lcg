@@ -36,8 +36,8 @@ internal sealed class AttackDamageResolution
         Result = new(completion ?? execution);
         priorDefeats = execution.Occurrence.Defeats.Count;
         incarnation = request.Replacement?.TargetIncarnation ?? request.Target.Incarnation;
-        overkill = !spillOnly && Keywords.Has(world, request.Attacker, Keywords.Overkill, facts);
-        retaliate = !spillOnly && request.Retaliate && !Keywords.Has(world, request.Attacker, Keywords.Ranged, facts);
+        overkill = !spillOnly && AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Overkill, request.Basic);
+        retaliate = !spillOnly && request.Retaliate && !AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Ranged, request.Basic);
     }
 
     internal AttackDamageResult Result { get; }
@@ -98,8 +98,8 @@ internal sealed class AttackDamageResolution
         if (!pierced)
         {
             pierced = true;
-            if (!spillOnly) DamageAttacks.DiscardPiercedTough(world, facts, request.Attacker,
-                request.Target, request.Amount, request.Trigger, events);
+            if (!spillOnly && AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Piercing, request.Basic))
+                DamageAttacks.DiscardPiercedTough(world, request.Target, request.Amount, request.Trigger, events);
         }
         replacement ??= DamagePlacement.Replace(world,
             new(request.Source, request.Target, request.Amount, request.Trigger, request.Verb,

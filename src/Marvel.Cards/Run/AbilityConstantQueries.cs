@@ -114,9 +114,11 @@ internal sealed class AbilityConstantQueries
                 foreach (var target in ConstantTargets(grant.Cards, grant.EachCard, bindings, selectors))
                 {
                     found.Add(new ContinuousEffect(
-                        EffectSource.ConstantAbility, Kind: grant.Field,
+                        EffectSource.ConstantAbility, Kind: grant.AttackRestriction is null
+                            ? grant.Field : AttackKeywords.ScopedPrefix + grant.Field,
                         Amount: expressions.Amount(grant.Amount), Card: bindings.Source.ObjectId,
-                        Affects: target.ObjectId, Lasts: Duration.WhileInPlay));
+                        Affects: target.ObjectId, Lasts: Duration.WhileInPlay)
+                    { AttackRestriction = grant.AttackRestriction });
                 }
                 return true;
             case AbilityEffect.GrantTrait { Until: null } grant:

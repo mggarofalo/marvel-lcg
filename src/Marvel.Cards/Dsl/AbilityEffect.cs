@@ -89,7 +89,11 @@ public abstract record AbilityEffect
     /// <summary>Grant a live trait, continuously or until a timing point.</summary>
     public sealed record GrantTrait(AbilityCardSelection Cards, string Trait, bool EachCard, string? Until) : AbilityEffect;
     /// <summary>Grant a supported modifier, continuously or until a timing point.</summary>
-    public sealed record GrantField(AbilityCardSelection Cards, string Field, AbilityNumber Amount, bool EachCard, string? Until) : AbilityEffect;
+    public sealed record GrantField(AbilityCardSelection Cards, string Field, AbilityNumber Amount, bool EachCard, string? Until) : AbilityEffect
+    {
+        /// <summary>The printed attack class receiving this keyword, if restricted.</summary>
+        public Marvel.Rules.Timing.AttackKeywordRestriction? AttackRestriction { get; init; }
+    }
     /// <summary>Define the source's own basic-power base before modifiers.</summary>
     public sealed record DefineBaseValue(string Field, AbilityNumber Value) : AbilityEffect;
     /// <summary>Grant modifiers to all characters controlled by the named player.</summary>

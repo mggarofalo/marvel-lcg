@@ -45,6 +45,9 @@ public sealed record ContinuousEffect(
     /// <summary>Only matching played cards may consume this cost reduction.</summary>
     public CardCostFilter? CostFilter { get; init; }
 
+    /// <summary>A keyword restricted to a printed attack class.</summary>
+    public AttackKeywordRestriction? AttackRestriction { get; init; }
+
     /// <summary>The original in-play copy named by a delayed discard.</summary>
     public int? TargetIncarnation { get; init; }
 

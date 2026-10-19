@@ -20,7 +20,7 @@ internal static class AbilityModifierLowering
         string target = each ? "cards" : "card";
         var fields = lasting
             ? Fields(value, location, target, "trait", "keyword", "amount", "until")
-            : Fields(value, location, target, "trait", "keyword", "amount");
+            : Fields(value, location, target, "trait", "keyword", "amount", "attackScope");
         if (fields.ContainsKey("trait") == fields.ContainsKey("keyword"))
         {
             throw location.Error("expected exactly one of 'trait' and 'keyword'");
@@ -28,19 +28,23 @@ internal static class AbilityModifierLowering
         string? until = lasting ? TimingPoint(Required(fields, "until", location), location.Child("until")) : null;
         var cards = Selected(fields, target, location);
         if (fields.TryGetValue("trait", out var trait))
-        {
-            if (fields.ContainsKey("amount"))
-            {
-                throw location.Child("amount").Error("a trait grant has no numeric amount");
-            }
-            return new AbilityEffect.GrantTrait(cards, Text(trait, location.Child("trait")), each, until);
-        }
+            return TraitGrant(fields, cards, trait, location, each, until);
         string field = Modifier(Required(fields, "keyword", location), location.Child("keyword"), keyword: true);
         // These defaults preserve the engine's distinct constant and lasting
         // modifier conventions; they are not inferred from a card's title.
         var amount = fields.TryGetValue("amount", out var number)
             ? Number(number, location.Child("amount")) : new AbilityNumber.Constant(lasting ? 0 : 1);
-        return new AbilityEffect.GrantField(cards, field, amount, each, until);
+        var attackRestriction = AbilityAttackKeywordLowering.Restriction(fields, location, cards, field, each);
+        return new AbilityEffect.GrantField(cards, field, amount, each, until)
+        { AttackRestriction = attackRestriction };
+    }
+
+    private static AbilityEffect.GrantTrait TraitGrant(IReadOnlyDictionary<string, AbilityValue> fields,
+        AbilityCardSelection cards, AbilityValue trait, AbilityLocation location, bool each, string? until)
+    {
+        if (fields.ContainsKey("amount") || fields.ContainsKey("attackScope"))
+            throw location.Error("a trait grant has neither a numeric amount nor an attack scope");
+        return new(cards, Text(trait, location.Child("trait")), each, until);
     }
 
     internal static AbilityEffect.GrantControlledCharacters GrantControlledEffect(AbilityValue value, AbilityLocation location)

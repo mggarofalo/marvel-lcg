@@ -49,15 +49,16 @@ internal static class AbilityBookLowering
         Index(effect, address, effects);
         AbilityStoragePermissionLowering.Validate(ability, effect, location, effects
             .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
+        AbilityAttackKeywordLowering.Validate(ability, ordinal, effects, location);
         return new CompiledCardAbility(ability.Card, ability.Name, ability.Trigger, effect,
-            ability.Cost is { } cost ? LowerCost(Syntax(cost), location with { Path = "cost" }) : null,
-            ability.When is { } when ? LowerCondition(Syntax(when), location with { Path = "when" }) : null,
-            ability.Limit, ability.AnyPlayer, ability.Labels?.ToImmutableArray() ?? [],
-            ability.PrintedResources, ability.Maximum, address)
-        {
-            LimitPeriod = AbilityLimit.Validate(ability),
-            ResourceRestriction = AbilityResourceRestriction.Validate(ability),
-        };
+        ability.Cost is { } cost ? LowerCost(Syntax(cost), location with { Path = "cost" }) : null,
+        ability.When is { } when ? LowerCondition(Syntax(when), location with { Path = "when" }) : null,
+        ability.Limit, ability.AnyPlayer, ability.Labels?.ToImmutableArray() ?? [],
+        ability.PrintedResources, ability.Maximum, address)
+    {
+        LimitPeriod = AbilityLimit.Validate(ability),
+        ResourceRestriction = AbilityResourceRestriction.Validate(ability),
+    };
     }
 
     private static ImmutableDictionary<string, AbilityCardSelection> LowerAttachments(

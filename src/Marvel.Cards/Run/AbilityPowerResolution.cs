@@ -107,7 +107,7 @@ internal static class AbilityPowerResolution
         if (power != BasicPowers.AttackVerb) return;
         var world = cast.World;
         var attacker = cast.PowerActor ?? world.Seats[player].IdentityCard;
-        if (Keywords.Has(world, attacker, Keywords.Ranged, world.Facts)) return;
+        if (AttackKeywords.Has(world, attacker, cast.Source, Keywords.Ranged)) return;
         foreach (var target in cast.Attacked.DistinctBy(card => card.ObjectId))
             DamageAttacks.Retaliate(world, world.Facts, target, attacker, cast.Trigger, cast.Events);
     }

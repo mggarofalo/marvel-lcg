@@ -35,7 +35,7 @@ internal static class GamePowerOffers
                 ? "attack"
                 : "thwart",
             game.facts, game.world.Players);
-        bool ranged = StateFields.Modified(game.world, character, "ranged", game.facts, game.world.Players) > 0;
+        bool ranged = AttackKeywords.Has(game.world, character, character, Keywords.Ranged, basic: true);
         options.Add(game.Anchored(verb, character, game.world.Seats[game.Active]) with
         {
             Description = PowerDescription(game, character, verb, power, ranged,
@@ -85,7 +85,7 @@ internal static class GamePowerOffers
                 : $"{current} → {result} threat";
         }
 
-        return Damage.PreviewAttack(game.world, game.facts, character, character, target, power);
+        return Damage.PreviewBasicAttack(game.world, game.facts, character, target, power);
     }
 
     // rr:consequential-damage.1: "Consequential damage is dealt to an ally after resolving abilities"

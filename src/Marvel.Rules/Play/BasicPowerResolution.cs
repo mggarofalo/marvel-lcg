@@ -133,9 +133,9 @@ public static class BasicPowerResolution
         ContinuousEffect? temporaryOverkill = RegisterOverkill(world, attack, source, attacker);
         amount = MoveDamage(world, facts, attack, source, amount, events);
 
-        DamageAttacks.Attack(
-            world, facts, attacker, source, world.Cards[attack.Enemy], amount,
-            attack.Trigger, AttackVerb, events);
+        DamageAttacks.Resolve(world, facts,
+            new AttackDamageRequest(attacker, source, world.Cards[attack.Enemy], amount, attack.Trigger, AttackVerb)
+            { Basic = attack.Amount < 0 && attack.Source < 0 }, events);
 
         if (temporaryOverkill is not null)
         {
