@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Events;
@@ -10,16 +11,17 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class JetTrooperTests
 {
-    private const string Book = """
-        {"cards":[
-          {"card":"04146","abilities":[{"trigger":{"timing":"Boost","event":"WhenCardRevealed","subject":"this"},
-            "effect":{"if":{"test":{"inForm":{"player":"you","form":"hero"}},"then":{"afterActivation":{"effect":{
-              "enemyAttacks":{"enemies":{"query":"villain"},"against":"you","dealBoostCards":"false"}
-            }}}}}}]},
-          {"card":"01006","abilities":[{"trigger":{"timing":"ForcedInterrupt","event":"WhenAttackInitiated","actor":"villain"},
-            "effect":{"giveAdditionalBoost":{"enemy":"trigger.actor"}}}]}
-        ]}
-        """;
+    private static readonly string Book = Read();
+
+    private static string Read()
+    {
+        var book = JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
+        var jet = book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "04146")!.DeepClone();
+        var extra = JsonNode.Parse("""
+            {"card":"01006","abilities":[{"trigger":{"timing":"ForcedInterrupt","event":"WhenAttackInitiated","actor":"villain"},"effect":{"giveAdditionalBoost":{"enemy":"trigger.actor"}}}]}
+            """)!;
+        return new JsonObject { ["cards"] = new JsonArray(jet, extra) }.ToJsonString();
+    }
 
     [Theory]
     [InlineData(true, false, 2, 1)]

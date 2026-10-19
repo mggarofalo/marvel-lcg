@@ -9638,6 +9638,589 @@
           }
         ]
       }
+    },
+    {
+      "card": "04044",
+      "name": "Piercing Strike",
+      "note": "Hero Action (attack): Deal 3 damage to an enemy. This attack gains piercing.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "piercing",
+              "attackScope": "source"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "attack"
+          ],
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "dealAttackDamage": {
+                      "cards": "chosen",
+                      "amount": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04053",
+      "name": "Uncertain Loyalties",
+      "note": "Give to the Jessica Drew Player.\n• Exhaust Jessica Drew → remove Uncertain Loyalties from the game.\n• Place 3 threat on the main scheme. Discard this obligation.\n",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "choose": {
+              "descriptions": [
+                "Exhaust Jessica Drew and remove Uncertain Loyalties",
+                "Place 3 threat on the main scheme and discard Uncertain Loyalties"
+              ],
+              "options": [
+                {
+                  "then": {
+                    "effect": {
+                      "exhaust": "yourAlterEgo"
+                    },
+                    "then": {
+                      "removeFromGame": "this"
+                    }
+                  }
+                },
+                {
+                  "seq": [
+                    {
+                      "placeThreat": {
+                        "scheme": {
+                          "query": "mainScheme"
+                        },
+                        "amount": 3
+                      }
+                    },
+                    {
+                      "discard": "this"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04054",
+      "name": "The Viper",
+      "note": "While the Viper is engaged with you, your hand size is reduced by 1.\n(Spider-Woman's nemesis minion.)",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grantEach": {
+              "cards": {
+                "inPlayerArea": {
+                  "area": "identity",
+                  "player": "engagedPlayer"
+                }
+              },
+              "keyword": "hand_size",
+              "amount": -1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04145",
+      "name": "Hydra Flame-Soldier",
+      "note": "star Forced Response: After Hydra Flame-Soldier makes an undefended attack against you, discard a support you control.\n\nstar Boost: If this card resolves during an undefended attack, discard a support you control.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "event": "WhenAttackEnds",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "undefendedAttack": "you"
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "discardable": {
+                      "query": "supportsYouControl"
+                    }
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "undefendedAttack": "you"
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "discardable": {
+                      "query": "supportsYouControl"
+                    }
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04146",
+      "name": "Hydra Jet-Trooper",
+      "note": "Quickstrike.\n\nstar Boost: If you are in hero form, the villain attacks you after this activation. Do not deal any boost cards for that attack.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "you",
+                  "form": "hero"
+                }
+              },
+              "then": {
+                "afterActivation": {
+                  "effect": {
+                    "enemyAttacks": {
+                      "enemies": {
+                        "query": "villain"
+                      },
+                      "against": "you",
+                      "dealBoostCards": "false"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04148",
+      "name": "Combat Knife",
+      "note": "Attach to the villain.\nstar Attached villain's attacks gain piercing.\nHero Action: Spend mentalphysical resources → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grant": {
+              "card": "attachedTo",
+              "keyword": "piercing"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered",
+            "form": "hero"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "cost": {
+            "spend": "BR"
+          }
+        }
+      ],
+      "attachTo": {
+        "query": "villain"
+      }
+    },
+    {
+      "card": "04149",
+      "name": "Hydra Sidearm",
+      "note": "Attach to the Villain.\nstar Forced Interrupt: When attached villain attacks, the attack gains ranged.\nHero Action: Spend mentalphysical resources → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "ForcedInterrupt",
+            "actor": "attachedTo"
+          },
+          "effect": {
+            "grantUntil": {
+              "card": "attachedTo",
+              "keyword": "ranged",
+              "amount": 1,
+              "until": "EndOfAttack"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered",
+            "form": "hero"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "cost": {
+            "spend": "BR"
+          }
+        }
+      ],
+      "attachTo": {
+        "query": "villain"
+      }
+    },
+    {
+      "card": "04151",
+      "name": "Concussion Grenade",
+      "note": "When Revealed (Alter-Ego): You are confused. Place 1 threat on the main scheme (2 threat instead if you were already confused).\nWhen Revealed (Hero): You are stunned. Deal 1 damage to your hero (2 instead if you were already stunned).",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "hasStatus": {
+                  "card": "you",
+                  "status": "confused"
+                }
+              },
+              "then": {
+                "seq": [
+                  {
+                    "giveStatus": {
+                      "card": "you",
+                      "status": "confused"
+                    }
+                  },
+                  {
+                    "placeThreat": {
+                      "scheme": {
+                        "query": "mainScheme"
+                      },
+                      "amount": 2
+                    }
+                  }
+                ]
+              },
+              "else": {
+                "seq": [
+                  {
+                    "giveStatus": {
+                      "card": "you",
+                      "status": "confused"
+                    }
+                  },
+                  {
+                    "placeThreat": {
+                      "scheme": {
+                        "query": "mainScheme"
+                      },
+                      "amount": 1
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "hasStatus": {
+                  "card": "you",
+                  "status": "stunned"
+                }
+              },
+              "then": {
+                "seq": [
+                  {
+                    "giveStatus": {
+                      "card": "you",
+                      "status": "stunned"
+                    }
+                  },
+                  {
+                    "dealDamage": {
+                      "cards": "you",
+                      "amount": 2
+                    }
+                  }
+                ]
+              },
+              "else": {
+                "seq": [
+                  {
+                    "giveStatus": {
+                      "card": "you",
+                      "status": "stunned"
+                    }
+                  },
+                  {
+                    "dealDamage": {
+                      "cards": "you",
+                      "amount": 1
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04154",
+      "name": "Hydra Patrol",
+      "note": "When Defeated: Each player searches the encounter deck and discard pile for a Hydra minion and puts it into play engaged with them. Shuffle the encounter deck.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenDefeated",
+            "event": "WhenCardDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "seq": [
+                  {
+                    "chooseCard": {
+                      "from": {
+                        "cardsIn": {
+                          "areas": [
+                            "encounterDeck",
+                            "encounterDiscardPile"
+                          ],
+                          "kind": "Minion",
+                          "trait": "HYDRA"
+                        }
+                      },
+                      "effect": {
+                        "putIntoPlay": {
+                          "card": "chosen",
+                          "where": "engagedWithYou"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "shuffle": "encounterDeck"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04157",
+      "name": "Emergency Teleporter",
+      "note": "Setup.\nHero Action: Discard this card and remove it from the campaign log → search your deck and discard pile for an ally, put it into play, and give it a tough status card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "areas": [
+                        "yourDeck",
+                        "yourDiscardPile"
+                      ],
+                      "kind": "Ally"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "putIntoPlay": {
+                          "card": "chosen",
+                          "where": "yourPlayArea"
+                        }
+                      },
+                      {
+                        "giveStatus": {
+                          "card": "chosen",
+                          "status": "tough"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "shuffle": "yourDeck"
+              }
+            ]
+          },
+          "cost": {
+            "consumeCampaignCard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04150",
+      "name": "Weapon Master",
+      "note": "When Reveled (Alter-Ego): The villain schemes. If they have a Weapon attachment, this card gains surge.\nWhen Reveled (Hero): the villain attacks you. If they have a Weapon attachment, this card gains surge.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "enemyAttacks": {
+                  "enemies": {
+                    "query": "villain"
+                  },
+                  "against": "you"
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "withTrait": {
+                        "cards": {
+                          "query": "attachmentsOnVillain"
+                        },
+                        "trait": "WEAPON"
+                      }
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "seq": [
+              {
+                "enemySchemes": {
+                  "enemies": {
+                    "query": "villain"
+                  },
+                  "against": "you"
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "withTrait": {
+                        "cards": {
+                          "query": "attachmentsOnVillain"
+                        },
+                        "trait": "WEAPON"
+                      }
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

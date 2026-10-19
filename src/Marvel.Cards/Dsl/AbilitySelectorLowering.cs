@@ -82,6 +82,7 @@ internal static class AbilitySelectorLowering
         "minionsEngagedWithYou" => AbilityCardQuery.MinionsEngagedWithYou,
         "identitiesWithinPerPlayerLimit" => AbilityCardQuery.IdentitiesWithinPerPlayerLimit,
         "attachedToThis" => AbilityCardQuery.AttachedToThis,
+        "attachmentsOnVillain" => AbilityCardQuery.AttachmentsOnVillain,
         "attachmentsOnThis" => AbilityCardQuery.AttachmentsOnThis,
         "beneathThis" => AbilityCardQuery.BeneathThis,
         "heroesAndAllies" => AbilityCardQuery.HeroesAndAllies,

@@ -180,6 +180,9 @@ internal static class AbilityCardStateExecution
     {
         foreach (var host in Every(status.Cards, context))
         {
+            // rr:in-play-and-out-of-play.4: abilities "can only target, cards that are in play".
+            // A character may leave during the preceding instruction's entry responses.
+            if (!DeckTypes.IsInPlay(host.Area.Type)) continue;
             Reveal.Afflict(context.World, context.World.Facts, host, status.Status,
                 context.Trigger, context.Events);
         }

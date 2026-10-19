@@ -733,3 +733,5 @@ constant source remains in play. `putIntoPlay` accepts
 `chooseDiscardToShuffle` defaults to at least one card and distinct titles;
 `min: 0, differentTitles: "false"` represents an optional selection permitting
 multiple physical cards with the same title.
+`attachmentsOnVillain` selects only printed encounter attachments hosted by the current villain, excluding hosted statuses and player upgrades.
+`supportsYouControl` selects the resolving player's controlled supports in play.

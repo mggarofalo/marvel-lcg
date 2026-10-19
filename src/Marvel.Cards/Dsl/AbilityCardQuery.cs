@@ -22,6 +22,8 @@ public enum AbilityCardQuery
     AttachedToThis,
     /// <summary>Encounter attachment cards attached to the source, excluding upgrades and statuses.</summary>
     AttachmentsOnThis,
+    /// <summary>Encounter attachments hosted by the current villain.</summary>
+    AttachmentsOnVillain,
     /// <summary>Out-of-play cards explicitly stored beneath this source.</summary>
     BeneathThis,
     /// <summary>The authored heroesAndAllies relation.</summary>

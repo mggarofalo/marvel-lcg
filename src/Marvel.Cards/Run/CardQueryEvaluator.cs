@@ -11,7 +11,7 @@ internal sealed class CardQueryEvaluator(
 {
     private static readonly ImmutableArray<AbilityCardQuery> ScenarioQueries =
     [
-        AbilityCardQuery.AttachedToThis, AbilityCardQuery.AttachmentsOnThis, AbilityCardQuery.BeneathThis, AbilityCardQuery.SideSchemes,
+        AbilityCardQuery.AttachmentsOnVillain, AbilityCardQuery.AttachedToThis, AbilityCardQuery.AttachmentsOnThis, AbilityCardQuery.BeneathThis, AbilityCardQuery.SideSchemes,
         AbilityCardQuery.Schemes, AbilityCardQuery.PowerTargets,
         AbilityCardQuery.YourAsidePile, AbilityCardQuery.OtherEnvironments,
         AbilityCardQuery.Villain, AbilityCardQuery.MainScheme,
@@ -56,6 +56,7 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.AttachedToThis =>
             [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId && !BeneathCards.IsStored(area.Type))
                 .SelectMany(area => area.Cards)],
+        AbilityCardQuery.AttachmentsOnVillain => VillainAttachments(),
         AbilityCardQuery.AttachmentsOnThis =>
             [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId && DeckTypes.IsInPlay(area.Type))
                 .SelectMany(area => area.Cards).Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Attachment)],
@@ -77,6 +78,15 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.YourAsideSideScheme => AsideOfKind(CardKind.EncounterSideScheme),
         _ => throw new InvalidOperationException("Unknown scenario card query"),
     };
+
+    private Card[] VillainAttachments()
+    {
+        var villain = cast.World.TheCardIn(DeckType.VillainArea);
+        if (villain is null) return [];
+        return [.. cast.World.Areas.Where(area => area.Host == villain.ObjectId && DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Attachment)];
+    }
 
     private IReadOnlyList<Card> EvaluateEnemies(AbilityCardQuery query) => query switch
     {
