@@ -22,6 +22,18 @@ For local play on Windows, run `pwsh ./tools/run-game.ps1` from the repository
 root. It discovers the installed .NET Godot editor and builds before launching.
 Use `-NoBuild` only when the current source has already been built.
 
+Embedded saves default to the user's local application-data `MarvelLCG/Saves`
+folder. Set `MARVEL_SAVE_DIRECTORY` before launching to use an explicit separate
+save root. Each concurrent review worktree or manual native probe must use a
+unique temporary root, for example
+`$env:MARVEL_SAVE_DIRECTORY = Join-Path $env:TEMP ([guid]::NewGuid().ToString('N'))`.
+The native-process test helper supplies its own unique root unless the case
+explicitly supplies one; the Godot test assembly always isolates embedded saves
+before tests initialize the desktop host. This override controls authoritative
+session/campaign saves, separately from deck-library and campaign-access files.
+A busy or inaccessible save root fails startup visibly; the client never falls
+back to another directory or bypasses the exclusive writer lease.
+
 Setup includes a [Core deck browser, builder and local library](deck-construction.md)
 with MarvelCDB JSON and published URL import. Open **Deck library · browse, build,
 import**, then capture a valid deck for a seat before starting the game.

@@ -30,6 +30,8 @@ function Invoke-NativeProcess {
             $start.Environment.Remove($key) | Out-Null
         }
     }
+    # Native probes never inherit a player's embedded save directory. An explicit case override may retain its own fixture.
+    $start.Environment['MARVEL_SAVE_DIRECTORY'] = Join-Path ([IO.Path]::GetTempPath()) ('marvel-native-saves-' + [guid]::NewGuid().ToString('N'))
     foreach ($key in $Environment.Keys) { $start.Environment[$key] = [string]$Environment[$key] }
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = $start
