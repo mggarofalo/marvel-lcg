@@ -4008,6 +4008,1082 @@
           }
         }
       ]
+    },
+    {
+      "card": "04031a",
+      "name": "Spider-Woman",
+      "note": "\"Superhuman Agility\" — Interrupt: When you play an aspect card, Spider-Woman gets +1 THW, +1 ATK, and +1 DEF until the end of the round. (limit once per round for each aspect.) Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardPlayed",
+            "timing": "Interrupt",
+            "subject": "game",
+            "player": "you"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "thwart",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "attack",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "defense",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              }
+            ]
+          },
+          "when": {
+            "cardClass": {
+              "card": "trigger.subject",
+              "class": "Aggression"
+            }
+          },
+          "limitPerRound": 1
+        },
+        {
+          "trigger": {
+            "event": "WhenCardPlayed",
+            "timing": "Interrupt",
+            "subject": "game",
+            "player": "you"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "thwart",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "attack",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "defense",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              }
+            ]
+          },
+          "when": {
+            "cardClass": {
+              "card": "trigger.subject",
+              "class": "Justice"
+            }
+          },
+          "limitPerRound": 1
+        },
+        {
+          "trigger": {
+            "event": "WhenCardPlayed",
+            "timing": "Interrupt",
+            "subject": "game",
+            "player": "you"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "thwart",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "attack",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "defense",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              }
+            ]
+          },
+          "when": {
+            "cardClass": {
+              "card": "trigger.subject",
+              "class": "Leadership"
+            }
+          },
+          "limitPerRound": 1
+        },
+        {
+          "trigger": {
+            "event": "WhenCardPlayed",
+            "timing": "Interrupt",
+            "subject": "game",
+            "player": "you"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "thwart",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "attack",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "defense",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              }
+            ]
+          },
+          "when": {
+            "cardClass": {
+              "card": "trigger.subject",
+              "class": "Protection"
+            }
+          },
+          "limitPerRound": 1
+        },
+        {
+          "trigger": {
+            "event": "WhenCardPlayed",
+            "timing": "Interrupt",
+            "subject": "game",
+            "player": "you"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "thwart",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "attack",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": "you",
+                  "keyword": "defense",
+                  "amount": 1,
+                  "until": "EndOfRound"
+                }
+              }
+            ]
+          },
+          "when": {
+            "cardClass": {
+              "card": "trigger.subject",
+              "class": "'Pool"
+            }
+          },
+          "limitPerRound": 1
+        }
+      ]
+    },
+    {
+      "card": "04032",
+      "name": "Captain Marvel",
+      "note": "Response: After Captain Marvel uses a basic power, draw 1 card. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Response",
+            "event": "WhenBasicAttackEnds",
+            "actor": "this"
+          },
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Response",
+            "event": "WhenBasicThwartEnds",
+            "actor": "this"
+          },
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04033",
+      "name": "Finesse",
+      "note": "Hero Resource: Exhaust Finesse → generate a wild resource for an aspect card. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "generate": "G"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "resourceRestriction": "aspectCard",
+          "printedResources": "G"
+        }
+      ]
+    },
+    {
+      "card": "04040",
+      "name": "Spider-Girl",
+      "note": "Response: After you play Spider-Girl from your hand, stun and confuse a minion. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardPlayed",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "minions"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "giveStatus": {
+                      "card": "chosen",
+                      "status": "stunned"
+                    }
+                  },
+                  {
+                    "giveStatus": {
+                      "card": "chosen",
+                      "status": "confused"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04043",
+      "name": "Press the Advantage",
+      "note": "Hero Action (attack): Deal 2 damage to an enemy. If that enemy is stunned or confused, draw 1 card. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 2
+                        }
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "or": [
+                              {
+                                "hasStatus": {
+                                  "card": "chosen",
+                                  "status": "stunned"
+                                }
+                              },
+                              {
+                                "hasStatus": {
+                                  "card": "chosen",
+                                  "status": "confused"
+                                }
+                              }
+                            ]
+                          },
+                          "then": {
+                            "draw": {
+                              "player": "you",
+                              "count": 1
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "labels": [
+            "attack"
+          ]
+        }
+      ]
+    },
+    {
+      "card": "04045",
+      "name": "Spider-Man",
+      "note": "Response: After you play Spider-Man from your hand, remove 3 per_hero threat from a side scheme. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardPlayed",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "sideSchemes"
+              },
+              "effect": {
+                "removeThreat": {
+                  "scheme": "chosen",
+                  "amount": {
+                    "perPlayer": 3
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04047",
+      "name": "Skilled Investigator",
+      "note": "Play under any player's control. Max 1 per player.\nHero Response: After a side scheme is defeated, exhaust Skilled Investigator → draw 1 card. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "Response",
+            "subject": "game",
+            "form": "hero"
+          },
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 1
+            }
+          },
+          "when": {
+            "isKind": {
+              "card": "defeated",
+              "kind": "sideScheme"
+            }
+          },
+          "cost": {
+            "exhaust": "this"
+          }
+        }
+      ],
+      "attachTo": {
+        "query": "identitiesWithinPerPlayerLimit"
+      }
+    },
+    {
+      "card": "04055",
+      "name": "The Viper's Ambition",
+      "note": "When Revealed: Place an additional 1per_hero threat here. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": "this",
+              "amount": {
+                "perPlayer": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04056",
+      "name": "Hydra Regular",
+      "note": "Incite 1. (When this card is revealed, place 1 threat on the main scheme.) Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": []
+    },
+    {
+      "card": "04152",
+      "name": "Hydra Regular",
+      "note": "Incite 1. (When this card is revealed, place 1 threat on the main scheme.) Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": []
+    },
+    {
+      "card": "04159a",
+      "name": "Basic Thwart Upgrade",
+      "note": "Permanent. Setup.\nYou get +2 hit points.\nYour hero gets +1 THW. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "you",
+                  "keyword": "health",
+                  "amount": 2
+                }
+              },
+              {
+                "grant": {
+                  "card": "yourHero",
+                  "keyword": "thwart",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04159b",
+      "name": "Improved Thwart Upgrade",
+      "note": "Permanent. Setup.\nYou get +2 hit points.\nYour hero gets +1 THW.\nResponse: After you defeat a side scheme, exhaust this card → draw 1 card. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "you",
+                  "keyword": "health",
+                  "amount": 2
+                }
+              },
+              {
+                "grant": {
+                  "card": "yourHero",
+                  "keyword": "thwart",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "Response",
+            "subject": "game"
+          },
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 1
+            }
+          },
+          "when": {
+            "and": [
+              {
+                "isKind": {
+                  "card": "defeated",
+                  "kind": "sideScheme"
+                }
+              },
+              {
+                "defeatedByYou": "you"
+              }
+            ]
+          },
+          "cost": {
+            "exhaust": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04160a",
+      "name": "Basic Attack Upgrade",
+      "note": "Permanent. Setup.\nYou get +1 hit points.\nYour hero gets +1 ATK. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "you",
+                  "keyword": "health",
+                  "amount": 1
+                }
+              },
+              {
+                "grant": {
+                  "card": "yourHero",
+                  "keyword": "attack",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04160b",
+      "name": "Improved Attack Upgrade",
+      "note": "Permanent. Setup.\nYou get +1 hit points.\nYour hero gets +1 ATK.\nHero Response: After you defeat a minion, exhaust this card → draw 1 card. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "you",
+                  "keyword": "health",
+                  "amount": 1
+                }
+              },
+              {
+                "grant": {
+                  "card": "yourHero",
+                  "keyword": "attack",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "Response",
+            "subject": "game",
+            "form": "hero"
+          },
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 1
+            }
+          },
+          "when": {
+            "and": [
+              {
+                "isKind": {
+                  "card": "defeated",
+                  "kind": "minion"
+                }
+              },
+              {
+                "defeatedByYou": "you"
+              }
+            ]
+          },
+          "cost": {
+            "exhaust": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04161a",
+      "name": "Basic Defense Upgrade",
+      "note": "Permanent. Setup.\nYou get +3 hit points.\nYour hero gets +1 DEF. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "you",
+                  "keyword": "health",
+                  "amount": 3
+                }
+              },
+              {
+                "grant": {
+                  "card": "yourHero",
+                  "keyword": "defense",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04161b",
+      "name": "Improved Defense Upgrade",
+      "note": "Permanent. Setup.\nYou get +3 hit points.\nYour hero gets +1 DEF.\nHero Response: After you defend against an attack, exhaust this card → draw 1 card. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "you",
+                  "keyword": "health",
+                  "amount": 3
+                }
+              },
+              {
+                "grant": {
+                  "card": "yourHero",
+                  "keyword": "defense",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "Response",
+            "subject": "game",
+            "form": "hero"
+          },
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 1
+            }
+          },
+          "when": {
+            "heroDefended": "you"
+          },
+          "cost": {
+            "exhaust": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04162a",
+      "name": "Basic Recovery Upgrade",
+      "note": "Permanent. Setup.\nYou get +4 hit points.\nYour alter-ego gets +1 REC. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "you",
+                  "keyword": "health",
+                  "amount": 4
+                }
+              },
+              {
+                "grant": {
+                  "card": "yourAlterEgo",
+                  "keyword": "recover",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04162b",
+      "name": "Improved Recovery Upgrade",
+      "note": "Permanent. Setup.\nYou get +4 hit points.\nYour alter-ego gets +1 REC.\nResponse: After you use your REC, exhaust this card → draw 1 card. Executable interpretation of canonical printed text; printed keywords are engine-owned.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "you",
+                  "keyword": "health",
+                  "amount": 4
+                }
+              },
+              {
+                "grant": {
+                  "card": "yourAlterEgo",
+                  "keyword": "recover",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenBasicRecoveryUsed",
+            "timing": "Response",
+            "subject": "game",
+            "player": "you"
+          },
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 1
+            }
+          },
+          "cost": {
+            "exhaust": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04001b",
+      "name": "Clint Barton",
+      "note": "Weapon of Choice — Action: Spend 1 resource of any type → search your deck and discard pile for Hawkeye's Bow and add it to your hand. Shuffle your deck. (Limit once per phase). Executable interpretation uses engine-owned costs, timing, and selection; printed traits and statistics come from the canonical card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "cardsIn": {
+                        "areas": [
+                          "yourDeck",
+                          "yourDiscardPile"
+                        ],
+                        "title": "Hawkeye's Bow"
+                      }
+                    }
+                  },
+                  "then": {
+                    "chooseCard": {
+                      "from": {
+                        "cardsIn": {
+                          "areas": [
+                            "yourDeck",
+                            "yourDiscardPile"
+                          ],
+                          "title": "Hawkeye's Bow"
+                        }
+                      },
+                      "effect": {
+                        "returnOwnedToHand": "chosen"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "shuffle": "yourDeck"
+              }
+            ]
+          },
+          "limitPerPhase": 1,
+          "cost": {
+            "spendAny": 1
+          }
+        }
+      ]
+    },
+    {
+      "card": "04010",
+      "name": "Expert Marksman",
+      "note": "Resource: Exhaust Expert Marksman → generate a wild resource for an Arrow event. Executable interpretation uses engine-owned costs, timing, and selection; printed traits and statistics come from the canonical card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Resource",
+            "subject": "this",
+            "event": "WhenActionTriggered"
+          },
+          "effect": {
+            "generate": "G"
+          },
+          "resourceRestriction": "arrowEvent",
+          "cost": {
+            "exhaust": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04011",
+      "name": "Hawkeye",
+      "note": "Action: Exhaust this ally and discard 1 card from your hand → deal X damage to an enemy, where X is the number of printed resources on that card. Executable interpretation uses engine-owned costs, timing, and selection; printed traits and statistics come from the canonical card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "dealDamage": {
+                  "cards": "chosen",
+                  "amount": {
+                    "printedResourceIconsDiscarded": "game"
+                  }
+                }
+              }
+            }
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "discardFromHand": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04013",
+      "name": "Goliath",
+      "note": "Action: Goliath gets +4 ATK until the end of the phase. At the end of the phase, discard Goliath. (Max once per phase.) Executable interpretation uses engine-owned costs, timing, and selection; printed traits and statistics come from the canonical card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grantUntil": {
+                  "card": "this",
+                  "keyword": "attack",
+                  "amount": 4,
+                  "until": "EndOfPhase"
+                }
+              },
+              {
+                "delayUntil": {
+                  "condition": "WhenPlayerPhaseEnds",
+                  "effect": {
+                    "discard": "this"
+                  }
+                }
+              }
+            ]
+          },
+          "maxPerPhase": 1
+        }
+      ]
+    },
+    {
+      "card": "04015",
+      "name": "Sky Cycle",
+      "note": "Attach to an Avenger ally. Max 1 per ally.\nAttached ally gains Aerial.\nAction: Exhaust Sky Cycle → ready attached ally. Executable interpretation uses engine-owned costs, timing, and selection; printed traits and statistics come from the canonical card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "attachedTo",
+              "trait": "AERIAL"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered"
+          },
+          "effect": {
+            "ready": "attachedTo"
+          },
+          "cost": {
+            "exhaust": "this"
+          }
+        }
+      ],
+      "attachTo": {
+        "withoutAnotherCopyAttached": {
+          "withTrait": {
+            "cards": {
+              "query": "allies"
+            },
+            "trait": "AVENGER"
+          }
+        }
+      }
+    },
+    {
+      "card": "04016",
+      "name": "Team Training",
+      "note": "Play under any player's control. Max 1 per player.\nEach ally you control gets +1 hit point. Executable interpretation uses engine-owned costs, timing, and selection; printed traits and statistics come from the canonical card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grantEach": {
+              "cards": {
+                "query": "alliesYouControl"
+              },
+              "keyword": "health",
+              "amount": 1
+            }
+          }
+        }
+      ],
+      "attachTo": {
+        "query": "identitiesWithinPerPlayerLimit"
+      }
+    },
+    {
+      "card": "04030",
+      "name": "Sniper Shot",
+      "note": "When Revealed (Alter-Ego): Place 3 threat on the main scheme.\nWhen Revealed (Hero): Deal 3 damage to your hero. Executable interpretation uses engine-owned costs, timing, and selection; printed traits and statistics come from the canonical card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "mainScheme"
+              },
+              "amount": 3
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": "you",
+              "amount": 3
+            }
+          }
+        }
+      ]
     }
   ]
 }
