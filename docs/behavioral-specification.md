@@ -15,11 +15,15 @@ obligation. They never decide what an obligation says or whether it exists.
 
 ## Product boundary
 
-The product is the Marvel Champions Core Set represented by
+This behavioral corpus certifies the Marvel Champions Core Set represented by
 `datasets/setup/setup.json`: five identities, three scenarios in Standard and
 Expert modes, and the encounter sets those games can use. An expansion card,
 mode, campaign instruction or deckbuilding exception is outside this contract
-even when the Rules Reference describes it.
+even when the Rules Reference describes it. Runtime product admission is separate:
+adding a complete expansion does not certify it through these Core transcripts.
+Every authored setup record is still enumerated and fingerprinted. The 15 Rise
+of Red Skull records are explicitly adjudicated `outside-core`; they are not
+filtered out or marked executable by this corpus.
 
 The Rules Reference is nevertheless enumerated in full. Starting with the
 whole document and classifying records out is what makes the boundary
