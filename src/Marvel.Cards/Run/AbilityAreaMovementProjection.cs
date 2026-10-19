@@ -130,7 +130,7 @@ internal static class AbilityAreaMovementProjection
                 {
                     state.Departed.Remove(card.ObjectId);
                     state.Entered.Add(card.ObjectId);
-                    if (!instruction.PrintedDestination)
+                    if (!instruction.PrintedDestination && !instruction.AllyUnderYourControl)
                     {
                         state.EngagedWith[card.ObjectId] = Resolver(projection.context);
                     }

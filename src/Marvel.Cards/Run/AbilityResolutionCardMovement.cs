@@ -8,6 +8,7 @@ internal static class AbilityResolutionCardMovement
 {
     internal static bool TryRunCardMovement(this AbilityResolutionExecution execution, AbilityEffect instruction, AbilityResolutionState cast)
     {
+        if (AbilityAllyEntry.TryRun(execution, instruction, cast)) return true;
         var result = AbilityDeckAndRevealExecution.Run(instruction,
             new AbilityDeckAndRevealContext(
                 cast.ExpressionContext(), cast.Trigger, cast.Events,

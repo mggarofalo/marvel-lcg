@@ -13,8 +13,7 @@ src/Marvel.Cards/Run/AbilityPowerProjection.cs:335: SL005: ConstantFieldCanDiffe
 src/Marvel.Cards/Run/AbilityPowerProjection.cs:367: SL005: ConditionalFieldCanDiffer=17
 src/Marvel.Cards/Run/AbilityPowerProjection.cs:406: SL005: TracedConditionalFieldCanDiffer=18
 src/Marvel.Cards/Run/AbilityPowerProjection.cs:440: SL005: BranchFieldCanDiffer=17
-src/Marvel.Cards/Run/AbilityPowerStateMutation.cs:18: SL003: AbilityPowerStateMutation=345
-src/Marvel.Cards/Run/AbilityPowerStateMutation.cs:308: SL005: GiveVulnerableStatus=8
+src/Marvel.Cards/Run/AbilityPowerStateMutation.cs:246: SL005: GiveVulnerableStatus=8
 src/Marvel.Cards/Run/AbilityPowerStateProjection.cs:24: SL003: AbilityPowerStateProjection=356
 src/Marvel.Cards/Run/AbilityPowerTrace.cs:25: SL003: AbilityPowerTrace=417
 src/Marvel.Cards/Run/AbilityProjection.cs:151: SL005: TryTraceCountAmount=9

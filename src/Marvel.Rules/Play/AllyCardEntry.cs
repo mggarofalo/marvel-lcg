@@ -6,8 +6,18 @@ using static Marvel.Rules.Play.CardPlayLegality;
 namespace Marvel.Rules.Play;
 
 /// <summary>Owns ally entry under an engine-granted put-into-play permission.</summary>
-internal static class AllyCardEntry
+public static class AllyCardEntry
 {
+    /// <summary>Whether an ally can enter under the named controller without being played.</summary>
+    public static bool CanPut(World world, Card ally, int controller) =>
+        controller >= 0 && controller < world.Players
+        && EffectiveCards.Kind(ally, world.Facts) == CardKind.Ally
+        && !DeckTypes.IsInPlay(ally.Area.Type)
+        && ally.Area.Type != DeckType.RemovedArea
+        && (world.Facts.RequiredForm(ally.FaceId) is not { } form
+            || Forms.In(world, world.Seats[controller], world.Facts, form))
+        && !Uniqueness.IsBlocked(world, world.Facts, ally, PlayArea.Of(controller));
+
     internal static void Put(
         World world, ICardFacts facts, ICardPlayAbilities abilities, Card ally,
         int controller, string trigger, List<GameEvent> events)

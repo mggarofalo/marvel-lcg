@@ -698,3 +698,10 @@ The card interpreter supplies `UsesThwartStat` on each scheduled power from its
 compiled numeric dependencies and resolved actor bindings. Stat substitution
 is offered only when that exact power reads its acting character's THW; a
 fixed-number effect or a reference to another character's THW offers no choice.
+
+`putIntoPlay` accepts `where: "yourPlayArea"` for a selected ally. Admission
+uses engine-owned ally entry legality (including uniqueness and form-only
+restrictions). Resolution ignores resource costs, uses the ordinary ally-limit
+and enters-play lifecycle, and resumes the containing ability after that work.
+A `chosen` ally retains its new entry provenance for a later instruction; if it
+leaves during entry responses, that instruction cannot affect a returned copy.

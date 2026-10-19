@@ -135,7 +135,11 @@ public abstract record AbilityEffect
     /// <summary>Search ordered areas for a printed face and reveal it.</summary>
     public sealed record Search(string Face, ImmutableArray<AbilitySearchArea> Areas) : AbilityEffect;
     /// <summary>Put a selected card into play by its printed destination or engaged with the resolver.</summary>
-    public sealed record PutIntoPlay(AbilityCardSelection Card, bool PrintedDestination) : AbilityEffect;
+    public sealed record PutIntoPlay(AbilityCardSelection Card, bool PrintedDestination) : AbilityEffect
+    {
+        /// <summary>Enter an ally under the resolving player's control.</summary>
+        public bool AllyUnderYourControl { get; init; }
+    }
     /// <summary>Choose one of the top cards for hand.</summary>
     public sealed record ChooseTopForHand(int Count) : AbilityEffect;
     /// <summary>Choose differently titled discarded cards to shuffle into the deck.</summary>

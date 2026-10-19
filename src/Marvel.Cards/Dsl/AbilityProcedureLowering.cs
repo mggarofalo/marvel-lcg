@@ -100,13 +100,16 @@ internal static class AbilityProcedureLowering
     internal static AbilityEffect.PutIntoPlay PutIntoPlayEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "where");
-        bool printed = Text(Required(fields, "where", location), location.Child("where")) switch
+        string destination = Text(Required(fields, "where", location), location.Child("where"));
+        bool printed = destination switch
         {
             "printedDestination" => true,
             "engagedWithYou" => false,
+            "yourPlayArea" => false,
             var name => throw location.Child("where").Error($"'{name}' is not a supported play destination"),
         };
-        return new(Selected(fields, "card", location), printed);
+        return new(Selected(fields, "card", location), printed)
+        { AllyUnderYourControl = destination == "yourPlayArea" };
     }
 
     internal static AbilityEffect ChoiceFromPile(AbilityValue value, AbilityLocation location, bool top)

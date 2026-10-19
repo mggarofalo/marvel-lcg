@@ -204,7 +204,7 @@ internal static class AbilityAdmission
         "placeThreat" => Every(ThreatSelectionOf(node, cast), cast).Count > 0,
         "placeAccelerationToken" => cast.World.TheCardIn(DeckType.MainSchemesArea) is not null,
         "enemyAttacks" or "enemySchemes" => Every(ActivationOf(node, cast).Enemies, cast).Count > 0,
-        "putIntoPlay" => Find(EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast) is not null,
+        "putIntoPlay" => AbilityAllyEntry.HasTarget(EffectOf<AbilityEffect.PutIntoPlay>(node, cast), cast),
         "placeAtRandom" => Find(EffectOf<AbilityEffect.PlaceAtRandom>(node, cast).Host, cast) is not null,
         "search" => HasSearchableArea(node, cast),
 
