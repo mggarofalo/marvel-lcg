@@ -53,6 +53,7 @@ internal sealed class AbilityCostPayment
     {
         world.Agenda.Executions.RequireActive(owner);
         outcome.Suspended = false;
+        outcome.Discarded.Clear();
         if (resourcePayment is { IsComplete: false })
             throw new InvalidOperationException("resource payment resumed before its owned work completed");
         resourcePayment = null;
@@ -83,7 +84,7 @@ internal sealed class AbilityCostPayment
             DamageCostSettlement.Settle(world, owner, damageCosts, events);
         }
         outcome.Suspended |= damageCosts.Any(damage => !damage.IsComplete);
-        return new(outcome.Healed, outcome.Energy, outcome.Suspended);
+        return new(outcome.Healed, outcome.Energy, outcome.Suspended) { Discarded = [.. outcome.Discarded] };
     }
 
     private bool CommitImmediate(
@@ -126,6 +127,7 @@ internal sealed class AbilityCostPayment
         }
         int start = events.Count;
         foreach (var card in cards) Discard.Card(world, card, CardPlay.Verb, events);
+        outcome.Discarded.AddRange(cards);
         ActivityBatches.Complete(events, start, "Discard", player,
             included: cards.Select(card => card.ObjectId).ToArray());
     }
@@ -210,6 +212,7 @@ internal sealed class AbilityCostPayment
         internal long? Healed { get; set; }
         internal long? Energy { get; set; }
         internal bool Suspended { get; set; }
+        internal List<Card> Discarded { get; } = [];
     }
 
 }
