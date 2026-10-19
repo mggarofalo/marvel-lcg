@@ -20,6 +20,8 @@ public abstract record AbilityCondition
     public sealed record PaidWithResource(char Resource) : AbilityCondition;
     /// <summary>A discarded card generated a resource of this kind.</summary>
     public sealed record DiscardedWithResource(char Resource) : AbilityCondition;
+    /// <summary>Whether this resolution discarded a card with the printed trait.</summary>
+    public sealed record DiscardedWithTrait(string Trait) : AbilityCondition;
     /// <summary>The interrupted threat has this cause.</summary>
     public sealed record CausedThreat(ThreatCause Cause) : AbilityCondition;
     /// <summary>The selection contains at least one card.</summary>
@@ -45,3 +47,4 @@ public abstract record AbilityCondition
     /// <summary>The selected card is the resolver's identity.</summary>
     public sealed record IsYourIdentity(AbilityCardSelection Card) : AbilityCondition;
 }
+

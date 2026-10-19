@@ -35,6 +35,7 @@ internal static class AbilityConditionLowering
             "undefendedAttack" => Flag(argument, child, "you", AbilityConditionFact.UndefendedAttack),
             "defeatedBy" => Flag(argument, child, "consequentialDamage", AbilityConditionFact.DefeatedByConsequentialDamage),
             "paidWithResource" => new AbilityCondition.PaidWithResource(Resource(argument, child)),
+            "discardedWithTrait" => new AbilityCondition.DiscardedWithTrait(Text(argument, child)),
             "discardedWithResource" => new AbilityCondition.DiscardedWithResource(Resource(argument, child)),
             "threatCause" => new AbilityCondition.CausedThreat(Text(argument, child) switch
             {

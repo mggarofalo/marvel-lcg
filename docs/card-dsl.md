@@ -671,3 +671,7 @@ creates one reduction usable by the next matching played card across all players
 until the end of the phase. Nonmatching cards and price queries do not consume
 it. Kind and trait restrictions are typed effect data; they are not inferred
 from card names.
+
+The condition discardedWithTrait tests whether a card discarded by the current resolution has the named printed trait. It reads the discard receipt, including cards that have subsequently moved, rather than searching the current discard pile.
+
+The `cardsIn` filter `cardSet` matches the canonical printed card-set identifier, independently of class or title.

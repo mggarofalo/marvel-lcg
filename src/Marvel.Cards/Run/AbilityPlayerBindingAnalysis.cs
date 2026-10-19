@@ -250,7 +250,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCondition.IsKind kind => Contains(kind.Card),
         AbilityCondition.WasDefeated defeated => Contains(defeated.Card),
         AbilityCondition.IsYourIdentity => true,
-        AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource
+        AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
             or AbilityCondition.CausedThreat or AbilityCondition.TitleInPlay
             or AbilityCondition.ActivationIs => false,
         _ => throw new InvalidOperationException(

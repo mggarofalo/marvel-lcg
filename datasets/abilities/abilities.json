@@ -8208,7 +8208,7 @@
         },
         {
           "trigger": {
-            "event": "WhenDefeated",
+            "event": "WhenCardDefeated",
             "timing": "WhenDefeated",
             "subject": "this"
           },
@@ -8313,6 +8313,669 @@
               "effect": {
                 "ready": "chosen"
               }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04093",
+      "name": "Taskmaster",
+      "note": "Forced Response: After a player changes to hero form, they discard the top card of the encounter deck and take damage equal to the number of boost icons on that card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "event": "WhenFormChanged",
+            "subject": "game",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 1
+                }
+              },
+              {
+                "dealDamage": {
+                  "cards": "you",
+                  "amount": {
+                    "printedBoostIconsDiscarded": "game"
+                  }
+                }
+              }
+            ]
+          },
+          "when": {
+            "inForm": {
+              "player": "trigger.player",
+              "form": "hero"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04094",
+      "name": "Taskmaster",
+      "note": "When Revealed: Deal each player an encounter card.\nForced Response: After a player changes to hero form, they discard the top card of the encounter deck and take damage equal to the number of boost icons on that card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "dealEncounterCards": {
+              "count": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "event": "WhenFormChanged",
+            "subject": "game",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 1
+                }
+              },
+              {
+                "dealDamage": {
+                  "cards": "you",
+                  "amount": {
+                    "printedBoostIconsDiscarded": "game"
+                  }
+                }
+              }
+            ]
+          },
+          "when": {
+            "inForm": {
+              "player": "trigger.player",
+              "form": "hero"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04095",
+      "name": "Taskmaster",
+      "note": "When Revealed: Deal each player an encounter card.\nForced Response: After a player changes to hero form, they discard the top card of the encounter deck and take damage equal to the number of boost icons on that card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "dealEncounterCards": {
+              "count": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "event": "WhenFormChanged",
+            "subject": "game",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 1
+                }
+              },
+              {
+                "dealDamage": {
+                  "cards": "you",
+                  "amount": {
+                    "printedBoostIconsDiscarded": "game"
+                  }
+                }
+              }
+            ]
+          },
+          "when": {
+            "inForm": {
+              "player": "trigger.player",
+              "form": "hero"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04096a",
+      "name": "Hunting Down Heroes",
+      "note": "Contents: Taskmaster (I) and Taskmaster (II). Taskmaster, Hydra Patrol, and Standard encounter sets. One modular encounter set (Weapon Master).\nSetup: Set each Captive ally aside out of play. Search the encounter deck for Hydra Patrol and put it into play. Shuffle the encounter deck.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Setup",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "putIntoPlay": {
+                  "card": {
+                    "cardsIn": {
+                      "area": "encounterDeck",
+                      "title": "Hydra Patrol"
+                    }
+                  },
+                  "where": "printedDestination"
+                }
+              },
+              {
+                "shuffle": "encounterDeck"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04096b",
+      "name": "Hunting Down Heroes",
+      "note": "star Forced Response: After resolving step one of the villain phase, each player in hero form must choose to either place 1 threat here or take 1 damage.\nIf this stage is completed, the players lose the game.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "subject": "game",
+            "event": "WhenVillainPhaseStepOneEnds"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "if": {
+                  "test": {
+                    "inForm": {
+                      "player": "you",
+                      "form": "hero"
+                    }
+                  },
+                  "then": {
+                    "choose": {
+                      "options": [
+                        {
+                          "placeThreat": {
+                            "scheme": "this",
+                            "amount": 1
+                          }
+                        },
+                        {
+                          "dealDamage": {
+                            "cards": "you",
+                            "amount": 1
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04097",
+      "name": "Moon Knight",
+      "note": "Response: After you play Moon Knight from your hand, spend a wild resource → draw 2 cards.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Response",
+            "subject": "this",
+            "event": "WhenCardPlayed"
+          },
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 2
+            }
+          },
+          "cost": {
+            "spend": "G"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04098",
+      "name": "Shang-Chi",
+      "note": "Response: After you play Shang-Chi from your hand, spend a energy resource → stun an enemy.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Response",
+            "subject": "this",
+            "event": "WhenCardPlayed"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "giveStatus": {
+                  "card": "chosen",
+                  "status": "stunned"
+                }
+              }
+            }
+          },
+          "cost": {
+            "spend": "Y"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04099",
+      "name": "White Tiger",
+      "note": "Response: After you play White Tiger from your hand, spend mental resource → remove 3 threat from a scheme.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Response",
+            "subject": "this",
+            "event": "WhenCardPlayed"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "schemes"
+              },
+              "effect": {
+                "removeThreat": {
+                  "scheme": "chosen",
+                  "amount": 3
+                }
+              }
+            }
+          },
+          "cost": {
+            "spend": "B"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04100",
+      "name": "Elektra",
+      "note": "Response: After you play Elektra from your hand, spend a physical resource → deal 3 damage to an enemy.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Response",
+            "subject": "this",
+            "event": "WhenCardPlayed"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "dealDamage": {
+                  "cards": "chosen",
+                  "amount": 3
+                }
+              }
+            }
+          },
+          "cost": {
+            "spend": "R"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04101",
+      "name": "Hydra Hunter",
+      "note": "star Hydra's Hunter's attacks gain piercing and ranged.\n\nstar Boost: If you are in hero form, take 1 damage. Otherwise place 1 threat on the main scheme.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "this",
+                  "keyword": "piercing",
+                  "amount": 1
+                }
+              },
+              {
+                "grant": {
+                  "card": "this",
+                  "keyword": "ranged",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "you",
+                  "form": "hero"
+                }
+              },
+              "then": {
+                "dealDamage": {
+                  "cards": "you",
+                  "amount": 1
+                }
+              },
+              "else": {
+                "placeThreat": {
+                  "scheme": {
+                    "query": "mainScheme"
+                  },
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04102",
+      "name": "Taskmaster's Sword",
+      "note": "Attach to Taskmaster.\nstar Taskmaster's attacks gain piercing.\nHero Action: Exhaust your hero and spend mentalphysical resources → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "attachedTo",
+              "keyword": "piercing",
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered",
+            "form": "hero"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "you"
+              },
+              {
+                "spend": "BR"
+              }
+            ]
+          }
+        }
+      ],
+      "attachTo": {
+        "titled": "Taskmaster"
+      }
+    },
+    {
+      "card": "04103",
+      "name": "Taskmaster's Shield",
+      "note": "Attach to Taskmaster.\nTaskmaster gains retaliate 1.\nHero Action: Exhaust your hero and spend mentalphysical resources → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "attachedTo",
+              "keyword": "retaliate",
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered",
+            "form": "hero"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "you"
+              },
+              {
+                "spend": "BR"
+              }
+            ]
+          }
+        }
+      ],
+      "attachTo": {
+        "titled": "Taskmaster"
+      }
+    },
+    {
+      "card": "04105",
+      "name": "Mimicry",
+      "note": "When Revealed (Alter-Ego): Discard the top 5 cards of your deck. If a Thwart card was discarded this way, Taskmaster schemes.\nWhen Revealed (Hero): Discard the top 5 cards of your deck. If an Attack card was discarded this way, Taskmaster attacks you.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "yourDeck",
+                  "count": 5
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "discardedWithTrait": "THWART"
+                  },
+                  "then": {
+                    "enemySchemes": {
+                      "enemies": {
+                        "titled": "Taskmaster"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "yourDeck",
+                  "count": 5
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "discardedWithTrait": "ATTACK"
+                  },
+                  "then": {
+                    "enemyAttacks": {
+                      "enemies": {
+                        "titled": "Taskmaster"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04106",
+      "name": "Hunted by Hydra",
+      "note": "Incite 1. (When this card is revealed place 1 threat on the main scheme.)\nWhen Revealed: Each player in hero form takes 1 damage and discards 1 card at random from their hand.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "if": {
+                  "test": {
+                    "inForm": {
+                      "player": "you",
+                      "form": "hero"
+                    }
+                  },
+                  "then": {
+                    "seq": [
+                      {
+                        "dealDamage": {
+                          "cards": "you",
+                          "amount": 1
+                        }
+                      },
+                      {
+                        "discardAtRandom": {
+                          "player": "you",
+                          "count": 1
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04107",
+      "name": "Captured by Hydra",
+      "note": "When Revealed: Place 1 random set-aside Captive ally facedown beneath this scheme. When this scheme is defeated, the player who defeated it takes that ally into their hand and removes this scheme from the game.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "storeBeneath": {
+              "cards": {
+                "cardsIn": {
+                  "area": "scenarioSetAside",
+                  "kind": "Ally",
+                  "trait": "CAPTIVE"
+                }
+              },
+              "host": "this",
+              "faceUp": "false",
+              "randomCount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenDefeated",
+            "subject": "this",
+            "event": "WhenCardDefeated"
+          },
+          "effect": {
+            "releaseBeneath": {
+              "removeHost": "true",
+              "rescue": "true"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04108",
+      "name": "Taskmaster's Training Camp",
+      "note": "Forced Response: After a minion enters play, give it a tough status card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "subject": "game",
+            "event": "WhenCardEntersPlay"
+          },
+          "effect": {
+            "giveStatus": {
+              "card": "trigger.subject",
+              "status": "tough"
+            }
+          },
+          "when": {
+            "isKind": {
+              "card": "trigger.subject",
+              "kind": "minion"
             }
           }
         }

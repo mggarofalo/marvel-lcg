@@ -115,7 +115,7 @@ internal static class AbilityEffectTargetAdmission
                 && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0
                     ? TargetLegality.Valid : TargetLegality.Invalid,
             "dealDamage" or "dealAttackDamage" =>
-                Amount(DamageAmountOf(node, cast), cast) > 0
+                AbilityFutureDiscardAdmission.MayDealDamage(DamageAmountOf(node, cast), cast)
                     ? CardsLegality(DamageTargets(DamageSelectionOf(node, cast), cast))
                     : TargetLegality.Invalid,
             "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) <= 0

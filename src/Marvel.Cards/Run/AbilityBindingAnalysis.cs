@@ -25,7 +25,7 @@ internal static class AbilityBindingAnalysis
         AbilityCondition.IsKind kind => BindingCanChange(kind.Card),
         AbilityCondition.WasDefeated defeated => BindingCanChange(defeated.Card),
         AbilityCondition.IsYourIdentity identity => BindingCanChange(identity.Card),
-        AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource
+        AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
             or AbilityCondition.CausedThreat or AbilityCondition.TitleInPlay or AbilityCondition.ActivationIs => false,
         _ => throw new InvalidOperationException("Unknown compiled condition in binding analysis"),
     };
@@ -105,7 +105,7 @@ internal static class AbilityBindingAnalysis
         AbilityCondition.Negated negated => ContainsPowerAmount(negated.Operand),
         AbilityCondition.AtLeast comparison => ContainsPowerAmount(comparison.Value)
             || ContainsPowerAmount(comparison.Count),
-        AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource
+        AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
             or AbilityCondition.CausedThreat or AbilityCondition.Exists or AbilityCondition.LegalPractice
             or AbilityCondition.AutomaticThwart or AbilityCondition.TitleInPlay or AbilityCondition.InForm
             or AbilityCondition.ActivationIs or AbilityCondition.CardText or AbilityCondition.IsKind

@@ -77,6 +77,8 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityCondition.Negated negated => !Test(negated.Operand),
         AbilityCondition.Flag flag => TestFact(flag.Kind),
         AbilityCondition.PaidWithResource resource => PaidWith(resource.Resource.ToString()),
+        AbilityCondition.DiscardedWithTrait trait => context.Discarded.Any(card =>
+            context.World.Facts.Traits(card.FaceId).Contains(trait.Trait, StringComparer.Ordinal)),
         AbilityCondition.DiscardedWithResource resource => context.Discarded.Any(card =>
             Resources.GeneratedBy(card.FaceId, context.World.Facts).Contains(resource.Resource)),
         AbilityCondition.CausedThreat threat => context.Occurrence.Threat?.Cause == threat.Cause,
