@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityPowerSuspension;
 using System.Collections.Immutable;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;

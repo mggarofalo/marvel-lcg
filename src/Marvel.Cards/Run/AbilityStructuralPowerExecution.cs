@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityPowerSuspension;
 using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.State;
@@ -31,7 +32,7 @@ internal static class AbilityStructuralPowerExecution
             return new Unsupported($"'{context.SourceFace}' cannot find the target of its {verb}");
 
         var selected = context.Admission().WithSelection(target);
-        if (AbilityPowerTrace.SuspendsPowerEffect(
+        if (AbilityPowerSuspension.SuspendsPowerEffect(
             power.Effect, selected, bindingMayChange: amount >= 0))
         {
             return new Unsupported(

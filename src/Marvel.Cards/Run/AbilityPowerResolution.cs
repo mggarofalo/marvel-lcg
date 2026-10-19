@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityPowerSuspension;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -84,24 +85,35 @@ internal static class AbilityPowerResolution
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' suspends inside a {power.ToLowerInvariant()}, which is not implemented");
 
-        cast.RestoreAbility(restored.Ordinal, restored.Frames, continuation.Capture.Invocation.Address.Face);
+        cast.RestoreAbility(restored.Ordinal, restored.Frames.Add(new PowerFrame()), continuation.Capture.Invocation.Address.Face);
         execution.RestoreAlteredFromFrames(cast, restored.Frames);
         cast.TrackResolution(restored.Ordinal);
         var attackModifiers = power == BasicPowers.AttackVerb
             ? execution.EventModifierEffects(cast, "attackDamage")
             : [];
+        cast.PowerExecution = new(restored, continuation, power, cast.PowerActor?.ObjectId,
+            cast.PowerAmount, [.. attackModifiers]) { ThwartActorUsingAttack = cast.ThwartActorUsingAttack };
         execution.Run(restored.Body, cast);
+        if (cast.Suspended)
+        {
+            cast.CompleteResolution();
+            return;
+        }
+        execution.FinishResumedPower(cast);
+    }
+
+    internal static void FinishResumedPower(this AbilityResolutionExecution execution, AbilityResolutionState cast)
+    {
+        var state = cast.PowerExecution ?? throw new InvalidOperationException("The power has no execution state.");
+        cast.PowerExecution = null;
         cast.ThwartActorUsingAttack = null;
-
-        // A modifier to "an attack" lasts through every damage node belonging
-        // to that attack, then is consumed once at the wrapper boundary.
-        foreach (var modifier in attackModifiers) world.Effects.Use(modifier);
-        FinishAttack(cast, player, power);
-
-        // The labelled power owns `chosen` while its effect runs. The outer
-        // ability's selection becomes current when that ability resumes.
-        RestoreOuterChosen(continuation.Capture.Memory.Chosen, cast);
-        execution.CompletePower(restored, cast);
+        // One attack modifier applies to every damage node and is consumed only after its body completes.
+        foreach (var modifier in state.Modifiers) cast.World.Effects.Use(modifier);
+        FinishAttack(cast, cast.Player, state.Kind);
+        RestoreOuterChosen(state.Continuation.Capture.Memory.Chosen, cast);
+        cast.RestoreAbility(state.Decoded.Ordinal, state.Decoded.Frames,
+            state.Continuation.Capture.Invocation.Address.Face);
+        execution.CompletePower(state.Decoded, cast with { Power = null, PowerActor = null, PowerTargets = [], PowerAmount = -1 });
     }
 
     private static void FinishAttack(AbilityResolutionState cast, int player, string power)

@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityPowerSuspension;
 using Marvel.Cards.Dsl;
 
 namespace Marvel.Cards.Run;
@@ -57,7 +58,7 @@ internal static class AbilityResolutionAdmissionAdapter
     internal static bool SuspendsPowerEffect(this AbilityResolutionExecution execution,
         AbilityEffect effect, AbilityResolutionState cast, bool stateMayChange = false,
         bool bindingMayChange = false) =>
-        AbilityPowerTrace.SuspendsPowerEffect(
+        AbilityPowerSuspension.SuspendsPowerEffect(
             effect, execution.AdmissionContext(cast), stateMayChange, bindingMayChange);
 
     internal static IEnumerable<AbilityEffect> MutationChildren(this AbilityResolutionExecution execution, AbilityEffect effect) =>

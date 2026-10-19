@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityPowerSuspension;
 using static Marvel.Cards.Run.AbilityPowerTargetAdmission;
 using static Marvel.Cards.Run.AbilityPlayerSelectorRelations;
 using static Marvel.Cards.Run.AbilityAdmission;

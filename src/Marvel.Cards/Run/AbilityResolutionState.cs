@@ -23,6 +23,7 @@ internal sealed record AbilityResolutionState(
 
     public Defeated? TriggeringDefeat { get; set; }
     internal AbilityExecution? Execution { get; set; }
+    internal AbilityPowerExecutionState? PowerExecution { get; set; }
     internal AbilityPaymentPlan? PendingPayment { get; set; }
     private bool executionEntered;
 

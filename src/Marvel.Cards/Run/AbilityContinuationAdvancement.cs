@@ -17,6 +17,8 @@ internal static class AbilityContinuationAdvancement
         {
             var frame = frames[^1];
             var prefix = frames.RemoveAt(frames.Length - 1);
+            if (frame is PowerFrame)
+                return new ResumeComplete(state with { Cursor = state.Cursor with { Frames = prefix } });
             if (frame is AfterActivationFrame)
                 return new ResumeComplete(state with { Cursor = state.Cursor with { Frames = [], HasContinuation = false } });
             if (PausesForNextPlayer(frame, state))

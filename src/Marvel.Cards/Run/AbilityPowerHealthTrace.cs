@@ -79,7 +79,9 @@ internal static class AbilityPowerHealthTrace
                 + "labelled-power continuation reads a step-6 interrupt, "
                 + "which is not implemented");
         }
-        if (AbilityProjectedDefeatWindows.HasWork(state, damaged, cast))
+        if (AbilityProjectedDefeatWindows.CanProjectEncounterDeal(state, damaged, cast))
+            state = state with { EncounterCardsChanged = true };
+        else if (AbilityProjectedDefeatWindows.HasWork(state, damaged, cast))
         {
             throw new RulesNotImplementedException(
                 $"character '{damaged.FaceId}' is defeated before a "
