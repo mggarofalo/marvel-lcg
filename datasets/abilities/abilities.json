@@ -10221,6 +10221,824 @@
           }
         }
       ]
+    },
+    {
+      "card": "04125",
+      "name": "Red Skull",
+      "note": "star Red Skull gets +1 ATK for each side scheme in play.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "attack",
+              "amount": {
+                "count": {
+                  "query": "sideSchemes"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04126",
+      "name": "Red Skull",
+      "note": "star Red Skull gets +1 ATK for each side scheme in play.\nWhen Revealed: Deal each player an encounter card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "attack",
+              "amount": {
+                "count": {
+                  "query": "sideSchemes"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "dealEncounterCards": {
+              "count": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04127",
+      "name": "Red Skull",
+      "note": "star Red Skull gets +1 ATK for each side scheme in play.\nWhen Revealed: Deal each player an encounter card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "attack",
+              "amount": {
+                "count": {
+                  "query": "sideSchemes"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "dealEncounterCards": {
+              "count": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04128a",
+      "name": "The Rise of Red Skull",
+      "note": "Contents: Red Skull (I) and Red Skull (II). Red Skull and Standard encounter sets. Two modular encounter sets (Hydra Assault and Hydra Patrol).\nSetup: Put the Red House into play. Shuffle every other side scheme into the side-scheme deck and set it next to the encounter deck (see insert).\nSet The Sleeper aside, out of play.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Setup",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "putIntoPlay": {
+                  "card": {
+                    "cardsIn": {
+                      "area": "encounterDeck",
+                      "title": "The Red House"
+                    }
+                  },
+                  "where": "printedDestination"
+                }
+              },
+              {
+                "initializeAuxiliaryDeck": {
+                  "deck": "sideSchemes",
+                  "cards": {
+                    "cardsIn": {
+                      "area": "encounterDeck",
+                      "kind": "EncounterSideScheme"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04128b",
+      "name": "The Rise of Red Skull",
+      "note": "star Forced Response: After resolving step one of the villain phase, reveal the top of the side-scheme deck and put it into play.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "subject": "game",
+            "event": "WhenVillainPhaseStepOneEnds"
+          },
+          "effect": {
+            "revealAuxiliaryTop": "sideSchemes"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04129b",
+      "name": "New World Hydra",
+      "note": "star Forced Response: After resolving step one of the villain phase, reveal the top card of the side-scheme deck and put it into play.\nIf this scheme is completed, the players lose the game.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "subject": "game",
+            "event": "WhenVillainPhaseStepOneEnds"
+          },
+          "effect": {
+            "revealAuxiliaryTop": "sideSchemes"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04129a",
+      "name": "New World Hydra",
+      "note": "When Revealed: Reveal the top card of the side-scheme deck and put it into play.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "revealAuxiliaryTop": "sideSchemes"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04130",
+      "name": "The Sleeper",
+      "note": "Guard. Retaliate 1. Toughness.\nWhen Revealed: The Sleeper engages the first player.\nWhen Defeated: Remove The Sleeper from the game.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "engagedWithFirstPlayer"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenDefeated",
+            "subject": "this",
+            "event": "WhenCardDefeated"
+          },
+          "effect": {
+            "removeFromGame": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04131",
+      "name": "Hydra Exo-Soldier",
+      "note": "Toughness.\n\nstar Boost: Give the villain a tough status card and another boost card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "seq": [
+              {
+                "giveStatus": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "status": "tough"
+                }
+              },
+              {
+                "giveAdditionalBoost": {
+                  "enemy": {
+                    "query": "villain"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04132",
+      "name": "Red Skull's Luger",
+      "note": "Attach to Red Skull.\nstar Red Skull's attacks gain piercing and ranged.\nHero Action: Spend energy mental physical resources → discard this card.\n\nstar Boost: Attach to Red Skull.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "attachedTo",
+                  "keyword": "piercing",
+                  "amount": 1
+                }
+              },
+              {
+                "grant": {
+                  "card": "attachedTo",
+                  "keyword": "ranged",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered",
+            "form": "hero"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "cost": {
+            "spend": "YBR"
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "attachTo": {
+              "titled": "Red Skull"
+            }
+          }
+        }
+      ],
+      "attachTo": {
+        "titled": "Red Skull"
+      }
+    },
+    {
+      "card": "04133",
+      "name": "Red Skull's Right Hook",
+      "note": "Attach to Red Skull.\nRed Skull gains retaliate 1.\nHero Action: Spend energymentalphysical resources → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "attachedTo",
+              "keyword": "retaliate",
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered",
+            "form": "hero"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "cost": {
+            "spend": "YBR"
+          }
+        }
+      ],
+      "attachTo": {
+        "titled": "Red Skull"
+      }
+    },
+    {
+      "card": "04134",
+      "name": "Master Strategist",
+      "note": "Attach to Red Skull.\nstar Forced Interrupt: When Red Skull activates, give him an additional boost card for each side scheme in play. Then, discard this card. (Max once per activation.)",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedInterrupt",
+            "event": "WhenEnemyActivates",
+            "subject": "attachedTo"
+          },
+          "effect": {
+            "seq": [
+              {
+                "forEach": {
+                  "count": {
+                    "count": {
+                      "query": "sideSchemes"
+                    }
+                  },
+                  "effect": {
+                    "giveAdditionalBoost": {
+                      "enemy": "attachedTo"
+                    }
+                  }
+                }
+              },
+              {
+                "discard": "this"
+              }
+            ]
+          },
+          "maxPerActivation": 1
+        }
+      ],
+      "attachTo": {
+        "titled": "Red Skull"
+      }
+    },
+    {
+      "card": "04135",
+      "name": "Twisted Reality",
+      "note": "Incite 1.\nAttach to a side scheme.\nForced Interrupt: When attached side scheme is defeated, deal the first player an encounter card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedInterrupt",
+            "subject": "attachedTo",
+            "event": "WhenCardDefeated"
+          },
+          "effect": {
+            "dealEncounterCards": {
+              "player": "firstPlayer",
+              "count": 1
+            }
+          }
+        }
+      ],
+      "attachTo": {
+        "query": "sideSchemes"
+      }
+    },
+    {
+      "card": "04136",
+      "name": "Bitter Rival",
+      "note": "When Revealed: Exhaust a character you control for each side scheme in play.\n\nstar Boost: Exhaust a character you control.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "forEach": {
+              "count": {
+                "count": {
+                  "query": "sideSchemes"
+                }
+              },
+              "effect": {
+                "chooseCard": {
+                  "from": {
+                    "query": "charactersYouControl"
+                  },
+                  "effect": {
+                    "exhaust": "chosen"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "charactersYouControl"
+              },
+              "effect": {
+                "exhaust": "chosen"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04137",
+      "name": "Spreading Lies",
+      "note": "When Revealed: Place 2 threat on each scheme in play.\n\nstar Boost: Give Red Skull a tough status card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "schemes"
+              },
+              "amount": 2
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "giveStatus": {
+              "card": {
+                "titled": "Red Skull"
+              },
+              "status": "tough"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04138",
+      "name": "Infinite Power",
+      "note": "When Revealed (Alter-Ego): Give Red Skull a tough status card. Red Skull schemes.\nWhen Revealed (Hero): Give Red Skull a tough status card. Red Skull attacks you.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "seq": [
+              {
+                "giveStatus": {
+                  "card": {
+                    "titled": "Red Skull"
+                  },
+                  "status": "tough"
+                }
+              },
+              {
+                "enemySchemes": {
+                  "enemies": {
+                    "titled": "Red Skull"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "giveStatus": {
+                  "card": {
+                    "titled": "Red Skull"
+                  },
+                  "status": "tough"
+                }
+              },
+              {
+                "enemyAttacks": {
+                  "enemies": {
+                    "titled": "Red Skull"
+                  },
+                  "against": "you"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04139",
+      "name": "The Red House",
+      "note": "Red Skull cannot take damage.\nInterrupt: When a character thwarts this side scheme, they may use their ATK instead of their THW.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "preventDamageWhile": {
+              "card": {
+                "titled": "Red Skull"
+              },
+              "condition": {
+                "exists": "this"
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Interrupt",
+            "subject": "this",
+            "event": "WhenCharacterThwarts",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "useAttackForThwart": "trigger"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04140",
+      "name": "The Sleeper Awakened",
+      "note": "This scheme cannot leave play while The Sleeper is in play.\nWhen Revealed: Put The Sleeper into play engaged with the first player. When The Sleeper is defeated, remove this card from the game.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "The Sleeper"
+                }
+              },
+              "then": {
+                "preventSideSchemeDeparture": "this"
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": {
+                "cardsIn": {
+                  "area": "scenarioSetAside",
+                  "title": "The Sleeper"
+                }
+              },
+              "where": "printedDestination"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "subject": "game",
+            "event": "WhenCardDefeated"
+          },
+          "effect": {
+            "removeFromGame": "this"
+          },
+          "when": {
+            "isTitle": {
+              "card": "defeated",
+              "title": "The Sleeper"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04142",
+      "name": "Censor the Past",
+      "note": "When Defeated: Each player chooses up to 3 cards in their discard pile and shuffles them into their deck.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenDefeated",
+            "subject": "this",
+            "event": "WhenCardDefeated"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "chooseDiscardToShuffle": {
+                  "max": 3,
+                  "min": 0,
+                  "differentTitles": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04143",
+      "name": "Hydra Reinforcements",
+      "note": "When Defeated: The player who defeated this scheme discards a non-Elite minion.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenDefeated",
+            "subject": "this",
+            "event": "WhenCardDefeated"
+          },
+          "effect": {
+            "eachPlayer": {
+              "player": "defeater",
+              "effect": {
+                "chooseCard": {
+                  "from": {
+                    "withoutTrait": {
+                      "cards": {
+                        "query": "minions"
+                      },
+                      "trait": "ELITE"
+                    }
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04144",
+      "name": "Mass Chaos",
+      "note": "When Revealed: Each player discards the top 5 cards of their deck and places 1 threat here for each different type of resource icon (energy,mental,physical, or wild) they discarded this way.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "seq": [
+                  {
+                    "discardTop": {
+                      "from": "yourDeck",
+                      "count": 5
+                    }
+                  },
+                  {
+                    "placeThreat": {
+                      "scheme": "this",
+                      "amount": {
+                        "distinctPrintedResourceTypesDiscarded": "game"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04031b",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "subject": "this"
+          },
+          "limitPerRound": 1,
+          "effect": {
+            "peekTop": "anyDeck"
+          }
+        }
+      ],
+      "name": "Jessica Drew",
+      "note": "Double Agent — Choose two aspects instead of one during deck-building. You must include an equal number of cards from those aspects in your deck.\nAction:: Look at the top card of any deck. (Limit once per round.)"
+    },
+    {
+      "card": "04049",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "removeThreat": {
+                          "scheme": "chosen",
+                          "amount": 2
+                        }
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "atLeast": {
+                              "value": {
+                                "result": "schemesCleared"
+                              },
+                              "count": 1
+                            }
+                          },
+                          "then": {
+                            "draw": {
+                              "player": "you",
+                              "count": 1
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "name": "Clear the Area",
+      "note": "Hero Action (thwart): Remove 2 threat from a scheme. If this removes the last threat on that scheme, draw 1 card."
     }
   ]
 }

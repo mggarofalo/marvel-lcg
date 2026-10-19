@@ -13,22 +13,10 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Actual Red Skull setup recipe with a candidate ability fragment; not product admission.</summary>
+/// <summary>Actual Red Skull setup recipe and canonical ability book.</summary>
 internal sealed record RedSkullFixture(World World, AbilityRunner Runner)
 {
-    internal static AbilityRunner Abilities()
-    {
-        var book = JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
-        var fragment = JsonNode.Parse(RedSkullFragment.Json)!;
-        var rows = book["cards"]!.AsArray();
-        foreach (var row in fragment["cards"]!.AsArray())
-        {
-            foreach (var existing in rows.Where(existing => (string?)existing!["card"] == (string?)row!["card"]).ToArray())
-                rows.Remove(existing);
-            rows.Add(row!.DeepClone());
-        }
-        return new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
-    }
+    internal static AbilityRunner Abilities() => AuthoredCards.Runner();
 
     internal static RedSkullFixture Create(bool hero = true, int players = 1)
     {

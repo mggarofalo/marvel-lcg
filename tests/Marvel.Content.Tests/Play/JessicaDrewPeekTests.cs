@@ -1,3 +1,4 @@
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
@@ -77,10 +78,5 @@ public sealed class JessicaDrewPeekTests : CoreCardTestBase
         Assert.Equal(before, world.Digest().Canonical());
     }
 
-    internal static AbilityRunner Runner() => new(AbilityCatalog.Parse("""
-        {"cards":[{"card":"04031b","abilities":[{
-          "trigger":{"timing":"Action","event":"WhenActionTriggered","subject":"this"},
-          "limitPerRound":1,"effect":{"peekTop":"anyDeck"}
-        }]}]}
-        """));
+    internal static AbilityRunner Runner() => AuthoredCards.Runner();
 }

@@ -735,3 +735,4 @@ constant source remains in play. `putIntoPlay` accepts
 multiple physical cards with the same title.
 `attachmentsOnVillain` selects only printed encounter attachments hosted by the current villain, excluding hosted statuses and player upgrades.
 `supportsYouControl` selects the resolving player's controlled supports in play.
+`forEach` takes a numeric `count` and an `effect` body, repeating that body for the resolved count. It supports printed counted instructions such as one additional boost card per side scheme.

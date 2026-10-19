@@ -1,3 +1,4 @@
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
@@ -77,16 +78,5 @@ public sealed class ClearTheAreaTests
         return (game, world, card!, scheme!, top!);
     }
 
-    internal static AbilityRunner Runner() => new(AbilityCatalog.Parse("""
-        {"cards":[{"card":"04049","abilities":[{
-          "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
-          "effect":{"chooseCard":{"from":{"query":"thwartableSchemes"},"effect":{
-            "thwart":{"target":"chosen","effect":{"seq":[
-              {"removeThreat":{"scheme":"chosen","amount":2}},
-              {"if":{"test":{"atLeast":{"value":{"result":"schemesCleared"},"count":1}},
-                "then":{"draw":{"player":"you","count":1}}}}
-            ]}}
-          }}}
-        }]}]}
-        """));
+    internal static AbilityRunner Runner() => AuthoredCards.Runner();
 }
