@@ -21,6 +21,7 @@ internal static class AbilityPlayerBindingAnalysis
     internal static bool Contains(AbilityCost? cost) => cost switch
     {
         null => false,
+        AbilityCost.ReturnSourceToHand => false,
         AbilityCost.Sequence sequence => sequence.Costs.Any(Contains),
         AbilityCost.ExhaustTitled => true,
         AbilityCost.Exhaust exhaust => exhaust.Card == AbilityCostCard.Identity,

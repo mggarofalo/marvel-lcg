@@ -29,11 +29,8 @@ internal static class AbilityAreaCostProjection
             case AbilityCost.Heal heal:
                 projection.TraceHealCost(heal, state);
                 return;
-            case AbilityCost.ConsumeCampaignCard consume:
-                projection.TraceDiscardCost(new AbilityCost.Discard(consume.Card), state);
-                return;
-            case AbilityCost.Discard discard:
-                projection.TraceDiscardCost(discard, state);
+            case AbilityCost.ConsumeCampaignCard or AbilityCost.Discard or AbilityCost.ReturnSourceToHand:
+                projection.TraceDepartureCost(payment, state);
                 return;
             case AbilityCost.RemoveCounters counters:
                 projection.TraceCounterCost(counters, state);
@@ -46,6 +43,17 @@ internal static class AbilityAreaCostProjection
 
     private static bool IsExhaustionCost(AbilityCost payment) =>
         payment is AbilityCost.Exhaust or AbilityCost.ExhaustChosen or AbilityCost.ExhaustTitled;
+
+    private static void TraceDepartureCost(this AbilityAreaProjection projection, AbilityCost cost, AreaProjectionState state)
+    {
+        if (cost is AbilityCost.ReturnSourceToHand) projection.TraceReturnCost(state);
+        else projection.TraceDiscardCost(cost switch
+        {
+            AbilityCost.Discard discard => discard,
+            AbilityCost.ConsumeCampaignCard consume => new AbilityCost.Discard(consume.Card),
+            _ => throw new InvalidOperationException("Unknown departure cost"),
+        }, state);
+    }
 
     private static bool IsHandCost(AbilityCost payment) =>
         payment is AbilityCost.DiscardFromHand or AbilityCost.Spend
@@ -107,6 +115,15 @@ internal static class AbilityAreaCostProjection
         }
         projection.couldDiscard |= projection.queried.Contains(target.Area.Type)
             || projection.DiscardTreeChangesArea(target);
+        projection.MarkDiscardedTree(state, target);
+    }
+
+    private static void TraceReturnCost(this AbilityAreaProjection projection, AreaProjectionState state)
+    {
+        if (projection.CostTarget(AbilityCostCard.Source, state) is not { } target) return;
+        projection.couldDiscard |= projection.queried.Contains(target.Area.Type)
+            || projection.queried.Contains(DeckType.HandsArea)
+            || projection.HostedCardsChangeArea(state, target.ObjectId);
         projection.MarkDiscardedTree(state, target);
     }
 

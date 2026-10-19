@@ -82,7 +82,8 @@ internal sealed class AbilityCostPreparation
             PrepareSteps(taking);
         var spends = sequence.Costs.OfType<AbilityCost.Spend>().ToList();
         if (!resourcesPaidByEvent && spends.Count > 0)
-            ordered.Add(new Spend(string.Concat(spends.Select(step => step.Resources))));
+            ordered.Add(new Spend(string.Concat(spends.Select(step => step.Resources)),
+                Generic: spends.Sum(step => step.Generic)));
         foreach (var remaining in sequence.Costs.Where(step =>
                      step is not (AbilityCost.Spend
                          or AbilityCost.Damage { MustTakeAll: true })))
@@ -94,7 +95,7 @@ internal sealed class AbilityCostPreparation
         if (resourcesPaidByEvent) return;
         if (component is AbilityCost.Spend spend)
         {
-            ordered.Add(new Spend(spend.Resources));
+            ordered.Add(new Spend(spend.Resources, Generic: spend.Generic));
             return;
         }
         long x = AbilityPaymentValidation.DefinedVariable(variables, "X", source);
@@ -126,11 +127,8 @@ internal sealed class AbilityCostPreparation
             case AbilityCost.Exhaust exhaust:
                 ordered.Add(new Exhaust(Bind(exhaust.Card)));
                 break;
-            case AbilityCost.ConsumeCampaignCard consume:
-                ordered.Add(new ConsumeCampaignBound(Bind(consume.Card)));
-                break;
-            case AbilityCost.Discard discard:
-                ordered.Add(new DiscardBound(Bind(discard.Card)));
+            case AbilityCost.ConsumeCampaignCard or AbilityCost.Discard or AbilityCost.ReturnSourceToHand:
+                ordered.Add(PrepareDeparture(component));
                 break;
             case AbilityCost.RemoveCounters counters:
                 ordered.Add(new RemoveCounters(
@@ -147,4 +145,12 @@ internal sealed class AbilityCostPreparation
                     "Unknown compiled cost in payment preparation");
         }
     }
+
+    private Step PrepareDeparture(AbilityCost component) => component switch
+    {
+        AbilityCost.ConsumeCampaignCard consume => new ConsumeCampaignBound(Bind(consume.Card)),
+        AbilityCost.Discard discard => new DiscardBound(Bind(discard.Card)),
+        AbilityCost.ReturnSourceToHand => new ReturnBound(Bind(AbilityCostCard.Source)),
+        _ => throw new InvalidOperationException("Unknown departure cost"),
+    };
 }

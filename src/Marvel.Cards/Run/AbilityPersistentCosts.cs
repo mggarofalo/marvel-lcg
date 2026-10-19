@@ -21,7 +21,7 @@ internal static class AbilityPersistentCosts
             AbilityCost.Exhaust exhaust => new("Exhaust", Target(exhaust.Card)),
             AbilityCost.Discard discard => new("Discard", Target(discard.Card)),
             AbilityCost.RemoveCounters counters => new("RemoveCounters", Target(counters.Card), counters.Count, Counter: counters.Counter),
-            AbilityCost.Spend spend => new("SpendResources", "ActingPlayer", Resources: spend.Resources, PrintedOnly: spend.PrintedOnly),
+            AbilityCost.Spend { Generic: 0 } spend => new("SpendResources", "ActingPlayer", Resources: spend.Resources, PrintedOnly: spend.PrintedOnly),
             _ => null,
         };
         if (described is null) return false;

@@ -16,12 +16,13 @@ internal static class AbilityPaymentInstructions
     }
 
     internal abstract record Step;
-    internal sealed record Spend(string Required, long? Energy = null) : Step;
+    internal sealed record Spend(string Required, long? Energy = null, int Generic = 0) : Step;
     internal sealed record DiscardHand(Area Hand, ImmutableArray<BoundCard> Cards) : Step;
     internal sealed record ExhaustSelected(ImmutableArray<BoundCard> Cards) : Step;
     internal sealed record TakeDamage(BoundCard Target, long Amount) : Step;
     internal sealed record Exhaust(BoundCard Target) : Step;
     internal sealed record DiscardBound(BoundCard Target) : Step;
+    internal sealed record ReturnBound(BoundCard Target) : Step;
     internal sealed record ConsumeCampaignBound(BoundCard Target) : Step;
     internal sealed record RemoveCounters(BoundCard Target, string Counter, long Count) : Step;
     internal sealed record Heal(BoundCard Target, long Amount) : Step;

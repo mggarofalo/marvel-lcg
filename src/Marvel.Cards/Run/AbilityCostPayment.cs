@@ -93,7 +93,7 @@ internal sealed class AbilityCostPayment
         {
             case Spend spend:
                 resourcePayment = AbilityResourcePayment.Spend(world, resourceAbilities,
-                    new(source, player, paying, spend.Required.Length, spend.Required), events);
+                    new(source, player, paying, spend.Required.Length + spend.Generic, spend.Required), events);
                 outcome.Suspended = !resourcePayment.IsComplete;
                 if (spend.Energy is { } x) outcome.Energy = x;
                 return true;
@@ -179,6 +179,9 @@ internal sealed class AbilityCostPayment
                 break;
             case DiscardBound discard:
                 physical.Discard(discard.Target.RequireCurrent(), trigger, events);
+                break;
+            case ReturnBound returned:
+                physical.ReturnToHand(returned.Target.RequireCurrent(), trigger, events);
                 break;
             case RemoveCounters removal:
                 physical.RemoveCounters(removal.Target.RequireCurrent(), removal.Counter, removal.Count, pools, trigger, events);

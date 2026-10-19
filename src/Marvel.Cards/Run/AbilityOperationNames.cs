@@ -13,8 +13,10 @@ internal static class AbilityOperationNames
         AbilityCost.Exhaust => "exhaust",
         AbilityCost.ExhaustTitled => "exhaustTitled",
         AbilityCost.Discard => "discard",
+        AbilityCost.ReturnSourceToHand => "returnToHand",
         AbilityCost.ConsumeCampaignCard => "consumeCampaignCard",
         AbilityCost.RemoveCounters => "removeCounters",
+        AbilityCost.Spend { Generic: > 0 } => "spendAny",
         AbilityCost.Spend spend => spend.PrintedOnly ? "spendPrinted" : "spend",
         AbilityCost.SpendEnergy => "spendEnergyX",
         AbilityCost.DiscardFromHand discard => discard.Range switch

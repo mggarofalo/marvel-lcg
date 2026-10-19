@@ -15,12 +15,20 @@ public abstract record AbilityCost
     public sealed record ExhaustTitled(string Title) : AbilityCost;
     /// <summary>Discard the source or resolving identity.</summary>
     public sealed record Discard(AbilityCostCard Card) : AbilityCost;
+    /// <summary>Return the source from play to its owner's hand.</summary>
+    public sealed record ReturnSourceToHand : AbilityCost;
     /// <summary>Discard a campaign TECH reward and permanently remove its saved instance.</summary>
     public sealed record ConsumeCampaignCard(AbilityCostCard Card) : AbilityCost;
     /// <summary>Remove a positive number of named counters.</summary>
     public sealed record RemoveCounters(AbilityCostCard Card, string Counter, long Count) : AbilityCost;
     /// <summary>Generate the required resources, optionally using printed icons only.</summary>
-    public sealed record Spend(string Resources, bool PrintedOnly) : AbilityCost;
+    public sealed record Spend(string Resources, bool PrintedOnly) : AbilityCost
+    {
+        /// <summary>Additional resources with no required type.</summary>
+        public int Generic { get; init; }
+        /// <summary>Total icons required, including unrestricted resources.</summary>
+        public int Amount => checked(Resources.Length + Generic);
+    }
     /// <summary>Define and pay a positive X in energy resources.</summary>
     public sealed record SpendEnergy : AbilityCost;
     /// <summary>Discard selected cards from the resolving player's hand.</summary>

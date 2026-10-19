@@ -27,9 +27,11 @@ internal static class AbilityCostLowering
             "exhaust" => new AbilityCost.Exhaust(CostCard(argument, child)),
             "exhaustTitled" => ExhaustTitledCost(argument, child),
             "discard" => DiscardCost(argument, child),
+            "returnToHand" => ReturnCost(argument, child),
             "consumeCampaignCard" => new AbilityCost.ConsumeCampaignCard(CostCard(argument, child)),
             "removeCounters" => RemoveCounterCost(argument, child),
             "spend" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: false),
+            "spendAny" => new AbilityCost.Spend("", PrintedOnly: false) { Generic = PositiveCount(argument, child) },
             "spendPrinted" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: true),
             "spendEnergyX" => EnergyCost(argument, child),
             "discardFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.Exact(PositiveCount(argument, child))),
@@ -48,6 +50,12 @@ internal static class AbilityCostLowering
         string title = Text(value, location);
         return !string.IsNullOrWhiteSpace(title) ? new(title)
             : throw location.Error("expected a nonempty printed title");
+    }
+
+    private static AbilityCost.ReturnSourceToHand ReturnCost(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "this");
+        return new();
     }
 
     internal static AbilityCost.Sequence CostSequence(AbilityValue value, AbilityLocation location)

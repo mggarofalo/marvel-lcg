@@ -67,8 +67,8 @@ internal sealed class AbilityPaymentValidation(
         string generated = GeneratedResources(generators, paying);
         string required = string.Concat(spends.Select(step => step.Resources));
         bool pays = printed
-            ? Resources.PaysPrinted(generated, required.Length, required)
-            : Resources.Pays(generated, required.Length, required);
+            ? Resources.PaysPrinted(generated, spends.Sum(step => step.Amount), required)
+            : Resources.Pays(generated, spends.Sum(step => step.Amount), required);
         if (!pays)
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' has simultaneous resource costs requiring '{required}' and the payment generates '{generated}'");

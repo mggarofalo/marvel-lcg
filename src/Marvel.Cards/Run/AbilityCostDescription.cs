@@ -26,6 +26,7 @@ internal static class AbilityCostDescription
     private static string? Bound(World world, Card source, int player, AbilityCost cost) => cost switch
     {
         AbilityCost.ExhaustTitled named => $"Exhaust {named.Title}",
+        AbilityCost.ReturnSourceToHand => $"Return {world.Facts.Title(source.FaceId)} to its owner's hand",
         AbilityCost.Exhaust exhaust => $"Exhaust {Name(world, source, player, exhaust.Card)}",
         AbilityCost.ConsumeCampaignCard consume => $"Discard {Name(world, source, player, consume.Card)} and remove it from the campaign",
         AbilityCost.Discard discard => $"Discard {Name(world, source, player, discard.Card)}",

@@ -61,7 +61,7 @@ internal static class AbilityPaymentPricing
         string letters = spend.Resources;
         return new CostOption(
             Target: card.ObjectId,
-            Cost: letters.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Cost: spend.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture),
             Rule: [letters],
             Sources: CardPayment.Generators(
                 world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card));

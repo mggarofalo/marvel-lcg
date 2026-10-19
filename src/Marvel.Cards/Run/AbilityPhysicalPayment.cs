@@ -7,6 +7,19 @@ namespace Marvel.Cards.Run;
 /// <summary>Commits physical costs against the currently bound card incarnation.</summary>
 internal sealed class AbilityPhysicalPayment(World world, Card source)
 {
+    internal static bool CanReturnToHand(World world, Card card) =>
+        card.Owner >= 0 && DeckTypes.IsInPlay(card.Area.Type)
+        && EffectiveCards.Kind(card, world.Facts) is not (CardKind.Hero or CardKind.AlterEgo)
+        && Marvel.Rules.Play.Discard.EffectCanRemove(world, world.Facts, card, card);
+
+    internal void ReturnToHand(Card target, string trigger, List<GameEvent> events)
+    {
+        if (!CanReturnToHand(world, target))
+            throw new RulesNotImplementedException("source cannot pay its required return-to-hand cost");
+        AbilityCardMovementExecution.MoveToHand(world, target, world.Seats[target.Owner].Hand, trigger, events, "Return");
+        target.TurnFaceUp();
+    }
+
     internal static void RequireReady(Card card)
     {
         // rr:initiating-abilities.3: departure cannot prevent "a required cost from being paid".

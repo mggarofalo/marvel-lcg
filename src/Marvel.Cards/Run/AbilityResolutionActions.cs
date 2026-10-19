@@ -95,7 +95,7 @@ internal static class AbilityResolutionActions
             world, card, cast.Player, found.Cost, execution.program, execution.resourceAbilities,
             AbilityPaymentSelection.Capture(paying, recipientChoice is null ? chosen : [], values,
                 resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-                    && ResourceRequirement(found.Cost, card).Length > 0));
+                    && (ResourceRequirement(found.Cost, card).Length + GenericResourceAmount(found.Cost)) > 0));
         var eventPayment = AbilityEventPayment.Prepare(
             world, card, cast.Player, paying, found, execution.resourceAbilities, allocations);
         cast.TrackResolution(ability.Ordinal);

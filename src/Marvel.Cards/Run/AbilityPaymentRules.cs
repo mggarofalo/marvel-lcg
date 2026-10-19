@@ -28,6 +28,7 @@ internal static class AbilityPaymentRules
         cost switch
         {
             null => true,
+            AbilityCost.ReturnSourceToHand => AbilityPhysicalPayment.CanReturnToHand(world, card),
             AbilityCost.Sequence sequence => SequencePayable(
                 world, card, player, sequence, program, resourceAbilities),
             AbilityCost.ExhaustTitled named => NamedAbilityCost.Target(world, player, named.Title)?.Ready == true,
@@ -54,12 +55,12 @@ internal static class AbilityPaymentRules
                 string.Concat(CardPayment.Generators(
                         world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card)
                     .SelectMany(source => source.Generates)),
-                spend.Resources.Length,
+                spend.Amount,
                 spend.Resources),
             AbilityCost.Spend { PrintedOnly: true } spend => Resources.PaysPrinted(
                 string.Concat(AbilityPaymentPricing.PrintedGenerators(world, player, resourceAbilities, card)
                     .SelectMany(source => source.Generates)),
-                spend.Resources.Length,
+                spend.Amount,
                 spend.Resources),
             AbilityCost.SpendEnergy => Resources.Pays(
                 string.Concat(CardPayment.Generators(
@@ -104,7 +105,7 @@ internal static class AbilityPaymentRules
     internal static bool MandatoryCostIsAutomatic(AbilityCost cost) => cost switch
     {
         AbilityCost.Sequence sequence => sequence.Costs.All(MandatoryCostIsAutomatic),
-        AbilityCost.ConsumeCampaignCard or AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.ExhaustTitled or AbilityCost.RemoveCounters => true,
+        AbilityCost.ReturnSourceToHand or AbilityCost.ConsumeCampaignCard or AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.ExhaustTitled or AbilityCost.RemoveCounters => true,
         _ => false,
     };
 
@@ -143,8 +144,8 @@ internal static class AbilityPaymentRules
                         world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card))
                 .SelectMany(source => source.Generates));
             bool pays = printed
-                ? Resources.PaysPrinted(pool, required.Length, required)
-                : Resources.Pays(pool, required.Length, required);
+                ? Resources.PaysPrinted(pool, spends.Sum(step => step.Amount), required)
+                : Resources.Pays(pool, spends.Sum(step => step.Amount), required);
             if (!pays)
             {
                 return false;
@@ -241,12 +242,19 @@ internal static class AbilityPaymentRules
         string required = Resources.Required(world, card, world.Facts)
             + ResourceRequirement(ability.Cost, card);
         cost += required.Length
-            - Resources.Required(world, card, world.Facts).Length;
+            - Resources.Required(world, card, world.Facts).Length + GenericResourceAmount(ability.Cost);
         string pool = string.Concat(AbilityPaymentPricing.EventGenerators(
                 world, card, player, ability.Effect, resourceAbilities)
             .SelectMany(source => source.Generates));
         return Resources.Pays(pool, cost, required);
     }
+
+    internal static int GenericResourceAmount(AbilityCost? cost) => cost switch
+    {
+        AbilityCost.Spend spend => spend.Generic,
+        AbilityCost.Sequence sequence => sequence.Costs.Sum(GenericResourceAmount),
+        _ => 0,
+    };
 
     internal static string ResourceRequirement(AbilityCost? cost, Card card) => cost switch
     {
