@@ -139,7 +139,7 @@ presentation facts do not change the saved prompt record or replay identity.
 Quantity-dependent typed payments retain
 the protocol 20 resource contract. The engine resolves the
 required resource slots from the offered component and chosen variable; the
-composer uses that same function for readiness and icon declarations. Saves use schema 6 and replay contract v17. Other schema and replay identities
+composer uses that same function for readiness and icon declarations. Saves use schema 7 and replay contract v17. Other schema and replay identities
 are rejected; there is no migration adapter.
 
 Readable faces carry `printed_values` separately from `effective_values`.
@@ -336,8 +336,8 @@ visibility configuration, durable sessions and shutdown behavior.
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Both endpoints must use
-protocol 33. Setup and decisions replay under engine-replay-v18, with session
-schema 6 retaining the exact ordered decks. Requests carry engine-authored
+protocol 34. Setup and decisions replay under engine-replay-v18, with session
+schema 7 retaining the exact ordered decks. Requests carry engine-authored
 commitments and explicit payment allocations; authorized responses include
 readable choices, active attack participants and attack completion events.
 Neither hidden state nor interpreter continuation payloads cross this boundary.

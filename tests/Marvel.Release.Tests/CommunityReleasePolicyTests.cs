@@ -79,9 +79,9 @@ public sealed class CommunityReleasePolicyTests
             workflow, StringComparison.Ordinal);
         Assert.Contains("needs: [identity, acceptance-record, server-sign]",
             workflow, StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v18 · protocol 33 · save 6", workflow,
+        Assert.Contains("engine-replay-v18 · protocol 34 · save 7", workflow,
             StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v18 · protocol 33 · save 6", serverUpgrade,
+        Assert.Contains("engine-replay-v18 · protocol 34 · save 7", serverUpgrade,
             StringComparison.Ordinal);
         Assert.Contains("protocol:33,save_schema:6", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("protocol:14", workflow, StringComparison.Ordinal);

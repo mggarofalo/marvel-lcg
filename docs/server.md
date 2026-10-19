@@ -269,7 +269,7 @@ Never overlay a backup onto a populated volume. Keep the old volume until the
 restored server is healthy and its expected tables have synchronized.
 
 Before an upgrade, stop the server and preserve both the current image digest
-and a complete volume backup. The selected runtime replay-verifies each session against save schema 6 and its
+and a complete volume backup. The selected runtime replay-verifies each session against save schema 7 and its
 exact replay contract. Older save schemas are not migrated. A corrupt, divergent,
 dataset-incompatible, or newer-last-writer session is quarantined and reported
 with a bounded `session.restore.failed` error code; it does not prevent other

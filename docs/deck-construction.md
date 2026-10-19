@@ -71,7 +71,7 @@ remain setup constraints in `DeckConstruction`.
 ordering. The host assesses explicit decks before allocating a world. Existing
 session recipes capture their own immutable card sequence; assessing or editing
 a draft does not modify a game or consume its randomness. Protocol 33 requires
-matching clients and hosts. This unmerged protocol 33 increment also adds
+matching clients and hosts. This unmerged protocol 34 increment also adds
 public catalog previews, bounded 200-card research pages and search metadata.
 It requires matching hosts and clients; earlier PR builds are not compatible.
 Save, RNG, allocation-order and digest formats are
@@ -152,7 +152,7 @@ choice for each face.
 A read-only host assessment supplies `CanExtend` and, when `IncludeQuantities`
 is requested, accepted per-face quantities. The engine accepts a partial deck
 below 40 cards but requires every other construction constraint, including the
-50-card maximum. These are additive fields in this unreleased protocol 33
+50-card maximum. These are additive fields in this unreleased protocol 34
 increment; matching hosts and clients remain required. Unavailable quantities
 are hidden. Zero remains available to correct optional imported cards.
 Restore required cards repairs a malformed signature recipe while retaining
