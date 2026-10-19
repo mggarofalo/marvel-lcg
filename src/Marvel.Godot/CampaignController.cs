@@ -129,7 +129,7 @@ internal sealed class CampaignController
     private async Task Send(EngineRequest request)
     {
         if (connection is null || client is null || store is null) return;
-        busy = true;
+        busy = true; RefreshRecovery();
         ui.Status.Text = "Saving campaign choice…";
         try
         {
@@ -154,7 +154,8 @@ internal sealed class CampaignController
     {
         connection = connection! with { Pending = result.Pending };
         store!.Save(connection);
-        if (result.Response?.Campaign is { } latest) { campaign = latest; Render(); }
+        if (result.Response?.Campaign is { } latest) campaign = latest;
+        Render();
         ui.Status.Text = result.Error!.Message;
     }
 
@@ -177,6 +178,7 @@ internal sealed class CampaignController
         if (campaign is null || catalog is null) return;
         CampaignPresentation.Render(ui, campaign, catalog, Choose, seat =>
             CampaignDeckEditor.Open(main, ui, connection!, campaign, catalog, seat, Choose), ResumeTable);
+        ui.SetBusy(busy);
     }
 
     private async void ResumeTable()
@@ -198,6 +200,7 @@ internal sealed class CampaignController
 
     private void RefreshRecovery()
     {
+        ui.SetBusy(busy);
         ui.Retry.Visible = connection?.Pending is not null;
         ui.Retry.Disabled = busy;
         ui.New.Disabled = ui.Open.Disabled = ui.Refresh.Disabled = busy || connection?.Pending is not null;

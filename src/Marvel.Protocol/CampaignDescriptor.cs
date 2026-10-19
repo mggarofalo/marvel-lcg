@@ -5,6 +5,9 @@ namespace Marvel.Protocol;
 public sealed record CampaignDescriptor(string Id, long Revision, CampaignState State,
     CampaignRewardChoice? Reward, string? ActiveGameId)
 {
+    /// <summary>Printed inventory identities for campaign cards permanently consumed from the log.</summary>
+    public IReadOnlyList<CampaignCard> RemovedCards { get; init; } = [];
+
     /// <summary>Host-authored corrections that must be resolved before beginning an attempt.</summary>
     public IReadOnlyList<string> PreparationProblems { get; init; } = [];
 }

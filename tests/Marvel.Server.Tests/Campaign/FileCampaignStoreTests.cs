@@ -26,8 +26,10 @@ public sealed class FileCampaignStoreTests
         finally { Directory.Delete(root, recursive: true); }
     }
 
-    [Fact]
-    public void CorruptCurrentGenerationIsQuarantinedWithoutResurrectingPreviousState()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CorruptCurrentGenerationIsQuarantinedWithoutResurrectingPreviousState(bool manifestOnly)
     {
         string root = Path.Combine(Path.GetTempPath(), "marvel-campaign-" + Guid.NewGuid().ToString("N"));
         try
@@ -42,8 +44,16 @@ public sealed class FileCampaignStoreTests
             string generation = manifest["generation"]!.GetValue<string>();
             string path = Path.Combine(directory, generation + ".archive");
             byte[] payload = File.ReadAllBytes(path);
-            payload[payload.Length / 2] ^= 1;
-            File.WriteAllBytes(path, payload);
+            if (manifestOnly)
+            {
+                manifest["sha256"] = new string('0', 64);
+                File.WriteAllText(Path.Combine(directory, "current"), manifest.ToJsonString());
+            }
+            else
+            {
+                payload[payload.Length / 2] ^= 1;
+                File.WriteAllBytes(path, payload);
+            }
             var rejected = Assert.Single(store.Load());
             Assert.Null(rejected.Campaign);
             Assert.Equal("campaign_restore_failed", rejected.Error);

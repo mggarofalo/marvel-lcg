@@ -133,7 +133,8 @@ public sealed class CampaignHost : IEngineEndpoint
             ? save.Attempts.LastOrDefault(item => item.Setup.Campaign!.Attempt == save.State.Attempt)?.Session.Label : null;
         return new(save.Identity.StorageId, save.Revision, save.State,
             save.State.Phase == CampaignPhase.Rewards ? CampaignRewardRules.Choice(save.State, Factory.CampaignDefinition!) : null, active)
-        { PreparationProblems = PreparationProblems(save.State) };
+        { PreparationProblems = PreparationProblems(save.State),
+            RemovedCards = [.. Factory.CampaignDefinition!.Tech.Where(card => save.State.RemovedCardKeys.Contains(card.Key))] };
     }
 
     private IReadOnlyList<string> PreparationProblems(CampaignState state)

@@ -17,7 +17,9 @@ internal static class CampaignPresentation
         ui.Body.AddChild(CampaignControls.Text(Phase(state.Phase)));
         foreach (var pair in state.Players.Select((player, seat) => (player, seat)))
             Player(ui, pair.player, pair.seat, state, catalog, edit, choose);
-        if (!state.BannedAllyFaces.IsEmpty) ui.Body.AddChild(CampaignControls.Text("Imprisoned: " + string.Join(", ", state.BannedAllyFaces.Select(face => Title(catalog, face)))));
+        CampaignCardLinks.Section(ui, "Experimental weapons in later encounter decks", state.ExperimentalWeapons, catalog);
+        CampaignCardLinks.Section(ui, "Consumed upgrades · unavailable for the rest of this campaign", campaign.RemovedCards.Select(card => card.Face), catalog);
+        CampaignCardLinks.Section(ui, "Imprisoned allies · excluded from every deck", state.BannedAllyFaces, catalog);
         if (state.DelayCounters > 0) ui.Body.AddChild(CampaignControls.Text($"Recorded delay: {state.DelayCounters}"));
         ShowActions(ui, campaign, catalog, choose, resume);
     }
@@ -29,7 +31,7 @@ internal static class CampaignPresentation
         string hp = state.Expert && player.RecordedHitPoints is { } value ? $" · recorded HP {value}/{player.BaseHitPoints}" : "";
         ui.Body.AddChild(CampaignControls.Text($"Player {seat + 1} · {name}{hp}"));
         if (player.RequiresRecovery) ui.Body.AddChild(CampaignControls.Text("Defeated last scenario: take a recovery obligation during setup to rejoin."));
-        if (!player.Cards.IsEmpty) ui.Body.AddChild(CampaignControls.Text("Campaign cards: " + string.Join(", ", player.Cards.Select(card => Title(catalog, card.Face)))));
+        CampaignCardLinks.Section(ui, "Campaign cards", player.Cards.Select(card => card.Face), catalog);
         if (state.Phase == CampaignPhase.Preparing && player.RequiresRecovery)
         {
             var participate = new CheckButton { Text = $"Player {seat + 1} joins this attempt", ButtonPressed = player.Participating };
@@ -62,19 +64,24 @@ internal static class CampaignPresentation
 
     private static void Rewards(CampaignControls ui, CampaignRewardChoice reward, DeckCatalog catalog, Action<CampaignQuery> choose)
     {
-        ui.Body.AddChild(CampaignControls.Text($"Player {reward.Seat + 1}: choose {reward.Kind}"));
+        ui.Body.AddChild(CampaignControls.Text($"Player {reward.Seat + 1}: {RewardInstruction(reward.Kind)}"));
         foreach (var card in reward.Options)
         {
             var printed = catalog.Cards.FirstOrDefault(item => item.Face == card.Face);
             var button = CampaignControls.Action(ui.Body, printed?.Title ?? card.Face,
                 () => choose(new("reward") { Seat = reward.Seat, Choice = card.Key }));
-            button.TooltipText = printed?.Text ?? "";
-            if (printed is not null) ui.Body.AddChild(CampaignControls.Text(printed.Text));
+            if (printed is not null) CampaignCardLinks.Bind(ui, button, printed);
         }
         if (reward.Optional) CampaignControls.Action(ui.Body, "Decline this optional reward", () => choose(new("reward") { Seat = reward.Seat }));
     }
 
-    private static string Title(DeckCatalog catalog, string face) => catalog.Cards.FirstOrDefault(card => card.Face == face)?.Title ?? face;
+    private static string RewardInstruction(CampaignRewardKind kind) => kind switch
+    {
+        CampaignRewardKind.Tech => "choose a campaign upgrade",
+        CampaignRewardKind.Condition => "choose a Basic Condition upgrade, or decline",
+        CampaignRewardKind.ImproveCondition => "improve your Condition upgrade, or decline",
+        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+    };
     private static string Name(CampaignStage stage) => stage switch
     { CampaignStage.AbsorbingMan => "Absorbing Man", CampaignStage.RedSkull => "Red Skull", _ => stage.ToString() };
     private static string Phase(CampaignPhase phase) => phase switch
