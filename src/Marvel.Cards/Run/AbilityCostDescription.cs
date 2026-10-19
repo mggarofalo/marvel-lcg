@@ -25,6 +25,7 @@ internal static class AbilityCostDescription
 
     private static string? Bound(World world, Card source, int player, AbilityCost cost) => cost switch
     {
+        AbilityCost.ExhaustTitled named => $"Exhaust {named.Title}",
         AbilityCost.Exhaust exhaust => $"Exhaust {Name(world, source, player, exhaust.Card)}",
         AbilityCost.Discard discard => $"Discard {Name(world, source, player, discard.Card)}",
         AbilityCost.RemoveCounters counters =>

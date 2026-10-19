@@ -25,6 +25,8 @@ internal static class AbilityDeckAndRevealExecution
             AbilityEffect.DiscardUntil discard => DiscardUntil(discard, context),
             AbilityEffect.RecoverDiscardedByResource recovery =>
                 RecoverDiscardedByResource(recovery, context),
+            AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop =>
+                AbilityAuxiliaryDeckExecution.Run(effect, context),
             AbilityEffect.Shuffle shuffle => Shuffle(shuffle, context),
             AbilityEffect.ShuffleInto shuffle => ShuffleInto(shuffle, context),
             AbilityEffect.Search search => Search(search, context),
@@ -36,35 +38,9 @@ internal static class AbilityDeckAndRevealExecution
     private static AbilityDeckAndRevealResult RevealCard(
         Card? card, AbilityDeckAndRevealContext context)
     {
-        var reveal = PrepareReveal(card, context);
+        var reveal = AbilityEncounterReveal.Prepare(card, context);
         return new(true, reveal is not null, reveal,
             ImmutableDictionary<string, long>.Empty);
-    }
-
-    /// <summary>Moves a card now so the executor can schedule its reveal procedure.</summary>
-    /// <remarks>
-    /// Revealing is not dealing: <c>rr:deal</c> leaves a card facedown for the
-    /// villain phase, while <c>rr:reveal</c> opens its own interrupt and response
-    /// windows. The move precedes the scheduled procedure so later text sees
-    /// the card in the revealing area rather than its former deck or pile.
-    /// </remarks>
-    private static AbilityRevealRequest? PrepareReveal(
-        Card? card, AbilityDeckAndRevealContext context)
-    {
-        if (card is null) return null;
-        var from = card.Area;
-        var revealing = context.World.AreaOf(DeckType.RevealingArea);
-        EncounterRevealExposure.Expose(context.World, card, context.Trigger, context.Events);
-        World.MoveToTop(card, revealing);
-        context.Events.Add(new CardsMoved(
-            Places.Reference(from), Places.Reference(revealing),
-            [new Landing(card.ObjectId, revealing.Cards.Count - 1)])
-        {
-            Trigger = context.Trigger,
-            Verb = "Reveal",
-        });
-        int player = context.Player >= 0 ? context.Player : context.World.FirstPlayer;
-        return new AbilityRevealRequest(card.ObjectId, player);
     }
 
     /// <summary>Deals a specific encounter card facedown — <c>rr:deal</c>.</summary>
@@ -130,7 +106,7 @@ internal static class AbilityDeckAndRevealExecution
                 found, context.World.FirstPlayer, CardStateContext(context));
             return AbilityDeckAndRevealResult.Handled;
         }
-        var reveal = PrepareReveal(found, context);
+        var reveal = AbilityEncounterReveal.Prepare(found, context);
         return new(true, reveal is not null, reveal,
             ImmutableDictionary<string, long>.Empty);
     }
@@ -213,7 +189,7 @@ internal static class AbilityDeckAndRevealExecution
                 + "not implemented");
         }
         context.World.RecordInformation(InformationKind.Search);
-        var reveal = found.Count == 1 ? PrepareReveal(found[0], context) : null;
+        var reveal = found.Count == 1 ? AbilityEncounterReveal.Prepare(found[0], context) : null;
         bool applied = reveal is not null;
         foreach (var deck in areas.Where(area => area.Type == DeckType.EncounterDeck))
             applied |= context.World.Shuffle(deck);

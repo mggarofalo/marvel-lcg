@@ -11,6 +11,8 @@ public abstract record AbilityCost
     public sealed record Sequence(ImmutableArray<AbilityCost> Costs) : AbilityCost;
     /// <summary>Exhaust the source or resolving identity.</summary>
     public sealed record Exhaust(AbilityCostCard Card) : AbilityCost;
+    /// <summary>Exhaust the single named card controlled by the resolving player.</summary>
+    public sealed record ExhaustTitled(string Title) : AbilityCost;
     /// <summary>Discard the source or resolving identity.</summary>
     public sealed record Discard(AbilityCostCard Card) : AbilityCost;
     /// <summary>Remove a positive number of named counters.</summary>

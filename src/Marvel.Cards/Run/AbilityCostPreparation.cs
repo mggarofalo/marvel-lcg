@@ -114,6 +114,10 @@ internal sealed class AbilityCostPreparation
                 ordered.Add(new ExhaustSelected(
                     [.. selected.Select(id => new BoundCard(world.Cards[id], world.Cards[id].Incarnation))]));
                 break;
+            case AbilityCost.ExhaustTitled named:
+                var target = NamedAbilityCost.RequireTarget(world, player, named.Title);
+                ordered.Add(new Exhaust(new BoundCard(target, target.Incarnation)));
+                break;
             case AbilityCost.Exhaust exhaust:
                 ordered.Add(new Exhaust(Bind(exhaust.Card)));
                 break;

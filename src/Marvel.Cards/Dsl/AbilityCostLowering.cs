@@ -25,6 +25,7 @@ internal static class AbilityCostLowering
         {
             "seq" => CostSequence(argument, child),
             "exhaust" => new AbilityCost.Exhaust(CostCard(argument, child)),
+            "exhaustTitled" => ExhaustTitledCost(argument, child),
             "discard" => DiscardCost(argument, child),
             "removeCounters" => RemoveCounterCost(argument, child),
             "spend" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: false),
@@ -39,6 +40,13 @@ internal static class AbilityCostLowering
             "takeDamage" => DamageCost(argument, child, mustTakeAll: true),
             _ => throw child.Error($"'{node.Kind}' is not a cost operation"),
         };
+    }
+
+    private static AbilityCost.ExhaustTitled ExhaustTitledCost(AbilityValue value, AbilityLocation location)
+    {
+        string title = Text(value, location);
+        return !string.IsNullOrWhiteSpace(title) ? new(title)
+            : throw location.Error("expected a nonempty printed title");
     }
 
     internal static AbilityCost.Sequence CostSequence(AbilityValue value, AbilityLocation location)

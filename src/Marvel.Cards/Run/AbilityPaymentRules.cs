@@ -30,6 +30,7 @@ internal static class AbilityPaymentRules
             null => true,
             AbilityCost.Sequence sequence => SequencePayable(
                 world, card, player, sequence, program, resourceAbilities),
+            AbilityCost.ExhaustTitled named => NamedAbilityCost.Target(world, player, named.Title)?.Ready == true,
             AbilityCost.Exhaust exhaust => CostTarget(world, card, player, exhaust.Card)?.Ready == true,
             AbilityCost.Discard discard => CostTarget(world, card, player, discard.Card) is not null,
             AbilityCost.RemoveCounters removal => CostTarget(world, card, player, removal.Card) is { } counterCard
@@ -101,7 +102,7 @@ internal static class AbilityPaymentRules
     internal static bool MandatoryCostIsAutomatic(AbilityCost cost) => cost switch
     {
         AbilityCost.Sequence sequence => sequence.Costs.All(MandatoryCostIsAutomatic),
-        AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.RemoveCounters => true,
+        AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.ExhaustTitled or AbilityCost.RemoveCounters => true,
         _ => false,
     };
 

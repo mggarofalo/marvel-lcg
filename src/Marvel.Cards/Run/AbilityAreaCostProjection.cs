@@ -17,6 +17,7 @@ internal static class AbilityAreaCostProjection
             return;
         }
 
+        if (IsExhaustionCost(payment)) return;
         switch (payment)
         {
             case AbilityCost.Sequence sequence:
@@ -34,14 +35,14 @@ internal static class AbilityAreaCostProjection
             case AbilityCost.RemoveCounters counters:
                 projection.TraceCounterCost(counters, state);
                 return;
-            case AbilityCost.Exhaust:
-            case AbilityCost.ExhaustChosen:
-                return;
             default:
                 throw new InvalidOperationException(
                     "Unknown compiled cost in area projection");
         }
     }
+
+    private static bool IsExhaustionCost(AbilityCost payment) =>
+        payment is AbilityCost.Exhaust or AbilityCost.ExhaustChosen or AbilityCost.ExhaustTitled;
 
     private static bool IsHandCost(AbilityCost payment) =>
         payment is AbilityCost.DiscardFromHand or AbilityCost.Spend

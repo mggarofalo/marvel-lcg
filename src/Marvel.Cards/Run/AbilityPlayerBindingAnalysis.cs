@@ -22,6 +22,7 @@ internal static class AbilityPlayerBindingAnalysis
     {
         null => false,
         AbilityCost.Sequence sequence => sequence.Costs.Any(Contains),
+        AbilityCost.ExhaustTitled => true,
         AbilityCost.Exhaust exhaust => exhaust.Card == AbilityCostCard.Identity,
         AbilityCost.Discard discard => discard.Card == AbilityCostCard.Identity,
         AbilityCost.RemoveCounters counters => counters.Card == AbilityCostCard.Identity,
@@ -153,6 +154,8 @@ internal static class AbilityPlayerBindingAnalysis
 
     private static bool ContainsOther(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.InitializeAuxiliaryDeck initialize => Contains(initialize.Cards),
+        AbilityEffect.RevealAuxiliaryTop => false,
         AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate

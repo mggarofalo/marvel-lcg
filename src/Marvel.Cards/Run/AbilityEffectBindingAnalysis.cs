@@ -195,6 +195,8 @@ internal static class AbilityEffectBindingAnalysis
 
     private static bool NoBindingChange(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.InitializeAuxiliaryDeck initialize => BindingCanChange(initialize.Cards),
+        AbilityEffect.RevealAuxiliaryTop => false,
         AbilityEffect.Shuffle or AbilityEffect.Search => false,
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.DoubleResourceFor
             or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun or AbilityEffect.DiscardUntil

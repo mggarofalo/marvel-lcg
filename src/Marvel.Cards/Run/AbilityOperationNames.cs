@@ -11,6 +11,7 @@ internal static class AbilityOperationNames
     {
         AbilityCost.Sequence => "seq",
         AbilityCost.Exhaust => "exhaust",
+        AbilityCost.ExhaustTitled => "exhaustTitled",
         AbilityCost.Discard => "discard",
         AbilityCost.RemoveCounters => "removeCounters",
         AbilityCost.Spend spend => spend.PrintedOnly ? "spendPrinted" : "spend",
@@ -44,6 +45,8 @@ internal static class AbilityOperationNames
         AbilityEffect.GainSurge => "gainSurge",
         AbilityEffect.Generate => "generate",
         AbilityEffect.DoubleResourceFor => "doubleResourceFor",
+        AbilityEffect.InitializeAuxiliaryDeck => "initializeAuxiliaryDeck",
+        AbilityEffect.RevealAuxiliaryTop => "revealAuxiliaryTop",
         AbilityEffect.Shuffle => "shuffle",
         AbilityEffect.GrantControlledCharacters => "grantCharactersControlledBy",
         AbilityEffect.PreventDamageFrom => "preventDamageFrom",

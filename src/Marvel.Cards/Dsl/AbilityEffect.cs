@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Marvel.Rules.State;
+using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Dsl;
 
@@ -7,6 +8,11 @@ namespace Marvel.Cards.Dsl;
 public abstract record AbilityEffect
 {
     private AbilityEffect() { }
+
+    /// <summary>Move and shuffle the printed setup selection into a scenario auxiliary deck.</summary>
+    public sealed record InitializeAuxiliaryDeck(AuxiliaryDeckKind Deck, AbilityCardSelection Cards) : AbilityEffect;
+    /// <summary>Reveal the top card of the named scenario auxiliary deck.</summary>
+    public sealed record RevealAuxiliaryTop(AuxiliaryDeckKind Deck) : AbilityEffect;
 
     /// <summary>Resolve child effects in authored order.</summary>
     public sealed record Sequence(ImmutableArray<AbilityEffect> Effects) : AbilityEffect;
