@@ -10,7 +10,7 @@ public abstract record AbilityEffect
     private AbilityEffect() { }
 
     /// <summary>Return this host's stored cards to their owners, optionally removing the host.</summary>
-    public sealed record ReleaseBeneath(bool RemoveHost) : AbilityEffect;
+    public sealed record ReleaseBeneath(bool RemoveHost, bool Rescue = false) : AbilityEffect;
 
     /// <summary>Attach selected encounter attachments to a specified host.</summary>
     public sealed record AttachCards(AbilityCardSelection Cards, AbilityCardSelection Host) : AbilityEffect;

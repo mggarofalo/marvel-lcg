@@ -9,8 +9,8 @@ internal static class AbilityBeneathLowering
 {
     internal static AbilityEffect.ReleaseBeneath Release(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "removeHost");
-        return new(Boolean(fields, "removeHost", location));
+        var fields = Fields(value, location, "removeHost", "rescue");
+        return new(Boolean(fields, "removeHost", location), Boolean(fields, "rescue", location));
     }
 
     internal static AbilityEffect.StoreBeneath Store(AbilityValue value, AbilityLocation location)

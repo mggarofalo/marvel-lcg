@@ -78,6 +78,29 @@ public sealed class CrossbonesAbilityTests
         Assert.Equal(2, world.AreaOf(DeckType.EncounterDiscardPile).Cards.Count);
     }
 
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(1, true)]
+    [InlineData(0, false)]
+    [InlineData(1, false)]
+    public void AssaultActivatesAgainstTheDefeaterInThatPlayersCurrentForm(int defeater, bool hero)
+    {
+        // 04070: "Crossbones activates against the player who defeated this scheme."
+        var (world, villain) = Board("04058", players: 2);
+        if (!hero) Forms.Change(world.Seats[defeater], world.Facts);
+        Statuses.Give(world, villain, "stunned");
+        Statuses.Give(world, villain, "confused");
+        var scheme = world.CreateCard("04070", world.AreaOf(DeckType.SideSchemesArea));
+
+        Defeat.Scheme(world, world.Facts, scheme, "defeat", [], by: defeater,
+            recordOn: new Occurrence(1, []));
+        Sequence.Finish(world, world.Facts, AuthoredCards.Runner(), []);
+
+        Assert.Equal(!hero, Statuses.Has(world, villain, "stunned"));
+        Assert.Equal(hero, Statuses.Has(world, villain, "confused"));
+        Assert.Equal(DeckType.EncounterDiscardPile, scheme.Area.Type);
+    }
+
     private static (World World, Card Villain) Board(string face, int players = 1)
     {
         var facts = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
@@ -85,7 +108,7 @@ public sealed class CrossbonesAbilityTests
         for (int player = 0; player < players; player++)
         {
             var seat = world.CreateSeat("p" + player);
-            seat.IdentityCard = world.CreateCard("01001a", seat.Hero);
+            seat.IdentityCard = world.CreateCard("01001a,01001b", seat.Hero);
         }
         world.Abilities = AuthoredCards.Runner();
         return (world, world.CreateCard(face, world.AreaOf(DeckType.VillainArea)));

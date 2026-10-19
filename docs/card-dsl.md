@@ -636,3 +636,6 @@ discard them, and removes the host. Omit `removeHost` or use false when ordinary
 defeat should discard the host. `attachmentsOnThis` selects encounter attachment
 cards only; upgrades and status cards are different types (ruling:81bce25b60d865d5).
 `ignoresCrisis` is a scoped thwart modifier: it permits that ability to remove main-scheme threat while a crisis side scheme is in play, without removing the crisis icon or changing other thwarts.
+`releaseBeneath` optionally takes `rescue: "true"` for CAPTIVE allies: the player credited with the triggering defeat becomes their physical owner, the campaign records that rescue when present, and they enter that player's hand before host removal. Ordinary release preserves each card's existing owner.
+
+The player relation `defeater` reads the triggering defeat's credited seat, including when a scenario-owned When Defeated ability has no resolving player. It refuses an uncredited defeat rather than choosing the first player.

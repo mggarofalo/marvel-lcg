@@ -96,6 +96,8 @@ internal static class AbilityStructuralPowerExecution
         AbilityStructuralContext context, AbilityEffect.ActivateEnemies activation) =>
         activation.Against switch
         {
+            AbilityCardSelection.Bound { Binding: AbilityCardBinding.Defeater } =>
+                AbilityCardQueries.DefeatingPlayer(context.Expressions.Bindings),
             AbilityCardSelection.Bound { Binding: AbilityCardBinding.TriggerActor } =>
                 context.Expressions.Occurrence.ActorFacts?.Controller ?? World.Scenario,
             AbilityCardSelection.Bound { Binding: AbilityCardBinding.TriggerTarget } =>

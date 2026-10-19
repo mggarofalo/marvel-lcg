@@ -81,6 +81,7 @@ internal static class AbilityConditionLowering
             "chosenPlayer" => AbilityPlayer.ChosenPlayer,
             "engagedPlayer" => AbilityPlayer.EngagedPlayer,
             "firstPlayer" => AbilityPlayer.FirstPlayer,
+            "defeater" => AbilityPlayer.Defeater,
             var name => throw location.Error($"'{name}' is not a player relation"),
         };
     }

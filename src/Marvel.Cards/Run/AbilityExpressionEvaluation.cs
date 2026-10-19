@@ -148,6 +148,7 @@ internal sealed class AbilityExpressionEvaluation(
             ? context.Source.Area.PlayArea.Player
             : throw new RulesNotImplementedException($"'{context.Source.FaceId}' asks for its engaged player outside a player's engaged area")),
         AbilityPlayer.FirstPlayer => context.World.FirstPlayer,
+        AbilityPlayer.Defeater => AbilityCardQueries.DefeatingPlayer(context.Bindings),
         _ => throw new InvalidOperationException("Unknown compiled player relation"),
     };
 

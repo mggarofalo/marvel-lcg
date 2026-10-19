@@ -5578,7 +5578,7 @@
             "if": {
               "test": {
                 "inForm": {
-                  "player": "you",
+                  "player": "defeater",
                   "form": "hero"
                 }
               },
@@ -5586,14 +5586,16 @@
                 "enemyAttacks": {
                   "enemies": {
                     "titled": "Crossbones"
-                  }
+                  },
+                  "against": "defeater"
                 }
               },
               "else": {
                 "enemySchemes": {
                   "enemies": {
                     "titled": "Crossbones"
-                  }
+                  },
+                  "against": "defeater"
                 }
               }
             }
