@@ -134,7 +134,14 @@ public static class StateFields
             FillInPlay(fields, card, kind, faceId, facts, players, hasFirstPlayerToken);
         }
 
+        FillCampaign(fields, world, card);
         return fields;
+    }
+
+    private static void FillCampaign(Dictionary<string, long> fields, World? world, Card card)
+    {
+        if (world?.Campaign is not { } campaign) return;
+        foreach (var pair in campaign.Fields(card)) Merge(fields, pair.Key, pair.Value);
     }
 
     /// <summary>The keys a kind registers, before any value is known.</summary>

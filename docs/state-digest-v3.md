@@ -233,6 +233,15 @@ for the separate piles required by `pack:mc10:experimental-weapons-deck` and
 Core games create none of these areas and retain their existing digest bytes.
 Both draw piles are concealed and the discard pile is face up.
 
+Campaign-tracked cards additionally register `campaign_role` (TECH=1,
+Condition=2, rescued ally=3, obligation=4), `campaign_seat`,
+`campaign_removed`, `campaign_rescued`, and `campaign_assigned`. The last three
+are numeric booleans. These engine-chosen fields remain present at zero and
+outside play. Saved campaign setup and the pinned content composition determine
+the mapping from physical object ids to persistent campaign keys. Ordinary
+cards register none of these fields; a generic token dictionary is not a
+substitute for registered campaign state.
+
 The digest tests hold:
 
 - exact empty and populated canonical strings;
