@@ -40,6 +40,7 @@ public sealed class AbilityDataPrintedTextBoxResourceIconsTests : AbilityDataTes
             ["01064"] = new("snoop", 3, Uses: true),
             ["01066"] = new("arrow", 4, Uses: false),
             ["01080"] = new("medical", 3, Uses: true),
+            ["04042"] = new("attack", 3, Uses: true),
         };
         Assert.Equal(expected.OrderBy(pair => pair.Key, StringComparer.Ordinal), AuthoredCards.Book.CounterPools!.OrderBy(pair => pair.Key, StringComparer.Ordinal));
     }

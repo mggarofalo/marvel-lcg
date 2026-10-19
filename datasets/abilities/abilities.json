@@ -1,7 +1,7 @@
 {
   "dataset_version": 1,
   "authored_by": "the C# port, by hand, against the published Rules Reference",
-  "notes": "Core Set card abilities as data -- docs/card-dsl.md. All 209 Core Set faces have been read; an empty abilities array means the face has no executable text. Later products remain only in datasets/cards and have no executable row. Printed text is quoted from datasets/cards/cards.json, which is extracted rather than authored. The latest Rules Reference decides every behaviour here; where a card's printed words do not settle a case, the note on that card says so and says what was chosen instead.",
+  "notes": "Core Set card abilities as data -- docs/card-dsl.md. All 209 Core Set faces have been read; an empty abilities array means the face has no executable text. Rise of Red Skull rows are interpreted from their printed text; product admission additionally requires the complete expansion and scenario definitions. Printed text is quoted from datasets/cards/cards.json, which is extracted rather than authored. The latest Rules Reference decides every behaviour here; where a card's printed words do not settle a case, the note on that card says so and says what was chosen instead.",
   "cards": [
     {
       "card": "01001a",
@@ -3298,6 +3298,509 @@
         {
           "trigger": { "timing": "Constant", "subject": "this" },
           "effect": { "doubleResourceFor": "Protection" }
+        }
+      ]
+    },
+    {
+      "card": "04006",
+      "name": "Explosive Arrow",
+      "note": "Hero Action: Exhaust Hawkeye's Bow and choose a player → deal 3 damage to the villain and each minion engaged with that player. Executable interpretation of the printed card; keyword and resource values are read from the card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "identities"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "dealDamage": {
+                      "cards": {
+                        "query": "villain"
+                      },
+                      "amount": 3
+                    }
+                  },
+                  {
+                    "dealDamage": {
+                      "cards": {
+                        "query": "enemiesEngagedWithChosenPlayer"
+                      },
+                      "amount": 3
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "cost": {
+            "exhaustTitled": "Hawkeye's Bow"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04014",
+      "name": "U.S. Agent",
+      "note": "Retaliate 1. Executable interpretation of the printed card; keyword and resource values are read from the card catalog.",
+      "abilities": []
+    },
+    {
+      "card": "04017",
+      "name": "Ready for Action",
+      "note": "Hero Action: Give an ally you control a tough status card. Executable interpretation of the printed card; keyword and resource values are read from the card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "alliesYouControl"
+              },
+              "effect": {
+                "giveStatus": {
+                  "card": "chosen",
+                  "status": "tough"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04018",
+      "name": "Lead from the Front",
+      "note": "Hero Action: Choose a player. Each character that player controls gets +1 THW and +1 ATK until the end of the phase. Same printed ability as 01070.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "identities"
+              },
+              "effect": {
+                "grantCharactersControlledBy": {
+                  "player": "chosenPlayer",
+                  "fields": [
+                    "thwart",
+                    "attack"
+                  ],
+                  "amount": 1,
+                  "until": "EndOfPlayerPhase"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04019",
+      "name": "The Power of Leadership",
+      "note": "Max 2 per deck.\nDouble the number of resources this card generates while paying for a Leadership (blue) card. Same printed ability as 01072.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "doubleResourceFor": "Leadership"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04023",
+      "name": "Energy",
+      "note": "Max 1 per deck. Same printed ability as 01088.",
+      "abilities": []
+    },
+    {
+      "card": "04024",
+      "name": "Genius",
+      "note": "Max 1 per deck. Same printed ability as 01089.",
+      "abilities": []
+    },
+    {
+      "card": "04025",
+      "name": "Strength",
+      "note": "Max 1 per deck. Same printed ability as 01090.",
+      "abilities": []
+    },
+    {
+      "card": "04035",
+      "name": "Venom Blast",
+      "note": "Hero Action (attack): Deal 5 damage to an enemy. Executable interpretation of the printed card; keyword and resource values are read from the card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "dealAttackDamage": {
+                      "cards": "chosen",
+                      "amount": 5
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04036",
+      "name": "Pheromones",
+      "note": "Hero Action: Stun and confuse an enemy. Executable interpretation of the printed card; keyword and resource values are read from the card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "giveStatus": {
+                      "card": "chosen",
+                      "status": "stunned"
+                    }
+                  },
+                  {
+                    "giveStatus": {
+                      "card": "chosen",
+                      "status": "confused"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04037",
+      "name": "Contaminant Immunity",
+      "note": "Hero Action: Heal 3 damage from Spider-Woman and give her a tough status card. Executable interpretation of the printed card; keyword and resource values are read from the card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "heal": {
+                  "card": "yourHero",
+                  "amount": 3
+                }
+              },
+              {
+                "giveStatus": {
+                  "card": "yourHero",
+                  "status": "tough"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04039",
+      "name": "Self-Propelled Glide",
+      "note": "Hero Action: Ready Spider-Woman. She gains [aerial] until the end of the round. Executable interpretation of the printed card; keyword and resource values are read from the card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "ready": "yourHero"
+              },
+              {
+                "grantUntil": {
+                  "card": "yourHero",
+                  "trait": "AERIAL",
+                  "until": "EndOfRound"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04041",
+      "name": "Combat Training",
+      "note": "Play under any player's control. Max 1 per player.\nYour hero gets +1 ATK. Same printed ability as 01057.",
+      "attachTo": {
+        "query": "identitiesWithinPerPlayerLimit"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "yourHero",
+              "keyword": "attack",
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04042",
+      "name": "Tac Team",
+      "note": "Uses (3 attack counters). (Enters play with 3 counters. When those are gone, discard this card)\nAction: Exhaust Tac Team and remove 1 attack counter from it → deal 2 damage to an enemy. Same printed ability as 01056.",
+      "startingCounters": {
+        "type": "attack",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "removeCounters": {
+                  "card": "this",
+                  "counter": "attack",
+                  "count": 1
+                }
+              }
+            ]
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "dealDamage": {
+                  "cards": "chosen",
+                  "amount": 2
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04046",
+      "name": "Heroic Intuition",
+      "note": "Play under any player's control. Max 1 per player.\nYour hero gets +1 THW. Same printed ability as 01065.",
+      "attachTo": {
+        "query": "identitiesWithinPerPlayerLimit"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "yourHero",
+              "keyword": "thwart",
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04048",
+      "name": "Interrogation Room",
+      "note": "Max 1 per player.\nResponse: After you defeat a minion, exhaust Interrogation Room → remove 1 threat from a scheme. Same printed ability as 01063.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "Response",
+            "subject": "game"
+          },
+          "when": {
+            "and": [
+              {
+                "isKind": {
+                  "card": "defeated",
+                  "kind": "minion"
+                }
+              },
+              {
+                "defeatedByYou": "you"
+              }
+            ]
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "schemes"
+              },
+              "effect": {
+                "removeThreat": {
+                  "scheme": "chosen",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04050",
+      "name": "Energy",
+      "note": "Max 1 per deck. Same printed ability as 01088.",
+      "abilities": []
+    },
+    {
+      "card": "04051",
+      "name": "Genius",
+      "note": "Max 1 per deck. Same printed ability as 01089.",
+      "abilities": []
+    },
+    {
+      "card": "04052",
+      "name": "Strength",
+      "note": "Max 1 per deck. Same printed ability as 01090.",
+      "abilities": []
+    },
+    {
+      "card": "04153",
+      "name": "Hydra Soldier",
+      "note": "Guard.(While this minion is engaged with you, you cannot attack the villain.)\nWhen Defeated: Deal the engaged player an encounter card. Same printed ability as 01182.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "WhenDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "dealEncounterCards": {
+              "player": "engagedPlayer",
+              "count": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04155",
+      "name": "Adrenal Stims",
+      "note": "Setup.\nHero Action: Discard this card and remove it from the campaign log → ready your hero and heal 5 damage from them. Executable interpretation of the printed card; keyword and resource values are read from the card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "ready": "you"
+              },
+              {
+                "heal": {
+                  "card": "you",
+                  "amount": 5
+                }
+              }
+            ]
+          },
+          "cost": {
+            "consumeCampaignCard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04156",
+      "name": "Tactical Scanner",
+      "note": "Setup.\nHero Action: Discard this card and remove it from the campaign log → draw 5 cards. Executable interpretation of the printed card; keyword and resource values are read from the card catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 5
+            }
+          },
+          "cost": {
+            "consumeCampaignCard": "this"
+          }
         }
       ]
     }

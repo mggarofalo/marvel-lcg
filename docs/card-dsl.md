@@ -526,3 +526,22 @@ attack replacement; status-card priority remains higher. The parser rejects
 this marker on other ability timings. Optional “would” subwindows with distinct
 pass lifecycles are not represented by this marker. The supported Core optional
 damage-prevention and imminent-threat windows already isolate those conditions.
+
+### Campaign rewards and physical storage
+
+`exhaustTitled` is a cost naming the single ready card with the printed title under
+its acting player's control. Missing or ambiguous cards cannot pay it.
+`consumeCampaignCard` binds a campaign TECH reward, discards it, and records its
+physical campaign key as removed before resolving the ability effect. Untracked,
+already removed, or non-TECH instances cannot pay this cost.
+
+`storeBeneath` moves selected `cards` underneath a selected `host` outside play.
+`faceUp` controls public visibility; optional positive `randomCount` selects without
+replacement using the seeded game stream. `beneathThis` selects those stored cards,
+separately from in-play attachments. Host departure discards stored cards to their
+owners' discard piles.
+
+`initializeAuxiliaryDeck` initializes a named `experimentalWeapons` or `sideSchemes`
+deck from its selected cards. `revealAuxiliaryTop` resolves its top card through the
+ordinary encounter reveal procedure. Deck exhaustion and recycling are owned by
+the engine's auxiliary-deck rules.
