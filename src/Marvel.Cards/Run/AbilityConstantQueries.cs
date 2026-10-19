@@ -95,6 +95,9 @@ internal sealed class AbilityConstantQueries
     {
         switch (effect)
         {
+            case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.GainEnvironmentTraits }:
+                found.AddRange(EnvironmentTraitGrants.For(bindings.World, bindings.Source));
+                return true;
             case AbilityEffect.DefineBaseValue definition:
                 found.Add(new ContinuousEffect(
                     EffectSource.ConstantAbility, Kind: definition.Field,

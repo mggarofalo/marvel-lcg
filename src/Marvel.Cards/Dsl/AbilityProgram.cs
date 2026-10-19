@@ -25,6 +25,7 @@ public sealed class AbilityProgram
         Effects = effects;
         Profiles = AbilityProfileDefinitions.Compile(abilities, effects);
         AbilityBaseDefinitions.Validate(abilities, effects);
+        AbilityEnvironmentTraits.Validate(abilities, effects);
         byCard = abilities.GroupBy(ability => ability.Card, StringComparer.Ordinal)
             .ToImmutableDictionary(group => group.Key, group => group.ToImmutableArray(), StringComparer.Ordinal);
     }

@@ -139,6 +139,7 @@ internal static class AbilityOperationNames
             AbilityFixedInstruction.PlaceAccelerationToken => "placeAccelerationToken",
             AbilityFixedInstruction.GenerateTopDiscard => "generateTopDiscard",
             AbilityFixedInstruction.MakeTheCall => "makeTheCall",
+            AbilityFixedInstruction.GainEnvironmentTraits => "gainEnvironmentTraits",
             AbilityFixedInstruction.RequireAllyDefender => "requireAllyDefender",
             _ => throw new InvalidOperationException("Unknown fixed instruction"),
         },

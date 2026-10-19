@@ -26,4 +26,6 @@ public enum AbilityFixedInstruction
     MakeTheCall,
     /// <summary>Require an ally defender for the engaged player.</summary>
     RequireAllyDefender,
+    /// <summary>Continuously gain the effective traits of every environment in play.</summary>
+    GainEnvironmentTraits,
 }

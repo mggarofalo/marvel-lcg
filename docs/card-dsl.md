@@ -571,3 +571,10 @@ unknown values fail admission. Printed wild icons use `G` as elsewhere in this D
 
 Discard receipts expose `printedResourceIconsDiscarded` and `distinctPrintedResourceTypesDiscarded` numeric expressions (value `"game"`). They count printed resource icons, including wild as its own type, without payment multipliers. `printedBoostIconsDiscarded` counts numeric boost icons and excludes boost stars. Empty receipts yield zero.
 Arrow costs support `spendAny: N` for a positive number of resources without a required type, and `returnToHand: "this"` for returning the source from play to its owner. Event payment combines generic arrow costs with its printed price without charging twice. Returning a source discards attachments and ends its continuous effects before the post-arrow effect.
+### Environment trait copying
+
+`{"gainEnvironmentTraits":"this"}` is an unconditional, cost-free Constant
+root. Its source gains the current effective traits of every environment in
+play. Other grants and losses on those environments participate in the same
+constant-effect fixed point. Leaving play ends that environment's contribution;
+independent trait grants remain. This operation does not copy abilities.
