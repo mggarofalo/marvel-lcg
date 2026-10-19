@@ -40,7 +40,7 @@ internal static class AbilityAdmissionAreaDependencies
         typeof(AbilityEffect.DelayedDiscard), typeof(AbilityEffect.DealEncounterCard),
         typeof(AbilityEffect.PlaceAtRandom), typeof(AbilityEffect.Search),
         typeof(AbilityEffect.PutIntoPlay), typeof(AbilityEffect.PlaceCounters),
-        typeof(AbilityEffect.RemoveCounters),
+        typeof(AbilityEffect.RemoveCounters), typeof(AbilityEffect.StoreBeneath),
     ];
 
     private static readonly ImmutableArray<Type> NumberDependencyTypes =
@@ -215,6 +215,9 @@ internal static class AbilityAdmissionAreaDependencies
     {
         switch (effect)
         {
+            case AbilityEffect.StoreBeneath store:
+                CollectCardsInDependencies(store.Host, context, areas);
+                break;
             case AbilityEffect.DelayedDiscard delayed:
                 CollectCardsInDependencies(delayed.Card, context, areas);
                 break;

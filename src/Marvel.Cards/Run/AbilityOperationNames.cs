@@ -45,6 +45,7 @@ internal static class AbilityOperationNames
         AbilityEffect.GainSurge => "gainSurge",
         AbilityEffect.Generate => "generate",
         AbilityEffect.DoubleResourceFor => "doubleResourceFor",
+        AbilityEffect.StoreBeneath => "storeBeneath",
         AbilityEffect.InitializeAuxiliaryDeck => "initializeAuxiliaryDeck",
         AbilityEffect.RevealAuxiliaryTop => "revealAuxiliaryTop",
         AbilityEffect.Shuffle => "shuffle",

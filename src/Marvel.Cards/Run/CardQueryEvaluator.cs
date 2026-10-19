@@ -11,7 +11,7 @@ internal sealed class CardQueryEvaluator(
 {
     private static readonly ImmutableArray<AbilityCardQuery> ScenarioQueries =
     [
-        AbilityCardQuery.AttachedToThis, AbilityCardQuery.SideSchemes,
+        AbilityCardQuery.AttachedToThis, AbilityCardQuery.BeneathThis, AbilityCardQuery.SideSchemes,
         AbilityCardQuery.Schemes, AbilityCardQuery.PowerTargets,
         AbilityCardQuery.YourAsidePile,
         AbilityCardQuery.Villain, AbilityCardQuery.MainScheme,
@@ -54,8 +54,9 @@ internal sealed class CardQueryEvaluator(
     {
         // rr:attachment: an attachment is in an area hosted by its card.
         AbilityCardQuery.AttachedToThis =>
-            [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId)
+            [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId && !BeneathCards.IsStored(area.Type))
                 .SelectMany(area => area.Cards)],
+        AbilityCardQuery.BeneathThis => BeneathCards.Of(cast.World, cast.Source),
         // rr:player-side-scheme.1 puts both kinds of side scheme together.
         AbilityCardQuery.SideSchemes =>
             [.. InArea(cast.World, DeckType.SideSchemesArea, PlayArea.Villains)],

@@ -55,5 +55,7 @@ public enum DeckType
     VictoryDisplay = 52,
     StatusArea = 53,
     RuleArea = 54,
+    BeneathCardsArea = 55,
+    BeneathCardsPile = 56,
 #pragma warning restore CS1591, SA1602
 }

@@ -195,6 +195,7 @@ internal static class AbilityEffectBindingAnalysis
 
     private static bool NoBindingChange(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.StoreBeneath store => BindingCanChange(store.Cards) || BindingCanChange(store.Host),
         AbilityEffect.InitializeAuxiliaryDeck initialize => BindingCanChange(initialize.Cards),
         AbilityEffect.RevealAuxiliaryTop => false,
         AbilityEffect.Shuffle or AbilityEffect.Search => false,

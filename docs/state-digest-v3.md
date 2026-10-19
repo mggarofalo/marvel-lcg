@@ -262,3 +262,8 @@ The digest tests hold:
 
 Gameplay tests add board-level invariants. Running the test suite must not create
 or update a digest fixture in the repository.
+
+Stored cards use `BeneathCardsArea` when faceup and `BeneathCardsPile` when
+facedown. Both are out of play. Their existing `host` field identifies the
+in-play card above them; physical `owner` is preserved independently of that
+host. These zone spellings and face states are part of the digest contract.

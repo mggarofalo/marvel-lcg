@@ -25,6 +25,7 @@ internal static class AbilityDeckAndRevealExecution
             AbilityEffect.DiscardUntil discard => DiscardUntil(discard, context),
             AbilityEffect.RecoverDiscardedByResource recovery =>
                 RecoverDiscardedByResource(recovery, context),
+            AbilityEffect.StoreBeneath store => AbilityBeneathExecution.Run(store, context),
             AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop =>
                 AbilityAuxiliaryDeckExecution.Run(effect, context),
             AbilityEffect.Shuffle shuffle => Shuffle(shuffle, context),

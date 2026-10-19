@@ -15,7 +15,7 @@ public static class DeckTypes
 
         // `rr:deal-deal-an-encounter-card`: a dealt encounter card is placed
         // facedown in front of the player and is not revealed at that time.
-        DeckType.DealtEncounterCardsDeck,
+        DeckType.DealtEncounterCardsDeck, DeckType.BeneathCardsPile,
 
         // The one entry here the recording cannot vouch for, because nothing in
         // it ever sits in this place. `rr:attack-enemy-activation.step.1` is
@@ -68,7 +68,8 @@ public static class DeckTypes
         or DeckType.ExperimentalWeaponsDeck
         or DeckType.SideSchemeDeck
         or DeckType.DealtEncounterCardsDeck
-        or DeckType.BoostCardsDeck;
+        or DeckType.BoostCardsDeck
+        or DeckType.BeneathCardsPile;
     /// <summary>Whether a card in this kind of place is <i>in play</i>.</summary>
     /// <remarks>
     /// <c>rr:in-play-and-out-of-play</c>. Read off the recorded milestone board
