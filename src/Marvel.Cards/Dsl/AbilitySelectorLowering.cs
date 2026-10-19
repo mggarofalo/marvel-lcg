@@ -46,6 +46,7 @@ internal static class AbilitySelectorLowering
             "titled" => new AbilityCardSelection.Titled(Text(node.Argument, child)),
             "enemiesWithTrait" => new AbilityCardSelection.EnemiesWithTrait(Text(node.Argument, child)),
             "withTrait" => WithTrait(node.Argument, child),
+            "withoutTrait" => WithTrait(node.Argument, child) with { Exclude = true },
             "inObjectIdOrder" => new AbilityCardSelection.InObjectIdOrder(SelectCards(node.Argument, child)),
             "defeatedWithProfile" => DefeatedProfile(node.Argument, child),
             "faceDown" => new AbilityCardSelection.FaceDown(SelectCards(node.Argument, child)),

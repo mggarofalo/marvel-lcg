@@ -37,7 +37,7 @@ internal static class AbilityPowerHealthTrace
         {
             var damage = new Dictionary<int, long>(state.CardDamage);
             var discarded = new HashSet<int>(state.Discarded);
-            long landed = AfterForcedDamageReplacements(
+            long landed = AbilityDamageProtectionTrace.AfterForcedDamageReplacements(
                 cast, card.ObjectId, amount, damage, discarded,
                 state.CurrentVillain);
             state = state with

@@ -12,7 +12,8 @@ internal static class AbilityDiscardShuffleDescription
     internal static Prompt Describe(AbilityStructuralContext context, AbilityEffect.ChooseDiscardToShuffle discard)
     {
         TargetRequest request = Request(context, discard);
-        string description = $"Choose 1–{request.Max} cards with different titles from your discard pile. "
+        string distinct = discard.DifferentTitles ? " with different titles" : string.Empty;
+        string description = $"Choose {request.Min}–{request.Max} cards{distinct} from your discard pile. "
             + "Shuffle the selected cards into your deck when you confirm.";
         return new Prompt(context.Player, Question.Element, TimingPriority.Untimed, Steps.TurnAction,
             $"{context.SourceFace}: choose cards to shuffle", false,
@@ -34,7 +35,7 @@ internal static class AbilityDiscardShuffleDescription
     internal static AbilityStructuralTransition Answer(
         AbilityStructuralContext context, AbilityEffect.ChooseDiscardToShuffle discard, Decision answer) =>
         answer.IsDecline || !Request(context, discard).Allows(answer.Targets)
-            ? new Unsupported($"'{context.SourceFace}' requires one to {discard.Maximum} cards with different titles")
+            ? new Unsupported($"'{context.SourceFace}' requires {discard.Minimum} to {discard.Maximum} legal discard cards")
             : new ShuffleDiscardCommand([.. answer.Targets]);
 
     private static TargetRequest Request(AbilityStructuralContext context, AbilityEffect.ChooseDiscardToShuffle discard)
@@ -42,9 +43,9 @@ internal static class AbilityDiscardShuffleDescription
         World world = context.Expressions.World;
         Area area = world.AreaOf(DeckType.DiscardPile, PlayArea.Of(context.Player), cardOwner: context.Player);
         IGrouping<string, Card>[] titles = [.. area.Cards.GroupBy(card => world.Facts.Title(card.FaceId), StringComparer.Ordinal)];
-        return new TargetRequest([.. area.Cards.Select(card => card.ObjectId)], 1, Math.Min(discard.Maximum, titles.Length))
+        return new TargetRequest([.. area.Cards.Select(card => card.ObjectId)], discard.Minimum, Math.Min(discard.Maximum, discard.DifferentTitles ? titles.Length : area.Cards.Count))
         {
-            ExclusiveSets = [.. titles.Where(group => group.Count() > 1)
+            ExclusiveSets = !discard.DifferentTitles ? [] : [.. titles.Where(group => group.Count() > 1)
                 .Select(group => (IReadOnlyList<int>)group.Select(card => card.ObjectId).ToArray())],
         };
     }

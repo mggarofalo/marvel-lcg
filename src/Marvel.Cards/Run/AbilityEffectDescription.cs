@@ -105,7 +105,7 @@ internal static class AbilityEffectDescription
     private static string Noun(AbilityCardSelection selection) => selection switch
     {
         AbilityCardSelection.Discardable discardable => Noun(discardable.Cards),
-        AbilityCardSelection.WithTrait trait => $"{trait.Trait} {Noun(trait.Cards)}",
+        AbilityCardSelection.WithTrait trait => $"{(trait.Exclude ? "non-" : "")}{trait.Trait} {Noun(trait.Cards)}",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.CharactersYouControlExceptCost } =>
             "character you control other than the character exhausted for this cost",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.CardsYouControl } => "card you control",

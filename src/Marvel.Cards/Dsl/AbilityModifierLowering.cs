@@ -87,8 +87,11 @@ internal static class AbilityModifierLowering
     internal static AbilityEffect.PreventDamageWhile ConditionalDamageProhibition(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "condition");
-        FixedWord(Required(fields, "card", location), location.Child("card"), "this");
-        return new(LowerCondition(Required(fields, "condition", location), location.Child("condition")));
+        var target = Selected(fields, "card", location);
+        if (target is not AbilityCardSelection.Titled and not AbilityCardSelection.Bound { Binding: AbilityCardBinding.This })
+            throw location.Child("card").Error("expected 'this' or a printed-title target");
+        return new(LowerCondition(Required(fields, "condition", location), location.Child("condition")))
+        { Target = target is AbilityCardSelection.Titled ? target : null };
     }
 
     internal static AbilityEffect DelayedEffect(AbilityValue value, AbilityLocation location)

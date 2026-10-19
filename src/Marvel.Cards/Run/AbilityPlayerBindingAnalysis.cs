@@ -138,7 +138,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.ShuffleInto shuffle =>
             Contains(shuffle.Cards) || shuffle.Deck == AbilitySearchArea.YourDeck,
         AbilityEffect.PutIntoPlay entering =>
-            !entering.PrintedDestination || Contains(entering.Card),
+            entering is { PrintedDestination: false, FirstPlayer: false } || Contains(entering.Card),
         AbilityEffect.PlaceCounters counters => Contains(counters.Card) || Contains(counters.Count),
         AbilityEffect.RemoveCounters counters => Contains(counters.Card),
         _ => throw new InvalidOperationException("Unknown placement player-binding effect"),

@@ -67,4 +67,22 @@ public sealed class AttackMaximumTests : CoreCardTestBase
         world.Agenda.Abandon();
         Assert.Null(world.Agenda.PlayerAttackScope());
     }
+
+    [Fact]
+    public void ActivationScopeIgnoresQueuedWorkAndTracksNestedInterrupts()
+    {
+        var world = Hero("01001a");
+        var enemy = world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
+        var step = new PhaseStep(new EnemySchemeOperation(), 1, 2, Subject: enemy.ObjectId, Seat: 0);
+        world.Agenda.Now(step);
+        var outerOccurrence = world.Agenda.Begin(world, Cards);
+        var outer = world.Agenda.EnemyActivationScope(outerOccurrence);
+        Assert.NotNull(outer);
+        world.Agenda.Now(step);
+        Assert.Equal(outer, world.Agenda.EnemyActivationScope(outerOccurrence));
+        var innerOccurrence = world.Agenda.Begin(world, Cards);
+        Assert.NotEqual(outer, world.Agenda.EnemyActivationScope(innerOccurrence));
+        Assert.Equal(outer, world.Agenda.EnemyActivationScope(outerOccurrence));
+        Assert.Null(world.Agenda.EnemyActivationScope(new Occurrence(999, [])));
+    }
 }

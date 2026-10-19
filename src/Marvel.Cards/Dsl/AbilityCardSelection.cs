@@ -17,7 +17,11 @@ public abstract record AbilityCardSelection
     /// <summary>Enemies carrying a named trait.</summary>
     public sealed record EnemiesWithTrait(string Trait) : AbilityCardSelection;
     /// <summary>Selected cards carrying a named trait.</summary>
-    public sealed record WithTrait(AbilityCardSelection Cards, string Trait) : AbilityCardSelection;
+    public sealed record WithTrait(AbilityCardSelection Cards, string Trait) : AbilityCardSelection
+    {
+        /// <summary>Select cards lacking the named trait.</summary>
+        public bool Exclude { get; init; }
+    }
     /// <summary>Selected cards whose physical face is down.</summary>
     public sealed record FaceDown(AbilityCardSelection Cards) : AbilityCardSelection;
     /// <summary>The first nonempty ordered selection.</summary>

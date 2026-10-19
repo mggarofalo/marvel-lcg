@@ -725,3 +725,11 @@ actually removed by the most recent removal instruction. It records committed
 removal against the threat held before that instruction, so a defeated side
 scheme's departure cannot erase the result. A removal that takes nothing records
 zero; later conditional text cannot inherit an earlier removal's success.
+Red Skull interpretations use `withoutTrait: { cards: <selector>, trait: "ELITE" }`
+to exclude a live trait before presenting choices. `preventDamageWhile` accepts
+`card: { titled: "Red Skull" }` to protect that in-play character while the
+constant source remains in play. `putIntoPlay` accepts
+`where: "engagedWithFirstPlayer"` for explicit first-player engagement.
+`chooseDiscardToShuffle` defaults to at least one card and distinct titles;
+`min: 0, differentTitles: "false"` represents an optional selection permitting
+multiple physical cards with the same title.

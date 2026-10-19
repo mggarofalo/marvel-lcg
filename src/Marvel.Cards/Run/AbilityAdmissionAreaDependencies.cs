@@ -186,6 +186,7 @@ internal static class AbilityAdmissionAreaDependencies
                 CollectGrantDependencies(effect, context, areas);
                 break;
             case AbilityEffect.PreventDamageWhile prevention:
+                if (prevention.Target is { } target) CollectCardsInDependencies(target, context, areas);
                 CollectSingularAreaDependencies(prevention.Condition, context, areas);
                 break;
             default:

@@ -90,7 +90,7 @@ internal static class AbilityProjectedStateQueries
         AbilityCardSelection.WithTrait trait, AreaProjectionState state,
         AbilityAdmissionContext context) =>
         [.. ProjectedEvery(trait.Cards, state, context)
-            .Where(card => state.HasTrait(context, card, trait.Trait))];
+            .Where(card => state.HasTrait(context, card, trait.Trait) != trait.Exclude)];
 
     private static List<Card> ProjectedVillain(
         List<Card> found, AreaProjectionState state, AbilityAdmissionContext context)

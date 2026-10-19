@@ -187,6 +187,7 @@ internal static class AbilityDeckAndRevealExecution
     {
         var card = Find(placement.Card, context) ?? throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' would put a card into play that is not there");
+        int player = placement.FirstPlayer ? context.World.FirstPlayer : context.Player;
         if (placement.PrintedDestination)
         {
             return AbilityDeckAndRevealResult.Handled with
@@ -198,10 +199,10 @@ internal static class AbilityDeckAndRevealExecution
         if (!DeckTypes.IsInPlay(card.Area.Type) && EffectiveCards.Kind(card, context.World.Facts) == CardKind.Minion)
             return AbilityDeckAndRevealResult.Handled with
             {
-                Entry = EncounterEntryRequest.For(card, context.Player,
+                Entry = EncounterEntryRequest.For(card, player,
                     new CardEntryPlacement(Verb: "Put_Into_Play")),
             };
-        AbilityCardStateExecution.PutIntoPlay(card, context.Player, CardStateContext(context));
+        AbilityCardStateExecution.PutIntoPlay(card, player, CardStateContext(context));
         return AbilityDeckAndRevealResult.Handled;
     }
 

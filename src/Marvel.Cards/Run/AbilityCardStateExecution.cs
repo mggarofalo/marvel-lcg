@@ -79,9 +79,10 @@ internal static class AbilityCardStateExecution
         context.Events.Add(new CardsMoved(Places.Reference(from), Places.Reference(into),
             [new Landing(card.ObjectId, into.Cards.Count - 1)])
         { Trigger = context.Trigger, Verb = "Put_Into_Play" });
-        Reveal.EnterPlay(
-            context.World, context.World.Facts, card, context.Events,
-            abilities: context.CardPlayAbilities);
+        if (!DeckTypes.IsInPlay(from.Type))
+            Reveal.EnterPlay(
+                context.World, context.World.Facts, card, context.Events,
+                abilities: context.CardPlayAbilities);
     }
     internal static bool TryRun(AbilityEffect effect, AbilityCardStateContext context)
     {

@@ -51,7 +51,7 @@ internal static class AbilitySelectorTrace
             EffectiveCards.Title(candidate, trace.Cast.World.Facts), StringComparison.Ordinal),
         AbilityCardSelection.EnemiesWithTrait filtered => HasTrait(candidate, filtered.Trait, trace),
         AbilityCardSelection.WithTrait filtered => TraceSelectorMatches(filtered.Cards, candidate, trace)
-            && HasTrait(candidate, filtered.Trait, trace),
+            && HasTrait(candidate, filtered.Trait, trace) != filtered.Exclude,
         AbilityCardSelection.FaceDown filtered => !candidate.FaceUp
             && TraceSelectorMatches(filtered.Cards, candidate, trace),
         AbilityCardSelection.InObjectIdOrder ordered => TraceSelectorMatches(ordered.Cards, candidate, trace),

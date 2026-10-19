@@ -104,20 +104,27 @@ internal static class AbilityProcedureLowering
         bool printed = destination switch
         {
             "printedDestination" => true,
-            "engagedWithYou" => false,
+            "engagedWithYou" or "engagedWithFirstPlayer" => false,
             "yourPlayArea" => false,
             var name => throw location.Child("where").Error($"'{name}' is not a supported play destination"),
         };
         return new(Selected(fields, "card", location), printed)
-        { AllyUnderYourControl = destination == "yourPlayArea" };
+        { AllyUnderYourControl = destination == "yourPlayArea", FirstPlayer = destination == "engagedWithFirstPlayer" };
     }
 
     internal static AbilityEffect ChoiceFromPile(AbilityValue value, AbilityLocation location, bool top)
     {
         string count = top ? "count" : "max";
-        var fields = Fields(value, location, count);
+        var fields = top ? Fields(value, location, count) : Fields(value, location, count, "min", "differentTitles");
         int maximum = NonnegativeCount(Required(fields, count, location), location.Child(count));
-        return top ? new AbilityEffect.ChooseTopForHand(maximum) : new AbilityEffect.ChooseDiscardToShuffle(maximum);
+        if (top) return new AbilityEffect.ChooseTopForHand(maximum);
+        int minimum = fields.TryGetValue("min", out var min) ? NonnegativeCount(min, location.Child("min")) : 1;
+        if (minimum > maximum) throw location.Error("minimum cannot exceed maximum");
+        return new AbilityEffect.ChooseDiscardToShuffle(maximum)
+        {
+            Minimum = minimum,
+            DifferentTitles = !fields.ContainsKey("differentTitles") || Boolean(fields, "differentTitles", location),
+        };
     }
 
     internal static AbilityEffect CountersEffect(AbilityValue value, AbilityLocation location, bool remove)

@@ -44,7 +44,7 @@ internal static class AbilitySearchDescription
     private static string? Criterion(AbilityCardSelection selector) => selector switch
     {
         AbilityCardSelection.WithTrait trait when Criterion(trait.Cards) is { } inner =>
-            WithTrait(inner, trait.Trait),
+            trait.Exclude ? $"{inner} without the {trait.Trait} trait" : WithTrait(inner, trait.Trait),
         AbilityCardSelection.InAreas { Areas: [AbilitySearchArea.YourDeck], Title: null } area =>
             Article(string.Join(" ", new[] { area.AspectOnly ? "aspect" : null,
                 area.CardClass == "Hero" ? "hero-specific" : area.CardClass?.ToLowerInvariant(), area.Trait?.Replace('_', ' '),
@@ -65,7 +65,7 @@ internal static class AbilitySearchDescription
         (left, right) switch
         {
             (AbilityCardSelection.WithTrait a, AbilityCardSelection.WithTrait b) =>
-                a.Trait == b.Trait && SameSelection(a.Cards, b.Cards),
+                a.Trait == b.Trait && a.Exclude == b.Exclude && SameSelection(a.Cards, b.Cards),
             (AbilityCardSelection.InAreas a, AbilityCardSelection.InAreas b) =>
                 a == b || a.Areas.SequenceEqual(b.Areas) && a.Kind == b.Kind && a.Trait == b.Trait
                 && a.Title == b.Title && a.Top == b.Top && a.AspectOnly == b.AspectOnly && a.CardClass == b.CardClass,

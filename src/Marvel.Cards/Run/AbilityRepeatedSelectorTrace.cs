@@ -78,7 +78,7 @@ internal static class AbilityRepeatedSelectorTrace
             AbilityCardSelection.Titled titled => string.Equals(
                 titled.Title, cast.World.Facts.Title(current.FaceId), StringComparison.Ordinal),
             AbilityCardSelection.EnemiesWithTrait trait => TraceHasTrait(current, trait.Trait, cast, []),
-            AbilityCardSelection.WithTrait trait => TraceHasTrait(current, trait.Trait, cast, [])
+            AbilityCardSelection.WithTrait trait => TraceHasTrait(current, trait.Trait, cast, []) != trait.Exclude
                 && SelectorCanTrackVillain(trait.Cards, current, cast),
             AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => SelectorCanTrackVillain(option, current, cast)),
             AbilityCardSelection.Last last => SelectorCanTrackVillain(last.Cards, current, cast),
@@ -153,7 +153,7 @@ internal static class AbilityRepeatedSelectorTrace
         Dictionary<int, int> engagement) =>
         villain
             ? VillainIsAttackableInTrace(cast, candidate, discarded, modifiers, engagement)
-            : kind == CardKind.Minion && CanTakeDamageInTrace(cast, candidate, discarded);
+            : kind == CardKind.Minion && AbilityDamageProtectionTrace.CanTakeDamageInTrace(cast, candidate, discarded);
 
     private static bool IsEngagedMinion(
         CardKind kind, Card candidate, int player, Dictionary<int, int> engagement) =>
@@ -206,7 +206,7 @@ internal static class AbilityRepeatedSelectorTrace
                 && TraceModified(
                     cast.World.Cards[pair.Key], "guard",
                     cast, discarded, modifiers) > 0);
-        return !guarded && CanTakeDamageInTrace(cast, current, discarded);
+        return !guarded && AbilityDamageProtectionTrace.CanTakeDamageInTrace(cast, current, discarded);
     }
 
 

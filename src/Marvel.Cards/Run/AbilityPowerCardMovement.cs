@@ -35,7 +35,7 @@ internal static class AbilityPowerCardMovement
         if (!discarded.Remove(card.ObjectId)) return state;
         var engagement = new Dictionary<int, int>(state.Engagement);
         if (!entry.PrintedDestination && !entry.AllyUnderYourControl)
-            engagement[card.ObjectId] = Resolver(cast);
+            engagement[card.ObjectId] = entry.FirstPlayer ? cast.World.FirstPlayer : Resolver(cast);
         state = state with { Discarded = discarded, Engagement = engagement };
         if (StateFields.Modified(
                 cast.World, card, "toughness", cast.World.Facts,

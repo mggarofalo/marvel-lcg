@@ -83,7 +83,7 @@ internal sealed class AbilitySelectorEvaluation(
             .SelectMany(area => area.Cards)
             .Where(card => Rules.State.Traits.Of(context.World, card, context.World.Facts).Contains(trait.Trait, StringComparer.Ordinal))],
         AbilityCardSelection.WithTrait trait => [.. Every(trait.Cards)
-            .Where(card => Rules.State.Traits.Has(context.World, card, trait.Trait, context.World.Facts))],
+            .Where(card => Rules.State.Traits.Has(context.World, card, trait.Trait, context.World.Facts) != trait.Exclude)],
         AbilityCardSelection.InObjectIdOrder ordered => [.. Every(ordered.Cards).OrderBy(card => card.ObjectId)],
         AbilityCardSelection.DefeatedWithProfile defeated => [.. context.Occurrence.Defeats
             .Where(fact => fact.ProfileId == defeated.Profile && (!defeated.RequiresFaceDown || fact.WasFaceDown))

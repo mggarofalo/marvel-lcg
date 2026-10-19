@@ -109,7 +109,11 @@ public abstract record AbilityEffect
     /// <summary>Prohibit damage to the source from matching damage sources.</summary>
     public sealed record PreventDamageFrom(CardKind SourceKind, string SourceTrait) : AbilityEffect;
     /// <summary>Prohibit damage to the source while a condition holds.</summary>
-    public sealed record PreventDamageWhile(AbilityCondition Condition) : AbilityEffect;
+    public sealed record PreventDamageWhile(AbilityCondition Condition) : AbilityEffect
+    {
+        /// <summary>An explicitly named protected card; null protects the source itself.</summary>
+        public AbilityCardSelection? Target { get; init; }
+    }
     /// <summary>Discard the selected card when the named occurrence happens.</summary>
     public sealed record DelayedDiscard(AbilityCardSelection Card, string Condition) : AbilityEffect;
     /// <summary>Stun the character damaged by the bounded attack or activation.</summary>
@@ -143,11 +147,19 @@ public abstract record AbilityEffect
     {
         /// <summary>Enter an ally under the resolving player's control.</summary>
         public bool AllyUnderYourControl { get; init; }
+        /// <summary>Engage the first player rather than the resolver.</summary>
+        public bool FirstPlayer { get; init; }
     }
     /// <summary>Choose one of the top cards for hand.</summary>
     public sealed record ChooseTopForHand(int Count) : AbilityEffect;
     /// <summary>Choose differently titled discarded cards to shuffle into the deck.</summary>
-    public sealed record ChooseDiscardToShuffle(int Maximum) : AbilityEffect;
+    public sealed record ChooseDiscardToShuffle(int Maximum) : AbilityEffect
+    {
+        /// <summary>Minimum number of selected cards.</summary>
+        public int Minimum { get; init; } = 1;
+        /// <summary>Whether selected cards must have different printed titles.</summary>
+        public bool DifferentTitles { get; init; } = true;
+    }
     /// <summary>Discard hand cards providing one or two printed resource icons, as far as possible.</summary>
     public sealed record DiscardResourceIcons(int Count) : AbilityEffect;
     /// <summary>Place named counters on a card.</summary>

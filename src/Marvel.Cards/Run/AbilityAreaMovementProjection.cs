@@ -132,7 +132,8 @@ internal static class AbilityAreaMovementProjection
                     state.Entered.Add(card.ObjectId);
                     if (!instruction.PrintedDestination && !instruction.AllyUnderYourControl)
                     {
-                        state.EngagedWith[card.ObjectId] = Resolver(projection.context);
+                        state.EngagedWith[card.ObjectId] = instruction.FirstPlayer
+                            ? projection.context.World.FirstPlayer : Resolver(projection.context);
                     }
                     if (StateFields.Modified(
                             projection.context.World, card, "toughness",

@@ -248,7 +248,7 @@ internal sealed class DamageTraceMutation
     {
         if (!CanLand(transfer, to)) return;
         long incoming = transfer.DealsDamage
-            ? AfterForcedDamageReplacements(
+            ? AbilityDamageProtectionTrace.AfterForcedDamageReplacements(
                 cast, to, transfer.Amount, damage, discarded, currentVillain)
             : transfer.Amount;
         AssignDamage(to, incoming);
@@ -262,7 +262,7 @@ internal sealed class DamageTraceMutation
         long amount = Math.Min(available, transfer.Amount);
         damage[from] = available - amount;
         long landed = to >= 0 && transfer.DealsDamage
-            ? AfterForcedDamageReplacements(
+            ? AbilityDamageProtectionTrace.AfterForcedDamageReplacements(
                 cast, to, amount, damage, discarded, currentVillain)
             : amount;
         if (to >= 0) AssignDamage(to, landed);
@@ -272,7 +272,7 @@ internal sealed class DamageTraceMutation
     private bool CanLand(DamageTransfer transfer, int to) =>
         to < 0
         || !transfer.DealsDamage
-        || CanTakeDamageInTrace(cast, cast.World.Cards[to], discarded);
+        || AbilityDamageProtectionTrace.CanTakeDamageInTrace(cast, cast.World.Cards[to], discarded);
 
     private void AssignDamage(int cardId, long incoming)
     {

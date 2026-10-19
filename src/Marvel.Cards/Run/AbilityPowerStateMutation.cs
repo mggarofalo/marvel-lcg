@@ -186,10 +186,10 @@ internal static class AbilityPowerStateMutation
         {
             "dealDamage" or "dealAttackDamage" =>
                 [.. PowerEvery(targets, cast, state).Where(card =>
-                    CanTakeDamageInTrace(cast, card, state.Discarded))],
+                    AbilityDamageProtectionTrace.CanTakeDamageInTrace(cast, card, state.Discarded))],
             "moveDamage" or "moveAttackDamage" =>
                 PowerFind(targets, cast, state) is { } destination
-                    && CanTakeDamageInTrace(cast, destination, state.Discarded)
+                    && AbilityDamageProtectionTrace.CanTakeDamageInTrace(cast, destination, state.Discarded)
                         ? [destination] : [],
             _ => PowerEvery(targets, cast, state),
         };
