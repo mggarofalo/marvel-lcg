@@ -27,6 +27,7 @@ internal static class AbilityCostLowering
             "exhaust" => new AbilityCost.Exhaust(CostCard(argument, child)),
             "exhaustTitled" => ExhaustTitledCost(argument, child),
             "discard" => DiscardCost(argument, child),
+            "consumeCampaignCard" => new AbilityCost.ConsumeCampaignCard(CostCard(argument, child)),
             "removeCounters" => RemoveCounterCost(argument, child),
             "spend" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: false),
             "spendPrinted" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: true),

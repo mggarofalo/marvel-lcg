@@ -175,6 +175,9 @@ internal sealed class AbilityCostPayment
             case Exhaust exhaust:
                 CommitExhaust(exhaust, trigger, events);
                 break;
+            case ConsumeCampaignBound consume:
+                physical.ConsumeCampaign(consume.Target.RequireCurrent(), trigger, events);
+                break;
             case DiscardBound discard:
                 physical.Discard(discard.Target.RequireCurrent(), trigger, events);
                 break;

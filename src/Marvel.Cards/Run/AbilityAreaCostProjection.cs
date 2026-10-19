@@ -29,6 +29,9 @@ internal static class AbilityAreaCostProjection
             case AbilityCost.Heal heal:
                 projection.TraceHealCost(heal, state);
                 return;
+            case AbilityCost.ConsumeCampaignCard consume:
+                projection.TraceDiscardCost(new AbilityCost.Discard(consume.Card), state);
+                return;
             case AbilityCost.Discard discard:
                 projection.TraceDiscardCost(discard, state);
                 return;

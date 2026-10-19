@@ -27,6 +27,7 @@ internal static class AbilityCostDescription
     {
         AbilityCost.ExhaustTitled named => $"Exhaust {named.Title}",
         AbilityCost.Exhaust exhaust => $"Exhaust {Name(world, source, player, exhaust.Card)}",
+        AbilityCost.ConsumeCampaignCard consume => $"Discard {Name(world, source, player, consume.Card)} and remove it from the campaign",
         AbilityCost.Discard discard => $"Discard {Name(world, source, player, discard.Card)}",
         AbilityCost.RemoveCounters counters =>
             $"Remove {Number(counters.Count)} {Counter(counters.Counter)} counter{Plural(counters.Count)} "

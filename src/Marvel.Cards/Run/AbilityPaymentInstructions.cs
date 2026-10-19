@@ -22,6 +22,7 @@ internal static class AbilityPaymentInstructions
     internal sealed record TakeDamage(BoundCard Target, long Amount) : Step;
     internal sealed record Exhaust(BoundCard Target) : Step;
     internal sealed record DiscardBound(BoundCard Target) : Step;
+    internal sealed record ConsumeCampaignBound(BoundCard Target) : Step;
     internal sealed record RemoveCounters(BoundCard Target, string Counter, long Count) : Step;
     internal sealed record Heal(BoundCard Target, long Amount) : Step;
     internal sealed record DealDamage(BoundCard Target, long Amount) : Step;

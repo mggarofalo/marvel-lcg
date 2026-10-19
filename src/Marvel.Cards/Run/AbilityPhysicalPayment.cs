@@ -25,6 +25,19 @@ internal sealed class AbilityPhysicalPayment(World world, Card source)
         Marvel.Rules.Play.Discard.CardFromEffect(world, world.Facts, source, target, trigger, events);
     }
 
+    internal static bool CanConsumeCampaign(World world, Card source, Card target) =>
+        world.Campaign?.CanRemove(target) == true && DeckTypes.IsInPlay(target.Area.Type)
+        && Marvel.Rules.Play.Discard.EffectCanRemove(world, world.Facts, source, target);
+
+    internal void ConsumeCampaign(Card target, string trigger, List<GameEvent> events)
+    {
+        if (!CanConsumeCampaign(world, source, target))
+            throw new RulesNotImplementedException("campaign TECH reward cannot pay its removal cost");
+        // The printed arrow cost removes the physical reward from the campaign before its effect.
+        world.Campaign!.Remove(target, trigger, events);
+        Discard(target, trigger, events);
+    }
+
     internal void RemoveCounters(
         Card target, string counter, long count, ICardCounterPools pools,
         string trigger, List<GameEvent> events)

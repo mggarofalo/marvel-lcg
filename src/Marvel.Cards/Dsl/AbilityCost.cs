@@ -15,6 +15,8 @@ public abstract record AbilityCost
     public sealed record ExhaustTitled(string Title) : AbilityCost;
     /// <summary>Discard the source or resolving identity.</summary>
     public sealed record Discard(AbilityCostCard Card) : AbilityCost;
+    /// <summary>Discard a campaign TECH reward and permanently remove its saved instance.</summary>
+    public sealed record ConsumeCampaignCard(AbilityCostCard Card) : AbilityCost;
     /// <summary>Remove a positive number of named counters.</summary>
     public sealed record RemoveCounters(AbilityCostCard Card, string Counter, long Count) : AbilityCost;
     /// <summary>Generate the required resources, optionally using printed icons only.</summary>

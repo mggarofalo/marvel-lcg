@@ -52,11 +52,16 @@ public sealed class CampaignAttemptState
     public IReadOnlyList<Card> EnteredExperimentalWeapons => owner is null ? [] :
         [.. weapons.Order().Select(id => owner.Cards[id]).Where(card => card.HasEnteredPlay)];
 
+    /// <summary>Whether this exact bound TECH reward remains available to remove.</summary>
+    public bool CanRemove(Card card) => owner is not null && owner.Cards.Contains(card)
+        && cards.TryGetValue(card.ObjectId, out var progress)
+        && progress.Binding.Card.Role == CampaignCardRole.Tech && !progress.Removed;
+
     /// <summary>Records a printed removal from the campaign, independently of the card's current zone.</summary>
     public void Remove(Card card, string trigger, List<GameEvent> events)
     {
         var progress = Get(card);
-        if (progress.Removed) throw new InvalidOperationException("campaign card has already been removed");
+        if (!CanRemove(card)) throw new InvalidOperationException("card is not an available campaign TECH reward");
         cards[card.ObjectId] = progress with { Removed = true };
         Changed(card, "campaign_removed", 0, 1, trigger, events);
     }

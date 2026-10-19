@@ -24,6 +24,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCost.Sequence sequence => sequence.Costs.Any(Contains),
         AbilityCost.ExhaustTitled => true,
         AbilityCost.Exhaust exhaust => exhaust.Card == AbilityCostCard.Identity,
+        AbilityCost.ConsumeCampaignCard consume => consume.Card == AbilityCostCard.Identity,
         AbilityCost.Discard discard => discard.Card == AbilityCostCard.Identity,
         AbilityCost.RemoveCounters counters => counters.Card == AbilityCostCard.Identity,
         AbilityCost.Heal heal => heal.Card == AbilityCostCard.Identity,

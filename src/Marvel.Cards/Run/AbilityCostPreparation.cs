@@ -102,6 +102,11 @@ internal sealed class AbilityCostPreparation
             new string(Resources.Energy, checked((int)x)), Energy: x));
     }
 
+    private void PrepareDamage(AbilityCost.Damage damage) =>
+        ordered.Add(damage.MustTakeAll
+            ? new TakeDamage(Bind(damage.Card), damage.Amount)
+            : new DealDamage(Bind(damage.Card), damage.Amount));
+
     private void PreparePhysical(AbilityCost component)
     {
         switch (component)
@@ -121,6 +126,9 @@ internal sealed class AbilityCostPreparation
             case AbilityCost.Exhaust exhaust:
                 ordered.Add(new Exhaust(Bind(exhaust.Card)));
                 break;
+            case AbilityCost.ConsumeCampaignCard consume:
+                ordered.Add(new ConsumeCampaignBound(Bind(consume.Card)));
+                break;
             case AbilityCost.Discard discard:
                 ordered.Add(new DiscardBound(Bind(discard.Card)));
                 break;
@@ -132,9 +140,7 @@ internal sealed class AbilityCostPreparation
                 ordered.Add(new Heal(Bind(heal.Card), heal.Amount));
                 break;
             case AbilityCost.Damage damage:
-                ordered.Add(damage.MustTakeAll
-                    ? new TakeDamage(Bind(damage.Card), damage.Amount)
-                    : new DealDamage(Bind(damage.Card), damage.Amount));
+                PrepareDamage(damage);
                 break;
             default:
                 throw new InvalidOperationException(

@@ -32,6 +32,8 @@ internal static class AbilityPaymentRules
                 world, card, player, sequence, program, resourceAbilities),
             AbilityCost.ExhaustTitled named => NamedAbilityCost.Target(world, player, named.Title)?.Ready == true,
             AbilityCost.Exhaust exhaust => CostTarget(world, card, player, exhaust.Card)?.Ready == true,
+            AbilityCost.ConsumeCampaignCard consume => CostTarget(world, card, player, consume.Card) is { } reward
+                && AbilityPhysicalPayment.CanConsumeCampaign(world, card, reward),
             AbilityCost.Discard discard => CostTarget(world, card, player, discard.Card) is not null,
             AbilityCost.RemoveCounters removal => CostTarget(world, card, player, removal.Card) is { } counterCard
                 && CounterKeyForRemoval(
@@ -102,7 +104,7 @@ internal static class AbilityPaymentRules
     internal static bool MandatoryCostIsAutomatic(AbilityCost cost) => cost switch
     {
         AbilityCost.Sequence sequence => sequence.Costs.All(MandatoryCostIsAutomatic),
-        AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.ExhaustTitled or AbilityCost.RemoveCounters => true,
+        AbilityCost.ConsumeCampaignCard or AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.ExhaustTitled or AbilityCost.RemoveCounters => true,
         _ => false,
     };
 
