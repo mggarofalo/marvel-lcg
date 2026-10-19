@@ -53,6 +53,8 @@ public abstract record AbilityEffect
     public sealed record GiveStatus(AbilityCardSelection Cards, string Status) : AbilityEffect;
     /// <summary>Change the selected player's form.</summary>
     public sealed record ChangeForm(AbilityPlayer Player, string Form) : AbilityEffect;
+    /// <summary>Permit matching cards beneath the source to be played as if in hand.</summary>
+    public sealed record AllowPlayBeneath(CardKind Kind, string Trait) : AbilityEffect;
     /// <summary>Draw a fixed number of cards for the selected players.</summary>
     public sealed record Draw(AbilityPlayerSelection Players, int Count) : AbilityEffect;
     /// <summary>Draw to the player's modified or printed hand size.</summary>

@@ -550,3 +550,7 @@ the engine's auxiliary-deck rules.
 positive `top` bound examines the top of one deck before applying kind, trait,
 title, or `aspectOnly` filters. `aspectOnly: "true"` selects printed Aggression,
 Justice, Leadership, or Protection cards; identity and Basic cards do not match.
+
+`allowPlayBeneath` is a Constant permission with printed `kind: "Event"` and a
+`trait`. The engine may play matching owned cards stored under the live controlled
+host as if in hand; the query never moves them to hand or makes them resources.
