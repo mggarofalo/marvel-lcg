@@ -8,9 +8,9 @@ namespace Marvel.Godot;
 internal static class BoardInteractionControlProjection
 {
     internal static IReadOnlyList<CardInteractionControlDescriptor> From(
-        DecisionComposer? composer, PromptPresentation? prompt)
+        DecisionComposer? composer, PromptPresentation? prompt, bool inlinePayment = false)
     {
-        if (composer is null || prompt is null || CardPaymentPresentation.UsesModal(composer))
+        if (composer is null || prompt is null || (!inlinePayment && CardPaymentPresentation.UsesModal(composer)))
         {
             return [];
         }

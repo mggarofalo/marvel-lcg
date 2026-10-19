@@ -104,6 +104,8 @@ public sealed class BoardRenderResult
 
     internal void ClearPendingChoices() => completeChoicesEntry.ClearPending();
 
+    internal void SetInlinePayment(bool enabled) => interactionControls.InlinePayment = enabled;
+
     internal void SetCompleteChoicesOpen(bool open)
     {
         completeChoicesOpen = open;

@@ -15,6 +15,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal DecisionComposer? composer;
     private CardPaymentWorkspace? paymentModal;
     internal readonly AbilityWindowController AbilityWindows;
+    internal readonly LocalDecisionController LocalDecision;
     internal bool AbilityWindowOpen => AbilityWindows.IsOpen;
     internal bool AcknowledgementPending => AbilityWindows.Paused;
     private readonly CompleteDecisionSheetController choices;
@@ -22,11 +23,12 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal readonly BoardChoiceContinuity BoardChoices;
     internal long CurrentRevision => lifecycle.Revision;
     internal BoardRenderResult? CurrentBoard => mulliganBoard;
-    internal bool CompleteChoicesOpen => choices.IsOpen;
-    internal void ShowCompleteChoices(Control source) => choices.Open(source);
+    internal bool CompleteChoicesOpen => choices.IsOpen || LocalDecision.IsOpen;
+    internal void ShowCompleteChoices(Control source)
+    { if (LocalDecision.Active) LocalDecision.Resume(source); else choices.Open(source); }
     internal void CompleteChoicesClosed() => choices.Closed();
     internal void PresentOperationalNotice(Marvel.Client.GameProgressPresentation progress) =>
-        choices.PresentProgress(progress);
+        PresentProgress(progress);
     internal void SetCompleteChoicesVisibility(bool open) => mulliganBoard?.SetCompleteChoicesOpen(open);
     internal bool PaymentModalOpen => paymentModal is not null;
     internal CardPaymentWorkspace? PaymentModal => paymentModal;
@@ -35,11 +37,13 @@ public sealed partial class DecisionPanel : VBoxContainer
         choices.Close();
         paymentModal = new CardPaymentWorkspace(this, prompt);
     }
-    internal void PreviewPaymentCard(int? id) => paymentModal?.Preview(id);
-    internal Node LayoutHost => paymentModal?.Content ?? AbilityWindows.Content ?? (Node)this;
-    internal Control FocusHost => paymentModal?.Content ?? AbilityWindows.Content ?? (Control)this;
+    internal void PreviewPaymentCard(int? id)
+    { if (LocalDecision.IsOpen) LocalDecision.Preview(id); else paymentModal?.Preview(id); }
+    internal Node LayoutHost => paymentModal?.Content ?? LocalDecision.Content ?? AbilityWindows.Content ?? (Node)this;
+    internal Control FocusHost => paymentModal?.Content ?? LocalDecision.Content ?? AbilityWindows.Content ?? (Control)this;
     internal void RouteDecisionSurfaceInput(InputEvent input)
     {
+        LocalDecision.Input(input);
         paymentModal?.Input(input);
         choices.Input(input);
         AbilityWindows.Input(input);
@@ -47,6 +51,8 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal void ClearDecision()
     {
         choices.Close();
+        LocalDecision.Continuity.Clear();
+        LocalDecision.Dispose();
         composer = null;
         world = null;
         Rebuild();
@@ -64,12 +70,15 @@ public sealed partial class DecisionPanel : VBoxContainer
     public DecisionPanel()
     {
         lifecycle = new DecisionPanelLifecycle(this);
+        LocalDecision = new LocalDecisionController(this);
         AbilityWindows = new AbilityWindowController(this);
         TreeExiting += AbilityWindows.Dispose;
+        TreeExiting += LocalDecision.Dispose;
         choices = new CompleteDecisionSheetController(this);
         CardChoices = new DecisionCardChoices(this);
         BoardChoices = new BoardChoiceContinuity(this);
-        cardPreview.Changed += id => CardHovered?.Invoke(id);
+        cardPreview.Changed += id =>
+        { if (LocalDecision.IsOpen) LocalDecision.Preview(id); else CardHovered?.Invoke(id); };
     }
     /// <summary>Raised with one answer built from the current prompt.</summary>
     public event Action<Decision>? Submitted;
@@ -113,6 +122,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         interfaceScale = EffectiveScale(
             requestedScale, compactMulliganChrome, MulliganPrompt.IsOpening(prompt));
         choices.Close();
+        LocalDecision.Refresh(prompt, revision);
         lifecycle.Render(prompt, currentWorld, revision);
         choices.OpenCardChoiceAfterRender();
     }
@@ -193,12 +203,16 @@ public sealed partial class DecisionPanel : VBoxContainer
         if (!RenderPrompt())
         {
             DraftChanged?.Invoke(null, null);
-            RenderNoDecision();
+            ProgressChanged?.Invoke(null);
+            DecisionPanelSurface.RenderNoDecision(this);
             return;
         }
         if (mulliganBoard is { } board) restoreChoice?.Invoke(board);
-        Callable.From(() => lifecycle.RestoreFocus(focusName, focusFirst || PaymentModalOpen, generation, paymentScroll)).CallDeferred();
+        RestoreDecisionFocus(focusName, focusFirst, generation, paymentScroll);
     }
+
+    private void RestoreDecisionFocus(string? name, bool first, int generation, int? scroll) =>
+        Callable.From(() => lifecycle.RestoreFocus(name, first || PaymentModalOpen, generation, scroll)).CallDeferred();
 
     private bool BoardInteractionsSuppressed => AbilityWindowOpen || AcknowledgementPending || submitting;
 
@@ -211,6 +225,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         PresentAutomaticTarget(composer);
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
         MulliganBinding.Bind(this, mulliganBoard);
+        LocalDecision.Open(prompt);
         BoardInteractionBinder.Bind(this, mulliganBoard);
         bool completeWindow = AbilityWindows.Open(prompt);
         bool modal = BoardInteractionsSuppressed;
@@ -234,6 +249,7 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private void ClearPanel()
     {
+        LocalDecision.ClearFrame();
         cardPreview.Clear();
         AbilityWindows.ClearFrame();
         paymentModal?.Dispose();
@@ -246,26 +262,6 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
         ThemeTypeVariation = GodotThemeVariations.TightStack;
     }
-
-    private void RenderNoDecision()
-    {
-        ProgressChanged?.Invoke(null);
-        (string heading, string detail) = world?.Outcome switch
-        {
-            Outcome.Unfinished => (
-                "WAITING FOR ANOTHER PLAYER",
-                "Another player has the current decision."),
-            Outcome.PlayersWin => ("VICTORY", "The players won. No further decision is waiting."),
-            Outcome.VillainWins => ("DEFEAT", "The villain won. No further decision is waiting."),
-            Outcome.PlayersLose => ("DEFEAT", "The players lost. No further decision is waiting."),
-            _ => ("NO DECISION", "No decision is available."),
-        };
-        if (world is { Outcome: not Outcome.Unfinished })
-            detail = OutcomeDescription.Result(world.Outcome, world.LossReason);
-        AddChild(Text(heading, GodotThemeVariations.Caption));
-        AddChild(Text(detail, GodotThemeVariations.Body, wrap: true));
-    }
-
 
     internal void InstallLayout(VBoxContainer body, VBoxContainer commitBar)
     {
@@ -285,6 +281,9 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         DecisionAnchorBinding.Bind(this, control, ids);
     }
+
+    private void PresentProgress(Marvel.Client.GameProgressPresentation progress)
+    { choices.PresentProgress(progress); LocalDecision.PresentProgress(progress); }
 
     internal static string NodeKey(string value) => new(
         value.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());

@@ -26,6 +26,8 @@ internal static class CardContextMenuBinding
     {
         var binding = panel.BindTableDraft(composer, generation);
         if (!CardMenuChoices.Select(composer, binding, choice)) return;
+        var offered = PromptPresentation.From(composer.Prompt, panel.world!).Affordances.Single(offer => offer.Id == choice.Offer);
+        panel.LocalDecision.Begin(gesture, offered);
         panel.RaiseDraftStarted();
         if (choice.Commit && composer.TryBuild(out var decision, out _))
         {

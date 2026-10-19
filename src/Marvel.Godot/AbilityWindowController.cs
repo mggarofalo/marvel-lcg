@@ -42,7 +42,7 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
         return true;
     }
 
-    private bool CanOpen(DecisionComposer draft) => !Paused && !panel.CompleteChoicesOpen
+    private bool CanOpen(DecisionComposer draft) => !Paused && !panel.LocalDecision.Active && !panel.CompleteChoicesOpen
         && !CardPaymentPresentation.UsesModal(draft, panel.submitting)
         && (UsesModal(draft.Prompt) || RequiredNotification is not null);
 

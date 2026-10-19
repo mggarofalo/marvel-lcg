@@ -31,11 +31,11 @@ public sealed class WakandaDamageMeaningTests
         string before = world.Digest().Fingerprint();
         string summary = SelectedSummary(world, prompt, target, restricted);
 
-        Assert.Contains($"Current attack damage: {(finalStep ? 4 : 2)} before prevention and replacement", summary);
+        Assert.Contains($"Current attack damage: {(finalStep ? 4 : 2)} before prevention/replacement", summary);
         Assert.Equal(finalStep, summary.Contains("Final step", StringComparison.Ordinal));
         Assert.Contains("2/4 → 0/4 HP", summary);
         Assert.Contains("would be defeated", summary);
-        Assert.Contains("Later effects can change the result", summary);
+        Assert.Contains("Later effects may change it", summary);
         Assert.Equal(before, world.Digest().Fingerprint());
         Assert.Equal(2, target.Damage);
         Assert.Null(WorldProjection.For(world, prompt, [], new RestrictedVisibilityPolicy(1).Authorize(null, 2)).Prompt);
@@ -69,7 +69,7 @@ public sealed class WakandaDamageMeaningTests
         }
         else
         {
-            Assert.Contains("Current attack damage: 4 before prevention and replacement", summary);
+            Assert.Contains("Current attack damage: 4 before prevention/replacement", summary);
             Assert.Contains("Tough prevents the damage and is discarded", summary);
             Assert.Contains("2/4 → 2/4 HP", summary);
         }
@@ -103,7 +103,7 @@ public sealed class WakandaDamageMeaningTests
         Assert.Contains(claws.ObjectId, clawsTarget.ContextCardIds);
         string summary = SelectedSummary(world, clawsTarget, target, restricted: true);
         Assert.Contains("Final step", summary);
-        Assert.Contains("Current attack damage: 4 before prevention and replacement", summary);
+        Assert.Contains("Current attack damage: 4 before prevention/replacement", summary);
         Assert.Contains("2/4 → 0/4 HP", summary);
     }
 
