@@ -16,9 +16,10 @@ public sealed class PerPlayerCounterTests
     [InlineData(2, true, 4)]
     [InlineData(4, true, 8)]
     [InlineData(4, false, 2)]
-    [Rule("rr:per-player")]
+    [Rule("rr:per-player-icon")]
     public void EntryUsesOriginalPlayerCountAndEmitsTheActualCounterTotal(int players, bool perPlayer, long expected)
     {
+        // "The value associated with this icon is multiplied by the number of players who started the scenario."
         // 04064: "Uses (2 [per-player] ammo counters)."
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var world = new World(cards, players);
@@ -34,3 +35,4 @@ public sealed class PerPlayerCounterTests
         Assert.Contains(events.OfType<FieldSet>(), change => change.Card == gun.ObjectId && change.Field == "c_ammo" && change.To == expected);
     }
 }
+

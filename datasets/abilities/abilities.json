@@ -5084,6 +5084,703 @@
           }
         }
       ]
+    },
+    {
+      "card": "04058",
+      "name": "Crossbones",
+      "note": "star While Crossbones has a Weapon attachment, his attacks gain piercing. (Discard any tough status cards from the target before dealing damage.)",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "withTrait": {
+                    "cards": {
+                      "query": "attachedToThis"
+                    },
+                    "trait": "WEAPON"
+                  }
+                }
+              },
+              "then": {
+                "grant": {
+                  "card": "this",
+                  "keyword": "piercing",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04059",
+      "name": "Crossbones",
+      "note": "star While Crossbones has a Weapon attachment, his attacks gain piercing.\nWhen Revealed: Search the encounter deck and discard pile for Crossbone's Machine Gun and attach it to Crossbones. Shuffle the encounter deck.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "withTrait": {
+                    "cards": {
+                      "query": "attachedToThis"
+                    },
+                    "trait": "WEAPON"
+                  }
+                }
+              },
+              "then": {
+                "grant": {
+                  "card": "this",
+                  "keyword": "piercing",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "seq": [
+              {
+                "attachCards": {
+                  "cards": {
+                    "cardsIn": {
+                      "areas": [
+                        "encounterDeck",
+                        "encounterDiscardPile"
+                      ],
+                      "title": "Crossbones' Machine Gun"
+                    }
+                  },
+                  "host": "this"
+                }
+              },
+              {
+                "shuffle": "encounterDeck"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04060",
+      "name": "Crossbones",
+      "note": "star While Crossbones has a Weapon attachment, his attacks gain piercing.\nWhen Revealed: Reveal the top card of the Experimental Weapons deck.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "withTrait": {
+                    "cards": {
+                      "query": "attachedToThis"
+                    },
+                    "trait": "WEAPON"
+                  }
+                }
+              },
+              "then": {
+                "grant": {
+                  "card": "this",
+                  "keyword": "piercing",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "revealAuxiliaryTop": "experimentalWeapons"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04061a",
+      "name": "Attack on Mount Athena",
+      "note": "Contents: Crossbones (I) and Crossbones (II). Crossbones, Experimental Weapons, and Standard Encounter sets. Three modular sets (Hydra Assault, Weapon Master, and Legions of Hydra).\nSetup: Create the Experimental Weapons deck and set it next to the main scheme deck. (see rulebook page 5.)",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Setup",
+            "subject": "this"
+          },
+          "effect": {
+            "initializeAuxiliaryDeck": {
+              "deck": "experimentalWeapons",
+              "cards": {
+                "cardsIn": {
+                  "area": "scenarioSetAside",
+                  "kind": "Attachment"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04061b",
+      "name": "Attack on Mount Athena",
+      "note": "Printed statistics and scheme advancement are resolved by the engine.",
+      "abilities": []
+    },
+    {
+      "card": "04062a",
+      "name": "The Infinity Stone.",
+      "note": "Printed statistics and scheme advancement are resolved by the engine.",
+      "abilities": []
+    },
+    {
+      "card": "04063a",
+      "name": "The Getaway",
+      "note": "Printed statistics and scheme advancement are resolved by the engine.",
+      "abilities": []
+    },
+    {
+      "card": "04062b",
+      "name": "The Infinity Stone",
+      "note": "When Revealed: Reveal the top card of the Experimental Weapons deck.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "revealAuxiliaryTop": "experimentalWeapons"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04063b",
+      "name": "The Getaway",
+      "note": "When Revealed: Reveal the top card of the Experimental Weapons deck.\nIf this stage is completed, the players lose the game.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "revealAuxiliaryTop": "experimentalWeapons"
+          }
+        }
+      ]
+    },
+    {
+      "card": "04064",
+      "name": "Crossbones' Machine Gun",
+      "note": "Attach to Crossbones. Uses (2per_hero ammo counters).\nstar Forced Interrupt: When Crossbones attacks you, remove 1 ammo counter from this card and discard the top card of the encounter deck → take indirect damage equal to the number of boost icons on the discarded card.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "ForcedInterrupt",
+            "actor": "attachedTo",
+            "player": "you"
+          },
+          "effect": {
+            "indirectDamage": {
+              "among": {
+                "query": "charactersYouControl"
+              },
+              "amount": {
+                "printedBoostIconsDiscarded": "game"
+              }
+            }
+          },
+          "cost": {
+            "seq": [
+              {
+                "removeCounters": {
+                  "card": "this",
+                  "counter": "ammo",
+                  "count": 1
+                }
+              },
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "attachTo": {
+        "titled": "Crossbones"
+      },
+      "startingCounters": {
+        "type": "ammo",
+        "count": 2,
+        "uses": true,
+        "perPlayer": true
+      }
+    },
+    {
+      "card": "04065",
+      "name": "Crossbones' Armor",
+      "note": "Attach to Crossbones.\nForced Interrupt: When Crossbones would take any amount of damage, place it here instead. If there is 5 or more damage here, discard Crossbones' Armor.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageWouldBeDealt",
+            "timing": "ForcedInterrupt",
+            "subject": "attachedTo"
+          },
+          "effect": {
+            "seq": [
+              {
+                "soakDamage": {
+                  "onto": "this"
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "damageOn": "this"
+                      },
+                      "count": 5
+                    }
+                  },
+                  "then": {
+                    "discard": "this"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "attachTo": {
+        "titled": "Crossbones"
+      }
+    },
+    {
+      "card": "04066",
+      "name": "Hydra Bomber",
+      "note": "When Revealed: Choose to either take 2 damage or place 1 threat on the main scheme.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "choose": {
+              "options": [
+                {
+                  "dealDamage": {
+                    "cards": "you",
+                    "amount": 2
+                  }
+                },
+                {
+                  "placeThreat": {
+                    "scheme": {
+                      "query": "mainScheme"
+                    },
+                    "amount": 1
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04067",
+      "name": "Full Auto",
+      "note": "When Revealed (Alter-Ego): Surge.\nWhen Revealed (Hero): Discard X cards from the top of the encounter deck, where X is Crossbones' ATK. Take 1 indirect damage for each boost icon discarded this way.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "gainSurge": 1
+          }
+        },
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": {
+                    "modified": {
+                      "card": {
+                        "titled": "Crossbones"
+                      },
+                      "field": "attack"
+                    }
+                  }
+                }
+              },
+              {
+                "indirectDamage": {
+                  "among": {
+                    "query": "charactersYouControl"
+                  },
+                  "amount": {
+                    "printedBoostIconsDiscarded": "game"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04068",
+      "name": "Hard as Nails",
+      "note": "When Revealed: Give the villain a tough status card. If you cannot, heal 3 damage from it instead.\n\nstar Boost: Give the villain a tough status card. If you cannot, heal 3 damage from it instead.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "otherwise": {
+              "effect": {
+                "giveStatus": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "status": "tough"
+                }
+              },
+              "otherwise": {
+                "heal": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "amount": 3
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "otherwise": {
+              "effect": {
+                "giveStatus": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "status": "tough"
+                }
+              },
+              "otherwise": {
+                "heal": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "amount": 3
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04069",
+      "name": "Raid the Armory",
+      "note": "Incite 1. (When this card is revealed place 1 threat on the main scheme.)\nWhen Revealed: Discard cards from the top of the encounter deck until a Weapon attachment is discarded. Reveal that card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "discardUntil": {
+              "from": "encounterDeck",
+              "kind": "attachment",
+              "trait": "WEAPON",
+              "then": "reveal"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04070",
+      "name": "Crossbones' Assault",
+      "note": "When Defeated: Crossbones activates against the player who defeated this scheme.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenDefeated",
+            "subject": "this",
+            "event": "WhenCardDefeated"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "you",
+                  "form": "hero"
+                }
+              },
+              "then": {
+                "enemyAttacks": {
+                  "enemies": {
+                    "titled": "Crossbones"
+                  }
+                }
+              },
+              "else": {
+                "enemySchemes": {
+                  "enemies": {
+                    "titled": "Crossbones"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04071",
+      "name": "Cornered Staff",
+      "note": "When Revealed: Discard 1per_hero cards from the top of the encounter deck. Place 1 additional threat here for each boost icon discarded this way.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "event": "WhenCardRevealed"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": {
+                    "perPlayer": 1
+                  }
+                }
+              },
+              {
+                "placeThreat": {
+                  "scheme": "this",
+                  "amount": {
+                    "printedBoostIconsDiscarded": "game"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04072",
+      "name": "Laser Rifle",
+      "note": "Attach to the Villain.\nstar Forced Interrupt: When attached villain attacks, the attack gains ranged.\nHero Action: Spend energyphysical resources → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "ForcedInterrupt",
+            "actor": "attachedTo"
+          },
+          "effect": {
+            "grantUntil": {
+              "card": "attachedTo",
+              "keyword": "ranged",
+              "amount": 1,
+              "until": "EndOfAttack"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered",
+            "form": "hero"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "cost": {
+            "spend": "YR"
+          }
+        }
+      ],
+      "attachTo": {
+        "query": "villain"
+      }
+    },
+    {
+      "card": "04073",
+      "name": "Energy Shield",
+      "note": "Attach to the villain.\nAttached villain gains retaliate 1.\nHero Action: Spend energymental resources → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "attachedTo",
+              "keyword": "retaliate",
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered",
+            "form": "hero"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "cost": {
+            "spend": "YB"
+          }
+        }
+      ],
+      "attachTo": {
+        "query": "villain"
+      }
+    },
+    {
+      "card": "04074",
+      "name": "Power Gauntlets",
+      "note": "Attach to the Villain.\nstar Forced Response: After the attached villain attacks and damages you, discard 1 card from your hand.\nHero Action: Spend mentalphysical resources → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo",
+            "player": "you"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "cardsIn": {
+                  "area": "yourHand"
+                }
+              },
+              "effect": {
+                "discard": "chosen"
+              }
+            }
+          },
+          "when": {
+            "attackDamaged": "trigger.target"
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered",
+            "form": "hero"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "cost": {
+            "spend": "BR"
+          }
+        }
+      ],
+      "attachTo": {
+        "query": "villain"
+      }
+    },
+    {
+      "card": "04075",
+      "name": "Exo-Suit",
+      "note": "Attach to the villain.\nHero Action: Spend energymentalphysical resources → discard this card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered",
+            "form": "hero"
+          },
+          "effect": {
+            "discard": "this"
+          },
+          "cost": {
+            "spend": "YBR"
+          }
+        }
+      ],
+      "attachTo": {
+        "query": "villain"
+      }
     }
   ]
 }
