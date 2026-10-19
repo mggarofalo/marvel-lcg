@@ -149,9 +149,9 @@ public sealed class FileSessionStore : ISessionStore
         string storageId = session.Save.Session.StorageId;
         RequireStorageId(storageId);
         string directory = Path.Combine(root, storageId);
-        EnsurePrivateDirectory(root);
-        EnsurePrivateDirectory(directory);
-        FlushDirectory(root);
+        DurableFiles.EnsurePrivateDirectory(root);
+        DurableFiles.EnsurePrivateDirectory(directory);
+        DurableFiles.FlushDirectory(root);
 
         string manifest = Path.Combine(directory, Current);
         string? previous = File.Exists(manifest)
@@ -168,37 +168,25 @@ public sealed class FileSessionStore : ISessionStore
         _ = StoredSessionJson.Write(session);
         string finalSave = Path.Combine(directory, generation + ".session.json");
         string temporarySave = finalSave + ".tmp";
-        WriteFlushed(temporarySave, SessionSaveJson.Write(session.Save));
-        MoveDurably(temporarySave, finalSave, overwrite: false);
+        WriteTextFlushed(temporarySave, SessionSaveJson.Write(session.Save));
+        DurableFiles.MoveDurably(temporarySave, finalSave, overwrite: false);
 
         string finalAuthority = Path.Combine(directory, generation + ".authority.json");
         string temporaryAuthority = finalAuthority + ".tmp";
-        WriteFlushed(
+        WriteTextFlushed(
             temporaryAuthority,
             StoredAuthorityJson.Write(session.Authorities));
-        MoveDurably(temporaryAuthority, finalAuthority, overwrite: false);
+        DurableFiles.MoveDurably(temporaryAuthority, finalAuthority, overwrite: false);
 
         string temporaryManifest = Path.Combine(directory, ".current-" + generation + ".tmp");
-        WriteFlushed(temporaryManifest, generation + "\n");
-        MoveDurably(temporaryManifest, manifest, overwrite: true);
+        WriteTextFlushed(temporaryManifest, generation + "\n");
+        DurableFiles.MoveDurably(temporaryManifest, manifest, overwrite: true);
         RemoveObsoleteGenerationsBestEffort(directory, generation, previous);
         return generation;
     }
 
-    private static void WriteFlushed(string path, string value)
-    {
-        byte[] bytes = StrictUtf8.GetBytes(value);
-        using var stream = new FileStream(
-            path, FileMode.CreateNew, FileAccess.Write, FileShare.None,
-            bufferSize: 4096, FileOptions.WriteThrough);
-        if (!OperatingSystem.IsWindows())
-        {
-            File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
-        }
-
-        stream.Write(bytes);
-        stream.Flush(flushToDisk: true);
-    }
+    private static void WriteTextFlushed(string path, string value) =>
+        DurableFiles.WriteFlushed(path, StrictUtf8.GetBytes(value));
 
     private static string ReadStrict(string path)
     {
@@ -211,58 +199,6 @@ public sealed class FileSessionStore : ISessionStore
             throw new SessionSaveException(
                 $"stored session file {Path.GetFileName(path)} is not valid UTF-8",
                 failure);
-        }
-    }
-
-    private static void EnsurePrivateDirectory(
-        string path,
-        bool setModeWhenAlreadyPresent = true)
-    {
-        if (!Directory.Exists(path))
-        {
-            string? parent = Path.GetDirectoryName(path);
-            if (string.IsNullOrEmpty(parent))
-            {
-                throw new IOException("session directory has no durable parent");
-            }
-
-            // Existing ancestors may be shared system directories. They provide the
-            // durable rename boundary, but the server does not own their permissions.
-            EnsurePrivateDirectory(parent, setModeWhenAlreadyPresent: false);
-            string temporary = Path.Combine(
-                parent,
-                ".creating-" + Path.GetFileName(path) + "-"
-                + Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant());
-            Directory.CreateDirectory(temporary);
-            SetPrivateDirectoryMode(temporary);
-            try
-            {
-                MoveDurably(temporary, path, overwrite: false);
-            }
-            finally
-            {
-                if (Directory.Exists(temporary))
-                {
-                    Directory.Delete(temporary);
-                }
-            }
-        }
-
-        if (setModeWhenAlreadyPresent)
-        {
-            SetPrivateDirectoryMode(path);
-        }
-    }
-
-    private static void SetPrivateDirectoryMode(string path)
-    {
-        if (!OperatingSystem.IsWindows())
-        {
-            File.SetUnixFileMode(
-                path,
-                UnixFileMode.UserRead
-                | UnixFileMode.UserWrite
-                | UnixFileMode.UserExecute);
         }
     }
 
@@ -298,88 +234,6 @@ public sealed class FileSessionStore : ISessionStore
             // command into a reported failure. A later commit tries again.
         }
     }
-
-    private static void MoveDurably(string source, string destination, bool overwrite)
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            uint flags = 0x00000008;
-            if (overwrite)
-            {
-                flags |= 0x00000001;
-            }
-
-            if (!MoveFileEx(source, destination, flags))
-            {
-                throw new IOException(
-                    "could not durably publish a session generation",
-                    new Win32Exception(Marshal.GetLastWin32Error()));
-            }
-            return;
-        }
-
-        if (Directory.Exists(source))
-        {
-            if (overwrite)
-            {
-                throw new IOException("session directories cannot be replaced");
-            }
-
-            Directory.Move(source, destination);
-        }
-        else
-        {
-            File.Move(source, destination, overwrite);
-        }
-        FlushDirectory(Path.GetDirectoryName(destination)!);
-    }
-
-    private static void FlushDirectory(string path)
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            return;
-        }
-
-        int descriptor = OpenDirectory(path, 0);
-        if (descriptor < 0)
-        {
-            throw new IOException(
-                "could not open session directory for durability",
-                new Win32Exception(Marshal.GetLastWin32Error()));
-        }
-
-        try
-        {
-            if (FlushDescriptor(descriptor) != 0)
-            {
-                throw new IOException(
-                    "could not flush session directory metadata",
-                    new Win32Exception(Marshal.GetLastWin32Error()));
-            }
-        }
-        finally
-        {
-            _ = CloseDescriptor(descriptor);
-        }
-    }
-
-    [DllImport("kernel32.dll", EntryPoint = "MoveFileExW", SetLastError = true,
-        CharSet = CharSet.Unicode)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool MoveFileEx(
-        string existingFileName,
-        string newFileName,
-        uint flags);
-
-    [DllImport("libc", EntryPoint = "open", SetLastError = true)]
-    private static extern int OpenDirectory(string path, int flags);
-
-    [DllImport("libc", EntryPoint = "fsync", SetLastError = true)]
-    private static extern int FlushDescriptor(int descriptor);
-
-    [DllImport("libc", EntryPoint = "close", SetLastError = true)]
-    private static extern int CloseDescriptor(int descriptor);
 
     private static void RequireStorageId(string value)
     {

@@ -12,7 +12,10 @@ public static class EngineProtocol
     /// The sole accepted wire contract: visibility-scoped prompts and events, explicit
     /// entry recovery claims, typed failure outcomes, and complete engine decisions.
     /// </summary>
-    public const int Version = 33;
+    public const int Version = 34;
+
+    /// <summary>Creates or advances an owner-authenticated persistent campaign.</summary>
+    public const string Campaign = "campaign";
 
     /// <summary>Reads public deckbuilding facts or assesses a draft before game creation.</summary>
     public const string Decks = "decks";

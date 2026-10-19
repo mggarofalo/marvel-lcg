@@ -1,0 +1,59 @@
+using System.Text;
+using System.Text.Json;
+using Marvel.Session;
+namespace Marvel.Server;
+
+/// <summary>Private, bounded, checksummed campaign archives with an exclusive process writer lease.</summary>
+public sealed class FileCampaignStore : ICampaignStore, IDisposable
+{
+    private readonly CampaignArchiveFiles files;
+    /// <summary>Acquires exclusive write ownership for the campaign root.</summary>
+    public FileCampaignStore(string root) => files = new CampaignArchiveFiles(root);
+
+    /// <inheritdoc />
+    public IReadOnlyList<CampaignLoadResult> Load()
+    {
+        var result = new List<CampaignLoadResult>();
+        foreach (string id in files.Ids())
+        {
+            try
+            {
+                StoredCampaign campaign = CampaignSaveJson.ReadDocument<StoredCampaign>(files.Read(id));
+                Validate(campaign);
+                if (campaign.Save.Identity.StorageId != id) throw new SessionSaveException("campaign identity differs from directory");
+                result.Add(new(id, campaign, null));
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or SessionSaveException or JsonException)
+            { result.Add(new(id, null, "campaign_restore_failed")); }
+        }
+        return result;
+    }
+
+    /// <inheritdoc />
+    public string Commit(StoredCampaign campaign)
+    {
+        Validate(campaign);
+        return files.Commit(campaign.Save.Identity.StorageId, Encoding.UTF8.GetBytes(CampaignSaveJson.Canonical(campaign)));
+    }
+
+    internal static void Validate(StoredCampaign campaign)
+    {
+        _ = CampaignSaveJson.Write(campaign.Save);
+        if (campaign.OwnerVerifier is not { Length: 64 } || !campaign.OwnerVerifier.All(char.IsAsciiHexDigit)
+            || campaign.Entry is null || !EntryReceipts.Valid(campaign.Entry))
+            throw new SessionSaveException("campaign owner authority is invalid");
+        if (campaign.Authorities.IsDefault || campaign.Receipts.IsDefault || campaign.Receipts.Length > 100000)
+            throw new SessionSaveException("campaign operational records are invalid");
+        if (campaign.Authorities.Length != campaign.Save.Attempts.Length)
+            throw new SessionSaveException("campaign attempt authority is incomplete");
+        foreach (var attempt in campaign.Save.Attempts)
+        {
+            var authorities = campaign.Authorities.SingleOrDefault(item => item.StorageId == attempt.Session.StorageId)
+                ?? throw new SessionSaveException("campaign attempt authority is absent");
+            StoredSessionJson.ValidateLoaded(new(attempt, authorities.Authorities));
+        }
+    }
+
+    /// <summary>Releases the exclusive process writer lease.</summary>
+    public void Dispose() => files.Dispose();
+}

@@ -11,17 +11,17 @@ internal static class LocalClientConnectionFactory
     private static readonly object gate = new();
     private static readonly HashSet<QueuedInProcessTransport> hosts = [];
     private static bool stopping;
+    private static readonly DesktopPersistentHosts persistent = new();
 
     internal static LocalClientConnection Connect(string dataRoot)
     {
         OperationalLog log = ClientComposition.ProcessLog;
         try
         {
-            var host = new EngineHost(DatasetGameFactory.Load(dataRoot), log: log);
             lock (gate)
             {
                 if (stopping) throw new InvalidOperationException("The desktop host lifetime is closing.");
-                var transport = new QueuedInProcessTransport(host);
+                var transport = new QueuedInProcessTransport(persistent.Get(dataRoot, log));
                 hosts.Add(transport);
                 _ = ReleaseAfterShutdownAsync(transport);
                 return new LocalClientConnection(new LocalGameClient(transport, log), Error: null);
@@ -36,13 +36,16 @@ internal static class LocalClientConnectionFactory
         }
     }
 
-    internal static Task ShutdownAsync()
+    internal static async Task ShutdownAsync()
     {
+        Task completion;
         lock (gate)
         {
             stopping = true;
-            return Task.WhenAll(hosts.Select(host => host.DisposeAsync().AsTask()));
+            completion = Task.WhenAll(hosts.Select(host => host.DisposeAsync().AsTask()));
         }
+        await completion.ConfigureAwait(false);
+        lock (gate) persistent.Dispose();
     }
 
     private static async Task ReleaseAfterShutdownAsync(QueuedInProcessTransport transport)

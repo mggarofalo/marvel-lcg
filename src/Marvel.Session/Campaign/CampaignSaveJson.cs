@@ -42,6 +42,19 @@ public static class CampaignSaveJson
         }
     }
 
+    /// <summary>Reads a strictly bounded enclosing campaign document using the canonical contract.</summary>
+    public static T ReadDocument<T>(ReadOnlySpan<byte> bytes)
+    {
+        if (bytes.Length > MaximumBytes) throw new SessionSaveException("campaign document exceeds size limit");
+        try
+        {
+            StrictJsonMembers.Validate(bytes);
+            return JsonSerializer.Deserialize<T>(bytes, Options)
+                ?? throw new SessionSaveException("campaign document is empty");
+        }
+        catch (JsonException failure) { throw new SessionSaveException("campaign document is malformed", failure); }
+    }
+
     private static void Validate(CampaignSave save)
     {
         if (save.Format != CampaignSave.FormatName || save.Schema != CampaignSave.CurrentSchema)

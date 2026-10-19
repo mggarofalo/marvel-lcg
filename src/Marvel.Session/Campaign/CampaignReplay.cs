@@ -48,17 +48,20 @@ public static class CampaignReplay
                 entry.Deck ?? throw new SessionSaveException("deck transition has no recipe")),
             "reward" => CampaignRewardRules.Choose(state, definition, entry.Seat, entry.Choice),
             "retry" => CampaignRules.Retry(state),
-            "start" => Start(state, entry, verify, proofs),
+            "start" => Start(state, definition, entry, verify, proofs),
             "progress" => Progress(state, definition, entry, verify, proofs),
             _ => throw new SessionSaveException("campaign journal contains an unknown transition"),
         };
     }
 
-    private static CampaignState Start(CampaignState state, CampaignJournalEntry entry,
+    private static CampaignState Start(CampaignState state, CampaignDefinition definition, CampaignJournalEntry entry,
         Func<SessionSave, CampaignGameProgress> verify, Dictionary<int, SessionSave> proofs)
     {
         SessionSave proof = entry.Proof ?? throw new SessionSaveException("attempt start lacks proof");
         CampaignProof.RequireSetup(state, proof);
+        var scenario = definition.Scenarios[(int)state.Stage];
+        if (proof.Setup.Scenario != (state.ExpertScenario ? scenario.Expert : scenario.Standard))
+            throw new ReplayDivergenceException("attempt scenario differs from campaign authority");
         _ = verify(proof);
         if (!proofs.TryAdd(state.Attempt, proof))
             throw new ReplayDivergenceException("campaign attempt started twice");

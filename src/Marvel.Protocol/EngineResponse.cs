@@ -38,6 +38,9 @@ public sealed record EngineResponse(
     long Revision = 0,
     HistoryDescriptor? History = null)
 {
+    /// <summary>Authorized campaign state, absent from unrelated exchanges.</summary>
+    public CampaignDescriptor? Campaign { get; init; }
+
     /// <summary>Read-only deck data, absent from game responses.</summary>
     public DeckResponse? Decks { get; init; }
 }

@@ -29,6 +29,10 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
     private long requestSequence;
     private readonly LocalGameEntryClient entry;
 
+    /// <summary>Sends or retries one exact campaign intention with response validation.</summary>
+    public ValueTask<ClientCampaignResult> ExchangeCampaignAsync(EngineRequest request,
+        CancellationToken cancellationToken = default) => CampaignClient.ExchangeAsync(this, request, cancellationToken);
+
     /// <summary>Reads the public deck catalog or assesses a draft without creating a session.</summary>
     public ValueTask<ClientDeckResult> ReadDecksAsync(DeckQuery? draft = null,
         CancellationToken cancellationToken = default) => DeckClient.QueryAsync(this, draft, cancellationToken);
