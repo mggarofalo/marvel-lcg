@@ -246,13 +246,472 @@
         "01135",
         "01136"
       ]
+    },
+    "crossbones": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "legions_of_hydra"
+      ],
+      "encounters": [
+        "04064",
+        "04065",
+        "04066",
+        "04066",
+        "04067",
+        "04067",
+        "04068",
+        "04068",
+        "04069",
+        "04069",
+        "04070",
+        "04070",
+        "04071"
+      ],
+      "expert": false,
+      "modular_sets": [
+        "hydra_assault",
+        "weapon_master"
+      ],
+      "name": "Crossbones",
+      "schemes": [
+        "04061a,04061b",
+        "04062a,04062b",
+        "04063a,04063b"
+      ],
+      "set_aside": [
+        "04072",
+        "04073",
+        "04074",
+        "04075"
+      ],
+      "villain": [
+        "04058",
+        "04059"
+      ]
+    },
+    "crossbones_expert": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "expert",
+        "legions_of_hydra"
+      ],
+      "encounters": [
+        "04064",
+        "04065",
+        "04066",
+        "04066",
+        "04067",
+        "04067",
+        "04068",
+        "04068",
+        "04069",
+        "04069",
+        "04070",
+        "04070",
+        "04071"
+      ],
+      "expert": true,
+      "modular_sets": [
+        "hydra_assault",
+        "weapon_master"
+      ],
+      "name": "Crossbones",
+      "schemes": [
+        "04061a,04061b",
+        "04062a,04062b",
+        "04063a,04063b"
+      ],
+      "set_aside": [
+        "04072",
+        "04073",
+        "04074",
+        "04075"
+      ],
+      "villain": [
+        "04059",
+        "04060"
+      ]
+    },
+    "absorbing_man": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard"
+      ],
+      "encounters": [
+        "04080",
+        "04081",
+        "04082",
+        "04083",
+        "04084",
+        "04085",
+        "04085",
+        "04086",
+        "04086",
+        "04087",
+        "04087",
+        "04088",
+        "04088",
+        "04089",
+        "04089",
+        "04089",
+        "04090",
+        "04090",
+        "04091",
+        "04091",
+        "04092"
+      ],
+      "expert": false,
+      "modular_sets": [
+        "hydra_patrol"
+      ],
+      "name": "Absorbing Man",
+      "schemes": [
+        "04079a,04079b"
+      ],
+      "set_aside": [],
+      "villain": [
+        "04076",
+        "04077"
+      ]
+    },
+    "absorbing_man_expert": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "expert"
+      ],
+      "encounters": [
+        "04080",
+        "04081",
+        "04082",
+        "04083",
+        "04084",
+        "04085",
+        "04085",
+        "04086",
+        "04086",
+        "04087",
+        "04087",
+        "04088",
+        "04088",
+        "04089",
+        "04089",
+        "04089",
+        "04090",
+        "04090",
+        "04091",
+        "04091",
+        "04092"
+      ],
+      "expert": true,
+      "modular_sets": [
+        "hydra_patrol"
+      ],
+      "name": "Absorbing Man",
+      "schemes": [
+        "04079a,04079b"
+      ],
+      "set_aside": [],
+      "villain": [
+        "04077",
+        "04078"
+      ]
+    },
+    "taskmaster": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "hydra_patrol"
+      ],
+      "encounters": [
+        "04101",
+        "04101",
+        "04102",
+        "04103",
+        "04104",
+        "04104",
+        "04105",
+        "04105",
+        "04106",
+        "04106",
+        "04107",
+        "04107",
+        "04107",
+        "04107",
+        "04108"
+      ],
+      "expert": false,
+      "modular_sets": [
+        "weapon_master"
+      ],
+      "name": "Taskmaster",
+      "schemes": [
+        "04096a,04096b"
+      ],
+      "set_aside": [
+        "04097",
+        "04098",
+        "04099",
+        "04100"
+      ],
+      "villain": [
+        "04093",
+        "04094"
+      ]
+    },
+    "taskmaster_expert": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "expert",
+        "hydra_patrol"
+      ],
+      "encounters": [
+        "04101",
+        "04101",
+        "04102",
+        "04103",
+        "04104",
+        "04104",
+        "04105",
+        "04105",
+        "04106",
+        "04106",
+        "04107",
+        "04107",
+        "04107",
+        "04107",
+        "04108"
+      ],
+      "expert": true,
+      "modular_sets": [
+        "weapon_master"
+      ],
+      "name": "Taskmaster",
+      "schemes": [
+        "04096a,04096b"
+      ],
+      "set_aside": [
+        "04097",
+        "04098",
+        "04099",
+        "04100"
+      ],
+      "villain": [
+        "04094",
+        "04095"
+      ]
+    },
+    "zola": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard"
+      ],
+      "encounters": [
+        "04114",
+        "04114",
+        "04114",
+        "04114",
+        "04115",
+        "04115",
+        "04115",
+        "04116",
+        "04116",
+        "04116",
+        "04117",
+        "04117",
+        "04117",
+        "04118",
+        "04118",
+        "04119",
+        "04119",
+        "04120",
+        "04120",
+        "04120",
+        "04121",
+        "04121",
+        "04122",
+        "04123",
+        "04123",
+        "04124"
+      ],
+      "expert": false,
+      "modular_sets": [
+        "under_attack"
+      ],
+      "name": "Zola",
+      "schemes": [
+        "04112a,04112b",
+        "04113a,04113b"
+      ],
+      "set_aside": [],
+      "villain": [
+        "04109",
+        "04110"
+      ]
+    },
+    "zola_expert": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "expert"
+      ],
+      "encounters": [
+        "04114",
+        "04114",
+        "04114",
+        "04114",
+        "04115",
+        "04115",
+        "04115",
+        "04116",
+        "04116",
+        "04116",
+        "04117",
+        "04117",
+        "04117",
+        "04118",
+        "04118",
+        "04119",
+        "04119",
+        "04120",
+        "04120",
+        "04120",
+        "04121",
+        "04121",
+        "04122",
+        "04123",
+        "04123",
+        "04124"
+      ],
+      "expert": true,
+      "modular_sets": [
+        "under_attack"
+      ],
+      "name": "Zola",
+      "schemes": [
+        "04112a,04112b",
+        "04113a,04113b"
+      ],
+      "set_aside": [],
+      "villain": [
+        "04110",
+        "04111"
+      ]
+    },
+    "red_skull": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard"
+      ],
+      "encounters": [
+        "04131",
+        "04131",
+        "04131",
+        "04132",
+        "04133",
+        "04133",
+        "04134",
+        "04134",
+        "04135",
+        "04135",
+        "04136",
+        "04136",
+        "04137",
+        "04137",
+        "04138",
+        "04138",
+        "04139",
+        "04140",
+        "04141",
+        "04142",
+        "04143",
+        "04144"
+      ],
+      "expert": false,
+      "modular_sets": [
+        "hydra_assault",
+        "hydra_patrol"
+      ],
+      "name": "Red Skull",
+      "schemes": [
+        "04128a,04128b",
+        "04129a,04129b"
+      ],
+      "set_aside": [
+        "04130"
+      ],
+      "villain": [
+        "04125",
+        "04126"
+      ]
+    },
+    "red_skull_expert": {
+      "campaign_log": {},
+      "challenges": [],
+      "encounter_sets": [
+        "standard",
+        "expert"
+      ],
+      "encounters": [
+        "04131",
+        "04131",
+        "04131",
+        "04132",
+        "04133",
+        "04133",
+        "04134",
+        "04134",
+        "04135",
+        "04135",
+        "04136",
+        "04136",
+        "04137",
+        "04137",
+        "04138",
+        "04138",
+        "04139",
+        "04140",
+        "04141",
+        "04142",
+        "04143",
+        "04144"
+      ],
+      "expert": true,
+      "modular_sets": [
+        "hydra_assault",
+        "hydra_patrol"
+      ],
+      "name": "Red Skull",
+      "schemes": [
+        "04128a,04128b",
+        "04129a,04129b"
+      ],
+      "set_aside": [
+        "04130"
+      ],
+      "villain": [
+        "04126",
+        "04127"
+      ]
     }
   },
   "contract": "docs/setup-dataset.md",
   "counts": {
-    "campaigns": 6,
-    "encounter_sets": 7,
-    "heroes": 5
+    "campaigns": 16,
+    "encounter_sets": 10,
+    "heroes": 7
   },
   "encounter_sets": {
     "standard": {
@@ -336,6 +795,41 @@
         "01185"
       ],
       "name": "The Doomsday Chair"
+    },
+    "hydra_assault": {
+      "role": "modular",
+      "encounters": [
+        "04145",
+        "04145",
+        "04145",
+        "04146",
+        "04146",
+        "04147"
+      ],
+      "name": "Hydra Assault"
+    },
+    "weapon_master": {
+      "role": "modular",
+      "encounters": [
+        "04148",
+        "04149",
+        "04150",
+        "04150",
+        "04151"
+      ],
+      "name": "Weapon Master"
+    },
+    "hydra_patrol": {
+      "role": "modular",
+      "encounters": [
+        "04152",
+        "04152",
+        "04153",
+        "04153",
+        "04153",
+        "04154"
+      ],
+      "name": "Hydra Patrol"
     }
   },
   "heroes": {
@@ -643,8 +1137,131 @@
         "01092",
         "01093"
       ]
+    },
+    "hawkeye": {
+      "hero": [
+        "04001a,04001b"
+      ],
+      "hero_deck": [
+        "04002",
+        "04003",
+        "04004",
+        "04005",
+        "04005",
+        "04006",
+        "04006",
+        "04007",
+        "04007",
+        "04008",
+        "04008",
+        "04009",
+        "04009",
+        "04010",
+        "04010"
+      ],
+      "name": "Hawkeye",
+      "nemesis_set_icon": "hawkeye_nemesis",
+      "nemesis_set": [
+        "04027",
+        "04028",
+        "04029",
+        "04030",
+        "04030"
+      ],
+      "obligations": [
+        "04026"
+      ],
+      "player_deck": [
+        "04011",
+        "04012",
+        "04013",
+        "04014",
+        "04015",
+        "04015",
+        "04015",
+        "04016",
+        "04016",
+        "04016",
+        "04017",
+        "04017",
+        "04017",
+        "04018",
+        "04018",
+        "04019",
+        "04019",
+        "04020",
+        "04021",
+        "04022",
+        "04022",
+        "04022",
+        "04023",
+        "04024",
+        "04025"
+      ]
+    },
+    "spider_woman": {
+      "hero": [
+        "04031a,04031b"
+      ],
+      "hero_deck": [
+        "04032",
+        "04033",
+        "04033",
+        "04034",
+        "04035",
+        "04035",
+        "04036",
+        "04036",
+        "04037",
+        "04037",
+        "04038",
+        "04038",
+        "04039",
+        "04039",
+        "04039"
+      ],
+      "name": "Spider-Woman",
+      "nemesis_set_icon": "spider_woman_nemesis",
+      "nemesis_set": [
+        "04054",
+        "04055",
+        "04056",
+        "04056",
+        "04057"
+      ],
+      "obligations": [
+        "04053"
+      ],
+      "player_deck": [
+        "04040",
+        "04041",
+        "04041",
+        "04042",
+        "04042",
+        "04043",
+        "04043",
+        "04043",
+        "04044",
+        "04044",
+        "04044",
+        "04045",
+        "04046",
+        "04046",
+        "04047",
+        "04047",
+        "04047",
+        "04048",
+        "04048",
+        "04049",
+        "04049",
+        "04049",
+        "04050",
+        "04051",
+        "04052"
+      ],
+      "aspect_rule": "equal_two_aspects"
     }
   },
-  "note": "Authored Core Set runtime boundary, not generated: what a scenario is dealt from is printed in its rules insert rather than on any card, so there is nothing to derive it from and no upstream to copy it from. Gated by SetupDatasetTests -- see datasets/setup/UPSTREAM.md.",
+  "note": "Authored Core Set and Rise of Red Skull setup, admitted by complete-product runtime gates: what a scenario is dealt from is printed in its rules insert rather than on any card, so there is nothing to derive it from and no upstream to copy it from. Gated by SetupDatasetTests -- see datasets/setup/UPSTREAM.md.",
   "setup_version": 1
 }

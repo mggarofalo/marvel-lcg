@@ -257,30 +257,6 @@ public sealed class SetupDatasetTests
         Assert.Empty(collisions);
     }
 
-    [Fact]
-    public void TheRuntimeBoundaryIsExactlyTheCoreSet()
-    {
-        // The complete card catalog remains available as printed facts, but
-        // setup is the product-selection API. Its keys therefore define the
-        // product the engine claims can be played.
-        Assert.Equal(
-            ["rhino", "rhino_expert", "klaw", "klaw_expert", "ultron", "ultron_expert"],
-            Setup.CampaignNames);
-        Assert.Equal(
-            ["spider_man", "captain_marvel", "she_hulk", "iron_man", "black_panther"],
-            Setup.HeroNames);
-        Assert.Equal(
-            [
-                "standard", "expert", "bomb_scare", "masters_of_evil", "under_attack",
-                "legions_of_hydra", "the_doomsday_chair",
-            ],
-            Setup.EncounterSetNames);
-
-        Assert.Throws<KeyNotFoundException>(() => Setup.Campaign("unus"));
-        Assert.Throws<KeyNotFoundException>(() => Setup.Hero("sp_dr"));
-        Assert.Throws<KeyNotFoundException>(() => Setup.EncounterSet("sinister_syndicate"));
-    }
-
     /// <summary>Every card id the dataset names, with where it names it.</summary>
     private static IEnumerable<(string Section, string Name, string Key, string Card)>
         Referenced()
