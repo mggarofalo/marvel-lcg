@@ -158,6 +158,8 @@ internal static class AbilityPlayerBindingAnalysis
 
     private static bool ContainsOther(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.You,
+        AbilityEffect.AttachCards attach => Contains(attach.Cards) || Contains(attach.Host),
         AbilityEffect.StoreBeneath store => Contains(store.Cards) || Contains(store.Host),
         AbilityEffect.InitializeAuxiliaryDeck initialize => Contains(initialize.Cards),
         AbilityEffect.RevealAuxiliaryTop => false,
@@ -165,7 +167,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
             or AbilityEffect.AllowPlayBeneath or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
-            or AbilityEffect.DelayedStun or AbilityEffect.DiscardUntil
+            or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource
             or AbilityEffect.RecoverDiscardedByResource => false,

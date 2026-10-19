@@ -55,7 +55,7 @@ internal static class AbilityProcedureLowering
 
     internal static AbilityEffect.DiscardUntil DiscardUntilEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "from", "kind", "trait", "then");
+        var fields = Fields(value, location, "from", "kind", "trait", "then", "player");
         FixedWord(Required(fields, "from", location), location.Child("from"), "encounterDeck");
         var result = Text(Required(fields, "then", location), location.Child("then")) switch
         {
@@ -66,7 +66,8 @@ internal static class AbilityProcedureLowering
             var name => throw location.Child("then").Error($"'{name}' is not a supported discard-until result"),
         };
         return new(ConditionCardKind(Required(fields, "kind", location), location.Child("kind")),
-            OptionalText(fields, "trait", location), result);
+            OptionalText(fields, "trait", location), result)
+        { Player = fields.TryGetValue("player", out var player) ? AbilityLowering.Player(player, location.Child("player")) : AbilityPlayer.You };
     }
 
     internal static AbilityEffect.ShuffleInto ShuffleIntoEffect(AbilityValue value, AbilityLocation location)

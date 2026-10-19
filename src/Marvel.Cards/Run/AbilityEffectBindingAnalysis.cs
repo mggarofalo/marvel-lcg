@@ -195,12 +195,14 @@ internal static class AbilityEffectBindingAnalysis
 
     private static bool NoBindingChange(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.ChosenPlayer,
+        AbilityEffect.AttachCards attach => BindingCanChange(attach.Cards) || BindingCanChange(attach.Host),
         AbilityEffect.StoreBeneath store => BindingCanChange(store.Cards) || BindingCanChange(store.Host),
         AbilityEffect.InitializeAuxiliaryDeck initialize => BindingCanChange(initialize.Cards),
         AbilityEffect.RevealAuxiliaryTop => false,
         AbilityEffect.Shuffle or AbilityEffect.Search => false,
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.DoubleResourceFor
-            or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun or AbilityEffect.DiscardUntil
+            or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource or AbilityEffect.RecoverDiscardedByResource => false,
         _ => throw new InvalidOperationException("Unknown compiled effect in player-binding analysis"),

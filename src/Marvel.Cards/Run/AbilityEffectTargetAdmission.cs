@@ -138,6 +138,7 @@ internal static class AbilityEffectTargetAdmission
         {
             "enemyAttacks" or "enemySchemes" =>
                 CardsLegality(Every(ActivationOf(node, cast).Enemies, cast)),
+            "attachCards" => AbilityAttachmentExecution.Target((AbilityEffect.AttachCards)node, cast),
             "storeBeneath" => AbilityBeneathAdmission.Target((AbilityEffect.StoreBeneath)node, cast),
             "putIntoPlay" => Find(EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,

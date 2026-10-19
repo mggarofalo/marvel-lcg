@@ -43,6 +43,7 @@ internal static class AbilityEffectLowering
             "returnOwnedToHand" => CardInstruction(argument, child, AbilityCardInstruction.ReturnOwnedToHand),
             "addToHand" => CardInstruction(argument, child, AbilityCardInstruction.AddToHand),
             "reveal" => CardInstruction(argument, child, AbilityCardInstruction.Reveal),
+            "attachCards" => AbilityAttachmentLowering.Attach(argument, child),
             "attachTo" => CardInstruction(argument, child, AbilityCardInstruction.AttachTo),
             "preventThreatRemoval" => CardInstruction(argument, child, AbilityCardInstruction.PreventThreatRemoval),
             "preventReady" => CardInstruction(argument, child, AbilityCardInstruction.PreventReady),

@@ -70,9 +70,59 @@ public sealed class EncounterDiscardInstructionTests
         Assert.Single(world.AreaOf(DeckType.EncounterDeck).Cards);
     }
 
-    private static AbilityEffect.DiscardUntil Lower(string kind, string instruction, string? trait = null)
+    [Fact]
+    public void ExplicitFirstPlayerRevealDoesNotEngageTheDefeatingPlayersSeat()
+    {
+        var world = new World(Cards, players: 2);
+        world.CreateSeat("first");
+        world.CreateSeat("defeater");
+        var source = world.CreateCard("04123", world.AreaOf(DeckType.SideSchemesArea));
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        world.CreateCard("01104", deck);
+        var minion = world.CreateCard("04115", deck);
+        var context = Context(world, source);
+        context = context with { Expressions = context.Expressions with
+            { Bindings = context.Expressions.Bindings with { Player = 1 } } };
+        var effect = Lower("minion", "reveal", player: "firstPlayer");
+
+        var result = AbilityDiscardUntilExecution.Run(effect, context);
+
+        Assert.Equal(minion.ObjectId, result.Reveal!.Card);
+        Assert.Equal(0, result.Reveal.Player);
+    }
+
+    [Rule("rr:attach-to.3.1")]
+    [Fact]
+    public void ExplicitAttachmentSelectsTopmostMatchingDiscardAndOverridesPrintedHost()
+    {
+        // An ability's specified host replaces the card's own attach-to phrase.
+        var world = new World(Cards, players: 1);
+        var source = world.CreateCard("04124", world.AreaOf(DeckType.SideSchemesArea));
+        var minion = world.CreateCard("04116", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
+        var lower = world.CreateCard("04117", discard);
+        var top = world.CreateCard("04118", discard);
+        var unrelated = world.CreateCard("01098", discard);
+        var context = Context(world, source);
+        context = context with { Expressions = context.Expressions with
+            { Bindings = context.Expressions.Bindings with { Occurrence = new Occurrence(1, [], Subject: minion.ObjectId) } } };
+        var effect = new AbilityEffect.AttachCards(new AbilityCardSelection.Last(
+            new AbilityCardSelection.InAreas([AbilitySearchArea.EncounterDiscardPile], CardKind.Attachment, "TECH", null)),
+            new AbilityCardSelection.Bound(AbilityCardBinding.TriggerSubject));
+
+        var result = AbilityAttachmentExecution.Run(effect, context);
+
+        Assert.Equal(minion.ObjectId, top.Area.Host);
+        Assert.Same(discard, lower.Area);
+        Assert.Same(discard, unrelated.Area);
+        Assert.Null(result.Reveal);
+        Assert.Equal([top.ObjectId], context.Events.OfType<CardAttached>().Select(item => item.Card));
+    }
+
+    private static AbilityEffect.DiscardUntil Lower(string kind, string instruction, string? trait = null, string? player = null)
     {
         string qualifier = trait is null ? string.Empty : $",\"trait\":\"{trait}\"";
+        if (player is not null) qualifier += $",\"player\":\"{player}\"";
         var effect = AbilityCatalog.Parse($$$"""
             {"cards":[{"card":"04115","abilities":[{
               "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},

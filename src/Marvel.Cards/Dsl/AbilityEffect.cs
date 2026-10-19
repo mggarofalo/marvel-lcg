@@ -9,6 +9,9 @@ public abstract record AbilityEffect
 {
     private AbilityEffect() { }
 
+    /// <summary>Attach selected encounter attachments to a specified host.</summary>
+    public sealed record AttachCards(AbilityCardSelection Cards, AbilityCardSelection Host) : AbilityEffect;
+
     /// <summary>Store selected cards out of play beneath a host, optionally choosing a random subset.</summary>
     public sealed record StoreBeneath(AbilityCardSelection Cards, AbilityCardSelection Host, bool FaceUp, int? RandomCount) : AbilityEffect;
 
@@ -111,7 +114,11 @@ public abstract record AbilityEffect
     /// <summary>Discard cards from a supported deck or the named players' decks.</summary>
     public sealed record DiscardTop(AbilitySearchArea From, AbilityPlayerSelection? Players, AbilityNumber Count) : AbilityEffect;
     /// <summary>Discard from the encounter deck until a matching card is found.</summary>
-    public sealed record DiscardUntil(CardKind Kind, string? Trait, AbilityDiscardUntilResult Result) : AbilityEffect;
+    public sealed record DiscardUntil(CardKind Kind, string? Trait, AbilityDiscardUntilResult Result) : AbilityEffect
+    {
+        /// <summary>The player explicitly instructed to reveal the match, or the resolving player.</summary>
+        public AbilityPlayer Player { get; init; } = AbilityPlayer.You;
+    }
     /// <summary>Move selected cards into a deck and shuffle it.</summary>
     public sealed record ShuffleInto(AbilityCardSelection Cards, AbilitySearchArea Deck) : AbilityEffect;
     /// <summary>Search ordered areas for a printed face and reveal it.</summary>

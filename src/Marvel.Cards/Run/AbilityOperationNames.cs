@@ -51,6 +51,7 @@ internal static class AbilityOperationNames
         AbilityEffect.Generate => "generate",
         AbilityEffect.DoubleResourceFor => "doubleResourceFor",
         AbilityEffect.AllowPlayBeneath => "allowPlayBeneath",
+        AbilityEffect.AttachCards => "attachCards",
         AbilityEffect.StoreBeneath => "storeBeneath",
         AbilityEffect.InitializeAuxiliaryDeck => "initializeAuxiliaryDeck",
         AbilityEffect.RevealAuxiliaryTop => "revealAuxiliaryTop",
