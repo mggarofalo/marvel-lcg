@@ -164,5 +164,7 @@ public abstract record AbilityEffect
     {
         /// <summary>Modify ATK or SCH only for the activations scheduled by this instruction.</summary>
         public AbilityNumber? Modifier { get; init; }
+        /// <summary>Whether this attack may receive new boost cards.</summary>
+        public bool DealBoostCards { get; init; } = true;
     }
 }

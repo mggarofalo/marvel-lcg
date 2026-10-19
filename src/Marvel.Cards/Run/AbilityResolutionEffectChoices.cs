@@ -180,7 +180,8 @@ internal static class AbilityResolutionEffectChoices
         foreach (var target in command.Targets)
         {
             var activation = new PhaseStep(
-                command.Effect.Attack ? new EnemyAttackOperation(command.Against) : new EnemySchemeOperation(),
+                command.Effect.Attack ? new EnemyAttackOperation(command.Against)
+                    { DealBoostCards = command.Effect.DealBoostCards } : new EnemySchemeOperation(),
                 round, 2, Index: target.Seat, Subject: target.Enemy.ObjectId, Seat: target.Seat);
             if (command.Dynamic) cast.Results[$"dynamicActivation:{activation.Subject}"] = 1;
             int activationId = command.First

@@ -237,6 +237,10 @@ retaining the triggering environment.
 `enemyAttacks` and `enemySchemes` accept an optional numeric `modifier`, evaluated
 when each activation is scheduled. It modifies that activation's ATK or SCH and
 expires with its activation identity, including cancellation and nested activations.
+`enemyAttacks` also accepts `dealBoostCards: "false"` for a printed no-boost
+attack. This suppresses normal and additional deals for that activation only;
+boost cards assigned before the activation still resolve. The field defaults to
+`"true"` and is rejected on `enemySchemes`.
 `undefendedAttack` reads the matching completed attack in an attack-end window.
 Form-qualified `WhenRevealed` abilities retain their authored ordinals while only
 the revealing player's current form is offered and resolved.

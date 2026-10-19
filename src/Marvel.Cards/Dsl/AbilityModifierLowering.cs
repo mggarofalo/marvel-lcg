@@ -43,7 +43,7 @@ internal static class AbilityModifierLowering
         AbilityCardSelection cards, AbilityValue trait, AbilityLocation location, bool each, string? until)
     {
         if (fields.ContainsKey("amount") || fields.ContainsKey("attackScope"))
-            throw location.Error("a trait grant has neither a numeric amount nor an attack scope");
+            throw location.Error("a trait grant has no numeric amount or attack scope");
         return new(cards, Text(trait, location.Child("trait")), each, until);
     }
 

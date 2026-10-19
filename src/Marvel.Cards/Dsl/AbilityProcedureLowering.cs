@@ -168,7 +168,9 @@ internal static class AbilityProcedureLowering
 
     internal static AbilityEffect.ActivateEnemies ActivationEffect(AbilityValue value, AbilityLocation location, bool attack)
     {
-        var fields = Fields(value, location, "enemies", "against", "first", "dynamic", "modifier");
+        var fields = Fields(value, location, "enemies", "against", "first", "dynamic", "modifier", "dealBoostCards");
+        if (!attack && fields.ContainsKey("dealBoostCards"))
+            throw location.Error("dealBoostCards is supported only for attacks");
         AbilityCardSelection? against = null;
         bool engagedHero = false;
         if (fields.TryGetValue("against", out var target))
@@ -182,6 +184,7 @@ internal static class AbilityProcedureLowering
         return new(attack, Selected(fields, "enemies", location), against, engagedHero,
             Boolean(fields, "first", location), Boolean(fields, "dynamic", location))
         {
+            DealBoostCards = !fields.ContainsKey("dealBoostCards") || Boolean(fields, "dealBoostCards", location),
             Modifier = fields.TryGetValue("modifier", out var modifier)
                 ? Number(modifier, location.Child("modifier")) : null,
         };

@@ -74,7 +74,8 @@ public static class Attack
             : world.Seats[step.Seat].IdentityCard;
         world.Attack = new EnemyAttack(step.Subject, step.Seat, target.ObjectId);
         world.Activation = new EnemyActivation(
-            step.Subject, step.Seat, Attacking: true, Id: step.ActivationId);
+            step.Subject, step.Seat, Attacking: true, Id: step.ActivationId)
+        { DealBoostCards = step.Require<EnemyAttackOperation>().DealBoostCards };
         world.FinishedAttack = null;
     }
 
