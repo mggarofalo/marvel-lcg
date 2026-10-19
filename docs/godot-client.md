@@ -742,6 +742,21 @@ carry no face id, and the renderer never asks the art pack about them. This
 repository intentionally bundles no card images; an image may be committed only
 with its redistribution rights documented alongside it.
 
+### Campaign restart journey
+
+Run `pwsh tools/campaign-restart-smoke.ps1 -GodotBin <Godot-console-executable>`
+to create a Standard Rise of Red Skull campaign with Spider-Man, begin Crossbones,
+keep the opening hand, restart the authoritative server process, and resume that
+attempt in a fresh native client. Add `-NoBuild` only for already built current
+sources. The runner uses new isolated save and access directories on every run.
+
+The final output prints the evidence directory. It contains `evidence.json`
+with the source revision, independent campaign/scenario difficulties and viewport,
+`create.png` and `resume.png`, client logs, and server logs proving durable session
+restoration. `-ResultsDirectory <directory>` chooses the evidence parent directory.
+This checks the actual entry and recovery flow; it is not uncoached product-owner
+acceptance or evidence of five seeded scenario victories.
+
 ### Source-local actions
 
 Right-click a visible card, or focus it and use Menu/Shift+F10, to inspect it or
