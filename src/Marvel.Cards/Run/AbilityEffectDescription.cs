@@ -11,6 +11,8 @@ internal static class AbilityEffectDescription
         ?? AbilityRevealDescription.Summary(effect)
         ?? AbilityReadinessDescription.Summary(effect) ?? (effect switch
     {
+        AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.UseAttackForThwart } =>
+            "Use ATK instead of THW for this thwart, including ally consequential damage",
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),
         AbilityEffect.Draw draw => DrawSummary(draw),
         AbilityEffect.GiveStatus status => StatusAction(status.Status),

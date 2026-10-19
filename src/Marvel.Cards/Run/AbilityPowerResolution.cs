@@ -35,6 +35,7 @@ internal static class AbilityPowerResolution
             continuation, thwart.Origin ?? occurrence, events) with
         {
             PowerAmount = thwart.Amount,
+            ThwartActorUsingAttack = thwart.UsesAttack ? thwart.Thwarter : null,
             ImminentThreat = thwart.ImminentThreat,
             EventTrigger = thwart.Trigger,
             AbilityActor = world.Cards[thwart.Thwarter],
@@ -90,6 +91,7 @@ internal static class AbilityPowerResolution
             ? execution.EventModifierEffects(cast, "attackDamage")
             : [];
         execution.Run(restored.Body, cast);
+        cast.ThwartActorUsingAttack = null;
 
         // A modifier to "an attack" lasts through every damage node belonging
         // to that attack, then is consumed once at the wrapper boundary.

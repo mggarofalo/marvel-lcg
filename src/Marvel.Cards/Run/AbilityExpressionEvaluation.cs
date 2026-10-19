@@ -31,7 +31,7 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityNumber.Counters counters => selectors.Find(counters.Card) is { } holder
             ? CounterCount(context.Bindings.Quantities(holder), counters.Counter) : 0,
         AbilityNumber.Modified modified => selectors.Find(modified.Card) is { } holder
-            ? StateFields.Modified(context.World, holder, modified.Field, context.World.Facts, context.World.Players) : 0,
+            ? Modified(holder, modified.Field) : 0,
         AbilityNumber.Count count => selectors.Every(count.Cards).Count,
         AbilityNumber.SumPrintedCost sum => AbilityAmounts.SaturatingSum(0,
             selectors.Every(sum.Cards).Select(card => context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players))),
@@ -42,6 +42,11 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityNumber.ResolutionValue value => ResolutionAmount(value.Kind),
         _ => throw new InvalidOperationException("Unknown compiled numeric expression"),
     };
+
+    private long Modified(Card holder, string field) =>
+        StateFields.Modified(context.World, holder,
+            field == "thwart" && context.ThwartActorUsingAttack == holder.ObjectId ? "attack" : field,
+            context.World.Facts, context.World.Players);
 
     private long ResolutionAmount(AbilityResolutionNumber kind) => kind switch
     {

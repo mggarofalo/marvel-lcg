@@ -135,6 +135,7 @@ internal static class AbilityOperationNames
         },
         AbilityEffect.Fixed instruction => instruction.Instruction switch
         {
+            AbilityFixedInstruction.UseAttackForThwart => "useAttackForThwart",
             AbilityFixedInstruction.AdvanceMainScheme => "advanceMainScheme",
             AbilityFixedInstruction.CancelOccurrence => "cancelOccurrence",
             AbilityFixedInstruction.CancelWhenRevealed => "cancelWhenRevealed",

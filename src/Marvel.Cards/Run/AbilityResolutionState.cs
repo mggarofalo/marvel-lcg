@@ -215,7 +215,8 @@ internal sealed record AbilityResolutionState(
 
     public AbilityExpressionContext ExpressionContext() => new(
         QueryContext(), Results.ToImmutableDictionary(StringComparer.Ordinal),
-        [.. Discarded], Payment, PowerAmount, FinalStep, ProjectedPlayAreaPlayer);
+        [.. Discarded], Payment, PowerAmount, FinalStep, ProjectedPlayAreaPlayer)
+        { ThwartActorUsingAttack = ThwartActorUsingAttack };
 
     /// <summary>
     /// Which of the card's abilities is running, or null.
@@ -283,6 +284,7 @@ internal sealed record AbilityResolutionState(
 
     /// <summary>A numeric result carried into this labelled power.</summary>
     public long PowerAmount { get; init; } = -1;
+    internal int? ThwartActorUsingAttack { get; set; }
 
     /// <summary>The outer threat assignment this interrupt can prevent.</summary>
     public ThreatPlacement? ImminentThreat { get; init; }

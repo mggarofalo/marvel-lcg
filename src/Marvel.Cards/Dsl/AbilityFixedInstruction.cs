@@ -8,6 +8,8 @@ public enum AbilityFixedInstruction
 {
     /// <summary>Advance directly to the next main scheme without completing this one.</summary>
     AdvanceMainScheme,
+    /// <summary>Use ATK instead of THW for the current thwart.</summary>
+    UseAttackForThwart,
     /// <summary>Cancel the current occurrence.</summary>
     CancelOccurrence,
     /// <summary>Cancel the revealed card's When Revealed effects.</summary>

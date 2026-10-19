@@ -157,7 +157,8 @@ internal static class AttackProcedure
             world,
             facts,
             world.Cards[step.Subject],
-            byAttack: attacked || BasicPowerStatus.Assaulted(world, facts, world.Cards[step.Require<ConsequentialDamageOperation>().Character]),
+            byAttack: attacked || step.Require<ConsequentialDamageOperation>().UsesAttack
+                || BasicPowerStatus.Assaulted(world, facts, world.Cards[step.Require<ConsequentialDamageOperation>().Character]),
             attacked ? BasicPowers.AttackVerb : BasicPowers.ThwartVerb,
             events);
     }

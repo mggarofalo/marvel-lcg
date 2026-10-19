@@ -56,4 +56,8 @@ public sealed record CharacterThwart(
     Occurrence? Origin = null,
     bool SurgeGained = false,
     ThreatPlacement? ImminentThreat = null,
-    int TargetIncarnation = -1);
+    int TargetIncarnation = -1)
+{
+    /// <summary>Whether an interrupt substitutes ATK for this thwart's THW.</summary>
+    public bool UsesAttack { get; init; }
+}

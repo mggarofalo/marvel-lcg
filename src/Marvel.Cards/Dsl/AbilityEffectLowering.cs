@@ -68,6 +68,7 @@ internal static class AbilityEffectLowering
             "preventThreat" => new AbilityEffect.PreventThreat(Number(argument, child)),
             "preventDamage" => PreventDamageEffect(argument, child),
             "gainSurge" => new AbilityEffect.GainSurge(Integer(argument, child)),
+            "useAttackForThwart" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.UseAttackForThwart),
             "advanceMainScheme" => FixedEffect(argument, child, "next", AbilityFixedInstruction.AdvanceMainScheme),
             "cancelOccurrence" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelOccurrence),
             "cancelWhenRevealed" => FixedEffect(argument, child, "trigger.subject", AbilityFixedInstruction.CancelWhenRevealed),
