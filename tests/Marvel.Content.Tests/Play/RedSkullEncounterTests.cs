@@ -19,6 +19,23 @@ public sealed class RedSkullEncounterTests
         Assert.True(Statuses.Has(f.World, sleeper, Statuses.Tough));
     }
 
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(1, 0)]
+    public void SleeperAwakenedPutsTheSleeperWithTheFirstPlayer(int first, int revealer)
+    {
+        // 04140: "Put The Sleeper into play engaged with the first player."
+        // Placement is not a reveal of The Sleeper, so it cannot rely on that card's When Revealed text.
+        var f = RedSkullFixture.Create(players: 2);
+        f.World.FirstPlayer = first;
+        f.Reveal("04140", revealer);
+        f.Finish();
+        var sleeper = Assert.Single(f.World.Cards, card => card.FaceId == "04130");
+        Assert.Equal(PlayArea.Of(first), sleeper.Area.PlayArea);
+        Assert.Equal(DeckType.EngagedEnemiesArea, sleeper.Area.Type);
+        Assert.True(Statuses.Has(f.World, sleeper, Statuses.Tough));
+    }
+
     [Fact]
     public void SleeperAwakenedStaysUntilSleeperDefeatThenBothLeaveTheGame()
     {

@@ -83,14 +83,21 @@ internal sealed class AttackDamageResolution
             new DamageRequest(request.Source, request.Target, replacement.ResolvedAmount, request.Trigger, request.Verb)
             { PreventAllDamage = request.EnemyAttack?.PreventAllDamage == true }, events);
         DamagePlacement.ApplyPlaced(world, facts, placed, request.Trigger, request.Verb, events);
-        if (placed.Landed) Execution.Occurrence.Also(Steps.DamageDealt);
-        if (!spillOnly && request.EnemyAttack is { } attack)
-            AttackDamageAccounting.RecordAttackDamage(world, attack, placed);
-        AttackDamageAccounting.RecordRecipient(world, request.Source, request.Target, placed.Dealt);
+        RecordDamage(placed);
         DamageAttacks.ResolveLandedDamage(world, request.ActivationId, request.Target, placed, events);
         outcome = DamagePlacement.FinishPlaced(world, facts, request.Source, placed, request.Trigger,
             request.Verb, events, LabeledAbilities.IdentityPlayer(world, request.Attacker), Execution.Occurrence);
         return outcome != Damage.Outcome.Suspended;
+    }
+
+    private void RecordDamage(Damage.PlacedDamage damage)
+    {
+        if (damage.Landed) Execution.Occurrence.Also(Steps.DamageDealt);
+        if (!spillOnly && request.EnemyAttack is { } attack)
+            AttackDamageAccounting.RecordAttackDamage(world, attack, damage);
+        AttackDamageAccounting.RecordRecipient(world, request.Source, request.Target, damage.Dealt);
+        if (request.EnemyAttack is not null || spillOnly)
+            AttackDamageAccounting.RecordIdentityDamage(world, request.Source, damage);
     }
 
     private void PrepareReplacement(List<GameEvent> events)

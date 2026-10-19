@@ -134,6 +134,7 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityConditionFact.CanMakeTheCall => CanMakeTheCall(),
         AbilityConditionFact.AttackDamaged => context.World.FinishedAttack is { Damaged: true } attack
             && attack.Enemy == context.Occurrence.Actor && attack.Target == context.Occurrence.Target,
+        AbilityConditionFact.AttackDamagedYou => AttackDamagedIdentity(),
         AbilityConditionFact.InExpertMode => context.World.Expert,
         AbilityConditionFact.DefeatedByYou => context.Bindings.Defeat is { By: >= 0 } defeat && defeat.By == AbilityCardQueries.Resolver(context.Bindings),
         AbilityConditionFact.HeroDefended => context.World.FinishedAttack is { } attack
@@ -146,6 +147,11 @@ internal sealed class AbilityExpressionEvaluation(
             && string.Equals(defeat.How, "Consequential_Damage", StringComparison.Ordinal),
         _ => throw new InvalidOperationException("Unknown compiled condition fact"),
     };
+
+    private bool AttackDamagedIdentity() => context.World.FinishedAttack is { } completed
+            && completed.Enemy == context.Occurrence.Actor
+            && context.Occurrence.Player >= 0 && completed.Player == context.Occurrence.Player
+            && completed.DamagedIdentities.Contains(context.World.Seats[context.Occurrence.Player].IdentityCard.ObjectId);
 
     internal int Seat(AbilityPlayer player) => player switch
     {

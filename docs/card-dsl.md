@@ -736,3 +736,5 @@ multiple physical cards with the same title.
 `attachmentsOnVillain` selects only printed encounter attachments hosted by the current villain, excluding hosted statuses and player upgrades.
 `supportsYouControl` selects the resolving player's controlled supports in play.
 `forEach` takes a numeric `count` and an `effect` body, repeating that body for the resolved count. It supports printed counted instructions such as one additional boost card per side scheme.
+
+`attackDamagedYou: "you"` checks whether the completed enemy attack caused the attacked identity to take damage, including overkill, independently of damage to an ally defender.

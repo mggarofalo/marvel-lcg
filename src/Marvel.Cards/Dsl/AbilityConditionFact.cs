@@ -12,6 +12,8 @@ public enum AbilityConditionFact
     CanMakeTheCall,
     /// <summary>The completed attack damaged its target.</summary>
     AttackDamaged,
+    /// <summary>The completed attack damaged the resolving player's identity.</summary>
+    AttackDamagedYou,
     /// <summary>The game was set up in expert mode.</summary>
     InExpertMode,
     /// <summary>The resolver caused the defeat.</summary>

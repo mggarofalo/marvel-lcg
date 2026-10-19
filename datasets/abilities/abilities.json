@@ -5723,7 +5723,7 @@
             "event": "WhenAttackEnds",
             "timing": "ForcedResponse",
             "actor": "attachedTo",
-            "player": "you"
+            "player": "trigger.player"
           },
           "effect": {
             "chooseCard": {
@@ -5738,7 +5738,7 @@
             }
           },
           "when": {
-            "attackDamaged": "trigger.target"
+            "attackDamagedYou": "you"
           }
         },
         {

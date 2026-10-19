@@ -28,6 +28,7 @@ internal static class AbilityConditionLowering
             "not" => new AbilityCondition.Negated(LowerCondition(argument, child)),
             "finalStep" => Flag(argument, child, "true", AbilityConditionFact.FinalStep),
             "canMakeTheCall" => Flag(argument, child, "game", AbilityConditionFact.CanMakeTheCall),
+            "attackDamagedYou" => Flag(argument, child, "you", AbilityConditionFact.AttackDamagedYou),
             "attackDamaged" => Flag(argument, child, "trigger.target", AbilityConditionFact.AttackDamaged),
             "inExpertMode" => Flag(argument, child, "expert", AbilityConditionFact.InExpertMode),
             "defeatedByYou" => Flag(argument, child, "you", AbilityConditionFact.DefeatedByYou),
