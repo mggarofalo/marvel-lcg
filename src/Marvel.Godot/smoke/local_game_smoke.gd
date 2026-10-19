@@ -67,6 +67,10 @@ func _release_table_resources() -> bool:
 func _open_setup(packed: PackedScene) -> bool:
 	main = packed.instantiate() as Control
 	render_viewport.add_child(main)
+	# Main initializes the native minimum size; set the physical fixture size afterward.
+	root.size = render_viewport.size
+	if render_viewport != root:
+		render_viewport.size_changed.connect(func() -> void: root.size = render_viewport.size)
 	if not await _wait_for_setup():
 		_fail("setup never became ready")
 		return false

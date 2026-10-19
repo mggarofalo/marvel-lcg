@@ -128,8 +128,12 @@ remains the owner's affirmation of the working build.
 
 ### Card rendering
 
-The Compatibility renderer uses `canvas_items`, so the canvas is rendered at the
-window resolution. Fitted collection cards allocate their actual face dimensions
+The Compatibility renderer uses native framebuffer pixels with canvas stretch
+disabled. Resizing changes the responsive layout, rather than stretching a
+1920×1080 logical canvas. The UI scale slider changes integer font and control
+metrics; it does not resample the finished interface. This keeps the same text
+rasterization at 1080p, 1440p, 4K and fractional window widths. Fitted collection
+cards allocate their actual face dimensions
 and integer font sizes instead of shrinking a prebuilt control. Theme roots enable
 scale-aware font oversampling for ancestor/DPI transforms. Pinned inspection
 reveals at its final size, without scaling already-shaped text during animation.
@@ -365,7 +369,13 @@ on the table. One dock shows the current situation, editable draft, named
 commitment and latest result. Complete choices opens the full prompt editor
 using the same draft; payment uses a temporary workspace beside the table.
 
-The supported desktop viewport is 1920x1080 or larger. It keeps setup controls
+The supported desktop viewport is 1920x1080 physical pixels or larger.
+Higher resolutions provide more space; use the UI scale slider for larger text.
+OS display scaling and the application slider are separate. Keep OS high-DPI
+support enabled; external screenshot scaling and display compositor filtering
+are outside the framebuffer guarantee.
+
+The desktop layout keeps setup controls
 and the current commitment visible while keeping local card values readable.
 Card inspection supplies full printed text and traits. Smaller viewports are
 not a product or release acceptance boundary.
@@ -580,6 +590,13 @@ to the shell runner or `-InvitationLayout` to PowerShell. It keeps a fresh norma
 restricted table’s invitation unused and checks sidebar containment and whole
 captions at 100/150 with collapsed/expanded history. Both profiles run on Windows
 and Linux.
+
+The `text-resolution` native cases resize the real root window through 1080p,
+1440p, 4K and an odd-width window, then open the deck editor and table. The
+rendered visual QA runner additionally compares a fixed inherited-font crop
+byte-for-byte across those resizes at 50/80/100/150% UI scale. This proves
+resolution changes do not resample that text; it does not certify every OS DPI
+or make tiny text larger. Inspect retained PNGs at 100% image zoom.
 
 The local matrix uses `--headless`; it does not use movie capture. The visual QA tools
 additionally check and retain rendered viewport images at
