@@ -20,6 +20,7 @@ internal static class CampaignSetupAdmission
             || !campaign.Seats.Select(seat => seat.Seat).SequenceEqual(Enumerable.Range(0, specification.Heroes.Count)))
             throw new ArgumentException("campaign requires ordered seats and complete explicit decks", nameof(specification));
         ValidateInventory(campaign, definition, cards, authored);
+        CampaignSeatAdmission.Validate(campaign, definition);
     }
 
     private static void ValidateStage(GameSpecification specification, CampaignGameSetup campaign, CampaignDefinition definition)
@@ -41,8 +42,7 @@ internal static class CampaignSetupAdmission
         SetupCatalogAdmission.ValidateFaces(inventory.Select(card => card.Face), cards, authored);
         if (inventory.Any(card => !Belongs(card, definition)))
             throw new ArgumentException("campaign inventory contains a card outside its printed role", nameof(campaign));
-        if (campaign.AdditionalThreat < 0 || campaign.ExperimentalWeapons.Any(face => !definition.ExperimentalWeaponFaces.Contains(face)))
-            throw new ArgumentException("invalid campaign scenario carry-over", nameof(campaign));
+        ValidateScenarioCarryOver(campaign, definition);
         CampaignDeckExclusions.Validate(campaign.BannedAllyFaces, cards);
         foreach (var seat in campaign.Seats)
         {
@@ -52,6 +52,13 @@ internal static class CampaignSetupAdmission
                 || !definition.ObligationFaces.Contains(card.Face)))
                 throw new ArgumentException("invalid recovery obligation inventory", nameof(campaign));
         }
+    }
+
+    private static void ValidateScenarioCarryOver(CampaignGameSetup campaign, CampaignDefinition definition)
+    {
+        if (campaign.AdditionalThreat < 0 || campaign.ExperimentalWeapons.Any(face => !definition.ExperimentalWeaponFaces.Contains(face))
+            || campaign.ExperimentalWeapons.Distinct(StringComparer.Ordinal).Count() != campaign.ExperimentalWeapons.Length)
+            throw new ArgumentException("invalid campaign scenario carry-over", nameof(campaign));
     }
 
     private static bool Belongs(CampaignCard card, CampaignDefinition definition) => card.Role switch

@@ -15,9 +15,9 @@ internal static class CampaignInspection
         var tracked = attempt.Cards;
         return new CampaignGameProgress(
             [.. tracked.Where(card => card.Removed)
-                .Select(card => new CampaignCardRemoval(card.Binding.Seat, card.Binding.Card.Key))],
+                .Select(card => new CampaignCardRemoval(RosterSeat(attempt, card.Binding.Seat), card.Binding.Card.Key))],
             [.. tracked.Where(card => card.Assigned)
-                .Select(card => new CampaignObligationAssignment(card.Binding.Seat, card.Binding.Card))],
+                .Select(card => new CampaignObligationAssignment(RosterSeat(attempt, card.Binding.Seat), card.Binding.Card))],
             world.IsOver ? Outcome(world, attempt, definition) : null);
     }
 
@@ -26,7 +26,7 @@ internal static class CampaignInspection
         var prison = world.Cards.FirstOrDefault(card => card.FaceId == definition.HydraPrisonFace
             && DeckTypes.IsInPlay(card.Area.Type));
         return new CampaignAttemptOutcome(world.Result == Marvel.Rules.Play.Outcome.PlayersWin,
-            [.. world.Seats.Select((seat, index) => Seat(world, attempt, definition, index))],
+            [.. world.Seats.Select((seat, index) => Seat(world, attempt, index))],
             [.. attempt.EnteredExperimentalWeapons.Select(card => card.FaceId)],
             checked((int)(world.TheCardIn(DeckType.MainSchemesArea)?.Tokens.GetValueOrDefault(definition.DelayCounterField) ?? 0)),
             prison is not null,
@@ -35,14 +35,20 @@ internal static class CampaignInspection
                 .Where(card => world.Facts.Kind(card.FaceId) == CardKind.Ally).Select(card => card.FaceId)]);
     }
 
-    private static CampaignSeatOutcome Seat(World world, CampaignAttemptState attempt, CampaignDefinition definition, int index)
+    private static int RosterSeat(CampaignAttemptState attempt, int liveSeat)
+    {
+        var seat = attempt.Setup.Seats.Single(value => value.Seat == liveSeat);
+        return seat.CampaignSeat ?? seat.Seat;
+    }
+
+    private static CampaignSeatOutcome Seat(World world, CampaignAttemptState attempt, int index)
     {
         var seat = world.Seats[index];
         var identity = seat.IdentityCard;
         int baseHealth = checked((int)world.Facts.PrintedValue(identity.FaceId, "HP", world.Players));
         // ruling:1516351f87fc4382 keeps the recorded cap at starting hit points.
         // The campaign Condition grants its extra HP at the next game's setup.
-        return new CampaignSeatOutcome(index, seat.Eliminated,
+        return new CampaignSeatOutcome(RosterSeat(attempt, index), seat.Eliminated,
             world.Facts.Kind(identity.FaceId) == CardKind.Hero,
             seat.Eliminated ? 0 : checked((int)Math.Max(0, DamagePlacement.Health(world, world.Facts, identity) - identity.Damage)),
             baseHealth,

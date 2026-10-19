@@ -20,12 +20,15 @@ public sealed class CampaignInspectionTests
         world.CreateCard("ally", world.CreateArea(DeckType.AsideDeck, 0, PlayArea.Of(0), prison.ObjectId));
         world.CreateCard("ally", world.CreateArea(DeckType.UpgradesArea, 0, PlayArea.Of(0), prison.ObjectId));
         var tech = world.CreateCard("tech", world.Seats[0].SetAside);
+        var obligation = world.CreateCard("obligation", world.Seats[0].SetAside);
+        var assigned = new CampaignCard("obligation", "obligation", CampaignCardRole.Obligation);
         var reward = new CampaignCard("tech", "tech", CampaignCardRole.Tech);
         var condition = new CampaignCard("condition", "condition", CampaignCardRole.Condition);
         var input = new CampaignGameSetup("synthetic", true, CampaignStage.Zola, 4,
-            [new(0, [reward, condition], 5, false, [], false)], [], 0);
-        new CampaignAttemptState(input, [new(tech.ObjectId, 0, reward)]).Bind(world);
+            [new(0, [reward, condition], 5, false, [assigned], false) { CampaignSeat = 2 }], [], 0);
+        new CampaignAttemptState(input, [new(tech.ObjectId, 0, reward), new(obligation.ObjectId, 0, assigned)]).Bind(world);
         world.Campaign!.Remove(tech, "synthetic", []);
+        world.Campaign.AssignObligation(obligation, 0, "synthetic", []);
         var definition = new CampaignDefinition("synthetic", [], [reward], [new(condition, "improved", 2)], [], [], [])
         { HydraPrisonFace = "prison" };
         var game = Game.BeginWithoutCardAbilities(world, world.Facts);
@@ -42,12 +45,15 @@ public sealed class CampaignInspectionTests
         Assert.Equal(agendaBefore, world.Agenda.Count);
         Assert.Equal(first.Removals.ToArray(), second.Removals.ToArray());
         Assert.Equal("tech", Assert.Single(first.Removals).CardKey);
+        Assert.Equal(2, Assert.Single(first.Removals).Seat);
+        Assert.Equal(2, Assert.Single(first.Obligations).Seat);
         Assert.True(first.Outcome!.Won);
         Assert.Equal(4, first.Outcome.DelayCounters);
         Assert.True(first.Outcome.HydraPrisonInPlay);
         Assert.Equal(["ally"], first.Outcome.ImprisonedAllyFaces);
         Assert.Equal(10, Assert.Single(first.Outcome.Seats).BaseHitPoints);
         Assert.Equal(10, Assert.Single(first.Outcome.Seats).RemainingHitPoints);
+        Assert.Equal(2, Assert.Single(first.Outcome.Seats).Seat);
     }
 
     private sealed class Printed : ICardFacts
