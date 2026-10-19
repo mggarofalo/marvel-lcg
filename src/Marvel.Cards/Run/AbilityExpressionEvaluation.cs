@@ -111,6 +111,7 @@ internal sealed class AbilityExpressionEvaluation(
             AbilityCardTextProperty.Trait => Rules.State.Traits.Has(context.World, card, text.Text, context.World.Facts),
             AbilityCardTextProperty.Set => string.Equals(context.World.Facts.EncounterSet(card.FaceId), text.Text, StringComparison.Ordinal),
             AbilityCardTextProperty.Title => string.Equals(context.World.Facts.Title(card.FaceId), text.Text, StringComparison.Ordinal),
+            AbilityCardTextProperty.Class => string.Equals(context.World.Facts.Attributes(card.FaceId).GetValueOrDefault("Class"), text.Text, StringComparison.Ordinal),
             _ => throw new InvalidOperationException("Unknown compiled card text property"),
         };
     }

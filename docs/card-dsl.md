@@ -1,5 +1,9 @@
 # The card DSL
 
+`cardClass: { card, class }` tests the selected card's printed classification
+(`Aggression`, `Justice`, `Leadership`, `Protection`, `Basic`, `Hero`, or `'Pool`).
+Identity-specific cards retain their printed aspect classification for this test.
+
 The card DSL turns printed card text into inert JSON that the rules engine can
 execute. `Marvel.Cards` owns the parser and interpreter.
 

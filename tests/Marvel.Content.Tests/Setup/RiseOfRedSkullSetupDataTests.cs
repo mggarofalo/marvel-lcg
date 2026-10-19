@@ -32,8 +32,8 @@ public sealed class RiseOfRedSkullSetupDataTests
         Assert.Throws<KeyNotFoundException>(() => Setup.Hero("sp_dr"));
     }
 
-    [Rule("pack:mc10:scenario-1-crossbones")]
-    [Rule("pack:mc10:scenario-3-taskmaster")]
+    // Authority: pack:mc10:scenario-1-crossbones
+    // Authority: pack:mc10:scenario-3-taskmaster
     [Fact]
     public void RequiredSetsCannotBeReplacedAsOptionalModularSets()
     {
@@ -49,8 +49,8 @@ public sealed class RiseOfRedSkullSetupDataTests
         Assert.Equal(["04097", "04098", "04099", "04100"], taskmaster.SetAside);
     }
 
-    [Rule("pack:mc10:hawkeye-starter-deck")]
-    [Rule("pack:mc10:spider-woman-starter-deck")]
+    // Authority: pack:mc10:hawkeye-starter-deck
+    // Authority: pack:mc10:spider-woman-starter-deck
     [Fact]
     public void PrintedStarterDeckMultiplicitiesAndIdentityExceptionArePreserved()
     {

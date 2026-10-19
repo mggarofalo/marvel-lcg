@@ -14,4 +14,6 @@ public enum AbilityCardTextProperty
     Set,
     /// <summary>The printed title.</summary>
     Title,
+    /// <summary>The printed card classification.</summary>
+    Class,
 }
