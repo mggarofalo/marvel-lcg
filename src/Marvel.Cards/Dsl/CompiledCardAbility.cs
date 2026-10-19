@@ -10,6 +10,9 @@ public sealed record CompiledCardAbility(
     ImmutableArray<string> Labels, string PrintedResources, AbilityMaximum? Maximum,
     AbilityEffectAddress Address)
 {
+    /// <summary>The period of the per-instance use limit.</summary>
+    public AbilityLimitPeriod LimitPeriod { get; init; }
+
     /// <summary>Printed limitation on the cost that consumes this ability's resources.</summary>
     public Marvel.Rules.Prompts.ResourceRestriction ResourceRestriction { get; init; }
 }

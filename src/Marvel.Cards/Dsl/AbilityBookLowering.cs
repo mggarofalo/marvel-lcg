@@ -53,6 +53,7 @@ internal static class AbilityBookLowering
             ability.Limit, ability.AnyPlayer, ability.Labels?.ToImmutableArray() ?? [],
             ability.PrintedResources, ability.Maximum, address)
         {
+            LimitPeriod = AbilityLimit.Validate(ability),
             ResourceRestriction = AbilityResourceRestriction.Validate(ability),
         };
     }

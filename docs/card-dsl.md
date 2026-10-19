@@ -111,7 +111,7 @@ Each ability has these fields:
 | `when` | An additional live condition |
 | `cost` | What must be paid before the effect begins |
 | `effect` | One executable effect node |
-| `limitPerRound` | A per-instance use limit |
+| `limitPerRound`, `limitPerPhase` | A per-instance use limit; mutually exclusive positive integers |
 | `maxPerRound`, `maxPerPhase`, `maxPerGame`, `maxPerInstance` | A title-shared maximum |
 | `anyPlayer` | Printed permission for any player to use the ability |
 | `labels` | Printed attack, defense or thwart labels |

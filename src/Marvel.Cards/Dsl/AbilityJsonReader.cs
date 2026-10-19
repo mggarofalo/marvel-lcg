@@ -66,13 +66,14 @@ internal static class AbilityJsonReader
             trigger,
             effect,
             element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null,
-            element.TryGetProperty("limitPerRound", out var limit) ? limit.GetInt64() : null,
+            AbilityLimit.ReadCount(element),
             element.TryGetProperty("when", out var condition) ? Node(condition, card) : null,
             Flag(element, "anyPlayer", card),
             Labels(element, card),
             printedResources,
             Maximum(element, card))
         {
+            LimitPeriod = element.TryGetProperty("limitPerPhase", out _) ? AbilityLimitPeriod.Phase : AbilityLimitPeriod.Round,
             ResourceRestriction = AbilityResourceRestriction.Read(element, trigger.Timing),
         };
     }

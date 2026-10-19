@@ -41,7 +41,7 @@ public static class AbilityCatalog
     internal static readonly FrozenSet<string> AbilityKeys =
         new[]
         {
-            "name", "note", "trigger", "effect", "cost", "limitPerRound", "when",
+            "name", "note", "trigger", "effect", "cost", "limitPerRound", "limitPerPhase", "when",
             "anyPlayer", "labels", "printedResources", "maxPerRound", "maxPerPhase",
             "maxPerGame", "maxPerInstance", "resourceRestriction",
         }.ToFrozenSet(StringComparer.Ordinal);

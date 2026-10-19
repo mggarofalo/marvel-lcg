@@ -20,7 +20,8 @@ internal static class AbilityUseRecording
                 EffectSource.LastingEffect,
                 Kind: AbilityAvailability.Spent(card, ability, index),
                 Card: card.ObjectId, Affects: card.ObjectId,
-                Lasts: Duration.UntilEndOf(TimingPoints.EndOfRound)));
+                Lasts: Duration.UntilEndOf(ability.LimitPeriod == AbilityLimitPeriod.Phase
+                    ? TimingPoints.EndOfPhase : TimingPoints.EndOfRound)));
         }
 
         if (ability.Maximum is not { } maximum) return;
