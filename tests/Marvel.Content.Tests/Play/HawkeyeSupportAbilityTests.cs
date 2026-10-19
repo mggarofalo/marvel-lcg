@@ -10,6 +10,47 @@ namespace Marvel.Content.Tests.Play;
 public sealed class HawkeyeSupportAbilityTests : CoreCardTestBase
 {
     [Theory]
+    [InlineData("04001a", 3, 0)]
+    [InlineData("04001b", 0, 3)]
+    public void SniperShotResolvesOnlyTheRevealingPlayersCurrentForm(string identity, long damage, long threat)
+    {
+        var world = Hero(identity);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var main = world.CreateCard("01097b", world.AreaOf(DeckType.MainSchemesArea));
+        var shot = world.CreateCard("04030", world.AreaOf(DeckType.RevealingArea));
+        var events = runner.ExecuteReveal(world, shot, 0).Events.ToList();
+        Sequence.Finish(world, Cards, runner, events);
+        Assert.Equal(damage, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(threat, main.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Fact]
+    public void ExpertMarksmanPaysForAnArrowAndExhaustsOnlyWhenItsResourceIsSpent()
+    {
+        var world = Hero("04001a");
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var marksman = world.CreateCard("04010", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("04002", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        var arrow = world.CreateCard("04008", world.Seats[0].Hand);
+        var nonArrow = world.CreateCard("01005", world.Seats[0].Hand);
+        var main = world.CreateCard("01097b", world.AreaOf(DeckType.MainSchemesArea));
+        main.PlaceTokens("k_threat", 5);
+        Assert.Contains(CardPayment.Generators(world, Cards, world.Seats[0], runner, arrow), item => item.Effect == marksman.ObjectId);
+        Assert.DoesNotContain(CardPayment.Generators(world, Cards, world.Seats[0], runner, nonArrow), item => item.Effect == marksman.ObjectId);
+        Assert.True(marksman.Ready);
+        var action = Assert.Single(runner.Actions(world, 0), item => item.Card == arrow.ObjectId);
+        var events = runner.ExecuteAction(world, new PlayerAction(action, [marksman.ObjectId], [])).Events.ToList();
+        var choice = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(world, Cards, runner, choice, Decision.Take(main.ObjectId), events);
+        Sequence.Finish(world, Cards, runner, events);
+        Assert.False(marksman.Ready);
+        Assert.Equal(2, main.Tokens["k_threat"]);
+        Assert.Same(world.Seats[0].Hand, nonArrow.Area);
+    }
+
+    [Theory]
     [InlineData("01088", 2)]
     [InlineData("01055", 1)]
     public void HawkeyeAllyDiscardsPrintedIconsForNonAttackDamage(string face, long expected)
