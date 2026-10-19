@@ -33,7 +33,7 @@ public static class VictoryDisplay
 
         // Presence and value are separate: Victory 0 still supplies this
         // replacement ability even though it contributes no points.
-        if (!Timing.Keywords.Has(world, card, "victory", facts))
+        if (!Timing.Keywords.Has(world, card, "victory", facts) || !SideSchemeDeparture.Allowed(world, card))
         {
             return false;
         }
@@ -47,6 +47,7 @@ public static class VictoryDisplay
         World world, Card card, string trigger, List<GameEvent> events,
         string verb = "Victory", string? subject = null)
     {
+        if (!SideSchemeDeparture.Allowed(world, card)) return;
         var display = world.AreaOf(DeckType.VictoryDisplay);
         var from = card.Area;
         var constantsEnding = world.Effects.PreflightConstantsEnding(card);
@@ -119,6 +120,7 @@ public static class VictoryDisplay
         World world, ICardFacts facts, Card host, string trigger,
         List<GameEvent> events)
     {
+        if (!SideSchemeDeparture.Allowed(world, host)) return;
         string? subject = EffectiveCards.HasProfile(host)
             ? EffectiveCards.Title(host, facts)
             : null;

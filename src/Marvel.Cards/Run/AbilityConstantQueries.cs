@@ -95,6 +95,11 @@ internal sealed class AbilityConstantQueries
     {
         switch (effect)
         {
+            case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.PreventSideSchemeDeparture }:
+                found.Add(new ContinuousEffect(EffectSource.ConstantAbility,
+                    Kind: SideSchemeDeparture.Prohibited, Card: bindings.Source.ObjectId,
+                    Affects: bindings.Source.ObjectId, Lasts: Duration.WhileInPlay));
+                return true;
             case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.GainEnvironmentTraits }:
                 found.AddRange(EnvironmentTraitGrants.For(bindings.World, bindings.Source));
                 return true;

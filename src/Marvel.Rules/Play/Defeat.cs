@@ -184,6 +184,8 @@ public static class Defeat
 
         ArgumentNullException.ThrowIfNull(facts);
 
+        // ruling:25a8a46bc9925963: "If a side scheme cannot leave play, then it cannot be defeated."
+        if (!SideSchemeDeparture.Allowed(world, scheme)) return;
         var defeated = Record(world, scheme, by, BasicPowers.ThwartVerb, recordOn);
         var owner = world.Agenda.Current;
         var containing = world.Agenda.Occurrence;

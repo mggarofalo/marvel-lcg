@@ -54,6 +54,7 @@ internal static class AbilityCardMovementExecution
     internal static void MoveToHand(World world, Card card, Area hand, string trigger,
         List<Marvel.Rules.Events.GameEvent> events, string verb, int? linkedOwner = null)
     {
+        if (!SideSchemeDeparture.Allowed(world, card)) return;
         var from = card.Area;
         var ending = world.Effects.PreflightConstantsEnding(card);
         using var departure = ending.Begin();

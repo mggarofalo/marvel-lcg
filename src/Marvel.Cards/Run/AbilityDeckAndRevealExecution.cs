@@ -131,6 +131,7 @@ internal static class AbilityDeckAndRevealExecution
         bool applied = false;
         foreach (var card in Every(shuffle.Cards, context))
         {
+            if (!SideSchemeDeparture.Allowed(context.World, card)) continue;
             var from = card.Area;
             World.MoveToTop(card, deck);
             context.Events.Add(new CardsMoved(

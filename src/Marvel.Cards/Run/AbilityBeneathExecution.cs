@@ -15,7 +15,7 @@ internal static class AbilityBeneathExecution
         foreach (var observation in hostResult.Information.Concat(cardsResult.Information))
             context.World.RecordInformation(observation);
         var host = hostResult.Value ?? throw new RulesNotImplementedException("stored cards have no bound host");
-        var cards = cardsResult.Value.ToList();
+        var cards = cardsResult.Value.Where(card => SideSchemeDeparture.Allowed(context.World, card)).ToList();
         int count = Math.Min(store.RandomCount ?? cards.Count, cards.Count);
         for (int index = 0; index < count; index++)
         {

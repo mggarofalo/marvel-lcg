@@ -21,6 +21,7 @@ public static class BeneathCards
             throw new ArgumentException("stored cards require a different in-play host in this world");
         // ruling:6768213a7e0f4606: cards attached to Quiver are not considered in play.
         // rr:in-play-and-out-of-play.10: "Facedown cards attached to in-play cards are out of play."
+        if (!SideSchemeDeparture.Allowed(world, card)) return;
         var from = card.Area;
         bool revealsFace = faceUp && !card.FaceUp;
         var destination = world.AreaOf(faceUp ? DeckType.BeneathCardsArea : DeckType.BeneathCardsPile,

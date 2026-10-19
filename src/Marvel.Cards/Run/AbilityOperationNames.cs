@@ -147,6 +147,7 @@ internal static class AbilityOperationNames
             AbilityFixedInstruction.MakeTheCall => "makeTheCall",
             AbilityFixedInstruction.DiscardOtherEnvironments => "discardOtherEnvironments",
             AbilityFixedInstruction.GainEnvironmentTraits => "gainEnvironmentTraits",
+            AbilityFixedInstruction.PreventSideSchemeDeparture => "preventSideSchemeDeparture",
             AbilityFixedInstruction.RequireAllyDefender => "requireAllyDefender",
             _ => throw new InvalidOperationException("Unknown fixed instruction"),
         },

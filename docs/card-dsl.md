@@ -571,6 +571,9 @@ the engine's auxiliary-deck rules.
 `cardsIn` also accepts `yourPlayArea`, including the resolver's in-play areas
 and attached cards, with the same printed filters. This aggregate is a selection
 boundary, not a shuffleable deck. It excludes other players and out-of-play cards.
+`preventSideSchemeDeparture: "this"` is a constant instruction, optionally inside
+an `if`, that prevents this side scheme leaving play. It also prevents defeat
+and its defeat events (ruling:25a8a46bc9925963); it does not prevent threat removal.
 `cardsIn` accepts `yourDiscardPile` as well as the named decks. Its optional
 positive `top` bound examines the top of one deck before applying kind, trait,
 title, or `aspectOnly` filters. `aspectOnly: "true"` selects printed Aggression,

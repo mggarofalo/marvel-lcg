@@ -20,6 +20,7 @@ public static class Tuck
             throw new RulesNotImplementedException("a tucked card needs a different in-play host");
         }
 
+        if (!SideSchemeDeparture.Allowed(world, card)) return;
         var from = card.Area;
         var under = world.AreaOf(
             DeckType.AsideDeck, host.Area.PlayArea, host.ObjectId, card.Owner);

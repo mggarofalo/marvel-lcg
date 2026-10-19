@@ -48,6 +48,7 @@ public static class Discard
         // another out-of-play area was expressly named belongs to the caller's
         // selector, not this Permanent rule primitive.
         target.Area.Type != DeckType.RemovedArea
+        && SideSchemeDeparture.Allowed(world, target)
         && (!DeckTypes.IsInPlay(target.Area.Type)
             || StateFields.Modified(world, target, "permanent", facts, world.Players) <= 0
             || SameSet(facts, source, target));
@@ -59,6 +60,10 @@ public static class Discard
         !DeckTypes.IsInPlay(card.Area.Type)
         || card.Area.Type != DeckType.MainSchemesArea
             && EffectiveCards.Kind(card, facts) is not (CardKind.Hero or CardKind.AlterEgo);
+
+    /// <summary>Whether type and active card restrictions permit this discard.</summary>
+    public static bool CanDiscardFromPlay(World world, State.Card card) =>
+        CanDiscardFromPlay(card, world.Facts) && SideSchemeDeparture.Allowed(world, card);
 
     /// <summary>Whether two printed cards belong to the same non-empty set.</summary>
     public static bool SameSet(ICardFacts facts, State.Card first, State.Card second)
@@ -88,7 +93,7 @@ public static class Discard
         // rr:main-scheme-main-scheme-deck.6: "Main scheme cards cannot be
         // discarded from play." The attempted game function resolves without
         // moving the card or emitting a discard event.
-        if (!CanDiscardFromPlay(card, world.Facts))
+        if (!CanDiscardFromPlay(world, card))
         {
             return;
         }
