@@ -12,4 +12,6 @@ public enum AbilityCardRank
     Attack,
     /// <summary>Printed health, including a facedown card's rules-defined base.</summary>
     PrintedHealth,
+    /// <summary>Current maximum health minus damage, including active modifiers.</summary>
+    RemainingHealth,
 }

@@ -578,3 +578,13 @@ root. Its source gains the current effective traits of every environment in
 play. Other grants and losses on those environments participate in the same
 constant-effect fixed point. Leaving play ends that environment's contribution;
 independent trait grants remain. This operation does not copy abilities.
+Encounter discard searches distinguish `then: reveal`, `putIntoPlayFirstPlayer`,
+`putIntoPlay` (the printed encounter destination without When Revealed), and
+`attachToThis` (the resolving source overrides the attachment's printed host).
+Their `kind` also accepts `attachment` and `environment`.
+
+Card ranking accepts `remainingHealth`, including current HP modifiers and damage,
+and preserves all ties for the printed chooser. `cardsIn` accepts `yourHand` and
+an optional `cardClass` printed classification filter, such as `Hero` for a
+hero-specific card. These spellings are authored DSL choices; the printed card
+and Rules Reference determine which criteria an ability must use.

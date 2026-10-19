@@ -42,6 +42,7 @@ internal static class AbilityResolutionTypedSelectors
         AbilitySearchArea.EncounterDiscardPile => cast.World.AreaOf(DeckType.EncounterDiscardPile),
         AbilitySearchArea.ScenarioSetAside => cast.World.AreaOf(DeckType.AsideDeck),
         AbilitySearchArea.YourDeck => cast.World.Seats[cast.Player].Deck,
+        AbilitySearchArea.YourHand => cast.World.Seats[cast.Player].Hand,
         AbilitySearchArea.YourDiscardPile => cast.World.AreaOf(DeckType.DiscardPile, PlayArea.Of(cast.Player), cardOwner: cast.Player),
         _ => throw new InvalidOperationException("Unknown compiled search area"),
     };

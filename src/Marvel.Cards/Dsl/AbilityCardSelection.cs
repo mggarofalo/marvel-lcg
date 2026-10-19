@@ -45,5 +45,7 @@ public abstract record AbilityCardSelection
         public int? Top { get; init; }
         /// <summary>Match cards from any of the four aspects.</summary>
         public bool AspectOnly { get; init; }
+        /// <summary>Match one printed card classification.</summary>
+        public string? CardClass { get; init; }
     }
 }

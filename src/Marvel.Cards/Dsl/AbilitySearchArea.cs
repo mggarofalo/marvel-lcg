@@ -16,4 +16,6 @@ public enum AbilitySearchArea
     YourDeck,
     /// <summary>The resolving player's discard pile.</summary>
     YourDiscardPile,
+    /// <summary>The resolving player's hand.</summary>
+    YourHand,
 }

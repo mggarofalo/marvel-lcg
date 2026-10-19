@@ -12,6 +12,10 @@ internal static class AbilitySearchFilters
         if (top is not null && (selection.Areas.Length != 1
             || selection.Areas[0] is not (AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck)))
             throw location.Child("top").Error("top-card searches require one deck");
-        return selection with { Top = top, AspectOnly = Boolean(fields, "aspectOnly", location) };
+        return selection with
+        {
+            Top = top, AspectOnly = Boolean(fields, "aspectOnly", location),
+            CardClass = AbilitySelectorLowering.OptionalText(fields, "cardClass", location),
+        };
     }
 }

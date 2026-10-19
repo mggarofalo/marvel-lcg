@@ -46,7 +46,8 @@ internal static class AbilitySearchDescription
         AbilityCardSelection.WithTrait trait when Criterion(trait.Cards) is { } inner =>
             WithTrait(inner, trait.Trait),
         AbilityCardSelection.InAreas { Areas: [AbilitySearchArea.YourDeck], Title: null } area =>
-            Article(string.Join(" ", new[] { area.AspectOnly ? "aspect" : null, area.Trait?.Replace('_', ' '),
+            Article(string.Join(" ", new[] { area.AspectOnly ? "aspect" : null,
+                area.CardClass == "Hero" ? "hero-specific" : area.CardClass?.ToLowerInvariant(), area.Trait?.Replace('_', ' '),
                 area.Kind?.ToString().ToLowerInvariant() ?? "card" }.Where(value => value is not null))),
         _ => null,
     };
@@ -67,7 +68,7 @@ internal static class AbilitySearchDescription
                 a.Trait == b.Trait && SameSelection(a.Cards, b.Cards),
             (AbilityCardSelection.InAreas a, AbilityCardSelection.InAreas b) =>
                 a == b || a.Areas.SequenceEqual(b.Areas) && a.Kind == b.Kind && a.Trait == b.Trait
-                && a.Title == b.Title && a.Top == b.Top && a.AspectOnly == b.AspectOnly,
+                && a.Title == b.Title && a.Top == b.Top && a.AspectOnly == b.AspectOnly && a.CardClass == b.CardClass,
             _ => false,
         };
 }

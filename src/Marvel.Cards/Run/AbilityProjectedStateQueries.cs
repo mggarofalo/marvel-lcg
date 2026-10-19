@@ -80,6 +80,7 @@ internal static class AbilityProjectedStateQueries
             AbilityCardRank.Attack => state.ModifiedOf(context, card, "attack"),
             AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(
                 card, context.World.Facts, "HP", context.World.Players),
+            AbilityCardRank.RemainingHealth => Math.Max(0, state.HealthOf(context, card) - state.DamageOf(card)),
             _ => throw new InvalidOperationException(
                 "Unknown compiled card rank in area projection"),
         };

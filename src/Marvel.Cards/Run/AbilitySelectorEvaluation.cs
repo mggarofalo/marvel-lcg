@@ -127,6 +127,8 @@ internal sealed class AbilitySelectorEvaluation(
             information.Add(InformationKind.Search);
         return [.. selection.Areas.SelectMany(area => SearchRange(area, selection.Top))
             .Where(card => !selection.AspectOnly || IsAspect(card))
+            .Where(card => selection.CardClass is null || string.Equals(selection.CardClass,
+                context.World.Facts.Attributes(card.FaceId).GetValueOrDefault("Class"), StringComparison.Ordinal))
             .Where(card => selection.Kind is null || EffectiveCards.Kind(card, context.World.Facts) == selection.Kind)
             .Where(card => selection.Trait is null || Rules.State.Traits.Has(context.World, card, selection.Trait, context.World.Facts))
             .Where(card => selection.Title is null || string.Equals(context.World.Facts.Title(card.FaceId), selection.Title, StringComparison.Ordinal))];
@@ -141,6 +143,7 @@ internal sealed class AbilitySelectorEvaluation(
     private IReadOnlyList<Card> AreaCards(AbilitySearchArea area)
     {
         if (area == AbilitySearchArea.YourDeck) return context.World.Seats[context.Player].Deck.Cards;
+        if (area == AbilitySearchArea.YourHand) return context.World.Seats[context.Player].Hand.Cards;
         var playArea = area == AbilitySearchArea.YourDiscardPile ? PlayArea.Of(context.Player) : PlayArea.Villains;
         return context.World.Areas.FirstOrDefault(candidate => candidate.Type == AreaType(area)
             && candidate.PlayArea == playArea && candidate.Host == -1)?.Cards ?? [];
@@ -153,6 +156,7 @@ internal sealed class AbilitySelectorEvaluation(
         AbilitySearchArea.ScenarioSetAside => DeckType.AsideDeck,
         AbilitySearchArea.YourDeck => DeckType.PlayerDeck,
         AbilitySearchArea.YourDiscardPile => DeckType.DiscardPile,
+        AbilitySearchArea.YourHand => DeckType.HandsArea,
         _ => throw new InvalidOperationException("Unknown compiled search area"),
     };
 
@@ -167,6 +171,7 @@ internal sealed class AbilitySelectorEvaluation(
             AbilityCardRank.Cost => context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players),
             AbilityCardRank.Attack => StateFields.Modified(context.World, card, "attack", context.World.Facts, context.World.Players),
             AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(card, context.World.Facts, "HP", context.World.Players),
+            AbilityCardRank.RemainingHealth => CardValues.RemainingHealth(context.World, card, context.World.Facts),
             _ => throw new InvalidOperationException("Unknown compiled card rank"),
         };
         long extreme = selection.Maximum ? among.Max(Rank) : among.Min(Rank);
