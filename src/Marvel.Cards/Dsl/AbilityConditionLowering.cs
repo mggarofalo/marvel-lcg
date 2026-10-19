@@ -159,6 +159,8 @@ internal static class AbilityConditionLowering
             "ally" => CardKind.Ally,
             "upgrade" => CardKind.Upgrade,
             "treachery" => CardKind.Treachery,
+            "attachment" => CardKind.Attachment,
+            "environment" => CardKind.Environment,
             _ => throw location.Error($"'{name}' is not a supported condition card kind"),
         };
     }

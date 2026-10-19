@@ -57,14 +57,16 @@ internal static class AbilityProcedureLowering
     {
         var fields = Fields(value, location, "from", "kind", "trait", "then");
         FixedWord(Required(fields, "from", location), location.Child("from"), "encounterDeck");
-        bool putIntoPlay = Text(Required(fields, "then", location), location.Child("then")) switch
+        var result = Text(Required(fields, "then", location), location.Child("then")) switch
         {
-            "reveal" => false,
-            "putIntoPlayFirstPlayer" => true,
+            "reveal" => AbilityDiscardUntilResult.Reveal,
+            "putIntoPlayFirstPlayer" => AbilityDiscardUntilResult.PutIntoPlayFirstPlayer,
+            "attachToThis" => AbilityDiscardUntilResult.AttachToThis,
+            "putIntoPlay" => AbilityDiscardUntilResult.PutIntoPlay,
             var name => throw location.Child("then").Error($"'{name}' is not a supported discard-until result"),
         };
         return new(ConditionCardKind(Required(fields, "kind", location), location.Child("kind")),
-            OptionalText(fields, "trait", location), putIntoPlay);
+            OptionalText(fields, "trait", location), result);
     }
 
     internal static AbilityEffect.ShuffleInto ShuffleIntoEffect(AbilityValue value, AbilityLocation location)

@@ -22,7 +22,7 @@ internal static class AbilityDeckAndRevealExecution
             AbilityEffect.DealEncounterCard deal => DealEncounterCard(deal, context),
             AbilityEffect.DealEncounterCards deal => DealEncounterCards(deal, context),
             AbilityEffect.EngageTopAsMinion drones => EngageTopAsMinion(drones, context),
-            AbilityEffect.DiscardUntil discard => DiscardUntil(discard, context),
+            AbilityEffect.DiscardUntil discard => AbilityDiscardUntilExecution.Run(discard, context),
             AbilityEffect.RecoverDiscardedByResource recovery =>
                 RecoverDiscardedByResource(recovery, context),
             AbilityEffect.StoreBeneath store => AbilityBeneathExecution.Run(store, context),
@@ -36,7 +36,7 @@ internal static class AbilityDeckAndRevealExecution
         };
     }
 
-    private static AbilityDeckAndRevealResult RevealCard(
+    internal static AbilityDeckAndRevealResult RevealCard(
         Card? card, AbilityDeckAndRevealContext context)
     {
         var reveal = AbilityEncounterReveal.Prepare(card, context);
@@ -44,7 +44,7 @@ internal static class AbilityDeckAndRevealExecution
             ImmutableDictionary<string, long>.Empty);
     }
 
-    /// <summary>Deals a specific encounter card facedown — <c>rr:deal</c>.</summary>
+    /// <summary>Deals a specific encounter card facedown â€” <c>rr:deal</c>.</summary>
     private static AbilityDeckAndRevealResult DealEncounterCard(
         AbilityEffect.DealEncounterCard deal, AbilityDeckAndRevealContext context)
     {
@@ -58,7 +58,7 @@ internal static class AbilityDeckAndRevealExecution
         return AbilityDeckAndRevealResult.Handled;
     }
 
-    /// <summary>Deals facedown encounter cards in player order — <c>rr:deal</c>.</summary>
+    /// <summary>Deals facedown encounter cards in player order â€” <c>rr:deal</c>.</summary>
     private static AbilityDeckAndRevealResult DealEncounterCards(
         AbilityEffect.DealEncounterCards deal, AbilityDeckAndRevealContext context)
     {
@@ -88,30 +88,6 @@ internal static class AbilityDeckAndRevealExecution
         return AbilityDeckAndRevealResult.Handled;
     }
 
-    /// <summary>Discards one at a time until the bounded search matches.</summary>
-    /// <remarks>
-    /// <c>rr:discard.4</c> preserves order when one effect discards several
-    /// cards. <see cref="EncounterDeck.DiscardUntil"/> also bounds an absent
-    /// match by the cards available across the deck and discard pile.
-    /// </remarks>
-    private static AbilityDeckAndRevealResult DiscardUntil(
-        AbilityEffect.DiscardUntil discard, AbilityDeckAndRevealContext context)
-    {
-        var found = EncounterDeck.DiscardUntil(
-            context.World, context.World.Facts, discard.Kind,
-            context.Trigger, context.Events, discard.Trait);
-        if (found is null) return AbilityDeckAndRevealResult.Handled;
-        if (discard.PutIntoPlayForFirstPlayer)
-        {
-            AbilityCardStateExecution.PutIntoPlay(
-                found, context.World.FirstPlayer, CardStateContext(context));
-            return AbilityDeckAndRevealResult.Handled;
-        }
-        var reveal = AbilityEncounterReveal.Prepare(found, context);
-        return new(true, reveal is not null, reveal,
-            ImmutableDictionary<string, long>.Empty);
-    }
-
     private static AbilityDeckAndRevealResult RecoverDiscardedByResource(
         AbilityEffect.RecoverDiscardedByResource recovery,
         AbilityDeckAndRevealContext context)
@@ -134,7 +110,7 @@ internal static class AbilityDeckAndRevealExecution
         return AbilityDeckAndRevealResult.Handled;
     }
 
-    /// <summary>Shuffles one named deck — <c>rr:shuffle</c>.</summary>
+    /// <summary>Shuffles one named deck â€” <c>rr:shuffle</c>.</summary>
     /// <remarks>
     /// This is a separate effect after an answered search choice because
     /// <c>rr:search.3</c> shuffles upon completion of that search.
@@ -144,7 +120,7 @@ internal static class AbilityDeckAndRevealExecution
         new(true, context.World.Shuffle(Area(shuffle.Area, context)), null,
             ImmutableDictionary<string, long>.Empty);
 
-    /// <summary>Moves every selected card, then shuffles once — <c>rr:shuffle</c>.</summary>
+    /// <summary>Moves every selected card, then shuffles once â€” <c>rr:shuffle</c>.</summary>
     /// <remarks>The single shuffle is part of the seeded RNG wire format.</remarks>
     private static AbilityDeckAndRevealResult ShuffleInto(
         AbilityEffect.ShuffleInto shuffle, AbilityDeckAndRevealContext context)
@@ -168,7 +144,7 @@ internal static class AbilityDeckAndRevealExecution
         return new(true, applied, null, ImmutableDictionary<string, long>.Empty);
     }
 
-    /// <summary>Searches without moving inspected cards — <c>rr:search.2</c>.</summary>
+    /// <summary>Searches without moving inspected cards â€” <c>rr:search.2</c>.</summary>
     /// <remarks>
     /// A found card leaves before <c>rr:search.3</c> shuffles the searched deck.
     /// Several matches require the player choice in <c>rr:search.1</c>, which

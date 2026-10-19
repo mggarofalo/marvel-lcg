@@ -111,7 +111,7 @@ public abstract record AbilityEffect
     /// <summary>Discard cards from a supported deck or the named players' decks.</summary>
     public sealed record DiscardTop(AbilitySearchArea From, AbilityPlayerSelection? Players, AbilityNumber Count) : AbilityEffect;
     /// <summary>Discard from the encounter deck until a matching card is found.</summary>
-    public sealed record DiscardUntil(CardKind Kind, string? Trait, bool PutIntoPlayForFirstPlayer) : AbilityEffect;
+    public sealed record DiscardUntil(CardKind Kind, string? Trait, AbilityDiscardUntilResult Result) : AbilityEffect;
     /// <summary>Move selected cards into a deck and shuffle it.</summary>
     public sealed record ShuffleInto(AbilityCardSelection Cards, AbilitySearchArea Deck) : AbilityEffect;
     /// <summary>Search ordered areas for a printed face and reveal it.</summary>
