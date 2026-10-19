@@ -64,6 +64,7 @@ public static class AgendaProcedures
                 PhaseTransitionProcedure.Apply(world, facts, step, events),
             AgendaProcedureKind.CardEntry => EventCardEntry.Apply(world, step, events),
             AgendaProcedureKind.ResourcePayment => ResourcePaymentProcedure.Apply(world, step, events),
+            AgendaProcedureKind.Campaign => CampaignRecoveryProcedure.Apply(world, step, events),
             AgendaProcedureKind.Lifecycle => null,
             _ => throw new RulesNotImplementedException(
                 $"the agenda has no procedure for '{step.What}'"),
@@ -116,6 +117,9 @@ public static class AgendaProcedures
                 break;
             case AgendaProcedureKind.AbilityContinuation:
                 AbilityContinuationProcedure.Answer(world, step, input, events);
+                break;
+            case AgendaProcedureKind.Campaign:
+                CampaignRecoveryProcedure.Answer(world, step, input, events);
                 break;
             case AgendaProcedureKind.Activation:
                 ActivationProcedure.Answer(world, step, input);

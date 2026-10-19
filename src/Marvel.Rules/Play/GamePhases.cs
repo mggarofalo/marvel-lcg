@@ -33,13 +33,8 @@ internal static class GamePhases
     /// same distinction <see cref="PhaseEnd.DrawToHandSize"/> makes.
     /// </para>
     /// <para>
-    /// <b>The two readings cannot disagree here, and that is worth knowing
-    /// rather than hiding.</b> Step 14 has already drawn every player up to
-    /// their hand size, so the hand this is asked about is exactly that size
-    /// and "up to hand size" and "as many as went" fetch the same number. A
-    /// mutation that swaps one for the other survives every test, and will
-    /// until something modifies hand size during setup. The rule's number is
-    /// used anyway, because the rule is what this is implementing.
+    /// Campaign obligations drawn during this instruction enter play immediately
+    /// and consume one draw; they do not cause a replacement draw.
     /// </para>
     /// </remarks>
     /// <param name="game">The game.</param>
@@ -63,18 +58,7 @@ internal static class GamePhases
 
         ActivityBatches.Complete(happened, 0, "Discard", game.Active);
         int drawStart = happened.Count;
-        long limit = PhaseEnd.HandSize(game.world, seat, game.facts);
-        while (seat.Hand.Cards.Count < limit)
-        {
-            int before = seat.Hand.Cards.Count;
-            Draw.Resolve(game.world, game.Active, 1, MulliganTrigger, happened);
-            if (seat.Hand.Cards.Count == before)
-            {
-                // `rr:player-deck.4` -- a deck and a discard pile both empty.
-                // No card to draw is a legal board, not a stall.
-                break;
-            }
-        }
+        DrawHandSize.Resolve(game.world, game.facts, game.Active, MulliganTrigger, happened);
 
         ActivityBatches.Complete(happened, drawStart, "Draw", game.Active);
 
