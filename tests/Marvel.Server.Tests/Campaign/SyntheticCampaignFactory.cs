@@ -16,5 +16,6 @@ internal sealed class SyntheticCampaignFactory : ICampaignGameFactory
     public OpenedGame Create(GameSpecification specification) => core.Create(specification with { Campaign = null, PlayerDecks = null });
     public CampaignGameProgress InspectCampaign(Game game) => new([], [], null);
     public DeckAssessment AssessCampaignDeck(string hero, IReadOnlyList<string> cards, IReadOnlyList<string> bannedAllies) => new(cards.Count, []);
+    public IReadOnlyDictionary<string, int[]> CampaignDeckQuantities(string hero, IReadOnlyList<string> draft, IReadOnlyList<string> bannedAllies) => new Dictionary<string, int[]>();
     public int CampaignBaseHitPoints(string hero) => 10;
 }

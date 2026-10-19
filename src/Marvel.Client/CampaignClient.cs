@@ -48,11 +48,26 @@ internal static class CampaignClient
         return new(response, new(session, Sanitize(response), response.Invitations ?? [], null), null, null);
     }
 
-    private static bool Complete(CampaignDescriptor? campaign, EngineRequest request) =>
-        campaign is { Revision: >= 0, State: not null } && ValidIdentifier(campaign.Id)
+    private static bool Complete(CampaignDescriptor? campaign, EngineRequest request)
+    {
+        return campaign is { Revision: >= 0, State: not null } && ValidIdentifier(campaign.Id)
         && (request.Campaign!.Action == "create" || campaign.Id == request.GameId)
-        && !campaign.State.Players.IsDefaultOrEmpty && campaign.State.Players.Length <= 4
-        && Enum.IsDefined(campaign.State.Phase) && Enum.IsDefined(campaign.State.Stage);
+        && CompleteState(campaign.State);
+    }
+
+    private static bool CompleteState(Marvel.Rules.Campaign.CampaignState state)
+    {
+        return state.Product is { Length: > 0 and <= 80 } && !state.Players.IsDefaultOrEmpty && state.Players.Length <= 4
+        && !state.BannedAllyFaces.IsDefault && !state.RemovedCardKeys.IsDefault
+        && Enum.IsDefined(state.Phase) && Enum.IsDefined(state.Stage)
+        && state.Players.All(CompletePlayer);
+    }
+
+    private static bool CompletePlayer(Marvel.Rules.Campaign.CampaignPlayerState player)
+    {
+        return player is { Hero.Length: > 0, Deck.Cards: not null } && !player.Cards.IsDefault
+        && !player.AvailableObligations.IsDefault;
+    }
 
     private static ClientCampaignResult Uncertain(EngineRequest request, string message) =>
         new(null, null, Error("campaign_uncertain", message), request);

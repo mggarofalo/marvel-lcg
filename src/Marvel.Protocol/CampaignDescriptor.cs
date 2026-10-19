@@ -3,4 +3,9 @@ namespace Marvel.Protocol;
 
 /// <summary>Campaign-owner knowledge and the next rules-owned choice, without hidden live-game state.</summary>
 public sealed record CampaignDescriptor(string Id, long Revision, CampaignState State,
-    CampaignRewardChoice? Reward, string? ActiveGameId);
+    CampaignRewardChoice? Reward, string? ActiveGameId)
+{
+    /// <summary>Host-authored corrections that must be resolved before beginning an attempt.</summary>
+    public IReadOnlyList<string> PreparationProblems { get; init; } = [];
+}
+

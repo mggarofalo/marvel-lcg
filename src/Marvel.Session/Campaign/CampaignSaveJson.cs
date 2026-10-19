@@ -62,6 +62,7 @@ public static class CampaignSaveJson
         if (save.Compatibility is null || save.Identity is null || save.Configuration is null || save.State is null)
             throw new SessionSaveException("campaign save lacks required records");
         ValidateDimensions(save);
+        ValidateState(save);
         foreach (SessionSave attempt in save.Attempts) SessionSaveJson.Validate(attempt);
     }
 
@@ -72,6 +73,21 @@ public static class CampaignSaveJson
             throw new SessionSaveException("campaign save dimensions are invalid");
         if (save.Journal.Length > 100000 || save.Attempts.Length > 1000)
             throw new SessionSaveException("campaign history exceeds supported bounds");
+    }
+
+    private static void ValidateState(CampaignSave save)
+    {
+        var state = save.State;
+        if (state.Players.IsDefaultOrEmpty || state.Players.Length > 4 || state.RewardSeats.IsDefault
+            || state.RemovedCardKeys.IsDefault || state.BannedAllyFaces.IsDefault || state.ExperimentalWeapons.IsDefault)
+            throw new SessionSaveException("campaign state dimensions are invalid");
+        foreach (var player in state.Players) ValidatePlayer(player);
+    }
+
+    private static void ValidatePlayer(Marvel.Rules.Campaign.CampaignPlayerState player)
+    {
+            if (player is null || player.Deck is null || player.Cards.IsDefault || player.AvailableObligations.IsDefault)
+                throw new SessionSaveException("campaign player is malformed");
     }
 
     private static DefaultJsonTypeInfoResolver RequiredCampaignMembers()

@@ -51,4 +51,37 @@ public sealed class FileCampaignStoreTests
         }
         finally { Directory.Delete(root, recursive: true); }
     }
+    [Theory]
+    [InlineData("authority")]
+    [InlineData("receipt")]
+    public void StructurallyForgedArchivesWithValidChecksumsAreQuarantined(string alteration)
+    {
+        string root = Path.Combine(Path.GetTempPath(), "marvel-campaign-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            using var store = new FileCampaignStore(root);
+            var host = new CampaignHost(new SyntheticCampaignFactory(), store, new MemorySessionStore());
+            var created = host.Exchange(CampaignHostTests.Create());
+            var start = CampaignHostTests.Command(created, "start", 0) with { Entry = Marvel.Protocol.EntryClaim.Create() };
+            Assert.Null(host.Exchange(start).Error);
+            string directory = Path.Combine(root, created.Campaign!.Id);
+            string manifestPath = Path.Combine(directory, "current");
+            var manifest = JsonNode.Parse(File.ReadAllText(manifestPath))!;
+            string path = Path.Combine(directory, manifest["generation"]!.GetValue<string>() + ".archive");
+            var payload = JsonNode.Parse(File.ReadAllBytes(path))!;
+            string field = alteration == "authority" ? "authorities" : "receipts";
+            payload[field]!.AsArray().Add(payload[field]![0]!.DeepClone());
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(payload.ToJsonString());
+            File.WriteAllBytes(path, bytes);
+            manifest["length"] = bytes.Length;
+            manifest["sha256"] = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
+            File.WriteAllText(manifestPath, manifest.ToJsonString());
+            var result = Assert.Single(store.Load());
+            Assert.Null(result.Campaign);
+            Assert.Equal("campaign_restore_failed", result.Error);
+            Assert.Equal(bytes, File.ReadAllBytes(path));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
 }

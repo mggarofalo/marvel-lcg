@@ -9,9 +9,9 @@ public static class CampaignProof
     public static void RequireSetup(CampaignState state, SessionSave proof)
     {
         if (proof.Setup.Seed != CampaignSeed.ForAttempt(state.Seed, state.Stage, state.Attempt)
-            || !proof.Setup.Heroes.SequenceEqual(state.Players.Select(player => player.Hero))
+            || !proof.Setup.Heroes.SequenceEqual(state.Players.Where(player => player.Participating).Select(player => player.Hero))
             || CampaignSaveJson.Canonical(proof.Setup.Campaign) != CampaignSaveJson.Canonical(CampaignRules.Setup(state))
-            || CampaignSaveJson.Canonical(proof.Setup.PlayerDecks) != CampaignSaveJson.Canonical(state.Players.Select(player => player.Deck).ToArray()))
+            || CampaignSaveJson.Canonical(proof.Setup.PlayerDecks) != CampaignSaveJson.Canonical(state.Players.Where(player => player.Participating).Select(player => player.Deck).ToArray()))
             throw new ReplayDivergenceException("campaign attempt setup differs from prepared authority");
         if (proof.Units.Count != 0)
             throw new ReplayDivergenceException("attempt start contains decisions made before admission");

@@ -33,9 +33,13 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
     public ValueTask<ClientCampaignResult> ExchangeCampaignAsync(EngineRequest request,
         CancellationToken cancellationToken = default) => CampaignClient.ExchangeAsync(this, request, cancellationToken);
 
+    /// <summary>Optional campaign authority applied only to this editor connection’s draft assessments.</summary>
+    public CampaignDeckAccess? CampaignDeck { get; set; }
+
     /// <summary>Reads the public deck catalog or assesses a draft without creating a session.</summary>
     public ValueTask<ClientDeckResult> ReadDecksAsync(DeckQuery? draft = null,
-        CancellationToken cancellationToken = default) => DeckClient.QueryAsync(this, draft, cancellationToken);
+        CancellationToken cancellationToken = default) => DeckClient.QueryAsync(this, draft is { CatalogPage: null }
+            ? draft with { Campaign = CampaignDeck } : draft, cancellationToken);
 
     /// <summary>Creates an app client over an embedded or remote transport.</summary>
     public LocalGameClient(

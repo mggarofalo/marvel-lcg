@@ -44,7 +44,7 @@ internal static class Program
             ServerOptions options = ServerOptions.Parse(args);
             log = CreateLog(
                 Console.Error, options.TelemetryEndpoint, options.DiagnosticsRoot);
-            SocketEngineServer server = Prepare(options, log);
+            HostedEndpoint server = Prepare(options, log);
             Console.CancelKeyPress += stop;
             subscribed = true;
             using PosixSignalRegistration? terminate = OperatingSystem.IsWindows()
@@ -203,24 +203,16 @@ internal static class Program
         return log;
     }
 
-    private static SocketEngineServer Prepare(
-        ServerOptions options, OperationalLog? log = null)
-    {
-        var host = new EngineHost(
-            DatasetGameFactory.Load(options.DataRoot),
-            visibility: options.Visibility,
-            store: new FileSessionStore(options.SaveRoot),
-            log: log);
-        return new SocketEngineServer(host, options.Address, options.Port);
-    }
+    private static HostedEndpoint Prepare(ServerOptions options, OperationalLog? log = null) => new(options, log);
 
     private static int Serve(
-        SocketEngineServer server,
+        HostedEndpoint host,
         OperationalLog log,
         Action<IPEndPoint>? onListening,
         CancellationToken cancellationToken)
     {
-        server.Run(endpoint =>
+        using var lifetime = host;
+        host.Server.Run(endpoint =>
         {
             log.Write(
                 OperationalEventIds.ServerListening,

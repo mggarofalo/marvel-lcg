@@ -148,6 +148,9 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View");
         PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(LocalGameClient).Assembly,
+            // Read-only campaign contracts and private client resume metadata; rules remain server-owned.
+            "Marvel.Protocol.CampaignDeckAccess",
+            "Marvel.Rules.Campaign.CampaignCard",
             // Campaign contracts are read-only; CampaignHost owns transitions and durable admission.
             "Marvel.Protocol.CampaignDescriptor",
             "Marvel.Protocol.CampaignQuery",

@@ -15,6 +15,8 @@ public sealed record CampaignQuery(string Action)
     public uint Seed { get; init; }
     /// <summary>Campaign difficulty on create; independent scenario difficulty on mode.</summary>
     public bool Expert { get; init; }
+    /// <summary>Whether the selected defeated expert player joins the next attempt.</summary>
+    public bool Participating { get; init; } = true;
     /// <summary>The seat whose recipe or reward is being chosen.</summary>
     public int Seat { get; init; }
     /// <summary>A replacement base recipe accepted only between scenarios.</summary>

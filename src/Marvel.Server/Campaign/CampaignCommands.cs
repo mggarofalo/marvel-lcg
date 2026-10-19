@@ -73,13 +73,15 @@ internal static class CampaignCommands
         CampaignJournalEntry entry;
         switch (query.Action)
         {
+            case "participation": state = CampaignParticipationRules.Select(save.State, query.Seat, query.Participating);
+                entry = new("participation", Seat: query.Seat) { Participating = query.Participating }; break;
             case "mode": state = CampaignRules.SelectScenarioMode(save.State, query.Expert); entry = new("mode", Expert: query.Expert); break;
             case "retry": state = CampaignRules.Retry(save.State); entry = new("retry"); break;
             case "reward": state = CampaignRewardRules.Choose(save.State, factory.CampaignDefinition!, query.Seat, query.Choice);
                 entry = new("reward", Seat: query.Seat, Choice: query.Choice); break;
             case "deck":
                 state = CampaignRules.ReplaceDeck(save.State, query.Seat, query.Deck ?? throw new ArgumentException("deck required"));
-                RequireDecks(factory, state); entry = new("deck", Seat: query.Seat, Deck: query.Deck); break;
+                RequireDeck(factory, state, query.Seat); entry = new("deck", Seat: query.Seat, Deck: query.Deck); break;
             default: throw new ArgumentException("unknown campaign command");
         }
         return campaign with { Save = CampaignTransactions.Append(save, state, entry) };
@@ -87,9 +89,16 @@ internal static class CampaignCommands
 
     internal static void RequireDecks(ICampaignGameFactory factory, CampaignState state)
     {
-        foreach (var player in state.Players)
+        foreach (var player in state.Players.Where(player => player.Participating))
             if (!factory.AssessCampaignDeck(player.Hero, player.Deck.Cards, state.BannedAllyFaces).IsValid)
                 throw new ArgumentException("campaign deck is not legal");
+    }
+
+    private static void RequireDeck(ICampaignGameFactory factory, CampaignState state, int seat)
+    {
+        var player = state.Players[seat];
+        if (!factory.AssessCampaignDeck(player.Hero, player.Deck.Cards, state.BannedAllyFaces).IsValid)
+            throw new ArgumentException("campaign deck is not legal");
     }
 
     internal static StoredCampaign AddReceipt(StoredCampaign campaign, EngineRequest request, string? gameId = null) =>

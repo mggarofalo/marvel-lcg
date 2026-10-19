@@ -16,6 +16,9 @@ public interface ICampaignGameFactory : IDurableGameFactory
     /// <summary>Assesses a campaign recipe with its authorized removed-card exceptions.</summary>
     DeckAssessment AssessCampaignDeck(string hero, IReadOnlyList<string> cards, IReadOnlyList<string> bannedAllies);
 
+    /// <summary>Offers exact row quantities under the same campaign construction exceptions.</summary>
+    IReadOnlyDictionary<string, int[]> CampaignDeckQuantities(string hero, IReadOnlyList<string> draft, IReadOnlyList<string> bannedAllies);
+
     /// <summary>Returns the printed identity base HP after hero admission.</summary>
     int CampaignBaseHitPoints(string hero);
 }

@@ -37,7 +37,7 @@ public sealed class FileSessionStore : ISessionStore
                      .OrderBy(path => path, StringComparer.Ordinal))
         {
             string storageId = Path.GetFileName(directory);
-            if (storageId.StartsWith(".creating-", StringComparison.Ordinal))
+            if (ReservedDirectory(storageId))
             {
                 continue;
             }
@@ -92,7 +92,7 @@ public sealed class FileSessionStore : ISessionStore
             string? generation = null;
             try
             {
-                if (storageId.StartsWith(".creating-", StringComparison.Ordinal))
+                if (ReservedDirectory(storageId))
                 {
                     continue;
                 }
@@ -234,6 +234,9 @@ public sealed class FileSessionStore : ISessionStore
             // command into a reported failure. A later commit tries again.
         }
     }
+
+    private static bool ReservedDirectory(string storageId) => storageId == ".campaigns"
+        || storageId.StartsWith(".creating-", StringComparison.Ordinal);
 
     private static void RequireStorageId(string value)
     {

@@ -22,6 +22,27 @@ public sealed class PresentationBoundaryTests
             "Marvel.View");
         PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(Main).Assembly,
+            // Read-only campaign contracts and private client resume metadata; rules remain server-owned.
+            "Marvel.Client.CampaignConnection",
+            "Marvel.Client.ClientCampaignResult",
+            "Marvel.Client.ClientSession",
+            "Marvel.Client.ClientSynchronizationResult",
+            "Marvel.Desktop.CampaignConnectionStore",
+            "Marvel.Protocol.CampaignDeckAccess",
+            "Marvel.Protocol.CampaignDescriptor",
+            "Marvel.Protocol.CampaignQuery",
+            "Marvel.Protocol.EngineRequest",
+            "Marvel.Protocol.EntryClaim",
+            "Marvel.Protocol.GameSpecification",
+            "Marvel.Rules.Campaign.CampaignCard",
+            "Marvel.Rules.Campaign.CampaignPhase",
+            "Marvel.Rules.Campaign.CampaignPlayerState",
+            "Marvel.Rules.Campaign.CampaignRewardChoice",
+            "Marvel.Rules.Campaign.CampaignRewardKind",
+            "Marvel.Rules.Campaign.CampaignStage",
+            "Marvel.Rules.Campaign.CampaignState",
+            "Marvel.Rules.Setup.PlayerDeckRecipe",
+            "Marvel.View.ViewerClaim",
             // Library values and public printed facts have no live-card authority.
             // Legality arrives only as host-authored diagnostics; unknown faces
             // remain rejected by DeckCatalogTransportTests and DeckAssessmentTests.

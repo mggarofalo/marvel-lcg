@@ -18,8 +18,7 @@ public static class CampaignOutcomeRules
             return state with { Phase = CampaignPhase.Complete };
         state = RecordPlayers(state, outcome);
         state = RecordScenario(state, outcome);
-        ImmutableArray<int> seats = [.. Enumerable.Range(0, state.Players.Length)
-            .Where(seat => Eligible(state, outcome.Seats[seat]))];
+        ImmutableArray<int> seats = [.. outcome.Seats.Where(seat => Eligible(state, seat)).Select(seat => seat.Seat)];
         state = state with { PendingOutcome = outcome, RewardSeats = seats, Phase = CampaignPhase.Rewards };
         return seats.IsEmpty ? Advance(state) : state;
     }
@@ -88,10 +87,11 @@ public static class CampaignOutcomeRules
     private static void Validate(
         CampaignState state, CampaignDefinition definition, CampaignAttemptOutcome outcome)
     {
-        if (outcome.Seats.Length != state.Players.Length || outcome.DelayCounters < 0)
+        var participating = state.Players.Select((player, seat) => (player, seat))
+            .Where(item => item.player.Participating).Select(item => item.seat);
+        if (!outcome.Seats.Select(seat => seat.Seat).SequenceEqual(participating) || outcome.DelayCounters < 0)
             throw new ArgumentException("terminal campaign facts have invalid dimensions", nameof(outcome));
-        for (int seat = 0; seat < outcome.Seats.Length; seat++)
-            ValidateSeat(state, definition, outcome.Seats[seat], seat);
+        foreach (var seat in outcome.Seats) ValidateSeat(state, definition, seat, seat.Seat);
         if (outcome.ExperimentalWeapons.Any(face => !definition.ExperimentalWeaponFaces.Contains(face)))
             throw new ArgumentException("unknown experimental weapon", nameof(outcome));
     }

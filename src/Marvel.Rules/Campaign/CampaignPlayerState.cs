@@ -14,6 +14,9 @@ public sealed record CampaignPlayerState(
     ImmutableArray<CampaignCard> AvailableObligations,
     bool EngagedWithEnemy)
 {
+    /// <summary>Whether this roster seat joins the next attempt; defeated expert players may sit out.</summary>
+    public bool Participating { get; init; } = true;
+
     /// <summary>Printed permanent HP bonus from the awarded campaign Condition, independent of temporary effects.</summary>
     public int ConditionHitPointBonus { get; init; }
 }

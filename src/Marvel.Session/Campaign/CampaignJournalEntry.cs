@@ -11,4 +11,9 @@ public sealed record CampaignJournalEntry(
     bool Expert = false,
     PlayerDeckRecipe? Deck = null,
     SessionSave? Proof = null,
-    CampaignGameProgress? Progress = null);
+    CampaignGameProgress? Progress = null)
+{
+    /// <summary>The accepted participation choice for a defeated expert roster seat.</summary>
+    public bool Participating { get; init; } = true;
+}
+

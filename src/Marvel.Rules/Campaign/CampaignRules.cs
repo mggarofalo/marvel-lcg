@@ -51,14 +51,19 @@ public static class CampaignRules
     public static CampaignGameSetup Setup(CampaignState state)
     {
         RequirePhase(state, CampaignPhase.Preparing);
+        var problems = CampaignPreparationRules.Problems(state);
+        if (!problems.IsEmpty) throw new InvalidOperationException(string.Join(" ", problems));
+        var participants = state.Players.Select((player, roster) => (player, roster))
+            .Where(item => item.player.Participating).ToArray();
+        PlayerCountRules.Validate(participants.Length);
         int threat = state.Stage == CampaignStage.RedSkull
-            ? checked(state.DelayCounters * (state.Expert ? state.Players.Length : 1)) : 0;
+            ? checked(state.DelayCounters * (state.Expert ? participants.Length : 1)) : 0;
         return new CampaignGameSetup(state.Product, state.Expert, state.Stage, state.Attempt,
-            [.. state.Players.Select((player, seat) => new CampaignSeatSetup(seat,
-                player.Cards, state.Expert ? player.RecordedHitPoints : null,
-                state.Expert && player.RequiresRecovery, player.AvailableObligations,
-                state.Expert && state.Stage == CampaignStage.RedSkull && player.EngagedWithEnemy)
-                { ConditionHitPointBonus = player.ConditionHitPointBonus })],
+            [.. participants.Select((item, seat) => new CampaignSeatSetup(seat,
+                item.player.Cards, state.Expert ? item.player.RecordedHitPoints : null,
+                state.Expert && item.player.RequiresRecovery, item.player.AvailableObligations,
+                state.Expert && state.Stage == CampaignStage.RedSkull && item.player.EngagedWithEnemy)
+                { CampaignSeat = item.roster, ConditionHitPointBonus = item.player.ConditionHitPointBonus })],
             state.ExperimentalWeapons, threat) { BannedAllyFaces = state.BannedAllyFaces };
     }
 
@@ -66,6 +71,7 @@ public static class CampaignRules
     public static CampaignState Start(CampaignState state)
     {
         RequirePhase(state, CampaignPhase.Preparing);
+        _ = Setup(state);
         return state with { Phase = CampaignPhase.Playing };
     }
 

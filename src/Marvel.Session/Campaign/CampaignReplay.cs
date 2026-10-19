@@ -43,6 +43,7 @@ public static class CampaignReplay
     {
         return entry.Kind switch
         {
+            "participation" => CampaignParticipationRules.Select(state, entry.Seat, entry.Participating),
             "mode" => CampaignRules.SelectScenarioMode(state, entry.Expert),
             "deck" => CampaignRules.ReplaceDeck(state, entry.Seat,
                 entry.Deck ?? throw new SessionSaveException("deck transition has no recipe")),
