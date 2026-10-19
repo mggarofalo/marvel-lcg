@@ -8084,6 +8084,239 @@
           }
         }
       ]
+    },
+    {
+      "card": "04026",
+      "name": "Criminal Past",
+      "note": "Give to the Clint Barton Player.\nYou may flip to alter-ego form. Choose:\n• Exhaust Clint Barton → remove this card from the game.\n• Discard Hawkeye's Bow from play. Discard this obligation.\n",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "descriptions": [
+                    "Change to alter-ego form",
+                    "Remain in your current form"
+                  ],
+                  "options": [
+                    {
+                      "changeForm": {
+                        "player": "you",
+                        "to": "alter-ego"
+                      }
+                    },
+                    {
+                      "seq": []
+                    }
+                  ]
+                }
+              },
+              {
+                "choose": {
+                  "descriptions": [
+                    "Exhaust Clint Barton and remove Criminal Past from the game",
+                    "Discard Hawkeye’s Bow and this obligation"
+                  ],
+                  "options": [
+                    {
+                      "then": {
+                        "effect": {
+                          "exhaust": "yourAlterEgo"
+                        },
+                        "then": {
+                          "removeFromGame": "this"
+                        }
+                      }
+                    },
+                    {
+                      "seq": [
+                        {
+                          "discard": {
+                            "titled": "Hawkeye's Bow"
+                          }
+                        },
+                        {
+                          "discard": "this"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "04028",
+      "name": "Marked for Death",
+      "note": "When Revealed: The Clint Barton player searches their hand, deck, discard pile, and play area for Mockingbird and places her faceup beneath this card. When this scheme is defeated, return Mockingbird to her owner's hand. ruling:6d6264d6620980b3 supersedes outdated in-play interpretations: search only Clint Barton’s identity-specific Mockingbird, tuck out of play, and return only that stored copy upon defeat.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "if": {
+                  "test": {
+                    "cardSet": {
+                      "card": "you",
+                      "set": "hawkeye"
+                    }
+                  },
+                  "then": {
+                    "seq": [
+                      {
+                        "storeBeneath": {
+                          "cards": {
+                            "cardsIn": {
+                              "areas": [
+                                "yourHand",
+                                "yourDeck",
+                                "yourDiscardPile",
+                                "yourPlayArea"
+                              ],
+                              "kind": "Ally",
+                              "title": "Mockingbird",
+                              "cardClass": "Hero"
+                            }
+                          },
+                          "host": "this",
+                          "faceUp": "true"
+                        }
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenDefeated",
+            "timing": "WhenDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "releaseBeneath": {
+              "removeHost": "false"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04021",
+      "name": "Avengers Tower",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "atLeast": {
+                  "value": {
+                    "count": {
+                      "withTrait": {
+                        "cards": {
+                          "query": "alliesYouControl"
+                        },
+                        "trait": "AVENGER"
+                      }
+                    }
+                  },
+                  "count": {
+                    "count": {
+                      "query": "alliesYouControl"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "grant": {
+                  "card": "you",
+                  "keyword": "ally_limit",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "reduceNextCardCost": {
+              "player": "any",
+              "kind": "ally",
+              "trait": "AVENGER",
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "04022",
+      "name": "Earth's Mightiest Heroes",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "form": "hero",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaustChosen": {
+              "from": {
+                "query": "charactersYouControl"
+              },
+              "trait": "AVENGER",
+              "count": 1
+            }
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "withTrait": {
+                  "cards": {
+                    "query": "charactersYouControlExceptCost"
+                  },
+                  "trait": "AVENGER"
+                }
+              },
+              "effect": {
+                "ready": "chosen"
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
