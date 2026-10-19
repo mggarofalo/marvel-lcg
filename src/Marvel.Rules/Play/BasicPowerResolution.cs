@@ -70,6 +70,7 @@ public static class BasicPowerResolution
 
         RemoveThreat(
             world, facts, world.Cards[thwart.Thwarter], world.Cards[thwart.Scheme], events);
+        world.Agenda.Occurrence?.Also(BasicPowerTiming.ThwartEnds);
     }
 
     /// <summary>

@@ -11,4 +11,6 @@ public enum LifecycleKind
     CardEntersPlay,
     /// <summary>FormChanged procedure stage.</summary>
     FormChanged,
+    /// <summary>Completed basic recovery.</summary>
+    BasicRecoveryUsed,
 }
