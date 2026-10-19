@@ -76,7 +76,9 @@ func _control_has_real_hit_area(control: Control) -> bool:
 	]
 	for point in points:
 		if not await _control_owns_point(control, point):
-			_fail("hosted control '%s' loses a center or interior-edge hit" % control.name)
+			_fail("hosted control '%s' loses hit at %s; sampled=%s current=%s hovered=%s" % [
+				control.name, point, rect, _visible_control_rect(control),
+				control.get_viewport().gui_get_hovered_control()])
 			return false
 	return true
 

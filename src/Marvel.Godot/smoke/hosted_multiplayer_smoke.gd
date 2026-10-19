@@ -104,7 +104,10 @@ func _open_guest(packed: PackedScene, invitation: String) -> bool:
 	guest = packed.instantiate() as Control
 	guest_viewport = _new_client_viewport()
 	guest_viewport.add_child(guest)
-	if not await _wait_for(func() -> bool: return _button(guest, "Join a game") != null):
+	# Discovery updates the entry layout; sample pointer bounds after it is ready.
+	if not await _wait_for(func() -> bool:
+		var ready := _button(guest, "Start game")
+		return ready != null and not ready.disabled):
 		_fail("the guest entry screen never became ready")
 		return false
 	_configure_connection(guest)
