@@ -40,9 +40,8 @@ internal static class AbilityStructuralPowerExecution
 
         var abilities = Abilities(context);
         var addresses = abilities
+            .Where(ability => context.Tier is null || ability.Trigger.Timing == context.Tier)
             .Select((ability, index) => (Ability: ability, Index: index))
-            .Where(candidate => context.Tier is null
-                || candidate.Ability.Trigger.Timing == context.Tier)
             .SelectMany(candidate => AbilityAdmission.PowerEffects(candidate.Ability.Effect, verb)
                 .Select((wrapper, ordinal) =>
                     (candidate.Index, Ordinal: ordinal, Wrapper: wrapper)))
