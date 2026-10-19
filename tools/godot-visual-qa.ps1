@@ -24,12 +24,14 @@ dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 New-Item -ItemType Directory -Force -Path $CaptureDir | Out-Null
 function Invoke-VisualSmoke {
+    param([string]$Script = "res://smoke/local_game_smoke.gd", [string]$Marker = "LOCAL_GAME_SMOKE_OK")
     $output = & $GodotBin --audio-driver Dummy --rendering-method gl_compatibility `
         --resolution $env:MARVEL_SMOKE_VIEWPORT `
         --path "$repoRoot/src/Marvel.Godot" `
-        --script res://smoke/local_game_smoke.gd 2>&1
+        --script $Script 2>&1
     $output | Write-Output
-    if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output)) {
+    if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output) -or
+        -not (($output -join "`n").Contains($Marker))) {
         throw "Godot visual smoke reported an unexpected failure diagnostic."
     }
 }
@@ -41,6 +43,11 @@ foreach ($viewport in @("1920x1080")) {
         $env:MARVEL_SMOKE_CAPTURE_DIR = $CaptureDir
         Invoke-VisualSmoke
     }
+}
+
+foreach ($scale in @(50, 80, 100, 150)) {
+    $env:MARVEL_UI_SCALE = [string]$scale
+    Invoke-VisualSmoke -Script "res://smoke/text_resolution_smoke.gd" -Marker "TEXT_RESOLUTION_OK"
 }
 
 Write-Output "Rendered visual checkpoints: $CaptureDir"

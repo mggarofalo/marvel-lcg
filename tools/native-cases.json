@@ -40,6 +40,10 @@
     }
   },
   "cases": [
+    {"id":"text-resolution-50","script":"res://smoke/text_resolution_smoke.gd","profiles":["representative","exhaustive"],"scale":50,"motion":"disabled","viewport":"1920x1080","players":1,"timeoutSeconds":60,"markers":["TEXT_RESOLUTION_OK"],"evidenceKind":"synthetic-component"},
+    {"id":"text-resolution-80","script":"res://smoke/text_resolution_smoke.gd","profiles":["representative","exhaustive"],"scale":80,"motion":"disabled","viewport":"1920x1080","players":1,"timeoutSeconds":60,"markers":["TEXT_RESOLUTION_OK"],"evidenceKind":"synthetic-component"},
+    {"id":"text-resolution-100","script":"res://smoke/text_resolution_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"disabled","viewport":"1920x1080","players":1,"timeoutSeconds":60,"markers":["TEXT_RESOLUTION_OK"],"evidenceKind":"synthetic-component"},
+    {"id":"text-resolution-150","script":"res://smoke/text_resolution_smoke.gd","profiles":["representative","exhaustive"],"scale":150,"motion":"disabled","viewport":"1920x1080","players":1,"timeoutSeconds":60,"markers":["TEXT_RESOLUTION_OK"],"evidenceKind":"synthetic-component"},
     {"id":"deck-library-50-motion","script":"res://smoke/deck_library_smoke.gd","profiles":["representative","exhaustive"],"scale":50,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["DECK_LIBRARY_SMOKE_OK keyboard_edit=true invalid_draft_saved=true recipe_started=true"]},
     {"id":"deck-library-100-motion","script":"res://smoke/deck_library_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["DECK_LIBRARY_SMOKE_OK keyboard_edit=true invalid_draft_saved=true recipe_started=true"]},
     {"id":"deck-library-150-motion","script":"res://smoke/deck_library_smoke.gd","profiles":["representative","exhaustive"],"scale":150,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["DECK_LIBRARY_SMOKE_OK keyboard_edit=true invalid_draft_saved=true recipe_started=true"]},
