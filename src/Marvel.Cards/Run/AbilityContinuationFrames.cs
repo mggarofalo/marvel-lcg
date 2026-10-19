@@ -101,6 +101,7 @@ internal static class AbilityContinuationFrames
                 ChoiceOtherwiseFrame => EffectFollowing(node),
                 DefenseFrame => EffectBody(node),
                 PowerFrame when node is AbilityEffect.Power parent => parent.Effect,
+                PowerFrame when node is AbilityEffect.ThwartGroup parent => parent.Thwart.Effect,
                 EachPlayerFrame when node is AbilityEffect.EachPlayer parent => parent.Effect,
                 AfterActivationFrame when node is AbilityEffect.AfterActivation parent => parent.Effect,
                 _ => throw Invalid(frame.ToString()!),

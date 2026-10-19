@@ -9,14 +9,16 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class HydraPatrolPowerContinuationTests : CoreCardTestBase
 {
-    [Fact]
+    [Theory]
+    [InlineData("04049")]
+    [InlineData("04038")]
     [Rule("rr:when-defeated-abilities.2.1")]
-    public void ClearTheAreaWaitsForBothHydraSearchesThenUsesItsRemovalReceipt()
+    public void ThwartWaitsForBothHydraSearchesThenCompletesExactlyOnce(string face)
     {
         // Hydra Patrol: each player searches and puts a Hydra minion into play, then shuffles.
         // The When Defeated ability resolves before the scheme leaves play.
-        var probed = FinishPatrol(extraQueries: 3);
-        var control = FinishPatrol(extraQueries: 0);
+        var probed = FinishPatrol(face, extraQueries: 3);
+        var control = FinishPatrol(face, extraQueries: 0);
         Assert.Equal(control.Digest().Canonical(), probed.Digest().Canonical());
         Assert.Equal(control.Random.Generator.GetState().Words, probed.Random.Generator.GetState().Words);
         Assert.Equal(control.Random.Generator.GetState().Index, probed.Random.Generator.GetState().Index);
@@ -48,7 +50,7 @@ public sealed class HydraPatrolPowerContinuationTests : CoreCardTestBase
         Assert.Equal(2, scheme.Tokens["k_threat"]);
     }
 
-    private static World FinishPatrol(int extraQueries)
+    private static World FinishPatrol(string face, int extraQueries)
     {
         var runner = AuthoredCards.Runner();
         var world = Hero("01001a", 2);
@@ -62,7 +64,7 @@ public sealed class HydraPatrolPowerContinuationTests : CoreCardTestBase
         };
         world.CreateCard("01186", world.AreaOf(DeckType.EncounterDeck));
         world.CreateCard("01187", world.AreaOf(DeckType.EncounterDeck));
-        var card = world.CreateCard("04049", world.Seats[0].Hand);
+        var card = world.CreateCard(face, world.Seats[0].Hand);
         var payment = world.CreateCard("01088", world.Seats[0].Hand);
         world.CreateCard("01089", world.Seats[0].Deck);
         var top = world.CreateCard("01090", world.Seats[0].Deck);
@@ -70,7 +72,9 @@ public sealed class HydraPatrolPowerContinuationTests : CoreCardTestBase
         var action = Assert.Single(runner.Actions(world, 0), option => option.Card == card.ObjectId);
         var events = runner.ExecuteAction(world, new PlayerAction(action, [payment.ObjectId], [])).Events.ToList();
         var choice = Sequence.Work(world, Cards, runner, events)!;
-        Sequence.Answer(world, Cards, runner, choice, Decision.Take(scheme.ObjectId), events);
+        Sequence.Answer(world, Cards, runner, choice, face == "04038"
+            ? Decision.Take(Assert.Single(choice.Affordances).Id, [scheme.ObjectId, scheme.ObjectId], [])
+            : Decision.Take(scheme.ObjectId), events);
         choice = Sequence.Work(world, Cards, runner, events)!;
         Sequence.Answer(world, Cards, runner, choice,
             Decision.Take(scheme.ObjectId, world.Seats.Select(seat => seat.IdentityCard.ObjectId).ToArray(), []), events);
@@ -84,7 +88,8 @@ public sealed class HydraPatrolPowerContinuationTests : CoreCardTestBase
         Sequence.Finish(world, Cards, runner, events);
         for (int player = 0; player < 2; player++)
             Assert.Contains(minions[player], world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player)).Cards);
-        Assert.Contains(top, world.Seats[0].Hand.Cards);
+        if (face == "04049") Assert.Same(top, Assert.Single(world.Seats[0].Hand.Cards));
+        else Assert.Empty(world.Seats[0].Hand.Cards);
         Assert.Equal(DeckType.EncounterDiscardPile, scheme.Area.Type);
         Assert.Equal(DeckType.DiscardPile, card.Area.Type);
         Assert.False(world.Agenda.IsBusy);
