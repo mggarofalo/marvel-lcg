@@ -120,7 +120,7 @@ Each ability has these fields:
 | `cost` | What must be paid before the effect begins |
 | `effect` | One executable effect node |
 | `limitPerRound`, `limitPerPhase` | A per-instance use limit; mutually exclusive positive integers |
-| `maxPerRound`, `maxPerPhase`, `maxPerGame`, `maxPerInstance` | A title-shared maximum |
+| `maxPerRound`, `maxPerPhase`, `maxPerGame`, `maxPerInstance`, `maxPerAttack`, `maxPerActivation` | A title-shared maximum |
 | `anyPlayer` | Printed permission for any player to use the ability |
 | `labels` | Printed attack, defense or thwart labels |
 | `printedResources` | Icons physically printed on a resource ability |

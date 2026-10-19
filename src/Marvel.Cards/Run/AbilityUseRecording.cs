@@ -29,7 +29,8 @@ internal static class AbilityUseRecording
         {
             MaximumPeriod.Round => Duration.UntilEndOf(TimingPoints.EndOfRound),
             MaximumPeriod.Phase => Duration.UntilEndOf(TimingPoints.EndOfPhase),
-            MaximumPeriod.Game or MaximumPeriod.Instance => Duration.WhileInPlay,
+            MaximumPeriod.Game or MaximumPeriod.Instance or MaximumPeriod.Attack
+                or MaximumPeriod.Activation => Duration.WhileInPlay,
             _ => throw new ArgumentOutOfRangeException(nameof(ability)),
         };
         world.Effects.Register(new ContinuousEffect(

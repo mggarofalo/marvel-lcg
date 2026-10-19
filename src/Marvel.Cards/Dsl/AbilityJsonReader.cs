@@ -117,6 +117,8 @@ internal static class AbilityJsonReader
         {
             (Key: "maxPerRound", Period: MaximumPeriod.Round),
             (Key: "maxPerPhase", Period: MaximumPeriod.Phase),
+            (Key: "maxPerAttack", Period: MaximumPeriod.Attack),
+            (Key: "maxPerActivation", Period: MaximumPeriod.Activation),
             (Key: "maxPerGame", Period: MaximumPeriod.Game),
             (Key: "maxPerInstance", Period: MaximumPeriod.Instance),
         }

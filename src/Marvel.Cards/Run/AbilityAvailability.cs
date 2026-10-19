@@ -45,14 +45,27 @@ internal static class AbilityAvailability
     internal static string MaximumSpent(
         World world, Card card, MaximumPeriod period, Occurrence? occurrence)
     {
-        string instance = period == MaximumPeriod.Instance
-            ? ":" + (occurrence?.Id
+        string instance = period switch
+        {
+            MaximumPeriod.Instance => ":" + (occurrence?.Id
                 ?? throw new RulesNotImplementedException(
                     $"'{card.FaceId}' has a per-instance maximum without an occurrence"))
-                .ToString(CultureInfo.InvariantCulture)
-            : string.Empty;
+                .ToString(CultureInfo.InvariantCulture),
+            MaximumPeriod.Attack => ":" + AttackScope(world),
+            MaximumPeriod.Activation => ":" + ActivationScope(world),
+            _ => string.Empty,
+        };
         return $"maximum:{period}:{world.Facts.Title(card.FaceId)}{instance}";
     }
+
+    private static string AttackScope(World world) => world.Agenda.PlayerAttackScope() is { } frame
+        ? "player:" + frame.ToString(CultureInfo.InvariantCulture)
+        : world.Activation is { Attacking: true } ? "enemy:" + ActivationScope(world)
+        : throw new RulesNotImplementedException("a per-attack maximum requires an active attack");
+
+    private static string ActivationScope(World world) => world.Activation is { Id: >= 0 } activation
+        ? activation.Id.ToString(CultureInfo.InvariantCulture)
+        : throw new RulesNotImplementedException("a per-activation maximum requires an active activation");
 
     internal static string Spent(Card card, CompiledCardAbility ability, int abilityIndex) =>
         "spent:"

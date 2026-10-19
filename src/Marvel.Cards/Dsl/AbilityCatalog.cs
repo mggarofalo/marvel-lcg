@@ -42,7 +42,7 @@ public static class AbilityCatalog
         new[]
         {
             "name", "note", "trigger", "effect", "cost", "limitPerRound", "limitPerPhase", "when",
-            "anyPlayer", "labels", "printedResources", "maxPerRound", "maxPerPhase",
+            "anyPlayer", "labels", "printedResources", "maxPerRound", "maxPerPhase", "maxPerAttack", "maxPerActivation",
             "maxPerGame", "maxPerInstance", "resourceRestriction",
         }.ToFrozenSet(StringComparer.Ordinal);
 
