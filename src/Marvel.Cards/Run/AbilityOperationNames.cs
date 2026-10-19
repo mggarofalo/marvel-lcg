@@ -145,6 +145,7 @@ internal static class AbilityOperationNames
             AbilityFixedInstruction.ReflectAttackDamage => "reflectAttackDamage",
             AbilityFixedInstruction.PreventAttackDamage => "preventAttackDamage",
             AbilityFixedInstruction.RevealTop => "revealTop",
+            AbilityFixedInstruction.PeekAnyDeck => "peekTop",
             AbilityFixedInstruction.PlaceAccelerationToken => "placeAccelerationToken",
             AbilityFixedInstruction.GenerateTopDiscard => "generateTopDiscard",
             AbilityFixedInstruction.MakeTheCall => "makeTheCall",

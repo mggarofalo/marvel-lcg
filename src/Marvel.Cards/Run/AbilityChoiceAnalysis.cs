@@ -65,7 +65,7 @@ internal static class AbilityChoiceAnalysis
 
     internal static bool IsChoice(AbilityEffect node) =>
         node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
-            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand"
+            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop"
             or "discardResourceIcons" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
             or "legalPractice" or "payOrEffect" or "enemyAttacks" or "enemySchemes";
 

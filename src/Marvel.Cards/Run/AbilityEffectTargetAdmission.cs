@@ -154,6 +154,8 @@ internal static class AbilityEffectTargetAdmission
             "draw" => DrawTargetLegality((AbilityEffect.Draw)node, cast, bindingMayChange),
             "search" => HasSearchableArea(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
+            "peekTop" => AbilityDeckPeek.Decks(cast.World).Count > 0
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             _ => TargetLegality.None,
         };
 

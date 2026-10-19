@@ -38,4 +38,6 @@ public enum AbilityFixedInstruction
     PreventSideSchemeDeparture,
     /// <summary>Discard every live environment except the triggering entrant.</summary>
     DiscardOtherEnvironments,
+    /// <summary>Privately inspect the top card of one chosen deck until acknowledgement.</summary>
+    PeekAnyDeck,
 }

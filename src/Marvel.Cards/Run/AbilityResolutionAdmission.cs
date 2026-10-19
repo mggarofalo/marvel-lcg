@@ -109,6 +109,7 @@ internal static class AbilityResolutionAdmission
     private static bool OtherPartialResolution(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "peekTop" => AbilityDeckPeek.Decks(cast.World).Count > 0,
             "preventThreat" => cast.Occurrence.Threat is { Remaining: > 0 }
                 && Amount(EffectOf<AbilityEffect.PreventThreat>(node, cast).Amount, cast) > 0,
             "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source),
@@ -153,7 +154,7 @@ internal static class AbilityResolutionAdmission
     internal static AdmissionResolution ResolutionOf(AbilityEffect node, AbilityAdmissionScope cast)
     {
         if (node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
-            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand"
+            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop"
             or "discardResourceIcons" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
             or "legalPractice" or "payOrEffect")
         {

@@ -299,7 +299,7 @@ heroes heroesAndAllies heroAndAllyTargets identities
 identitiesWithinPerPlayerLimit inForm indirectDamage isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou modified moveAttackDamage mul onto options overkill
-paidWithResource payOrEffect payOrExhaust perPlayer placeAccelerationToken
+paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
 placeAtRandom placeCounters placeThreat power powerAmount powerTargets
 preventDamage preventDamageFrom preventDamageWhile preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
@@ -315,6 +315,13 @@ yourAsideMinion yourAsidePile yourAsideSideScheme
 ```
 
 ## Generic selection and temporary identities
+
+`peekTop: "anyDeck"` first asks which nonempty deck to inspect. Its subsequent
+`CardLook` prompt grants only the acting player sight of that deck's top card,
+including its full printed text, until acknowledgement. It neither moves the
+card nor shuffles. The selected card, area and incarnation live in the existing
+ability continuation; visibility is prompt-scoped rather than a face-up mutation.
+The villain and main-scheme decks expose their current in-play top stages.
 
 `heroAndAllyTargets` selects hero-form identities and allies. The existing
 `heroesAndAllies` selector includes identities in either form for effects that

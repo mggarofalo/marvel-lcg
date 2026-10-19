@@ -27,6 +27,8 @@ internal sealed class AbilityChoiceAnswer(
         if (operation is "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")
             return ApplyThwartChoice(choice);
         if (operation == "makeTheCall") return ApplyMakeTheCall(choice);
+        if (operation == "peekTop")
+            return AbilityDeckPeek.Answer(execution, choice, cast, input) ? Continue() : cast.Events;
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);
         return ApplyGeneric(choice);
     }
