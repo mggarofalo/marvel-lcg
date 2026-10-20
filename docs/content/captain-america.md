@@ -195,6 +195,19 @@ followed by a valid play, and unsupported physical-receipt refusal. Dropping the
 receipt-count/payment correlation is killed by Any and UpTo negative controls.
 This does not settle MARVEL-633's intervening resource-ability discard authority.
 
+An explicit aggregate card-attack invocation validates all distinct recipients
+against the same pre-attack board before scheduling its interpreter continuation.
+Eight focused rules cases cover Guard in either target order, duplicate targets,
+non-enemy secondary targets, aggregate contract errors and one scheduled attack.
+Compiled duplicate and secondary-eligibility mutants fail; all 991 Rules tests
+pass. The default single-target invocation is unchanged. This contract does not
+yet connect an authored multi-target choice or establish Shield Toss acceptance.
+
+The target-count design follows rr:choose-game-element.3: choose as many legal
+targets as available, up to the specified number. An X larger than the available
+enemy count does not itself make initiation illegal. Guard still excludes the
+villain from the simultaneous selection, and targets must be distinct.
+
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains
 closed while this work proceeds.

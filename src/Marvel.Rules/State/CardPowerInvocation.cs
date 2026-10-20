@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.State;
@@ -12,6 +13,10 @@ namespace Marvel.Rules.State;
 public sealed record CardPowerInvocation(
     int Player, Card Source, Card Target, long Amount, string Trigger)
 {
+    /// <summary>Explicit recipients validated together before a multi-target interpreter continuation starts.</summary>
+    /// <remarks>The default retains the ordinary single-target contract. The continuation owns damage resolution.</remarks>
+    public ImmutableArray<Card> Targets { get; init; }
+
     /// <summary>A performer already established by the containing labelled ability.</summary>
     public Card? Performer { get; init; }
 
