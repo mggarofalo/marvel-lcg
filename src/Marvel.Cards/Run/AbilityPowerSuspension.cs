@@ -48,7 +48,7 @@ internal static class AbilityPowerSuspension
             || node.OperationName() is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
                 or "placeThreat" or "enemyAttacks" or "enemySchemes"
             || paths.SelectMany(path => PowerSuspensionChildren(
-                node, cast, stateMayChange, bindingMayChange, path, suspensionOnly: true)).Any(child =>
+                node, cast, stateMayChange, bindingMayChange, path)).Any(child =>
                 SuspendsPowerEffect(
                     child.Node, cast, child.StateMayChange, child.BindingMayChange,
                     child.Reachability));
@@ -58,12 +58,12 @@ internal static class AbilityPowerSuspension
         AbilityEffect Node, bool StateMayChange, bool BindingMayChange,
         PowerReachability Reachability)> PowerSuspensionChildren(
         AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
-        bool bindingMayChange, PowerReachability reachability, bool suspensionOnly = false)
+        bool bindingMayChange, PowerReachability reachability)
     {
         if (node.OperationName() == "seq")
         {
             return PowerSequenceChildren(
-                node, cast, stateMayChange, bindingMayChange, reachability, suspensionOnly);
+                node, cast, stateMayChange, bindingMayChange, reachability);
         }
         if (node.OperationName() == "and")
         {
@@ -89,7 +89,7 @@ internal static class AbilityPowerSuspension
         AbilityEffect Node, bool StateMayChange, bool BindingMayChange,
         PowerReachability Reachability)> PowerSequenceChildren(
         AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
-        bool bindingMayChange, PowerReachability reachability, bool suspensionOnly)
+        bool bindingMayChange, PowerReachability reachability)
     {
         var children = OrderedEffects(node).ToList();
         var result = new List<(AbilityEffect, bool, bool, PowerReachability)>(children.Count);
@@ -98,9 +98,7 @@ internal static class AbilityPowerSuspension
         {
             bool mayChange = stateMayChange || index > 0;
             result.Add((children[index], mayChange, bindingMayChange, state));
-            if (index + 1 < children.Count
-                && (!suspensionOnly
-                    || !children.Skip(index + 1).All(AbilityPowerContinuationDependencies.IsIndependent)))
+            if (index + 1 < children.Count)
             {
                 state = PowerStateAfter(children[index], cast, mayChange, bindingMayChange, state);
             }

@@ -59,6 +59,9 @@ internal static class AbilityProjectedDefeatWindows
 
     internal static void ValidateContinuation(AbilityEffect node, AbilityPowerState state, AbilityAdmissionScope cast)
     {
+        if (AbilityPowerContinuationDependencies.IsIndependent(node)) return;
+        if (state.UnprojectedStageEntry is { } reason)
+            throw new RulesNotImplementedException(reason);
         if (state.DefeatWindowDeferred && !AbilityDefeatReceiptProjection.PreservesReads(node))
             throw new RulesNotImplementedException("A labelled-power continuation reads the board after an unprojected defeat window.");
         if (!state.EncounterCardsChanged) return;

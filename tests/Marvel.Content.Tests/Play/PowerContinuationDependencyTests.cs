@@ -11,6 +11,50 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class PowerContinuationDependencyTests : CoreCardTestBase
 {
+    [Fact]
+    public void IndependentDrawCannotAdmitAnUnsupportedMinionDeparture()
+    {
+        var runner = Runner("01006", "Action", """
+            {"attack":{"target":{"query":"villain"},"effect":{"seq":[
+              {"dealAttackDamage":{"cards":{"titled":"Sandman"},"amount":4}},
+              {"draw":{"player":"you","count":1}}
+            ]}}}
+            """, cost: """{"exhaust":"this"}""", includeAuthored: true);
+        Card? source = null;
+        Card? minion = null;
+        var error = Assert.Throws<RulesNotImplementedException>(() => Playing(board =>
+        {
+            source = InPlay(board, "01006");
+            minion = board.CreateCard("01102", board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            board.CreateCard("16149",
+                board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId, cardOwner: -1));
+        }, hero: true, abilities: runner));
+        Assert.Contains("permanent attachment", error.Message);
+        Assert.True(source!.Ready);
+        Assert.Equal(0, minion!.Damage);
+    }
+
+    [Fact]
+    public void OneDamageEffectCannotReadAnotherRecipientAfterAnUnprojectedStageConstant()
+    {
+        var runner = Runner("01006", "Action", """
+            {"attack":{"target":{"query":"villain"},"effect":{"seq":[
+              {"dealAttackDamage":{"cards":{"query":"enemies"},"amount":100}},
+              {"draw":{"player":"you","count":1}}
+            ]}}}
+            """, cost: """{"exhaust":"this"}""", includeAuthored: true);
+        Card? source = null;
+        Card? minion = null;
+        var error = Assert.Throws<RulesNotImplementedException>(() => Playing(board =>
+        {
+            source = InPlay(board, "01006");
+            minion = board.CreateCard("01102", board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        }, hero: true, abilities: runner, scenario: "crossbones"));
+        Assert.Contains("constant abilities", error.Message);
+        Assert.True(source!.Ready);
+        Assert.Equal(0, minion!.Damage);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

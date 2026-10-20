@@ -24,8 +24,8 @@ internal sealed record AbilityQueryContext(
     internal CardInstanceState Quantities(Card card) => SourceBindingIsCurrent(card)
         && !DeckTypes.IsInPlay(card.Area.Type)
         ? SourceState : card.InstanceState;
-    internal Card? Chosen => ChosenBinding?.Resolve(Source, "chosen");
-    internal Card? PlayerSelection => PlayerSelectionBinding?.Resolve(Source, "player selection");
+    internal Card? Chosen => ChosenBinding?.Resolve(World, Source, "chosen");
+    internal Card? PlayerSelection => PlayerSelectionBinding?.Resolve(World, Source, "player selection");
 
     internal bool WasSelectedInCurrentArea(Card card)
     {
@@ -34,8 +34,7 @@ internal sealed record AbilityQueryContext(
         return binding is not null && binding.Area == card.Area.Id && binding.Incarnation == card.Incarnation;
     }
 
-    internal bool ChosenBindingIsCurrent(Card card) => ChosenBinding is { } binding
-        && binding.Card.ObjectId == card.ObjectId && binding.Incarnation == card.Incarnation;
+    internal bool ChosenBindingIsCurrent(Card card) => ReferenceEquals(Chosen, card);
 
     internal bool SourceBindingIsCurrent(Card card) => Source.ObjectId == card.ObjectId && SourceIncarnation == card.Incarnation;
 
