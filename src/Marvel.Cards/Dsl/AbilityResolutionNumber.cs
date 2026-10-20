@@ -7,6 +7,8 @@ public enum AbilityResolutionNumber
 {
     /// <summary>The paid or selected amount for a basic power.</summary>
     PowerAmount,
+    /// <summary>Physical cards discarded as this ability's costs or effects.</summary>
+    CardsDiscarded,
     /// <summary>Completed attacks against the current player in the scheduled activation batch.</summary>
     ActivationAttacksAgainstYou,
     /// <summary>Printed boost icons on all cards discarded this way.</summary>

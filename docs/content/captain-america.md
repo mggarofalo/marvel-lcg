@@ -139,6 +139,12 @@ before paying the event's remaining hand discard. An adversarial synthetic
 interrupt that removes that reserved discard remains unsupported; MARVEL-633
 records the reproduction and unresolved nested-payment abort authority.
 
+The numeric expression `{"cardsDiscarded":"game"}` reads the physical discard
+receipt, separately from resource payment and printed resource icon counts.
+Synthetic cost cases cover one, two and three double-resource cards; a compiled
+icon-count substitution fails all three. This binding does not itself provide
+Shield Toss's target selection or per-enemy attack response instances.
+
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains
 closed while this work proceeds.
