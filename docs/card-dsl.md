@@ -5,8 +5,10 @@ replacement for the main-scheme destination. Its compiled relation resolves the
 scheming villain's immutable scenario group, independently of the active villain
 counter. The villain and paired side scheme must remain in play. Unknown values
 are rejected, and this metadata alone does not declare a card implemented.
-Activation integration remains tracked by MARVEL-643; the declaration does not
-admit Wrecking Crew into public scenario setup.
+Scheme steps consult this relation before constructing the threat occurrence,
+so the existing placement, interruption and response procedures receive the
+selected scheme. Whole-pack verification remains tracked by MARVEL-643; the
+declaration does not admit Wrecking Crew into public scenario setup.
 
 `defendingCharacter` names the live defender of the current enemy attack.
 It selects nothing during an undefended attack, a scheme, after the defender

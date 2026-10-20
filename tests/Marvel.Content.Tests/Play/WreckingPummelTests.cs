@@ -13,17 +13,28 @@ namespace Marvel.Content.Tests.Play;
 public sealed class WreckingPummelTests : CoreCardTestBase
 {
     [Rule("rr:lasting-effects.5")]
+    [Rule("rr:confuse-confused.6")]
     [Theory]
-    [InlineData("07032", false, 2)]
-    [InlineData("07032", true, 4)]
-    [InlineData("07033", false, 3)]
-    [InlineData("07033", true, 5)]
-    public void HeroRevealUsesPiledriverAndOnlyHisToughStatusForThisAttack(string face, bool tough, int expected)
+    [InlineData("07032", false, true, 2, false)]
+    [InlineData("07032", true, true, 4, false)]
+    [InlineData("07033", false, true, 3, false)]
+    [InlineData("07033", true, true, 5, false)]
+    [InlineData("07032", false, false, 2, false)]
+    [InlineData("07032", true, false, 4, false)]
+    [InlineData("07033", false, false, 2, false)]
+    [InlineData("07033", true, false, 4, false)]
+    [InlineData("07032", true, false, 0, true)]
+    [InlineData("07033", false, false, 0, true)]
+    public void RevealUsesPiledriverAndOnlyHisToughStatusForThisActivation(
+        string face, bool tough, bool hero, int expected, bool confused)
     {
         // 07044: "Piledriver attacks you. If Piledriver is tough, he gets +2 ATK
-        // for this activation." Lasting effects: "expires as soon as its specified duration ends."
-        var world = Hero("01001a");
-        world.Seats[0].IdentityCard.TurnTo("01001a");
+        // for this activation." In alter-ego: "Piledriver schemes. If Piledriver
+        // is tough, he gets +2 SCH for this activation."
+        // Lasting effects: "expires as soon as its specified duration ends."
+        // Confused: "If a confused villain or minion would scheme, discard the confused status card instead."
+        var world = Hero(hero ? "01001a" : "01001b");
+        world.Seats[0].IdentityCard.TurnTo(hero ? "01001a" : "01001b");
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
         world.CreateCard("07001b", world.AreaOf(DeckType.MainSchemesArea));
@@ -34,7 +45,8 @@ public sealed class WreckingPummelTests : CoreCardTestBase
         var other = Group(world, thunderball, "07019");
         world.BindEncounterTopology(new EncounterTopology(world, [own, other], thunderball));
         Statuses.Give(world, tough ? piledriver : thunderball, Statuses.Tough);
-        Assert.True(Forms.In(world, world.Seats[0], Cards, Forms.Hero));
+        if (confused) Statuses.Give(world, piledriver, Statuses.Confused);
+        Assert.True(Forms.In(world, world.Seats[0], Cards, hero ? Forms.Hero : Forms.AlterEgo));
         Assert.Same(piledriver, new AbilitySelectorEvaluation(new AbilityQueryContext(
             world, source, new Occurrence(0, []), 0, source.Incarnation, null, null, null, []))
             .Find(new AbilityCardSelection.Titled("Piledriver")));
@@ -51,17 +63,39 @@ public sealed class WreckingPummelTests : CoreCardTestBase
             prompt = Sequence.Work(world, Cards, runner, events);
         }
 
-        Assert.Contains(events.OfType<Marvel.Rules.Events.AttackBoundary>(),
-            boundary => !boundary.Started && boundary.Source == piledriver.ObjectId);
-        Assert.Equal(expected, world.Seats[0].IdentityCard.Damage);
+        if (hero)
+            Assert.Contains(events.OfType<Marvel.Rules.Events.AttackBoundary>(),
+                boundary => !boundary.Started && boundary.Source == piledriver.ObjectId);
+        AssertThreatAndDamage(world, own, other, hero, expected);
+        AssertActivationEnded(world, piledriver, thunderball, face);
+        AssertBoostOwnership(own, other, confused);
+    }
+
+    private static void AssertThreatAndDamage(World world, EncounterDeckGroup own,
+        EncounterDeckGroup other, bool hero, int expected)
+    {
+        Assert.Equal(hero ? expected : 0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(hero ? 0 : expected, own.Scheme.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(0, other.Scheme.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(0, world.TheCardIn(DeckType.MainSchemesArea)!.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    private static void AssertActivationEnded(World world, Card piledriver, Card thunderball, string face)
+    {
         Assert.Same(thunderball, EncounterRouting.Villain(world));
         Assert.Equal(face == "07032" ? 2 : 3, StateFields.Modified(world, piledriver, "attack", Cards, 1));
+        Assert.Equal(2, StateFields.Modified(world, piledriver, "scheme", Cards, 1));
         Assert.Equal(0, thunderball.Damage);
+        Assert.Equal(0, Statuses.Count(world, piledriver, Statuses.Confused));
+    }
+
+    private static void AssertBoostOwnership(EncounterDeckGroup own, EncounterDeckGroup other, bool confused)
+    {
         // pack:mc03:new-rules: "When the villain is dealt a boost card,
         // it is dealt from the active villain's deck."
-        Assert.Single(other.Discard.Cards, card => card.FaceId == "07037");
+        Assert.Equal(confused ? 0 : 1, other.Discard.Cards.Count(card => card.FaceId == "07037"));
         Assert.Equal(2, own.Deck.Cards.Count);
-        Assert.Single(other.Deck.Cards);
+        Assert.Equal(confused ? 2 : 1, other.Deck.Cards.Count);
     }
 
     private static EncounterDeckGroup Group(World world, Card villain, string scheme, Card? source = null)

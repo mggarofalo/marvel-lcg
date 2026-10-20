@@ -146,13 +146,14 @@ public readonly record struct PhaseStep(
 
     private Occurrence SchemeThreat(int id, World world, ICardFacts facts)
     {
-        if (world.TheCardIn(DeckType.MainSchemesArea) is not { } scheme
-            || Subject < 0 || Subject >= world.Cards.Count)
+        if (Subject < 0 || Subject >= world.Cards.Count)
         {
             return new Occurrence(id, []);
         }
 
         var enemy = world.Cards[Subject];
+        if (world.ThreatAbilities.SchemeDestination(world, enemy) is not { } scheme)
+            return new Occurrence(id, []);
         long amount = StateFields.Modified(
             world, enemy, "scheme", facts, world.Players);
         if (amount <= 0)

@@ -11065,6 +11065,20 @@
       "abilities": []
     },
     {
+      "card": "07032",
+      "name": "Piledriver",
+      "note": "Printed Retaliate 1 is engine-owned keyword behavior. Piledriver's scheme activations place threat on his corresponding side scheme.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": []
+    },
+    {
+      "card": "07033",
+      "name": "Piledriver",
+      "note": "Printed Retaliate 1 is engine-owned keyword behavior. Piledriver's scheme activations place threat on his corresponding side scheme.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": []
+    },
+    {
       "card": "07044",
       "name": "Pummel",
       "note": "Piledriver activates against the revealing player in either form. His tough status grants +2 to this activation only; the named villain is independent of the active counter.",

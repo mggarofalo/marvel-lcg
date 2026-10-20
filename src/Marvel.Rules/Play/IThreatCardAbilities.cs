@@ -13,5 +13,8 @@ namespace Marvel.Rules.Play;
 public interface IThreatCardAbilities : IEncounterCardAbilities
 {
     bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1);
+
+    /// <summary>The scheme receiving this enemy's activation threat.</summary>
+    Card? SchemeDestination(World world, Card enemy);
 }
 #pragma warning restore CS1591

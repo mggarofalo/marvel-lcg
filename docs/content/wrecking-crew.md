@@ -196,10 +196,10 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07030 | Lightning Blast / thunderball | 2 | When Revealed (Alter-Ego): Place 3 threat on the side scheme with the most threat. | Pending MARVEL-625 |
 | 07030:2 | Lightning Blast / thunderball | 2 | When Revealed (Hero): Thunderball attacks you. If this attack is undefended, place 3 threat on Thunderball's side scheme. | Pending MARVEL-625 |
 | 07031 | Tactical Prowess / thunderball | 2 | When Revealed: Move all threat from the side scheme with the least threat to the side scheme with the most threat. If that scheme's "Forced Response" ability is not triggered this way, this card gains surge. | Pending MARVEL-625 |
-| 07032 | Piledriver / piledriver | 1 | Retaliate 1. | Pending MARVEL-625 |
-| 07032:2 | Piledriver / piledriver | 1 | star When Piledriver schemes, place the threat on his side scheme instead of the main scheme. | Pending MARVEL-625 |
-| 07033 | Piledriver / piledriver | 1 | Retaliate 1. | Pending MARVEL-625 |
-| 07033:2 | Piledriver / piledriver | 1 | star When Piledriver schemes, place the threat on his side scheme instead of the main scheme. | Pending MARVEL-625 |
+| 07032 | Piledriver / piledriver | 1 | Retaliate 1. | Authored printed keyword; integrated promoted-stage verification pending MARVEL-638 |
+| 07032:2 | Piledriver / piledriver | 1 | star When Piledriver schemes, place the threat on his side scheme instead of the main scheme. | WreckingPummelTests actual authored activation targets own scheme; remaining MARVEL-643 composition checks pending |
+| 07033 | Piledriver / piledriver | 1 | Retaliate 1. | Authored printed keyword; integrated promoted-stage verification pending MARVEL-638 |
+| 07033:2 | Piledriver / piledriver | 1 | star When Piledriver schemes, place the threat on his side scheme instead of the main scheme. | WreckingPummelTests actual authored activation targets own scheme; remaining MARVEL-643 composition checks pending |
 | 07034 | Pile It On! / piledriver | 1 | Piledriver's Side Scheme. | Pending MARVEL-625 |
 | 07034:2 | Pile It On! / piledriver | 1 | This card cannot leave play while Piledriver is in play. | Pending MARVEL-625 |
 | 07034:3 | Pile It On! / piledriver | 1 | Pile Drive — Forced Response: After threat is placed here, if there is 10 or more threat here, each player discards the upgrade or support they control with the highest cost. Remove all but 3 threat from this scheme. | Pending MARVEL-625 |
@@ -222,7 +222,7 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07042:2 | Oversized Hands / piledriver | 2 | star Boost: Discard a support you control. | Pending MARVEL-625 |
 | 07043 | Escape Plan / piledriver | 2 | When Revealed: You are confused. If you are already confused, Piledriver schemes. | Pending MARVEL-625 |
 | 07043:2 | Escape Plan / piledriver | 2 | star Boost: Give the active villain a tough status card. If they already have a tough status card, place 2 threat on their scheme. | Pending MARVEL-625 |
-| 07044 | Pummel / piledriver | 2 | When Revealed (Alter-Ego): Piledriver schemes. If Piledriver is tough, he gets +2 SCH for this activation. | Authored; activation destination verification blocked by MARVEL-643 |
+| 07044 | Pummel / piledriver | 2 | When Revealed (Alter-Ego): Piledriver schemes. If Piledriver is tough, he gets +2 SCH for this activation. | WreckingPummelTests: both stages, inactive Piledriver, tough modifier, own scheme placement, confused cancellation, expiry and boost ownership; full native journey pending |
 | 07044:2 | Pummel / piledriver | 2 | When Revealed (Hero): Piledriver attacks you. If Piledriver is tough, he gets +2 ATK for this activation. | WreckingPummelTests: both stages, inactive Piledriver, own/opposing tough status, exact damage, modifier expiry, active-deck boost; full native journey pending |
 | 07045 | Uncanny Resilience / piledriver | 1 | When Revealed: Remove each stunned and confused status card from each villain. If no status cards were removed, this card gains surge. | Pending MARVEL-625 |
 | 07045:2 | Uncanny Resilience / piledriver | 1 | star Boost: You are confused. | Pending MARVEL-625 |
