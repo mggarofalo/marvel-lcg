@@ -89,3 +89,27 @@ This run is **not clean native acceptance**. Every campaign resume logged
 the same failure as accessibility activation. MARVEL-644 tracks the fix.
 The preceding external-script attempt timed out because release export templates
 do not support that option; it is not counted as a journey.
+# Modal dismissal regression (MARVEL-644)
+
+Godot 4.7.1's embedded `Window` dismissal removes the subwindow before it
+clears the parent's exclusive-child association. With accessibility enabled,
+the parent focus callback tries to focus that removed child. A standalone
+exclusive-window reproduction emits the same diagnostic as campaign resume;
+no campaign or gameplay code is needed.
+The ordering is visible in upstream
+[`Window::set_visible` and its focus callback](https://github.com/godotengine/godot/blob/4.7.1-stable/scene/main/window.cpp)
+and [`Viewport::_sub_window_remove`](https://github.com/godotengine/godot/blob/4.7.1-stable/scene/main/viewport.cpp).
+
+`ModalWindowFocus` releases exclusivity during the hidden window's focus-exit
+callback and restores the setting at visibility notification. A visible modal
+retains its focus boundary, including when a nested dialog owns focus. The
+binding covers the owned campaign, deck, published-search and management
+dialog constructors, including dialogs that dismiss internally.
+
+The `modal-focus-100-motion` native case checks nested focus, repeated reopen,
+dialog cancellation, disposal and nonexclusive windows. Its parent-focus
+assertion also runs headlessly; removing the release compiles and fails that
+assertion. A rendered Windows run with `--accessibility always` additionally
+checks the actual Godot error path. These focused controls do not replace
+the packaged campaign journey or Windows/Linux acceptance evidence.
+

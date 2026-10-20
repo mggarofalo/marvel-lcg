@@ -11,6 +11,11 @@ public sealed partial class CampaignTrackerNativeProbe : Node
     public string Failure { get; private set; } = "";
     public string LastChoice { get; private set; } = "";
 
+    /// <summary>Applies the production focus policy to synthetic native modal fixtures.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822",
+        Justification = "The GDScript native probe invokes this generated instance bridge.")]
+    public void BindModal(Window window) => ModalWindowFocus.Bind(window);
+
     public async void Show(Node scene, string responseJson)
     {
         try

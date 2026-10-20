@@ -10,6 +10,7 @@ internal static class CampaignManagementDialogs
             MinSize = new(480, 140) };
         var field = new LineEdit { Name = "CampaignName", Text = name, MaxLength = 128 };
         dialog.AddChild(field);
+        ModalWindowFocus.Bind(dialog);
         ui.Window.AddChild(dialog);
         dialog.Confirmed += () => { accept(field.Text); dialog.QueueFree(); };
         dialog.Canceled += dialog.QueueFree;
@@ -22,6 +23,7 @@ internal static class CampaignManagementDialogs
         var dialog = new ConfirmationDialog { Name = "CampaignDeleteDialog", Title = "Delete campaign permanently?",
             DialogText = $"Delete '{name}' and every saved game in it?\nThis cannot be undone. Export a backup first if you want to keep it.",
             OkButtonText = "Delete permanently", MinSize = new(620, 180) };
+        ModalWindowFocus.Bind(dialog);
         ui.Window.AddChild(dialog);
         dialog.Confirmed += () => { accept(); dialog.QueueFree(); };
         dialog.Canceled += dialog.QueueFree;
@@ -46,6 +48,7 @@ internal static class CampaignManagementDialogs
             FileMode = save ? FileDialog.FileModeEnum.SaveFile : FileDialog.FileModeEnum.OpenFile,
             Access = FileDialog.AccessEnum.Filesystem, Filters = ["*.marvelcampaign ; Marvel campaign backup"],
             CurrentFile = save ? "campaign.marvelcampaign" : "", Size = new(800, 600) };
+        ModalWindowFocus.Bind(dialog);
         ui.Window.AddChild(dialog);
         dialog.FileSelected += path =>
         {

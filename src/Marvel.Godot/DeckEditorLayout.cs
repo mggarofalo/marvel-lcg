@@ -144,6 +144,7 @@ internal static class DeckEditorLayout
     private static VBoxContainer Popup(DeckEditorControls ui, Button trigger, string title, Vector2I size, bool anchored = false)
     {
         Window window = anchored ? new PopupPanel() : new Window();
+        ModalWindowFocus.Bind(window);
         window.Title = title;
         window.Size = size;
         window.WrapControls = false;
