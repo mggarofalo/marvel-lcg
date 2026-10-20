@@ -74,7 +74,7 @@ public sealed class CampaignContentUpgradeTests
             ? entry with { Proof = proof with { Compatibility = compatibility } } : entry)],
     };
 
-    private static EngineRequest Create(DatasetGameFactory factory) =>
+    internal static EngineRequest Create(DatasetGameFactory factory) =>
         new(EngineProtocol.Version, "create", EngineProtocol.Campaign, "upgrade-campaign", Entry: EntryClaim.Create())
         {
             Campaign = new("create")
@@ -84,7 +84,7 @@ public sealed class CampaignContentUpgradeTests
             },
         };
 
-    private static EngineRequest Command(EngineResponse created, string action, long revision) =>
+    internal static EngineRequest Command(EngineResponse created, string action, long revision) =>
         new(EngineProtocol.Version, action, EngineProtocol.Campaign, created.Campaign!.Id,
             Capability: created.Capability, ExpectedRevision: revision) { Campaign = new(action) };
 }

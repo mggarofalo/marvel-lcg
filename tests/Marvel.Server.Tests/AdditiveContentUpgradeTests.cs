@@ -35,16 +35,20 @@ public sealed class AdditiveContentUpgradeTests
 
     [Theory]
     [InlineData("cards")]
+    [InlineData("engine-card")]
     [InlineData("abilities")]
     [InlineData("setup")]
     public void ChangedAdmittedEntryHasNoUpgradeEvenWhenTheSavedTraceDidNotReachIt(string category)
     {
         WithAddedScenario((root, original) =>
         {
-            string path = Path.Combine(root, "datasets", category, category + ".json");
+            string dataset = category == "engine-card" ? "cards" : category;
+            string path = Path.Combine(root, "datasets", dataset, dataset + ".json");
             var data = JsonNode.Parse(File.ReadAllText(path))!;
             if (category == "cards")
                 data["cards"]!.AsArray().Single(row => row!["card_id"]!.GetValue<string>() == "01001a")!["name"] = "Altered identity";
+            else if (category == "engine-card")
+                data["cards"]!.AsArray().Single(row => row!["card_id"]!.GetValue<string>() == "rule_a")!["name"] = "Altered rule source";
             else if (category == "abilities")
                 data["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "01001a")!
                     ["abilities"]![0]!["effect"]!["draw"]!["count"] = 2;

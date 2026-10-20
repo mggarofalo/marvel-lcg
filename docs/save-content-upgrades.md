@@ -10,7 +10,7 @@ dataset hashes and the replay, RNG and digest contracts. The fixture archive in
 `tests/Marvel.Server.Tests/Fixtures/content-91098022.zip` retains those original
 runtime bytes and the search catalog offline.
 
-`ContentUpgradeAdmission` requires every baseline Core/RoRS card entry, authored
+`ContentUpgradeAdmission` requires every baseline Core/RoRS and shared rule/status card entry, authored
 ability and setup entry to retain its canonical JSON fingerprint. Object member
 order and whitespace are irrelevant; array order and all entry values are not.
 Adding entries or correcting research-only cards outside the admitted products
