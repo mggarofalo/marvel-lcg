@@ -15,9 +15,6 @@ internal static class SessionContentPublication
             throw new SessionSaveException("session has an invalid generation manifest");
         var previous = SessionSaveJson.Read(FileSessionStore.ReadStrict(
             Path.Combine(directory, generation + ".session.json"))).Compatibility;
-        if (previous.CardsSha256 != candidate.CardsSha256
-            || previous.SetupSha256 != candidate.SetupSha256
-            || previous.AbilitiesSha256 != candidate.AbilitiesSha256)
-            throw new SessionSaveException("session content changed; restore the current generation before writing");
+        SessionPublication.RequireCompatible(previous, candidate);
     }
 }

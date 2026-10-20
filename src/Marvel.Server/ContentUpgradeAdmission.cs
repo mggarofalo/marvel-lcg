@@ -32,10 +32,19 @@ internal sealed class ContentUpgradeAdmission
             source = baseline.Source;
     }
 
-    internal SessionContentUpgrade? For(SessionCompatibility actual) =>
-        source is not null && actual with { Application = source.Application } == source
-            && actual with { Application = target.Application } != target
-            ? new SessionContentUpgrade(source, target) : null;
+    internal SessionContentUpgrade? For(SessionCompatibility actual)
+    {
+        if (source is null || actual with { Application = target.Application } == target) return null;
+        var admitted = source;
+        // This release's v20 runtime also writes the frozen Core/RoRS content triple.
+        // It is a distinct named source, not a claim that newly recorded games are historical v19 saves.
+        if (target.ReplayContract == "engine-replay-v20" && actual.ReplayContract == "engine-replay-v20")
+            admitted = source with { ReplayContract = "engine-replay-v20" };
+        if (actual with { Application = admitted.Application } != admitted) return null;
+        return new SessionContentUpgrade(admitted, target,
+            admitted.ReplayContract == "engine-replay-v19" && target.ReplayContract == "engine-replay-v20"
+                ? SessionReplayUpgrade.CoreRorsV19ToV20 : SessionReplayUpgrade.Unchanged);
+    }
 
     private static bool Matches(
         Dictionary<string, string> expected, Dictionary<string, JsonElement> actual) =>

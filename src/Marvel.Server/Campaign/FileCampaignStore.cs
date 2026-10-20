@@ -65,7 +65,7 @@ public sealed class FileCampaignStore : IContentUpgradeCampaignStore, IDisposabl
         Validate(campaign);
         if (Deletions().Any(item => item.StorageId == campaign.Save.Identity.StorageId))
             throw new SessionSaveException("campaign was permanently deleted");
-        return files.Commit(campaign.Save.Identity.StorageId, Encoding.UTF8.GetBytes(CampaignSaveJson.Canonical(campaign)));
+        return files.CommitCampaign(campaign);
     }
 
     /// <inheritdoc />

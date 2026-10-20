@@ -15,15 +15,16 @@ public sealed class CampaignContentUpgradeRejectionTests
     {
         AdditiveContentUpgradeTests.WithAddedScenario((root, original) =>
         {
-            using var store = new FileCampaignStore(Path.Combine(root, "campaigns"));
-            var host = new CampaignHost(original, store, new MemorySessionStore());
+            var initialStore = new MemoryCampaignStore();
+            var host = new CampaignHost(original, initialStore, new MemorySessionStore());
             var created = host.Exchange(CampaignContentUpgradeTests.Create(original));
             Assert.Null(created.Error);
             var opened = host.Exchange(CampaignContentUpgradeTests.Command(created, "start", 0)
                 with { Entry = EntryClaim.Create() });
             Assert.Null(opened.Error);
-            var previous = Assert.Single(store.Load()).Campaign!;
+            var previous = Assert.Single(initialStore.Load()).Campaign!;
             var changed = previous with { Save = Alter(previous.Save, change) };
+            using var store = new FileCampaignStore(Path.Combine(root, "campaigns"));
             store.Commit(changed);
             string before = CampaignSaveJson.Canonical(changed);
             var upgraded = new CampaignHost(DatasetGameFactory.Load(root), store, new MemorySessionStore());

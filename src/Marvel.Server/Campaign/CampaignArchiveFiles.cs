@@ -55,6 +55,21 @@ internal sealed class CampaignArchiveFiles : IDisposable
         lock (publication) return CommitGeneration(id, bytes);
     }
 
+    internal string CommitCampaign(StoredCampaign candidate)
+    {
+        lock (publication)
+        {
+            string id = candidate.Save.Identity.StorageId;
+            RequireId(id);
+            if (File.Exists(Path.Combine(root, id, "current")))
+            {
+                var previous = CampaignSaveJson.ReadDocument<StoredCampaign>(Read(id));
+                SessionPublication.RequireCompatible(previous.Save.Compatibility, candidate.Save.Compatibility);
+            }
+            return CommitGeneration(id, System.Text.Encoding.UTF8.GetBytes(CampaignSaveJson.Canonical(candidate)));
+        }
+    }
+
     private string CommitGeneration(string id, ReadOnlySpan<byte> bytes)
     {
         RequireId(id);

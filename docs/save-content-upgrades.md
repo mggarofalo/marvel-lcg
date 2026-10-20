@@ -1,4 +1,4 @@
-# Additive content save upgrades
+# Named content and replay save upgrades
 
 MARVEL-630 owns acceptance of this path. Its implementation and focused checks do
 not establish packaged upgrade or played campaign acceptance.
@@ -19,8 +19,23 @@ The baseline is embedded in the executable; a save cannot supply a new baseline
 or authorize its own migration.
 
 This is a conservative product policy, not a rule inferred from the tabletop.
-It admits only this named predecessor. It is not a promise to accept arbitrary
-older dataset triples, new replay contracts, or changed card interpretations.
+The v20 delivery admits two named source identities on this exact frozen content
+triple: historical `engine-replay-v19` to `engine-replay-v20`, and this delivery's
+`engine-replay-v20` to itself when additive content changes the dataset identity.
+The latter describes the corrected runtime writing the baseline content; it does
+not relabel newly generated games as historical v19 evidence. Both paths require
+the original RNG and state-digest identities, current save schema, unchanged
+admitted content, and complete deterministic verification. Unknown v18/v21
+sources, other dataset triples and application downgrades are rejected.
+
+Replay v20 corrects card-power continuation and responsible-player attribution.
+A historical save which recorded a different outcome under an affected rule is
+not migratable merely because its dataset bytes match. The named adapter checks
+its original expected values against the corrected runtime and rejects any
+mismatch before publication. It does not rewrite expected events, decisions,
+state digests or campaign records. Ordinary strict replay continues to reject a
+v19 identity under a v20 runtime; only release-owned source admission grants the
+named adapter.
 
 After admission, `SessionContentUpgrade` replays the original save with the new
 runtime while comparing every recorded prompt, decision, event, RNG count,
@@ -41,9 +56,13 @@ authority files. Campaign backups include the checksummed archive and its
 original manifest. A stale predecessor is rejected. A standalone session writer
 lease excludes concurrent publication during predecessor checking and migration;
 the campaign store retains its existing process-wide writer lease.
-Ordinary session publication also checks the current content identity under that
-lease. An older host cannot overwrite a migrated archive with its stale content
-provenance; it must restore the current generation with a compatible runtime.
+Ordinary session publication checks the current replay, RNG, digest and content
+identities under that lease, including version-only migrations with identical
+dataset hashes. Ordinary campaign publication applies the same check under its
+read/guard/write lock; sharing one store cannot let a retained stale host replace
+a migrated aggregate. Both reject application downgrades. An older host must
+restore the current generation with a compatible runtime. Deletion tombstones
+use their own typed operational payload and remain independently repeatable.
 
 Publication uses the existing flushed generation and atomic manifest replacement.
 Startup publishes no migrated game before verification and persistence succeed.
