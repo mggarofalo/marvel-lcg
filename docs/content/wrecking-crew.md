@@ -131,7 +131,7 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07007 | Wrecker's Command / wrecker | 1 | Attach to Wrecker. | Pending MARVEL-625 |
 | 07007:2 | Wrecker's Command / wrecker | 1 | star Forced Response: After Wrecker schemes, place 1 threat on each other villain's side scheme. | Pending MARVEL-625 |
 | 07007:3 | Wrecker's Command / wrecker | 1 | Hero Action: Spend physical physical resources → discard this card. | Pending MARVEL-625 |
-| 07008 | Corrupt Prison Guard / wrecker | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Pending MARVEL-625 |
+| 07008 | Corrupt Prison Guard / wrecker | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Authored; guard-query contract verified, full-pack journey pending MARVEL-631 |
 | 07009 | Escaped Convict / wrecker | 1 | Surge | Pending MARVEL-625 |
 | 07009:2 | Escaped Convict / wrecker | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
 | 07010 | Buddy System / wrecker | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Pending MARVEL-625 |
@@ -163,7 +163,7 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07022 | Radioactive Buildup / thunderball | 1 | Attach to Thunderball. | Pending MARVEL-625 |
 | 07022:2 | Radioactive Buildup / thunderball | 1 | Excess damage dealt by Thunderball is placed as threat on his corresponding side scheme. | Pending MARVEL-625 |
 | 07022:3 | Radioactive Buildup / thunderball | 1 | star Forced Response: After Thunderball attacks, discard this card. | Pending MARVEL-625 |
-| 07023 | Corrupt Prison Guard / thunderball | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Pending MARVEL-625 |
+| 07023 | Corrupt Prison Guard / thunderball | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Authored; guard-query contract verified, full-pack journey pending MARVEL-631 |
 | 07024 | Escaped Convict / thunderball | 1 | Surge | Pending MARVEL-625 |
 | 07024:2 | Escaped Convict / thunderball | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
 | 07025 | Buddy System / thunderball | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Pending MARVEL-625 |
@@ -192,7 +192,7 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07036 | Held Hostage / piledriver | 1 | Attach to the active villain side scheme. | Pending MARVEL-625 |
 | 07036:2 | Held Hostage / piledriver | 1 | Threat cannot be removed from attached scheme by thwarting. | Pending MARVEL-625 |
 | 07036:3 | Held Hostage / piledriver | 1 | Hero Action: The villain corresponding to the attached side scheme attacks you. Then, discard this card. | Pending MARVEL-625 |
-| 07037 | Corrupt Prison Guard / piledriver | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Pending MARVEL-625 |
+| 07037 | Corrupt Prison Guard / piledriver | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Authored; guard-query contract verified, full-pack journey pending MARVEL-631 |
 | 07038 | Escaped Convict / piledriver | 1 | Surge. | Pending MARVEL-625 |
 | 07038:2 | Escaped Convict / piledriver | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
 | 07039 | Buddy System / piledriver | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Pending MARVEL-625 |
@@ -225,7 +225,7 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07051 | Ramming Speed / bulldozer | 2 | Attach to Bulldozer. | Pending MARVEL-625 |
 | 07051:2 | Ramming Speed / bulldozer | 2 | star Forced Interrupt: When Bulldozer attacks you, you must defend against Bulldozer's attacks with an ally you control, if able. | Pending MARVEL-625 |
 | 07051:3 | Ramming Speed / bulldozer | 2 | star Forced Response: After Bulldozer attacks you, discard this card. | Pending MARVEL-625 |
-| 07052 | Corrupt Prison Guard / bulldozer | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Pending MARVEL-625 |
+| 07052 | Corrupt Prison Guard / bulldozer | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Authored; guard-query contract verified, full-pack journey pending MARVEL-631 |
 | 07053 | Escaped Convict / bulldozer | 1 | Surge. | Pending MARVEL-625 |
 | 07053:2 | Escaped Convict / bulldozer | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
 | 07054 | Buddy System / bulldozer | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Pending MARVEL-625 |

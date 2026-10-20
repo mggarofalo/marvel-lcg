@@ -72,7 +72,9 @@ internal sealed class CardQueryEvaluator(
              .. InArea(cast.World, DeckType.SideSchemesArea, PlayArea.Villains)],
         AbilityCardQuery.PowerTargets => cast.PowerTargets,
         AbilityCardQuery.YourAsidePile => [.. cast.World.Seats[cast.Player].Nemesis.Cards],
-        AbilityCardQuery.Villain => SingleIn(DeckType.VillainArea),
+        // pack:mc03:new-rules.the-active-villain: a card reference to "the
+        // villain" names the active villain; selecting an enemy remains plural.
+        AbilityCardQuery.Villain => EncounterRouting.Villain(cast.World) is { } villain ? [villain] : [],
         AbilityCardQuery.MainScheme => SingleIn(DeckType.MainSchemesArea),
         AbilityCardQuery.YourAsideMinion => AsideOfKind(CardKind.Minion),
         AbilityCardQuery.YourAsideSideScheme => AsideOfKind(CardKind.EncounterSideScheme),
@@ -81,7 +83,7 @@ internal sealed class CardQueryEvaluator(
 
     private Card[] VillainAttachments()
     {
-        var villain = cast.World.TheCardIn(DeckType.VillainArea);
+        var villain = EncounterRouting.Villain(cast.World);
         if (villain is null) return [];
         return [.. cast.World.Areas.Where(area => area.Host == villain.ObjectId && DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
