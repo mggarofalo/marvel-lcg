@@ -269,7 +269,11 @@ internal static class AbilityRepeatedEffectAnalysis
         string? GrantsField = null,
         AbilityCardSelection? FromVillain = null, AbilityCardSelection? ToVillain = null,
         int ChangesForm = -1, string? Form = null,
-        string? GrantsStatus = null);
+        string? GrantsStatus = null)
+    {
+        internal AbilityCardSelection? FromSingular { get; init; }
+        internal AbilityCardSelection? ToSingular { get; init; }
+    }
 
     internal readonly record struct TraceCard(
         Card Card, AbilityCardSelection? VillainSelector);

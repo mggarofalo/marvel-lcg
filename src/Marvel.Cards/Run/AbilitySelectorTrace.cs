@@ -100,7 +100,7 @@ internal static class AbilitySelectorTrace
             trace.Cast, trace.Discarded, trace.Modifiers);
     }
 
-    private static IEnumerable<Card> MatchingCandidates(AbilityCardSelection selector, AbilitySelectorTraceContext trace)
+    internal static IEnumerable<Card> MatchingCandidates(AbilityCardSelection selector, AbilitySelectorTraceContext trace)
     {
         // Engagement projections retain membership, not move chronology.
         // An explicit object order supplies a complete order; an area's last
@@ -109,7 +109,10 @@ internal static class AbilitySelectorTrace
             throw new Rules.Play.RulesNotImplementedException(
                 "Last-card area order after projected engagement changes is not implemented");
         int boardVillain = Rules.Play.EncounterRouting.Villain(trace.Cast.World)?.ObjectId ?? -1;
-        var candidates = TraceCandidateCards(selector, trace.Cast)
+        IEnumerable<Card> source = TraceCandidateCards(selector, trace.Cast);
+        if (trace.EncounterStages is not null)
+            source = source.Concat(trace.Cast.World.EncounterTopology!.Groups.SelectMany(group => group.Stages));
+        var candidates = source
             .Select(card => ProjectedCard(card, boardVillain, trace))
             .Where(card => card is not null).Cast<Card>().DistinctBy(card => card.ObjectId)
             .Where(card => !trace.Discarded.Contains(card.ObjectId)

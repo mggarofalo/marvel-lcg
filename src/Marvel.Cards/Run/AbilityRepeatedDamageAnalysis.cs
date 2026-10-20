@@ -192,7 +192,8 @@ internal static class AbilityRepeatedDamageAnalysis
         if (TraceCardNamed(heal.Card, cast) is not { } healed) return [];
         return [new DamageTransfer(
             healed.Card.ObjectId, -1, Amount(heal.Amount, cast),
-            FromVillain: healed.VillainSelector)];
+            FromVillain: healed.VillainSelector)
+        { FromSingular = cast.World.EncounterTopology is null ? null : heal.Card }];
     }
 
     private static IReadOnlyList<DamageTransfer> MovedDamageTransfer(
@@ -204,7 +205,11 @@ internal static class AbilityRepeatedDamageAnalysis
         return [new DamageTransfer(
             from.Card.ObjectId, to.Card.ObjectId, Amount(move.Amount, cast),
             DealsDamage: true, FromVillain: from.VillainSelector,
-            ToVillain: to.VillainSelector)];
+            ToVillain: to.VillainSelector)
+        {
+            FromSingular = cast.World.EncounterTopology is null ? null : move.From,
+            ToSingular = cast.World.EncounterTopology is null ? null : move.To,
+        }];
     }
 
     private static IReadOnlyList<DamageTransfer> CardMutationTransfers(
@@ -257,7 +262,8 @@ internal static class AbilityRepeatedDamageAnalysis
         if (TraceCardNamed(health.Cards, cast) is not { } healthier) return [];
         return [new DamageTransfer(
             0, healthier.Card.ObjectId, Amount(health.Amount, cast),
-            GrantsHealth: true, ToVillain: healthier.VillainSelector)];
+            GrantsHealth: true, ToVillain: healthier.VillainSelector)
+        { ToSingular = cast.World.EncounterTopology is null ? null : health.Cards }];
     }
 
     private static IReadOnlyList<DamageTransfer> DiscardTransfers(

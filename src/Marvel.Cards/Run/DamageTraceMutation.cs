@@ -84,20 +84,23 @@ internal sealed class DamageTraceMutation
 
     private void Apply(DamageTransfer transfer)
     {
-        int from = ResolveCard(transfer.FromVillain, transfer.From);
-        int to = ResolveCard(transfer.ToVillain, transfer.To);
+        int from = ResolveCard(transfer.FromVillain, transfer.From, transfer.FromSingular);
+        int to = ResolveCard(transfer.ToVillain, transfer.To, transfer.ToSingular);
         if (from == int.MinValue || to == int.MinValue) return;
         if (ApplyStructural(transfer, to)) return;
         if (ApplyGrant(transfer, to)) return;
         ApplyDamage(transfer, from, to);
     }
 
-    private int ResolveCard(AbilityCardSelection? selector, int fallback) =>
-        selector is null
-            ? fallback
-            : TraceSelectorIncludesCard(
-                selector, fallback, new(currentVillain, cast, discarded, traits, modifiers, engagement)
-                { EncounterStages = encounterStages, EncounterOrder = encounterOrder }) ?? int.MinValue;
+    private int ResolveCard(AbilityCardSelection? selector, int fallback, AbilityCardSelection? singular)
+    {
+        if (selector is null && singular is null) return fallback;
+        var trace = new AbilitySelectorTraceContext(currentVillain, cast, discarded, traits, modifiers, engagement)
+            { EncounterStages = encounterStages, EncounterOrder = encounterOrder };
+        return singular is not null
+            ? AbilitySingularTraceSelection.Find(singular, trace)?.ObjectId ?? int.MinValue
+            : TraceSelectorIncludesCard(selector!, fallback, trace) ?? int.MinValue;
+    }
 
     private bool ApplyStructural(DamageTransfer transfer, int to)
     {
