@@ -87,7 +87,7 @@ internal static class AbilityRepeatedSelectorTrace
         AbilityCardSelection selector, Card current, AbilityAdmissionScope cast) => selector switch
         {
             AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.Villain
-                or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters
+                or AbilityCardQuery.Villains or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters
                 || AbilityEncounterSchemeQueries.IsRanked(query.Kind),
             AbilityCardSelection.Titled titled => string.Equals(
                 titled.Title, cast.World.Facts.Title(current.FaceId), StringComparison.Ordinal),
@@ -130,6 +130,7 @@ internal static class AbilityRepeatedSelectorTrace
         return query switch
         {
             AbilityCardQuery.Villain => candidate.ObjectId == trace.CurrentVillain,
+            AbilityCardQuery.Villains => villain,
             AbilityCardQuery.Enemies => villain
                 || kind == CardKind.Minion,
             AbilityCardQuery.Minions => kind == CardKind.Minion,

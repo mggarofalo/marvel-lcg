@@ -20,7 +20,7 @@ internal sealed class CardQueryEvaluator(
     private static readonly ImmutableArray<AbilityCardQuery> EnemyQueries =
     [
         AbilityCardQuery.MinionsEngagedWithYou, AbilityCardQuery.Minions,
-        AbilityCardQuery.Enemies, AbilityCardQuery.AttackableEnemies,
+        AbilityCardQuery.Villains, AbilityCardQuery.Enemies, AbilityCardQuery.AttackableEnemies,
         AbilityCardQuery.AttackableMinions, AbilityCardQuery.ThwartableSchemes,
         AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
     ];
@@ -104,6 +104,7 @@ internal sealed class CardQueryEvaluator(
                 .SelectMany(area => area.Cards)
                 .Where(card => EffectiveCards.Kind(card, cast.World.Facts)
                     == CardKind.Minion)],
+        AbilityCardQuery.Villains => [.. InArea(cast.World, DeckType.VillainArea, PlayArea.Villains)],
         AbilityCardQuery.Enemies =>
             [.. cast.World.Areas.Where(area => area.Type is DeckType.VillainArea
                     or DeckType.EngagedEnemiesArea)

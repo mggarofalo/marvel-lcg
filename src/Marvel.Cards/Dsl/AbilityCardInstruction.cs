@@ -42,4 +42,6 @@ public enum AbilityCardInstruction
     DeclareDefender,
     /// <summary>Move the active villain counter to a different living villain.</summary>
     MoveActiveCounter,
+    /// <summary>Reveal the top card of the selected living villain's paired encounter deck.</summary>
+    RevealFromVillainDeck,
 }

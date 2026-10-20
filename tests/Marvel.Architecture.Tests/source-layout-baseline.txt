@@ -1,4 +1,4 @@
-src/Marvel.Cards/Run/AbilityAdmission.cs:25: SL003: AbilityAdmission=425
+src/Marvel.Cards/Run/AbilityAdmission.cs:25: SL003: AbilityAdmission=393
 src/Marvel.Cards/Run/AbilityConditionProjection.cs:106: SL005: TryTraceConstantTest=14
 src/Marvel.Cards/Run/AbilityConditionProjection.cs:120: SL005: AmountCanDifferInVillainTrace=14
 src/Marvel.Cards/Run/AbilityConditionProjection.cs:134: SL005: TestCanChangeOnVillainAdvance=14
@@ -12,7 +12,7 @@ src/Marvel.Cards/Run/AbilityPowerProjection.cs:291: SL005: TracedConditionalFiel
 src/Marvel.Cards/Run/AbilityPowerProjection.cs:31: SL005: ConstantCanRetargetVillain=13
 src/Marvel.Cards/Run/AbilityPowerProjection.cs:325: SL005: BranchFieldCanDiffer=17
 src/Marvel.Cards/Run/AbilityPowerProjection.cs:65: SL005: ConditionalCanRetargetVillain=13
-src/Marvel.Cards/Run/AbilityPowerStateMutation.cs:250: SL005: GiveVulnerableStatus=8
+src/Marvel.Cards/Run/AbilityPowerStateMutation.cs:252: SL005: GiveVulnerableStatus=8
 src/Marvel.Cards/Run/AbilityProjection.cs:161: SL005: TryTraceCountAmount=9
 src/Marvel.Cards/Run/AbilityProjection.cs:217: SL005: TryTraceCompositeAmount=10
 src/Marvel.Cards/Run/AbilityProjection.cs:89: SL005: TryTraceCount=9

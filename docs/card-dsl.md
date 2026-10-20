@@ -1,5 +1,19 @@
 # The card DSL
 
+`revealFromVillainDeck: <single-card selection>` reveals the top card of a
+living physical villain's paired encounter deck. It preserves the active counter
+and resolving player. An empty draw resets only that deck from its paired discard
+pile; taking its last card resets immediately, before the child reveal resolves.
+The parent continuation waits for the child reveal, including its responses.
+Missing or foreign group ownership raises instead of falling back to the active
+deck. Admission inspects the public group relation, never hidden deck contents.
+Power, area and repeated traces refuse to invent the board after an unresolved
+selected-deck reveal.
+
+`villains` selects all living villains independently of the active counter.
+Projected queries use projected stage membership, so promotion replaces one
+physical stage and final defeat removes that villain from the count.
+
 `moveActiveCounter: <single-card selection>` moves the scenario counter only to a
 different living physical villain. It does not change an activation in progress.
 The operation requires configured encounter groups; ordinary scenarios do not

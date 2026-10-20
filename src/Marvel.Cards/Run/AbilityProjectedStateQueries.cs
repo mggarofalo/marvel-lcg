@@ -183,6 +183,7 @@ internal static class AbilityProjectedStateQueries
                 kind == CardKind.Minion
                 && state.EngagedWith.GetValueOrDefault(card.ObjectId, -1)
                     == ChosenPlayer(context).Owner,
+            AbilityCardQuery.Villains => CardKinds.IsVillain(kind),
             AbilityCardQuery.Enemies => CardKinds.IsEnemy(kind),
             AbilityCardQuery.Characters => CardKinds.IsCharacter(kind),
             _ => IsSchemeQuery(query) && kind == CardKind.EncounterSideScheme,

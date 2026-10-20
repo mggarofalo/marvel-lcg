@@ -66,6 +66,7 @@ internal static class AbilityPublicInstructionDescription
             AbilityCardInstruction.Discard => $"Discard {recipient}",
             AbilityCardInstruction.RemoveFromGame => $"Remove {recipient} from the game",
             AbilityCardInstruction.Ready => $"Ready {recipient}",
+            AbilityCardInstruction.RevealFromVillainDeck => $"Reveal the top encounter card from {recipient}'s deck",
             AbilityCardInstruction.MoveActiveCounter => $"Move the active counter to {recipient}",
             _ => null,
         };

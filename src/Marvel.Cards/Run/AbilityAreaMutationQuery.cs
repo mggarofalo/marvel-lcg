@@ -72,6 +72,7 @@ internal sealed class AbilityAreaMutationQuery(
 
     private bool? DeckOperationChange(string operation) => operation switch
     {
+        "revealFromVillainDeck" => queried.Count > 0,
         "moveActiveCounter" => queried.Contains(DeckType.VillainArea),
         _ when DrawOperations.Contains(operation) =>
             Includes(DeckType.PlayerDeck, DeckType.HandsArea),

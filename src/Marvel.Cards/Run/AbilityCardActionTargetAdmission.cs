@@ -17,17 +17,15 @@ internal static class AbilityCardActionTargetAdmission
             "moveActiveCounter" => AbilityActiveCounterExecution.CanMove(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "removeFromGame" => RemoveFromGameTargetLegality(node, cast),
+            "revealFromVillainDeck" => AbilitySelectedDeckReveal.HasTarget(node, cast)
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             "reveal" or "returnToHand" => CardsLegality(
                 Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)),
             "returnOwnedToHand" or "addToHand" => AbilityCardMovementAdmission.HasHandTarget(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "exhaust" or "ready" => Readiness(node, cast),
             "giveStatus" => CardsLegality(StatusTargets(node, cast)),
-            "declareDefender" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } declared
-                && Attack.CanDeclareByAbility(
-                    cast.World, cast.World.Facts, declared,
-                    ReplaceableDefenseDefender(cast))
-                    ? TargetLegality.Valid : TargetLegality.Invalid,
+            "declareDefender" => DeclaredDefenderLegality(node, cast),
             "attachTo" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "grantUntil" => Find(GrantSelectionOf(node, cast), cast) is null
@@ -38,6 +36,13 @@ internal static class AbilityCardActionTargetAdmission
                     ? TargetLegality.Valid : TargetLegality.Invalid,
             _ => throw new InvalidOperationException("Unknown card-action target operation"),
         };
+
+    private static TargetLegality DeclaredDefenderLegality(
+        AbilityEffect node, AbilityAdmissionScope cast) =>
+        Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } declared
+            && Attack.CanDeclareByAbility(cast.World, cast.World.Facts, declared,
+                ReplaceableDefenseDefender(cast))
+                ? TargetLegality.Valid : TargetLegality.Invalid;
 
     internal static TargetLegality CardsLegality(IEnumerable<Card> candidates) =>
         candidates.Any() ? TargetLegality.Valid : TargetLegality.Invalid;

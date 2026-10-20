@@ -127,6 +127,7 @@ internal static class AbilityOperationNames
             AbilityCardInstruction.ReturnOwnedToHand => "returnOwnedToHand",
             AbilityCardInstruction.AddToHand => "addToHand",
             AbilityCardInstruction.Reveal => "reveal",
+            AbilityCardInstruction.RevealFromVillainDeck => "revealFromVillainDeck",
             AbilityCardInstruction.AttachTo => "attachTo",
             AbilityCardInstruction.GiveAdditionalBoost => "giveAdditionalBoost",
             AbilityCardInstruction.SoakDamage => "soakDamage",

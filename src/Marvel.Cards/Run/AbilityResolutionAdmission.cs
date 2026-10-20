@@ -124,7 +124,7 @@ internal static class AbilityResolutionAdmission
             "generate" or "soakDamage" or "preventDamage" or "cancelWhenRevealed"
                 or "cancelOccurrence"
                 or "dealEncounterCards" or "dealEncounterCard"
-                or "revealTop" or "reveal" or "placeAtRandom"
+                or "revealFromVillainDeck" or "revealTop" or "reveal" or "placeAtRandom"
                 or "returnToHand" or "discardUntil" or "recoverDiscardedByResource"
                 or "shuffleInto" or "search" or "giveStatus" or "declareDefender"
                 or "attachTo"

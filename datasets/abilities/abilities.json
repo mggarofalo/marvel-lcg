@@ -11303,6 +11303,270 @@
       ]
     },
     {
+      "card": "07010",
+      "name": "Buddy System",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "count": {
+                          "query": "villains"
+                        }
+                      },
+                      "count": 2
+                    }
+                  },
+                  "then": {
+                    "revealFromVillainDeck": "chosen"
+                  },
+                  "else": {
+                    "seq": [
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      },
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "moveActiveCounter": "chosen"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07025",
+      "name": "Buddy System",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "count": {
+                          "query": "villains"
+                        }
+                      },
+                      "count": 2
+                    }
+                  },
+                  "then": {
+                    "revealFromVillainDeck": "chosen"
+                  },
+                  "else": {
+                    "seq": [
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      },
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "moveActiveCounter": "chosen"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07039",
+      "name": "Buddy System",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "count": {
+                          "query": "villains"
+                        }
+                      },
+                      "count": 2
+                    }
+                  },
+                  "then": {
+                    "revealFromVillainDeck": "chosen"
+                  },
+                  "else": {
+                    "seq": [
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      },
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "moveActiveCounter": "chosen"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07054",
+      "name": "Buddy System",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "count": {
+                          "query": "villains"
+                        }
+                      },
+                      "count": 2
+                    }
+                  },
+                  "then": {
+                    "revealFromVillainDeck": "chosen"
+                  },
+                  "else": {
+                    "seq": [
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      },
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "moveActiveCounter": "chosen"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       "card": "07041",
       "name": "I've Been Waiting For This!",
       "abilities": [

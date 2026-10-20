@@ -25,6 +25,8 @@ internal static class AbilityPowerStateMutation
         RefuseMutableAmountAfterDamage(node, cast, state);
         return node.OperationName() switch
         {
+            "revealFromVillainDeck" => throw new RulesNotImplementedException(
+                "projected selected-deck reveal requires unresolved encounter effects"),
             "moveActiveCounter" => AbilityActiveCounterProjection.MovePower(node, cast, state),
             "exhaust" or "ready" => Readiness(node, cast, state),
             "grantUntil" => Grant(node, cast, state),

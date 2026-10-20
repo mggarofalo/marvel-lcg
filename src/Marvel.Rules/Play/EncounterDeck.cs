@@ -47,20 +47,16 @@ public static class EncounterDeck
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
+        return EncounterDeckAccess.TakeTop(world, EncounterRouting.Deck(world), null, trigger, events);
+    }
 
-        var deck = EncounterRouting.Deck(world);
-        if (deck.Cards.Count == 0 && !Reset(world, trigger, events))
-        {
-            return null;
-        }
-
-        var card = deck.TakeTop();
-        if (deck.Cards.Count == 0)
-        {
-            Reset(world, trigger, events);
-        }
-
-        return card;
+    /// <summary>Takes a card from one living villain's paired deck without moving the active counter.</summary>
+    public static Card? TakeTopFromVillain(World world, Card villain, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(events);
+        var group = EncounterRouting.CorrespondingGroup(world, villain);
+        return EncounterDeckAccess.TakeTop(world, group.Deck, group.Discard, trigger, events);
     }
 
     /// <summary>
@@ -225,46 +221,7 @@ public static class EncounterDeck
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
-
-        var deck = EncounterRouting.Deck(world);
-        var pile = EncounterRouting.Discard(world);
-        if (deck.Cards.Count > 0)
-        {
-            return false;
-        }
-
-        if (pile.Cards.Count == 0)
-        {
-            world.Finish(Outcome.PlayersLose, PlayerLossReason.EncounterCardsExhausted);
-            return false;
-        }
-
-        var landings = new List<Landing>();
-        while (pile.Cards.Count > 0)
-        {
-            var card = pile.Cards[0];
-            World.MoveToTop(card, deck);
-            landings.Add(new Landing(card.ObjectId, deck.Cards.Count - 1));
-        }
-
-        events.Add(new CardsMoved(
-            Places.Reference(pile), Places.Reference(deck), landings)
-        {
-            Trigger = trigger,
-            Verb = "Reset",
-        });
-
-        world.Shuffle(deck);
-        events.Add(new AreaReordered(
-            Places.Reference(deck), [.. deck.Cards.Select(card => card.ObjectId)])
-        {
-            Trigger = trigger,
-            Verb = "Shuffle",
-        });
-
-        PlaceAccelerationToken(world, trigger, events);
-
-        return true;
+        return EncounterDeckAccess.Reset(world, EncounterRouting.Deck(world), null, trigger, events);
     }
 
     /// <summary>Places one acceleration token next to the main scheme.</summary>

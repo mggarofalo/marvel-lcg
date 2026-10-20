@@ -30,7 +30,7 @@ internal static class AbilitySelectorTrace
                 .Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion)],
         AbilityCardSelection.EnemiesWithTrait or AbilityCardSelection.Query
         {
-            Kind: AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies
+            Kind: AbilityCardQuery.Villains or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies
                 or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.EnemiesEngagedWithChosenPlayer
         } => [.. cast.World.Areas.SelectMany(area => area.Cards)
             .Where(card => CardKinds.IsEnemy(EffectiveCards.Kind(card, cast.World.Facts)))],

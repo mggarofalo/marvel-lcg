@@ -151,8 +151,8 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07008 | Corrupt Prison Guard / wrecker | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Authored; guard-query contract verified, full-pack journey pending MARVEL-631 |
 | 07009 | Escaped Convict / wrecker | 1 | Surge | Pending MARVEL-625 |
 | 07009:2 | Escaped Convict / wrecker | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
-| 07010 | Buddy System / wrecker | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Pending MARVEL-625 |
-| 07010:2 | Buddy System / wrecker | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Pending MARVEL-625 |
+| 07010 | Buddy System / wrecker | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
+| 07010:2 | Buddy System / wrecker | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
 | 07011 | Chaos In the Prison / wrecker | 1 | When Revealed: Choose to either discard an upgrade you control or place 1 threat on the active villain's side scheme for each upgrade you control. If you do not control any upgrades, this card gains surge. | Pending MARVEL-625 |
 | 07011:2 | Chaos In the Prison / wrecker | 1 | star Boost: If this attack is undefended, discard an upgrade you control. | Pending MARVEL-625 |
 | 07012 | Crowbar Toss / wrecker | 2 | When Revealed (Alter-Ego): Wrecker schemes. Then, move the active villain counter to the villain whose side scheme has the least threat. | Pending MARVEL-625 |
@@ -183,8 +183,8 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07023 | Corrupt Prison Guard / thunderball | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Authored; guard-query contract verified, full-pack journey pending MARVEL-631 |
 | 07024 | Escaped Convict / thunderball | 1 | Surge | Pending MARVEL-625 |
 | 07024:2 | Escaped Convict / thunderball | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
-| 07025 | Buddy System / thunderball | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Pending MARVEL-625 |
-| 07025:2 | Buddy System / thunderball | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Pending MARVEL-625 |
+| 07025 | Buddy System / thunderball | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
+| 07025:2 | Buddy System / thunderball | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
 | 07026 | Chaos In the Prison / thunderball | 1 | When Revealed: Choose to either discard an upgrade you control or place 1 threat on the active villain's side scheme for each upgrade you control. If you do not control any upgrades, this card gains surge. | Pending MARVEL-625 |
 | 07026:2 | Chaos In the Prison / thunderball | 1 | star Boost: If this attack is undefended, discard an upgrade you control. | Pending MARVEL-625 |
 | 07027 | Energy Projectiles / thunderball | 2 | When Revealed: Deal 1 damage to each friendly character you control. | Authored; owner/form resolution contracts verified; full journey pending MARVEL-631 |
@@ -212,8 +212,8 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07037 | Corrupt Prison Guard / piledriver | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Authored; guard-query contract verified, full-pack journey pending MARVEL-631 |
 | 07038 | Escaped Convict / piledriver | 1 | Surge. | Pending MARVEL-625 |
 | 07038:2 | Escaped Convict / piledriver | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
-| 07039 | Buddy System / piledriver | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Pending MARVEL-625 |
-| 07039:2 | Buddy System / piledriver | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Pending MARVEL-625 |
+| 07039 | Buddy System / piledriver | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
+| 07039:2 | Buddy System / piledriver | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
 | 07040 | Get Wrecked! / piledriver | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
 | 07040:2 | Get Wrecked! / piledriver | 1 | When Revealed (Hero): The villain whose side scheme has the least threat attacks you. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
 | 07041 | I've Been Waiting For This! / piledriver | 1 | When Revealed: The active villain heals 3 hit points. Give that villain a tough status card. | WreckingWaitingTests; authored reveal/boost, MARVEL-648 whole-pack verification pending |
@@ -245,8 +245,8 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07052 | Corrupt Prison Guard / bulldozer | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Authored; guard-query contract verified, full-pack journey pending MARVEL-631 |
 | 07053 | Escaped Convict / bulldozer | 1 | Surge. | Pending MARVEL-625 |
 | 07053:2 | Escaped Convict / bulldozer | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
-| 07054 | Buddy System / bulldozer | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Pending MARVEL-625 |
-| 07054:2 | Buddy System / bulldozer | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Pending MARVEL-625 |
+| 07054 | Buddy System / bulldozer | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
+| 07054:2 | Buddy System / bulldozer | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
 | 07055 | Bull Rush / bulldozer | 2 | When Revealed (Alter-Ego): Bulldozer schemes. Discard the top card of your deck for each threat placed by this activation. | Pending MARVEL-625 |
 | 07055:2 | Bull Rush / bulldozer | 2 | When Revealed (Hero): Bulldozer attacks you. Discard the top card of your deck for each damage dealt by this attack. | Pending MARVEL-625 |
 | 07056 | Chaos In the Prison / bulldozer | 1 | When Revealed: Choose to either discard an upgrade you control or place 1 threat on the active villain's side scheme for each upgrade you control. If you do not control any upgrades, this card gains surge. | Pending MARVEL-625 |

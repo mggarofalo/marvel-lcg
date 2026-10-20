@@ -80,4 +80,6 @@ public enum AbilityCardQuery
     OtherEnvironments,
     /// <summary>Every in-play card controlled by the resolving player.</summary>
     CardsYouControl,
+    /// <summary>All living villains, independently of the active counter.</summary>
+    Villains,
 }

@@ -171,6 +171,9 @@ internal sealed class AbilityAreaProjection
 
 
 
+        if (effect.OperationName() == "revealFromVillainDeck")
+            throw new RulesNotImplementedException(
+                "projected selected-deck reveal requires unresolved encounter effects");
         return TraceNumeric(effect, states, repetitions, baseMultiplier)
             ?? TraceModifiers(effect, states, repetitions, baseMultiplier)
             ?? TraceFlow(effect, states, repetitions, baseMultiplier)

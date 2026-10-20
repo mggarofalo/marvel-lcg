@@ -36,6 +36,7 @@ internal static class AbilityEffectLowering
             "chooseCard" => ChooseCardEffect(argument, child),
             "exhaust" => CardInstruction(argument, child, AbilityCardInstruction.Exhaust),
             "ready" => CardInstruction(argument, child, AbilityCardInstruction.Ready),
+            "revealFromVillainDeck" => CardInstruction(argument, child, AbilityCardInstruction.RevealFromVillainDeck),
             "moveActiveCounter" => CardInstruction(argument, child, AbilityCardInstruction.MoveActiveCounter),
             "discard" => DiscardEffect(argument, child),
             "removeFromGame" => CardInstruction(argument, child, AbilityCardInstruction.RemoveFromGame),

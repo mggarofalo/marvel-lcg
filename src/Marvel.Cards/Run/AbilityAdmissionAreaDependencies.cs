@@ -57,6 +57,7 @@ internal static class AbilityAdmissionAreaDependencies
     [
         AbilityCardInstruction.AttachTo, AbilityCardInstruction.Exhaust,
         AbilityCardInstruction.RemoveFromGame, AbilityCardInstruction.Reveal,
+        AbilityCardInstruction.RevealFromVillainDeck,
         AbilityCardInstruction.ReturnToHand, AbilityCardInstruction.AddToHand,
         AbilityCardInstruction.ReturnOwnedToHand, AbilityCardInstruction.Discard,
         AbilityCardInstruction.SoakDamage,

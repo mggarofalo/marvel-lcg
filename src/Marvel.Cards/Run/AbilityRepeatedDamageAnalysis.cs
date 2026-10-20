@@ -147,6 +147,8 @@ internal static class AbilityRepeatedDamageAnalysis
         AbilityEffect node, AbilityAdmissionScope cast) =>
         node.OperationName() switch
         {
+            "revealFromVillainDeck" => throw new RulesNotImplementedException(
+                "repeated selected-deck reveal requires unresolved encounter effects"),
             "moveActiveCounter" => [new DamageTransfer(-1, -1, 0)
                 { MovesActiveCounter = true, ToSingular = ((AbilityEffect.CardAction)node).Selection }],
             "changeForm" => FormTransfer(node, cast),
