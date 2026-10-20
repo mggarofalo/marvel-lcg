@@ -7,6 +7,9 @@ static func commit(main: Node) -> Button:
 		var surface := main.find_child(name, true, false)
 		if _visible(surface):
 			return _button(surface, "Submit")
+	return table_commit(main)
+
+static func table_commit(main: Node) -> Button:
 	return _button(main, "ContextualCommit")
 
 static func clear_draft(main: Node) -> Button:

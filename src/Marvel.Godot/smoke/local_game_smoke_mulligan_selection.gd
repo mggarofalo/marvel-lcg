@@ -61,9 +61,10 @@ func _open_fallback_mulligan_sheet() -> Button:
 		_fail("opening the complete choice sheet did not focus its first canonical target")
 		return null
 	var submit := _decision().find_child("Submit", true, false) as Button
-	if submit == null or not _control_is_fully_visible(submit) or _task_commit() != null:
+	var table_commit: Button = preload("res://smoke/decision_surface_controls.gd").table_commit(main)
+	if submit == null or not _control_is_fully_visible(submit) or _task_commit() != submit or table_commit != null:
 		await _capture_checkpoint("complete-choice-sheet-failure")
-		_fail("complete choices lost its visible canonical commitment or duplicated the task commitment: submit=%s visible=%s task=%s" % [submit.get_global_rect() if submit != null else Rect2(), _visible_control_rect(submit) if submit != null else Rect2(), _task_commit() != null])
+		_fail("complete choices lost its visible canonical commitment or duplicated the task commitment: submit=%s visible=%s task=%s" % [submit.get_global_rect() if submit != null else Rect2(), _visible_control_rect(submit) if submit != null else Rect2(), table_commit != null])
 		return null
 	if not await _capture_checkpoint("complete-choice-sheet"):
 		return null
