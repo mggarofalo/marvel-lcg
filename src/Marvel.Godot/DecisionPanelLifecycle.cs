@@ -85,6 +85,7 @@ internal sealed class DecisionPanelLifecycle
         }
 
         Affordance option = composer.Selected!;
+        panel.LocalDecision.LeaveForTableAction();
         panel.RaiseDraftStarted();
         panel.NotifyAnchorFocused([option.AnchorId]);
         if (!DecisionDialogLayout.Automatic(composer.Prompt) && DirectCommitment.IsReady(composer)

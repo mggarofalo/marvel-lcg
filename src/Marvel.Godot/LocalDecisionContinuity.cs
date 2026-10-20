@@ -14,8 +14,10 @@ internal sealed class LocalDecisionContinuity
     internal long Revision { get; private set; }
     internal string Origin { get; private set; } = string.Empty;
 
-    internal void Begin(int source, int seat, long revision, string origin)
+    internal void Begin(int source, int seat, long revision, string origin, PublicDecisionKind kind)
     {
+        if (Active && Seat == seat && Revision == revision && kind != PublicDecisionKind.PlayerAction)
+            return;
         Active = true;
         Committed = false;
         Awaiting = false;
@@ -31,6 +33,13 @@ internal sealed class LocalDecisionContinuity
     { if (Awaiting && revision == Revision + 1) AcceptedRevision = revision; }
     internal void Reject() { Awaiting = false; AcceptedRevision = null; }
     internal void Clear() { Active = false; Reject(); }
+
+    internal bool LeaveForTableAction(PublicDecisionKind kind)
+    {
+        if (kind != PublicDecisionKind.PlayerAction) return false;
+        Clear();
+        return true;
+    }
 
     internal bool Refresh(int? player, PublicDecisionKind? kind, long revision)
     {

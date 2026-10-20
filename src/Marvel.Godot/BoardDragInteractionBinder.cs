@@ -38,6 +38,7 @@ internal static class BoardDragInteractionBinder
         bool Select(int id)
         {
             if (!play.TrySelect(id, intent.Source, intent.Destination, intent.IsHandCard, intent.OnPlayerLane)) return false;
+            panel.LocalDecision.LeaveForTableAction();
             panel.RaiseDraftStarted();
             BoardInteractionBinder.RefreshDraft(panel, composer, generation, intent.Source);
             return true;

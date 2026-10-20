@@ -21,7 +21,7 @@ internal static class BoardInteractionBinder
                 && BoardDragInteractionBinder.Drag(panel, composer, board, gesture));
         board.BindDragPreview(gesture => BoardDragInteractionBinder.PreviewDrag(panel, composer, board, gesture));
         board.SetInlinePayment(panel.LocalDecision.IsOpen);
-        board.SetDialogOnly(DecisionDialogLayout.Automatic(composer.Prompt));
+        board.SetDialogOnly(DecisionDialogLayout.Automatic(composer.Prompt) || panel.LocalDecision.Active);
         board.SetCompleteChoicesOpen(panel.CompleteChoicesOpen || panel.AbilityWindowOpen);
         board.BindCompleteChoices(source =>
         {
@@ -46,6 +46,7 @@ internal static class BoardInteractionBinder
         int generation = panel.GetRenderGeneration();
         if (panel.PaymentModalOpen || panel.AcknowledgementPending
             || !CurrentOperations(panel, composer).TrySelectAffordance(id)) return;
+        panel.LocalDecision.LeaveForTableAction();
         panel.RaiseDraftStarted();
         if (DirectCommitment.IsReady(composer))
         {
@@ -156,12 +157,15 @@ internal static class BoardInteractionBinder
                 panel.BoardChoices.Show(source, composer, cardId, recipients, recipient =>
                 {
                     if (RecipientCommitmentChoices.Select(composer, CurrentOperations(panel, composer), actions[0].Id, recipient))
+                    {
+                        panel.LocalDecision.LeaveForTableAction();
                         Submit(panel, composer, generation);
+                    }
                 }, replacement => ReopenSourceChoice(panel, composer, cardId, replacement), recipients: true);
                 return BoardDraftMutation.None;
             }
             if (panel.BoardChoices.IsRestoring) return BoardDraftMutation.None;
-            BoardDraftMutation mutation = interaction.TrySelectAction(actions[0].Id, cardId);
+            BoardDraftMutation mutation = SelectFreshAction(panel, interaction, actions[0].Id, cardId);
             return mutation == BoardDraftMutation.Affordance
                 && DirectCommitment.IsReady(composer)
                 ? Submit(panel, composer, generation) : mutation;
@@ -170,7 +174,7 @@ internal static class BoardInteractionBinder
         {
             panel.BoardChoices.Show(source, composer, cardId, actions, id =>
             {
-                if (interaction.TrySelectAction(id, cardId) == BoardDraftMutation.Affordance)
+                if (SelectFreshAction(panel, interaction, id, cardId) == BoardDraftMutation.Affordance)
                 {
                     panel.RaiseDraftStarted();
                     if (DirectCommitment.IsReady(composer)) Submit(panel, composer, generation);
@@ -179,6 +183,14 @@ internal static class BoardInteractionBinder
             }, replacement => ReopenSourceChoice(panel, composer, cardId, replacement));
         }
         return BoardDraftMutation.None;
+    }
+
+    private static BoardDraftMutation SelectFreshAction(
+        DecisionPanel panel, BoardDraftInteraction interaction, int offer, int card)
+    {
+        BoardDraftMutation mutation = interaction.TrySelectAction(offer, card);
+        if (mutation == BoardDraftMutation.Affordance) panel.LocalDecision.LeaveForTableAction();
+        return mutation;
     }
 
     private static void ReopenSourceChoice(DecisionPanel panel, DecisionComposer composer, int source, Control replacement)

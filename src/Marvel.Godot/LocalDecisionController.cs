@@ -16,6 +16,8 @@ internal sealed class LocalDecisionController(DecisionPanel panel) : IDisposable
     private Rect2 anchor;
     private bool dismissed;
     private Viewport? viewport;
+    private Control? inspector;
+    private Node? inspectorParent;
     private string notice = string.Empty;
     internal VBoxContainer? Content { get; private set; }
     internal bool IsOpen => Content is not null && !dismissed;
@@ -28,7 +30,8 @@ internal sealed class LocalDecisionController(DecisionPanel panel) : IDisposable
     {
         receipt.Dispose();
         Continuity.Begin(sourceId, panel.composer!.Prompt.Player,
-            panel.CurrentRevision, DecisionCopy.Choice(offer));
+            panel.CurrentRevision, DecisionCopy.Choice(offer), panel.composer.Prompt.PublicKind);
+        panel.CurrentBoard?.ClearPendingChoices();
         anchor = source.GetGlobalRect();
         opener = source;
         dismissed = false;
@@ -69,6 +72,9 @@ internal sealed class LocalDecisionController(DecisionPanel panel) : IDisposable
         frame = new PanelContainer { Name = "LocalDecisionWorkspace", Theme = panel.Theme,
             ThemeTypeVariation = GodotThemeVariations.SurfacePanel };
         layer.AddChild(frame);
+        inspector = main.cardInspector;
+        inspectorParent = inspector.GetParent();
+        inspector.Reparent(layer);
         Content = new VBoxContainer { Name = "LocalDecisionContent",
             ThemeTypeVariation = GodotThemeVariations.TightStack };
         frame.AddChild(Content);
@@ -87,8 +93,8 @@ internal sealed class LocalDecisionController(DecisionPanel panel) : IDisposable
 
     private void AddHeader(PromptPresentation prompt)
     {
-        Content!.AddChild(DecisionPanel.Text(Continuity.Origin, GodotThemeVariations.Body, wrap: true));
-        Content.AddChild(DecisionPanel.Text(Requirement(prompt),
+        AddSource();
+        Content!.AddChild(DecisionPanel.Text(Requirement(prompt),
             GodotThemeVariations.Caption, wrap: true));
         if (Continuity.Committed)
             Content.AddChild(DecisionPanel.Text("Previous choice committed · no refund on close.",
@@ -113,6 +119,23 @@ internal sealed class LocalDecisionController(DecisionPanel panel) : IDisposable
             && generation == panel.GetRenderGeneration()) Dismiss(); };
         row.AddChild(close);
         Content.AddChild(row);
+    }
+
+    private void AddSource()
+    {
+        var source = new Button
+        {
+            Name = "LocalDecisionSource", Text = Continuity.Origin, Flat = true,
+            Alignment = HorizontalAlignment.Left, AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            AccessibilityName = $"Inspect {Continuity.Origin}",
+        };
+        CardPaymentInspection.Bind(panel, source, Continuity.Source);
+        source.Pressed += () =>
+        {
+            if (panel.CurrentBoard is { } board && board.Inspector.Current(Continuity.Source) is { } card)
+                board.InspectCard(card, source);
+        };
+        Content!.AddChild(source);
     }
 
     private void Resize() => Fit(ClientSceneHost.MainFor(panel));
@@ -143,6 +166,15 @@ internal sealed class LocalDecisionController(DecisionPanel panel) : IDisposable
 
     internal void Preview(int? id)
     { if (frame is not null) panel.CurrentBoard?.PreviewMenuCard(id, frame); }
+
+    internal void LeaveForTableAction()
+    {
+        if (panel.composer is { } composer && Continuity.LeaveForTableAction(composer.Prompt.PublicKind))
+        {
+            panel.CurrentBoard?.ClearPendingChoices();
+            Dispose();
+        }
+    }
 
     internal void Resume(Control source)
     {
@@ -180,6 +212,10 @@ internal sealed class LocalDecisionController(DecisionPanel panel) : IDisposable
 
     internal void ClearFrame()
     {
+        if (GodotObject.IsInstanceValid(inspector) && GodotObject.IsInstanceValid(inspectorParent))
+            inspector!.Reparent(inspectorParent!);
+        inspector = null;
+        inspectorParent = null;
         if (GodotObject.IsInstanceValid(viewport)) viewport!.SizeChanged -= Resize;
         viewport = null;
         Content = null;

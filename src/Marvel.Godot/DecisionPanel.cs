@@ -49,10 +49,10 @@ public sealed partial class DecisionPanel : VBoxContainer
         choices.Input(input);
         AbilityWindows.Input(input);
     }
-    internal void ClearDecision()
+    internal void ClearDecision(bool preserveLocalContinuity = false)
     {
         choices.Close();
-        LocalDecision.Continuity.Clear();
+        if (!preserveLocalContinuity) LocalDecision.Continuity.Clear();
         LocalDecision.Dispose();
         composer = null;
         world = null;

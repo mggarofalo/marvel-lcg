@@ -10,6 +10,26 @@ func _run() -> void:
         await process_frame
         quit(0)
 
+func _play_mockingbird() -> bool:
+        if OS.get_environment("MARVEL_RESPONSE_TARGET_DRAG") != "true":
+                return await super._play_mockingbird()
+        if not await _open_response_context(_tabletop_card_named("Mockingbird")): return false
+        var play := _visible_button_beginning(_response_menu(), "Play Mockingbird")
+        if play == null or not await _pointer_activate(play): return false
+        if main.find_child("LocalDecisionWorkspace", true, false) == null:
+                _fail("context play did not start a local ally payment")
+                return false
+        for title in ["Energy", "Emergency"]:
+                var resource := _visible_button_beginning(_payment_modal(), "Discard " + title)
+                if resource == null or not await _pointer_activate(resource): return false
+        if not await _commit_once("Play Mockingbird"): return false
+        if not await _wait_for_result_motion(): return false
+        var local := main.find_child("LocalDecisionWorkspace", true, false)
+        if local == null or "Previous choice committed" not in _visible_text(local):
+                _fail("local ally play lost its accepted continuation into its response")
+                return false
+        return await _pointer_activate(local.find_child("LocalReturnToTable", true, false) as Button)
+
 func _verify_named_response() -> bool:
         var source := _tabletop_card_named("Mockingbird")
         var revision := _recipient_revision()
@@ -38,11 +58,22 @@ func _check_response_dismissal(source: Control, revision: int) -> bool:
         if _recipient_revision() != revision:
                 _fail("dismissing response menu committed or passed")
                 return false
+        if OS.get_environment("MARVEL_RESPONSE_TARGET_DRAG") == "true":
+                return await _resumed_response_keeps_decline(revision)
         return true
 
+func _resumed_response_keeps_decline(revision: int) -> bool:
+        if not await _keyboard_activate(_button_named("Resume current choice")): return false
+        var local := main.find_child("LocalDecisionWorkspace", true, false)
+        var decline := local.find_child("Decline", true, false) as Button
+        if decline == null or not decline.is_visible_in_tree() or decline.disabled:
+                _fail("resumed response lost its optional Pass choice")
+                return false
+        if not await _pointer_activate(local.find_child("LocalReturnToTable", true, false) as Button): return false
+        return _recipient_revision() == revision
+
 func _keyboard_response_target(source: Control) -> bool:
-        var table_entry := _window().find_child("WindowUseTable", true, false) as Button
-        if not await _pointer_activate(table_entry): return false
+        if not await _focus_response_source(source): return false
         if render_viewport.gui_get_focus_owner() != source:
                 _fail("response keyboard table entry did not focus its source")
                 return false
@@ -55,6 +86,13 @@ func _keyboard_response_target(source: Control) -> bool:
                 return false
         return true
 
+func _focus_response_source(source: Control) -> bool:
+        if _window() != null:
+                var table_entry := _window().find_child("WindowUseTable", true, false) as Button
+                return await _pointer_activate(table_entry)
+        source.grab_focus()
+        return true
+
 func _drag_response_target(source: Control, revision: int) -> bool:
         _response_key(KEY_ESCAPE)
         _response_key(KEY_ESCAPE)
@@ -65,6 +103,12 @@ func _drag_response_target(source: Control, revision: int) -> bool:
                 return false
         if _recipient_revision() != revision:
                 _fail("response drag committed before review")
+                return false
+        var local := main.find_child("LocalDecisionWorkspace", true, false)
+        var origin := local.find_child("LocalDecisionSource", true, false) as Button
+        if origin == null or origin.text != "Play Mockingbird" \
+                        or "Previous choice committed" not in _visible_text(local):
+                _fail("response drag replaced the accepted play origin with its nested answer")
                 return false
         if not await _capture_checkpoint("response-drag-draft"): return false
         var commit := _button_named("Stun Rhino")

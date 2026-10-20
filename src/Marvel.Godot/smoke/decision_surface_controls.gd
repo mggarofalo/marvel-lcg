@@ -2,6 +2,12 @@ extends RefCounted
 
 const SURFACES := ["LocalDecisionWorkspace", "PaymentWorkspace", "CompleteChoicesFrame"]
 
+static func resolution(main: Node) -> Control:
+	for name in SURFACES + ["AbilityWindow", "ContextualDecision"]:
+		var surface := main.find_child(name, true, false)
+		if _visible(surface): return surface as Control
+	return null
+
 static func commit(main: Node) -> Button:
 	for name in SURFACES:
 		var surface := main.find_child(name, true, false)

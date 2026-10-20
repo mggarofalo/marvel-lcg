@@ -26,7 +26,7 @@ internal sealed class BoardResponseTransition(Main main) : IDisposable
             main.eventController.PlaybackSettled += Settled;
             subscribed = true;
         }
-        main.decisions.ClearDecision();
+        main.decisions.ClearDecision(preserveLocalContinuity: true);
         main.decisions.BindMulliganTargets(main.boardRender);
         pending.Begin(() =>
         {
