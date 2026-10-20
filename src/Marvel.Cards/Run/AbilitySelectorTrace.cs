@@ -12,6 +12,10 @@ internal static class AbilitySelectorTrace
 {
     internal static List<Card> TraceCandidateCards(AbilityCardSelection selector, AbilityAdmissionScope cast) => selector switch
     {
+        AbilityCardSelection.Query query when AbilityEncounterSchemeQueries.IsRanked(query.Kind) =>
+            [.. (cast.World.EncounterTopology?.Groups
+                ?? throw new Marvel.Rules.Play.RulesNotImplementedException("ranked encounter schemes require encounter topology"))
+                .SelectMany(group => group.Stages)],
         AbilityCardSelection.Ranked ranked => TraceCandidateCards(ranked.Cards, cast),
         AbilityCardSelection.WithTrait filtered => TraceCandidateCards(filtered.Cards, cast),
         AbilityCardSelection.FirstAvailable fallback => [.. fallback.Options.SelectMany(option => TraceCandidateCards(option, cast)).Distinct()],
@@ -119,7 +123,8 @@ internal static class AbilitySelectorTrace
                 && TraceSelectorMatches(selector, card, trace));
         return UsesObjectIdOrder(selector)
             ? candidates.OrderBy(card => card.ObjectId)
-            : AbilityEncounterCandidateOrder.Apply(candidates, trace.Cast.World, trace.EncounterOrder);
+            : AbilityEncounterCandidateOrder.Apply(candidates, trace.Cast.World,
+                AbilityEncounterSchemeQueries.UsesGroupOrder(selector) ? null : trace.EncounterOrder);
     }
 
     private static Card? ProjectedCard(Card card, int boardVillain, AbilitySelectorTraceContext trace)

@@ -43,6 +43,9 @@ internal sealed class CardQueryEvaluator(
 
     internal IReadOnlyList<Card> Evaluate(AbilityCardQuery query)
     {
+        if (AbilityEncounterSchemeQueries.IsRanked(query))
+            return EncounterSchemeRelations.AtThreatExtreme(cast.World,
+                query == AbilityCardQuery.VillainsWithMostSchemeThreat);
         if (ScenarioQueries.Contains(query)) return EvaluateScenario(query);
         if (EnemyQueries.Contains(query)) return EvaluateEnemies(query);
         if (ControlledQueries.Contains(query)) return EvaluateControlled(query);

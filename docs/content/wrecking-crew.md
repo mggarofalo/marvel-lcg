@@ -157,8 +157,8 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07011:2 | Chaos In the Prison / wrecker | 1 | star Boost: If this attack is undefended, discard an upgrade you control. | Pending MARVEL-625 |
 | 07012 | Crowbar Toss / wrecker | 2 | When Revealed (Alter-Ego): Wrecker schemes. Then, move the active villain counter to the villain whose side scheme has the least threat. | Pending MARVEL-625 |
 | 07012:2 | Crowbar Toss / wrecker | 2 | When Revealed (Hero): Wrecker attacks you. Then, move the active villain counter to the villain whose side scheme has the least threat. | Pending MARVEL-625 |
-| 07013 | Get Wrecked! / wrecker | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Pending MARVEL-625 |
-| 07013:2 | Get Wrecked! / wrecker | 1 | When Revealed (Hero): The villain whose side scheme has the least threat attacks you. | Pending MARVEL-625 |
+| 07013 | Get Wrecked! / wrecker | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
+| 07013:2 | Get Wrecked! / wrecker | 1 | When Revealed (Hero): The villain whose side scheme has the least threat attacks you. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
 | 07014 | I've Been Waiting For This! / wrecker | 1 | When Revealed: The active villain heals 3 hit points. Give that villain a tough status card. | Pending MARVEL-625 |
 | 07014:2 | I've Been Waiting For This! / wrecker | 1 | star Boost: Move the active counter to the villain with the least threat on his side scheme. That villain schemes. | Pending MARVEL-625 |
 | 07015 | Mystical Link / wrecker | 2 | When Revealed: Place 2 threat on each side scheme. | Pending MARVEL-625 |
@@ -189,8 +189,8 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07026:2 | Chaos In the Prison / thunderball | 1 | star Boost: If this attack is undefended, discard an upgrade you control. | Pending MARVEL-625 |
 | 07027 | Energy Projectiles / thunderball | 2 | When Revealed: Deal 1 damage to each friendly character you control. | Authored; owner/form resolution contracts verified; full journey pending MARVEL-631 |
 | 07027:2 | Energy Projectiles / thunderball | 2 | star Boost: Deal 1 damage to the defending character. | Authored; current defender and absent/departed defender contracts verified; full journey pending MARVEL-631 |
-| 07028 | Get Wrecked! / thunderball | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Pending MARVEL-625 |
-| 07028:2 | Get Wrecked! / thunderball | 1 | When Revealed (Hero): The villain whose side scheme has the least threat attacks you. | Pending MARVEL-625 |
+| 07028 | Get Wrecked! / thunderball | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
+| 07028:2 | Get Wrecked! / thunderball | 1 | When Revealed (Hero): The villain whose side scheme has the least threat attacks you. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
 | 07029 | I've Been Waiting For This! / thunderball | 1 | When Revealed: The active villain heals 3 hit points. Give that villain a tough status card. | Pending MARVEL-625 |
 | 07029:2 | I've Been Waiting For This! / thunderball | 1 | star Boost: Move the active counter to the villain with the least threat on his side scheme. That villain schemes. | Pending MARVEL-625 |
 | 07030 | Lightning Blast / thunderball | 2 | When Revealed (Alter-Ego): Place 3 threat on the side scheme with the most threat. | Pending MARVEL-625 |
@@ -214,8 +214,8 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07038:2 | Escaped Convict / piledriver | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
 | 07039 | Buddy System / piledriver | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Pending MARVEL-625 |
 | 07039:2 | Buddy System / piledriver | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Pending MARVEL-625 |
-| 07040 | Get Wrecked! / piledriver | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Pending MARVEL-625 |
-| 07040:2 | Get Wrecked! / piledriver | 1 | When Revealed (Hero): The villain whose side scheme has the least threat attacks you. | Pending MARVEL-625 |
+| 07040 | Get Wrecked! / piledriver | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
+| 07040:2 | Get Wrecked! / piledriver | 1 | When Revealed (Hero): The villain whose side scheme has the least threat attacks you. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
 | 07041 | I've Been Waiting For This! / piledriver | 1 | When Revealed: The active villain heals 3 hit points. Give that villain a tough status card. | Pending MARVEL-625 |
 | 07041:2 | I've Been Waiting For This! / piledriver | 1 | star Boost: Move the active counter to the villain with the least threat on his side scheme. That villain schemes. | Pending MARVEL-625 |
 | 07042 | Oversized Hands / piledriver | 2 | When Revealed: Discard the support you control with the highest cost. If no support was discarded this way, place 2 threat on the active villain's scheme. | Pending MARVEL-625 |
@@ -251,7 +251,7 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07055:2 | Bull Rush / bulldozer | 2 | When Revealed (Hero): Bulldozer attacks you. Discard the top card of your deck for each damage dealt by this attack. | Pending MARVEL-625 |
 | 07056 | Chaos In the Prison / bulldozer | 1 | When Revealed: Choose to either discard an upgrade you control or place 1 threat on the active villain's side scheme for each upgrade you control. If you do not control any upgrades, this card gains surge. | Pending MARVEL-625 |
 | 07056:2 | Chaos In the Prison / bulldozer | 1 | star Boost: If this attack is undefended, discard an upgrade you control. | Pending MARVEL-625 |
-| 07057 | Get Wrecked! / bulldozer | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Pending MARVEL-625 |
-| 07057:2 | Get Wrecked! / bulldozer | 1 | When Revealed (Hero): The villain whose side scheme has the least threat attacks you. | Pending MARVEL-625 |
+| 07057 | Get Wrecked! / bulldozer | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
+| 07057:2 | Get Wrecked! / bulldozer | 1 | When Revealed (Hero): The villain whose side scheme has the least threat attacks you. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
 | 07058 | Headbutt / bulldozer | 2 | When Revealed: Discard 1 card at random from your hand. If you are in hero form, take damage equal to that card's printed cost. If you are in alter-ego form, place threat on Bulldozer's side scheme equal to that card's printed cost. | Pending MARVEL-625 |
 | 07059 | Leading the Charge / bulldozer | 2 | When Revealed: Discard the top X cards of your deck, where X is Bulldozer's ATK. Place 1 threat on Bulldozer's side scheme for each different card type discarded this way | Pending MARVEL-625 |

@@ -96,7 +96,7 @@ internal sealed class DamageTraceMutation
     {
         if (selector is null && singular is null) return fallback;
         var trace = new AbilitySelectorTraceContext(currentVillain, cast, discarded, traits, modifiers, engagement)
-            { EncounterStages = encounterStages, EncounterOrder = encounterOrder };
+            { EncounterStages = encounterStages, EncounterOrder = encounterOrder, SchemeThreat = threat };
         return singular is not null
             ? AbilitySingularTraceSelection.Find(singular, trace)?.ObjectId ?? int.MinValue
             : TraceSelectorIncludesCard(selector!, fallback, trace) ?? int.MinValue;

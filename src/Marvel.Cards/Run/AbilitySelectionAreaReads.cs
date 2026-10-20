@@ -18,6 +18,10 @@ internal static class AbilitySelectionAreaReads
         if (Operand(selection) is { } child) Collect(child, areas);
         switch (selection)
         {
+            case AbilityCardSelection.Query query when AbilityEncounterSchemeQueries.IsRanked(query.Kind):
+                areas.Add(DeckType.VillainArea);
+                areas.Add(DeckType.SideSchemesArea);
+                break;
             case AbilityCardSelection.FirstAvailable fallback:
                 foreach (var option in fallback.Options) Collect(option, areas);
                 break;

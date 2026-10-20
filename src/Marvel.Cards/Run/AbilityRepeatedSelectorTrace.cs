@@ -87,7 +87,8 @@ internal static class AbilityRepeatedSelectorTrace
         AbilityCardSelection selector, Card current, AbilityAdmissionScope cast) => selector switch
         {
             AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.Villain
-                or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters,
+                or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters
+                || AbilityEncounterSchemeQueries.IsRanked(query.Kind),
             AbilityCardSelection.Titled titled => string.Equals(
                 titled.Title, cast.World.Facts.Title(current.FaceId), StringComparison.Ordinal),
             AbilityCardSelection.EnemiesWithTrait trait => TraceHasTrait(current, trait.Trait, cast, []),
@@ -117,6 +118,8 @@ internal static class AbilityRepeatedSelectorTrace
     internal static bool TraceQueryMatches(
         AbilityCardQuery query, Card candidate, AbilitySelectorTraceContext trace)
     {
+        if (AbilityEncounterSchemeQueries.IsRanked(query))
+            return AbilityEncounterSchemeQueries.InTrace(query, trace).Contains(candidate);
         var cast = trace.Cast;
         var discarded = trace.Discarded;
         var modifiers = trace.Modifiers;

@@ -13,6 +13,8 @@ internal static class AbilityProjectedStateQueries
         AbilityCardSelection selector, AreaProjectionState state,
         AbilityAdmissionContext context)
     {
+        if (selector is AbilityCardSelection.Query rankedQuery && AbilityEncounterSchemeQueries.IsRanked(rankedQuery.Kind))
+            return [.. AbilityEncounterSchemeQueries.InAreas(rankedQuery.Kind, context.World, state)];
         var found = ProjectedCandidates(selector, state, context)
             .Where(card => !state.Departed.Contains(card.ObjectId))
             .ToList();

@@ -11182,6 +11182,70 @@
       ]
     },
     {
+      "card": "07013",
+      "name": "Get Wrecked!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+            "effect": { "enemyAttacks": { "enemies": "chosen", "against": "you" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithMostSchemeThreat" },
+            "effect": { "enemySchemes": { "enemies": "chosen", "against": "you" } } } }
+        }
+      ]
+    },
+    {
+      "card": "07028",
+      "name": "Get Wrecked!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+            "effect": { "enemyAttacks": { "enemies": "chosen", "against": "you" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithMostSchemeThreat" },
+            "effect": { "enemySchemes": { "enemies": "chosen", "against": "you" } } } }
+        }
+      ]
+    },
+    {
+      "card": "07040",
+      "name": "Get Wrecked!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+            "effect": { "enemyAttacks": { "enemies": "chosen", "against": "you" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithMostSchemeThreat" },
+            "effect": { "enemySchemes": { "enemies": "chosen", "against": "you" } } } }
+        }
+      ]
+    },
+    {
+      "card": "07057",
+      "name": "Get Wrecked!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+            "effect": { "enemyAttacks": { "enemies": "chosen", "against": "you" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithMostSchemeThreat" },
+            "effect": { "enemySchemes": { "enemies": "chosen", "against": "you" } } } }
+        }
+      ]
+    },
+    {
       "card": "07027",
       "name": "Energy Projectiles",
       "note": "When Revealed damages each character controlled by the resolving player, including an alter-ego. The Boost ability damages only the current defending character; an undefended attack or scheme has none.",

@@ -8,6 +8,10 @@ public enum AbilityCardQuery
 {
     /// <summary>The authored villain relation.</summary>
     Villain,
+    /// <summary>Living villains tied for the least threat on their corresponding schemes.</summary>
+    VillainsWithLeastSchemeThreat,
+    /// <summary>Living villains tied for the most threat on their corresponding schemes.</summary>
+    VillainsWithMostSchemeThreat,
     /// <summary>The authored mainScheme relation.</summary>
     MainScheme,
     /// <summary>The authored yourAsideMinion relation.</summary>

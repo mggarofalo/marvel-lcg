@@ -24,7 +24,7 @@ public sealed class WreckingSingularTraceTests
         var state = AbilityPowerHealthTrace.ApplyPowerDamage(AbilityPowerStateFactory.Initial(scope),
             [groups[0].Villain], 100, world.Seats[0].IdentityCard, scope);
 
-        Assert.Throws<RulesNotImplementedException>(() => AbilityPowerTrace.PowerFind(selection, scope, state));
+        Assert.Throws<RulesNotImplementedException>(() => AbilityPowerSelectionTrace.PowerFind(selection, scope, state));
 
         Assert.Equal(before, (world.Digest().Canonical(), world.Random.Generator.WordsConsumed));
     }

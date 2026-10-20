@@ -33,11 +33,11 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
         Assert.Contains(groups[0].Villain.ObjectId, promoted.Discarded);
         Assert.DoesNotContain(groups[0].Scheme.ObjectId, promoted.Discarded);
         Assert.Equal(new[] { groups[1].Villain, groups[2].Villain, groups[3].Villain, groups[0].Stages[1] },
-            AbilityPowerTrace.PowerEvery(new AbilityCardSelection.Query(AbilityCardQuery.Enemies), scope, promoted));
-        Assert.Same(groups[0].Stages[1], AbilityPowerTrace.PowerFind(
+            AbilityPowerSelectionTrace.PowerEvery(new AbilityCardSelection.Query(AbilityCardQuery.Enemies), scope, promoted));
+        Assert.Same(groups[0].Stages[1], AbilityPowerSelectionTrace.PowerFind(
             new AbilityCardSelection.Last(new AbilityCardSelection.Query(AbilityCardQuery.Enemies)), scope, promoted));
         Assert.Same(groups[1].Villain,
-            AbilityPowerTrace.PowerFind(new AbilityCardSelection.Query(AbilityCardQuery.Villain), scope, promoted));
+            AbilityPowerSelectionTrace.PowerFind(new AbilityCardSelection.Query(AbilityCardQuery.Villain), scope, promoted));
 
         var defeated = Damage(promoted, groups[0].Stages[1], scope);
         Assert.Equal(-1, defeated.EncounterStages![groups[0].Villain.ObjectId]);
@@ -46,7 +46,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
         Assert.Contains(groups[0].Scheme.ObjectId, defeated.Discarded);
         Assert.Contains(hostage.ObjectId, defeated.Discarded);
         Assert.Equal(groups.Skip(1).Select(group => group.Villain),
-            AbilityPowerTrace.PowerEvery(new AbilityCardSelection.Query(AbilityCardQuery.Enemies), scope, defeated));
+            AbilityPowerSelectionTrace.PowerEvery(new AbilityCardSelection.Query(AbilityCardQuery.Enemies), scope, defeated));
         Assert.Equal(groups[0].Villain.ObjectId, initial.EncounterStages![groups[0].Villain.ObjectId]);
         Assert.Equal(digest, world.Digest().Canonical());
         Assert.Equal(rng, world.Random.Generator.WordsConsumed);
@@ -60,9 +60,9 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
         state = Damage(state, groups[2].Villain, scope);
         var enemies = new AbilityCardSelection.Query(AbilityCardQuery.Enemies);
         Card[] expected = [groups[1].Villain, groups[3].Villain, groups[0].Stages[1], groups[2].Stages[1]];
-        Assert.Equal(expected, AbilityPowerTrace.PowerEvery(enemies, scope, state));
-        Assert.Same(expected[^1], AbilityPowerTrace.PowerFind(new AbilityCardSelection.Last(enemies), scope, state));
-        Assert.Equal(expected.OrderBy(card => card.ObjectId), AbilityPowerTrace.PowerEvery(
+        Assert.Equal(expected, AbilityPowerSelectionTrace.PowerEvery(enemies, scope, state));
+        Assert.Same(expected[^1], AbilityPowerSelectionTrace.PowerFind(new AbilityCardSelection.Last(enemies), scope, state));
+        Assert.Equal(expected.OrderBy(card => card.ObjectId), AbilityPowerSelectionTrace.PowerEvery(
             new AbilityCardSelection.InObjectIdOrder(enemies), scope, state));
     }
 
@@ -208,10 +208,10 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
         var chosen = new AbilityCardSelection.Bound(AbilityCardBinding.Chosen);
         var enemies = new AbilityCardSelection.Query(AbilityCardQuery.Enemies);
         var power = Damage(AbilityPowerStateFactory.Initial(scope), groups[0].Villain, scope);
-        Assert.Contains(groups[0].Stages[1], AbilityPowerTrace.PowerEvery(enemies, scope, power));
-        Assert.Null(AbilityPowerTrace.PowerFind(chosen, scope, power));
-        Assert.Empty(AbilityPowerTrace.PowerEvery(chosen, scope, power));
-        Assert.Empty(AbilityPowerTrace.PowerEvery(
+        Assert.Contains(groups[0].Stages[1], AbilityPowerSelectionTrace.PowerEvery(enemies, scope, power));
+        Assert.Null(AbilityPowerSelectionTrace.PowerFind(chosen, scope, power));
+        Assert.Empty(AbilityPowerSelectionTrace.PowerEvery(chosen, scope, power));
+        Assert.Empty(AbilityPowerSelectionTrace.PowerEvery(
             new AbilityCardSelection.WithTrait(chosen, "SYNTHETIC") { Exclude = true }, scope, power));
         var area = new AreaProjectionState(scope.Context);
         var projection = new AbilityAreaProjection([], null,
@@ -231,8 +231,8 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
         var power = Damage(AbilityPowerStateFactory.Initial(scope), groups[2].Villain, scope);
         var enemies = new AbilityCardSelection.Query(AbilityCardQuery.Enemies);
         Assert.Equal(new[] { groups[0].Villain, groups[1].Villain, groups[3].Villain, groups[2].Stages[1] },
-            AbilityPowerTrace.PowerEvery(enemies, scope, power));
-        Assert.Equal(new[] { groups[2].Stages[1] }, AbilityPowerTrace.PowerEvery(
+            AbilityPowerSelectionTrace.PowerEvery(enemies, scope, power));
+        Assert.Equal(new[] { groups[2].Stages[1] }, AbilityPowerSelectionTrace.PowerEvery(
             new AbilityCardSelection.WithTrait(new AbilityCardSelection.Bound(AbilityCardBinding.Chosen),
                 "SYNTHETIC") { Exclude = true }, scope, power));
     }

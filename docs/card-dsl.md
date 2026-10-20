@@ -261,6 +261,13 @@ player in the most recent scheduled activation collection. Canceled attacks do
 not count; a different defending player receives the attack receipt. Each-player
 continuations retain these receipts, and an empty new collection resets them.
 `undefendedAttack` reads the matching completed attack in an attack-end window.
+`villainsWithLeastSchemeThreat` and `villainsWithMostSchemeThreat` select every
+living villain tied at the corresponding scheme-threat extreme, including the
+active villain. Engine choice: their order follows immutable setup groups,
+including after stage promotion. Projected evaluation uses projected threat and
+physical stage membership; a trace without those facts raises. These queries
+select activation targets; they do not move the active counter.
+
 `chooseCard` accepts `chooser: "firstPlayer"` when the first player must select
 the target. This changes only the answering seat: `you`, the original resolving
 player, and continuation bindings retain their meanings. Omission uses the

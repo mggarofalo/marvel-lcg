@@ -46,7 +46,8 @@ internal static class AbilityProjection
             or AbilityCardQuery.MinionsEngagedWithYou
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer or AbilityCardQuery.UpgradesYouControl
             or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.UpgradesAndSupportsYouControl
-            or AbilityCardQuery.CardsYouControl,
+            or AbilityCardQuery.CardsYouControl
+            || AbilityEncounterSchemeQueries.IsRanked(query.Kind),
         _ => false,
     };
 
@@ -56,7 +57,8 @@ internal static class AbilityProjection
         return selector switch
         {
             AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.Villain
-                or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters,
+                or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters
+                || AbilityEncounterSchemeQueries.IsRanked(query.Kind),
             AbilityCardSelection.Titled titled => PotentialStages(cast.World)
                 .Any(stage => string.Equals(titled.Title, cast.World.Facts.Title(stage.FaceId), StringComparison.Ordinal)),
             AbilityCardSelection.EnemiesWithTrait => true,

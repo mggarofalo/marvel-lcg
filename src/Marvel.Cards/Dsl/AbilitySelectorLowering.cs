@@ -77,6 +77,8 @@ internal static class AbilitySelectorLowering
     internal static AbilityCardQuery Query(string name, AbilityLocation location) => name switch
     {
         "villain" => AbilityCardQuery.Villain,
+        "villainsWithLeastSchemeThreat" => AbilityCardQuery.VillainsWithLeastSchemeThreat,
+        "villainsWithMostSchemeThreat" => AbilityCardQuery.VillainsWithMostSchemeThreat,
         "mainScheme" => AbilityCardQuery.MainScheme,
         "yourAsideMinion" => AbilityCardQuery.YourAsideMinion,
         "yourAsideSideScheme" => AbilityCardQuery.YourAsideSideScheme,
