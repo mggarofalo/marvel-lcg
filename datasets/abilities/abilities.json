@@ -12964,6 +12964,342 @@
           ] }
         }
       ]
+    },
+    {
+      "card": "03001a",
+      "name": "Captain America",
+      "note": "Printed discard is a cost; readying this identity must change the game. The instance-specific once-per-round limit persists through form changes.",
+      "abilities": [
+        {
+          "name": "I Can Do This All Day!",
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "discardFromHand": 1
+          },
+          "limitPerRound": 1,
+          "effect": {
+            "ready": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "03001b",
+      "name": "Steve Rogers",
+      "note": "Living Legend discounts the globally first ally played this round only while this face is active. Setup searches only the printed deck/discard locations after mulligans; a held or facedown Drone Shield is not a match. The searched deck is shuffled even without a match.",
+      "abilities": [
+        {
+          "name": "Living Legend",
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "reduceFirstAllyCost": 1
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Setup",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "areas": [
+                      "yourDeck",
+                      "yourDiscardPile"
+                    ],
+                    "kind": "Upgrade",
+                    "title": "Captain America's Shield"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "areas": [
+                        "yourDeck",
+                        "yourDiscardPile"
+                      ],
+                      "kind": "Upgrade",
+                      "title": "Captain America's Shield"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "addToHand": "chosen"
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "shuffle": "yourDeck"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03002",
+      "name": "Agent 13",
+      "note": "The optional response follows entering play, including put-into-play effects. Threat removal is not a thwart ability and therefore does not consume confused.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "removeThreat": {
+                  "scheme": "chosen",
+                  "amount": 2
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03003",
+      "name": "Fearless Determination",
+      "note": "Hero Action grants the named Captain America one THW until phase end, then draws one card. The title reference follows current form rather than granting an unrelated controller the modifier.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "titled": "Captain America"
+                    }
+                  },
+                  "then": {
+                    "grantUntil": {
+                      "card": {
+                        "titled": "Captain America"
+                      },
+                      "keyword": "thwart",
+                      "amount": 1,
+                      "until": "EndOfPhase"
+                    }
+                  }
+                }
+              },
+              {
+                "draw": {
+                  "player": "you",
+                  "count": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "03007",
+      "name": "Steve's Apartment",
+      "note": "Exhaust is paid before the alter-ego action draws and heals the named Steve Rogers. Drawing remains meaningful while undamaged; the named heal does not apply to another identity.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "draw": {
+                  "player": "you",
+                  "count": 1
+                }
+              },
+              {
+                "heal": {
+                  "card": {
+                    "titled": "Steve Rogers"
+                  },
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "03009",
+      "name": "Captain America's Shield",
+      "note": "Restricted is printed card data. Both constant bonuses name the currently faceup Captain America; exhaustion does not blank them, and Steve Rogers receives neither bonus.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Captain America"
+                }
+              },
+              "then": {
+                "seq": [
+                  {
+                    "grant": {
+                      "card": {
+                        "titled": "Captain America"
+                      },
+                      "keyword": "defense",
+                      "amount": 1
+                    }
+                  },
+                  {
+                    "grant": {
+                      "card": {
+                        "titled": "Captain America"
+                      },
+                      "keyword": "retaliate",
+                      "amount": 1
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03010",
+      "name": "Super-Soldier Serum",
+      "note": "The controlled ready Serum exhausts to generate one physical resource during an eligible payment in either form.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "printedResources": "R",
+          "effect": {
+            "generate": "R"
+          }
+        }
+      ]
+    },
+    {
+      "card": "03004",
+      "name": "Heroic Strike",
+      "note": "Hero Action attack deals six damage. The chosen enemy is stunned only if the captured payment includes a physical resource; a declared wild follows its allocated type. Damage prevention does not prevent the subsequent status effect.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 6
+                        }
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "paidWithResource": "R"
+                          },
+                          "then": {
+                            "giveStatus": {
+                              "card": "chosen",
+                              "status": "stunned"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03005",
+      "name": "Shield Block",
+      "note": "The defense interrupt prevents damage to your identity after exhausting your controlled ready Captain America's Shield. The printed interrupt has no form restriction and may trigger outside an attack without defending an attack (rr:defend-defense.4.8).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageWouldBeDealt",
+            "timing": "Interrupt",
+            "target": "you"
+          },
+          "labels": [
+            "defense"
+          ],
+          "when": {
+            "isYourIdentity": "trigger.target"
+          },
+          "cost": {
+            "exhaustTitled": "Captain America's Shield"
+          },
+          "effect": {
+            "preventDamage": "trigger.target"
+          }
+        }
+      ]
     }
   ]
 }

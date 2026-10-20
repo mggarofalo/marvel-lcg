@@ -297,3 +297,48 @@ deck leakage, acknowledgement revocation, retained count and no offer when only
 the active deck is empty. Twelve inspection controls, all 336 View cases and all
 3,210 Content cases pass in the topology integration branch. No Falcon authored
 row or product admission is included in this foundation.
+
+## Authored pack work in progress
+
+The follow-on draft interprets nine faces: Captain America, Steve Rogers, Agent
+13, Fearless Determination, Heroic Strike, Shield Block, Steve's Apartment,
+Captain America's Shield and Super-Soldier Serum. These rows are research
+implementations, not a complete playable pack.
+
+Prepared card-execution scenes exercise the actual authored interpreter and
+Game decisions for readying costs and round limits, first-ally accounting across
+form changes, setup searches and unconditional shuffling, optional Agent 13
+responses, temporary THW bonuses, resource generation, healing and draw.
+Heroic Strike's declared payment controls distinguish physical, mental and wild
+allocation, and prove that Tough prevention does not suppress its separate stun.
+Shield Block's real enemy-attack path prevents damage, exhausts the named Shield,
+leaves the identity ready and permits the Shield's retaliation after zero damage.
+Its nonattack tests explicitly supply the imminent-damage occurrence; they prove
+window eligibility and prevention in either form, not a complete encounter
+transcript. Cost controls reject missing, exhausted, foreign and wrongly named
+upgrades.
+
+MARVEL-645 adds an explicit runtime product policy independent of authored
+interpretations. Partial and unknown products remain unavailable to executable
+discovery, deck assessment, quantities and game creation, while their printed
+research cards remain browseable with runtime support false. Product-owned
+research recipes are excluded; references from retained Core recipes still fail
+validation. The authored-book gate names only these nine additional research
+faces. This boundary does not establish Captain America's completeness or
+acceptance.
+
+Verification for the nine-face checkpoint: 35 focused Captain cases and the full
+2,782-case Content suite pass. Fourteen compiled authored-data mutations are
+caught: ready cost, round limit, first-ally amount, missing setup shuffle, Shield
+DEF, Serum resource type, THW expiry, apartment healing, Agent 13 forced timing,
+Heroic Strike damage and payment type, and Shield Block form, cost and prevention.
+This covers the named observations above, not every per-face obligation.
+
+The separate admission checkpoint `4ac8d021` passes 397 Server tests, including
+full prior-history upgrade controls. Four compiled admission bypasses are caught:
+all authored faces playable, unknown products accepted, incomplete RoRS accepted,
+and retained-recipe validation omitted. The solution builds without warnings;
+eight immutable predecessor Core/RoRS journals replay 214 decisions without
+divergence (not an RNG audit). Independent review found no admission-boundary
+blocker. These additive research rows introduce no new replay contract beyond the
+separately reviewed v21 attack-completion baseline.
