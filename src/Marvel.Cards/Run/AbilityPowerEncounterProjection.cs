@@ -15,6 +15,13 @@ internal static class AbilityPowerEncounterProjection
         return current < 0 ? null : cast.World.Cards[current];
     }
 
+    internal static Card? CurrentCharacter(Card card, AbilityAdmissionScope cast, IReadOnlyDictionary<int, int> stages)
+    {
+        var current = Current(card, cast, stages);
+        return current is not null && string.Equals(cast.World.Facts.Title(card.FaceId),
+            cast.World.Facts.Title(current.FaceId), StringComparison.Ordinal) ? current : null;
+    }
+
     internal static bool IsCurrent(Card card, AbilityAdmissionScope cast, AbilityPowerState state) =>
         state.EncounterStages is not null && Group(card, cast) is { } group
             && state.EncounterStages[group.Villain.ObjectId] == card.ObjectId;

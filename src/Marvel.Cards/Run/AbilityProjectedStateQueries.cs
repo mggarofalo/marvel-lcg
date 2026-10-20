@@ -48,8 +48,12 @@ internal static class AbilityProjectedStateQueries
             || selector is not AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen })
             return candidates;
         // rr:villain-defeat.3.1: same-title villain stages are "the same character".
-        return candidates.Select(card => AbilityAreaEncounterProjection.Current(context.World, state, card))
-            .Where(card => card is not null).Cast<Card>();
+        return candidates.Select(card => (Original: card,
+                Current: AbilityAreaEncounterProjection.Current(context.World, state, card)))
+            .Where(pair => pair.Current is not null && string.Equals(
+                context.World.Facts.Title(pair.Original.FaceId), context.World.Facts.Title(pair.Current.FaceId),
+                StringComparison.Ordinal))
+            .Select(pair => pair.Current!);
     }
 
     private static List<Card> ProjectedBound(

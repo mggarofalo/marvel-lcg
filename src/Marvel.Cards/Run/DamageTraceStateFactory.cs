@@ -17,7 +17,8 @@ internal static class DamageTraceStateFactory
             EncounterStages = cast.World.EncounterTopology?.Groups.ToDictionary(
                 group => group.Villain.ObjectId, group => group.CurrentVillain?.ObjectId ?? -1),
             EncounterOrder = cast.World.EncounterTopology is null ? null
-                : cast.World.AreaOf(DeckType.VillainArea).Cards.Select(card => card.ObjectId).ToArray(),
+                : cast.World.Areas.Where(area => area.Type == DeckType.VillainArea)
+                    .SelectMany(area => area.Cards).Select(card => card.ObjectId).ToArray(),
         };
     }
 }

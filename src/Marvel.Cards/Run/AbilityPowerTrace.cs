@@ -43,10 +43,12 @@ internal static class AbilityPowerTrace
 
     private static Card? CurrentVillainCard(
         Card? found, int liveVillain, AbilityAdmissionScope cast,
-        AbilityPowerState reachability)
+        AbilityPowerState reachability, bool sameCharacter = true)
     {
         if (found is not null && reachability.EncounterStages is not null)
-            return AbilityPowerEncounterProjection.Current(found, cast, reachability.EncounterStages);
+            return sameCharacter
+                ? AbilityPowerEncounterProjection.CurrentCharacter(found, cast, reachability.EncounterStages)
+                : AbilityPowerEncounterProjection.Current(found, cast, reachability.EncounterStages);
         if (found?.ObjectId != liveVillain
             || reachability.CurrentVillain == liveVillain) return found;
         return reachability.Finished || reachability.CurrentVillain < 0
@@ -78,7 +80,7 @@ internal static class AbilityPowerTrace
         }
         List<Card> selected =
         [
-            .. AbilityEncounterCandidateOrder.Apply(candidates.Select(card => CurrentVillainCard(card, liveVillain, cast, reachability))
+            .. AbilityEncounterCandidateOrder.Apply(candidates.Select(card => CurrentVillainCard(card, liveVillain, cast, reachability, sameCharacter: false))
                 .Where(card => card is not null).Cast<Card>()
                 .DistinctBy(card => card.ObjectId), cast.World, reachability.EncounterOrder)
                 .Where(card => !reachability.Discarded.Contains(card.ObjectId)

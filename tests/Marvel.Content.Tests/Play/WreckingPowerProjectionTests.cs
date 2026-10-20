@@ -200,16 +200,69 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
         Assert.False(defeated.Finished);
     }
 
+    [Fact]
+    public void DifferentTitleSuccessorIsRediscoveredByQueryButDoesNotInheritChosenCharacter()
+    {
+        var (_, groups, original) = Fixture(firstSuccessor: "01113");
+        var scope = new AbilityAdmission.AbilityAdmissionScope(original.Context.WithChosen(groups[0].Villain), []);
+        var chosen = new AbilityCardSelection.Bound(AbilityCardBinding.Chosen);
+        var enemies = new AbilityCardSelection.Query(AbilityCardQuery.Enemies);
+        var power = Damage(AbilityPowerStateFactory.Initial(scope), groups[0].Villain, scope);
+        Assert.Contains(groups[0].Stages[1], AbilityPowerTrace.PowerEvery(enemies, scope, power));
+        Assert.Null(AbilityPowerTrace.PowerFind(chosen, scope, power));
+        Assert.Empty(AbilityPowerTrace.PowerEvery(chosen, scope, power));
+        Assert.Empty(AbilityPowerTrace.PowerEvery(
+            new AbilityCardSelection.WithTrait(chosen, "SYNTHETIC") { Exclude = true }, scope, power));
+        var area = new AreaProjectionState(scope.Context);
+        var projection = new AbilityAreaProjection([], null,
+            new HashSet<DeckType> { DeckType.EncounterDiscardPile }, scope.Context, 1);
+        projection.DealProjected(area, groups[0].Villain, 100, 1);
+        Assert.Contains(groups[0].Stages[1], AbilityProjectedStateQueries.ProjectedEvery(enemies, area, scope.Context));
+        Assert.Null(AbilityProjectedStateQueries.ProjectedFind(chosen, area, scope.Context));
+    }
+
+    [Fact]
+    public void ProjectedCandidateOrderKeepsEachGroupInItsCapturedVillainArea()
+    {
+        var (world, groups, original) = Fixture();
+        var area = world.CreateArea(DeckType.VillainArea);
+        World.MoveToTop(groups[2].Villain, area);
+        var scope = new AbilityAdmission.AbilityAdmissionScope(original.Context.WithChosen(groups[2].Villain), []);
+        var power = Damage(AbilityPowerStateFactory.Initial(scope), groups[2].Villain, scope);
+        var enemies = new AbilityCardSelection.Query(AbilityCardQuery.Enemies);
+        Assert.Equal(new[] { groups[0].Villain, groups[1].Villain, groups[3].Villain, groups[2].Stages[1] },
+            AbilityPowerTrace.PowerEvery(enemies, scope, power));
+        Assert.Equal(new[] { groups[2].Stages[1] }, AbilityPowerTrace.PowerEvery(
+            new AbilityCardSelection.WithTrait(new AbilityCardSelection.Bound(AbilityCardBinding.Chosen),
+                "SYNTHETIC") { Exclude = true }, scope, power));
+    }
+
+    [Rule("rr:when-revealed-abilities")]
+    [Fact]
+    public void RepeatedProjectionRefusesUnknownStageEntryBeforeReadingItsResult()
+    {
+        // Synthetic composed topology: revealing Klaw II must resolve its
+        // When Revealed search for The Immortal Klaw before subsequent reads.
+        // No currently admitted each-player damage body can promote a villain.
+        var (_, groups, scope) = Fixture(firstSuccessor: "01114");
+        var target = groups[0].Villain;
+        var initial = DamageTraceStateFactory.Initial(target, scope);
+        var error = Assert.Throws<RulesNotImplementedException>(() =>
+            new DamageTraceMutation(initial, target, scope).Apply([new(-1, target.ObjectId, 100)]));
+        Assert.Contains("When Revealed", error.Message);
+    }
+
     private static AbilityPowerState Damage(
         AbilityPowerState state, Card card, AbilityAdmission.AbilityAdmissionScope scope) =>
         AbilityPowerHealthTrace.ApplyPowerDamage(state, [card], 100,
             scope.World.Seats[0].IdentityCard, scope);
 
-    private static (World, EncounterDeckGroup[], AbilityAdmission.AbilityAdmissionScope) Fixture()
+    private static (World, EncounterDeckGroup[], AbilityAdmission.AbilityAdmissionScope) Fixture(string? firstSuccessor = null)
     {
         var world = Hero("01001a");
         string[][] faces = [["07002", "07003", "07004"], ["07017", "07018", "07019"],
             ["07032", "07033", "07034"], ["07046", "07047", "07048"]];
+        if (firstSuccessor is not null) faces[0][1] = firstSuccessor;
         var groups = faces.Select(pair => Group(world, pair)).ToArray();
         world.BindEncounterTopology(new EncounterTopology(world, groups, groups[1].Villain));
         var source = world.CreateCard("01006", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));

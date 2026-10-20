@@ -79,16 +79,23 @@ internal sealed class DamageTraceVillains(DamageTraceState state, AbilityAdmissi
                 + "repeated continuation reads its constant abilities, "
                 + "which is not implemented");
         }
-        if (!HasLiveVillainRetargetingConstant(
+        if (HasLiveVillainRetargetingConstant(
             state.Discarded, current, next, cast, state.Threat, state.Damage, state.Modifiers, state.Traits,
             [
                 .. state.StatusChanges,
                 .. state.Tough.Keys.Select(card => (card, Statuses.Tough)),
-            ], state.Engagement, state.FormsMayChange, state.FirstPlayer)) return;
-        throw new RulesNotImplementedException(
+            ], state.Engagement, state.FormsMayChange, state.FirstPlayer))
+            throw new RulesNotImplementedException(
             $"villain stage '{next.FaceId}' enters play before a "
             + "repeated continuation reads retargeting constant abilities, "
             + "which is not implemented");
+        if (AbilityProgramQueries.On(cast.Context.Program, next).Any(ability =>
+                ability.Trigger.Timing == AbilityType.WhenRevealed))
+        {
+            throw new RulesNotImplementedException(
+                $"villain stage '{next.FaceId}' has an unprojected When Revealed ability before repeated continuation reads");
+        }
+
     }
 
     private DamageTraceState AdvanceVillain(Card current, Card next, bool carries)

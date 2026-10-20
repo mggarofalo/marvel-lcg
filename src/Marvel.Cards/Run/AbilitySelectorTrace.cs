@@ -68,9 +68,21 @@ internal static class AbilitySelectorTrace
             && TraceEngagedWith(candidate, Seat(area.Player, trace.Cast), trace.Engagement),
         AbilityCardSelection.InPlayerArea or AbilityCardSelection.WithMatchingPlayerArea
             or AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.InAreas
-            or AbilityCardSelection.Bound => Every(selector, trace.Cast).Contains(candidate),
+            => Every(selector, trace.Cast).Contains(candidate),
+        AbilityCardSelection.Bound bound => BoundMatches(bound, candidate, trace),
         _ => throw new InvalidOperationException("Unknown compiled selector in projected membership"),
     };
+
+    private static bool BoundMatches(
+        AbilityCardSelection.Bound bound, Card candidate, AbilitySelectorTraceContext trace)
+    {
+        var found = Every(bound, trace.Cast);
+        if (trace.EncounterStages is null) return found.Contains(candidate);
+        return found.Any(original =>
+            AbilityPowerEncounterProjection.Current(original, trace.Cast, trace.EncounterStages) == candidate
+            && string.Equals(trace.Cast.World.Facts.Title(original.FaceId),
+                trace.Cast.World.Facts.Title(candidate.FaceId), StringComparison.Ordinal));
+    }
 
     private static bool HasTrait(Card candidate, string trait, AbilitySelectorTraceContext trace) =>
         TraceHasTrait(candidate, trait, trace.Cast, trace.Discarded, trace.Traits);
