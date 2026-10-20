@@ -109,6 +109,17 @@ that tracks only the active face is killed by the hero-form prior-play case.
 These are prerequisite observations, not a complete Captain America game or a
 saved-session upgrade proof. Exact revision and counts are recorded in Plane.
 
+`SimultaneousAttackDamageTests` exercises an engine damage-batch prerequisite
+with synthetic targets. All selected shares are placed before the first defeat
+interrupt; replacement and defeat suspension retain the batch, stale target
+incarnations are excluded, and recipient results include tough, retaliation,
+ranged and overkill outcomes. The compiled sequential-placement mutation is
+killed by observing the second recipient at the first defeat interrupt; removing
+incarnation validation is killed by the departure-and-return case. This is not
+yet a Shield Toss transcript: its cost-to-target count binding, Guard admission,
+stun boundary and separate per-target attack response opportunities still need
+implementation and acceptance under MARVEL-627.
+
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains
 closed while this work proceeds.

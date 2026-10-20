@@ -1,0 +1,69 @@
+using Marvel.Rules.Events;
+using Marvel.Rules.State;
+
+namespace Marvel.Rules.Play;
+
+/// <summary>Places every selected share before any recipient's defeat or attack aftermath.</summary>
+internal sealed class SimultaneousAttackDamageResolution
+{
+    private readonly World world;
+    private readonly ICardFacts facts;
+    private readonly SimultaneousAttackRecipient[] recipients;
+    private int replacementIndex;
+    private int settlementIndex;
+    private bool placed;
+
+    internal SimultaneousAttackDamageResolution(World world, ICardFacts facts,
+        SimultaneousAttackDamageRequest request, AbilityExecution execution, AbilityExecution? completion)
+    {
+        this.world = world;
+        this.facts = facts;
+        Execution = execution;
+        Result = new(completion ?? execution);
+        recipients = [.. request.Targets.Select(target => new SimultaneousAttackRecipient(
+            new(request.Attacker, request.Source, target, request.Amount, request.Trigger, request.Verb, request.Retaliate)))];
+    }
+
+    internal AbilityExecution Execution { get; }
+    internal SimultaneousAttackDamageResult Result { get; }
+
+    internal void Continue(List<GameEvent> events)
+    {
+        world.Agenda.Executions.RequireActive(Execution);
+        while (replacementIndex < recipients.Length)
+        {
+            if (!recipients[replacementIndex].Replace(world, Execution, events)) { Suspend(events); return; }
+            replacementIndex++;
+        }
+        if (!placed)
+        {
+            // faq:03006: Shield Toss damage is dealt simultaneously. No defeat
+            // or attack aftermath may change another recipient's placement.
+            foreach (var recipient in recipients) recipient.Prepare(world, facts, events);
+            foreach (var recipient in recipients) recipient.Place(world, facts, events);
+            placed = true;
+        }
+        while (settlementIndex < recipients.Length)
+        {
+            if (!recipients[settlementIndex].Settle(world, facts, Execution, events)) { Suspend(events); return; }
+            settlementIndex++;
+        }
+        Result.Publish(recipients.Select(recipient => recipient.Result!));
+        Execution.Finish(events);
+    }
+
+    private void Suspend(List<GameEvent> events)
+    {
+        world.Agenda.ThenContinuation(new PhaseStep(new SimultaneousAttackDamageOperation(this),
+            world.Agenda.Current?.Round ?? 0, 5, Plan: true), Execution.Occurrence);
+        Execution.Yield(events);
+    }
+
+    internal static void Resume(World world, PhaseStep step, List<GameEvent> events)
+    {
+        var resolution = step.Require<SimultaneousAttackDamageOperation>().Resolution;
+        world.Agenda.Executions.RequireContinuation(step);
+        world.Agenda.Executions.Resume(resolution.Execution);
+        resolution.Continue(events);
+    }
+}
