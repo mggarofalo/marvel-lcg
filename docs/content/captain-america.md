@@ -12,13 +12,20 @@ Printed behavior comes from `datasets/cards/cards.json` (35 faces, 03001a/b and
 including both sides of the one physical identity, and omits obligation/nemesis
 records supplied by the joined dataset. Therefore 54 is **not** the physical pack
 count. Reconcile the remaining physical quantities and supplied starter deck
-against the official rulesheet before creating executable setup; do not infer
+against the physical product's divider and contents before creating executable setup; do not infer
 physical completeness from the 35-face count.
 
 The official insert is vendored at `datasets/rules-packs/mc04/leadership.md`, with
 source pin in `sources.manifest.json`. Its extracted paragraph describes play but
-does not itself enumerate the complete contents or starter deck. This source gap
-blocks component acceptance until the pinned PDF's printed list is checked.
+does not itself enumerate the complete contents or starter deck. Both pages of the
+[official PDF](https://images-cdn.fantasyflightgames.com/filer_public/2c/59/2c59220a-6df3-4f39-8104-abc0ed61e8e6/mc04_captain_america_rulesheet.pdf)
+were visually checked on 2026-10-20; its SHA-256 matches the vendored pin
+`a8e3bffc7953b7ca0a6182cdcaaaa80f3d79710efc3b0e289c9ff46c0110a87a`.
+Page one directs the reader to the physical divider: “There is a complete
+decklist on the reverse side of the divider card for your reference.” Page two
+is artwork. Neither page lists starter quantities or a physical component
+inventory. MARVEL-629 therefore still requires a source for that divider and
+component reconciliation; repeating extraction of this PDF cannot supply it.
 
 FAQ entries under `datasets/marvelcdb-faq/faq.json` for 03001a, 03006, 03024,
 03025, 03032 and 03033 are material. In particular: Shield setup cannot retrieve
@@ -247,3 +254,48 @@ pack or replay schema change follows from this interpreter checkpoint.
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains
 closed while this work proceeds.
+
+## Authored pack work in progress
+
+The follow-on draft interprets nine faces: Captain America, Steve Rogers, Agent
+13, Fearless Determination, Heroic Strike, Shield Block, Steve's Apartment,
+Captain America's Shield and Super-Soldier Serum. These rows are research
+implementations, not a complete playable pack.
+
+Prepared card-execution scenes exercise the actual authored interpreter and
+Game decisions for readying costs and round limits, first-ally accounting across
+form changes, setup searches and unconditional shuffling, optional Agent 13
+responses, temporary THW bonuses, resource generation, healing and draw.
+Heroic Strike's declared payment controls distinguish physical, mental and wild
+allocation, and prove that Tough prevention does not suppress its separate stun.
+Shield Block's real enemy-attack path prevents damage, exhausts the named Shield,
+leaves the identity ready and permits the Shield's retaliation after zero damage.
+Its nonattack tests explicitly supply the imminent-damage occurrence; they prove
+window eligibility and prevention in either form, not a complete encounter
+transcript. Cost controls reject missing, exhausted, foreign and wrongly named
+upgrades.
+
+MARVEL-645 adds an explicit runtime product policy independent of authored
+interpretations. Partial and unknown products remain unavailable to executable
+discovery, deck assessment, quantities and game creation, while their printed
+research cards remain browseable with runtime support false. Product-owned
+research recipes are excluded; references from retained Core recipes still fail
+validation. The authored-book gate names only these nine additional research
+faces. This boundary does not establish Captain America's completeness or
+acceptance.
+
+Verification for the nine-face checkpoint: 35 focused Captain cases and the full
+2,782-case Content suite pass. Fourteen compiled authored-data mutations are
+caught: ready cost, round limit, first-ally amount, missing setup shuffle, Shield
+DEF, Serum resource type, THW expiry, apartment healing, Agent 13 forced timing,
+Heroic Strike damage and payment type, and Shield Block form, cost and prevention.
+This covers the named observations above, not every per-face obligation.
+
+The separate admission checkpoint `4ac8d021` passes 397 Server tests, including
+full prior-history upgrade controls. Four compiled admission bypasses are caught:
+all authored faces playable, unknown products accepted, incomplete RoRS accepted,
+and retained-recipe validation omitted. The solution builds without warnings;
+eight immutable predecessor Core/RoRS journals replay 214 decisions without
+divergence (not an RNG audit). Independent review found no admission-boundary
+blocker. These additive research rows introduce no new replay contract beyond the
+separately reviewed v21 attack-completion baseline.
