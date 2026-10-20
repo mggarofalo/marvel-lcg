@@ -68,7 +68,7 @@ internal static class AttackBoost
         // rr:boost-boost-icon.6 still retains cards dealt before that activation.
         if (world.Activation is { DealBoostCards: false } activation && activation.Enemy == enemy.ObjectId)
             return;
-        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var deck = EncounterRouting.Deck(world);
         var boost = EncounterDeck.TakeTop(world, trigger, events);
         if (boost is null)
         {

@@ -1,0 +1,20 @@
+using Marvel.Rules.State;
+
+namespace Marvel.Rules.Play;
+
+/// <summary>Resolves the active villain's encounter piles without changing physical ownership.</summary>
+public static class EncounterRouting
+{
+    /// <summary>pack:mc03:new-rules: “the villain” refers to the active villain.</summary>
+    public static Card? Villain(World world) =>
+        world.EncounterTopology is { } topology
+            ? topology.Active.CurrentVillain : world.TheCardIn(DeckType.VillainArea);
+
+    /// <summary>The current encounter draw pile; ordinary games retain their existing area lookup.</summary>
+    public static Area Deck(World world) =>
+        world.EncounterTopology?.Active.Deck ?? world.AreaOf(DeckType.EncounterDeck);
+
+    /// <summary>The discard paired with the current draw pile.</summary>
+    public static Area Discard(World world) =>
+        world.EncounterTopology?.Active.Discard ?? world.AreaOf(DeckType.EncounterDiscardPile);
+}

@@ -37,7 +37,7 @@ internal static class ActivationProcedure
             return null;
         }
 
-        var villain = world.TheCardIn(DeckType.VillainArea);
+        var villain = EncounterRouting.Villain(world);
         if (villain is null)
         {
             return null;

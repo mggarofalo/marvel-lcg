@@ -6,6 +6,19 @@ namespace Marvel.Rules.State;
 /// <summary>Creates and changes the deterministic topology of a world.</summary>
 public static class WorldTopology
 {
+    /// <summary>Creates the ordinary initial game area in deterministic play-area order.</summary>
+    internal static void Initialize(World world)
+    {
+        // An ordinary game has exactly one game area holding every play area.
+        // Creating it before any cards gives every reach predicate the same shape.
+        var whole = world.CreateGameArea();
+        whole.Add(PlayArea.Villains);
+        for (int seat = 0; seat < world.Players; seat++)
+        {
+            whole.Add(PlayArea.Of(seat));
+        }
+    }
+
     /// <summary>
     /// Shuffles a pile, drawing from the game's one stream.
     /// </summary>

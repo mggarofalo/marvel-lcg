@@ -48,7 +48,7 @@ public static class EncounterDeck
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
 
-        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var deck = EncounterRouting.Deck(world);
         if (deck.Cards.Count == 0 && !Reset(world, trigger, events))
         {
             return null;
@@ -89,7 +89,7 @@ public static class EncounterDeck
             return [];
         }
 
-        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var deck = EncounterRouting.Deck(world);
         if (deck.Cards.Count == 0 && !Reset(world, trigger, events))
         {
             return [];
@@ -163,7 +163,7 @@ public static class EncounterDeck
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(events);
 
-        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var deck = EncounterRouting.Deck(world);
         if (deck.Cards.Count == 0 && !Reset(world, trigger, events))
         {
             return null;
@@ -226,8 +226,8 @@ public static class EncounterDeck
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
 
-        var deck = world.AreaOf(DeckType.EncounterDeck);
-        var pile = world.AreaOf(DeckType.EncounterDiscardPile);
+        var deck = EncounterRouting.Deck(world);
+        var pile = EncounterRouting.Discard(world);
         if (deck.Cards.Count > 0)
         {
             return false;
