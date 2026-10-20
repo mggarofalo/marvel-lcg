@@ -43,6 +43,8 @@ internal static class AbilityAttackDamageExecution
         bool suspended = false;
         foreach (var target in AbilityDamageAndThreatExecution.DamageTargets(damage.Cards, context))
         {
+            if (context.PowerOccurrence?.Retaliation is { } retaliation)
+                context.PowerOccurrence.Retaliation = retaliation.Include(target, context.World.Facts);
             var damaged = DamageAttacks.Attack(context.World, context.World.Facts, attacker, context.Source, target,
                 amount, context.Trigger, "Attack", context.Events, retaliate: false);
             state.Attacked.Add(target);

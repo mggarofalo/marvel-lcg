@@ -90,7 +90,7 @@ public sealed record Occurrence
     /// <summary>The imminent threat placement, when this occurrence is one.</summary>
     public State.ThreatPlacement? Threat { get; }
 
-    private readonly HashSet<(WindowKind Window, int Card, AbilityType Type, int Ordinal, State.Defeated? Defeat, State.Attacked? Attack)> spent = [];
+    private readonly HashSet<(WindowKind Window, int Card, AbilityType Type, int Ordinal, State.Defeated? Defeat, State.Attacked? Attack, NativeAbilityKind Native)> spent = [];
 
     // The positional parameter of the same name, copied. Inside this body
     // `Conditions` is the constructor's argument; outside it is the property
@@ -127,20 +127,8 @@ public sealed record Occurrence
         State.ICardFacts facts,
         int actor,
         int target,
-        int player = -1)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-
-        return new Occurrence(
-            id,
-            conditions,
-            Player: player,
-            Actor: actor,
-            Target: target,
-            ActorFacts: OccurrenceCard.Capture(world.Cards[actor], facts),
-            TargetFacts: OccurrenceCard.Capture(world.Cards[target], facts));
-    }
+        int player = -1) =>
+        OccurrenceCapture.Attack(id, conditions, world, facts, actor, target, player);
 
     /// <summary>Create a thwart occurrence with explicit actor and scheme roles.</summary>
     /// <remarks>
@@ -156,49 +144,14 @@ public sealed record Occurrence
         State.ICardFacts facts,
         int actor,
         int scheme,
-        int player)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-
-        return new Occurrence(
-            id,
-            conditions,
-            Subject: scheme,
-            Player: player,
-            Actor: actor,
-            Target: scheme,
-            ActorFacts: OccurrenceCard.Capture(world.Cards[actor], facts),
-            TargetFacts: OccurrenceCard.Capture(world.Cards[scheme], facts));
-    }
+        int player) =>
+        OccurrenceCapture.Thwart(id, conditions, world, facts, actor, scheme, player);
 
     /// <summary>Create an occurrence for one imminent threat assignment.</summary>
     public static Occurrence ForThreat(
         int id, IReadOnlyList<string> conditions, State.World world,
-        State.ICardFacts facts, State.ThreatPlacement placement, int? subject = null)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(placement);
-
-        OccurrenceCard? source = placement.Source >= 0
-            ? OccurrenceCard.Capture(world.Cards[placement.Source], facts)
-            : null;
-        OccurrenceCard? target = placement.Scheme >= 0
-            ? OccurrenceCard.Capture(world.Cards[placement.Scheme], facts)
-            : null;
-
-        return new Occurrence(
-            id,
-            conditions,
-            Subject: subject ?? placement.Scheme,
-            Player: placement.Player,
-            Actor: placement.Source,
-            Target: placement.Scheme,
-            ActorFacts: source,
-            TargetFacts: target,
-            Threat: placement);
-    }
+        State.ICardFacts facts, State.ThreatPlacement placement, int? subject = null) =>
+        OccurrenceCapture.Threat(id, conditions, world, facts, placement, subject);
 
     /// <summary>
     /// Every triggering condition this occurrence has created so far.
@@ -226,6 +179,10 @@ public sealed record Occurrence
     /// cleared after it, and the clearing is what nobody remembers.
     /// </remarks>
     public IReadOnlyList<State.Defeated> Defeats => defeats;
+
+    /// <summary>Engine-owned completion facts for native retaliate responses.</summary>
+    [JsonIgnore]
+    public State.RetaliationContext? Retaliation { get; set; }
 
     private readonly List<State.Attacked> attacks = [];
 
@@ -311,7 +268,7 @@ public sealed record Occurrence
     /// <param name="window">Which window.</param>
     /// <param name="ability">The ability and exact triggering fact.</param>
     public bool MayTrigger(WindowKind window, PendingAbility ability) =>
-        !spent.Contains((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat, ability.TriggeringAttack));
+        !spent.Contains((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat, ability.TriggeringAttack, ability.Native));
 
     /// <summary>Record that a card's ability has been triggered in this window.</summary>
     /// <remarks>
@@ -322,5 +279,5 @@ public sealed record Occurrence
     /// <param name="ability">The ability and exact triggering fact.</param>
     /// <returns>False when it had already been triggered.</returns>
     public bool Trigger(WindowKind window, PendingAbility ability) =>
-        spent.Add((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat, ability.TriggeringAttack));
+        spent.Add((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat, ability.TriggeringAttack, ability.Native));
 }

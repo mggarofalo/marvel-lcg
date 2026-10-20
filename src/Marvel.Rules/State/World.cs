@@ -324,7 +324,7 @@ public sealed class World
     /// <summary>The action-specific card capability.</summary>
     public Play.ICardActionAbilities ActionAbilities => (Play.ICardActionAbilities)Abilities;
     /// <summary>The timing-window card capability.</summary>
-    public Timing.IWindowAbilities WindowAbilities => Abilities;
+    public Timing.IWindowAbilities WindowAbilities => new Timing.NativeWindowAbilities(Abilities);
     /// <summary>The enemy-attack card capability.</summary>
     public Play.IAttackCardAbilities AttackAbilities => (Play.IAttackCardAbilities)Abilities;
     /// <summary>The enter-play card capability.</summary>

@@ -114,7 +114,7 @@ public readonly record struct PhaseStep(
                 facts,
                 attack.Enemy,
                 attack.Target,
-                attack.Player),
+                attack.Player) with { Retaliation = attack.Retaliation },
             _ => new Occurrence(id, Conditions, Subject, Seat),
         };
     }

@@ -64,6 +64,10 @@ public sealed record EnemyAttack(
     bool Damaged = false, long? CalculatedDamage = null,
     IReadOnlyList<int>? AdditionalPlayers = null, bool Indirect = false)
 {
+    /// <summary>Captured physical retaliation recipients for the final shared response window.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public RetaliationContext? Retaliation { get; init; }
+
     /// <summary>Controllers who passed their step-2 basic-defense opportunity.</summary>
     /// <remarks>
     /// This sequential scheduling choice is ours. It is reconstructed from accepted
