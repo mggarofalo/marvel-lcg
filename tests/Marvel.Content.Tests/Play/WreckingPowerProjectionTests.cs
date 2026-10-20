@@ -32,8 +32,10 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
         Assert.False(promoted.Finished);
         Assert.Contains(groups[0].Villain.ObjectId, promoted.Discarded);
         Assert.DoesNotContain(groups[0].Scheme.ObjectId, promoted.Discarded);
-        Assert.Equal(new[] { groups[0].Stages[1], groups[1].Villain, groups[2].Villain, groups[3].Villain },
+        Assert.Equal(new[] { groups[1].Villain, groups[2].Villain, groups[3].Villain, groups[0].Stages[1] },
             AbilityPowerTrace.PowerEvery(new AbilityCardSelection.Query(AbilityCardQuery.Enemies), scope, promoted));
+        Assert.Same(groups[0].Stages[1], AbilityPowerTrace.PowerFind(
+            new AbilityCardSelection.Last(new AbilityCardSelection.Query(AbilityCardQuery.Enemies)), scope, promoted));
         Assert.Same(groups[1].Villain,
             AbilityPowerTrace.PowerFind(new AbilityCardSelection.Query(AbilityCardQuery.Villain), scope, promoted));
 
@@ -48,6 +50,20 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
         Assert.Equal(groups[0].Villain.ObjectId, initial.EncounterStages![groups[0].Villain.ObjectId]);
         Assert.Equal(digest, world.Digest().Canonical());
         Assert.Equal(rng, world.Random.Generator.WordsConsumed);
+    }
+
+    [Fact]
+    public void SuccessivePromotionsAppendInResolutionOrderWhileExplicitObjectOrderRemainsExplicit()
+    {
+        var (_, groups, scope) = Fixture();
+        var state = Damage(AbilityPowerStateFactory.Initial(scope), groups[0].Villain, scope);
+        state = Damage(state, groups[2].Villain, scope);
+        var enemies = new AbilityCardSelection.Query(AbilityCardQuery.Enemies);
+        Card[] expected = [groups[1].Villain, groups[3].Villain, groups[0].Stages[1], groups[2].Stages[1]];
+        Assert.Equal(expected, AbilityPowerTrace.PowerEvery(enemies, scope, state));
+        Assert.Same(expected[^1], AbilityPowerTrace.PowerFind(new AbilityCardSelection.Last(enemies), scope, state));
+        Assert.Equal(expected.OrderBy(card => card.ObjectId), AbilityPowerTrace.PowerEvery(
+            new AbilityCardSelection.InObjectIdOrder(enemies), scope, state));
     }
 
     [Fact]

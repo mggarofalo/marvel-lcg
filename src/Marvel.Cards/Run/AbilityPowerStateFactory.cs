@@ -20,6 +20,8 @@ internal static class AbilityPowerStateFactory
             new Dictionary<int, long>(), new Dictionary<int, long>(), [], [], [],
             villain, 0, false)
         {
+            EncounterOrder = cast.World.EncounterTopology is null ? null
+                : cast.World.AreaOf(DeckType.VillainArea).Cards.Select(card => card.ObjectId).ToArray(),
             EncounterStages = cast.World.EncounterTopology?.Groups.ToDictionary(
                 group => group.Villain.ObjectId, group => group.CurrentVillain?.ObjectId ?? -1),
         };

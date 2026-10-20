@@ -36,7 +36,12 @@ internal static class AbilityPowerEncounterProjection
         {
             [group.Villain.ObjectId] = next?.ObjectId ?? -1,
         };
-        var updated = state with { EncounterStages = stages };
+        var order = state.EncounterOrder!.Where(id => id != damaged.ObjectId);
+        var updated = state with
+        {
+            EncounterStages = stages,
+            EncounterOrder = next is null ? order.ToArray() : [.. order, next.ObjectId],
+        };
         if (next is not null)
             return damaged.ObjectId == state.CurrentVillain
                 ? updated with { CurrentVillain = next.ObjectId } : updated;

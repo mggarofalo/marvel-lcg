@@ -117,9 +117,13 @@ internal static class AbilityPowerAlternatives
         left is null ? right is null : right is not null && SameValues(left, right);
 
     private static bool SameUnprojectedReads(AbilityPowerState left, AbilityPowerState right) =>
-        left.EncounterCardsChanged == right.EncounterCardsChanged
+        SameEncounterOrder(left.EncounterOrder, right.EncounterOrder)
+        && left.EncounterCardsChanged == right.EncounterCardsChanged
         && left.DefeatWindowDeferred == right.DefeatWindowDeferred
         && left.UnprojectedStageEntry == right.UnprojectedStageEntry;
+
+    private static bool SameEncounterOrder(int[]? left, int[]? right) =>
+        left is null ? right is null : right is not null && left.SequenceEqual(right);
 
     private static bool SameTraits(AbilityPowerState left, AbilityPowerState right) =>
         left.Traits.Count == right.Traits.Count && left.Traits.All(pair =>

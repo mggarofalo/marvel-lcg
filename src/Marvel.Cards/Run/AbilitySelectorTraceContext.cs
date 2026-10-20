@@ -9,4 +9,5 @@ internal sealed record AbilitySelectorTraceContext(
     Dictionary<int, int> Engagement)
 {
     internal IReadOnlyDictionary<int, int>? EncounterStages { get; init; }
+    internal int[]? EncounterOrder { get; init; }
 }

@@ -103,7 +103,8 @@ internal static class AbilitySelectorTrace
             .Where(card => !trace.Discarded.Contains(card.ObjectId)
                 && TraceSelectorMatches(selector, card, trace));
         return UsesObjectIdOrder(selector)
-            ? candidates.OrderBy(card => card.ObjectId) : candidates;
+            ? candidates.OrderBy(card => card.ObjectId)
+            : AbilityEncounterCandidateOrder.Apply(candidates, trace.Cast.World, trace.EncounterOrder);
     }
 
     private static Card? ProjectedCard(Card card, int boardVillain, AbilitySelectorTraceContext trace)
@@ -128,7 +129,7 @@ internal static class AbilitySelectorTrace
         _ => false,
     };
 
-    private static bool UsesObjectIdOrder(AbilityCardSelection selector) => selector switch
+    internal static bool UsesObjectIdOrder(AbilityCardSelection selector) => selector switch
     {
         AbilityCardSelection.InObjectIdOrder => true,
         AbilityCardSelection.WithTrait filtered => UsesObjectIdOrder(filtered.Cards),

@@ -76,18 +76,20 @@ internal static class AbilityPowerTrace
         {
             candidates.Insert(0, cast.World.Cards[liveVillain]);
         }
-        return
+        List<Card> selected =
         [
-            .. candidates.Select(card => CurrentVillainCard(card, liveVillain, cast, reachability))
+            .. AbilityEncounterCandidateOrder.Apply(candidates.Select(card => CurrentVillainCard(card, liveVillain, cast, reachability))
                 .Where(card => card is not null).Cast<Card>()
-                .DistinctBy(card => card.ObjectId)
+                .DistinctBy(card => card.ObjectId), cast.World, reachability.EncounterOrder)
                 .Where(card => !reachability.Discarded.Contains(card.ObjectId)
                     && TraceSelectorMatches(
                         value, card, new(reachability.CurrentVillain, cast,
                         reachability.Discarded, reachability.Traits,
                             reachability.Modifiers, reachability.Engagement)
-                            { EncounterStages = reachability.EncounterStages })),
+                            { EncounterStages = reachability.EncounterStages, EncounterOrder = reachability.EncounterOrder })),
         ];
+        return reachability.EncounterOrder is not null && UsesObjectIdOrder(value)
+            ? [.. selected.OrderBy(card => card.ObjectId)] : selected;
     }
 
     private static List<Card> StablePowerCards(
