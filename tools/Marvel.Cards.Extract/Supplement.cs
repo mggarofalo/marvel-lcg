@@ -117,7 +117,8 @@ internal sealed class Supplement
         foreach (var (key, value) in attributes) merged[key] = value;
         found[id] = new Entry(
             merged,
-            element.TryGetProperty("traits", out _) ? traits : already?.Traits);
+            element.TryGetProperty("traits", out _) ? traits : already?.Traits,
+            PrintedTextCorrection.Read(element) ?? already?.Text);
     }
 
     private static HashSet<string> ReadDropped(JsonElement root)
@@ -162,6 +163,7 @@ internal sealed class Supplement
         {
             Attributes = attributes,
             Traits = entry.Traits ?? card.Traits,
+            Text = entry.Text ?? card.Text,
         };
     }
 
@@ -219,5 +221,6 @@ internal sealed class Supplement
             : "";
 
     private sealed record Entry(
-        IReadOnlyDictionary<string, string> Attributes, IReadOnlyList<string>? Traits);
+        IReadOnlyDictionary<string, string> Attributes, IReadOnlyList<string>? Traits,
+        string? Text);
 }

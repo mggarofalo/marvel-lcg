@@ -157,3 +157,20 @@ persistent damage and Condition upgrades. Current RR `modes-of-play.10` preserve
 campaign removals on retries; clauses 11–12 separate campaign difficulty from
 scenario modes. The PDF is preserved as published, not silently rewritten to
 incorporate later authorities.
+
+## Wrecking Crew authority repair (2026-10-20)
+
+The [official FFG booklet](https://images-cdn.fantasyflightgames.com/filer_public/87/8c/878c0089-00d6-4485-9696-49e623936c6c/mc03_wrecking_crew_rules_insert-compressed.pdf)
+was downloaded and visually inspected at printed pages 4, 6 and 7. Its 861,302 bytes
+and SHA-256 `443f135a8c5d90a8bfd3719323e6c00501ed166d88f517bec37b59ee9d10124c`
+match the existing source pin. Copyright Marvel / Fantasy Flight Games, 2019;
+no open-content license is asserted. The PDF remains outside Git.
+
+The reviewed mc03 transcription includes the italic setup exclusion on page 4,
+the italic basic-target note on page 6, and the complete bold victory sentence
+continuing onto page 7. Existing section/rule identifiers remain stable. The
+combined index hashes and byte-level snapshot pin cover these exact changes;
+all other pack entries and PDF pins remain unchanged. The generic typography
+harvester is a candidate generator, not a byte-identical reproduction of this
+reviewed vendored text. `WreckingCrewAuthorityTests` holds these operative clauses;
+`PackRulesHarvestTests` independently checks the offline snapshot pin.
