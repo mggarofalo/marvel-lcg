@@ -41,13 +41,14 @@ internal static class AbilityPowerSuspension
         // Enumerate every supported path before accepting a suspension answer;
         // unsupported is a missing calculation, never an absent legal option.
         var paths = PowerPaths(state).ToArray();
+        if (AbilityPowerContinuationDependencies.IsIndependent(node)) return false;
         foreach (var path in paths) AbilityProjectedDefeatWindows.ValidateContinuation(node, path, cast);
         return (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())
             || IsChoice(node)
             || node.OperationName() is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
                 or "placeThreat" or "enemyAttacks" or "enemySchemes"
             || paths.SelectMany(path => PowerSuspensionChildren(
-                node, cast, stateMayChange, bindingMayChange, path)).Any(child =>
+                node, cast, stateMayChange, bindingMayChange, path, suspensionOnly: true)).Any(child =>
                 SuspendsPowerEffect(
                     child.Node, cast, child.StateMayChange, child.BindingMayChange,
                     child.Reachability));
@@ -57,12 +58,12 @@ internal static class AbilityPowerSuspension
         AbilityEffect Node, bool StateMayChange, bool BindingMayChange,
         PowerReachability Reachability)> PowerSuspensionChildren(
         AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
-        bool bindingMayChange, PowerReachability reachability)
+        bool bindingMayChange, PowerReachability reachability, bool suspensionOnly = false)
     {
         if (node.OperationName() == "seq")
         {
             return PowerSequenceChildren(
-                node, cast, stateMayChange, bindingMayChange, reachability);
+                node, cast, stateMayChange, bindingMayChange, reachability, suspensionOnly);
         }
         if (node.OperationName() == "and")
         {
@@ -88,7 +89,7 @@ internal static class AbilityPowerSuspension
         AbilityEffect Node, bool StateMayChange, bool BindingMayChange,
         PowerReachability Reachability)> PowerSequenceChildren(
         AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
-        bool bindingMayChange, PowerReachability reachability)
+        bool bindingMayChange, PowerReachability reachability, bool suspensionOnly)
     {
         var children = OrderedEffects(node).ToList();
         var result = new List<(AbilityEffect, bool, bool, PowerReachability)>(children.Count);
@@ -97,7 +98,9 @@ internal static class AbilityPowerSuspension
         {
             bool mayChange = stateMayChange || index > 0;
             result.Add((children[index], mayChange, bindingMayChange, state));
-            if (index + 1 < children.Count)
+            if (index + 1 < children.Count
+                && (!suspensionOnly
+                    || !children.Skip(index + 1).All(AbilityPowerContinuationDependencies.IsIndependent)))
             {
                 state = PowerStateAfter(children[index], cast, mayChange, bindingMayChange, state);
             }
