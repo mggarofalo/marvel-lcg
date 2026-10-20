@@ -24,7 +24,7 @@ internal static class AbilityPowerResolution
         };
         if (attack.SurgeGained) cast.GainedKeywords.Add("surge");
         cast.Choose(world.Cards[attack.Enemy]);
-        execution.ResolvePower(cast, continuation);
+        execution.ResolvePower(cast, continuation, occurrence);
     }
 
     internal static void ResolveCardThwart(this AbilityResolutionExecution execution,
@@ -44,7 +44,7 @@ internal static class AbilityPowerResolution
         };
         if (thwart.SurgeGained) cast.GainedKeywords.Add("surge");
         cast.Choose(world.Cards[thwart.Scheme]);
-        execution.ResolvePower(cast, continuation);
+        execution.ResolvePower(cast, continuation, occurrence);
     }
 
     private static AbilityPowerContinuation RequireContinuation(CardPowerContinuation? continuation, string power) =>
@@ -71,7 +71,7 @@ internal static class AbilityPowerResolution
     }
 
     private static void ResolvePower(
-        this AbilityResolutionExecution execution, AbilityResolutionState cast, AbilityPowerContinuation continuation)
+        this AbilityResolutionExecution execution, AbilityResolutionState cast, AbilityPowerContinuation continuation, Occurrence occurrence)
     {
         var world = cast.World;
         var source = cast.Source;
@@ -92,7 +92,7 @@ internal static class AbilityPowerResolution
             ? execution.EventModifierEffects(cast, "attackDamage")
             : [];
         cast.PowerExecution = new(restored, continuation, power, cast.PowerActor?.ObjectId,
-            cast.PowerAmount, [.. attackModifiers]) { ThwartActorUsingAttack = cast.ThwartActorUsingAttack };
+            cast.PowerAmount, [.. attackModifiers]) { ThwartActorUsingAttack = cast.ThwartActorUsingAttack, Occurrence = occurrence };
         execution.Run(restored.Body, cast);
         if (cast.Suspended)
         {

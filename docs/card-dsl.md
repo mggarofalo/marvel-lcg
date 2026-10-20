@@ -754,3 +754,11 @@ multiple physical cards with the same title.
 `forEach` takes a numeric `count` and an `effect` body, repeating that body for the resolved count. It supports printed counted instructions such as one additional boost card per side scheme.
 
 `attackDamagedYou: "you"` checks whether the completed enemy attack caused the attacked identity to take damage, including overkill, independently of damage to an ally defender.
+
+`dealAttackDamage` accepts `simultaneous: 1` inside a labelled attack. It snapshots
+its distinct recipients, places all damage before settling any recipient defeat,
+and publishes incarnation-bound attacked/damaged facts on that attack's response
+window. Retaliation remains the containing attack's aftermath. Ordinary attack
+damage retains its default path. Multiple simultaneous damage nodes in one power
+are explicitly unsupported; this marker does not supply multi-target selection,
+Guard admission or discard-cost cardinality by itself.
