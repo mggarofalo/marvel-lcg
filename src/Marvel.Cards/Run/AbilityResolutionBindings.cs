@@ -4,7 +4,7 @@ using Marvel.Rules.Play;
 namespace Marvel.Cards.Run;
 
 // Captured references and last-known quantities belong to one resolving copy.
-internal sealed class AbilityResolutionBindings(Card source)
+internal sealed class AbilityResolutionBindings(World world, Card source)
 {
     private AbilityCardReference? chosenBinding;
     private AbilityCardReference? playerSelectionBinding;
@@ -78,7 +78,7 @@ internal sealed class AbilityResolutionBindings(Card source)
         ? null
         : new AbilityCardReference(card, card.Area.Id, card.Incarnation);
 
-    private Card? CurrentCard(AbilityCardReference? binding, string name) => binding?.Resolve(source, name);
+    private Card? CurrentCard(AbilityCardReference? binding, string name) => binding?.Resolve(world, source, name);
 
     internal AbilityQueryContext QueryContext(AbilityResolutionState resolution) => new(
         resolution.World, source, resolution.Occurrence, resolution.Player, sourceIncarnation,

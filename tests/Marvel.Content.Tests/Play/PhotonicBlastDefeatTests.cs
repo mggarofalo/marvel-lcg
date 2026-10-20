@@ -35,9 +35,21 @@ public sealed class PhotonicBlastDefeatTests
         Assert.Equal(control, probed);
     }
 
-    private static (string Digest, long Random, string Events) Run(bool promotion, string payment, bool probe)
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NestedIndependentSuffixRetainsThePaidDraw(bool promotion)
     {
-        var (game, world, blast, target, paying) = Prepare(promotion, payment);
+        // Synthetic equivalent nesting of the authored attack plus a zero draw.
+        var direct = Run(promotion, "energy", false);
+        var nested = Run(promotion, "energy", false, nested: true);
+        Assert.Equal(direct.Digest, nested.Digest);
+        Assert.Equal(direct.Random, nested.Random);
+    }
+
+    private static (string Digest, long Random, string Events) Run(bool promotion, string payment, bool probe, bool nested = false)
+    {
+        var (game, world, blast, target, paying) = Prepare(promotion, payment, nested);
         var action = Assert.Single(game.Pending!.Affordances,
             option => option.AnchorId == blast.ObjectId && option.Verb == Game.ActionVerb);
         if (probe) AssertActionQueryIsPure(game, world, blast);
@@ -80,12 +92,12 @@ public sealed class PhotonicBlastDefeatTests
             ? [new(paying[0].ObjectId, 0, "Y"), new(paying[1].ObjectId, 0, "BB")]
             : ResourcePayment.Allocate(Assert.Single(action.Costs!), [.. paying.Select(card => card.ObjectId)]);
 
-    private static (Game Game, World World, Card Blast, Card Target, Card[] Paying) Prepare(bool promotion, string payment)
+    private static (Game Game, World World, Card Blast, Card Target, Card[] Paying) Prepare(bool promotion, string payment, bool nested)
     {
         Card? blast = null;
         Card? target = null;
         Card[] paying = [];
-        var runner = AuthoredCards.Runner();
+        var runner = nested ? NestedRunner() : AuthoredCards.Runner();
         var (game, world) = Playing(board =>
         {
             board.Seats[0].IdentityCard.TurnTo("01010a");
@@ -107,6 +119,21 @@ public sealed class PhotonicBlastDefeatTests
             }
         }, heroes: ["captain_marvel"], abilities: runner, scenario: "crossbones");
         return (game, world, blast!, target!, paying);
+    }
+
+    private static Marvel.Cards.Run.AbilityRunner NestedRunner()
+    {
+        var book = System.Text.Json.Nodes.JsonNode.Parse(
+            File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
+        var row = book["cards"]!.AsArray().Single(card => card!["card"]!.GetValue<string>() == "01013")!;
+        var attack = row["abilities"]![0]!["effect"]!["chooseCard"]!["effect"]!["attack"]!;
+        var body = attack["effect"]!.DeepClone();
+        attack["effect"] = new System.Text.Json.Nodes.JsonObject
+        {
+            ["seq"] = new System.Text.Json.Nodes.JsonArray(body,
+                System.Text.Json.Nodes.JsonNode.Parse("""{"draw":{"player":"you","count":0}}""")),
+        };
+        return new(Marvel.Cards.Dsl.AbilityCatalog.Parse(book.ToJsonString()));
     }
 
     private static void AssertActionQueryIsPure(Game game, World world, Card blast)

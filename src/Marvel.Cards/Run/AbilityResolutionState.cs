@@ -194,7 +194,7 @@ internal sealed record AbilityResolutionState(
     public bool HasPendingDependency => StructuralPath.Any(frame =>
         frame is DependentFrame { Predecessor: true, Outcome: null });
 
-    private AbilityResolutionBindings Bindings { get; } = new(Source);
+    private AbilityResolutionBindings Bindings { get; } = new(World, Source);
 
     public CardInstanceState CaptureSourceState() => Bindings.CaptureSourceState();
     public void RestoreSourceState(CardInstanceState? restored) => Bindings.RestoreSourceState(restored);

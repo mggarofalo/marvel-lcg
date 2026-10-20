@@ -14,6 +14,9 @@ internal readonly record struct AbilityPowerState(
     Dictionary<int, int> Engagement,
     int CurrentVillain, int VillainStagesDrawn, bool Finished)
 {
+    // Projection-only uncertainty, not a gameplay state or serialized field.
+    // Prefix settlement is still checked; dependent reads must reject this state.
+    internal string? UnprojectedStageEntry { get; init; }
     internal bool DefeatWindowDeferred { get; init; }
     internal bool EncounterCardsChanged { get; init; }
 }
