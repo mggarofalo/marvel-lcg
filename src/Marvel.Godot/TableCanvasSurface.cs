@@ -2,19 +2,14 @@ using Godot;
 
 namespace Marvel.Godot;
 
-/// <summary>Reports settled table placement when its themed ancestors move.</summary>
+/// <summary>Observes available canvas height as themed ancestor containers settle.</summary>
 internal sealed partial class TableCanvasSurface : Control
 {
-    internal Action? BoundsChanged { get; set; }
+    internal Func<bool>? BoundsChanged { get; set; }
+    internal TableCanvasReflow? Reflow { get; set; }
 
-    public override void _Ready() => SetNotifyTransform(true);
-
-    public override void _Notification(int what)
+    public override void _Process(double delta)
     {
-        if (what != NotificationTransformChanged && what != NotificationResized) return;
-        Callable.From(() =>
-        {
-            if (IsInsideTree() && !IsQueuedForDeletion()) BoundsChanged?.Invoke();
-        }).CallDeferred();
+        if (!IsQueuedForDeletion()) BoundsChanged?.Invoke();
     }
 }

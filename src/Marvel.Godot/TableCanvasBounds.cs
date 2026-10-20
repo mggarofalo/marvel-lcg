@@ -12,14 +12,15 @@ internal static class TableCanvasBounds
 
     internal static void Observe(Main main, TableCanvasSurface surface)
     {
-        float installedHeight = surface.CustomMinimumSize.Y;
-        void Refresh()
+        bool Refresh()
         {
-            if (InteractionControl.IsUsable(main) && InteractionControl.IsUsable(surface)
-                && Height(main) != installedHeight)
-                main.boardController.RerenderForViewport(main.GetViewportRect().Size);
+            if (!InteractionControl.IsUsable(main) || !InteractionControl.IsUsable(surface)
+                || main.CurrentGame?.World is null) return true;
+            float height = Height(main);
+            if (surface.Reflow?.Apply(height) == false) return false;
+            main.boardController.RecordTableHeight(height);
+            return true;
         }
         surface.BoundsChanged = Refresh;
-        Callable.From(Refresh).CallDeferred();
     }
 }

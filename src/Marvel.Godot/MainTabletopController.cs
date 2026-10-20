@@ -47,6 +47,7 @@ internal sealed class MainTabletopController
 
     internal void RerenderForViewport(Vector2 viewport)
     {
+        if (TryReflowHeight(viewport)) return;
         if (main.CurrentGame?.World is not null && main.board.Visible && LayoutChanged(viewport)
             && main.boardController.PresentedGame?.World is { } world)
         {
@@ -57,6 +58,27 @@ internal sealed class MainTabletopController
             main.RenderBoard(world);
         }
     }
+
+    private bool TryReflowHeight(Vector2 viewport)
+    {
+        if (CanReflowHeight(viewport)
+            && main.boardAreas.GetChildren().OfType<TableCanvasSurface>().FirstOrDefault() is { } surface)
+        {
+            float height = TableCanvasBounds.Height(main);
+            if (surface.Reflow?.Apply(height) == true) RecordHeight(height);
+            else surface.SetProcess(true);
+            return true;
+        }
+        return false;
+    }
+
+    private bool CanReflowHeight(Vector2 viewport) =>
+        main.CurrentGame?.World is not null && main.board.Visible
+        && renderedViewport is { } installed && installed.IsEqualApprox(viewport)
+        && renderedDesktopTabletop == true && renderedHistoryExpanded == HasReviewSpace()
+        && renderedPayment == CardPaymentWorkspaceLayout.Active(main);
+
+    internal void RecordHeight(float height) => renderedTableHeight = height;
 
     private bool LayoutChanged(Vector2 viewport)
     {

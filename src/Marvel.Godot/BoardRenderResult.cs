@@ -83,6 +83,10 @@ public sealed class BoardRenderResult
 
     internal void RegisterHandArea(Control control, int seat,
         Func<int, int, float, SpatialCardPlacement> placement) => pointer.RegisterHandArea(control, seat, placement);
+
+    internal bool PointerLayoutBusy => pointer.LayoutBusy;
+    internal void TranslateHand(float delta) => pointer.TranslateHand(delta);
+    internal void TranslateRestingPose(Control control, Vector2 delta) => pointer.TranslateRestingPose(control, delta);
     internal void RegisterMulliganStage(Control control) => pointer.RegisterMulliganStage(control);
 
     internal void RegisterContextualActions(Container host)
@@ -255,40 +259,12 @@ public sealed class BoardRenderResult
         [.. controls.Values.SelectMany(matches => matches).Where(InteractionControl.IsUsable)];
 
     /// <summary>Highlights every visible control matching server-provided ids.</summary>
-    public void Highlight(IEnumerable<int> ids)
-    {
-        ArgumentNullException.ThrowIfNull(ids);
-        HashSet<int> highlighted = ids.ToHashSet();
-        foreach ((int key, List<CardControl> matches) in controls)
-        {
-            foreach (CardControl match in matches.Where(InteractionControl.IsUsable))
-            {
-                match.SetHighlighted(highlighted.Contains(key));
-                if (highlighted.Contains(key))
-                {
-                    reveal.Ensure(key);
-                }
-            }
-        }
-    }
+    public void Highlight(IEnumerable<int> ids) =>
+        BoardCardEmphasis.Apply(controls, ids, reveal, highlight: true);
 
     /// <summary>Marks cards for a transient event cue without disturbing prompt focus.</summary>
-    public void Present(IEnumerable<int> ids)
-    {
-        ArgumentNullException.ThrowIfNull(ids);
-        HashSet<int> presented = ids.ToHashSet();
-        foreach ((int key, List<CardControl> matches) in controls)
-        {
-            foreach (CardControl match in matches.Where(InteractionControl.IsUsable))
-            {
-                match.SetPresented(presented.Contains(key));
-                if (presented.Contains(key))
-                {
-                    reveal.Ensure(key);
-                }
-            }
-        }
-    }
+    public void Present(IEnumerable<int> ids) =>
+        BoardCardEmphasis.Apply(controls, ids, reveal, highlight: false);
 
     internal void ExpandArea(Control areaBody)
     {

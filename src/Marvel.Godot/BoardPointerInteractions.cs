@@ -23,6 +23,9 @@ internal sealed class BoardPointerInteractions
     private Func<CardPointerGesture, bool>? directDrag;
     private Func<CardPointerGesture, bool>? canDrag;
     private bool pointerLifted;
+    internal bool LayoutBusy => pointerCapture is not null || returns.Active;
+    internal void TranslateHand(float delta) => hand.Translate(delta);
+    internal void TranslateRestingPose(Control control, Vector2 delta) => resting.Translate(control, delta);
     internal Func<bool>? MotionEnabled { get; set; }
     internal Action<CardPointerGesture>? DragPreview { get; set; }
     internal Action<bool>? DragFinished { get; set; }
@@ -290,15 +293,7 @@ internal sealed class BoardPointerInteractions
         pointerLifted = false;
         feedback.Finish(invalid ? "No offered action here · returned" : cancelled ? "Drag cancelled · returned" : "");
         DragFinished?.Invoke(invalid);
-        if (!resting.TryGetValue(control, out var pose) || !InteractionControl.IsUsable(control)) return;
-        if (MotionEnabled?.Invoke() == false)
-        {
-            resting.Restore(control);
-            control.Modulate = Colors.White;
-            return;
-        }
-        if (invalid) control.Modulate = ClientTheme.ToGodot(VisualSystem.Palette.Danger);
-        returns.Settle(control, pose.Position, pose.Rotation, () => resting.Restore(control));
+        returns.Restore(control, resting, MotionEnabled?.Invoke() != false, invalid);
     }
 
 }

@@ -20,6 +20,7 @@ internal static class SpatialTableContextRenderer
             Size = bounds.Size, CustomMinimumSize = bounds.Size, MouseFilter = Control.MouseFilterEnum.Ignore,
             ZIndex = 60 };
         surface.AddChild(panel);
+        TableCanvasReflow.AnchorBottom(surface, panel);
         var copy = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             MouseFilter = Control.MouseFilterEnum.Ignore };
         var summaryViewport = new ScrollContainer { Name = "DraftSummaryViewport",

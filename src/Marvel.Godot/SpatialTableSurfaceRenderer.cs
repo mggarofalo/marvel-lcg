@@ -18,8 +18,9 @@ internal static class SpatialTableSurfaceRenderer
         using var faces = new BoardCardFaceReuse(previous);
         Prepare(main);
         AstraTableGeometry geometry = Geometry(main, selection, prompt);
-        Control surface = CreateSurface(main, geometry);
+        TableCanvasSurface surface = CreateSurface(main, geometry);
         var result = new BoardRenderResult(main.boardPresentation);
+        surface.Reflow = new TableCanvasReflow(surface, result);
         AddMats(surface, result, geometry, selection);
         RenderObjects(main, result, surface, geometry, selection, prompt, faces);
         AddSeats(surface, geometry, main.boardPresentation!, selection, switchSeat);
@@ -112,6 +113,8 @@ internal static class SpatialTableSurfaceRenderer
             GodotThemeVariations.SpatialPlayerMat,
             $"Player {selection.ExpandedSeat + 1}");
         result.RegisterDropTarget(selection.ExpandedSeat, playerMat);
+        TableCanvasReflow.Grow(surface, playerMat);
+        TableCanvasReflow.MoveMiddle(surface, playerMat);
         AddConfrontationSeam(surface, geometry, selection.ExpandedSeat);
     }
 
@@ -133,6 +136,7 @@ internal static class SpatialTableSurfaceRenderer
         var handArea = new Control { Name = "HandDropArea", Position = geometry.Hand.Position,
             Size = geometry.Hand.Size, MouseFilter = Control.MouseFilterEnum.Ignore };
         surface.AddChild(handArea);
+        TableCanvasReflow.AnchorBottom(surface, handArea);
         result.RegisterHandArea(handArea, prompt?.Player ?? selection.ExpandedSeat, geometry.HandCard);
         if (MulliganPrompt.IsOpening(prompt))
         {
@@ -141,6 +145,7 @@ internal static class SpatialTableSurfaceRenderer
             stage.AddChild(new Label { Text = "Staged for redraw", ThemeTypeVariation = GodotThemeVariations.Caption,
                 MouseFilter = Control.MouseFilterEnum.Ignore });
             surface.AddChild(stage);
+            TableCanvasReflow.AnchorBottom(surface, stage);
             result.RegisterMulliganStage(stage);
         }
         objects.RenderScenario(scenario);
@@ -214,7 +219,7 @@ internal static class SpatialTableSurfaceRenderer
             : $"Player {seat + 1} hand";
         float left = geometry.PlayerMat.Position.X + 22;
         float top = geometry.Hand.Position.Y + 12;
-        surface.AddChild(new Label
+        var caption = new Label
         {
             Name = "SpatialHandHeading",
             Text = $"{heading} · {visible} cards"
@@ -223,7 +228,9 @@ internal static class SpatialTableSurfaceRenderer
             ThemeTypeVariation = GodotThemeVariations.Caption,
             ZIndex = 60,
             MouseFilter = Control.MouseFilterEnum.Ignore,
-        });
+        };
+        surface.AddChild(caption);
+        TableCanvasReflow.AnchorBottom(surface, caption);
     }
 
     private static void AddSeats(
