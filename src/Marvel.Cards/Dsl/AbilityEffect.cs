@@ -44,7 +44,11 @@ public abstract record AbilityEffect
     /// <summary>A player chooses among authored effect options.</summary>
     public sealed record Choose(ImmutableArray<AbilityEffect> Options, ImmutableArray<string> Descriptions) : AbilityEffect;
     /// <summary>A player selects a card before resolving the effect with that binding.</summary>
-    public sealed record ChooseCard(AbilityCardSelection From, AbilityEffect Effect) : AbilityEffect;
+    public sealed record ChooseCard(AbilityCardSelection From, AbilityEffect Effect) : AbilityEffect
+    {
+        /// <summary>The first player answers while the original player's resolution bindings remain intact.</summary>
+        public bool FirstPlayerChooses { get; init; }
+    }
     /// <summary>Resolve an effect after the current enemy activation.</summary>
     public sealed record AfterActivation(AbilityEffect Effect) : AbilityEffect;
     /// <summary>An instruction whose only parameter is a card relation.</summary>

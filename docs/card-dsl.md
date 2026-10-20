@@ -261,6 +261,10 @@ player in the most recent scheduled activation collection. Canceled attacks do
 not count; a different defending player receives the attack receipt. Each-player
 continuations retain these receipts, and an empty new collection resets them.
 `undefendedAttack` reads the matching completed attack in an attack-end window.
+`chooseCard` accepts `chooser: "firstPlayer"` when the first player must select
+the target. This changes only the answering seat: `you`, the original resolving
+player, and continuation bindings retain their meanings. Omission uses the
+resolving player. Other chooser values are rejected.
 `isEnemyAttacker` accepts a singular card selector and tests whether that in-play
 card is the current enemy attack's attacker. It does not use the active-villain
 counter or a completed attack. Stage-transition projection refuses this condition
