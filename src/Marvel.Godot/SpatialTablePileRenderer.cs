@@ -35,6 +35,22 @@ internal sealed class SpatialTablePileRenderer(
         return true;
     }
 
+    internal void RenderNamed(BoardAreaPresentation area, Rect2 rect, string title)
+    {
+        var pile = TabletopAreaObject.From(area);
+        var panel = PilePanel($"Pile{area.Id}", rect, title);
+        var inspect = InspectButton(pile);
+        inspect.Text = $"{(area.Zone.Contains("Discard", StringComparison.Ordinal) ? "Discard" : "Deck")} · {pile.Count}";
+        inspect.AccessibilityName = $"{title} · {pile.Count} cards";
+        inspect.TooltipText = inspect.AccessibilityName;
+        inspect.Pressed += () => TabletopPileInspector.Show(inspect, pile, result, scale, art);
+        panel.AddChild(inspect);
+        surface.AddChild(panel);
+        TableCompactButtonStyle.Apply(inspect);
+        if (area.Zone.Contains("Discard", StringComparison.Ordinal) && pile.Top is { } top)
+            result.TrackPreviewOnly(inspect, top);
+    }
+
     private static Button InspectButton(TabletopAreaObject pile)
     {
         BoardAreaPresentation area = pile.Area;

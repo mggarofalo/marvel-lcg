@@ -41,6 +41,24 @@ a keyword or stat also needs its corresponding attribute correction and tests.
 
 ## Integration obligations
 
+### Four-group presentation contract
+
+`EncounterGroupProjectionTests` verifies visibility filtering, detached group
+descriptions, and readable active-counter presentation. The native
+`encounter-groups-*` cases render the real projection of a synthetic world in
+Standard and Extreme layouts at 100% and 150% interface scale. They check four
+named groups, eight distinct encounter piles, nonoverlapping cards, exact full
+printed hover text, and each group's own future-stage inspector. A compiled
+mutation routing every group to the first encounter deck fails with
+`missing or conflated encounter piles`.
+
+These fixtures deliberately use repeated encounter cards and arranged threat;
+they establish layout and projection behavior only. They do not establish
+legal setup, card abilities, game completion, save compatibility, target
+selection, or user comprehension. MARVEL-631 and MARVEL-632 still require
+admitted games covering legal menu/drag targets, active-counter ties, stage
+promotion and defeat, independent pile inspection, and restart/resume.
+
 | Obligation | Decisive authority | Distinguishing observation | Status |
 |---|---|---|---|
 | Four independent enemies | pack:mc03:additional-setup.prepare-villains-and-dials | Four live HP totals scale independently at 1/2/3/4 seats; initial active counter is Wrecker | Blocked MARVEL-625 |

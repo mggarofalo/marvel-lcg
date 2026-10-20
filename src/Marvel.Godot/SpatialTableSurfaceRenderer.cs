@@ -62,6 +62,7 @@ internal static class SpatialTableSurfaceRenderer
             HasSeatSummaries: board.PlayerSummaries.Count > 1,
             HasSourceTableau: CardSourceGroups.Controlled(board.Areas, seat).Length > 0)
         {
+            HasEncounterGroups = board.EncounterGroups.Count > 0,
             HasAllies = board.Areas.Any(area => area.Zone == "AlliesArea" && area.Seat == seat && area.Cards.Count > 0),
         };
 
@@ -148,7 +149,7 @@ internal static class SpatialTableSurfaceRenderer
             TableCanvasReflow.AnchorBottom(surface, stage);
             result.RegisterMulliganStage(stage);
         }
-        objects.RenderScenario(scenario);
+        objects.RenderScenario(scenario, board.EncounterGroups);
         objects.RenderRevealing(board.Areas, Context(main, prompt));
         objects.RenderPlayer(player);
         PendingEncounterIndicator.Add(surface, geometry.PendingEncounters,

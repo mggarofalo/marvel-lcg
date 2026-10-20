@@ -8,9 +8,10 @@ internal sealed record AstraTableGeometry(
     Vector2? PhysicalCardSize = null, bool HasSeatSummaries = false, bool HasSourceTableau = false)
 {
     internal bool HasAllies { get; init; }
+    internal bool HasEncounterGroups { get; init; }
     internal const float ReferenceWidth = 1320;
     internal const float ReferenceHeight = 962;
-    internal Rect2 VillainMat => new(8, 8, Width - 16, ScaleY(294));
+    internal Rect2 VillainMat => new(8, 8, Width - 16, HasEncounterGroups ? 344 : ScaleY(294));
     internal Rect2 PlayerMat => new(8, ScaleY(404), Width - 16, Height - ScaleY(404) - 8);
     internal Rect2 EncounterDiscard => Scale(new Rect2(22, 60, 70, 112));
     internal Rect2 EncounterDeck => Scale(new Rect2(104, 60, 70, 112));
@@ -19,7 +20,9 @@ internal sealed record AstraTableGeometry(
     internal Rect2 SideSchemes => Scale(new Rect2(626, 34, 300, 248));
     internal Rect2 EngagedEnemies => Scale(new Rect2(944, 34, 354, 248));
     internal Rect2 SeatStrip => Scale(new Rect2(22, 214, 158, 164));
-    internal Rect2 Revealing => Scale(new Rect2(194, 304, 474, 94));
+    internal Rect2 Revealing => HasEncounterGroups
+        ? new Rect2(MainScheme.Position.X, 354, SourceTableau.Position.X - MainScheme.Position.X - 12, 44)
+        : Scale(new Rect2(194, 304, 474, 94));
     internal bool HasSeparateRevealSlot => Width > 0;
     internal Rect2 PlayerDiscard => Scale(new Rect2(22, 408, 70, 112));
     internal Rect2 PlayerDeck => Scale(new Rect2(104, 408, 70, 112));

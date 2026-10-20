@@ -189,6 +189,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.EventCuePlanner",
             "Marvel.View.EventMotionKind",
             "Marvel.View.EventPresentation",
+            // Passive, visibility-filtered group identity and pile ownership.
+            "Marvel.View.EncounterGroupDescriptor",
             // Typed facts derived locally from visibility-filtered events.
             "Marvel.View.EventActivityDescriptor",
             "Marvel.View.EventActivityKind",

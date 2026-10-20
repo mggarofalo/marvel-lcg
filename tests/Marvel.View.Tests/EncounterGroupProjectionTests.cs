@@ -74,6 +74,22 @@ public sealed class EncounterGroupProjectionTests
         Assert.DoesNotContain(visible.EncounterGroups.SelectMany(group => group.Stages), id => id == hidden.ObjectId);
     }
 
+    [Fact]
+    public void BoardAndActivityDescribeActiveCounterWithoutNumericStorageFields()
+    {
+        var (world, groups) = Board();
+        World.MoveToTop(groups[0].Members[0], world.AreaOf(DeckType.RevealingArea));
+        var visible = WorldProjection.For(world, null, [], ViewScope.None).World;
+        var board = BoardPresentation.From(visible);
+        Assert.DoesNotContain(board.Areas.SelectMany(area => area.Cards).SelectMany(card => card.Fields),
+            field => field.Name is "ACTIVE VILLAIN" or "ENCOUNTER VILLAIN");
+        var happened = new Marvel.Rules.Events.FieldSet(groups[0].Villain.ObjectId, "active_villain", 0, 1);
+        Assert.Equal("villain0 became the active villain.", EventPresenter.Present(happened, visible).Summary);
+        var ids = Assert.IsType<int[]>(board.EncounterGroups[0].Stages);
+        ids[0] = 999;
+        Assert.Equal(groups[0].Villain.ObjectId, visible.EncounterGroups[0].Stages[0]);
+    }
+
     private static (World World, EncounterDeckGroup[] Groups) Board(bool future = false)
     {
         var world = new World(new Facts(), 1);

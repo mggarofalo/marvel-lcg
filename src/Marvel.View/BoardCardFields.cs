@@ -30,6 +30,8 @@ internal static class BoardCardFields
 
     private static bool VisibleField(KeyValuePair<string, long> field, bool inPlay, CardKind kind)
     {
+        // Topology relationships have named descriptors, not printable numeric card statistics.
+        if (field.Key is "active_villain" or "encounter_villain") return false;
         if (field.Key.StartsWith("t_", StringComparison.Ordinal) || field.Key == "is_exhaust") return false;
         if (field.Key == "k_threat" && kind is not (CardKind.MainScheme or CardKind.EncounterSideScheme)) return false;
         // A supplied in-play zero is an authoritative current value, distinct
