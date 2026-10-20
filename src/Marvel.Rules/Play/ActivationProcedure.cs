@@ -65,10 +65,11 @@ internal static class ActivationProcedure
         }
 
         var remaining = MinionActivationChoice.Remaining(world, seat, step);
-        if (NeedsOrder(step, villain, activated, remaining))
+        bool villainActivated = HasActivatedVillain(world, villain, activated);
+        if (NeedsOrder(step, villainActivated, remaining))
             return MinionActivationChoice.Describe(world, villain, seat, remaining);
 
-        int? enemy = NextEnemy(step, villain, activated, remaining);
+        int? enemy = NextEnemy(step, villain, villainActivated, remaining);
 
         if (enemy is { } next)
         {
@@ -118,17 +119,24 @@ internal static class ActivationProcedure
     }
 
     private static bool NeedsOrder(
-        PhaseStep step, Card villain, IReadOnlyList<int> activated, List<Card> remaining) =>
-        activated.Contains(villain.ObjectId)
+        PhaseStep step, bool villainActivated, List<Card> remaining) =>
+        villainActivated
         && step.Require<ActivationPlanOperation>().Chosen?.Any(id => remaining.Any(card => card.ObjectId == id)) != true
         && remaining.Count > 1;
 
     private static int? NextEnemy(
-        PhaseStep step, Card villain, IReadOnlyList<int> activated, List<Card> remaining)
+        PhaseStep step, Card villain, bool villainActivated, List<Card> remaining)
     {
-        if (!activated.Contains(villain.ObjectId)) return villain.ObjectId;
+        if (!villainActivated) return villain.ObjectId;
         return step.Require<ActivationPlanOperation>().Chosen?.Where(id => remaining.Any(card => card.ObjectId == id))
             .Select(id => (int?)id).FirstOrDefault()
             ?? remaining.Select(card => (int?)card.ObjectId).FirstOrDefault();
     }
+
+    private static bool HasActivatedVillain(World world, Card villain, IReadOnlyList<int> activated) =>
+        // pack:mc03:new-rules limits the ordinary villain-phase activation to
+        // the active villain. Moving the counter does not grant a second one.
+        world.EncounterTopology is { } topology
+            ? topology.Groups.Any(group => group.Stages.Any(stage => activated.Contains(stage.ObjectId)))
+            : activated.Contains(villain.ObjectId);
 }

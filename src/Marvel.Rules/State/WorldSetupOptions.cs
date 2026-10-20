@@ -7,4 +7,5 @@ public sealed record WorldSetupOptions(
     bool Expert = false,
     CampaignGameSetup? Campaign = null,
     IReadOnlyList<CampaignCardBinding>? CampaignCards = null,
-    IReadOnlyList<int>? ExperimentalWeapons = null);
+    IReadOnlyList<int>? ExperimentalWeapons = null,
+    EncounterSetupPlan? EncounterGroups = null);

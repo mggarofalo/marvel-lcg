@@ -1,7 +1,9 @@
 # Wrecking Crew admission ledger
 
 Canonical pack: MARVEL-562. Complete-product acceptance remains blocked by
-MARVEL-625 (runtime integration). MARVEL-624 owns source corrections and
+MARVEL-625 (runtime integration), MARVEL-630 (prior-save compatibility),
+MARVEL-631 (content admission and complete card behavior), and MARVEL-632
+(four-villain presentation and native journeys). MARVEL-624 owns source corrections and
 extractor text-override behavior. Nothing in this ledger admits the scenario.
 
 ## Components and authorities
@@ -50,6 +52,35 @@ a keyword or stat also needs its corresponding attribute correction and tests.
 | Difficulty progression | pack:mc03:adjustable-difficulty | Mixed A/B versions start correctly; extreme A defeat introduces its B instead of premature final victory | Blocked MARVEL-625 |
 | Terminal outcomes | card:07001b; pack:mc03:new-rules.multiple-villains-and-encounter-decks | Main-scheme threshold loses; all required villain versions defeated wins; one surviving villain prevents win | Blocked MARVEL-625 |
 | Source-local UI and saves | MARVEL-562 acceptance criteria | Native four-villain targeting, first-player ties, explicit inactive activations and deck-owner inspection; pending choices survive fresh-process restart with same replay | Blocked MARVEL-625 |
+
+## Runtime prerequisite evidence
+
+The engine accepts a typed four-group setup plan with one or two physical stages
+per villain, a paired side scheme, and exactly fifteen owned encounter cards.
+Validation runs before game allocation or ability execution. The content dealer
+must provide that plan; it does not yet admit this pack. Initial scheme placement,
+printed starting threat and active-counter placement belong to this setup path;
+the eventual interpretation of Breakout's setup text must not repeat them.
+
+`EncounterTopologyTests`, `WreckingSetupTests` and `WreckingVillainDefeatTests`
+exercise independent piles, stable ownership after movement/defeat, deterministic
+setup, active-villain ties, suspended defeat settlement, Extreme promotion and
+all-four victory. These fixtures establish engine prerequisites, not the printed
+card ledger below. Full setup still needs actual pack recipes for every custom
+combination and player count, and full card/native/restart acceptance.
+
+Ordinary-game compatibility was checked against commit `84d326a9`: complete
+Rhino, Ultron, Crossbones and Red Skull games in Standard and Expert (seed 700,
+policy seed 13) replayed all 214 decisions without prompt, event or digest
+divergence. Temporary diagnostics separately compared seeded-generator words
+consumed after every decision; all 214 counts matched. The diagnostic changes
+were restored and are not part of the implementation. This runtime comparison
+uses the same corrected card dataset on both sides; it does not establish prior
+save compatibility across the printed-source hash change (MARVEL-630).
+
+Compiled negative controls killed an incorrect first-deck boost source and an
+incorrect automatic tie resolution. Integration must additionally prove the
+simultaneous-attack batch settles a mandatory Wrecking Crew tie before finishing.
 
 ## Per-face behavioral obligations
 

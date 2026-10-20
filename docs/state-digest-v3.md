@@ -269,11 +269,13 @@ in-play card above them; physical `owner` is preserved independently of that
 host. These zone spellings and face states are part of the digest contract.
 
 Multi-villain encounter topology registers `encounter_villain` on each physical
-encounter card: the object id of its owning villain, retained in every zone.
+encounter card: the object id of its group's initial villain stage, retained in every zone.
 Each participating villain registers `active_villain` at both zero and one.
 These are engine-chosen field names for the separate encounter decks and single
 active counter in `pack:mc03:new-rules`. Membership is reconstructed from pinned
 setup rather than inferred from the current zone or current active villain.
+An Extreme-mode group has an ordered A/B stage list. The ownership id stays
+fixed when A is removed; only its in-play stage can have `active_villain=1`.
 Ordinary Core and Rise of Red Skull cards register neither field. Wrecking Crew
 public admission additionally requires setup integration, deterministic replay,
 save compatibility and visibility-safe projections; these fields alone do not

@@ -12,6 +12,8 @@ internal static class DefeatProcedure
     internal static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        if (step.Operation is ActiveVillainSelectionOperation)
+            return ActiveVillainSelection.Describe(world);
         switch (step.What)
         {
             case Steps.FinalizeCharacterDefeat:
@@ -44,6 +46,11 @@ internal static class DefeatProcedure
         World world, ICardFacts facts, PhaseStep step, Decision input,
         List<GameEvent> events)
     {
+        if (step.Operation is ActiveVillainSelectionOperation)
+        {
+            ActiveVillainSelection.Answer(world, step, input, events);
+            return;
+        }
         switch (step.What)
         {
             case Steps.ChooseWouldBeDefeated:

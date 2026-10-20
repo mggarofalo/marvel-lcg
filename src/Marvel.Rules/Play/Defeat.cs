@@ -105,8 +105,8 @@ public static class Defeat
             return Damage.Outcome.Suspended;
         }
 
-        FinalizeCharacter(world, facts, character, trigger, events);
-        return Damage.Outcome.Defeated;
+        return FinalizeCharacter(world, facts, character, trigger, events)
+            ? Damage.Outcome.Suspended : Damage.Outcome.Defeated;
     }
 
     /// <summary>Damage step 8: move or eliminate a defeated card.</summary>
@@ -117,7 +117,8 @@ public static class Defeat
     /// plan after the nested work. With no suspension it is called inline, so
     /// ordinary defeat retains its existing synchronous result.
     /// </remarks>
-    public static void FinalizeCharacter(
+    /// <returns>True when mandatory defeat consequences suspended the causing operation.</returns>
+    public static bool FinalizeCharacter(
         World world, ICardFacts facts, Card card, string trigger, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -128,8 +129,10 @@ public static class Defeat
         var kind = EffectiveCards.Kind(card, facts);
         if (CardKinds.IsVillain(kind))
         {
+            if (world.EncounterTopology is not null)
+                return EncounterVillainDefeat.Apply(world, card, trigger, events);
             VictoryDisplay.VillainStage(world, facts, card, trigger, events);
-            return;
+            return false;
         }
 
         switch (kind)
@@ -140,7 +143,7 @@ public static class Defeat
                 // minion is the encounter discard. Unless it is worth points.
                 VictoryDisplay.MoveDefeatedCard(world, facts, card, trigger, events);
 
-                return;
+                return false;
 
             case CardKind.Hero:
             case CardKind.AlterEgo:
@@ -148,7 +151,7 @@ public static class Defeat
                 // reduced to zero, that player is defeated and eliminated from
                 // the game." What that costs is `rr:player-elimination`.
                 Elimination.Eliminate(world, facts, card.Owner, trigger, events);
-                return;
+                return false;
 
             default:
                 throw new RulesNotImplementedException(
