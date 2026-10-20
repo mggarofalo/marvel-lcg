@@ -11,9 +11,9 @@ Printed behavior comes from `datasets/cards/cards.json` (35 faces, 03001a/b and
 `datasets/marvelsdb/pack/cap.json`. The latter has 30 records with quantity sum54,
 including both sides of the one physical identity, and omits obligation/nemesis
 records supplied by the joined dataset. Therefore 54 is **not** the physical pack
-count. Reconcile the remaining physical quantities and supplied starter deck
-against the physical product's divider and contents before creating executable setup; do not infer
-physical completeness from the 35-face count.
+count. The supplied starter deck and encounter quantities are now checked against
+the physical product's divider below. Do not infer physical completeness from the
+35-face count.
 
 The official insert is vendored at `datasets/rules-packs/mc04/leadership.md`, with
 source pin in `sources.manifest.json`. Its extracted paragraph describes play but
@@ -24,8 +24,19 @@ were visually checked on 2026-10-20; its SHA-256 matches the vendored pin
 Page one directs the reader to the physical divider: “There is a complete
 decklist on the reverse side of the divider card for your reference.” Page two
 is artwork. Neither page lists starter quantities or a physical component
-inventory. MARVEL-629 therefore still requires a source for that divider and
-component reconciliation; repeating extraction of this PDF cannot supply it.
+inventory.
+
+The actual FFG divider scan is now retained at
+`datasets/rules-packs/mc04/captain-america-deck-divider.jpg`, with its source URL,
+SHA-256 and independently verified transcription in that directory's `UPSTREAM.md`.
+It establishes the 40-card starter (15 hero, 17 Leadership, eight Basic), one
+obligation and five nemesis cards, including two Hydra Soldiers. The acquisition
+snapshot separately lists three copies each of 03031–03034. Those 12 extras plus
+40 starter cards, six obligation/nemesis cards, one double-sided identity and one
+divider reconcile to 60 physical cards. The scan does not independently establish
+those four extra-card quantities, so that evidence boundary remains explicit in
+MARVEL-629. The byte-pin test and all 22 pack-harvest tests pass without changing
+the PDF snapshot or its manifest.
 
 FAQ entries under `datasets/marvelcdb-faq/faq.json` for 03001a, 03006, 03024,
 03025, 03032 and 03033 are material. In particular: Shield setup cannot retrieve
