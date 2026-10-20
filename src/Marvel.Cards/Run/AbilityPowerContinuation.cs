@@ -5,4 +5,7 @@ namespace Marvel.Cards.Run;
 
 internal sealed record AbilityPowerContinuation(
     AbilityContinuationState Capture, int PowerOrdinal, ImmutableArray<int> Targets)
-    : CardPowerContinuation;
+    : CardPowerContinuation
+{
+    internal ImmutableArray<AbilityContinuationCardBinding> SelectedTargets { get; init; }
+}

@@ -208,6 +208,23 @@ targets as available, up to the specified number. An X larger than the available
 enemy count does not itself make initiation illegal. Guard still excludes the
 villain from the simultaneous selection, and targets must be distinct.
 
+Counted attack selection now connects the physical discard receipt to one
+engine-owned target prompt and the simultaneous damage body. Fourteen focused
+cases cover distinct targets, fewer available enemies than X, Guard, separate
+event resources, stun after costs, unsupported DSL shapes, query purity and a
+legal synthetic discard/reentry interrupt. The latter explicitly raises before
+damage at the unimplemented absent-recipient completion boundary; finishing that
+case remains a required MARVEL-627 obligation, not accepted behavior. Counted
+bodies are restricted to one simultaneous constant-damage instruction over
+powerTargets, with a constant or physical receipt count. Arbitrary dynamic counts
+and compound bodies raise during lowering.
+
+Compiled uncapped-cardinality and omitted-incarnation-validation mutants fail
+three and one cases respectively. All 2,687 Content tests pass and eight old
+journals replay 214 decisions without divergence (not an RNG audit). No authored
+Captain cards or setup are added by this interpreter checkpoint. MARVEL-633's
+adverse cost continuation and MARVEL-635's forced aftermath ordering remain open.
+
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains
 closed while this work proceeds.

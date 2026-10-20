@@ -185,7 +185,11 @@ public abstract record AbilityEffect
         public Marvel.Rules.Play.CardCostFilter? Filter { get; init; }
     }
     /// <summary>A labeled attack, defense, or thwart containing an effect.</summary>
-    public sealed record Power(AbilityPowerKind Kind, AbilityCardSelection? Target, AbilityEffect Effect, bool AutomaticTarget) : AbilityEffect;
+    public sealed record Power(AbilityPowerKind Kind, AbilityCardSelection? Target, AbilityEffect Effect, bool AutomaticTarget) : AbilityEffect
+    {
+        /// <summary>Choose this many distinct attack targets, or all available if fewer exist.</summary>
+        public AbilityNumber? TargetCount { get; init; }
+    }
     /// <summary>A rule-specific way to select schemes and run a thwart power.</summary>
     public sealed record ThwartGroup(AbilityThwartSelection Selection, AbilityCardSelection Schemes, Power Thwart) : AbilityEffect
     {

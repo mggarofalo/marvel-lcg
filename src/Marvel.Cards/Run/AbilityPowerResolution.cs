@@ -59,6 +59,7 @@ internal static class AbilityPowerResolution
             throw new RulesNotImplementedException(
                 $"card {power.ToLowerInvariant()} has no reconstructable source");
 
+        ValidateSelectedTargets(world, continuation);
         return new(world, world.Cards[sourceId], occurrence, player, events)
         {
             FinalStep = continuation.Capture.Cursor.FinalStep,
@@ -68,6 +69,18 @@ internal static class AbilityPowerResolution
             FinalPlayer = continuation.Capture.Cursor.FinalPlayer,
             AbilityPlayer = continuation.Capture.Invocation.AbilityPlayer,
         };
+    }
+
+    private static void ValidateSelectedTargets(World world, AbilityPowerContinuation continuation)
+    {
+        if (continuation.SelectedTargets.IsDefault) return;
+        foreach (var binding in continuation.SelectedTargets)
+        {
+            var card = world.Cards[binding.ObjectId];
+            if (card.Incarnation != binding.Incarnation || card.Area.Id != binding.AreaId)
+                throw new RulesNotImplementedException(
+                    "A counted attack recipient changed incarnation before damage; absent-recipient completion is not implemented");
+        }
     }
 
     private static void ResolvePower(

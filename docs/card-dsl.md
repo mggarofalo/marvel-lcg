@@ -762,3 +762,18 @@ window. Retaliation remains the containing attack's aftermath. Ordinary attack
 damage retains its default path. Multiple simultaneous damage nodes in one power
 are explicitly unsupported; this marker does not supply multi-target selection,
 Guard admission or discard-cost cardinality by itself.
+
+An `attack` may specify `count` (a constant or `cardsDiscarded`) alongside its
+target selector. This bounded form requires one `dealAttackDamage` body with constant `amount`,
+`simultaneous: 1`, and `cards: { "query": "powerTargets" }`. It presents one
+engine-owned selection of distinct, jointly legal enemies. Under
+`rr:choose-game-element.3`, selection uses the lesser of the requested count and
+the number of available legal targets. `cardsDiscarded` can supply the count from
+the physical cost receipt; event resource payments do not contribute. The
+ordinary attack form remains a single declared target.
+
+Counted targets retain incarnation bindings through attack interrupts. A
+recipient leaving/reentering before damage explicitly raises at the unimplemented
+absent-recipient completion boundary; it does not attack the new copy. This
+boundary and after-attack forced-keyword ordering still block Captain America
+admission. The counted form does not admit arbitrary compound damage bodies.
