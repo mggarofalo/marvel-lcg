@@ -102,7 +102,7 @@ internal static class AbilityRepeatedStatusTrace
     internal static bool AnotherCopyAttachedInTrace(
         Card current, AbilityAdmissionScope cast, HashSet<int> discarded)
     {
-        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        int boardVillain = AbilityProjectedAttachmentHosts.BoardVillain(current, cast);
         string sourceTitle = cast.World.Facts.Title(cast.Source.FaceId);
         bool carried = boardVillain >= 0 && string.Equals(
             cast.World.Facts.Title(cast.World.Cards[boardVillain].FaceId),
