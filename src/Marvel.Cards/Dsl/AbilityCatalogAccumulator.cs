@@ -14,6 +14,7 @@ internal sealed class AbilityCatalogAccumulator
     private readonly HashSet<string> placementOnly = new(StringComparer.Ordinal);
     private readonly Dictionary<string, CardCounterPool> counterPools = new(StringComparer.Ordinal);
     private readonly List<string> incomplete = [];
+    private readonly Dictionary<string, AbilitySchemeDestination> schemeDestinations = new(StringComparer.Ordinal);
 
     internal void Add(JsonElement element)
     {
@@ -29,6 +30,7 @@ internal sealed class AbilityCatalogAccumulator
         ReadAttachment(element, card);
         ReadController(element, card);
         ReadCounters(element, card);
+        ReadSchemeDestination(element, card);
         ReadAbilities(element, card, name);
     }
 
@@ -41,7 +43,16 @@ internal sealed class AbilityCatalogAccumulator
         }
         return new AbilityBook(
             abilities, authored, attachTo, controlledByFirstPlayer, placementOnly,
-            counterPools);
+            counterPools, schemeDestinations);
+    }
+
+    private void ReadSchemeDestination(JsonElement element, string card)
+    {
+        if (!element.TryGetProperty("schemeDestination", out var destination)) return;
+        if (destination.ValueKind != JsonValueKind.String
+            || destination.GetString() != "correspondingSideScheme")
+            throw new AbilityException($"card '{card}' has an unsupported schemeDestination");
+        schemeDestinations.Add(card, AbilitySchemeDestination.CorrespondingSideScheme);
     }
 
     private void ReadAttachment(JsonElement element, string card)

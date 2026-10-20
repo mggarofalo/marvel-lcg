@@ -44,6 +44,9 @@ public sealed class AbilityProgram
     public ImmutableHashSet<string> PlacementOnly { get; }
     /// <summary>Starting counter pools by printed face.</summary>
     public ImmutableDictionary<string, CardCounterPool> CounterPools { get; }
+    /// <summary>Validated printed scheme destinations; omission preserves the main-scheme rule.</summary>
+    public ImmutableDictionary<string, AbilitySchemeDestination> SchemeDestinations { get; internal init; }
+        = ImmutableDictionary.Create<string, AbilitySchemeDestination>(StringComparer.Ordinal);
     /// <summary>Every effect and its stable structural address.</summary>
     public ImmutableDictionary<AbilityEffectAddress, AbilityEffect> Effects { get; }
     /// <summary>Temporary identities declared by authored constant definitions.</summary>
