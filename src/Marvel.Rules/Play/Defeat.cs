@@ -113,7 +113,7 @@ public static class Defeat
     /// <remarks>
     /// This remains a separate operation because a step-7 ability may insert
     /// an occurrence that can ask a player a question. In that case
-    /// <see cref="Character"/> or <see cref="Scheme"/> schedules this as a
+    /// <see cref="Character"/> or <see cref="Scheme(World, ICardFacts, ThreatRemovalRequest, List{GameEvent})"/> schedules this as a
     /// plan after the nested work. With no suspension it is called inline, so
     /// ordinary defeat retains its existing synchronous result.
     /// </remarks>
@@ -179,8 +179,16 @@ public static class Defeat
     /// <param name="recordOn">The cause of this defeat, or the current occurrence.</param>
     public static Damage.Outcome Scheme(
         World world, ICardFacts facts, Card scheme, string trigger, List<GameEvent> events,
-        int by = -1, Timing.Occurrence? recordOn = null)
+        int by = -1, Timing.Occurrence? recordOn = null) =>
+        Scheme(world, facts, new ThreatRemovalRequest(scheme, 0, trigger, BasicPowers.ThwartVerb, by)
+            { RecordDefeatOn = recordOn }, events);
+
+    /// <summary>Defeats a scheme retaining both identity credit and the responsible player.</summary>
+    public static Damage.Outcome Scheme(
+        World world, ICardFacts facts, ThreatRemovalRequest request, List<GameEvent> events)
     {
+        var scheme = request.Scheme;
+        string trigger = request.Trigger;
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(scheme);
         ArgumentNullException.ThrowIfNull(events);
@@ -189,7 +197,7 @@ public static class Defeat
 
         // ruling:25a8a46bc9925963: "If a side scheme cannot leave play, then it cannot be defeated."
         if (!SideSchemeDeparture.Allowed(world, scheme)) return Damage.Outcome.NotDefeated;
-        var defeated = Record(world, scheme, by, BasicPowers.ThwartVerb, recordOn);
+        var defeated = Record(world, scheme, request.By, BasicPowers.ThwartVerb, request.RecordDefeatOn, request.ResponsiblePlayer);
         var owner = world.Agenda.Current;
         var containing = world.Agenda.Occurrence;
 
@@ -248,10 +256,11 @@ public static class Defeat
     /// </remarks>
     internal static Defeated Record(
         World world, Card card, int by, string how,
-        Timing.Occurrence? recordOn = null)
+        Timing.Occurrence? recordOn = null, int? responsiblePlayer = null)
     {
         var defeated = new Defeated(card.ObjectId, by, how)
         {
+            ResponsiblePlayer = responsiblePlayer ?? by,
             Kind = EffectiveCards.Kind(card, world.Facts),
             Title = EffectiveCards.Title(card, world.Facts),
             Incarnation = card.Incarnation,

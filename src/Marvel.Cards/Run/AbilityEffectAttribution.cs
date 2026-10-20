@@ -3,9 +3,19 @@ using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
-/// <summary>Identifies damage performed by an identity or one of its card extensions.</summary>
+/// <summary>Separates the responsible player from identity-only credit for damage and threat removal.</summary>
 internal static class AbilityEffectAttribution
 {
+    internal static int ResponsiblePlayer(AbilityDamageAndThreatContext context) =>
+        ResponsiblePlayer(context.World, context.Source, AbilityDamageAndThreatQueries.Resolver(context));
+
+    internal static int ResponsiblePlayer(World world, Card source, int player) =>
+        // rr:ownership-and-control.2: player cards enter play under their owner's control.
+        // The captured ability resolver retains the acting controller across nested effects;
+        // encounter-card effects do not become player actions merely by asking a player a question.
+        player >= 0 && player < world.Players && AbilityCardQueries.IsPlayerCard(world.Facts, source)
+            ? player : -1;
+
     internal static int IdentityPlayer(AbilityDamageAndThreatContext context) =>
         IdentityPlayer(context.World, context.Source,
             AbilityDamageAndThreatQueries.Resolver(context), context.PowerActor ?? context.AbilityActor);

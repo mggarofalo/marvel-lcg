@@ -64,12 +64,13 @@ public static class BasicPowerResolution
                 world.ThreatAbilities,
                 new ThreatRemovalRequest(world.Cards[thwart.Scheme],
                     thwart.Amount, thwart.Trigger, ThwartVerb,
-                    LabeledAbilities.IdentityPlayer(world, world.Cards[thwart.Thwarter])), events);
+                    LabeledAbilities.IdentityPlayer(world, world.Cards[thwart.Thwarter]))
+                    { ResponsiblePlayer = thwart.Player }, events);
             return;
         }
 
         RemoveThreat(
-            world, facts, world.Cards[thwart.Thwarter], world.Cards[thwart.Scheme], events);
+            world, facts, world.Cards[thwart.Thwarter], world.Cards[thwart.Scheme], events, thwart.Player);
         world.Agenda.Occurrence?.Also(BasicPowerTiming.ThwartEnds);
     }
 

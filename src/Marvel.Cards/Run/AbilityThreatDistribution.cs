@@ -68,7 +68,7 @@ internal static class AbilityThreatDistribution
         var held = groups.Select(group => group.First().Tokens.GetValueOrDefault("k_threat")).ToArray();
         var requests = groups.Select(group => new ThreatRemovalRequest(group.First(), group.Count(),
             context.Trigger, "Remove_Threat", AbilityEffectAttribution.IdentityPlayer(context))
-            { RecordDefeatOn = occurrence }).ToArray();
+            { RecordDefeatOn = occurrence, ResponsiblePlayer = AbilityEffectAttribution.ResponsiblePlayer(context) }).ToArray();
         var results = ThreatBatchRemoval.Remove(context.World, context.ThreatAbilities, requests, context.Events);
         long removed = 0;
         for (int index = 0; index < results.Count; index++)

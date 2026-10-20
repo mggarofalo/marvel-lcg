@@ -41,6 +41,11 @@ namespace Marvel.Rules.State;
 /// </param>
 public sealed record Defeated(int Card, int By, string How)
 {
+    /// <summary>The player responsible for the defeating action, including controlled allies and supports.</summary>
+    /// <remarks>This immutable occurrence fact defaults to identity credit at construction.
+    /// It is independent of By, which remains the predicate for identity-only responses.
+    /// Occurrences are reconstructed by replay and are not persisted session authority.</remarks>
+    public int ResponsiblePlayer { get; init; } = By;
     /// <summary>The classification at defeat, before leaving play clears temporary profiles.</summary>
     public required CardKind Kind { get; init; }
     /// <summary>The public name at defeat, including temporary character names.</summary>
