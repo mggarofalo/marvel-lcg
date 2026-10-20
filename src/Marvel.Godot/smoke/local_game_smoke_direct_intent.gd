@@ -79,7 +79,7 @@ func _hero_target_drag_preserves_commitment() -> bool:
 		return false
 	if not _active_cues_leave_printed_values_readable(): return false
 	if not await _capture_checkpoint("target-commitment-popup"): return false
-	var cancel := main.find_child("ContextualCancelDraft", true, false) as Button
+	var cancel := _task_clear_draft()
 	if cancel == null or not await _pointer_activate(cancel):
 		_fail("the attack drag draft cannot be cancelled locally")
 		return false
@@ -168,7 +168,7 @@ func _collection_actor_drag_stages_and_returns() -> bool:
 	if commit == null or commit.text.trim_prefix("✓ ") != "Attack Rhino" or source.is_set_as_top_level():
 		_fail("collection actor drop lost its exact named composition or temporary lift")
 		return false
-	var cancel := main.find_child("ContextualCancelDraft", true, false) as Button
+	var cancel := _task_clear_draft()
 	if cancel == null or not await _pointer_activate(cancel): return false
 	if source.get_parent() != parent or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("canceling the collection actor drag changed physical ownership or engine state")
@@ -302,9 +302,10 @@ func _initial_targeted_payment_inspection() -> bool:
 	return true
 
 func _deliberate_targeted_inspection(preview: Control) -> bool:
-	var thumbnail := _payment_button("InspectPaymentPlayed")
+	var point := _targeted_payment_inspection_point()
+	if point == Vector2.INF: return false
 	var hover := InputEventMouseMotion.new()
-	hover.position = thumbnail.get_global_rect().get_center()
+	hover.position = point
 	hover.global_position = hover.position
 	render_viewport.push_input(hover, true)
 	await process_frame
@@ -328,6 +329,15 @@ func _deliberate_targeted_inspection(preview: Control) -> bool:
 			return false
 	if not await _capture_checkpoint("targeted-event-deliberate-inspection"): return false
 	return true
+
+func _targeted_payment_inspection_point() -> Vector2:
+	var thumbnail := _payment_button("InspectPaymentPlayed")
+	if thumbnail != null: return thumbnail.get_global_rect().get_center()
+	var cards := _visible_cards_named("Swinging Web Kick")
+	if cards.size() != 1:
+		_fail("localized payment lost its visible played-card inspection source")
+		return Vector2.INF
+	return _card_body_point(cards[0] as Control)
 
 func _drag_preview_is_meaningful(card: Control) -> bool:
 	if not main.has_meta("checking_deferred_preview"):

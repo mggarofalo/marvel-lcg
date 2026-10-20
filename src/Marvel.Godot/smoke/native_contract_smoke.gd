@@ -164,7 +164,7 @@ func _end_phase_contract() -> bool:
     return await _wait_for(func() -> bool: return witness.Revision() == 2)
 
 func _cancel_discard_and_restage() -> bool:
-    var clear := main.find_child("ContextualCancelDraft", true, false) as Button
+    var clear := _task_clear_draft()
     if clear == null or not await _pointer_activate(clear): return false
     if witness.Revision() != 1 or witness.DecisionKind() != "EndPhaseDiscards":
         _fail("clearing staged discard changed the authoritative prompt")

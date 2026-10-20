@@ -52,7 +52,7 @@ static func _round_trip_and_cancel(driver, after: Array) -> bool:
 	await _toggle(driver, after[1])
 	await _toggle(driver, after[4])
 	if not await _cancel_insertion(driver, after[0]): return false
-	var clear: Button = driver.main.find_child("ContextualCancelDraft", true, false)
+	var clear: Button = driver._task_clear_draft()
 	if not await driver._pointer_activate(clear): return false
 	await preload("res://smoke/gesture_settlement.gd").hand(driver)
 	if not _matches(driver, after, "cancel insertion and clear replacements"): return false

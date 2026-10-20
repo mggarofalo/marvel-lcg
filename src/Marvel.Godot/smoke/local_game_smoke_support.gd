@@ -2,9 +2,11 @@ extends "res://smoke/local_game_smoke_core.gd"
 
 
 func _task_commit() -> Button:
-	var control := main.find_child("ContextualCommit", true, false) as Button
-	return control if control != null and not control.is_queued_for_deletion() \
-		and control.is_visible_in_tree() else null
+	return preload("res://smoke/decision_surface_controls.gd").commit(main)
+
+
+func _task_clear_draft() -> Button:
+	return preload("res://smoke/decision_surface_controls.gd").clear_draft(main)
 
 
 func _hand_surface() -> Control:

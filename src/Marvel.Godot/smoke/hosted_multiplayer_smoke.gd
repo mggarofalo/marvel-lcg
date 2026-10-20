@@ -393,8 +393,7 @@ func _has_table_decision(main: Control) -> bool:
 
 
 func _task_commit(main: Control) -> Button:
-	var control := main.find_child("ContextualCommit", true, false) as Button
-	return control if control != null and control.is_visible_in_tree() else null
+	return preload("res://smoke/decision_surface_controls.gd").commit(main)
 
 
 func _attached(main: Control, pattern: String, skip_selected := false) -> Button:

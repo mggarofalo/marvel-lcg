@@ -100,6 +100,8 @@ func _terminal_table_outcome_is_visible() -> bool:
 
 
 func _terminal_has_no_active_controls() -> bool:
+	var commit := _task_commit()
+	if commit != null and not commit.disabled: return false
 	for pattern in ["ContextualCommit", "ContextualDecline", "Card*Action", "Card*Target", "Card*Generator"]:
 		for candidate in main.find_children(pattern, "Button", true, false):
 			if candidate.is_visible_in_tree() and not candidate.disabled:

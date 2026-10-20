@@ -2,8 +2,7 @@ extends "res://smoke/local_game_smoke_relationship_checks.gd"
 
 
 func _payment_modal() -> Control:
-	var modal := main.find_child("PaymentWorkspace", true, false) as Control
-	return modal if modal != null and modal.is_visible_in_tree() else null
+	return preload("res://smoke/decision_surface_controls.gd").payment(main)
 
 
 func _payment_button(pattern: String) -> Button:
@@ -117,12 +116,23 @@ func _payment_cancel_is_safe() -> bool:
 	if modal == null: return false
 	var source := _payment_button("Resource*")
 	if source == null or not await _pointer_activate(source): return false
-	var cancel := _payment_button("CancelCardPlay")
-	if cancel == null or not await _pointer_activate(cancel): return false
+	if not await _clear_payment_draft(): return false
 	await process_frame
 	if _payment_modal() != null or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("cancelling payment changed the game or retained the modal")
 		return false
+	return true
+
+
+func _clear_payment_draft() -> bool:
+	var cancel := _task_clear_draft()
+	if cancel == null or not await _pointer_activate(cancel): return false
+	var local := main.find_child("LocalDecisionWorkspace", true, false) as Control
+	if local != null and local.is_visible_in_tree():
+		if _payment_modal() != null or _task_commit() != null:
+			_fail("clearing a local payment retained its staged choices")
+			return false
+		return await _pointer_activate(local.find_child("LocalReturnToTable", true, false) as Button)
 	return true
 
 
