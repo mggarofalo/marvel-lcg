@@ -31,6 +31,28 @@ public sealed class WreckingGetWreckedTests : CoreCardTestBase
         Assert.Equal(Resolve(face, hero, probe: false), Resolve(face, hero, probe: true));
     }
 
+    [Rule("rr:first-player.1")]
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void UniqueRankedVillainRequiresNoFirstPlayerChoice(bool hero)
+    {
+        // rr:first-player.1 assigns a selection when "there are multiple eligible targets".
+        // 07040 attacks with the least-threat villain or schemes with the most-threat villain.
+        var (world, runner, source, groups, _, _) = Setup("07040", hero);
+        groups[hero ? 3 : 2].Scheme.PlaceTokens("k_threat", 1);
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard),
+            1, 4, Subject: source.ObjectId, Seat: 1));
+        // Only optional attack responses/defense may ask; an Element target choice fails this driver.
+        Finish(world, runner, []);
+
+        Assert.Equal(hero ? 2 : 0, world.Seats[1].IdentityCard.Damage);
+        Assert.Equal(hero ? 1 : 11, groups[2].Scheme.Tokens.GetValueOrDefault("k_threat"));
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Same(groups[0], world.EncounterTopology!.Active);
+        Assert.Equal(groups[2].Discard, source.Area);
+    }
+
     private static (string Digest, long Words) Resolve(string face, bool hero, bool probe)
     {
         var (world, runner, source, groups, threat, main) = Setup(face, hero);

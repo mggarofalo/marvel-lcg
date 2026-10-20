@@ -65,14 +65,35 @@ public sealed class EncounterChoicePlayerTests : ChoosingCardsTestBase
         Assert.Throws<AbilityException>(() => Runner("\"chooser\":" + chooser + ","));
     }
 
-    private static AbilityRunner Runner(string chooser) => new(AbilityCatalog.Parse("""
-        {"cards":[{"card":"01110","abilities":[{
+    [Theory]
+    [InlineData("01110", "", 1)]
+    [InlineData("01086", "\"chooser\":\"firstPlayer\",", 0)]
+    public void OrdinarySingleTargetChoiceRetainsItsExplicitAnswer(string face, string chooser, int answeringSeat)
+    {
+        // Synthetic player-card reveal distinguishes the mandatory encounter-only automatic path.
+        var world = Deal("spider_man", "captain_marvel");
+        var runner = Runner(chooser, """{"last":{"query":"identities"}}""", face);
+        var source = world.CreateCard(face, world.AreaOf(DeckType.RevealingArea));
+        runner.ExecuteReveal(world, source, 1);
+
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, []));
+        Assert.Equal(answeringSeat, prompt.Player);
+        Assert.Single(prompt.Affordances);
+        Assert.Equal(world.Seats[1].IdentityCard.ObjectId, prompt.Affordances[0].Id);
+    }
+
+    private static AbilityRunner Runner(string chooser, string selector = """{"query":"identities"}""",
+        string face = "01110") =>
+        new(AbilityCatalog.Parse("""
+        {"cards":[{"card":"FACE","abilities":[{
           "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
-          "effect":{"chooseCard":{CHOOSER"from":{"query":"identities"},
+          "effect":{"chooseCard":{CHOOSER"from":SELECTOR,
             "effect":{"seq":[
               {"giveStatus":{"card":"chosen","status":"tough"}},
               {"dealDamage":{"cards":"you","amount":1}}
             ]}}}
         }]}]}
-        """.Replace("CHOOSER", chooser, StringComparison.Ordinal)));
+        """.Replace("CHOOSER", chooser, StringComparison.Ordinal)
+            .Replace("SELECTOR", selector, StringComparison.Ordinal)
+            .Replace("FACE", face, StringComparison.Ordinal)));
 }

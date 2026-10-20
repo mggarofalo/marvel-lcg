@@ -37,10 +37,17 @@ internal static class AbilityStructuralFlowExecution
     }
 
     internal static AbilityStructuralTransition ChooseCard(
-        AbilityStructuralContext context, AbilityEffect.ChooseCard choice) =>
-        AbilityAdmission.LegalCardChoices(choice, context.Admission()).Count == 0
-            ? new Complete(context.Frames)
-            : AskFor(context, choice);
+        AbilityStructuralContext context, AbilityEffect.ChooseCard choice)
+    {
+        var candidates = AbilityAdmission.LegalCardChoices(choice, context.Admission());
+        if (candidates.Count == 0) return new Complete(context.Frames);
+        // rr:first-player.1 assigns an encounter selection only when there are
+        // "multiple eligible targets". A sole target does not require an answer.
+        if (choice.FirstPlayerChooses && context.IsMandatoryEncounter && candidates.Count == 1)
+            return AnswerGenericChoice(context, choice, AbilityContinuationFacts.Empty,
+                Decision.Take(candidates[0].ObjectId));
+        return AskFor(context, choice);
+    }
 
     internal static AbilityStructuralTransition EachPlayer(
         AbilityStructuralContext context, AbilityEffect.EachPlayer each)
