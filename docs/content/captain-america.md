@@ -184,6 +184,17 @@ ability origin. Compiled sequential-route and Tough-as-damaged mutants fail.
 The default ordinary damage path is preserved; multi-target choice, Guard,
 discard-receipt cardinality and Shield Toss cost composition remain unfinished.
 
+Count-only hand-discard admission binds candidate receipt sizes for Any, UpTo and
+Exact costs and correlates the same count with independent event resources. It
+uses the existing memoized payment search rather than enumerating physical hand
+subsets. Explicit selections bind their actual cards; exact-one receipt queries
+retain printed icon/trait semantics. Variable multi-card receipt queries that
+read physical traits/icons or recover physical discarded cards raise explicitly.
+Eleven focused cases include bounds, an unchanged-state rejected real-game choice
+followed by a valid play, and unsupported physical-receipt refusal. Dropping the
+receipt-count/payment correlation is killed by Any and UpTo negative controls.
+This does not settle MARVEL-633's intervening resource-ability discard authority.
+
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains
 closed while this work proceeds.

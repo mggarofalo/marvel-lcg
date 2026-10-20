@@ -232,7 +232,7 @@ internal static class AbilityPaymentRules
 
     internal static bool EventPayable(
         World world, Card card, int player, CompiledCardAbility ability,
-        IResourceCardAbilities resourceAbilities)
+        IResourceCardAbilities resourceAbilities, IReadOnlyList<int>? discarded = null, int? discardCount = null)
     {
         if (EffectiveCards.Kind(card, world.Facts) != CardKind.Event)
         {
@@ -251,8 +251,11 @@ internal static class AbilityPaymentRules
         cost += required.Length
             - Resources.Required(world, card, world.Facts).Length + GenericResourceAmount(ability.Cost);
         var generators = AbilityPaymentPricing.EventGenerators(world, card, player, ability.Effect, resourceAbilities);
+        if (discarded is not null)
+            return Resources.Pays(new string([.. generators
+                .Where(source => !discarded.Contains(source.Effect)).SelectMany(source => source.Generates)]), cost, required);
         return AbilityHandDiscardAvailability.CanPay(ability.Cost,
-            AbilityCostSelection.HandCandidates(world, card, player), generators, cost, required);
+            AbilityCostSelection.HandCandidates(world, card, player), generators, cost, required, discardCount);
     }
 
     internal static int GenericResourceAmount(AbilityCost? cost) => cost switch
