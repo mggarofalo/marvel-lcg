@@ -30,12 +30,10 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
         AbilityProgram abilities,
         SessionCompatibility compatibility)
     {
-        CampaignDefinition = RiseOfRedSkullAdmission.Discover(setup, cards, abilities.Authored);
-        playable = abilities.Authored.Where(face => CampaignDefinition is not null || cards.Pack(face) != "trors")
-            .ToImmutableHashSet(StringComparer.Ordinal);
-        if (CampaignDefinition is null) setup = setup.WithoutPack(cards, "trors");
-        SetupCatalogAdmission.Validate(setup, cards, playable);
-        this.setup = setup;
+        var admitted = RuntimeProductAdmission.Discover(setup, cards, abilities.Authored);
+        CampaignDefinition = admitted.Campaign;
+        playable = admitted.Playable;
+        this.setup = admitted.Setup;
         this.cards = cards;
         this.abilities = abilities;
         Compatibility = compatibility;
