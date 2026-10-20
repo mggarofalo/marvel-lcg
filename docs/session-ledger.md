@@ -678,7 +678,13 @@ Campaign schema 1 and protocol 35 are strict compatibility boundaries. No
 migration invents missing campaign meaning. Complete content admission is
 required before the host advertises a campaign or starts its first attempt.
 
-The current replay identity is `engine-replay-v19`. Attack reflection, typed
+The current replay identity is `engine-replay-v20`. Scheme defeat preserves the
+responsible player separately from identity-only credit, and selected villains
+retain same-character meaning across same-title stage promotion. A named v19
+upgrade verifies the complete original history before changing compatibility
+metadata; see [save-content-upgrades.md](save-content-upgrades.md). Histories
+containing a corrected outcome are rejected rather than rewritten.
+Attack reflection, typed
 thwart-stat use, no-boost activation instructions and activation-local receipts
 live in reconstructed agenda state. Session saves persist setup and decisions,
 not these internal operation objects. A restart rebuilds them by replaying the
