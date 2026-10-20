@@ -25,7 +25,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCost.DiscardTop discard => discard.From == AbilitySearchArea.YourDeck,
         AbilityCost.DealEncounterToYou => true,
         AbilityCost.Sequence sequence => sequence.Costs.Any(Contains),
-        AbilityCost.ExhaustTitled => true,
+        AbilityCost.ExhaustTitled or AbilityCost.ReturnTitledToHand => true,
         AbilityCost.Exhaust exhaust => exhaust.Card == AbilityCostCard.Identity,
         AbilityCost.ConsumeCampaignCard consume => consume.Card == AbilityCostCard.Identity,
         AbilityCost.Discard discard => discard.Card == AbilityCostCard.Identity,

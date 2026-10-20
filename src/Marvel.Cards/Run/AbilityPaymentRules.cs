@@ -29,6 +29,8 @@ internal static class AbilityPaymentRules
         {
             null => true,
             AbilityCost.ReturnSourceToHand => AbilityPhysicalPayment.CanReturnToHand(world, card),
+            AbilityCost.ReturnTitledToHand named => NamedAbilityCost.Target(world, player, named.Title) is { } returning
+                && AbilityPhysicalPayment.CanReturnToHand(world, returning),
             AbilityCost.DiscardTop discard => AbilityDeckCosts.CanDiscard(world, player, discard),
             AbilityCost.DealEncounterToYou => player >= 0 && AbilityDeckCosts.EncounterAvailable(world) > 0,
             AbilityCost.Sequence sequence => SequencePayable(
@@ -108,7 +110,8 @@ internal static class AbilityPaymentRules
     {
         AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou => true,
         AbilityCost.Sequence sequence => sequence.Costs.All(MandatoryCostIsAutomatic),
-        AbilityCost.ReturnSourceToHand or AbilityCost.ConsumeCampaignCard or AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.ExhaustTitled or AbilityCost.RemoveCounters => true,
+        AbilityCost.ReturnSourceToHand or AbilityCost.ReturnTitledToHand or AbilityCost.ConsumeCampaignCard
+            or AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.ExhaustTitled or AbilityCost.RemoveCounters => true,
         _ => false,
     };
 
