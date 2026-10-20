@@ -196,9 +196,9 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07030 | Lightning Blast / thunderball | 2 | When Revealed (Alter-Ego): Place 3 threat on the side scheme with the most threat. | Pending MARVEL-625 |
 | 07030:2 | Lightning Blast / thunderball | 2 | When Revealed (Hero): Thunderball attacks you. If this attack is undefended, place 3 threat on Thunderball's side scheme. | Pending MARVEL-625 |
 | 07031 | Tactical Prowess / thunderball | 2 | When Revealed: Move all threat from the side scheme with the least threat to the side scheme with the most threat. If that scheme's "Forced Response" ability is not triggered this way, this card gains surge. | Pending MARVEL-625 |
-| 07032 | Piledriver / piledriver | 1 | Retaliate 1. | Authored printed keyword; integrated promoted-stage verification pending MARVEL-638 |
+| 07032 | Piledriver / piledriver | 1 | Retaliate 1. | WreckingPiledriverRetaliationTests: actual offered basic attack promotes A to B and retaliates once for active/inactive group; native/full-pack journey pending |
 | 07032:2 | Piledriver / piledriver | 1 | star When Piledriver schemes, place the threat on his side scheme instead of the main scheme. | WreckingPummelTests actual authored activation targets own scheme; remaining MARVEL-643 composition checks pending |
-| 07033 | Piledriver / piledriver | 1 | Retaliate 1. | Authored printed keyword; integrated promoted-stage verification pending MARVEL-638 |
+| 07033 | Piledriver / piledriver | 1 | Retaliate 1. | WreckingPiledriverRetaliationTests: actual offered basic attack promotes A to B and retaliates once for active/inactive group; native/full-pack journey pending |
 | 07033:2 | Piledriver / piledriver | 1 | star When Piledriver schemes, place the threat on his side scheme instead of the main scheme. | WreckingPummelTests actual authored activation targets own scheme; remaining MARVEL-643 composition checks pending |
 | 07034 | Pile It On! / piledriver | 1 | Piledriver's Side Scheme. | Pending MARVEL-625 |
 | 07034:2 | Pile It On! / piledriver | 1 | This card cannot leave play while Piledriver is in play. | Pending MARVEL-625 |
