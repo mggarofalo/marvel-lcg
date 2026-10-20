@@ -574,6 +574,15 @@ damage-prevention and imminent-threat windows already isolate those conditions.
 
 ### Campaign rewards and physical storage
 
+`reduceFirstAllyCost` takes a positive integer in a direct, unconditional Constant
+ability on an identity face. It reduces the first ally played by any player each
+round while that face is active. The selected identities' compiled abilities on
+all forms determine whether the engine records ally-play history; unrelated Core
+and Rise of Red Skull games allocate no history effects. An accepted ally play
+records history even while the reducing face is inactive. Putting an ally into
+play and rejected payments do not. Pricing is read-only, and the marker expires
+at the end of the round. This is the Living Legend prerequisite, not pack admission.
+
 `returnTitledToHand` is a cost naming the single controlled card with that printed
 title in play. It returns that card to its owner's hand before the post-arrow
 effect and discards its attachments through ordinary departure handling. The card

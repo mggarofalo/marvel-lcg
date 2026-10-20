@@ -51,6 +51,7 @@ internal static class AbilityOperationNames
         AbilityEffect.GainSurge => "gainSurge",
         AbilityEffect.Generate => "generate",
         AbilityEffect.DoubleResourceFor => "doubleResourceFor",
+        AbilityEffect.ReduceFirstAllyCost => "reduceFirstAllyCost",
         AbilityEffect.AllowPlayBeneath => "allowPlayBeneath",
         AbilityEffect.AttachCards => "attachCards",
         AbilityEffect.ReleaseBeneath => "releaseBeneath",

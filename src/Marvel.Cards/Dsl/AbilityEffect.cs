@@ -90,6 +90,8 @@ public abstract record AbilityEffect
     public sealed record Generate(string Resources) : AbilityEffect;
     /// <summary>A constant resource multiplier for a printed classification.</summary>
     public sealed record DoubleResourceFor(string Classification) : AbilityEffect;
+    /// <summary>A constant discount for the first ally played globally each round.</summary>
+    public sealed record ReduceFirstAllyCost(long Amount) : AbilityEffect;
     /// <summary>Shuffle an engine-supported search area.</summary>
     public sealed record Shuffle(AbilitySearchArea Area) : AbilityEffect;
     /// <summary>Pay resources or resolve the alternative effect.</summary>

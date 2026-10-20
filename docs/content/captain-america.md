@@ -87,6 +87,9 @@ implementation findings must become actionable dependencies, not exemptions from
 this ledger. Helmet replacement and Hail Hydra bookkeeping still need a complete
 mechanic audit before deciding whether existing primitives suffice.
 
+- Official component/starter reconciliation: child8bc2b9ea-544e-496a-b4d9-ed2f4a26fb6f.
+- Additive content save/campaign compatibility: shared MARVEL-630.
+
 ## Evidence presently available
 
 `NamedReturnCostTests` covers a synthetic Core-card rendering of the required
@@ -97,6 +100,14 @@ empty-title rejection. These tests **do not** prove Shield Toss or pack gameplay
 The compiled controller-to-owner substitution mutant is killed by the
 other-controller case. Existing named-exhaust/source-return tests protect sibling
 cost classes. Exact-revision execution results belong on the Plane child.
+
+`FirstAllyCostTests` exercises the history-dependent discount using a synthetic
+Core identity, including cross-seat play, active/inactive forms, reset, rejected
+payment, actual DSL put-into-play, no-marker Core/RoRS controls and paired query
+purity including subsequent events/digest/RNG/pending work. The compiled mutation
+that tracks only the active face is killed by the hero-form prior-play case.
+These are prerequisite observations, not a complete Captain America game or a
+saved-session upgrade proof. Exact revision and counts are recorded in Plane.
 
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains
