@@ -89,7 +89,8 @@ This run is **not clean native acceptance**. Every campaign resume logged
 the same failure as accessibility activation. MARVEL-644 tracks the fix.
 The preceding external-script attempt timed out because release export templates
 do not support that option; it is not counted as a journey.
-# Modal dismissal regression (MARVEL-644)
+
+## Modal dismissal regression (MARVEL-644)
 
 Godot 4.7.1's embedded `Window` dismissal removes the subwindow before it
 clears the parent's exclusive-child association. With accessibility enabled,
@@ -113,3 +114,38 @@ assertion. A rendered Windows run with `--accessibility always` additionally
 checks the actual Godot error path. These focused controls do not replace
 the packaged campaign journey or Windows/Linux acceptance evidence.
 
+### Windows candidate evidence
+
+The clean local candidate `2bb00463f176162791d30a2d5dd38a72fbd6db15` produced
+portable ZIP SHA-256
+`772a7de3418bdfaee1c17ee5a246cbd223dc2636ee22b5f591dcf798ca0f30ff`.
+This is a locally built artifact, not the downloaded CI artifact above.
+Three externally operated exported processes passed resume, End turn, and
+restart, with clean native logs and exact full campaign comparisons against
+both predecessor controls. The original migration backup remained unchanged.
+Screenshots, process logs and manifest/executable identities are retained under
+`marvel644-exported-38fb1d6b95e84883a424104cf8e41819` in the recorded evidence root.
+Plane MARVEL-630 and MARVEL-644 link the evidence and outstanding requirements.
+
+### Manual Linux evidence workflow
+
+`campaign-upgrade-evidence.yml` builds and retains an exact server image,
+including its image ID, revision label, archive checksum and version banner.
+Its Linux client is explicitly a source-built development runtime. The workflow
+does not claim a Linux desktop release package or replace the external Windows
+exported-app observations.
+
+Both hosting modes use three fresh client processes. The remote mode stops
+the configured server image after every journey, copies its stopped authority
+archive for full comparison, then starts the same container for the next
+journey. Only the isolated fixture mount changes ownership to the configured
+container user. Client evidence records its own source and executable identity
+separately from the server artifact. The workflow retains screenshots, original
+proofs, stopped-server snapshots, logs, and container identities.
+
+The development driver uses the existing fixed SubViewport pointer harness.
+It does not establish OS accessibility behavior. A forced-accessibility
+SubViewport experiment produced an AccessKit diagnostic and is not counted as
+clean evidence; the exported Windows root-window journey above passes with
+accessibility enabled. A root-window variant of the development pointer driver
+failed its hit-area assertion and was not retained as the runner.

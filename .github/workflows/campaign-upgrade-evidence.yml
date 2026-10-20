@@ -1,0 +1,76 @@
+name: Campaign upgrade evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-native-and-server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.424
+            10.0.400
+      - name: Install pinned development runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --output "$RUNNER_TEMP/godot.zip" \
+            https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_linux_x86_64.zip
+          echo "6ca7ff0459f1b806900be683c1b0837c607a9c16834c530dc68c81b9fc3ae1f6  $RUNNER_TEMP/godot.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/godot.zip" -d "$RUNNER_TEMP/godot"
+          binary=$(find "$RUNNER_TEMP/godot" -type f -name 'Godot*_mono_linux.*' | head -1)
+          chmod +x "$binary"
+          echo "GODOT_BIN=$binary" >> "$GITHUB_ENV"
+          dotnet build src/Marvel.Godot/Marvel.Godot.csproj --nologo
+      - name: Build and retain exact server image
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/upgrade-image"
+          docker build --file src/Marvel.Server/Dockerfile \
+            --build-arg MARVEL_COMMIT="$GITHUB_SHA" \
+            --build-arg MARVEL_PRODUCT_VERSION=0.1.0-preview.1 \
+            --tag marvel-upgrade:evidence .
+          docker image inspect marvel-upgrade:evidence > "$RUNNER_TEMP/upgrade-image/identity.json"
+          docker save marvel-upgrade:evidence | gzip > "$RUNNER_TEMP/upgrade-image/server.tar.gz"
+          sha256sum "$RUNNER_TEMP/upgrade-image/server.tar.gz" > "$RUNNER_TEMP/upgrade-image/SHA256SUMS"
+      - name: Embedded native predecessor journey (development client)
+        shell: bash
+        run: |
+          set -euo pipefail
+          pwsh -NoProfile -File tools/campaign-upgrade-native.ps1 -Journey Prepare -Root "$RUNNER_TEMP/upgrade-embedded"
+          for journey in inspect continue restart; do
+            xvfb-run -a pwsh -NoProfile -File tools/campaign-upgrade-development.ps1 \
+              -Journey "$journey" -Root "$RUNNER_TEMP/upgrade-embedded" -GodotBin "$GODOT_BIN"
+          done
+      - name: Packaged server restart journey (development client)
+        shell: bash
+        run: |
+          set -euo pipefail
+          xvfb-run -a pwsh -NoProfile -File tools/campaign-upgrade-container.ps1 \
+            -Root "$RUNNER_TEMP/upgrade-remote" -Image marvel-upgrade:evidence \
+            -ArtifactCommit "$GITHUB_SHA" -GodotBin "$GODOT_BIN"
+      - name: Retain exact image
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: campaign-upgrade-server-image
+          path: ${{ runner.temp }}/upgrade-image
+          if-no-files-found: ignore
+      - name: Retain native and whole-history evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: campaign-upgrade-linux-evidence
+          path: |
+            ${{ runner.temp }}/upgrade-embedded
+            ${{ runner.temp }}/upgrade-remote
+            !${{ runner.temp }}/upgrade-remote/authority
+          if-no-files-found: ignore
