@@ -2,12 +2,15 @@ name: Campaign upgrade evidence
 
 on:
   workflow_dispatch:
+  pull_request:
+    types: [labeled]
 
 permissions:
   contents: read
 
 jobs:
   linux-native-and-server:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'campaign-upgrade-evidence'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:

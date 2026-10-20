@@ -131,6 +131,8 @@ Plane MARVEL-630 and MARVEL-644 link the evidence and outstanding requirements.
 
 `campaign-upgrade-evidence.yml` builds and retains an exact server image,
 including its image ID, revision label, archive checksum and version banner.
+Request it with workflow dispatch, or apply the `campaign-upgrade-evidence`
+PR label when reviewing a workflow that is not yet on the default branch.
 Its Linux client is explicitly a source-built development runtime. The workflow
 does not claim a Linux desktop release package or replace the external Windows
 exported-app observations.
