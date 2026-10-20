@@ -142,6 +142,45 @@ public sealed class SimultaneousAttackDamageTests
         Assert.False(world.Agenda.IsBusy);
     }
 
+    [Rule("rr:attack-player-ability-type.5.1")]
+    [Fact]
+    public void RetaliationWaitsUntilEveryAttackedTargetHasSettledItsDefeat()
+    {
+        // Each surviving enemy retaliates "after the attack resolves."
+        var (world, first, _) = Board("retaliator");
+        var second = world.CreateCard("fragile", first.Area);
+        var observer = new RetaliationObserver(second);
+        world.Abilities = observer;
+        var result = Resolve(world, [first, second]);
+        Sequence.Finish(world, world.Facts, observer, []);
+
+        Assert.True(result.IsComplete);
+        Assert.Equal(DeckType.EncounterDiscardPile, observer.OtherAreaWhenRetaliating);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:attack-player-ability-type.5.1")]
+    [Fact]
+    public void BatchCompletionWaitsForSuspendedRetaliationDamage()
+    {
+        // The attack's surviving recipient deals retaliation after resolution.
+        var (world, first, _) = Board("retaliator");
+        var second = world.CreateCard("fragile", first.Area);
+        var hero = world.Seats[0].IdentityCard;
+        var abilities = new SuspendedReplacement(hero);
+        world.Abilities = abilities;
+        var result = Resolve(world, [first, second]);
+        Assert.False(result.IsComplete);
+        Assert.Equal(0, hero.Damage);
+        Assert.Equal(DeckType.EncounterDiscardPile, second.Area.Type);
+
+        Sequence.Finish(world, world.Facts, abilities, []);
+        Assert.True(result.IsComplete);
+        Assert.Equal(2, hero.Damage);
+        Assert.Equal([4L, 4L], result.Recipients.Select(recipient => recipient.Taken));
+        Assert.False(world.Agenda.IsBusy);
+    }
+
     private static SimultaneousAttackDamageResult Resolve(World world, IReadOnlyList<Card> targets) =>
         SimultaneousAttackDamage.Resolve(world, world.Facts,
             new(world.Seats[0].IdentityCard, world.Seats[0].IdentityCard, targets, 4, "synthetic", "Attack"), []);
@@ -169,6 +208,17 @@ public sealed class SimultaneousAttackDamageTests
             Card target, DefeatCause cause)
         {
             OtherDamageAtFirstDefeat ??= other.Damage;
+            return entry.Finish([]);
+        }
+    }
+
+    private sealed class RetaliationObserver(Card other) : NoCardAbilities
+    {
+        internal DeckType? OtherAreaWhenRetaliating { get; private set; }
+        public override AbilityExecutionResult WouldBeDealt(World world, AbilityExecution entry, DamageReplacement receipt)
+        {
+            if (receipt.Target == world.Seats[0].IdentityCard)
+                OtherAreaWhenRetaliating = other.Area.Type;
             return entry.Finish([]);
         }
     }

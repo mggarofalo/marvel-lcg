@@ -54,7 +54,17 @@ internal sealed class SimultaneousAttackRecipient(AttackDamageRequest request)
     internal bool Settle(World world, ICardFacts facts, AbilityExecution execution, List<GameEvent> events)
     {
         Result ??= DamageAttacks.Begin(world, facts,
-            request with { Prepared = prepared, Origin = execution.Occurrence }, events, spillOnly: false);
+            request with
+            {
+                Prepared = prepared! with { Policy = prepared.Policy with { Retaliate = false } },
+                Origin = execution.Occurrence,
+            }, events, spillOnly: false);
         return Result.IsComplete;
+    }
+
+    internal void Retaliate(World world, ICardFacts facts, List<GameEvent> events)
+    {
+        if (IsCurrent && prepared!.Policy.Retaliate)
+            DamageAttacks.Retaliate(world, facts, request.Target, request.Attacker, request.Trigger, events);
     }
 }

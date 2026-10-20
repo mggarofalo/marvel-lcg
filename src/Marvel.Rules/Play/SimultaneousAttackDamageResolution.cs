@@ -48,6 +48,9 @@ internal sealed class SimultaneousAttackDamageResolution
             if (!recipients[settlementIndex].Settle(world, facts, Execution, events)) { Suspend(events); return; }
             settlementIndex++;
         }
+        // rr:attack-player-ability-type.5.1: each surviving attacked enemy
+        // retaliates after the attack resolves, not between recipient defeats.
+        foreach (var recipient in recipients) recipient.Retaliate(world, facts, events);
         Result.Publish(recipients.Select(recipient => recipient.Result!));
         Execution.Finish(events);
     }
