@@ -89,7 +89,7 @@ Reprints need pack-face admission and representative execution, not empty rows.
 | 03030 Hail Hydra! | Every Hydra minion engaged with a hero attacks that hero; each player not attacked searches deck/discard for Hydra minion; only searched deck shuffles; alter-ego, none/many, defeated/eliminated and attack-cancellation accounting. |
 | 03031 Enraged | Ally attachment max1; +2ATK and +1 attack consequential damage; thwart unchanged; damage-prevention/defeat and control changes. |
 | 03032 Followed | Side-scheme max1; optional interrupt before scheme defeat;4 to legal enemy while scheme still in play; Madame Hydra immunity negative control; attached card discarded afterward. |
-| 03033 Expert Defense | Hero actual basic defense declaration, before boost reveal; +3DEF for that attack only; no ally defense or defense-event-only trigger; multiplayer defender. |
+| 03033 Expert Defense | Current RR1.8 hero-defends timing, including defense-labeled abilities under rr:defend-defense.4.2; basic declaration before boost reveal; +3DEF for that attack only; ally/foreign/nonattack and multiplayer controls. MARVEL-649 owns the committed-defense occurrence and authority reconciliation; the pre-1.5 basic-only ruling does not override current RR. |
 | 03034 Enhanced Awareness | Uses3 mental, Hero Resource exhaust+counter cost; removes final counter and discards; no alter-ego or exhausted use; generator remains committed through final departure. |
 
 ## Confirmed mechanic blockers
@@ -99,6 +99,8 @@ Reprints need pack-face admission and representative execution, not empty rows.
 - Shield Toss variable simultaneous composition: childd673eba4-e4a8-4b37-8715-811cc21d9dc9.
 - Falcon private multi-card look and Wonder Man mandatory attack cost:
   child30e1d631-8063-4a66-8025-9df30695213e.
+- Committed hero-defense timing for Expert Defense under RR1.8:
+  MARVEL-649, child5229cb6c-b82c-421d-a79b-eda7ab649b3e.
 
 All are in Content Expansion, linked as blockers of MARVEL-560. Additional
 implementation findings must become actionable dependencies, not exemptions from
