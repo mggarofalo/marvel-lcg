@@ -14,11 +14,12 @@ internal static class EncounterVillainDefeat
         Card? next = stage + 1 < group.Stages.Count ? group.Stages[stage + 1] : null;
         bool active = ReferenceEquals(topology.Active, group);
         var tokens = villain.Tokens;
+        var area = villain.Area;
         Remove(world, villain, trigger, events, preserveHosted: next is not null);
         if (active) events.Add(new FieldSet(villain.ObjectId, "active_villain", 1, 0)
             { Trigger = trigger, Verb = "Remove" });
         if (next is not null)
-            return Promote(world, villain, next, tokens, trigger, events);
+            return Promote(world, villain, next, tokens, area, trigger, events);
 
         // pack:mc03:new-rules: the defeated villain's side scheme is removed;
         // encounter cards from its deck already in play remain in play.
@@ -32,12 +33,13 @@ internal static class EncounterVillainDefeat
     }
 
     private static bool Promote(World world, Card prior, Card next,
-        IReadOnlyDictionary<string, long> tokens, string trigger, List<GameEvent> events)
+        IReadOnlyDictionary<string, long> tokens, Area into, string trigger, List<GameEvent> events)
     {
         // pack:mc03:adjustable-difficulty: "its version B enters play".
         // rr:villain-defeat.3.1: the next stage is the same character.
+        // Engine choice: retain that character's captured area for continuation
+        // identity and public placement, including worlds with separate areas.
         var from = next.Area;
-        var into = world.AreaOf(DeckType.VillainArea);
         World.MoveToTop(next, into);
         next.TurnFaceUp();
         events.Add(new CardsMoved(Places.Reference(from), Places.Reference(into),

@@ -8,6 +8,27 @@ namespace Marvel.Rules.Tests.Play;
 /// <summary>pack:mc03:new-rules and adjustable-difficulty, through engine defeat and agenda paths.</summary>
 public sealed class WreckingVillainDefeatTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PromotionPreservesTheDefeatedGroupsVillainArea(bool active)
+    {
+        var fixture = new WreckingRuntimeFixture(extreme: true);
+        var world = fixture.World;
+        var group = fixture.Groups[active ? 0 : 2];
+        var area = world.CreateArea(DeckType.VillainArea);
+        World.MoveToTop(group.Villain, area);
+        var events = new List<GameEvent>();
+        var result = DamagePlacement.Resolve(world, world.Facts,
+            new(world.Seats[0].IdentityCard, group.Villain, 5, "test", "Damage"), events);
+        Assert.Null(Sequence.Work(world, world.Facts, world.Abilities, events));
+        Assert.True(result.IsComplete);
+        Assert.Same(area, group.Stages[1].Area);
+        Assert.Same(active ? group.Stages[1] : fixture.Groups[0].Villain, EncounterRouting.Villain(world));
+        Assert.Contains(events.OfType<CardsMoved>(), moved =>
+            moved.To == Places.Reference(area) && moved.Cards.Any(card => card.Card == group.Stages[1].ObjectId));
+    }
+
     [Fact]
     public void ReconstructedTopologyReplaysTheSameChoiceEventsDigestAndRandomConsumption()
     {
