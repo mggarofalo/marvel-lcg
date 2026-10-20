@@ -46,5 +46,7 @@ public abstract record AbilityCondition
     public sealed record WasDefeated(AbilityCardSelection Card) : AbilityCondition;
     /// <summary>The selected card is the resolver's identity.</summary>
     public sealed record IsYourIdentity(AbilityCardSelection Card) : AbilityCondition;
+    /// <summary>The selected in-play card is the current enemy attack's attacker.</summary>
+    public sealed record IsEnemyAttacker(AbilityCardSelection Card) : AbilityCondition;
 }
 

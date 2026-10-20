@@ -27,6 +27,9 @@ internal static class AbilityExpressionAreaDependencies
                 break;
             case AbilityCondition.CardText text: CollectCardsInDependencies(text.Card, cast, areas); break;
             case AbilityCondition.IsKind kind: CollectCardsInDependencies(kind.Card, cast, areas); break;
+            case AbilityCondition.IsEnemyAttacker attacker:
+                CollectCardsInDependencies(attacker.Card, cast, areas);
+                break;
             case AbilityCondition.WasDefeated defeated: CollectCardsInDependencies(defeated.Card, cast, areas); break;
             case AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
                 or AbilityCondition.CausedThreat or AbilityCondition.Exists or AbilityCondition.LegalPractice

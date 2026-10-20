@@ -103,6 +103,9 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityCondition.ActivationIs activation => context.World.Activation is { } current && current.Attacking == activation.Attack,
         AbilityCondition.CardText text => TestCardText(text),
         AbilityCondition.IsKind kind => IsKind(kind),
+        AbilityCondition.IsEnemyAttacker attacker => selectors.Find(attacker.Card) is { } source
+            && DeckTypes.IsInPlay(source.Area.Type)
+            && context.World.Attack is { } attack && attack.Enemy == source.ObjectId,
         AbilityCondition.WasDefeated defeated => selectors.Find(defeated.Card) is { } card
             && context.Occurrence.Defeats.Any(defeat => defeat.Card == card.ObjectId),
         AbilityCondition.IsYourIdentity identity => selectors.Find(identity.Card)?.ObjectId == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,

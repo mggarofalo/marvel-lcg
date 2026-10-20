@@ -66,6 +66,7 @@ internal static class AbilityConditionLowering
             "isKind" => IsKind(argument, child),
             "wasDefeated" => new AbilityCondition.WasDefeated(SelectCards(argument, child)),
             "isYourIdentity" => new AbilityCondition.IsYourIdentity(SelectCards(argument, child)),
+            "isEnemyAttacker" => new AbilityCondition.IsEnemyAttacker(SelectCards(argument, child)),
             _ => throw child.Error($"'{node.Kind}' is not a condition"),
         };
     }

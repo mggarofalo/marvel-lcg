@@ -97,6 +97,7 @@ internal static class AbilityConditionProjection
             AbilityCondition.AutomaticThwart thwart => ValueReadsVillain(thwart.Scheme, cast),
             AbilityCondition.CardText text => ValueReadsVillain(text.Card, cast),
             AbilityCondition.IsKind kind => ValueReadsVillain(kind.Card, cast),
+            AbilityCondition.IsEnemyAttacker attacker => ValueReadsVillain(attacker.Card, cast),
             AbilityCondition.WasDefeated defeated => ValueReadsVillain(defeated.Card, cast),
             AbilityCondition.IsYourIdentity identity => ValueReadsVillain(identity.Card, cast),
             _ => false,
