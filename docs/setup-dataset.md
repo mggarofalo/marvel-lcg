@@ -4,6 +4,13 @@
 admission determines which declared products the runtime can start; an incomplete
 expansion is excluded from public discovery as a whole.
 
+`RuntimeProductAdmission` owns the closed accepted-product policy: Core Set and
+the complete Rise of Red Skull expansion. Merely adding an authored ability or
+setup recipe does not admit another product. Unaccepted product-owned recipes
+are excluded; a retained accepted recipe that references an unavailable face
+still fails validation. The same admitted face set controls discovery, research
+cards' runtime-support flags, deck assessment and game creation.
+
 The dataset is authored. Scenario composition and starter-deck contents are
 printed in rules inserts, Learn to Play material and product lists rather than
 on individual cards. There is no upstream dataset that can generate the same
