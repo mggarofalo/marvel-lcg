@@ -33,6 +33,8 @@ internal sealed class DamageTraceMutation
     private int currentVillain;
     private int villainStagesDrawn;
     private bool finished;
+    private Dictionary<int, int>? encounterStages;
+    private int[]? encounterOrder;
     private long peak;
 
     internal DamageTraceMutation(
@@ -58,6 +60,8 @@ internal sealed class DamageTraceMutation
         currentVillain = state.CurrentVillain;
         villainStagesDrawn = state.VillainStagesDrawn;
         finished = state.Finished;
+        encounterStages = state.EncounterStages;
+        encounterOrder = state.EncounterOrder;
         peak = state.PeakTargetPressure;
     }
 
@@ -68,12 +72,15 @@ internal sealed class DamageTraceMutation
             if (finished) break;
             Apply(transfer);
         }
-        return new DamageTraceState(
+        return Snapshot();
+    }
+
+    private DamageTraceState Snapshot() => new DamageTraceState(
             damage, peak, original.Players, tough, statusChanges,
             statusCounts, health, discarded, threat, traits, modifiers,
             engagement, formsMayChange, firstPlayer, currentVillain,
-            villainStagesDrawn, finished);
-    }
+            villainStagesDrawn, finished)
+        { EncounterStages = encounterStages, EncounterOrder = encounterOrder };
 
     private void Apply(DamageTransfer transfer)
     {
@@ -89,8 +96,8 @@ internal sealed class DamageTraceMutation
         selector is null
             ? fallback
             : TraceSelectorIncludesCard(
-                selector, fallback, currentVillain, cast,
-                discarded, traits, modifiers, engagement) ?? int.MinValue;
+                selector, fallback, new(currentVillain, cast, discarded, traits, modifiers, engagement)
+                { EncounterStages = encounterStages, EncounterOrder = encounterOrder }) ?? int.MinValue;
 
     private bool ApplyStructural(DamageTransfer transfer, int to)
     {
@@ -176,49 +183,11 @@ internal sealed class DamageTraceMutation
         else modifiers[key] = changed;
     }
 
-    private void GrantStatus(int cardId, string status)
-    {
-        if (discarded.Contains(cardId))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would give a status to a card that is not there");
-        }
-        var card = cast.World.Cards[cardId];
-        if (status == Statuses.Tough) GrantTough(card);
-        else GrantLimitedStatus(card, status);
-    }
+    private void GrantStatus(int cardId, string status) =>
+        new DamageTraceStatuses(Snapshot(), cast).GrantStatus(cardId, status);
 
-    private void GrantTough(Card card)
-    {
-        if (CurrentTough(card.ObjectId) >= 1) return;
-        SetTough(card, 1);
-    }
-
-    private void SetTough(Card card, int count)
-    {
-        int live = Statuses.Count(cast.World, card, Statuses.Tough);
-        if (count == live) tough.Remove(card.ObjectId);
-        else tough[card.ObjectId] = count;
-        TraceSetStatusCount(
-            card, Statuses.Tough, count, cast, statusCounts, statusChanges);
-    }
-
-    private void GrantLimitedStatus(Card card, string status)
-    {
-        var key = (card.ObjectId, status);
-        int current = statusCounts.GetValueOrDefault(
-            key, Statuses.Count(cast.World, card, status));
-        int limit = TraceStatusLimit(card, status, cast, discarded, modifiers);
-        if (current >= limit) return;
-        int changed = current + 1;
-        TraceSetStatusCount(
-            card, status, changed, cast, statusCounts, statusChanges);
-        if (TraceStatusMakesVulnerable(
-            card, status, changed, limit, cast, discarded, modifiers))
-        {
-            LeavePlay(card.ObjectId);
-        }
-    }
+    private void SetTough(Card card, int count) =>
+        new DamageTraceStatuses(Snapshot(), cast).SetTough(card, count);
 
     private long Current(int cardId) => damage.TryGetValue(cardId, out long amount)
         ? amount : cast.World.Cards[cardId].Damage;
@@ -292,7 +261,8 @@ internal sealed class DamageTraceMutation
         var card = cast.World.Cards[cardId];
         long tracedHealth = SaturatingAdd(
             TraceHealth(card, discarded, threat, cast), HealthBonus(cardId));
-        if (cardId == currentVillain && Current(cardId) >= tracedHealth)
+        if ((encounterStages?.ContainsValue(cardId) ?? cardId == currentVillain)
+            && Current(cardId) >= tracedHealth)
         {
             ResolveVillainDefeat(card);
             return;
@@ -303,57 +273,12 @@ internal sealed class DamageTraceMutation
 
     private void ResolveVillainDefeat(Card card)
     {
-        var deck = cast.World.AreaOf(DeckType.VillainDeck);
-        int nextIndex = deck.Cards.Count - 1 - villainStagesDrawn;
-        if (nextIndex < 0)
-        {
-            LeavePlay(card.ObjectId);
-            finished = true;
-            return;
-        }
-        var next = deck.Cards[nextIndex];
-        bool carries = string.Equals(
-            cast.World.Facts.Title(card.FaceId),
-            cast.World.Facts.Title(next.FaceId), StringComparison.Ordinal);
-        if (carries) discarded.Add(card.ObjectId);
-        else LeavePlay(card.ObjectId);
-        RefuseUntraceableVillainEntry(card, next);
-        AdvanceVillain(card, next, carries);
-    }
-
-    private void RefuseUntraceableVillainEntry(Card current, Card next)
-    {
-        if (AbilityProgramQueries.On(cast.Context.Program, next).Any(ability =>
-                ability.Trigger.Timing == AbilityType.Constant))
-        {
-            throw new RulesNotImplementedException(
-                $"villain stage '{next.FaceId}' enters play before a "
-                + "repeated continuation reads its constant abilities, "
-                + "which is not implemented");
-        }
-        if (!HasLiveVillainRetargetingConstant(
-            discarded, current, next, cast, threat, damage, modifiers, traits,
-            [
-                .. statusChanges,
-                .. tough.Keys.Select(card => (card, Statuses.Tough)),
-            ], engagement, formsMayChange, firstPlayer)) return;
-        throw new RulesNotImplementedException(
-            $"villain stage '{next.FaceId}' enters play before a "
-            + "repeated continuation reads retargeting constant abilities, "
-            + "which is not implemented");
-    }
-
-    private void AdvanceVillain(Card current, Card next, bool carries)
-    {
-        villainStagesDrawn++;
-        int carriedTough = carries ? CurrentTough(current.ObjectId) : 0;
-        currentVillain = next.ObjectId;
-        damage[next.ObjectId] = 0;
-        tough[next.ObjectId] = Math.Max(
-            carriedTough,
-            StateFields.Modified(
-                cast.World, next, "toughness",
-                cast.World.Facts, cast.World.Players) > 0 ? 1 : 0);
+        var advanced = new DamageTraceVillains(Snapshot(), cast).Resolve(card);
+        currentVillain = advanced.CurrentVillain;
+        villainStagesDrawn = advanced.VillainStagesDrawn;
+        finished = advanced.Finished;
+        encounterStages = advanced.EncounterStages;
+        encounterOrder = advanced.EncounterOrder;
     }
 
     private void ResolveInPlayDefeat(Card card, long tracedHealth)
@@ -366,107 +291,8 @@ internal sealed class DamageTraceMutation
         }
     }
 
-    private void ResolveIdentityDefeat(Card card, long tracedHealth)
-    {
-        int player = PlayerForIdentity(card.ObjectId);
-        if (player < 0 || Current(card.ObjectId) < tracedHealth) return;
-        ApplyElimination(player);
-        if (player == firstPlayer) AdvanceFirstPlayer();
-    }
+    private void ResolveIdentityDefeat(Card card, long tracedHealth) =>
+        firstPlayer = new DamageTraceDepartures(Snapshot(), cast).ResolveIdentityDefeat(card, tracedHealth);
 
-    private int PlayerForIdentity(int cardId) => cast.World.Seats
-        .Select((seat, player) => (seat, player))
-        .Where(pair => pair.seat.IdentityCard.ObjectId == cardId)
-        .Select(pair => pair.player)
-        .DefaultIfEmpty(-1)
-        .First();
-
-    private void ApplyElimination(int player)
-    {
-        var plan = PlanTracePlayerElimination(
-            player, cast, discarded, engagement);
-        foreach (int relocated in plan.RelocatedCards)
-        {
-            engagement[relocated] = plan.NextPlayer!.Value;
-        }
-        foreach (int leaving in plan.Leaving)
-        {
-            DiscardCard(leaving);
-        }
-    }
-
-    private void AdvanceFirstPlayer()
-    {
-        for (int offset = 1; offset < cast.World.Seats.Count; offset++)
-        {
-            int candidate = (firstPlayer + offset) % cast.World.Seats.Count;
-            var identity = cast.World.Seats[candidate].IdentityCard;
-            long candidateHealth = SaturatingAdd(
-                TraceHealth(identity, discarded, threat, cast),
-                HealthBonus(identity.ObjectId));
-            if (Current(identity.ObjectId) >= candidateHealth) continue;
-            firstPlayer = candidate;
-            return;
-        }
-    }
-
-    private void LeavePlay(int cardId)
-    {
-        foreach (int leaving in LeavingTree(cardId))
-        {
-            DiscardCard(leaving);
-        }
-    }
-
-    private List<int> LeavingTree(int cardId)
-    {
-        var leaving = new List<int> { cardId };
-        var pending = new Stack<Card>(ChildrenOf(cardId).Reverse());
-        var seen = new HashSet<int> { cardId };
-        while (pending.TryPop(out var hosted))
-        {
-            RefuseInvalidAttachment(hosted, seen, cardId);
-            leaving.Add(hosted.ObjectId);
-            foreach (var child in ChildrenOf(hosted.ObjectId).Reverse())
-            {
-                pending.Push(child);
-            }
-        }
-        return leaving;
-    }
-
-    private IEnumerable<Card> ChildrenOf(int host) => cast.World.Areas
-        .Where(area => area.Host == host)
-        .SelectMany(area => area.Cards);
-
-    private void RefuseInvalidAttachment(
-        Card hosted, HashSet<int> seen, int root)
-    {
-        if (!seen.Add(hosted.ObjectId))
-        {
-            throw new RulesNotImplementedException(
-                $"attachment {hosted.ObjectId} forms a hosting cycle");
-        }
-        if (StateFields.Modified(
-                cast.World, hosted, "permanent",
-                cast.World.Facts, cast.World.Players) <= 0) return;
-        // Match Discard.Attachments' complete-tree preflight so eligibility
-        // refuses before an action cost can mutate.
-        throw new RulesNotImplementedException(
-            $"permanent attachment {hosted.ObjectId} lost host {root}, "
-            + "and rr:permanent.5 is not implemented");
-    }
-
-    private void DiscardCard(int cardId)
-    {
-        discarded.Add(cardId);
-        if (Statuses.Count(
-                cast.World, cast.World.Cards[cardId], Statuses.Tough) > 0)
-        {
-            tough[cardId] = 0;
-        }
-        else tough.Remove(cardId);
-        TraceStatusesLeave(cardId, cast, statusCounts, statusChanges);
-        engagement.Remove(cardId);
-    }
+    private void LeavePlay(int cardId) => new DamageTraceDepartures(Snapshot(), cast).LeavePlay(cardId);
 }

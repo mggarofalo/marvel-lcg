@@ -161,6 +161,45 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
         Assert.Equal(groups[3].Villain.ObjectId, unique.ActiveVillain);
     }
 
+    [Fact]
+    public void RepeatedDamageTracksInactivePromotionAndFinalDefeatWithoutFinishingOtherGroups()
+    {
+        var (world, groups, scope) = Fixture();
+        var target = groups[0].Villain;
+        var initial = DamageTraceStateFactory.Initial(target, scope);
+        var enemies = new AbilityCardSelection.Query(AbilityCardQuery.Enemies);
+        string digest = world.Digest().Canonical();
+        var promoted = new DamageTraceMutation(initial, target, scope).Apply(
+            [new(-1, target.ObjectId, 100, ToVillain: enemies)]);
+        Assert.Equal(groups[1].Villain.ObjectId, promoted.CurrentVillain);
+        Assert.Equal(groups[0].Stages[1].ObjectId, promoted.EncounterStages![target.ObjectId]);
+        Assert.False(promoted.Finished);
+        Assert.DoesNotContain(groups[0].Scheme.ObjectId, promoted.Discarded);
+        var defeated = new DamageTraceMutation(promoted, target, scope).Apply(
+            [new(-1, target.ObjectId, 100, ToVillain: enemies)]);
+        Assert.Equal(-1, defeated.EncounterStages![target.ObjectId]);
+        Assert.Equal(groups[1].Villain.ObjectId, defeated.CurrentVillain);
+        Assert.Contains(groups[0].Scheme.ObjectId, defeated.Discarded);
+        Assert.False(defeated.Finished);
+        Assert.Equal(digest, world.Digest().Canonical());
+    }
+
+    [Fact]
+    public void RepeatedDamageRejectsActiveTieAndUsesUniqueProjectedThreat()
+    {
+        var (_, groups, scope) = Fixture();
+        var target = groups[1].Villain;
+        var initial = DamageTraceStateFactory.Initial(target, scope);
+        var promoted = new DamageTraceMutation(initial, target, scope).Apply([new(-1, target.ObjectId, 100)]);
+        Assert.Throws<RulesNotImplementedException>(() => new DamageTraceMutation(promoted, target, scope)
+            .Apply([new(-1, groups[1].Stages[1].ObjectId, 100)]));
+        promoted.Threat[groups[3].Scheme.ObjectId] = 9;
+        var defeated = new DamageTraceMutation(promoted, target, scope)
+            .Apply([new(-1, groups[1].Stages[1].ObjectId, 100)]);
+        Assert.Equal(groups[3].Villain.ObjectId, defeated.CurrentVillain);
+        Assert.False(defeated.Finished);
+    }
+
     private static AbilityPowerState Damage(
         AbilityPowerState state, Card card, AbilityAdmission.AbilityAdmissionScope scope) =>
         AbilityPowerHealthTrace.ApplyPowerDamage(state, [card], 100,

@@ -274,66 +274,10 @@ internal static class AbilityRepeatedEffectAnalysis
     internal readonly record struct TraceCard(
         Card Card, AbilityCardSelection? VillainSelector);
 
-    internal sealed record DamageTraceState(
-        Dictionary<int, long> Damage, long PeakTargetPressure,
-        HashSet<int> Players, Dictionary<int, int> Tough,
-        HashSet<(int Card, string Status)> StatusChanges,
-        Dictionary<(int Card, string Status), int> StatusCounts,
-        Dictionary<int, long> Health, HashSet<int> Discarded,
-        Dictionary<int, long> Threat, Dictionary<int, HashSet<string>> Traits,
-        Dictionary<(int Card, string Field), long> Modifiers,
-        Dictionary<int, int> Engagement,
-        ulong FormsMayChange,
-        int FirstPlayer,
-        int CurrentVillain,
-        int VillainStagesDrawn, bool Finished);
-
     internal static long PeakRepeatedDamageOn(
         Card target, AbilityEffect repeatedEffect, AbilityAdmissionScope cast,
-        RepeatedChange assumed, bool binding, int frames)
-    {
-        int original = cast.Player;
-        try
-        {
-            int villain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-            IReadOnlyList<DamageTraceState> states =
-                [new(new Dictionary<int, long>(), target.Damage, [], new(), new(),
-                    new(), new(), TraceUnavailableMinions(cast), new(),
-                    new(), new(), new(), 0, cast.World.FirstPlayer,
-                    villain, 0, false)];
-            for (int frame = 0; frame < frames; frame++)
-            {
-                var next = new List<DamageTraceState>();
-                foreach (var state in states)
-                {
-                    foreach (int player in cast.World.PlayerOrder.Where(player =>
-                        !state.Players.Contains(player)))
-                    {
-                        cast.RestorePlayer(player);
-                        var traces = DamageTraces(
-                            repeatedEffect, cast, assumed, binding);
-                        foreach (var trace in traces)
-                        {
-                            var advanced = ApplyDamageTrace(
-                                state, trace, target, cast);
-                            next.Add(advanced with
-                            {
-                                Players = [.. state.Players, player],
-                            });
-                        }
-                    }
-                }
-                states = next;
-            }
-            return states.Select(state => state.PeakTargetPressure)
-                .DefaultIfEmpty(target.Damage)
-                .Max();
-        }
-        finally
-        {
-            cast.RestorePlayer(original);
-        }
-    }
+        RepeatedChange assumed, bool binding, int frames) =>
+        RepeatedDamageFrames.Peak(target, repeatedEffect, cast, assumed, binding, frames);
 
     internal static HashSet<int> TraceUnavailableMinions(AbilityAdmissionScope cast) =>
         cast.World.Areas

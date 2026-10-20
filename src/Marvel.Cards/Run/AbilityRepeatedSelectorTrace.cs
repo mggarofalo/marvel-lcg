@@ -90,23 +90,15 @@ internal static class AbilityRepeatedSelectorTrace
         };
 
     internal static int? TraceSelectorIncludesCard(
-        AbilityCardSelection value, int bound, int currentVillain, AbilityAdmissionScope cast,
-        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
-        Dictionary<(int Card, string Field), long> modifiers,
-        Dictionary<int, int> engagement)
+        AbilityCardSelection value, int bound, AbilitySelectorTraceContext trace)
     {
-        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        int candidateId = bound == boardVillain ? currentVillain : bound;
-        if (candidateId < 0 || discarded.Contains(candidateId))
-        {
-            return null;
-        }
-        var candidate = cast.World.Cards[candidateId];
-        return TraceSelectorMatches(
-            value, candidate, new(currentVillain, cast, discarded, traits, modifiers,
-            engagement))
-            ? candidateId
-            : null;
+        var world = trace.Cast.World;
+        int boardVillain = Rules.Play.EncounterRouting.Villain(world)?.ObjectId ?? -1;
+        int candidateId = trace.EncounterStages is { } stages
+            ? AbilityPowerEncounterProjection.Current(world.Cards[bound], trace.Cast, stages)?.ObjectId ?? -1
+            : bound == boardVillain ? trace.CurrentVillain : bound;
+        if (candidateId < 0 || trace.Discarded.Contains(candidateId)) return null;
+        return TraceSelectorMatches(value, world.Cards[candidateId], trace) ? candidateId : null;
     }
 
     internal static bool TraceQueryMatches(
