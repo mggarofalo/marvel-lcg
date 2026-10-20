@@ -8,6 +8,27 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class WreckingSingularTraceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PowerProjectionRefusesNewlyAmbiguousSingularTitles(bool fallback)
+    {
+        // Synthetic duplicate titles distinguish a single-card query from choosing
+        // the first candidate; a projected state preserves live selector cardinality.
+        var (world, groups, scope) = WreckingProjectionFixture.Create(firstSuccessor: "07017");
+        AbilityCardSelection title = new AbilityCardSelection.Titled("Thunderball");
+        var selection = fallback
+            ? new AbilityCardSelection.FirstAvailable([title, new AbilityCardSelection.Bound(AbilityCardBinding.YourHero)])
+            : title;
+        var before = (world.Digest().Canonical(), world.Random.Generator.WordsConsumed);
+        var state = AbilityPowerHealthTrace.ApplyPowerDamage(AbilityPowerStateFactory.Initial(scope),
+            [groups[0].Villain], 100, world.Seats[0].IdentityCard, scope);
+
+        Assert.Throws<RulesNotImplementedException>(() => AbilityPowerTrace.PowerFind(selection, scope, state));
+
+        Assert.Equal(before, (world.Digest().Canonical(), world.Random.Generator.WordsConsumed));
+    }
+
     [Fact]
     public void APluralOnlySelectorDoesNotBecomeSingularMerelyBecauseOneCardMatches()
     {

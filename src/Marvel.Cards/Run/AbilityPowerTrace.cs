@@ -32,6 +32,10 @@ internal static class AbilityPowerTrace
         if (SelectorMembershipCanChange(value)
             || PotentialVillainSelector(value, cast))
         {
+            if (reachability.EncounterStages is not null)
+                return AbilitySingularTraceSelection.Find(value, new(reachability.CurrentVillain, cast,
+                    reachability.Discarded, reachability.Traits, reachability.Modifiers, reachability.Engagement)
+                { EncounterStages = reachability.EncounterStages, EncounterOrder = reachability.EncounterOrder });
             return PowerEvery(value, cast, reachability).FirstOrDefault();
         }
         var found = Find(value, cast);

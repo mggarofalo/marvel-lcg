@@ -13,9 +13,9 @@ src/Marvel.Cards/Run/AbilityPowerProjection.cs:31: SL005: ConstantCanRetargetVil
 src/Marvel.Cards/Run/AbilityPowerProjection.cs:325: SL005: BranchFieldCanDiffer=17
 src/Marvel.Cards/Run/AbilityPowerProjection.cs:65: SL005: ConditionalCanRetargetVillain=13
 src/Marvel.Cards/Run/AbilityPowerStateMutation.cs:248: SL005: GiveVulnerableStatus=8
-src/Marvel.Cards/Run/AbilityProjection.cs:152: SL005: TryTraceCountAmount=9
-src/Marvel.Cards/Run/AbilityProjection.cs:208: SL005: TryTraceCompositeAmount=10
-src/Marvel.Cards/Run/AbilityProjection.cs:80: SL005: TryTraceCount=9
+src/Marvel.Cards/Run/AbilityProjection.cs:159: SL005: TryTraceCountAmount=9
+src/Marvel.Cards/Run/AbilityProjection.cs:215: SL005: TryTraceCompositeAmount=10
+src/Marvel.Cards/Run/AbilityProjection.cs:87: SL005: TryTraceCount=9
 src/Marvel.Client/LocalGameMutationClient.cs:244: SL005: RecoveryResponse=8
 src/Marvel.Content/Behavior/CanonicalCoreScene.cs:19: SL003: CanonicalCoreScene=432
 src/Marvel.Content/Behavior/CoreSceneValidation.cs:17: SL003: CoreSceneValidation=324
