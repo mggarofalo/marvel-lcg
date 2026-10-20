@@ -41,6 +41,9 @@ authority files. Campaign backups include the checksummed archive and its
 original manifest. A stale predecessor is rejected. A standalone session writer
 lease excludes concurrent publication during predecessor checking and migration;
 the campaign store retains its existing process-wide writer lease.
+Ordinary session publication also checks the current content identity under that
+lease. An older host cannot overwrite a migrated archive with its stale content
+provenance; it must restore the current generation with a compatible runtime.
 
 Publication uses the existing flushed generation and atomic manifest replacement.
 Startup publishes no migrated game before verification and persistence succeed.

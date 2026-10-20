@@ -53,6 +53,13 @@ public sealed class ContentUpgradePersistenceTests
             Assert.Throws<SessionSaveException>(() => store.CommitContentUpgrade(saved, current, oldGeneration));
             Assert.Equal(generation, File.ReadAllText(Path.Combine(path, "current")));
             keep = Assert.Single(after.Prompt!.Affordances, action => action.Verb == Game.ResolveMulligans);
+            var stale = host.Exchange(EngineRequest.ResolveGame("stale-old-host", opened.GameId, guest.Capability!,
+                Decision.Take(keep.Id), before.Revision));
+            Assert.Equal("save_failed", stale.Error?.Code);
+            Assert.Equal(generation, File.ReadAllText(Path.Combine(path, "current")));
+            Assert.Equal(StoredSessionJson.Write(current), StoredSessionJson.Write(Assert.Single(store.Load())));
+            Assert.Equal(before.Revision, host.Exchange(
+                EngineRequest.SyncGame("stale-state", opened.GameId, guest.Capability!)).Revision);
             var wrong = restored.Exchange(EngineRequest.ResolveGame("wrong", opened.GameId, opened.Capability!,
                 Decision.Take(keep.Id), after.Revision));
             Assert.NotNull(wrong.Error);

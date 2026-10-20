@@ -148,6 +148,7 @@ public sealed class FileSessionStore : IContentUpgradeStore
         ArgumentNullException.ThrowIfNull(session);
         string directory = PrepareDirectory(session.Save.Session.StorageId);
         using var lease = WriterLease(directory);
+        SessionContentPublication.RequireUnchanged(directory, session.Save.Compatibility);
         return CommitGeneration(session);
     }
 
@@ -227,7 +228,7 @@ public sealed class FileSessionStore : IContentUpgradeStore
     private static void WriteTextFlushed(string path, string value) =>
         DurableFiles.WriteFlushed(path, StrictUtf8.GetBytes(value));
 
-    private static string ReadStrict(string path)
+    internal static string ReadStrict(string path)
     {
         try
         {
@@ -286,7 +287,7 @@ public sealed class FileSessionStore : IContentUpgradeStore
         }
     }
 
-    private static bool ValidGeneration(string value) =>
+    internal static bool ValidGeneration(string value) =>
         value.Length == 32 && value.All(character =>
             character is (>= '0' and <= '9') or (>= 'a' and <= 'f'));
 }
