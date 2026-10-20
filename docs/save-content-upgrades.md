@@ -54,15 +54,26 @@ The file stores retain exact predecessor bytes under `.upgrade-` names outside
 ordinary generation cleanup. Session backup pairs include the session and
 authority files. Campaign backups include the checksummed archive and its
 original manifest. A stale predecessor is rejected. A standalone session writer
-lease excludes concurrent publication during predecessor checking and migration;
+lease excludes cooperating current-runtime writers during predecessor checking and migration;
 the campaign store retains its existing process-wide writer lease.
 Ordinary session publication checks the current replay, RNG, digest and content
 identities under that lease, including version-only migrations with identical
 dataset hashes. Ordinary campaign publication applies the same check under its
 read/guard/write lock; sharing one store cannot let a retained stale host replace
-a migrated aggregate. Both reject application downgrades. An older host must
-restore the current generation with a compatible runtime. Deletion tombstones
+a migrated aggregate. Both reject application downgrades. A stale host using this
+publication implementation must restore the current generation with a compatible
+runtime. Deletion tombstones
 use their own typed operational payload and remain independently repeatable.
+
+Before upgrading standalone session storage, stop every predecessor server and
+keep it stopped until rollback or completion. The immutable 910 predecessor does
+not implement the standalone `.writer` lease or compatibility publication guard;
+a still-running old binary can overwrite its original storage layout. Current
+stale-writer tests exercise the new publication implementation and do not prove
+protection against that historical binary. The predecessor campaign store already
+holds a lifetime process writer lease, so its concurrent-process exclusion is a
+different boundary. Take the stopped storage-volume backup described below before
+starting the new artifact.
 
 Publication uses the existing flushed generation and atomic manifest replacement.
 Startup publishes no migrated game before verification and persistence succeed.

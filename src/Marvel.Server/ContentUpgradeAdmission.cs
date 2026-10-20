@@ -34,7 +34,8 @@ internal sealed class ContentUpgradeAdmission
 
     internal SessionContentUpgrade? For(SessionCompatibility actual)
     {
-        if (source is null || actual with { Application = target.Application } == target) return null;
+        if (target.ReplayContract != "engine-replay-v20" || source is null
+            || actual with { Application = target.Application } == target) return null;
         var admitted = source;
         // This release's v20 runtime also writes the frozen Core/RoRS content triple.
         // It is a distinct named source, not a claim that newly recorded games are historical v19 saves.

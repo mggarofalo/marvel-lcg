@@ -99,6 +99,20 @@ public sealed class ReplayContractUpgradeTests
         });
     }
 
+    [Theory]
+    [InlineData("engine-replay-v19")]
+    [InlineData("engine-replay-v21")]
+    public void HostAdmissionRequiresThisDeliveryDestination(string destination)
+    {
+        AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>
+        {
+            var (previous, factory) = Fixture(root);
+            var admission = Admission(root, factory.Compatibility with { ReplayContract = destination });
+            Assert.Null(admission.For(previous.Save.Compatibility));
+            Assert.Null(admission.For(previous.Save.Compatibility with { ReplayContract = "engine-replay-v20" }));
+        });
+    }
+
     [Fact]
     public void DivergentRecordedGameplayIsRejectedWithoutProducingAnUpgrade()
     {

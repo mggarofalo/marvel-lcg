@@ -139,11 +139,13 @@ game. A migration may write a new save only after complete replay under the new
 runtime verifies every prompt, decision, event and digest. “The final board
 looks plausible” is not a migration rule.
 
-The narrow [additive content upgrade path](save-content-upgrades.md) admits a
+The narrow [named save upgrade path](save-content-upgrades.md) admits a
 pinned predecessor only after checking unchanged admitted content. It verifies
 the complete retained trace and all campaign proof sessions, then preserves the
-original archive before atomic publication. It does not change the save schema
-or authorize a new replay contract.
+original archive before atomic publication. The save schema remains unchanged.
+Only the explicit Core/RoRS v19-to-v20 replay transition is supported, and only
+when every original recorded fact verifies under the corrected runtime; unknown
+contracts and divergent histories remain unsupported.
 
 ### Setup
 
