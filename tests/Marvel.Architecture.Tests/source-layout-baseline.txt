@@ -48,7 +48,6 @@ src/Marvel.Rules/State/Seat.cs:23: SL005: Seat=8
 src/Marvel.Rules/State/World.cs:17: SL003: World=423
 src/Marvel.Rules/Timing/ContinuousEffectRegistry.cs:8: SL003: ContinuousEffectRegistry=359
 src/Marvel.Rules/Timing/ContinuousEffects.cs:46: SL003: ContinuousEffects=442
-src/Marvel.Rules/Timing/Occurrence.cs:30: SL003: Occurrence=421
 src/Marvel.Rules/Timing/Occurrence.cs:43: SL005: Occurrence=10
 src/Marvel.Server/AuthorizedSessionProjector.cs:15: SL005: Succeeded=9
 src/Marvel.Server/EngineHostHistory.cs:214: SL005: ReorderUnavailable=8

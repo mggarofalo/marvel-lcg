@@ -263,7 +263,7 @@ internal static class AbilityResolutionEffectChoices
             new AbilityInvocation(new(cast.AbilityFace, cast.Tier, ordinal),
                 new(cast.Source.ObjectId, cast.Source.Area.Id, cast.SourceBindingIncarnation),
                 cast.Occurrence, cast.Trigger, cast.AbilityPlayer, cast.AbilityActor?.ObjectId ?? -1)
-                { TriggeringDefeat = cast.TriggeringDefeat },
+                { TriggeringAttack = cast.TriggeringAttack, TriggeringDefeat = cast.TriggeringDefeat },
             new AbilityCursor([.. frames ?? cast.StructuralPath], cast.Position, cast.Player,
                 cast.HasContinuation, cast.FinalStep, cast.FinalPlayer, cast.EachPlayerFrame),
             new AbilityMemory(cast.Results.ToImmutableDictionary(StringComparer.Ordinal),

@@ -115,7 +115,7 @@ internal static class RevealProcedure
         var occurrence = step.Require<RevealAbilityOperation>().Origin
             ?? throw new InvalidOperationException("reveal ordering has no occurrence");
         if (step.Require<RevealAbilityOperation>().Completed is { } completed)
-            occurrence.Complete(completed);
+            occurrence.Resolution.Complete(completed);
 
         var pending = step.Require<RevealAbilityOperation>().Abilities ?? [];
         var handles = step.Require<RevealAbilityOperation>().Candidates ?? [];

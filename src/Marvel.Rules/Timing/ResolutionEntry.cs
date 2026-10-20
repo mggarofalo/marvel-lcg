@@ -14,4 +14,7 @@ public sealed record ResolutionEntry(
 {
     /// <summary>The particular defeat answered by this resolution.</summary>
     public State.Defeated? TriggeringDefeat { get; init; }
+
+    /// <summary>The exact attacked enemy answered within a shared attack window.</summary>
+    public State.Attacked? TriggeringAttack { get; init; }
 }

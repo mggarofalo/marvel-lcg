@@ -25,8 +25,8 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
         var(world, card, occurrence, runner) = Revealing(AuthoredCards.ImTough, """{ "giveStatus": { "card": { "query": "villain" }, "status": "stunned" } }""");
         runner.ExecuteReveal(world, card, 0, occurrence);
         var ability = new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0);
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:status-cards.1")]
@@ -56,8 +56,8 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
         world.Seats[0].IdentityCard.Exhaust();
         runner.ExecuteReveal(world, card, 0, occurrence);
         var ability = new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0);
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:resolve.7")]
@@ -69,8 +69,8 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "cancelWhenRevealed", Affects: card.ObjectId, Lasts: new Duration(Uses: 1)));
         runner.ExecuteReveal(world, card, 0, occurrence);
         var ability = new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0);
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:resolve.2")]
@@ -99,9 +99,9 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
             ] } ] }
             """));
         runner.ExecuteReveal(world, card, 0, occurrence);
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0, 0)));
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0, 1)));
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0, 0)));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0, 1)));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:resolve.2")]
@@ -121,13 +121,13 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
         world.Abilities = runner;
         var events = runner.ExecuteReveal(world, card, 0, occurrence).Events.ToList();
         var ability = new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0);
-        Assert.Equal(ResolutionStatus.Pending, occurrence.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Pending, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Pending, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Pending, occurrence.Resolution.CardStatus(card.ObjectId));
         var question = Sequence.Work(world, Cards, runner, events)!;
         Sequence.Answer(world, Cards, runner, question, Decision.Take(0), events);
         Sequence.Finish(world, Cards, runner, events);
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:resolve.2")]
@@ -144,8 +144,8 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
         var ability = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Interrupt), pending => pending.Card == card.ObjectId);
         runner.ResolveWindow(world, occurrence, ability, new Decision(ability.Card, [], []));
         Sequence.Finish(world, Cards, runner, []);
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:resolve.2")]
@@ -176,8 +176,8 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
         var ability = new PendingAbility(card.ObjectId, AbilityType.Action, 0);
         runner.ExecuteAction(world, new PlayerAction(ability, [], []), occurrence);
         Assert.False(Statuses.Has(world, hero, Statuses.Stunned));
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:resolve.2")]
@@ -190,8 +190,8 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
         var(world, card, occurrence, runner) = Revealing(AuthoredCards.Assault, """{ "enemyAttacks": { "enemies": { "query": "villain" } } }""");
         runner.ExecuteReveal(world, card, 0, occurrence);
         var ability = new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0);
-        Assert.Equal(ResolutionStatus.Pending, occurrence.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Pending, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Pending, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Pending, occurrence.Resolution.CardStatus(card.ObjectId));
         var attack = Assert.Single(world.Agenda.Outstanding, step => step.What == Steps.Attack);
         if (!made) Statuses.Give(world, world.Cards[attack.Subject], Statuses.Stunned);
         var events = new List<GameEvent>();
@@ -202,8 +202,8 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
             Assert.True(prompt.Cancellable, prompt.Label);
             Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
         }
-        Assert.Equal(expected, occurrence.StatusOf(ability));
-        Assert.Equal(expected, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(expected, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(expected, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:resolve.1")]
@@ -222,10 +222,10 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
         world.Abilities = runner;
         var events = runner.ExecuteReveal(world, card, 0, occurrence).Events.ToList();
         var ability = new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0);
-        Assert.Equal(amount > 0 ? ResolutionStatus.Pending : ResolutionStatus.Unresolved, occurrence.StatusOf(ability));
+        Assert.Equal(amount > 0 ? ResolutionStatus.Pending : ResolutionStatus.Unresolved, occurrence.Resolution.StatusOf(ability));
         Sequence.Finish(world, Cards, runner, events);
-        Assert.Equal(expected, occurrence.StatusOf(ability));
-        Assert.Equal(expected, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(expected, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(expected, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:resolve.1")]
@@ -242,11 +242,11 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
         runner.ExecuteReveal(world, card, 0, occurrence);
         var ability = new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0);
         Assert.Equal(DeckType.RevealingArea, top.Area.Type);
-        Assert.Equal(ResolutionStatus.Pending, occurrence.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Pending, occurrence.Resolution.StatusOf(ability));
         Sequence.Finish(world, Cards, runner, []);
         Assert.Equal(DeckType.EngagedEnemiesArea, top.Area.Type);
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:resolve.1")]
@@ -261,9 +261,9 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
             } }
             """);
         runner.ExecuteReveal(world, card, 0, occurrence);
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
         // A villain is one of rr:resolve.6's other card types.
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:resolve.1")]
@@ -285,6 +285,6 @@ public sealed class ResolutionStatusAResolvedEffectResolvesItsAbilityTests : Res
         }
 
         runner.ExecuteReveal(world, card, 0, occurrence);
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
     }
 }

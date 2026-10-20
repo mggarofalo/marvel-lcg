@@ -206,7 +206,7 @@ internal static class EncounterRevealProcedure
             {
                 if (EffectiveCards.Kind(card, facts) == CardKind.Treachery)
                 {
-                    occurrence.BeginCard(card.ObjectId, simultaneous);
+                    occurrence.Resolution.BeginCard(card.ObjectId, simultaneous);
                 }
                 var handles = simultaneous
                     .Select((_, index) => 1_000_000 + index)
