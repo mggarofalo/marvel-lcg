@@ -89,6 +89,10 @@ mechanic audit before deciding whether existing primitives suffice.
 
 - Official component/starter reconciliation: child8bc2b9ea-544e-496a-b4d9-ed2f4a26fb6f.
 - Additive content save/campaign compatibility: shared MARVEL-630.
+- Event source/hand-discard and resource-payment atomicity: MARVEL-633,
+  child `a6a7f37b-e591-4bdb-8f40-51fd4cc2862a`, blocks MARVEL-627 and this pack.
+  The reproductions use synthetic event interpretations; admitted Core/RoRS
+  discard-hand costs belong to in-play Alpha Flight Station and Hawkeye.
 
 ## Evidence presently available
 
@@ -119,6 +123,14 @@ incarnation validation is killed by the departure-and-return case. This is not
 yet a Shield Toss transcript: its cost-to-target count binding, Guard admission,
 stun boundary and separate per-target attack response opportunities still need
 implementation and acceptance under MARVEL-627.
+
+`EventDiscardCostTests` distinguishes event-source exclusion, source-only hand
+payability, resource/discard overlap rejection before mutation, a real
+`Game.Resolve` payment with distinct cards, and repeated-query/subsequent-play
+controls. The source-inclusion and payment-overlap mutations each fail the
+corresponding observation. This does not establish the entire event-cost space:
+intervening resource-ability effects, complete jointly payable offer admission,
+and actual Shield Toss cost/target composition remain separate acceptance work.
 
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains

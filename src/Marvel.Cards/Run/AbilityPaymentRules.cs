@@ -78,7 +78,7 @@ internal static class AbilityPaymentRules
             // discard can be: the card is the cost and what it would have
             // generated is not read at all. So the question is a count and not
             // a sum, and a card with no printed `RES` pays it.
-            AbilityCost.DiscardFromHand discard => world.Seats[player].Hand.Cards.Count
+            AbilityCost.DiscardFromHand discard => AbilityCostSelection.HandCandidates(world, card, player).Count
                 >= AbilityCostSelection.Range(discard.Range, int.MaxValue).Min,
             AbilityCost.ExhaustChosen exhaust => AbilityCostSelection.Choices(world, player, exhaust)
                 .Count(card => card.Ready) >= AbilityCostSelection.Range(exhaust.Range, int.MaxValue).Min,
