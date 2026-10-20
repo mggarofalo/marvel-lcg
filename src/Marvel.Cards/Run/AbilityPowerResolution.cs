@@ -105,25 +105,20 @@ internal static class AbilityPowerResolution
     internal static void FinishResumedPower(this AbilityResolutionExecution execution, AbilityResolutionState cast)
     {
         var state = cast.PowerExecution ?? throw new InvalidOperationException("The power has no execution state.");
+        if (state.Aftermath is null)
+        {
+            // One modifier applies throughout the body and is consumed once before aftermath.
+            foreach (var modifier in state.Modifiers) cast.World.Effects.Use(modifier);
+            state = state with { Aftermath = new AbilityPowerAftermath(cast, state.Kind) };
+            cast.PowerExecution = state;
+        }
+        if (!state.Aftermath.Complete(execution, cast)) return;
         cast.PowerExecution = null;
         cast.ThwartActorUsingAttack = null;
-        // One attack modifier applies to every damage node and is consumed only after its body completes.
-        foreach (var modifier in state.Modifiers) cast.World.Effects.Use(modifier);
-        FinishAttack(cast, cast.Player, state.Kind);
         RestoreOuterChosen(state.Continuation.Capture.Memory.Chosen, cast);
         cast.RestoreAbility(state.Decoded.Ordinal, state.Decoded.Frames,
             state.Continuation.Capture.Invocation.Address.Face);
         execution.CompletePower(state.Decoded, cast with { Power = null, PowerActor = null, PowerTargets = [], PowerAmount = -1 });
-    }
-
-    private static void FinishAttack(AbilityResolutionState cast, int player, string power)
-    {
-        if (power != BasicPowers.AttackVerb) return;
-        var world = cast.World;
-        var attacker = cast.PowerActor ?? world.Seats[player].IdentityCard;
-        if (AttackKeywords.Has(world, attacker, cast.Source, Keywords.Ranged)) return;
-        foreach (var target in cast.Attacked.DistinctBy(card => card.ObjectId))
-            DamageAttacks.Retaliate(world, world.Facts, target, attacker, cast.Trigger, cast.Events);
     }
 
     private static void RestoreOuterChosen(

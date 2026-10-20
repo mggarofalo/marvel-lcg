@@ -9,5 +9,6 @@ internal sealed record AbilityPowerExecutionState(
     string Kind, int? Actor, long Amount, ImmutableArray<ContinuousEffect> Modifiers)
 {
     internal ImmutableArray<int> Attacked { get; init; } = [];
+    internal AbilityPowerAftermath? Aftermath { get; init; }
     internal int? ThwartActorUsingAttack { get; init; }
 }

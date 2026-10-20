@@ -161,6 +161,20 @@ Toss acceptance. `OccurrenceResolutions` owns ability/card status transitions;
 new lifecycle owner during serialization. This decomposition removes its former
 large-class baseline exception. Exact revisions and suite counts are in Plane.
 
+MARVEL-635 retains a labelled attack's aftermath while retaliation damage resolves
+an interrupt choice. Eight synthetic real-game cases compare queried and unqueried
+continuations, including two recipients, repeated damage to one enemy, ranged,
+prevention and accepted damage. State, events, pending work and RNG remain paired;
+attack modifiers are consumed once and the containing effect runs only after the
+last retaliation. Compiled skip-wait and duplicate-recipient mutants fail. Removing
+only the caller's early return survives because the suspended cast independently
+prevents outer advancement and the scheduled capture already retains its power
+state; that mutation is equivalent for this completion boundary. Eight old journals
+still replay 214 decisions without divergence (not an RNG audit). This is a shared
+synthetic capability checkpoint, not Shield Toss publication or pack acceptance.
+The separate stale-recipient, response-window, save-continuation and integrated
+multi-villain acceptance work remains open in the linked prerequisites.
+
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains
 closed while this work proceeds.
