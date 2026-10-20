@@ -43,7 +43,7 @@ Aerial Agility 42004 instead says **for this attack** and grants retaliate in
 Archangel form. `ruling:ef77ad713fff71d9` (October 2023) confirms it creates a
 lasting effect but does not independently specify its expiration boundary.
 Neither that card nor a `for this attack` retaliate duration is admitted here.
-Its interpretation belongs to Angel-pack acceptance; this ledger does not assert
+Its interpretation is tracked by MARVEL-640 under Angel-pack MARVEL-599; this ledger does not assert
 equivalence to the explicit `Until: EndOfAttack` representation.
 
 ## Containing abilities and event discard
@@ -64,13 +64,43 @@ The native and authored abilities have distinct engine identities even when
 they originate from the same physical card. Their affordance handles are
 assigned together, and both resolutions remain separately recorded.
 
-## Evidence still required before acceptance
+## Checkpoint evidence and remaining acceptance
 
-The work remains unaccepted until focused controls, independent review, compiled
-mutations, complete regression suites and dedicated admitted retaliate replay
-comparisons are recorded against a committed candidate. New response order and
-native resolution facts require explicit replay-version assessment; default
-serialization omission alone does not establish compatibility.
+Checkpoint `951e3e110191a55dcdb90f8478755842792745d7` passed 2,698 Content tests,
+1,000 Rules tests, 129 architecture tests and commit hooks. This is evidence on
+the isolated Captain branch, not the final combined delivery.
+
+Twelve compiled mutations were rejected by distinguishing assertions:
+
+| Mutation | Failing cases |
+|---|---:|
+| Merge native and authored spent identity | 1 |
+| Merge native and authored resolution identity | 1 |
+| Demote native forced-response priority | 4 |
+| Ignore basic-only ranged scope | 1 |
+| Omit generic selected-recipient capture | 3 |
+| Resume enclosing effects before attack responses | 2 |
+| Retain an expired end-of-attack grant | 1 |
+| Accept another execution's owner | 1 |
+| Accept an unstarted owner | 1 |
+| Defer completed event discard past responses | 9 |
+| Omit retaliation when attack damage is zero | 1 |
+| Retain duplicate physical attack recipients | 8 |
+
+The zero-damage case has an actual admitted predecessor reproduction. Original
+runtime `91098022d37ce739dd2880e8964b40ee3675eeb3` generated Black Panther against
+standard Rhino with game seed 700 and policy seed 13. Its 30-decision journal
+replays without divergence on that original runtime. At decision 9, the identical
+Defense answer produces 18 old events versus 19 new events: the corrected
+completion path deals 1 retaliate damage after `AttackCompleted`, although the
+defended enemy attack dealt zero damage. The board digest consequently changes.
+The predecessor journal's SHA-256 is
+`f9107037687344f2cfde00005e3acc2a5494894b1f905c0ef8e94aae1b0e7be1`.
+
+The work remains unaccepted until rebased onto the complete merged PR-434
+delivery, compared against its v20 runtime, assigned an explicit replay
+transition and independently reviewed on the final combined candidate.
+Default serialization omission does not establish replay compatibility.
 
 Multi-villain stage-lineage integration belongs to MARVEL-638 and must verify
 that a departed recipient cannot bind to another group's identically titled
