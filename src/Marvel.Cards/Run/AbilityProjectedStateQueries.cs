@@ -13,7 +13,7 @@ internal static class AbilityProjectedStateQueries
         AbilityCardSelection selector, AreaProjectionState state,
         AbilityAdmissionContext context)
     {
-        var found = Every(selector, context)
+        var found = ProjectedCandidates(selector, state, context)
             .Where(card => !state.Departed.Contains(card.ObjectId))
             .ToList();
         return selector switch
@@ -38,6 +38,18 @@ internal static class AbilityProjectedStateQueries
                 ProjectedTitled(titled, found, state, context),
             _ => Distinct(found),
         };
+    }
+
+    private static IEnumerable<Card> ProjectedCandidates(
+        AbilityCardSelection selector, AreaProjectionState state, AbilityAdmissionContext context)
+    {
+        var candidates = Every(selector, context);
+        if (context.World.EncounterTopology is null
+            || selector is not AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen })
+            return candidates;
+        // rr:villain-defeat.3.1: same-title villain stages are "the same character".
+        return candidates.Select(card => AbilityAreaEncounterProjection.Current(context.World, state, card))
+            .Where(card => card is not null).Cast<Card>();
     }
 
     private static List<Card> ProjectedBound(

@@ -128,6 +128,23 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
     }
 
     [Fact]
+    public void AreaChosenBindingFollowsItsOwnPromotedCharacterAndDisappearsAfterFinalDefeat()
+    {
+        var (_, groups, scope) = Fixture();
+        var context = scope.Context.WithChosen(groups[0].Villain);
+        var state = new AreaProjectionState(context);
+        var projection = new AbilityAreaProjection([], null,
+            new HashSet<DeckType> { DeckType.EncounterDiscardPile }, context, 1);
+        var chosen = new AbilityCardSelection.Bound(AbilityCardBinding.Chosen);
+        projection.DealProjected(state, groups[0].Villain, 100, 1);
+        Assert.Same(groups[0].Stages[1], AbilityProjectedStateQueries.ProjectedFind(chosen, state, context));
+        Assert.Same(groups[1].Villain, AbilityProjectedStateQueries.ProjectedFind(
+            new AbilityCardSelection.Query(AbilityCardQuery.Villain), state, context));
+        projection.DealProjected(state, groups[0].Villain, 100, 1);
+        Assert.Null(AbilityProjectedStateQueries.ProjectedFind(chosen, state, context));
+    }
+
+    [Fact]
     public void AreaProjectionUsesProjectedThreatAndRefusesAnUnansweredActiveTie()
     {
         var (_, groups, scope) = Fixture();
