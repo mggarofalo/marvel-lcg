@@ -139,6 +139,12 @@ game. A migration may write a new save only after complete replay under the new
 runtime verifies every prompt, decision, event and digest. “The final board
 looks plausible” is not a migration rule.
 
+The narrow [additive content upgrade path](save-content-upgrades.md) admits a
+pinned predecessor only after checking unchanged admitted content. It verifies
+the complete retained trace and all campaign proof sessions, then preserves the
+original archive before atomic publication. It does not change the save schema
+or authorize a new replay contract.
+
 ### Setup
 
 `setup` records the complete authored input to a game:

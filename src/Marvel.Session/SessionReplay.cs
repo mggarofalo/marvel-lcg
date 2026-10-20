@@ -150,6 +150,18 @@ public static class SessionReplay
     private static void RequireCompatibility(
         SessionCompatibility expected, SessionCompatibility actual)
     {
+        RequireRuntimeCompatibility(expected, actual);
+        RequireIdentity(expected.CardsSha256, actual.CardsSha256,
+            "cards_dataset_mismatch");
+        RequireIdentity(expected.SetupSha256, actual.SetupSha256,
+            "setup_dataset_mismatch");
+        RequireIdentity(expected.AbilitiesSha256, actual.AbilitiesSha256,
+            "abilities_dataset_mismatch");
+    }
+
+    internal static void RequireRuntimeCompatibility(
+        SessionCompatibility expected, SessionCompatibility actual)
+    {
         ArgumentNullException.ThrowIfNull(expected);
         if (actual is null)
         {
@@ -171,12 +183,6 @@ public static class SessionReplay
             "rng_identity_mismatch");
         RequireIdentity(expected.StateDigest, actual.StateDigest,
             "digest_identity_mismatch");
-        RequireIdentity(expected.CardsSha256, actual.CardsSha256,
-            "cards_dataset_mismatch");
-        RequireIdentity(expected.SetupSha256, actual.SetupSha256,
-            "setup_dataset_mismatch");
-        RequireIdentity(expected.AbilitiesSha256, actual.AbilitiesSha256,
-            "abilities_dataset_mismatch");
     }
 
     private static void RequireIdentity(string expected, string actual, string category)

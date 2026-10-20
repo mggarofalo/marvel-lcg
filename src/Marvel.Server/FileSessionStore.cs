@@ -9,7 +9,7 @@ using Marvel.Session;
 namespace Marvel.Server;
 
 /// <summary>Generation-based filesystem persistence with one atomic manifest switch.</summary>
-public sealed class FileSessionStore : ISessionStore
+public sealed class FileSessionStore : IContentUpgradeStore
 {
     private const string Current = "current";
     private static readonly Encoding StrictUtf8 = new UTF8Encoding(
@@ -144,6 +144,45 @@ public sealed class FileSessionStore : ISessionStore
 
     /// <inheritdoc />
     public string? Commit(StoredSession session)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        string directory = PrepareDirectory(session.Save.Session.StorageId);
+        using var lease = WriterLease(directory);
+        return CommitGeneration(session);
+    }
+
+    /// <inheritdoc />
+    public string? CommitContentUpgrade(StoredSession previous, StoredSession candidate, string? generation)
+    {
+        string directory = PrepareDirectory(previous.Save.Session.StorageId);
+        using var lease = WriterLease(directory);
+        string actualGeneration = ReadStrict(Path.Combine(directory, Current)).Trim();
+        if (!ValidGeneration(actualGeneration) || actualGeneration != generation
+            || candidate.Save.Session != previous.Save.Session)
+            throw new SessionSaveException("content upgrade predecessor changed");
+        var current = new StoredSession(
+            SessionSaveJson.Read(ReadStrict(Path.Combine(directory, actualGeneration + ".session.json"))),
+            StoredAuthorityJson.Read(ReadStrict(Path.Combine(directory, actualGeneration + ".authority.json"))));
+        if (StoredSessionJson.Write(current) != StoredSessionJson.Write(previous))
+            throw new SessionSaveException("content upgrade predecessor changed");
+        ContentUpgradeBackup.Preserve(directory, actualGeneration + ".session.json");
+        ContentUpgradeBackup.Preserve(directory, actualGeneration + ".authority.json");
+        return CommitGeneration(candidate);
+    }
+
+    private string PrepareDirectory(string storageId)
+    {
+        RequireStorageId(storageId);
+        DurableFiles.EnsurePrivateDirectory(root);
+        string directory = Path.Combine(root, storageId);
+        DurableFiles.EnsurePrivateDirectory(directory);
+        return directory;
+    }
+
+    private static FileStream WriterLease(string directory) =>
+        new(Path.Combine(directory, ".writer"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+
+    private string? CommitGeneration(StoredSession session)
     {
         ArgumentNullException.ThrowIfNull(session);
         string storageId = session.Save.Session.StorageId;

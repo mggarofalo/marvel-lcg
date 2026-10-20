@@ -10,6 +10,7 @@ internal sealed class CampaignArchiveFiles : IDisposable
 {
     private readonly string root;
     private readonly FileStream lease;
+    private readonly object publication = new();
 
     internal CampaignArchiveFiles(string root)
     {
@@ -51,6 +52,11 @@ internal sealed class CampaignArchiveFiles : IDisposable
 
     internal string Commit(string id, ReadOnlySpan<byte> bytes)
     {
+        lock (publication) return CommitGeneration(id, bytes);
+    }
+
+    private string CommitGeneration(string id, ReadOnlySpan<byte> bytes)
+    {
         RequireId(id);
         if (bytes.Length > CampaignSaveJson.MaximumBytes) throw new SessionSaveException("campaign archive exceeds size limit");
         string directory = Path.Combine(root, id);
@@ -70,6 +76,22 @@ internal sealed class CampaignArchiveFiles : IDisposable
         { throw new CampaignCommitUncertainException(failure); }
         Cleanup(directory, manifest);
         return generation;
+    }
+
+    internal string CommitContentUpgrade(string id, StoredCampaign previous, StoredCampaign candidate)
+    {
+        lock (publication)
+        {
+            byte[] original = Read(id);
+            if (CampaignSaveJson.Canonical(CampaignSaveJson.ReadDocument<StoredCampaign>(original))
+                != CampaignSaveJson.Canonical(previous) || candidate.Save.Identity != previous.Save.Identity)
+                throw new SessionSaveException("campaign content upgrade predecessor changed");
+            string directory = Path.Combine(root, id);
+            var manifest = ReadManifest(directory);
+            ContentUpgradeBackup.Preserve(directory, manifest.Generation + ".archive");
+            ContentUpgradeBackup.Preserve(directory, "current", manifest.Generation + ".manifest");
+            return CommitGeneration(id, System.Text.Encoding.UTF8.GetBytes(CampaignSaveJson.Canonical(candidate)));
+        }
     }
 
     private static CampaignGeneration ReadManifest(string directory)

@@ -184,7 +184,9 @@ when all of the following hold:
 - its product version is not lower than the saved application version;
 - the save schema is the current schema;
 - the engine replay, RNG and state-digest identities are supported;
-- the card, setup and ability dataset SHA-256 values match exactly; and
+- the card, setup and ability dataset SHA-256 values match exactly, or a
+  [named additive content migration](save-content-upgrades.md) verifies the
+  unchanged predecessor content before replay; and
 - complete deterministic replay verifies every recorded prompt, event, RNG
   count and state fingerprint.
 
