@@ -41,6 +41,11 @@ func _resume_payment() -> bool:
         _fail("local payment omitted shared table resource affordance")
         return false
     if not await _keyboard_activate(table_source): return false
+    var staged := _payment_button(selected_name)
+    if staged == null or not staged.button_pressed:
+        _fail("local payment did not stage the selected resource")
+        return false
+    if not await preload("res://smoke/table_bounds_continuity.gd").fractional_translation(self, staged): return false
     var before := _recipient_revision()
     var close := _payment_button("LocalReturnToTable")
     if close == null or not await _pointer_activate(close): return false

@@ -23,6 +23,8 @@ func _recipient_cancel_and_commit() -> bool:
     var before := _recipient_revision()
     var source := _visible_cards_named(recipient_title)[0] as Control
     if not await _open_context(source): return false
+    if not await preload("res://smoke/table_bounds_continuity.gd").fractional_translation(self,
+            main.find_child("Menu0Item0", true, false) as Control): return false
     if not await _capture_checkpoint("context-source"): return false
     _menu_key(KEY_ESCAPE)
     if not await _wait_for(func() -> bool: return _context_menu() == null):
@@ -53,6 +55,8 @@ func _choose_recipient(source: Control, before: int) -> bool:
 
 func _finish_context_journey() -> bool:
     if not await _identity_menu_actions(): return false
+    if not await _wait_for_result_motion(): return false
+    if not await preload("res://smoke/table_bounds_continuity.gd").physical_resize(self): return false
     print("CONTEXT_MENU_SMOKE_OK")
     await process_frame
     return true
