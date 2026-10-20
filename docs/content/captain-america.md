@@ -360,3 +360,19 @@ authored mutations are caught: arrow count, arrow damage, Uses, resource aspect,
 forced Mockingbird timing, encounter-card recipient, Tower reduction amount and
 Tower exhaustion target. Independent review verified the canonical text matches,
 the interpreted rows, the counter pool and the tests without finding a blocker.
+
+## Enhanced Awareness
+
+03034 uses the existing resource-ability and Uses contracts: three mental
+counters on entry, hero-only exhaustion plus one counter for one mental resource.
+Actual game decisions play the upgrade and pay for a support with it. The last
+counter discards the upgrade while its committed resource still pays for the
+support. Alter-ego, exhausted and foreign-controlled copies are excluded; these
+availability checks preserve digest and RNG, without claiming the stronger
+paired pending-work/event-stream purity evidence used for Helmet above.
+
+Six focused cases distinguish those outcomes. Six executable authored mutations
+are caught: two starting counters, missing Uses, unrestricted form, wrong
+exhaustion target, physical output and a two-counter cost. Independent source
+review found no blocker. The full Content suite passes 2,826 cases. This
+twentieth research face does not open the pack.

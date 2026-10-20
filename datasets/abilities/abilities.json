@@ -11517,6 +11517,44 @@
       ]
     },
     {
+      "card": "03034",
+      "name": "Enhanced Awareness",
+      "note": "Uses (3 mental counters). Hero Resource: Exhaust Enhanced Awareness and remove 1 mental counter from it to generate a mental resource. The last counter discards this upgrade under rr:uses-x-type; the committed resource ability still generates its resource.",
+      "startingCounters": {
+        "type": "mental",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "removeCounters": {
+                  "card": "this",
+                  "counter": "mental",
+                  "count": 1
+                }
+              }
+            ]
+          },
+          "printedResources": "B",
+          "effect": {
+            "generate": "B"
+          }
+        }
+      ]
+    },
+    {
       "card": "03004",
       "name": "Heroic Strike",
       "note": "Hero Action attack deals six damage. The chosen enemy is stunned only if the captured payment includes a physical resource; a declared wild follows its allocated type. Damage prevention does not prevent the subsequent status effect.",
