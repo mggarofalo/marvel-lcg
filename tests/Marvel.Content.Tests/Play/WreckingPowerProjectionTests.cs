@@ -19,7 +19,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
     {
         // The pack's Extreme mode promotes each villain to its own B stage.
         // The active counter remains on another living group.
-        var (world, groups, scope) = Fixture();
+        var (world, groups, scope) = WreckingProjectionFixture.Create();
         var hostage = world.CreateCard("07005",
             world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, groups[0].Scheme.ObjectId));
         var initial = AbilityPowerStateFactory.Initial(scope);
@@ -55,7 +55,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
     [Fact]
     public void SuccessivePromotionsAppendInResolutionOrderWhileExplicitObjectOrderRemainsExplicit()
     {
-        var (_, groups, scope) = Fixture();
+        var (_, groups, scope) = WreckingProjectionFixture.Create();
         var state = Damage(AbilityPowerStateFactory.Initial(scope), groups[0].Villain, scope);
         state = Damage(state, groups[2].Villain, scope);
         var enemies = new AbilityCardSelection.Query(AbilityCardQuery.Enemies);
@@ -69,7 +69,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
     [Fact]
     public void ActiveFinalDefeatUsesProjectedThreatForUniqueReplacement()
     {
-        var (_, groups, scope) = Fixture();
+        var (_, groups, scope) = WreckingProjectionFixture.Create();
         var state = AbilityPowerStateFactory.Initial(scope);
         state = state with { SchemeThreat = new Dictionary<int, long> { [groups[3].Scheme.ObjectId] = 9 } };
         state = Damage(state, groups[1].Villain, scope);
@@ -82,7 +82,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
     [Fact]
     public void ActiveFinalDefeatPreservesAnUnansweredTieInsteadOfChoosingByOrder()
     {
-        var (_, groups, scope) = Fixture();
+        var (_, groups, scope) = WreckingProjectionFixture.Create();
         var state = AbilityPowerStateFactory.Initial(scope);
         state = Damage(state, groups[1].Villain, scope);
         state = Damage(state, groups[1].Stages[1], scope);
@@ -98,7 +98,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
     [Fact]
     public void AreaProjectionKeepsDamageAndAttachmentsInTheirOwnGroup()
     {
-        var (world, groups, scope) = Fixture();
+        var (world, groups, scope) = WreckingProjectionFixture.Create();
         var attachment = world.CreateCard("07006",
             world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, groups[0].Villain.ObjectId));
         var hostage = world.CreateCard("07005",
@@ -130,7 +130,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
     [Fact]
     public void AreaChosenBindingFollowsItsOwnPromotedCharacterAndDisappearsAfterFinalDefeat()
     {
-        var (_, groups, scope) = Fixture();
+        var (_, groups, scope) = WreckingProjectionFixture.Create();
         var context = scope.Context.WithChosen(groups[0].Villain);
         var state = new AreaProjectionState(context);
         var projection = new AbilityAreaProjection([], null,
@@ -147,7 +147,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
     [Fact]
     public void AreaProjectionUsesProjectedThreatAndRefusesAnUnansweredActiveTie()
     {
-        var (_, groups, scope) = Fixture();
+        var (_, groups, scope) = WreckingProjectionFixture.Create();
         var projection = new AbilityAreaProjection([], null,
             new HashSet<DeckType> { DeckType.EncounterDiscardPile }, scope.Context, 1);
         var tied = new AreaProjectionState(scope.Context);
@@ -164,7 +164,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
     [Fact]
     public void RepeatedDamageTracksInactivePromotionAndFinalDefeatWithoutFinishingOtherGroups()
     {
-        var (world, groups, scope) = Fixture();
+        var (world, groups, scope) = WreckingProjectionFixture.Create();
         var target = groups[0].Villain;
         var initial = DamageTraceStateFactory.Initial(target, scope);
         var enemies = new AbilityCardSelection.Query(AbilityCardQuery.Enemies);
@@ -187,7 +187,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
     [Fact]
     public void RepeatedDamageRejectsActiveTieAndUsesUniqueProjectedThreat()
     {
-        var (_, groups, scope) = Fixture();
+        var (_, groups, scope) = WreckingProjectionFixture.Create();
         var target = groups[1].Villain;
         var initial = DamageTraceStateFactory.Initial(target, scope);
         var promoted = new DamageTraceMutation(initial, target, scope).Apply([new(-1, target.ObjectId, 100)]);
@@ -203,7 +203,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
     [Fact]
     public void DifferentTitleSuccessorIsRediscoveredByQueryButDoesNotInheritChosenCharacter()
     {
-        var (_, groups, original) = Fixture(firstSuccessor: "01113");
+        var (_, groups, original) = WreckingProjectionFixture.Create(firstSuccessor: "01113");
         var scope = new AbilityAdmission.AbilityAdmissionScope(original.Context.WithChosen(groups[0].Villain), []);
         var chosen = new AbilityCardSelection.Bound(AbilityCardBinding.Chosen);
         var enemies = new AbilityCardSelection.Query(AbilityCardQuery.Enemies);
@@ -224,7 +224,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
     [Fact]
     public void ProjectedCandidateOrderKeepsEachGroupInItsCapturedVillainArea()
     {
-        var (world, groups, original) = Fixture();
+        var (world, groups, original) = WreckingProjectionFixture.Create();
         var area = world.CreateArea(DeckType.VillainArea);
         World.MoveToTop(groups[2].Villain, area);
         var scope = new AbilityAdmission.AbilityAdmissionScope(original.Context.WithChosen(groups[2].Villain), []);
@@ -244,7 +244,7 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
         // Synthetic composed topology: revealing Klaw II must resolve its
         // When Revealed search for The Immortal Klaw before subsequent reads.
         // No currently admitted each-player damage body can promote a villain.
-        var (_, groups, scope) = Fixture(firstSuccessor: "01114");
+        var (_, groups, scope) = WreckingProjectionFixture.Create(firstSuccessor: "01114");
         var target = groups[0].Villain;
         var initial = DamageTraceStateFactory.Initial(target, scope);
         var error = Assert.Throws<RulesNotImplementedException>(() =>
@@ -257,30 +257,4 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
         AbilityPowerHealthTrace.ApplyPowerDamage(state, [card], 100,
             scope.World.Seats[0].IdentityCard, scope);
 
-    private static (World, EncounterDeckGroup[], AbilityAdmission.AbilityAdmissionScope) Fixture(string? firstSuccessor = null)
-    {
-        var world = Hero("01001a");
-        string[][] faces = [["07002", "07003", "07004"], ["07017", "07018", "07019"],
-            ["07032", "07033", "07034"], ["07046", "07047", "07048"]];
-        if (firstSuccessor is not null) faces[0][1] = firstSuccessor;
-        var groups = faces.Select(pair => Group(world, pair)).ToArray();
-        world.BindEncounterTopology(new EncounterTopology(world, groups, groups[1].Villain));
-        var source = world.CreateCard("01006", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
-        var query = new AbilityQueryContext(world, source, new Occurrence(0, []), 0,
-            source.Incarnation, null, null, null, []);
-        var expression = new AbilityExpressionContext(query, ImmutableDictionary<string, long>.Empty,
-            [], "", 0, false, null);
-        var scope = new AbilityAdmission.AbilityAdmissionScope(new AbilityAdmissionContext(
-            AbilityLowering.Book(AuthoredCards.Book), world.ResourceAbilities, expression, new(), null), []);
-        return (world, groups, scope);
-    }
-
-    private static EncounterDeckGroup Group(World world, string[] faces)
-    {
-        var first = world.CreateCard(faces[0], world.AreaOf(DeckType.VillainArea));
-        var next = world.CreateCard(faces[1], world.AreaOf(DeckType.VillainDeck));
-        return new(first, world.CreateCard(faces[2], world.AreaOf(DeckType.SideSchemesArea)),
-            world.CreateArea(DeckType.EncounterDeck), world.CreateArea(DeckType.EncounterDiscardPile),
-            [], [first, next]);
-    }
 }

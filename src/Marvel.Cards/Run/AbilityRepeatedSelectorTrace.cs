@@ -33,6 +33,16 @@ internal static class AbilityRepeatedSelectorTrace
         var selected = dynamic
             ? TraceCandidateCards(value, cast)
             : Every(value, cast).ToList();
+        if (dynamic && cast.World.EncounterTopology is { } topology)
+        {
+            // A dynamic trace follows one living character per group, not one
+            // candidate for every physical stage waiting in its villain deck.
+            selected = selected.Select(card =>
+            {
+                var group = topology.Groups.SingleOrDefault(group => group.Stages.Contains(card));
+                return group is null ? card : group.CurrentVillain;
+            }).OfType<Card>().Distinct().ToList();
+        }
         var current = cast.World.TheCardIn(DeckType.VillainArea);
         var traced = selected.Select(card => new TraceCard(
             card, dynamic ? value : VillainSelector(value, card, cast))).ToList();
