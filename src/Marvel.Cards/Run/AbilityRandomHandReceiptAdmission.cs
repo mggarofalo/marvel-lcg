@@ -15,7 +15,7 @@ internal static class AbilityRandomHandReceiptAdmission
         if (hand.Count < cost.Count) return null;
         // Only cardinality is observable to admitted expressions. These placeholders
         // never choose the committed cards and never advance the random stream.
-        var result = AbilityAdmission.Admit(ability.Effect, context with
+        var result = AbilityEntryAdmission.Admit(ability.Effect, context with
         { Expressions = context.Expressions with { Discarded = [.. hand.Take(cost.Count)] } });
         return result.IsAdmissible ? result : null;
     }

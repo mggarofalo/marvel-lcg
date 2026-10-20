@@ -91,6 +91,7 @@ internal static class AbilityPlayerBindingAnalysis
     {
         AbilityEffect.CardAction action => Contains(action.Selection),
         AbilityEffect.Heal heal => Contains(heal.Card) || Contains(heal.Amount),
+        AbilityEffect.SetHitPoints assignment => Contains(assignment.Card),
         AbilityEffect.Damage damage => Contains(damage.Cards) || Contains(damage.Amount),
         AbilityEffect.AttackDamage damage => Contains(damage.Cards) || Contains(damage.Amount),
         AbilityEffect.MoveThreat move => Contains(move.From) || Contains(move.To) || Contains(move.Amount),

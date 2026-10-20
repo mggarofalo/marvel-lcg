@@ -39,6 +39,7 @@ internal static class AbilityOperationNames
     internal static string OperationName(this AbilityEffect effect) => effect switch
     {
         AbilityEffect.Heal => "heal",
+        AbilityEffect.SetHitPoints => "setHitPoints",
         AbilityEffect.Damage => "dealDamage",
         AbilityEffect.AttackDamage => "dealAttackDamage",
         AbilityEffect.IndirectDamage => "indirectDamage",

@@ -56,6 +56,7 @@ internal static class AbilityEffectLowering
             "resolveSpecials" => FieldCardInstruction(argument, child, "cards", AbilityCardInstruction.ResolveSpecials),
             "declareDefender" => FieldCardInstruction(argument, child, "card", AbilityCardInstruction.DeclareDefender),
             "heal" => HealEffect(argument, child),
+            "setHitPoints" => AbilityHitPointLowering.Lower(argument, child),
             "dealDamage" => DamageEffect(argument, child),
             "dealAttackDamage" => AttackDamageEffect(argument, child),
             "moveDamage" or "moveAttackDamage" => MoveDamageEffect(argument, child, node.Kind == "moveAttackDamage"),

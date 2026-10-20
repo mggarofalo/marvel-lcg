@@ -29,7 +29,7 @@ internal static class AbilityAdmissionAreaDependencies
 
     private static readonly ImmutableArray<Type> SelectionDependencyTypes =
     [
-        typeof(AbilityEffect.CardAction), typeof(AbilityEffect.Heal),
+        typeof(AbilityEffect.CardAction), typeof(AbilityEffect.Heal), typeof(AbilityEffect.SetHitPoints),
         typeof(AbilityEffect.MoveThreat), typeof(AbilityEffect.MoveDamage), typeof(AbilityEffect.RemoveThreat),
         typeof(AbilityEffect.GrantTrait), typeof(AbilityEffect.GrantField),
         typeof(AbilityEffect.PreventDamageWhile),
@@ -53,16 +53,6 @@ internal static class AbilityAdmissionAreaDependencies
         typeof(AbilityEffect.ReduceNextCardCost),
     ];
 
-    private static readonly ImmutableArray<AbilityCardInstruction> SingularCardInstructions =
-    [
-        AbilityCardInstruction.AttachTo, AbilityCardInstruction.Exhaust,
-        AbilityCardInstruction.RemoveFromGame, AbilityCardInstruction.Reveal,
-        AbilityCardInstruction.RevealFromVillainDeck,
-        AbilityCardInstruction.ReturnToHand, AbilityCardInstruction.AddToHand,
-        AbilityCardInstruction.ReturnOwnedToHand, AbilityCardInstruction.Discard,
-        AbilityCardInstruction.SoakDamage,
-    ];
-
     // This engine-owned preflight collects dependencies of singular lookups,
     // including those in alternatives. Plural selections do not constrain an
     // earlier choice: their matching cards can be selected after it resolves.
@@ -78,7 +68,7 @@ internal static class AbilityAdmissionAreaDependencies
         else if (WrappedContainerTypes.Contains(type))
             CollectWrappedContainer(effect, context, areas);
         else if (SelectionDependencyTypes.Contains(type))
-            CollectSelectionDependencies(effect, context, areas);
+            AbilitySelectionAreaDependencies.Collect(effect, context, areas);
         else if (CardMutationDependencyTypes.Contains(type))
             CollectCardMutationDependencies(effect, context, areas);
         else if (NumberDependencyTypes.Contains(type))
@@ -158,62 +148,6 @@ internal static class AbilityAdmissionAreaDependencies
             default:
                 throw new InvalidOperationException("Unknown wrapped area container");
         }
-    }
-
-    private static void CollectSelectionDependencies(
-        AbilityEffect effect, AbilityAdmissionContext context,
-        HashSet<DeckType> areas)
-    {
-        switch (effect)
-        {
-            case AbilityEffect.CardAction action:
-                if (SingularCardInstructions.Contains(action.Instruction))
-                    CollectCardsInDependencies(action.Selection, context, areas);
-                break;
-            case AbilityEffect.Heal heal:
-                CollectCardsInDependencies(heal.Card, context, areas);
-                CollectSingularAreaDependencies(heal.Amount, context, areas);
-                break;
-            case AbilityEffect.MoveThreat move:
-                CollectCardsInDependencies(move.From, context, areas);
-                CollectCardsInDependencies(move.To, context, areas);
-                CollectSingularAreaDependencies(move.Amount, context, areas);
-                break;
-            case AbilityEffect.MoveDamage move:
-                CollectCardsInDependencies(move.From, context, areas);
-                CollectCardsInDependencies(move.To, context, areas);
-                CollectSingularAreaDependencies(move.Amount, context, areas);
-                break;
-            case AbilityEffect.RemoveThreat threat:
-                CollectCardsInDependencies(threat.Schemes, context, areas);
-                CollectSingularAreaDependencies(threat.Amount, context, areas);
-                break;
-            case AbilityEffect.GrantTrait or AbilityEffect.GrantField:
-                CollectGrantDependencies(effect, context, areas);
-                break;
-            case AbilityEffect.PreventDamageWhile prevention:
-                if (prevention.Target is { } target) CollectCardsInDependencies(target, context, areas);
-                CollectSingularAreaDependencies(prevention.Condition, context, areas);
-                break;
-            default:
-                throw new InvalidOperationException("Unknown selection area dependency");
-        }
-    }
-
-    private static void CollectGrantDependencies(
-        AbilityEffect effect, AbilityAdmissionContext context,
-        HashSet<DeckType> areas)
-    {
-        if (effect is AbilityEffect.GrantTrait trait)
-        {
-            if (trait.Until is not null)
-                CollectCardsInDependencies(trait.Cards, context, areas);
-            return;
-        }
-        var field = (AbilityEffect.GrantField)effect;
-        if (field.Until is not null)
-            CollectCardsInDependencies(field.Cards, context, areas);
-        CollectSingularAreaDependencies(field.Amount, context, areas);
     }
 
     private static void CollectCardMutationDependencies(

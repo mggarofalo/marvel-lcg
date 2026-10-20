@@ -55,6 +55,9 @@ public abstract record AbilityEffect
     public sealed record CardAction(AbilityCardInstruction Instruction, AbilityCardSelection Selection) : AbilityEffect;
     /// <summary>Heal damage from the selected card.</summary>
     public sealed record Heal(AbilityCardSelection Card, AbilityNumber Amount) : AbilityEffect;
+
+    /// <summary>Assign a positive remaining value to the selected hit-point dial.</summary>
+    public sealed record SetHitPoints(AbilityCardSelection Card, long Remaining) : AbilityEffect;
     /// <summary>Deal ordinary damage, optionally using the attack event verb.</summary>
     public sealed record Damage(AbilityCardSelection Cards, AbilityNumber Amount, bool AttackVerb) : AbilityEffect;
     /// <summary>Deal attack damage with its attack-specific rule handling.</summary>

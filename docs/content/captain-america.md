@@ -342,3 +342,36 @@ eight immutable predecessor Core/RoRS journals replay 214 decisions without
 divergence (not an RNG audit). Independent review found no admission-boundary
 blocker. These additive research rows introduce no new replay contract beyond the
 separately reviewed v21 attack-completion baseline.
+
+## Helmet defeat replacement (MARVEL-646)
+
+The tenth research face, 03008, uses a typed positive hit-point assignment.
+Excess lethal damage does not change the result: damage 11 or 20 against a
+maximum of 11 becomes damage 10, leaving one hit point. The optional interrupt
+names Captain America; it does not rescue Steve Rogers or another hero. The
+Helmet discards only after the assignment changes the dial in full.
+
+Focused evidence covers modified maxima, loss of a maximum modifier causing
+defeat, declining the interrupt, and a real enemy-attack continuation through
+Helmet discard and Shield retaliation. Repeated offer queries preserve digest,
+RNG and pending work; their completed event stream matches an unprobed control.
+A synthetic labelled attack verifies that setting a villain to one hit point
+changes subsequent lethal-stage prediction: an unprojected successor-health
+read is refused before exhaustion. The ordinary admission and structure-entry
+boundaries share explicit shape validation. Absolute assignments inside repeated
+frames remain unsupported instead of being treated as additive damage transfers.
+
+This is card/mechanic evidence, not complete pack, starter-deck or native-client
+acceptance. MARVEL-629 and MARVEL-633 remain required blockers.
+
+The checkpoint passes 21 focused Content cases, seven Rules arithmetic cases,
+all 2,803 Content tests, all 1,010 Rules tests and 129 architecture tests. The
+solution builds with zero warnings/errors, and eight immutable predecessor
+Core/RoRS journals replay 214 decisions exactly (not an independent RNG audit).
+Eleven compiled mutants are caught: heal-one substitution, wrong maximum, lost
+completion, ignored repeated-frame refusal, omitted power/area assignment,
+unchanged assignment counted as full, missing maximum validation, forced timing,
+wrong character and premature discard. Independent source review found no
+blocking finding within this bounded mechanic scope. Evidence-producing entry
+methods now have their own owner; the prior admission class shrinks from 425 to
+398 lines without relaxing its debt gate.

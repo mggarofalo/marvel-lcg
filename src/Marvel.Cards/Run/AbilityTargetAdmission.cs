@@ -65,7 +65,7 @@ internal static class AbilityTargetAdmission
         {
             return AbilityCardActionTargetAdmission.Of(node, cast);
         }
-        if (operation is "dealEncounterCard" or "heal" or "dealDamage"
+        if (operation is "dealEncounterCard" or "heal" or "setHitPoints" or "dealDamage"
             or "dealAttackDamage" or "indirectDamage" or "placeThreat"
             or "removeThreat" or "moveThreat" or "moveDamage" or "moveAttackDamage")
         {

@@ -43,11 +43,11 @@ internal static class AbilityResolutionAdmissionAdapter
             return true;
         }
 
-        return execution.ApplyAdmission(AbilityAdmission.Admit(ability.Effect, context), cast);
+        return execution.ApplyAdmission(AbilityEntryAdmission.Admit(ability.Effect, context), cast);
     }
 
     internal static bool CanInitiate(this AbilityResolutionExecution execution, AbilityEffect effect, AbilityResolutionState cast) =>
-        execution.ApplyAdmission(AbilityAdmission.Admit(effect, execution.AdmissionContext(cast)), cast);
+        execution.ApplyAdmission(AbilityEntryAdmission.Admit(effect, execution.AdmissionContext(cast)), cast);
 
     internal static bool BindingCanChange(this AbilityResolutionExecution execution, AbilityEffect? effect) =>
         AbilityBindingAnalysis.BindingCanChange(effect);

@@ -42,6 +42,7 @@ internal static class AbilityCardStateAdmission
                 && DiscardTopHasCards((AbilityEffect.DiscardTop)node, cast),
             "heal" => Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { Damage: > 0 }
                 && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0,
+            "setHitPoints" => AbilityHitPointAssignment.Outcome(node, cast) != AdmissionResolution.None,
             _ => null,
         };
 

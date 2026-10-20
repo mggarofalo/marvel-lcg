@@ -34,6 +34,7 @@ internal static class AbilityPowerStateMutation
             "draw" => AbilityPowerCardMovement.Draw(node, cast, state),
             "discard" => AbilityPowerCardMovement.Discard(node, cast, state),
             "removeThreat" => RemoveThreat(node, cast, state, multiplier),
+            "setHitPoints" => AbilityHitPointAssignment.ProjectPower(node, cast, state),
             _ => Targeted(node, cast, bindingMayChange, state, multiplier),
         };
     }

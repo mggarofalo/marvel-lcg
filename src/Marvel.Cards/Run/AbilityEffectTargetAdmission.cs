@@ -120,6 +120,7 @@ internal static class AbilityEffectTargetAdmission
             "heal" => Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { Damage: > 0 }
                 && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0
                     ? TargetLegality.Valid : TargetLegality.Invalid,
+            "setHitPoints" => AbilityHitPointAssignment.TargetLegalityOf(node, cast),
             "dealDamage" or "dealAttackDamage" =>
                 AbilityFutureDiscardAdmission.MayDealDamage(DamageAmountOf(node, cast), cast)
                     ? CardsLegality(DamageTargets(DamageSelectionOf(node, cast), cast))

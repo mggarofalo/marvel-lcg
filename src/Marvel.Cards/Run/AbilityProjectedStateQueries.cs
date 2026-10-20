@@ -273,6 +273,7 @@ internal static class AbilityProjectedStateQueries
                 ProjectedFind(EffectOf<AbilityEffect.Heal>(effect, context).Card, state, context) is { } healed
                     ? state.DamageOf(healed) : 0,
                 Amount(EffectOf<AbilityEffect.Heal>(effect, context).Amount, context)),
+            "setHitPoints" => AbilityHitPointAssignment.ProjectedOutcome(effect, state, context),
             "removeThreat" => CombinedOutcomes(
                 ProjectedEvery(EffectOf<AbilityEffect.RemoveThreat>(effect, context).Schemes, state, context).Select(scheme =>
                     ResolutionOfAmount(

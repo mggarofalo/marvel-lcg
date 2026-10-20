@@ -36,7 +36,7 @@ internal static class AbilityEffectBindingAnalysis
     ];
     private static readonly ImmutableArray<Type> BasicCardTypes =
     [
-        typeof(AbilityEffect.CardAction), typeof(AbilityEffect.Heal),
+        typeof(AbilityEffect.CardAction), typeof(AbilityEffect.Heal), typeof(AbilityEffect.SetHitPoints),
         typeof(AbilityEffect.Damage), typeof(AbilityEffect.AttackDamage),
         typeof(AbilityEffect.MoveThreat), typeof(AbilityEffect.MoveDamage), typeof(AbilityEffect.IndirectDamage),
         typeof(AbilityEffect.GiveStatus), typeof(AbilityEffect.RemoveStatuses),
@@ -131,6 +131,7 @@ internal static class AbilityEffectBindingAnalysis
     private static bool BasicCardBindingCanChange(AbilityEffect effect) => effect switch
     {
         AbilityEffect.CardAction action => BindingCanChange(action.Selection),
+        AbilityEffect.SetHitPoints assignment => BindingCanChange(assignment.Card),
         AbilityEffect.Heal heal => BindingCanChange(heal.Card) || BindingCanChange(heal.Amount),
         AbilityEffect.Damage damage => BindingCanChange(damage.Cards) || BindingCanChange(damage.Amount),
         AbilityEffect.AttackDamage damage => BindingCanChange(damage.Cards) || BindingCanChange(damage.Amount),
