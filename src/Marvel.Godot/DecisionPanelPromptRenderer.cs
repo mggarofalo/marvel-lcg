@@ -186,8 +186,10 @@ internal static class DecisionPanelPromptRenderer
         var choose = new Button { Name = $"Affordance{option.Id}", Text = Text(label, unavailable, selected, resolving),
             AutowrapMode = TextServer.AutowrapMode.WordSmart, Alignment = HorizontalAlignment.Left,
             Disabled = unavailable, ToggleMode = true, ButtonPressed = selected, TooltipText = option.Illegal ?? DecisionCopy.ActionSummary(view) };
+        choose.AccessibilityDescription = choose.TooltipText;
         LocalDecisionController.DescribeChoice(panel, choose, view);
         panel.StyleButton(choose, resolving ? InteractiveVisualState.Selected : unavailable ? InteractiveVisualState.Unavailable : selected ? InteractiveVisualState.Selected : InteractiveVisualState.Resting);
+        DecisionCostLabel.AttachTo(choose, view);
         if (resolving) choose.ThemeTypeVariation = "WaitingButton";
         choose.Pressed += () => panel.SelectAffordance(option.Id, generation);
         panel.BindAnchors(choose, option.AnchorId);
