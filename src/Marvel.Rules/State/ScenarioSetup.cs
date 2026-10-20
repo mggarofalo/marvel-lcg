@@ -22,12 +22,29 @@ internal sealed class ScenarioSetup
         {
             Pending = Sequence.WorkWithWorldAbilities(
                 world, world.Facts, events, WindowAbilityScope.EncounterCardsOnly);
+            if (world.IsOver)
+            {
+                world.ScenarioSetup = null;
+                return;
+            }
             SetupCardPlacement.TrackSetupEntrants(world, world.Facts, events, ref cursor, reveals, seen);
             if (Pending is not null) return;
             if (stage == 9)
             {
                 if (RevealNext(world, events)) continue;
-                DrawOpeningHands(world);
+                stage++;
+                CampaignSetupProcedure.Enqueue(world, events);
+                continue;
+            }
+            if (stage == 10)
+            {
+                if (RevealNext(world, events)) continue;
+                DrawOpeningHands(world, events);
+                stage++;
+                continue;
+            }
+            if (stage == 11)
+            {
                 world.ScenarioSetup = null;
                 return;
             }
@@ -110,18 +127,22 @@ internal sealed class ScenarioSetup
         return false;
     }
 
-    private static void DrawOpeningHands(World world)
+    private static void DrawOpeningHands(World world, List<GameEvent> events)
     {
         // rr:appendix-ii-setup.step.14: "Each player draws cards equal to
         // their hand size." This follows every scenario setup decision.
         foreach (Seat seat in world.Seats)
         {
-            long size = world.Facts.PrintedValue(seat.IdentityCard.FaceId, "HS", world.Players);
+            long size = PhaseEnd.HandSize(world, seat, world.Facts);
+            long diverted = 0;
             for (long drawn = 0; drawn < size; drawn++)
             {
+                if (seat.Hand.Cards.Count + diverted >= PhaseEnd.HandSize(world, seat, world.Facts)) break;
                 Card? card = seat.Deck.TakeTop();
                 if (card is null) break;
                 seat.Hand.Append(card);
+                CampaignObligationDraw.Enter(world, card, seat.Index, "OpeningHand", events);
+                if (card.Area != seat.Hand) diverted++;
             }
         }
     }

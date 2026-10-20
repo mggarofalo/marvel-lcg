@@ -75,6 +75,9 @@ internal static class AbilityResolutionEffectChoices
             execution.Resolver(cast), cast.Source, command.Target, command.Amount, cast.Trigger)
         {
             Performer = cast.AbilityActor,
+            UsesThwartStat = command.Verb == BasicPowers.ThwartVerb
+                && AbilityThwartStatUsage.ReadsActor(command.Effect.Effect, cast.QueryContext(),
+                    cast.AbilityActor ?? cast.World.Seats[execution.Resolver(cast)].IdentityCard),
             Continuation = AbilityContinuationScheduling.Power(
                 capture, command.PowerOrdinal, [.. command.Targets.Select(card => card.ObjectId)]),
             SurgeGained = capture.Memory.SurgeGained,
@@ -151,7 +154,8 @@ internal static class AbilityResolutionEffectChoices
     {
         int round = cast.World.Agenda.Current?.Round ?? 0;
         bool duringActivation = cast.World.Agenda.Current?.ActivationId >= 0;
-        var activationIds = EnqueueActivations(command, cast, round);
+        AbilityActivationReceipts.Begin(cast.Results, command.Dynamic);
+        var activationIds = EnqueueActivations(execution, command, cast, round);
 
         cast.World.Effects.BindScheduledActivations(
             cast.Occurrence.Id, cast.Source.ObjectId, activationIds);
@@ -173,19 +177,27 @@ internal static class AbilityResolutionEffectChoices
         }
     }
 
-    private static List<int> EnqueueActivations(ScheduleActivationsCommand command,
+    private static List<int> EnqueueActivations(AbilityResolutionExecution execution, ScheduleActivationsCommand command,
         AbilityResolutionState cast, int round)
     {
         var activationIds = new List<int>();
         foreach (var target in command.Targets)
         {
             var activation = new PhaseStep(
-                command.Effect.Attack ? new EnemyAttackOperation(command.Against) : new EnemySchemeOperation(),
+                command.Effect.Attack ? new EnemyAttackOperation(command.Against)
+                    { DealBoostCards = command.Effect.DealBoostCards } : new EnemySchemeOperation(),
                 round, 2, Index: target.Seat, Subject: target.Enemy.ObjectId, Seat: target.Seat);
             if (command.Dynamic) cast.Results[$"dynamicActivation:{activation.Subject}"] = 1;
-            activationIds.Add(command.First
+            int activationId = command.First
                 ? cast.World.Agenda.NowActivation(activation)
-                : cast.World.Agenda.ThenActivation(activation));
+                : cast.World.Agenda.ThenActivation(activation);
+            activationIds.Add(activationId);
+            if (command.Effect.Modifier is { } modifier)
+                cast.World.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect,
+                    Kind: command.Effect.Attack ? "attack" : "scheme",
+                    Amount: execution.Amount(modifier, cast), Card: cast.Source.ObjectId,
+                    Affects: target.Enemy.ObjectId, Lasts: Duration.UntilEndOf(TimingPoints.EndOfActivation))
+                { ActivationId = activationId });
         }
         return activationIds;
     }
@@ -256,9 +268,12 @@ internal static class AbilityResolutionEffectChoices
                 cast.HasContinuation, cast.FinalStep, cast.FinalPlayer, cast.EachPlayerFrame),
             new AbilityMemory(cast.Results.ToImmutableDictionary(StringComparer.Ordinal),
                 [.. cast.Discarded.Select(card => card.ObjectId)], binding, crisis,
-                cast.CaptureSourceState(), cast.GainedKeywords.Contains("surge")))
+                cast.CaptureSourceState(), cast.GainedKeywords.Contains("surge"))
+            { ExhaustedForCost = cast.ExhaustedForCost.ToImmutableHashSet() })
         { Execution = cast.Execution, Completion = cast.PendingCompletion, DamageCompletion = cast.PendingDamageCompletion,
-            CompletedOutcome = cast.CompletedOutcome, Payment = cast.PendingPayment, DamageReplacement = cast.DamageReplacement };
+            CompletedOutcome = cast.CompletedOutcome, Payment = cast.PendingPayment, DamageReplacement = cast.DamageReplacement,
+            PowerExecution = cast.PowerExecution is { } power
+                ? power with { Attacked = [.. cast.Attacked.Select(card => card.ObjectId)] } : null };
 
     }
 

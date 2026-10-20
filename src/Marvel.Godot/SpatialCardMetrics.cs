@@ -8,7 +8,7 @@ internal static class SpatialCardMetrics
 {
     internal static InterfaceScale TableScale(InterfaceScale scale, float tableHeight = AstraTableGeometry.ReferenceHeight)
     {
-        int maximum = Math.Clamp((int)(100 * tableHeight / AstraTableGeometry.ReferenceHeight / 10) * 10, 80, 100);
+        int maximum = Math.Clamp((int)MathF.Ceiling(100 * tableHeight / AstraTableGeometry.ReferenceHeight / 10) * 10, 80, 100);
         return (InterfaceScale)Math.Min(Math.Max((int)scale, 80), maximum);
     }
 

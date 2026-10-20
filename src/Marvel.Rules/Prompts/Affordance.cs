@@ -71,6 +71,11 @@ public sealed record Affordance(
     /// retains the separately prompted route; clients never pre-answer that future prompt.</remarks>
     public bool DirectRecipientCommit { get; init; }
 
+    /// <summary>The source whose current card choice selects this offer's card anchor.</summary>
+    /// <remarks>This engine-owned interaction link describes only the current prompt;
+    /// it neither offers nor reserves a target for a future decision.</remarks>
+    public int? SelectionSourceId { get; init; }
+
     /// <summary>Whether the player can actually take this.</summary>
     /// <remarks>
     /// <para>

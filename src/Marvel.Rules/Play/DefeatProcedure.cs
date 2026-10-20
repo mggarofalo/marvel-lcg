@@ -142,8 +142,8 @@ internal static class DefeatProcedure
             AbilityTypes.PriorityOf(pending[0].Type),
             Steps.CardDefeated,
             mandatory
-                ? $"order abilities when card {step.Subject} is defeated"
-                : $"interrupt when card {step.Subject} is defeated",
+                ? "Order abilities when cards are defeated"
+                : "Interrupt when cards are defeated",
             !mandatory,
             [.. offered.Select(ability => abilities.Describe(world, ability))]);
     }

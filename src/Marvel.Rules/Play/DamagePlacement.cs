@@ -76,7 +76,12 @@ public static class DamagePlacement
     internal static PlacedDamage PrepareAfterReplacement(
         World world, ICardFacts facts, Card source, Card target, long amount,
         string trigger, List<GameEvent> events)
+        => PrepareAfterReplacement(world, facts, new(source, target, amount, trigger, "Damage"), events);
+
+    internal static PlacedDamage PrepareAfterReplacement(
+        World world, ICardFacts facts, DamageRequest request, List<GameEvent> events)
     {
+        var (source, target, amount, trigger, _, _) = request;
         var assignment = DamageAssignment.AfterReplacement(
             amount, amount > 0 && Statuses.Has(world, target, Statuses.Tough));
         if (assignment.Dealt <= 0)
@@ -116,6 +121,7 @@ public static class DamagePlacement
         // the reduced taken amount.
         assignment = assignment.AfterPrevention(
             world.DamageAbilities.WouldTake(world, target, source, assignment.Taken, events));
+        if (request.PreventAllDamage) assignment = assignment.AfterPrevention(0);
         return new PlacedDamage(target, assignment.Dealt, assignment.Taken);
     }
 

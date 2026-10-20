@@ -10,4 +10,7 @@ namespace Marvel.Cards.Run;
 internal sealed record RestoredContinuationState(
     ImmutableArray<Card> Discarded, ImmutableDictionary<string, long> Results,
     int SourceIncarnation, AbilityContinuationCardBinding? Chosen, Card? Actor,
-    ImmutableHashSet<int> CrisisIgnoringThwarts, CardInstanceState? SourceState);
+    ImmutableHashSet<int> CrisisIgnoringThwarts, CardInstanceState? SourceState)
+{
+    internal ImmutableHashSet<int> ExhaustedForCost { get; init; } = [];
+}

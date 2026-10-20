@@ -82,7 +82,8 @@ internal sealed class AbilityCostPreparation
             PrepareSteps(taking);
         var spends = sequence.Costs.OfType<AbilityCost.Spend>().ToList();
         if (!resourcesPaidByEvent && spends.Count > 0)
-            ordered.Add(new Spend(string.Concat(spends.Select(step => step.Resources))));
+            ordered.Add(new Spend(string.Concat(spends.Select(step => step.Resources)),
+                Generic: spends.Sum(step => step.Generic)));
         foreach (var remaining in sequence.Costs.Where(step =>
                      step is not (AbilityCost.Spend
                          or AbilityCost.Damage { MustTakeAll: true })))
@@ -94,7 +95,7 @@ internal sealed class AbilityCostPreparation
         if (resourcesPaidByEvent) return;
         if (component is AbilityCost.Spend spend)
         {
-            ordered.Add(new Spend(spend.Resources));
+            ordered.Add(new Spend(spend.Resources, Generic: spend.Generic));
             return;
         }
         long x = AbilityPaymentValidation.DefinedVariable(variables, "X", source);
@@ -102,10 +103,18 @@ internal sealed class AbilityCostPreparation
             new string(Resources.Energy, checked((int)x)), Energy: x));
     }
 
+    private void PrepareDamage(AbilityCost.Damage damage) =>
+        ordered.Add(damage.MustTakeAll
+            ? new TakeDamage(Bind(damage.Card), damage.Amount)
+            : new DealDamage(Bind(damage.Card), damage.Amount));
+
     private void PreparePhysical(AbilityCost component)
     {
         switch (component)
         {
+            case AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou:
+                ordered.Add(new DeckCost(component));
+                break;
             case AbilityCost.DiscardFromHand:
                 ordered.Add(new DiscardHand(world.Seats[player].Hand,
                     [.. selected.Select(id => new BoundCard(world.Cards[id], world.Cards[id].Incarnation))]));
@@ -114,11 +123,15 @@ internal sealed class AbilityCostPreparation
                 ordered.Add(new ExhaustSelected(
                     [.. selected.Select(id => new BoundCard(world.Cards[id], world.Cards[id].Incarnation))]));
                 break;
+            case AbilityCost.ExhaustTitled named:
+                var target = NamedAbilityCost.RequireTarget(world, player, named.Title);
+                ordered.Add(new Exhaust(new BoundCard(target, target.Incarnation)));
+                break;
             case AbilityCost.Exhaust exhaust:
                 ordered.Add(new Exhaust(Bind(exhaust.Card)));
                 break;
-            case AbilityCost.Discard discard:
-                ordered.Add(new DiscardBound(Bind(discard.Card)));
+            case AbilityCost.ConsumeCampaignCard or AbilityCost.Discard or AbilityCost.ReturnSourceToHand:
+                ordered.Add(PrepareDeparture(component));
                 break;
             case AbilityCost.RemoveCounters counters:
                 ordered.Add(new RemoveCounters(
@@ -128,13 +141,19 @@ internal sealed class AbilityCostPreparation
                 ordered.Add(new Heal(Bind(heal.Card), heal.Amount));
                 break;
             case AbilityCost.Damage damage:
-                ordered.Add(damage.MustTakeAll
-                    ? new TakeDamage(Bind(damage.Card), damage.Amount)
-                    : new DealDamage(Bind(damage.Card), damage.Amount));
+                PrepareDamage(damage);
                 break;
             default:
                 throw new InvalidOperationException(
                     "Unknown compiled cost in payment preparation");
         }
     }
+
+    private Step PrepareDeparture(AbilityCost component) => component switch
+    {
+        AbilityCost.ConsumeCampaignCard consume => new ConsumeCampaignBound(Bind(consume.Card)),
+        AbilityCost.Discard discard => new DiscardBound(Bind(discard.Card)),
+        AbilityCost.ReturnSourceToHand => new ReturnBound(Bind(AbilityCostCard.Source)),
+        _ => throw new InvalidOperationException("Unknown departure cost"),
+    };
 }

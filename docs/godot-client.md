@@ -22,7 +22,19 @@ For local play on Windows, run `pwsh ./tools/run-game.ps1` from the repository
 root. It discovers the installed .NET Godot editor and builds before launching.
 Use `-NoBuild` only when the current source has already been built.
 
-Setup includes a [Core deck browser, builder and local library](deck-construction.md)
+Embedded saves default to the user's local application-data `MarvelLCG/Saves`
+folder. Set `MARVEL_SAVE_DIRECTORY` before launching to use an explicit separate
+save root. Each concurrent review worktree or manual native probe must use a
+unique temporary root, for example
+`$env:MARVEL_SAVE_DIRECTORY = Join-Path $env:TEMP ([guid]::NewGuid().ToString('N'))`.
+The native-process test helper supplies its own unique root unless the case
+explicitly supplies one; the Godot test assembly always isolates embedded saves
+before tests initialize the desktop host. This override controls authoritative
+session/campaign saves, separately from deck-library and campaign-access files.
+A busy or inaccessible save root fails startup visibly; the client never falls
+back to another directory or bypasses the exclusive writer lease.
+
+Setup includes a [deck browser, builder and local library](deck-construction.md)
 with MarvelCDB JSON and published URL import. Open **Deck library · browse, build,
 import**, then capture a valid deck for a seat before starting the game.
 
@@ -35,6 +47,16 @@ product acceptance: the owner affirms the tableau and decision area after
 trying the working build.
 
 ### Table interactions
+
+Right-click a visible game card, or focus it and press Menu / Shift+F10, to open
+its currently offered actions. The compact cascading menu keeps known costs and
+effects beside the source. Single-target actions list only current offered targets;
+engaged enemies are grouped by player, and recipient support actions name each
+player. A leaf marked **Commit** submits that complete current choice; actions
+needing payment or a more involved selection continue through the same composer.
+Opening a branch never commits. Escape or Left returns one menu level; Escape at
+the root dismisses it. Existing click, drag and complete-choice paths remain available.
+
 
 Minions and allies use continuous collections; side schemes expose landscape
 faces and named headers in a scrollable stack. Upgrades and supports share
@@ -128,8 +150,12 @@ remains the owner's affirmation of the working build.
 
 ### Card rendering
 
-The Compatibility renderer uses `canvas_items`, so the canvas is rendered at the
-window resolution. Fitted collection cards allocate their actual face dimensions
+The Compatibility renderer uses native framebuffer pixels with canvas stretch
+disabled. Resizing changes the responsive layout, rather than stretching a
+1920×1080 logical canvas. The UI scale slider changes integer font and control
+metrics; it does not resample the finished interface. This keeps the same text
+rasterization at 1080p, 1440p, 4K and fractional window widths. Fitted collection
+cards allocate their actual face dimensions
 and integer font sizes instead of shrinking a prebuilt control. Theme roots enable
 scale-aware font oversampling for ancestor/DPI transforms. Pinned inspection
 reveals at its final size, without scaling already-shaped text during animation.
@@ -365,7 +391,13 @@ on the table. One dock shows the current situation, editable draft, named
 commitment and latest result. Complete choices opens the full prompt editor
 using the same draft; payment uses a temporary workspace beside the table.
 
-The supported desktop viewport is 1920x1080 or larger. It keeps setup controls
+The supported desktop viewport is 1920x1080 physical pixels or larger.
+Higher resolutions provide more space; use the UI scale slider for larger text.
+OS display scaling and the application slider are separate. Keep OS high-DPI
+support enabled; external screenshot scaling and display compositor filtering
+are outside the framebuffer guarantee.
+
+The desktop layout keeps setup controls
 and the current commitment visible while keeping local card values readable.
 Card inspection supplies full printed text and traits. Smaller viewports are
 not a product or release acceptance boundary.
@@ -581,6 +613,13 @@ restricted table’s invitation unused and checks sidebar containment and whole
 captions at 100/150 with collapsed/expanded history. Both profiles run on Windows
 and Linux.
 
+The `text-resolution` native cases resize the real root window through 1080p,
+1440p, 4K and an odd-width window, then open the deck editor and table. The
+rendered visual QA runner additionally compares a fixed inherited-font crop
+byte-for-byte across those resizes at 50/80/100/150% UI scale. This proves
+resolution changes do not resample that text; it does not certify every OS DPI
+or make tiny text larger. Inspect retained PNGs at 100% image zoom.
+
 The local matrix uses `--headless`; it does not use movie capture. The visual QA tools
 additionally check and retain rendered viewport images at
 setup, open-table/prompt, player-phase, villain-phase and terminal checkpoints.
@@ -702,3 +741,59 @@ and invalid images silently use the complete procedural face. Concealed cards
 carry no face id, and the renderer never asks the art pack about them. This
 repository intentionally bundles no card images; an image may be committed only
 with its redistribution rights documented alongside it.
+
+### Campaign restart journey
+
+Run `pwsh tools/campaign-restart-smoke.ps1 -GodotBin <Godot-console-executable>`
+to create a Standard Rise of Red Skull campaign with Spider-Man, begin Crossbones,
+keep the opening hand, restart the authoritative server process, and resume that
+attempt in a fresh native client. Add `-NoBuild` only for already built current
+sources. The runner uses new isolated save and access directories on every run.
+
+The final output prints the evidence directory. It contains `evidence.json`
+with the source revision, independent campaign/scenario difficulties and viewport,
+`create.png` and `resume.png`, client logs, and server logs proving durable session
+restoration. `-ResultsDirectory <directory>` chooses the evidence parent directory.
+This checks the actual entry and recovery flow; it is not uncoached product-owner
+acceptance or evidence of five seeded scenario victories.
+
+### Source-local actions
+
+Right-click a visible card, or focus it and use Menu/Shift+F10, to inspect it or
+choose a currently offered action. Short target choices nest by engaged player
+where relevant. An action requiring payment, allocation, ordering or a later
+choice continues in an adjacent editor using the same draft as table controls.
+Escape/Return to table preserves the current draft; Resume current choice opens
+it again. Clear current draft clears only uncommitted selections. Already paid
+costs are never refunded by closing a later choice. Every later prompt requires
+its own explicit answer. Accepted results remain beside the originating card;
+synchronization and unrelated changes invalidate context rather than guessing
+a new target. Pointer, keyboard and table resource controls share one submission
+latch. The eight `context-*` native cases cover source actions, player recipients,
+engaged minions, paid-event continuation at 50/100/150% and looked-at card choices.
+
+Current response sources also support right-click and drag targeting. A later
+recipient prompt carries its engine-owned source identity, so the same source
+can expose that prompt's offered targets without anticipating a future answer.
+Grouped selections and repeated allocations retain the complete editor.
+
+### Non-spatial decision dialog
+
+Ordering and non-spatial choices open in a centered, viewport-bounded dialog.
+The header identifies the source and answering player, explains why the choice
+exists, and supports source inspection. Rows wrap and retain their alternatives
+while one choice is staged. A fixed footer names the exact commitment. Escape
+closes a pinned inspector first; dismissing the dialog preserves the draft and
+leaves **Resume current choice** on the table.
+
+The `raid-dialog-*` native cases use an actual engine-produced Raid the Armory
+snapshot at 80/100/150% to check visibility, staging, inspection, dismissal and
+single submission. They are component interaction evidence, not live session
+execution or owner acceptance.
+
+The **Campaigns** manager lists saved campaigns and supports rename, archive/
+restore, export, import as an independent copy, and confirmed permanent deletion.
+The `campaign-manager-100` native journey creates and plays a real campaign,
+uses the file dialogs to transfer its active game, resumes the copy, and deletes
+only that copy after checking cancellation. Portable format and recovery
+semantics are documented in [session-ledger.md](session-ledger.md#campaign-library-operations).

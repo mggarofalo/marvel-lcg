@@ -36,14 +36,14 @@ public static class AbilityCatalog
         }.ToFrozenSet(StringComparer.Ordinal);
 
     internal static readonly FrozenSet<string> StartingCounterKeys =
-        new[] { "type", "count", "uses" }.ToFrozenSet(StringComparer.Ordinal);
+        new[] { "type", "count", "uses", "perPlayer" }.ToFrozenSet(StringComparer.Ordinal);
 
     internal static readonly FrozenSet<string> AbilityKeys =
         new[]
         {
-            "name", "note", "trigger", "effect", "cost", "limitPerRound", "when",
-            "anyPlayer", "labels", "printedResources", "maxPerRound", "maxPerPhase",
-            "maxPerGame", "maxPerInstance",
+            "name", "note", "trigger", "effect", "cost", "limitPerRound", "limitPerPhase", "when",
+            "anyPlayer", "labels", "printedResources", "maxPerRound", "maxPerPhase", "maxPerAttack", "maxPerActivation",
+            "maxPerGame", "maxPerInstance", "resourceRestriction",
         }.ToFrozenSet(StringComparer.Ordinal);
 
     internal static readonly FrozenSet<string> TriggerKeys =

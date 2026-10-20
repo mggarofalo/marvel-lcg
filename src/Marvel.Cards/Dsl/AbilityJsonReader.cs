@@ -38,7 +38,8 @@ internal static class AbilityJsonReader
                 $"starting counters on '{card}' need a boolean 'uses'");
         }
 
-        return new CardCounterPool(type, count, Flag(element, "uses", card));
+        return new CardCounterPool(type, count, Flag(element, "uses", card))
+        { PerPlayer = Flag(element, "perPlayer", card) };
     }
 
     internal static JsonDocument Read(string json)
@@ -66,12 +67,16 @@ internal static class AbilityJsonReader
             trigger,
             effect,
             element.TryGetProperty("cost", out var cost) ? Node(cost, card) : null,
-            element.TryGetProperty("limitPerRound", out var limit) ? limit.GetInt64() : null,
+            AbilityLimit.ReadCount(element),
             element.TryGetProperty("when", out var condition) ? Node(condition, card) : null,
             Flag(element, "anyPlayer", card),
             Labels(element, card),
             printedResources,
-            Maximum(element, card));
+            Maximum(element, card))
+        {
+            LimitPeriod = element.TryGetProperty("limitPerPhase", out _) ? AbilityLimitPeriod.Phase : AbilityLimitPeriod.Round,
+            ResourceRestriction = AbilityResourceRestriction.Read(element, trigger.Timing),
+        };
     }
 
     private static AbilityNode Effect(JsonElement element, string card)
@@ -112,6 +117,8 @@ internal static class AbilityJsonReader
         {
             (Key: "maxPerRound", Period: MaximumPeriod.Round),
             (Key: "maxPerPhase", Period: MaximumPeriod.Phase),
+            (Key: "maxPerAttack", Period: MaximumPeriod.Attack),
+            (Key: "maxPerActivation", Period: MaximumPeriod.Activation),
             (Key: "maxPerGame", Period: MaximumPeriod.Game),
             (Key: "maxPerInstance", Period: MaximumPeriod.Instance),
         }

@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityPowerSuspension;
 using System.Collections.Immutable;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
@@ -20,7 +21,7 @@ internal static class AbilityAdmissionResolutionPreflight
 {
     private static readonly ImmutableArray<string> BindingChangingGuardOperations =
     [
-        "chooseCard", "thwartSchemes", "thwartDifferentSchemes", "legalPractice",
+        "chooseCard", "thwartSchemes", "distributeThreat", "thwartDifferentSchemes", "legalPractice",
     ];
 
     private static readonly ImmutableArray<string> StateChangingGuardOperations =
@@ -81,7 +82,7 @@ internal static class AbilityAdmissionResolutionPreflight
             int original = cast.Player;
             try
             {
-                var players = cast.World.PlayerOrder.ToList();
+                var players = AbilityEachPlayerSelection.Players(node, cast.Context.Expressions);
                 foreach (int player in players)
                 {
                     cast.RestorePlayer(player);
@@ -117,7 +118,7 @@ internal static class AbilityAdmissionResolutionPreflight
             int original = cast.Player;
             try
             {
-                var players = cast.World.PlayerOrder.ToList();
+                var players = AbilityEachPlayerSelection.Players(node, cast.Context.Expressions);
                 foreach (int player in players)
                 {
                     cast.RestorePlayer(player);

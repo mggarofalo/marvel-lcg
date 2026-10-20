@@ -4,7 +4,7 @@ using Marvel.Rules.Timing;
 namespace Marvel.Rules.Play;
 
 /// <summary>Explains known damage consequences without committing damage or predicting optional choices.</summary>
-internal sealed class DamageConsequencePreview(World world, ICardFacts facts, Card source, Card target)
+internal sealed class DamageConsequencePreview(World world, ICardFacts facts, Card source, Card target, bool basic = false)
 {
     internal string Describe(
         Card attacker, long amount,
@@ -126,7 +126,7 @@ internal sealed class DamageConsequencePreview(World world, ICardFacts facts, Ca
         Card attacker, long? taken,
         long current, bool isAttack, bool granted) =>
         isAttack && EffectiveCards.Kind(target, facts) is CardKind.Minion or CardKind.Ally
-        && (granted || Keywords.Has(world, attacker, Keywords.Overkill, facts))
+        && (granted || AttackKeywords.Has(world, attacker, source, Keywords.Overkill, basic))
         && taken is { } damage && damage > current;
 
     private string? RetaliateNote(
@@ -136,7 +136,7 @@ internal sealed class DamageConsequencePreview(World world, ICardFacts facts, Ca
             ? StateFields.Modified(world, target, "retaliate", facts, world.Players) : 0;
         if (retaliate <= 0 || taken >= current) return null;
         if (taken is null) return $"Retaliate {retaliate} applies if the target remains in play";
-        return Keywords.Has(world, attacker, Keywords.Ranged, facts)
+        return AttackKeywords.Has(world, attacker, source, Keywords.Ranged, basic)
             ? $"Ranged ignores Retaliate {retaliate}"
             : $"Retaliate {retaliate} will hit {EffectiveCards.Title(attacker, facts)}";
     }
@@ -151,7 +151,7 @@ internal sealed class DamageConsequencePreview(World world, ICardFacts facts, Ca
     private long? ProjectPrevention(Card attacker, bool isAttack, long? taken, List<string> notes)
     {
         bool piercing = isAttack
-            && Keywords.Has(world, attacker, Keywords.Piercing, facts);
+            && AttackKeywords.Has(world, attacker, source, Keywords.Piercing, basic);
         bool tough = Statuses.Has(world, target, Statuses.Tough);
         if (taken is { } dealt)
         {

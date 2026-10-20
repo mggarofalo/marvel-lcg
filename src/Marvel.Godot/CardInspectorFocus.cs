@@ -7,6 +7,7 @@ namespace Marvel.Godot;
 internal sealed class CardInspectorFocus
 {
     private readonly Main main;
+    internal Control? PreviewSource { get; set; }
     private int? returnTargetId;
     private Control? returnReference;
     private string? returnPaymentControl;
@@ -116,7 +117,7 @@ internal sealed class CardInspectorFocus
             if (InteractionControl.IsUsable(main)
                 && generation == main.cardInspectorGeneration
                 && InteractionControl.IsUsable(main.cardInspector) && !main.cardInspectorPinned
-                && !main.cardInspectorHovered && !HasFocus())
+                && !main.cardInspectorHovered && !HasFocus() && !SourceHasPointer())
             {
                 main.cardInspectorFrame.FocusMode = Control.FocusModeEnum.None;
                 main.cardInspectorScroll.FocusMode = Control.FocusModeEnum.None;
@@ -124,6 +125,14 @@ internal sealed class CardInspectorFocus
                 main.cardInspector.Visible = false;
             }
         };
+    }
+
+    private bool SourceHasPointer()
+    {
+        if (!InteractionControl.IsUsable(PreviewSource)) return false;
+        Control? hovered = main.GetViewport().GuiGetHoveredControl();
+        return InteractionControl.IsUsable(hovered)
+            && (hovered == PreviewSource || PreviewSource!.IsAncestorOf(hovered));
     }
 
     internal void BindFocus(Control control)

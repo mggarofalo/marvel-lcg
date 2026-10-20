@@ -18,8 +18,8 @@ namespace Marvel.Rules.State;
 /// <para>
 /// <b>Not a boolean, and not two options.</b> <c>rr:form-change-form.6</c>
 /// permits a card with a "[type] form" keyword to grant a form in addition to
-/// hero or alter-ego form. The runtime is Core Set only, but the representation
-/// supports that later rules pattern without changing the form model.
+/// hero or alter-ego form. The representation supports that rules pattern
+/// without changing the form model.
 /// </para>
 /// <para>
 /// Additional forms are not emitted into the state digest. The reserved

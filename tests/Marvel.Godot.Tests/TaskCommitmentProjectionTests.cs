@@ -12,6 +12,24 @@ namespace Marvel.Godot.Tests;
 public sealed class TaskCommitmentProjectionTests
 {
     [Fact]
+    public void SelectedResponseTargetUsesItsEngineInstructionForCommitment()
+    {
+        var composer = Composer(new Affordance(3, "Respond", 55, 0, "Mockingbird",
+            new TargetRequest([20, 21], 0, 1))
+        {
+            CommitLabel = "Mockingbird",
+            WindowChoices = [new(20, "Stun Rhino", null), new(21, "Stun Guard", null)],
+        });
+        composer.SelectAffordance(3);
+        composer.SelectTargets([21]);
+        Assert.Equal("Stun Guard", DecisionPanelCopy.SubmitAction(composer,
+            new WorldDescriptor([], [], [], Outcome.Unfinished)));
+        composer.SelectTargets([]);
+        Assert.Equal("Mockingbird", DecisionPanelCopy.SubmitAction(composer,
+            new WorldDescriptor([], [], [], Outcome.Unfinished)));
+    }
+
+    [Fact]
     public void DefenseCommitmentNamesTheSelectedCharacter()
     {
         // Synthetic authorized prompt: the UI names the exact offered defender.

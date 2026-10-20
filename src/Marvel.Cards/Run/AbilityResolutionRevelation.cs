@@ -17,6 +17,10 @@ internal static class AbilityResolutionRevelation
             world, card, player,
             new Occurrence(0, [Steps.CardRevealed], Subject: card.ObjectId, Player: player));
 
+    private static bool RevealedInForm(World world, int player, string? form) =>
+        form is null || player >= 0 && player < world.Seats.Count
+            && Forms.In(world, world.Seats[player], world.Facts, form);
+
     /// <inheritdoc/>
     internal static IReadOnlyList<PendingAbility> WhenRevealedAbilities(this AbilityResolutionExecution execution,
         World world, Card card, int player)
@@ -32,10 +36,11 @@ internal static class AbilityResolutionRevelation
 
         return [.. execution.On(card)
             .Where(ability => ability.Trigger.Timing == AbilityType.WhenRevealed)
-            .Where(ability => string.Equals(
-                ability.Trigger.Event, Steps.CardRevealed, StringComparison.Ordinal))
-            .Select((_, ordinal) => new PendingAbility(
-                card.ObjectId, AbilityType.WhenRevealed, player, ordinal))];
+            .Select((ability, ordinal) => (Ability: ability, Ordinal: ordinal))
+            .Where(entry => string.Equals(entry.Ability.Trigger.Event, Steps.CardRevealed, StringComparison.Ordinal)
+                && RevealedInForm(world, player, entry.Ability.Trigger.Form))
+            .Select(entry => new PendingAbility(
+                card.ObjectId, AbilityType.WhenRevealed, player, entry.Ordinal))];
     }
 
     /// <inheritdoc/>
@@ -60,7 +65,8 @@ internal static class AbilityResolutionRevelation
             .Select((ability, ordinal) => (Ability: ability, Ordinal: ordinal))
             .Where(entry => string.Equals(
                 entry.Ability.Trigger.Event, Steps.CardRevealed,
-                StringComparison.Ordinal))
+                StringComparison.Ordinal)
+                && RevealedInForm(world, player, entry.Ability.Trigger.Form))
             .ToList();
         var addresses = reveals.Select(entry => new PendingAbility(
             card.ObjectId, AbilityType.WhenRevealed, player, entry.Ordinal)).ToList();

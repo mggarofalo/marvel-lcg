@@ -115,6 +115,12 @@ public static class Threat
     public static long Remove(
         World world, ICardFacts facts, IThreatCardAbilities abilities,
         ThreatRemovalRequest request, List<GameEvent> events)
+        => RemoveWithOutcome(world, facts, abilities, request, events).Removed;
+
+    /// <summary>Removes threat and reports whether a defeat procedure must finish before the containing effect resumes.</summary>
+    public static ThreatRemovalResult RemoveWithOutcome(
+        World world, ICardFacts facts, IThreatCardAbilities abilities,
+        ThreatRemovalRequest request, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -123,14 +129,37 @@ public static class Threat
         ArgumentNullException.ThrowIfNull(events);
 
         var scheme = request.Scheme;
-        long held = scheme.Tokens.GetValueOrDefault("k_threat");
-        long removed = Math.Min(held, Math.Max(0, request.Amount));
-        if (removed == 0
-            || !abilities.CanRemoveThreat(world, scheme, request.OverridesCannotFrom))
+        long removed = RemoveTokens(world, abilities, request, events);
+        if (removed == 0) return new(0, false);
+
+        bool suspended = false;
+        if (scheme.Area.Type == DeckType.SideSchemesArea
+            && scheme.Tokens.GetValueOrDefault("k_threat") == 0)
         {
-            return 0;
+            suspended = Defeat.Scheme(world, facts, scheme, request.Trigger, events, request.By,
+                request.RecordDefeatOn) == Damage.Outcome.Suspended;
         }
 
+        return new(removed, suspended);
+    }
+
+    internal static long RemoveTokens(World world, IThreatCardAbilities abilities,
+        ThreatRemovalRequest request, List<GameEvent> events)
+    {
+        long removed = Removable(world, abilities, request);
+        ApplyRemoval(request, removed, events);
+        return removed;
+    }
+
+    internal static long Removable(World world, IThreatCardAbilities abilities, ThreatRemovalRequest request) =>
+        abilities.CanRemoveThreat(world, request.Scheme, request.OverridesCannotFrom)
+            ? Math.Min(request.Scheme.Tokens.GetValueOrDefault("k_threat"), Math.Max(0, request.Amount)) : 0;
+
+    internal static void ApplyRemoval(ThreatRemovalRequest request, long removed, List<GameEvent> events)
+    {
+        if (removed == 0) return;
+        var scheme = request.Scheme;
+        long held = scheme.Tokens.GetValueOrDefault("k_threat");
         scheme.PlaceTokens("k_threat", -removed);
         events.Add(new FieldSet(scheme.ObjectId, "k_threat", held, held - removed)
         {
@@ -138,14 +167,6 @@ public static class Threat
             Verb = request.Verb,
         });
 
-        if (scheme.Area.Type == DeckType.SideSchemesArea
-            && scheme.Tokens.GetValueOrDefault("k_threat") == 0)
-        {
-            Defeat.Scheme(world, facts, scheme, request.Trigger, events, request.By,
-                request.RecordDefeatOn);
-        }
-
-        return removed;
     }
 
     /// <summary>

@@ -36,8 +36,8 @@ internal sealed class AttackDamageResolution
         Result = new(completion ?? execution);
         priorDefeats = execution.Occurrence.Defeats.Count;
         incarnation = request.Replacement?.TargetIncarnation ?? request.Target.Incarnation;
-        overkill = !spillOnly && Keywords.Has(world, request.Attacker, Keywords.Overkill, facts);
-        retaliate = !spillOnly && request.Retaliate && !Keywords.Has(world, request.Attacker, Keywords.Ranged, facts);
+        overkill = !spillOnly && AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Overkill, request.Basic);
+        retaliate = !spillOnly && request.Retaliate && !AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Ranged, request.Basic);
     }
 
     internal AttackDamageResult Result { get; }
@@ -79,17 +79,25 @@ internal sealed class AttackDamageResolution
         remaining = Math.Max(0, DamagePlacement.Health(world, facts, request.Target) - request.Target.Damage);
         kind = EffectiveCards.Kind(request.Target, facts);
         controller = kind == CardKind.Ally ? request.Target.Area.PlayArea.Player : -1;
-        placed = DamagePlacement.PrepareAfterReplacement(world, facts, request.Source, request.Target,
-            replacement.ResolvedAmount, request.Trigger, events);
+        placed = DamagePlacement.PrepareAfterReplacement(world, facts,
+            new DamageRequest(request.Source, request.Target, replacement.ResolvedAmount, request.Trigger, request.Verb)
+            { PreventAllDamage = request.EnemyAttack?.PreventAllDamage == true }, events);
         DamagePlacement.ApplyPlaced(world, facts, placed, request.Trigger, request.Verb, events);
-        if (placed.Landed) Execution.Occurrence.Also(Steps.DamageDealt);
-        if (!spillOnly && request.EnemyAttack is { } attack)
-            AttackDamageAccounting.RecordAttackDamage(world, attack, placed);
-        AttackDamageAccounting.RecordRecipient(world, request.Source, request.Target, placed.Dealt);
+        RecordDamage(placed);
         DamageAttacks.ResolveLandedDamage(world, request.ActivationId, request.Target, placed, events);
         outcome = DamagePlacement.FinishPlaced(world, facts, request.Source, placed, request.Trigger,
             request.Verb, events, LabeledAbilities.IdentityPlayer(world, request.Attacker), Execution.Occurrence);
         return outcome != Damage.Outcome.Suspended;
+    }
+
+    private void RecordDamage(Damage.PlacedDamage damage)
+    {
+        if (damage.Landed) Execution.Occurrence.Also(Steps.DamageDealt);
+        if (!spillOnly && request.EnemyAttack is { } attack)
+            AttackDamageAccounting.RecordAttackDamage(world, attack, damage);
+        AttackDamageAccounting.RecordRecipient(world, request.Source, request.Target, damage.Dealt);
+        if (request.EnemyAttack is not null || spillOnly)
+            AttackDamageAccounting.RecordIdentityDamage(world, request.Source, damage);
     }
 
     private void PrepareReplacement(List<GameEvent> events)
@@ -97,8 +105,8 @@ internal sealed class AttackDamageResolution
         if (!pierced)
         {
             pierced = true;
-            if (!spillOnly) DamageAttacks.DiscardPiercedTough(world, facts, request.Attacker,
-                request.Target, request.Amount, request.Trigger, events);
+            if (!spillOnly && AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Piercing, request.Basic))
+                DamageAttacks.DiscardPiercedTough(world, request.Target, request.Amount, request.Trigger, events);
         }
         replacement ??= DamagePlacement.Replace(world,
             new(request.Source, request.Target, request.Amount, request.Trigger, request.Verb,

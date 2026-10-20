@@ -57,7 +57,8 @@ internal sealed class AbilityOfferQueries
         ActionAdmission(world, card, ability, player, occurrence) is not null;
 
     internal AbilityAdmissionResult? ActionAdmission(
-        World world, Card card, CompiledCardAbility ability, int player, Occurrence? occurrence)
+        World world, Card card, CompiledCardAbility ability, int player, Occurrence? occurrence,
+        IReadOnlyList<int>? costSelection = null)
     {
         int index = AbilityAvailability.IndexOf(program, card, ability);
         if (!MayInitiate(world, ability, card, player)
@@ -74,8 +75,7 @@ internal sealed class AbilityOfferQueries
             return new AbilityAdmissionResult(true, []);
         }
 
-        var result = AbilityAdmission.Admit(ability.Effect, context);
-        return result.IsAdmissible ? result : null;
+        return AbilityDiscardReceiptAdmission.Admit(ability.Effect, ability.Cost, context, costSelection);
     }
 
     internal IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player)
@@ -90,6 +90,7 @@ internal sealed class AbilityOfferQueries
             if (generated.Length > 0) sources.Add(new ResourceSource(card.ObjectId, generated)
             {
                 AbilityName = ability.Name,
+                Restriction = ability.ResourceRestriction,
                 CostDescription = AbilityCostDescription.Summary(world, card, player, ability.Cost),
             });
         }
@@ -155,6 +156,8 @@ internal sealed class AbilityOfferQueries
 
         foreach (var card in world.Seats[player].Hand.Cards)
             if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event) yield return card;
+        foreach (var card in world.Areas.Where(area => BeneathCards.IsStored(area.Type)).SelectMany(area => area.Cards))
+            if (CardPlayOrigin.CanPlayEvent(world, card, player)) yield return card;
     }
 
     private AbilityAdmissionContext TurnAction(
@@ -182,6 +185,8 @@ internal sealed class AbilityOfferQueries
 
     private bool MayInitiate(World world, CompiledCardAbility ability, Card card, int player)
     {
+        if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event
+            && !CardPlayOrigin.CanPlayEvent(world, card, player)) return false;
         bool cardPermits = AbilityCardQueries.ControllerOf(world, card) == player
             || card.Owner == World.Scenario || ability.AnyPlayer;
         return cardPermits && (RestrictedPlayer(world, ability, card) is not { } restricted

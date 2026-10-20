@@ -20,6 +20,12 @@ public enum AbilityCardQuery
     IdentitiesWithinPerPlayerLimit,
     /// <summary>The authored attachedToThis relation.</summary>
     AttachedToThis,
+    /// <summary>Encounter attachment cards attached to the source, excluding upgrades and statuses.</summary>
+    AttachmentsOnThis,
+    /// <summary>Encounter attachments hosted by the current villain.</summary>
+    AttachmentsOnVillain,
+    /// <summary>Out-of-play cards explicitly stored beneath this source.</summary>
+    BeneathThis,
     /// <summary>The authored heroesAndAllies relation.</summary>
     HeroesAndAllies,
     /// <summary>Hero-form identities and allies; alter-egos are excluded.</summary>
@@ -50,6 +56,8 @@ public enum AbilityCardQuery
     SupportsYouControl,
     /// <summary>The authored charactersYouControl relation.</summary>
     CharactersYouControl,
+    /// <summary>Controlled characters other than those exhausted for this ability cost.</summary>
+    CharactersYouControlExceptCost,
     /// <summary>The authored upgradesYouControl relation.</summary>
     UpgradesYouControl,
     /// <summary>The authored enemiesEngagedWithChosenPlayer relation.</summary>
@@ -64,4 +72,8 @@ public enum AbilityCardQuery
     Identities,
     /// <summary>The authored characters relation.</summary>
     Characters,
+    /// <summary>In-play environments other than the card entering in this occurrence.</summary>
+    OtherEnvironments,
+    /// <summary>Every in-play card controlled by the resolving player.</summary>
+    CardsYouControl,
 }

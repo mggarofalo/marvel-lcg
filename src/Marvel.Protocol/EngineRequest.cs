@@ -45,6 +45,9 @@ public sealed record EngineRequest(
     IReadOnlyList<int>? Order = null,
     EntryClaim? Entry = null)
 {
+    /// <summary>A campaign intention, accepted only by the campaign operation.</summary>
+    public CampaignQuery? Campaign { get; init; }
+
     /// <summary>An optional editable draft, accepted only by the read-only deck operation.</summary>
     public DeckQuery? Deck { get; init; }
 

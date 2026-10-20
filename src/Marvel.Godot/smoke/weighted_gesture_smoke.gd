@@ -9,6 +9,7 @@ func _run() -> void:
 	if not await _return_click_restores_pose(): return
 	await _press_key(KEY_ESCAPE)
 	if not await _check_cancel_paths(): return
+	if not await preload("res://smoke/table_bounds_capture.gd").perform(self): return
 	if not await _pending_return_retires(): return
 	print("WEIGHTED_GESTURE_OK returning_click_restores=true inspection=true unchanged_revision=true escape=true focus_loss=true")
 	quit(0)
@@ -17,6 +18,7 @@ func _return_click_restores_pose() -> bool:
 	var card := _mulligan_card("Swinging Web Kick")
 	if card == null: return false
 	var position := card.position
+	var canvas_height := _canvas_height()
 	var rotation := card.rotation
 	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var start := await _exposed_card_body_point(card)
@@ -47,7 +49,8 @@ func _return_click_restores_pose() -> bool:
 	await process_frame
 	_send_pointer(click, false)
 	await process_frame
-	await preload("res://smoke/gesture_settlement.gd").pose(self, card, position, rotation)
+	await preload("res://smoke/gesture_settlement.gd").authored_pose(self, card)
+	position += Vector2(0, _canvas_height() - canvas_height)
 	if not _return_state_matches(card, false): return false
 	if not card.position.is_equal_approx(position) or not is_equal_approx(card.rotation, rotation) \
 			or card.modulate != Color.WHITE or card.is_set_as_top_level():
@@ -57,7 +60,7 @@ func _return_click_restores_pose() -> bool:
 	return await _capture_checkpoint("weighted-return-click-settled")
 
 func _return_click_inspection_safe(card: Control, revision: String) -> bool:
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not inspector.visible or inspector.get_node("Backdrop").visible \
 			or inspector.get_node("Frame/Stack/Header/Close").visible:
 		_fail("returning-card click did not retain transient inspection semantics")
@@ -80,6 +83,7 @@ func _check_cancel_paths() -> bool:
 	var resting := card.position
 	var rotation := card.rotation
 	for focus_loss in [false, true]:
+		var canvas_height := _canvas_height()
 		var start := await _exposed_card_body_point(card)
 		if start == Vector2.INF: return false
 		_send_pointer(start, true)
@@ -95,9 +99,13 @@ func _check_cancel_paths() -> bool:
 		else:
 			await _press_key(KEY_ESCAPE)
 		_send_pointer(finish, false)
-		await preload("res://smoke/gesture_settlement.gd").pose(self, card, resting, rotation)
+		await preload("res://smoke/gesture_settlement.gd").authored_pose(self, card)
+		resting += Vector2(0, _canvas_height() - canvas_height)
 		if not _cancelled_pose_is_safe(card, resting, rotation): return false
 	return true
+
+func _canvas_height() -> float:
+	return (main.find_child("AstraTableSurface", true, false) as Control).custom_minimum_size.y
 
 func _cancelled_pose_is_safe(card: Control, resting: Vector2, rotation: float) -> bool:
 	if not _return_state_matches(card, false): return false

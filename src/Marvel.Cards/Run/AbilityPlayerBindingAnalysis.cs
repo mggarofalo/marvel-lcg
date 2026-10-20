@@ -21,8 +21,13 @@ internal static class AbilityPlayerBindingAnalysis
     internal static bool Contains(AbilityCost? cost) => cost switch
     {
         null => false,
+        AbilityCost.ReturnSourceToHand => false,
+        AbilityCost.DiscardTop discard => discard.From == AbilitySearchArea.YourDeck,
+        AbilityCost.DealEncounterToYou => true,
         AbilityCost.Sequence sequence => sequence.Costs.Any(Contains),
+        AbilityCost.ExhaustTitled => true,
         AbilityCost.Exhaust exhaust => exhaust.Card == AbilityCostCard.Identity,
+        AbilityCost.ConsumeCampaignCard consume => consume.Card == AbilityCostCard.Identity,
         AbilityCost.Discard discard => discard.Card == AbilityCostCard.Identity,
         AbilityCost.RemoveCounters counters => counters.Card == AbilityCostCard.Identity,
         AbilityCost.Heal heal => heal.Card == AbilityCostCard.Identity,
@@ -133,7 +138,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.ShuffleInto shuffle =>
             Contains(shuffle.Cards) || shuffle.Deck == AbilitySearchArea.YourDeck,
         AbilityEffect.PutIntoPlay entering =>
-            !entering.PrintedDestination || Contains(entering.Card),
+            entering is { PrintedDestination: false, FirstPlayer: false } || Contains(entering.Card),
         AbilityEffect.PlaceCounters counters => Contains(counters.Card) || Contains(counters.Count),
         AbilityEffect.RemoveCounters counters => Contains(counters.Card),
         _ => throw new InvalidOperationException("Unknown placement player-binding effect"),
@@ -147,19 +152,26 @@ internal static class AbilityPlayerBindingAnalysis
             power.Target is { } target && Contains(target) || Contains(power.Effect),
         AbilityEffect.ThwartGroup thwart => Contains(thwart.Schemes) || Contains(thwart.Thwart),
         AbilityEffect.ActivateEnemies activate => Contains(activate.Enemies)
-            || activate.Against is { } target && Contains(target),
+            || activate.Against is { } target && Contains(target)
+            || activate.Modifier is { } modifier && Contains(modifier),
         _ => throw new InvalidOperationException("Unknown power player-binding effect"),
     };
 
     private static bool ContainsOther(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.You,
+        AbilityEffect.AttachCards attach => Contains(attach.Cards) || Contains(attach.Host),
+        AbilityEffect.ReleaseBeneath => false,
+        AbilityEffect.StoreBeneath store => Contains(store.Cards) || Contains(store.Host),
+        AbilityEffect.InitializeAuxiliaryDeck initialize => Contains(initialize.Cards),
+        AbilityEffect.RevealAuxiliaryTop => false,
         AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
-            or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
-            or AbilityEffect.DelayedStun or AbilityEffect.DiscardUntil
+            or AbilityEffect.AllowPlayBeneath or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
+            or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
-            or AbilityEffect.DiscardHandWithResource
+            or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardResourceIcons
             or AbilityEffect.RecoverDiscardedByResource => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled effect in player-binding analysis"),
@@ -181,13 +193,15 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCardSelection.Query query => query.Kind is
             AbilityCardQuery.YourAsideMinion or AbilityCardQuery.YourAsideSideScheme
             or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.YourAsidePile
-            or AbilityCardQuery.UpgradesAndSupportsYouControl
+            or AbilityCardQuery.UpgradesAndSupportsYouControl or AbilityCardQuery.CardsYouControl
             or AbilityCardQuery.IdentitySpecificInYourHand
             or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.CharactersYouControl
+            or AbilityCardQuery.CharactersYouControlExceptCost
             or AbilityCardQuery.UpgradesYouControl or AbilityCardQuery.AlliesYouControl
            ,
         AbilityCardSelection.WithTrait trait => Contains(trait.Cards),
         AbilityCardSelection.FaceDown trait => Contains(trait.Cards),
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(Contains),
         AbilityCardSelection.Last trait => Contains(trait.Cards),
         AbilityCardSelection.InObjectIdOrder trait => Contains(trait.Cards),
         AbilityCardSelection.WithMatchingPlayerArea trait => Contains(trait.Cards),
@@ -195,7 +209,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCardSelection.Discardable discardable => Contains(discardable.Cards),
         AbilityCardSelection.Ranked ranked => Contains(ranked.Cards),
         AbilityCardSelection.InPlayerArea area => area.Player is AbilityPlayer.You or AbilityPlayer.Controller,
-        AbilityCardSelection.InAreas areas => areas.Areas.Contains(AbilitySearchArea.YourDeck),
+        AbilityCardSelection.InAreas areas => areas.Areas.Any(area => area is AbilitySearchArea.YourDeck or AbilitySearchArea.YourDiscardPile or AbilitySearchArea.YourHand or AbilitySearchArea.YourPlayArea),
         AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled selector in player-binding analysis"),
@@ -205,13 +219,16 @@ internal static class AbilityPlayerBindingAnalysis
     {
         AbilityNumber.Sum sum => sum.Operands.Any(Contains),
         AbilityNumber.Product product => product.Operands.Any(Contains),
+        AbilityNumber.FloorDivide division => division.Operands.Any(Contains),
         AbilityNumber.Minimum minimum => minimum.Operands.Any(Contains),
         AbilityNumber.CardValue value => Contains(value.Card),
         AbilityNumber.Counters counters => Contains(counters.Card),
         AbilityNumber.Modified modified => Contains(modified.Card),
         AbilityNumber.Count count => Contains(count.Cards),
+        AbilityNumber.SumPrintedCost sum => Contains(sum.Cards),
         AbilityNumber.Conditional conditional => Contains(conditional.Test)
             || Contains(conditional.Then) || Contains(conditional.Else),
+        AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.ActivationAttacksAgainstYou } => true,
         AbilityNumber.Constant or AbilityNumber.PerPlayer or AbilityNumber.Result
             or AbilityNumber.PrintedResourcesDiscarded
             or AbilityNumber.DiscardedWithResource or AbilityNumber.ResolutionValue => false,
@@ -235,7 +252,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCondition.IsKind kind => Contains(kind.Card),
         AbilityCondition.WasDefeated defeated => Contains(defeated.Card),
         AbilityCondition.IsYourIdentity => true,
-        AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource
+        AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
             or AbilityCondition.CausedThreat or AbilityCondition.TitleInPlay
             or AbilityCondition.ActivationIs => false,
         _ => throw new InvalidOperationException(

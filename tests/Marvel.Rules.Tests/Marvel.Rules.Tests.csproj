@@ -43,6 +43,7 @@
     <Compile Include="../../tools/Marvel.Rules.Index/Citations.cs" Link="Citations.cs" />
     <Compile Include="../../tools/Marvel.Rules.Index/Cited.cs" Link="Cited.cs" />
     <Compile Include="../../tools/Marvel.Rules.Index/Corpus.cs" Link="Corpus.cs" />
+    <Compile Include="../../tools/Marvel.Rules.Index/CorpusReader.cs" Link="CorpusReader.cs" />
     <Compile Include="../../tools/Marvel.Rules.Index/Edge.cs" Link="Edge.cs" />
     <Compile Include="../../tools/Marvel.Rules.Index/Modification.cs" Link="Modification.cs" />
     <Compile Include="../../tools/Marvel.Rules.Index/ParsedCitation.cs" Link="ParsedCitation.cs" />

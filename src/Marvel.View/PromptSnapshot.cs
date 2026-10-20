@@ -16,6 +16,8 @@ internal static class PromptSnapshot
     {
         Targets = option.Targets is { } targets ? Copy(targets) : null,
         Costs = option.Costs?.Select(Copy).ToArray(),
+        SelectionSourceId = option.SelectionSourceId is { } source && readable.Contains(source)
+            ? source : null,
         WindowChoices = readable.Contains(option.AnchorId)
             ? option.WindowChoices.Where(choice => choice.RecipientIds.All(readable.Contains))
                 .Select(choice => choice with { RecipientIds = choice.RecipientIds.ToArray() }).ToArray()

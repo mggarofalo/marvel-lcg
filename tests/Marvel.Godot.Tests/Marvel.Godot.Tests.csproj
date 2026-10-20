@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <Compile Include="../Shared/CoreGamePolicy.cs" Link="CoreGamePolicy.cs" />
+    <Compile Include="../Shared/PolicyTargetSelection.cs" Link="PolicyTargetSelection.cs" />
     <Compile Include="../Shared/PresentationAssemblyPolicy.cs" Link="PresentationAssemblyPolicy.cs" />
     <Compile Include="../Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
   </ItemGroup>

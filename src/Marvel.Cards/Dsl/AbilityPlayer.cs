@@ -18,4 +18,6 @@ public enum AbilityPlayer
     EngagedPlayer,
     /// <summary>The first player.</summary>
     FirstPlayer,
+    /// <summary>The player credited with the triggering card defeat.</summary>
+    Defeater,
 }

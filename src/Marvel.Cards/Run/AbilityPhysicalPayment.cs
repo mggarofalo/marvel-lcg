@@ -7,6 +7,19 @@ namespace Marvel.Cards.Run;
 /// <summary>Commits physical costs against the currently bound card incarnation.</summary>
 internal sealed class AbilityPhysicalPayment(World world, Card source)
 {
+    internal static bool CanReturnToHand(World world, Card card) =>
+        card.Owner >= 0 && DeckTypes.IsInPlay(card.Area.Type)
+        && EffectiveCards.Kind(card, world.Facts) is not (CardKind.Hero or CardKind.AlterEgo)
+        && Marvel.Rules.Play.Discard.EffectCanRemove(world, world.Facts, card, card);
+
+    internal void ReturnToHand(Card target, string trigger, List<GameEvent> events)
+    {
+        if (!CanReturnToHand(world, target))
+            throw new RulesNotImplementedException("source cannot pay its required return-to-hand cost");
+        AbilityCardMovementExecution.MoveToHand(world, target, world.Seats[target.Owner].Hand, trigger, events, "Return");
+        target.TurnFaceUp();
+    }
+
     internal static void RequireReady(Card card)
     {
         // rr:initiating-abilities.3: departure cannot prevent "a required cost from being paid".
@@ -23,6 +36,19 @@ internal sealed class AbilityPhysicalPayment(World world, Card source)
         if (!removableArea || !Marvel.Rules.Play.Discard.EffectCanRemove(world, world.Facts, source, target))
             throw new RulesNotImplementedException($"card {target.ObjectId} cannot pay its required discard cost");
         Marvel.Rules.Play.Discard.CardFromEffect(world, world.Facts, source, target, trigger, events);
+    }
+
+    internal static bool CanConsumeCampaign(World world, Card source, Card target) =>
+        world.Campaign?.CanRemove(target) == true && DeckTypes.IsInPlay(target.Area.Type)
+        && Marvel.Rules.Play.Discard.EffectCanRemove(world, world.Facts, source, target);
+
+    internal void ConsumeCampaign(Card target, string trigger, List<GameEvent> events)
+    {
+        if (!CanConsumeCampaign(world, source, target))
+            throw new RulesNotImplementedException("campaign TECH reward cannot pay its removal cost");
+        // The printed arrow cost removes the physical reward from the campaign before its effect.
+        world.Campaign!.Remove(target, trigger, events);
+        Discard(target, trigger, events);
     }
 
     internal void RemoveCounters(

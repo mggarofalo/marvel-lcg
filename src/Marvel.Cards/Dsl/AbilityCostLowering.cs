@@ -25,9 +25,15 @@ internal static class AbilityCostLowering
         {
             "seq" => CostSequence(argument, child),
             "exhaust" => new AbilityCost.Exhaust(CostCard(argument, child)),
+            "exhaustTitled" => ExhaustTitledCost(argument, child),
             "discard" => DiscardCost(argument, child),
+            "returnToHand" => ReturnCost(argument, child),
+            "discardTop" => DeckDiscardCost(argument, child),
+            "dealEncounterCard" => EncounterCardCost(argument, child),
+            "consumeCampaignCard" => new AbilityCost.ConsumeCampaignCard(CostCard(argument, child)),
             "removeCounters" => RemoveCounterCost(argument, child),
             "spend" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: false),
+            "spendAny" => new AbilityCost.Spend("", PrintedOnly: false) { Generic = PositiveCount(argument, child) },
             "spendPrinted" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: true),
             "spendEnergyX" => EnergyCost(argument, child),
             "discardFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.Exact(PositiveCount(argument, child))),
@@ -39,6 +45,34 @@ internal static class AbilityCostLowering
             "takeDamage" => DamageCost(argument, child, mustTakeAll: true),
             _ => throw child.Error($"'{node.Kind}' is not a cost operation"),
         };
+    }
+
+    private static AbilityCost.ExhaustTitled ExhaustTitledCost(AbilityValue value, AbilityLocation location)
+    {
+        string title = Text(value, location);
+        return !string.IsNullOrWhiteSpace(title) ? new(title)
+            : throw location.Error("expected a nonempty printed title");
+    }
+
+    private static AbilityCost.ReturnSourceToHand ReturnCost(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "this");
+        return new();
+    }
+
+    private static AbilityCost.DiscardTop DeckDiscardCost(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "from", "count");
+        var area = SearchArea(Required(fields, "from", location), location.Child("from"));
+        if (area is not (AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck))
+            throw location.Error("a deck discard cost requires yourDeck or encounterDeck");
+        return new(area, PositiveCount(Required(fields, "count", location), location.Child("count")));
+    }
+
+    private static AbilityCost.DealEncounterToYou EncounterCardCost(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "you");
+        return new();
     }
 
     internal static AbilityCost.Sequence CostSequence(AbilityValue value, AbilityLocation location)
@@ -99,7 +133,7 @@ internal static class AbilityCostLowering
 
     internal static AbilityCost.ExhaustChosen ExhaustChosenCost(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "from", "count", "upTo", "anyNumber");
+        var fields = Fields(value, location, "from", "count", "upTo", "anyNumber", "trait");
         var from = SelectCards(Required(fields, "from", location), location.Child("from"));
         if (from is not AbilityCardSelection.Query
             { Kind: AbilityCardQuery.HeroesAndAllies or AbilityCardQuery.CharactersYouControl or AbilityCardQuery.AlliesYouControl } query)
@@ -122,7 +156,7 @@ internal static class AbilityCostLowering
             FixedWord(any, location.Child("anyNumber"), "true");
             range = new AbilityCostRange.Any();
         }
-        return new(query.Kind, range);
+        return new(query.Kind, range) { Trait = OptionalText(fields, "trait", location) };
     }
 
     internal static AbilityCost.Heal HealCost(AbilityValue value, AbilityLocation location)

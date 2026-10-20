@@ -241,8 +241,12 @@ internal sealed class MainSetupController
             return;
         }
 
-        DisplayServer.ClipboardSet(main.transientInvitation);
-        main.transientInvitation = null;
+        if (!InvitationClipboard.TryCopy(ref main.transientInvitation,
+                DisplayServer.ClipboardSet, DisplayServer.ClipboardGet))
+        {
+            main.status.Text = "CLIPBOARD UNAVAILABLE  ·  YOUR INVITATION IS STILL AVAILABLE TO COPY";
+            return;
+        }
         main.invitationOffer.Visible = false;
         main.status.Text = "INVITATION COPIED  ·  THE ONE-TIME SECRET WAS REMOVED FROM THIS SCREEN";
     }

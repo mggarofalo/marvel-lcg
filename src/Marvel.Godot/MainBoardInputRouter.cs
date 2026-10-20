@@ -10,15 +10,16 @@ internal static class MainBoardInputRouter
         CardInspectorFocus inspector,
         InputEvent input)
     {
+        if (CardContextMenu.RouteInput()) return;
         inspector.ObservePreviewPointer(input);
-        if (main.decisions.CompleteChoicesOpen)
-        {
-            main.decisions.RouteDecisionSurfaceInput(input);
-            return;
-        }
         if (main.cardInspector.Visible && main.cardInspectorPinned)
         {
             inspector.Input(input);
+            return;
+        }
+        if (main.decisions.CompleteChoicesOpen && !main.decisions.LocalDecision.IsOpen)
+        {
+            main.decisions.RouteDecisionSurfaceInput(input);
             return;
         }
 
@@ -38,7 +39,7 @@ internal static class MainBoardInputRouter
 
     private static bool RouteDecisionSurface(Main main, InputEvent input)
     {
-        if (!main.decisions.AbilityWindowOpen && !main.decisions.PaymentModalOpen) return false;
+        if (!main.decisions.LocalDecision.IsOpen && !main.decisions.AbilityWindowOpen && !main.decisions.PaymentModalOpen) return false;
         main.decisions.RouteDecisionSurfaceInput(input);
         return main.GetViewport().IsInputHandled();
     }

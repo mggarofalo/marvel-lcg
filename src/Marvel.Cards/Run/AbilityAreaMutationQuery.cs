@@ -195,7 +195,7 @@ internal sealed class AbilityAreaMutationQuery(
     }
 
     private bool EachPlayerChange(AbilityEffect effect) =>
-        context.World.PlayerOrder.Any(player =>
+        AbilityEachPlayerSelection.Players(effect, context.Expressions).Any(player =>
             new AbilityAreaMutationQuery(queried, context.WithPlayer(player), multiplier)
                 .MayChange(EffectBody(effect)));
 

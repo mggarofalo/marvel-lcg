@@ -32,7 +32,7 @@ public static class Draw
         ActivityBatches.Complete(events, start, "Draw", player);
     }
 
-    internal static void Resolve(
+    internal static int Resolve(
         World world, int player, int count, string trigger, List<GameEvent> events)
     {
 
@@ -49,7 +49,7 @@ public static class Draw
                 // Deck and discard pile both empty. `rr:player-deck.4` makes
                 // that a legal board rather than a fault: there is no card to
                 // draw, so no card is drawn.
-                return;
+                return drawn;
             }
 
             var card = seat.Deck.Cards[^1];
@@ -63,6 +63,8 @@ public static class Draw
                 Verb = "Draw",
             });
 
+            CampaignObligationDraw.Enter(world, card, player, trigger, events);
+
             // `rr:player-deck.1`'s trigger is the deck *emptying*, not the next
             // attempt to draw from it, and `rr:player-deck.2` says the player
             // "continues to draw cards up to the specified number" across the
@@ -71,5 +73,6 @@ public static class Draw
             // moving it one draw later changes every card that follows.
             PlayerDeck.Reset(world, player, events);
         }
+        return Math.Max(0, count);
     }
 }

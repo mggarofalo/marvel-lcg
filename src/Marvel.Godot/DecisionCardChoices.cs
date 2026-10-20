@@ -24,7 +24,7 @@ internal sealed class DecisionCardChoices(DecisionPanel panel)
 
     internal bool AddVisibleTargets(int generation)
     {
-        if (!panel.CompleteChoicesOpen || !VisibleTargetCardGallery.IsChoice(panel.composer?.Prompt)) return false;
+        if (panel.LocalDecision.IsOpen || !panel.CompleteChoicesOpen || !VisibleTargetCardGallery.IsChoice(panel.composer?.Prompt)) return false;
         targets.Add(generation);
         return true;
     }

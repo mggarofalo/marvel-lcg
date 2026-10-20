@@ -49,10 +49,22 @@ public static class Dealer
     public static IReadOnlyList<Creation> DealOrder(
         SetupCatalog catalog, string campaignName, IReadOnlyList<string> heroNames,
         IReadOnlyList<string>? modularSetNames = null, ICardFacts? facts = null,
-        IReadOnlyList<string>? playerDeckNames = null, IReadOnlyList<PlayerDeckRecipe>? playerDecks = null)
+        IReadOnlyList<string>? playerDeckNames = null, IReadOnlyList<PlayerDeckRecipe>? playerDecks = null) =>
+        Deal(catalog, new DealRequest(campaignName, heroNames, modularSetNames, playerDeckNames, playerDecks), facts);
+
+    /// <summary>Deals a roster with explicitly authorized campaign exclusions.</summary>
+    public static IReadOnlyList<Creation> Deal(SetupCatalog catalog, DealRequest request, ICardFacts? facts)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        string campaignName = request.Scenario;
+        var heroNames = request.Heroes;
+        var modularSetNames = request.ModularSets;
+        var playerDeckNames = request.StarterDecks;
+        var playerDecks = request.PlayerDecks;
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(heroNames);
+        CampaignDeckExclusions.Validate(request.CampaignExcludedAllies, facts);
+        CampaignDeckExclusions.ValidateRecipes(request);
         ValidateDeckSelections(heroNames, facts, playerDeckNames, playerDecks);
 
         var campaign = catalog.Campaign(campaignName);
@@ -72,7 +84,7 @@ public static class Dealer
 
         for (int seat = 0; seat < heroNames.Count; seat++)
         {
-            var hero = catalog.Hero(heroNames[seat]);
+            var hero = CampaignDeckExclusions.Apply(catalog.Hero(heroNames[seat]), request.CampaignExcludedAllies);
             // The rulebook decides whether the resulting deck is legal;
             // choosing a published starter's 25-card customization block as a
             // compact deterministic deck recipe is this engine's test format.
@@ -87,9 +99,12 @@ public static class Dealer
             // One call over the concatenation in the engine, so the two lists
             // are a single unbroken run of ids rather than two.
             if (playerDecks is not null)
-                dealt.AddRange(PlayerDeckAdmission.Admit(playerDecks[seat], hero.HeroDeck, seat, facts!, hero.Hero[0]));
+                dealt.AddRange(PlayerDeckAdmission.Admit(playerDecks[seat], hero.HeroDeck, seat, facts!, hero.Hero[0], hero.AspectRule));
             else
             {
+                if (facts is not null)
+                    _ = PlayerDeckAdmission.Admit(new([.. hero.HeroDeck, .. customization.PlayerDeck]),
+                        hero.HeroDeck, seat, facts, hero.Hero[0], hero.AspectRule);
                 Add(hero.HeroDeck, CreationSource.HeroDeck, seat);
                 Add(customization.PlayerDeck, CreationSource.PlayerDeck, seat);
             }

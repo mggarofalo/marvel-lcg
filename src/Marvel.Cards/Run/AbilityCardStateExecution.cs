@@ -79,9 +79,10 @@ internal static class AbilityCardStateExecution
         context.Events.Add(new CardsMoved(Places.Reference(from), Places.Reference(into),
             [new Landing(card.ObjectId, into.Cards.Count - 1)])
         { Trigger = context.Trigger, Verb = "Put_Into_Play" });
-        Reveal.EnterPlay(
-            context.World, context.World.Facts, card, context.Events,
-            abilities: context.CardPlayAbilities);
+        if (!DeckTypes.IsInPlay(from.Type))
+            Reveal.EnterPlay(
+                context.World, context.World.Facts, card, context.Events,
+                abilities: context.CardPlayAbilities);
     }
     internal static bool TryRun(AbilityEffect effect, AbilityCardStateContext context)
     {
@@ -179,6 +180,9 @@ internal static class AbilityCardStateExecution
     {
         foreach (var host in Every(status.Cards, context))
         {
+            // rr:in-play-and-out-of-play.4: abilities "can only target, cards that are in play".
+            // A character may leave during the preceding instruction's entry responses.
+            if (!DeckTypes.IsInPlay(host.Area.Type)) continue;
             Reveal.Afflict(context.World, context.World.Facts, host, status.Status,
                 context.Trigger, context.Events);
         }
@@ -257,6 +261,8 @@ internal static class AbilityCardStateExecution
         AbilitySearchArea.EncounterDiscardPile => context.World.AreaOf(DeckType.EncounterDiscardPile),
         AbilitySearchArea.ScenarioSetAside => context.World.AreaOf(DeckType.AsideDeck),
         AbilitySearchArea.YourDeck => context.World.Seats[context.Player].Deck,
+        AbilitySearchArea.YourHand => context.World.Seats[context.Player].Hand,
+        AbilitySearchArea.YourDiscardPile => context.World.AreaOf(DeckType.DiscardPile, PlayArea.Of(context.Player), cardOwner: context.Player),
         _ => throw new InvalidOperationException("Unknown compiled search area"),
     };
     internal static IEnumerable<int> Players(AbilityPlayerSelection players, AbilityCardStateContext context) => players switch

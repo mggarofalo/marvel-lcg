@@ -71458,6 +71458,78 @@
       ]
     },
     {
+      "id": "setup:campaign:absorbing_man",
+      "fingerprint": "sha256:22769c6d06842846a4abf42616f9e3a01c149f786b47ac0ba45c647a54530118",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Absorbing Man campaign record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull campaign Absorbing Man, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:absorbing_man_expert",
+      "fingerprint": "sha256:22da78141f34aa0a8c96bf688efe1c26e4da8c5d781ef801c9c725de79d6822c",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Absorbing Man campaign record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull campaign Absorbing Man, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:crossbones",
+      "fingerprint": "sha256:ec374be70f3cc0470f8fac3ff5efe94624e7c7fde10b11167edf11c720a78602",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Crossbones campaign record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull campaign Crossbones, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:crossbones_expert",
+      "fingerprint": "sha256:2c96ccbd4d8252ea1dd255b24083780b17b1c068a2a161cbf0a8e22f0b77f67d",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Crossbones campaign record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull campaign Crossbones, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:campaign:klaw",
       "fingerprint": "sha256:21fa72e52f4ebbcf9339ded71facc7876ba59a321cce82b82d1d8a538a99e2ec",
       "obligations": [
@@ -71734,6 +71806,42 @@
       ]
     },
     {
+      "id": "setup:campaign:red_skull",
+      "fingerprint": "sha256:3780aa4f86373e4bff91cc3a6c0b5c2f140438063e70fcb06d40258bcdccea67",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Red Skull campaign record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull campaign Red Skull, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:red_skull_expert",
+      "fingerprint": "sha256:3650cbd680acd7fe3bb3c4b4fa89879c03a1de74fa304d67ecd842d405d88c70",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Red Skull campaign record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull campaign Red Skull, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:campaign:rhino",
       "fingerprint": "sha256:bb39c8c4414e570db9e87e2372320134f65ae4b6576c9d50a19a1c2b3ede28b0",
       "obligations": [
@@ -72006,6 +72114,42 @@
             "specs/behavior/core/setup-authorities.feature::The expert Rhino setup record deals its complete game"
           ],
           "mutation": "Change or omit this authored setup field; the transcript no longer matches the complete dealt scene."
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:taskmaster",
+      "fingerprint": "sha256:3556e178ebd931d5cb1b8c47eb63446d8efef239a46084c9a2ebaad3e6da2701",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Taskmaster campaign record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull campaign Taskmaster, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:taskmaster_expert",
+      "fingerprint": "sha256:08e97d1e6d52c6cea1796bd92e4f5eea0756393ae2dd17e6346b626046d04335",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Taskmaster campaign record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull campaign Taskmaster, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
         }
       ]
     },
@@ -72290,6 +72434,42 @@
       ]
     },
     {
+      "id": "setup:campaign:zola",
+      "fingerprint": "sha256:6befb31732d726c250976b8d0083b41c936cab745b99a3abc803b6eb8b7b7d0e",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Zola campaign record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull campaign Zola, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:zola_expert",
+      "fingerprint": "sha256:16e5a4eb48e1fafc4ec245f75a07180a51c18c4d7278afb03385cb99849b1523",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Zola campaign record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull campaign Zola, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:encounter-set:bomb_scare",
       "fingerprint": "sha256:7a64d598e2ac8dd9e60bcd8c7cd1718c4d6a2a6b33ca6009fa16c2573af2efe3",
       "obligations": [
@@ -72368,6 +72548,42 @@
           "summary": "name: \"Expert\"",
           "disposition": "no-independent-behavior",
           "reason": "The display label creates no game-state component independent of the setup record it names.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:encounter-set:hydra_assault",
+      "fingerprint": "sha256:8326b7a012f52bf7d96ea8d9d5c03f5692647f87eab91ea07af7adf5dea798a8",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Hydra Assault encounter-set record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull encounter-set Hydra Assault, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:encounter-set:hydra_patrol",
+      "fingerprint": "sha256:0bbbce48adef003d42d69223fafe61ca6dbfcedb816e3cb2ec84aa39f18647a5",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Hydra Patrol encounter-set record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull encounter-set Hydra Patrol, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
           "target": null,
           "implementation": null,
           "work_item": null,
@@ -72598,6 +72814,24 @@
       ]
     },
     {
+      "id": "setup:encounter-set:weapon_master",
+      "fingerprint": "sha256:7350d2fb28353a3828c3d31ee2498a5050a5ef00b8d6c4d7e6cbf6b4be345629",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Weapon Master encounter-set record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull encounter-set Weapon Master, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:hero:black_panther",
       "fingerprint": "sha256:cfb64a5ec8edef779f2d799cac67681fb366909edd25bc117c144e2fe79ddb42",
       "obligations": [
@@ -72794,6 +73028,24 @@
             "specs/behavior/core/setup-authorities.feature::The Captain Marvel setup record deals every owned and set-aside card"
           ],
           "mutation": "Change or omit this authored setup field; the transcript no longer matches the complete dealt scene."
+        }
+      ]
+    },
+    {
+      "id": "setup:hero:hawkeye",
+      "fingerprint": "sha256:b0b0c8598534fe8f9461d4e34cd22de1ea5e77fcc967199d1bc500f81a775447",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Hawkeye hero record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull hero Hawkeye, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
         }
       ]
     },
@@ -73094,6 +73346,24 @@
             "specs/behavior/core/setup-authorities.feature::The Spider-Man setup record deals every owned and set-aside card"
           ],
           "mutation": "Change or omit this authored setup field; the transcript no longer matches the complete dealt scene."
+        }
+      ]
+    },
+    {
+      "id": "setup:hero:spider_woman",
+      "fingerprint": "sha256:c9e7b1aeaef84cf66c6c89d9e66bb008f6a19f3b0d421d93988bff3ac1509748",
+      "obligations": [
+        {
+          "key": "rise-of-red-skull-setup",
+          "summary": "The Spider-Woman hero record supplies Rise of Red Skull components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Rise of Red Skull hero Spider-Woman, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
         }
       ]
     }

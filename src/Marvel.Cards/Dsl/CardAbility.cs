@@ -16,7 +16,7 @@ namespace Marvel.Cards.Dsl;
 /// <param name="Effect">What it does.</param>
 /// <remarks>
 /// The implemented envelope carries the trigger, an optional live condition,
-/// a cost and a per-round limit. Target selection remains an effect-tree
+/// a cost and a per-instance period limit. Target selection remains an effect-tree
 /// question until a printed card requires a target in the envelope itself.
 /// </remarks>
 /// <param name="Cost">
@@ -28,7 +28,7 @@ namespace Marvel.Cards.Dsl;
 /// card the ability is on.
 /// </param>
 /// <param name="Limit">
-/// How many times per round this ability may be used, or null for no limit.
+/// How many times during LimitPeriod this ability may be used, or null for no limit.
 /// <c>rr:limit</c> — "each copy of an ability with such a limit may be used X
 /// times per the specified period, <b>per instance of that ability</b>", so the
 /// count is per card in play rather than per printed id.
@@ -54,4 +54,11 @@ public sealed record CardAbility(
     string Card, string Name, AbilityTrigger Trigger, AbilityNode Effect,
     AbilityNode? Cost = null, long? Limit = null, AbilityNode? When = null,
     bool AnyPlayer = false, IReadOnlyList<string>? Labels = null,
-    string PrintedResources = "", AbilityMaximum? Maximum = null);
+    string PrintedResources = "", AbilityMaximum? Maximum = null)
+{
+    /// <summary>The period of the per-instance use limit.</summary>
+    public AbilityLimitPeriod LimitPeriod { get; init; }
+
+    /// <summary>Printed limitation on the cost that consumes this ability's resources.</summary>
+    public Marvel.Rules.Prompts.ResourceRestriction ResourceRestriction { get; init; }
+}

@@ -37,6 +37,10 @@ internal static class CardFaceSpecifications
         var sources = catalog.Sources
             .Where(source => source.Kind == "card")
             .ToDictionary(source => source.Id["card:".Length..], StringComparer.Ordinal);
+        var coreSetup = catalog.Sources
+            .Where(source => source.Kind == "setup" && source.Disposition != "outside-core")
+            .Select(source => source.Id)
+            .ToHashSet(StringComparer.Ordinal);
         using JsonDocument cards = ReadDataset("cards", "cards.json");
         using JsonDocument setup = ReadDataset("setup", "setup.json");
         var output = new StringBuilder();
@@ -57,7 +61,7 @@ internal static class CardFaceSpecifications
                     string.Equals(obligation.Id, $"behavior:card:{id}:{field.Key}",
                         StringComparison.Ordinal)))
                 .ToList();
-            Deal deal = FindDeal(id, setup.RootElement);
+            Deal deal = FindDeal(id, setup.RootElement, coreSetup);
 
             output.AppendLine();
             output.AppendLine($"  @{obligations[0].Id}");
@@ -137,9 +141,10 @@ internal static class CardFaceSpecifications
         return fields;
     }
 
-    private static Deal FindDeal(string id, JsonElement root)
+    private static Deal FindDeal(string id, JsonElement root, HashSet<string> coreSetup)
     {
-        foreach (JsonProperty hero in root.GetProperty("heroes").EnumerateObject())
+        foreach (JsonProperty hero in root.GetProperty("heroes").EnumerateObject()
+                     .Where(record => coreSetup.Contains($"setup:hero:{record.Name}")))
         {
             if (ContainsCard(hero.Value, id))
             {
@@ -147,7 +152,8 @@ internal static class CardFaceSpecifications
             }
         }
 
-        foreach (JsonProperty campaign in root.GetProperty("campaigns").EnumerateObject())
+        foreach (JsonProperty campaign in root.GetProperty("campaigns").EnumerateObject()
+                         .Where(record => coreSetup.Contains($"setup:campaign:{record.Name}")))
         {
             if (ContainsCard(campaign.Value, id))
             {
@@ -155,14 +161,16 @@ internal static class CardFaceSpecifications
             }
         }
 
-        foreach (JsonProperty encounterSet in root.GetProperty("encounter_sets").EnumerateObject())
+        foreach (JsonProperty encounterSet in root.GetProperty("encounter_sets").EnumerateObject()
+                     .Where(record => coreSetup.Contains($"setup:encounter-set:{record.Name}")))
         {
             if (!ContainsCard(encounterSet.Value, id))
             {
                 continue;
             }
 
-            foreach (JsonProperty campaign in root.GetProperty("campaigns").EnumerateObject())
+            foreach (JsonProperty campaign in root.GetProperty("campaigns").EnumerateObject()
+                         .Where(record => coreSetup.Contains($"setup:campaign:{record.Name}")))
             {
                 if (NamesSet(campaign.Value, "encounter_sets", encounterSet.Name)
                     || NamesSet(campaign.Value, "modular_sets", encounterSet.Name))

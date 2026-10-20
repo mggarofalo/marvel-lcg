@@ -54,6 +54,19 @@ internal static class AttackDamageAccounting
             world.FinishedActivation = AddRecipient(finished, target.ObjectId);
     }
 
+    internal static void RecordIdentityDamage(World world, Card source, Damage.PlacedDamage damage)
+    {
+        if (!damage.Landed || !world.Seats.Any(seat => seat.IdentityCard == damage.Target)) return;
+        if (world.Attack is { } active && active.Enemy == source.ObjectId)
+            world.Attack = AddIdentity(active, damage.Target.ObjectId);
+        else if (world.FinishedAttack is { } finished && finished.Enemy == source.ObjectId)
+            world.FinishedAttack = AddIdentity(finished, damage.Target.ObjectId);
+    }
+
+    private static EnemyAttack AddIdentity(EnemyAttack attack, int target) =>
+        attack.DamagedIdentities.Contains(target) ? attack
+            : attack with { DamagedIdentities = [.. attack.DamagedIdentities, target] };
+
     private static EnemyActivation AddRecipient(EnemyActivation activation, int target) =>
         activation.DamageRecipients.Contains(target) ? activation
             : activation with { DamageRecipients = [.. activation.DamageRecipients, target] };
@@ -75,7 +88,10 @@ internal static class AttackDamageAccounting
         }
         if ((world.Activation ?? world.FinishedActivation) is { } activation)
             foreach (var damage in placed)
+            {
                 RecordRecipient(world, world.Cards[activation.Enemy], damage.Target, damage.Dealt);
+                RecordIdentityDamage(world, world.Cards[activation.Enemy], damage);
+            }
         AddActivationDamage(world, placed.Sum(damage => damage.Dealt));
     }
 

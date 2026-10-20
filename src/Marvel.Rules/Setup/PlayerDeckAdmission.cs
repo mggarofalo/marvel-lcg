@@ -7,12 +7,13 @@ public static class PlayerDeckAdmission
 {
     /// <summary>Classifies an ordered recipe and verifies its exact signature-card membership.</summary>
     public static IReadOnlyList<Creation> Admit(
-        PlayerDeckRecipe recipe, IReadOnlyList<string> signature, int player, ICardFacts facts, string identity)
+        PlayerDeckRecipe recipe, IReadOnlyList<string> signature, int player, ICardFacts facts, string identity,
+        DeckAspectRule aspectRule = DeckAspectRule.Standard)
     {
         ArgumentNullException.ThrowIfNull(recipe);
         ArgumentNullException.ThrowIfNull(signature);
         ArgumentNullException.ThrowIfNull(facts);
-        var assessment = PlayerDeckAssessment.Assess(recipe, signature, identity, facts);
+        var assessment = PlayerDeckAssessment.Assess(recipe, signature, identity, facts, aspectRule);
         if (!assessment.IsValid)
             throw new ArgumentException(string.Join("; ", assessment.Diagnostics.Select(item => item.Message)), nameof(recipe));
         var signatureFaces = signature.ToHashSet(StringComparer.Ordinal);

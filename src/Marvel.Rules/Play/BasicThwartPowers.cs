@@ -86,7 +86,7 @@ public static class BasicThwartPowers
         ScheduleThwart(world, new CharacterThwart(
             thwarter.ObjectId, power.Target.ObjectId, power.Player, power.Amount,
             power.Source.ObjectId, power.Trigger, power.Continuation, power.Origin, power.SurgeGained,
-            imminentThreat, power.Target.Incarnation), nested);
+            imminentThreat, power.Target.Incarnation) { UsesThwartStat = power.UsesThwartStat }, nested);
         return true;
     }
 

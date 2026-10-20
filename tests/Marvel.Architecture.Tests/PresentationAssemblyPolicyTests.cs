@@ -148,6 +148,18 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View");
         PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(LocalGameClient).Assembly,
+            // Read-only campaign contracts and private client resume metadata; rules remain server-owned.
+            "Marvel.Protocol.CampaignDeckAccess",
+            "Marvel.Rules.Campaign.CampaignCard",
+            // Campaign contracts are read-only; CampaignHost owns transitions and durable admission.
+            "Marvel.Protocol.CampaignDescriptor",
+            "Marvel.Protocol.CampaignGameAccess",
+            "Marvel.Protocol.CampaignQuery",
+            "Marvel.Rules.Campaign.CampaignPlayerState",
+            "Marvel.Rules.Campaign.CampaignState",
+            "Marvel.Rules.Campaign.CampaignPhase",
+            "Marvel.Rules.Campaign.CampaignStage",
+            "Marvel.Rules.Campaign.CampaignGameSetup",
             // Read-only public deck contracts and engine-authored corrections;
             // DeckCatalogTransportTests proves admission remains at the host.
             "Marvel.Protocol.DeckAssessmentResult",

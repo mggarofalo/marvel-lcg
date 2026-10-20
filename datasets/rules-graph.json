@@ -22,6 +22,36 @@
       "ruling_hash": "sha256:837e515443fb2ec5c0dc6c745b4a4681196556edebcd96773879da933536cee5",
       "absorbed_in": null,
       "why": "Cost clause 4 permits generating resources beyond a cost. This ruling resolves conflicting earlier guidance by establishing that overpaid resources are still spent for abilities that care about spending, while remaining not paid for that cost."
+    },
+    "ruling:1516351f87fc4382": {
+      "base": "pack:mc10:persistent-damage",
+      "supersedes_hash": "sha256:131fbca14b2545c3ffdfb16d8b516b18f9e78574f9af00750bd465698eeb7f66",
+      "ruling_hash": "sha256:55664daa1d3d398b10d72fda0757b55fabd55d41fd18ebcc121c1d2254d35fee",
+      "absorbed_in": null,
+      "why": "The RoRS persistent-damage rule records at most printed starting hit points. This correction clarifies that the next game still grants the Condition upgrade hit-point increase when it enters play; restoring the recorded dial must not erase that increase. RR 1.8 hit-points.2.3 retains the increase when a gets +X hit points ability takes effect."
+    }
+  },
+  "card_clarifications": {
+    "ruling:6d6264d6620980b3": {
+      "ruling_hash": "sha256:05dcf08549bf502f4386335dd379b4ef79642efca132cdfb44aedaa706f5b94b",
+      "cards": { "04028": "sha256:35db3c88609a66f0a40e20cdc824da306fe2f0e83c5bf552b1106dea7d786bd9" },
+      "references": ["rr:in-play-and-out-of-play", "rr:unique-icon"],
+      "supersedes": { "ruling:681d243446872e43": "sha256:e02dae8cc504607cc2866cf051c262f9c6861cf66f24fe1cdfb43e5fc0150105" },
+      "why": "The February 2026 ruling explicitly declares the older Marked for Death ruling outdated: only the identity-specific Mockingbird is tucked out of play, and only that tucked copy returns to its owner's hand. It does not create a general exception for other faceup attachments."
+    },
+    "ruling:b216c9af67e04d26": {
+      "ruling_hash": "sha256:1d422648046356a8d18efa0886e4b6920dfc6b6f39a8f102ededf7a75774d596",
+      "cards": { "04003": "sha256:1b2b059d4863e377c972c46da98eeaf3e695c3beb2307213539a5151000699b1" },
+      "references": ["rr:search.3"],
+      "supersedes": {},
+      "why": "Quiver's top-five search shuffles the entire deck after completion. This applies the current search rule to Quiver rather than replacing the general rule."
+    },
+    "ruling:3bdad6b3608ce352": {
+      "ruling_hash": "sha256:db43ab92eb3d289e0a2c02709b9955cf2cbebc9e73153a4cd4cdabb354715d3e",
+      "cards": { "04003": "sha256:1b2b059d4863e377c972c46da98eeaf3e695c3beb2307213539a5151000699b1" },
+      "references": ["rr:search", "rr:ability.3", "rr:initiating-abilities.step.2"],
+      "supersedes": {},
+      "why": "Quiver may search a nonempty deck even if the player knows no Arrow is in its top five; search is exempt from the ordinary known-valid-target initiation requirement. The exhaust cost and nonempty search area still apply."
     }
   },
   "edges": {

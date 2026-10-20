@@ -26,12 +26,16 @@ internal static class AbilityCostSelection
         }
         if (cost is AbilityCost.ExhaustChosen exhaust)
         {
-            var cards = Choices(world, player, exhaust.From).Where(card => card.Ready).ToList();
+            var cards = Choices(world, player, exhaust).Where(card => card.Ready).ToList();
             var range = Range(exhaust.Range, cards.Count);
             return new TargetRequest([.. cards.Select(card => card.ObjectId)], range.Min, range.Max);
         }
         return null;
     }
+
+    internal static IReadOnlyList<Card> Choices(World world, int player, AbilityCost.ExhaustChosen cost) =>
+        [.. Choices(world, player, cost.From).Where(card => cost.Trait is null
+            || Traits.Has(world, card, cost.Trait, world.Facts))];
 
     internal static IReadOnlyList<Card> Choices(World world, int player, AbilityCardQuery relation) => relation switch
     {

@@ -322,7 +322,7 @@ per game. One final `summary` record makes the aggregate machine-readable.
 
 The current numeric `schema` is `5`. Replay and reporting accept only that
 schema and reject other versions before interpreting a decision. New runs write
-schema 5. Research records remain distinct from schema 6 session saves: their
+schema 5. Research records remain distinct from schema 7 session saves: their
 setup header records the simulation configuration, not an uploaded player save.
 
 ### Header record

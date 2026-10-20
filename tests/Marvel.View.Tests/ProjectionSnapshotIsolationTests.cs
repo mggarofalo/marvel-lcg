@@ -78,6 +78,7 @@ public sealed class ProjectionSnapshotIsolationTests
             WindowChoices = new[] { new WindowChoice(source, "Recipient", "Description") { RecipientIds = new[] { source } } },
             DisplayLabel = "Display", CommitLabel = "Commit", CostDescription = "Exhaust source",
             DeferredTargetSelection = true, DirectRecipientCommit = true,
+            SelectionSourceId = source,
         };
         return new Prompt(0, Question.TurnOption, TimingPriority.Untimed, "Trigger", "Prompt", true, new[] { option })
         {

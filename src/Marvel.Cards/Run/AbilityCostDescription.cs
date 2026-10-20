@@ -25,7 +25,13 @@ internal static class AbilityCostDescription
 
     private static string? Bound(World world, Card source, int player, AbilityCost cost) => cost switch
     {
+        AbilityCost.ExhaustTitled named => $"Exhaust {named.Title}",
+        AbilityCost.ReturnSourceToHand => $"Return {world.Facts.Title(source.FaceId)} to its owner's hand",
+        AbilityCost.DiscardTop discard => $"Discard {discard.Count} from the top of "
+            + (discard.From == AbilitySearchArea.YourDeck ? "your deck" : "the encounter deck"),
+        AbilityCost.DealEncounterToYou => "Deal yourself a facedown encounter card",
         AbilityCost.Exhaust exhaust => $"Exhaust {Name(world, source, player, exhaust.Card)}",
+        AbilityCost.ConsumeCampaignCard consume => $"Discard {Name(world, source, player, consume.Card)} and remove it from the campaign",
         AbilityCost.Discard discard => $"Discard {Name(world, source, player, discard.Card)}",
         AbilityCost.RemoveCounters counters =>
             $"Remove {Number(counters.Count)} {Counter(counters.Counter)} counter{Plural(counters.Count)} "
@@ -38,7 +44,7 @@ internal static class AbilityCostDescription
     private static string Chosen(AbilityCost cost) => cost switch
     {
         AbilityCost.DiscardFromHand discard => $"Discard {Range(discard.Range)} cards from your hand",
-        AbilityCost.ExhaustChosen exhaust => $"Exhaust {Range(exhaust.Range)} {Relation(exhaust.From)}",
+        AbilityCost.ExhaustChosen exhaust => $"Exhaust {Range(exhaust.Range)} {exhaust.Trait + (exhaust.Trait is null ? "" : " ")}{Relation(exhaust.From)}",
         _ => throw new RulesNotImplementedException($"Cost description for {cost.GetType().Name}"),
     };
 

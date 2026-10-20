@@ -83,6 +83,11 @@ public static class Damage
         new DamageConsequencePreview(world, facts, source, target)
             .Describe(attacker, amount, isAttack: true, grantsOverkill);
 
+    /// <summary>Describes the consequence of a character's basic ATK power.</summary>
+    public static string PreviewBasicAttack(World world, ICardFacts facts, Card attacker, Card target, long amount) =>
+        new DamageConsequencePreview(world, facts, attacker, target, basic: true)
+            .Describe(attacker, amount, isAttack: true, grantsOverkill: false);
+
     /// <summary>Describes presently knowable non-attack damage consequences.</summary>
     public static string PreviewDamage(
         World world, ICardFacts facts, Card source, Card target, long amount) =>

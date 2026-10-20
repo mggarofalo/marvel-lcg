@@ -93,6 +93,7 @@ internal static class AbilityRuntimeQueries
             or AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PowerAmount } => false,
         AbilityNumber.Sum sum => sum.Operands.Any(AmountMayChange),
         AbilityNumber.Product product => product.Operands.Any(AmountMayChange),
+        AbilityNumber.FloorDivide division => division.Operands.Any(AmountMayChange),
         AbilityNumber.Minimum minimum => minimum.Operands.Any(AmountMayChange),
         _ => true,
     };
@@ -102,6 +103,7 @@ internal static class AbilityRuntimeQueries
         AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PowerAmount } => true,
         AbilityNumber.Sum sum => sum.Operands.Any(ContainsPowerAmount),
         AbilityNumber.Product product => product.Operands.Any(ContainsPowerAmount),
+        AbilityNumber.FloorDivide division => division.Operands.Any(ContainsPowerAmount),
         AbilityNumber.Minimum minimum => minimum.Operands.Any(ContainsPowerAmount),
         AbilityNumber.Conditional conditional => ContainsPowerAmount(conditional.Then)
             || ContainsPowerAmount(conditional.Else),

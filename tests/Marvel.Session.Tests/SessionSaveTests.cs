@@ -55,7 +55,7 @@ public sealed class SessionSaveTests
 
         Assert.Equal(json, SessionSaveJson.Write(parsed));
         Assert.StartsWith(
-            "{\"format\":\"marvel-session\",\"schema\":6,\"compatibility\":",
+            "{\"format\":\"marvel-session\",\"schema\":7,\"compatibility\":",
             json,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -82,8 +82,8 @@ public sealed class SessionSaveTests
                 "\"format\":\"future-session\"",
                 StringComparison.Ordinal),
             "schema" => json.Replace(
-                "\"schema\":6",
                 "\"schema\":7",
+                "\"schema\":8",
                 StringComparison.Ordinal),
             _ => throw new InvalidOperationException(change),
         };
@@ -155,7 +155,8 @@ public sealed class SessionSaveTests
     [InlineData(3)]
     [InlineData(4)]
     [InlineData(5)]
-    [InlineData(7)]
+    [InlineData(6)]
+    [InlineData(8)]
     public void OtherSchemasAreRejectedBeforeOpeningAGame(int schema)
     {
         SessionSave save = Save() with { Schema = schema };

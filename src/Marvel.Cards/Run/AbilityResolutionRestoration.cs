@@ -64,6 +64,12 @@ internal static class AbilityResolutionRestoration
         AbilityResolutionState cast, AbilityContinuationState state)
     {
         cast.Execution = state.Execution;
+        cast.PowerExecution = state.PowerExecution;
+        if (state.PowerExecution is { } power)
+        {
+            cast.Attacked.Clear();
+            cast.Attacked.AddRange(power.Attacked.Select(id => cast.World.Cards[id]));
+        }
         cast.DamageReplacement = state.DamageReplacement;
         cast.TriggeringDefeat = state.Invocation.TriggeringDefeat;
         execution.ApplyRestored(cast,
@@ -72,6 +78,7 @@ internal static class AbilityResolutionRestoration
 
     internal static void ApplyRestored(this AbilityResolutionExecution execution, AbilityResolutionState cast, RestoredContinuationState state)
     {
+        cast.ExhaustedForCost.UnionWith(state.ExhaustedForCost);
         cast.Discarded.Clear();
         cast.Discarded.AddRange(state.Discarded);
         foreach (var (name, value) in state.Results)

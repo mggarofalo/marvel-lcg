@@ -51,6 +51,8 @@ func _motion_state_is_safe(state: Dictionary) -> bool:
 	return true
 
 func _current_table_prompt_is_operable() -> bool:
+	var commit := _task_commit()
+	if commit != null and not commit.disabled: return true
 	for pattern in ["ContextualCommit", "ContextualDecline", "Card*Action", "Card*Target", "Card*Generator", "CompleteChoiceSheet"]:
 		for candidate in main.find_children(pattern, "Button", true, false):
 			if candidate.is_visible_in_tree() and not candidate.disabled and not _accepted_decision_entry(candidate):

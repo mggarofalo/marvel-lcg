@@ -43,6 +43,11 @@
       "hash": "sha256:228d253d7d0591e4063f359dc53f0cf067b1298986413bb46c78f59d03d6c03c"
     },
     {
+      "path": "mc10_the_rise_of_red_skull_rules_web.pdf",
+      "bytes": 2864641,
+      "hash": "sha256:9e783e8cc325009f44d1cf0a9f5b845c7b41b50d0e88d4e5a7c05ae5816a88c6"
+    },
+    {
       "path": "mc11_once_and_future_kang_rules_insert-compressed.pdf",
       "bytes": 598221,
       "hash": "sha256:a5949b6e63bfcf4999cfa71d2e523831d168fb1610adab02accb98bbb674db08"
@@ -310,7 +315,7 @@
   ],
   "snapshot": {
     "algorithm": "sha256-length-prefixed-path-and-bytes",
-    "files": 526,
-    "hash": "sha256:a0334d76cf91804a9492094f6ad84ccba9e4de41affca307df42114544194864"
+    "files": 554,
+    "hash": "sha256:824b6dace9a4ac5175b923c7f59e6b58248e212ee5a1a0224b710aba979c3c87"
   }
 }

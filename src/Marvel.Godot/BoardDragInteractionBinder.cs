@@ -38,6 +38,7 @@ internal static class BoardDragInteractionBinder
         bool Select(int id)
         {
             if (!play.TrySelect(id, intent.Source, intent.Destination, intent.IsHandCard, intent.OnPlayerLane)) return false;
+            panel.LocalDecision.LeaveForTableAction();
             panel.RaiseDraftStarted();
             BoardInteractionBinder.RefreshDraft(panel, composer, generation, intent.Source);
             return true;
@@ -96,6 +97,7 @@ internal static class BoardDragInteractionBinder
         void Select(int id)
         {
             if (!interaction.TrySelect(id, source, destination)) return;
+            panel.LocalDecision.Begin(sourceControl, source, matches.Single(offer => offer.Id == id));
             Control recipient = board.VisibleCardControls().FirstOrDefault(card => card.TargetId == destination)
                 ?? (Control)sourceControl;
             board.AnchorDraft(recipient.GetGlobalRect().GetCenter(), id);

@@ -15,7 +15,9 @@ internal static class DefeatWindowEligibility
             or DefeatAbilityKind.ResumeWouldBeDefeated;
         var candidates = operation.Window.OwnAbilities.Concat(
             abilities.Waiting(world, occurrence, WindowKind.Interrupt)
-                .Where(ability => beforeDefeat || ability.Card != step.Subject));
+                .Where(ability => beforeDefeat || (ability.Card != step.Subject
+                    && !operation.Window.OwnAbilities.Any(own => own.Card == ability.Card
+                        && own.Type == ability.Type && own.Ordinal == ability.Ordinal))));
         var tiers = AbilityWindow.Tiers(candidates, WindowKind.Interrupt, occurrence);
         if (tiers.Count == 0) return [];
         var (forced, optional) = AbilityWindow.Split(tiers[0]);

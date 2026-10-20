@@ -30,7 +30,7 @@ func _tabletop_board_area_is_visible() -> bool:
 		return false
 	if not await _pointer_activate_card_body(scheme):
 		return false
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if inspector == null or not inspector.visible \
 			or inspector.find_child("CardFace", true, false) == null:
 		_fail("clicking the tabletop main scheme did not inspect its current card")

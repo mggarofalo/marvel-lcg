@@ -189,12 +189,15 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
     [Fact]
     public void TheAuthoredCardsAreTheOnesTheTestsName()
     {
-        // The runtime book is the Core Set product boundary. The complete
-        // generated card catalog remains available for printed facts, but no
-        // later product may acquire executable text accidentally.
+        // Core completeness is independent of expansion authoring. Runtime expansion
+        // admission additionally requires its complete card and scenario definitions.
         using var cards = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var core = cards.RootElement.GetProperty("cards").EnumerateArray().Where(card => string.Equals(card.GetProperty("pack").GetString(), "core", StringComparison.Ordinal)).Select(card => card.GetProperty("card_id").GetString()!).ToList();
-        Assert.Equal(core.Order(StringComparer.Ordinal), AuthoredCards.Book.Authored.Order(StringComparer.Ordinal));
+        Assert.Equal(core.Order(StringComparer.Ordinal), AuthoredCards.Book.Authored.Where(core.Contains).Order(StringComparer.Ordinal));
+        var permitted = cards.RootElement.GetProperty("cards").EnumerateArray()
+            .Where(card => card.GetProperty("pack").GetString() is "core" or "trors")
+            .Select(card => card.GetProperty("card_id").GetString()!).ToHashSet(StringComparer.Ordinal);
+        Assert.All(AuthoredCards.Book.Authored, face => Assert.Contains(face, permitted));
     }
 
     [Fact]

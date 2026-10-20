@@ -25,7 +25,7 @@ public sealed record SessionSave(
     public const string FormatName = "marvel-session";
 
     /// <summary>The single schema this runtime reads and writes.</summary>
-    public const int CurrentSchema = 6;
+    public const int CurrentSchema = 7;
 
     /// <summary>Creates the zero-decision authority for a freshly dealt game.</summary>
     public static SessionSave Open(

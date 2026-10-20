@@ -6,12 +6,27 @@ namespace Marvel.Godot;
 internal sealed class CardReturnMotion
 {
     private readonly Dictionary<Control, Tween> motions = [];
+    internal bool Active => motions.Any(pair => InteractionControl.IsUsable(pair.Key)
+        && GodotObject.IsInstanceValid(pair.Value) && pair.Value.IsRunning());
 
     internal void Stop(Control card)
     {
         if (!motions.Remove(card, out Tween? tween)) return;
         if (GodotObject.IsInstanceValid(tween) && tween.IsValid()) tween.Kill();
         MarkInactive(card);
+    }
+
+    internal void Restore(Control control, CardPointerRestingPoses resting, bool animate, bool invalid)
+    {
+        if (!resting.TryGetValue(control, out var pose) || !InteractionControl.IsUsable(control)) return;
+        if (!animate)
+        {
+            resting.Restore(control);
+            control.Modulate = Colors.White;
+            return;
+        }
+        if (invalid) control.Modulate = ClientTheme.ToGodot(VisualSystem.Palette.Danger);
+        Settle(control, pose.Position, pose.Rotation, () => resting.Restore(control));
     }
 
     internal void Settle(Control card, Vector2 position, float rotation, Action finished)

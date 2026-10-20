@@ -32,6 +32,7 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
         int generation = panel.GetRenderGeneration();
         foreach (AffordancePresentation offer in prompt.Affordances.Where(offer => offer.Illegal is null))
             AddOffer(draft, offer, generation, titles.Length > 1);
+        AddTableEntry(draft, prompt, generation);
         AddPass(draft, prompt, generation);
         Callable.From(() =>
         {
@@ -42,7 +43,7 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
         return true;
     }
 
-    private bool CanOpen(DecisionComposer draft) => !Paused && !panel.CompleteChoicesOpen
+    private bool CanOpen(DecisionComposer draft) => !Paused && !panel.LocalDecision.Active && !panel.CompleteChoicesOpen
         && !CardPaymentPresentation.UsesModal(draft, panel.submitting)
         && (UsesModal(draft.Prompt) || RequiredNotification is not null);
 
@@ -105,6 +106,19 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
         pass.SetMeta("table_mutation", true);
     }
 
+    private void AddTableEntry(DecisionComposer draft, PromptPresentation prompt, int generation)
+    {
+        int? source = prompt.Affordances.FirstOrDefault(offer => offer.Illegal is null)?.CardAnchorId;
+        if (source is not { } id || panel.CurrentBoard?.VisibleCardControls()
+                .Any(card => card.TargetId == id) != true) return;
+        frame!.AddButton("WindowUseTable", "Use card on table · right-click or drag", () =>
+        {
+            if (panel.IsCurrentDraft(draft, generation))
+                panel.CurrentBoard?.VisibleCardControls()
+                    .FirstOrDefault(card => card.TargetId == id)?.GrabFocus();
+        }, panel.submitting);
+    }
+
     private void Decline(DecisionComposer draft, int generation)
     {
         if (panel.IsCurrentDraft(draft, generation) && draft.TryDecline(out Decision? decision, out _))
@@ -114,6 +128,8 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
     internal void Input(InputEvent input)
     {
         if (frame is null || panel.composer is not { } draft) return;
+        Control? focused = panel.GetViewport().GuiGetFocusOwner();
+        if (focused is not null && focused != frame.Frame && !frame.Frame.IsAncestorOf(focused)) return;
         if (AbilityModalFocus.Route(frame.Frame, input)) return;
         if (!input.IsActionPressed("ui_cancel") || !draft.Prompt.Cancellable) return;
         Decline(draft, panel.GetRenderGeneration());

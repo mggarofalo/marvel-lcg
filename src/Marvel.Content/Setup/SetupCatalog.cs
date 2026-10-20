@@ -64,6 +64,22 @@ public sealed class SetupCatalog
     /// <summary>The authored classification used by setup selection.</summary>
     public EncounterSetRole EncounterRole(string name) => Get(encounterSets, name, "encounter set").Role;
 
+    /// <summary>Excludes one unavailable product while preserving validation of retained recipes.</summary>
+    public SetupCatalog WithoutPack(CardCatalog cards, string pack)
+    {
+        bool ContainsPack(IEnumerable<string> specs) => specs.SelectMany(spec => spec.Split(','))
+            .Any(face => cards.Has(face) && cards.Pack(face) == pack);
+        // Product ownership follows identities and villains. A Core recipe that
+        // accidentally references an unavailable expansion still fails admission.
+        return new SetupCatalog(
+            campaigns.Where(item => !ContainsPack(item.Value.Villain))
+                .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal),
+            heroes.Where(item => !ContainsPack(item.Value.Hero))
+                .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal),
+            encounterSets.Where(item => !ContainsPack(item.Value.Cards))
+                .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal));
+    }
+
     private static T Get<T>(IReadOnlyDictionary<string, T> from, string name, string what)
     {
         ArgumentNullException.ThrowIfNull(name);
@@ -128,7 +144,18 @@ public sealed class SetupCatalog
         Obligations: Strings(element, "obligations"),
         NemesisSet: Strings(element, "nemesis_set"),
         PlayerDeck: Strings(element, "player_deck"),
-        NemesisSetIcon: Text(element, "nemesis_set_icon"));
+        NemesisSetIcon: Text(element, "nemesis_set_icon"))
+    {
+        AspectRule = AspectRule(element),
+    };
+
+    private static Marvel.Rules.Setup.DeckAspectRule AspectRule(JsonElement element) =>
+        !element.TryGetProperty("aspect_rule", out _) ? Marvel.Rules.Setup.DeckAspectRule.Standard
+        : Text(element, "aspect_rule") switch
+        {
+            "equal_two_aspects" => Marvel.Rules.Setup.DeckAspectRule.EqualTwoAspects,
+            _ => throw new JsonException("unknown identity aspect rule"),
+        };
 
     private static string Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String

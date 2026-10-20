@@ -74,7 +74,8 @@ public static class Attack
             : world.Seats[step.Seat].IdentityCard;
         world.Attack = new EnemyAttack(step.Subject, step.Seat, target.ObjectId);
         world.Activation = new EnemyActivation(
-            step.Subject, step.Seat, Attacking: true, Id: step.ActivationId);
+            step.Subject, step.Seat, Attacking: true, Id: step.ActivationId)
+        { DealBoostCards = step.Require<EnemyAttackOperation>().DealBoostCards };
         world.FinishedAttack = null;
     }
 
@@ -235,6 +236,13 @@ public static class Attack
     public static void CalculateDamage(World world, ICardFacts facts) => AttackDamage.CalculateDamage(world, facts);
     /// <inheritdoc cref="AttackDamage.MakeIndirect"/>
     public static void MakeIndirect(World world) => AttackDamage.MakeIndirect(world);
+
+    /// <summary>Prevent this enemy attack's damage without cancelling its boost effects or completion.</summary>
+    public static void PreventDamage(World world)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        world.Attack = Current(world) with { PreventAllDamage = true };
+    }
     /// <inheritdoc cref="AttackDamage.DealDamage"/>
     public static void DealDamage(World world, ICardFacts facts, List<GameEvent> events) => AttackDamage.DealDamage(world, facts, events);
     /// <inheritdoc cref="AttackDamage.IndirectDamagePrompt"/>

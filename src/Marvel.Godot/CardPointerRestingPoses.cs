@@ -16,6 +16,13 @@ internal sealed class CardPointerRestingPoses
     internal bool TryGetValue(Control control, out (Vector2 Position, float Rotation, int Z) pose) =>
         poses.TryGetValue(control, out pose);
 
+    internal void Translate(Control control, Vector2 delta)
+    {
+        if (!poses.TryGetValue(control, out var pose)) return;
+        poses[control] = (pose.Position + delta, pose.Rotation, pose.Z);
+        control.SetMeta("spatial_resting_position", pose.Position + delta);
+    }
+
     internal void Restore(Control control)
     {
         if (!poses.TryGetValue(control, out var pose) || !InteractionControl.IsUsable(control)) return;

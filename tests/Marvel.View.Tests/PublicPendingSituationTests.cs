@@ -107,6 +107,11 @@ public sealed class PublicPendingSituationTests
         privateSource.TurnFaceUp();
         Prompt prompt = Choice([world.Seats[0].IdentityCard.ObjectId]) with
         { CauseCardIds = [assault.ObjectId, privateSource.ObjectId], Description = "Enemy attack" };
+        prompt = prompt with
+        {
+            Affordances = prompt.Affordances.Select(offer => offer with
+                { SelectionSourceId = privateSource.ObjectId }).ToArray(),
+        };
         VisibleResult visible = WorldProjection.For(world, prompt, [], Scope(world, viewer));
         Assert.Equal([assault.ObjectId], visible.World.Table!.PendingSituation!.CauseCardIds);
         Assert.Contains("Cause: Assault", PendingSituationPresentation.Context(visible.World));
@@ -114,6 +119,7 @@ public sealed class PublicPendingSituationTests
         if (viewer == 0)
         {
             Assert.Equal([assault.ObjectId], visible.Prompt!.CauseCardIds);
+            Assert.All(visible.Prompt.Affordances, offer => Assert.Null(offer.SelectionSourceId));
             PromptPresentation presentation = PromptPresentation.From(visible.Prompt, visible.World);
             Assert.Contains("Cause: Assault", presentation.Resolution);
             Assert.Contains("Resolving Spider-Man", presentation.Context);

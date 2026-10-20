@@ -17,9 +17,15 @@ public abstract record AbilityCardSelection
     /// <summary>Enemies carrying a named trait.</summary>
     public sealed record EnemiesWithTrait(string Trait) : AbilityCardSelection;
     /// <summary>Selected cards carrying a named trait.</summary>
-    public sealed record WithTrait(AbilityCardSelection Cards, string Trait) : AbilityCardSelection;
+    public sealed record WithTrait(AbilityCardSelection Cards, string Trait) : AbilityCardSelection
+    {
+        /// <summary>Select cards lacking the named trait.</summary>
+        public bool Exclude { get; init; }
+    }
     /// <summary>Selected cards whose physical face is down.</summary>
     public sealed record FaceDown(AbilityCardSelection Cards) : AbilityCardSelection;
+    /// <summary>The first nonempty ordered selection.</summary>
+    public sealed record FirstAvailable(ImmutableArray<AbilityCardSelection> Options) : AbilityCardSelection;
     /// <summary>The last card in an explicitly ordered selection.</summary>
     public sealed record Last(AbilityCardSelection Cards) : AbilityCardSelection;
     /// <summary>Cards in one player's explicitly named public area.</summary>
@@ -39,5 +45,13 @@ public abstract record AbilityCardSelection
     public sealed record Ranked(AbilityCardSelection Cards, AbilityCardRank By, bool Maximum) : AbilityCardSelection;
     /// <summary>Cards matching printed criteria in an ordered collection of areas.</summary>
     public sealed record InAreas(ImmutableArray<AbilitySearchArea> Areas, CardKind? Kind,
-        string? Trait, string? Title) : AbilityCardSelection;
+        string? Trait, string? Title) : AbilityCardSelection
+    {
+        /// <summary>Inspect this many top cards before applying printed filters.</summary>
+        public int? Top { get; init; }
+        /// <summary>Match cards from any of the four aspects.</summary>
+        public bool AspectOnly { get; init; }
+        /// <summary>Match one printed card classification.</summary>
+        public string? CardClass { get; init; }
+    }
 }

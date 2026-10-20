@@ -102,7 +102,7 @@ public sealed class ActionAbilityTypedChoicePreviewsChoicePreviewDistinguishesAt
         string title = world.Facts.Title(villain.FaceId);
         long health = Damage.Health(world, world.Facts, villain);
         string quantity = structure == "leading"
-            ? "Current damage: 2 before prevention and replacement. Later effects can change the result. " : "";
+            ? "Current damage: 2 before prevention/replacement. Later effects may change it. " : "";
         Assert.Equal(structure is "leading" or "then" or "else"
             ? $"{title} · {quantity}{health}/{health} → {health - 2}/{health} HP" : title, choice.Description);
         Assert.Equal(0, villain.Damage);

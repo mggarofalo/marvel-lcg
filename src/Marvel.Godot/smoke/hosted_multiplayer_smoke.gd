@@ -16,6 +16,15 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	var hit_checks := preload("res://smoke/hosted_hit_area_checks.gd").new()
+	add_child(hit_checks)
+	var hit_valid: bool = await hit_checks.verify()
+	var hit_failure: String = hit_checks.failed_case
+	hit_checks.queue_free()
+	if not hit_valid:
+		_fail("hosted hit coverage failed: " + hit_failure)
+		return
+	print("HOSTED_HIT_COVERAGE_OK cases=8")
 	var settlement_checks := SettlementChecks.new()
 	add_child(settlement_checks)
 	var observer_valid := await settlement_checks.verify()
@@ -104,7 +113,10 @@ func _open_guest(packed: PackedScene, invitation: String) -> bool:
 	guest = packed.instantiate() as Control
 	guest_viewport = _new_client_viewport()
 	guest_viewport.add_child(guest)
-	if not await _wait_for(func() -> bool: return _button(guest, "Join a game") != null):
+	# Discovery updates the entry layout; sample pointer bounds after it is ready.
+	if not await _wait_for(func() -> bool:
+		var ready := _button(guest, "Start game")
+		return ready != null and not ready.disabled):
 		_fail("the guest entry screen never became ready")
 		return false
 	_configure_connection(guest)
@@ -381,8 +393,7 @@ func _has_table_decision(main: Control) -> bool:
 
 
 func _task_commit(main: Control) -> Button:
-	var control := main.find_child("ContextualCommit", true, false) as Button
-	return control if control != null and control.is_visible_in_tree() else null
+	return preload("res://smoke/decision_surface_controls.gd").commit(main)
 
 
 func _attached(main: Control, pattern: String, skip_selected := false) -> Button:

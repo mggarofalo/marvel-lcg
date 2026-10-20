@@ -18,8 +18,11 @@ internal static class AbilitySelectionAreaReads
         if (Operand(selection) is { } child) Collect(child, areas);
         switch (selection)
         {
+            case AbilityCardSelection.FirstAvailable fallback:
+                foreach (var option in fallback.Options) Collect(option, areas);
+                break;
             case AbilityCardSelection.InAreas searched:
-                areas.UnionWith(searched.Areas.Select(AbilitySelectorEvaluation.AreaType)); break;
+                areas.UnionWith(searched.Areas.SelectMany(SearchTypes)); break;
             case AbilityCardSelection.InPlayerArea named: areas.Add(named.Area); break;
             case AbilityCardSelection.WithMatchingPlayerArea filtered:
                 areas.Add(filtered.Area); break;
@@ -32,6 +35,10 @@ internal static class AbilitySelectionAreaReads
             default: throw new InvalidOperationException("Unknown compiled selector in area-dependency analysis");
         }
     }
+
+    private static IEnumerable<DeckType> SearchTypes(AbilitySearchArea area) =>
+        area == AbilitySearchArea.YourPlayArea ? Enum.GetValues<DeckType>().Where(DeckTypes.IsInPlay)
+            : [AbilitySelectorEvaluation.AreaType(area)];
 
     private static AbilityCardSelection? Operand(AbilityCardSelection selection) => selection switch
     {

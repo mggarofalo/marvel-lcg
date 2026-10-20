@@ -2,10 +2,11 @@
 
 A rules engine for Marvel Champions: The Card Game, written in C#.
 
-The supported runtime product is the Core Set: its 5 heroes, 3 scenarios in
-Standard and Expert, 5 modular encounter sets, and all 209 card faces. Broader
-card and rules datasets support research, but later products are not executable
-content. [Product and repository scope](docs/scope.md) defines that boundary.
+The runtime covers the Core Set and Rise of Red Skull: 7 heroes, 8 scenarios in
+Standard and Expert, 8 modular encounter sets, and all 390 printed card faces.
+Rise of Red Skull includes a persistent five-scenario campaign with Standard and
+Expert campaign rules. Broader card and rules datasets support research;
+[product and repository scope](docs/scope.md) defines the executable boundary.
 
 The engine's job is to be **right about the rules**. Every behaviour it
 implements is held against the published Rules Reference, vendored in

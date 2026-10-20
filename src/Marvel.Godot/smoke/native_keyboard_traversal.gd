@@ -52,7 +52,7 @@ static func payment(smoke) -> bool:
 static func _inspect_and_dismiss(smoke, source: Control) -> bool:
     var draft: String = smoke.witness.Draft()
     await key(smoke, KEY_ENTER)
-    var popup := smoke.main.get_node("CardInspector") as Control
+    var popup := smoke.main.find_child("CardInspector", true, false) as Control
     if not await smoke._wait_for(func() -> bool: return popup.visible):
         smoke._fail("keyboard card activation did not open its inspector")
         return false

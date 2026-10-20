@@ -33,9 +33,11 @@ internal static class AbilityImmediateExecution
         var world = context.Admission.World;
         switch (effect.Instruction)
         {
+            case AbilityFixedInstruction.DiscardOtherEnvironments:
+                return new(true, EnvironmentReplacement.DiscardOthers(context));
             case AbilityFixedInstruction.AdvanceMainScheme:
-                AdvanceMainScheme(context);
-                return new(true, false);
+            AdvanceMainScheme(context);
+            return new(true, false);
             case AbilityFixedInstruction.CancelWhenRevealed:
                 CancelWhenRevealed(context);
                 return new(true, true);
@@ -43,17 +45,11 @@ internal static class AbilityImmediateExecution
                 if (world.Agenda.IsOutstanding(context.Admission.Query.Occurrence))
                     world.Agenda.Cancel(context.Admission.Query.Occurrence);
                 return new(true, true);
-            case AbilityFixedInstruction.AlsoAttackEachOtherHero:
-                Attack.AlsoResolveAgainstEachOtherHero(world);
-                return new(true, true);
-            case AbilityFixedInstruction.MakeAttackIndirect:
-                Attack.MakeIndirect(world);
-                return new(true, false);
             case AbilityFixedInstruction.PlaceAccelerationToken:
                 EncounterDeck.PlaceAccelerationToken(world, context.Trigger, context.Events);
                 return new(true, false);
             default:
-                return new(false, false);
+                return AbilityCombatImmediateExecution.Run(effect, context);
         }
     }
 
@@ -152,7 +148,10 @@ internal static class AbilityImmediateExecution
                         evaluator.Amount(grant.Amount), grant.Until);
                 return new(true, true);
             case AbilityEffect.ReduceNextCardCost reduction:
-                CardPayment.ReduceNextCardCost(
+                if (reduction.AnyPlayer)
+                    CardPayment.ReduceNextMatchingCardCost(world, source,
+                        evaluator.Amount(reduction.Amount), reduction.Filter!);
+                else CardPayment.ReduceNextCardCost(
                     world, source, evaluator.Seat(reduction.Player),
                     evaluator.Amount(reduction.Amount));
                 return new(true, true);

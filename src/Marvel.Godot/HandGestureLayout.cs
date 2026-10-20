@@ -15,6 +15,8 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
     private int seat;
     private List<CardControl>? preview;
     private bool opening;
+    private float verticalOffset;
+    private bool reflowing;
     internal Func<int, int, float, SpatialCardPlacement>? Placement { get; set; }
     internal Func<bool>? MotionEnabled { get; set; }
 
@@ -37,6 +39,17 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
     {
         if (card is CardControl hand && cards.Contains(hand))
             slots[hand] = (hand.Position, hand.Rotation, hand.ZIndex);
+    }
+
+    internal void Translate(float delta)
+    {
+        verticalOffset += delta;
+        foreach (CardControl card in cards)
+            if (slots.TryGetValue(card, out var slot))
+                slots[card] = (slot.Position + new Vector2(0, delta), slot.Rotation, slot.Z);
+        reflowing = true;
+        try { ApplyStaging(); }
+        finally { reflowing = false; }
     }
 
     internal bool Contains(Vector2 position) => InteractionControl.IsUsable(area)
@@ -142,7 +155,7 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
         {
             CardControl card = kept[index];
             SpatialCardPlacement pose = Placement(index, kept.Length, card.Size.X);
-            slots[card] = (pose.Position, pose.Rotation, pose.ZIndex);
+            slots[card] = (pose.Position + new Vector2(0, verticalOffset), pose.Rotation, pose.ZIndex);
             float exposed = index + 1 == kept.Length ? card.Size.X
                 : Math.Min(card.Size.X, Placement(index + 1, kept.Length, card.Size.X).Position.X - pose.Position.X);
             card.SetMeta("spatial_hand_exposed_width", exposed);
@@ -153,6 +166,7 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
     private void Move(CardControl card, (Vector2 Position, float Rotation, int Z) pose, bool capture)
     {
         StopMotion(card);
+        int presentedZ = card.ZIndex;
         card.ZIndex = pose.Z;
         if (capture)
         {
@@ -165,8 +179,10 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
             card.Position = currentPosition;
             card.Rotation = currentRotation;
         }
-        if (MotionEnabled?.Invoke() == false)
+        if (reflowing || MotionEnabled?.Invoke() == false)
         {
+            // Geometry changes retain hover/focus emphasis while recording the authored resting layer.
+            if (reflowing) card.ZIndex = presentedZ;
             card.Position = pose.Position;
             card.Rotation = pose.Rotation;
             SpatialHandActionStrip.Refresh(card);

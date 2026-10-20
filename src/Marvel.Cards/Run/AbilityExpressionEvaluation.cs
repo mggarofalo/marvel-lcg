@@ -25,27 +25,43 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityNumber.Result result => context.Results.GetValueOrDefault(result.Name),
         AbilityNumber.Sum sum => sum.Operands.Sum(operand => Amount(operand)),
         AbilityNumber.Product product => product.Operands.Aggregate(1L, (value, operand) => value * Amount(operand)),
+        AbilityNumber.FloorDivide division => IntegerQuotients.Floor(Amount(division.Operands[0]), Amount(division.Operands[1])),
         AbilityNumber.Minimum minimum => minimum.Operands.Min(operand => Amount(operand)),
         AbilityNumber.CardValue value => CardNumber(value),
         AbilityNumber.Counters counters => selectors.Find(counters.Card) is { } holder
             ? CounterCount(context.Bindings.Quantities(holder), counters.Counter) : 0,
         AbilityNumber.Modified modified => selectors.Find(modified.Card) is { } holder
-            ? StateFields.Modified(context.World, holder, modified.Field, context.World.Facts, context.World.Players) : 0,
+            ? Modified(holder, modified.Field) : 0,
         AbilityNumber.Count count => selectors.Every(count.Cards).Count,
+        AbilityNumber.SumPrintedCost sum => AbilityAmounts.SaturatingSum(0,
+            selectors.Every(sum.Cards).Select(card => context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players))),
         AbilityNumber.Conditional conditional => Amount(Test(conditional.Test) ? conditional.Then : conditional.Else),
         AbilityNumber.PrintedResourcesDiscarded resource => Resources.PrintedCount(context.Discarded, resource.Resource, context.World.Facts),
         AbilityNumber.DiscardedWithResource resource => context.Discarded.Count(card =>
             Resources.GeneratedBy(card.FaceId, context.World.Facts).Contains(resource.Resource)),
-        AbilityNumber.ResolutionValue value => value.Kind switch
-        {
-            AbilityResolutionNumber.PowerAmount => context.PowerAmount,
-            AbilityResolutionNumber.PrintedBoostIconsDiscarded => context.Discarded.Sum(card =>
-                context.World.Facts.PrintedValue(card.FaceId, "Boost", context.World.Players)),
-            AbilityResolutionNumber.TopEncounterDiscardBoostPlusOne => 1 + (context.Discarded.LastOrDefault() is { } card
-                ? context.World.Facts.PrintedValue(card.FaceId, "Boost", context.World.Players) : 0),
-            _ => throw new InvalidOperationException("Unknown compiled resolution number"),
-        },
+        AbilityNumber.ResolutionValue value => ResolutionAmount(value.Kind),
         _ => throw new InvalidOperationException("Unknown compiled numeric expression"),
+    };
+
+    private long Modified(Card holder, string field) =>
+        StateFields.Modified(context.World, holder,
+            field == "thwart" && context.ThwartActorUsingAttack == holder.ObjectId ? "attack" : field,
+            context.World.Facts, context.World.Players);
+
+    private long ResolutionAmount(AbilityResolutionNumber kind) => kind switch
+    {
+        AbilityResolutionNumber.PowerAmount => context.PowerAmount,
+        AbilityResolutionNumber.ActivationAttacksAgainstYou =>
+            context.Results.GetValueOrDefault(AbilityActivationReceipts.PlayerKey(context.Player)),
+        AbilityResolutionNumber.PrintedBoostIconsDiscarded => context.Discarded.Sum(card =>
+            context.World.Facts.PrintedValue(card.FaceId, "Boost", context.World.Players)),
+        AbilityResolutionNumber.PrintedResourceIconsDiscarded => context.Discarded.Sum(card =>
+            (long)Resources.GeneratedBy(card.FaceId, context.World.Facts).Length),
+        AbilityResolutionNumber.DistinctPrintedResourceTypesDiscarded => context.Discarded.SelectMany(card =>
+            Resources.GeneratedBy(card.FaceId, context.World.Facts)).Distinct().LongCount(),
+        AbilityResolutionNumber.TopEncounterDiscardBoostPlusOne => 1 + (context.Discarded.LastOrDefault() is { } card
+            ? context.World.Facts.PrintedValue(card.FaceId, "Boost", context.World.Players) : 0),
+        _ => throw new InvalidOperationException("Unknown compiled resolution number"),
     };
 
     private long CardNumber(AbilityNumber.CardValue value)
@@ -68,6 +84,8 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityCondition.Negated negated => !Test(negated.Operand),
         AbilityCondition.Flag flag => TestFact(flag.Kind),
         AbilityCondition.PaidWithResource resource => PaidWith(resource.Resource.ToString()),
+        AbilityCondition.DiscardedWithTrait trait => context.Discarded.Any(card =>
+            context.World.Facts.Traits(card.FaceId).Contains(trait.Trait, StringComparer.Ordinal)),
         AbilityCondition.DiscardedWithResource resource => context.Discarded.Any(card =>
             Resources.GeneratedBy(card.FaceId, context.World.Facts).Contains(resource.Resource)),
         AbilityCondition.CausedThreat threat => context.Occurrence.Threat?.Cause == threat.Cause,
@@ -105,6 +123,7 @@ internal sealed class AbilityExpressionEvaluation(
             AbilityCardTextProperty.Trait => Rules.State.Traits.Has(context.World, card, text.Text, context.World.Facts),
             AbilityCardTextProperty.Set => string.Equals(context.World.Facts.EncounterSet(card.FaceId), text.Text, StringComparison.Ordinal),
             AbilityCardTextProperty.Title => string.Equals(context.World.Facts.Title(card.FaceId), text.Text, StringComparison.Ordinal),
+            AbilityCardTextProperty.Class => string.Equals(context.World.Facts.Attributes(card.FaceId).GetValueOrDefault("Class"), text.Text, StringComparison.Ordinal),
             _ => throw new InvalidOperationException("Unknown compiled card text property"),
         };
     }
@@ -115,15 +134,24 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityConditionFact.CanMakeTheCall => CanMakeTheCall(),
         AbilityConditionFact.AttackDamaged => context.World.FinishedAttack is { Damaged: true } attack
             && attack.Enemy == context.Occurrence.Actor && attack.Target == context.Occurrence.Target,
+        AbilityConditionFact.AttackDamagedYou => AttackDamagedIdentity(),
         AbilityConditionFact.InExpertMode => context.World.Expert,
         AbilityConditionFact.DefeatedByYou => context.Bindings.Defeat is { By: >= 0 } defeat && defeat.By == AbilityCardQueries.Resolver(context.Bindings),
         AbilityConditionFact.HeroDefended => context.World.FinishedAttack is { } attack
             && attack.Defender == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,
-        AbilityConditionFact.UndefendedAttack => context.World.Attack is { IsDefended: false },
+        AbilityConditionFact.UndefendedAttack => context.Occurrence.Is(Steps.AttackEnds)
+            ? context.World.FinishedAttack is { IsDefended: false } ended
+                && ended.Enemy == context.Occurrence.Actor && ended.Target == context.Occurrence.Target
+            : context.World.Attack is { IsDefended: false },
         AbilityConditionFact.DefeatedByConsequentialDamage => context.Bindings.Defeat is { } defeat
             && string.Equals(defeat.How, "Consequential_Damage", StringComparison.Ordinal),
         _ => throw new InvalidOperationException("Unknown compiled condition fact"),
     };
+
+    private bool AttackDamagedIdentity() => context.World.FinishedAttack is { } completed
+            && completed.Enemy == context.Occurrence.Actor
+            && context.Occurrence.Player >= 0 && completed.Player == context.Occurrence.Player
+            && completed.DamagedIdentities.Contains(context.World.Seats[context.Occurrence.Player].IdentityCard.ObjectId);
 
     internal int Seat(AbilityPlayer player) => player switch
     {
@@ -135,6 +163,7 @@ internal sealed class AbilityExpressionEvaluation(
             ? context.Source.Area.PlayArea.Player
             : throw new RulesNotImplementedException($"'{context.Source.FaceId}' asks for its engaged player outside a player's engaged area")),
         AbilityPlayer.FirstPlayer => context.World.FirstPlayer,
+        AbilityPlayer.Defeater => AbilityCardQueries.DefeatingPlayer(context.Bindings),
         _ => throw new InvalidOperationException("Unknown compiled player relation"),
     };
 

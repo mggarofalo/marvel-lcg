@@ -114,6 +114,10 @@ public static class PhaseEnd
             [TimingPoints.EndOfPlayerPhase, TimingPoints.EndOfPhase],
             events);
 
+    /// <summary>Expire effects whose stated duration is the active player's turn.</summary>
+    public static void EndPlayerTurn(World world, int player, List<GameEvent> events) =>
+        End(world, new Occurrence(0, [PlayerTurnTiming.Ends], Player: player), [TimingPoints.EndOfTurn], events);
+
     /// <summary>
     /// Step 1 — one player discards from hand.
     /// </summary>
@@ -212,30 +216,7 @@ public static class PhaseEnd
 
         foreach (int seat in world.PlayerOrder)
         {
-            var player = world.Seats[seat];
-
-            // Bounded by the hand size read before the first draw as well as by
-            // the one read after each. The re-read is the rule; the bound is
-            // what stops a card that *raises* hand size while being drawn from
-            // making this a loop that never ends.
-            long limit = HandSize(world, player, facts);
-            for (long drawn = 0; drawn < limit; drawn++)
-            {
-                if (player.Hand.Cards.Count >= HandSize(world, player, facts))
-                {
-                    break;
-                }
-
-                int before = player.Hand.Cards.Count;
-                Draw.Resolve(world, seat, 1, "end of player phase", events);
-                if (player.Hand.Cards.Count == before)
-                {
-                    // `rr:player-deck.4` -- a deck and a discard pile both
-                    // empty. There is no card to draw and that is a legal
-                    // board, not a stall.
-                    break;
-                }
-            }
+            DrawHandSize.Resolve(world, facts, seat, "end of player phase", events);
         }
         ActivityBatches.Complete(events, start, "Draw", -1, ActivityPhaseStep.DrawToHandSize);
     }

@@ -48,9 +48,22 @@ public static class Discard
         // another out-of-play area was expressly named belongs to the caller's
         // selector, not this Permanent rule primitive.
         target.Area.Type != DeckType.RemovedArea
+        && SideSchemeDeparture.Allowed(world, target)
         && (!DeckTypes.IsInPlay(target.Area.Type)
             || StateFields.Modified(world, target, "permanent", facts, world.Players) <= 0
             || SameSet(facts, source, target));
+
+    /// <summary>Whether the card type permits discarding from its current area.</summary>
+    public static bool CanDiscardFromPlay(State.Card card, ICardFacts facts) =>
+        // rr:identity.3: "Identity cards cannot be discarded from play."
+        // rr:main-scheme-main-scheme-deck.6 gives main schemes the same protection.
+        !DeckTypes.IsInPlay(card.Area.Type)
+        || card.Area.Type != DeckType.MainSchemesArea
+            && EffectiveCards.Kind(card, facts) is not (CardKind.Hero or CardKind.AlterEgo);
+
+    /// <summary>Whether type and active card restrictions permit this discard.</summary>
+    public static bool CanDiscardFromPlay(World world, State.Card card) =>
+        CanDiscardFromPlay(card, world.Facts) && SideSchemeDeparture.Allowed(world, card);
 
     /// <summary>Whether two printed cards belong to the same non-empty set.</summary>
     public static bool SameSet(ICardFacts facts, State.Card first, State.Card second)
@@ -80,7 +93,7 @@ public static class Discard
         // rr:main-scheme-main-scheme-deck.6: "Main scheme cards cannot be
         // discarded from play." The attempted game function resolves without
         // moving the card or emitting a discard event.
-        if (card.Area.Type == DeckType.MainSchemesArea)
+        if (!CanDiscardFromPlay(world, card))
         {
             return;
         }
@@ -129,6 +142,8 @@ public static class Discard
         // discard pile, **then** the player deals themself one facedown
         // encounter card". This is *then* -- a card has just landed there.
         if (card.Owner >= 0) PlayerDeck.Reset(world, card.Owner, events);
+        if (pile.Type == DeckType.SideSchemeDiscardPile)
+            AuxiliaryDeck.ResetSideSchemes(world, trigger, events);
 
         if (host >= 0)
         {
@@ -153,6 +168,8 @@ public static class Discard
     private static Area DiscardPile(World world, State.Card card)
     {
         if (card.Area.Type == DeckType.StatusArea) return world.AreaOf(DeckType.RemovedArea);
+        if (AuxiliaryDeck.UsesSideSchemeDiscard(world, card))
+            return world.AreaOf(DeckType.SideSchemeDiscardPile);
         if (card.Owner < 0) return world.AreaOf(DeckType.EncounterDiscardPile);
         return world.AreaOf(DeckType.DiscardPile,
             PlayArea.Of(card.Owner), cardOwner: card.Owner);
@@ -261,7 +278,7 @@ public static class Discard
         // becomes a new copy on re-entry. An acceleration token is different:
         // rr:acceleration-token.2.1 counts it from any in-play host, so clause
         // .3 expressly removes it when a non-main-scheme host leaves.
-        if (card.Area.Type == DeckType.MainSchemesArea)
+        if (!CanDiscardFromPlay(card, world.Facts))
         {
             return;
         }

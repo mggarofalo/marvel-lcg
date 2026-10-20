@@ -1,7 +1,8 @@
 # The setup dataset
 
-`datasets/setup/setup.json` defines every game the runtime can start. It is the
-public product-selection boundary described in [scope.md](scope.md).
+`datasets/setup/setup.json` declares scenario and hero recipes. Complete-product
+admission determines which declared products the runtime can start; an incomplete
+expansion is excluded from public discovery as a whole.
 
 The dataset is authored. Scenario composition and starter-deck contents are
 printed in rules inserts, Learn to Play material and product lists rather than
@@ -15,13 +16,17 @@ The file has 3 groups:
 
 | Group | Supported rows |
 |---|---:|
-| `campaigns` | 6 Core Set scenario and mode combinations |
-| `heroes` | 5 Core Set starter decks |
-| `encounter_sets` | 7 Core Set fixed and modular sets |
+| `campaigns` | 16 Core Set and Rise of Red Skull scenario/mode combinations |
+| `heroes` | 7 Core Set and Rise of Red Skull starter decks |
+| `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets |
 
 The scenario rows are Rhino, Klaw and Ultron in Standard and Expert modes. The
 hero rows are Spider-Man, Captain Marvel, She-Hulk, Iron Man and Black Panther.
-The encounter rows include Standard, Expert and the 5 Core modular sets.
+Rise of Red Skull adds Crossbones, Absorbing Man, Taskmaster, Zola and Red Skull
+in both modes, plus Hawkeye and Spider-Woman. The encounter rows include Standard,
+Expert, five Core modular sets and three Rise of Red Skull modular sets.
+Crossbones keeps Legions of Hydra fixed; Taskmaster keeps Hydra Patrol fixed,
+as required by their scenario instructions.
 
 Names are keys inside their own group. A campaign, hero and encounter set are
 different namespaces even when a future product gives them the same display
@@ -59,6 +64,12 @@ Omitting recipes selects the authored starter defaults. Identities, obligations
 and nemesis sets always come from the selected hero record. Each hero declares
 `nemesis_set_icon` explicitly; the engine checks that association without
 constructing a set name from the identity’s name.
+
+An optional `aspect_rule: "equal_two_aspects"` records Jessica Drew's printed
+Double Agent construction instruction (04031b). The engine requires equal totals
+for the two chosen aspects, including their signature cards, while allowing the
+required signature cards from other aspects. Omission retains ordinary one-aspect
+construction. Both explicit recipes and starter substitutions use this rule.
 
 An encounter-set row names its cards in printed composition order and declares
 its `role`: `modular`, `standard`, `expert`, `scenario` or `nemesis`. Roles are

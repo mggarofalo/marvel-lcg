@@ -13,7 +13,8 @@ public sealed record SessionSetup(
     [property: JsonRequired] IReadOnlyList<string> Heroes,
     [property: JsonRequired] IReadOnlyList<string>? ModularSets,
     [property: JsonRequired] uint Seed,
-    [property: JsonRequired] IReadOnlyList<PlayerDeckRecipe>? PlayerDecks = null)
+    [property: JsonRequired] IReadOnlyList<PlayerDeckRecipe>? PlayerDecks = null,
+    [property: JsonRequired] Marvel.Rules.Campaign.CampaignGameSetup? Campaign = null)
 {
     internal SessionSetup Snapshot() => this with
     {

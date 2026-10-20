@@ -11,6 +11,10 @@ static func problems(main: Control) -> Array[String]:
 	var viewport := main.find_child("ContextualActionScroll", true, false) as Control
 	if viewport != null:
 		failures.append_array(commitment_problems(viewport))
+	for name in preload("res://smoke/decision_surface_controls.gd").SURFACES:
+		var surface := main.find_child(name, true, false) as Control
+		if surface != null and surface.is_visible_in_tree():
+			failures.append_array(commitment_problems(surface))
 	return failures
 
 
@@ -32,14 +36,16 @@ static func _bounded_caption(button: Button) -> bool:
 		or str(button.name).begins_with("InspectPile") \
 		or str(button.name).begins_with("InspectAttachments") \
 		or str(button.name).begins_with("Contextual") \
-		or button.name in [&"Earlier", &"More", &"CopyInvitation", &"CompleteChoiceSheet"]
+		or button.name in [&"Earlier", &"More", &"CopyInvitation", &"CompleteChoiceSheet",
+			&"Submit", &"LocalChooseAction", &"LocalReturnToTable", &"CloseChoiceSheet"]
 
 
 static func commitment_problems(viewport: Control) -> Array[String]:
 	var failures: Array[String] = []
-	for node in viewport.find_children("ContextualCommit", "Button", true, false):
+	for node in viewport.find_children("*", "Button", true, false):
 		var button := node as Button
-		if button.is_visible_in_tree() and button.size.y > viewport.size.y + 0.5:
+		if button.name in [&"ContextualCommit", &"Submit"] and button.is_visible_in_tree() \
+				and button.size.y > viewport.size.y + 0.5:
 			failures.append("%s cannot fit a whole commitment in its viewport: %.1f > %.1f" % [
 				button.name, button.size.y, viewport.size.y])
 	return failures

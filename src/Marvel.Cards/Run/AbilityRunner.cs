@@ -41,6 +41,7 @@ public sealed class AbilityRunner : ICardAbilities
 
     public const string ChooseVerb = AbilityStructuralExecution.ChooseVerb;
     public IReadOnlySet<string> Authored => program.Authored;
+    public bool CanPlayFromStorage(World world, Card card, int player) => AbilityStoragePermission.CanPlay(world, program, card, player);
     public CardCounterPool? CounterPool(World world, Card card) => AbilityProgramQueries.CounterPool(world, program, card);
     public IReadOnlyList<ContinuousEffect> Constant(World world, Card card) => constantQueries.Constant(world, card);
     public string ResourcesGeneratedBy(World world, Card source, Card? payingFor) => AbilityProgramQueries.ResourcesGeneratedBy(world, program, source, payingFor);
@@ -95,6 +96,9 @@ public sealed class AbilityRunner : ICardAbilities
     public AbilityExecutionResult Setup(World world, AbilityExecution entry, Card card) =>
         AbilityEntryExecution.Run(world, entry, () => resolution.Setup(world, card));
     public IReadOnlyList<GameEvent> ResolveEachPlayer(World world, PhaseStep continuation) => new EachPlayerAbilityResolution(resolution).Resolve(world, continuation);
+    public AbilityExecutionResult WhenCardsDefeated(World world, AbilityExecution entry,
+        IReadOnlyList<Defeated> defeated, string trigger) =>
+        AbilityEntryExecution.Run(world, entry, () => resolution.WhenCardsDefeated(world, defeated, trigger, entry.Occurrence));
     public AbilityExecutionResult WhenCardDefeated(World world, AbilityExecution entry,
         Card card, Defeated defeated, string trigger) =>
         AbilityEntryExecution.Run(world, entry, () => resolution.WhenCardDefeated(world, card, defeated, trigger, entry.Occurrence));

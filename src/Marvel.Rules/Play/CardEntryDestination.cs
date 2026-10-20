@@ -16,6 +16,9 @@ internal static class CardEntryDestination
             CardKind.Support when placement.SetupController is { } controller => world.AreaOf(
                 DeckType.SupportsArea, PlayArea.Of(controller), cardOwner: controller),
 
+            CardKind.Upgrade when placement.SetupController is { } controller =>
+                SetupUpgrade(world, card, controller),
+
             // `rr:reveal.3` and `rr:minion`: "it enters play in the play area of
             // the player revealing it. **It is considered to engage that
             // player.**" Engagement is not a flag beside the minion -- it is
@@ -64,4 +67,15 @@ internal static class CardEntryDestination
             _ => null,
         };
     }
+    private static Area SetupUpgrade(World world, Card card, int controller)
+    {
+        // rr:upgrade: without an attachment instruction an upgrade belongs to its identity.
+        // A printed attachment choice needs an explicit decision, never an arbitrary host.
+        if (world.CardPlayAbilities.AttachmentTargets(world, card) is not null)
+            throw new RulesNotImplementedException(
+                $"setup upgrade '{card.FaceId}' requires an attachment-target decision");
+        return world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(controller),
+            world.Seats[controller].IdentityCard.ObjectId, cardOwner: card.Owner);
+    }
+
 }

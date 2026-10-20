@@ -7,6 +7,9 @@ namespace Marvel.Rules.Play;
 public sealed record ConsequentialDamageOperation(ConsequentialDamageKind Kind,
     int Character = -1) : AgendaOperation
 {
+    /// <summary>The stat substituted for this exact ally thwart.</summary>
+    public bool UsesAttack { get; init; }
+
     /// <inheritdoc/>
     public override string What => Kind switch
     {

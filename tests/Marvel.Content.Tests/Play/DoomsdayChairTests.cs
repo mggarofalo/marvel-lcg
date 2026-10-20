@@ -163,7 +163,9 @@ public sealed class DoomsdayChairTests
     {
         var chair = world.CreateCard(
             AuthoredCards.DoomsdayChair, world.AreaOf(DeckType.RevealingArea));
-        AuthoredCards.Runner().ExecuteReveal(world, chair, player);
+        var runner = AuthoredCards.Runner();
+        runner.ExecuteReveal(world, chair, player);
+        Agendas.Finish(world, Cards, runner);
     }
 
     private static World Deal(params string[] heroes)

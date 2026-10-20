@@ -58,16 +58,20 @@ internal sealed class SpatialTableObjectRenderer
 
     internal void RenderPlayer(IReadOnlyList<BoardAreaPresentation> areas)
     {
+        int lowerStart = surface.GetChildCount();
         if (!piles.Render(areas, "DiscardPile", geometry.PlayerDiscard))
         {
             piles.RenderEmpty("PlayerDiscard", "Discard\nEmpty", geometry.PlayerDiscard, openingMulligan);
         }
         piles.Render(areas, "PlayerDeck", geometry.PlayerDeck);
+        TableCanvasReflow.MoveAddedMiddle(surface, lowerStart);
         RenderCards(areas, "EngagedEnemiesArea", geometry.EngagedEnemies, CardDisplaySize.Board);
+        lowerStart = surface.GetChildCount();
         RenderCards(areas, "HeroArea", geometry.Identity, CardDisplaySize.Board);
         RenderCards(areas, "AlliesArea", geometry.Allies, CardDisplaySize.Board);
         RenderCards(areas, "SupportsArea", geometry.Assets, CardDisplaySize.Board);
         RenderCards(areas, "UpgradesArea", geometry.Upgrades, CardDisplaySize.Board, includeHosted: true);
+        TableCanvasReflow.MoveAddedMiddle(surface, lowerStart);
     }
 
     internal void RenderHosted(IReadOnlyList<BoardAreaPresentation> areas)
@@ -88,6 +92,8 @@ internal sealed class SpatialTableObjectRenderer
             areas.SelectMany(area => area.Cards).Where(card => card.TargetId.HasValue && !card.Concealed)
                 .DistinctBy(card => card.TargetId).ToDictionary(card => card.TargetId!.Value, card => card.Title));
         surface.AddChild(sources);
+        TableCanvasReflow.Grow(surface, sources);
+        TableCanvasReflow.MoveMiddle(surface, sources);
         result.RegisterDropTarget(seat, sources);
     }
 

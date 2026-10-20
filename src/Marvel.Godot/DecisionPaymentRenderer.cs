@@ -44,7 +44,7 @@ internal sealed class DecisionPaymentRenderer
         }
         CostOption selectedCost = selected.CostOptions[composer.SelectedCost];
         AddVariables(selectedCost);
-        if (panel.PaymentModalOpen) new DecisionPaymentSources(panel, composer, generation).Add(selectedCost);
+        if (panel.PaymentModalOpen || panel.LocalDecision.IsOpen) new DecisionPaymentSources(panel, composer, generation).Add(selectedCost);
         else AddGenerators(selectedCost);
         new DecisionPaymentResourceAssignmentRenderer(
             panel, composer, world, submitting, generation).Add(selectedCost);
@@ -52,6 +52,11 @@ internal sealed class DecisionPaymentRenderer
     }
     private void AddCostOptions(Affordance selected)
     {
+        if (panel.LocalDecision.IsOpen && selected.CostOptions.Count == 1)
+        {
+            panel.AddContent(DecisionCostLabel.Create(selected.CostOptions[0], world, showTarget: false));
+            return;
+        }
         if (panel.PaymentModalOpen && selected.CostOptions.Count == 1)
         {
             return;
@@ -184,14 +189,14 @@ internal sealed class DecisionPaymentRenderer
             progress.ExcessIcons > 0 ? GodotThemeVariations.DangerText : GodotThemeVariations.Body,
             wrap: true);
         label.Name = "PaymentProgress";
-        if (panel.PaymentModalOpen) panel.AddCommit(label);
+        if (panel.PaymentModalOpen || panel.LocalDecision.IsOpen) panel.AddCommit(label);
         else panel.AddContent(label);
     }
 
     private void AddWarnings(DecisionProgressPresentation progress)
     {
         if (!progress.IsReady && progress.Error is not null
-            && (!panel.PaymentModalOpen || progress.Payment.IsSatisfied))
+            && (!(panel.PaymentModalOpen || panel.LocalDecision.IsOpen) || progress.Payment.IsSatisfied))
         {
             Label validation = DecisionPanel.Text(
                 $"! {progress.Error}",
@@ -216,7 +221,7 @@ internal sealed class DecisionPaymentRenderer
         AddWarnings(progress);
         string action = DecisionCopy.WithPaymentConsequence(
             DecisionPanelCopy.SubmitAction(composer, world), progress.Payment);
-        if (panel.PaymentModalOpen)
+        if (panel.PaymentModalOpen || panel.LocalDecision.IsOpen && composer.Selected?.PlaysCard == true)
             action = $"Pay and play {PromptPresentation.Describe(composer.Selected!.AnchorId, world)}";
         var submit = new Button
         {

@@ -28,7 +28,7 @@ func _inspect_and_dismiss_during_activity(rhino: Control) -> bool:
 	inspect.pressed = true
 	render_viewport.push_input(inspect)
 	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not inspector.visible:
 		_fail("read-only card inspection was blocked during accepted activity")
 		return false

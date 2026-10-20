@@ -32,6 +32,21 @@ public static class CardPayment
             Lasts: new Duration(Until: TimingPoints.EndOfPlayerPhase, Uses: 1)));
     }
 
+    /// <summary>Reduces the next matching card played by any player this phase.</summary>
+    public static ContinuousEffects.Registration ReduceNextMatchingCardCost(
+        World world, Card source, long amount, CardCostFilter filter)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(filter);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
+        return world.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, CardCostReduction, Amount: amount,
+            Card: source.ObjectId,
+            Lasts: new Duration(Until: TimingPoints.EndOfPhase, Uses: 1))
+        { CostFilter = filter });
+    }
+
     /// <summary>
     /// Determines one card's modified resource cost and remembers the effects
     /// that supplied the adjustment.
@@ -53,7 +68,9 @@ public static class CardPayment
         long amount = Resources.Cost(card.FaceId, facts, world.Players) ?? 0;
         var modifiers = world.Effects.Active().Where(effect =>
             string.Equals(effect.Kind, CardCostReduction, StringComparison.Ordinal)
-            && effect.Affects == seat.IdentityCard.ObjectId
+            && (effect.Affects == seat.IdentityCard.ObjectId
+                || effect.Affects is null && effect.CostFilter is not null)
+            && Matches(world, card, effect.CostFilter)
             && effect.Amount > 0).ToList();
 
         foreach (var modifier in modifiers)
@@ -63,6 +80,10 @@ public static class CardPayment
 
         return new AdjustedCardCost(amount, modifiers);
     }
+
+    private static bool Matches(World world, Card card, CardCostFilter? filter) =>
+        filter is null || (filter.Kind is null || EffectiveCards.Kind(card, world.Facts) == filter.Kind)
+            && (filter.Trait is null || Traits.Has(world, card, filter.Trait, world.Facts));
 
     /// <summary>Consumes the one-use effects applied to a successfully played card.</summary>
     public static void UseCostModifiers(World world, AdjustedCardCost cost)
@@ -94,10 +115,10 @@ public static class CardPayment
         World world, ICardFacts facts, Seat seat, Card? payingFor = null)
         => Generators(world, facts, seat, world.ResourceAbilities, payingFor);
 
-    /// <summary>Every resource source supplied by one explicit card capability.</summary>
+    /// <summary>Every eligible source from one card capability. Ability source restricts generators without applying card-play multipliers.</summary>
     public static IReadOnlyList<ResourceSource> Generators(
         World world, ICardFacts facts, Seat seat,
-        IResourceCardAbilities resourceAbilities, Card? payingFor = null)
+        IResourceCardAbilities resourceAbilities, Card? payingFor = null, Card? abilitySource = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -111,7 +132,8 @@ public static class CardPayment
         // recorded prompt carries, and it is why that prompt lists six
         // generators for five payable cards.
         var sources = new List<ResourceSource>(resourceAbilities.ResourceAbilities(
-            world, seat.Index));
+            world, seat.Index).Where(source => ResourceSourceEligibility.Allows(
+                world, facts, source, payingFor ?? abilitySource)));
 
         foreach (var card in seat.Hand.Cards)
         {

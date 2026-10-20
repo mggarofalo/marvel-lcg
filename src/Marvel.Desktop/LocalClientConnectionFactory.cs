@@ -11,38 +11,48 @@ internal static class LocalClientConnectionFactory
     private static readonly object gate = new();
     private static readonly HashSet<QueuedInProcessTransport> hosts = [];
     private static bool stopping;
+    private static readonly DesktopPersistentHosts persistent = new();
 
-    internal static LocalClientConnection Connect(string dataRoot)
+    internal static LocalClientConnection Connect(string dataRoot, string? saveDirectory = null)
     {
         OperationalLog log = ClientComposition.ProcessLog;
         try
         {
-            var host = new EngineHost(DatasetGameFactory.Load(dataRoot), log: log);
             lock (gate)
             {
                 if (stopping) throw new InvalidOperationException("The desktop host lifetime is closing.");
-                var transport = new QueuedInProcessTransport(host);
+                var transport = new QueuedInProcessTransport(persistent.Get(dataRoot, log, saveDirectory));
                 hosts.Add(transport);
                 _ = ReleaseAfterShutdownAsync(transport);
                 return new LocalClientConnection(new LocalGameClient(transport, log), Error: null);
             }
+        }
+        catch (DesktopStorageException)
+        {
+            log.Write(OperationalEventIds.ServerStartFailed, "rejected",
+                operation: "embedded_start", errorCode: "save_storage_unavailable");
+            return new LocalClientConnection(Client: null, new ClientStartupError("save_storage_unavailable",
+                "The local save storage could not be opened. Close another game using these saves, or check folder access. No alternate save location was used."));
         }
         catch (Exception)
         {
             log.Write(OperationalEventIds.ServerStartFailed, "rejected",
                 operation: "embedded_start", errorCode: "content_unavailable");
             return new LocalClientConnection(Client: null, new ClientStartupError("content_unavailable",
-                "The local game could not load its committed Core Set content."));
+                "The local game could not load its committed game content."));
         }
     }
 
-    internal static Task ShutdownAsync()
+    internal static async Task ShutdownAsync()
     {
+        Task completion;
         lock (gate)
         {
             stopping = true;
-            return Task.WhenAll(hosts.Select(host => host.DisposeAsync().AsTask()));
+            completion = Task.WhenAll(hosts.Select(host => host.DisposeAsync().AsTask()));
         }
+        await completion.ConfigureAwait(false);
+        lock (gate) persistent.Dispose();
     }
 
     private static async Task ReleaseAfterShutdownAsync(QueuedInProcessTransport transport)

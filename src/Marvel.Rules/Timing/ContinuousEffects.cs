@@ -430,7 +430,7 @@ public sealed class ContinuousEffects(World state)
     }
 
     /// <summary>Whether a card is part of one preflighted departure snapshot.</summary>
-    internal bool IsDeparting(Card card) => departing.Contains(card.ObjectId);
+    public bool IsDeparting(Card card) => departing.Contains(card.ObjectId);
 
 
     internal DepartureScope BeginDepartures(IReadOnlyList<int> cards)

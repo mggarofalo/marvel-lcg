@@ -67,6 +67,7 @@ func _committed_faces_retire(observed: Dictionary) -> bool:
 	return true
 
 func _scale_and_scene_retire(probe: Node) -> bool:
+	if not await _local_inspector_lifetime_is_safe(): return false
 	var old_face: WeakRef = weakref(_face(RHINO))
 	var scale := main.get_node("StatusBar/InterfaceScale") as HSlider
 	# Physical cards retain their readable table scale independently of the interface.
@@ -77,11 +78,34 @@ func _scale_and_scene_retire(probe: Node) -> bool:
 		_fail("physical face with replaced reading geometry remains owned")
 		return false
 	var current_face: WeakRef = weakref(_face(RHINO))
+	var current_inspector: WeakRef = weakref(main.find_child("CardInspector", true, false))
 	main.queue_free()
 	probe.queue_free()
 	for frame in 3: await process_frame
 	if current_face.get_ref() != null:
 		_fail("last table retains a procedural face after closing")
+		return false
+	if current_inspector.get_ref() != null:
+		_fail("closing the local decision scene leaked its shared inspector")
+		return false
+	return true
+
+func _local_inspector_lifetime_is_safe() -> bool:
+	var local := main.find_child("LocalDecisionWorkspace", true, false)
+	var inspector := main.find_child("CardInspector", true, false)
+	if local == null or inspector.get_parent() != local.get_parent():
+		_fail("the staged hero attack did not own inspection in its local layer")
+		return false
+	var original_id := inspector.get_instance_id()
+	if not await _pointer_activate(local.find_child("LocalReturnToTable", true, false)): return false
+	for frame in 3: await process_frame
+	if not is_instance_valid(inspector) or inspector.get_parent() != main:
+		_fail("closing a local draft failed to restore the shared inspector to the table")
+		return false
+	if not await _pointer_activate(_button_named("Resume current choice")): return false
+	local = main.find_child("LocalDecisionWorkspace", true, false)
+	if inspector.get_instance_id() != original_id or inspector.get_parent() != local.get_parent():
+		_fail("resuming a local draft replaced or lost its shared inspector")
 		return false
 	return true
 

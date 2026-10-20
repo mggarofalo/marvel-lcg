@@ -43,7 +43,7 @@ func _action_card_preview_is_safe() -> bool:
 	if card == null:
 		_fail("the post-mulligan table has no readable hand card")
 		return false
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not await _open_immediate_preview(card, inspector): return false
 	if not await preload("res://smoke/local_game_smoke_preview_switch.gd").perform(self, card, inspector): return false
 	if not await _bridge_and_dismiss_preview(inspector): return false
@@ -57,7 +57,8 @@ func _open_immediate_preview(card: Control, inspector: Control) -> bool:
 	render_viewport.push_input(leave, true)
 	await process_frame
 	var resting_z := card.z_index
-	var resting_position := card.position
+	var region := "HandDropArea" if card.has_meta("spatial_hand_index") else "VillainTable"
+	var resting_pose := preload("res://smoke/player_card_pose.gd").capture(self, card, region)
 	var resting_rotation := card.rotation
 	var body_point := await _exposed_card_body_point(card)
 	if body_point == Vector2.INF:
@@ -68,9 +69,9 @@ func _open_immediate_preview(card: Control, inspector: Control) -> bool:
 	motion.global_position = motion.position
 	render_viewport.push_input(motion, true)
 	await process_frame
-	if card.z_index <= resting_z or not card.position.is_equal_approx(resting_position) \
+	if card.z_index <= resting_z or not card.get_global_transform().is_equal_approx(preload("res://smoke/player_card_pose.gd").expected(resting_pose)) \
 			or not is_equal_approx(card.rotation, resting_rotation):
-		_fail("inspection must bring the card forward without moving or rotating its hit area")
+		_fail("inspection must raise the card without changing its table-relative pose: z=%s/%s expected=%s actual=%s rotation=%s/%s" % [resting_z, card.z_index, preload("res://smoke/player_card_pose.gd").expected(resting_pose), card.get_global_transform(), resting_rotation, card.rotation])
 		return false
 	if not inspector.visible or (inspector.get_node("Backdrop") as Control).mouse_filter \
 			!= Control.MOUSE_FILTER_IGNORE:
@@ -85,7 +86,7 @@ func _open_immediate_preview(card: Control, inspector: Control) -> bool:
 
 
 func _top_row_previews_keep_their_sources() -> bool:
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	for title in ["Rhino", "The Break-In!"]:
 		var card := _tabletop_card_named(title)
 		if card == null:
@@ -169,7 +170,7 @@ func _show_action_card_preview(action_card: Button) -> Control:
 	action_card.grab_focus()
 	await process_frame
 	var motion := InputEventMouseMotion.new()
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	for attempt in 4:
 		motion.position = preview_point + Vector2(attempt % 2, 0)
 		motion.global_position = motion.position
@@ -277,7 +278,7 @@ func _pinned_inspector_mouse_filter_is_safe(hand_card: Control) -> bool:
 	if not await _keyboard_activate(hand_card):
 		return false
 	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if inspector == null or not inspector.visible:
 		_fail("the pointer probe could not open a pinned card inspector")
 		return false
@@ -300,7 +301,7 @@ func _open_card_inspector(hand_card: Control) -> Control:
 	if not await _keyboard_activate(hand_card):
 		return null
 	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if inspector == null or not inspector.visible:
 		_fail("clicking a card did not open the card inspector")
 		return null

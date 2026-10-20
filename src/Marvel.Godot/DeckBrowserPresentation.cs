@@ -28,7 +28,7 @@ internal sealed class DeckBrowserPresentation(DeckEditorControls ui, DeckWorkspa
             ui.Search.Text = (ui.Search.Text + " " + prefix + "\"" + value + "\"").Trim();
             Filter();
         };
-        foreach (string scope in new[] { "Playable Core", "All research cards", "Player cards", "Encounter cards" }) ui.CardScope.AddItem(scope);
+        foreach (string scope in new[] { "Playable cards", "All research cards", "Player cards", "Encounter cards" }) ui.CardScope.AddItem(scope);
         ui.CardScope.ItemSelected += _ => Filter();
         foreach (string sort in new[] { "Sort: Name", "Sort: Pack", "Sort: Aspect", "Sort: Type", "Sort: Cost" }) ui.Sort.AddItem(sort);
         ui.Sort.ItemSelected += _ => Filter();

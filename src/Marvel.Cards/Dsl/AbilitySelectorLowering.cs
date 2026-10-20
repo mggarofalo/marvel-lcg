@@ -46,9 +46,11 @@ internal static class AbilitySelectorLowering
             "titled" => new AbilityCardSelection.Titled(Text(node.Argument, child)),
             "enemiesWithTrait" => new AbilityCardSelection.EnemiesWithTrait(Text(node.Argument, child)),
             "withTrait" => WithTrait(node.Argument, child),
+            "withoutTrait" => WithTrait(node.Argument, child) with { Exclude = true },
             "inObjectIdOrder" => new AbilityCardSelection.InObjectIdOrder(SelectCards(node.Argument, child)),
             "defeatedWithProfile" => DefeatedProfile(node.Argument, child),
             "faceDown" => new AbilityCardSelection.FaceDown(SelectCards(node.Argument, child)),
+            "firstAvailable" => FirstAvailable(node.Argument, child),
             "last" => new AbilityCardSelection.Last(SelectCards(node.Argument, child)),
             "inPlayerArea" => PlayerArea(node.Argument, child),
             "withMatchingPlayerArea" => MatchingPlayerArea(node.Argument, child),
@@ -60,6 +62,17 @@ internal static class AbilitySelectorLowering
         };
     }
 
+    private static AbilityCardSelection.FirstAvailable FirstAvailable(AbilityValue value, AbilityLocation location)
+    {
+        if (value is not AbilityValue.List { Values.Count: >= 2 and <= 8 } list)
+            throw location.Error("expected two to eight ordered card selections");
+        var options = list.Values.Select(item => SelectCards(item, location)).ToImmutableArray();
+        if (options.Any(option => option is not AbilityCardSelection.Titled
+            and not AbilityCardSelection.Query { Kind: AbilityCardQuery.Villain or AbilityCardQuery.MainScheme }))
+            throw location.Error("fallback options must name a public title, villain, or main scheme");
+        return new(options);
+    }
+
     internal static AbilityCardQuery Query(string name, AbilityLocation location) => name switch
     {
         "villain" => AbilityCardQuery.Villain,
@@ -69,6 +82,9 @@ internal static class AbilitySelectorLowering
         "minionsEngagedWithYou" => AbilityCardQuery.MinionsEngagedWithYou,
         "identitiesWithinPerPlayerLimit" => AbilityCardQuery.IdentitiesWithinPerPlayerLimit,
         "attachedToThis" => AbilityCardQuery.AttachedToThis,
+        "attachmentsOnVillain" => AbilityCardQuery.AttachmentsOnVillain,
+        "attachmentsOnThis" => AbilityCardQuery.AttachmentsOnThis,
+        "beneathThis" => AbilityCardQuery.BeneathThis,
         "heroesAndAllies" => AbilityCardQuery.HeroesAndAllies,
         "heroAndAllyTargets" => AbilityCardQuery.HeroAndAllyTargets,
         "sideSchemes" => AbilityCardQuery.SideSchemes,
@@ -84,6 +100,7 @@ internal static class AbilitySelectorLowering
         "identitySpecificInYourHand" => AbilityCardQuery.IdentitySpecificInYourHand,
         "supportsYouControl" => AbilityCardQuery.SupportsYouControl,
         "charactersYouControl" => AbilityCardQuery.CharactersYouControl,
+        "charactersYouControlExceptCost" => AbilityCardQuery.CharactersYouControlExceptCost,
         "upgradesYouControl" => AbilityCardQuery.UpgradesYouControl,
         "enemiesEngagedWithChosenPlayer" => AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
         "alliesYouControl" => AbilityCardQuery.AlliesYouControl,
@@ -91,6 +108,8 @@ internal static class AbilitySelectorLowering
         "heroes" => AbilityCardQuery.Heroes,
         "identities" => AbilityCardQuery.Identities,
         "characters" => AbilityCardQuery.Characters,
+        "otherEnvironments" => AbilityCardQuery.OtherEnvironments,
+        "cardsYouControl" => AbilityCardQuery.CardsYouControl,
         _ => throw location.Error($"'{name}' is not a card query"),
     };
 
@@ -121,6 +140,7 @@ internal static class AbilitySelectorLowering
 
     private static DeckType PublicPlayerArea(AbilityValue value, AbilityLocation location) => Text(value, location) switch
     {
+        "identity" => DeckType.HeroArea,
         "discardPile" => DeckType.DiscardPile,
         "upgrades" => DeckType.UpgradesArea,
         "allies" => DeckType.AlliesArea,
@@ -146,6 +166,7 @@ internal static class AbilitySelectorLowering
             "cost" => AbilityCardRank.Cost,
             "attack" => AbilityCardRank.Attack,
             "printedHealth" => AbilityCardRank.PrintedHealth,
+            "remainingHealth" => AbilityCardRank.RemainingHealth,
             _ => throw location.Child("by").Error($"'{by}' is not a card ranking"),
         };
         return new(SelectCards(Required(fields, "of", location), location.Child("of")), rank, maximum);
@@ -153,7 +174,7 @@ internal static class AbilitySelectorLowering
 
     internal static AbilityCardSelection.InAreas InAreas(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "area", "areas", "kind", "trait", "title");
+        var fields = Fields(value, location, "area", "areas", "kind", "trait", "title", "top", "aspectOnly", "cardClass");
         if (fields.ContainsKey("area") == fields.ContainsKey("areas"))
         {
             throw location.Error("expected exactly one of 'area' and 'areas'");
@@ -161,7 +182,7 @@ internal static class AbilitySelectorLowering
         ImmutableArray<AbilitySearchArea> areas;
         if (fields.TryGetValue("area", out var area))
         {
-            areas = [SearchArea(area, location.Child("area"))];
+            areas = [SearchArea(area, location.Child("area"), allowPlayArea: true)];
         }
         else
         {
@@ -173,7 +194,7 @@ internal static class AbilitySelectorLowering
             var builder = ImmutableArray.CreateBuilder<AbilitySearchArea>(list.Values.Count);
             for (int index = 0; index < list.Values.Count; index++)
             {
-                builder.Add(SearchArea(list.Values[index], location.Child("areas").Item(index)));
+                builder.Add(SearchArea(list.Values[index], location.Child("areas").Item(index), allowPlayArea: true));
             }
             areas = builder.MoveToImmutable();
         }
@@ -188,16 +209,19 @@ internal static class AbilitySelectorLowering
             }
             kind = parsed;
         }
-        return new(areas, kind, OptionalText(fields, "trait", location), OptionalText(fields, "title", location));
+        return AbilitySearchFilters.Lower(new(areas, kind, OptionalText(fields, "trait", location), OptionalText(fields, "title", location)), fields, location);
     }
 
-    internal static AbilitySearchArea SearchArea(AbilityValue value, AbilityLocation location) =>
+    internal static AbilitySearchArea SearchArea(AbilityValue value, AbilityLocation location, bool allowPlayArea = false) =>
         Text(value, location) switch
         {
             "encounterDeck" => AbilitySearchArea.EncounterDeck,
             "encounterDiscardPile" => AbilitySearchArea.EncounterDiscardPile,
             "scenarioSetAside" => AbilitySearchArea.ScenarioSetAside,
             "yourDeck" => AbilitySearchArea.YourDeck,
+            "yourDiscardPile" => AbilitySearchArea.YourDiscardPile,
+            "yourHand" => AbilitySearchArea.YourHand,
+            "yourPlayArea" when allowPlayArea => AbilitySearchArea.YourPlayArea,
             var name => throw location.Error($"'{name}' is not a supported search area"),
         };
 
@@ -238,3 +262,4 @@ internal static class AbilitySelectorLowering
         IReadOnlyDictionary<string, AbilityValue> fields, string name, AbilityLocation location) =>
         fields.TryGetValue(name, out var value) ? Text(value, location.Child(name)) : null;
 }
+

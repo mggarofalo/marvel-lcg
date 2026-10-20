@@ -26,9 +26,9 @@ internal static class AbilityPowerStateMutation
         {
             "exhaust" or "ready" => Readiness(node, cast, state),
             "grantUntil" => Grant(node, cast, state),
-            "putIntoPlay" => Enter(node, cast, state),
-            "draw" => Draw(node, cast, state),
-            "discard" => Discard(node, cast, state),
+            "putIntoPlay" => AbilityPowerCardMovement.Enter(node, cast, state),
+            "draw" => AbilityPowerCardMovement.Draw(node, cast, state),
+            "discard" => AbilityPowerCardMovement.Discard(node, cast, state),
             "removeThreat" => RemoveThreat(node, cast, state, multiplier),
             _ => Targeted(node, cast, bindingMayChange, state, multiplier),
         };
@@ -85,68 +85,6 @@ internal static class AbilityPowerStateMutation
         return state with { Modifiers = modifiers };
     }
 
-    private static AbilityPowerState Enter(
-        AbilityEffect node, AbilityAdmissionScope cast, AbilityPowerState state)
-    {
-        var entry = EffectOf<AbilityEffect.PutIntoPlay>(node, cast);
-        var card = Find(entry.Card, cast);
-        if (card is null) return state;
-        if (AbilityProgramQueries.On(cast.Context.Program, card).Any(ability =>
-                ability.Trigger.Timing == AbilityType.Constant))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' puts '{card.FaceId}' into play before "
-                + "a labelled-power continuation reads its constant abilities, "
-                + "which is not implemented");
-        }
-        var discarded = new HashSet<int>(state.Discarded);
-        if (!discarded.Remove(card.ObjectId)) return state;
-        var engagement = new Dictionary<int, int>(state.Engagement);
-        if (!entry.PrintedDestination) engagement[card.ObjectId] = Resolver(cast);
-        state = state with { Discarded = discarded, Engagement = engagement };
-        if (StateFields.Modified(
-                cast.World, card, "toughness", cast.World.Facts,
-                cast.World.Players) <= 0) return state;
-        var first = cast.World.Seats[cast.World.FirstPlayer].IdentityCard;
-        return SetPowerTough(state, card, true, first, cast);
-    }
-
-    private static AbilityPowerState Draw(
-        AbilityEffect node, AbilityAdmissionScope cast, AbilityPowerState state)
-    {
-        var draw = EffectOf<AbilityEffect.Draw>(node, cast);
-        foreach (int player in Seats(draw.Players, cast))
-        {
-            long available = PowerCardsAvailable(state, player, cast);
-            state = SetPowerCardsAvailable(
-                state, player, Math.Max(0, available - draw.Count), cast);
-        }
-        return state;
-    }
-
-    private static AbilityPowerState Discard(
-        AbilityEffect node, AbilityAdmissionScope cast, AbilityPowerState state)
-    {
-        var card = PowerFind(
-            EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, state);
-        if (card is null) return state;
-        var discarded = new HashSet<int>(state.Discarded);
-        var engagement = new Dictionary<int, int>(state.Engagement);
-        var counts = new Dictionary<(int Card, string Status), int>(state.StatusCounts);
-        var changes = new HashSet<(int Card, string Status)>(state.StatusChanges);
-        foreach (int leaving in PowerLeavingTree(card, cast))
-        {
-            discarded.Add(leaving);
-            TraceStatusesLeave(leaving, cast, counts, changes);
-            engagement.Remove(leaving);
-        }
-        return state with
-        {
-            Discarded = discarded, Engagement = engagement,
-            StatusCounts = counts, StatusChanges = changes,
-        };
-    }
-
     private static AbilityPowerState RemoveThreat(
         AbilityEffect node, AbilityAdmissionScope cast,
         AbilityPowerState state, long multiplier)
@@ -184,7 +122,9 @@ internal static class AbilityPowerStateMutation
     private static AbilityPowerState DefeatSideScheme(
         AbilityPowerState state, Card scheme, AbilityAdmissionScope cast)
     {
-        if (AbilityProjectedDefeatWindows.HasWork(state, scheme, cast))
+        if (AbilityProjectedDefeatWindows.CanDeferOwnDefeat(state, scheme, cast))
+            state = state with { DefeatWindowDeferred = true };
+        else if (AbilityProjectedDefeatWindows.HasWork(state, scheme, cast))
         {
             throw new RulesNotImplementedException(
                 $"side scheme '{scheme.FaceId}' is defeated before a "
@@ -248,10 +188,10 @@ internal static class AbilityPowerStateMutation
         {
             "dealDamage" or "dealAttackDamage" =>
                 [.. PowerEvery(targets, cast, state).Where(card =>
-                    CanTakeDamageInTrace(cast, card, state.Discarded))],
+                    AbilityDamageProtectionTrace.CanTakeDamageInTrace(cast, card, state.Discarded))],
             "moveDamage" or "moveAttackDamage" =>
                 PowerFind(targets, cast, state) is { } destination
-                    && CanTakeDamageInTrace(cast, destination, state.Discarded)
+                    && AbilityDamageProtectionTrace.CanTakeDamageInTrace(cast, destination, state.Discarded)
                         ? [destination] : [],
             _ => PowerEvery(targets, cast, state),
         };

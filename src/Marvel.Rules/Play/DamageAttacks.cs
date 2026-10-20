@@ -111,10 +111,9 @@ public static class DamageAttacks
         return resolution!.Result;
     }
     internal static void DiscardPiercedTough(
-        World world, ICardFacts facts, Card attacker, Card target, long amount,
-        string trigger, List<GameEvent> events)
+        World world, Card target, long amount, string trigger, List<GameEvent> events)
     {
-        if (amount <= 0 || !Keywords.Has(world, attacker, Keywords.Piercing, facts))
+        if (amount <= 0)
         {
             return;
         }

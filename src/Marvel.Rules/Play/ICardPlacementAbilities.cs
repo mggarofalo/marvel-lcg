@@ -12,5 +12,8 @@ public interface ICardPlacementAbilities
 {
     int? AttachesTo(World world, Card card);
     IReadOnlyList<int>? AttachmentTargets(World world, Card card);
+
+    /// <summary>Whether active printed text permits this player to play a stored card.</summary>
+    bool CanPlayFromStorage(World world, Card card, int player);
 }
 #pragma warning restore CS1591

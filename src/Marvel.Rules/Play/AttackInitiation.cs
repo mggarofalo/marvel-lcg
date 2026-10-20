@@ -43,15 +43,19 @@ internal static class AttackInitiation
         // considered to have activated". The umbrella, which a scheme sets too;
         // `world.Attack` is the six steps below it.
         world.Activation ??= new EnemyActivation(
-            step.Subject, step.Seat, Attacking: true, Id: step.ActivationId);
+            step.Subject, step.Seat, Attacking: true, Id: step.ActivationId)
+        { DealBoostCards = step.Require<EnemyAttackOperation>().DealBoostCards };
 
-        world.Agenda.Then(new PhaseStep(
-            new AttackStageOperation(AttackStageKind.GiveBoostCard),
-            step.Round,
-            1,
-            Index: step.Seat,
-            Subject: step.Subject
-        ) { ActivationId = step.ActivationId });
+        if (world.Activation.DealBoostCards)
+        {
+            world.Agenda.Then(new PhaseStep(
+                new AttackStageOperation(AttackStageKind.GiveBoostCard),
+                step.Round,
+                1,
+                Index: step.Seat,
+                Subject: step.Subject
+            ) { ActivationId = step.ActivationId });
+        }
         world.Agenda.Then(new PhaseStep(
             new AttackStageOperation(AttackStageKind.DeclareDefender),
             step.Round,

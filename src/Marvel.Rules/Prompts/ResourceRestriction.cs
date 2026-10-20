@@ -1,0 +1,12 @@
+namespace Marvel.Rules.Prompts;
+
+/// <summary>The printed kinds of cost that may consume a generated resource.</summary>
+public enum ResourceRestriction
+{
+    /// <summary>No printed spending restriction.</summary>
+    None,
+    /// <summary>An Arrow event, as printed on Expert Marksman.</summary>
+    ArrowEvent,
+    /// <summary>An aspect card's resource cost or ability cost, as printed on Finesse.</summary>
+    AspectCard,
+}

@@ -1,13 +1,16 @@
 # Product and repository scope
 
-The executable product is the Marvel Champions Core Set. The runtime supports:
+The executable products are the Marvel Champions Core Set and Rise of Red Skull. The runtime supports:
 
-- Spider-Man, Captain Marvel, She-Hulk, Iron Man and Black Panther;
-- Rhino, Klaw and Ultron in Standard and Expert modes;
+- Spider-Man, Captain Marvel, She-Hulk, Iron Man, Black Panther, Hawkeye and Spider-Woman;
+- Rhino, Klaw, Ultron, Crossbones, Absorbing Man, Taskmaster, Zola and Red Skull in Standard and Expert modes;
 - Bomb Scare, Masters of Evil, Under Attack, Legions of Hydra and The Doomsday
-  Chair; and
-- all 209 Core Set card faces; and
-- one through four seats using authored starters or validated, ordered Core decks.
+  Chair, Hydra Assault, Weapon Master and Hydra Patrol;
+- all 390 printed faces across the two products;
+- one through four seats using authored starters or validated, ordered decks; and
+- the five-scenario Rise of Red Skull campaign, with persistent progress, rewards
+  and saved games. Standard or Expert campaign rules are selected independently
+  of scenario difficulty.
 
 `datasets/setup/setup.json` defines which products the runtime can start.
 `datasets/abilities/abilities.json` defines which printed faces have executable
@@ -25,10 +28,8 @@ The repository keeps broader source material for research and future work:
 These datasets are authorities and research inputs. Their presence does not make
 a later product executable.
 
-The card DSL was designed against the complete card pool before the runtime was
-narrowed to the Core Set. That exercise validated the language against known
-future card patterns so later products should not require a wholesale rewrite.
-Only the 209 Core Set faces have executable ability rows today.
+The executable ability book contains the 209 Core Set and 181 Rise of Red Skull
+faces. Language support for a later card pattern does not admit that product.
 
 Some engine tests use synthetic cards or later-product patterns to prove a
 general rule or data shape. Those tests validate an engine primitive. They do

@@ -28,7 +28,8 @@ public sealed class AbilityProgramTests
         var source = AuthoredCards.Book;
         var program = AbilityLowering.Book(source);
 
-        Assert.Equal(209, program.Authored.Count);
+        var cards = Marvel.Content.CardCatalog.Parse(File.ReadAllText(Marvel.Tests.RepositoryPaths.Dataset("cards", "cards.json")));
+        Assert.Equal(209, program.Authored.Count(face => cards.Pack(face) == "core"));
         Assert.True(program.Authored.SetEquals(source.Authored));
         Assert.Equal(source.Abilities.Count, program.Abilities.Length);
         Assert.Equal(source.Abilities.Select(ability => (ability.Card, ability.Name)),

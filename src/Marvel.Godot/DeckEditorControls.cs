@@ -5,7 +5,7 @@ namespace Marvel.Godot;
 /// <summary>The deck library's native controls and keyboard-accessible editing surface.</summary>
 internal sealed class DeckEditorControls
 {
-    internal Window Window { get; } = new() { Name = "DeckLibrary", Title = "Core deck library", Size = new(1720, 940), MinSize = new(1000, 600), Transient = true, Exclusive = true, GuiEmbedSubwindows = true };
+    internal Window Window { get; } = new() { Name = "DeckLibrary", Title = "Deck library", Size = new(1720, 940), MinSize = new(1000, 600), Transient = true, Exclusive = true, GuiEmbedSubwindows = true };
     internal LineEdit Name { get; } = new() { PlaceholderText = "Deck name", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
     internal OptionButton Hero { get; } = new() { Name = "DeckIdentity", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
     internal Button InspectIdentity { get; } = new() { Text = "Preview identity" };

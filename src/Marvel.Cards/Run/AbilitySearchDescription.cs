@@ -7,7 +7,7 @@ internal static class AbilitySearchDescription
 {
     internal static string? Action(AbilityEffect effect) => SearchChoice(effect) is { } choice
         && Criterion(choice.From) is { } criterion
-            ? $"Search your deck for {criterion} and add it to your hand"
+            ? $"Search {SearchExtent(choice.From)} for {criterion} and add it to your hand"
             : null;
 
     internal static string? Summary(AbilityEffect effect) => Action(effect) is { } action
@@ -44,12 +44,16 @@ internal static class AbilitySearchDescription
     private static string? Criterion(AbilityCardSelection selector) => selector switch
     {
         AbilityCardSelection.WithTrait trait when Criterion(trait.Cards) is { } inner =>
-            WithTrait(inner, trait.Trait),
+            trait.Exclude ? $"{inner} without the {trait.Trait} trait" : WithTrait(inner, trait.Trait),
         AbilityCardSelection.InAreas { Areas: [AbilitySearchArea.YourDeck], Title: null } area =>
-            Article(string.Join(" ", new[] { area.Trait?.Replace('_', ' '),
+            Article(string.Join(" ", new[] { area.AspectOnly ? "aspect" : null,
+                area.CardClass == "Hero" ? "hero-specific" : area.CardClass?.ToLowerInvariant(), area.Trait?.Replace('_', ' '),
                 area.Kind?.ToString().ToLowerInvariant() ?? "card" }.Where(value => value is not null))),
         _ => null,
     };
+
+    private static string SearchExtent(AbilityCardSelection selector) => selector is AbilityCardSelection.InAreas { Top: { } count }
+        ? $"the top {count} cards of your deck" : "your deck";
 
     private static string WithTrait(string criterion, string trait) =>
         Article($"{trait.Replace('_', ' ')} {criterion[(criterion.IndexOf(' ') + 1)..]}");
@@ -61,9 +65,10 @@ internal static class AbilitySearchDescription
         (left, right) switch
         {
             (AbilityCardSelection.WithTrait a, AbilityCardSelection.WithTrait b) =>
-                a.Trait == b.Trait && SameSelection(a.Cards, b.Cards),
+                a.Trait == b.Trait && a.Exclude == b.Exclude && SameSelection(a.Cards, b.Cards),
             (AbilityCardSelection.InAreas a, AbilityCardSelection.InAreas b) =>
-                a.Areas.SequenceEqual(b.Areas) && a.Kind == b.Kind && a.Trait == b.Trait && a.Title == b.Title,
+                a == b || a.Areas.SequenceEqual(b.Areas) && a.Kind == b.Kind && a.Trait == b.Trait
+                && a.Title == b.Title && a.Top == b.Top && a.AspectOnly == b.AspectOnly && a.CardClass == b.CardClass,
             _ => false,
         };
 }

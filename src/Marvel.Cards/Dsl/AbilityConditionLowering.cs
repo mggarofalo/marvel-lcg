@@ -28,6 +28,7 @@ internal static class AbilityConditionLowering
             "not" => new AbilityCondition.Negated(LowerCondition(argument, child)),
             "finalStep" => Flag(argument, child, "true", AbilityConditionFact.FinalStep),
             "canMakeTheCall" => Flag(argument, child, "game", AbilityConditionFact.CanMakeTheCall),
+            "attackDamagedYou" => Flag(argument, child, "you", AbilityConditionFact.AttackDamagedYou),
             "attackDamaged" => Flag(argument, child, "trigger.target", AbilityConditionFact.AttackDamaged),
             "inExpertMode" => Flag(argument, child, "expert", AbilityConditionFact.InExpertMode),
             "defeatedByYou" => Flag(argument, child, "you", AbilityConditionFact.DefeatedByYou),
@@ -35,6 +36,7 @@ internal static class AbilityConditionLowering
             "undefendedAttack" => Flag(argument, child, "you", AbilityConditionFact.UndefendedAttack),
             "defeatedBy" => Flag(argument, child, "consequentialDamage", AbilityConditionFact.DefeatedByConsequentialDamage),
             "paidWithResource" => new AbilityCondition.PaidWithResource(Resource(argument, child)),
+            "discardedWithTrait" => new AbilityCondition.DiscardedWithTrait(Text(argument, child)),
             "discardedWithResource" => new AbilityCondition.DiscardedWithResource(Resource(argument, child)),
             "threatCause" => new AbilityCondition.CausedThreat(Text(argument, child) switch
             {
@@ -59,6 +61,7 @@ internal static class AbilityConditionLowering
             "hasStatus" => CardText(argument, child, "status", AbilityCardTextProperty.Status),
             "hasTrait" => CardText(argument, child, "trait", AbilityCardTextProperty.Trait),
             "cardSet" => CardText(argument, child, "set", AbilityCardTextProperty.Set),
+            "cardClass" => CardText(argument, child, "class", AbilityCardTextProperty.Class),
             "isTitle" => CardText(argument, child, "title", AbilityCardTextProperty.Title),
             "isKind" => IsKind(argument, child),
             "wasDefeated" => new AbilityCondition.WasDefeated(SelectCards(argument, child)),
@@ -80,6 +83,7 @@ internal static class AbilityConditionLowering
             "chosenPlayer" => AbilityPlayer.ChosenPlayer,
             "engagedPlayer" => AbilityPlayer.EngagedPlayer,
             "firstPlayer" => AbilityPlayer.FirstPlayer,
+            "defeater" => AbilityPlayer.Defeater,
             var name => throw location.Error($"'{name}' is not a player relation"),
         };
     }
@@ -128,6 +132,11 @@ internal static class AbilityConditionLowering
     {
         var fields = Fields(value, location, "card", name);
         string text = Text(Required(fields, name, location), location.Child(name));
+        if (property == AbilityCardTextProperty.Class
+            && text is not ("Aggression" or "Justice" or "Leadership" or "Protection" or "Basic" or "Hero" or "'Pool"))
+        {
+            throw location.Child(name).Error($"'{text}' is not a card class");
+        }
         if (property == AbilityCardTextProperty.Status
             && text is not (Statuses.Tough or Statuses.Stunned or Statuses.Confused))
         {
@@ -153,6 +162,8 @@ internal static class AbilityConditionLowering
             "ally" => CardKind.Ally,
             "upgrade" => CardKind.Upgrade,
             "treachery" => CardKind.Treachery,
+            "attachment" => CardKind.Attachment,
+            "environment" => CardKind.Environment,
             _ => throw location.Error($"'{name}' is not a supported condition card kind"),
         };
     }

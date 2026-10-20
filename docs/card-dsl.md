@@ -1,5 +1,13 @@
 # The card DSL
 
+`startingCounters` accepts optional boolean `perPlayer` (default false). Its
+positive `count` is multiplied by the number of players who started the scenario
+when the card enters play; later eliminations do not reduce that multiplier.
+
+`cardClass: { card, class }` tests the selected card's printed classification
+(`Aggression`, `Justice`, `Leadership`, `Protection`, `Basic`, `Hero`, or `'Pool`).
+Identity-specific cards retain their printed aspect classification for this test.
+
 The card DSL turns printed card text into inert JSON that the rules engine can
 execute. `Marvel.Cards` owns the parser and interpreter.
 
@@ -111,8 +119,8 @@ Each ability has these fields:
 | `when` | An additional live condition |
 | `cost` | What must be paid before the effect begins |
 | `effect` | One executable effect node |
-| `limitPerRound` | A per-instance use limit |
-| `maxPerRound`, `maxPerPhase`, `maxPerGame`, `maxPerInstance` | A title-shared maximum |
+| `limitPerRound`, `limitPerPhase` | A per-instance use limit; mutually exclusive positive integers |
+| `maxPerRound`, `maxPerPhase`, `maxPerGame`, `maxPerInstance`, `maxPerAttack`, `maxPerActivation` | A title-shared maximum |
 | `anyPlayer` | Printed permission for any player to use the ability |
 | `labels` | Printed attack, defense or thwart labels |
 | `printedResources` | Icons physically printed on a resource ability |
@@ -219,6 +227,36 @@ A `choose` node may carry a `descriptions` string list parallel to `options`.
 Those strings are engine-authored affordance descriptions: clients display
 them and do not reconstruct printed choices from effect-node names.
 
+Encounter `putIntoPlay` with `printedDestination` and `discardUntil` placement
+open entry interrupts before moving the retained card, then entry responses before
+continuing later text. Cancellation, a moved entrant, or a departed explicit
+attachment host completes the instruction with zero applied entries.
+`discardOtherEnvironments: "game"` discards the existing environment set while
+retaining the triggering environment.
+
+`enemyAttacks` and `enemySchemes` accept an optional numeric `modifier`, evaluated
+when each activation is scheduled. It modifies that activation's ATK or SCH and
+expires with its activation identity, including cancellation and nested activations.
+`enemyAttacks` also accepts `dealBoostCards: "false"` for a printed no-boost
+attack. This suppresses normal and additional deals for that activation only;
+boost cards assigned before the activation still resolve. The field defaults to
+`"true"` and is rejected on `enemySchemes`.
+`activationAttacksAgainstYou: "game"` counts completed attacks against the current
+player in the most recent scheduled activation collection. Canceled attacks do
+not count; a different defending player receives the attack receipt. Each-player
+continuations retain these receipts, and an empty new collection resets them.
+`undefendedAttack` reads the matching completed attack in an attack-end window.
+Form-qualified `WhenRevealed` abilities retain their authored ordinals while only
+the revealing player's current form is offered and resolved.
+
+Constant keyword grants accept `attackScope: "basic"` for basic ATK only,
+`attackScope: {"sourceTrait": "ARROW"}` for attacks with a matching source trait,
+and `attackScope: "source"` when the card itself supplies the attack. The last
+form must grant to `this`; an event's source grant is read for its own attack
+preview and resolution even while it is in hand. Scoped grants do not become
+unrestricted character keywords. Damage, retaliation and consequence previews
+share the engine's attacker/source/basic-power query.
+
 The implemented vocabulary covers these groups:
 
 - control flow such as sequences, conditions, alternatives and repetition;
@@ -261,7 +299,7 @@ heroes heroesAndAllies heroAndAllyTargets identities
 identitiesWithinPerPlayerLimit inForm indirectDamage isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou modified moveAttackDamage mul onto options overkill
-paidWithResource payOrEffect payOrExhaust perPlayer placeAccelerationToken
+paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
 placeAtRandom placeCounters placeThreat power powerAmount powerTargets
 preventDamage preventDamageFrom preventDamageWhile preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
@@ -277,6 +315,13 @@ yourAsideMinion yourAsidePile yourAsideSideScheme
 ```
 
 ## Generic selection and temporary identities
+
+`peekTop: "anyDeck"` first asks which nonempty deck to inspect. Its subsequent
+`CardLook` prompt grants only the acting player sight of that deck's top card,
+including its full printed text, until acknowledgement. It neither moves the
+card nor shuffles. The selected card, area and incarnation live in the existing
+ability continuation; visibility is prompt-scoped rather than a face-up mutation.
+The villain and main-scheme decks expose their current in-play top stages.
 
 `heroAndAllyTargets` selects hero-form identities and allies. The existing
 `heroesAndAllies` selector includes identities in either form for effects that
@@ -526,3 +571,170 @@ attack replacement; status-card priority remains higher. The parser rejects
 this marker on other ability timings. Optional “would” subwindows with distinct
 pass lifecycles are not represented by this marker. The supported Core optional
 damage-prevention and imminent-threat windows already isolate those conditions.
+
+### Campaign rewards and physical storage
+
+`exhaustTitled` is a cost naming the single ready card with the printed title under
+its acting player's control. Missing or ambiguous cards cannot pay it.
+`consumeCampaignCard` binds a campaign TECH reward, discards it, and records its
+physical campaign key as removed before resolving the ability effect. Untracked,
+already removed, or non-TECH instances cannot pay this cost.
+
+`storeBeneath` moves selected `cards` underneath a selected `host` outside play.
+`faceUp` controls public visibility; optional positive `randomCount` selects without
+replacement using the seeded game stream. `beneathThis` selects those stored cards,
+separately from in-play attachments. Host departure discards stored cards to their
+owners' discard piles.
+
+`initializeAuxiliaryDeck` initializes a named `experimentalWeapons` or `sideSchemes`
+deck from its selected cards. `revealAuxiliaryTop` resolves its top card through the
+ordinary encounter reveal procedure. Deck exhaustion and recycling are owned by
+the engine's auxiliary-deck rules.
+
+`cardsIn` also accepts `yourPlayArea`, including the resolver's in-play areas
+and attached cards, with the same printed filters. This aggregate is a selection
+boundary, not a shuffleable deck. It excludes other players and out-of-play cards.
+`preventSideSchemeDeparture: "this"` is a constant instruction, optionally inside
+an `if`, that prevents this side scheme leaving play. It also prevents defeat
+and its defeat events (ruling:25a8a46bc9925963); it does not prevent threat removal.
+`cardsIn` accepts `yourDiscardPile` as well as the named decks. Its optional
+positive `top` bound examines the top of one deck before applying kind, trait,
+title, or `aspectOnly` filters. `aspectOnly: "true"` selects printed Aggression,
+Justice, Leadership, or Protection cards; identity and Basic cards do not match.
+
+`allowPlayBeneath` is a Constant permission with printed `kind: "Event"` and a
+`trait`. The engine may play matching owned cards stored under the live controlled
+host as if in hand; the query never moves them to hand or makes them resources.
+
+### Restricted resource abilities
+
+A resource ability may declare `"resourceRestriction": "arrowEvent"` (Expert
+Marksman) or `"resourceRestriction": "aspectCard"` (Finesse). The payment engine
+checks the cost's actual card before offering or spending the source. Finesse
+can pay an aspect card's printed cost or a cost within its ability
+(`ruling:6800619dc41a043c`); ability-cost context does not activate card-play-only
+resource multipliers. The restriction is valid only on a Resource ability and
+unknown values fail admission. Printed wild icons use `G` as elsewhere in this DSL.
+
+Discard receipts expose `printedResourceIconsDiscarded` and `distinctPrintedResourceTypesDiscarded` numeric expressions (value `"game"`). They count printed resource icons, including wild as its own type, without payment multipliers. `printedBoostIconsDiscarded` counts numeric boost icons and excludes boost stars. Empty receipts yield zero.
+Arrow costs support `spendAny: N` for a positive number of resources without a required type, and `returnToHand: "this"` for returning the source from play to its owner. Event payment combines generic arrow costs with its printed price without charging twice. Returning a source discards attachments and ends its continuous effects before the post-arrow effect.
+### Environment trait copying
+
+`{"gainEnvironmentTraits":"this"}` is an unconditional, cost-free Constant
+root. Its source gains the current effective traits of every environment in
+play. Other grants and losses on those environments participate in the same
+constant-effect fixed point. Leaving play ends that environment's contribution;
+independent trait grants remain. This operation does not copy abilities.
+Encounter discard searches distinguish `then: reveal`, `putIntoPlayFirstPlayer`,
+`putIntoPlay` (the printed encounter destination without When Revealed), and
+`attachToThis` (the resolving source overrides the attachment's printed host).
+Their `kind` also accepts `attachment` and `environment`.
+
+Card ranking accepts `remainingHealth`, including current HP modifiers and damage,
+and preserves all ties for the printed chooser. `cardsIn` accepts `yourHand` and
+an optional `cardClass` printed classification filter, such as `Hero` for a
+hero-specific card. These spellings are authored DSL choices; the printed card
+and Rules Reference determine which criteria an ability must use.
+Deck arrow costs use `discardTop: { from: "yourDeck" | "encounterDeck", count: N }` or `dealEncounterCard: "you"`. The complete cost is admitted before payment, movement uses ordinary deck-reset rules, and physical discard receipts are available to the post-arrow numeric expressions. Resource-payment discards are excluded from those receipts.
+
+`discardUntil` can explicitly name `player: firstPlayer` for a reveal whose
+recipient differs from the resolving player. `attachCards: {cards, host}` attaches
+selected encounter attachments to the specified host without revealing them or
+re-running their printed host selection.
+
+`floorDiv` takes a numeric `value` and a positive integer `divisor`, returning
+mathematical floor division. Stall Tactics uses complete pairs of delay counters.
+`discardResourceIcons: 1` or `2` asks the resolving player to discard a minimal
+hand-card group containing that many printed icons, or all available icons when
+fewer exist. It does not generate resources or permit resource abilities.
+`cardsYouControl` selects in-play controlled player cards; `discardable` filters
+identity/main-scheme and permanent restrictions. `otherEnvironments` selects live
+environments other than the triggering occurrence's subject.
+
+`preventAttackDamage: "attack"` prevents all damage taken from the current enemy
+attack, including assigned indirect shares. It preserves damage dealt, Tough's
+priority, boost effects and attack completion. The state belongs to that attack,
+survives source departure and defender changes, and does not apply to later attacks.
+`sumPrintedCost` totals the printed costs of a selected set, allowing one threat
+placement after a group of captive choices. `releaseBeneath: {removeHost: true}`
+returns stored cards to their physical owners' hands before host departure can
+discard them, and removes the host. Omit `removeHost` or use false when ordinary
+defeat should discard the host. `attachmentsOnThis` selects encounter attachment
+cards only; upgrades and status cards are different types (ruling:81bce25b60d865d5).
+`ignoresCrisis` is a scoped thwart modifier: it permits that ability to remove main-scheme threat while a crisis side scheme is in play, without removing the crisis icon or changing other thwarts.
+`releaseBeneath` optionally takes `rescue: "true"` for CAPTIVE allies: the player credited with the triggering defeat becomes their physical owner, the campaign records that rescue when present, and they enter that player's hand before host removal. Ordinary release preserves each card's existing owner.
+
+The player relation `defeater` reads the triggering defeat's credited seat, including when a scenario-owned When Defeated ability has no resolving player. It refuses an uncredited defeat rather than choosing the first player.
+
+### Trait-qualified Avengers costs
+
+`exhaustChosen` accepts an optional `trait`, matched against the selected ready
+character's current traits as well as its declared control relation. Both the
+offer and payment validation use the same restriction.
+`charactersYouControlExceptCost` selects controlled characters excluding the
+physical cards exhausted for this ability's chosen-card cost. This evidence is
+retained across later target choices and continuations, so an effect saying
+“another” cannot ready the character that paid it.
+
+`reduceNextCardCost` retains its existing selected-player form. The form
+`{ "player": "any", "kind": "ally", "trait": "AVENGER", "amount": 1 }`
+creates one reduction usable by the next matching played card across all players
+until the end of the phase. Nonmatching cards and price queries do not consume
+it. Kind and trait restrictions are typed effect data; they are not inferred
+from card names.
+
+The condition discardedWithTrait tests whether a card discarded by the current resolution has the named printed trait. It reads the discard receipt, including cards that have subsequently moved, rather than searching the current discard pile.
+
+The `cardsIn` filter `cardSet` matches the canonical printed card-set identifier, independently of class or title.
+`useAttackForThwart: "trigger"` is an interrupt instruction attached to the exact
+initiated thwart. It substitutes the acting character's ATK for THW and uses ATK
+consequential icons for an ally. It does not grant permission to initiate a
+basic thwart with a dash THW, alter fixed card-effect amounts, or change a later
+thwart. A card ability's THW expressions are substituted only while that power
+body resolves; unrelated interrupts retain their ordinary stat reads.
+
+`eachPlayer` may specify `player: "defeater"` for a body explicitly assigned
+by printed text to the player credited with defeating the triggering card.
+This schedules only that player's resumable frame, without an ordering choice;
+`you`, searches, and choices within the body use that player. Missing defeat
+credit raises instead of selecting a default seat. An eliminated recipient is
+not scheduled. Omitting `player` retains the all-player frame behavior.
+
+`reflectAttackDamage: "attack"` installs a replacement on the active player attack for this attachment's host. Every damage instance against that target during the attack is prevented and dealt to the attacking player's identity instead. The replacement survives the attachment leaving play and ends with the owning attack.
+The card interpreter supplies `UsesThwartStat` on each scheduled power from its
+compiled numeric dependencies and resolved actor bindings. Stat substitution
+is offered only when that exact power reads its acting character's THW; a
+fixed-number effect or a reference to another character's THW offers no choice.
+
+`putIntoPlay` accepts `where: "yourPlayArea"` for a selected ally. Admission
+uses engine-owned ally entry legality (including uniqueness and form-only
+restrictions). Resolution ignores resource costs, uses the ordinary ally-limit
+and enters-play lifecycle, and resumes the containing ability after that work.
+A `chosen` ally retains its new entry provenance for a later instruction; if it
+leaves during entry responses, that instruction cannot affect a returned copy.
+
+`WhenPlayerTurnEnds` is the active player's end-of-turn occurrence, before advancing to the next player. Its player binding identifies that player. `inPlayerArea` accepts `identity` for the identity occupying the selected player's play area; encounter constants can select `engagedPlayer` without assuming player ownership.
+`distributeThreat` takes `schemes` and a positive integer `amount`. It allocates a total threat removal through the engine repeated-target contract, caps each scheme at its removable threat, applies event modifiers to the total once, and schedules one thwart with one removal instance per assigned scheme. Its ordered assignments remain in the existing power continuation for deterministic replay.
+
+
+`firstAvailable` selects the first nonempty option in an ordered list of two to eight public title, villain, or main-scheme selectors. It preserves every candidate from that option and never consults later options when the preferred host exists. Attachment placement uses the same selection for reveal and put-into-play entry.
+`activationIs: "attack"` or `"scheme"` tests the currently resolving enemy activation; boost effects can restrict a grant to that activation kind.
+
+`result: "schemesCleared"` is the number of schemes whose last threat was
+actually removed by the most recent removal instruction. It records committed
+removal against the threat held before that instruction, so a defeated side
+scheme's departure cannot erase the result. A removal that takes nothing records
+zero; later conditional text cannot inherit an earlier removal's success.
+Red Skull interpretations use `withoutTrait: { cards: <selector>, trait: "ELITE" }`
+to exclude a live trait before presenting choices. `preventDamageWhile` accepts
+`card: { titled: "Red Skull" }` to protect that in-play character while the
+constant source remains in play. `putIntoPlay` accepts
+`where: "engagedWithFirstPlayer"` for explicit first-player engagement.
+`chooseDiscardToShuffle` defaults to at least one card and distinct titles;
+`min: 0, differentTitles: "false"` represents an optional selection permitting
+multiple physical cards with the same title.
+`attachmentsOnVillain` selects only printed encounter attachments hosted by the current villain, excluding hosted statuses and player upgrades.
+`supportsYouControl` selects the resolving player's controlled supports in play.
+`forEach` takes a numeric `count` and an `effect` body, repeating that body for the resolved count. It supports printed counted instructions such as one additional boost card per side scheme.
+
+`attackDamagedYou: "you"` checks whether the completed enemy attack caused the attacked identity to take damage, including overkill, independently of damage to an ally defender.

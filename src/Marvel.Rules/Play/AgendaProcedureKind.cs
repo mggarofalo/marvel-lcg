@@ -30,4 +30,8 @@ public enum AgendaProcedureKind
     ResourcePayment,
     /// <summary>Played card resolution and finalization.</summary>
     CardEntry,
+    /// <summary>Campaign setup and expert recovery before opening hands.</summary>
+    Campaign,
+    /// <summary>Encounter placement with entry windows and no reveal text.</summary>
+    EncounterEntry,
 }

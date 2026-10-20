@@ -10,6 +10,7 @@ internal sealed class SetupSelectionControls
 {
     private readonly Main main;
     private DeckSetupController? decks;
+    private CampaignController? campaigns;
 
     internal GameSetupSelection ApplyDecks(GameSetupSelection setup) => decks?.Apply(setup) ?? setup;
 
@@ -38,6 +39,7 @@ internal sealed class SetupSelectionControls
         main.SetAssignmentControlsEnabled(true);
         OnScenarioSelected(0);
         decks ??= new DeckSetupController(main);
+        campaigns ??= new CampaignController(main);
     }
 
     internal void PopulateSecondHeroChoices()

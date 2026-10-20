@@ -10,7 +10,7 @@ static func inspect_played_upgrade(driver) -> bool:
 		return false
 	var revision: String = str((driver._node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	if not await driver._keyboard_activate(card): return false
-	var inspector := driver.main.get_node("CardInspector") as Control
+	var inspector := driver.main.find_child("CardInspector", true, false) as Control
 	if not inspector.visible or "Web-Shooter" not in driver._visible_text(inspector) \
 			or inspector.find_child("CardFace", true, false) == null:
 		driver._fail("the installed source tile did not open its complete card face")

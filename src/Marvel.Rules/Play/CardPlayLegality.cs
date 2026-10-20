@@ -119,7 +119,7 @@ public static class CardPlayLegality
         IReadOnlyList<int>? targets = null, ICardPlayAbilities? abilities = null,
         bool outOfPlayPermission = false)
     {
-        if (!PermittedLocation(seat, card, outOfPlayPermission)) return false;
+        if (!PermittedLocation(world, seat, card, outOfPlayPermission)) return false;
 
         // `rr:dash-value.1`: a dash cost cannot be paid; the card may only
         // enter play through another effect. The dataset represents that both
@@ -173,10 +173,10 @@ public static class CardPlayLegality
         return PlayableKind(EffectiveCards.Kind(card, facts));
     }
 
-    private static bool PermittedLocation(Seat seat, Card card, bool outOfPlayPermission) =>
+    private static bool PermittedLocation(World world, Seat seat, Card card, bool outOfPlayPermission) =>
         outOfPlayPermission
             ? card.Owner == seat.Index && !DeckTypes.IsInPlay(card.Area.Type)
-            : card.Area == seat.Hand;
+            : card.Area == seat.Hand || CardPlayOrigin.CanPlayEvent(world, card, seat.Index);
 
     private static bool PlayableKind(CardKind kind) =>
         kind is CardKind.Ally or CardKind.Upgrade or CardKind.Support or CardKind.Event;

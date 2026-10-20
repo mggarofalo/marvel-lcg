@@ -58,6 +58,18 @@ internal static class AbilityDamageReplacementExecution
     private static void Continue(AbilityResolutionExecution resolver, World world,
         DamageReplacement replacement, List<GameEvent> events)
     {
+        if (replacement.CurrentAmount > 0 && PlayerAttackReflection.For(world, replacement.Target) is { } reflection)
+        {
+            long amount = replacement.CurrentAmount;
+            replacement.Replace(replacement.Execution, 0);
+            var result = DamagePlacement.Resolve(world, world.Facts,
+                new(reflection.Source, reflection.Recipient, amount, reflection.Trigger, "Damage"), events);
+            if (!result.IsComplete)
+            {
+                Suspend(world, replacement, AbilityContinuationStage.Resume, events);
+                return;
+            }
+        }
         while (replacement.CurrentAmount > 0)
         {
             var pending = Pending(resolver, world, replacement);

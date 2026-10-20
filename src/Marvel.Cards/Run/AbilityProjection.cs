@@ -37,7 +37,7 @@ internal static class AbilityProjection
 
     internal static bool SelectorMembershipCanChange(AbilityCardSelection selector) => selector switch
     {
-        AbilityCardSelection.FaceDown or AbilityCardSelection.Last or AbilityCardSelection.WithMatchingPlayerArea => true,
+        AbilityCardSelection.FirstAvailable or AbilityCardSelection.FaceDown or AbilityCardSelection.Last or AbilityCardSelection.WithMatchingPlayerArea => true,
         AbilityCardSelection.InObjectIdOrder ordered => SelectorMembershipCanChange(ordered.Cards),
         AbilityCardSelection.InPlayerArea { Area: DeckType.EngagedEnemiesArea } => true,
         AbilityCardSelection.WithTrait or AbilityCardSelection.EnemiesWithTrait
@@ -45,7 +45,8 @@ internal static class AbilityProjection
         AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.AttackableEnemies
             or AbilityCardQuery.MinionsEngagedWithYou
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer or AbilityCardQuery.UpgradesYouControl
-            or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.UpgradesAndSupportsYouControl,
+            or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.UpgradesAndSupportsYouControl
+            or AbilityCardQuery.CardsYouControl,
         _ => false,
     };
 
@@ -62,6 +63,7 @@ internal static class AbilityProjection
             AbilityCardSelection.EnemiesWithTrait => true,
             AbilityCardSelection.WithTrait filtered => PotentialVillainSelector(filtered.Cards, cast),
 
+            AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => PotentialVillainSelector(option, cast)),
             AbilityCardSelection.Last filtered => PotentialVillainSelector(filtered.Cards, cast),
 
             AbilityCardSelection.FaceDown filtered => PotentialVillainSelector(filtered.Cards, cast),
@@ -196,6 +198,7 @@ internal static class AbilityProjection
     private static System.Collections.Immutable.ImmutableArray<AbilityNumber> CompositeOperands(
         AbilityNumber number) => number switch
         {
+            AbilityNumber.FloorDivide division => division.Operands,
             AbilityNumber.Minimum minimum => minimum.Operands,
             AbilityNumber.Sum sum => sum.Operands,
             AbilityNumber.Product product => product.Operands,
@@ -223,6 +226,7 @@ internal static class AbilityProjection
         }
         amount = number switch
         {
+            AbilityNumber.FloorDivide => IntegerQuotients.Floor(values[0], values[1]),
             AbilityNumber.Minimum => values.Min(),
             AbilityNumber.Sum => values.Sum(),
             _ => values.Aggregate(1L, (product, value) => product * value),
@@ -239,6 +243,7 @@ internal static class AbilityProjection
                 Enumerable.Range(0, cast.World.Seats.Count).Any(seat => SeatMayChange(formsMayChange, seat)),
             AbilityCardSelection.WithTrait filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
 
+            AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => CountSelectorFormsMayChange(option, cast, formsMayChange)),
             AbilityCardSelection.Last filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
 
             AbilityCardSelection.FaceDown filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),

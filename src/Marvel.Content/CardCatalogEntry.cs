@@ -18,6 +18,8 @@ internal sealed record CardCatalogEntry(
     IReadOnlyList<string> CounterTypes,
     IReadOnlyDictionary<string, long> CounterMaximums)
 {
+    internal string Pack { get; init; } = string.Empty;
+
     internal IReadOnlyDictionary<string, PrintedStatValue> PrintedStats { get; init; } =
         new Dictionary<string, PrintedStatValue>();
 }

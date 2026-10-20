@@ -62,6 +62,7 @@ public static class AbilityLowering
             "result" => new AbilityNumber.Result(ResultName(argument, child)),
             "add" => new AbilityNumber.Sum(Operands(argument, child, nonempty: false)),
             "mul" => new AbilityNumber.Product(Operands(argument, child, nonempty: false)),
+            "floorDiv" => AbilityFloorDivision.Lower(argument, child),
             "min" => new AbilityNumber.Minimum(Operands(argument, child, nonempty: true)),
             "tokensOn" => CardNumber(argument, child, AbilityCardNumberProperty.Threat),
             "damageOn" => CardNumber(argument, child, AbilityCardNumberProperty.Damage),
@@ -70,11 +71,15 @@ public static class AbilityLowering
             "countersOn" => Counters(argument, child),
             "modified" => Modified(argument, child),
             "count" => new AbilityNumber.Count(SelectCards(argument, child)),
+            "sumPrintedCost" => new AbilityNumber.SumPrintedCost(SelectCards(argument, child)),
             "if" => ConditionalNumber(argument, child),
             "printedResourceCountDiscarded" => new AbilityNumber.PrintedResourcesDiscarded(Resource(argument, child)),
             "discardedWithResource" => new AbilityNumber.DiscardedWithResource(Resource(argument, child)),
+            "activationAttacksAgainstYou" => FixedNumber(argument, child, "game", AbilityResolutionNumber.ActivationAttacksAgainstYou),
             "powerAmount" => FixedNumber(argument, child, "cardsDiscarded", AbilityResolutionNumber.PowerAmount),
             "printedBoostIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedBoostIconsDiscarded),
+            "printedResourceIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedResourceIconsDiscarded),
+            "distinctPrintedResourceTypesDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.DistinctPrintedResourceTypesDiscarded),
             "topEncounterDiscardBoostPlusOne" => FixedNumber(argument, child, "game", AbilityResolutionNumber.TopEncounterDiscardBoostPlusOne),
             _ => throw child.Error($"'{kind}' is not a numeric operation"),
         };
@@ -166,7 +171,7 @@ public static class AbilityLowering
     internal static string ResultName(AbilityValue value, AbilityLocation location)
     {
         string name = Text(value, location);
-        return name is "healed" or "discarded" or "found" or "energy" or "resourceTypes"
+        return name is "healed" or "discarded" or "found" or "energy" or "resourceTypes" or "schemesCleared"
             or "activationDamage" or "activationDamageToYou" or "activationThreat" or "activationMade"
             ? name : throw location.Error($"'{name}' is not an authored resolution result");
     }

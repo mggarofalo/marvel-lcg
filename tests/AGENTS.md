@@ -20,7 +20,7 @@ that a query left execution or hidden-information observations untouched.
 
 ## Test the player's observable task
 
-Use legal Core engine states for reachable gameplay. Synthetic contracts can
+Use legal supported engine states for reachable gameplay. Synthetic contracts can
 prove general shapes such as alternative effects without opening an expansion
 product boundary; label them as synthetic and do not claim a played scenario.
 

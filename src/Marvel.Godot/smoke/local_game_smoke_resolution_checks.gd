@@ -23,7 +23,7 @@ func _active_resolution_is_safe(state: Dictionary) -> bool:
 
 
 func _hidden_resolution_is_safe(state: Dictionary) -> bool:
-	var contextual := main.find_child("ContextualDecision", true, false) as Control
+	var contextual := preload("res://smoke/decision_surface_controls.gd").resolution(main)
 	var text := _visible_text(contextual).to_lower() if contextual != null else ""
 	if "enemy attack" not in text and "defend" not in text and "defense" not in text:
 		return true

@@ -13,6 +13,7 @@ public sealed record LifecycleOperation(LifecycleKind Kind) : AgendaOperation
         LifecycleKind.EventPlayed => Steps.EventPlayed,
         LifecycleKind.CardEntersPlay => Steps.CardEntersPlay,
         LifecycleKind.FormChanged => Steps.FormChanged,
+        LifecycleKind.BasicRecoveryUsed => BasicPowerTiming.RecoveryUsed,
         _ => throw new ArgumentOutOfRangeException(nameof(Kind)),
     };
     /// <inheritdoc/>

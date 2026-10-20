@@ -54,8 +54,9 @@ internal static class CardEntryState
             return;
         }
         string key = "c_" + pool.Type;
-        card.PlaceTokens(key, pool.Starting);
-        events.Add(new FieldSet(card.ObjectId, key, 0, pool.Starting)
+        long starting = checked((long)pool.Starting * (pool.PerPlayer ? world.Players : 1));
+        card.PlaceTokens(key, starting);
+        events.Add(new FieldSet(card.ObjectId, key, 0, starting)
         {
             Trigger = pool.Uses ? "uses" : "card text",
             Verb = "Enter_Play",

@@ -13,11 +13,12 @@ config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
 
 [display]
 
-; The desktop canvas is the primary tabletop. Smaller windows are handled by
-; the responsive layout rather than by shrinking this logical board first.
+; Render controls at physical framebuffer pixels. Window resizing changes the
+; responsive layout; the UI scale control changes integer font and control sizes.
+; A fixed logical canvas would fractionally resample text at e.g. 2560x1440.
 window/size/viewport_width=1920
 window/size/viewport_height=1080
-window/stretch/mode="canvas_items"
+window/stretch/mode="disabled"
 
 [dotnet]
 

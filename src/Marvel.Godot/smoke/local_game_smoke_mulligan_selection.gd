@@ -7,7 +7,7 @@ func _clearing_mulligan_replacements_preserves_task() -> bool:
 	if not await _keyboard_stage_card(card): return false
 	if not await preload("res://smoke/native_scale_checkpoint.gd").requested(self, "mulligan" ): return false
 	card = _mulligan_card("Avengers Mansion")
-	var clear := main.find_child("ContextualCancelDraft", true, false) as Button
+	var clear := _task_clear_draft()
 	if clear == null or not await _pointer_activate(clear):
 		_fail("opening-hand replacements cannot be cleared without abandoning the task")
 		return false
@@ -61,9 +61,10 @@ func _open_fallback_mulligan_sheet() -> Button:
 		_fail("opening the complete choice sheet did not focus its first canonical target")
 		return null
 	var submit := _decision().find_child("Submit", true, false) as Button
-	if submit == null or not _control_is_fully_visible(submit) or _task_commit() != null:
+	var table_commit: Button = preload("res://smoke/decision_surface_controls.gd").table_commit(main)
+	if submit == null or not _control_is_fully_visible(submit) or _task_commit() != submit or table_commit != null:
 		await _capture_checkpoint("complete-choice-sheet-failure")
-		_fail("complete choices lost its visible canonical commitment or duplicated the task commitment: submit=%s visible=%s task=%s" % [submit.get_global_rect() if submit != null else Rect2(), _visible_control_rect(submit) if submit != null else Rect2(), _task_commit() != null])
+		_fail("complete choices lost its visible canonical commitment or duplicated the task commitment: submit=%s visible=%s task=%s" % [submit.get_global_rect() if submit != null else Rect2(), _visible_control_rect(submit) if submit != null else Rect2(), table_commit != null])
 		return null
 	if not await _capture_checkpoint("complete-choice-sheet"):
 		return null

@@ -10,6 +10,11 @@ internal static class AbilityAreaCostProjection
 {
     internal static void TraceCost(this AbilityAreaProjection projection, AbilityCost payment, AreaProjectionState state)
     {
+        if (payment is AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou)
+        {
+            projection.couldDiscard = true;
+            return;
+        }
         if (IsHandCost(payment))
         {
             projection.couldDiscard |= projection.queried.Contains(DeckType.HandsArea)
@@ -17,6 +22,7 @@ internal static class AbilityAreaCostProjection
             return;
         }
 
+        if (IsExhaustionCost(payment)) return;
         switch (payment)
         {
             case AbilityCost.Sequence sequence:
@@ -28,19 +34,30 @@ internal static class AbilityAreaCostProjection
             case AbilityCost.Heal heal:
                 projection.TraceHealCost(heal, state);
                 return;
-            case AbilityCost.Discard discard:
-                projection.TraceDiscardCost(discard, state);
+            case AbilityCost.ConsumeCampaignCard or AbilityCost.Discard or AbilityCost.ReturnSourceToHand:
+                projection.TraceDepartureCost(payment, state);
                 return;
             case AbilityCost.RemoveCounters counters:
                 projection.TraceCounterCost(counters, state);
-                return;
-            case AbilityCost.Exhaust:
-            case AbilityCost.ExhaustChosen:
                 return;
             default:
                 throw new InvalidOperationException(
                     "Unknown compiled cost in area projection");
         }
+    }
+
+    private static bool IsExhaustionCost(AbilityCost payment) =>
+        payment is AbilityCost.Exhaust or AbilityCost.ExhaustChosen or AbilityCost.ExhaustTitled;
+
+    private static void TraceDepartureCost(this AbilityAreaProjection projection, AbilityCost cost, AreaProjectionState state)
+    {
+        if (cost is AbilityCost.ReturnSourceToHand) projection.TraceReturnCost(state);
+        else projection.TraceDiscardCost(cost switch
+        {
+            AbilityCost.Discard discard => discard,
+            AbilityCost.ConsumeCampaignCard consume => new AbilityCost.Discard(consume.Card),
+            _ => throw new InvalidOperationException("Unknown departure cost"),
+        }, state);
     }
 
     private static bool IsHandCost(AbilityCost payment) =>
@@ -103,6 +120,15 @@ internal static class AbilityAreaCostProjection
         }
         projection.couldDiscard |= projection.queried.Contains(target.Area.Type)
             || projection.DiscardTreeChangesArea(target);
+        projection.MarkDiscardedTree(state, target);
+    }
+
+    private static void TraceReturnCost(this AbilityAreaProjection projection, AreaProjectionState state)
+    {
+        if (projection.CostTarget(AbilityCostCard.Source, state) is not { } target) return;
+        projection.couldDiscard |= projection.queried.Contains(target.Area.Type)
+            || projection.queried.Contains(DeckType.HandsArea)
+            || projection.HostedCardsChangeArea(state, target.ObjectId);
         projection.MarkDiscardedTree(state, target);
     }
 

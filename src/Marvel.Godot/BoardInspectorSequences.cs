@@ -15,6 +15,8 @@ internal sealed class BoardInspectorSequences(BoardPresentation? board = null)
         board is not null && Current(board, source.TargetId) is { } current
             ? current : source with { TargetId = null };
 
+    internal BoardCardPresentation? Current(int id) => board is null ? null : Current(board, id);
+
     internal void Register(IReadOnlyList<BoardCardPresentation> cards)
     {
         foreach (BoardCardPresentation card in cards)

@@ -14,4 +14,8 @@ public enum MaximumPeriod
     Game,
     /// <summary>For one triggering occurrence.</summary>
     Instance,
+    /// <summary>Across every triggering occurrence within one attack.</summary>
+    Attack,
+    /// <summary>Across every triggering occurrence within one enemy activation.</summary>
+    Activation,
 }

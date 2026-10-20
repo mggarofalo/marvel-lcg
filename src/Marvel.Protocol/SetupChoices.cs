@@ -10,4 +10,9 @@ public sealed record SetupChoices(
     IReadOnlyList<HeroSetupChoice> Heroes,
     IReadOnlyList<ScenarioSetupChoice> Scenarios,
     IReadOnlyList<ModularSetupChoice> ModularSets,
-    RuntimeIdentity Runtime);
+    RuntimeIdentity Runtime)
+{
+    /// <summary>Complete campaigns admitted by the host, excluding incomplete expansion work.</summary>
+    public IReadOnlyList<string> Campaigns { get; init; } = [];
+}
+

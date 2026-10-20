@@ -219,6 +219,8 @@ internal static class AbilityInitiationPrimitives
             AbilitySearchArea.EncounterDiscardPile => scope.World.AreaOf(DeckType.EncounterDiscardPile),
             AbilitySearchArea.ScenarioSetAside => scope.World.AreaOf(DeckType.AsideDeck),
             AbilitySearchArea.YourDeck => scope.World.Seats[scope.Player].Deck,
+        AbilitySearchArea.YourHand => scope.World.Seats[scope.Player].Hand,
+        AbilitySearchArea.YourDiscardPile => scope.World.AreaOf(DeckType.DiscardPile, PlayArea.Of(scope.Player), cardOwner: scope.Player),
             _ => throw new InvalidOperationException("Unknown compiled search area"),
         };
 
@@ -246,6 +248,6 @@ internal static class AbilityInitiationPrimitives
             or "dealAttackDamage" or "moveAttackDamage" or "placeThreat"
             or "removeThreat" or "replaceThreatWithDamage" or "enemyAttacks"
             or "enemySchemes" or "putIntoPlay" or "placeAtRandom" or "thwartSchemes"
-            or "thwartDifferentSchemes" or "legalPractice"
+            or "distributeThreat" or "thwartDifferentSchemes" or "legalPractice"
         || ContinuationChildren(node).Any(ContainsForEachTarget);
 }

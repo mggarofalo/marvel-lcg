@@ -53,6 +53,8 @@ internal sealed class AbilityCostPayment
     {
         world.Agenda.Executions.RequireActive(owner);
         outcome.Suspended = false;
+        outcome.Discarded.Clear();
+        outcome.Exhausted.Clear();
         if (resourcePayment is { IsComplete: false })
             throw new InvalidOperationException("resource payment resumed before its owned work completed");
         resourcePayment = null;
@@ -83,7 +85,7 @@ internal sealed class AbilityCostPayment
             DamageCostSettlement.Settle(world, owner, damageCosts, events);
         }
         outcome.Suspended |= damageCosts.Any(damage => !damage.IsComplete);
-        return new(outcome.Healed, outcome.Energy, outcome.Suspended);
+        return new(outcome.Healed, outcome.Energy, outcome.Suspended) { Discarded = [.. outcome.Discarded], Exhausted = [.. outcome.Exhausted] };
     }
 
     private bool CommitImmediate(
@@ -91,10 +93,12 @@ internal sealed class AbilityCostPayment
     {
         switch (step)
         {
+            case DeckCost deck:
+                outcome.Discarded.AddRange(AbilityDeckCosts.Pay(world, player, deck.Cost, trigger, events));
+                return true;
             case Spend spend:
-                resourcePayment = CardPlay.Spend(
-                    world, world.Facts, resourceAbilities, [world.Seats[player].Hand],
-                    paying, spend.Required.Length, spend.Required, -1, player, events);
+                resourcePayment = AbilityResourcePayment.Spend(world, resourceAbilities,
+                    new(source, player, paying, spend.Required.Length + spend.Generic, spend.Required), events);
                 outcome.Suspended = !resourcePayment.IsComplete;
                 if (spend.Energy is { } x) outcome.Energy = x;
                 return true;
@@ -105,6 +109,7 @@ internal sealed class AbilityCostPayment
                 var selected = exhaust.Cards.Select(card => card.RequireCurrent()).ToArray();
                 foreach (var card in selected) AbilityPhysicalPayment.RequireReady(card);
                 foreach (var card in selected) AbilityCardOperations.Exhaust(card, trigger, events);
+                outcome.Exhausted.AddRange(selected.Select(card => card.ObjectId));
                 return true;
             case TakeDamage damage:
                 CommitTakeDamage(damage, owner, trigger, events);
@@ -127,6 +132,7 @@ internal sealed class AbilityCostPayment
         }
         int start = events.Count;
         foreach (var card in cards) Discard.Card(world, card, CardPlay.Verb, events);
+        outcome.Discarded.AddRange(cards);
         ActivityBatches.Complete(events, start, "Discard", player,
             included: cards.Select(card => card.ObjectId).ToArray());
     }
@@ -175,8 +181,14 @@ internal sealed class AbilityCostPayment
             case Exhaust exhaust:
                 CommitExhaust(exhaust, trigger, events);
                 break;
+            case ConsumeCampaignBound consume:
+                physical.ConsumeCampaign(consume.Target.RequireCurrent(), trigger, events);
+                break;
             case DiscardBound discard:
                 physical.Discard(discard.Target.RequireCurrent(), trigger, events);
+                break;
+            case ReturnBound returned:
+                physical.ReturnToHand(returned.Target.RequireCurrent(), trigger, events);
                 break;
             case RemoveCounters removal:
                 physical.RemoveCounters(removal.Target.RequireCurrent(), removal.Counter, removal.Count, pools, trigger, events);
@@ -202,9 +214,11 @@ internal sealed class AbilityCostPayment
 
     private sealed class CommitOutcome
     {
+        internal List<int> Exhausted { get; } = [];
         internal long? Healed { get; set; }
         internal long? Energy { get; set; }
         internal bool Suspended { get; set; }
+        internal List<Card> Discarded { get; } = [];
     }
 
 }

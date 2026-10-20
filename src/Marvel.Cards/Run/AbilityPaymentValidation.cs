@@ -23,6 +23,8 @@ internal sealed class AbilityPaymentValidation(
         }
 
         IReadOnlyList<AbilityCost> steps = cost is AbilityCost.Sequence sequence ? sequence.Costs : [cost];
+        if (!AbilityDeckCosts.CanPayTogether(world, player, steps))
+            throw new RulesNotImplementedException("the combined deck costs cannot be paid in full");
         if (EffectiveCards.Kind(source, world.Facts) == CardKind.Event
             && steps.Any(step => step is AbilityCost.Damage { MustTakeAll: true }))
         {
@@ -58,17 +60,17 @@ internal sealed class AbilityPaymentValidation(
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' mixes printed and ordinary simultaneous resource costs, whose allocation is not implemented");
         var generators = printed
-            ? PrintedGenerators(world, player, resourceAbilities)
+            ? PrintedGenerators(world, player, resourceAbilities, source)
             : CardPayment.Generators(
-                world, world.Facts, world.Seats[player], resourceAbilities).ToList();
+                world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: source).ToList();
         if (paying.Any(id => generators.All(candidate => candidate.Effect != id)))
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' names a resource source that is not available");
         string generated = GeneratedResources(generators, paying);
         string required = string.Concat(spends.Select(step => step.Resources));
         bool pays = printed
-            ? Resources.PaysPrinted(generated, required.Length, required)
-            : Resources.Pays(generated, required.Length, required);
+            ? Resources.PaysPrinted(generated, spends.Sum(step => step.Amount), required)
+            : Resources.Pays(generated, spends.Sum(step => step.Amount), required);
         if (!pays)
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' has simultaneous resource costs requiring '{required}' and the payment generates '{generated}'");
@@ -107,7 +109,7 @@ internal sealed class AbilityPaymentValidation(
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' defines X as {x}, outside the offered range {request.Min}..{request.Max}");
         var generators = CardPayment.Generators(
-            world, world.Facts, world.Seats[player], resourceAbilities).ToList();
+            world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: source).ToList();
         if (paying.Count == 0 || paying.Distinct().Count() != paying.Count
             || paying.Any(id => generators.All(candidate => candidate.Effect != id)))
             throw new RulesNotImplementedException($"'{source.FaceId}' names an invalid generator for X");
@@ -138,7 +140,7 @@ internal sealed class AbilityPaymentValidation(
     private void ValidateChosenExhaust(
         AbilityCost.ExhaustChosen exhaust, IReadOnlyList<int> chosen)
     {
-        var legal = AbilityCostSelection.Choices(world, player, exhaust.From)
+        var legal = AbilityCostSelection.Choices(world, player, exhaust)
             .Where(card => card.Ready).Select(card => card.ObjectId).ToHashSet();
         var range = AbilityCostSelection.Range(exhaust.Range, legal.Count);
         if (chosen.Count < range.Min || chosen.Count > range.Max

@@ -21,7 +21,7 @@ func _run() -> void:
 
 func _inspect_ultron() -> bool:
 	var card := _tabletop_card_named("Ultron")
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var prompt := _logical_prompt_identity()
 	if card == null:
@@ -38,7 +38,8 @@ func _inspect_ultron() -> bool:
 func _bounded_expansion(card: Control, inspector: Control) -> bool:
 	var motion := _node("Toolbar/Motion") as CheckButton
 	var preference := motion.button_pressed
-	var physical := card.get_global_rect()
+	var physical := preload("res://smoke/player_card_pose.gd").capture(self, card, "VillainTable")
+	var physical_size := card.size
 	for enabled in [true, false]:
 		motion.button_pressed = enabled
 		motion.toggled.emit(enabled)
@@ -56,7 +57,7 @@ func _bounded_expansion(card: Control, inspector: Control) -> bool:
 		if not await _wait_for(func() -> bool: return is_equal_approx(frame.modulate.a, 1.0)):
 			_fail("pinned inspection did not settle at its measured size")
 			return false
-		if card.get_global_rect() != physical:
+		if card.size != physical_size or not card.get_global_transform().is_equal_approx(preload("res://smoke/player_card_pose.gd").expected(physical)):
 			_fail("inspection expansion moved its physical source")
 			return false
 		if not await _close_inspector_with_keyboard(card, inspector): return false

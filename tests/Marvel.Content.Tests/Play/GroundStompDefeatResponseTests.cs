@@ -20,10 +20,11 @@ public sealed class GroundStompDefeatResponseTests
     [InlineData(1, false)]
     [InlineData(2, false)]
     [InlineData(1, true)]
+    [InlineData(1, false, true)]
     [Rule("rr:you-your.12")]
     [Rule("rr:triggering-condition.2")]
     [Rule("rr:exhausted.2")]
-    public void GroundStompDefeatsOfferInterrogationRoom(int count, bool drone)
+    public void GroundStompDefeatsOfferInterrogationRoom(int count, bool drone, bool direct = false)
     {
         // Ground Stomp: "Deal 1 damage to each enemy." Interrogation Room:
         // "After you defeat a minion, exhaust Interrogation Room" to remove 1 threat.
@@ -62,10 +63,17 @@ public sealed class GroundStompDefeatResponseTests
         var responses = game.Pending!.Affordances.Where(a => a.AnchorId == room.ObjectId).ToList();
         Assert.Equal(count, responses.Count);
         Affordance response = responses[0];
-        game.Resolve(Decision.Take(response.Id));
-        Affordance choice = Assert.Single(game.Pending!.Affordances);
-        Assert.Equal(scheme.ObjectId, choice.AnchorId);
-        game.Resolve(Decision.Take(choice.Id));
+        Assert.True(response.DirectRecipientCommit);
+        Assert.Contains(scheme.ObjectId, response.Targets!.Legal);
+        if (direct) game.Resolve(Decision.Take(response.Id, [scheme.ObjectId], []));
+        else
+        {
+            game.Resolve(Decision.Take(response.Id));
+            Affordance choice = Assert.Single(game.Pending!.Affordances);
+            Assert.Equal(scheme.ObjectId, choice.AnchorId);
+            Assert.Equal(room.ObjectId, choice.SelectionSourceId);
+            game.Resolve(Decision.Take(choice.Id));
+        }
 
         Assert.Equal(threat - 1, scheme.Tokens["k_threat"]);
         Assert.False(room.Ready);

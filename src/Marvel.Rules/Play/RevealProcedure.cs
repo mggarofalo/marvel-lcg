@@ -32,7 +32,7 @@ internal static class RevealProcedure
             case Steps.ChooseAttachmentTarget:
                 return AttachmentTargetPrompt.Describe(world, facts, step);
             case Steps.ChooseRevealAbility:
-                return ChooseRevealAbility(world, facts, step);
+                return RevealOrderPrompt.Describe(world, facts, step);
             case Steps.ResumeRevealAbility:
                 ResumeRevealAbility(world, facts, world.RevealAbilities, step, events);
                 break;
@@ -70,40 +70,6 @@ internal static class RevealProcedure
                     $"reveal step '{step.What}' asked nothing and cannot take an answer");
         }
     }
-
-    internal static Prompt ChooseRevealAbility(
-        World world, ICardFacts facts, PhaseStep step)
-    {
-        var card = world.Cards[step.Subject];
-        var handles = step.Require<RevealAbilityOperation>().Candidates ?? [];
-        var abilities = step.Require<RevealAbilityOperation>().Abilities ?? [];
-        if (handles.Count != abilities.Count || handles.Count < 2)
-        {
-            throw new InvalidOperationException("reveal ordering has no simultaneous abilities");
-        }
-
-        return new Prompt(
-            world.FirstPlayer,
-            Question.Order,
-            TimingPriority.Occurrence,
-            Steps.CardRevealed,
-            $"order When Revealed abilities on {card.FaceId}",
-            false,
-            [.. handles.Select((handle, index) => new Affordance(
-                handle,
-                "Resolve",
-                card.ObjectId,
-                world.FirstPlayer,
-                RevealAbilityLabel(facts, card, abilities[index])))]);
-    }
-
-    private static string RevealAbilityLabel(
-        ICardFacts facts, Card card, PendingAbility ability) => ability.Ordinal switch
-        {
-            Reveal.InciteResolutionOrdinal => "Incite",
-            Reveal.SurgeResolutionOrdinal => "Surge",
-            _ => $"{facts.Title(card.FaceId)} When Revealed {ability.Ordinal + 1}",
-        };
 
     internal static void ResolveRevealAbility(
         World world, ICardFacts facts, IRevealCardAbilities abilities, PhaseStep step,

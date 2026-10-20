@@ -138,7 +138,7 @@ internal static class AbilityAdmissionMutation
         ulong state = before;
         bool childBindingMayChange = bindingMayChange
             || node.OperationName() is "chooseCard" or "thwartSchemes"
-                or "thwartDifferentSchemes" or "legalPractice";
+                or "distributeThreat" or "thwartDifferentSchemes" or "legalPractice";
         foreach (var child in MutationChildren(node))
         {
             cast = cast.ForReachability(cast.Reachability with { PriorFormsMayChange = state });
@@ -202,7 +202,7 @@ internal static class AbilityAdmissionMutation
         try
         {
             ulong possible = 0;
-            foreach (var order in PlayerPermutations(cast.World.PlayerOrder.ToList()))
+            foreach (var order in PlayerPermutations(AbilityEachPlayerSelection.Players(node, cast.Context.Expressions)))
             {
                 ulong after = before;
                 foreach (int player in order)
@@ -245,7 +245,7 @@ internal static class AbilityAdmissionMutation
         AbilityEffect node, AbilityAdmissionScope cast, bool before)
     {
         if (node.OperationName() is "chooseCard" or "thwartSchemes"
-            or "thwartDifferentSchemes" or "legalPractice")
+            or "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")
         {
             return true;
         }

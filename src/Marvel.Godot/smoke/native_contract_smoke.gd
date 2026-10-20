@@ -136,7 +136,7 @@ func _inspect_while_uncertain() -> bool:
     var draft: String = witness.Draft()
     var card := _tabletop_card_named("Black Cat")
     if card == null or not await _pointer_activate_card_body(card): return false
-    var inspector := main.get_node("CardInspector") as Control
+    var inspector := main.find_child("CardInspector", true, false) as Control
     if not inspector.visible:
         _fail("uncertain response disabled read-only card inspection")
         return false
@@ -164,7 +164,7 @@ func _end_phase_contract() -> bool:
     return await _wait_for(func() -> bool: return witness.Revision() == 2)
 
 func _cancel_discard_and_restage() -> bool:
-    var clear := main.find_child("ContextualCancelDraft", true, false) as Button
+    var clear := _task_clear_draft()
     if clear == null or not await _pointer_activate(clear): return false
     if witness.Revision() != 1 or witness.DecisionKind() != "EndPhaseDiscards":
         _fail("clearing staged discard changed the authoritative prompt")

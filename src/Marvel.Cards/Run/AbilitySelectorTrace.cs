@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityRepeatedCharacteristicTrace;
 using static Marvel.Cards.Run.AbilityAdmission;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.State;
@@ -13,6 +14,7 @@ internal static class AbilitySelectorTrace
     {
         AbilityCardSelection.Ranked ranked => TraceCandidateCards(ranked.Cards, cast),
         AbilityCardSelection.WithTrait filtered => TraceCandidateCards(filtered.Cards, cast),
+        AbilityCardSelection.FirstAvailable fallback => [.. fallback.Options.SelectMany(option => TraceCandidateCards(option, cast)).Distinct()],
         AbilityCardSelection.Last filtered => TraceCandidateCards(filtered.Cards, cast),
         AbilityCardSelection.FaceDown filtered => TraceCandidateCards(filtered.Cards, cast),
         AbilityCardSelection.InObjectIdOrder ordered => [.. TraceCandidateCards(ordered.Cards, cast).OrderBy(card => card.ObjectId)],
@@ -28,6 +30,9 @@ internal static class AbilitySelectorTrace
                 or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.EnemiesEngagedWithChosenPlayer
         } => [.. cast.World.Areas.SelectMany(area => area.Cards)
             .Where(card => CardKinds.IsEnemy(EffectiveCards.Kind(card, cast.World.Facts)))],
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.CardsYouControl } =>
+            [.. cast.World.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type)
+                && CardControl.IsPlayerCard(cast.World.Facts, card))],
         AbilityCardSelection.Query
         {
             Kind: AbilityCardQuery.UpgradesYouControl or AbilityCardQuery.SupportsYouControl
@@ -46,14 +51,16 @@ internal static class AbilitySelectorTrace
             EffectiveCards.Title(candidate, trace.Cast.World.Facts), StringComparison.Ordinal),
         AbilityCardSelection.EnemiesWithTrait filtered => HasTrait(candidate, filtered.Trait, trace),
         AbilityCardSelection.WithTrait filtered => TraceSelectorMatches(filtered.Cards, candidate, trace)
-            && HasTrait(candidate, filtered.Trait, trace),
+            && HasTrait(candidate, filtered.Trait, trace) != filtered.Exclude,
         AbilityCardSelection.FaceDown filtered => !candidate.FaceUp
             && TraceSelectorMatches(filtered.Cards, candidate, trace),
         AbilityCardSelection.InObjectIdOrder ordered => TraceSelectorMatches(ordered.Cards, candidate, trace),
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Select(option => MatchingCandidates(option, trace).ToList()).FirstOrDefault(cards => cards.Count > 0)?.Contains(candidate) == true,
         AbilityCardSelection.Last last => MatchingCandidates(last.Cards, trace).LastOrDefault() == candidate,
         AbilityCardSelection.WithoutAnotherCopyAttached filtered => TraceSelectorMatches(filtered.Cards, candidate, trace)
             && !AnotherCopyAttachedInTrace(candidate, trace.Cast, trace.Discarded),
         AbilityCardSelection.Discardable filtered => TraceSelectorMatches(filtered.Cards, candidate, trace)
+            && Rules.Play.Discard.CanDiscardFromPlay(candidate, trace.Cast.World.Facts)
             && Removable(candidate, trace),
         AbilityCardSelection.Ranked ranked => RankedIncludes(ranked, candidate, trace),
         AbilityCardSelection.InPlayerArea { Area: DeckType.EngagedEnemiesArea } area =>

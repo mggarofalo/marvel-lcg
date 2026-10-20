@@ -27,11 +27,12 @@ The engine already has the determinism, stable decision selectors and replay
 checks needed by this design. `Marvel.Sim` records setup, prompts, decisions,
 events and digests, then deals and resolves the game again to find divergence.
 
-Schema 6 save, atomic generation commit, strict load, verified replay, the
+Schema 7 save, atomic generation commit, strict load, verified replay, the
 information frontier, linear undo and redo, legal action reordering, and the
 redacted structured operational-log boundary are implemented for hosted
-sessions. The embedded host uses the same ledger and replay path with an
-isolated memory store. Opt-in bounded metrics and correlated traces consume the
+sessions. The embedded desktop host uses the same durable ledger and replay
+path in its private local application-data directory. Memory stores remain
+available for isolated tests. Opt-in bounded metrics and correlated traces consume the
 same redacted operational signals. A configured private diagnostics volume now
 retains rotated copies, and a read-only incident manifest correlates those
 records with hashes of the opaque save generations. Neither is replay or save
@@ -77,13 +78,13 @@ server replay but must never cross the client boundary. A visibility-safe
 
 ## The save is a decision trace
 
-A save is one strict UTF-8 JSON document. Schema 6 has these top-level members
+A save is one strict UTF-8 JSON document. Schema 7 has these top-level members
 in this order:
 
 ```json
 {
   "format": "marvel-session",
-  "schema": 6,
+  "schema": 7,
   "compatibility": {},
   "session": {},
   "setup": {},
@@ -96,8 +97,9 @@ in this order:
 }
 ```
 
-The runtime reads and writes schema 6 only. The setup record includes ordered
-explicit player deck recipes, or null to select each hero's authored starter.
+The runtime reads and writes schema 7 only. The setup record includes ordered
+explicit player deck recipes, or null to select each hero's authored starter,
+and a required nullable `campaign` member containing exact carry-over setup.
 Unknown members, missing members and other schemas fail loading. Unsupported
 save generations remain untouched and quarantined; no compatibility adapter
 supplies missing gameplay meaning.
@@ -583,7 +585,7 @@ their respective interfaces. A client cache is not a backup.
 
 The subsystem requires executable examples for:
 
-- byte-stable schema 6 records and strict parsing;
+- byte-stable schema 7 records and strict parsing;
 - atomic open with its initial save and owner authority, including crashes at
   each persistence boundary;
 - durable attach, credential revocation and owner retirement, including restart
@@ -615,11 +617,97 @@ The final native journey uses 2 clients and one persistent server. It plays,
 saves, disconnects, restarts, restores, reconnects, edits reversible history
 and reaches an engine-reported terminal result.
 
-Protocol 33 carries engine-authored decision shapes, attack identities and lifetime
+Protocol 34 carries engine-authored decision shapes, attack identities and lifetime
 boundaries, scheme/thwart occurrence causes, resource-ability costs, typed failure
 dispositions and player-loss reasons. Replay v18 reconstructs invocation-owned
 payments and nested interrupt continuations with their completion dependencies.
 Live execution permits never enter the save; replay recreates them in the new
-world. The save envelope remains schema 6, with unchanged RNG and state-digest
+world. The save envelope remains schema 7, with unchanged RNG and state-digest
 formats. Supporting travel, reveal and installation receipts may share one
 presentation beat; every raw event remains available in diagnostics.
+
+
+## Campaign persistence
+
+Campaign transitions belong to `Marvel.Rules.Campaign`. `Marvel.Session` records
+an ordered campaign journal and verifies it by applying those transitions again.
+`CampaignHost` owns authentication, concurrency, admission and atomic publication.
+The client displays these results and never supplies a replacement campaign state.
+These storage and concurrency choices are authored here, not tabletop rules.
+
+A campaign archive contains its fixed roster and seed, derived state, ordered
+journal, retained scenario attempts, owner verifier, encrypted entry receipt,
+attempt authorities and durable command receipts. Each scenario attempt uses the
+ordinary schema 7 session ledger. Gameplay facts that change campaign state are
+accepted only after replaying their session proof and comparing the factory's
+cumulative campaign inspection. Active engine seats map to stable roster seats;
+a defeated player sitting out does not change another player's identity or log.
+
+One immutable archive generation commits the attempt and campaign log together.
+The publisher writes and flushes the candidate, flushes its directory, then
+atomically replaces a manifest containing length, SHA-256 and generation names.
+Windows uses write-through replacement; POSIX uses rename and directory fsync.
+A process lease prevents competing writers. A failed pre-publication write leaves
+the old state authoritative. An uncertain publication freezes mutations until
+restart establishes which complete generation the manifest names.
+
+The storage design applies the commit-point and failure-model reasoning in
+[SQLite's atomic commit analysis](https://www.sqlite.org/atomiccommit.html)
+to the existing file store. It keeps campaign progress and its game attempt in
+one publication rather than independently replacing two files. Windows publication
+uses the documented replacement and write-through options of
+[MoveFileExW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexw).
+Durability depends on the filesystem and device honoring their flush contracts;
+the archive format does not promise power-loss immunity on arbitrary storage.
+
+The previous generation is retained for diagnosis, never silently substituted.
+Bad checksums, incompatible identities, malformed authorities or receipts, and
+replay disagreement quarantine that campaign without deleting the original files
+or blocking independent campaigns. SHA-256 detects corruption; it is not an
+attestation that a local file was never intentionally edited.
+
+The desktop persists the exact pending request and entry claim in a separate
+private access archive before transmitting it. A lost acknowledgement retries
+that same request; it never creates another attempt. Successful replies are
+saved with the campaign capability and current game authority before the UI
+publishes success. Closing the campaign table preserves its resumable attempt.
+A campaign's history cannot cross a committed campaign-fact frontier, and a
+completed attempt cannot be edited into a different campaign outcome.
+
+Campaign schema 1 and protocol 35 are strict compatibility boundaries. No
+migration invents missing campaign meaning. Complete content admission is
+required before the host advertises a campaign or starts its first attempt.
+
+The current replay identity is `engine-replay-v19`. Attack reflection, typed
+thwart-stat use, no-boost activation instructions and activation-local receipts
+live in reconstructed agenda state. Session saves persist setup and decisions,
+not these internal operation objects. A restart rebuilds them by replaying the
+complete active prefix and verifies every recorded prompt, event, RNG count and
+state digest before publication. Earlier replay identities are rejected even if
+the Core dataset hashes are unchanged; protocol 35 and schema 7 remain unchanged
+by these internal operation additions.
+
+### Campaign library operations
+
+The desktop library lists locally retained campaign connections with their last
+confirmed summaries. Selecting a campaign synchronizes its authoritative state.
+Rename and archive advance the campaign revision without changing its rules
+journal. Archived campaigns remain readable and exportable; restore is required
+before play or campaign progression.
+
+Portable `.marvelcampaign` files contain a schema 1 campaign save and its session
+proofs, without capabilities, authority records or operational request receipts.
+The `marvel-campaign-transfer:1` envelope stores a SHA-256 checksum of the
+uncompressed save followed by base64 Brotli data. Transfers are bounded to 3 MiB
+of text and 256 MiB expanded data. An oversized export is rejected without
+truncation. Import verifies replay, remaps campaign and attempt identities,
+verifies the remapped proofs, issues fresh authority, and publishes a separate
+copy atomically. It never replaces the original campaign.
+
+Permanent deletion first durably records minimal revocation and exact-request
+retry metadata, then removes every campaign archive generation and live attempt
+authority. The revocation retains identifiers and verifier hashes, not campaign
+names, decks, journals or game state. Interrupted cleanup is retried on restart;
+the revocation prevents a retained creation request from resurrecting the
+deleted campaign. The desktop removes its private connection generations only
+after an authoritative deletion acknowledgement.

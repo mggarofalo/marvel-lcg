@@ -11,6 +11,8 @@ internal sealed record AbilityExpressionContext(
     ImmutableDictionary<string, long> Results, ImmutableArray<Card> Discarded,
     string Payment, long PowerAmount, bool FinalStep, int? ProjectedPlayAreaPlayer)
 {
+    internal int? ThwartActorUsingAttack { get; init; }
+
     internal World World => Bindings.World;
     internal Card Source => Bindings.Source;
     internal Occurrence Occurrence => Bindings.Occurrence;

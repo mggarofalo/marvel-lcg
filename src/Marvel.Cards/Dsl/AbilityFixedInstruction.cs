@@ -8,6 +8,8 @@ public enum AbilityFixedInstruction
 {
     /// <summary>Advance directly to the next main scheme without completing this one.</summary>
     AdvanceMainScheme,
+    /// <summary>Use ATK instead of THW for the current thwart.</summary>
+    UseAttackForThwart,
     /// <summary>Cancel the current occurrence.</summary>
     CancelOccurrence,
     /// <summary>Cancel the revealed card's When Revealed effects.</summary>
@@ -16,6 +18,10 @@ public enum AbilityFixedInstruction
     AlsoAttackEachOtherHero,
     /// <summary>Make the current attack indirect.</summary>
     MakeAttackIndirect,
+    /// <summary>Prevent all damage from the current enemy attack.</summary>
+    PreventAttackDamage,
+    /// <summary>Reflect damage to this attachment host during the active player attack.</summary>
+    ReflectAttackDamage,
     /// <summary>Reveal the top encounter card.</summary>
     RevealTop,
     /// <summary>Place one acceleration token.</summary>
@@ -26,4 +32,12 @@ public enum AbilityFixedInstruction
     MakeTheCall,
     /// <summary>Require an ally defender for the engaged player.</summary>
     RequireAllyDefender,
+    /// <summary>Continuously gain the effective traits of every environment in play.</summary>
+    GainEnvironmentTraits,
+    /// <summary>Keep this side scheme in play while the enclosing constant applies.</summary>
+    PreventSideSchemeDeparture,
+    /// <summary>Discard every live environment except the triggering entrant.</summary>
+    DiscardOtherEnvironments,
+    /// <summary>Privately inspect the top card of one chosen deck until acknowledgement.</summary>
+    PeekAnyDeck,
 }

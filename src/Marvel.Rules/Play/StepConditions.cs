@@ -51,6 +51,8 @@ public static class StepConditions
         [EventPlayed] = [CardPlayed],
         [CardEntersPlay] = [CardEntersPlay],
         [FormChanged] = [FormChanged],
+        [PlayerTurnTiming.Ends] = [PlayerTurnTiming.Ends],
+        [BasicPowerTiming.RecoveryUsed] = [BasicPowerTiming.RecoveryUsed],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
 
@@ -81,5 +83,5 @@ public static class StepConditions
         Conditions.Values.SelectMany(each => each).Concat(
                 // These are discovered while their occurrence applies rather
                 // than promised when its step is scheduled.
-                [DamageDealt, ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds, BasicAttackEnds]).ToFrozenSet(StringComparer.Ordinal);
+                [DamageDealt, ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds]).ToFrozenSet(StringComparer.Ordinal);
 }

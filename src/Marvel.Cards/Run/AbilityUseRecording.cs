@@ -20,7 +20,8 @@ internal static class AbilityUseRecording
                 EffectSource.LastingEffect,
                 Kind: AbilityAvailability.Spent(card, ability, index),
                 Card: card.ObjectId, Affects: card.ObjectId,
-                Lasts: Duration.UntilEndOf(TimingPoints.EndOfRound)));
+                Lasts: Duration.UntilEndOf(ability.LimitPeriod == AbilityLimitPeriod.Phase
+                    ? TimingPoints.EndOfPhase : TimingPoints.EndOfRound)));
         }
 
         if (ability.Maximum is not { } maximum) return;
@@ -28,7 +29,8 @@ internal static class AbilityUseRecording
         {
             MaximumPeriod.Round => Duration.UntilEndOf(TimingPoints.EndOfRound),
             MaximumPeriod.Phase => Duration.UntilEndOf(TimingPoints.EndOfPhase),
-            MaximumPeriod.Game or MaximumPeriod.Instance => Duration.WhileInPlay,
+            MaximumPeriod.Game or MaximumPeriod.Instance or MaximumPeriod.Attack
+                or MaximumPeriod.Activation => Duration.WhileInPlay,
             _ => throw new ArgumentOutOfRangeException(nameof(ability)),
         };
         world.Effects.Register(new ContinuousEffect(

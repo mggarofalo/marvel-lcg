@@ -24,6 +24,7 @@ internal static class AbilityProjectedStateQueries
                 ProjectedEnemiesWithTrait(enemies, state, context),
             AbilityCardSelection.Ranked ranked =>
                 ProjectedRanked(ranked, state, context),
+            AbilityCardSelection.FirstAvailable fallback => fallback.Options.Select(option => ProjectedEvery(option, state, context)).FirstOrDefault(cards => cards.Count > 0) ?? [],
             AbilityCardSelection.Last last => [.. ProjectedEvery(last.Cards, state, context).TakeLast(1)],
             AbilityCardSelection.FaceDown filtered => [.. ProjectedEvery(filtered.Cards, state, context).Where(card => !card.FaceUp)],
             AbilityCardSelection.InObjectIdOrder ordered => [.. ProjectedEvery(ordered.Cards, state, context).OrderBy(card => card.ObjectId)],
@@ -80,6 +81,7 @@ internal static class AbilityProjectedStateQueries
             AbilityCardRank.Attack => state.ModifiedOf(context, card, "attack"),
             AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(
                 card, context.World.Facts, "HP", context.World.Players),
+            AbilityCardRank.RemainingHealth => Math.Max(0, state.HealthOf(context, card) - state.DamageOf(card)),
             _ => throw new InvalidOperationException(
                 "Unknown compiled card rank in area projection"),
         };
@@ -88,7 +90,7 @@ internal static class AbilityProjectedStateQueries
         AbilityCardSelection.WithTrait trait, AreaProjectionState state,
         AbilityAdmissionContext context) =>
         [.. ProjectedEvery(trait.Cards, state, context)
-            .Where(card => state.HasTrait(context, card, trait.Trait))];
+            .Where(card => state.HasTrait(context, card, trait.Trait) != trait.Exclude)];
 
     private static List<Card> ProjectedVillain(
         List<Card> found, AreaProjectionState state, AbilityAdmissionContext context)

@@ -87,7 +87,10 @@ internal static class SetupCardPlacement
             }
 
             var from = card.Area;
-            int? controller = world.SetupAbilities.SetupController(world, card);
+            // rr:setup-keyword.1 puts player-owned setup cards into play for their owner.
+            int? controller = world.SetupAbilities.SetupController(world, card)
+                ?? (card.Owner >= 0 && EffectiveCards.Kind(card, facts) is
+                    CardKind.Ally or CardKind.Support or CardKind.Upgrade ? card.Owner : null);
             if (controller is { } player)
             {
                 Play.CardControlTransfer.TakeScenarioCardOwnership(facts, card, player);

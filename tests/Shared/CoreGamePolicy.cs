@@ -171,7 +171,7 @@ public sealed class CoreGamePolicy(ICardFacts facts)
         var values = Values(option);
         return Decision.Take(
             option.Id,
-            targets ?? Targets(world, option),
+            targets ?? PolicyTargetSelection.Select(world, option),
             payment,
             values,
             Allocations(option, payment, values));
@@ -213,28 +213,6 @@ public sealed class CoreGamePolicy(ICardFacts facts)
         }
 
         return null;
-    }
-
-    private static IReadOnlyList<int> Targets(World world, Affordance option)
-    {
-        if (option.Targets is not { } wanted)
-        {
-            return [];
-        }
-
-        if (wanted.IsGrouped && wanted.Groups is { Count: > 0 } groups)
-        {
-            return groups[0];
-        }
-
-        var selected = wanted.Legal.Take(wanted.Min).ToList();
-        int villain = world.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        if (wanted.Min == 1 && wanted.Legal.Contains(villain))
-        {
-            selected[0] = villain;
-        }
-
-        return selected;
     }
 
     private static IReadOnlyList<int> Excess(World world, int player)

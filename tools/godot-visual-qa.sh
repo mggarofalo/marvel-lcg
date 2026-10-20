@@ -35,21 +35,23 @@ smoke_log=$(mktemp)
 cleanup() { rm -f "$smoke_log"; }
 trap cleanup EXIT
 run_visual_smoke() {
+  local script=${1:-res://smoke/local_game_smoke.gd}
+  local marker=${2:-LOCAL_GAME_SMOKE_OK}
   set +e
   local status
   if [[ "$use_xvfb" == true ]]; then
     xvfb-run -a "$godot_bin" --audio-driver Dummy --rendering-method gl_compatibility \
       --resolution "$MARVEL_SMOKE_VIEWPORT" --path "$repo_root/src/Marvel.Godot" \
-      --script res://smoke/local_game_smoke.gd 2>&1 | tee "$smoke_log"
+      --script "$script" 2>&1 | tee "$smoke_log"
     status=${PIPESTATUS[0]}
   else
     "$godot_bin" --audio-driver Dummy --rendering-method gl_compatibility \
       --resolution "$MARVEL_SMOKE_VIEWPORT" --path "$repo_root/src/Marvel.Godot" \
-      --script res://smoke/local_game_smoke.gd 2>&1 | tee "$smoke_log"
+      --script "$script" 2>&1 | tee "$smoke_log"
     status=${PIPESTATUS[0]}
   fi
   set -e
-  if [[ $status -ne 0 ]] || godot_smoke_has_error "$smoke_log"; then
+  if [[ $status -ne 0 ]] || godot_smoke_has_error "$smoke_log" || ! grep -q "$marker" "$smoke_log"; then
     echo "Godot visual smoke reported an unexpected failure diagnostic." >&2
     exit 1
   fi
@@ -60,6 +62,12 @@ for viewport in 1920x1080; do
       MARVEL_SMOKE_MOTION="$motion" MARVEL_SMOKE_CAPTURE_DIR="$capture_dir" \
       run_visual_smoke
   done
+done
+
+for scale in 50 80 100 150; do
+  MARVEL_UI_SCALE="$scale" MARVEL_SMOKE_VIEWPORT=1920x1080 \
+    MARVEL_SMOKE_CAPTURE_DIR="$capture_dir" \
+    run_visual_smoke res://smoke/text_resolution_smoke.gd TEXT_RESOLUTION_OK
 done
 
 echo "Rendered visual checkpoints: $capture_dir"

@@ -14,9 +14,11 @@ namespace Marvel.Protocol;
 /// </param>
 /// <param name="Seed">The seed for the game's one MT19937 stream.</param>
 /// <param name="PlayerDecks">Explicit full decks in seat order, or null for published starters.</param>
+/// <param name="Campaign">Authoritative campaign carry-over; absent for standalone games.</param>
 public sealed record GameSpecification(
     string Scenario,
     IReadOnlyList<string> Heroes,
     IReadOnlyList<string>? ModularSets,
     uint Seed,
-    IReadOnlyList<Marvel.Rules.Setup.PlayerDeckRecipe>? PlayerDecks = null);
+    IReadOnlyList<Marvel.Rules.Setup.PlayerDeckRecipe>? PlayerDecks = null,
+    Marvel.Rules.Campaign.CampaignGameSetup? Campaign = null);

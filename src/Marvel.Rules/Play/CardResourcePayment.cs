@@ -53,7 +53,10 @@ internal sealed class CardResourcePayment(
             if (IsGenerator(card))
             {
                 var offered = abilities.ResourceAbilities(world, payers[id]);
-                proposed.Append(offered.Single(source => source.Effect == id).Generates);
+                var source = offered.Single(candidate => candidate.Effect == id);
+                if (!ResourceSourceEligibility.Allows(world, facts, source, request.PayingFor ?? request.AbilitySource))
+                    throw new RulesNotImplementedException("the selected resource ability cannot pay this card's cost");
+                proposed.Append(source.Generates);
             }
             else
             {

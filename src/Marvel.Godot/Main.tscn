@@ -134,7 +134,7 @@ text = "Assemble the table."
 [node name="Description" type="Label" parent="Margin/Shell/Content" unique_id=1000000018]
 layout_mode = 2
 theme_type_variation = &"BodyMuted"
-text = "Loading the supported Core Set assignments…"
+text = "Loading the supported assignments…"
 autowrap_mode = 2
 
 [node name="Setup" type="HBoxContainer" parent="Margin/Shell/Content" unique_id=1000000019]

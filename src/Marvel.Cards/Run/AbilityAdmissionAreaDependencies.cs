@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityExpressionAreaDependencies;
 using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.State;
@@ -39,7 +40,7 @@ internal static class AbilityAdmissionAreaDependencies
         typeof(AbilityEffect.DelayedDiscard), typeof(AbilityEffect.DealEncounterCard),
         typeof(AbilityEffect.PlaceAtRandom), typeof(AbilityEffect.Search),
         typeof(AbilityEffect.PutIntoPlay), typeof(AbilityEffect.PlaceCounters),
-        typeof(AbilityEffect.RemoveCounters),
+        typeof(AbilityEffect.RemoveCounters), typeof(AbilityEffect.StoreBeneath), typeof(AbilityEffect.AttachCards),
     ];
 
     private static readonly ImmutableArray<Type> NumberDependencyTypes =
@@ -185,6 +186,7 @@ internal static class AbilityAdmissionAreaDependencies
                 CollectGrantDependencies(effect, context, areas);
                 break;
             case AbilityEffect.PreventDamageWhile prevention:
+                if (prevention.Target is { } target) CollectCardsInDependencies(target, context, areas);
                 CollectSingularAreaDependencies(prevention.Condition, context, areas);
                 break;
             default:
@@ -214,6 +216,13 @@ internal static class AbilityAdmissionAreaDependencies
     {
         switch (effect)
         {
+            case AbilityEffect.AttachCards attach:
+                CollectCardsInDependencies(attach.Host, context, areas);
+                CollectCardsInDependencies(attach.Cards, context, areas);
+                break;
+            case AbilityEffect.StoreBeneath store:
+                CollectCardsInDependencies(store.Host, context, areas);
+                break;
             case AbilityEffect.DelayedDiscard delayed:
                 CollectCardsInDependencies(delayed.Card, context, areas);
                 break;
@@ -269,79 +278,17 @@ internal static class AbilityAdmissionAreaDependencies
             AbilityEffect.GiveStatus or AbilityEffect.ChangeForm or AbilityEffect.Draw
                 or AbilityEffect.DrawToHandSize or AbilityEffect.GainSurge
                 or AbilityEffect.Fixed or AbilityEffect.Generate
-                or AbilityEffect.DoubleResourceFor or AbilityEffect.Shuffle
+                or AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop
+                or AbilityEffect.ReleaseBeneath or AbilityEffect.AllowPlayBeneath or AbilityEffect.DoubleResourceFor or AbilityEffect.Shuffle
                 or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
                 or AbilityEffect.DealEncounterCards or AbilityEffect.EngageTopAsMinion
                 or AbilityEffect.DiscardUntil or AbilityEffect.ShuffleInto
                 or AbilityEffect.ChooseTopForHand
-                or AbilityEffect.ChooseDiscardToShuffle
+                or AbilityEffect.ChooseDiscardToShuffle or AbilityEffect.DiscardResourceIcons
                 or AbilityEffect.DiscardHandWithResource
                 or AbilityEffect.RecoverDiscardedByResource
                 or AbilityEffect.ActivateEnemies => true,
             _ => false,
         };
 
-    private static void CollectSingularAreaDependencies(
-        AbilityCondition condition, AbilityAdmissionContext context, HashSet<DeckType> areas)
-    {
-        var cast = context;
-        switch (condition)
-        {
-            case AbilityCondition.All all:
-                foreach (var operand in all.Operands) CollectSingularAreaDependencies(operand, cast, areas);
-                break;
-            case AbilityCondition.Any any:
-                foreach (var operand in any.Operands) CollectSingularAreaDependencies(operand, cast, areas);
-                break;
-            case AbilityCondition.Negated negated:
-                CollectSingularAreaDependencies(negated.Operand, cast, areas);
-                break;
-            case AbilityCondition.AtLeast comparison:
-                CollectSingularAreaDependencies(comparison.Value, cast, areas);
-                CollectSingularAreaDependencies(comparison.Count, cast, areas);
-                break;
-            case AbilityCondition.CardText text: CollectCardsInDependencies(text.Card, cast, areas); break;
-            case AbilityCondition.IsKind kind: CollectCardsInDependencies(kind.Card, cast, areas); break;
-            case AbilityCondition.WasDefeated defeated: CollectCardsInDependencies(defeated.Card, cast, areas); break;
-            case AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource
-                or AbilityCondition.CausedThreat or AbilityCondition.Exists or AbilityCondition.LegalPractice
-                or AbilityCondition.AutomaticThwart or AbilityCondition.TitleInPlay or AbilityCondition.InForm
-                or AbilityCondition.ActivationIs or AbilityCondition.IsYourIdentity:
-                break;
-            default: throw new InvalidOperationException("Unknown compiled condition in area-dependency analysis");
-        }
-    }
-
-    private static void CollectSingularAreaDependencies(
-        AbilityNumber number, AbilityAdmissionContext context, HashSet<DeckType> areas)
-    {
-        var cast = context;
-        switch (number)
-        {
-            case AbilityNumber.Sum sum:
-                foreach (var operand in sum.Operands) CollectSingularAreaDependencies(operand, cast, areas);
-                break;
-            case AbilityNumber.Product product:
-                foreach (var operand in product.Operands) CollectSingularAreaDependencies(operand, cast, areas);
-                break;
-            case AbilityNumber.Minimum minimum:
-                foreach (var operand in minimum.Operands) CollectSingularAreaDependencies(operand, cast, areas);
-                break;
-            case AbilityNumber.Conditional conditional:
-                CollectSingularAreaDependencies(conditional.Test, cast, areas);
-                CollectSingularAreaDependencies(conditional.Then, cast, areas);
-                CollectSingularAreaDependencies(conditional.Else, cast, areas);
-                break;
-            case AbilityNumber.Constant or AbilityNumber.PerPlayer or AbilityNumber.Result
-                or AbilityNumber.CardValue or AbilityNumber.Counters or AbilityNumber.Modified
-                or AbilityNumber.Count or AbilityNumber.PrintedResourcesDiscarded
-                or AbilityNumber.DiscardedWithResource or AbilityNumber.ResolutionValue:
-                break;
-            default: throw new InvalidOperationException("Unknown compiled number in area-dependency analysis");
-        }
-    }
-
-    private static void CollectCardsInDependencies(
-        AbilityCardSelection selector, AbilityAdmissionContext context, HashSet<DeckType> areas) =>
-        areas.UnionWith(AbilitySelectionAreaReads.For(selector));
 }

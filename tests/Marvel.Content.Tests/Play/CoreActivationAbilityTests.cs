@@ -28,6 +28,7 @@ public sealed class CoreActivationAbilityTests
         world.Abilities = runner;
 
         runner.ExecuteReveal(world, legions, 0);
+        Agendas.Finish(world, Cards, runner);
 
         Assert.Equal(DeckType.EngagedEnemiesArea, madame.Area.Type);
         Assert.Equal(PlayArea.Of(0), madame.Area.PlayArea);
@@ -332,11 +333,11 @@ public sealed class CoreActivationAbilityTests
         var runner = AuthoredCards.Runner();
 
         runner.ExecuteReveal(world, card, 0);
-        var choice = Assert.Single(
-            world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
-        Prompt prompt = runner.Choosing(world, choice)!;
+        var events = new List<GameEvent>();
+        Prompt prompt = Sequence.Work(world, Cards, runner, events)!;
         Assert.True(prompt.ExposesConcealedCandidates);
-        runner.Chose(world, choice, Decision.Take(found.ObjectId));
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(found.ObjectId), events);
+        Agendas.Finish(world, Cards, runner);
 
         Assert.Contains(
             found,

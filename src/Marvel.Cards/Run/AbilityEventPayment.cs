@@ -161,18 +161,22 @@ internal sealed class AbilityEventPayment
         {
             string printed = Resources.Required(world, card, world.Facts);
             string additional = ResourceRequirement(additionalCost, card);
+            int additionalAmount = checked(additional.Length + GenericResourceAmount(additionalCost));
             var components = new List<ResourceCost>
             {
                 new(adjusted.Amount.ToString(
                     System.Globalization.CultureInfo.InvariantCulture),
                     printed.Length > 0 ? [printed] : null),
             };
-            if (additional.Length > 0)
+            if (additionalAmount > 0)
                 components.Add(new ResourceCost(
-                    additional.Length.ToString(
+                    additionalAmount.ToString(
                         System.Globalization.CultureInfo.InvariantCulture), [additional]));
+            // Total is an early affordability check. Component allocation independently
+            // enforces the full amount, so omitting this addition is an equivalent
+            // mutant when every component is checked by ResourceAllocationLedger.
             return new EventPaymentRequirements(
-                checked(adjusted.Amount + additional.Length), printed + additional, components);
+                checked(adjusted.Amount + additionalAmount), printed + additional, components);
         }
     }
 

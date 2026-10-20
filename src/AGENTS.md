@@ -86,7 +86,7 @@ outcomes, or replace engine validation. State uncertainty explicitly when a
 result depends on later choices, responses, boosts or other unresolved effects.
 Do not advertise a current stat as guaranteed final damage or threat removal.
 
-Keep the supported [Core Set boundary](../docs/scope.md). Later stat-replacement
+Keep the supported [product boundary](../docs/scope.md). Later stat-replacement
 or card patterns can motivate general contracts; they do not authorize adding
 isolated expansion content or assuming its rules from an informal example.
 

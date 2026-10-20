@@ -11,7 +11,7 @@ namespace Marvel.Cards.Run;
 internal static class AbilityResolutionChoices
 {
     private static readonly System.Collections.Immutable.ImmutableArray<string> SpecialChoiceOperations =
-        ["resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle"];
+        ["resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardResourceIcons"];
 
     internal static Prompt? Choosing(this AbilityResolutionExecution execution, World world, PhaseStep step)
     {
@@ -68,11 +68,12 @@ internal static class AbilityResolutionChoices
         string operation = choice.OperationName();
         if (SpecialChoiceOperations.Contains(operation))
             return AbilityStructuralExecution.DescribeSpecialChoice(structural, choice);
-        if (operation is "thwartDifferentSchemes" or "legalPractice")
+        if (operation is "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")
             return AbilityStructuralExecution.DescribeThwartChoice(
                 structural, (AbilityEffect.ThwartGroup)choice);
         Prompt? prompt = operation switch
         {
+            "peekTop" => AbilityDeckPeek.Describe(structural),
             "indirectDamage" => AbilityStructuralExecution.DescribeIndirectDamage(
                 structural, (AbilityEffect.IndirectDamage)choice),
             "and" => AbilityStructuralExecution.DescribeSimultaneous(

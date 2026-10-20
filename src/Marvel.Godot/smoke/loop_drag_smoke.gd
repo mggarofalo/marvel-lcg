@@ -57,15 +57,10 @@ func _loop_returns(card: Control, context: String, start_override: Vector2 = Vec
 	if not await preload("res://smoke/gesture_settlement.gd").authored_pose(self, card): return false
 	var start := start_override if start_override != Vector2.INF else await _exposed_card_body_point(card)
 	if start == Vector2.INF: return false
-	if not await preload("res://smoke/gesture_settlement.gd").wait_for(self, func() -> bool:
-		return card.position == card.get_meta("spatial_resting_position", card.position) \
-			and card.rotation == card.get_meta("spatial_resting_rotation", card.rotation)):
-		_fail(context + ": exact authored baseline did not finish settling")
-		return false
+	if not await _loop_pose_ready(card, context): return false
 	card.force_update_transform()
 	var original := card.get_global_transform()
-	var original_local := card.position
-	var original_rotation := card.rotation
+	var pose_snapshot := preload("res://smoke/player_card_pose.gd").capture(self, card)
 	var original_scale := card.scale
 	var original_pivot := card.pivot_offset
 	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
@@ -74,27 +69,20 @@ func _loop_returns(card: Control, context: String, start_override: Vector2 = Vec
 	if not await _follow_loop(card, start, original.origin, release_offset, context): return false
 	_loop_pointer(start + release_offset, false)
 	await process_frame
-	if not await preload("res://smoke/gesture_settlement.gd").pose(self, card, original_local, original_rotation) \
-			or card.scale != original_scale or card.pivot_offset != original_pivot \
-			or card.get_global_transform().origin.distance_to(original.origin) > 1:
+	if not await preload("res://smoke/player_card_pose.gd").settled(self, card, pose_snapshot) \
+			or card.scale != original_scale or card.pivot_offset != original_pivot:
 		_fail(context + ": looped drag did not restore its exact authored pose and original visual location")
 		return false
-	if not await _loop_state_is_clean(card, revision, commitment, order, context): return false
-	# A body click keeps hover inspection transient after the consumed drag release.
-	_loop_motion(start)
-	_loop_pointer(start, true)
-	await process_frame
-	_loop_pointer(start, false)
-	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
-	if not inspector.visible or inspector.get_node("Frame/Stack/Header/Close").visible:
-		_fail(context + ": the next ordinary card click did not retain transient inspection")
+	if not await preload("res://smoke/player_card_pose.gd").reflow_round_trip(self, card, pose_snapshot):
+		_fail(context + ": chrome reflow changed the card pose relative to its table region")
 		return false
-	await _loop_key(KEY_ESCAPE)
-	return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == revision
+	if not await _loop_state_is_clean(card, revision, commitment, order, context): return false
+	start += preload("res://smoke/player_card_pose.gd").expected(pose_snapshot).origin - original.origin
+	return await _next_inspection(start, revision, context)
+
 
 func _loop_state_is_clean(card: Control, revision: String, commitment: String, order: Array, context: String) -> bool:
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if card.find_child("DragContactShadow", true, false) != null or card.is_set_as_top_level() \
 			or card.modulate != Color.WHITE or card.mouse_default_cursor_shape == Control.CURSOR_FORBIDDEN \
 			or (inspector.visible and inspector.get_node("Frame/Stack/Header/Close").visible):
@@ -150,3 +138,25 @@ func _follow_loop(card: Control, start: Vector2, origin: Vector2, release_offset
 			_fail(context + ": recognized drag stopped following the pointer near its origin")
 			return false
 	return true
+
+func _loop_pose_ready(card: Control, context: String) -> bool:
+	if not await preload("res://smoke/gesture_settlement.gd").wait_for(self, func() -> bool:
+		return card.position == card.get_meta("spatial_resting_position", card.position) \
+			and card.rotation == card.get_meta("spatial_resting_rotation", card.rotation)):
+		_fail(context + ": exact authored baseline did not finish settling")
+		return false
+	return true
+
+func _next_inspection(start: Vector2, revision: String, context: String) -> bool:
+	# A body click keeps hover inspection transient after the consumed drag release.
+	_loop_motion(start)
+	_loop_pointer(start, true)
+	await process_frame
+	_loop_pointer(start, false)
+	await process_frame
+	var inspector := main.find_child("CardInspector", true, false) as Control
+	if not inspector.visible or inspector.get_node("Frame/Stack/Header/Close").visible:
+		_fail(context + ": the next ordinary card click did not retain transient inspection")
+		return false
+	await _loop_key(KEY_ESCAPE)
+	return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == revision

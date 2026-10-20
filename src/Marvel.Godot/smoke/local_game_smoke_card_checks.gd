@@ -147,7 +147,7 @@ func _upcoming_stages_are_safe() -> bool:
 		_fail("the current villain stage cannot open its inspector")
 		return false
 	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not await _wait_for(func() -> bool:
 		return is_equal_approx(inspector.get_node("Frame").modulate.a, 1.0)):
 		_fail("the villain inspector expansion did not settle")

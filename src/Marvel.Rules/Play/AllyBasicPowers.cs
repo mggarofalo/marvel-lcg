@@ -44,6 +44,13 @@ public static class AllyBasicPowers
             world, facts, seat.IdentityCard,
             StateFields.Modified(world, seat.IdentityCard, "recover", facts, world.Players),
             RecoverVerb, RecoverVerb, events);
+        // rr:after: the recovery has concluded before its response opens.
+        // The lifecycle gets a dynamic identity so repeated recoveries do not share use limits.
+        world.Agenda.Then(new PhaseStep(
+            new LifecycleOperation(LifecycleKind.BasicRecoveryUsed),
+            world.Agenda.Current?.Round ?? 0, 0,
+            Subject: seat.IdentityCard.ObjectId, Seat: player)
+        { OccurrenceId = world.Agenda.nextPlayerActionOccurrence-- });
     }
 
     /// <summary>

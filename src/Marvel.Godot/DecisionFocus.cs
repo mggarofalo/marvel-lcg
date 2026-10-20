@@ -187,7 +187,7 @@ internal static class DecisionFocus
     }
 
     private static bool IsStableName(string name) =>
-        name is "Submit" or "Decline" or "CancelCardPlay" || CardChoiceFocus.IsPage(name)
+        name is "Submit" or "Decline" or "CancelCardPlay" or "LocalChooseAction" or "LocalReturnToTable" || CardChoiceFocus.IsPage(name)
         || name.StartsWith("InspectPayment", StringComparison.Ordinal)
         || name.StartsWith("Affordance", StringComparison.Ordinal)
         || name.StartsWith("Group", StringComparison.Ordinal)

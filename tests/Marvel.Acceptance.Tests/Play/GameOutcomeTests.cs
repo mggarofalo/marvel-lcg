@@ -21,13 +21,17 @@ public sealed class GameOutcomeTests
     private static readonly CardCatalog Cards =
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Rule("rr:player-elimination.4")]
     [Fact]
     public void ACompleteGameIsDeterministicAndTraversesBothVillainStages()
     {
         var first = Play(2794);
         var replay = Play(2794);
 
-        Assert.Equal(Outcome.VillainWins, first.World.Result);
+        // "If all players are eliminated, the game ends and the players lose."
+        Assert.Equal(Outcome.PlayersLose, first.World.Result);
+        Assert.Equal(PlayerLossReason.AllPlayersEliminated, first.World.LossReason);
+        Assert.All(first.World.Seats, seat => Assert.True(seat.Eliminated));
         Assert.Contains(RhinoOne, first.Policy.VillainStages);
         Assert.Contains(RhinoTwo, first.Policy.VillainStages);
         Assert.True(first.Policy.CardsPlayed > 0, "the player played no cards");

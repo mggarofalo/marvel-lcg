@@ -8,7 +8,13 @@ internal static class GameScenarioSetup
     internal static Resolution ContinueScenarioSetup(this Game game, List<GameEvent> events)
     {
         game.world.ScenarioSetup!.Advance(game.world, events);
-        if (game.world.ScenarioSetup?.Pending is { } asked)
+        if (game.world.IsOver)
+        {
+            game.Phase = GamePhase.Over;
+            game.Pending = null;
+            game.asking = Game.Asker.Game;
+        }
+        else if (game.world.ScenarioSetup?.Pending is { } asked)
         {
             game.Pending = asked;
             game.Active = asked.Player;

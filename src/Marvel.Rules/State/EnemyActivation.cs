@@ -51,6 +51,9 @@ public sealed record EnemyActivation(
     long DamageDealt = 0,
     long ThreatPlaced = 0)
 {
+    /// <summary>Whether new boost cards may be dealt for this activation.</summary>
+    public bool DealBoostCards { get; init; } = true;
+
     /// <summary>Identity object ids dealt damage by this activation, in placement order.</summary>
     public IReadOnlyList<int> DamageRecipients { get; init; } = [];
 }

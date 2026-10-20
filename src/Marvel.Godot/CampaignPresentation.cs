@@ -1,0 +1,101 @@
+using Godot;
+using Marvel.Protocol;
+using Marvel.Rules.Campaign;
+namespace Marvel.Godot;
+
+/// <summary>Explains campaign authority and displays only the current phase's useful actions.</summary>
+internal static class CampaignPresentation
+{
+    internal static void Render(CampaignControls ui, CampaignDescriptor campaign, DeckCatalog catalog,
+        Action<CampaignQuery> choose, Action<int> edit, Action resume)
+    {
+        ui.Clear();
+        var state = campaign.State;
+        ui.Body.AddChild(CampaignControls.Text(campaign.Name));
+        ui.Body.AddChild(CampaignControls.Text($"Rise of Red Skull · {(state.Expert ? "Expert" : "Standard")} campaign"
+            + $" · {(state.ExpertScenario ? "Expert" : "Standard")} scenario"));
+        ui.Body.AddChild(CampaignControls.Text(string.Join("  →  ", Enum.GetValues<CampaignStage>().Select(stage =>
+            (stage == state.Stage ? "▶ " : "") + Name(stage)))));
+        ui.Body.AddChild(CampaignControls.Text(Phase(state.Phase)));
+        foreach (var pair in state.Players.Select((player, seat) => (player, seat)))
+            Player(ui, pair.player, pair.seat, campaign, catalog, edit, choose);
+        CampaignCardLinks.Section(ui, "Experimental weapons in later encounter decks", state.ExperimentalWeapons, catalog);
+        CampaignCardLinks.Section(ui, "Consumed upgrades · unavailable for the rest of this campaign", campaign.RemovedCards.Select(card => card.Face), catalog);
+        CampaignCardLinks.Section(ui, "Imprisoned allies · excluded from every deck", state.BannedAllyFaces, catalog);
+        if (state.DelayCounters > 0) ui.Body.AddChild(CampaignControls.Text($"Recorded delay: {state.DelayCounters}"));
+        if (campaign.Archived) ui.Body.AddChild(CampaignControls.Text("Archived · records are preserved. Restore this campaign to continue playing."));
+        else ShowActions(ui, campaign, catalog, choose, resume);
+    }
+
+    private static void Player(CampaignControls ui, CampaignPlayerState player, int seat, CampaignDescriptor campaign,
+        DeckCatalog catalog, Action<int> edit, Action<CampaignQuery> choose)
+    {
+        var state = campaign.State;
+        string name = catalog.Heroes.FirstOrDefault(hero => hero.Key == player.Hero)?.Name ?? player.Hero;
+        string hp = state.Expert && player.RecordedHitPoints is { } value ? $" · recorded HP {value}/{player.BaseHitPoints}" : "";
+        ui.Body.AddChild(CampaignControls.Text($"Player {seat + 1} · {name}{hp}"));
+        if (player.RequiresRecovery) ui.Body.AddChild(CampaignControls.Text("Defeated last scenario: take a recovery obligation during setup to rejoin."));
+        CampaignCardLinks.Section(ui, "Campaign cards", player.Cards.Select(card => card.Face), catalog);
+        if (campaign.Archived || state.Phase != CampaignPhase.Preparing) return;
+        if (player.RequiresRecovery)
+        {
+            var participate = new CheckButton { Text = $"Player {seat + 1} joins this attempt", ButtonPressed = player.Participating };
+            participate.Toggled += selected => choose(new("participation") { Seat = seat, Participating = selected });
+            ui.Body.AddChild(participate);
+        }
+        CampaignControls.Action(ui.Body, $"Edit {name}'s deck · {player.Deck.Cards.Count} cards", () => edit(seat));
+    }
+
+    private static void ShowActions(CampaignControls ui, CampaignDescriptor campaign, DeckCatalog catalog,
+        Action<CampaignQuery> choose, Action resume)
+    {
+        switch (campaign.State.Phase)
+        {
+            case CampaignPhase.Preparing:
+                var mode = new CheckButton { Text = "Expert scenario", ButtonPressed = campaign.State.ExpertScenario,
+                    TooltipText = "Scenario difficulty is independent of campaign difficulty." };
+                mode.Toggled += selected => choose(new("mode") { Expert = selected });
+                ui.Body.AddChild(mode);
+                foreach (string problem in campaign.PreparationProblems) ui.Body.AddChild(CampaignControls.Text(problem));
+                CampaignControls.Action(ui.Body, "Begin " + Name(campaign.State.Stage), () => choose(new("start")))
+                    .Disabled = campaign.PreparationProblems.Count > 0;
+                break;
+            case CampaignPhase.Playing: CampaignControls.Action(ui.Body, "Return to current game", resume); break;
+            case CampaignPhase.Retry: CampaignControls.Action(ui.Body, "Prepare another attempt", () => choose(new("retry"))); break;
+            case CampaignPhase.Rewards: Rewards(ui, campaign.Reward!, catalog, choose); break;
+        }
+    }
+
+    private static void Rewards(CampaignControls ui, CampaignRewardChoice reward, DeckCatalog catalog, Action<CampaignQuery> choose)
+    {
+        ui.Body.AddChild(CampaignControls.Text($"Player {reward.Seat + 1}: {RewardInstruction(reward.Kind)}"));
+        foreach (var card in reward.Options)
+        {
+            var printed = catalog.Cards.FirstOrDefault(item => item.Face == card.Face);
+            var button = CampaignControls.Action(ui.Body, printed?.Title ?? card.Face,
+                () => choose(new("reward") { Seat = reward.Seat, Choice = card.Key }));
+            if (printed is not null) CampaignCardLinks.Bind(ui, button, printed);
+        }
+        if (reward.Optional) CampaignControls.Action(ui.Body, "Decline this optional reward", () => choose(new("reward") { Seat = reward.Seat }));
+    }
+
+    private static string RewardInstruction(CampaignRewardKind kind) => kind switch
+    {
+        CampaignRewardKind.Tech => "choose a campaign upgrade",
+        CampaignRewardKind.Condition => "choose a Basic Condition upgrade, or decline",
+        CampaignRewardKind.ImproveCondition => "improve your Condition upgrade, or decline",
+        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+    };
+    internal static string Name(CampaignStage stage) => stage switch
+    { CampaignStage.AbsorbingMan => "Absorbing Man", CampaignStage.RedSkull => "Red Skull", _ => stage.ToString() };
+    private static string Phase(CampaignPhase phase) => phase switch
+    {
+        CampaignPhase.Preparing => "Prepare your decks, choose scenario difficulty, then begin. Campaign cards are added automatically.",
+        CampaignPhase.Playing => "Your current game is saved after every accepted choice.",
+        CampaignPhase.Rewards => "Victory. Resolve the campaign rewards below before preparing the next scenario.",
+        CampaignPhase.Retry => "The attempt ended in defeat. Consumed campaign cards remain consumed when you retry.",
+        CampaignPhase.Complete => "Campaign complete. Red Skull has been defeated.",
+        CampaignPhase.Failed => "The expert campaign ended in defeat against Red Skull.",
+        _ => throw new ArgumentOutOfRangeException(nameof(phase)),
+    };
+}

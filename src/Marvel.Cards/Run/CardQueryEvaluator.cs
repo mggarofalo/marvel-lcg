@@ -11,9 +11,9 @@ internal sealed class CardQueryEvaluator(
 {
     private static readonly ImmutableArray<AbilityCardQuery> ScenarioQueries =
     [
-        AbilityCardQuery.AttachedToThis, AbilityCardQuery.SideSchemes,
+        AbilityCardQuery.AttachmentsOnVillain, AbilityCardQuery.AttachedToThis, AbilityCardQuery.AttachmentsOnThis, AbilityCardQuery.BeneathThis, AbilityCardQuery.SideSchemes,
         AbilityCardQuery.Schemes, AbilityCardQuery.PowerTargets,
-        AbilityCardQuery.YourAsidePile,
+        AbilityCardQuery.YourAsidePile, AbilityCardQuery.OtherEnvironments,
         AbilityCardQuery.Villain, AbilityCardQuery.MainScheme,
         AbilityCardQuery.YourAsideMinion, AbilityCardQuery.YourAsideSideScheme,
     ];
@@ -26,10 +26,10 @@ internal sealed class CardQueryEvaluator(
     ];
     private static readonly ImmutableArray<AbilityCardQuery> ControlledQueries =
     [
-        AbilityCardQuery.UpgradesAndSupportsYouControl,
+        AbilityCardQuery.UpgradesAndSupportsYouControl, AbilityCardQuery.CardsYouControl,
         AbilityCardQuery.IdentitySpecificInYourHand,
         AbilityCardQuery.SupportsYouControl,
-        AbilityCardQuery.CharactersYouControl,
+        AbilityCardQuery.CharactersYouControl, AbilityCardQuery.CharactersYouControlExceptCost,
         AbilityCardQuery.UpgradesYouControl,
         AbilityCardQuery.AlliesYouControl,
     ];
@@ -54,8 +54,16 @@ internal sealed class CardQueryEvaluator(
     {
         // rr:attachment: an attachment is in an area hosted by its card.
         AbilityCardQuery.AttachedToThis =>
-            [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId)
+            [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId && !BeneathCards.IsStored(area.Type))
                 .SelectMany(area => area.Cards)],
+        AbilityCardQuery.AttachmentsOnVillain => VillainAttachments(),
+        AbilityCardQuery.AttachmentsOnThis =>
+            [.. cast.World.Areas.Where(area => area.Host == cast.Source.ObjectId && DeckTypes.IsInPlay(area.Type))
+                .SelectMany(area => area.Cards).Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Attachment)],
+        AbilityCardQuery.OtherEnvironments => [.. cast.World.Cards.Where(card =>
+            DeckTypes.IsInPlay(card.Area.Type) && card.ObjectId != cast.Occurrence.Subject
+            && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Environment)],
+        AbilityCardQuery.BeneathThis => BeneathCards.Of(cast.World, cast.Source),
         // rr:player-side-scheme.1 puts both kinds of side scheme together.
         AbilityCardQuery.SideSchemes =>
             [.. InArea(cast.World, DeckType.SideSchemesArea, PlayArea.Villains)],
@@ -70,6 +78,15 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.YourAsideSideScheme => AsideOfKind(CardKind.EncounterSideScheme),
         _ => throw new InvalidOperationException("Unknown scenario card query"),
     };
+
+    private Card[] VillainAttachments()
+    {
+        var villain = cast.World.TheCardIn(DeckType.VillainArea);
+        if (villain is null) return [];
+        return [.. cast.World.Areas.Where(area => area.Host == villain.ObjectId && DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Attachment)];
+    }
 
     private IReadOnlyList<Card> EvaluateEnemies(AbilityCardQuery query) => query switch
     {
@@ -118,6 +135,8 @@ internal sealed class CardQueryEvaluator(
     private IReadOnlyList<Card> EvaluateControlled(AbilityCardQuery query) => query switch
     {
         // rr:play-area.1: cards in a player's play area are under their control.
+        AbilityCardQuery.CardsYouControl => [.. cast.World.Cards.Where(card =>
+            DeckTypes.IsInPlay(card.Area.Type) && CardControl.ControllerOf(cast.World, card) == cast.Player)],
         AbilityCardQuery.UpgradesAndSupportsYouControl =>
             [.. ControlledAreas(DeckType.UpgradesArea, DeckType.SupportsArea)],
         // rr:identity-specific-card.3: the identity icon is extracted as Hero class.
@@ -125,6 +144,8 @@ internal sealed class CardQueryEvaluator(
             [.. cast.World.Seats[cast.Player].Hand.Cards.Where(IsIdentitySpecific)],
         AbilityCardQuery.SupportsYouControl =>
             [.. InArea(cast.World, DeckType.SupportsArea, PlayArea.Of(cast.Player))],
+        AbilityCardQuery.CharactersYouControlExceptCost => [.. EvaluateControlled(AbilityCardQuery.CharactersYouControl)
+            .Where(card => !cast.ExhaustedForCost.Contains(card.ObjectId))],
         AbilityCardQuery.CharactersYouControl =>
             [cast.World.Seats[cast.Player].IdentityCard,
              .. InArea(cast.World, DeckType.AlliesArea, PlayArea.Of(cast.Player))],

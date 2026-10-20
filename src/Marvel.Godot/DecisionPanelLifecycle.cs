@@ -54,6 +54,7 @@ internal sealed class DecisionPanelLifecycle
             return false;
         }
 
+        panel.LocalDecision.Continuity.Submit();
         panel.submitting = true;
         panel.Rebuild();
         return true;
@@ -84,9 +85,10 @@ internal sealed class DecisionPanelLifecycle
         }
 
         Affordance option = composer.Selected!;
+        panel.LocalDecision.LeaveForTableAction();
         panel.RaiseDraftStarted();
         panel.NotifyAnchorFocused([option.AnchorId]);
-        if (DirectCommitment.IsReady(composer)
+        if (!DecisionDialogLayout.Automatic(composer.Prompt) && DirectCommitment.IsReady(composer)
             && composer.TryBuild(out Decision? decision, out _))
         {
             NotifySubmitted(decision!, generation);

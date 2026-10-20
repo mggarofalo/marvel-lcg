@@ -15,6 +15,7 @@ internal static class AbilityContinuationRestoration
         return new(memory.Discarded.Select(At).ToImmutableArray(), memory.Results,
             state.Invocation.Source.Incarnation, memory.Chosen,
             state.Invocation.AbilityActor >= 0 ? At(state.Invocation.AbilityActor) : null,
-            memory.CrisisIgnoringThwarts, memory.SourceState);
+            memory.CrisisIgnoringThwarts, memory.SourceState)
+        { ExhaustedForCost = memory.ExhaustedForCost };
     }
 }

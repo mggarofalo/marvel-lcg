@@ -23,6 +23,7 @@ internal sealed record AbilityResolutionState(
 
     public Defeated? TriggeringDefeat { get; set; }
     internal AbilityExecution? Execution { get; set; }
+    internal AbilityPowerExecutionState? PowerExecution { get; set; }
     internal AbilityPaymentPlan? PendingPayment { get; set; }
     private bool executionEntered;
 
@@ -82,6 +83,9 @@ internal sealed record AbilityResolutionState(
 
     /// <summary>Cards discarded earlier in this resolution, in order.</summary>
     public List<Card> Discarded { get; } = [];
+
+    /// <summary>Physical cards exhausted to pay this ability, retained across choices.</summary>
+    internal HashSet<int> ExhaustedForCost { get; } = [];
 
     /// <summary>The game element bound by the current alteration frame.</summary>
     public Card? Altered { get; private set; }
@@ -212,7 +216,8 @@ internal sealed record AbilityResolutionState(
 
     public AbilityExpressionContext ExpressionContext() => new(
         QueryContext(), Results.ToImmutableDictionary(StringComparer.Ordinal),
-        [.. Discarded], Payment, PowerAmount, FinalStep, ProjectedPlayAreaPlayer);
+        [.. Discarded], Payment, PowerAmount, FinalStep, ProjectedPlayAreaPlayer)
+        { ThwartActorUsingAttack = ThwartActorUsingAttack };
 
     /// <summary>
     /// Which of the card's abilities is running, or null.
@@ -280,6 +285,7 @@ internal sealed record AbilityResolutionState(
 
     /// <summary>A numeric result carried into this labelled power.</summary>
     public long PowerAmount { get; init; } = -1;
+    internal int? ThwartActorUsingAttack { get; set; }
 
     /// <summary>The outer threat assignment this interrupt can prevent.</summary>
     public ThreatPlacement? ImminentThreat { get; init; }

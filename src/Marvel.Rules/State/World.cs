@@ -16,6 +16,9 @@ namespace Marvel.Rules.State;
 /// </remarks>
 public sealed class World
 {
+    /// <summary>Persistent campaign facts for this attempt; absent in standalone games.</summary>
+    public Campaign.CampaignAttemptState? Campaign { get; internal set; }
+
     internal ScenarioSetup? ScenarioSetup { get; set; }
     internal readonly List<Card> _cards = [];
     internal readonly List<Area> _areas = [];
@@ -432,36 +435,5 @@ public sealed class World
     /// One record per card, ascending by id, nothing excluded — not the rules
     /// pseudo-card, not id 0, not the middle of a deck.
     /// </remarks>
-    public StateDigest Digest()
-    {
-        var positions = new Dictionary<int, (string Zone, int Index)>();
-        foreach (var area in _areas)
-        {
-            string zone = area.Type.ToString();
-            for (int index = 0; index < area.Cards.Count; index++)
-            {
-                positions[area.Cards[index].ObjectId] = (zone, index);
-            }
-
-            for (int index = 0; index < area.Removed.Count; index++)
-            {
-                positions[area.Removed[index].ObjectId] = (zone + "/removed", index);
-            }
-        }
-
-        var records = new List<CardRecord>(_cards.Count);
-        foreach (var card in _cards)
-        {
-            // `/absent` should not happen. It is emitted rather than raised
-            // because a digest that can crash while computing itself is worse
-            // than one with a visible anomaly in it.
-            var (zone, index) = positions.TryGetValue(card.ObjectId, out var found)
-                ? found
-                : (card.Area.Type + "/absent", -1);
-
-            records.Add(CardDigestRecord.For(this, card, zone, index));
-        }
-
-        return new StateDigest(records);
-    }
+    public StateDigest Digest() => WorldDigest.Create(this);
 }

@@ -226,6 +226,28 @@ named comparison policy outside the digest format.
 
 ## Validation
 
+Rise of Red Skull uses three additional zone names: `ExperimentalWeaponsDeck`,
+`SideSchemeDeck`, and `SideSchemeDiscardPile`. They are engine-chosen spellings
+for the separate piles required by `pack:mc10:experimental-weapons-deck` and
+`pack:mc10:side-scheme-deck`. They use the existing v3 zone and index fields;
+Core games create none of these areas and retain their existing digest bytes.
+Both draw piles are concealed and the discard pile is face up.
+
+Campaign-tracked cards additionally register `campaign_role` (TECH=1,
+Condition=2, rescued ally=3, obligation=4), `campaign_seat`,
+`campaign_removed`, `campaign_rescued`, and `campaign_assigned`. The last three
+are numeric booleans. These engine-chosen fields remain present at zero and
+outside play. Saved campaign setup and the pinned content composition determine
+the mapping from physical object ids to persistent campaign keys. Ordinary
+cards register none of these fields; a generic token dictionary is not a
+substitute for registered campaign state.
+
+Campaign Experimental Weapons additionally register `campaign_entered_play`
+(0 or 1). It records actual entry, remains set after departure, and is not set
+by revealing or boosting alone. This is the cumulative fact required by
+Crossbones' campaign victory instruction; emptying the auxiliary deck does not
+establish that an attachment entered play.
+
 The digest tests hold:
 
 - exact empty and populated canonical strings;
@@ -240,3 +262,8 @@ The digest tests hold:
 
 Gameplay tests add board-level invariants. Running the test suite must not create
 or update a digest fixture in the repository.
+
+Stored cards use `BeneathCardsArea` when faceup and `BeneathCardsPile` when
+facedown. Both are out of play. Their existing `host` field identifies the
+in-play card above them; physical `owner` is preserved independently of that
+host. These zone spellings and face states are part of the digest contract.

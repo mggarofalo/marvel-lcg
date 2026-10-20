@@ -42,6 +42,7 @@ internal static class AbilityEffectStructure
 
     internal static AbilityNumber? EffectAmount(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.ActivateEnemies activation => activation.Modifier,
         AbilityEffect.Heal heal => heal.Amount,
         AbilityEffect.Damage damage => damage.Amount,
         AbilityEffect.AttackDamage damage => damage.Amount,
@@ -102,6 +103,7 @@ internal static class AbilityEffectStructure
             .Concat(PaidResourceQueries(conditional.Then)).Concat(PaidResourceQueries(conditional.Else)),
         AbilityNumber.Sum sum => sum.Operands.SelectMany(PaidResourceQueries),
         AbilityNumber.Product product => product.Operands.SelectMany(PaidResourceQueries),
+        AbilityNumber.FloorDivide division => division.Operands.SelectMany(PaidResourceQueries),
         AbilityNumber.Minimum minimum => minimum.Operands.SelectMany(PaidResourceQueries),
         _ => [],
     };
@@ -136,6 +138,7 @@ internal static class AbilityEffectStructure
             AbilityNumber.Conditional conditional => [conditional.Then, conditional.Else],
             AbilityNumber.Sum sum => sum.Operands,
             AbilityNumber.Product product => product.Operands,
+            AbilityNumber.FloorDivide division => division.Operands,
             AbilityNumber.Minimum minimum => minimum.Operands,
             _ => [],
         };

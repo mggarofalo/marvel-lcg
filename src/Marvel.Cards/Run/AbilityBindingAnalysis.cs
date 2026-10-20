@@ -25,7 +25,7 @@ internal static class AbilityBindingAnalysis
         AbilityCondition.IsKind kind => BindingCanChange(kind.Card),
         AbilityCondition.WasDefeated defeated => BindingCanChange(defeated.Card),
         AbilityCondition.IsYourIdentity identity => BindingCanChange(identity.Card),
-        AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource
+        AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
             or AbilityCondition.CausedThreat or AbilityCondition.TitleInPlay or AbilityCondition.ActivationIs => false,
         _ => throw new InvalidOperationException("Unknown compiled condition in binding analysis"),
     };
@@ -34,11 +34,13 @@ internal static class AbilityBindingAnalysis
     {
         AbilityNumber.Sum sum => sum.Operands.Any(BindingCanChange),
         AbilityNumber.Product product => product.Operands.Any(BindingCanChange),
+        AbilityNumber.FloorDivide division => division.Operands.Any(BindingCanChange),
         AbilityNumber.Minimum minimum => minimum.Operands.Any(BindingCanChange),
         AbilityNumber.CardValue value => BindingCanChange(value.Card),
         AbilityNumber.Counters counters => BindingCanChange(counters.Card),
         AbilityNumber.Modified modified => BindingCanChange(modified.Card),
         AbilityNumber.Count count => BindingCanChange(count.Cards),
+        AbilityNumber.SumPrintedCost sum => BindingCanChange(sum.Cards),
         AbilityNumber.Conditional conditional => BindingCanChange(conditional.Test)
             || BindingCanChange(conditional.Then) || BindingCanChange(conditional.Else),
         AbilityNumber.ResolutionValue value => value.Kind == AbilityResolutionNumber.PowerAmount,
@@ -55,6 +57,7 @@ internal static class AbilityBindingAnalysis
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
         AbilityCardSelection.WithTrait trait => BindingCanChange(trait.Cards),
         AbilityCardSelection.FaceDown trait => BindingCanChange(trait.Cards),
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(BindingCanChange),
         AbilityCardSelection.Last trait => BindingCanChange(trait.Cards),
         AbilityCardSelection.InObjectIdOrder trait => BindingCanChange(trait.Cards),
         AbilityCardSelection.WithMatchingPlayerArea trait => BindingCanChange(trait.Cards),
@@ -71,9 +74,10 @@ internal static class AbilityBindingAnalysis
         AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PowerAmount } => false,
         AbilityNumber.Sum sum => sum.Operands.Any(AmountMayChange),
         AbilityNumber.Product product => product.Operands.Any(AmountMayChange),
+        AbilityNumber.FloorDivide division => division.Operands.Any(AmountMayChange),
         AbilityNumber.Minimum minimum => minimum.Operands.Any(AmountMayChange),
         AbilityNumber.Result or AbilityNumber.CardValue or AbilityNumber.Counters
-            or AbilityNumber.Modified or AbilityNumber.Count or AbilityNumber.Conditional
+            or AbilityNumber.Modified or AbilityNumber.Count or AbilityNumber.SumPrintedCost or AbilityNumber.Conditional
             or AbilityNumber.PrintedResourcesDiscarded or AbilityNumber.DiscardedWithResource
             or AbilityNumber.ResolutionValue => true,
         _ => throw new InvalidOperationException("Unknown compiled number in mutation analysis"),
@@ -84,12 +88,13 @@ internal static class AbilityBindingAnalysis
         AbilityNumber.ResolutionValue value => value.Kind == AbilityResolutionNumber.PowerAmount,
         AbilityNumber.Sum sum => sum.Operands.Any(ContainsPowerAmount),
         AbilityNumber.Product product => product.Operands.Any(ContainsPowerAmount),
+        AbilityNumber.FloorDivide division => division.Operands.Any(ContainsPowerAmount),
         AbilityNumber.Minimum minimum => minimum.Operands.Any(ContainsPowerAmount),
         AbilityNumber.Conditional conditional => ContainsPowerAmount(conditional.Test)
             || ContainsPowerAmount(conditional.Then) || ContainsPowerAmount(conditional.Else),
         AbilityNumber.Constant or AbilityNumber.PerPlayer or AbilityNumber.Result
             or AbilityNumber.CardValue or AbilityNumber.Counters or AbilityNumber.Modified
-            or AbilityNumber.Count or AbilityNumber.PrintedResourcesDiscarded
+            or AbilityNumber.Count or AbilityNumber.SumPrintedCost or AbilityNumber.PrintedResourcesDiscarded
             or AbilityNumber.DiscardedWithResource => false,
         _ => throw new InvalidOperationException("Unknown compiled number in power-binding analysis"),
     };
@@ -101,7 +106,7 @@ internal static class AbilityBindingAnalysis
         AbilityCondition.Negated negated => ContainsPowerAmount(negated.Operand),
         AbilityCondition.AtLeast comparison => ContainsPowerAmount(comparison.Value)
             || ContainsPowerAmount(comparison.Count),
-        AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource
+        AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
             or AbilityCondition.CausedThreat or AbilityCondition.Exists or AbilityCondition.LegalPractice
             or AbilityCondition.AutomaticThwart or AbilityCondition.TitleInPlay or AbilityCondition.InForm
             or AbilityCondition.ActivationIs or AbilityCondition.CardText or AbilityCondition.IsKind

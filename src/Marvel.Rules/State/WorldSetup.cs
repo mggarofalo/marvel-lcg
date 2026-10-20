@@ -33,12 +33,21 @@ public static class WorldSetup
         ICardFacts facts, IReadOnlyList<CardBlueprint> blueprints,
         IReadOnlyList<string> seats, uint seed,
         Play.ICardAbilities abilities, List<Events.GameEvent>? events = null,
-        bool expert = false)
+        bool expert = false) => DealConfigured(facts, blueprints, seats, seed, abilities,
+            new WorldSetupOptions(expert), events);
+
+    /// <summary>Deals a world with deterministic campaign bindings before any setup abilities run.</summary>
+    public static World DealConfigured(
+        ICardFacts facts, IReadOnlyList<CardBlueprint> blueprints,
+        IReadOnlyList<string> seats, uint seed,
+        Play.ICardAbilities abilities, WorldSetupOptions options,
+        List<Events.GameEvent>? events = null)
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(blueprints);
         ArgumentNullException.ThrowIfNull(seats);
         ArgumentNullException.ThrowIfNull(abilities);
+        ArgumentNullException.ThrowIfNull(options);
 
         Setup.PlayerCountRules.Validate(seats.Count);
 
@@ -52,7 +61,7 @@ public static class WorldSetup
         // later, and a second generator would restart it.
         var world = new World(facts, players, seed);
         world.Abilities = abilities;
-        world.Expert = expert;
+        world.Expert = options.Expert;
 
         var insert = world.CreateArea(DeckType.RemovedArea);
         var encounterDeck = world.CreateArea(DeckType.EncounterDeck);
@@ -72,6 +81,8 @@ public static class WorldSetup
             world, blueprints, players, insert, encounterDeck, villainDeck, mainSchemeDeck);
         var obligations = created.Obligations;
         var identities = created.Identities;
+        if (options.Campaign is { } campaign)
+            new Campaign.CampaignAttemptState(campaign, options.CampaignCards ?? [], options.ExperimentalWeapons).Bind(world);
 
         // 2. Each identity enters play. The alter-ego side is already first --
         //    the deal order put it there -- so nothing is flipped here.

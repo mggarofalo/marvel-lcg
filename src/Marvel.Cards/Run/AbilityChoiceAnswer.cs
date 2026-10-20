@@ -13,7 +13,7 @@ internal sealed class AbilityChoiceAnswer(
 {
     private static readonly ImmutableArray<string> SpecialOperations =
     [
-        "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle",
+        "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardResourceIcons",
     ];
 
     internal List<Marvel.Rules.Events.GameEvent> Apply(AbilityEffect choice)
@@ -24,9 +24,11 @@ internal sealed class AbilityChoiceAnswer(
         if (SpecialOperations.Contains(operation)) return ApplySpecial(choice);
         if (operation is "payOrEffect" or "payOrExhaust")
             return ApplyPayment(choice);
-        if (operation is "thwartDifferentSchemes" or "legalPractice")
+        if (operation is "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")
             return ApplyThwartChoice(choice);
         if (operation == "makeTheCall") return ApplyMakeTheCall(choice);
+        if (operation == "peekTop")
+            return AbilityDeckPeek.Answer(execution, choice, cast, input) ? Continue() : cast.Events;
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);
         return ApplyGeneric(choice);
     }
@@ -53,6 +55,7 @@ internal sealed class AbilityChoiceAnswer(
             "resolveSpecials" => ApplyResolveSpecials(choice),
             "chooseTopForHand" => ApplyChooseTopForHand(choice),
             "chooseDiscardToShuffle" => ApplyChooseDiscardToShuffle(choice),
+            "discardResourceIcons" => ApplyDiscardResourceIcons(choice),
             _ => throw new InvalidOperationException("Unknown special choice"),
         };
 
@@ -75,10 +78,8 @@ internal sealed class AbilityChoiceAnswer(
             string required = ((AbilityEffect.PayOrEffect)choice).Resources;
             var owner = cast.World.Agenda.Current;
             var occurrence = cast.World.Agenda.Occurrence;
-            var payment = CardPlay.Spend(
-                cast.World, cast.World.Facts, execution.resourceAbilities,
-                [cast.World.Seats[player].Hand], input.Spent, required.Length,
-                required, -1, player, cast.Events);
+            var payment = AbilityResourcePayment.Spend(cast.World, execution.resourceAbilities,
+                new(cast.Source, player, input.Spent, required.Length, required), cast.Events);
             if (!payment.IsComplete)
             {
                 cast.PendingPayment = new AbilityChoicePayment(payment);
@@ -130,6 +131,15 @@ internal sealed class AbilityChoiceAnswer(
         AbilityCardStateExecution.ShuffleDiscardIntoDeck(
             command.Targets.Select(id => cast.World.Cards[id]).ToList(),
             CardStateContext());
+        cast.ResolveEffect();
+        return Continue();
+    }
+
+    private List<Marvel.Rules.Events.GameEvent> ApplyDiscardResourceIcons(AbilityEffect choice)
+    {
+        var answer = AbilityStructuralExecution.AnswerSpecialChoice(execution.StructuralContext(cast), choice, input);
+        ThrowIfUnsupported(answer);
+        AbilityResourceIconDiscard.Commit(cast, ((DiscardResourceIconsCommand)answer).Targets);
         cast.ResolveEffect();
         return Continue();
     }

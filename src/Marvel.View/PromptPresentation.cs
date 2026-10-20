@@ -123,7 +123,7 @@ public sealed record PromptPresentation(
         string subject = prompt.PublicKind == PublicDecisionKind.MinionActivationOrder
             ? " · Choosing the next minion activation"
             : contextCards.Count > 0
-            ? $" · Resolving {contextCards[0].Title}"
+            ? $" · {(prompt.PublicKind == PublicDecisionKind.CardLook ? "Inspecting" : "Resolving")} {contextCards[0].Title}"
             : string.Empty;
         return $"Decision for {player}{subject}";
     }

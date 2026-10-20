@@ -27,7 +27,8 @@ internal static class AbilityContinuations
     internal static DecodedPowerContinuation DecodePower(
         AbilityProgram program, Card source, AbilityPowerContinuation continuation, string power)
     {
-        var ability = AbilityAt(program, source, null, continuation.Capture.Invocation.Address.Ordinal, continuation.Capture.Invocation.Address.Face);
+        var ability = AbilityAt(program, source, continuation.Capture.Invocation.Address.Tier,
+            continuation.Capture.Invocation.Address.Ordinal, continuation.Capture.Invocation.Address.Face);
         var wrappers = AbilityAdmission.PowerEffects(ability.Effect, power).ToList();
         var wrapper = wrappers.ElementAtOrDefault(continuation.PowerOrdinal)
             ?? throw new RulesNotImplementedException(
@@ -138,6 +139,7 @@ internal static class AbilityContinuations
             .SetItem("activationMade", state.Memory.Results.GetValueOrDefault("activationMade") + (result.Made ? 1 : 0))
             .SetItem("activationDamage", state.Memory.Results.GetValueOrDefault("activationDamage") + result.DamageDealt)
             .SetItem("activationThreat", state.Memory.Results.GetValueOrDefault("activationThreat") + result.ThreatPlaced);
+        values = AbilityActivationReceipts.Record(values, result);
         var remaining = step.Require<AbilityContinuationAgendaOperation>().AwaitedActivations.Where(id => id != result.Id).ToImmutableArray();
         return new(step with { Operation = step.Require<AbilityContinuationAgendaOperation>() with
         { AwaitedActivations = remaining, Continuation = state with { Memory = state.Memory with { Results = values } } } }, remaining.IsEmpty);

@@ -18,8 +18,9 @@ internal static class SpatialTableSurfaceRenderer
         using var faces = new BoardCardFaceReuse(previous);
         Prepare(main);
         AstraTableGeometry geometry = Geometry(main, selection, prompt);
-        Control surface = CreateSurface(main, geometry);
+        TableCanvasSurface surface = CreateSurface(main, geometry);
         var result = new BoardRenderResult(main.boardPresentation);
+        surface.Reflow = new TableCanvasReflow(surface, result);
         AddMats(surface, result, geometry, selection);
         RenderObjects(main, result, surface, geometry, selection, prompt, faces);
         AddSeats(surface, geometry, main.boardPresentation!, selection, switchSeat);
@@ -32,6 +33,7 @@ internal static class SpatialTableSurfaceRenderer
     {
         TabletopPileInspector.Close();
         BoardActionChoiceSurface.Close();
+        CardContextMenu.Close();
         BoardRenderCleanup.Clear(main.boardAreas);
         BoardRenderCleanup.Clear(main.handRail);
         main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").Visible = false;
@@ -46,7 +48,7 @@ internal static class SpatialTableSurfaceRenderer
                 expanded ? TableHistoryDrawer.ExpandedWidth(main) : 0) + 40
             : expanded ? TableHistoryDrawer.ExpandedWidth(main) + 40 : 56;
         float width = Math.Max(expanded ? 920 : 1060, viewport.X - reserved);
-        float height = Math.Min(AstraTableGeometry.ReferenceHeight, Math.Max(820, viewport.Y - 118));
+        float height = TableCanvasBounds.Height(main);
         return ActivityGeometry(new(width, height), main.interfaceScale, main.boardPresentation!,
             selection.ExpandedSeat, Context(main, prompt));
     }
@@ -81,9 +83,9 @@ internal static class SpatialTableSurfaceRenderer
             ? new Vector2(Math.Max(installed.X, revealing.X), Math.Max(installed.Y, revealing.Y)) : installed;
     }
 
-    private static Control CreateSurface(Main main, AstraTableGeometry geometry)
+    private static TableCanvasSurface CreateSurface(Main main, AstraTableGeometry geometry)
     {
-        var surface = new Control
+        var surface = new TableCanvasSurface
         {
             Name = "AstraTableSurface",
             Size = new Vector2(geometry.Width, geometry.Height),
@@ -94,6 +96,7 @@ internal static class SpatialTableSurfaceRenderer
             MouseFilter = Control.MouseFilterEnum.Pass,
         };
         main.boardAreas.AddChild(surface);
+        TableCanvasBounds.Observe(main, surface);
         TableMaterialLighting.Add(surface);
         return surface;
     }
@@ -110,6 +113,8 @@ internal static class SpatialTableSurfaceRenderer
             GodotThemeVariations.SpatialPlayerMat,
             $"Player {selection.ExpandedSeat + 1}");
         result.RegisterDropTarget(selection.ExpandedSeat, playerMat);
+        TableCanvasReflow.Grow(surface, playerMat);
+        TableCanvasReflow.MoveMiddle(surface, playerMat);
         AddConfrontationSeam(surface, geometry, selection.ExpandedSeat);
     }
 
@@ -131,6 +136,7 @@ internal static class SpatialTableSurfaceRenderer
         var handArea = new Control { Name = "HandDropArea", Position = geometry.Hand.Position,
             Size = geometry.Hand.Size, MouseFilter = Control.MouseFilterEnum.Ignore };
         surface.AddChild(handArea);
+        TableCanvasReflow.AnchorBottom(surface, handArea);
         result.RegisterHandArea(handArea, prompt?.Player ?? selection.ExpandedSeat, geometry.HandCard);
         if (MulliganPrompt.IsOpening(prompt))
         {
@@ -139,6 +145,7 @@ internal static class SpatialTableSurfaceRenderer
             stage.AddChild(new Label { Text = "Staged for redraw", ThemeTypeVariation = GodotThemeVariations.Caption,
                 MouseFilter = Control.MouseFilterEnum.Ignore });
             surface.AddChild(stage);
+            TableCanvasReflow.AnchorBottom(surface, stage);
             result.RegisterMulliganStage(stage);
         }
         objects.RenderScenario(scenario);
@@ -212,7 +219,7 @@ internal static class SpatialTableSurfaceRenderer
             : $"Player {seat + 1} hand";
         float left = geometry.PlayerMat.Position.X + 22;
         float top = geometry.Hand.Position.Y + 12;
-        surface.AddChild(new Label
+        var caption = new Label
         {
             Name = "SpatialHandHeading",
             Text = $"{heading} · {visible} cards"
@@ -221,7 +228,9 @@ internal static class SpatialTableSurfaceRenderer
             ThemeTypeVariation = GodotThemeVariations.Caption,
             ZIndex = 60,
             MouseFilter = Control.MouseFilterEnum.Ignore,
-        });
+        };
+        surface.AddChild(caption);
+        TableCanvasReflow.AnchorBottom(surface, caption);
     }
 
     private static void AddSeats(
@@ -238,8 +247,8 @@ internal static class SpatialTableSurfaceRenderer
         Control seats = MulliganSeatStripRenderer.CreateCompact(board, selection, switchSeat);
         seats.Name = "SpatialSeatSummaries";
         seats.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        var viewport = new ScrollContainer { Name = "SeatSummaryViewport", Position = geometry.SeatStrip.Position,
-            Size = geometry.SeatStrip.Size, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+        var viewport = new ScrollContainer { Name = "SeatSummaryViewport", Position = geometry.SeatStrip.Position.Round(),
+            Size = geometry.SeatStrip.Size.Floor(), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto, FollowFocus = true, ZIndex = 24 };
         viewport.AddChild(seats);
         surface.AddChild(viewport);

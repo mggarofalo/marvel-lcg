@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityPowerSuspension;
 using static Marvel.Cards.Run.AbilityPowerTargetAdmission;
 using static Marvel.Cards.Run.AbilityPlayerSelectorRelations;
 using static Marvel.Cards.Run.AbilityAdmission;
@@ -116,6 +117,7 @@ internal static class AbilityInitiationConstraints
         "choose" => CanInitiateChoice(node, cast),
         "draw" => CanInitiateDraw(node, cast),
         "placeCounters" => CanInitiateCounters((AbilityEffect.PlaceCounters)node, cast),
+        "distributeThreat" => AbilityThreatDistribution.HasTargets((AbilityEffect.ThwartGroup)node, cast),
         "thwartDifferentSchemes" => Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
         "legalPractice" => cast.World.Seats[cast.Player].Hand.Cards.Any(card =>
                 card.ObjectId != cast.Source.ObjectId)

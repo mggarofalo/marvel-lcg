@@ -7,4 +7,7 @@ namespace Marvel.Cards.Run;
 internal sealed record AbilityMemory(ImmutableDictionary<string, long> Results,
     ImmutableArray<int> Discarded, AbilityContinuationCardBinding? Chosen,
     ImmutableHashSet<int> CrisisIgnoringThwarts, CardInstanceState SourceState,
-    bool SurgeGained);
+    bool SurgeGained)
+{
+    internal ImmutableHashSet<int> ExhaustedForCost { get; init; } = [];
+}

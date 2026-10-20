@@ -8,7 +8,7 @@ public static class PlayerDeckAssessment
 {
     /// <summary>Reports corrections without consuming randomness or creating a game.</summary>
     public static DeckAssessment Assess(PlayerDeckRecipe recipe, IReadOnlyList<string> signature,
-        string identity, ICardFacts facts)
+        string identity, ICardFacts facts, DeckAspectRule aspectRule = DeckAspectRule.Standard)
     {
         ArgumentNullException.ThrowIfNull(recipe);
         ArgumentNullException.ThrowIfNull(signature);
@@ -44,6 +44,7 @@ public static class PlayerDeckAssessment
                 diagnostics.Add(new("player-card-required", face, "Choose a player-deck card."));
 
         var customization = cards.Where(face => !required.ContainsKey(face)).ToList();
+        DeckAspectAssessment.Assess(cards, customization, facts, aspectRule, diagnostics);
         AssessCustomization(customization, facts, diagnostics);
         AssessUniqueness(cards, identity, facts, diagnostics);
         return new(size, diagnostics);
@@ -52,22 +53,6 @@ public static class PlayerDeckAssessment
     private static void AssessCustomization(IReadOnlyList<string> cards, ICardFacts facts,
         List<DeckDiagnostic> diagnostics)
     {
-        var aspects = new HashSet<string>(StringComparer.Ordinal);
-        foreach (string face in cards.Distinct(StringComparer.Ordinal))
-        {
-            string classification = facts.Attributes(face).GetValueOrDefault("Class", "");
-            if (classification == "Basic") continue;
-            if (classification is "Aggression" or "Justice" or "Leadership" or "Protection")
-                aspects.Add(classification);
-            else
-                diagnostics.Add(new("unsupported-classification", face,
-                    "Choose a Basic card or a card from one supported aspect."));
-        }
-        // Core Learn to Play, Customization Rules (p. 22): "exactly one aspect"
-        // and "cards that belong to that aspect and/or basic cards".
-        if (aspects.Count > 1)
-            diagnostics.Add(new("multiple-aspects", "", "Choose cards from at most one aspect.", aspects.Count, 1));
-
         // "No more than three copies (by title) of each non-unique card";
         // a printed MaxPerDeck overrides that general limit.
         foreach (var group in cards.GroupBy(facts.Title, StringComparer.Ordinal))

@@ -4,7 +4,7 @@ func _run() -> void:
 	if not await _open_seeded_table(): return
 	var coverage := _protected_fixture()
 	var card := _mulligan_card("Swinging Web Kick")
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not await _bounded_preview(card, inspector): return
 	if not await _bounded_pinned(card, inspector): return
 	if not await _no_space_reading(card, inspector, coverage): return

@@ -51,28 +51,50 @@ internal static class AbilityThreatExecution
     }
 
     internal static AbilityStructuralOutcome ExecuteRemoveThreat(AbilityEffect.RemoveThreat removal,
-        AbilityDamageAndThreatContext context, long multiplier = 1)
+        AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state, long multiplier = 1)
     {
+        state.SchemesCleared = 0;
+        if (removal.Assigned) return AbilityThreatDistribution.Remove(context, state);
         var schemes = Every(removal.Schemes, context);
         if (schemes.Count == 0) throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' would remove threat from a scheme that is not there");
         long requested = AbilityAmounts.SaturatingSum(
             AbilityAmounts.SaturatingMultiply(Amount(removal.Amount, context), multiplier),
             [AbilityEventModifiers.Amount(context.World, context.Source, "eventThreatRemoval")]);
-        AbilityStructuralOutcome? outcome = null;
+        return RemoveFromSchemes(removal, context, state,
+            schemes.Where(scheme => !BlockedByCrisis(removal, context, scheme)).ToArray(), requested);
+    }
+
+    private static AbilityStructuralOutcome RemoveFromSchemes(AbilityEffect.RemoveThreat removal,
+        AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state,
+        IReadOnlyList<Card> schemes, long requested)
+    {
+        var owner = context.World.Agenda.Current;
         var occurrence = context.World.Agenda.Occurrence;
-        foreach (var scheme in schemes)
+        var held = schemes.Select(scheme => scheme.Tokens.GetValueOrDefault("k_threat")).ToArray();
+        int overridden = removal.OverridesCannotFrom is { } source ? Find(source, context)?.ObjectId ?? -1 : -1;
+        var requests = schemes.Select(scheme => new ThreatRemovalRequest(scheme, requested,
+            context.Trigger, "Remove_Threat", AbilityEffectAttribution.IdentityPlayer(context), overridden)
+            { RecordDefeatOn = occurrence }).ToArray();
+        var results = ThreatBatchRemoval.Remove(context.World, context.ThreatAbilities, requests, context.Events);
+        AbilityStructuralOutcome? outcome = null;
+        for (int index = 0; index < results.Count; index++)
         {
-            if (BlockedByCrisis(removal, context, scheme)) continue;
-            long removed = Threat.Remove(context.World, context.World.Facts, context.ThreatAbilities,
-                new ThreatRemovalRequest(scheme, requested, context.Trigger, "Remove_Threat",
-                    AbilityEffectAttribution.IdentityPlayer(context),
-                    removal.OverridesCannotFrom is { } source ? Find(source, context)?.ObjectId ?? -1 : -1)
-                    { RecordDefeatOn = occurrence }, context.Events);
-            if (removed > 0) outcome = AbilityCompletion.Combine(outcome,
-                AbilityCompletion.Amount(removed, requested));
+            var result = results[index];
+            RetainSuspension(state, result, owner, occurrence);
+            if (result.Removed == 0) continue;
+            if (result.Removed == held[index]) state.SchemesCleared++;
+            outcome = AbilityCompletion.Combine(outcome, AbilityCompletion.Amount(result.Removed, requested));
         }
         return outcome ?? AbilityStructuralOutcome.None;
+    }
+
+    internal static void RetainSuspension(AbilityDamageAndThreatState state, ThreatRemovalResult result, PhaseStep? owner, Occurrence? occurrence)
+    {
+        if (!result.Suspended) return;
+        if (state.Boundary is null && owner is { } frame && occurrence is not null)
+            state.Boundary = new(frame, occurrence);
+        state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
     }
 
     private static bool BlockedByCrisis(AbilityEffect.RemoveThreat removal,

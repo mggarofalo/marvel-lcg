@@ -17,18 +17,9 @@ internal sealed class AbilitySelectorEvaluation(
 
     internal Card? Find(AbilityCardSelection selector)
     {
+        if (selector is AbilityCardSelection.FirstAvailable fallback) return FindFirstAvailable(fallback);
         if (selector is AbilityCardSelection.Bound bound) return AbilityCardQueries.Named(bound.Binding, context);
-        if (selector is AbilityCardSelection.Titled titled)
-        {
-            var found = AbilityCardQueries.ReferencedByTitle(titled.Title, context);
-            return found.Count switch
-            {
-                0 => null,
-                1 => found[0],
-                _ => throw new RulesNotImplementedException(
-                    $"'{context.Source.FaceId}' refers to {found.Count} cards titled '{titled.Title}' where one card is required"),
-            };
-        }
+        if (selector is AbilityCardSelection.Titled titled) return FindTitle(titled);
         if (selector is AbilityCardSelection.Query
             {
                 Kind:
@@ -42,26 +33,48 @@ internal sealed class AbilitySelectorEvaluation(
                 return null;
             return LastCard(Every(last.Cards));
         }
-        if (selector is AbilityCardSelection.InAreas areas)
-        {
-            if (admitSingularArea is not null && !admitSingularArea(areas.Areas.Select(AreaType).ToHashSet()))
-                return null;
-            var found = CardsIn(areas);
-            return found.Count switch
-            {
-                0 => null,
-                1 => found[0],
-                _ => throw new RulesNotImplementedException(
-                    $"'{context.Source.FaceId}' searched and found {found.Count} matching cards; "
-                    + "rr:search.1 gives the player that choice and asking is not implemented"),
-            };
-        }
+        if (selector is AbilityCardSelection.InAreas areas) return FindInAreas(areas);
         throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' uses a selector whose single-card resolution is not implemented");
     }
 
+    private Card? FindInAreas(AbilityCardSelection.InAreas areas)
+    {
+        if (admitSingularArea is not null && !admitSingularArea(AbilitySelectionAreaReads.For(areas)))
+            return null;
+        var found = CardsIn(areas);
+        return found.Count switch
+        {
+            0 => null,
+            1 => found[0],
+            _ => throw new RulesNotImplementedException(
+                $"'{context.Source.FaceId}' searched and found {found.Count} matching cards; "
+                + "rr:search.1 gives the player that choice and asking is not implemented"),
+        };
+    }
+
+    private Card? FindTitle(AbilityCardSelection.Titled titled)
+    {
+        var found = AbilityCardQueries.ReferencedByTitle(titled.Title, context);
+        return found.Count switch
+        {
+            0 => null,
+            1 => found[0],
+            _ => throw new RulesNotImplementedException(
+                $"'{context.Source.FaceId}' refers to {found.Count} cards titled '{titled.Title}' where one card is required"),
+        };
+    }
+
+    private Card? FindFirstAvailable(AbilityCardSelection.FirstAvailable fallback)
+    {
+        foreach (var option in fallback.Options)
+            if (Every(option).Count > 0) return Find(option);
+        return null;
+    }
+
     internal IReadOnlyList<Card> Every(AbilityCardSelection selector) => selector switch
     {
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Select(Every).FirstOrDefault(cards => cards.Count > 0) ?? [],
         AbilityCardSelection.Bound bound => AbilityCardQueries.Named(bound.Binding, context) is { } card ? [card] : [],
         AbilityCardSelection.Query query => AbilityCardQueries.Cards(query.Kind, context, program),
         AbilityCardSelection.Titled titled => AbilityCardQueries.ReferencedByTitle(titled.Title, context),
@@ -70,7 +83,7 @@ internal sealed class AbilitySelectorEvaluation(
             .SelectMany(area => area.Cards)
             .Where(card => Rules.State.Traits.Of(context.World, card, context.World.Facts).Contains(trait.Trait, StringComparer.Ordinal))],
         AbilityCardSelection.WithTrait trait => [.. Every(trait.Cards)
-            .Where(card => Rules.State.Traits.Has(context.World, card, trait.Trait, context.World.Facts))],
+            .Where(card => Rules.State.Traits.Has(context.World, card, trait.Trait, context.World.Facts) != trait.Exclude)],
         AbilityCardSelection.InObjectIdOrder ordered => [.. Every(ordered.Cards).OrderBy(card => card.ObjectId)],
         AbilityCardSelection.DefeatedWithProfile defeated => [.. context.Occurrence.Defeats
             .Where(fact => fact.ProfileId == defeated.Profile && (!defeated.RequiresFaceDown || fact.WasFaceDown))
@@ -87,7 +100,7 @@ internal sealed class AbilitySelectorEvaluation(
                 .SelectMany(area => area.Cards)
                 .Any(attached => attached.ObjectId != context.Source.ObjectId
                     && string.Equals(context.World.Facts.Title(attached.FaceId), context.World.Facts.Title(context.Source.FaceId), StringComparison.Ordinal)))],
-        AbilityCardSelection.Discardable discardable => [.. Every(discardable.Cards).Where(card => CanRemove(discardable.Cards, card))],
+        AbilityCardSelection.Discardable discardable => [.. Every(discardable.Cards).Where(card => Rules.Play.Discard.CanDiscardFromPlay(card, context.World.Facts) && CanRemove(discardable.Cards, card))],
         AbilityCardSelection.Ranked ranked => Ranked(ranked),
         AbilityCardSelection.InAreas areas => CardsIn(areas),
         _ => throw new InvalidOperationException("Unknown compiled card selection"),
@@ -101,6 +114,7 @@ internal sealed class AbilitySelectorEvaluation(
         AbilityPlayer.ChosenPlayer => AbilityCardQueries.ChosenPlayer(context).Owner,
         AbilityPlayer.Controller => AbilityCardQueries.ControllerOf(context.World, context.Source),
         AbilityPlayer.FirstPlayer => context.World.FirstPlayer,
+        AbilityPlayer.Defeater => AbilityCardQueries.DefeatingPlayer(context),
         AbilityPlayer.TriggerPlayer => context.Occurrence.Player,
         AbilityPlayer.EngagedPlayer => context.Source.Area.PlayArea.Player,
         _ => throw new InvalidOperationException("Unknown player relation"),
@@ -125,16 +139,32 @@ internal sealed class AbilitySelectorEvaluation(
         // searched area." Exposure is an output, never a write to the board.
         if (selection.Areas.Any(area => area is AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck))
             information.Add(InformationKind.Search);
-        return [.. selection.Areas.SelectMany(AreaCards)
+        return [.. selection.Areas.SelectMany(area => SearchRange(area, selection.Top))
+            .Where(card => !selection.AspectOnly || IsAspect(card))
+            .Where(card => selection.CardClass is null || string.Equals(selection.CardClass,
+                context.World.Facts.Attributes(card.FaceId).GetValueOrDefault("Class"), StringComparison.Ordinal))
             .Where(card => selection.Kind is null || EffectiveCards.Kind(card, context.World.Facts) == selection.Kind)
             .Where(card => selection.Trait is null || Rules.State.Traits.Has(context.World, card, selection.Trait, context.World.Facts))
             .Where(card => selection.Title is null || string.Equals(context.World.Facts.Title(card.FaceId), selection.Title, StringComparison.Ordinal))];
     }
 
-    private IReadOnlyList<Card> AreaCards(AbilitySearchArea area) => area == AbilitySearchArea.YourDeck
-        ? context.World.Seats[context.Player].Deck.Cards
-        : context.World.Areas.FirstOrDefault(candidate => candidate.Type == AreaType(area)
-            && candidate.PlayArea == PlayArea.Villains && candidate.Host == -1)?.Cards ?? [];
+    private IEnumerable<Card> SearchRange(AbilitySearchArea area, int? top) => top is { } count
+        ? AreaCards(area).Reverse().Take(count) : AreaCards(area);
+
+    private bool IsAspect(Card card) => context.World.Facts.Attributes(card.FaceId).GetValueOrDefault("Class")
+        is "Aggression" or "Justice" or "Leadership" or "Protection";
+
+    private IReadOnlyList<Card> AreaCards(AbilitySearchArea area)
+    {
+        if (area == AbilitySearchArea.YourDeck) return context.World.Seats[context.Player].Deck.Cards;
+        if (area == AbilitySearchArea.YourHand) return context.World.Seats[context.Player].Hand.Cards;
+        if (area == AbilitySearchArea.YourPlayArea)
+            return [.. context.World.Areas.Where(candidate => DeckTypes.IsInPlay(candidate.Type)
+                && candidate.PlayArea == PlayArea.Of(context.Player)).SelectMany(candidate => candidate.Cards)];
+        var playArea = area == AbilitySearchArea.YourDiscardPile ? PlayArea.Of(context.Player) : PlayArea.Villains;
+        return context.World.Areas.FirstOrDefault(candidate => candidate.Type == AreaType(area)
+            && candidate.PlayArea == playArea && candidate.Host == -1)?.Cards ?? [];
+    }
 
     internal static DeckType AreaType(AbilitySearchArea area) => area switch
     {
@@ -142,6 +172,8 @@ internal sealed class AbilitySelectorEvaluation(
         AbilitySearchArea.EncounterDiscardPile => DeckType.EncounterDiscardPile,
         AbilitySearchArea.ScenarioSetAside => DeckType.AsideDeck,
         AbilitySearchArea.YourDeck => DeckType.PlayerDeck,
+        AbilitySearchArea.YourDiscardPile => DeckType.DiscardPile,
+        AbilitySearchArea.YourHand => DeckType.HandsArea,
         _ => throw new InvalidOperationException("Unknown compiled search area"),
     };
 
@@ -156,6 +188,7 @@ internal sealed class AbilitySelectorEvaluation(
             AbilityCardRank.Cost => context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players),
             AbilityCardRank.Attack => StateFields.Modified(context.World, card, "attack", context.World.Facts, context.World.Players),
             AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(card, context.World.Facts, "HP", context.World.Players),
+            AbilityCardRank.RemainingHealth => CardValues.RemainingHealth(context.World, card, context.World.Facts),
             _ => throw new InvalidOperationException("Unknown compiled card rank"),
         };
         long extreme = selection.Maximum ? among.Max(Rank) : among.Min(Rank);
@@ -192,6 +225,7 @@ internal sealed class AbilitySelectorEvaluation(
         AbilityCardSelection.InObjectIdOrder ordered => ExplicitlySelectsOutOfPlayCard(ordered.Cards, target),
         AbilityCardSelection.DefeatedWithProfile defeated => Every(defeated).Contains(target),
         AbilityCardSelection.FaceDown filtered => ExplicitlySelectsOutOfPlayCard(filtered.Cards, target),
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => ExplicitlySelectsOutOfPlayCard(option, target)),
         AbilityCardSelection.Last last => ExplicitlySelectsOutOfPlayCard(last.Cards, target),
         AbilityCardSelection.InPlayerArea area => !DeckTypes.IsInPlay(area.Area)
             && Every(area).Any(card => card == target),

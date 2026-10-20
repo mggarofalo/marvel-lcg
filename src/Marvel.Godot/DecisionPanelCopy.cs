@@ -33,6 +33,9 @@ internal static class DecisionPanelCopy
     internal static string SubmitAction(DecisionComposer composer, WorldDescriptor world)
     {
         Affordance selected = composer.Selected!;
+        if (composer.Targets.Count == 1 && selected.WindowChoices
+                .FirstOrDefault(choice => choice.TargetId == composer.Targets[0]) is { } windowChoice)
+            return windowChoice.Label;
         if (selected.CommitLabel is { Length: > 0 } commitment) return commitment;
         int count = composer.Targets.Count;
         return selected.Verb switch

@@ -47,21 +47,27 @@ internal static class AbilityCardMovementExecution
     }
 
     internal static void MoveToHand(Card card, Area hand, string verb, AbilityCardStateContext context, bool linked)
+        => MoveToHand(context.World, card, hand, context.Trigger, context.Events, verb,
+            linked && !Characteristics.IsLost(context.World, card, "linked")
+                && context.World.Facts.Attributes(card.FaceId).ContainsKey("Linked") ? context.Player : null);
+
+    internal static void MoveToHand(World world, Card card, Area hand, string trigger,
+        List<Marvel.Rules.Events.GameEvent> events, string verb, int? linkedOwner = null)
     {
+        if (!SideSchemeDeparture.Allowed(world, card)) return;
         var from = card.Area;
-        var ending = context.World.Effects.PreflightConstantsEnding(card);
+        var ending = world.Effects.PreflightConstantsEnding(card);
         using var departure = ending.Begin();
-        if (DeckTypes.IsInPlay(from.Type)) Rules.Play.Discard.Attachments(context.World, card, context.Trigger, context.Events);
-        if (linked && !Characteristics.IsLost(context.World, card, "linked")
-            && context.World.Facts.Attributes(card.FaceId).ContainsKey("Linked")) card.TransferLinkedOwnership(context.Player);
+        if (DeckTypes.IsInPlay(from.Type)) Rules.Play.Discard.Attachments(world, card, trigger, events);
+        if (linkedOwner is { } owner) card.TransferLinkedOwnership(owner);
         World.MoveToTop(card, hand);
-        context.Events.Add(new CardsMoved(Places.Reference(from), Places.Reference(hand),
+        events.Add(new CardsMoved(Places.Reference(from), Places.Reference(hand),
             [new Landing(card.ObjectId, hand.Cards.Count - 1)])
-        { Trigger = context.Trigger, Verb = verb });
+        { Trigger = trigger, Verb = verb });
         if (from.Host >= 0)
-            context.Events.Add(new CardDetached(card.ObjectId, from.Host)
-            { Trigger = context.Trigger, Verb = verb });
-        ending.Complete(context.Trigger, context.Events);
+            events.Add(new CardDetached(card.ObjectId, from.Host)
+            { Trigger = trigger, Verb = verb });
+        ending.Complete(trigger, events);
     }
 
     internal static void AttachTo(AbilityCardSelection selection, AbilityCardStateContext context)

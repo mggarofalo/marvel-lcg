@@ -14,4 +14,10 @@ public enum AbilitySearchArea
     ScenarioSetAside,
     /// <summary>The resolving player's deck.</summary>
     YourDeck,
+    /// <summary>The resolving player's discard pile.</summary>
+    YourDiscardPile,
+    /// <summary>The resolving player's hand.</summary>
+    YourHand,
+    /// <summary>In-play areas controlled by the resolving player, for card selection only.</summary>
+    YourPlayArea,
 }

@@ -116,6 +116,14 @@ A ruling does not silently replace a rule because it is newer or later in a
 file. `datasets/rules-graph.json` must name the relationship and pin both source
 hashes.
 
+`card_clarifications` records scoped applications to printed card text, including
+explicit supersession of an older ruling. Each record pins the ruling hash,
+SHA-256 of each card's generated `text_plain` UTF-8 bytes, and any superseded
+ruling hash. `CardRulingRelationshipTests` validates these references offline.
+These records do not replace a general Rules Reference clause or make an entire
+card-specific answer the resolved text of that clause; `modifications` retains
+that separate job.
+
 ## Rules graph
 
 The rules graph points from an exception or modification to the base rule it

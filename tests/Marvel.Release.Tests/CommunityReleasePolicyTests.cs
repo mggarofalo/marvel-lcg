@@ -79,11 +79,11 @@ public sealed class CommunityReleasePolicyTests
             workflow, StringComparison.Ordinal);
         Assert.Contains("needs: [identity, acceptance-record, server-sign]",
             workflow, StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v18 · protocol 33 · save 6", workflow,
+        Assert.Contains("engine-replay-v19 · protocol 35 · save 7", workflow,
             StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v18 · protocol 33 · save 6", serverUpgrade,
+        Assert.Contains("engine-replay-v19 · protocol 35 · save 7", serverUpgrade,
             StringComparison.Ordinal);
-        Assert.Contains("protocol:33,save_schema:6", workflow, StringComparison.Ordinal);
+        Assert.Contains("protocol:34,save_schema:7", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("protocol:14", workflow, StringComparison.Ordinal);
         Assert.Contains("tar -C /source -czf - . > \"$backup\"", serverUpgrade,
             StringComparison.Ordinal);
@@ -113,7 +113,7 @@ public sealed class CommunityReleasePolicyTests
     {
         string matrix = File.ReadAllText(Path.Combine(
             RepositoryPaths.Root, "docs", "release-test-matrix.md"));
-        Assert.Contains("Empty schema `6` volume", matrix, StringComparison.Ordinal);
+        Assert.Contains("Empty schema `7` volume", matrix, StringComparison.Ordinal);
         Assert.Contains("Unsupported save schema", matrix, StringComparison.Ordinal);
         Assert.Contains("quarantine", matrix, StringComparison.Ordinal);
 
@@ -167,8 +167,8 @@ public sealed class CommunityReleasePolicyTests
             "Linux server interrupted candidate",
             "Linux server downgrade",
             "unsupported_downgrade",
-            "engine-replay-v18",
-            "protocol `33`",
+            "engine-replay-v19",
+            "protocol `34`",
             "TrustedPeople",
         })
         {

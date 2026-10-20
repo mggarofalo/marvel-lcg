@@ -101,7 +101,7 @@ internal static class EngineHostLifecycle
     internal static ReplayOpenedGame ReplayOpen(this EngineHost host, SessionSetup setup)
     {
         OpenedGame opened = host.factory.Create(new GameSpecification(
-            setup.Scenario, setup.Heroes, setup.ModularSets, setup.Seed, setup.PlayerDecks));
+            setup.Scenario, setup.Heroes, setup.ModularSets, setup.Seed, setup.PlayerDecks, setup.Campaign));
         return new ReplayOpenedGame(opened.Game, opened.SetupEvents);
     }
 
@@ -111,7 +111,7 @@ internal static class EngineHostLifecycle
     internal static SessionSetup ToSessionSetup(GameSpecification setup) =>
         new(setup.Scenario, [.. setup.Heroes],
             setup.ModularSets is null ? null : [.. setup.ModularSets], setup.Seed,
-            setup.PlayerDecks is null ? null : [.. setup.PlayerDecks]);
+            setup.PlayerDecks is null ? null : [.. setup.PlayerDecks], setup.Campaign);
 
     internal static SessionSave Append(
         SessionSave save,

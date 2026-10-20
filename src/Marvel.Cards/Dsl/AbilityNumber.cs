@@ -29,6 +29,9 @@ public abstract record AbilityNumber
     /// <summary>The least of a nonempty ordered collection of operands.</summary>
     public sealed record Minimum(ImmutableArray<AbilityNumber> Operands) : AbilityNumber;
 
+    /// <summary>Integer division rounded down by a positive fixed divisor.</summary>
+    public sealed record FloorDivide(ImmutableArray<AbilityNumber> Operands) : AbilityNumber;
+
     /// <summary>A value read from a selected card.</summary>
     public sealed record CardValue(AbilityCardSelection Card, AbilityCardNumberProperty Property) : AbilityNumber;
     /// <summary>A named counter pool on a selected card.</summary>
@@ -37,6 +40,8 @@ public abstract record AbilityNumber
     public sealed record Modified(AbilityCardSelection Card, string Field) : AbilityNumber;
     /// <summary>The number of selected cards.</summary>
     public sealed record Count(AbilityCardSelection Cards) : AbilityNumber;
+    /// <summary>The sum of selected cards' printed resource costs.</summary>
+    public sealed record SumPrintedCost(AbilityCardSelection Cards) : AbilityNumber;
     /// <summary>A conditional number with both branches validated.</summary>
     public sealed record Conditional(AbilityCondition Test, AbilityNumber Then, AbilityNumber Else) : AbilityNumber;
     /// <summary>The number of printed resource icons on cards discarded this way.</summary>

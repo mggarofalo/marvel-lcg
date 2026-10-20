@@ -84,6 +84,8 @@ internal static class AbilityPublicInstructionDescription
 
     private static string? StateInstruction(AbilityStructuralContext context, AbilityEffect effect) => effect switch
     {
+        AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.UseAttackForThwart } =>
+            "Use ATK instead of THW for this thwart (including ally consequential damage)",
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.PlaceAccelerationToken } =>
             "Place 1 acceleration token on the main scheme",
         AbilityEffect.GainSurge { Instances: 1 } =>

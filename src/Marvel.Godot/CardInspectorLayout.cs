@@ -156,7 +156,8 @@ internal sealed partial class CardInspectorLayout(Main main) : Node
     {
         "CausalSituation" => control.FindChildren("*", "Label", true, false).OfType<Label>()
             .Any(label => label.IsVisibleInTree() && !string.IsNullOrWhiteSpace(label.Text)),
-        "ContextualDecision" or "EventTimeline" or "AbilityWindow" or "PaymentWorkspace" => true,
+        "ContextualDecision" or "EventTimeline" or "AbilityWindow" or "PaymentWorkspace"
+            or "LocalDecisionWorkspace" => true,
         _ => false,
     };
 }

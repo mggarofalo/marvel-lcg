@@ -46,9 +46,14 @@ public readonly record struct PhaseStep(
     {
         int id = OccurrenceId ?? Moment.Id(Round, Number, Index);
 
+        if (Operation is EncounterEntryOperation entry)
+            return new Occurrence(id, EncounterEntry.IsCurrent(world, entry.Entry)
+                && EncounterEntry.WillEnter(world, world.Cards[Subject], entry.Entry.Placement)
+                    ? [Steps.CardEntersPlay] : [], Subject, Seat);
         return What switch
         {
-            Steps.RevealEncounterCard => new Occurrence(id, Conditions, Subject,
+            Steps.RevealEncounterCard => new Occurrence(id, EncounterEntry.WillEnter(world, world.Cards[Subject])
+                ? [Steps.CardRevealed, Steps.CardEntersPlay] : Conditions, Subject,
                 EncounterRevealExposure.RevealingPlayer(world, world.Cards[Subject], Seat)),
             Steps.PlaceThreat => VillainPhaseThreat(id, world, facts),
             Steps.SchemeThreat => SchemeThreat(id, world, facts),
@@ -175,7 +180,7 @@ public readonly record struct PhaseStep(
     }
 
     /// <summary>An occurrence that needs no live attack roles, or null.</summary>
-    public Occurrence? ScheduledOccurrence => What is
+    public Occurrence? ScheduledOccurrence => Operation is EncounterEntryOperation ? null : What is
         Steps.Attack or Steps.CharacterAttacks or Steps.CharacterThwarts or Steps.EndAttack
             or Steps.PlaceThreat or Steps.SchemeThreat or Steps.PlaceThreatEffect
             or Steps.PrepareIndirectAttackDamage

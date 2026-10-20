@@ -7,4 +7,8 @@ using Marvel.Rules.State;
 namespace Marvel.Cards.Run;
 
 /// <summary>Only payment outcomes needed by post-arrow resolution.</summary>
-internal readonly record struct AbilityPaymentResult(long? Healed, long? Energy, bool Suspended);
+internal readonly record struct AbilityPaymentResult(long? Healed, long? Energy, bool Suspended)
+{
+    internal ImmutableArray<int> Exhausted { get; init; } = [];
+    internal ImmutableArray<Card> Discarded { get; init; } = [];
+}

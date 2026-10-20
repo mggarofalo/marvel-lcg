@@ -12,6 +12,7 @@ internal static class AbilityResolutionTypedSelectors
             AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck),
         AbilityCardSelection.WithTrait filtered => execution.InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.FaceDown filtered => execution.InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(execution.InspectsConcealedPile),
         AbilityCardSelection.Last filtered => execution.InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.InObjectIdOrder filtered => execution.InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.WithMatchingPlayerArea filtered => execution.InspectsConcealedPile(filtered.Cards),
@@ -42,6 +43,8 @@ internal static class AbilityResolutionTypedSelectors
         AbilitySearchArea.EncounterDiscardPile => cast.World.AreaOf(DeckType.EncounterDiscardPile),
         AbilitySearchArea.ScenarioSetAside => cast.World.AreaOf(DeckType.AsideDeck),
         AbilitySearchArea.YourDeck => cast.World.Seats[cast.Player].Deck,
+        AbilitySearchArea.YourHand => cast.World.Seats[cast.Player].Hand,
+        AbilitySearchArea.YourDiscardPile => cast.World.AreaOf(DeckType.DiscardPile, PlayArea.Of(cast.Player), cardOwner: cast.Player),
         _ => throw new InvalidOperationException("Unknown compiled search area"),
     };
 

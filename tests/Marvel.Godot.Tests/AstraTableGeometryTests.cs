@@ -29,6 +29,7 @@ public sealed class AstraTableGeometryTests
     [Theory]
     [InlineData(820)]
     [InlineData(900)]
+    [InlineData(937)]
     [InlineData(962)]
     public void EntireRotatedHandClearsTheDecisionAndSources(float height)
     {
@@ -57,5 +58,12 @@ public sealed class AstraTableGeometryTests
         Assert.True(cards[^1].Rotation > 0);
         Assert.True(cards[^1].Position.X + 156 <= table.Hand.End.X + 0.01f);
         Assert.All(cards.Zip(cards.Skip(1)), pair => Assert.True(pair.Second.Position.X > pair.First.Position.X));
+    }
+
+    [Fact]
+    public void LargerChromeRetainsReadablePhysicalCardSize()
+    {
+        var scale = SpatialCardMetrics.TableScale(InterfaceScale.Percent150, 937);
+        Assert.True(VisualSystem.Card(CardDisplaySize.Board, scale).Width >= 156);
     }
 }

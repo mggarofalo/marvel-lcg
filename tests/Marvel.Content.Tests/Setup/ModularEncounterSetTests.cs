@@ -23,6 +23,7 @@ public sealed class ModularEncounterSetTests
             [
                 "bomb_scare", "masters_of_evil", "under_attack",
                 "legions_of_hydra", "the_doomsday_chair",
+                "hydra_assault", "weapon_master", "hydra_patrol",
             ],
             modular);
         foreach (string name in modular)

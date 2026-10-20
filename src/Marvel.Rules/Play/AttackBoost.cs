@@ -64,6 +64,10 @@ internal static class AttackBoost
     internal static void DealBoostCard(
         World world, Card enemy, string trigger, List<GameEvent> events)
     {
+        // A printed no-boost attack prohibits new cards, including additional deals.
+        // rr:boost-boost-icon.6 still retains cards dealt before that activation.
+        if (world.Activation is { DealBoostCards: false } activation && activation.Enemy == enemy.ObjectId)
+            return;
         var deck = world.AreaOf(DeckType.EncounterDeck);
         var boost = EncounterDeck.TakeTop(world, trigger, events);
         if (boost is null)

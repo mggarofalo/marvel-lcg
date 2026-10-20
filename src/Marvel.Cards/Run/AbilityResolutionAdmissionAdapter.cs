@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityPowerSuspension;
 using Marvel.Cards.Dsl;
 
 namespace Marvel.Cards.Run;
@@ -57,7 +58,7 @@ internal static class AbilityResolutionAdmissionAdapter
     internal static bool SuspendsPowerEffect(this AbilityResolutionExecution execution,
         AbilityEffect effect, AbilityResolutionState cast, bool stateMayChange = false,
         bool bindingMayChange = false) =>
-        AbilityPowerTrace.SuspendsPowerEffect(
+        AbilityPowerSuspension.SuspendsPowerEffect(
             effect, execution.AdmissionContext(cast), stateMayChange, bindingMayChange);
 
     internal static IEnumerable<AbilityEffect> MutationChildren(this AbilityResolutionExecution execution, AbilityEffect effect) =>
@@ -67,9 +68,9 @@ internal static class AbilityResolutionAdmissionAdapter
     internal static IEnumerable<AbilityEffect> EachPlayers(this AbilityResolutionExecution execution, AbilityEffect effect) =>
         AbilityPowerStateProjection.EachPlayers(effect);
     internal static bool ContainsEffect(this AbilityResolutionExecution execution, AbilityEffect effect, string kind) =>
-        AbilityRepeatedDamageAnalysis.ContainsEffect(effect, kind);
+        AbilityDamageProtectionTrace.ContainsEffect(effect, kind);
     internal static long SoakDiscardThreshold(this AbilityResolutionExecution execution, AbilityEffect effect) =>
-        AbilityRepeatedDamageAnalysis.SoakDiscardThreshold(effect);
+        AbilityDamageProtectionTrace.SoakDiscardThreshold(effect);
     internal static long SaturatingSum(this AbilityResolutionExecution execution, long own, IEnumerable<long> rest) =>
         AbilityRepeatedStatusTrace.SaturatingSum(own, rest);
     internal static long SaturatingMultiply(this AbilityResolutionExecution execution, long amount, long multiplier) =>

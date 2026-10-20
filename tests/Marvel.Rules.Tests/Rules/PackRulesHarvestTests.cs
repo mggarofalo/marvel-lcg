@@ -176,8 +176,8 @@ public sealed class PackRulesHarvestTests
         var records = index.RootElement.GetProperty("entries").EnumerateArray().ToList();
         var ids = records.Select(record => record.GetProperty("id").GetString()!).ToList();
 
-        Assert.Equal(859, records.Count);
-        Assert.Equal(61, index.RootElement.GetProperty("documents").GetInt32());
+        Assert.Equal(902, records.Count);
+        Assert.Equal(62, index.RootElement.GetProperty("documents").GetInt32());
         Assert.Equal(records.Count, index.RootElement.GetProperty("record_count").GetInt32());
         Assert.Equal(ids.Count, ids.Distinct(StringComparer.Ordinal).Count());
         Assert.All(records, record =>
@@ -202,7 +202,7 @@ public sealed class PackRulesHarvestTests
         var files = manifest.RootElement.GetProperty("files").EnumerateArray().ToList();
         var actual = IndependentSnapshotHash(root);
 
-        Assert.Equal(61, files.Count);
+        Assert.Equal(62, files.Count);
         Assert.Equal(files.Count, files.Select(file => file.GetProperty("path").GetString())
             .Distinct(StringComparer.Ordinal).Count());
         Assert.All(files, file =>

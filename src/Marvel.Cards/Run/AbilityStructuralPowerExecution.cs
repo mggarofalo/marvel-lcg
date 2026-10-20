@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityPowerSuspension;
 using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.State;
@@ -31,7 +32,7 @@ internal static class AbilityStructuralPowerExecution
             return new Unsupported($"'{context.SourceFace}' cannot find the target of its {verb}");
 
         var selected = context.Admission().WithSelection(target);
-        if (AbilityPowerTrace.SuspendsPowerEffect(
+        if (AbilityPowerSuspension.SuspendsPowerEffect(
             power.Effect, selected, bindingMayChange: amount >= 0))
         {
             return new Unsupported(
@@ -40,9 +41,8 @@ internal static class AbilityStructuralPowerExecution
 
         var abilities = Abilities(context);
         var addresses = abilities
+            .Where(ability => context.Tier is null || ability.Trigger.Timing == context.Tier)
             .Select((ability, index) => (Ability: ability, Index: index))
-            .Where(candidate => context.Tier is null
-                || candidate.Ability.Trigger.Timing == context.Tier)
             .SelectMany(candidate => AbilityAdmission.PowerEffects(candidate.Ability.Effect, verb)
                 .Select((wrapper, ordinal) =>
                     (candidate.Index, Ordinal: ordinal, Wrapper: wrapper)))
@@ -96,6 +96,8 @@ internal static class AbilityStructuralPowerExecution
         AbilityStructuralContext context, AbilityEffect.ActivateEnemies activation) =>
         activation.Against switch
         {
+            AbilityCardSelection.Bound { Binding: AbilityCardBinding.Defeater } =>
+                AbilityCardQueries.DefeatingPlayer(context.Expressions.Bindings),
             AbilityCardSelection.Bound { Binding: AbilityCardBinding.TriggerActor } =>
                 context.Expressions.Occurrence.ActorFacts?.Controller ?? World.Scenario,
             AbilityCardSelection.Bound { Binding: AbilityCardBinding.TriggerTarget } =>

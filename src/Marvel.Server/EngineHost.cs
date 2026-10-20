@@ -151,7 +151,7 @@ public sealed class EngineHost : IEngineEndpoint
         };
     }
 
-    private static EngineResponse? ValidateEnvelope(EngineRequest request)
+    internal static EngineResponse? ValidateEnvelope(EngineRequest request)
     {
         if (request.Version != EngineProtocol.Version)
         {

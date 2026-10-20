@@ -30,9 +30,13 @@ internal static class GeneratedPartialTypePolicy
             "src/Marvel.Godot/SourceGridGesture.cs" => (Namespace: "Marvel.Godot", Type: "SourceGridGesture"),
             "src/Marvel.Godot/SmoothRelationshipLine.cs" => (Namespace: "Marvel.Godot", Type: "SmoothRelationshipLine"),
             "src/Marvel.Godot/StatusCardBadge.cs" => (Namespace: "Marvel.Godot", Type: "StatusCardBadge"),
+            // Global transform notifications track actual themed table placement.
+            "src/Marvel.Godot/TableCanvasSurface.cs" => (Namespace: "Marvel.Godot", Type: "TableCanvasSurface"),
             "src/Marvel.Godot/smoke/ResourceFinalizerProbe.cs" => (Namespace: "Marvel.Godot", Type: "ResourceFinalizerProbe"),
             "src/Marvel.Godot/smoke/CardFaceReuseNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "CardFaceReuseNativeProbe"),
+            "src/Marvel.Godot/smoke/CampaignTrackerNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "CampaignTrackerNativeProbe"),
             "src/Marvel.Godot/smoke/GroupedDecisionNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "GroupedDecisionNativeProbe"),
+            "src/Marvel.Godot/smoke/DecisionDialogNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "DecisionDialogNativeProbe"),
             "src/Marvel.Godot/smoke/NativeGameWitness.cs" => (Namespace: "Marvel.Godot", Type: "NativeGameWitness"),
             "src/Marvel.Godot/smoke/TooltipPolicyProbe.cs" => (Namespace: "Marvel.Godot", Type: "TooltipPolicyProbe"),
             "src/Marvel.Protocol/EngineJsonContext.cs" => (Namespace: "Marvel.Protocol", Type: "EngineJsonContext"),

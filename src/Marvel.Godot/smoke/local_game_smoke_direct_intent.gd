@@ -8,6 +8,7 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 		return false
 	card.force_update_transform()
 	var original := card.get_global_transform()
+	var pose_snapshot := preload("res://smoke/player_card_pose.gd").capture(self, card)
 	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var start := _card_body_point(card)
 	var finish := start + Vector2(80, -90)
@@ -33,7 +34,7 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 	escape.keycode = KEY_ESCAPE
 	escape.pressed = true
 	render_viewport.push_input(escape, true)
-	if not await preload("res://smoke/gesture_settlement.gd").global_pose(self, card, original):
+	if not await preload("res://smoke/player_card_pose.gd").settled(self, card, pose_snapshot):
 		_fail("cancelled exhausted drag did not settle at its saved physical pose")
 		return false
 	if not await preload("res://smoke/exhausted_pointer_checks.gd").perform(self, card, anchor): return false
@@ -78,7 +79,7 @@ func _hero_target_drag_preserves_commitment() -> bool:
 		return false
 	if not _active_cues_leave_printed_values_readable(): return false
 	if not await _capture_checkpoint("target-commitment-popup"): return false
-	var cancel := main.find_child("ContextualCancelDraft", true, false) as Button
+	var cancel := _task_clear_draft()
 	if cancel == null or not await _pointer_activate(cancel):
 		_fail("the attack drag draft cannot be cancelled locally")
 		return false
@@ -111,7 +112,7 @@ func _discard_hover_is_passive() -> bool:
 	_position_pointer_without_settle(Vector2(4, 4))
 	await create_timer(0.2).timeout
 	_position_pointer_without_settle(discard.get_global_rect().get_center())
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not await _wait_for(func() -> bool: return inspector.visible):
 		_fail("hovering a nonempty discard concealed its top card")
 		return false
@@ -151,7 +152,24 @@ func _compose_source_tableau_drop(point: Vector2) -> bool:
 	if "Black Cat" not in _visible_text(_payment_modal()):
 		_fail("occupied source drop composed a different card")
 		return false
-	return await _payment_cancel_is_safe()
+	var disclosure := main.find_child("CompleteChoiceSheet", true, false) as Button
+	if disclosure == null or disclosure.get_meta("accepted_decision_entry", false) \
+			or disclosure.text == "Resume current choice":
+		_fail("fresh card play retained the dismissed intention's resume action")
+		return false
+	if not await _payment_cancel_is_safe(): return false
+	return await _fresh_choices_disclosure_opens()
+
+func _fresh_choices_disclosure_opens() -> bool:
+	var status := _node("Toolbar/SyncStatus") as Label
+	var before := int(status.get_meta("response_revision", -1))
+	var disclosure := main.find_child("CompleteChoiceSheet", true, false) as Button
+	if not await _pointer_activate(disclosure): return false
+	var sheet := main.find_child("CompleteChoicesFrame", true, false)
+	if sheet == null or not sheet.is_visible_in_tree() or int(status.get_meta("response_revision", -1)) != before:
+		_fail("fresh intention's All choices used the dismissed local resume callback")
+		return false
+	return await _pointer_activate(sheet.find_child("CloseChoiceSheet", true, false) as Button)
 
 
 func _collection_actor_drag_stages_and_returns() -> bool:
@@ -167,7 +185,7 @@ func _collection_actor_drag_stages_and_returns() -> bool:
 	if commit == null or commit.text.trim_prefix("✓ ") != "Attack Rhino" or source.is_set_as_top_level():
 		_fail("collection actor drop lost its exact named composition or temporary lift")
 		return false
-	var cancel := main.find_child("ContextualCancelDraft", true, false) as Button
+	var cancel := _task_clear_draft()
 	if cancel == null or not await _pointer_activate(cancel): return false
 	if source.get_parent() != parent or str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("canceling the collection actor drag changed physical ownership or engine state")
@@ -226,7 +244,7 @@ func _dismiss_source_chooser(chooser: Control) -> bool:
 		await process_frame
 	# Synthetic passive-preview visibility exercises overlay input priority;
 	# the surrounding chooser and gameplay still come from the legal Core game.
-	var preview := main.get_node("CardInspector") as Control
+	var preview := main.find_child("CardInspector", true, false) as Control
 	var preview_was_visible := preview.visible
 	preview.visible = true
 	print("SOURCE_CHOOSER_PASSIVE_PREVIEW_ESCAPE_CHECK")
@@ -280,7 +298,7 @@ func _deferred_preview_when_offered() -> bool:
 	if modal == null or chosen == null or not chosen.button_pressed or "Rhino" not in chosen.text:
 		_fail("the targeted event drop did not retain Rhino through payment")
 		return false
-	if not await _initial_targeted_payment_inspection(): return false
+	if not await _initial_targeted_payment_inspection(anchor): return false
 	if not await _payment_cancel_is_safe(): return false
 	if str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) != revision:
 		_fail("the deferred drag preview or cancelled payment committed an answer")
@@ -289,21 +307,22 @@ func _deferred_preview_when_offered() -> bool:
 	return true
 
 
-func _initial_targeted_payment_inspection() -> bool:
+func _initial_targeted_payment_inspection(anchor: int) -> bool:
 	await process_frame
 	await process_frame
-	var preview := main.get_node("CardInspector") as Control
+	var preview := main.find_child("CardInspector", true, false) as Control
 	if preview.visible:
 		_fail("targeted payment automatically opened a card face without inspection intent")
 		return false
 	if not await _capture_checkpoint("targeted-event-payment"): return false
-	if not await _deliberate_targeted_inspection(preview): return false
+	if not await _deliberate_targeted_inspection(preview, anchor): return false
 	return true
 
-func _deliberate_targeted_inspection(preview: Control) -> bool:
-	var thumbnail := _payment_button("InspectPaymentPlayed")
+func _deliberate_targeted_inspection(preview: Control, anchor: int) -> bool:
+	var point := _targeted_payment_inspection_point(anchor)
+	if point == Vector2.INF: return false
 	var hover := InputEventMouseMotion.new()
-	hover.position = thumbnail.get_global_rect().get_center()
+	hover.position = point
 	hover.global_position = hover.position
 	render_viewport.push_input(hover, true)
 	await process_frame
@@ -318,6 +337,7 @@ func _deliberate_targeted_inspection(preview: Control) -> bool:
 		_fail("targeted payment inspection obscures the selected Rhino")
 		return false
 	if not preload("res://smoke/card_inspection_protection_checks.gd").verify(self, frame): return false
+	if not _local_inspection_is_above_its_workspace(preview): return false
 	if detail_scroll.get_v_scroll_bar().visible:
 		_fail("targeted payment inspection clips the full card face")
 		return false
@@ -327,6 +347,24 @@ func _deliberate_targeted_inspection(preview: Control) -> bool:
 			return false
 	if not await _capture_checkpoint("targeted-event-deliberate-inspection"): return false
 	return true
+
+func _local_inspection_is_above_its_workspace(preview: Control) -> bool:
+	var local := main.find_child("LocalDecisionWorkspace", true, false) as Control
+	if local == null or not local.is_visible_in_tree(): return true
+	if preview.get_parent() != local.get_parent() or preview.get_index() <= local.get_index():
+		_fail("localized source inspection is drawn beneath its decision workspace")
+		return false
+	return true
+
+func _targeted_payment_inspection_point(anchor: int) -> Vector2:
+	var thumbnail := _payment_button("InspectPaymentPlayed")
+	if thumbnail == null: thumbnail = _payment_button("LocalDecisionSource")
+	if thumbnail != null: return thumbnail.get_global_rect().get_center()
+	var card := _card_for_anchor(anchor)
+	if card == null:
+		_fail("localized payment lost its visible played-card inspection source")
+		return Vector2.INF
+	return _card_body_point(card)
 
 func _drag_preview_is_meaningful(card: Control) -> bool:
 	if not main.has_meta("checking_deferred_preview"):

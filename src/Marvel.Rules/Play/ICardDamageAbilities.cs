@@ -18,6 +18,8 @@ public interface ICardDamageAbilities
     void DamagePreventedByTough(World world, Card target, Card source, List<GameEvent> events);
     AbilityExecutionResult WouldBeDefeated(World world, AbilityExecution entry,
         Card target, DefeatCause cause);
+    AbilityExecutionResult WhenCardsDefeated(World world, AbilityExecution entry,
+        IReadOnlyList<Defeated> defeated, string trigger);
     AbilityExecutionResult WhenCardDefeated(World world, AbilityExecution entry, Card card,
         Defeated defeated, string trigger);
 }

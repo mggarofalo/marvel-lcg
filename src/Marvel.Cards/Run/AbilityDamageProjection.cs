@@ -37,9 +37,9 @@ internal sealed class AbilityDamageProjection
             Card card = candidate.Card;
             CompiledCardAbility ability = candidate.Ability;
             string name = world.Facts.Title(card.FaceId);
-            if (AbilityRepeatedDamageAnalysis.ContainsEffect(ability.Effect, "soakDamage"))
+            if (AbilityDamageProtectionTrace.ContainsEffect(ability.Effect, "soakDamage"))
             {
-                long threshold = AbilityRepeatedDamageAnalysis.SoakDiscardThreshold(ability.Effect);
+                long threshold = AbilityDamageProtectionTrace.SoakDiscardThreshold(ability.Effect);
                 bool discarded = threshold > 0
                     && AbilityRepeatedStatusTrace.SaturatingSum(card.Damage, [amount]) >= threshold;
                 return new DamageProjection(
@@ -76,7 +76,7 @@ internal sealed class AbilityDamageProjection
                 return new DefeatProjection(
                     maximumHealth,
                     $"{name} heals all damage instead"
-                    + (AbilityRepeatedDamageAnalysis.ContainsEffect(ability.Effect, "discard")
+                    + (AbilityDamageProtectionTrace.ContainsEffect(ability.Effect, "discard")
                         ? " and will be discarded"
                         : string.Empty));
             }

@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | Kind | authored |
-| Product boundary | Marvel Champions Core Set |
-| Records | 209 printed card faces, including explicit empty rows |
-| Authorities | Generated `datasets/cards/`, vendored Rules Reference and published rulings |
-| Gated by | Ability admission/lowering tests, Core runtime scope tests and executable behavioral transcripts |
+| Product boundary | Marvel Champions Core Set and Rise of Red Skull |
+| Records | 390 printed card faces, including explicit empty rows |
+| Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
+| Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
 `abilities.json` records executable interpretations of printed text. It is not
 a copied rules source or generated printed-card catalog. Authoring follows

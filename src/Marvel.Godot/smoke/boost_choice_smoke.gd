@@ -67,6 +67,8 @@ func _boost_choice_fits() -> bool:
 
 
 func _cause_and_draft_fit() -> bool:
+	var dialog := main.find_child("CompleteChoicesFrame", true, false)
+	if dialog != null: return _dialog_cause_fits(dialog)
 	var heading := main.find_child("ContextualHeading", true, false) as Control
 	if heading == null or not _control_is_fully_visible(heading):
 		_fail("the decision heading is clipped")
@@ -77,6 +79,22 @@ func _cause_and_draft_fit() -> bool:
 			_fail("the attack cause is clipped: %s rect=%s visible=%s" % [label.text,
 				label.get_global_rect(), _visible_control_rect(label)])
 			return false
+	return true
+
+
+func _dialog_cause_fits(dialog: Node) -> bool:
+	var content := dialog.find_child("CompleteChoicesContent", true, false)
+	var copy := ""
+	for child in content.get_children():
+		if child is Label and child.is_visible_in_tree() and not child.text.is_empty():
+			copy += child.text + "\n"
+			if not _control_is_fully_visible(child):
+				_fail("the modal decision explanation is clipped: " + child.text)
+				return false
+	if "Decision for Black Panther" not in copy or "Choose to continue." not in copy \
+			or "Android Efficiency: choose an option" not in copy:
+		_fail("the modal lost answering player, requirement or resolution context: " + copy)
+		return false
 	return true
 
 
@@ -120,16 +138,15 @@ func _choose_android_consequence() -> bool:
 	await process_frame
 	await process_frame
 	if not _cause_and_draft_fit(): return false
-	var payment_commit := _button_named("Spend resources")
+	var dialog := main.find_child("CompleteChoicesFrame", true, false)
+	var payment_commit := dialog.find_child("Submit", true, false) as Button
 	if payment_commit == null or not _control_is_fully_visible(payment_commit) or not payment_commit.disabled:
 		_fail("the typed payment commitment is clipped")
 		return false
-	if not await _pointer_activate(_button_named("Cancel draft")): return false
-	await process_frame
 	if _boost_revision() != revision:
-		_fail("staging or cancelling incomplete resource payment committed a choice")
+		_fail("staging incomplete resource payment committed a choice")
 		return false
-	return await _direct_choice_once(_boost_option("Engage 1 Drone"))
+	return await _staged_choice_once(_boost_option("Engage 1 Drone"))
 
 
 func _select_ultron_threat() -> bool:
@@ -144,7 +161,7 @@ func _select_ultron_threat() -> bool:
 	if choice.accessibility_description != choice.tooltip_text:
 		_fail("the offered threat preview is missing from keyboard accessibility")
 		return false
-	return await _direct_choice_once(choice)
+	return await _staged_choice_once(choice)
 
 
 func _discard_seeded_resources() -> bool:
@@ -187,11 +204,22 @@ func _turn_end_starts_visible() -> bool:
 	return _cause_and_draft_fit()
 
 
-func _direct_choice_once(choice: Button) -> bool:
+func _staged_choice_once(choice: Button) -> bool:
 	var revision := _boost_revision()
 	if not await _pointer_activate(choice): return false
+	await process_frame
+	await process_frame
+	if _boost_revision() != revision:
+		_fail("selecting or replacing a consequence draft committed a choice")
+		return false
+	var dialog := main.find_child("CompleteChoicesFrame", true, false)
+	var commit := dialog.find_child("Submit", true, false) as Button
+	if commit == null or commit.disabled or not _control_is_fully_visible(commit):
+		_fail("the staged consequence has no visible enabled commitment")
+		return false
+	if not await _pointer_activate(commit): return false
 	if not await _wait_for(func() -> bool: return _boost_revision() > revision):
-		_fail("a complete consequence choice required another commitment")
+		_fail("explicit consequence commitment did not advance the game")
 		return false
 	await process_frame
 	await process_frame

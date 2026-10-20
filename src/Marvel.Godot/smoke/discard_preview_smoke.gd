@@ -23,7 +23,7 @@ func _play_with_known_payment() -> bool:
 	return await _commit_once("Web-Shooter")
 
 func _empty_and_hidden_piles_are_private() -> bool:
-	var inspector: Control = main.get_node("CardInspector")
+	var inspector: Control = main.find_child("CardInspector", true, false)
 	var empty_count := 0
 	for pile in _hand_surface().find_children("PileEmpty*", "PanelContainer", true, false):
 		empty_count += 1
@@ -57,7 +57,7 @@ func _known_discard_preview(expected: int) -> bool:
 		_fail("accepted payment created no player discard")
 		return false
 	var revision: String = str(_node("Toolbar/SyncStatus").get_meta("response_revision", -1))
-	var inspector: Control = main.get_node("CardInspector")
+	var inspector: Control = main.find_child("CardInspector", true, false)
 	var focus := render_viewport.gui_get_focus_owner()
 	if not await _control_owns_point(discard, discard.get_global_rect().get_center()): return false
 	await process_frame

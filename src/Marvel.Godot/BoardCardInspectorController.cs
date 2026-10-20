@@ -92,6 +92,7 @@ internal sealed class BoardCardInspectorController
     {
         int inspectorGeneration = checked(++main.cardInspectorGeneration);
         previewSource = pinned ? null : source;
+        inspector.PreviewSource = previewSource;
         main.inspectedCardId = card.TargetId;
         main.cardInspector.SetMeta("inspected_card_anchor", card.TargetId ?? -1);
         int? sourceId = source is CardControl sourceCard

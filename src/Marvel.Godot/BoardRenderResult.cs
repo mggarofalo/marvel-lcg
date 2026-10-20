@@ -20,6 +20,7 @@ public sealed class BoardRenderResult
     private readonly BoardCompleteChoicesEntry completeChoicesEntry;
     private Container? contextualActions;
     private bool completeChoicesOpen;
+    private bool dialogOnly;
     private bool sourceArrangementActive;
     internal BoardTargetSnap TargetSnap { get; } = new();
     internal bool MotionEnabled => pointer.MotionEnabled?.Invoke() != false;
@@ -42,6 +43,14 @@ public sealed class BoardRenderResult
 
     /// <summary>Raised with the card under the pointer, or null when it leaves.</summary>
     public event Action<BoardCardPresentation, Control>? CardActivated;
+
+    internal void PreviewMenuCard(int? id, Control source)
+    {
+        if (id is { } target && Inspector.Current(target) is { } card) CardPreviewEntered?.Invoke(card, source);
+        else CardPreviewExited?.Invoke(source);
+    }
+
+    internal void InspectCard(BoardCardPresentation card, Control source) => CardActivated?.Invoke(card, source);
 
     /// <summary>Raised after a readable card body becomes the pointer's preview source.</summary>
     internal event Action<BoardCardPresentation, Control>? CardPreviewEntered;
@@ -75,6 +84,10 @@ public sealed class BoardRenderResult
 
     internal void RegisterHandArea(Control control, int seat,
         Func<int, int, float, SpatialCardPlacement> placement) => pointer.RegisterHandArea(control, seat, placement);
+
+    internal bool PointerLayoutBusy => pointer.LayoutBusy;
+    internal void TranslateHand(float delta) => pointer.TranslateHand(delta);
+    internal void TranslateRestingPose(Control control, Vector2 delta) => pointer.TranslateRestingPose(control, delta);
     internal void RegisterMulliganStage(Control control) => pointer.RegisterMulliganStage(control);
 
     internal void RegisterContextualActions(Container host)
@@ -96,15 +109,23 @@ public sealed class BoardRenderResult
 
     internal void ClearPendingChoices() => completeChoicesEntry.ClearPending();
 
+    internal void SetInlinePayment(bool enabled) => interactionControls.InlinePayment = enabled;
+
     internal void SetCompleteChoicesOpen(bool open)
     {
         completeChoicesOpen = open;
-        interactionControls.SetContextualVisible(!open);
+        interactionControls.SetContextualVisible(!open && !dialogOnly);
         if (InteractionControl.IsUsable(contextualActions))
         {
-            contextualActions!.Visible = !open;
+            contextualActions!.Visible = !open && !dialogOnly;
         }
         completeChoicesEntry.SetOpen(open, currentComposer is not null);
+    }
+
+    internal void SetDialogOnly(bool value)
+    {
+        dialogOnly = value;
+        SetCompleteChoicesOpen(completeChoicesOpen);
     }
 
     internal void RegisterContextualWorld(WorldDescriptor world) => copy.RegisterWorld(world);
@@ -245,40 +266,12 @@ public sealed class BoardRenderResult
         [.. controls.Values.SelectMany(matches => matches).Where(InteractionControl.IsUsable)];
 
     /// <summary>Highlights every visible control matching server-provided ids.</summary>
-    public void Highlight(IEnumerable<int> ids)
-    {
-        ArgumentNullException.ThrowIfNull(ids);
-        HashSet<int> highlighted = ids.ToHashSet();
-        foreach ((int key, List<CardControl> matches) in controls)
-        {
-            foreach (CardControl match in matches.Where(InteractionControl.IsUsable))
-            {
-                match.SetHighlighted(highlighted.Contains(key));
-                if (highlighted.Contains(key))
-                {
-                    reveal.Ensure(key);
-                }
-            }
-        }
-    }
+    public void Highlight(IEnumerable<int> ids) =>
+        BoardCardEmphasis.Apply(controls, ids, reveal, highlight: true);
 
     /// <summary>Marks cards for a transient event cue without disturbing prompt focus.</summary>
-    public void Present(IEnumerable<int> ids)
-    {
-        ArgumentNullException.ThrowIfNull(ids);
-        HashSet<int> presented = ids.ToHashSet();
-        foreach ((int key, List<CardControl> matches) in controls)
-        {
-            foreach (CardControl match in matches.Where(InteractionControl.IsUsable))
-            {
-                match.SetPresented(presented.Contains(key));
-                if (presented.Contains(key))
-                {
-                    reveal.Ensure(key);
-                }
-            }
-        }
-    }
+    public void Present(IEnumerable<int> ids) =>
+        BoardCardEmphasis.Apply(controls, ids, reveal, highlight: false);
 
     internal void ExpandArea(Control areaBody)
     {

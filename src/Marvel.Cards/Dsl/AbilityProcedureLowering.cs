@@ -55,16 +55,19 @@ internal static class AbilityProcedureLowering
 
     internal static AbilityEffect.DiscardUntil DiscardUntilEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "from", "kind", "trait", "then");
+        var fields = Fields(value, location, "from", "kind", "trait", "then", "player");
         FixedWord(Required(fields, "from", location), location.Child("from"), "encounterDeck");
-        bool putIntoPlay = Text(Required(fields, "then", location), location.Child("then")) switch
+        var result = Text(Required(fields, "then", location), location.Child("then")) switch
         {
-            "reveal" => false,
-            "putIntoPlayFirstPlayer" => true,
+            "reveal" => AbilityDiscardUntilResult.Reveal,
+            "putIntoPlayFirstPlayer" => AbilityDiscardUntilResult.PutIntoPlayFirstPlayer,
+            "attachToThis" => AbilityDiscardUntilResult.AttachToThis,
+            "putIntoPlay" => AbilityDiscardUntilResult.PutIntoPlay,
             var name => throw location.Child("then").Error($"'{name}' is not a supported discard-until result"),
         };
         return new(ConditionCardKind(Required(fields, "kind", location), location.Child("kind")),
-            OptionalText(fields, "trait", location), putIntoPlay);
+            OptionalText(fields, "trait", location), result)
+        { Player = fields.TryGetValue("player", out var player) ? AbilityLowering.Player(player, location.Child("player")) : AbilityPlayer.You };
     }
 
     internal static AbilityEffect.ShuffleInto ShuffleIntoEffect(AbilityValue value, AbilityLocation location)
@@ -97,21 +100,31 @@ internal static class AbilityProcedureLowering
     internal static AbilityEffect.PutIntoPlay PutIntoPlayEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "where");
-        bool printed = Text(Required(fields, "where", location), location.Child("where")) switch
+        string destination = Text(Required(fields, "where", location), location.Child("where"));
+        bool printed = destination switch
         {
             "printedDestination" => true,
-            "engagedWithYou" => false,
+            "engagedWithYou" or "engagedWithFirstPlayer" => false,
+            "yourPlayArea" => false,
             var name => throw location.Child("where").Error($"'{name}' is not a supported play destination"),
         };
-        return new(Selected(fields, "card", location), printed);
+        return new(Selected(fields, "card", location), printed)
+        { AllyUnderYourControl = destination == "yourPlayArea", FirstPlayer = destination == "engagedWithFirstPlayer" };
     }
 
     internal static AbilityEffect ChoiceFromPile(AbilityValue value, AbilityLocation location, bool top)
     {
         string count = top ? "count" : "max";
-        var fields = Fields(value, location, count);
+        var fields = top ? Fields(value, location, count) : Fields(value, location, count, "min", "differentTitles");
         int maximum = NonnegativeCount(Required(fields, count, location), location.Child(count));
-        return top ? new AbilityEffect.ChooseTopForHand(maximum) : new AbilityEffect.ChooseDiscardToShuffle(maximum);
+        if (top) return new AbilityEffect.ChooseTopForHand(maximum);
+        int minimum = fields.TryGetValue("min", out var min) ? NonnegativeCount(min, location.Child("min")) : 1;
+        if (minimum > maximum) throw location.Error("minimum cannot exceed maximum");
+        return new AbilityEffect.ChooseDiscardToShuffle(maximum)
+        {
+            Minimum = minimum,
+            DifferentTitles = !fields.ContainsKey("differentTitles") || Boolean(fields, "differentTitles", location),
+        };
     }
 
     internal static AbilityEffect CountersEffect(AbilityValue value, AbilityLocation location, bool remove)
@@ -130,8 +143,16 @@ internal static class AbilityProcedureLowering
 
     internal static AbilityEffect.ReduceNextCardCost ReduceCostEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "player", "amount");
-        return new(LowerPlayer(Required(fields, "player", location), location.Child("player")), Numeric(fields, "amount", location));
+        var fields = Fields(value, location, "player", "amount", "kind", "trait");
+        bool any = Required(fields, "player", location) is AbilityValue.Word { Value: "any" };
+        var kind = fields.TryGetValue("kind", out var cardKind)
+            ? ConditionCardKind(cardKind, location.Child("kind")) : (Marvel.Rules.State.CardKind?)null;
+        string? trait = OptionalText(fields, "trait", location);
+        if (!any && (kind is not null || trait is not null))
+            throw location.Error("filtered reductions currently require player any");
+        return new(any ? AbilityPlayer.You : LowerPlayer(fields["player"], location.Child("player")),
+            Numeric(fields, "amount", location))
+        { AnyPlayer = any, Filter = any ? new(kind, trait) : null };
     }
 
     internal static AbilityEffect.Power PowerEffect(AbilityValue value, AbilityLocation location, AbilityPowerKind kind)
@@ -142,6 +163,19 @@ internal static class AbilityProcedureLowering
         bool automatic = Marker(fields, "automaticTarget", location);
         return new(kind, kind == AbilityPowerKind.Defense ? null : Selected(fields, "target", location),
             LowerEffect(Required(fields, "effect", location), location.Child("effect")), automatic);
+    }
+
+    internal static AbilityEffect.ThwartGroup DistributedThwart(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "schemes", "amount");
+        int total = checked((int)PositiveInteger(Required(fields, "amount", location), location.Child("amount")));
+        var targets = new AbilityCardSelection.Query(AbilityCardQuery.PowerTargets);
+        var removal = new AbilityEffect.RemoveThreat(targets, new AbilityNumber.Constant(1), false, null)
+            { Assigned = true };
+        var power = new AbilityEffect.Power(AbilityPowerKind.Thwart,
+            new AbilityCardSelection.Bound(AbilityCardBinding.Chosen), removal, false);
+        return new(AbilityThwartSelection.Distributed, Selected(fields, "schemes", location), power)
+            { DistributionTotal = total };
     }
 
     internal static AbilityEffect.ThwartGroup GroupThwartEffect(AbilityValue value, AbilityLocation location, AbilityThwartSelection selection)
@@ -157,7 +191,9 @@ internal static class AbilityProcedureLowering
 
     internal static AbilityEffect.ActivateEnemies ActivationEffect(AbilityValue value, AbilityLocation location, bool attack)
     {
-        var fields = Fields(value, location, "enemies", "against", "first", "dynamic");
+        var fields = Fields(value, location, "enemies", "against", "first", "dynamic", "modifier", "dealBoostCards");
+        if (!attack && fields.ContainsKey("dealBoostCards"))
+            throw location.Error("dealBoostCards is supported only for attacks");
         AbilityCardSelection? against = null;
         bool engagedHero = false;
         if (fields.TryGetValue("against", out var target))
@@ -169,6 +205,11 @@ internal static class AbilityProcedureLowering
             }
         }
         return new(attack, Selected(fields, "enemies", location), against, engagedHero,
-            Boolean(fields, "first", location), Boolean(fields, "dynamic", location));
+            Boolean(fields, "first", location), Boolean(fields, "dynamic", location))
+        {
+            DealBoostCards = !fields.ContainsKey("dealBoostCards") || Boolean(fields, "dealBoostCards", location),
+            Modifier = fields.TryGetValue("modifier", out var modifier)
+                ? Number(modifier, location.Child("modifier")) : null,
+        };
     }
 }

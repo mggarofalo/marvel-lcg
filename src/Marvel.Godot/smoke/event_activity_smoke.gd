@@ -321,7 +321,7 @@ func _historical_encounter_face_is_inspectable() -> bool:
 				chip.grab_focus()
 				await process_frame
 				await process_frame
-				var inspector := main.get_node("CardInspector") as Control
+				var inspector := main.find_child("CardInspector", true, false) as Control
 				if not inspector.is_visible_in_tree() or "Hard to Keep Down" not in _visible_text(inspector):
 					_fail("discarded boost face cannot be inspected from its occurrence")
 					return false

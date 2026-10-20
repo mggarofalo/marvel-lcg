@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityRepeatedCharacteristicTrace;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
 using static Marvel.Cards.Run.AbilityPowerProjection;
@@ -130,6 +131,9 @@ internal static class AbilityRepeatedStatusTrace
                 card, "attack", cast, discarded, modifiers),
             AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(
                 card, cast.World.Facts, "HP", cast.World.Players),
+            AbilityCardRank.RemainingHealth => Math.Max(0, EffectiveCards.BaseValue(
+                card, cast.World.Facts, "HP", cast.World.Players)
+                + TraceModified(card, "health", cast, discarded, modifiers) - card.Damage),
             _ => throw new InvalidOperationException("Unknown compiled rank in a projected selector"),
         };
         long extreme = maximum ? candidates.Max(Rank) : candidates.Min(Rank);
@@ -213,7 +217,7 @@ internal static class AbilityRepeatedStatusTrace
             ],
             "afterActivation" => [EffectBody(node)],
             "payOrEffect" or "payOrExhaust" => [EffectFollowing(node)],
-            "thwartSchemes" or "thwartDifferentSchemes" or "legalPractice" =>
+            "thwartSchemes" or "distributeThreat" or "thwartDifferentSchemes" or "legalPractice" =>
                 [((AbilityEffect.ThwartGroup)node).Thwart],
             _ => ResolutionChildren(node),
         };

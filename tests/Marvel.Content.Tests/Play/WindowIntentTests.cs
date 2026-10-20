@@ -68,6 +68,7 @@ public sealed class WindowIntentTests : ChoosingCardsTestBase
         var prompt = runner.Choosing(world, waiting)!;
         Assert.False(prompt.Cancellable);
         Assert.Contains(source.ObjectId, prompt.ContextCardIds);
+        Assert.All(prompt.Affordances, offer => Assert.Equal(source.ObjectId, offer.SelectionSourceId));
         var resumed = runner.Chose(world, waiting, Decision.Take(world.TheCardIn(DeckType.VillainArea)!.ObjectId));
         Assert.Empty(resumed.OfType<AbilityWindowResult>());
         Assert.True(Statuses.Has(world, world.TheCardIn(DeckType.VillainArea)!, Statuses.Stunned));

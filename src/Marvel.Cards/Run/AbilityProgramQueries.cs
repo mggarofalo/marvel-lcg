@@ -173,7 +173,9 @@ internal static class AbilityProgramQueries
     internal static bool CanTakeDamage(
         World world, AbilityProgram program, Card target, Card source)
     {
-        if (!DeckTypes.IsInPlay(target.Area.Type) || EffectiveCards.HasProfile(target)) return true;
+        if (!DeckTypes.IsInPlay(target.Area.Type)) return true;
+        if (AbilityTargetDamageProtection.Prevents(world, program, target)) return false;
+        if (EffectiveCards.HasProfile(target)) return true;
         foreach (var ability in On(program, target).Where(ability =>
                      ability.Trigger.Timing == AbilityType.Constant))
         {
@@ -246,7 +248,7 @@ internal static class AbilityProgramQueries
             AbilityEffect.PreventDamageFrom prohibition => EffectiveCards.Kind(source, world.Facts)
                 == prohibition.SourceKind && Rules.State.Traits.Has(
                     world, source, prohibition.SourceTrait, world.Facts),
-            AbilityEffect.PreventDamageWhile prohibition => expressions.Test(prohibition.Condition),
+            AbilityEffect.PreventDamageWhile { Target: null } prohibition => expressions.Test(prohibition.Condition),
             _ => false,
         };
 

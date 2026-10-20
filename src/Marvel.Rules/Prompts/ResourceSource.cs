@@ -15,6 +15,9 @@ namespace Marvel.Rules.Prompts;
 /// </remarks>
 public readonly record struct ResourceSource(int Effect, string Generates)
 {
+    /// <summary>Printed spending restriction, evaluated by the engine against the cost's card.</summary>
+    public ResourceRestriction Restriction { get; init; }
+
     /// <summary>The offered resource ability's authored name; null for a hand discard.</summary>
     public string? AbilityName { get; init; }
 

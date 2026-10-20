@@ -86,18 +86,7 @@ internal static class AbilityResolutionLifecycle
         };
         continuation = AbilityContinuations.WithResumedResults(continuation, resumed);
 
-        var cast = execution.Resuming(
-            world, source, continuation.Seat, resumed.Invocation.Address.Tier, resumed.Cursor.FinalStep,
-            resumed.Invocation.Occurrence) with
-        {
-            EachPlayerFrame = resumed.Cursor.EachPlayerFrame,
-            FinalPlayer = resumed.Cursor.FinalPlayer,
-            AbilityPlayer = StateOf(continuation)!.Invocation.AbilityPlayer,
-            EventTrigger = resumed.Invocation.Trigger,
-            GainedKeywords = resumed.Memory.SurgeGained
-                ? new HashSet<string>(["surge"], StringComparer.Ordinal)
-                : new HashSet<string>(StringComparer.Ordinal),
-        };
+        var cast = CreateResumedState(execution, world, source, continuation, resumed);
         execution.RestoreContinuationCursor(cast, resumed);
         execution.RestorePersisted(cast, continuation);
         if (delayed)
@@ -130,6 +119,28 @@ internal static class AbilityResolutionLifecycle
         return execution.ResumeContinuation(cast, source, transition);
     }
 
+    private static AbilityResolutionState CreateResumedState(AbilityResolutionExecution execution,
+        World world, Card source, PhaseStep continuation, AbilityContinuationState resumed)
+    {
+        return execution.Resuming(
+            world, source, continuation.Seat, resumed.Invocation.Address.Tier, resumed.Cursor.FinalStep,
+            resumed.Invocation.Occurrence) with
+        {
+            Power = resumed.PowerExecution?.Kind,
+            PowerAmount = resumed.PowerExecution?.Amount ?? -1,
+            PowerActor = resumed.PowerExecution?.Actor is { } actor ? world.Cards[actor] : null,
+            PowerTargets = resumed.PowerExecution?.Continuation.Targets.Select(id => world.Cards[id]).ToArray() ?? [],
+            ThwartActorUsingAttack = resumed.PowerExecution?.ThwartActorUsingAttack,
+            EachPlayerFrame = resumed.Cursor.EachPlayerFrame,
+            FinalPlayer = resumed.Cursor.FinalPlayer,
+            AbilityPlayer = StateOf(continuation)!.Invocation.AbilityPlayer,
+            EventTrigger = resumed.Invocation.Trigger,
+            GainedKeywords = resumed.Memory.SurgeGained
+                ? new HashSet<string>(["surge"], StringComparer.Ordinal)
+                : new HashSet<string>(StringComparer.Ordinal),
+        };
+    }
+
     internal static List<GameEvent> ResumeContinuation(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, Card source, AbilityContinuationTransition transition)
     {
@@ -153,6 +164,11 @@ internal static class AbilityResolutionLifecycle
 
                 case ResumeComplete complete:
                     execution.RestoreContinuationCursor(cast, complete.State);
+                    if (!cast.Suspended && cast.PowerExecution is not null)
+                    {
+                        execution.FinishResumedPower(cast);
+                        return cast.Events;
+                    }
                     execution.DiscardEvent(source, cast);
                     cast.CompleteResolution();
                     return cast.Events;
