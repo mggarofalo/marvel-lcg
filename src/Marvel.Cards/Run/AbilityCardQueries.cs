@@ -25,9 +25,7 @@ internal static class AbilityCardQueries
             ? cast.World.Cards[cast.Occurrence.Actor]
             : null,
 
-        AbilityCardBinding.TriggerTarget => cast.Occurrence.Target >= 0
-            ? cast.World.Cards[cast.Occurrence.Target]
-            : null,
+        AbilityCardBinding.TriggerTarget => TriggerTarget(cast),
 
         // The card a `chooseCard` was answered with. Null while the ability is
         // still asking, which is why nothing before the answer can read it.
@@ -94,6 +92,15 @@ internal static class AbilityCardQueries
             : null,
         _ => throw new InvalidOperationException("Unknown compiled card binding"),
     };
+
+    private static Card? TriggerTarget(AbilityQueryContext cast)
+    {
+        int id = cast.TriggeringAttack?.Card ?? cast.Occurrence.Target;
+        if (id < 0) return null;
+        var target = cast.World.Cards[id];
+        return cast.TriggeringAttack is { } attack && attack.Incarnation != target.Incarnation
+            ? null : target;
+    }
 
     /// <summary>Cards a printed title reference denotes — <c>rr:referential-ability</c>.</summary>
     /// <remarks>

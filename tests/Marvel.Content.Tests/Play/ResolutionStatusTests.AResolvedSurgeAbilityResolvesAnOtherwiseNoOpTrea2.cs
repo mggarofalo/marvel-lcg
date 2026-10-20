@@ -32,8 +32,8 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         var surge = Assert.Single(asked.Affordances, option => option.Label == "Surge");
         Sequence.Answer(world, Cards, runner, asked, Decision.Take(surge.Id), events);
         Sequence.Finish(world, Cards, runner, events);
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:cancel.1")]
@@ -53,7 +53,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         var events = new List<GameEvent>();
         Sequence.Finish(world, Cards, runner, events);
         Assert.Empty(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards);
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.CardStatus(card.ObjectId));
         Assert.All(occurrence.Resolutions.Where(entry => entry.Card == card.ObjectId), entry => Assert.Equal(ResolutionStatus.Unresolved, entry.Status));
     }
 
@@ -81,8 +81,8 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         Assert.True(resolution.IsComplete);
         Assert.True(occurrence.Threat!.Replaced);
         Assert.Equal(0, hero.Damage);
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:shuffle")]
@@ -103,7 +103,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         }
 
         runner.ExecuteReveal(world, card, 0, occurrence);
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
     }
 
     [Rule("rr:resolve.1")]
@@ -130,7 +130,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         }
 
         runner.ExecuteReveal(world, card, 0, occurrence);
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
     }
 
     [Rule("rr:resolve.1")]
@@ -148,7 +148,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         }
 
         runner.ExecuteReveal(world, card, 0, occurrence);
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0)));
     }
 
     [Rule("rr:resolve.2")]
@@ -182,7 +182,7 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         var question = Sequence.Work(world, Cards, runner, events)!;
         Sequence.Answer(world, Cards, runner, question, Decision.Take(0), events);
         Sequence.Finish(world, Cards, runner, events);
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0, 1)));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.StatusOf(new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0, 1)));
     }
 
     [Rule("rr:resolve.2")]
@@ -200,8 +200,8 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
         var events = new List<GameEvent>();
         Sequence.Finish(world, Cards, runner, events);
         var ability = new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0);
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Resolved, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Resolved, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:resolve.5")]
@@ -210,11 +210,11 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
     public void ConstantsAndOtherCardTypesNeverBecomeResolvedCards()
     {
         var occurrence = new Occurrence(1, [Steps.TurnAction]);
-        occurrence.Begin(new PendingAbility(4, AbilityType.Constant, 0));
-        occurrence.Resolve(new PendingAbility(4, AbilityType.Constant, 0));
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.StatusOf(new PendingAbility(4, AbilityType.Constant, 0)));
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.CardStatus(4));
-        Assert.Equal(ResolutionStatus.Unresolved, occurrence.CardStatus(5));
+        occurrence.Resolution.Begin(new PendingAbility(4, AbilityType.Constant, 0));
+        occurrence.Resolution.Resolve(new PendingAbility(4, AbilityType.Constant, 0));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.StatusOf(new PendingAbility(4, AbilityType.Constant, 0)));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.CardStatus(4));
+        Assert.Equal(ResolutionStatus.Unresolved, occurrence.Resolution.CardStatus(5));
     }
 
     [Rule("rr:resolve.2")]
@@ -223,12 +223,12 @@ public sealed class ResolutionStatusAResolvedSurgeAbilityResolvesAnOtherwiseNoOp
     {
         var occurrence = new Occurrence(7, [Steps.CardRevealed]);
         var ability = new PendingAbility(4, AbilityType.WhenRevealed, 0);
-        occurrence.BeginCard(4, [ability]);
-        occurrence.Resolve(ability);
-        occurrence.Complete(ability);
+        occurrence.Resolution.BeginCard(4, [ability]);
+        occurrence.Resolution.Resolve(ability);
+        occurrence.Resolution.Complete(ability);
         string json = JsonSerializer.Serialize(occurrence, EventJson.Options);
         var restored = JsonSerializer.Deserialize<Occurrence>(json, EventJson.Options)!;
-        Assert.Equal(ResolutionStatus.Resolved, restored.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Resolved, restored.CardStatus(4));
+        Assert.Equal(ResolutionStatus.Resolved, restored.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Resolved, restored.Resolution.CardStatus(4));
     }
 }

@@ -22,6 +22,9 @@ public readonly record struct PendingAbility(
     /// <summary>The exact defeat that satisfies this trigger within its shared window.</summary>
     public State.Defeated? TriggeringDefeat { get; init; }
 
+    /// <summary>The exact attacked enemy answered within a shared attack window.</summary>
+    public State.Attacked? TriggeringAttack { get; init; }
+
     /// <summary>Prompt-local handle assigned when several instances share a source card.</summary>
     public int? OfferId { get; init; }
 }

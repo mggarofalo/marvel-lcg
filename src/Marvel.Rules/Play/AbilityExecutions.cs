@@ -263,7 +263,7 @@ public sealed class AbilityExecutions
     {
         if (!invocation.ReadyToComplete) return;
         invocation.State = AbilityExecutionState.Complete;
-        if (invocation.Resolution is { } ability) invocation.Occurrence.Complete(ability);
+        if (invocation.Resolution is { } ability) invocation.Occurrence.Resolution.Complete(ability);
         invocations.Remove(invocation);
         if (invocation.Parent is { } parent)
         {

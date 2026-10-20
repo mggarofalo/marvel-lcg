@@ -83,6 +83,6 @@ internal sealed class AbilityResolutionBindings(World world, Card source)
     internal AbilityQueryContext QueryContext(AbilityResolutionState resolution) => new(
         resolution.World, source, resolution.Occurrence, resolution.Player, sourceIncarnation,
         chosenBinding, playerSelectionBinding, resolution.Altered, [.. resolution.PowerTargets])
-        { SourceState = sourceState, TriggeringDefeat = resolution.TriggeringDefeat,
+        { SourceState = sourceState, TriggeringAttack = resolution.TriggeringAttack, TriggeringDefeat = resolution.TriggeringDefeat,
             ExhaustedForCost = System.Collections.Immutable.ImmutableHashSet.CreateRange(resolution.ExhaustedForCost) };
 }

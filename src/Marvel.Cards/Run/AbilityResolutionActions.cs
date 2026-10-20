@@ -113,7 +113,7 @@ internal static class AbilityResolutionActions
         execution.Use(world, card, found, occurrence);
         if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event)
         {
-            occurrence.BeginCard(card.ObjectId, [ability]);
+            occurrence.Resolution.BeginCard(card.ObjectId, [ability]);
         }
         cast.RestoreAbility(ability.Ordinal, []);
         cast.TrackResolution(ability.Ordinal);

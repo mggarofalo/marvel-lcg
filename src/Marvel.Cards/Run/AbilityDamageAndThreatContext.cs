@@ -20,6 +20,6 @@ internal sealed record AbilityDamageAndThreatContext(
 
     internal void ResolveEffect()
     {
-        if (ResolutionAbility is { } ability) Occurrence.Resolve(ability);
+        if (ResolutionAbility is { } ability) Occurrence.Resolution.Resolve(ability);
     }
 }

@@ -17,6 +17,7 @@ internal sealed record AbilityQueryContext(
     internal ImmutableHashSet<int> ExhaustedForCost { get; init; } = [];
 
     internal Defeated? TriggeringDefeat { get; init; }
+    internal Attacked? TriggeringAttack { get; init; }
     internal Defeated? Defeat => TriggeringDefeat ?? Occurrence.Defeat;
 
     internal CardInstanceState SourceState { get; init; } = Source.InstanceState;

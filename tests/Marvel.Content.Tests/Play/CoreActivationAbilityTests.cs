@@ -199,14 +199,14 @@ public sealed class CoreActivationAbilityTests
 
         runner.ExecuteReveal(world, card, 0, occurrence);
         var ability = new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0);
-        Assert.Equal(ResolutionStatus.Pending, occurrence.StatusOf(ability));
-        Assert.Equal(ResolutionStatus.Pending, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(ResolutionStatus.Pending, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Pending, occurrence.Resolution.CardStatus(card.ObjectId));
 
         if (!made) Statuses.Give(world, drone, Statuses.Stunned);
         FinishUnopposed(world, runner);
 
-        Assert.Equal(expected, occurrence.StatusOf(ability));
-        Assert.Equal(expected, occurrence.CardStatus(card.ObjectId));
+        Assert.Equal(expected, occurrence.Resolution.StatusOf(ability));
+        Assert.Equal(expected, occurrence.Resolution.CardStatus(card.ObjectId));
     }
 
     [Rule("rr:attack-enemy-activation")]

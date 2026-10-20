@@ -145,6 +145,22 @@ Synthetic cost cases cover one, two and three double-resource cards; a compiled
 icon-count substitution fails all three. This binding does not itself provide
 Shield Toss's target selection or per-enemy attack response instances.
 
+`AttackTriggerBindingTests` and `MultiTargetAttackOccurrenceTests` exercise a
+synthetic multi-recipient occurrence contract. Targeted responses receive one
+incarnation-bound fact per matching enemy; untargeted attack responses retain one
+instance. Attack/defeat and attack/damage clauses correlate the same recipient.
+A second-enemy-first response can suspend for a choice without losing its target,
+and repeated read-only queries preserve subsequent results. Four compiled
+negative controls cover lost continuation keys, stale incarnations, cross-target
+defeat correlation and repeating whole-attack responses. Eight existing Core/RoRS
+journals replay 214 decisions without divergence; those simulator journals do
+not record RNG counts, so that replay is not an RNG audit. This contract is not
+yet published by the actual multi-target power/batch path, nor is it full Shield
+Toss acceptance. `OccurrenceResolutions` owns ability/card status transitions;
+`Occurrence` retains its read-only serialized resolution array and ignores the
+new lifecycle owner during serialization. This decomposition removes its former
+large-class baseline exception. Exact revisions and suite counts are in Plane.
+
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains
 closed while this work proceeds.
