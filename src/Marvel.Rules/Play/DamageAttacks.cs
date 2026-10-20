@@ -169,7 +169,7 @@ public static class DamageAttacks
         // now represented by the next stage.
         if (!DeckTypes.IsInPlay(attacked.Area.Type)
             && CardKinds.IsVillain(EffectiveCards.Kind(attacked, facts))
-            && world.TheCardIn(DeckType.VillainArea) is { } next
+            && CurrentStage(world, attacked) is { } next
             && string.Equals(
                 facts.Title(attacked.FaceId), facts.Title(next.FaceId),
                 StringComparison.Ordinal))
@@ -188,4 +188,9 @@ public static class DamageAttacks
         DamagePlacement.Resolve(world, facts,
             new(attacked, attacker, retaliate, trigger, "Retaliate"), events);
     }
+    private static Card? CurrentStage(World world, Card prior) =>
+        world.EncounterTopology is { } topology
+            ? topology.Groups.Single(group => group.Stages.Contains(prior)).CurrentVillain
+            : world.TheCardIn(DeckType.VillainArea);
+
 }

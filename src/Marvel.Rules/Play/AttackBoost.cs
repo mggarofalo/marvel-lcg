@@ -256,7 +256,9 @@ internal static class AttackBoost
             return;
         }
 
-        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
+        var discard = world.EncounterTopology is { } topology
+            ? topology.ForCard(boost).Discard
+            : world.AreaOf(DeckType.EncounterDiscardPile);
         var from = boost.Area;
         World.MoveToTop(boost, discard);
         events.Add(new CardsMoved(
