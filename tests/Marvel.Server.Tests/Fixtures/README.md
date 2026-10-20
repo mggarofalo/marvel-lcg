@@ -34,4 +34,25 @@ timestamps; payloads are unmodified. JSON object key order is not semantic;
 all array order, values, visibility and gameplay fields are compared.
 
 This Core fixture is not a multi-scenario campaign victory fixture.
-MARVEL-634 remains required for the latter evidence.
+
+`played-campaign-91098022.zip` is the genuine predecessor campaign fixture,
+SHA-256 `1199392F3439FE89B6A21AA03D195DF18BEF1CC70F20DD65A998A2E32B29FFE8`.
+Its embedded README, provenance, harness sources and logs document generation
+using the untouched 910 runtime. Spider-Man's published starter plays a standard
+campaign at seed504: ten Crossbones attempts and two Absorbing Man attempts,
+including one victory in each scenario, then five accepted Taskmaster decisions.
+The 781 terminal decisions were independently matched including prompts, choices,
+events, RNG word counts and digests; the active five decisions were independently
+executed and their resulting digest/RNG verified. Fresh old-runtime processes
+restored the full aggregate and resumed it. A separate copy supplies the next
+legal decision and exact old-runtime continuation response.
+
+The ZIP preserves original campaign generations/manifests, all authority and
+receipts, host export, actual owner/game wire responses, and the independent
+miner's full traces. These capabilities belong only to the generated test
+campaign. The new-runtime tests work on temporary copies and verify all proofs,
+all 13 attempts, the carried experimental weapon, consumed tech, awarded
+condition/HP bonus, restart, continuation and independent-copy import. They
+normalize only explicitly migrated compatibility and import identity fields.
+This is standard-mode evidence with zero delay counters; it does not establish
+expert-mode or nonzero-delay campaign coverage.
