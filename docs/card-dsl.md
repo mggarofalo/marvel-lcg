@@ -574,6 +574,13 @@ damage-prevention and imminent-threat windows already isolate those conditions.
 
 ### Campaign rewards and physical storage
 
+`returnTitledToHand` is a cost naming the single controlled card with that printed
+title in play. It returns that card to its owner's hand before the post-arrow
+effect and discards its attachments through ordinary departure handling. The card
+may be exhausted. Missing, uncontrolled, out-of-play and ambiguous matches are
+unpayable; a named card is bound by incarnation when payment is prepared. This
+primitive is required by Shield Toss; it does not admit Captain America by itself.
+
 `exhaustTitled` is a cost naming the single ready card with the printed title under
 its acting player's control. Missing or ambiguous cards cannot pay it.
 `consumeCampaignCard` binds a campaign TECH reward, discards it, and records its

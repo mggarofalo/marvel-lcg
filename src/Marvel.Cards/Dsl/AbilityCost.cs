@@ -17,6 +17,8 @@ public abstract record AbilityCost
     public sealed record Discard(AbilityCostCard Card) : AbilityCost;
     /// <summary>Return the source from play to its owner's hand.</summary>
     public sealed record ReturnSourceToHand : AbilityCost;
+    /// <summary>Return the single named controlled card from play to its owner's hand.</summary>
+    public sealed record ReturnTitledToHand(string Title) : AbilityCost;
     /// <summary>Discard an exact number from the top of the specified deck.</summary>
     public sealed record DiscardTop(AbilitySearchArea From, int Count) : AbilityCost;
     /// <summary>Deal one facedown encounter card to the resolving player.</summary>

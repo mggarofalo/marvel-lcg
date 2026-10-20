@@ -8,6 +8,13 @@ public sealed class AbilityCostLoweringTests
     private static readonly AbilityLocation Location = new("01005", 0, "cost");
 
     [Fact]
+    public void NamedReturnRetainsItsPrintedTitle()
+    {
+        Assert.Equal(new AbilityCost.ReturnTitledToHand("Captain America's Shield"),
+            Lower("""{"returnTitledToHand":"Captain America's Shield"}"""));
+    }
+
+    [Fact]
     public void EveryCoreArrowCostLowersWithoutAWorld()
     {
         var costs = AuthoredCards.Book.Abilities.Where(ability => ability.Cost is not null).ToList();
@@ -55,6 +62,7 @@ public sealed class AbilityCostLoweringTests
     [InlineData("{\"exhaustChosen\":{\"from\":{\"query\":\"villain\"}}}", "supported exhaust-cost relation")]
     [InlineData("{\"exhaustChosen\":{\"from\":{\"query\":\"heroesAndAllies\"},\"anyNumber\":\"false\"}}", "expected 'true'")]
     [InlineData("{\"discardFromHand\":0}", "positive integer")]
+    [InlineData("{\"returnTitledToHand\":\" \"}", "nonempty printed title")]
     [InlineData("{\"discardFromHand\":2147483648}", "exceeds the engine range")]
     [InlineData("{\"removeCounters\":{\"card\":\"this\",\"counter\":\"\",\"count\":1}}", "nonempty counter")]
     [InlineData("{\"removeCounters\":{\"card\":\"this\",\"counter\":\"web\",\"count\":0}}", "positive integer")]

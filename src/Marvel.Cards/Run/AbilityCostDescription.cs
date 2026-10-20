@@ -26,6 +26,7 @@ internal static class AbilityCostDescription
     private static string? Bound(World world, Card source, int player, AbilityCost cost) => cost switch
     {
         AbilityCost.ExhaustTitled named => $"Exhaust {named.Title}",
+        AbilityCost.ReturnTitledToHand named => $"Return {named.Title} to its owner's hand",
         AbilityCost.ReturnSourceToHand => $"Return {world.Facts.Title(source.FaceId)} to its owner's hand",
         AbilityCost.DiscardTop discard => $"Discard {discard.Count} from the top of "
             + (discard.From == AbilitySearchArea.YourDeck ? "your deck" : "the encounter deck"),

@@ -14,6 +14,7 @@ internal static class AbilityOperationNames
         AbilityCost.ExhaustTitled => "exhaustTitled",
         AbilityCost.Discard => "discard",
         AbilityCost.ReturnSourceToHand => "returnToHand",
+        AbilityCost.ReturnTitledToHand => "returnTitledToHand",
         AbilityCost.DiscardTop => "discardTop",
         AbilityCost.DealEncounterToYou => "dealEncounterCard",
         AbilityCost.ConsumeCampaignCard => "consumeCampaignCard",

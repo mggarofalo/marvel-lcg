@@ -25,9 +25,10 @@ internal static class AbilityCostLowering
         {
             "seq" => CostSequence(argument, child),
             "exhaust" => new AbilityCost.Exhaust(CostCard(argument, child)),
-            "exhaustTitled" => ExhaustTitledCost(argument, child),
+            "exhaustTitled" => new AbilityCost.ExhaustTitled(NamedCostTitle(argument, child)),
             "discard" => DiscardCost(argument, child),
             "returnToHand" => ReturnCost(argument, child),
+            "returnTitledToHand" => new AbilityCost.ReturnTitledToHand(NamedCostTitle(argument, child)),
             "discardTop" => DeckDiscardCost(argument, child),
             "dealEncounterCard" => EncounterCardCost(argument, child),
             "consumeCampaignCard" => new AbilityCost.ConsumeCampaignCard(CostCard(argument, child)),
@@ -47,10 +48,10 @@ internal static class AbilityCostLowering
         };
     }
 
-    private static AbilityCost.ExhaustTitled ExhaustTitledCost(AbilityValue value, AbilityLocation location)
+    private static string NamedCostTitle(AbilityValue value, AbilityLocation location)
     {
         string title = Text(value, location);
-        return !string.IsNullOrWhiteSpace(title) ? new(title)
+        return !string.IsNullOrWhiteSpace(title) ? title
             : throw location.Error("expected a nonempty printed title");
     }
 
