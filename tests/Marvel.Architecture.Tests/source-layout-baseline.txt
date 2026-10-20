@@ -1,5 +1,4 @@
 src/Marvel.Cards/Run/AbilityAdmission.cs:25: SL003: AbilityAdmission=425
-src/Marvel.Cards/Run/AbilityAreaProjection.cs:12: SL003: AbilityAreaProjection=399
 src/Marvel.Cards/Run/AbilityConditionProjection.cs:105: SL005: TryTraceConstantTest=14
 src/Marvel.Cards/Run/AbilityConditionProjection.cs:119: SL005: AmountCanDifferInVillainTrace=14
 src/Marvel.Cards/Run/AbilityConditionProjection.cs:133: SL005: TestCanChangeOnVillainAdvance=14

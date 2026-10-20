@@ -79,6 +79,55 @@ public sealed class WreckingPowerProjectionTests : CoreCardTestBase
             reachability: state));
     }
 
+    [Fact]
+    public void AreaProjectionKeepsDamageAndAttachmentsInTheirOwnGroup()
+    {
+        var (world, groups, scope) = Fixture();
+        var attachment = world.CreateCard("07006",
+            world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, groups[0].Villain.ObjectId));
+        var hostage = world.CreateCard("07005",
+            world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, groups[0].Scheme.ObjectId));
+        var state = new AreaProjectionState(scope.Context);
+        var projection = new AbilityAreaProjection([], null,
+            new HashSet<DeckType> { DeckType.EncounterDiscardPile }, scope.Context, 1);
+        string digest = world.Digest().Canonical();
+        Assert.Equal(groups[1].Villain.ObjectId, state.ActiveVillain);
+
+        projection.DealProjected(state, groups[0].Villain, 100, 1);
+        Assert.Contains(groups[0].Villain.ObjectId, state.Departed);
+        Assert.Contains(groups[0].Stages[1].ObjectId, state.Entered);
+        Assert.DoesNotContain(groups[1].Villain.ObjectId, state.Departed);
+        Assert.Equal(groups[1].Villain.ObjectId, state.ActiveVillain);
+        Assert.Equal(groups[0].Stages[1].ObjectId, state.Hosts[attachment.ObjectId]);
+        Assert.DoesNotContain(attachment.ObjectId, state.Departed);
+        Assert.DoesNotContain(groups[0].Scheme.ObjectId, state.Departed);
+
+        projection.DealProjected(state, groups[0].Villain, 100, 1);
+        Assert.Contains(groups[0].Stages[1].ObjectId, state.Departed);
+        Assert.Contains(attachment.ObjectId, state.Departed);
+        Assert.Contains(hostage.ObjectId, state.Departed);
+        Assert.Contains(groups[0].Scheme.ObjectId, state.Departed);
+        Assert.Equal(groups[1].Villain.ObjectId, state.ActiveVillain);
+        Assert.Equal(digest, world.Digest().Canonical());
+    }
+
+    [Fact]
+    public void AreaProjectionUsesProjectedThreatAndRefusesAnUnansweredActiveTie()
+    {
+        var (_, groups, scope) = Fixture();
+        var projection = new AbilityAreaProjection([], null,
+            new HashSet<DeckType> { DeckType.EncounterDiscardPile }, scope.Context, 1);
+        var tied = new AreaProjectionState(scope.Context);
+        projection.DealProjected(tied, groups[1].Villain, 100, 1);
+        Assert.Throws<RulesNotImplementedException>(() =>
+            projection.DealProjected(tied, groups[1].Stages[1], 100, 1));
+        var unique = new AreaProjectionState(scope.Context);
+        unique.Threat[groups[3].Scheme.ObjectId] = 9;
+        projection.DealProjected(unique, groups[1].Villain, 100, 1);
+        projection.DealProjected(unique, groups[1].Stages[1], 100, 1);
+        Assert.Equal(groups[3].Villain.ObjectId, unique.ActiveVillain);
+    }
+
     private static AbilityPowerState Damage(
         AbilityPowerState state, Card card, AbilityAdmission.AbilityAdmissionScope scope) =>
         AbilityPowerHealthTrace.ApplyPowerDamage(state, [card], 100,
