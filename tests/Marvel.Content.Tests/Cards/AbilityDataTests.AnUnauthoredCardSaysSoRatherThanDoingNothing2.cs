@@ -195,7 +195,7 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         var core = cards.RootElement.GetProperty("cards").EnumerateArray().Where(card => string.Equals(card.GetProperty("pack").GetString(), "core", StringComparison.Ordinal)).Select(card => card.GetProperty("card_id").GetString()!).ToList();
         Assert.Equal(core.Order(StringComparer.Ordinal), AuthoredCards.Book.Authored.Where(core.Contains).Order(StringComparer.Ordinal));
         var permitted = cards.RootElement.GetProperty("cards").EnumerateArray()
-            .Where(card => card.GetProperty("pack").GetString() is "core" or "trors")
+            .Where(card => card.GetProperty("pack").GetString() is "core" or "trors" or "twc")
             .Select(card => card.GetProperty("card_id").GetString()!).ToHashSet(StringComparer.Ordinal);
         Assert.All(AuthoredCards.Book.Authored, face => Assert.Contains(face, permitted));
     }

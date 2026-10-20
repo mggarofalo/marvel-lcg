@@ -11063,6 +11063,21 @@
       "name": "Corrupt Prison Guard",
       "note": "Guard is supplied by the generated printed keyword. This Bulldozer encounter card has no triggered or boost ability.",
       "abilities": []
+    },
+    {
+      "card": "07027",
+      "name": "Energy Projectiles",
+      "note": "When Revealed damages each character controlled by the resolving player, including an alter-ego. The Boost ability damages only the current defending character; an undefended attack or scheme has none.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "dealDamage": { "cards": { "query": "charactersYouControl" }, "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "dealDamage": { "cards": "defendingCharacter", "amount": 1 } }
+        }
+      ]
     }
   ]
 }

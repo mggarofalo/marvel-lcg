@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Marvel Champions Core Set and Rise of Red Skull |
-| Records | 394 printed card faces, including explicit empty rows |
+| Records | 395 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 

@@ -92,8 +92,18 @@ internal static class AbilityCardQueries
         AbilityCardBinding.TriggerSubject => cast.Occurrence.Subject >= 0
             ? cast.World.Cards[cast.Occurrence.Subject]
             : null,
+        // rr:defend-defense.6: without a defending character the attack is
+        // undefended, including when a boost ability defeats its defending ally.
+        AbilityCardBinding.DefendingCharacter => CurrentDefender(cast.World),
         _ => throw new InvalidOperationException("Unknown compiled card binding"),
     };
+
+    private static Card? CurrentDefender(World world)
+    {
+        if (world.Attack is not { Defender: >= 0 } attack) return null;
+        var defender = world.Cards[attack.Defender];
+        return DeckTypes.IsInPlay(defender.Area.Type) ? defender : null;
+    }
 
     /// <summary>Cards a printed title reference denotes — <c>rr:referential-ability</c>.</summary>
     /// <remarks>

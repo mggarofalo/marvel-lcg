@@ -1,5 +1,10 @@
 # The card DSL
 
+`defendingCharacter` names the live defender of the current enemy attack.
+It selects nothing during an undefended attack, a scheme, after the defender
+leaves play, or when only a finished attack remains. It does not fall back to
+the attacked identity.
+
 `startingCounters` accepts optional boolean `perPlayer` (default false). Its
 positive `count` is multiplied by the number of players who started the scenario
 when the card enters play; later eliminations do not reduce that multiplier.

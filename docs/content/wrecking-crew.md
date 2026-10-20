@@ -170,8 +170,8 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07025:2 | Buddy System / thunderball | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Pending MARVEL-625 |
 | 07026 | Chaos In the Prison / thunderball | 1 | When Revealed: Choose to either discard an upgrade you control or place 1 threat on the active villain's side scheme for each upgrade you control. If you do not control any upgrades, this card gains surge. | Pending MARVEL-625 |
 | 07026:2 | Chaos In the Prison / thunderball | 1 | star Boost: If this attack is undefended, discard an upgrade you control. | Pending MARVEL-625 |
-| 07027 | Energy Projectiles / thunderball | 2 | When Revealed: Deal 1 damage to each friendly character you control. | Pending MARVEL-625 |
-| 07027:2 | Energy Projectiles / thunderball | 2 | star Boost: Deal 1 damage to the defending character. | Pending MARVEL-625 |
+| 07027 | Energy Projectiles / thunderball | 2 | When Revealed: Deal 1 damage to each friendly character you control. | Authored; owner/form resolution contracts verified; full journey pending MARVEL-631 |
+| 07027:2 | Energy Projectiles / thunderball | 2 | star Boost: Deal 1 damage to the defending character. | Authored; current defender and absent/departed defender contracts verified; full journey pending MARVEL-631 |
 | 07028 | Get Wrecked! / thunderball | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Pending MARVEL-625 |
 | 07028:2 | Get Wrecked! / thunderball | 1 | When Revealed (Hero): The villain whose side scheme has the least threat attacks you. | Pending MARVEL-625 |
 | 07029 | I've Been Waiting For This! / thunderball | 1 | When Revealed: The active villain heals 3 hit points. Give that villain a tough status card. | Pending MARVEL-625 |
