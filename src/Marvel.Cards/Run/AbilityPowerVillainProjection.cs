@@ -15,14 +15,13 @@ internal static class AbilityPowerVillainProjection
         AbilityPowerState state, Card damaged, Card first, AbilityAdmissionScope cast)
     {
         if (damaged.ObjectId != state.CurrentVillain
+            && !AbilityPowerEncounterProjection.IsCurrent(damaged, cast, state)
             || PowerDamage(state, damaged) < PowerHealth(state, damaged, cast))
         {
             return state;
         }
 
-        var deck = cast.World.AreaOf(DeckType.VillainDeck);
-        int nextIndex = deck.Cards.Count - 1 - state.VillainStagesDrawn;
-        Card? next = nextIndex >= 0 ? deck.Cards[nextIndex] : null;
+        Card? next = NextStage(state, damaged, cast);
         bool carriesAttachments = next is not null && string.Equals(
             cast.World.Facts.Title(damaged.FaceId),
             cast.World.Facts.Title(next.FaceId),
@@ -31,18 +30,22 @@ internal static class AbilityPowerVillainProjection
         string? stageEntry = StageEntryReadFailure(next, damaged, cast, state, discarded);
         var engagement = EngagementAfterStage(
             damaged, state, discarded, carriesAttachments);
-        if (nextIndex < 0)
-        {
-            return state with
-            {
-                Discarded = discarded,
-                Engagement = engagement,
-                CurrentVillain = -1,
-                Finished = true,
-            };
-        }
+        var settled = state with { Discarded = discarded, Engagement = engagement };
+        return next is null
+            ? CompleteVillain(settled, damaged, cast)
+            : PromoteVillain(settled, damaged, next, first, cast, stageEntry);
+    }
 
-        next = deck.Cards[nextIndex];
+    private static AbilityPowerState CompleteVillain(
+        AbilityPowerState state, Card damaged, AbilityAdmissionScope cast) =>
+        state.EncounterStages is not null
+            ? AbilityPowerEncounterProjection.Advance(state, damaged, null, cast)
+            : state with { CurrentVillain = -1, Finished = true };
+
+    private static AbilityPowerState PromoteVillain(
+        AbilityPowerState state, Card damaged, Card next, Card first,
+        AbilityAdmissionScope cast, string? stageEntry)
+    {
         bool carriesTough = string.Equals(
                 cast.World.Facts.Title(damaged.FaceId),
                 cast.World.Facts.Title(next.FaceId),
@@ -50,18 +53,27 @@ internal static class AbilityPowerVillainProjection
             && PowerTough(state, damaged, cast);
         var advanced = state with
         {
-            Discarded = discarded,
-            Engagement = engagement,
-            CurrentVillain = next.ObjectId,
-            VillainStagesDrawn = state.VillainStagesDrawn + 1,
+            CurrentVillain = state.EncounterStages is null ? next.ObjectId : state.CurrentVillain,
+            VillainStagesDrawn = state.EncounterStages is null
+                ? state.VillainStagesDrawn + 1 : state.VillainStagesDrawn,
             UnprojectedStageEntry = stageEntry,
         };
+        if (state.EncounterStages is not null)
+            advanced = AbilityPowerEncounterProjection.Advance(advanced, damaged, next, cast);
         advanced = SetPowerDamage(advanced, next, 0, first, cast);
         bool printedTough = StateFields.Modified(
             cast.World, next, "toughness",
             cast.World.Facts, cast.World.Players) > 0;
         return SetPowerTough(
             advanced, next, carriesTough || printedTough, first, cast);
+    }
+
+    private static Card? NextStage(AbilityPowerState state, Card damaged, AbilityAdmissionScope cast)
+    {
+        if (state.EncounterStages is not null) return AbilityPowerEncounterProjection.Next(damaged, cast);
+        var deck = cast.World.AreaOf(DeckType.VillainDeck);
+        int nextIndex = deck.Cards.Count - 1 - state.VillainStagesDrawn;
+        return nextIndex >= 0 ? deck.Cards[nextIndex] : null;
     }
 
     private static HashSet<int> DiscardedAfterStage(

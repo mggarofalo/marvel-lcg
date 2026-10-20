@@ -90,7 +90,8 @@ internal static class AbilityPowerHealthTrace
                 + "labelled-power continuation reads a defeat-triggered ability, "
                 + "which is not implemented");
         }
-        if (damaged.ObjectId == state.CurrentVillain)
+        if (damaged.ObjectId == state.CurrentVillain
+            || AbilityPowerEncounterProjection.IsCurrent(damaged, cast, state))
         {
             return AbilityPowerVillainProjection.AdvancePowerVillain(state, damaged, first, cast);
         }

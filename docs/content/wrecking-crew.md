@@ -41,6 +41,23 @@ a keyword or stat also needs its corresponding attribute correction and tests.
 
 ## Integration obligations
 
+### Projected stage continuity
+
+MARVEL-638 owns multi-villain card projection. `WreckingPowerProjectionTests`
+checks inactive Extreme promotion, final defeat and paired-scheme departure,
+all-villain enemy selection, unique active-counter replacement using projected
+threat, and refusal to invent an answer to a tied replacement. The immutable
+group stage map is projection-only; it is not a new digest or save field.
+`WreckingContinuationReferenceTests` requires a captured selection to follow
+only its own group's same-character successor, even with an unrelated same-title
+card in the shared villain area. Both controls preserve the live digest and RNG.
+Compiled mutants that move the active counter on inactive promotion or choose
+the first tied replacement fail these tests.
+
+These arranged contracts do not complete MARVEL-638. Area projection, repeated
+selector consumers, integrated legal card journeys and replay controls remain
+required before full-pack admission.
+
 ### Four-group presentation contract
 
 `EncounterGroupProjectionTests` verifies visibility filtering, detached group

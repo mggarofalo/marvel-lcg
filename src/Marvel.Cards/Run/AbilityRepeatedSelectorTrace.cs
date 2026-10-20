@@ -110,16 +110,18 @@ internal static class AbilityRepeatedSelectorTrace
     }
 
     internal static bool TraceQueryMatches(
-        AbilityCardQuery query, Card candidate, int currentVillain, AbilityAdmissionScope cast,
-        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
-        Dictionary<(int Card, string Field), long> modifiers,
-        Dictionary<int, int> engagement)
+        AbilityCardQuery query, Card candidate, AbilitySelectorTraceContext trace)
     {
-        bool villain = candidate.ObjectId == currentVillain;
+        var cast = trace.Cast;
+        var discarded = trace.Discarded;
+        var modifiers = trace.Modifiers;
+        var engagement = trace.Engagement;
+        bool villain = trace.EncounterStages is { } stages
+            ? stages.Values.Contains(candidate.ObjectId) : candidate.ObjectId == trace.CurrentVillain;
         var kind = EffectiveCards.Kind(candidate, cast.World.Facts);
         return query switch
         {
-            AbilityCardQuery.Villain => villain,
+            AbilityCardQuery.Villain => candidate.ObjectId == trace.CurrentVillain,
             AbilityCardQuery.Enemies => villain
                 || kind == CardKind.Minion,
             AbilityCardQuery.Minions => kind == CardKind.Minion,

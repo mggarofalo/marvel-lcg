@@ -110,7 +110,11 @@ internal static class AbilityPowerAlternatives
         && left.CurrentVillain == right.CurrentVillain
         && left.VillainStagesDrawn == right.VillainStagesDrawn
         && left.Finished == right.Finished
+        && SameEncounterStages(left.EncounterStages, right.EncounterStages)
         && SameUnprojectedReads(left, right);
+
+    private static bool SameEncounterStages(Dictionary<int, int>? left, Dictionary<int, int>? right) =>
+        left is null ? right is null : right is not null && SameValues(left, right);
 
     private static bool SameUnprojectedReads(AbilityPowerState left, AbilityPowerState right) =>
         left.EncounterCardsChanged == right.EncounterCardsChanged

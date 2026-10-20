@@ -6,4 +6,7 @@ internal sealed record AbilitySelectorTraceContext(
     int CurrentVillain, AbilityAdmissionScope Cast, HashSet<int> Discarded,
     Dictionary<int, HashSet<string>> Traits,
     Dictionary<(int Card, string Field), long> Modifiers,
-    Dictionary<int, int> Engagement);
+    Dictionary<int, int> Engagement)
+{
+    internal IReadOnlyDictionary<int, int>? EncounterStages { get; init; }
+}

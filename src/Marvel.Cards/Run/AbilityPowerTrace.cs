@@ -26,19 +26,6 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilityPowerTrace
 {
-    internal static AbilityPowerState InitialPowerReachability(AbilityAdmissionScope cast)
-    {
-        var identity = cast.World.Seats[cast.World.FirstPlayer].IdentityCard;
-        int villain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        return new AbilityPowerState(
-            0, cast.World.FirstPlayer, identity.Damage,
-            Statuses.Has(cast.World, identity, Statuses.Tough),
-            new Dictionary<int, long>(), new Dictionary<int, bool>(),
-            [], [], new Dictionary<int, PowerReadiness>(), TraceUnavailableMinions(cast),
-            new Dictionary<int, long>(), new Dictionary<int, long>(), [], [], [],
-            villain, 0, false);
-    }
-
     internal static Card? PowerFind(
         AbilityCardSelection value, AbilityAdmissionScope cast, AbilityPowerState reachability)
     {
@@ -48,7 +35,7 @@ internal static class AbilityPowerTrace
             return PowerEvery(value, cast, reachability).FirstOrDefault();
         }
         var found = Find(value, cast);
-        int liveVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        int liveVillain = EncounterRouting.Villain(cast.World)?.ObjectId ?? -1;
         found = CurrentVillainCard(found, liveVillain, cast, reachability);
         return found is not null && !reachability.Discarded.Contains(found.ObjectId)
             ? found : null;
@@ -58,6 +45,8 @@ internal static class AbilityPowerTrace
         Card? found, int liveVillain, AbilityAdmissionScope cast,
         AbilityPowerState reachability)
     {
+        if (found is not null && reachability.EncounterStages is not null)
+            return AbilityPowerEncounterProjection.Current(found, cast, reachability.EncounterStages);
         if (found?.ObjectId != liveVillain
             || reachability.CurrentVillain == liveVillain) return found;
         return reachability.Finished || reachability.CurrentVillain < 0
@@ -67,7 +56,7 @@ internal static class AbilityPowerTrace
     internal static List<Card> PowerEvery(
         AbilityCardSelection value, AbilityAdmissionScope cast, AbilityPowerState reachability)
     {
-        int liveVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        int liveVillain = EncounterRouting.Villain(cast.World)?.ObjectId ?? -1;
         bool dynamic = SelectorMembershipCanChange(value)
             || PotentialVillainSelector(value, cast);
         if (dynamic)
@@ -96,7 +85,8 @@ internal static class AbilityPowerTrace
                     && TraceSelectorMatches(
                         value, card, new(reachability.CurrentVillain, cast,
                         reachability.Discarded, reachability.Traits,
-                        reachability.Modifiers, reachability.Engagement))),
+                            reachability.Modifiers, reachability.Engagement)
+                            { EncounterStages = reachability.EncounterStages })),
         ];
     }
 

@@ -45,8 +45,7 @@ internal static class AbilitySelectorTrace
     internal static bool TraceSelectorMatches(
         AbilityCardSelection selector, Card candidate, AbilitySelectorTraceContext trace) => selector switch
     {
-        AbilityCardSelection.Query query => TraceQueryMatches(query.Kind, candidate, trace.CurrentVillain,
-            trace.Cast, trace.Discarded, trace.Traits, trace.Modifiers, trace.Engagement),
+        AbilityCardSelection.Query query => TraceQueryMatches(query.Kind, candidate, trace),
         AbilityCardSelection.Titled titled => string.Equals(titled.Title,
             EffectiveCards.Title(candidate, trace.Cast.World.Facts), StringComparison.Ordinal),
         AbilityCardSelection.EnemiesWithTrait filtered => HasTrait(candidate, filtered.Trait, trace),
@@ -97,15 +96,22 @@ internal static class AbilitySelectorTrace
         if (trace.Engagement.Count > 0 && !UsesObjectIdOrder(selector) && UsesEngagedAreaOrder(selector))
             throw new Rules.Play.RulesNotImplementedException(
                 "Last-card area order after projected engagement changes is not implemented");
-        int boardVillain = trace.Cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        int boardVillain = Rules.Play.EncounterRouting.Villain(trace.Cast.World)?.ObjectId ?? -1;
         var candidates = TraceCandidateCards(selector, trace.Cast)
-            .Select(card => card.ObjectId == boardVillain
-                ? trace.CurrentVillain >= 0 ? trace.Cast.World.Cards[trace.CurrentVillain] : null : card)
+            .Select(card => ProjectedCard(card, boardVillain, trace))
             .Where(card => card is not null).Cast<Card>().DistinctBy(card => card.ObjectId)
             .Where(card => !trace.Discarded.Contains(card.ObjectId)
                 && TraceSelectorMatches(selector, card, trace));
         return UsesObjectIdOrder(selector)
             ? candidates.OrderBy(card => card.ObjectId) : candidates;
+    }
+
+    private static Card? ProjectedCard(Card card, int boardVillain, AbilitySelectorTraceContext trace)
+    {
+        if (trace.EncounterStages is { } stages)
+            return AbilityPowerEncounterProjection.Current(card, trace.Cast, stages);
+        if (card.ObjectId != boardVillain) return card;
+        return trace.CurrentVillain >= 0 ? trace.Cast.World.Cards[trace.CurrentVillain] : null;
     }
 
     private static bool UsesEngagedAreaOrder(AbilityCardSelection selector) => selector switch
