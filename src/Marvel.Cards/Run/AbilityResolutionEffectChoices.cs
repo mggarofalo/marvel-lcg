@@ -79,13 +79,7 @@ internal static class AbilityResolutionEffectChoices
             UsesThwartStat = command.Verb == BasicPowers.ThwartVerb
                 && AbilityThwartStatUsage.ReadsActor(command.Effect.Effect, cast.QueryContext(),
                     cast.AbilityActor ?? cast.World.Seats[execution.Resolver(cast)].IdentityCard),
-            Continuation = AbilityContinuationScheduling.Power(
-                capture, command.PowerOrdinal, [.. command.Targets.Select(card => card.ObjectId)]) with
-                {
-                    SelectedTargets = command.Effect.TargetCount is null ? default
-                        : [.. command.Targets.Select(card => new AbilityContinuationCardBinding(
-                            card.ObjectId, card.Area.Id, card.Incarnation))],
-                },
+            Continuation = AbilityContinuationScheduling.Power(capture, command, cast.World.Facts),
             SurgeGained = capture.Memory.SurgeGained,
             Origin = capture.Invocation.Occurrence,
         };

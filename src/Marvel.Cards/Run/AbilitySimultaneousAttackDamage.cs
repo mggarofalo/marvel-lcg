@@ -18,14 +18,17 @@ internal static class AbilitySimultaneousAttackDamage
         if (occurrence.Attacks.Count != 0)
             throw new RulesNotImplementedException("multiple simultaneous damage nodes in one labelled attack");
         var targets = AbilityDamageAndThreatQueries.Every(damage.Cards, context);
-        if (targets.Count == 0) return false;
-        var recipients = targets.Select(card => Attacked.Capture(card, context.World.Facts)).ToArray();
-        var result = SimultaneousAttackDamage.Resolve(context.World, context.World.Facts,
+        var recipients = context.DeclaredAttackRecipients.IsDefault
+            ? targets.Select(card => Attacked.Capture(card, context.World.Facts)).ToArray()
+            : context.DeclaredAttackRecipients.ToArray();
+        if (recipients.Length == 0) return false;
+        var result = targets.Count == 0 ? null : SimultaneousAttackDamage.Resolve(context.World, context.World.Facts,
             new(attacker, context.Source, targets, amount, context.Trigger, "Attack") { Retaliate = false },
             context.Events);
         state.Attacked.AddRange(targets);
         (state.Damage ??= new(context.Occurrence)).Add(
-            new AbilitySimultaneousDamageCompletion(result, recipients, amount, occurrence));
-        return !result.IsComplete;
+            new AbilitySimultaneousDamageCompletion(result, recipients,
+                [.. targets.Select(card => card.ObjectId)], amount, occurrence));
+        return result is { IsComplete: false };
     }
 }

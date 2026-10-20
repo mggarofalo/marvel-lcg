@@ -8,4 +8,5 @@ internal sealed record AbilityPowerContinuation(
     : CardPowerContinuation
 {
     internal ImmutableArray<AbilityContinuationCardBinding> SelectedTargets { get; init; }
+    internal ImmutableArray<Attacked> DeclaredRecipients { get; init; }
 }

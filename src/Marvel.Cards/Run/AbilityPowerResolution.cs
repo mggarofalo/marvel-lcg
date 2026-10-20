@@ -59,28 +59,27 @@ internal static class AbilityPowerResolution
             throw new RulesNotImplementedException(
                 $"card {power.ToLowerInvariant()} has no reconstructable source");
 
-        ValidateSelectedTargets(world, continuation);
         return new(world, world.Cards[sourceId], occurrence, player, events)
         {
             FinalStep = continuation.Capture.Cursor.FinalStep,
             Power = power,
-            PowerTargets = [.. continuation.Targets.Select(id => world.Cards[id])],
+            PowerTargets = [.. CurrentTargets(world, continuation)],
             EachPlayerFrame = continuation.Capture.Cursor.EachPlayerFrame,
             FinalPlayer = continuation.Capture.Cursor.FinalPlayer,
             AbilityPlayer = continuation.Capture.Invocation.AbilityPlayer,
         };
     }
 
-    private static void ValidateSelectedTargets(World world, AbilityPowerContinuation continuation)
+    private static IEnumerable<Card> CurrentTargets(World world, AbilityPowerContinuation continuation)
     {
-        if (continuation.SelectedTargets.IsDefault) return;
-        foreach (var binding in continuation.SelectedTargets)
-        {
-            var card = world.Cards[binding.ObjectId];
-            if (card.Incarnation != binding.Incarnation || card.Area.Id != binding.AreaId)
-                throw new RulesNotImplementedException(
-                    "A counted attack recipient changed incarnation before damage; absent-recipient completion is not implemented");
-        }
+        if (continuation.SelectedTargets.IsDefault)
+            return continuation.Targets.Select(id => world.Cards[id]);
+        // rr:leaves-play.1: a departing card is a new copy. The declared
+        // recipient facts survive, but damage cannot follow the new copy.
+        return continuation.SelectedTargets.Select(binding => (Binding: binding, Card: world.Cards[binding.ObjectId]))
+            .Where(item => item.Card.Incarnation == item.Binding.Incarnation
+                && DeckTypes.IsInPlay(item.Card.Area.Type))
+            .Select(item => item.Card);
     }
 
     private static void ResolvePower(

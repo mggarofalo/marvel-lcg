@@ -772,8 +772,12 @@ the number of available legal targets. `cardsDiscarded` can supply the count fro
 the physical cost receipt; event resource payments do not contribute. The
 ordinary attack form remains a single declared target.
 
-Counted targets retain incarnation bindings through attack interrupts. A
-recipient leaving/reentering before damage explicitly raises at the unimplemented
-absent-recipient completion boundary; it does not attack the new copy. This
-boundary and after-attack forced-keyword ordering still block Captain America
-admission. The counted form does not admit arbitrary compound damage bodies.
+Counted targets retain incarnation bindings and public attack facts through
+interrupts. Damage resolves only against the original copies still in play;
+departed recipients retain their attacked facts with zero damage taken. A new copy
+receives neither the old attack's damage nor its retaliation obligation. Damage
+results are correlated by physical recipient, so a missing earlier target cannot
+shift another target's result. The next stage of the same villain retains the
+shared retaliation behavior. After-attack forced-keyword ordering still blocks
+Captain America admission. The counted form does not admit arbitrary compound
+bodies.
