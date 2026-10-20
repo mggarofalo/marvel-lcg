@@ -22,7 +22,7 @@ internal sealed class CompleteDecisionSheetController(DecisionPanel panel)
     internal void OpenCardChoiceAfterRender()
     {
         if (panel.LocalDecision.Active) return;
-        if (!DecisionCardChoices.IsChoice(panel.composer?.Prompt)) return;
+        if (!DecisionCardChoices.IsChoice(panel.composer?.Prompt) && !DecisionDialogLayout.Automatic(panel.composer?.Prompt)) return;
         var draft = panel.composer;
         Callable.From(() =>
         {

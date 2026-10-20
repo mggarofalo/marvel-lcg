@@ -21,7 +21,7 @@ func _run() -> void:
 
 func _inspect_ultron() -> bool:
 	var card := _tabletop_card_named("Ultron")
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var prompt := _logical_prompt_identity()
 	if card == null:

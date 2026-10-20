@@ -30,6 +30,10 @@ public sealed class PresentationBoundaryTests
             "Marvel.Desktop.CampaignConnectionStore",
             "Marvel.Protocol.CampaignDeckAccess",
             "Marvel.Protocol.CampaignDescriptor",
+            "Marvel.Protocol.CampaignGameAccess",
+            // The native prompt snapshot probe installs a non-executing client transport.
+            "Marvel.Protocol.IEngineTransport",
+            "Marvel.Observability.OperationalLog",
             // The synthetic native tracker fixture reads a wire response; it never submits state.
             "Marvel.Protocol.EngineJson",
             "Marvel.Protocol.CampaignQuery",

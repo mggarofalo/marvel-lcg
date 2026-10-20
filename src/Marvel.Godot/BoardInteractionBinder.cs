@@ -21,7 +21,8 @@ internal static class BoardInteractionBinder
                 && BoardDragInteractionBinder.Drag(panel, composer, board, gesture));
         board.BindDragPreview(gesture => BoardDragInteractionBinder.PreviewDrag(panel, composer, board, gesture));
         board.SetInlinePayment(panel.LocalDecision.IsOpen);
-        board.SetCompleteChoicesOpen(panel.CompleteChoicesOpen);
+        board.SetDialogOnly(DecisionDialogLayout.Automatic(composer.Prompt));
+        board.SetCompleteChoicesOpen(panel.CompleteChoicesOpen || panel.AbilityWindowOpen);
         board.BindCompleteChoices(source =>
         {
             if (CanUseTable(panel)) panel.ShowCompleteChoices(source);
@@ -38,12 +39,12 @@ internal static class BoardInteractionBinder
     }
 
     private static bool CanUseTable(DecisionPanel panel) =>
-        !panel.AbilityWindowOpen && !panel.AcknowledgementPending;
+        !panel.AcknowledgementPending && !panel.submitting;
 
     private static void SelectContextAction(DecisionPanel panel, DecisionComposer composer, int id)
     {
         int generation = panel.GetRenderGeneration();
-        if (panel.PaymentModalOpen || panel.AbilityWindowOpen || panel.AcknowledgementPending
+        if (panel.PaymentModalOpen || panel.AcknowledgementPending
             || !CurrentOperations(panel, composer).TrySelectAffordance(id)) return;
         panel.RaiseDraftStarted();
         if (DirectCommitment.IsReady(composer))

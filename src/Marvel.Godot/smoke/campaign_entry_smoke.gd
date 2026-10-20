@@ -5,7 +5,7 @@ extends "res://smoke/local_game_smoke.gd"
 func _run() -> void:
     if not await _open_campaign_tracker(): return
     var resume := OS.get_environment("MARVEL_CAMPAIGN_JOURNEY") == "resume"
-    if not await _wait_for(func(): return _button_named("Create campaign") != null):
+    if not resume and not await _wait_for(func(): return _button_named("Create campaign") != null):
         _fail("campaign creation was not explained")
         return
     if resume:
@@ -25,7 +25,6 @@ func _run() -> void:
     quit(0)
 
 func _resume_campaign() -> bool:
-    if not await _campaign_activate("Resume"): return false
     if not await _wait_for(func(): return _button_named("Return to current game") != null):
         _fail("saved campaign did not expose its current attempt")
         return false
@@ -45,14 +44,20 @@ func _create_campaign() -> bool:
     return true
 
 func _campaign_activate(label: String) -> bool:
+    if not await _wait_for(func(): return _button_named(label) != null and not _button_named(label).disabled):
+        _fail("campaign commitment did not become available: " + label)
+        return false
     var button := _button_named(label)
     if button == null or button.disabled:
         _fail("campaign commitment unavailable: " + label)
         return false
+    return await _campaign_press(button)
+
+func _campaign_press(button: Button) -> bool:
     button.grab_focus()
     await process_frame
     if button.get_viewport().gui_get_focus_owner() != button:
-        _fail("campaign commitment could not receive keyboard focus: " + label)
+        _fail("campaign commitment could not receive keyboard focus: " + button.text)
         return false
     for pressed in [true, false]:
         var key := InputEventAction.new()

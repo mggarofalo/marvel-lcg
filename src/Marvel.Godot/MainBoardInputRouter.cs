@@ -12,14 +12,14 @@ internal static class MainBoardInputRouter
     {
         if (CardContextMenu.RouteInput()) return;
         inspector.ObservePreviewPointer(input);
-        if (main.decisions.CompleteChoicesOpen && !main.decisions.LocalDecision.IsOpen)
-        {
-            main.decisions.RouteDecisionSurfaceInput(input);
-            return;
-        }
         if (main.cardInspector.Visible && main.cardInspectorPinned)
         {
             inspector.Input(input);
+            return;
+        }
+        if (main.decisions.CompleteChoicesOpen && !main.decisions.LocalDecision.IsOpen)
+        {
+            main.decisions.RouteDecisionSurfaceInput(input);
             return;
         }
 

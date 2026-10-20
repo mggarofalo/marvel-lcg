@@ -10,7 +10,7 @@ static func perform(driver, card: Control, anchor: int) -> bool:
 	var commit: Button = driver._task_commit()
 	var commitment: String = commit.text if commit != null else ""
 	if not await driver._pointer_activate_card_body(card): return false
-	var inspector: Control = driver.main.get_node("CardInspector")
+	var inspector: Control = driver.main.find_child("CardInspector", true, false)
 	if not inspector.visible or int(inspector.get_meta("inspected_card_anchor", -1)) != anchor:
 		driver._fail("exhausted card body helper did not inspect its exact instance")
 		return false

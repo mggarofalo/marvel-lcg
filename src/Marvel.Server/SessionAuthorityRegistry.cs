@@ -194,6 +194,13 @@ internal sealed class SessionAuthorityRegistry(ISessionCapabilityIssuer issuer)
         }
     }
 
+    internal void RemoveGames(IReadOnlyList<string> gameIds)
+    {
+        foreach (var session in sessions.Values.Select(item => item.Session).Distinct()
+                     .Where(session => gameIds.Contains(session.GameId, StringComparer.Ordinal)).ToArray())
+            Remove(session);
+    }
+
     public void ValidateForRestore(StoredSession stored, Game game)
     {
         StoredSessionJson.ValidateLoaded(stored);

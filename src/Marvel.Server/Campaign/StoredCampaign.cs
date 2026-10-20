@@ -7,4 +7,8 @@ namespace Marvel.Server;
 public sealed record StoredCampaign([property: JsonRequired] CampaignSave Save,
     [property: JsonRequired] string OwnerVerifier, [property: JsonRequired] StoredEntryReceipt Entry,
     [property: JsonRequired] ImmutableArray<CampaignAttemptAuthority> Authorities,
-    [property: JsonRequired] ImmutableArray<CampaignReceipt> Receipts);
+    [property: JsonRequired] ImmutableArray<CampaignReceipt> Receipts)
+{
+    /// <summary>Operational archive status; absent in older archives means active.</summary>
+    public bool Archived { get; init; }
+}

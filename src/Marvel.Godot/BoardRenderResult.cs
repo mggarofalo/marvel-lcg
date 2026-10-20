@@ -20,6 +20,7 @@ public sealed class BoardRenderResult
     private readonly BoardCompleteChoicesEntry completeChoicesEntry;
     private Container? contextualActions;
     private bool completeChoicesOpen;
+    private bool dialogOnly;
     private bool sourceArrangementActive;
     internal BoardTargetSnap TargetSnap { get; } = new();
     internal bool MotionEnabled => pointer.MotionEnabled?.Invoke() != false;
@@ -113,12 +114,18 @@ public sealed class BoardRenderResult
     internal void SetCompleteChoicesOpen(bool open)
     {
         completeChoicesOpen = open;
-        interactionControls.SetContextualVisible(!open);
+        interactionControls.SetContextualVisible(!open && !dialogOnly);
         if (InteractionControl.IsUsable(contextualActions))
         {
-            contextualActions!.Visible = !open;
+            contextualActions!.Visible = !open && !dialogOnly;
         }
         completeChoicesEntry.SetOpen(open, currentComposer is not null);
+    }
+
+    internal void SetDialogOnly(bool value)
+    {
+        dialogOnly = value;
+        SetCompleteChoicesOpen(completeChoicesOpen);
     }
 
     internal void RegisterContextualWorld(WorldDescriptor world) => copy.RegisterWorld(world);

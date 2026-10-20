@@ -115,7 +115,7 @@ func _stat_hover() -> bool:
 		_fail("compact stat decoding tooltip has no native hit area")
 		return false
 	if not await _pointer_activate_card_body(card): return false
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	var full_stat := inspector.find_child("StatREC", true, false) as Control
 	if full_stat == null or not full_stat.tooltip_text.is_empty() or full_stat.accessibility_name.is_empty():
 		_fail("full captioned stat repeats its value as a tooltip or lost accessibility")

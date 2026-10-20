@@ -64,7 +64,7 @@ func _inspect_forced_source() -> bool:
 	var heading := _window().find_child("ForcedAbilityHeading", true, false) as Control
 	if not await preload("res://smoke/transient_inspection_checks.gd").verify(self, heading): return false
 	if not await _keyboard_activate(heading): return false
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not inspector.visible or "Black Cat" not in _visible_text(inspector):
 		_fail("forced source title does not inspect the exact printed card")
 		return false

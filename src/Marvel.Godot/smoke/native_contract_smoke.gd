@@ -136,7 +136,7 @@ func _inspect_while_uncertain() -> bool:
     var draft: String = witness.Draft()
     var card := _tabletop_card_named("Black Cat")
     if card == null or not await _pointer_activate_card_body(card): return false
-    var inspector := main.get_node("CardInspector") as Control
+    var inspector := main.find_child("CardInspector", true, false) as Control
     if not inspector.visible:
         _fail("uncertain response disabled read-only card inspection")
         return false

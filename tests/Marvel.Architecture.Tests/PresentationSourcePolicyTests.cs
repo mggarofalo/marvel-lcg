@@ -152,6 +152,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Prompts.Affordance.Illegal",
             "Marvel.Rules.Prompts.Affordance.Label",
             "Marvel.Rules.Prompts.Affordance.PlaysCard",
+            // Current engine-owned source identity, copied only when visible.
+            "Marvel.Rules.Prompts.Affordance.SelectionSourceId",
             "Marvel.Rules.Prompts.Affordance.Targets",
             "Marvel.Rules.Prompts.Affordance.Timing",
             "Marvel.Rules.Prompts.Affordance.Verb",

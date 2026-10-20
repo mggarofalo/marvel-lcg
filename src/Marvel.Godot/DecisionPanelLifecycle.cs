@@ -87,7 +87,7 @@ internal sealed class DecisionPanelLifecycle
         Affordance option = composer.Selected!;
         panel.RaiseDraftStarted();
         panel.NotifyAnchorFocused([option.AnchorId]);
-        if (DirectCommitment.IsReady(composer)
+        if (!DecisionDialogLayout.Automatic(composer.Prompt) && DirectCommitment.IsReady(composer)
             && composer.TryBuild(out Decision? decision, out _))
         {
             NotifySubmitted(decision!, generation);

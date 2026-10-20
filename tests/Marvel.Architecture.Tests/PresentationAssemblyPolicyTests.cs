@@ -153,6 +153,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Campaign.CampaignCard",
             // Campaign contracts are read-only; CampaignHost owns transitions and durable admission.
             "Marvel.Protocol.CampaignDescriptor",
+            "Marvel.Protocol.CampaignGameAccess",
             "Marvel.Protocol.CampaignQuery",
             "Marvel.Rules.Campaign.CampaignPlayerState",
             "Marvel.Rules.Campaign.CampaignState",

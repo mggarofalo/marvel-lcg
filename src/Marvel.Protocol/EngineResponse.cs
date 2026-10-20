@@ -40,6 +40,12 @@ public sealed record EngineResponse(
 {
     /// <summary>Authorized campaign state, absent from unrelated exchanges.</summary>
     public CampaignDescriptor? Campaign { get; init; }
+    /// <summary>A portable, capability-free campaign export.</summary>
+    public string? CampaignTransfer { get; init; }
+    /// <summary>Confirms permanent removal of the named campaign and its attempts.</summary>
+    public bool CampaignDeleted { get; init; }
+    /// <summary>Fresh current-attempt authority returned only when importing a campaign.</summary>
+    public CampaignGameAccess? CampaignGame { get; init; }
 
     /// <summary>Read-only deck data, absent from game responses.</summary>
     public DeckResponse? Decks { get; init; }

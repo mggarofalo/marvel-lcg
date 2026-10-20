@@ -112,7 +112,7 @@ func _discard_hover_is_passive() -> bool:
 	_position_pointer_without_settle(Vector2(4, 4))
 	await create_timer(0.2).timeout
 	_position_pointer_without_settle(discard.get_global_rect().get_center())
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not await _wait_for(func() -> bool: return inspector.visible):
 		_fail("hovering a nonempty discard concealed its top card")
 		return false
@@ -227,7 +227,7 @@ func _dismiss_source_chooser(chooser: Control) -> bool:
 		await process_frame
 	# Synthetic passive-preview visibility exercises overlay input priority;
 	# the surrounding chooser and gameplay still come from the legal Core game.
-	var preview := main.get_node("CardInspector") as Control
+	var preview := main.find_child("CardInspector", true, false) as Control
 	var preview_was_visible := preview.visible
 	preview.visible = true
 	print("SOURCE_CHOOSER_PASSIVE_PREVIEW_ESCAPE_CHECK")
@@ -293,7 +293,7 @@ func _deferred_preview_when_offered() -> bool:
 func _initial_targeted_payment_inspection() -> bool:
 	await process_frame
 	await process_frame
-	var preview := main.get_node("CardInspector") as Control
+	var preview := main.find_child("CardInspector", true, false) as Control
 	if preview.visible:
 		_fail("targeted payment automatically opened a card face without inspection intent")
 		return false

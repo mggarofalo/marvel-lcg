@@ -71,7 +71,11 @@ func _verify_named_response() -> bool:
 
 func _window_keyboard_focus_is_contained(choice: Button, pass_button: Button) -> bool:
 	choice.grab_focus()
-	for expected in [pass_button, choice]:
+	var table_button := _window().find_child("WindowUseTable", true, false) as Button
+	if table_button == null:
+		_fail("response has no keyboard entry to table targeting")
+		return false
+	for expected in [table_button, pass_button, choice]:
 		var tab := InputEventKey.new()
 		tab.keycode = KEY_TAB
 		tab.pressed = true

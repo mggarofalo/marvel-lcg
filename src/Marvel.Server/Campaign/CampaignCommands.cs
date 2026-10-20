@@ -14,7 +14,9 @@ internal static class CampaignCommands
         if (!ValidQuery(request, query)) return CampaignHost.Failure(request, "invalid_request", "The campaign request has invalid fields or bounds.");
         if (host.Factory.CampaignDefinition is null)
             return CampaignHost.Failure(request, "campaign_unavailable", "This campaign is not admitted by the installed content.");
-        if (query.Action == "create") return Create(host, request, query);
+        if (query.Action is "create" or "import") return Create(host, request, query);
+        if (host.Deleted.TryGetValue(request.GameId, out var deletion))
+            return CampaignManagement.Deleted(request, deletion);
         if (!host.Campaigns.TryGetValue(request.GameId, out var campaign) || request.Capability is null
             || campaign.OwnerVerifier != SessionAuthorityRegistry.Verifier(request.Capability))
             return CampaignHost.Failure(request, "campaign_not_found", "The campaign owner capability is not valid.");
@@ -40,18 +42,26 @@ internal static class CampaignCommands
 
     private static EngineResponse Authorized(CampaignHost host, EngineRequest request, CampaignQuery query, StoredCampaign campaign)
     {
-        if (query.Action == "sync") return CampaignHost.Success(request) with { Campaign = host.Describe(campaign) };
+        if (CampaignManagement.Read(host, request, campaign) is { } read) return read;
         var receipt = campaign.Receipts.FirstOrDefault(item => item.RequestId == request.RequestId);
         if (receipt is not null) return Repeat(host, request, campaign, receipt);
         if (request.ExpectedRevision != campaign.Save.Revision)
             return CampaignHost.Failure(request, "revision_conflict", "Refresh the campaign before applying this choice.")
                 with { Campaign = host.Describe(campaign) };
+        if (query.Action == "delete")
+        {
+            host.Delete(campaign, request);
+            return CampaignHost.Success(request) with { CampaignDeleted = true };
+        }
+        var managed = CampaignManagement.Change(campaign, query);
+        if (campaign.Archived && managed is null)
+            return CampaignHost.Failure(request, "campaign_archived", "Restore the campaign before continuing play.");
         if (query.Action == "start")
         {
             if (!EntryReceipts.Valid(request.Entry)) return CampaignHost.Failure(request, "invalid_request", "Starting requires a retained entry claim.");
             return host.Start(request, campaign);
         }
-        var proposed = Change(host.Factory, campaign, query);
+        var proposed = managed ?? Change(host.Factory, campaign, query);
         proposed = AddReceipt(proposed, request);
         host.Publish(proposed);
         return CampaignHost.Success(request) with { Campaign = host.Describe(proposed) };
@@ -62,11 +72,15 @@ internal static class CampaignCommands
         if (!EntryReceipts.Valid(request.Entry))
             return CampaignHost.Failure(request, "invalid_request", "Creating requires a retained entry claim.");
         string verifier = EntryReceipts.Verifier(request.Entry!);
+        if (host.Deleted.Values.Any(item => item.EntryVerifier == verifier))
+            return CampaignHost.Failure(request, "campaign_deleted", "This campaign entry has been permanently deleted.");
         var existing = host.Campaigns.Values.FirstOrDefault(item => item.Entry.Verifier == verifier);
         if (existing is not null)
             return existing.Entry.Fingerprint == EntryReceipts.Fingerprint(request)
                 ? EntryReceipts.Recover(request, existing.Entry) with { RequestId = request.RequestId, Campaign = host.Describe(existing) }
                 : CampaignHost.Failure(request, "entry_conflict", "This entry claim belongs to a different campaign request.");
+        if (query.Action == "import") return CampaignImports.Create(host, request);
+        _ = CampaignManagement.Name(request.GameId);
         if (query.Product != host.Factory.CampaignDefinition!.Product || query.Heroes.IsDefaultOrEmpty
             || query.Decks.IsDefault || query.Heroes.Length != query.Decks.Length)
             return CampaignHost.Failure(request, "invalid_request", "A supported campaign and complete player recipes are required.");
@@ -77,7 +91,7 @@ internal static class CampaignCommands
         RequireDecks(host.Factory, save.State);
         string capability = new CryptographicCapabilityIssuer().Issue();
         var response = CampaignHost.Success(request) with { Capability = capability,
-            Campaign = new(save.Identity.StorageId, 0, save.State, null, null) };
+            Campaign = new(save.Identity.StorageId, 0, save.State, null, null) { Name = save.Identity.Label } };
         var campaign = new StoredCampaign(save, SessionAuthorityRegistry.Verifier(capability),
             EntryReceipts.Protect(request, response), [], []);
         host.Publish(campaign);

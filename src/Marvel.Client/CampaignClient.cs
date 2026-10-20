@@ -25,19 +25,34 @@ internal static class CampaignClient
             if (response.Error is { } error)
                 return new(response, null, Error(error.Code, error.Message),
                     error.Disposition == EngineFailureDisposition.CommitUncertain ? request : null);
+            if (request.Campaign!.Action == "delete")
+                return Deleted(request, response);
             if (!Complete(response.Campaign, request)) return Uncertain(request, "The campaign service returned incomplete state.");
             return request.Campaign!.Action == "start" ? Enter(client, request, response) : Ordinary(request, response);
     }
+
+    private static ClientCampaignResult Deleted(EngineRequest request, EngineResponse response) =>
+        response.CampaignDeleted && response.GameId == request.GameId && response.Campaign is null
+            && response.World is null && response.Prompt is null
+            ? new(response, null, null, null) : Uncertain(request, "Campaign deletion was not confirmed.");
 
     private static ClientCampaignResult Ordinary(EngineRequest request, EngineResponse response)
     {
         if (response.GameId != request.GameId || response.World is not null || response.Prompt is not null)
             return Uncertain(request, "The campaign response named another operation.");
-        if (request.Campaign!.Action == "create" && !ValidIdentifier(response.Capability))
+        if (request.Campaign!.Action is "create" or "import" && !ValidIdentifier(response.Capability))
             return Uncertain(request, "The campaign owner authority was missing.");
+        if (request.Campaign.Action == "import" && !CompleteImportedGame(response))
+            return Uncertain(request, "The imported game's authority was missing.");
+        if (request.Campaign.Action == "export" && string.IsNullOrEmpty(response.CampaignTransfer))
+            return Uncertain(request, "The campaign export was incomplete.");
         return new(response, null, null, null);
 
     }
+
+    private static bool CompleteImportedGame(EngineResponse response) =>
+        response.Campaign!.ActiveGameId is not { } active
+        || response.CampaignGame?.GameId == active && ValidIdentifier(response.CampaignGame.Capability);
 
     private static ClientCampaignResult Enter(LocalGameClient client, EngineRequest request, EngineResponse response)
     {
@@ -51,7 +66,7 @@ internal static class CampaignClient
     private static bool Complete(CampaignDescriptor? campaign, EngineRequest request)
     {
         return campaign is { Revision: >= 0, State: not null } && ValidIdentifier(campaign.Id)
-        && (request.Campaign!.Action == "create" || campaign.Id == request.GameId)
+        && (request.Campaign!.Action is "create" or "import" || campaign.Id == request.GameId)
         && CompleteState(campaign.State);
     }
 

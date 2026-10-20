@@ -7,15 +7,45 @@ namespace Marvel.Server;
 public sealed class FileCampaignStore : ICampaignStore, IDisposable
 {
     private readonly CampaignArchiveFiles files;
+    private readonly CampaignArchiveFiles deleted;
     /// <summary>Acquires exclusive write ownership for the campaign root.</summary>
-    public FileCampaignStore(string root) => files = new CampaignArchiveFiles(root);
+    public FileCampaignStore(string root)
+    {
+        files = new CampaignArchiveFiles(root);
+        try { deleted = new CampaignArchiveFiles(Path.Combine(root, ".deleted")); }
+        catch { files.Dispose(); throw; }
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<CampaignDeletion> Deletions() => deleted.Ids()
+        .Select(ReadDeletion).ToArray();
+
+    private CampaignDeletion ReadDeletion(string id)
+    {
+        var deletion = CampaignSaveJson.ReadDocument<CampaignDeletion>(deleted.Read(id));
+        CampaignDeletionValidation.Validate(deletion);
+        if (deletion.StorageId != id) throw new SessionSaveException("campaign revocation identity differs from directory");
+        return deletion;
+    }
+
+    /// <inheritdoc />
+    public void Delete(CampaignDeletion deletion)
+    {
+        CampaignDeletionValidation.Validate(deletion);
+        _ = deleted.Commit(deletion.StorageId, Encoding.UTF8.GetBytes(CampaignSaveJson.Canonical(deletion)));
+        try { files.Purge(deletion.StorageId); }
+        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
+        { throw new CampaignCommitUncertainException(failure); }
+    }
 
     /// <inheritdoc />
     public IReadOnlyList<CampaignLoadResult> Load()
     {
         var result = new List<CampaignLoadResult>();
+        var revoked = Deletions().Select(item => item.StorageId).ToHashSet(StringComparer.Ordinal);
         foreach (string id in files.Ids())
         {
+            if (revoked.Contains(id)) { files.Purge(id); continue; }
             try
             {
                 StoredCampaign campaign = CampaignSaveJson.ReadDocument<StoredCampaign>(files.Read(id));
@@ -33,6 +63,8 @@ public sealed class FileCampaignStore : ICampaignStore, IDisposable
     public string Commit(StoredCampaign campaign)
     {
         Validate(campaign);
+        if (Deletions().Any(item => item.StorageId == campaign.Save.Identity.StorageId))
+            throw new SessionSaveException("campaign was permanently deleted");
         return files.Commit(campaign.Save.Identity.StorageId, Encoding.UTF8.GetBytes(CampaignSaveJson.Canonical(campaign)));
     }
 
@@ -81,5 +113,5 @@ public sealed class FileCampaignStore : ICampaignStore, IDisposable
         && receipt.Revision <= revision && receipt.Fingerprint.All(char.IsAsciiHexDigit);
 
     /// <summary>Releases the exclusive process writer lease.</summary>
-    public void Dispose() => files.Dispose();
+    public void Dispose() { deleted.Dispose(); files.Dispose(); }
 }

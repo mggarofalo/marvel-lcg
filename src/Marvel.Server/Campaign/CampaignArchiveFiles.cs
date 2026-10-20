@@ -22,6 +22,18 @@ internal sealed class CampaignArchiveFiles : IDisposable
     internal IEnumerable<string> Ids() => Directory.EnumerateDirectories(root)
         .Select(Path.GetFileName).OfType<string>().Where(ValidId).Order(StringComparer.Ordinal);
 
+    internal void Purge(string id)
+    {
+        RequireId(id);
+        string directory = Path.Combine(root, id);
+        if (!Directory.Exists(directory)) return;
+        if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
+            throw new IOException("campaign directory must not be a link");
+        foreach (string file in Directory.EnumerateFiles(directory)) File.Delete(file);
+        Directory.Delete(directory);
+        DurableFiles.FlushDirectory(root);
+    }
+
     internal byte[] Read(string id)
     {
         RequireId(id);

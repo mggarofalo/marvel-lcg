@@ -6,5 +6,6 @@ namespace Marvel.Godot;
 internal static class ChoiceDisclosure
 {
     internal static string Label(Prompt? prompt) =>
-        prompt?.PublicKind == PublicDecisionKind.PlayerAction ? "All actions" : "All choices";
+        prompt?.PublicKind == PublicDecisionKind.PlayerAction ? "All actions"
+            : DecisionDialogLayout.Automatic(prompt) ? "Resume current choice" : "All choices";
 }

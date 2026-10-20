@@ -35,6 +35,9 @@ internal static class AffordancePresenter
             PlaysCard = option.PlaysCard,
             DeferredTargetSelection = option.DeferredTargetSelection,
             DirectRecipientCommit = option.DirectRecipientCommit,
+            SelectionSourceId = option.SelectionSourceId is { } selectionSource
+                && world.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
+                    .Any(card => card.Id == selectionSource) ? selectionSource : null,
             CostOptions = option.CostOptions,
             Relationships = Relationships(option, source, world),
         };

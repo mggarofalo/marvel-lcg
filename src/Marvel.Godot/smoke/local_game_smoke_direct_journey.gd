@@ -463,7 +463,7 @@ func _drag_preview_is_meaningful(_card: Control) -> bool:
 func _body_click_inspects_without_drafting(card: Control) -> bool:
 	if card == null or not await _pointer_activate_card_body(card):
 		return false
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if inspector == null or not inspector.visible or _web_shooter_draft_is_prepared():
 		_fail("a Web-Shooter body click did not remain an inspection-only action")
 		return false

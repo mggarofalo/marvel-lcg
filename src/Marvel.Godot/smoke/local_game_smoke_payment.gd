@@ -207,7 +207,7 @@ func _inspect_payment_source_and_return(resource_name: String) -> bool:
 	if resource == null: return false
 	resource.grab_focus()
 	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	var frame := inspector.get_node("Frame") as Control
 	var expected := int(resource_name.trim_prefix("Resource"))
 	if not inspector.visible or int(inspector.get_meta("inspected_card_anchor", -1)) != expected:

@@ -75,9 +75,29 @@ public sealed class RiseOfRedSkullProgressionTests
                 Assert.Equal(5, Assert.Single(store.Load()).Campaign!.Save.Attempts.Length);
                 Assert.Contains(complete.State.Players[0].Cards, card => card.Role == CampaignCardRole.Tech);
                 Assert.Contains(complete.State.Players[0].Cards, card => card.Role == CampaignCardRole.Condition);
+                AssertPortableCompletion(restored, owner, store, complete);
             }
         }
         finally { if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true); }
+    }
+
+    private static void AssertPortableCompletion(CampaignHost host, EngineResponse owner,
+        FileCampaignStore store, CampaignDescriptor complete)
+    {
+        var original = Assert.Single(store.Load()).Campaign!.Save;
+        var exported = host.Exchange(Command(owner, "export", complete.Revision));
+        Assert.Null(exported.Error);
+        var imported = host.Exchange(new(EngineProtocol.Version, "import-complete", EngineProtocol.Campaign,
+            "copy", Entry: EntryClaim.Create()) { Campaign = new("import") { Transfer = exported.CampaignTransfer } });
+        Assert.Null(imported.Error);
+        Assert.NotEqual(complete.Id, imported.Campaign!.Id);
+        Assert.Equal(CampaignSaveJson.Canonical(complete.State), CampaignSaveJson.Canonical(imported.Campaign.State));
+        var copy = store.Load().Single(result => result.StorageId == imported.Campaign.Id).Campaign!.Save;
+        Assert.Equal(5, copy.Attempts.Length);
+        Assert.DoesNotContain(copy.Attempts, attempt =>
+            original.Attempts.Any(source => source.Session.StorageId == attempt.Session.StorageId));
+        foreach (var proof in copy.Journal.Select(entry => entry.Proof).OfType<SessionSave>())
+            Assert.Contains(copy.Attempts, attempt => attempt.Session == proof.Session);
     }
 
     private static EngineResponse WinWithLegalAttack(CampaignHost host, EngineResponse opened)

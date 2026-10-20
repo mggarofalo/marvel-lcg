@@ -17,12 +17,15 @@ internal sealed class CompleteDecisionSheet : IDisposable
     private DecisionComposer? draft;
     private int focusGeneration;
     private Label notice = null!;
+    private Main main = null!;
+    private Node inspectorParent = null!;
 
     internal static CompleteDecisionSheet Open(DecisionPanel panel, Control opener)
     {
         var sheet = new CompleteDecisionSheet
         {
             panel = panel, opener = opener,
+            main = ClientSceneHost.MainFor(panel),
             originalParent = panel.GetParent(), originalIndex = panel.GetIndex(),
             draft = panel.composer, focusGeneration = panel.GetRenderGeneration(),
         };
@@ -32,6 +35,8 @@ internal sealed class CompleteDecisionSheet : IDisposable
         sheet.layer = new CanvasLayer { Name = "CompleteChoicesLayer", Layer = 25 };
         host.AddChild(sheet.layer);
         sheet.layer.AddChild(sheet.overlay);
+        sheet.inspectorParent = sheet.main.cardInspector.GetParent();
+        sheet.main.cardInspector.Reparent(sheet.layer);
         sheet.overlay.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         sheet.Build();
         return sheet;
@@ -82,12 +87,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
         };
         frame.AddChild(content);
         var header = new HBoxContainer();
-        header.AddChild(new Label
-        {
-            Text = DecisionCardChoices.Heading(panel.composer?.Prompt),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.Heading,
-        });
+        header.AddChild(Heading());
         var close = new Button { Name = "CloseChoiceSheet", Text = "Return to table" };
         openerFallback = close;
         close.Pressed += Close;
@@ -101,9 +101,12 @@ internal sealed class CompleteDecisionSheet : IDisposable
         {
             Marvel.View.PromptPresentation prompt = Marvel.View.PromptPresentation.From(composer.Prompt, world);
             content.AddChild(DecisionPanel.Text(
-                (DecisionCardChoices.IsChoice(composer.Prompt) ? "" : prompt.Heading + "\n")
-                    + $"{prompt.Context}\n{prompt.Resolution}",
+                $"{prompt.Context} · {prompt.Requirement}",
                 GodotThemeVariations.Caption, wrap: true));
+            if (!DecisionCardChoices.IsChoice(composer.Prompt))
+                content.AddChild(DecisionPanel.Text(prompt.Heading, GodotThemeVariations.Heading, wrap: true));
+            if (!string.IsNullOrWhiteSpace(prompt.Resolution))
+                content.AddChild(DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Body, wrap: true));
         }
         panel.Reparent(content);
         panel.Visible = true;
@@ -113,6 +116,32 @@ internal sealed class CompleteDecisionSheet : IDisposable
     }
 
     private Control openerFallback = null!;
+
+    private Control Heading()
+    {
+        if (panel.composer is { } composer && panel.world is { } world)
+        {
+            var prompt = Marvel.View.PromptPresentation.From(composer.Prompt, world);
+            if (prompt.ContextCards.Count == 1)
+            {
+                var title = new Button { Name = "DecisionSource", Text = prompt.ContextCards[0].Title,
+                    Flat = true, Alignment = HorizontalAlignment.Left, AutowrapMode = TextServer.AutowrapMode.WordSmart,
+                    SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, TooltipText = "Inspect card" };
+                title.Pressed += () => main.boardController.ShowCardInspector(prompt.ContextCards[0], title, pinned: true);
+                return title;
+            }
+        }
+        return new Label { Text = Title(), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            ThemeTypeVariation = GodotThemeVariations.Heading, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+    }
+
+    private string Title()
+    {
+        if (panel.composer is not { } composer || panel.world is not { } world) return "Current choice";
+        var prompt = Marvel.View.PromptPresentation.From(composer.Prompt, world);
+        if (prompt.ContextCards.Count == 1) return prompt.ContextCards[0].Title;
+        return DecisionCardChoices.IsChoice(composer.Prompt) ? DecisionCardChoices.Heading(composer.Prompt) : "Current choice";
+    }
 
     internal void PresentNotice(string copy)
     {
@@ -157,8 +186,9 @@ internal sealed class CompleteDecisionSheet : IDisposable
             panel.CardChoices.RefreshLayout();
             return;
         }
-        frame.Size = new Vector2(Math.Min(560, viewport.X - 32), Math.Min(560, Math.Max(220, viewport.Y * 0.52f)));
-        frame.Position = new Vector2(viewport.X - frame.Size.X - 16, 72);
+        Rect2 dialog = DecisionDialogLayout.Frame(viewport, panel.ReadingScale, panel.composer?.Prompt.Affordances.Count ?? 0);
+        frame.Size = dialog.Size;
+        frame.Position = dialog.Position;
     }
 
     internal void Input(InputEvent input)
@@ -184,6 +214,8 @@ internal sealed class CompleteDecisionSheet : IDisposable
     internal void Close()
     {
         if (overlay.IsQueuedForDeletion() || layer.IsQueuedForDeletion()) return;
+        main.HideCardInspector();
+        main.cardInspector.Reparent(inspectorParent);
         panel.Reparent(originalParent);
         originalParent.MoveChild(panel, Math.Min(originalIndex, originalParent.GetChildCount() - 1));
         panel.Visible = false;

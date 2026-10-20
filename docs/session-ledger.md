@@ -674,7 +674,7 @@ publishes success. Closing the campaign table preserves its resumable attempt.
 A campaign's history cannot cross a committed campaign-fact frontier, and a
 completed attempt cannot be edited into a different campaign outcome.
 
-Campaign schema 1 and protocol 34 are strict compatibility boundaries. No
+Campaign schema 1 and protocol 35 are strict compatibility boundaries. No
 migration invents missing campaign meaning. Complete content admission is
 required before the host advertises a campaign or starts its first attempt.
 
@@ -684,5 +684,30 @@ live in reconstructed agenda state. Session saves persist setup and decisions,
 not these internal operation objects. A restart rebuilds them by replaying the
 complete active prefix and verifies every recorded prompt, event, RNG count and
 state digest before publication. Earlier replay identities are rejected even if
-the Core dataset hashes are unchanged; protocol 34 and schema 7 remain unchanged
+the Core dataset hashes are unchanged; protocol 35 and schema 7 remain unchanged
 by these internal operation additions.
+
+### Campaign library operations
+
+The desktop library lists locally retained campaign connections with their last
+confirmed summaries. Selecting a campaign synchronizes its authoritative state.
+Rename and archive advance the campaign revision without changing its rules
+journal. Archived campaigns remain readable and exportable; restore is required
+before play or campaign progression.
+
+Portable `.marvelcampaign` files contain a schema 1 campaign save and its session
+proofs, without capabilities, authority records or operational request receipts.
+The `marvel-campaign-transfer:1` envelope stores a SHA-256 checksum of the
+uncompressed save followed by base64 Brotli data. Transfers are bounded to 3 MiB
+of text and 256 MiB expanded data. An oversized export is rejected without
+truncation. Import verifies replay, remaps campaign and attempt identities,
+verifies the remapped proofs, issues fresh authority, and publishes a separate
+copy atomically. It never replaces the original campaign.
+
+Permanent deletion first durably records minimal revocation and exact-request
+retry metadata, then removes every campaign archive generation and live attempt
+authority. The revocation retains identifiers and verifier hashes, not campaign
+names, decks, journals or game state. Interrupted cleanup is retried on restart;
+the revocation prevents a retained creation request from resurrecting the
+deleted campaign. The desktop removes its private connection generations only
+after an authoritative deletion acknowledgement.

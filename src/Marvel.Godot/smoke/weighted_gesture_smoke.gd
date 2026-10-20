@@ -60,7 +60,7 @@ func _return_click_restores_pose() -> bool:
 	return await _capture_checkpoint("weighted-return-click-settled")
 
 func _return_click_inspection_safe(card: Control, revision: String) -> bool:
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not inspector.visible or inspector.get_node("Backdrop").visible \
 			or inspector.get_node("Frame/Stack/Header/Close").visible:
 		_fail("returning-card click did not retain transient inspection semantics")

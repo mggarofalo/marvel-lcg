@@ -22,7 +22,7 @@ func _run() -> void:
 	quit(0)
 
 func _check_preview(card: Control) -> bool:
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not await _focused_preview_survives_reflow(card): return false
 	if not await _open_immediate_preview(card, inspector): return false
 	card.grab_focus()

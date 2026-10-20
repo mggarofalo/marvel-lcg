@@ -11,6 +11,25 @@ namespace Marvel.Godot.Tests;
 public sealed class SourceTargetInteractionTests
 {
     [Fact]
+    public void CurrentCardChoiceCanBeDraggedFromItsExplicitSourceWithoutInventingTargets()
+    {
+        var composer = Composer(
+            new Affordance(20, "Choose", 20, 0, "First") { SelectionSourceId = 10 },
+            new Affordance(21, "Choose", 21, 0, "Second") { SelectionSourceId = 10 },
+            new Affordance(22, "Choose", 22, 0, "Unrelated"));
+        var interaction = Interaction(composer);
+        Assert.True(interaction.CanDrag(10));
+        Assert.Equal([20, 21], interaction.Destinations(10));
+        Assert.Empty(interaction.Matches(10, 22));
+        Assert.False(interaction.TrySelect(20, 11, 20));
+        Assert.True(interaction.TrySelect(21, 10, 21));
+        Assert.Equal(21, composer.Selected!.Id);
+        Assert.Empty(composer.Targets);
+        Assert.True(composer.TryBuild(out var answer, out _));
+        Assert.Equal(21, answer!.Affordance);
+    }
+
+    [Fact]
     public void DragDestinationsOnlyExposeCurrentExplicitComposableTargets()
     {
         var composer = Composer(Offer(1, 10, [20, 21]) with
@@ -198,5 +217,6 @@ public sealed class SourceTargetInteractionTests
         [.. composer.Prompt.Affordances.Select(offer => new AffordancePresentation(offer.Id,
             offer.Label, null, offer.Verb, offer.Label, offer.AnchorId, offer.AnchorPlayer,
             offer.Illegal, "", []) { AnchorKind = AffordanceAnchorKind.Card, TargetRequest = offer.Targets,
-                DeferredTargetSelection = offer.DeferredTargetSelection, PlaysCard = offer.PlaysCard })];
+                DeferredTargetSelection = offer.DeferredTargetSelection, PlaysCard = offer.PlaysCard,
+                SelectionSourceId = offer.SelectionSourceId })];
 }

@@ -22,12 +22,15 @@ internal sealed class LocalDecisionController(DecisionPanel panel) : IDisposable
     internal bool Active => Continuity.Active;
 
     internal void Begin(CardPointerGesture gesture, AffordancePresentation offer)
+        => Begin(gesture.Source, gesture.Card.TargetId!.Value, offer);
+
+    internal void Begin(Control source, int sourceId, AffordancePresentation offer)
     {
         receipt.Dispose();
-        Continuity.Begin(gesture.Card.TargetId!.Value, panel.composer!.Prompt.Player,
+        Continuity.Begin(sourceId, panel.composer!.Prompt.Player,
             panel.CurrentRevision, DecisionCopy.Choice(offer));
-        anchor = gesture.Source.GetGlobalRect();
-        opener = gesture.Source;
+        anchor = source.GetGlobalRect();
+        opener = source;
         dismissed = false;
         notice = string.Empty;
     }

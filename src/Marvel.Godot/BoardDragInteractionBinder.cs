@@ -96,6 +96,7 @@ internal static class BoardDragInteractionBinder
         void Select(int id)
         {
             if (!interaction.TrySelect(id, source, destination)) return;
+            panel.LocalDecision.Begin(sourceControl, source, matches.Single(offer => offer.Id == id));
             Control recipient = board.VisibleCardControls().FirstOrDefault(card => card.TargetId == destination)
                 ?? (Control)sourceControl;
             board.AnchorDraft(recipient.GetGlobalRect().GetCenter(), id);

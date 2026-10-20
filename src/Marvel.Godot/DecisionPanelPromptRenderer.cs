@@ -36,7 +36,8 @@ internal static class DecisionPanelPromptRenderer
             ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
         bool search = !panel.LocalDecision.IsOpen && panel.CompleteChoicesOpen && DecisionCardChoices.IsChoice(composer.Prompt);
-        if (!panel.PaymentModalOpen && !search) AddActionSummary(body, selected, composer, panel.LocalDecision.IsOpen);
+        if (!panel.PaymentModalOpen && !search && !DecisionDialogLayout.Automatic(composer.Prompt))
+            AddActionSummary(body, selected, composer, panel.LocalDecision.IsOpen);
         if (search)
         {
             panel.LayoutHost.AddChild(body);
@@ -134,8 +135,8 @@ internal static class DecisionPanelPromptRenderer
                 Name = $"ChoiceGroup{category.Key}",
                 ThemeTypeVariation = GodotThemeVariations.TightStack,
             };
-            section.AddChild(DecisionPanel.Text(CompleteChoiceGroups.Headings[category.Key],
-                GodotThemeVariations.Body));
+            if (!DecisionDialogLayout.Automatic(panel.composer?.Prompt))
+                section.AddChild(DecisionPanel.Text(CompleteChoiceGroups.Headings[category.Key], GodotThemeVariations.Body));
             panel.AddContent(section);
             AddSources(panel, category.Where(view => view.Illegal is null), generation, section);
             AffordancePresentation[] unavailable = [.. category.Where(view => view.Illegal is not null)];
@@ -148,7 +149,7 @@ internal static class DecisionPanelPromptRenderer
     {
         foreach (var source in offers.GroupBy(CompleteChoiceGroups.SourceKey))
         {
-            if (source.Count() > 1)
+            if (source.Count() > 1 && !DecisionDialogLayout.Automatic(panel.composer?.Prompt))
                 section.AddChild(DecisionPanel.Text(source.First().SourceName ?? source.First().Anchor,
                     GodotThemeVariations.Caption, wrap: true));
             foreach (AffordancePresentation view in source) Add(panel, view, generation, section);
@@ -181,13 +182,26 @@ internal static class DecisionPanelPromptRenderer
         bool unavailable = panel.submitting || !option.IsLegal;
         bool selected = panel.composer.Selected?.Id == option.Id;
         bool resolving = panel.submitting && selected;
-        var choose = new Button { Name = $"Affordance{option.Id}", Text = Text(DecisionCopy.Choice(view), unavailable, selected, resolving), Alignment = HorizontalAlignment.Left, Disabled = unavailable, ToggleMode = true, ButtonPressed = selected, TooltipText = option.Illegal ?? DecisionCopy.ActionSummary(view) };
+        string label = ChoiceLabel(panel.composer.Prompt, view);
+        var choose = new Button { Name = $"Affordance{option.Id}", Text = Text(label, unavailable, selected, resolving),
+            AutowrapMode = TextServer.AutowrapMode.WordSmart, Alignment = HorizontalAlignment.Left,
+            Disabled = unavailable, ToggleMode = true, ButtonPressed = selected, TooltipText = option.Illegal ?? DecisionCopy.ActionSummary(view) };
         LocalDecisionController.DescribeChoice(panel, choose, view);
         panel.StyleButton(choose, resolving ? InteractiveVisualState.Selected : unavailable ? InteractiveVisualState.Unavailable : selected ? InteractiveVisualState.Selected : InteractiveVisualState.Resting);
         if (resolving) choose.ThemeTypeVariation = "WaitingButton";
         choose.Pressed += () => panel.SelectAffordance(option.Id, generation);
         panel.BindAnchors(choose, option.AnchorId);
         Add(destination, panel, choose);
+        AddExplanation(panel, view, option, destination);
+    }
+
+    private static string ChoiceLabel(Prompt prompt, AffordancePresentation view) =>
+        DecisionDialogLayout.Automatic(prompt) ? view.DisplayLabel ?? view.Label : DecisionCopy.Choice(view);
+
+    private static void AddExplanation(DecisionPanel panel, AffordancePresentation view, Affordance option, Container? destination)
+    {
+        if (DecisionDialogLayout.Automatic(panel.composer!.Prompt) && view.Description is { Length: > 0 } description)
+            Add(destination, panel, DecisionPanel.Text(description, GodotThemeVariations.Body, wrap: true));
         if (option.Illegal is not null)
             Add(destination, panel, DecisionPanel.Text(option.Illegal, GodotThemeVariations.Caption, wrap: true));
     }

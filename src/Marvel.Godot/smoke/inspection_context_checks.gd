@@ -17,10 +17,10 @@ static func defend(driver) -> bool:
 	for frame in range(4): await driver.process_frame
 	if not _clear(driver): return false
 	if not await driver._capture_checkpoint("defense-inspection-clear"): return false
-	return await driver._close_inspector_with_keyboard(card, driver.main.get_node("CardInspector"))
+	return await driver._close_inspector_with_keyboard(card, driver.main.find_child("CardInspector", true, false))
 
 static func _clear(driver) -> bool:
-	var inspector: Control = driver.main.get_node("CardInspector")
+	var inspector: Control = driver.main.find_child("CardInspector", true, false)
 	if not inspector.is_visible_in_tree():
 		driver._fail("defender focus did not expose the full card")
 		return false

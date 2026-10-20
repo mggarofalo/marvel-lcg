@@ -43,7 +43,7 @@ func _action_card_preview_is_safe() -> bool:
 	if card == null:
 		_fail("the post-mulligan table has no readable hand card")
 		return false
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not await _open_immediate_preview(card, inspector): return false
 	if not await preload("res://smoke/local_game_smoke_preview_switch.gd").perform(self, card, inspector): return false
 	if not await _bridge_and_dismiss_preview(inspector): return false
@@ -86,7 +86,7 @@ func _open_immediate_preview(card: Control, inspector: Control) -> bool:
 
 
 func _top_row_previews_keep_their_sources() -> bool:
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	for title in ["Rhino", "The Break-In!"]:
 		var card := _tabletop_card_named(title)
 		if card == null:
@@ -170,7 +170,7 @@ func _show_action_card_preview(action_card: Button) -> Control:
 	action_card.grab_focus()
 	await process_frame
 	var motion := InputEventMouseMotion.new()
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	for attempt in 4:
 		motion.position = preview_point + Vector2(attempt % 2, 0)
 		motion.global_position = motion.position
@@ -278,7 +278,7 @@ func _pinned_inspector_mouse_filter_is_safe(hand_card: Control) -> bool:
 	if not await _keyboard_activate(hand_card):
 		return false
 	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if inspector == null or not inspector.visible:
 		_fail("the pointer probe could not open a pinned card inspector")
 		return false
@@ -301,7 +301,7 @@ func _open_card_inspector(hand_card: Control) -> Control:
 	if not await _keyboard_activate(hand_card):
 		return null
 	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if inspector == null or not inspector.visible:
 		_fail("clicking a card did not open the card inspector")
 		return null

@@ -17,9 +17,11 @@ public sealed class FileCampaignAccessStore : IDisposable
     /// <summary>Durably publishes one bounded private document.</summary>
     public void Write(string id, byte[] value)
     {
-        if (value.Length > 1024 * 1024) throw new ArgumentException("access document exceeds size limit", nameof(value));
+        if (value.Length > 4 * 1024 * 1024) throw new ArgumentException("access document exceeds size limit", nameof(value));
         _ = files.Commit(id, value);
     }
+    /// <summary>Removes acknowledged local credentials and all retained generations.</summary>
+    public void Delete(string id) => files.Purge(id);
     /// <summary>Releases the directory's process lease.</summary>
     public void Dispose() => files.Dispose();
 }

@@ -24,6 +24,9 @@ public sealed class CampaignConnectionStoreTests
             var accepted = loaded with { CampaignId = new('a', 32), Capability = "owner", Game = new("attempt", "game-owner"), Pending = null };
             restored.Save(accepted);
             Assert.Equal(accepted, Assert.Single(restored.Load()));
+            restored.Delete(accepted.LocalId);
+            Assert.Empty(restored.Load());
+            Assert.False(Directory.Exists(Path.Combine(root, accepted.LocalId)));
         }
         finally { Directory.Delete(root, recursive: true); }
     }

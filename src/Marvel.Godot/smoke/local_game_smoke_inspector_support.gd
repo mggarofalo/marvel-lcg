@@ -35,7 +35,7 @@ func _capture_named_card(title: String, checkpoint: String) -> bool:
 	if not await _keyboard_activate(card):
 		return false
 	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not inspector.visible:
 		_fail("'%s' did not open for visual inspection" % title)
 		return false

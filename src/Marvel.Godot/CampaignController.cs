@@ -9,7 +9,8 @@ namespace Marvel.Godot;
 internal sealed class CampaignController
 {
     private readonly Main main;
-    private readonly Button open = new() { Text = "Campaigns", Visible = false };
+    private readonly Button open = new() { Text = "Campaigns", Visible = false,
+        SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin };
     private readonly CampaignControls ui;
     private CampaignConnectionStore? store;
     private IReadOnlyList<CampaignConnection> saved = [];
@@ -28,8 +29,14 @@ internal sealed class CampaignController
         main.setupPanel.GetParent().MoveChild(open, main.setupPanel.GetIndex());
         open.Pressed += Show;
         ui.New.Pressed += New;
-        ui.Open.Pressed += ResumeSaved;
         ui.Refresh.Pressed += () => Choose(new("sync"));
+        ui.ShowArchived.Toggled += _ => ReloadSaved();
+        ui.Import.Pressed += () => CampaignManagementDialogs.Import(ui, Import);
+        ui.Rename.Pressed += () => CampaignManagementDialogs.Rename(ui, connection!.Label,
+            name => Choose(new("rename") { Name = name }));
+        ui.Archive.Pressed += () => Choose(new(campaign!.Archived ? "restore" : "archive"));
+        ui.Export.Pressed += () => Choose(new("export"));
+        ui.Delete.Pressed += () => CampaignManagementDialogs.Delete(ui, connection!.Label, () => Choose(new("delete")));
         ui.Retry.Pressed += Recover;
         var timer = new global::Godot.Timer { WaitTime = 0.5, Autostart = true };
         timer.Timeout += () => open.Visible = main.setupChoices?.Campaigns.Count > 0 || saved.Count > 0;
@@ -49,7 +56,8 @@ internal sealed class CampaignController
             ui.Window.PopupCentered();
             if (connection is null)
             {
-                New();
+                if (saved.Count == 0) New();
+                else { ui.Selected = 0; ResumeSaved(); }
             }
             else Choose(new("sync"));
         }
@@ -84,6 +92,8 @@ internal sealed class CampaignController
     {
         if (busy || connection?.Pending is not null) return;
         connection = null; campaign = null;
+        ui.Management.Visible = false;
+        ReloadSaved();
         if (!await Connect(main.endpoint.Text) || catalog is null) return;
         string? product = main.setupChoices?.Campaigns is { Count: > 0 } products ? products[0] : null;
         if (product is null) { ui.Status.Text = "This content installation has no complete campaign available."; return; }
@@ -103,12 +113,22 @@ internal sealed class CampaignController
 
     private async void ResumeSaved()
     {
-        if (busy || ui.Saved.Selected < 0 || ui.Saved.Selected >= saved.Count) return;
-        connection = saved[ui.Saved.Selected];
+        if (busy || connection?.Pending is not null || ui.Selected < 0 || ui.Selected >= saved.Count) return;
+        connection = saved[ui.Selected];
         campaign = null;
         if (!await Connect(connection.Endpoint)) return;
         if (connection.Pending is not null) { ui.Status.Text = "A choice was awaiting confirmation. Recover that exact choice before continuing."; RefreshRecovery(); }
         else Choose(new("sync"));
+    }
+
+    private async void Import(string transfer)
+    {
+        if (busy || connection?.Pending is not null) return;
+        if (!await Connect(main.endpoint.Text)) return;
+        connection = new(Guid.NewGuid().ToString("N"), main.endpoint.Text, "Imported campaign", null, null, null, null);
+        campaign = null;
+        await Send(new(EngineProtocol.Version, Guid.NewGuid().ToString("N"), EngineProtocol.Campaign,
+            "Imported campaign", Entry: EntryClaim.Create()) { Campaign = new("import") { Transfer = transfer } });
     }
 
     private async void Choose(CampaignQuery query)
@@ -153,6 +173,14 @@ internal sealed class CampaignController
     private void Reject(ClientCampaignResult result)
     {
         connection = connection! with { Pending = result.Pending };
+        if (connection.CampaignId is null && result.Pending is null)
+        {
+            store!.Delete(connection.LocalId);
+            connection = null; campaign = null; saved = store.Load();
+            ReloadSaved(); ui.Clear(); ui.Management.Visible = false;
+            ui.Status.Text = result.Error!.Message;
+            return;
+        }
         store!.Save(connection);
         if (result.Response?.Campaign is { } latest) campaign = latest;
         Render();
@@ -162,20 +190,50 @@ internal sealed class CampaignController
     private async Task Accept(ClientCampaignResult result, EngineRequest request)
     {
         var response = result.Response!;
+        if (response.CampaignDeleted)
+        {
+            AcceptDeletion();
+            return;
+        }
         var proposed = connection! with { CampaignId = response.Campaign!.Id,
-            Capability = request.Campaign!.Action == "create" ? response.Capability : connection!.Capability,
-            Game = result.Entry?.Session ?? connection!.Game, Pending = null };
+            Capability = request.Campaign!.Action is "create" or "import" ? response.Capability : connection!.Capability,
+            Label = response.Campaign.Name, Snapshot = response.Campaign,
+            Game = response.CampaignGame is { } imported ? new(imported.GameId, imported.Capability)
+                : result.Entry?.Session ?? connection!.Game, Pending = null };
         store!.Save(proposed);
         connection = proposed;
         campaign = response.Campaign;
         saved = store.Load(); ReloadSaved(); Render();
         ui.Status.Text = "Saved";
+        if (response.CampaignTransfer is { } transfer) CampaignManagementDialogs.Export(ui, transfer);
         if (result.Entry is not null) await OpenTable();
+    }
+
+    private void AcceptDeletion()
+    {
+        if (main.CurrentGame?.GameId == connection!.Game?.GameId) CloseDeletedTable();
+        store!.Delete(connection!.LocalId);
+        connection = null; campaign = null; saved = store.Load();
+        ReloadSaved(); ui.Clear(); ui.Management.Visible = false;
+        ui.Status.Text = "Campaign and its saved games permanently deleted.";
+    }
+
+    private void CloseDeletedTable()
+    {
+        main.lifecycle.Detach();
+        main.boardController.ResetForSession();
+        main.decisions.ClearDecision();
+        main.board.Visible = false;
+        main.cardInspector.Visible = false;
+        main.setupPanel.Visible = true;
+        main.SetSetupControlsEnabled(true);
     }
 
     private void Render()
     {
         if (campaign is null || catalog is null) return;
+        ui.Management.Visible = true;
+        ui.Archive.Text = campaign.Archived ? "Restore" : "Archive";
         CampaignPresentation.Render(ui, campaign, catalog, Choose, seat =>
             CampaignDeckEditor.Open(main, ui, connection!, campaign, catalog, seat, Choose), ResumeTable);
         ui.SetBusy(busy);
@@ -203,14 +261,13 @@ internal sealed class CampaignController
         ui.SetBusy(busy);
         ui.Retry.Visible = connection?.Pending is not null;
         ui.Retry.Disabled = busy;
-        ui.New.Disabled = ui.Open.Disabled = ui.Refresh.Disabled = busy || connection?.Pending is not null;
+        ui.New.Disabled = ui.Refresh.Disabled = busy || connection?.Pending is not null;
+        ui.Import.Disabled = ui.Rename.Disabled = ui.Archive.Disabled = ui.Export.Disabled = ui.Delete.Disabled
+            = busy || connection?.Pending is not null;
     }
 
     private void ReloadSaved()
     {
-        ui.Saved.Clear();
-        foreach (var item in saved) ui.Saved.AddItem(item.Label);
-        int current = saved.ToList().FindIndex(item => item.LocalId == connection?.LocalId);
-        if (current >= 0) ui.Saved.Select(current);
+        CampaignLibrary.Render(ui, saved, connection, catalog, index => { ui.Selected = index; ResumeSaved(); });
     }
 }

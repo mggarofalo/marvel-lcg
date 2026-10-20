@@ -12,6 +12,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     private InterfaceScale interfaceScale = ClientTheme.ConfiguredScale();
     private InterfaceScale requestedScale = ClientTheme.ConfiguredScale();
     internal ControlMetrics ControlMetrics => VisualSystem.Controls(interfaceScale);
+    internal InterfaceScale ReadingScale => requestedScale;
     internal DecisionComposer? composer;
     private CardPaymentWorkspace? paymentModal;
     internal readonly AbilityWindowController AbilityWindows;
@@ -214,7 +215,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     private void RestoreDecisionFocus(string? name, bool first, int generation, int? scroll) =>
         Callable.From(() => lifecycle.RestoreFocus(name, first || PaymentModalOpen, generation, scroll)).CallDeferred();
 
-    private bool BoardInteractionsSuppressed => AbilityWindowOpen || AcknowledgementPending || submitting;
+    private bool BoardInteractionsSuppressed => AcknowledgementPending || submitting;
 
     private bool RenderPrompt()
     {
@@ -228,8 +229,8 @@ public sealed partial class DecisionPanel : VBoxContainer
         LocalDecision.Open(prompt);
         BoardInteractionBinder.Bind(this, mulliganBoard);
         bool completeWindow = AbilityWindows.Open(prompt);
-        bool modal = BoardInteractionsSuppressed;
-        DraftChanged?.Invoke(modal ? null : composer, modal ? null : prompt);
+        mulliganBoard?.SetCompleteChoicesOpen(CompleteChoicesOpen || AbilityWindowOpen);
+        PublishDraft(prompt);
         if (completeWindow)
         {
             ProgressChanged?.Invoke(composer.Progress());
@@ -238,6 +239,12 @@ public sealed partial class DecisionPanel : VBoxContainer
         DecisionPanelPromptRenderer.RenderEditor(this, composer, prompt);
         ProgressChanged?.Invoke(composer.Progress());
         return true;
+    }
+
+    private void PublishDraft(PromptPresentation prompt)
+    {
+        bool modal = BoardInteractionsSuppressed;
+        DraftChanged?.Invoke(modal ? null : composer, modal ? null : prompt);
     }
 
     private void PresentAutomaticTarget(DecisionComposer draft)

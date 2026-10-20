@@ -771,3 +771,29 @@ synchronization and unrelated changes invalidate context rather than guessing
 a new target. Pointer, keyboard and table resource controls share one submission
 latch. The eight `context-*` native cases cover source actions, player recipients,
 engaged minions, paid-event continuation at 50/100/150% and looked-at card choices.
+
+Current response sources also support right-click and drag targeting. A later
+recipient prompt carries its engine-owned source identity, so the same source
+can expose that prompt's offered targets without anticipating a future answer.
+Grouped selections and repeated allocations retain the complete editor.
+
+### Non-spatial decision dialog
+
+Ordering and non-spatial choices open in a centered, viewport-bounded dialog.
+The header identifies the source and answering player, explains why the choice
+exists, and supports source inspection. Rows wrap and retain their alternatives
+while one choice is staged. A fixed footer names the exact commitment. Escape
+closes a pinned inspector first; dismissing the dialog preserves the draft and
+leaves **Resume current choice** on the table.
+
+The `raid-dialog-*` native cases use an actual engine-produced Raid the Armory
+snapshot at 80/100/150% to check visibility, staging, inspection, dismissal and
+single submission. They are component interaction evidence, not live session
+execution or owner acceptance.
+
+The **Campaigns** manager lists saved campaigns and supports rename, archive/
+restore, export, import as an independent copy, and confirmed permanent deletion.
+The `campaign-manager-100` native journey creates and plays a real campaign,
+uses the file dialogs to transfer its active game, resumes the copy, and deletes
+only that copy after checking cancellation. Portable format and recovery
+semantics are documented in [session-ledger.md](session-ledger.md#campaign-library-operations).

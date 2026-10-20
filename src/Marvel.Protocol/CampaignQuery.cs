@@ -5,6 +5,10 @@ namespace Marvel.Protocol;
 /// <summary>An owner-authenticated campaign intention; game rules validate every transition.</summary>
 public sealed record CampaignQuery(string Action)
 {
+    /// <summary>Owner-selected display name for rename.</summary>
+    public string? Name { get; init; }
+    /// <summary>A bounded portable campaign document for import.</summary>
+    public string? Transfer { get; init; }
     /// <summary>The campaign product selected for creation.</summary>
     public string? Product { get; init; }
     /// <summary>Fixed hero identities selected for creation.</summary>

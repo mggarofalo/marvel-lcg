@@ -64,6 +64,7 @@ internal static class AbilityChoicePromptDescription
                     EffectiveCards.FaceId(card),
                     Description: DescribeCardChoice(context, chooseCard, card))
                 {
+                    SelectionSourceId = context.Expressions.Source.ObjectId,
                     DisplayLabel = AbilityPlayerChoiceDescription.Commitment(context, chooseCard, card)
                         ?? EffectiveCards.Title(card, context.Expressions.World.Facts),
                     CommitLabel = AbilityDamageTransferDescription.Commitment(context, chooseCard, card)

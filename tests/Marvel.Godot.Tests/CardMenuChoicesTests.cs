@@ -12,6 +12,38 @@ namespace Marvel.Godot.Tests;
 public sealed class CardMenuChoicesTests
 {
     [Fact]
+    public void ResponseMenuUsesEngineRecipientInstructionAndNeverAnEmptyCommitDescription()
+    {
+        var offer = new Affordance(3, "Respond", 10, 0, "Mockingbird",
+            new TargetRequest([20], 0, 1));
+        var shown = Visible(offer) with { WindowChoices = [new(20, "Stun Rhino", null)] };
+        var source = Assert.Single(CardMenuChoices.Build(Composer(offer), World(), 10, [shown]));
+        var target = Assert.Single(source.Children);
+        Assert.Equal("Stun Rhino", target.Label);
+        Assert.Equal("Commit now", target.Detail);
+        Assert.Equal(20, target.Preview);
+    }
+
+    [Fact]
+    public void CurrentChoiceTargetsAppearAtSourceAndCommitTheirOwnOfferWithoutFutureAnswers()
+    {
+        var offers = new[]
+        {
+            new Affordance(20, "Choose", 20, 0, "Rhino") { SelectionSourceId = 10 },
+            new Affordance(21, "Choose", 21, 0, "Minion A") { SelectionSourceId = 10 },
+            new Affordance(22, "Choose", 22, 0, "Unrelated"),
+        };
+        var composer = Composer(offers);
+        var entries = CardMenuChoices.Build(composer, World(), 10, offers.Select(Visible).ToArray());
+        Assert.Equal([20, 21], entries.Select(entry => entry.Preview));
+        Assert.All(entries, entry => Assert.True(entry.Choice!.Commit));
+        Assert.True(CardMenuChoices.Select(composer, Binding(composer), entries[1].Choice!));
+        Assert.True(composer.TryBuild(out var decision, out _));
+        Assert.Equal(21, decision!.Affordance);
+        Assert.Empty(decision.Targets);
+    }
+
+    [Fact]
     public void MenuGroupsOnlyOfferedTargetsByEngagementRatherThanController()
     {
         var offer = new Affordance(3, "Attack", 10, 0, "Attack", new TargetRequest([20, 21, 22], 1, 1));
@@ -144,7 +176,7 @@ public sealed class CardMenuChoicesTests
     private static AffordancePresentation Visible(Affordance offer) => new(offer.Id, offer.Label,
         offer.Description, offer.Verb, offer.Label, offer.AnchorId, offer.AnchorPlayer, offer.Illegal, "", [])
         { AnchorKind = AffordanceAnchorKind.Card, TargetRequest = offer.Targets,
-            DirectRecipientCommit = offer.DirectRecipientCommit };
+            DirectRecipientCommit = offer.DirectRecipientCommit, SelectionSourceId = offer.SelectionSourceId };
     private static WorldDescriptor World() => new([], [new(1, "Visible", 0, -1,
         [Card(20, "Rhino"), Card(21, "Minion A"), Card(22, "Minion B")], [])], [], Outcome.Unfinished);
     private static CardDescriptor Card(int id, string name) => new(id, CardBack.Encounter, true, true, -1,

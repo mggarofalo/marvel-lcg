@@ -19,18 +19,25 @@ internal sealed class BoardSourceTargetInteraction
     }
 
     internal IReadOnlyList<AffordancePresentation> Matches(int source, int destination) =>
-        [.. offers.Where(offer => offer.Illegal is null && offer.CardAnchorId == source
-            && (offer.TargetRequest?.Legal.Contains(destination) == true || DefersTarget(offer)))];
+        [.. offers.Where(offer => offer.Illegal is null
+            && (IsCurrentChoice(offer, source, destination) || offer.CardAnchorId == source
+                && (offer.TargetRequest?.Legal.Contains(destination) == true || DefersTarget(offer))))];
 
     internal bool CanDrag(int source) => offers.Any(offer => offer.Illegal is null
-        && offer.CardAnchorId == source
-        && (offer.TargetRequest is { Legal.Count: > 0 } || DefersTarget(offer)));
+        && (offer.SelectionSourceId == source && offer.CardAnchorId is not null
+            || offer.CardAnchorId == source
+                && (offer.TargetRequest is { Legal.Count: > 0 } || DefersTarget(offer))));
 
     internal IReadOnlyList<int> Destinations(int source) =>
-        [.. offers.Where(offer => offer.Illegal is null && offer.CardAnchorId == source)
-            .SelectMany(offer => (offer.TargetRequest?.Legal ?? [])
+        [.. offers.Where(offer => offer.Illegal is null
+                && (offer.CardAnchorId == source || offer.SelectionSourceId == source))
+            .SelectMany(offer => (offer.SelectionSourceId == source && offer.CardAnchorId is { } card
+                    ? [card] : offer.TargetRequest?.Legal ?? [])
                 .Where(target => CanCompose(offer.Id, target)))
             .Distinct()];
+
+    private static bool IsCurrentChoice(AffordancePresentation offer, int source, int destination) =>
+        offer.SelectionSourceId == source && offer.CardAnchorId == destination;
 
     private static bool DefersTarget(AffordancePresentation offer) =>
         offer.DeferredTargetSelection && offer.TargetRequest is null && !offer.PlaysCard;
@@ -40,8 +47,15 @@ internal sealed class BoardSourceTargetInteraction
         var trial = new DecisionComposer(composer.Prompt);
         var trialOperations = new TableDraftOperations(trial);
         if (!trialOperations.TrySelectAffordance(offerId)) return false;
+        if (trial.Selected!.SelectionSourceId is not null && trial.Selected.Targets is null)
+            return trial.Selected.AnchorId == destination && trial.TryBuild(out _, out _);
         if (trial.Selected!.DeferredTargetSelection && trial.Selected.Targets is null) return true;
-        if (composer.Selected?.Id == offerId) trial.SelectTargets(composer.Targets);
+        return CanComposeTarget(trial, trialOperations, destination);
+    }
+
+    private bool CanComposeTarget(DecisionComposer trial, TableDraftOperations trialOperations, int destination)
+    {
+        if (composer.Selected?.Id == trial.Selected!.Id) trial.SelectTargets(composer.Targets);
         return AlreadySelected(trial, destination) || trial.Selected!.Targets!.IsGrouped
             || trialOperations.TryAddTarget(destination);
     }
@@ -60,6 +74,7 @@ internal sealed class BoardSourceTargetInteraction
     internal bool TrySelect(int offerId, int source, int destination)
     {
         if (!TrySelectSource(offerId, source, destination)) return false;
+        if (composer.Selected!.SelectionSourceId == source && composer.Selected.Targets is null) return true;
         // This gesture starts composition only; the future prompt owns its targets.
         if (composer.Selected!.DeferredTargetSelection && composer.Selected.Targets is null) return true;
         if (AlreadySelected(composer, destination)) return true;

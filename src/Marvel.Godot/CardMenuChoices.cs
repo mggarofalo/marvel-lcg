@@ -8,8 +8,11 @@ internal static class CardMenuChoices
 {
     internal static IReadOnlyList<CardMenuEntry> Build(DecisionComposer composer,
         WorldDescriptor world, int source, IReadOnlyList<AffordancePresentation> offers) =>
-        [.. offers.Where(offer => offer.CardAnchorId == source)
-            .Select(offer => Action(composer, world, offer))];
+        [.. offers.Where(offer => offer.CardAnchorId == source && offer.SelectionSourceId != source)
+            .Select(offer => Action(composer, world, offer)),
+            .. Group(world, [.. offers.Where(offer => offer.SelectionSourceId == source
+                    && offer.CardAnchorId is not null)
+                .Select(offer => Action(composer, world, offer) with { Preview = offer.CardAnchorId })])];
 
     private static CardMenuEntry Action(DecisionComposer composer, WorldDescriptor world,
         AffordancePresentation offer)
@@ -32,13 +35,18 @@ internal static class CardMenuChoices
     private static CardMenuEntry Target(DecisionComposer composer, WorldDescriptor world,
         AffordancePresentation offer, int target)
     {
-        string label = TargetName(world, target, offer.TargetRequest!.Legal);
-        string detail = offer.TargetRequest?.Details?.GetValueOrDefault(target)
+        var windowChoice = offer.WindowChoices.FirstOrDefault(choice => choice.TargetId == target);
+        string label = windowChoice?.Label ?? TargetName(world, target, offer.TargetRequest!.Legal);
+        string detail = windowChoice?.Description ?? offer.TargetRequest?.Details?.GetValueOrDefault(target)
             ?? DecisionCopy.CompactActionSummary(offer);
         bool ready = Ready(composer, offer.Id, target);
-        return new(label, (ready ? "Commit: " : "Choose: ") + detail,
+        return new(label, TargetCommitmentDetail(detail, ready),
             new(offer.Id, target, ready), [], Preview: target);
     }
+
+    private static string TargetCommitmentDetail(string detail, bool ready) =>
+        string.IsNullOrWhiteSpace(detail) ? (ready ? "Commit now" : "Choose target")
+            : (ready ? "Commit: " : "Choose: ") + detail;
 
     private static string TargetName(WorldDescriptor world, int target, IReadOnlyList<int> legal)
     {

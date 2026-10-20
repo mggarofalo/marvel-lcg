@@ -30,7 +30,7 @@ public sealed class EngineBuildIdentityTests
 
         Assert.Equal(new Version(0, 1, 0, 0), assembly);
         Assert.Equal(
-            "v0.1.0-dev.0 · engine engine-replay-v19 · protocol 34 · save 7",
+            "v0.1.0-dev.0 · engine engine-replay-v19 · protocol 35 · save 7",
             EngineBuildIdentity.Display);
     }
 }

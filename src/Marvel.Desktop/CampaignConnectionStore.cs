@@ -41,10 +41,16 @@ public sealed class CampaignConnectionStore : IDisposable
             json.WritePropertyName("pending");
             if (connection.Pending is null) json.WriteNullValue();
             else json.WriteRawValue(EngineJson.Write(connection.Pending));
+            json.WritePropertyName("snapshot");
+            if (connection.Snapshot is null) json.WriteNullValue();
+            else json.WriteRawValue(EngineJson.Write(new EngineResponse(EngineProtocol.Version, "cache",
+                connection.CampaignId!, null, null, []) { Campaign = connection.Snapshot }));
             json.WriteEndObject();
         }
         files.Write(connection.LocalId, bytes.ToArray());
     }
+    /// <summary>Removes access only after authoritative permanent deletion is confirmed.</summary>
+    public void Delete(string id) => files.Delete(id);
 
     private CampaignConnection Read(string id)
     {
@@ -58,7 +64,11 @@ public sealed class CampaignConnectionStore : IDisposable
         return new(id, json.GetProperty("endpoint").GetString()!, json.GetProperty("label").GetString()!,
             json.GetProperty("campaign_id").GetString(), json.GetProperty("capability").GetString(),
             game is null || secret is null ? null : new(game, secret),
-            pending.ValueKind == JsonValueKind.Null ? null : EngineJson.ReadRequest(System.Text.Encoding.UTF8.GetBytes(pending.GetRawText())));
+            pending.ValueKind == JsonValueKind.Null ? null : EngineJson.ReadRequest(System.Text.Encoding.UTF8.GetBytes(pending.GetRawText())))
+        {
+            Snapshot = json.TryGetProperty("snapshot", out var snapshot) && snapshot.ValueKind != JsonValueKind.Null
+                ? EngineJson.ReadResponse(System.Text.Encoding.UTF8.GetBytes(snapshot.GetRawText())).Campaign : null,
+        };
     }
 
     /// <summary>Releases the local writer lease.</summary>

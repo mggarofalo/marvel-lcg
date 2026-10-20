@@ -82,7 +82,7 @@ func _loop_returns(card: Control, context: String, start_override: Vector2 = Vec
 
 
 func _loop_state_is_clean(card: Control, revision: String, commitment: String, order: Array, context: String) -> bool:
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if card.find_child("DragContactShadow", true, false) != null or card.is_set_as_top_level() \
 			or card.modulate != Color.WHITE or card.mouse_default_cursor_shape == Control.CURSOR_FORBIDDEN \
 			or (inspector.visible and inspector.get_node("Frame/Stack/Header/Close").visible):
@@ -154,7 +154,7 @@ func _next_inspection(start: Vector2, revision: String, context: String) -> bool
 	await process_frame
 	_loop_pointer(start, false)
 	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
+	var inspector := main.find_child("CardInspector", true, false) as Control
 	if not inspector.visible or inspector.get_node("Frame/Stack/Header/Close").visible:
 		_fail(context + ": the next ordinary card click did not retain transient inspection")
 		return false

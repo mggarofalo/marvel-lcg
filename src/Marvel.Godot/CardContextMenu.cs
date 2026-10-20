@@ -27,7 +27,7 @@ internal sealed class CardContextMenu : IDisposable
         this.inspect = inspect;
         this.previews = previews;
         this.theme = theme;
-        layer = new CanvasLayer { Name = "CardContextMenu", Layer = 100 };
+        layer = new CanvasLayer { Name = "CardContextMenu", Layer = 220 };
         Node host = source;
         while (host.GetParent() is Control parent) host = parent;
         host.AddChild(layer);

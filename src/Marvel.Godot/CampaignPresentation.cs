@@ -11,35 +11,39 @@ internal static class CampaignPresentation
     {
         ui.Clear();
         var state = campaign.State;
-        ui.Body.AddChild(CampaignControls.Text($"Rise of Red Skull · {(state.Expert ? "Expert" : "Standard")} campaign"));
+        ui.Body.AddChild(CampaignControls.Text(campaign.Name));
+        ui.Body.AddChild(CampaignControls.Text($"Rise of Red Skull · {(state.Expert ? "Expert" : "Standard")} campaign"
+            + $" · {(state.ExpertScenario ? "Expert" : "Standard")} scenario"));
         ui.Body.AddChild(CampaignControls.Text(string.Join("  →  ", Enum.GetValues<CampaignStage>().Select(stage =>
             (stage == state.Stage ? "▶ " : "") + Name(stage)))));
         ui.Body.AddChild(CampaignControls.Text(Phase(state.Phase)));
         foreach (var pair in state.Players.Select((player, seat) => (player, seat)))
-            Player(ui, pair.player, pair.seat, state, catalog, edit, choose);
+            Player(ui, pair.player, pair.seat, campaign, catalog, edit, choose);
         CampaignCardLinks.Section(ui, "Experimental weapons in later encounter decks", state.ExperimentalWeapons, catalog);
         CampaignCardLinks.Section(ui, "Consumed upgrades · unavailable for the rest of this campaign", campaign.RemovedCards.Select(card => card.Face), catalog);
         CampaignCardLinks.Section(ui, "Imprisoned allies · excluded from every deck", state.BannedAllyFaces, catalog);
         if (state.DelayCounters > 0) ui.Body.AddChild(CampaignControls.Text($"Recorded delay: {state.DelayCounters}"));
-        ShowActions(ui, campaign, catalog, choose, resume);
+        if (campaign.Archived) ui.Body.AddChild(CampaignControls.Text("Archived · records are preserved. Restore this campaign to continue playing."));
+        else ShowActions(ui, campaign, catalog, choose, resume);
     }
 
-    private static void Player(CampaignControls ui, CampaignPlayerState player, int seat, CampaignState state,
+    private static void Player(CampaignControls ui, CampaignPlayerState player, int seat, CampaignDescriptor campaign,
         DeckCatalog catalog, Action<int> edit, Action<CampaignQuery> choose)
     {
+        var state = campaign.State;
         string name = catalog.Heroes.FirstOrDefault(hero => hero.Key == player.Hero)?.Name ?? player.Hero;
         string hp = state.Expert && player.RecordedHitPoints is { } value ? $" · recorded HP {value}/{player.BaseHitPoints}" : "";
         ui.Body.AddChild(CampaignControls.Text($"Player {seat + 1} · {name}{hp}"));
         if (player.RequiresRecovery) ui.Body.AddChild(CampaignControls.Text("Defeated last scenario: take a recovery obligation during setup to rejoin."));
         CampaignCardLinks.Section(ui, "Campaign cards", player.Cards.Select(card => card.Face), catalog);
-        if (state.Phase == CampaignPhase.Preparing && player.RequiresRecovery)
+        if (campaign.Archived || state.Phase != CampaignPhase.Preparing) return;
+        if (player.RequiresRecovery)
         {
             var participate = new CheckButton { Text = $"Player {seat + 1} joins this attempt", ButtonPressed = player.Participating };
             participate.Toggled += selected => choose(new("participation") { Seat = seat, Participating = selected });
             ui.Body.AddChild(participate);
         }
-        if (state.Phase == CampaignPhase.Preparing)
-            CampaignControls.Action(ui.Body, $"Edit {name}'s deck · {player.Deck.Cards.Count} cards", () => edit(seat));
+        CampaignControls.Action(ui.Body, $"Edit {name}'s deck · {player.Deck.Cards.Count} cards", () => edit(seat));
     }
 
     private static void ShowActions(CampaignControls ui, CampaignDescriptor campaign, DeckCatalog catalog,
@@ -82,7 +86,7 @@ internal static class CampaignPresentation
         CampaignRewardKind.ImproveCondition => "improve your Condition upgrade, or decline",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
-    private static string Name(CampaignStage stage) => stage switch
+    internal static string Name(CampaignStage stage) => stage switch
     { CampaignStage.AbsorbingMan => "Absorbing Man", CampaignStage.RedSkull => "Red Skull", _ => stage.ToString() };
     private static string Phase(CampaignPhase phase) => phase switch
     {

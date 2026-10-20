@@ -6,5 +6,6 @@ public sealed record ClientCampaignResult(EngineResponse? Response, ClientEntryR
     ClientStartupError? Error, EngineRequest? Pending)
 {
     /// <summary>Whether the service returned complete campaign authority.</summary>
-    public bool Succeeded => Response?.Campaign is not null && Error is null;
+    public bool Succeeded => Error is null && Response is not null
+        && (Response.Campaign is not null || Response.CampaignDeleted);
 }
