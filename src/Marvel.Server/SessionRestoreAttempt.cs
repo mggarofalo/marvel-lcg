@@ -21,14 +21,27 @@ internal sealed class SessionRestoreAttempt(
     private void RestoreVerified()
     {
         StoredSession current = stored;
+        bool migrated = false;
+        string? restoredGeneration = generation;
+        if (host.factory is IContentUpgradeFactory factory
+            && factory.ContentUpgrade(current.Save.Compatibility) is { } upgrade)
+        {
+            if (host.store is not IContentUpgradeStore upgrades)
+                throw new SessionSaveException("this store cannot preserve a content upgrade predecessor");
+            current = current with { Save = upgrade.Verify(current.Save, host.ReplayOpen) };
+            Game verified = SessionReplay.Verify(current.Save, host.compatibility, host.ReplayOpen);
+            host.authority.ValidateForRestore(current, verified);
+            restoredGeneration = upgrades.CommitContentUpgrade(stored, current, generation);
+            migrated = true;
+        }
         Game game = SessionReplay.Verify(current.Save, host.compatibility, host.ReplayOpen);
         host.authority.ValidateForRestore(current, game);
         restoring = host.authority.PublishRestored(current, game);
         elapsed.Stop();
         host.log.Write(OperationalEventIds.SessionRestored, "accepted",
             elapsed.ElapsedMilliseconds, gameId: current.Save.Session.Label,
-            revision: current.Save.Revision, saveCommitted: false,
-            replayVerified: true, saveGeneration: generation,
+            revision: current.Save.Revision, saveCommitted: migrated,
+            replayVerified: true, saveGeneration: restoredGeneration,
             stage: "restore");
     }
 

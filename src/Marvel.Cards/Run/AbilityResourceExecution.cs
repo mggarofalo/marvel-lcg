@@ -43,7 +43,7 @@ internal sealed class AbilityResourceExecution
             .TakeWhile(candidate => candidate != ability).Count();
         var invocation = world.Agenda.Executions.Begin(entry.Occurrence,
             new PendingAbility(card, AbilityType.Resource, player, ordinal));
-        invocation.Occurrence.Begin(invocation.Ability);
+        invocation.Occurrence.Resolution.Begin(invocation.Ability);
         var receipt = new ResourceGenerationReceipt(world, invocation);
         var state = new ResourceAbilityContinuation(holder, player, ability, payment, receipt)
             { Execution = invocation };
@@ -84,7 +84,7 @@ internal sealed class AbilityResourceExecution
         AbilityUseRecording.Record(world, program, state.Source, state.Ability);
         string generated = AbilityOfferQueries.Generated(state.Ability.Effect, world, state.Player);
         state.Receipt.Complete(world, invocation, generated);
-        if (generated.Length > 0) invocation.Occurrence.Resolve(invocation.Ability);
+        if (generated.Length > 0) invocation.Occurrence.Resolution.Resolve(invocation.Ability);
         invocation.Finish(events);
     }
 }

@@ -35,11 +35,12 @@ public sealed class CampaignHost : IEngineEndpoint
             if (candidate.Campaign is not { } campaign) continue;
             try
             {
+                campaign = CampaignContentUpgrade.Restore(Factory, store, campaign);
                 _ = CampaignReplay.Verify(campaign.Save, definition, Factory.Compatibility,
                     setup => CampaignTransactions.Open(Factory, setup), Factory.InspectCampaign);
                 Campaigns.Add(candidate.StorageId, campaign);
             }
-            catch (Exception error) when (error is SessionSaveException or ReplayDivergenceException or SessionCompatibilityException or InvalidOperationException or ArgumentException)
+            catch (Exception error) when (error is SessionSaveException or ReplayDivergenceException or SessionCompatibilityException or InvalidOperationException or ArgumentException or IOException or UnauthorizedAccessException)
             { /* A rejected archive remains intact and is never replaced with an older generation. */ }
         }
     }

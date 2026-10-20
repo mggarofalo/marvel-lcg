@@ -75,11 +75,11 @@ internal static class AbilityResolutionEffectChoices
             execution.Resolver(cast), cast.Source, command.Target, command.Amount, cast.Trigger)
         {
             Performer = cast.AbilityActor,
+            Targets = command.Effect.TargetCount is null ? default : command.Targets,
             UsesThwartStat = command.Verb == BasicPowers.ThwartVerb
                 && AbilityThwartStatUsage.ReadsActor(command.Effect.Effect, cast.QueryContext(),
                     cast.AbilityActor ?? cast.World.Seats[execution.Resolver(cast)].IdentityCard),
-            Continuation = AbilityContinuationScheduling.Power(
-                capture, command.PowerOrdinal, [.. command.Targets.Select(card => card.ObjectId)]),
+            Continuation = AbilityContinuationScheduling.Power(capture, command, cast.World.Facts),
             SurgeGained = capture.Memory.SurgeGained,
             Origin = capture.Invocation.Occurrence,
         };
@@ -263,7 +263,7 @@ internal static class AbilityResolutionEffectChoices
             new AbilityInvocation(new(cast.AbilityFace, cast.Tier, ordinal),
                 new(cast.Source.ObjectId, cast.Source.Area.Id, cast.SourceBindingIncarnation),
                 cast.Occurrence, cast.Trigger, cast.AbilityPlayer, cast.AbilityActor?.ObjectId ?? -1)
-                { TriggeringDefeat = cast.TriggeringDefeat },
+                { TriggeringAttack = cast.TriggeringAttack, TriggeringDefeat = cast.TriggeringDefeat },
             new AbilityCursor([.. frames ?? cast.StructuralPath], cast.Position, cast.Player,
                 cast.HasContinuation, cast.FinalStep, cast.FinalPlayer, cast.EachPlayerFrame),
             new AbilityMemory(cast.Results.ToImmutableDictionary(StringComparer.Ordinal),

@@ -51,6 +51,7 @@ internal sealed class AbilityExpressionEvaluation(
     private long ResolutionAmount(AbilityResolutionNumber kind) => kind switch
     {
         AbilityResolutionNumber.PowerAmount => context.PowerAmount,
+        AbilityResolutionNumber.CardsDiscarded => context.Discarded.Length,
         AbilityResolutionNumber.ActivationAttacksAgainstYou =>
             context.Results.GetValueOrDefault(AbilityActivationReceipts.PlayerKey(context.Player)),
         AbilityResolutionNumber.PrintedBoostIconsDiscarded => context.Discarded.Sum(card =>

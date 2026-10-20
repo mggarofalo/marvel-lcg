@@ -13,6 +13,8 @@ internal sealed record AbilityDamageAndThreatContext(
     bool HasContinuation, ThreatPlacement? ImminentThreat, PendingAbility? ResolutionAbility,
     long Incoming, IThreatCardAbilities ThreatAbilities)
 {
+    internal Occurrence? PowerOccurrence { get; init; }
+    internal ImmutableArray<Attacked> DeclaredAttackRecipients { get; init; }
     internal World World => Expressions.World;
     internal Card Source => Expressions.Source;
     internal Occurrence Occurrence => Expressions.Occurrence;
@@ -20,6 +22,6 @@ internal sealed record AbilityDamageAndThreatContext(
 
     internal void ResolveEffect()
     {
-        if (ResolutionAbility is { } ability) Occurrence.Resolve(ability);
+        if (ResolutionAbility is { } ability) Occurrence.Resolution.Resolve(ability);
     }
 }

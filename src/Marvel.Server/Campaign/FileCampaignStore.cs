@@ -4,7 +4,7 @@ using Marvel.Session;
 namespace Marvel.Server;
 
 /// <summary>Private, bounded, checksummed campaign archives with an exclusive process writer lease.</summary>
-public sealed class FileCampaignStore : ICampaignStore, IDisposable
+public sealed class FileCampaignStore : IContentUpgradeCampaignStore, IDisposable
 {
     private readonly CampaignArchiveFiles files;
     private readonly CampaignArchiveFiles deleted;
@@ -65,7 +65,16 @@ public sealed class FileCampaignStore : ICampaignStore, IDisposable
         Validate(campaign);
         if (Deletions().Any(item => item.StorageId == campaign.Save.Identity.StorageId))
             throw new SessionSaveException("campaign was permanently deleted");
-        return files.Commit(campaign.Save.Identity.StorageId, Encoding.UTF8.GetBytes(CampaignSaveJson.Canonical(campaign)));
+        return files.CommitCampaign(campaign);
+    }
+
+    /// <inheritdoc />
+    public string CommitContentUpgrade(StoredCampaign previous, StoredCampaign candidate)
+    {
+        Validate(candidate);
+        if (Deletions().Any(item => item.StorageId == previous.Save.Identity.StorageId))
+            throw new SessionSaveException("campaign was permanently deleted");
+        return files.CommitContentUpgrade(previous.Save.Identity.StorageId, previous, candidate);
     }
 
     internal static void Validate(StoredCampaign campaign)

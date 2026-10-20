@@ -102,7 +102,7 @@ internal static class AbilityResolutionLifecycle
             execution.Use(world, source, ability, cast.Occurrence);
             if (EffectiveCards.Kind(source, world.Facts) == CardKind.Event)
             {
-                cast.Occurrence.BeginCard(
+                cast.Occurrence.Resolution.BeginCard(
                     source.ObjectId,
                     [new PendingAbility(
                         source.ObjectId,
@@ -244,6 +244,7 @@ internal static class AbilityResolutionLifecycle
     {
         cast.Execution ??= state.Execution;
         cast.TriggeringDefeat = state.Invocation.TriggeringDefeat;
+        cast.TriggeringAttack = state.Invocation.TriggeringAttack;
         cast.RestoreAbility(
             state.Invocation.Address.Ordinal,
             state.Cursor.Frames,

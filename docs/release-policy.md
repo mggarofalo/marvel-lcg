@@ -48,12 +48,20 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `36` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v19` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v21` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
 
-Replay v19 includes encounter-entry timing, activation-local effects and receipts,
+Replay v21 orders native retaliation with printed forced after-attack responses
+and applies retaliation even when attack damage is zero. The strict named v19/v20
+upgrade paths verify original histories and reject changed outcomes before
+publication; see [save-content-upgrades.md](save-content-upgrades.md).
+
+Replay v20 preserves the responsible player through scheme defeat and follows
+same-title villain stages through card continuations. Corrected outcomes can
+differ from v19, including Press the Advantage drawing after a stunned villain
+advances. It retains encounter-entry timing, activation-local effects and receipts,
 attack damage reflection, actor-specific thwart-stat substitution, and campaign
 setup and recovery. The same Core setup and decisions can resolve differently
 under these mechanics, independently of expansion dataset admission. Internal
@@ -61,8 +69,12 @@ agenda operations are reconstructed by full replay; they are not serialized as
 save authority. Schema 7 records ordered explicit decks and the exact campaign
 setup, including stable campaign seats and overlays. Protocol 36 carries campaign
 commands, engine-owned decision contracts and visibility-filtered independent
-villain/deck relationships. Older replay, protocol and save
-identities are rejected; no adapter invents omitted meaning. The RNG and
+villain/deck relationships. Older protocol and save
+identities remain rejected. Older replay identities are rejected except for the
+named predecessor upgrade described in
+[save-content-upgrades.md](save-content-upgrades.md). That adapter
+accepts an unchanged history only after every recorded result matches; it never
+rewrites a history containing a corrected outcome. The RNG and
 state-digest formats retain their existing identities.
 
 The product version belongs in desktop and server metadata. The protocol
@@ -178,7 +190,9 @@ when all of the following hold:
 - its product version is not lower than the saved application version;
 - the save schema is the current schema;
 - the engine replay, RNG and state-digest identities are supported;
-- the card, setup and ability dataset SHA-256 values match exactly; and
+- the card, setup and ability dataset SHA-256 values match exactly, or a
+  [named additive content migration](save-content-upgrades.md) verifies the
+  unchanged predecessor content before replay; and
 - complete deterministic replay verifies every recorded prompt, event, RNG
   count and state fingerprint.
 

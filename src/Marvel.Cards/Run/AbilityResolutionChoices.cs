@@ -73,6 +73,7 @@ internal static class AbilityResolutionChoices
                 structural, (AbilityEffect.ThwartGroup)choice);
         Prompt? prompt = operation switch
         {
+            "attack" => AbilityCountedAttackSelection.Describe(structural, (AbilityEffect.Power)choice),
             "peekTop" => AbilityDeckPeek.Describe(structural),
             "indirectDamage" => AbilityStructuralExecution.DescribeIndirectDamage(
                 structural, (AbilityEffect.IndirectDamage)choice),

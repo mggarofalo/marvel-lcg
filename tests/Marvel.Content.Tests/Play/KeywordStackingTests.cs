@@ -267,10 +267,8 @@ public sealed class KeywordStackingTests
         world.CreateCard("01113", world.AreaOf(DeckType.VillainArea));
 
         ResolveReveal(world, card, runner);
-        var step = Assert.Single(
-            world.Agenda.Outstanding, item => item.What == Steps.CharacterAttacks);
-        runner.ResolveCardAttack(
-            world, step.Require<CharacterAttackOperation>().Attack, step.OccurrenceOf(world, Cards), []);
+        Assert.Single(world.Agenda.Outstanding, item => item.What == Steps.CharacterAttacks);
+        Sequence.Finish(world, Cards, runner, []);
 
         AssertOneAdditionalCard(world);
     }

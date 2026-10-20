@@ -11,16 +11,16 @@ internal static class AbilityCostSelection
     // rr:initiating-abilities keeps choosing and paying separate. Resource
     // selections travel in Decision.Resources; this describes the cards a
     // discard or exhaust cost asks the payer to choose.
-    internal static TargetRequest? Ask(World world, int player, AbilityCost? cost)
+    internal static TargetRequest? Ask(World world, Card source, int player, AbilityCost? cost)
     {
         if (cost is AbilityCost.Sequence sequence)
         {
-            return sequence.Costs.Select(step => Ask(world, player, step))
+            return sequence.Costs.Select(step => Ask(world, source, player, step))
                 .SingleOrDefault(request => request is not null);
         }
         if (cost is AbilityCost.DiscardFromHand discard)
         {
-            var hand = world.Seats[player].Hand.Cards;
+            var hand = HandCandidates(world, source, player);
             var range = Range(discard.Range, hand.Count);
             return new TargetRequest([.. hand.Select(card => card.ObjectId)], range.Min, range.Max);
         }
@@ -32,6 +32,9 @@ internal static class AbilityCostSelection
         }
         return null;
     }
+
+    internal static IReadOnlyList<Card> HandCandidates(World world, Card source, int player) =>
+        [.. world.Seats[player].Hand.Cards.Where(card => card != source)];
 
     internal static IReadOnlyList<Card> Choices(World world, int player, AbilityCost.ExhaustChosen cost) =>
         [.. Choices(world, player, cost.From).Where(card => cost.Trait is null

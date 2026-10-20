@@ -137,12 +137,38 @@ public sealed class CombatEffectLifetimeTests
         Assert.Empty(world.Effects.Registered);
     }
 
-    private static World Hero()
+    [Fact]
+    [Rule("rr:delayed-effect.1")]
+    [Rule("rr:retaliate-x.1")]
+    public void ChargeAtEndDiscardPrecedesBlackPanthersAfterAttackRetaliate()
+    {
+        // rr:delayed-effect.1: "before responses to that point or condition may be used".
+        // Charge 01099 says "At the end of this attack, discard Charge."
+        // Black Panther's printed retaliate is a Forced Response after the attack.
+        var world = Hero("black_panther", "01040a");
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var charge = world.CreateCard("01099",
+            world.AreaOf(DeckType.UpgradesArea, host: villain.ObjectId));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), 1, 2,
+            Subject: villain.ObjectId, Seat: 0));
+
+        var events = Run(world);
+
+        int discarded = events.FindIndex(item => item is CardsMoved move
+            && move.Cards.Any(card => card.Card == charge.ObjectId));
+        int retaliated = events.FindIndex(item => item is FieldSet field
+            && field.Card == villain.ObjectId && field.Verb == "Retaliate");
+        Assert.True(discarded >= 0 && retaliated > discarded);
+        Assert.Equal(DeckType.EncounterDiscardPile, charge.Area.Type);
+        Assert.Equal(1, villain.Damage);
+    }
+
+    private static World Hero(string hero = "spider_man", string face = "01001a")
     {
         var world = WorldSetup.DealWithoutCardAbilities(Cards,
-            Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
+            Blueprints.From(Dealer.DealOrder(Setup, "rhino", [hero]), Cards),
             ["Spider-Man"], 12345);
-        world.Seats[0].IdentityCard.TurnTo("01001a");
+        world.Seats[0].IdentityCard.TurnTo(face);
         return world;
     }
 

@@ -15,6 +15,7 @@ internal static class AbilityWindowAdmission
         Card Card, CompiledCardAbility Ability, int Controller, int Ordinal)
     {
         internal Defeated? TriggeringDefeat { get; init; }
+        internal Attacked? TriggeringAttack { get; init; }
     }
 
     internal static ImmutableHashSet<int> WaitingCards(
@@ -74,7 +75,7 @@ internal static class AbilityWindowAdmission
                 ability.AnyPlayer ? controller : null)
             || !InForm(world, controller, ability.Trigger.Form, card)) return false;
         var context = Context(program, world, card, occurrence, controller, ability.Cost, resourceAbilities);
-        context = context.WithQuery(context.Query with { TriggeringDefeat = candidate.TriggeringDefeat });
+        context = context.WithQuery(context.Query with { TriggeringDefeat = candidate.TriggeringDefeat, TriggeringAttack = candidate.TriggeringAttack });
         return WhenHolds(ability, context)
             && (controller < 0 || CanInitiate(ability, context))
             && AbilityPaymentRules.Payable(world, card, controller, ability.Cost, program, resourceAbilities)
@@ -187,7 +188,7 @@ internal static class AbilityWindowAdmission
         return Subject(world, ability.Trigger.Subject, card, occurrence, restricted, candidate.TriggeringDefeat)
             && (ability.Trigger.Actor != AbilityRoles.You || occurrence.ActorFacts?.Kind is CardKind.Hero or CardKind.AlterEgo)
             && Role(world, ability.Trigger.Actor, card, occurrence.ActorFacts, restricted)
-            && Role(world, ability.Trigger.Target, card, occurrence.TargetFacts, restricted)
+            && Role(world, ability.Trigger.Target, card, candidate.TriggeringAttack?.Facts ?? occurrence.TargetFacts, restricted)
             && Player(world, ability.Trigger.Player, card, occurrence, restricted);
     }
 

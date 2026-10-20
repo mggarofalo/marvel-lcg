@@ -25,7 +25,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCost.DiscardTop discard => discard.From == AbilitySearchArea.YourDeck,
         AbilityCost.DealEncounterToYou => true,
         AbilityCost.Sequence sequence => sequence.Costs.Any(Contains),
-        AbilityCost.ExhaustTitled => true,
+        AbilityCost.ExhaustTitled or AbilityCost.ReturnTitledToHand => true,
         AbilityCost.Exhaust exhaust => exhaust.Card == AbilityCostCard.Identity,
         AbilityCost.ConsumeCampaignCard consume => consume.Card == AbilityCostCard.Identity,
         AbilityCost.Discard discard => discard.Card == AbilityCostCard.Identity,
@@ -168,7 +168,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
-            or AbilityEffect.AllowPlayBeneath or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
+            or AbilityEffect.AllowPlayBeneath or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardResourceIcons

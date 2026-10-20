@@ -98,13 +98,6 @@ internal static class IndirectAttackResolution
             return;
         }
 
-        // Only the declared defender (or the undefended target) was attacked;
-        // other recipients merely took damage from that attack.
-        if (!Keywords.Has(world, attacker, Keywords.Ranged, facts))
-        {
-            DamageAttacks.Retaliate(world, facts, world.Cards[step.Require<IndirectDamageOperation>().Character], attacker,
-                Steps.AttackInitiated, events);
-        }
     }
 
     private static List<Damage.PlacedDamage> PrepareIndirectPlacements(
@@ -118,7 +111,7 @@ internal static class IndirectAttackResolution
                     { PreventAllDamage = world.Attack?.PreventAllDamage == true }, events)),
         ];
 
-    /// <summary>Resolve retaliation after an indirect-damage defeat decision.</summary>
+    /// <summary>Complete indirect damage defeats before the attack reaches its response window.</summary>
     public static void FinishIndirectDamage(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
@@ -133,11 +126,6 @@ internal static class IndirectAttackResolution
             return;
         }
 
-        if (!Keywords.Has(world, attacker, Keywords.Ranged, facts))
-        {
-            DamageAttacks.Retaliate(world, facts, world.Cards[step.Require<IndirectDamageOperation>().Character], attacker,
-                Steps.AttackInitiated, events);
-        }
     }
 
     internal static bool FinishIndirectDefeats(

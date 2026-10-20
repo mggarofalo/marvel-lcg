@@ -76,6 +76,7 @@ public static class AbilityLowering
             "printedResourceCountDiscarded" => new AbilityNumber.PrintedResourcesDiscarded(Resource(argument, child)),
             "discardedWithResource" => new AbilityNumber.DiscardedWithResource(Resource(argument, child)),
             "activationAttacksAgainstYou" => FixedNumber(argument, child, "game", AbilityResolutionNumber.ActivationAttacksAgainstYou),
+            "cardsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.CardsDiscarded),
             "powerAmount" => FixedNumber(argument, child, "cardsDiscarded", AbilityResolutionNumber.PowerAmount),
             "printedBoostIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedBoostIconsDiscarded),
             "printedResourceIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedResourceIconsDiscarded),

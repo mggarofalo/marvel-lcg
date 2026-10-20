@@ -24,7 +24,7 @@ internal static class AbilityPowerResolution
         };
         if (attack.SurgeGained) cast.GainedKeywords.Add("surge");
         cast.Choose(world.Cards[attack.Enemy]);
-        execution.ResolvePower(cast, continuation);
+        execution.ResolvePower(cast, continuation, occurrence);
     }
 
     internal static void ResolveCardThwart(this AbilityResolutionExecution execution,
@@ -44,7 +44,7 @@ internal static class AbilityPowerResolution
         };
         if (thwart.SurgeGained) cast.GainedKeywords.Add("surge");
         cast.Choose(world.Cards[thwart.Scheme]);
-        execution.ResolvePower(cast, continuation);
+        execution.ResolvePower(cast, continuation, occurrence);
     }
 
     private static AbilityPowerContinuation RequireContinuation(CardPowerContinuation? continuation, string power) =>
@@ -63,15 +63,27 @@ internal static class AbilityPowerResolution
         {
             FinalStep = continuation.Capture.Cursor.FinalStep,
             Power = power,
-            PowerTargets = [.. continuation.Targets.Select(id => world.Cards[id])],
+            PowerTargets = [.. CurrentTargets(world, continuation)],
             EachPlayerFrame = continuation.Capture.Cursor.EachPlayerFrame,
             FinalPlayer = continuation.Capture.Cursor.FinalPlayer,
             AbilityPlayer = continuation.Capture.Invocation.AbilityPlayer,
         };
     }
 
+    private static IEnumerable<Card> CurrentTargets(World world, AbilityPowerContinuation continuation)
+    {
+        if (continuation.SelectedTargets.IsDefault)
+            return continuation.Targets.Select(id => world.Cards[id]);
+        // rr:leaves-play.1: a departing card is a new copy. The declared
+        // recipient facts survive, but damage cannot follow the new copy.
+        return continuation.SelectedTargets.Select(binding => (Binding: binding, Card: world.Cards[binding.ObjectId]))
+            .Where(item => item.Card.Incarnation == item.Binding.Incarnation
+                && DeckTypes.IsInPlay(item.Card.Area.Type))
+            .Select(item => item.Card);
+    }
+
     private static void ResolvePower(
-        this AbilityResolutionExecution execution, AbilityResolutionState cast, AbilityPowerContinuation continuation)
+        this AbilityResolutionExecution execution, AbilityResolutionState cast, AbilityPowerContinuation continuation, Occurrence occurrence)
     {
         var world = cast.World;
         var source = cast.Source;
@@ -92,7 +104,18 @@ internal static class AbilityPowerResolution
             ? execution.EventModifierEffects(cast, "attackDamage")
             : [];
         cast.PowerExecution = new(restored, continuation, power, cast.PowerActor?.ObjectId,
-            cast.PowerAmount, [.. attackModifiers]) { ThwartActorUsingAttack = cast.ThwartActorUsingAttack };
+            cast.PowerAmount, [.. attackModifiers]) { ThwartActorUsingAttack = cast.ThwartActorUsingAttack, Occurrence = occurrence, WindowOwner = world.Agenda.Current };
+        if (power == BasicPowers.AttackVerb)
+        {
+            var attacker = cast.PowerActor ?? world.Seats[player].IdentityCard;
+            occurrence.Retaliation = new(attacker.ObjectId, attacker.Incarnation,
+                AttackKeywords.Has(world, attacker, source, Keywords.Ranged),
+                continuation.DeclaredRecipients.IsDefault
+                    ? cast.PowerTargets.Select(target => new RetaliationRecipient(
+                        Attacked.Capture(target, world.Facts), target.Area.Id))
+                    : continuation.DeclaredRecipients.Select(recipient => new RetaliationRecipient(recipient, recipient.Area)),
+                cast.Trigger);
+        }
         execution.Run(restored.Body, cast);
         if (cast.Suspended)
         {
@@ -105,25 +128,20 @@ internal static class AbilityPowerResolution
     internal static void FinishResumedPower(this AbilityResolutionExecution execution, AbilityResolutionState cast)
     {
         var state = cast.PowerExecution ?? throw new InvalidOperationException("The power has no execution state.");
+        if (state.Aftermath is null)
+        {
+            // One modifier applies throughout the body and is consumed once before aftermath.
+            foreach (var modifier in state.Modifiers) cast.World.Effects.Use(modifier);
+            state = state with { Aftermath = new AbilityPowerAftermath(cast, state.Kind) };
+            cast.PowerExecution = state;
+        }
+        if (!state.Aftermath.Complete(execution, cast)) return;
         cast.PowerExecution = null;
         cast.ThwartActorUsingAttack = null;
-        // One attack modifier applies to every damage node and is consumed only after its body completes.
-        foreach (var modifier in state.Modifiers) cast.World.Effects.Use(modifier);
-        FinishAttack(cast, cast.Player, state.Kind);
         RestoreOuterChosen(state.Continuation.Capture.Memory.Chosen, cast);
         cast.RestoreAbility(state.Decoded.Ordinal, state.Decoded.Frames,
             state.Continuation.Capture.Invocation.Address.Face);
         execution.CompletePower(state.Decoded, cast with { Power = null, PowerActor = null, PowerTargets = [], PowerAmount = -1 });
-    }
-
-    private static void FinishAttack(AbilityResolutionState cast, int player, string power)
-    {
-        if (power != BasicPowers.AttackVerb) return;
-        var world = cast.World;
-        var attacker = cast.PowerActor ?? world.Seats[player].IdentityCard;
-        if (AttackKeywords.Has(world, attacker, cast.Source, Keywords.Ranged)) return;
-        foreach (var target in cast.Attacked.DistinctBy(card => card.ObjectId))
-            DamageAttacks.Retaliate(world, world.Facts, target, attacker, cast.Trigger, cast.Events);
     }
 
     private static void RestoreOuterChosen(

@@ -16,11 +16,18 @@ namespace Marvel.Rules.Timing;
 public readonly record struct PendingAbility(
     int Card, AbilityType Type, int Player, int Ordinal = 0)
 {
+    /// <summary>Engine-owned identity; authored card abilities retain their ordinary ordinal.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public NativeAbilityKind Native { get; init; }
+
     /// <summary>Resolve before ordinary forced interrupts to the same condition.</summary>
     public bool Would { get; init; }
 
     /// <summary>The exact defeat that satisfies this trigger within its shared window.</summary>
     public State.Defeated? TriggeringDefeat { get; init; }
+
+    /// <summary>The exact attacked enemy answered within a shared attack window.</summary>
+    public State.Attacked? TriggeringAttack { get; init; }
 
     /// <summary>Prompt-local handle assigned when several instances share a source card.</summary>
     public int? OfferId { get; init; }

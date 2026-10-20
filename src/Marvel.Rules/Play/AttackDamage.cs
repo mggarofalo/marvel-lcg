@@ -64,6 +64,12 @@ internal static class AttackDamage
         // step is resolved even when its calculated amount is zero, so mark it
         // before that early return. The marker also prevents a nested damage
         // consequence from rewriting the attack after assignment has begun.
+        var attacker = world.Cards[attack.Enemy];
+        var target = world.Cards[attack.Target];
+        attack = attack with { Retaliation = new(attacker.ObjectId, attacker.Incarnation,
+            AttackKeywords.Has(world, attacker, attacker, Keywords.Ranged),
+            [new(Attacked.Capture(target, facts), target.Area.Id)], Steps.AttackInitiated) };
+        world.Attack = attack;
         MarkDamageStepResolved(world, attack);
         if (amount <= 0)
         {
@@ -85,7 +91,7 @@ internal static class AttackDamage
         DamageAttacks.Resolve(world, facts,
             new AttackDamageRequest(world.Cards[attack.Enemy], world.Cards[attack.Enemy],
                 world.Cards[attack.Target], amount, Steps.AttackInitiated, "Deal_Damage",
-                ActivationId: world.Agenda.Current?.ActivationId) { EnemyAttack = attack,
+                Retaliate: false, ActivationId: world.Agenda.Current?.ActivationId) { EnemyAttack = attack,
                     Replacement = PreparedReplacement(world, attack) }, events);
 
     }

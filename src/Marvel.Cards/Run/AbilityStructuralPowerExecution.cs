@@ -31,7 +31,7 @@ internal static class AbilityStructuralPowerExecution
         if (target is null)
             return new Unsupported($"'{context.SourceFace}' cannot find the target of its {verb}");
 
-        var selected = context.Admission().WithSelection(target);
+        var selected = PowerAdmission(context, power, target, targets);
         if (AbilityPowerSuspension.SuspendsPowerEffect(
             power.Effect, selected, bindingMayChange: amount >= 0))
         {
@@ -61,6 +61,13 @@ internal static class AbilityStructuralPowerExecution
         return new SchedulePowerCommand(
             power, verb, target, [.. targets ?? [target]], amount,
             address.Index, address.Ordinal, automatic);
+    }
+
+    private static AbilityAdmissionContext PowerAdmission(
+        AbilityStructuralContext context, AbilityEffect.Power power, Card target, IReadOnlyList<Card>? targets)
+    {
+        var selected = context.Admission().WithSelection(target);
+        return power.TargetCount is null ? selected : selected.WithPowerTargets(targets ?? [target]);
     }
 
     internal static AbilityStructuralTransition ThwartAll(

@@ -26,6 +26,7 @@ internal sealed class CardPaymentEntry
         if (Card.Incarnation != Incarnation)
             throw new InvalidOperationException("the paid card changed incarnation before entry");
         consumed = true;
+        AllyPlayHistory.Record(world, Abilities, Card);
         CardEntry.Enter(world, Facts, Abilities, Seat, Card, events, Targets);
         CardPayment.UseCostModifiers(world, Cost);
         return Execution.Finish(events);

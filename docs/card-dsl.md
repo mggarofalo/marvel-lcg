@@ -313,7 +313,7 @@ identitiesWithinPerPlayerLimit inForm indirectDamage isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou modified moveAttackDamage mul onto options overkill
 paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
-placeAtRandom placeCounters placeThreat power powerAmount powerTargets
+placeAtRandom placeCounters placeThreat power powerAmount powerTargets cardsDiscarded
 preventDamage preventDamageFrom preventDamageWhile preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
 recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters
@@ -587,6 +587,22 @@ damage-prevention and imminent-threat windows already isolate those conditions.
 
 ### Campaign rewards and physical storage
 
+`reduceFirstAllyCost` takes a positive integer in a direct, unconditional Constant
+ability on an identity face. It reduces the first ally played by any player each
+round while that face is active. The selected identities' compiled abilities on
+all forms determine whether the engine records ally-play history; unrelated Core
+and Rise of Red Skull games allocate no history effects. An accepted ally play
+records history even while the reducing face is inactive. Putting an ally into
+play and rejected payments do not. Pricing is read-only, and the marker expires
+at the end of the round. This is the Living Legend prerequisite, not pack admission.
+
+`returnTitledToHand` is a cost naming the single controlled card with that printed
+title in play. It returns that card to its owner's hand before the post-arrow
+effect and discards its attachments through ordinary departure handling. The card
+may be exhausted. Missing, uncontrolled, out-of-play and ambiguous matches are
+unpayable; a named card is bound by incarnation when payment is prepared. This
+primitive is required by Shield Toss; it does not admit Captain America by itself.
+
 `exhaustTitled` is a cost naming the single ready card with the printed title under
 its acting player's control. Missing or ambiguous cards cannot pay it.
 `consumeCampaignCard` binds a campaign TECH reward, discards it, and records its
@@ -751,3 +767,30 @@ multiple physical cards with the same title.
 `forEach` takes a numeric `count` and an `effect` body, repeating that body for the resolved count. It supports printed counted instructions such as one additional boost card per side scheme.
 
 `attackDamagedYou: "you"` checks whether the completed enemy attack caused the attacked identity to take damage, including overkill, independently of damage to an ally defender.
+
+`dealAttackDamage` accepts `simultaneous: 1` inside a labelled attack. It snapshots
+its distinct recipients, places all damage before settling any recipient defeat,
+and publishes incarnation-bound attacked/damaged facts on that attack's response
+window. Retaliation remains the containing attack's aftermath. Ordinary attack
+damage retains its default path. Multiple simultaneous damage nodes in one power
+are explicitly unsupported; this marker does not supply multi-target selection,
+Guard admission or discard-cost cardinality by itself.
+
+An `attack` may specify `count` (a constant or `cardsDiscarded`) alongside its
+target selector. This bounded form requires one `dealAttackDamage` body with constant `amount`,
+`simultaneous: 1`, and `cards: { "query": "powerTargets" }`. It presents one
+engine-owned selection of distinct, jointly legal enemies. Under
+`rr:choose-game-element.3`, selection uses the lesser of the requested count and
+the number of available legal targets. `cardsDiscarded` can supply the count from
+the physical cost receipt; event resource payments do not contribute. The
+ordinary attack form remains a single declared target.
+
+Counted targets retain incarnation bindings and public attack facts through
+interrupts. Damage resolves only against the original copies still in play;
+departed recipients retain their attacked facts with zero damage taken. A new copy
+receives neither the old attack's damage nor its retaliation obligation. Damage
+results are correlated by physical recipient, so a missing earlier target cannot
+shift another target's result. The next stage of the same villain retains the
+shared retaliation behavior. After-attack forced-keyword ordering still blocks
+Captain America admission. The counted form does not admit arbitrary compound
+bodies.

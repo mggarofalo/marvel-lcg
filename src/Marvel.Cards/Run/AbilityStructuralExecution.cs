@@ -57,6 +57,8 @@ internal static class AbilityStructuralExecution
             AbilityEffect.ActivateEnemies activation => Activation(context, activation),
             AbilityEffect.Power { Kind: AbilityPowerKind.Defense } defense =>
                 new RunDefenseCommand(defense),
+            AbilityEffect.Power { TargetCount: not null } counted =>
+                AbilityCountedAttackSelection.Start(context, counted),
             AbilityEffect.Power power => Power(context, power),
             AbilityEffect.ThwartGroup { Selection: AbilityThwartSelection.All } group =>
                 ThwartAll(context, group),

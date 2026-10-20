@@ -87,6 +87,7 @@ internal static class AbilityEffectLowering
             "requireAllyDefender" => FixedEffect(argument, child, "engagedPlayer", AbilityFixedInstruction.RequireAllyDefender),
             "generate" => new AbilityEffect.Generate(ResourceString(argument, child)),
             "doubleResourceFor" => new AbilityEffect.DoubleResourceFor(Text(argument, child)),
+            "reduceFirstAllyCost" => new AbilityEffect.ReduceFirstAllyCost(PositiveInteger(argument, child)),
             "releaseBeneath" => AbilityBeneathLowering.Release(argument, child),
             "storeBeneath" => AbilityBeneathLowering.Store(argument, child),
             "initializeAuxiliaryDeck" => AbilityAuxiliaryDeckLowering.Initialize(argument, child),
@@ -164,8 +165,9 @@ internal static class AbilityEffectLowering
 
     internal static AbilityEffect.AttackDamage AttackDamageEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "cards", "amount", "overkill");
-        return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "overkill", location));
+        var fields = Fields(value, location, "cards", "amount", "overkill", "simultaneous");
+        return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "overkill", location))
+        { SimultaneousPlacement = Marker(fields, "simultaneous", location) };
     }
 
     internal static AbilityEffect.MoveDamage MoveDamageEffect(AbilityValue value, AbilityLocation location, bool attack)

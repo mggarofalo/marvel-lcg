@@ -49,7 +49,7 @@ internal static class AbilityWindowActivation
         Occurrence occurrence = cast.Occurrence;
         execution.Use(world, card, found, occurrence);
         if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event)
-            occurrence.BeginCard(card.ObjectId, [address]);
+            occurrence.Resolution.BeginCard(card.ObjectId, [address]);
         cast.RestoreAbility(address.Ordinal, []);
         cast.TrackResolution(address.Ordinal);
         if (!AbilityRecipientCommitment.Resume(execution, cast, found)) execution.Run(found, cast);

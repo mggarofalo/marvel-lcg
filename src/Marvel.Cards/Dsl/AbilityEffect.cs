@@ -54,7 +54,11 @@ public abstract record AbilityEffect
     /// <summary>Deal ordinary damage, optionally using the attack event verb.</summary>
     public sealed record Damage(AbilityCardSelection Cards, AbilityNumber Amount, bool AttackVerb) : AbilityEffect;
     /// <summary>Deal attack damage with its attack-specific rule handling.</summary>
-    public sealed record AttackDamage(AbilityCardSelection Cards, AbilityNumber Amount, bool Overkill) : AbilityEffect;
+    public sealed record AttackDamage(AbilityCardSelection Cards, AbilityNumber Amount, bool Overkill) : AbilityEffect
+    {
+        /// <summary>Whether every recipient receives damage before any recipient is defeated.</summary>
+        public bool SimultaneousPlacement { get; init; }
+    }
     /// <summary>Move damage between cards, optionally as attack damage.</summary>
     public sealed record MoveDamage(AbilityCardSelection From, AbilityCardSelection To, AbilityNumber Amount, bool Attack) : AbilityEffect;
     /// <summary>Assign indirect damage among eligible characters.</summary>
@@ -90,6 +94,8 @@ public abstract record AbilityEffect
     public sealed record Generate(string Resources) : AbilityEffect;
     /// <summary>A constant resource multiplier for a printed classification.</summary>
     public sealed record DoubleResourceFor(string Classification) : AbilityEffect;
+    /// <summary>A constant discount for the first ally played globally each round.</summary>
+    public sealed record ReduceFirstAllyCost(long Amount) : AbilityEffect;
     /// <summary>Shuffle an engine-supported search area.</summary>
     public sealed record Shuffle(AbilitySearchArea Area) : AbilityEffect;
     /// <summary>Pay resources or resolve the alternative effect.</summary>
@@ -179,7 +185,11 @@ public abstract record AbilityEffect
         public Marvel.Rules.Play.CardCostFilter? Filter { get; init; }
     }
     /// <summary>A labeled attack, defense, or thwart containing an effect.</summary>
-    public sealed record Power(AbilityPowerKind Kind, AbilityCardSelection? Target, AbilityEffect Effect, bool AutomaticTarget) : AbilityEffect;
+    public sealed record Power(AbilityPowerKind Kind, AbilityCardSelection? Target, AbilityEffect Effect, bool AutomaticTarget) : AbilityEffect
+    {
+        /// <summary>Choose this many distinct attack targets, or all available if fewer exist.</summary>
+        public AbilityNumber? TargetCount { get; init; }
+    }
     /// <summary>A rule-specific way to select schemes and run a thwart power.</summary>
     public sealed record ThwartGroup(AbilityThwartSelection Selection, AbilityCardSelection Schemes, Power Thwart) : AbilityEffect
     {

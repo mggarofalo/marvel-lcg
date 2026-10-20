@@ -8,6 +8,9 @@ internal sealed record AbilityPowerExecutionState(
     DecodedPowerContinuation Decoded, AbilityPowerContinuation Continuation,
     string Kind, int? Actor, long Amount, ImmutableArray<ContinuousEffect> Modifiers)
 {
+    internal Marvel.Rules.Play.PhaseStep? WindowOwner { get; init; }
+    internal Marvel.Rules.Timing.Occurrence? Occurrence { get; init; }
     internal ImmutableArray<int> Attacked { get; init; } = [];
+    internal AbilityPowerAftermath? Aftermath { get; init; }
     internal int? ThwartActorUsingAttack { get; init; }
 }

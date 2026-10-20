@@ -201,6 +201,8 @@ public static class BasicPowerInitiation
                 $"card {power.Target.ObjectId} is not an enemy {world.Seats[power.Player].Name} can attack");
         }
 
+        CardAttackTargets.Validate(world, facts, power);
+
         ScheduleAttack(world, new CharacterAttack(
             attacker.ObjectId, power.Target.ObjectId, power.Player, power.Amount,
             power.Source.ObjectId, moveFrom?.ObjectId ?? -1, overkill, power.Trigger,

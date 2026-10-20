@@ -30,6 +30,7 @@ internal sealed class AbilityChoiceAnswer(
         if (operation == "peekTop")
             return AbilityDeckPeek.Answer(execution, choice, cast, input) ? Continue() : cast.Events;
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);
+        if (operation == "attack") return ApplyCountedAttack((AbilityEffect.Power)choice);
         return ApplyGeneric(choice);
     }
 
@@ -231,6 +232,13 @@ internal sealed class AbilityChoiceAnswer(
             AbilityStructuralFlowExecution.AnswerGenericChoice(
                 execution.StructuralContext(cast), choice,
                 execution.ContinuationFacts(cast.Source, persisted, cast.Tier), input), cast);
+        return cast.Suspended ? cast.Events : Continue();
+    }
+
+    private List<Marvel.Rules.Events.GameEvent> ApplyCountedAttack(AbilityEffect.Power choice)
+    {
+        execution.ApplyStructuralDecision(AbilityCountedAttackSelection.Answer(
+            execution.StructuralContext(cast), choice, input), cast);
         return cast.Suspended ? cast.Events : Continue();
     }
 
