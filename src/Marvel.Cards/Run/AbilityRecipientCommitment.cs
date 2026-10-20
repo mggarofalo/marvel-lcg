@@ -46,13 +46,13 @@ internal static class AbilityRecipientCommitment
 
     private static AbilityEffect.ChooseCard? WindowChoice(World world, Card source,
         CompiledCardAbility ability) => ability.Labels.Length == 0
-            && AbilityCostSelection.Ask(world, source.Owner, ability.Cost) is null
+            && AbilityCostSelection.Ask(world, source, source.Owner, ability.Cost) is null
             && ability.Effect is AbilityEffect.ChooseCard choice ? choice : null;
 
     private static AbilityEffect.ChooseCard? EventChoice(World world, Card source,
         CompiledCardAbility ability) =>
         ability.Trigger.Timing == AbilityType.Action && ability.Labels.Length == 0
-            && AbilityCostSelection.Ask(world, source.Owner, ability.Cost) is null
+            && AbilityCostSelection.Ask(world, source, source.Owner, ability.Cost) is null
             && ability.Effect is AbilityEffect.ChooseCard choice ? choice : null;
 
     internal static TargetRequest? Targets(AbilityResolutionExecution execution, World world,

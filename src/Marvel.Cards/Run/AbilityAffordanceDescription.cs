@@ -31,7 +31,7 @@ internal static class AbilityAffordanceDescription
             AnchorId: ability.Card,
             AnchorPlayer: ability.Player,
             Label: found.Name,
-            Targets: recipients ?? AbilityCostSelection.Ask(world, ability.Player, found.Cost),
+            Targets: recipients ?? AbilityCostSelection.Ask(world, card, ability.Player, found.Cost),
             Costs: price is null ? null : [price], Description: Description(found.Effect, contextual))
         {
             Timing = found.Trigger.Timing,
