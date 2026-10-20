@@ -12,10 +12,12 @@ namespace Marvel.Server.Tests;
 
 public sealed class PlayedCampaignReplayUpgradeTests
 {
-    [Fact]
-    public void PlayedV19CampaignUpgradesAllProofsAndRestartsWithExactAuthorityAndCurrentPrompt()
+    [Theory]
+    [InlineData("v19")]
+    [InlineData("v20")]
+    public void PlayedCampaignUpgradesAllProofsAndRestartsWithExactAuthorityAndCurrentPrompt(string version)
     {
-        WithFixture((fixture, factory) =>
+        WithFixture(version, (fixture, factory) =>
         {
             string storage = Path.Combine(fixture, "campaigns");
             StoredCampaign original;
@@ -23,7 +25,7 @@ public sealed class PlayedCampaignReplayUpgradeTests
             {
                 original = Assert.Single(store.Load()).Campaign!;
                 AssertPlayedRecords(original.Save);
-                Assert.Equal("engine-replay-v19", original.Save.Compatibility.ReplayContract);
+                Assert.Equal("engine-replay-" + version, original.Save.Compatibility.ReplayContract);
                 var host = new CampaignHost(factory, store, new MemorySessionStore());
                 AssertResumed(host, fixture);
                 var current = Assert.Single(store.Load()).Campaign!;
@@ -31,8 +33,9 @@ public sealed class PlayedCampaignReplayUpgradeTests
                 Assert.Equal(CampaignSaveJson.Canonical(original), CampaignSaveJson.Canonical(current with
                     { Save = Normalize(current.Save, original.Save, remapIdentity: false) }));
                 Assert.Equal(CampaignSaveJson.Canonical(original), File.ReadAllText(Assert.Single(
-                    Directory.GetFiles(storage, ".upgrade-*.archive", SearchOption.AllDirectories))));
-                Assert.Single(Directory.GetFiles(storage, ".upgrade-*.manifest", SearchOption.AllDirectories));
+                    Directory.GetFiles(storage, ".upgrade-*.archive", SearchOption.AllDirectories),
+                        path => File.ReadAllText(path) == CampaignSaveJson.Canonical(original))));
+                Assert.Equal(version == "v19" ? 1 : 2, Directory.GetFiles(storage, ".upgrade-*.manifest", SearchOption.AllDirectories).Length);
             }
             StoredCampaign continued;
             using (var store = new FileCampaignStore(storage))
@@ -45,7 +48,7 @@ public sealed class PlayedCampaignReplayUpgradeTests
                     with { Version = EngineProtocol.Version };
                 Equivalent(ReadResponse(control, "continuation-response.json"), restarted.Exchange(next));
                 continued = Assert.Single(store.Load()).Campaign!;
-                Assert.Single(Directory.GetFiles(storage, ".upgrade-*.archive", SearchOption.AllDirectories));
+                Assert.Equal(version == "v19" ? 1 : 2, Directory.GetFiles(storage, ".upgrade-*.archive", SearchOption.AllDirectories).Length);
             }
             using (var store = new FileCampaignStore(storage))
             {
@@ -60,15 +63,17 @@ public sealed class PlayedCampaignReplayUpgradeTests
                 EqualJson(expected.Prompt, actual.Prompt);
                 EqualJson(expected.History, actual.History);
                 Assert.Equal(CampaignSaveJson.Canonical(continued), CampaignSaveJson.Canonical(Assert.Single(store.Load()).Campaign));
-                Assert.Single(Directory.GetFiles(storage, ".upgrade-*.archive", SearchOption.AllDirectories));
+                Assert.Equal(version == "v19" ? 1 : 2, Directory.GetFiles(storage, ".upgrade-*.archive", SearchOption.AllDirectories).Length);
             }
         });
     }
 
-    [Fact]
-    public void PlayedV19ExportImportsWithEveryProofIntactAndFreshPersistentAuthority()
+    [Theory]
+    [InlineData("v19")]
+    [InlineData("v20")]
+    public void PlayedExportImportsWithEveryProofIntactAndFreshPersistentAuthority(string version)
     {
-        WithFixture((fixture, factory) =>
+        WithFixture(version, (fixture, factory) =>
         {
             var original = CampaignSaveJson.Read(File.ReadAllBytes(Path.Combine(fixture, "campaign.json")));
             string sourceBytes = CampaignSaveJson.Canonical(original);
@@ -143,7 +148,7 @@ public sealed class PlayedCampaignReplayUpgradeTests
 
     private static void AssertCurrentCompatibility(CampaignSave save, SessionCompatibility target)
     {
-        Assert.Equal("engine-replay-v20", target.ReplayContract);
+        Assert.Equal("engine-replay-v21", target.ReplayContract);
         Assert.Equal(target, save.Compatibility);
         Assert.All(save.Attempts, attempt => Assert.Equal(target, attempt.Compatibility));
         Assert.All(save.Journal.Where(entry => entry.Proof is not null), entry => Assert.Equal(target, entry.Proof!.Compatibility));
@@ -180,14 +185,16 @@ public sealed class PlayedCampaignReplayUpgradeTests
             "complete predecessor response differs after upgrade");
     }
 
-    private static void WithFixture(Action<string, DatasetGameFactory> check) =>
+    private static void WithFixture(string version, Action<string, DatasetGameFactory> check) =>
         AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>
         {
-            string archive = Path.Combine(RepositoryPaths.Root, "tests", "Marvel.Server.Tests", "Fixtures", "played-campaign-91098022.zip");
-            Assert.Equal("1199392F3439FE89B6A21AA03D195DF18BEF1CC70F20DD65A998A2E32B29FFE8", Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(archive))));
+            string archive = Path.Combine(RepositoryPaths.Root, "tests", "Marvel.Server.Tests", "Fixtures", version == "v19" ? "played-campaign-91098022.zip" : "replay-v20-9097da07.zip");
+            Assert.Equal(version == "v19"
+                ? "1199392F3439FE89B6A21AA03D195DF18BEF1CC70F20DD65A998A2E32B29FFE8"
+                : "76ABF6271E0C8B1552A2EA220CA3A7710E9D0EE6765BDFBA0476933062C2E511", Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(archive))));
             string extraction = Path.Combine(root, "played-predecessor");
             ZipFile.ExtractToDirectory(archive, extraction);
-            string fixture = Path.GetDirectoryName(Assert.Single(Directory.GetFiles(extraction, "access.json", SearchOption.AllDirectories)))!;
+            string fixture = Path.GetDirectoryName(Assert.Single(Directory.GetFiles(version == "v19" ? extraction : Path.Combine(extraction, "played"), "access.json", SearchOption.AllDirectories)))!;
             check(fixture, DatasetGameFactory.Load(root));
         });
 }

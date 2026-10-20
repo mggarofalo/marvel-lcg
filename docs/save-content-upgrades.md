@@ -19,23 +19,23 @@ The baseline is embedded in the executable; a save cannot supply a new baseline
 or authorize its own migration.
 
 This is a conservative product policy, not a rule inferred from the tabletop.
-The v20 delivery admits two named source identities on this exact frozen content
-triple: historical `engine-replay-v19` to `engine-replay-v20`, and this delivery's
-`engine-replay-v20` to itself when additive content changes the dataset identity.
-The latter describes the corrected runtime writing the baseline content; it does
-not relabel newly generated games as historical v19 evidence. Both paths require
-the original RNG and state-digest identities, current save schema, unchanged
-admitted content, and complete deterministic verification. Unknown v18/v21
-sources, other dataset triples and application downgrades are rejected.
+The v21 delivery admits three explicit routes on this exact frozen content
+triple: `engine-replay-v19` to `engine-replay-v21`, `engine-replay-v20` to
+`engine-replay-v21`, and frozen-content v21 to v21 after additive content changes.
+Users do not need an intermediate installation. Every route requires the original
+RNG and state-digest identities, current save schema, unchanged admitted content,
+and complete deterministic verification. Unknown versions, other dataset triples
+and application downgrades are rejected. Exact current identities restore normally.
 
-Replay v20 corrects card-power continuation and responsible-player attribution.
-A historical save which recorded a different outcome under an affected rule is
-not migratable merely because its dataset bytes match. The named adapter checks
-its original expected values against the corrected runtime and rejects any
-mismatch before publication. It does not rewrite expected events, decisions,
-state digests or campaign records. Ordinary strict replay continues to reject a
-v19 identity under a v20 runtime; only release-owned source admission grants the
-named adapter.
+Replay v21 moves retaliation into the forced after-attack response window and
+corrects zero-damage retaliation. The actual predecessor Black Panther/Rhino trace
+in `tests/Marvel.Acceptance.Tests/Fixtures/retaliate-predecessor-91098022.jsonl.gz`
+first differs at decision 9: the corrected runtime deals one retaliation damage.
+Such a history must be rejected before publication. The named adapters never
+rewrite expected events, decisions, RNG counts, state digests or campaign records.
+The v19 route also verifies the continuation and attribution corrections introduced
+by v20. Ordinary strict replay still rejects a predecessor identity under v21;
+only release-owned admission permits verification through a named adapter.
 
 After admission, `SessionContentUpgrade` replays the original save with the new
 runtime while comparing every recorded prompt, decision, event, RNG count,

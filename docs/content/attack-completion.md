@@ -70,7 +70,7 @@ Checkpoint `951e3e110191a55dcdb90f8478755842792745d7` passed 2,698 Content tests
 1,000 Rules tests, 129 architecture tests and commit hooks. This is evidence on
 the isolated Captain branch, not the final combined delivery.
 
-Twelve compiled mutations were rejected by distinguishing assertions:
+Thirteen compiled mutations were rejected by distinguishing assertions:
 
 | Mutation | Failing cases |
 |---|---:|
@@ -86,6 +86,7 @@ Twelve compiled mutations were rejected by distinguishing assertions:
 | Defer completed event discard past responses | 9 |
 | Omit retaliation when attack damage is zero | 1 |
 | Retain duplicate physical attack recipients | 8 |
+| Bind indirect retaliation to the hero despite an ally defending | 1 |
 
 The zero-damage case has an actual admitted predecessor reproduction. Original
 runtime `91098022d37ce739dd2880e8964b40ee3675eeb3` generated Black Panther against
@@ -97,11 +98,22 @@ defended enemy attack dealt zero damage. The board digest consequently changes.
 The predecessor journal's SHA-256 is
 `f9107037687344f2cfde00005e3acc2a5494894b1f905c0ef8e94aae1b0e7be1`.
 
-The work remains unaccepted until rebased onto the complete merged PR-434
-delivery, compared against its v20 runtime, assigned an explicit replay
-transition and independently reviewed on the final combined candidate.
+The integration candidate is based on PR-434 candidate `9097da07`. Replay v21
+admits explicit frozen-content v19 and v20 histories only after complete original
+verification, and retains the same-contract additive-content policy. Genuine v20
+host artifacts distinguish the unchanged played campaign from the affected Black
+Panther session; see [replay evidence](../../tests/Marvel.Server.Tests/Fixtures/replay-v21-evidence.md).
+Final combined regression and independent review remain acceptance requirements.
 Default serialization omission does not establish replay compatibility.
 
 Multi-villain stage-lineage integration belongs to MARVEL-638 and must verify
 that a departed recipient cannot bind to another group's identically titled
 villain. Captain America remains unadmitted.
+
+The v21 transition has five additional compiled mutation controls: remove source 19
+admission (one failure), remove source 20 admission (one), remove additive 21
+admission (one), accept an unapproved destination (three), and skip original
+session-history verification (both genuine predecessor Black Panther cases fail).
+The combined candidate on `9097da07` passes the complete 4,240-test unit solution,
+including 2,747 Content and 1,003 Rules tests. Final integration and delivery evidence
+is tracked in MARVEL-635; these checks do not admit Captain America content.

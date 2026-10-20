@@ -7,4 +7,8 @@ public enum SessionReplayUpgrade
     Unchanged,
     /// <summary>Verify the complete v19 trace under v20 without changing any expected gameplay fact.</summary>
     CoreRorsV19ToV20,
+    /// <summary>Verify the complete v19 trace under v21 without replacing historical outcomes.</summary>
+    CoreRorsV19ToV21,
+    /// <summary>Verify the complete v20 trace under v21 without replacing historical outcomes.</summary>
+    CoreRorsV20ToV21,
 }
