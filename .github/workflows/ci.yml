@@ -158,7 +158,7 @@ jobs:
         run: dotnet test tests/Marvel.UnitTests.slnx --no-build --configuration Release
 
       - name: Architecture, server, Godot and release integration tests
-        run: dotnet test tests/Marvel.IntegrationTests.slnx --no-build --configuration Release
+        run: dotnet test tests/Marvel.IntegrationTests.slnx --no-build --configuration Release -m:1
 
       - name: Acceptance and regression sweeps
         if: ${{ inputs.exhaustive }}
