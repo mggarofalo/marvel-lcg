@@ -48,10 +48,15 @@ independent identities do:
 |---|---:|---|
 | Engine protocol | `35` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v20` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v21` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
+
+Replay v21 orders native retaliation with printed forced after-attack responses
+and applies retaliation even when attack damage is zero. The strict named v19/v20
+upgrade paths verify original histories and reject changed outcomes before
+publication; see [save-content-upgrades.md](save-content-upgrades.md).
 
 Replay v20 preserves the responsible player through scheme defeat and follows
 same-title villain stages through card continuations. Corrected outcomes can

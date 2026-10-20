@@ -38,6 +38,12 @@ public sealed class SessionContentUpgrade(SessionCompatibility source, SessionCo
             SessionReplayUpgrade.CoreRorsV19ToV20
                 when source.ReplayContract == "engine-replay-v19" && target.ReplayContract == "engine-replay-v20"
                 => target with { ReplayContract = source.ReplayContract },
+            SessionReplayUpgrade.CoreRorsV19ToV21
+                when source.ReplayContract == "engine-replay-v19" && target.ReplayContract == "engine-replay-v21"
+                => target with { ReplayContract = source.ReplayContract },
+            SessionReplayUpgrade.CoreRorsV20ToV21
+                when source.ReplayContract == "engine-replay-v20" && target.ReplayContract == "engine-replay-v21"
+                => target with { ReplayContract = source.ReplayContract },
             _ => throw new SessionCompatibilityException("replay_identity_mismatch", "unsupported named replay upgrade"),
         };
         // Application downgrade, RNG and digest checks remain exact. Source identity and

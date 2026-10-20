@@ -686,10 +686,11 @@ Campaign schema 1 and protocol 35 are strict compatibility boundaries. No
 migration invents missing campaign meaning. Complete content admission is
 required before the host advertises a campaign or starts its first attempt.
 
-The current replay identity is `engine-replay-v20`. Scheme defeat preserves the
-responsible player separately from identity-only credit, and selected villains
-retain same-character meaning across same-title stage promotion. A named v19
-upgrade verifies the complete original history before changing compatibility
+The current replay identity is `engine-replay-v21`. Native retaliation shares the
+forced after-attack window and applies after zero-damage attacks. Scheme defeat
+preserves the responsible player separately from identity-only credit, and selected villains
+retain same-character meaning across same-title stage promotion. Named v19 and v20
+upgrades verify the complete original history before changing compatibility
 metadata; see [save-content-upgrades.md](save-content-upgrades.md). Histories
 containing a corrected outcome are rejected rather than rewritten.
 Attack reflection, typed
