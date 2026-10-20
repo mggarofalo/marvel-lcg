@@ -11,14 +11,15 @@ internal sealed class TableCanvasReflow(TableCanvasSurface surface, BoardRenderR
     private readonly float initialHeight = surface.CustomMinimumSize.Y;
     private float middleOffset;
 
+    // Shared object renderers also serve fixed-size fixture surfaces without a reflow owner.
     internal static void AnchorBottom(Control surface, Control control) =>
-        ((TableCanvasSurface)surface).Reflow!.bottom.Add(control);
+        (surface as TableCanvasSurface)?.Reflow?.bottom.Add(control);
 
     internal static void Grow(Control surface, Control control) =>
-        ((TableCanvasSurface)surface).Reflow!.growing.Add(control);
+        (surface as TableCanvasSurface)?.Reflow?.growing.Add(control);
 
     internal static void MoveMiddle(Control surface, Control control) =>
-        ((TableCanvasSurface)surface).Reflow!.middle.Add(control);
+        (surface as TableCanvasSurface)?.Reflow?.middle.Add(control);
 
     internal static void MoveAddedMiddle(Control surface, int firstChild)
     {
