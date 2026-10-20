@@ -16,6 +16,8 @@ internal static class AbilityContinuationResumption
     {
         var decoded = Decode(program, source, step, null);
         var state = decoded.State;
+        if (state.Reason == AbilityResumeReason.PowerAftermath)
+            return new ResumeComplete(state with { Reason = AbilityResumeReason.Choice });
         if (state.Reason == AbilityResumeReason.StartAbility)
             return new RunResumedNode(decoded.Ability, decoded.Ability.Effect,
                 state with { Reason = AbilityResumeReason.Choice });
