@@ -56,12 +56,6 @@ public static class ActiveVillainSelection
     {
         // pack:mc03:new-rules: move to the villain whose scheme has most threat;
         // "In case of a tie, the first player decides." Setup order breaks no ties.
-        var topology = world.EncounterTopology
-            ?? throw new RulesNotImplementedException("active villain selection requires encounter topology");
-        var living = topology.Groups.Where(group => group.CurrentVillain is not null).ToList();
-        if (living.Count == 0) return [];
-        long highest = living.Max(group => group.Scheme.Tokens.GetValueOrDefault("k_threat"));
-        return living.Where(group => group.Scheme.Tokens.GetValueOrDefault("k_threat") == highest)
-            .Select(group => group.CurrentVillain!).ToList();
+        return [.. EncounterSchemeRelations.AtThreatExtreme(world, maximum: true)];
     }
 }
