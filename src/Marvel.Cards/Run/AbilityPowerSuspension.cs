@@ -47,6 +47,8 @@ internal static class AbilityPowerSuspension
             || IsChoice(node)
             || node.OperationName() is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
                 or "placeThreat" or "enemyAttacks" or "enemySchemes"
+                or "revealFromVillainDeck" or "reveal" or "revealTop" or "revealAuxiliaryTop"
+                or "search" or "discardUntil"
             || paths.SelectMany(path => PowerSuspensionChildren(
                 node, cast, stateMayChange, bindingMayChange, path)).Any(child =>
                 SuspendsPowerEffect(

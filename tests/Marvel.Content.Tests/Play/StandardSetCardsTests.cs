@@ -177,12 +177,16 @@ public sealed class StandardSetCardsTests
 
         Reveal(world, AuthoredCards.ShadowOfThePast);
 
-        // Both taken out of the pile and both on their way through a reveal.
+        // The first revealed card resolves before the instruction reveals the second.
         Assert.Equal(DeckType.RevealingArea, minion.Area.Type);
-        Assert.Equal(DeckType.RevealingArea, scheme.Area.Type);
-        Assert.Equal(
-            [minion.ObjectId, scheme.ObjectId],
-            world.Agenda.Outstanding.Select(step => step.Subject));
+        Assert.Same(aside, scheme.Area);
+        Assert.Equal(deck, world.AreaOf(DeckType.EncounterDeck).Cards.Count);
+        Finish(world, AuthoredCards.Runner(), []);
+        Assert.Equal(DeckType.EngagedEnemiesArea, minion.Area.Type);
+        Assert.Equal(PlayArea.Of(0), minion.Area.PlayArea);
+        Assert.Equal(DeckType.SideSchemesArea, scheme.Area.Type);
+        Assert.True(scheme.Tokens.GetValueOrDefault("k_threat") > 0);
+        Assert.Empty(world.Agenda.Outstanding);
 
         // "The rest" -- the three treacheries -- into the encounter deck, and
         // the pile empty. **The two revealed cards are not among the rest**,
@@ -239,10 +243,12 @@ public sealed class StandardSetCardsTests
         var theirs = world.Seats[0].Nemesis.Cards.Count;
 
         Reveal(world, AuthoredCards.ShadowOfThePast, player: 1);
+        Assert.All(world.Agenda.Outstanding, step => Assert.Equal(1, step.Seat));
+        Finish(world, AuthoredCards.Runner(), []);
 
         Assert.Empty(mine.Cards);
         Assert.Equal(theirs, world.Seats[0].Nemesis.Cards.Count);
-        Assert.All(world.Agenda.Outstanding, step => Assert.Equal(1, step.Seat));
+        Assert.Empty(world.Agenda.Outstanding);
     }
 
     [Rule("rr:player-side-scheme")]
