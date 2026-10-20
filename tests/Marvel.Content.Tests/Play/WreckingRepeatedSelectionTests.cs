@@ -6,6 +6,26 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class WreckingRepeatedSelectionTests
 {
+    [Fact]
+    public void GeneratedActiveVillainSelectionCanFollowTheCounterToAnyLivingGroup()
+    {
+        var (_, groups, scope) = WreckingProjectionFixture.Create();
+        var target = groups[3].Villain;
+        var effect = new AbilityEffect.Damage(
+            new AbilityCardSelection.Query(AbilityCardQuery.Villain), new AbilityNumber.Constant(1), false);
+        var trace = Assert.Single(AbilityRepeatedDamageAnalysis.DamageTraces(
+            effect, scope, AbilityRepeatedEffectAnalysis.RepeatedChange.None, false));
+        var initial = DamageTraceStateFactory.Initial(target, scope);
+        initial.Threat[groups[3].Scheme.ObjectId] = 9;
+        initial = new DamageTraceMutation(initial, target, scope).Apply(
+            [new(-1, groups[1].Villain.ObjectId, 100), new(-1, groups[1].Stages[1].ObjectId, 100)]);
+        Assert.Equal(target.ObjectId, initial.CurrentVillain);
+        var state = new DamageTraceMutation(initial, target, scope).Apply(trace);
+        Assert.Equal(1, state.Damage.GetValueOrDefault(target.ObjectId));
+        Assert.Equal(0, state.Damage.GetValueOrDefault(groups[0].Villain.ObjectId));
+        Assert.Equal(0, state.Damage.GetValueOrDefault(groups[2].Villain.ObjectId));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

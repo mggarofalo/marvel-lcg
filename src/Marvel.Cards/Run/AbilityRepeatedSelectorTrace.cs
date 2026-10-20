@@ -37,7 +37,10 @@ internal static class AbilityRepeatedSelectorTrace
         {
             // A dynamic trace follows one living character per group, not one
             // candidate for every physical stage waiting in its villain deck.
-            selected = selected.Select(card =>
+            // Include every group because the active counter can move before
+            // this selection is evaluated in a subsequent trace frame.
+            selected = selected.Concat(topology.Groups.Select(group => group.CurrentVillain).OfType<Card>())
+                .Select(card =>
             {
                 var group = topology.Groups.SingleOrDefault(group => group.Stages.Contains(card));
                 return group is null ? card : group.CurrentVillain;
