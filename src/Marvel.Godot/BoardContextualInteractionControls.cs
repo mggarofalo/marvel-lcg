@@ -23,7 +23,9 @@ internal sealed class BoardContextualInteractionControls(Func<bool> isCurrent)
     internal void AnchorDraft(Vector2 position, int offer) { releaseAnchor = position; releaseOffer = offer; }
     internal void SetVisible(bool visible)
     {
-        if (host?.GetNodeOrNull<CanvasLayer>("TargetCommitmentLayer") is { } layer) layer.Visible = visible;
+        if (InteractionControl.IsUsable(host)
+            && host!.GetNodeOrNull<CanvasLayer>("TargetCommitmentLayer") is { } layer)
+            layer.Visible = visible;
     }
 
     internal void Register(Container container) => host = container;

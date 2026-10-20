@@ -47,7 +47,7 @@ internal sealed class MainTabletopController
 
     internal void RerenderForViewport(Vector2 viewport)
     {
-        if (main.board.Visible && LayoutChanged(viewport)
+        if (main.CurrentGame?.World is not null && main.board.Visible && LayoutChanged(viewport)
             && main.boardController.PresentedGame?.World is { } world)
         {
             ScrollContainer table = main.GetNode<ScrollContainer>(

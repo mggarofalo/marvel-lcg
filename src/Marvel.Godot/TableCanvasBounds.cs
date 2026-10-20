@@ -12,7 +12,7 @@ internal static class TableCanvasBounds
     {
         void Refresh()
         {
-            if (InteractionControl.IsUsable(surface))
+            if (InteractionControl.IsUsable(main) && InteractionControl.IsUsable(surface))
                 main.boardController.RerenderForViewport(main.GetViewportRect().Size);
         }
         surface.BoundsChanged = Refresh;

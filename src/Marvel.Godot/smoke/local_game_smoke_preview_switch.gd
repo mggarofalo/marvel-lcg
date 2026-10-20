@@ -27,6 +27,10 @@ static func perform(driver, hand: Control, inspector: Control) -> bool:
 		await driver.main.get_tree().create_timer(0.38).timeout
 		var expected := str(target.name).trim_prefix("ProceduralCard").to_int()
 		if not inspector.visible or int(inspector.get_meta("inspected_card_anchor", -1)) != expected:
+			print("PREVIEW_SWITCH expected=", expected,
+				" actual=", inspector.get_meta("inspected_card_anchor", -1),
+				" visible=", inspector.visible, " target=", target.get_global_rect(),
+				" point=", point, " hovered=", driver.main.get_viewport().gui_get_hovered_control())
 			driver._fail("leaving the previous card dismissed the current card's preview")
 			return false
 		previous = target
