@@ -19,7 +19,7 @@ internal static class AbilityResolutionDamageAndThreat
     internal static AbilityDamageAndThreatContext DamageAndThreatContext(this AbilityResolutionExecution execution, AbilityResolutionState cast) =>
         new(cast.ExpressionContext(), execution.program, cast.Trigger, cast.Events,
             cast.AbilityActor, cast.PowerActor, cast.Power, cast.HasContinuation,
-            cast.ImminentThreat, cast.ResolutionAbility, cast.Incoming, execution.threatAbilities);
+            cast.ImminentThreat, cast.ResolutionAbility, cast.Incoming, execution.threatAbilities) { PowerOccurrence = cast.PowerExecution?.Occurrence };
 
     internal static void ApplyDamageAndThreat(this AbilityResolutionExecution execution,
         AbilityDamageAndThreatResult result, AbilityEffect syntax, AbilityResolutionState cast)

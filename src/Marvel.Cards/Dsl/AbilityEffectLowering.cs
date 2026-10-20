@@ -165,8 +165,9 @@ internal static class AbilityEffectLowering
 
     internal static AbilityEffect.AttackDamage AttackDamageEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "cards", "amount", "overkill");
-        return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "overkill", location));
+        var fields = Fields(value, location, "cards", "amount", "overkill", "simultaneous");
+        return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "overkill", location))
+        { SimultaneousPlacement = Marker(fields, "simultaneous", location) };
     }
 
     internal static AbilityEffect.MoveDamage MoveDamageEffect(AbilityValue value, AbilityLocation location, bool attack)

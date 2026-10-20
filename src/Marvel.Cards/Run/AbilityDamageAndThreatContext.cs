@@ -13,6 +13,7 @@ internal sealed record AbilityDamageAndThreatContext(
     bool HasContinuation, ThreatPlacement? ImminentThreat, PendingAbility? ResolutionAbility,
     long Incoming, IThreatCardAbilities ThreatAbilities)
 {
+    internal Occurrence? PowerOccurrence { get; init; }
     internal World World => Expressions.World;
     internal Card Source => Expressions.Source;
     internal Occurrence Occurrence => Expressions.Occurrence;

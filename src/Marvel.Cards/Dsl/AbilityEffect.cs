@@ -54,7 +54,11 @@ public abstract record AbilityEffect
     /// <summary>Deal ordinary damage, optionally using the attack event verb.</summary>
     public sealed record Damage(AbilityCardSelection Cards, AbilityNumber Amount, bool AttackVerb) : AbilityEffect;
     /// <summary>Deal attack damage with its attack-specific rule handling.</summary>
-    public sealed record AttackDamage(AbilityCardSelection Cards, AbilityNumber Amount, bool Overkill) : AbilityEffect;
+    public sealed record AttackDamage(AbilityCardSelection Cards, AbilityNumber Amount, bool Overkill) : AbilityEffect
+    {
+        /// <summary>Whether every recipient receives damage before any recipient is defeated.</summary>
+        public bool SimultaneousPlacement { get; init; }
+    }
     /// <summary>Move damage between cards, optionally as attack damage.</summary>
     public sealed record MoveDamage(AbilityCardSelection From, AbilityCardSelection To, AbilityNumber Amount, bool Attack) : AbilityEffect;
     /// <summary>Assign indirect damage among eligible characters.</summary>

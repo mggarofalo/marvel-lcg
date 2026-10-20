@@ -175,6 +175,15 @@ synthetic capability checkpoint, not Shield Toss publication or pack acceptance.
 The separate stale-recipient, response-window, save-continuation and integrated
 multi-villain acceptance work remains open in the linked prerequisites.
 
+The explicit `simultaneous: 1` attack-damage marker connects the interpreter to
+the shared damage barrier. Real-game synthetic tests prove all recipient damage
+is visible in the first When Defeated choice, one response per attacked enemy,
+one whole-attack response, and damage-only responses excluding a Tough recipient.
+The actual scheduled power occurrence is retained separately from the containing
+ability origin. Compiled sequential-route and Tough-as-damaged mutants fail.
+The default ordinary damage path is preserved; multi-target choice, Guard,
+discard-receipt cardinality and Shield Toss cost composition remain unfinished.
+
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains
 closed while this work proceeds.
