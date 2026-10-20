@@ -132,10 +132,10 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07001a:2 | Breakout / wrecking_crew | 1 | Setup: Put the Day of Reckoning, Thunderstruck, Pile It On!, and Clear the Road side schemes into play. Place the active counter on Wrecker. Advance to stage 1B. | Pending MARVEL-625 |
 | 07001b | Breakout / wrecking_crew | back of 07001a | star Forced Response: After step one of the villain phase, place 1 threat on each side scheme. Move the active counter to the villain whose scheme has the most threat. (If there is a tie, the first player chooses.) | Pending MARVEL-625 |
 | 07001b:2 | Breakout / wrecking_crew | back of 07001a | If this stage is completed, the players lose the game | Pending MARVEL-625 |
-| 07002 | Wrecker / wrecker | 1 | star When Wrecker schemes, place the threat on his side scheme instead of the main scheme. | Pending MARVEL-625 |
-| 07002:2 | Wrecker / wrecker | 1 | star While Wrecker is attacking, he gets +2 ATK if the attack is undefended. | Pending MARVEL-625 |
-| 07003 | Wrecker / wrecker | 1 | star When Wrecker schemes, place the threat on his side scheme instead of the main scheme. | Pending MARVEL-625 |
-| 07003:2 | Wrecker / wrecker | 1 | star While Wrecker is attacking, he gets +2 ATK if the attack is undefended. | Pending MARVEL-625 |
+| 07002 | Wrecker / wrecker | 1 | star When Wrecker schemes, place the threat on his side scheme instead of the main scheme. | Authored; `WreckingWreckerTests` own-scheme routing while another villain is active; full-pack/native pending |
+| 07002:2 | Wrecker / wrecker | 1 | star While Wrecker is attacking, he gets +2 ATK if the attack is undefended. | Authored; MARVEL-647 typed attacker condition; undefended/hero/ally/stun, boost-defeated defender and Backflip composition; independent/full-pack/native acceptance pending |
+| 07003 | Wrecker / wrecker | 1 | star When Wrecker schemes, place the threat on his side scheme instead of the main scheme. | Authored; `WreckingWreckerTests` own-scheme routing while another villain is active; full-pack/native pending |
+| 07003:2 | Wrecker / wrecker | 1 | star While Wrecker is attacking, he gets +2 ATK if the attack is undefended. | Authored; MARVEL-647 typed attacker condition; undefended/hero/ally/stun and boost-defeated defender; independent/full-pack/native acceptance pending |
 | 07004 | Day of Reckoning / wrecker | 1 | Wrecker's Side Scheme. | Pending MARVEL-625 |
 | 07004:2 | Day of Reckoning / wrecker | 1 | This card cannot leave play while Wrecker is in play. | Pending MARVEL-625 |
 | 07004:3 | Day of Reckoning / wrecker | 1 | Hard Hitter — Forced Response: After threat is placed here, if there is 10 or more threat here, deal 2 damage to each friendly character. Remove all but 3 threat from this scheme. | Pending MARVEL-625 |

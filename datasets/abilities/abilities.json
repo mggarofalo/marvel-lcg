@@ -11065,6 +11065,40 @@
       "abilities": []
     },
     {
+      "card": "07002",
+      "name": "Wrecker",
+      "note": "Schemes onto his corresponding side scheme. His ATK bonus reads his own current undefended attack.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "and": [ { "isEnemyAttacker": "this" }, { "undefendedAttack": "you" } ] },
+              "then": { "grant": { "card": "this", "keyword": "attack", "amount": 2 } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07003",
+      "name": "Wrecker",
+      "note": "Schemes onto his corresponding side scheme. His ATK bonus reads his own current undefended attack.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "and": [ { "isEnemyAttacker": "this" }, { "undefendedAttack": "you" } ] },
+              "then": { "grant": { "card": "this", "keyword": "attack", "amount": 2 } }
+            }
+          }
+        }
+      ]
+    },
+    {
       "card": "07017",
       "name": "Thunderball",
       "note": "Schemes onto his corresponding side scheme. After his attack, damage each character controlled by its final target player, including after ally defense.",

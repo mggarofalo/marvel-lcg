@@ -103,7 +103,8 @@ internal static class AbilityPowerVillainProjection
         if (state.UnprojectedStageEntry is { } existing) return existing;
         if (next is null) return null;
         if (AbilityProgramQueries.On(cast.Context.Program, next).Any(ability =>
-            ability.Trigger.Timing == AbilityType.Constant))
+            ability.Trigger.Timing == AbilityType.Constant
+            && !AbilityInactiveAttackConstant.IsInactive(ability, cast.World)))
         {
             return $"villain stage '{next.FaceId}' enters play before a "
                 + "labelled-power continuation reads its constant abilities, "

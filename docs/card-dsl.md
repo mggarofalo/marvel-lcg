@@ -265,6 +265,11 @@ continuations retain these receipts, and an empty new collection resets them.
 card is the current enemy attack's attacker. It does not use the active-villain
 counter or a completed attack. Stage-transition projection refuses this condition
 when it cannot establish the future attack relationship.
+With no active enemy attack, promotion can prove a newly entering constant
+inactive when its sole branch requires `isEnemyAttacker: "this"` (directly or
+as the first AND operand). An earlier test, an ability-level `when`, an ELSE
+branch, another selector, or an active attack keeps
+the existing unsupported-stage-constant boundary.
 Form-qualified `WhenRevealed` abilities retain their authored ordinals while only
 the revealing player's current form is offered and resolved.
 
@@ -315,7 +320,7 @@ enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
 finalStep generate generateTopDiscard giveAdditionalBoost
 grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroDefended
 heroes heroesAndAllies heroAndAllyTargets identities
-identitiesWithinPerPlayerLimit inForm indirectDamage isKind isTitle
+identitiesWithinPerPlayerLimit inForm indirectDamage isEnemyAttacker isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou modified moveAttackDamage mul onto options overkill
 paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken

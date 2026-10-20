@@ -72,7 +72,8 @@ internal sealed class DamageTraceVillains(DamageTraceState state, AbilityAdmissi
     private void RefuseUntraceableVillainEntry(Card current, Card next)
     {
         if (AbilityProgramQueries.On(cast.Context.Program, next).Any(ability =>
-                ability.Trigger.Timing == AbilityType.Constant))
+                ability.Trigger.Timing == AbilityType.Constant
+                && !AbilityInactiveAttackConstant.IsInactive(ability, cast.World)))
         {
             throw new RulesNotImplementedException(
                 $"villain stage '{next.FaceId}' enters play before a "
