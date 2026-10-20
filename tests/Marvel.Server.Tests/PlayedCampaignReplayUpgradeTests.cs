@@ -170,7 +170,7 @@ public sealed class PlayedCampaignReplayUpgradeTests
         };
     }
 
-    private static EngineResponse ReadResponse(string root, string name) => EngineJson.ReadResponse(File.ReadAllBytes(Path.Combine(root, name)));
+    private static EngineResponse ReadResponse(string root, string name) => HistoricalProtocol35Response.Read(File.ReadAllBytes(Path.Combine(root, name)));
 
     private static void EqualJson<T>(T expected, T actual) =>
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(CampaignSaveJson.Canonical(expected)),

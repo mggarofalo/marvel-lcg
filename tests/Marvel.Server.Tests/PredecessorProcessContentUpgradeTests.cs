@@ -40,7 +40,7 @@ public sealed class PredecessorProcessContentUpgradeTests
     }
 
     private static EngineResponse Read(string root, string name) =>
-        EngineJson.ReadResponse(File.ReadAllBytes(Path.Combine(root, "responses", name + ".json")));
+        HistoricalProtocol35Response.Read(File.ReadAllBytes(Path.Combine(root, "responses", name + ".json")));
 
     private static void Equivalent(EngineResponse expected, EngineResponse actual)
     {
