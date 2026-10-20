@@ -57,29 +57,31 @@ func _control_owns_point(control: Control, point: Vector2) -> bool:
 	move.position = input_point
 	move.global_position = input_point
 	viewport.push_input(move)
-	await get_tree().process_frame
 	return _owns_pointer_target(control, viewport.gui_get_hovered_control())
 
 
 func _control_has_real_hit_area(control: Control) -> bool:
-	var rect := _visible_control_rect(control)
-	if rect.size.x < 4.0 or rect.size.y < 4.0:
-		_fail("hosted control '%s' has no unclipped hit area" % control.name)
-		return false
-	var inset := minf(2.0, minf(rect.size.x, rect.size.y) / 4.0)
-	var points := [
-		rect.get_center(),
-		rect.position + Vector2(inset, inset),
-		Vector2(rect.end.x - inset, rect.position.y + inset),
-		Vector2(rect.position.x + inset, rect.end.y - inset),
-		rect.end - Vector2(inset, inset),
-	]
-	for point in points:
-		if not await _control_owns_point(control, point):
+	var control_name := control.name
+	# Each native input sample uses one live rectangle and synchronous hit result.
+	# Ancestor containers may settle between samples; all five locations still apply.
+	for fraction in [Vector2(0.5, 0.5), Vector2.ZERO, Vector2.RIGHT, Vector2.DOWN, Vector2.ONE]:
+		if not is_instance_valid(control) or not control.is_inside_tree() or control.is_queued_for_deletion():
+			_fail("hosted activation control was replaced: %s" % control_name)
+			return false
+		var rect := _visible_control_rect(control)
+		if rect.size.x < 4.0 or rect.size.y < 4.0:
+			_fail("hosted control '%s' has no unclipped hit area" % control.name)
+			return false
+		var inset := minf(2.0, minf(rect.size.x, rect.size.y) / 4.0)
+		var point := rect.position + Vector2(lerpf(inset, rect.size.x - inset, fraction.x),
+			lerpf(inset, rect.size.y - inset, fraction.y))
+		if not _control_owns_point(control, point):
 			_fail("hosted control '%s' loses hit at %s; sampled=%s current=%s hovered=%s" % [
 				control.name, point, rect, _visible_control_rect(control),
 				control.get_viewport().gui_get_hovered_control()])
 			return false
+		if fraction != Vector2.ONE:
+			await get_tree().process_frame
 	return true
 
 

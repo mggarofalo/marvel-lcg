@@ -16,6 +16,15 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	var hit_checks := preload("res://smoke/hosted_hit_area_checks.gd").new()
+	add_child(hit_checks)
+	var hit_valid: bool = await hit_checks.verify()
+	var hit_failure: String = hit_checks.failed_case
+	hit_checks.queue_free()
+	if not hit_valid:
+		_fail("hosted hit coverage failed: " + hit_failure)
+		return
+	print("HOSTED_HIT_COVERAGE_OK cases=8")
 	var settlement_checks := SettlementChecks.new()
 	add_child(settlement_checks)
 	var observer_valid := await settlement_checks.verify()
