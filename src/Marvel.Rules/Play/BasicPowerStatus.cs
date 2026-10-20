@@ -160,7 +160,7 @@ public static class BasicPowerStatus
     /// report a scheme going below zero.
     /// </remarks>
     internal static void RemoveThreat(
-        World world, ICardFacts facts, Card character, Card scheme, List<GameEvent> events)
+        World world, ICardFacts facts, Card character, Card scheme, List<GameEvent> events, int player)
     {
         string power = Assaulted(world, facts, scheme) ? "attack" : "thwart";
         // rr:you-your.15: an ally's function is not performed by its
@@ -168,7 +168,7 @@ public static class BasicPowerStatus
         Threat.Remove(
             world, facts, world.ThreatAbilities, new ThreatRemovalRequest(scheme,
             ThwartStatSubstitution.Modified(world, character, power),
-            ThwartVerb, ThwartVerb, By: LabeledAbilities.IdentityPlayer(world, character)), events);
+            ThwartVerb, ThwartVerb, By: LabeledAbilities.IdentityPlayer(world, character)) { ResponsiblePlayer = player }, events);
     }
 
     internal static void Exhaust(Card character, string verb, List<GameEvent> events)

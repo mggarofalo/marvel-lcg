@@ -136,8 +136,7 @@ public static class Threat
         if (scheme.Area.Type == DeckType.SideSchemesArea
             && scheme.Tokens.GetValueOrDefault("k_threat") == 0)
         {
-            suspended = Defeat.Scheme(world, facts, scheme, request.Trigger, events, request.By,
-                request.RecordDefeatOn) == Damage.Outcome.Suspended;
+            suspended = Defeat.Scheme(world, facts, request, events) == Damage.Outcome.Suspended;
         }
 
         return new(removed, suspended);
