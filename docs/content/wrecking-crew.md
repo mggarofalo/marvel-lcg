@@ -226,10 +226,10 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07044:2 | Pummel / piledriver | 2 | When Revealed (Hero): Piledriver attacks you. If Piledriver is tough, he gets +2 ATK for this activation. | WreckingPummelTests: both stages, inactive Piledriver, own/opposing tough status, exact damage, modifier expiry, active-deck boost; full native journey pending |
 | 07045 | Uncanny Resilience / piledriver | 1 | When Revealed: Remove each stunned and confused status card from each villain. If no status cards were removed, this card gains surge. | Pending MARVEL-625 |
 | 07045:2 | Uncanny Resilience / piledriver | 1 | star Boost: You are confused. | Pending MARVEL-625 |
-| 07046 | Bulldozer / bulldozer | 1 | star When Bulldozer schemes, place the threat on his side scheme instead of the main scheme. | Pending MARVEL-625 |
-| 07046:2 | Bulldozer / bulldozer | 1 | star Forced Interrupt: When Bulldozer attacks, the attack gains overkill. | Pending MARVEL-625 |
-| 07047 | Bulldozer / bulldozer | 1 | star When Bulldozer schemes, place the threat on his side scheme instead of the main scheme. | Pending MARVEL-625 |
-| 07047:2 | Bulldozer / bulldozer | 1 | star Forced Interrupt: When Bulldozer attacks, the attack gains overkill. | Pending MARVEL-625 |
+| 07046 | Bulldozer / bulldozer | 1 | star When Bulldozer schemes, place the threat on his side scheme instead of the main scheme. | WreckingBulldozerTests: both stages scheme onto own scheme with independent active counter/deck; full-pack journey pending |
+| 07046:2 | Bulldozer / bulldozer | 1 | star Forced Interrupt: When Bulldozer attacks, the attack gains overkill. | WreckingBulldozerTests: ally overkill, undefended, stun replacement, unrelated attacker and expiry controls; full-pack journey pending |
+| 07047 | Bulldozer / bulldozer | 1 | star When Bulldozer schemes, place the threat on his side scheme instead of the main scheme. | WreckingBulldozerTests: both stages scheme onto own scheme with independent active counter/deck; full-pack journey pending |
+| 07047:2 | Bulldozer / bulldozer | 1 | star Forced Interrupt: When Bulldozer attacks, the attack gains overkill. | WreckingBulldozerTests: ally overkill, undefended, stun replacement, unrelated attacker and expiry controls; full-pack journey pending |
 | 07048 | Clear the Road / bulldozer | 1 | Bulldozer's Side Scheme. | Pending MARVEL-625 |
 | 07048:2 | Clear the Road / bulldozer | 1 | This card cannot leave play while Bulldozer is in play. | Pending MARVEL-625 |
 | 07048:3 | Clear the Road / bulldozer | 1 | Charge! — Forced Response: After threat is placed here, if there is 10 or more threat here, each player must discard the top 10 cards of their deck. Remove all but 3 threat from this scheme. | Pending MARVEL-625 |

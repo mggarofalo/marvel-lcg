@@ -11079,6 +11079,30 @@
       "abilities": []
     },
     {
+      "card": "07046",
+      "name": "Bulldozer",
+      "note": "Schemes onto his corresponding side scheme. His forced interrupt grants overkill only to his current attack.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this" },
+          "effect": { "grantUntil": { "keyword": "overkill", "card": "trigger.actor", "until": "EndOfAttack" } }
+        }
+      ]
+    },
+    {
+      "card": "07047",
+      "name": "Bulldozer",
+      "note": "Schemes onto his corresponding side scheme. His forced interrupt grants overkill only to his current attack.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this" },
+          "effect": { "grantUntil": { "keyword": "overkill", "card": "trigger.actor", "until": "EndOfAttack" } }
+        }
+      ]
+    },
+    {
       "card": "07044",
       "name": "Pummel",
       "note": "Piledriver activates against the revealing player in either form. His tough status grants +2 to this activation only; the named villain is independent of the active counter.",
