@@ -11259,6 +11259,69 @@
           "effect": { "dealDamage": { "cards": "defendingCharacter", "amount": 1 } }
         }
       ]
+    },
+    {
+      "card": "07014",
+      "name": "I've Been Waiting For This!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "heal": { "card": { "query": "villain" }, "amount": 3 } },
+            { "giveStatus": { "card": { "query": "villain" }, "status": "tough" } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+              "effect": { "moveActiveCounter": "chosen" } } },
+            { "enemySchemes": { "enemies": { "query": "villain" }, "against": "you" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "07029",
+      "name": "I've Been Waiting For This!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "heal": { "card": { "query": "villain" }, "amount": 3 } },
+            { "giveStatus": { "card": { "query": "villain" }, "status": "tough" } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+              "effect": { "moveActiveCounter": "chosen" } } },
+            { "enemySchemes": { "enemies": { "query": "villain" }, "against": "you" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "07041",
+      "name": "I've Been Waiting For This!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "heal": { "card": { "query": "villain" }, "amount": 3 } },
+            { "giveStatus": { "card": { "query": "villain" }, "status": "tough" } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+              "effect": { "moveActiveCounter": "chosen" } } },
+            { "enemySchemes": { "enemies": { "query": "villain" }, "against": "you" } }
+          ] }
+        }
+      ]
     }
   ]
 }

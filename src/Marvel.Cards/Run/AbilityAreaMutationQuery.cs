@@ -72,6 +72,7 @@ internal sealed class AbilityAreaMutationQuery(
 
     private bool? DeckOperationChange(string operation) => operation switch
     {
+        "moveActiveCounter" => queried.Contains(DeckType.VillainArea),
         _ when DrawOperations.Contains(operation) =>
             Includes(DeckType.PlayerDeck, DeckType.HandsArea),
         // Engaging a player card can empty its deck and reset its discard pile;

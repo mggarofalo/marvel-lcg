@@ -60,7 +60,7 @@ internal static class AbilityTargetAdmission
         }
         if (operation is "removeFromGame" or "reveal" or "returnToHand"
             or "returnOwnedToHand" or "addToHand"
-            or "exhaust" or "ready" or "giveStatus" or "declareDefender"
+            or "exhaust" or "ready" or "moveActiveCounter" or "giveStatus" or "declareDefender"
             or "attachTo" or "grantUntil" or "discard")
         {
             return AbilityCardActionTargetAdmission.Of(node, cast);

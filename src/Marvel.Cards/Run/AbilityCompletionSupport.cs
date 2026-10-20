@@ -15,7 +15,7 @@ internal static class AbilityCompletionSupport
             return;
         }
         if (effect.OperationName() is "draw" or "heal" or "removeThreat" or "dealDamage" or "placeThreat"
-            or "exhaust" or "ready" or "discard" or "changeForm" or "declareDefender" or "giveStatus") return;
+            or "exhaust" or "ready" or "moveActiveCounter" or "discard" or "changeForm" or "declareDefender" or "giveStatus") return;
         throw new RulesNotImplementedException(
             $"'{source}' has no completed-result semantics for '{effect.OperationName()}'");
     }

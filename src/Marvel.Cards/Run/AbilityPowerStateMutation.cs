@@ -25,6 +25,7 @@ internal static class AbilityPowerStateMutation
         RefuseMutableAmountAfterDamage(node, cast, state);
         return node.OperationName() switch
         {
+            "moveActiveCounter" => AbilityActiveCounterProjection.MovePower(node, cast, state),
             "exhaust" or "ready" => Readiness(node, cast, state),
             "grantUntil" => Grant(node, cast, state),
             "putIntoPlay" => AbilityPowerCardMovement.Enter(node, cast, state),

@@ -185,6 +185,8 @@ internal static class AbilityResolutionAdmission
     private static AdmissionResolution? CardResolutionOf(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "moveActiveCounter" => AbilityActiveCounterExecution.CanMove(node, cast)
+                ? AdmissionResolution.Full : AdmissionResolution.None,
             "exhaust" => ResolutionOfCards(
                 Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast), card => card.Ready),
             "ready" => ResolutionOfCards(

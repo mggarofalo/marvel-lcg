@@ -119,6 +119,7 @@ internal static class AbilityOperationNames
         {
             AbilityCardInstruction.Exhaust => "exhaust",
             AbilityCardInstruction.Ready => "ready",
+            AbilityCardInstruction.MoveActiveCounter => "moveActiveCounter",
             AbilityCardInstruction.Discard => "discard",
             AbilityCardInstruction.RemoveFromGame => "removeFromGame",
             AbilityCardInstruction.ReturnToHand => "returnToHand",

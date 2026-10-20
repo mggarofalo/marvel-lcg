@@ -230,7 +230,8 @@ internal sealed class AbilityAreaProjection
     private List<AreaProjectionState>? TraceMovement(
         AbilityEffect effect, List<AreaProjectionState> states,
         long repetitions, long baseMultiplier) =>
-        this.TryTraceDelayedStun(effect, states, repetitions, baseMultiplier)
+        AbilityActiveCounterProjection.TraceArea(this, effect, states)
+        ?? this.TryTraceDelayedStun(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceDelayedBody(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceDiscard(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceAttach(effect, states, repetitions, baseMultiplier)

@@ -105,6 +105,11 @@ internal sealed class DamageTraceMutation
     private bool ApplyStructural(DamageTransfer transfer, int to)
     {
         if (transfer.ChangesForm >= 0) ChangeForm(transfer);
+        else if (transfer.MovesActiveCounter)
+        {
+            if (AbilityActiveCounterProjection.CanMove(cast.World, currentVillain,
+                cast.World.Cards[to], encounterStages, discarded)) currentVillain = to;
+        }
         else if (transfer.EntersPlay) EnterPlay(to);
         else if (transfer.RemovesThreat || transfer.PlacesThreat)
             ChangeThreat(transfer, to);

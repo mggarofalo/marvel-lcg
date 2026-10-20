@@ -272,6 +272,8 @@ internal static class AbilityProjectedStateQueries
         AbilityEffect effect, AreaProjectionState state, AbilityAdmissionContext context) =>
         effect.OperationName() switch
         {
+            "moveActiveCounter" => AbilityActiveCounterProjection.CanMoveArea(effect, state, context)
+                ? AbilityProjectionResolution.Full : AbilityProjectionResolution.None,
             "seq" or "and" => CombinedOutcomes(
                 OrderedEffects(effect).Select(child =>
                     ProjectedResolution(child, state, context))),

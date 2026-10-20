@@ -20,6 +20,7 @@ internal static class AbilityCardStateAdmission
     internal static bool? CardStatePartialResolution(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "moveActiveCounter" => AbilityActiveCounterExecution.CanMove(node, cast),
             "removeFromGame" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } card
                 && CanRemoveByEffect(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, card),
             "exhaust" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)?.Ready == true,

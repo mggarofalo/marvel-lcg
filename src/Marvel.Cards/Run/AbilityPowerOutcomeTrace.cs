@@ -31,6 +31,8 @@ internal static class AbilityPowerOutcomeTrace
     {
         HashSet<AdmissionResolution>? known = node.OperationName() switch
         {
+            "moveActiveCounter" => [AbilityActiveCounterProjection.CanMovePower(node, cast, reachability)
+                ? AdmissionResolution.Full : AdmissionResolution.None],
             "draw" => DrawOutcomes(node, cast, reachability),
             "heal" => HealOutcomes(node, cast, reachability),
             "discard" => DiscardOutcomes(node, cast, bindingMayChange, reachability),

@@ -14,17 +14,14 @@ internal static class AbilityCardActionTargetAdmission
         AbilityEffect node, AbilityAdmissionScope cast) =>
         node.OperationName() switch
         {
+            "moveActiveCounter" => AbilityActiveCounterExecution.CanMove(node, cast)
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             "removeFromGame" => RemoveFromGameTargetLegality(node, cast),
             "reveal" or "returnToHand" => CardsLegality(
                 Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)),
             "returnOwnedToHand" or "addToHand" => AbilityCardMovementAdmission.HasHandTarget(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
-            "exhaust" => CardsLegality(
-                Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)
-                    .Where(card => card.Ready)),
-            "ready" => CardsLegality(Every(
-                EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Where(card =>
-                !card.Ready && AbilityProgramQueries.CanReady(cast.World, cast.Context.Program, card))),
+            "exhaust" or "ready" => Readiness(node, cast),
             "giveStatus" => CardsLegality(StatusTargets(node, cast)),
             "declareDefender" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } declared
                 && Attack.CanDeclareByAbility(
@@ -44,6 +41,11 @@ internal static class AbilityCardActionTargetAdmission
 
     internal static TargetLegality CardsLegality(IEnumerable<Card> candidates) =>
         candidates.Any() ? TargetLegality.Valid : TargetLegality.Invalid;
+
+    private static TargetLegality Readiness(AbilityEffect node, AbilityAdmissionScope cast) =>
+        CardsLegality(Every(((AbilityEffect.CardAction)node).Selection, cast).Where(card =>
+            node.OperationName() == "exhaust" ? card.Ready
+                : !card.Ready && AbilityProgramQueries.CanReady(cast.World, cast.Context.Program, card)));
 
     internal static TargetLegality RemoveFromGameTargetLegality(
         AbilityEffect node, AbilityAdmissionScope cast)

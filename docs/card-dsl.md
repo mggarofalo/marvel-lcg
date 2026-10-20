@@ -1,5 +1,14 @@
 # The card DSL
 
+`moveActiveCounter: <single-card selection>` moves the scenario counter only to a
+different living physical villain. It does not change an activation in progress.
+The operation requires configured encounter groups; ordinary scenarios do not
+substitute a singleton villain. Ranked target selection happens before movement
+legality excludes the current holder. A unique extreme at the current holder
+therefore leaves no destination. Subsequent text still resolves unless its DSL
+explicitly requires completed movement with `then`. Power, area and repeated
+projections carry the active relation independently of immutable group ownership.
+
 `schemeDestination: "correspondingSideScheme"` declares an enemy's printed
 replacement for the main-scheme destination. Its compiled relation resolves the
 scheming villain's immutable scenario group, independently of the active villain

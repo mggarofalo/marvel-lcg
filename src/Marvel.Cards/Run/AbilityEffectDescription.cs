@@ -69,6 +69,7 @@ internal static class AbilityEffectDescription
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Discard } => "discard",
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust } => "exhaust",
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Ready } => "ready",
+        AbilityEffect.CardAction { Instruction: AbilityCardInstruction.MoveActiveCounter } => "move the active counter to",
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelWhenRevealed } =>
             "cancel the revealed treachery's When Revealed effects",
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
@@ -104,6 +105,10 @@ internal static class AbilityEffectDescription
 
     private static string Noun(AbilityCardSelection selection) => selection switch
     {
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainsWithLeastSchemeThreat } =>
+            "villain whose side scheme has the least threat",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainsWithMostSchemeThreat } =>
+            "villain whose side scheme has the most threat",
         AbilityCardSelection.Discardable discardable => Noun(discardable.Cards),
         AbilityCardSelection.WithTrait trait => $"{(trait.Exclude ? "non-" : "")}{trait.Trait} {Noun(trait.Cards)}",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.CharactersYouControlExceptCost } =>

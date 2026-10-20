@@ -147,6 +147,8 @@ internal static class AbilityRepeatedDamageAnalysis
         AbilityEffect node, AbilityAdmissionScope cast) =>
         node.OperationName() switch
         {
+            "moveActiveCounter" => [new DamageTransfer(-1, -1, 0)
+                { MovesActiveCounter = true, ToSingular = ((AbilityEffect.CardAction)node).Selection }],
             "changeForm" => FormTransfer(node, cast),
             "dealDamage" or "indirectDamage" => DealtDamageTransfers(node, cast),
             "replaceThreatWithDamage" => ReplacedThreatTransfer(node, cast),

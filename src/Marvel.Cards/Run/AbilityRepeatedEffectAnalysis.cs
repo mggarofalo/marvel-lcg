@@ -273,6 +273,7 @@ internal static class AbilityRepeatedEffectAnalysis
     {
         internal AbilityCardSelection? FromSingular { get; init; }
         internal AbilityCardSelection? ToSingular { get; init; }
+        internal bool MovesActiveCounter { get; init; }
     }
 
     internal readonly record struct TraceCard(

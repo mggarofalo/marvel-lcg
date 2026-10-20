@@ -40,4 +40,6 @@ public enum AbilityCardInstruction
     PreventReady,
     /// <summary>Declare the selected character as defender.</summary>
     DeclareDefender,
+    /// <summary>Move the active villain counter to a different living villain.</summary>
+    MoveActiveCounter,
 }
