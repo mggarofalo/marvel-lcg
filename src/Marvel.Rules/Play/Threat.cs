@@ -129,20 +129,8 @@ public static class Threat
         ArgumentNullException.ThrowIfNull(events);
 
         var scheme = request.Scheme;
-        long held = scheme.Tokens.GetValueOrDefault("k_threat");
-        long removed = Math.Min(held, Math.Max(0, request.Amount));
-        if (removed == 0
-            || !abilities.CanRemoveThreat(world, scheme, request.OverridesCannotFrom))
-        {
-            return new(0, false);
-        }
-
-        scheme.PlaceTokens("k_threat", -removed);
-        events.Add(new FieldSet(scheme.ObjectId, "k_threat", held, held - removed)
-        {
-            Trigger = request.Trigger,
-            Verb = request.Verb,
-        });
+        long removed = RemoveTokens(world, abilities, request, events);
+        if (removed == 0) return new(0, false);
 
         bool suspended = false;
         if (scheme.Area.Type == DeckType.SideSchemesArea
@@ -153,6 +141,32 @@ public static class Threat
         }
 
         return new(removed, suspended);
+    }
+
+    internal static long RemoveTokens(World world, IThreatCardAbilities abilities,
+        ThreatRemovalRequest request, List<GameEvent> events)
+    {
+        long removed = Removable(world, abilities, request);
+        ApplyRemoval(request, removed, events);
+        return removed;
+    }
+
+    internal static long Removable(World world, IThreatCardAbilities abilities, ThreatRemovalRequest request) =>
+        abilities.CanRemoveThreat(world, request.Scheme, request.OverridesCannotFrom)
+            ? Math.Min(request.Scheme.Tokens.GetValueOrDefault("k_threat"), Math.Max(0, request.Amount)) : 0;
+
+    internal static void ApplyRemoval(ThreatRemovalRequest request, long removed, List<GameEvent> events)
+    {
+        if (removed == 0) return;
+        var scheme = request.Scheme;
+        long held = scheme.Tokens.GetValueOrDefault("k_threat");
+        scheme.PlaceTokens("k_threat", -removed);
+        events.Add(new FieldSet(scheme.ObjectId, "k_threat", held, held - removed)
+        {
+            Trigger = request.Trigger,
+            Verb = request.Verb,
+        });
+
     }
 
     /// <summary>

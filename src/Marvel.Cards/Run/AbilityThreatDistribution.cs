@@ -60,22 +60,23 @@ internal static class AbilityThreatDistribution
         // Stable object-id order is an engine event-stream choice for simultaneous shares.
         var legal = BasicPowers.Thwartable(context.World, context.World.Facts, context.Player)
             .Select(card => card.ObjectId).ToHashSet();
-        long removed = 0;
         var targets = context.Expressions.Bindings.PowerTargets;
-        foreach (var group in targets.GroupBy(card => card.ObjectId).OrderBy(group => group.Key))
+        var groups = targets.GroupBy(card => card.ObjectId).OrderBy(group => group.Key)
+            .Where(group => legal.Contains(group.Key)).ToArray();
+        var owner = context.World.Agenda.Current;
+        var occurrence = context.World.Agenda.Occurrence;
+        var held = groups.Select(group => group.First().Tokens.GetValueOrDefault("k_threat")).ToArray();
+        var requests = groups.Select(group => new ThreatRemovalRequest(group.First(), group.Count(),
+            context.Trigger, "Remove_Threat", AbilityEffectAttribution.IdentityPlayer(context))
+            { RecordDefeatOn = occurrence }).ToArray();
+        var results = ThreatBatchRemoval.Remove(context.World, context.ThreatAbilities, requests, context.Events);
+        long removed = 0;
+        for (int index = 0; index < results.Count; index++)
         {
-            if (!legal.Contains(group.Key)) continue;
-            long held = group.First().Tokens.GetValueOrDefault("k_threat");
-            var owner = context.World.Agenda.Current;
-            var occurrence = context.World.Agenda.Occurrence;
-            var removal = Threat.RemoveWithOutcome(context.World, context.World.Facts, context.ThreatAbilities,
-                new ThreatRemovalRequest(group.First(), group.Count(), context.Trigger, "Remove_Threat",
-                    AbilityEffectAttribution.IdentityPlayer(context))
-                { RecordDefeatOn = context.World.Agenda.Occurrence }, context.Events);
-            AbilityThreatExecution.RetainSuspension(state, removal, owner, occurrence);
-            long taken = removal.Removed;
-            removed += taken;
-            if (taken > 0 && taken == held) state.SchemesCleared++;
+            var result = results[index];
+            AbilityThreatExecution.RetainSuspension(state, result, owner, occurrence);
+            removed += result.Removed;
+            if (result.Removed > 0 && result.Removed == held[index]) state.SchemesCleared++;
         }
         return AbilityCompletion.Amount(removed, targets.Length);
     }

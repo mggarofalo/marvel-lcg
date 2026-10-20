@@ -106,6 +106,10 @@ public class NoCardAbilities : ICardAbilities
         Card target, DefeatCause cause) => world.Agenda.Executions.FinishBatch(entry, []);
 
     /// <inheritdoc/>
+    public virtual AbilityExecutionResult WhenCardsDefeated(World world, AbilityExecution entry,
+        IReadOnlyList<Defeated> defeated, string trigger) => world.Agenda.Executions.FinishBatch(entry, []);
+
+    /// <inheritdoc/>
     public virtual AbilityExecutionResult WhenCardDefeated(World world, AbilityExecution entry,
         Card card, Defeated defeated, string trigger) => world.Agenda.Executions.FinishBatch(entry, []);
 

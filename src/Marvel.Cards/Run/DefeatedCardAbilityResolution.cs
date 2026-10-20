@@ -15,21 +15,15 @@ internal static class DefeatedCardAbilityResolution
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(defeated);
 
-        var written = execution.On(card)
-            .Where(ability => ability.Trigger.Timing == AbilityType.WhenDefeated)
-            .ToList();
+        return execution.WhenCardsDefeated(world, [defeated], trigger, occurrence);
+    }
 
-        // Authored definitions execute independently of the printed-text diagnostic.
-        if (written.Count == 0 && world.Facts.HasWhenDefeated(card.FaceId))
-        {
-            throw new RulesNotImplementedException(
-                $"card '{card.FaceId}' was defeated and prints a 'When Defeated' "
-                + "ability that no ability data is written for");
-        }
-
-        var own = written.Select((_, ordinal) => new PendingAbility(
-            card.ObjectId, AbilityType.WhenDefeated, card.Owner, ordinal)
-            { TriggeringDefeat = defeated }).ToArray();
+    internal static IReadOnlyList<GameEvent> WhenCardsDefeated(this AbilityResolutionExecution execution,
+        World world, IReadOnlyList<Defeated> defeats, string trigger, Occurrence occurrence)
+    {
+        var own = defeats.SelectMany(defeat => Own(execution, world, world.Cards[defeat.Card], defeat)).ToArray();
+        var defeated = defeats[0];
+        var card = world.Cards[defeated.Card];
         if (own.Length == 0 && execution.Answering(world, card, occurrence, world.Agenda.Occurrence).Count == 0)
             return [];
 
@@ -43,5 +37,24 @@ internal static class DefeatedCardAbilityResolution
             world.Agenda.ContinueBeforeOwner(parent, owner, resume);
         else world.Agenda.Add(resume);
         return [];
+    }
+    private static PendingAbility[] Own(AbilityResolutionExecution execution, World world,
+        Card card, Defeated defeated)
+    {
+        var written = execution.On(card)
+            .Where(ability => ability.Trigger.Timing == AbilityType.WhenDefeated)
+            .ToList();
+
+        // Authored definitions execute independently of the printed-text diagnostic.
+        if (written.Count == 0 && world.Facts.HasWhenDefeated(card.FaceId))
+        {
+            throw new RulesNotImplementedException(
+                $"card '{card.FaceId}' was defeated and prints a 'When Defeated' "
+                + "ability that no ability data is written for");
+        }
+
+        return written.Select((_, ordinal) => new PendingAbility(
+            card.ObjectId, AbilityType.WhenDefeated, card.Owner, ordinal)
+            { TriggeringDefeat = defeated }).ToArray();
     }
 }

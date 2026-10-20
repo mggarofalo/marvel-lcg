@@ -243,7 +243,7 @@ public static class Defeat
     /// notice.
     /// </para>
     /// </remarks>
-    private static Defeated Record(
+    internal static Defeated Record(
         World world, Card card, int by, string how,
         Timing.Occurrence? recordOn = null)
     {

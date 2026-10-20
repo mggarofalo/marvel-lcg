@@ -96,6 +96,9 @@ public sealed class AbilityRunner : ICardAbilities
     public AbilityExecutionResult Setup(World world, AbilityExecution entry, Card card) =>
         AbilityEntryExecution.Run(world, entry, () => resolution.Setup(world, card));
     public IReadOnlyList<GameEvent> ResolveEachPlayer(World world, PhaseStep continuation) => new EachPlayerAbilityResolution(resolution).Resolve(world, continuation);
+    public AbilityExecutionResult WhenCardsDefeated(World world, AbilityExecution entry,
+        IReadOnlyList<Defeated> defeated, string trigger) =>
+        AbilityEntryExecution.Run(world, entry, () => resolution.WhenCardsDefeated(world, defeated, trigger, entry.Occurrence));
     public AbilityExecutionResult WhenCardDefeated(World world, AbilityExecution entry,
         Card card, Defeated defeated, string trigger) =>
         AbilityEntryExecution.Run(world, entry, () => resolution.WhenCardDefeated(world, card, defeated, trigger, entry.Occurrence));

@@ -55,6 +55,17 @@ public static class CardAbilityEntries
             entry => abilities.WhenCardDefeated(world, entry, card, defeated, trigger));
     }
 
+    /// <summary>Open one ordering window for simultaneous defeated cards.</summary>
+    internal static AbilityExecutionResult ExecuteDefeats(this ICardDamageAbilities abilities,
+        World world, IReadOnlyList<Defeated> defeated, string trigger)
+    {
+        var occurrence = new Occurrence(0, [Steps.CardDefeated], Subject: defeated[0].Card,
+            Player: world.FirstPlayer);
+        foreach (var item in defeated) occurrence.Also(item);
+        return world.Agenda.Executions.RunBatch(occurrence,
+            entry => abilities.WhenCardsDefeated(world, entry, defeated, trigger));
+    }
+
     /// <summary>Resolve all interrupts to one imminent defeat before deciding whether it still happens.</summary>
     public static AbilityExecutionResult ExecuteWouldDefeat(this ICardDamageAbilities abilities,
         World world, Card target, DefeatCause cause) =>
