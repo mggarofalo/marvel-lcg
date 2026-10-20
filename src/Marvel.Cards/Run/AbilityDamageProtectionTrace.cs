@@ -63,7 +63,9 @@ internal static class AbilityDamageProtectionTrace
         int currentVillain)
     {
         int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        bool followsVillain = SameVillainTitle(cast, currentVillain, boardVillain);
+        // A carried attachment replaces damage to its own villain character only.
+        bool followsVillain = target == currentVillain
+            && SameVillainTitle(cast, currentVillain, boardVillain);
         return cast.World.Areas
             .Where(area => area.Host == target
                 || followsVillain && area.Host == boardVillain)
