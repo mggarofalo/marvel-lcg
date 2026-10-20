@@ -11,8 +11,10 @@ namespace Marvel.Content.Tests.Play;
 public sealed class PhotonicBlastDefeatTests
 {
     [Rule("rr:when-defeated-abilities.2.1")]
-    [Rule("rr:villain-defeat.4")]
+    [Rule("rr:when-revealed-abilities")]
+    [Rule("rr:villain-defeat.2")]
     [Rule("rr:cost.3.1")]
+    [Rule("rr:wild-resource.1")]
     [Theory]
     [InlineData(false, "energy")]
     [InlineData(false, "wild")]
@@ -22,9 +24,12 @@ public sealed class PhotonicBlastDefeatTests
     [InlineData(true, "mental")]
     public void AuthoredBlastCompletesDefeatBeforeItsPaymentConditionalDraw(bool promotion, string payment)
     {
-        // When Defeated resolves before leaving play; a new villain stage
-        // resolves its When Revealed ability. Photonic Blast then draws one
-        // card only if an energy resource was spent (printed 01013).
+        // "A defeated card leaves play after its 'When Defeated' ability is resolved, if any."
+        // When revealing "a new villain stage, all 'When Revealed' abilities on the card resolve."
+        // "Excess damage that is dealt to defeat a villain stage does not carry over to the new stage."
+        // "Resources generated to pay for an ability on a card are considered to have been paid for that card."
+        // For wild resources, players "may specify which resource type (energy, mental, physical, or wild) it is being used as."
+        // Printed 01013 draws one card only if an energy resource was spent.
         var probed = Run(promotion, payment, probe: true);
         var control = Run(promotion, payment, probe: false);
         Assert.Equal(control, probed);
