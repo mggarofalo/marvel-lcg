@@ -15,6 +15,11 @@ internal static class AttackProcedure
     public static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        if (step.Operation is SimultaneousAttackDamageOperation)
+        {
+            SimultaneousAttackDamageResolution.Resume(world, step, events);
+            return null;
+        }
         if (step.Operation is AttackDamageResolutionOperation)
         {
             AttackDamageResolution.Resume(world, step, events);

@@ -14,4 +14,5 @@ public sealed record AttackDamageRequest(
     internal Occurrence? Origin { get; init; }
     internal EnemyAttack? EnemyAttack { get; init; }
     internal DamageReplacement? Replacement { get; init; }
+    internal PreparedAttackDamage? Prepared { get; init; }
 }

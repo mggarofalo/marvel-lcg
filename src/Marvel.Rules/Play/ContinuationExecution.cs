@@ -5,6 +5,7 @@ internal static class ContinuationExecution
 {
     internal static AbilityExecution? Of(PhaseStep step) => step.Operation switch
     {
+        SimultaneousAttackDamageOperation operation => operation.Resolution.Execution,
         AttackDamageResolutionOperation operation => operation.Resolution.Execution,
         AbilityContinuationAgendaOperation operation => operation.Continuation?.Execution,
         CharacterAttackOperation operation => operation.Attack.Continuation?.Execution,
