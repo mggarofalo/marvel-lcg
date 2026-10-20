@@ -11065,6 +11065,30 @@
       "abilities": []
     },
     {
+      "card": "07017",
+      "name": "Thunderball",
+      "note": "Schemes onto his corresponding side scheme. After his attack, damage each character controlled by its final target player, including after ally defense.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player" },
+          "effect": { "dealDamage": { "cards": { "query": "charactersYouControl" }, "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "07018",
+      "name": "Thunderball",
+      "note": "Schemes onto his corresponding side scheme. After his attack, damage each character controlled by its final target player, including after ally defense.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player" },
+          "effect": { "dealDamage": { "cards": { "query": "charactersYouControl" }, "amount": 1 } }
+        }
+      ]
+    },
+    {
       "card": "07032",
       "name": "Piledriver",
       "note": "Printed Retaliate 1 is engine-owned keyword behavior. Piledriver's scheme activations place threat on his corresponding side scheme.",

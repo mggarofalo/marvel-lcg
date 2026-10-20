@@ -164,10 +164,10 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07015 | Mystical Link / wrecker | 2 | When Revealed: Place 2 threat on each side scheme. | Pending MARVEL-625 |
 | 07015:2 | Mystical Link / wrecker | 2 | star Boost: Wrecker gets +3 ATK for this activation unless you place 2 threat on his side scheme. | Pending MARVEL-625 |
 | 07016 | You're Dead Meat! / wrecker | 2 | When Revealed: Deal 1 damage to the hero or ally with the fewest remaining hit points. If that character is defeated this way, place 3 threat on Wrecker's side scheme. | Pending MARVEL-625 |
-| 07017 | Thunderball / thunderball | 1 | star When Thunderball schemes, place the threat on his side scheme instead of the main scheme. | Pending MARVEL-625 |
-| 07017:2 | Thunderball / thunderball | 1 | star Forced Response: After Thunderball attacks you, deal 1 damage to each character you control. | Pending MARVEL-625 |
-| 07018 | Thunderball / thunderball | 1 | star When Thunderball schemes, place the threat on his side scheme instead of the main scheme. | Pending MARVEL-625 |
-| 07018:2 | Thunderball / thunderball | 1 | star Forced Response: After Thunderball attacks you, deal 1 damage to each character you control. | Pending MARVEL-625 |
+| 07017 | Thunderball / thunderball | 1 | star When Thunderball schemes, place the threat on his side scheme instead of the main scheme. | WreckingThunderballTests: both stages scheme onto own scheme with independent active counter/deck; full-pack journey pending |
+| 07017:2 | Thunderball / thunderball | 1 | star Forced Response: After Thunderball attacks you, deal 1 damage to each character you control. | WreckingThunderballTests: undefended, ally defense, another player defending, defeated allies, stun suppression and unaffected other player; chained-activation/native composition pending |
+| 07018 | Thunderball / thunderball | 1 | star When Thunderball schemes, place the threat on his side scheme instead of the main scheme. | WreckingThunderballTests: both stages scheme onto own scheme with independent active counter/deck; full-pack journey pending |
+| 07018:2 | Thunderball / thunderball | 1 | star Forced Response: After Thunderball attacks you, deal 1 damage to each character you control. | WreckingThunderballTests: undefended, ally defense, another player defending, defeated allies, stun suppression and unaffected other player; chained-activation/native composition pending |
 | 07019 | Thunderstruck / thunderball | 1 | Thunderball's Side Scheme. | Pending MARVEL-625 |
 | 07019:2 | Thunderstruck / thunderball | 1 | This card cannot leave play while Thunderball is in play. | Pending MARVEL-625 |
 | 07019:3 | Thunderstruck / thunderball | 1 | Gamma Blast — Forced Response: After threat is placed here, if there is 10 or more threat here, stun each friendly character. Remove all but 3 threat from this scheme. | Pending MARVEL-625 |
