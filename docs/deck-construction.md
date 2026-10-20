@@ -8,7 +8,7 @@ Card lists show names and quantities; their full procedural previews retain
 printed rules, symbols, traits and stats.
 
 Card search supports MarvelCDB field keys, quoted phrases, pipe alternatives,
-AND clauses and numeric comparisons. **Filters** contains aspect/type/sort controls and a field/operator/value query builder. Search defaults to playable Core cards. The scope selector also exposes all
+AND clauses and numeric comparisons. **Filters** contains aspect/type/sort controls and a field/operator/value query builder. Search defaults to playable Core Set and Rise of Red Skull cards. The scope selector also exposes all
 research cards, player cards or encounter cards from the complete offline snapshot.
 Research presence never admits a card to gameplay. Search-only metadata is generated offline
 in `datasets/cards/search.json`; gameplay card bytes and compatibility hashes
@@ -37,7 +37,7 @@ writes those exact face quantities. **Import URL** accepts public HTTPS
 20 seconds and 1 MiB, and reject redirects. Acquisition never runs in gameplay.
 Malformed JSON or quantities fail without replacing the draft. Unknown and
 unsupported card codes remain visible for correction. Nonempty special
-deck-limit slots are rejected explicitly; expansion exceptions are unsupported.
+deck-limit slots are rejected explicitly; deckbuilding exceptions from unsupported products are unavailable.
 
 The seat selector and **Use deck** capture a valid immutable recipe for setup. Subsequent edits
 or deletion of the library file cannot change that selection or a started game.
@@ -60,11 +60,13 @@ the admitted ability pool. Malformed, unknown and unsupported faces remain
 diagnostics. When these prevent rules assessment, the counted size is unknown;
 the assessor never silently evaluates a reduced substitute deck.
 
-`PlayerDeckAssessment` owns ordinary Core construction rules: exact signature
+`PlayerDeckAssessment` owns deck construction rules: exact signature
 face quantities, counted size, player-card kinds, aspect membership, title copy
 limits and matching unique cards including the selected identity. Its inputs
 must already be admitted printed facts and the authored hero recipe. It does
-not support expansion deckbuilding exceptions. Table-wide identity conflicts
+support Spider-Woman's two-aspect selection and equal-count requirement, including
+her signature aspect cards in those counts. Other products' deckbuilding exceptions
+remain unsupported. Table-wide identity conflicts
 remain setup constraints in `DeckConstruction`.
 
 `PlayerDeckAdmission` uses that assessment and preserves a valid recipe's exact

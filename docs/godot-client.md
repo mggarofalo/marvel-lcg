@@ -34,7 +34,7 @@ session/campaign saves, separately from deck-library and campaign-access files.
 A busy or inaccessible save root fails startup visibly; the client never falls
 back to another directory or bypasses the exclusive writer lease.
 
-Setup includes a [Core deck browser, builder and local library](deck-construction.md)
+Setup includes a [deck browser, builder and local library](deck-construction.md)
 with MarvelCDB JSON and published URL import. Open **Deck library · browse, build,
 import**, then capture a valid deck for a seat before starting the game.
 
