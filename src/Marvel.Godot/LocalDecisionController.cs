@@ -210,6 +210,13 @@ internal sealed class LocalDecisionController(DecisionPanel panel) : IDisposable
 
     public void Dispose() { ClearFrame(); receipt.Dispose(); }
 
+    internal void ExitTree()
+    {
+        // The exiting scene owns the inspector through its local layer; its children cannot be reparented.
+        inspectorParent = null;
+        Dispose();
+    }
+
     internal void ClearFrame()
     {
         if (GodotObject.IsInstanceValid(inspector) && GodotObject.IsInstanceValid(inspectorParent))

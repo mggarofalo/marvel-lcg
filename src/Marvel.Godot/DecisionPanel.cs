@@ -74,7 +74,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         LocalDecision = new LocalDecisionController(this);
         AbilityWindows = new AbilityWindowController(this);
         TreeExiting += AbilityWindows.Dispose;
-        TreeExiting += LocalDecision.Dispose;
+        TreeExiting += LocalDecision.ExitTree;
         choices = new CompleteDecisionSheetController(this);
         CardChoices = new DecisionCardChoices(this);
         BoardChoices = new BoardChoiceContinuity(this);
