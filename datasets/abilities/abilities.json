@@ -11318,6 +11318,205 @@
       ]
     },
     {
+      "card": "03012",
+      "name": "Hawkeye",
+      "note": "Hawkeye enters play with four arrow counters before the entry response window opens. After a minion enters play, his optional response removes one arrow counter as its cost and deals two damage to that entered minion.",
+      "startingCounters": {
+        "type": "arrow",
+        "count": 4,
+        "uses": false
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "game"
+          },
+          "when": {
+            "isKind": {
+              "card": "trigger.subject",
+              "kind": "minion"
+            }
+          },
+          "cost": {
+            "removeCounters": {
+              "card": "this",
+              "counter": "arrow",
+              "count": 1
+            }
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": "trigger.subject",
+              "amount": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03016",
+      "name": "Make the Call",
+      "note": "The Action offers each affordable ally in every player's discard pile, priced at that ally's printed resource cost from the resolving player's generators. The chosen exact card keeps its owner but enters the resolving player's ally area under their control; putting it into play is not playing it and therefore does not spend next-card cost reductions or produce a Card Played response.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "when": {
+            "canMakeTheCall": "game"
+          },
+          "effect": {
+            "makeTheCall": "game"
+          }
+        }
+      ]
+    },
+    {
+      "card": "03018",
+      "name": "The Power of Leadership",
+      "note": "This card generates one wild resource normally and doubles that output while paying for a Leadership card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "doubleResourceFor": "Leadership"
+          }
+        }
+      ]
+    },
+    {
+      "card": "03020",
+      "name": "Mockingbird",
+      "note": "Response: after Mockingbird enters play, stun an enemy. The response asks the resolving player which enemy receives the status.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "giveStatus": {
+                  "card": "chosen",
+                  "status": "stunned"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03021",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "03022",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "03023",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "03024",
+      "name": "Avengers Tower",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "atLeast": {
+                  "value": {
+                    "count": {
+                      "withTrait": {
+                        "cards": {
+                          "query": "alliesYouControl"
+                        },
+                        "trait": "AVENGER"
+                      }
+                    }
+                  },
+                  "count": {
+                    "count": {
+                      "query": "alliesYouControl"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "grant": {
+                  "card": "you",
+                  "keyword": "ally_limit",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "reduceNextCardCost": {
+              "player": "any",
+              "kind": "ally",
+              "trait": "AVENGER",
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03029",
+      "name": "Hydra Soldier",
+      "note": "Guard is a printed keyword. When Hydra Soldier is defeated, its engaged player is dealt one facedown encounter card; the player comes from the minion's engaged play area, not from whichever effect dealt the final damage.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "WhenDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "dealEncounterCards": {
+              "player": "engagedPlayer",
+              "count": 1
+            }
+          }
+        }
+      ]
+    },
+    {
       "card": "03004",
       "name": "Heroic Strike",
       "note": "Hero Action attack deals six damage. The chosen enemy is stunned only if the captured payment includes a physical resource; a declared wild follows its allocated type. Damage prevention does not prevent the subsequent status effect.",

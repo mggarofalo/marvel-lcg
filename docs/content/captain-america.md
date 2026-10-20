@@ -332,3 +332,31 @@ wrong character and premature discard. Independent source review found no
 blocking finding within this bounded mechanic scope. Evidence-producing entry
 methods now have their own owner; the prior admission class shrinks from 425 to
 398 lines without relaxing its debt gate.
+
+## Reprinted faces
+
+Nine further research interpretations cover Hawkeye (03012), Make the Call
+(03016), The Power of Leadership (03018), Mockingbird (03020), Energy/Genius/
+Strength (03021–03023), Avengers Tower (03024) and Hydra Soldier (03029).
+Each face's canonical printed text matches its existing Core or RoRS printing;
+the Captain version of Hydra Soldier retains its distinct nemesis metadata.
+
+Existing lifecycle, payment and Tower controls run against both printings.
+They distinguish four arrows from Uses, arrow payment and damage, foreign ally
+ownership versus control, resource doubling for the chosen ally, conditional
+ally limits, cross-player discounts and phase expiry. The Hydra Soldier control
+supplies its defeat occurrence and proves encounter-card recipient attribution;
+it is not a complete nemesis reveal/defeat journey. Additional game-decision
+tests play Mockingbird, decline or choose a villain/another player's minion,
+and verify that only the chosen enemy is stunned. The three double resources
+pay for a support, and Leadership's doubled output is excluded for Basic cards.
+
+These additions remain behind the closed product gate. Complete deck limits,
+nemesis setup, starter composition and client journeys are still pack acceptance
+obligations, not conclusions from these bounded card tests.
+
+Verification: 49 focused cases and all 2,820 Content tests pass. Eight executable
+authored mutations are caught: arrow count, arrow damage, Uses, resource aspect,
+forced Mockingbird timing, encounter-card recipient, Tower reduction amount and
+Tower exhaustion target. Independent review verified the canonical text matches,
+the interpreted rows, the counter pool and the tests without finding a blocker.
