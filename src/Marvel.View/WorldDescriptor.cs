@@ -14,6 +14,9 @@ public sealed record WorldDescriptor(
     IReadOnlyList<GameAreaDescriptor> GameAreas,
     Outcome Outcome)
 {
+    /// <summary>Visibility-filtered independent encounter ownership and active-counter facts.</summary>
+    public IReadOnlyList<EncounterGroupDescriptor> EncounterGroups { get; init; } = [];
+
     /// <summary>The public rule-owned cause distinguishing player-loss outcomes.</summary>
     public PlayerLossReason LossReason { get; init; }
 

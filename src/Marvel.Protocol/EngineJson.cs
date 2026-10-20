@@ -49,6 +49,9 @@ public static class EngineJson
             throw new JsonException("response error code was missing or invalid");
         }
 
+        if (response.World is { } world && !EncounterGroupContract.IsValid(world))
+            throw new JsonException("response encounter groups contain invalid references");
+
         return response;
     }
 

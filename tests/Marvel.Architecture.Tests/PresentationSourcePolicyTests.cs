@@ -299,6 +299,15 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.EffectiveCards.HasProfile(Marvel.Rules.State.Card)",
             "Marvel.Rules.State.EffectiveCards.Kind(Marvel.Rules.State.Card, Marvel.Rules.State.ICardFacts)",
             "Marvel.Rules.State.EffectiveCards.Title(Marvel.Rules.State.Card, Marvel.Rules.State.ICardFacts)",
+            // Passive topology relationships; hidden card identities are filtered before export.
+            "Marvel.Rules.State.EncounterDeckGroup.CurrentVillain",
+            "Marvel.Rules.State.EncounterDeckGroup.Deck",
+            "Marvel.Rules.State.EncounterDeckGroup.Discard",
+            "Marvel.Rules.State.EncounterDeckGroup.Scheme",
+            "Marvel.Rules.State.EncounterDeckGroup.Stages",
+            "Marvel.Rules.State.EncounterDeckGroup.Villain",
+            "Marvel.Rules.State.EncounterTopology.Active",
+            "Marvel.Rules.State.EncounterTopology.Groups",
             "Marvel.Rules.State.GameArea.Id",
             "Marvel.Rules.State.GameArea.PlayAreas",
             // Printed attributes are read only for an explicitly granted occurrence face.
@@ -362,6 +371,7 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.Traits.Of(Marvel.Rules.State.World, Marvel.Rules.State.Card, Marvel.Rules.State.ICardFacts)",
             "Marvel.Rules.State.World.Areas",
             "Marvel.Rules.State.World.Cards",
+            "Marvel.Rules.State.World.EncounterTopology",
             "Marvel.Rules.State.World.Facts",
             "Marvel.Rules.State.World.FirstPlayer",
             "Marvel.Rules.State.World.GameAreas",

@@ -46,7 +46,7 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `35` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `36` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
 | Engine replay contract | `engine-replay-v19` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
@@ -59,8 +59,9 @@ setup and recovery. The same Core setup and decisions can resolve differently
 under these mechanics, independently of expansion dataset admission. Internal
 agenda operations are reconstructed by full replay; they are not serialized as
 save authority. Schema 7 records ordered explicit decks and the exact campaign
-setup, including stable campaign seats and overlays. Protocol 35 carries campaign
-commands and the engine-owned decision contracts. Older replay, protocol and save
+setup, including stable campaign seats and overlays. Protocol 36 carries campaign
+commands, engine-owned decision contracts and visibility-filtered independent
+villain/deck relationships. Older replay, protocol and save
 identities are rejected; no adapter invents omitted meaning. The RNG and
 state-digest formats retain their existing identities.
 

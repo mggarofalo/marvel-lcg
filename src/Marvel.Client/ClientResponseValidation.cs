@@ -151,7 +151,8 @@ internal static class ClientResponseValidation
         return world.Players.All(CompletePlayer)
             && world.GameAreas.All(CompleteGameArea)
             && world.Areas.All(CompleteArea)
-            && ClientTableValidation.Complete(world);
+            && ClientTableValidation.Complete(world)
+            && EncounterGroupContract.IsValid(world);
     }
 
     private static bool CompletePlayer(PlayerDescriptor player) =>

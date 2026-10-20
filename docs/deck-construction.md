@@ -72,8 +72,7 @@ remain setup constraints in `DeckConstruction`.
 `PlayerDeckAdmission` uses that assessment and preserves a valid recipe's exact
 ordering. The host assesses explicit decks before allocating a world. Existing
 session recipes capture their own immutable card sequence; assessing or editing
-a draft does not modify a game or consume its randomness. Protocol 33 requires
-matching clients and hosts. This unmerged protocol 35 increment also adds
+a draft does not modify a game or consume its randomness. Protocol 36 carries
 public catalog previews, bounded 200-card research pages and search metadata.
 It requires matching hosts and clients; earlier PR builds are not compatible.
 Save, RNG, allocation-order and digest formats are
@@ -154,7 +153,7 @@ choice for each face.
 A read-only host assessment supplies `CanExtend` and, when `IncludeQuantities`
 is requested, accepted per-face quantities. The engine accepts a partial deck
 below 40 cards but requires every other construction constraint, including the
-50-card maximum. These are additive fields in this unreleased protocol 35
+50-card maximum. These are additive fields in protocol 36
 increment; matching hosts and clients remain required. Unavailable quantities
 are hidden. Zero remains available to correct optional imported cards.
 Restore required cards repairs a malformed signature recipe while retaining

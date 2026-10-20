@@ -85,6 +85,9 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.State.DeckTypes",
             // Passive active-characteristic reads; no legality or mutation authority.
             "Marvel.Rules.State.EffectiveCards",
+            // Passive engine-owned topology; filtered relationship projection only.
+            "Marvel.Rules.State.EncounterDeckGroup",
+            "Marvel.Rules.State.EncounterTopology",
             "Marvel.Rules.State.GameArea",
             "Marvel.Rules.State.ICardFacts",
             "Marvel.Rules.State.PersistentAbility",
@@ -220,6 +223,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.TargetRequest",
             "Marvel.Rules.Prompts.VariableRequest",
             "Marvel.Rules.Play.Decision",
+            // Wire referential integrity, not game legality.
+            "Marvel.Protocol.EncounterGroupContract",
             "Marvel.Protocol.EngineError",
             "Marvel.Protocol.EngineFailureDisposition",
             "Marvel.Protocol.EngineJson",

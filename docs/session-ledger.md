@@ -674,7 +674,7 @@ publishes success. Closing the campaign table preserves its resumable attempt.
 A campaign's history cannot cross a committed campaign-fact frontier, and a
 completed attempt cannot be edited into a different campaign outcome.
 
-Campaign schema 1 and protocol 35 are strict compatibility boundaries. No
+Campaign schema 1 and protocol 36 are strict compatibility boundaries. No
 migration invents missing campaign meaning. Complete content admission is
 required before the host advertises a campaign or starts its first attempt.
 
@@ -684,7 +684,7 @@ live in reconstructed agenda state. Session saves persist setup and decisions,
 not these internal operation objects. A restart rebuilds them by replaying the
 complete active prefix and verifies every recorded prompt, event, RNG count and
 state digest before publication. Earlier replay identities are rejected even if
-the Core dataset hashes are unchanged; protocol 35 and schema 7 remain unchanged
+the Core dataset hashes are unchanged; protocol 36 and schema 7 remain unchanged
 by these internal operation additions.
 
 ### Campaign library operations

@@ -48,6 +48,7 @@ public static class WorldProjection
         {
             EventFaces = EventFaceProjection.From(safeEvents, world.Facts),
             ActiveAttack = ActiveAttackProjection.From(world, visible),
+            EncounterGroups = EncounterGroupProjection.From(world, visible),
         };
         return new VisibleResult(visible, authorizedPrompt, safeEvents);
     }
