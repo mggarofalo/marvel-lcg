@@ -73,6 +73,41 @@ public sealed class EventDiscardCostTests
         Assert.DoesNotContain(runner.Actions(world, 0), action => action.Card == source.ObjectId);
     }
 
+    [Rule("rr:cost.5")]
+    [Theory]
+    [InlineData(1, 1, false)]
+    [InlineData(1, 2, true)]
+    [InlineData(2, 2, false)]
+    [InlineData(2, 3, true)]
+    public void OffersRequireAJointlyPayableResourceAndDiscardSelection(int discarded, int heldCount, bool offered)
+    {
+        // Multiple costs "must be paid simultaneously"; independently affordable
+        // resource and discard costs do not establish a joint payment.
+        var (_, world, runner, source, held) = Board("01004", heldCount, discarded);
+        foreach (var card in world.Seats[0].Hand.Cards.Where(card => card != source && !held.Contains(card)).ToArray())
+            World.MoveToTop(card, world.Seats[0].Deck);
+        Assert.Equal(offered, runner.Actions(world, 0).Any(action => action.Card == source.ObjectId));
+    }
+
+    [Rule("rr:cost.5")]
+    [Rule("rr:resource.4")]
+    [Theory]
+    [InlineData("01088", true)]
+    [InlineData("01089", false)]
+    public void JointPaymentPreservesTheRequiredResourceInsteadOfDiscardingTheFirstCard(string resource, bool offered)
+    {
+        // Specific resource types must be generated "in order to pay the cost."
+        // The first candidate generates two icons and must remain available.
+        var runner = Runner("01004", "Action",
+            """{"placeCounters":{"card":"you","counter":"test","count":1}}""",
+            cost: """{"seq":[{"discardFromHand":1},{"spend":"Y"}]}""");
+        var (_, world) = Playing(_ => { }, abilities: runner);
+        Hand(world, resource, 1);
+        world.CreateCard("01003", world.Seats[0].Hand);
+        var source = world.CreateCard("01004", world.Seats[0].Hand);
+        Assert.Equal(offered, runner.Actions(world, 0).Any(action => action.Card == source.ObjectId));
+    }
+
     [Fact]
     public void RepeatedCostQueriesPreserveStateAndSubsequentLegalPlay()
     {
@@ -128,11 +163,12 @@ public sealed class EventDiscardCostTests
         Assert.Equal(pending, world.Agenda.Outstanding);
     }
 
-    private static (Game Game, World World, AbilityRunner Runner, Card Source, Card[] Held) Board(string face, int cards)
+    private static (Game Game, World World, AbilityRunner Runner, Card Source, Card[] Held) Board(
+        string face, int cards, int discard = 1)
     {
         var runner = Runner(face, "Action",
             """{"placeCounters":{"card":"you","counter":"test","count":1}}""",
-            cost: """{"discardFromHand":1}""");
+            cost: $$"""{"discardFromHand":{{discard}}}""");
         Card? source = null;
         Card[] held = [];
         var (game, world) = Playing(board =>

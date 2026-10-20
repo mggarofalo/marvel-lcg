@@ -250,10 +250,9 @@ internal static class AbilityPaymentRules
             + ResourceRequirement(ability.Cost, card);
         cost += required.Length
             - Resources.Required(world, card, world.Facts).Length + GenericResourceAmount(ability.Cost);
-        string pool = string.Concat(AbilityPaymentPricing.EventGenerators(
-                world, card, player, ability.Effect, resourceAbilities)
-            .SelectMany(source => source.Generates));
-        return Resources.Pays(pool, cost, required);
+        var generators = AbilityPaymentPricing.EventGenerators(world, card, player, ability.Effect, resourceAbilities);
+        return AbilityHandDiscardAvailability.CanPay(ability.Cost,
+            AbilityCostSelection.HandCandidates(world, card, player), generators, cost, required);
     }
 
     internal static int GenericResourceAmount(AbilityCost? cost) => cost switch

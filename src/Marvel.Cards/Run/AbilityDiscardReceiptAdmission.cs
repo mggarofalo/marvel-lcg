@@ -10,7 +10,7 @@ internal static class AbilityDiscardReceiptAdmission
         AbilityAdmissionContext context, IReadOnlyList<int>? selected)
     {
         if (!HasSingleDiscard(cost)) return Accepted(effect, context);
-        var hand = context.World.Seats[context.Query.Player].Hand.Cards;
+        var hand = AbilityCostSelection.HandCandidates(context.World, context.Source, context.Query.Player);
         IEnumerable<Card> candidates = selected is null ? hand
             : selected.Count == 1 ? hand.Where(card => card.ObjectId == selected[0]) : [];
         foreach (var card in candidates)
