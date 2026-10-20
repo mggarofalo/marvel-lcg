@@ -16,8 +16,7 @@ internal sealed class CampaignArchiveFiles : IDisposable
     {
         this.root = Path.GetFullPath(root);
         DurableFiles.EnsurePrivateDirectory(this.root);
-        lease = new FileStream(Path.Combine(this.root, ".writer"), FileMode.OpenOrCreate,
-            FileAccess.ReadWrite, FileShare.None);
+        lease = DurableFiles.AcquireWriterLease(this.root);
     }
 
     internal IEnumerable<string> Ids() => Directory.EnumerateDirectories(root)

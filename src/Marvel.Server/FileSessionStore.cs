@@ -147,7 +147,7 @@ public sealed class FileSessionStore : IContentUpgradeStore
     {
         ArgumentNullException.ThrowIfNull(session);
         string directory = PrepareDirectory(session.Save.Session.StorageId);
-        using var lease = WriterLease(directory);
+        using var lease = DurableFiles.AcquireWriterLease(directory);
         SessionContentPublication.RequireUnchanged(directory, session.Save.Compatibility);
         return CommitGeneration(session);
     }
@@ -156,7 +156,7 @@ public sealed class FileSessionStore : IContentUpgradeStore
     public string? CommitContentUpgrade(StoredSession previous, StoredSession candidate, string? generation)
     {
         string directory = PrepareDirectory(previous.Save.Session.StorageId);
-        using var lease = WriterLease(directory);
+        using var lease = DurableFiles.AcquireWriterLease(directory);
         string actualGeneration = ReadStrict(Path.Combine(directory, Current)).Trim();
         if (!ValidGeneration(actualGeneration) || actualGeneration != generation
             || candidate.Save.Session != previous.Save.Session)
@@ -179,9 +179,6 @@ public sealed class FileSessionStore : IContentUpgradeStore
         DurableFiles.EnsurePrivateDirectory(directory);
         return directory;
     }
-
-    private static FileStream WriterLease(string directory) =>
-        new(Path.Combine(directory, ".writer"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
 
     private string? CommitGeneration(StoredSession session)
     {
