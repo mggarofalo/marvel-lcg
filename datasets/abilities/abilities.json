@@ -11065,6 +11065,27 @@
       "abilities": []
     },
     {
+      "card": "07044",
+      "name": "Pummel",
+      "note": "Piledriver activates against the revealing player in either form. His tough status grants +2 to this activation only; the named villain is independent of the active counter.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "enemyAttacks": {
+            "enemies": { "titled": "Piledriver" }, "against": "you",
+            "modifier": { "if": { "test": { "hasStatus": { "card": { "titled": "Piledriver" }, "status": "tough" } }, "then": 2, "else": 0 } }
+          } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "enemySchemes": {
+            "enemies": { "titled": "Piledriver" }, "against": "you",
+            "modifier": { "if": { "test": { "hasStatus": { "card": { "titled": "Piledriver" }, "status": "tough" } }, "then": 2, "else": 0 } }
+          } }
+        }
+      ]
+    },
+    {
       "card": "07027",
       "name": "Energy Projectiles",
       "note": "When Revealed damages each character controlled by the resolving player, including an alter-ego. The Boost ability damages only the current defending character; an undefended attack or scheme has none.",

@@ -39,7 +39,7 @@ public sealed class WreckingSchemeDestinationTests
     public void TopologyAloneDoesNotRedirectAnUndeclaredEnemy()
     {
         var (world, groups, _) = WreckingProjectionFixture.Create();
-        var main = world.CreateCard("07001", world.AreaOf(DeckType.MainSchemesArea));
+        var main = world.CreateCard("07001b", world.AreaOf(DeckType.MainSchemesArea));
         Assert.Same(main, AbilitySchemeDestinations.Resolve(world, AbilityLowering.Book(AbilityBook.None),
             groups[2].Villain));
         var minion = world.CreateCard("01182", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));

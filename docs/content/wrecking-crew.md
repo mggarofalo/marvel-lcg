@@ -222,8 +222,8 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07042:2 | Oversized Hands / piledriver | 2 | star Boost: Discard a support you control. | Pending MARVEL-625 |
 | 07043 | Escape Plan / piledriver | 2 | When Revealed: You are confused. If you are already confused, Piledriver schemes. | Pending MARVEL-625 |
 | 07043:2 | Escape Plan / piledriver | 2 | star Boost: Give the active villain a tough status card. If they already have a tough status card, place 2 threat on their scheme. | Pending MARVEL-625 |
-| 07044 | Pummel / piledriver | 2 | When Revealed (Alter-Ego): Piledriver schemes. If Piledriver is tough, he gets +2 SCH for this activation. | Pending MARVEL-625 |
-| 07044:2 | Pummel / piledriver | 2 | When Revealed (Hero): Piledriver attacks you. If Piledriver is tough, he gets +2 ATK for this activation. | Pending MARVEL-625 |
+| 07044 | Pummel / piledriver | 2 | When Revealed (Alter-Ego): Piledriver schemes. If Piledriver is tough, he gets +2 SCH for this activation. | Authored; activation destination verification blocked by MARVEL-643 |
+| 07044:2 | Pummel / piledriver | 2 | When Revealed (Hero): Piledriver attacks you. If Piledriver is tough, he gets +2 ATK for this activation. | WreckingPummelTests: both stages, inactive Piledriver, own/opposing tough status, exact damage, modifier expiry, active-deck boost; full native journey pending |
 | 07045 | Uncanny Resilience / piledriver | 1 | When Revealed: Remove each stunned and confused status card from each villain. If no status cards were removed, this card gains surge. | Pending MARVEL-625 |
 | 07045:2 | Uncanny Resilience / piledriver | 1 | star Boost: You are confused. | Pending MARVEL-625 |
 | 07046 | Bulldozer / bulldozer | 1 | star When Bulldozer schemes, place the threat on his side scheme instead of the main scheme. | Pending MARVEL-625 |
