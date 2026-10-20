@@ -159,10 +159,19 @@ internal static class AbilityProcedureLowering
     {
         var fields = kind == AbilityPowerKind.Defense ? Fields(value, location, "effect")
             : kind == AbilityPowerKind.Thwart ? Fields(value, location, "target", "effect", "automaticTarget")
-                : Fields(value, location, "target", "effect");
+                : Fields(value, location, "target", "effect", "count");
         bool automatic = Marker(fields, "automaticTarget", location);
+        var body = LowerEffect(Required(fields, "effect", location), location.Child("effect"));
+        var count = fields.ContainsKey("count") ? Numeric(fields, "count", location) : null;
+        if (count is not (null or AbilityNumber.Constant
+            or AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.CardsDiscarded }))
+            throw location.Child("count").Error("a counted attack requires a constant or physical discard-receipt count");
+        if (count is not null && body is not AbilityEffect.AttackDamage
+            { SimultaneousPlacement: true, Amount: AbilityNumber.Constant,
+              Cards: AbilityCardSelection.Query { Kind: AbilityCardQuery.PowerTargets } })
+            throw location.Child("effect").Error("a counted attack requires one simultaneous constant-damage effect over powerTargets");
         return new(kind, kind == AbilityPowerKind.Defense ? null : Selected(fields, "target", location),
-            LowerEffect(Required(fields, "effect", location), location.Child("effect")), automatic);
+            body, automatic) { TargetCount = count };
     }
 
     internal static AbilityEffect.ThwartGroup DistributedThwart(AbilityValue value, AbilityLocation location)
