@@ -20,6 +20,9 @@ func _run() -> void:
 
 func _local_hand_gestures() -> bool:
 	if not await _hand_insertion_is_local(): return false
+	if not preload("res://smoke/player_card_pose.gd").strict_probe(self, _mulligan_card("Swinging Web Kick")):
+		_fail("region-relative pose check accepted a displaced or rotated card")
+		return false
 	if not await _middle_mulligan_closes_gap(): return false
 	if not await preload("res://smoke/mulligan_order_checks.gd").perform(self): return false
 	return await _drag_capture_is_safe()
@@ -53,7 +56,7 @@ func _hand_insertion_is_local() -> bool:
 	move.global_position = finish
 	render_viewport.push_input(move, true)
 	await create_timer(0.16).timeout
-	if neighbor.position.distance_to(old_neighbor) < 10:
+	if abs(neighbor.position.x - old_neighbor.x) < 10:
 		_fail("neighbors did not preview the insertion before release")
 		return false
 	var release := InputEventMouseButton.new()
@@ -75,12 +78,17 @@ func _middle_mulligan_closes_gap() -> bool:
 	var middle := cards[2]
 	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var original := cards.map(func(card: Control) -> Vector2: return card.position)
+	var original_height := _hand_surface().custom_minimum_size.y
+	var rotations := cards.map(func(card: Control) -> float: return card.rotation)
+	var origin := main.position
 	middle.grab_focus()
 	await _press_key(KEY_SPACE)
 	await preload("res://smoke/gesture_settlement.gd").hand(self)
 	if not middle.get_meta("mulligan_staged", false):
 		_fail("middle mulligan card did not stage")
 		return false
+	main.position = origin + Vector2(0, 32)
+	for frame in 5: await process_frame
 	var kept := cards.filter(func(card: Control) -> bool: return card != middle)
 	var step: float = kept[1].position.x - kept[0].position.x
 	for index in range(1, kept.size()):
@@ -90,11 +98,21 @@ func _middle_mulligan_closes_gap() -> bool:
 	middle.grab_focus()
 	await _press_key(KEY_SPACE)
 	await preload("res://smoke/gesture_settlement.gd").hand(self)
-	for index in range(cards.size()):
-		if cards[index].position.distance_to(original[index]) > 1:
-			_fail("unstaging did not restore local hand order and spacing")
-			return false
+	if not _restored_hand_pose(cards, original, rotations, original_height): return false
+	main.position = origin
+	for frame in 5: await process_frame
+	if not _restored_hand_pose(cards, original, rotations, original_height): return false
 	return str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1)) == revision
+
+func _restored_hand_pose(cards: Array[Control], positions: Array, rotations: Array, height: float) -> bool:
+	var shift := Vector2(0, _hand_surface().custom_minimum_size.y - height)
+	for index in range(cards.size()):
+		if not cards[index].position.is_equal_approx(positions[index] + shift) \
+				or not is_equal_approx(cards[index].rotation, rotations[index]):
+			_fail("unstaging did not restore exact hand order, spacing and rotation at the current canvas height")
+			return false
+	return true
+
 
 func _press_key(code: Key) -> void:
 	for pressed in [true, false]:

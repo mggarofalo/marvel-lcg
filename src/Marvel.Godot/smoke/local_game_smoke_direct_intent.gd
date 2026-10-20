@@ -8,6 +8,7 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 		return false
 	card.force_update_transform()
 	var original := card.get_global_transform()
+	var pose_snapshot := preload("res://smoke/player_card_pose.gd").capture(self, card)
 	var revision := str((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
 	var start := _card_body_point(card)
 	var finish := start + Vector2(80, -90)
@@ -33,7 +34,7 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 	escape.keycode = KEY_ESCAPE
 	escape.pressed = true
 	render_viewport.push_input(escape, true)
-	if not await preload("res://smoke/gesture_settlement.gd").global_pose(self, card, original):
+	if not await preload("res://smoke/player_card_pose.gd").settled(self, card, pose_snapshot):
 		_fail("cancelled exhausted drag did not settle at its saved physical pose")
 		return false
 	if not await preload("res://smoke/exhausted_pointer_checks.gd").perform(self, card, anchor): return false

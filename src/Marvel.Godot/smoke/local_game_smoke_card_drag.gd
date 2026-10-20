@@ -11,6 +11,7 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 		return false
 	card.force_update_transform()
 	var original := card.get_global_transform()
+	var pose_snapshot := preload("res://smoke/player_card_pose.gd").capture(driver, card)
 	var origin := card.global_position
 	var collection := card.find_parent("Continuous*")
 	var press := InputEventMouseButton.new()
@@ -49,7 +50,7 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 	release.global_position = finish
 	driver.render_viewport.push_input(release, true)
 	await driver.process_frame
-	if not await preload("res://smoke/gesture_settlement.gd").returned_or_retired(driver, card, original):
+	if not await preload("res://smoke/player_card_pose.gd").settled(driver, card, pose_snapshot, true):
 		driver._fail("released card did not finish returning or retire within 750 ms: " + _return_diagnostic(card, original))
 		return false
 	return true
