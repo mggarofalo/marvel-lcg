@@ -57,7 +57,8 @@ func _open_immediate_preview(card: Control, inspector: Control) -> bool:
 	render_viewport.push_input(leave, true)
 	await process_frame
 	var resting_z := card.z_index
-	var resting_position := card.position
+	var region := "HandDropArea" if card.has_meta("spatial_hand_index") else "VillainTable"
+	var resting_pose := preload("res://smoke/player_card_pose.gd").capture(self, card, region)
 	var resting_rotation := card.rotation
 	var body_point := await _exposed_card_body_point(card)
 	if body_point == Vector2.INF:
@@ -68,9 +69,9 @@ func _open_immediate_preview(card: Control, inspector: Control) -> bool:
 	motion.global_position = motion.position
 	render_viewport.push_input(motion, true)
 	await process_frame
-	if card.z_index <= resting_z or not card.position.is_equal_approx(resting_position) \
+	if card.z_index <= resting_z or not card.get_global_transform().is_equal_approx(preload("res://smoke/player_card_pose.gd").expected(resting_pose)) \
 			or not is_equal_approx(card.rotation, resting_rotation):
-		_fail("inspection must bring the card forward without moving or rotating its hit area")
+		_fail("inspection must raise the card without changing its table-relative pose: z=%s/%s expected=%s actual=%s rotation=%s/%s" % [resting_z, card.z_index, preload("res://smoke/player_card_pose.gd").expected(resting_pose), card.get_global_transform(), resting_rotation, card.rotation])
 		return false
 	if not inspector.visible or (inspector.get_node("Backdrop") as Control).mouse_filter \
 			!= Control.MOUSE_FILTER_IGNORE:

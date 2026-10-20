@@ -23,6 +23,7 @@ func _run() -> void:
 
 func _check_preview(card: Control) -> bool:
 	var inspector := main.get_node("CardInspector") as Control
+	if not await _focused_preview_survives_reflow(card): return false
 	if not await _open_immediate_preview(card, inspector): return false
 	card.grab_focus()
 	for frame in range(12): await process_frame
@@ -43,6 +44,28 @@ func _check_preview(card: Control) -> bool:
 	if not preload("res://smoke/card_inspection_protection_checks.gd").verify(self, inspector.get_node("Frame")): return false
 	if not await _capture_checkpoint("whole-card-" + str(card.get_meta("spatial_hand_index"))): return false
 	return await _staging_preserves_inspection(card)
+
+func _focused_preview_survives_reflow(card: Control) -> bool:
+	_position_pointer_without_settle(Vector2(4, 4))
+	card.release_focus()
+	await process_frame
+	card.grab_focus()
+	var layer := card.z_index
+	if layer <= int(card.get_meta("spatial_resting_z")):
+		_fail("focused card lacks inspection emphasis before reflow")
+		return false
+	var pose := preload("res://smoke/player_card_pose.gd").capture(self, card)
+	var origin := main.position
+	for position in [origin + Vector2(0, 32), origin]:
+		main.position = position
+		for frame in 5: await process_frame
+		if not card.has_focus() or card.z_index != layer \
+				or not card.get_global_transform().is_equal_approx(preload("res://smoke/player_card_pose.gd").expected(pose)):
+			_fail("table reflow lost focused card emphasis or moved its authored pose")
+			return false
+	card.release_focus()
+	await process_frame
+	return true
 
 func _staging_preserves_inspection(card: Control) -> bool:
 	var revision = _node("Toolbar/SyncStatus").get_meta("response_revision")

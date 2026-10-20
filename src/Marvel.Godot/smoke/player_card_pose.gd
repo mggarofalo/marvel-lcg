@@ -2,8 +2,8 @@ extends RefCounted
 
 # Player-card gestures restore their pose relative to independently laid-out table regions.
 # Hand and player-tableau regions move by different amounts when chrome changes height.
-static func capture(driver, card: Control) -> Dictionary:
-	var region_name := "HandDropArea" if card.has_meta("spatial_hand_index") else "PlayerTable"
+static func capture(driver, card: Control, region_name: String = "") -> Dictionary:
+	if region_name.is_empty(): region_name = "HandDropArea" if card.has_meta("spatial_hand_index") else "PlayerTable"
 	var region: Control = driver.main.find_child(region_name, true, false)
 	if region == null: region = card.get_parent() as Control
 	return {"pose": card.get_global_transform(), "region": weakref(region), "origin": region.global_position}

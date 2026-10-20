@@ -166,6 +166,7 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
     private void Move(CardControl card, (Vector2 Position, float Rotation, int Z) pose, bool capture)
     {
         StopMotion(card);
+        int presentedZ = card.ZIndex;
         card.ZIndex = pose.Z;
         if (capture)
         {
@@ -180,6 +181,8 @@ internal sealed class HandGestureLayout(Action<Control> poseChanged)
         }
         if (reflowing || MotionEnabled?.Invoke() == false)
         {
+            // Geometry changes retain hover/focus emphasis while recording the authored resting layer.
+            if (reflowing) card.ZIndex = presentedZ;
             card.Position = pose.Position;
             card.Rotation = pose.Rotation;
             SpatialHandActionStrip.Refresh(card);

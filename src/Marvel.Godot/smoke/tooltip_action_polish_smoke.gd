@@ -59,6 +59,9 @@ func _action_hint() -> bool:
 	var action := _attached(_attached_name(IDENTITY, "Action"))
 	var hint := action.find_child("ActionVerbHint", false, false) as Control
 	var bounds := action.get_global_rect()
+	var local_bounds := action.get_rect()
+	var card := _card_for_anchor(IDENTITY)
+	var pose := preload("res://smoke/player_card_pose.gd").capture(self, card)
 	var minimum := action.get_combined_minimum_size()
 	var point := bounds.get_center()
 	_position_pointer_without_settle(point)
@@ -68,16 +71,35 @@ func _action_hint() -> bool:
 		return false
 	if not await _capture_checkpoint("action-verb-hover"): return false
 	_position_pointer_without_settle(Vector2(4, 4))
+	var origin := main.position
+	main.position += Vector2(0, 32)
+	for frame in 5: await process_frame
 	action.grab_focus()
 	await process_frame
-	if not hint.is_visible_in_tree() or action.get_global_rect() != bounds or action.get_combined_minimum_size() != minimum:
-		_fail("keyboard action hint is absent or changes the compact control's hit geometry")
-		return false
+	if not _hint_geometry(action, hint, local_bounds, minimum, card, pose): return false
 	if not await _capture_checkpoint("action-verb-focus"): return false
+	action.release_focus()
+	main.position = origin
+	for frame in 5: await process_frame
+	action.grab_focus()
+	await process_frame
+	if not _hint_geometry(action, hint, local_bounds, minimum, card, pose): return false
 	action.release_focus()
 	await process_frame
 	if hint.visible:
 		_fail("contextual action label survived pointer and keyboard focus dismissal")
+		return false
+	return true
+
+func _hint_geometry(action: Control, hint: Control, bounds: Rect2, minimum: Vector2, card: Control, pose: Dictionary) -> bool:
+	if not hint.is_visible_in_tree() or action.get_rect() != bounds or action.get_combined_minimum_size() != minimum:
+		_fail("keyboard action hint is absent or changes the compact control's local hit geometry")
+		return false
+	if not card.get_global_transform().is_equal_approx(preload("res://smoke/player_card_pose.gd").expected(pose)):
+		_fail("action hint moved its card independently of the player tableau")
+		return false
+	if hint.get_global_rect().intersects(action.get_global_rect()) or hint.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		_fail("action hint obscures or intercepts its source control")
 		return false
 	return true
 
