@@ -49,6 +49,8 @@ internal static class AbilityBookLowering
         Index(effect, address, effects);
         AbilityStoragePermissionLowering.Validate(ability, effect, location, effects
             .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
+        AbilityAllyCostLowering.Validate(ability, effect, location, effects
+            .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
         AbilityAttackKeywordLowering.Validate(ability, ordinal, effects, location);
         return new CompiledCardAbility(ability.Card, ability.Name, ability.Trigger, effect,
         ability.Cost is { } cost ? LowerCost(Syntax(cost), location with { Path = "cost" }) : null,
