@@ -60,6 +60,13 @@ internal static class AbilityPowerVillainProjection
         };
         if (state.EncounterStages is not null)
             advanced = AbilityPowerEncounterProjection.Advance(advanced, damaged, next, cast);
+        if (AbilityProjectedStatusInheritance.HasCarry(damaged, next, cast, advanced.StatusCounts))
+        {
+            var counts = new Dictionary<(int Card, string Status), int>(advanced.StatusCounts);
+            var changes = new HashSet<(int Card, string Status)>(advanced.StatusChanges);
+            AbilityProjectedStatusInheritance.Apply(damaged, next, cast, counts, changes);
+            advanced = advanced with { StatusCounts = counts, StatusChanges = changes };
+        }
         advanced = SetPowerDamage(advanced, next, 0, first, cast);
         bool printedTough = StateFields.Modified(
             cast.World, next, "toughness",

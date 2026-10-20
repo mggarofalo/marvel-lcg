@@ -101,6 +101,8 @@ internal sealed class DamageTraceVillains(DamageTraceState state, AbilityAdmissi
     private DamageTraceState AdvanceVillain(Card current, Card next, bool carries)
     {
         int carriedTough = carries ? CurrentTough(current.ObjectId) : 0;
+        if (AbilityProjectedStatusInheritance.HasCarry(current, next, cast, state.StatusCounts))
+            AbilityProjectedStatusInheritance.Apply(current, next, cast, state.StatusCounts, state.StatusChanges);
         state.Damage[next.ObjectId] = 0;
         state.Tough[next.ObjectId] = Math.Max(
             carriedTough,
