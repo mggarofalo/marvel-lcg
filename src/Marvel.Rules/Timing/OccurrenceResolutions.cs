@@ -20,7 +20,7 @@ public sealed class OccurrenceResolutions
                 ability.Card, ability.Type, ability.Ordinal,
                 ability.Type == AbilityType.Constant
                     ? ResolutionStatus.Unresolved
-                    : ResolutionStatus.Pending) { TriggeringDefeat = ability.TriggeringDefeat, TriggeringAttack = ability.TriggeringAttack });
+                    : ResolutionStatus.Pending) { TriggeringDefeat = ability.TriggeringDefeat, TriggeringAttack = ability.TriggeringAttack, Native = ability.Native });
         }
     }
 
@@ -105,6 +105,7 @@ public sealed class OccurrenceResolutions
         entry.Card == ability.Card
         && entry.Ability == ability.Type
         && entry.Ordinal == ability.Ordinal
+        && entry.Native == ability.Native
         && entry.TriggeringDefeat == ability.TriggeringDefeat
         && entry.TriggeringAttack == ability.TriggeringAttack);
 
@@ -120,7 +121,7 @@ public sealed class OccurrenceResolutions
         {
             resolutions.Add(new ResolutionEntry(
                 ability.Card, ability.Type, ability.Ordinal, status, applied)
-                { TriggeringDefeat = ability.TriggeringDefeat, TriggeringAttack = ability.TriggeringAttack });
+                { TriggeringDefeat = ability.TriggeringDefeat, TriggeringAttack = ability.TriggeringAttack, Native = ability.Native });
         }
         else
         {

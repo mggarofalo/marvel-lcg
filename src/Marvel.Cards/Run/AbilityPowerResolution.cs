@@ -104,7 +104,18 @@ internal static class AbilityPowerResolution
             ? execution.EventModifierEffects(cast, "attackDamage")
             : [];
         cast.PowerExecution = new(restored, continuation, power, cast.PowerActor?.ObjectId,
-            cast.PowerAmount, [.. attackModifiers]) { ThwartActorUsingAttack = cast.ThwartActorUsingAttack, Occurrence = occurrence };
+            cast.PowerAmount, [.. attackModifiers]) { ThwartActorUsingAttack = cast.ThwartActorUsingAttack, Occurrence = occurrence, WindowOwner = world.Agenda.Current };
+        if (power == BasicPowers.AttackVerb)
+        {
+            var attacker = cast.PowerActor ?? world.Seats[player].IdentityCard;
+            occurrence.Retaliation = new(attacker.ObjectId, attacker.Incarnation,
+                AttackKeywords.Has(world, attacker, source, Keywords.Ranged),
+                continuation.DeclaredRecipients.IsDefault
+                    ? cast.PowerTargets.Select(target => new RetaliationRecipient(
+                        Attacked.Capture(target, world.Facts), target.Area.Id))
+                    : continuation.DeclaredRecipients.Select(recipient => new RetaliationRecipient(recipient, recipient.Area)),
+                cast.Trigger);
+        }
         execution.Run(restored.Body, cast);
         if (cast.Suspended)
         {

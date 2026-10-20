@@ -9,10 +9,13 @@ namespace Marvel.Rules.State;
 /// </remarks>
 public sealed record Attacked(int Card, int Incarnation, OccurrenceCard Facts, long DamageTaken)
 {
+    /// <summary>The original public play area, retained across stage departure.</summary>
+    public int Area { get; init; } = -1;
+
     /// <summary>The target name captured while it was a public attack recipient.</summary>
     public string? Title { get; init; }
 
     /// <summary>Capture public target facts before defeat or departure changes them.</summary>
     public static Attacked Capture(Card card, ICardFacts facts, long damageTaken = 0) =>
-        new(card.ObjectId, card.Incarnation, OccurrenceCard.Capture(card, facts), damageTaken) { Title = EffectiveCards.Title(card, facts) };
+        new(card.ObjectId, card.Incarnation, OccurrenceCard.Capture(card, facts), damageTaken) { Title = EffectiveCards.Title(card, facts), Area = card.Area.Id };
 }

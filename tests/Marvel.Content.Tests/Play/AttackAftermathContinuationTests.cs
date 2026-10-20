@@ -45,6 +45,12 @@ public sealed class AttackAftermathContinuationTests
         var events = game.Resolve(new Decision(action.Id, [], paying, Allocations: allocation)).Events.ToList();
         Assert.Equal(repeatedDamage ? 4 : 2, world.TheCardIn(DeckType.VillainArea)!.Damage);
         Assert.DoesNotContain(modifier!, world.Effects.Active());
+        if (secondEnemy && !ranged)
+        {
+            // rr:attack-player-ability-type.step.7: forced abilities resolve "in any order".
+            Assert.Equal(Question.Order, game.Pending!.Asking);
+            events.AddRange(game.Resolve(Decision.Take(game.Pending.Affordances[0].Id)).Events);
+        }
         if (!ranged)
         {
             Assert.NotNull(game.Pending);

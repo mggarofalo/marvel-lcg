@@ -16,6 +16,10 @@ namespace Marvel.Rules.Timing;
 public readonly record struct PendingAbility(
     int Card, AbilityType Type, int Player, int Ordinal = 0)
 {
+    /// <summary>Engine-owned identity; authored card abilities retain their ordinary ordinal.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public NativeAbilityKind Native { get; init; }
+
     /// <summary>Resolve before ordinary forced interrupts to the same condition.</summary>
     public bool Would { get; init; }
 

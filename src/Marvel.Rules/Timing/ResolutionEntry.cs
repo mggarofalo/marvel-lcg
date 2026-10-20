@@ -12,6 +12,10 @@ public sealed record ResolutionEntry(
     int Card, AbilityType? Ability, int Ordinal, ResolutionStatus Status,
     bool Applied = false)
 {
+    /// <summary>Engine-owned identity; authored card abilities retain their ordinary ordinal.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public NativeAbilityKind Native { get; init; }
+
     /// <summary>The particular defeat answered by this resolution.</summary>
     public State.Defeated? TriggeringDefeat { get; init; }
 

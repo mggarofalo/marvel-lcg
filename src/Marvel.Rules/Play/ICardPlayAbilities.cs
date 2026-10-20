@@ -11,6 +11,6 @@ namespace Marvel.Rules.Play;
 public interface ICardPlayAbilities : ICardPlacementAbilities, IEncounterCardAbilities, ICardCounterPools
 {
     /// <summary>Whether selected identities require first-ally history, including their inactive forms.</summary>
-    bool RequiresAllyPlayHistory(World world) => false;
+    bool RequiresAllyPlayHistory(World world);
 }
 #pragma warning restore CS1591
