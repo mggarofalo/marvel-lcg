@@ -11236,6 +11236,23 @@
       ]
     },
     {
+      "card": "03008",
+      "name": "Captain America's Helmet",
+      "note": "The optional would-be-defeated interrupt names Captain America, not Steve Rogers. Assign remaining hit points to one independently of excess damage, then discard the Helmet only after the assignment resolves in full.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardWouldBeDefeated", "timing": "Interrupt", "subject": "game" },
+          "when": { "isTitle": { "card": "trigger.subject", "title": "Captain America" } },
+          "effect": {
+            "then": {
+              "effect": { "setHitPoints": { "card": "trigger.subject", "amount": 1 } },
+              "then": { "discard": "this" }
+            }
+          }
+        }
+      ]
+    },
+    {
       "card": "03009",
       "name": "Captain America's Shield",
       "note": "Restricted is printed card data. Both constant bonuses name the currently faceup Captain America; exhaustion does not blank them, and Steve Rogers receives neither bonus.",

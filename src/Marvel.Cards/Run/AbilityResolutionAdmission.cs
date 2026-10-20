@@ -216,6 +216,7 @@ internal static class AbilityResolutionAdmission
             "heal" => ResolutionOfAmount(
                 Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast)?.Damage ?? 0,
                 Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast)),
+            "setHitPoints" => AbilityHitPointAssignment.Outcome(node, cast),
             "removeThreat" => ResolutionOfThreat(node, cast),
             "placeThreat" => Every(((AbilityEffect.PlaceThreat)node).Schemes, cast).Count > 0
                 && Amount(((AbilityEffect.PlaceThreat)node).Amount, cast) > 0

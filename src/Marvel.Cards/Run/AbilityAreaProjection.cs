@@ -349,7 +349,7 @@ internal sealed class AbilityAreaProjection
         long repetitions, long baseMultiplier) =>
         this.TryTraceDamage(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceMoveDamage(effect, states, repetitions, baseMultiplier)
-        ?? this.TryTraceHeal(effect, states, repetitions, baseMultiplier)
+        ?? this.TryTraceHealth(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceRemoveThreat(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceForEach(effect, states, repetitions, baseMultiplier);
 

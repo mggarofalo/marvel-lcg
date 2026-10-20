@@ -120,7 +120,7 @@ internal static class AbilityWindowAdmission
         {
             return true;
         }
-        return AbilityAdmission.Admit(ability.Effect, context).IsAdmissible;
+        return AbilityEntryAdmission.Admit(ability.Effect, context).IsAdmissible;
     }
 
     private static bool WhenHolds(

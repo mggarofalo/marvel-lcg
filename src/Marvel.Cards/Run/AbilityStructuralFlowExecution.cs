@@ -68,7 +68,7 @@ internal static class AbilityStructuralFlowExecution
         AbilityStructuralContext context, AbilityEffect.Sequence sequence, int from)
     {
         var admission = from == 0
-            ? AbilityAdmission.AdmitStructure(sequence, context.Admission())
+            ? AbilityEntryAdmission.AdmitStructure(sequence, context.Admission())
             : null;
         return NextSequence(context, sequence,
             new SequenceFrame(from, sequence.Effects.Length),

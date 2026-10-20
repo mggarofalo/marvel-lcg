@@ -77,10 +77,12 @@ internal static class AbilityAreaNumericProjection
         return null;
     }
 
-    internal static List<AreaProjectionState>? TryTraceHeal(
+    internal static List<AreaProjectionState>? TryTraceHealth(
         this AbilityAreaProjection projection, AbilityEffect effect, List<AreaProjectionState> states,
         long repetitions, long baseMultiplier)
     {
+        if (effect is AbilityEffect.SetHitPoints)
+            return AbilityHitPointAssignment.Trace(projection, effect, states);
         if (effect.OperationName() == "heal")
         {
             var instruction = EffectOf<AbilityEffect.Heal>(effect, projection.context);

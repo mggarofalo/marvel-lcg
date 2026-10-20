@@ -11,6 +11,16 @@ Identity-specific cards retain their printed aspect classification for this test
 The card DSL turns printed card text into inert JSON that the rules engine can
 execute. `Marvel.Cards` owns the parser and interpreter.
 
+`setHitPoints` takes `card` and a positive constant `amount`, assigning that
+many remaining hit points on an in-play identity or villain dial. It uses the
+modified maximum, independently of excess lethal damage. Zero, values above
+that maximum and targets without such a dial raise as unsupported. It records
+the existing health assignment event and a full result only when the dial
+changes; a following `then` uses that committed result.
+Repeated `eachPlayer`, `forEach` and `eachTime` frames containing this operation
+are explicitly unsupported: their transfer analysis does not model absolute
+assignment. Admission refuses them before costs or effects change state.
+
 The executable ability book is `datasets/abilities/abilities.json`. It contains
 all 209 Core Set card faces. A face with no executable text still has an explicit
 empty row, so the engine can distinguish “read and does nothing” from “not

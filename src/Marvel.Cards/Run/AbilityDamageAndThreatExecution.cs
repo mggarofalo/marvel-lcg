@@ -87,6 +87,9 @@ internal static class AbilityDamageAndThreatExecution
                 return true;
             case AbilityEffect.Heal heal:
                 Heal(heal, context, state); return true;
+            case AbilityEffect.SetHitPoints assignment:
+                state.Outcome = AbilityHitPointAssignment.Execute(assignment, context);
+                return true;
             case AbilityEffect.PreventDamage prevention:
                 PreventDamage(prevention, context); state.ResolveEffect = true; return true;
             default: return false;

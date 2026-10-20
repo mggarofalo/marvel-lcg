@@ -62,7 +62,7 @@ internal static class AbilityDiscardReceiptAdmission
 
     private static AbilityAdmissionResult? Accepted(AbilityEffect effect, AbilityAdmissionContext context)
     {
-        var result = AbilityAdmission.Admit(effect, context);
+        var result = AbilityEntryAdmission.Admit(effect, context);
         return result.IsAdmissible ? result : null;
     }
 

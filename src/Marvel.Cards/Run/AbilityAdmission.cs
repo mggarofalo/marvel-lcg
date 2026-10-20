@@ -31,33 +31,6 @@ internal static class AbilityAdmission
         Full,
     }
 
-    internal static AbilityAdmissionResult Admit(
-        AbilityEffect effect, AbilityAdmissionContext context)
-    {
-        var evidence = new HashSet<AbilityEffect>(ReferenceEqualityComparer.Instance);
-        var scope = new AbilityAdmissionScope(
-            context.WithReachability(context.Reachability with { CheckingInitiation = true }),
-            evidence);
-        bool admissible = CanInitiate(effect, scope)
-            && TargetLegalityOf(effect, scope) != TargetLegality.Invalid;
-        return new AbilityAdmissionResult(
-            admissible,
-            ImmutableHashSet.CreateRange<AbilityEffect>(
-                ReferenceEqualityComparer.Instance, evidence));
-    }
-
-    internal static AbilityAdmissionResult AdmitStructure(
-        AbilityEffect effect, AbilityAdmissionContext context)
-    {
-        var evidence = new HashSet<AbilityEffect>(ReferenceEqualityComparer.Instance);
-        bool admissible = CanInitiate(
-            effect, new AbilityAdmissionScope(context, evidence));
-        return new AbilityAdmissionResult(
-            admissible,
-            ImmutableHashSet.CreateRange<AbilityEffect>(
-                ReferenceEqualityComparer.Instance, evidence));
-    }
-
     internal static bool TargetsAreValid(
         AbilityEffect effect, AbilityAdmissionContext context) =>
         TargetLegalityOf(effect, new AbilityAdmissionScope(context, []))
