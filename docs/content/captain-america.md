@@ -129,8 +129,15 @@ payability, resource/discard overlap rejection before mutation, a real
 `Game.Resolve` payment with distinct cards, and repeated-query/subsequent-play
 controls. The source-inclusion and payment-overlap mutations each fail the
 corresponding observation. This does not establish the entire event-cost space:
-intervening resource-ability effects, complete jointly payable offer admission,
-and actual Shield Toss cost/target composition remain separate acceptance work.
+intervening resource-ability effects and actual Shield Toss cost/target
+composition remain separate acceptance work. Joint offer admission now searches
+for a hand-discard selection that leaves sufficient distinct resources, including
+typed and multi-icon payments; removing receipt subtraction is killed by the
+insufficient joint-payment cases. `EventDiscardPaymentContinuationTests` proves
+a resource ability's lethal damage cost may suspend for an interrupt and resume
+before paying the event's remaining hand discard. An adversarial synthetic
+interrupt that removes that reserved discard remains unsupported; MARVEL-633
+records the reproduction and unresolved nested-payment abort authority.
 
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains
