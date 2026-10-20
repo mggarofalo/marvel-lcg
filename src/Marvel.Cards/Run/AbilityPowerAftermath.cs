@@ -8,11 +8,14 @@ internal sealed class AbilityPowerAftermath
 {
     private readonly Card[] targets;
     private readonly Card attacker;
+    private readonly Dictionary<int, Attacked> recipients;
     private int next;
     private DamageResult? pending;
 
     internal AbilityPowerAftermath(AbilityResolutionState cast, string power)
     {
+        recipients = (cast.PowerExecution?.Occurrence?.Attacks ?? [])
+            .ToDictionary(recipient => recipient.Card);
         attacker = cast.PowerActor ?? cast.World.Seats[cast.Player].IdentityCard;
         targets = power == BasicPowers.AttackVerb
             && !AttackKeywords.Has(cast.World, attacker, cast.Source, Keywords.Ranged)
@@ -26,10 +29,12 @@ internal sealed class AbilityPowerAftermath
         pending = null;
         while (next < targets.Length)
         {
+            var target = targets[next++];
+            if (!IsCurrentRecipient(target)) continue;
             var owner = cast.World.Agenda.Current;
             var occurrence = cast.World.Agenda.Occurrence;
             pending = DamageAttacks.Retaliate(cast.World, cast.World.Facts,
-                targets[next++], attacker, cast.Trigger, cast.Events);
+                target, attacker, cast.Trigger, cast.Events);
             if (pending is not { IsComplete: false }) continue;
 
             // rr:interrupt.3: an interrupt resolves before its triggering condition.
@@ -48,4 +53,15 @@ internal sealed class AbilityPowerAftermath
         }
         return true;
     }
+
+    private bool IsCurrentRecipient(Card card)
+    {
+        if (!recipients.TryGetValue(card.ObjectId, out var recipient)) return true;
+        // rr:leaves-play.1 prevents a new copy retaliating for the old copy.
+        // Departure preserves this incarnation until reentry. The shared
+        // retaliation procedure can therefore resolve the next physical stage
+        // of the same villain (rr:villain-defeat.3.1).
+        return card.Incarnation == recipient.Incarnation;
+    }
+
 }

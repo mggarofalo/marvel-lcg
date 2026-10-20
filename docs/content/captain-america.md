@@ -212,9 +212,9 @@ Counted attack selection now connects the physical discard receipt to one
 engine-owned target prompt and the simultaneous damage body. Fourteen focused
 cases cover distinct targets, fewer available enemies than X, Guard, separate
 event resources, stun after costs, unsupported DSL shapes, query purity and a
-legal synthetic discard/reentry interrupt. The latter explicitly raises before
-damage at the unimplemented absent-recipient completion boundary; finishing that
-case remains a required MARVEL-627 obligation, not accepted behavior. Counted
+legal synthetic discard/reentry interrupt. Checkpoint 4732eb97 refused the
+absent-recipient completion case before damage; the subsequent completion evidence
+below replaces that refusal. Counted
 bodies are restricted to one simultaneous constant-damage instruction over
 powerTargets, with a constant or physical receipt count. Arbitrary dynamic counts
 and compound bodies raise during lowering.
@@ -224,6 +224,25 @@ three and one cases respectively. All 2,687 Content tests pass and eight old
 journals replay 214 decisions without divergence (not an RNG audit). No authored
 Captain cards or setup are added by this interpreter checkpoint. MARVEL-633's
 adverse cost continuation and MARVEL-635's forced aftermath ordering remain open.
+
+Counted selection captures each original public recipient before attack interrupts.
+Completion retains those facts when a recipient leaves play, assigns zero Taken
+to absent recipients, and correlates remaining damage results by physical card.
+A reentered copy cannot take the old attack's damage, receive its target-bound
+status response, or retaliate for it. Six real Game.Resolve cases place Whiplash
+first/last, remove every recipient, and interrupt either the attack or damage.
+They verify per-recipient versus whole-attack responses, damaged-only eligibility,
+and no retaliation from the new copy. A seventh case advances Zola I to II,
+resolves the authored Test Subjects search, and verifies the surviving villain's
+retaliation after its stage continuation.
+
+Compiled lost-binding, stale-retaliation and cross-recipient-result mutants fail
+three, three and four cases respectively. A proposed special villain exception
+survived its stage control because departure retains incarnation until reentry;
+the unnecessary exception was removed. The shared stage-retaliation procedure
+already supplies the required behavior. All 2,693 Content tests pass; eight old
+journals replay 214 decisions without divergence (not an RNG audit). No accepted
+pack or replay schema change follows from this interpreter checkpoint.
 
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains

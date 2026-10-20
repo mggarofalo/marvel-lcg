@@ -30,6 +30,16 @@ internal static class AbilityContinuationScheduling
     }
 
     internal static AbilityPowerContinuation Power(
-        AbilityContinuationState capture, int powerOrdinal, IReadOnlyList<int> targets) => new(
-            capture, powerOrdinal, [.. targets]) { Execution = capture.Execution };
+        AbilityContinuationState capture, SchedulePowerCommand command, ICardFacts facts)
+    {
+        var continuation = new AbilityPowerContinuation(capture, command.PowerOrdinal,
+            [.. command.Targets.Select(card => card.ObjectId)]) { Execution = capture.Execution };
+        if (command.Effect.TargetCount is null) return continuation;
+        return continuation with
+        {
+            DeclaredRecipients = [.. command.Targets.Select(card => Attacked.Capture(card, facts))],
+            SelectedTargets = [.. command.Targets.Select(card => new AbilityContinuationCardBinding(
+                card.ObjectId, card.Area.Id, card.Incarnation))],
+        };
+    }
 }
