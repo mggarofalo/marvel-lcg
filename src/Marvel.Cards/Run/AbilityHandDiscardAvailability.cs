@@ -9,14 +9,14 @@ namespace Marvel.Cards.Run;
 internal static class AbilityHandDiscardAvailability
 {
     internal static bool CanPay(AbilityCost? cost, IReadOnlyList<Card> candidates,
-        IReadOnlyList<ResourceSource> generators, long amount, string required)
+        IReadOnlyList<ResourceSource> generators, long amount, string required, int? discardCount = null)
     {
         var discards = Costs(cost).OfType<AbilityCost.DiscardFromHand>().ToArray();
         string pool = new([.. generators.SelectMany(source => source.Generates).Order()]);
         if (discards.Length == 0) return Resources.Pays(pool, amount, required);
         if (discards.Length > 1)
             throw new RulesNotImplementedException("multiple hand-discard cost selections require separate commitments");
-        int minimum = AbilityCostSelection.Range(discards[0].Range, candidates.Count).Min;
+        int minimum = discardCount ?? AbilityCostSelection.Range(discards[0].Range, candidates.Count).Min;
         var generated = generators.ToDictionary(source => source.Effect, source => source.Generates);
         string[] receipts = [.. candidates.Select(card => generated.GetValueOrDefault(card.ObjectId, ""))];
         return new PaymentSearch(receipts, amount, required).Find(0, minimum, pool);
