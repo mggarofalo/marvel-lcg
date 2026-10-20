@@ -19,7 +19,10 @@ internal static class AbilityProjectedDefeatWindows
         if (!would)
             occurrence.Also(new Defeated(subject.ObjectId,
                 AbilityEffectAttribution.IdentityPlayer(cast.World, cast.Source, cast.Player),
-                cast.Power ?? "Deal_Damage") { Incarnation = subject.Incarnation, Kind = EffectiveCards.Kind(subject, cast.World.Facts) });
+                cast.Power ?? "Deal_Damage") { Incarnation = subject.Incarnation, Kind = EffectiveCards.Kind(subject, cast.World.Facts),
+                ResponsiblePlayer = EffectiveCards.Kind(subject, cast.World.Facts) is CardKind.EncounterSideScheme or CardKind.PlayerSideScheme
+                    ? AbilityEffectAttribution.ResponsiblePlayer(cast.World, cast.Source, cast.Player)
+                    : AbilityEffectAttribution.IdentityPlayer(cast.World, cast.Source, cast.Player) });
         return AbilityWindowAdmission.WaitingCards(
                 cast.Context.Program, cast.World, occurrence,
                 WindowKind.Interrupt, cast.Context.ResourceAbilities)
@@ -52,13 +55,19 @@ internal static class AbilityProjectedDefeatWindows
         var occurrence = new Occurrence(0, [Steps.CardDefeated], Subject: subject.ObjectId, Player: subject.Owner);
         occurrence.Also(new Defeated(subject.ObjectId,
             AbilityEffectAttribution.IdentityPlayer(cast.World, cast.Source, cast.Player), cast.Power ?? "Deal_Damage")
-            { Incarnation = subject.Incarnation, Kind = EffectiveCards.Kind(subject, cast.World.Facts) });
+            { Incarnation = subject.Incarnation, Kind = EffectiveCards.Kind(subject, cast.World.Facts),
+                ResponsiblePlayer = EffectiveCards.Kind(subject, cast.World.Facts) is CardKind.EncounterSideScheme or CardKind.PlayerSideScheme
+                    ? AbilityEffectAttribution.ResponsiblePlayer(cast.World, cast.Source, cast.Player)
+                    : AbilityEffectAttribution.IdentityPlayer(cast.World, cast.Source, cast.Player) });
         return AbilityWindowAdmission.Waiting(cast.Context.Program, cast.World, occurrence,
             WindowKind.Interrupt, cast.Context.ResourceAbilities).Where(candidate => !state.Discarded.Contains(candidate.Card.ObjectId)).ToArray();
     }
 
     internal static void ValidateContinuation(AbilityEffect node, AbilityPowerState state, AbilityAdmissionScope cast)
     {
+        if (AbilityPowerContinuationDependencies.IsIndependent(node)) return;
+        if (state.UnprojectedStageEntry is { } reason)
+            throw new RulesNotImplementedException(reason);
         if (state.DefeatWindowDeferred && !AbilityDefeatReceiptProjection.PreservesReads(node))
             throw new RulesNotImplementedException("A labelled-power continuation reads the board after an unprojected defeat window.");
         if (!state.EncounterCardsChanged) return;

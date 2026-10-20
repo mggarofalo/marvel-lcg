@@ -213,7 +213,7 @@ public sealed class ActionAbilityProjectedStateSkippedPermanentDiscardTests
         // Constant abilities are active only while their source remains in
         // play. Discarding The "Immortal" Klaw removes +10 hit points, so the
         // next damage defeats this stage and the new stage begins undamaged.
-        var runner = Runner(AuthoredCards.AuntMay, "Action", """
+        string effect = """
             { "attack": {
               "target": { "query": "villain" },
               "effect": { "seq": [
@@ -237,7 +237,21 @@ public sealed class ActionAbilityProjectedStateSkippedPermanentDiscardTests
                 } }
               ] }
             } }
-            """, cost: """{ "exhaust": "this" }""", includeAuthored: true);
+            """;
+        // This synthetic successor retains Rhino II's printed HP but has no
+        // When Revealed ability: the test isolates removal of a health constant,
+        // not the separate projection of Breakin' & Takin' entering play.
+        var book = System.Text.Json.Nodes.JsonNode.Parse(
+            File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
+        var rows = book["cards"]!.AsArray();
+        rows.Single(row => row!["card"]!.GetValue<string>() == "01095")!["abilities"] =
+            new System.Text.Json.Nodes.JsonArray();
+        rows.Single(row => row!["card"]!.GetValue<string>() == AuthoredCards.AuntMay)!["abilities"]!.AsArray().Add(
+            System.Text.Json.Nodes.JsonNode.Parse($$"""
+                {"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+                 "cost":{"exhaust":"this"},"effect":{{effect}}}
+                """));
+        var runner = new Marvel.Cards.Run.AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
         Card? source = null;
         Card? villain = null;
         Card? immortal = null;

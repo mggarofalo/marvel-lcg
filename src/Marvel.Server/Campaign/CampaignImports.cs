@@ -10,6 +10,7 @@ internal static class CampaignImports
     {
         var imported = CampaignTransferCodec.Import(request.Campaign!.Transfer
             ?? throw new ArgumentException("a campaign file is required"));
+        imported = CampaignContentUpgrade.Verify(host.Factory, imported);
         Verify(host, imported);
         var save = Remap(imported);
         Verify(host, save);

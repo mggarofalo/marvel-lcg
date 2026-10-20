@@ -11,14 +11,13 @@ internal static class SideSchemeDefeats
         if (requests.Count == 0) return false;
         var first = requests[0];
         if (requests.Count == 1)
-            return Defeat.Scheme(world, world.Facts, first.Scheme, first.Trigger, events, first.By,
-                first.RecordDefeatOn) == Damage.Outcome.Suspended;
+            return Defeat.Scheme(world, world.Facts, first, events) == Damage.Outcome.Suspended;
 
         // rr:simultaneous-resolution: the first player orders effects with the same bold timing trigger.
         // Derived timing: one interrupt window for the simultaneous conditions (rr:triggering-condition.2)
         // finishes before departures, which occur after When Defeated abilities (rr:when-defeated-abilities.2.1).
         var defeats = requests.Select(request => Defeat.Record(world, request.Scheme, request.By,
-            BasicPowers.ThwartVerb, request.RecordDefeatOn)).ToArray();
+            BasicPowers.ThwartVerb, request.RecordDefeatOn, request.ResponsiblePlayer)).ToArray();
         var owner = world.Agenda.Current;
         var containing = world.Agenda.Occurrence;
         var result = world.DamageAbilities.ExecuteDefeats(world, defeats, first.Trigger);

@@ -15,12 +15,13 @@ using Marvel.Rules.Campaign;
 namespace Marvel.Server;
 
 /// <summary>Loads the repository's canonical datasets and deals games from them.</summary>
-public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, IDeckDiscovery
+public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, IDeckDiscovery, IContentUpgradeFactory
 {
     private readonly SetupCatalog setup;
     private readonly CardCatalog cards;
     private readonly AbilityProgram abilities;
     private readonly ImmutableHashSet<string> playable;
+    private ContentUpgradeAdmission? upgrades;
     private IReadOnlyDictionary<string, Dictionary<string, string>> search = new Dictionary<string, Dictionary<string, string>>();
 
     private DatasetGameFactory(
@@ -42,6 +43,9 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
 
     /// <inheritdoc />
     public SessionCompatibility Compatibility { get; }
+
+    /// <inheritdoc />
+    public SessionContentUpgrade? ContentUpgrade(SessionCompatibility source) => upgrades?.For(source);
 
     /// <inheritdoc />
     public CampaignDefinition? CampaignDefinition { get; }
@@ -71,7 +75,7 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
         byte[] setupBytes = ReadBytes(root, "setup", "setup.json");
         byte[] cardBytes = ReadBytes(root, "cards", "cards.json");
         byte[] abilityBytes = ReadBytes(root, "abilities", "abilities.json");
-        return new DatasetGameFactory(
+        var factory = new DatasetGameFactory(
             SetupCatalog.Parse(System.Text.Encoding.UTF8.GetString(setupBytes)),
             CardCatalog.Parse(System.Text.Encoding.UTF8.GetString(cardBytes)),
             AbilityLowering.Book(AbilityCatalog.Parse(System.Text.Encoding.UTF8.GetString(abilityBytes))),
@@ -87,6 +91,8 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
             search = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(
                 ReadBytes(root, "cards", "search.json"))!,
         };
+        factory.upgrades = new ContentUpgradeAdmission(factory.Compatibility, cardBytes, setupBytes, abilityBytes);
+        return factory;
     }
 
     /// <inheritdoc />

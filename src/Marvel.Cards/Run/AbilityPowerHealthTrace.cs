@@ -35,6 +35,8 @@ internal static class AbilityPowerHealthTrace
         var state = reachability;
         foreach (var card in cards)
         {
+            if (state.UnprojectedStageEntry is { } reason)
+                throw new RulesNotImplementedException(reason);
             var damage = new Dictionary<int, long>(state.CardDamage);
             var discarded = new HashSet<int>(state.Discarded);
             long landed = AbilityDamageProtectionTrace.AfterForcedDamageReplacements(
@@ -90,7 +92,7 @@ internal static class AbilityPowerHealthTrace
         }
         if (damaged.ObjectId == state.CurrentVillain)
         {
-            return AdvancePowerVillain(state, damaged, first, cast);
+            return AbilityPowerVillainProjection.AdvancePowerVillain(state, damaged, first, cast);
         }
         if (EffectiveCards.Kind(damaged, cast.World.Facts)
             is not (CardKind.Minion or CardKind.Ally))

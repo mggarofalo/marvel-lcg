@@ -75,7 +75,7 @@ internal static class AbilityThreatExecution
         int overridden = removal.OverridesCannotFrom is { } source ? Find(source, context)?.ObjectId ?? -1 : -1;
         var requests = schemes.Select(scheme => new ThreatRemovalRequest(scheme, requested,
             context.Trigger, "Remove_Threat", AbilityEffectAttribution.IdentityPlayer(context), overridden)
-            { RecordDefeatOn = occurrence }).ToArray();
+            { RecordDefeatOn = occurrence, ResponsiblePlayer = AbilityEffectAttribution.ResponsiblePlayer(context) }).ToArray();
         var results = ThreatBatchRemoval.Remove(context.World, context.ThreatAbilities, requests, context.Events);
         AbilityStructuralOutcome? outcome = null;
         for (int index = 0; index < results.Count; index++)

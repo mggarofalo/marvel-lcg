@@ -139,6 +139,14 @@ game. A migration may write a new save only after complete replay under the new
 runtime verifies every prompt, decision, event and digest. “The final board
 looks plausible” is not a migration rule.
 
+The narrow [named save upgrade path](save-content-upgrades.md) admits a
+pinned predecessor only after checking unchanged admitted content. It verifies
+the complete retained trace and all campaign proof sessions, then preserves the
+original archive before atomic publication. The save schema remains unchanged.
+Only the explicit Core/RoRS v19-to-v20 replay transition is supported, and only
+when every original recorded fact verifies under the corrected runtime; unknown
+contracts and divergent histories remain unsupported.
+
 ### Setup
 
 `setup` records the complete authored input to a game:
@@ -678,7 +686,13 @@ Campaign schema 1 and protocol 35 are strict compatibility boundaries. No
 migration invents missing campaign meaning. Complete content admission is
 required before the host advertises a campaign or starts its first attempt.
 
-The current replay identity is `engine-replay-v19`. Attack reflection, typed
+The current replay identity is `engine-replay-v20`. Scheme defeat preserves the
+responsible player separately from identity-only credit, and selected villains
+retain same-character meaning across same-title stage promotion. A named v19
+upgrade verifies the complete original history before changing compatibility
+metadata; see [save-content-upgrades.md](save-content-upgrades.md). Histories
+containing a corrected outcome are rejected rather than rewritten.
+Attack reflection, typed
 thwart-stat use, no-boost activation instructions and activation-local receipts
 live in reconstructed agenda state. Session saves persist setup and decisions,
 not these internal operation objects. A restart rebuilds them by replaying the

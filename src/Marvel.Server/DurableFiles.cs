@@ -7,6 +7,31 @@ namespace Marvel.Server;
 /// <summary>Platform durability primitives shared by session and campaign generations.</summary>
 internal static class DurableFiles
 {
+    internal static FileStream AcquireWriterLease(string directory)
+    {
+        string path = Path.Combine(directory, ".writer");
+        var options = new FileStreamOptions
+        {
+            Mode = FileMode.OpenOrCreate,
+            Access = FileAccess.ReadWrite,
+            Share = FileShare.None,
+        };
+        if (!OperatingSystem.IsWindows())
+            options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+        var lease = new FileStream(path, options);
+        try
+        {
+            if (!OperatingSystem.IsWindows())
+                File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            return lease;
+        }
+        catch
+        {
+            lease.Dispose();
+            throw;
+        }
+    }
+
     internal static void WriteFlushed(string path, ReadOnlySpan<byte> bytes)
     {
         using var stream = new FileStream(

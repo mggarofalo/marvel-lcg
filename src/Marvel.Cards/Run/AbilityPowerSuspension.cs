@@ -41,6 +41,7 @@ internal static class AbilityPowerSuspension
         // Enumerate every supported path before accepting a suspension answer;
         // unsupported is a missing calculation, never an absent legal option.
         var paths = PowerPaths(state).ToArray();
+        if (AbilityPowerContinuationDependencies.IsIndependent(node)) return false;
         foreach (var path in paths) AbilityProjectedDefeatWindows.ValidateContinuation(node, path, cast);
         return (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())
             || IsChoice(node)

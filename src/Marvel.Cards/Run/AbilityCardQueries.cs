@@ -60,8 +60,8 @@ internal static class AbilityCardQueries
         // "The player who defeated this scheme confuses their identity."
         // `rr:you-your.5` is why this answers an identity rather than a seat:
         // a status card placed on a player goes on their identity.
-        AbilityCardBinding.Defeater => cast.Defeat is { By: >= 0 } defeated
-            ? cast.World.Seats[defeated.By].IdentityCard
+        AbilityCardBinding.Defeater => cast.Defeat is { ResponsiblePlayer: >= 0 } defeated
+            ? cast.World.Seats[defeated.ResponsiblePlayer].IdentityCard
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the player who defeated a card, and no player "
                 + "did"),
@@ -191,8 +191,8 @@ internal static class AbilityCardQueries
     /// it has not got is refused by name rather than reaching for the first
     /// one.
     /// </remarks>
-    internal static int DefeatingPlayer(AbilityQueryContext cast) => cast.Defeat is { By: >= 0 } defeat
-        ? defeat.By : throw new RulesNotImplementedException("the triggering defeat names no defeating player");
+    internal static int DefeatingPlayer(AbilityQueryContext cast) => cast.Defeat is { ResponsiblePlayer: >= 0 } defeat
+        ? defeat.ResponsiblePlayer : throw new RulesNotImplementedException("the triggering defeat names no defeating player");
 
     internal static int Resolver(AbilityQueryContext cast) => cast.Player >= 0
         ? cast.Player

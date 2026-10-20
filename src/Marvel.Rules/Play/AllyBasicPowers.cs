@@ -140,8 +140,9 @@ public static class AllyBasicPowers
         // `rr:attack-player-ability-type.step.9` says the same thing from the
         // attack's side, and puts it last of all: after `.step.7`'s forced
         // abilities and `.step.8`'s optional ones.
-        if (attacking) InitiateAttack(world, ally, target, ally.Owner);
-        else InitiateThwart(world, ally, target, ally.Owner);
+        int player = CardControl.ControllerOf(world, ally);
+        if (attacking) InitiateAttack(world, ally, target, player);
+        else InitiateThwart(world, ally, target, player);
 
         world.Agenda.Then(new PhaseStep(
             new ConsequentialDamageOperation(
@@ -152,9 +153,9 @@ public static class AllyBasicPowers
             ),
             world.Agenda.Current?.Round ?? 0,
             9,
-            Index: ally.Owner,
+            Index: player,
             Subject: ally.ObjectId,
-            Seat: ally.Owner
+            Seat: player
         ));
     }
 
@@ -171,5 +172,5 @@ public static class AllyBasicPowers
 
     private static IReadOnlyList<Card> LegalTargets(
         World world, ICardFacts facts, Card ally, bool attacking) => attacking
-            ? Attackable(world, facts, ally.Owner) : Thwartable(world, facts, ally.Owner);
+            ? Attackable(world, facts, CardControl.ControllerOf(world, ally)) : Thwartable(world, facts, CardControl.ControllerOf(world, ally));
 }
