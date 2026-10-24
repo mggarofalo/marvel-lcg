@@ -54,6 +54,7 @@ public static class BasicPowerInitiation
                 $"card {enemy.ObjectId} is not an enemy {seat.Name} can attack");
         }
 
+        if (BasicAttackCosts.Schedule(world, character, enemy, exhaust: true)) return;
         Exhaust(character, AttackVerb, events);
 
         // `rr:stun-stunned.1` and `.5`: the attack is cancelled and the stun
@@ -99,13 +100,18 @@ public static class BasicPowerInitiation
                 $"card {enemy.ObjectId} is not an enemy card {character.ObjectId} can attack");
         }
 
-        if (BasicPowerStatus.Cancelled(world, facts, character, Statuses.Stunned, events))
-        {
-            return;
-        }
+        if (BasicAttackCosts.Schedule(world, character, enemy, exhaust: false)) return;
+        CommitPaidAttack(world, facts, character, enemy, events);
+    }
 
+    internal static void CommitPaidAttack(World world, ICardFacts facts, Card character,
+        Card enemy, List<GameEvent> events)
+    {
+        if (BasicPowerStatus.Cancelled(world, facts, character, Statuses.Stunned, events)) return;
+        int player = CardControl.ControllerOf(world, character);
         InitiateAttack(world, character, enemy, player);
-        if (ally) ScheduleConsequentialDamage(world, character, enemy, player);
+        if (EffectiveCards.Kind(character, facts) == CardKind.Ally)
+            ScheduleConsequentialDamage(world, character, enemy, player);
     }
 
     private static bool IsActiveHero(

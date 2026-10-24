@@ -984,3 +984,13 @@ subsequent removal, destination placement and response windows.
 a numeric expression retains ordinary requested-amount semantics. Result slots
 still describe the completed move. These DSL spellings and the single pair prompt
 are engine choices. No expansion card is admitted by this syntax.
+
+`attack_hand_discard_cost` is an engine-selected derived modifier for additional
+hand cards paid to initiate a basic attack. A constant `grant` to the attacking
+character supplies the quantity. It does not add a registered digest field.
+The basic-power offer checks the controller's hand and describes this cost.
+The attack then asks for exactly that many physical hand cards before paying
+them simultaneously with exhaustion. Stun cancels only after payment, including
+when no enemy can be targeted. Permission to attack without exhausting does not
+waive this separate cost. The suspended cost decision reconstructs through the
+ordinary session decision replay; it does not introduce a separate save format.

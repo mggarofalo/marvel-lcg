@@ -110,6 +110,8 @@ public static class AllyBasicPowers
         string field = attacking ? "ATK" : "THW";
         ValidateAllyPower(facts, ally, verb, field);
 
+        if (attacking && BasicAttackCosts.Schedule(world, ally, target, exhaust: true)) return;
+
         // A status-cancelled attempt needs no valid target
         // (`rr:stun-stunned.5.1`, `rr:confuse-confused.5.1`). Check it before
         // target legality so an ally can clear the status when the legal set
@@ -130,7 +132,11 @@ public static class AllyBasicPowers
         }
 
         Exhaust(ally, verb, events);
+        SchedulePowerAndConsequentialDamage(world, ally, target, attacking);
+    }
 
+    private static void SchedulePowerAndConsequentialDamage(World world, Card ally, Card target, bool attacking)
+    {
         // Scheduled, both halves -- and the consequential damage after the
         // power, because `rr:consequential-damage.1` deals it "after resolving
         // abilities that are triggered by the ally attacking or thwarting".

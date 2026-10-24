@@ -502,3 +502,48 @@ Followed damage/timing, Hit Squad order/icons), plus a compiled mutant omitting
 ordered scheduling. These are 26 research faces; the nine remaining faces,
 whole-pack setup/games, restart evidence and native acceptance still block
 runtime admission.
+
+
+### MARVEL-628 private inspection foundation
+
+The typed `inspectEncounterTop` instruction opens one private acknowledgement
+for ordered encounter tops, retains the looked-at treachery count in the existing
+resolution result map, and leaves the deck unchanged. The View grants those
+context faces only for an explicitly exposed CardLook prompt and only to its
+acting seat. The native gallery uses the ordered context cards and one Done
+commitment rather than treating every inspected card as a separate choice.
+Eight focused View cases cover empty/short/full decks, zero/multiple treacheries,
+ordered identities, other-seat privacy, acknowledgement revocation and both
+exposure guards. The View suite passed 325 cases before two additional guard
+controls; Content passed 2,857. Four compiled mutations (reverse order omitted,
+wrong counted type, missing private faces, broadened exposure kind) were killed.
+Four Godot candidate tests passed; native usability and replay acceptance remain.
+
+The integrated inspection owner uses `EncounterRouting.Deck(world)`.
+Wrecking encounter inspection controls verify the active group and private-face
+revocation; ordinary-deck tests alone do not establish that compatibility.
+No Falcon authored row or product admission is included in this foundation.
+
+
+### MARVEL-628 additional basic attack cost foundation
+
+`BasicAttackCosts` owns a positive, derived `attack_hand_discard_cost` modifier,
+hand-card affordability and a suspended exact-card choice. Discard and ordinary
+exhaustion commit together before Stun cancellation; a granted no-exhaust attack
+still pays the discard. The new cost operation carries physical source identity,
+incarnation, controller, target and fixed count through the pending decision.
+The basic offer describes the additional cost and omits unaffordable attacks.
+This is a constant modifier interpreted by the ordinary grant DSL, not a printed
+card-name branch, a new registered state field or a separate persistence format.
+
+Eight focused cases passed, including both identity forms, Stun, zero-target
+Stun, no-exhaust permission, empty hand, unaffected thwart and invalid-choice
+atomicity. Four compiled mutants were killed: omitted cost, omitted hand discard,
+omitted exhaustion and free Stunned attacks. Two EngineHost tests saved/restarted
+the actual pending cost, compared exact prompts and digests, continued against an
+uninterrupted control and verified other-seat hand redaction. Their deterministic
+fixture grants a synthetic cost to a Core ally; they do not claim pack setup.
+The full Content suite passed 2,865 after correcting a regression uncovered by
+its existing scenario-owned-character control: a zero additional cost needs no
+player controller lookup. The source review found no bounded cost-path blocker.
+Actual Wonder Man row, native interaction and full-pack acceptance remain open.
