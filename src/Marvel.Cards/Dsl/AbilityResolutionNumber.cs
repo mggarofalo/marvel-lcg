@@ -19,4 +19,8 @@ public enum AbilityResolutionNumber
     DistinctPrintedResourceTypesDiscarded,
     /// <summary>One plus printed boost icons on the last card discarded this way.</summary>
     TopEncounterDiscardBoostPlusOne,
+    /// <summary>Sum of the printed resource costs of cards discarded this way.</summary>
+    PrintedCostDiscarded,
+    /// <summary>Distinct printed card types among cards discarded this way.</summary>
+    DistinctCardTypesDiscarded,
 }

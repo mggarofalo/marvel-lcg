@@ -16,6 +16,8 @@ internal static class AbilityDiscardReceiptReads
         AbilityNumber.PrintedResourcesDiscarded or AbilityNumber.DiscardedWithResource => true,
         AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PrintedBoostIconsDiscarded
             or AbilityResolutionNumber.PrintedResourceIconsDiscarded
+            or AbilityResolutionNumber.PrintedCostDiscarded
+            or AbilityResolutionNumber.DistinctCardTypesDiscarded
             or AbilityResolutionNumber.DistinctPrintedResourceTypesDiscarded } => true,
         AbilityNumber.Sum sum => sum.Operands.Any(NeedsPhysicalMembers),
         AbilityNumber.Product product => product.Operands.Any(NeedsPhysicalMembers),

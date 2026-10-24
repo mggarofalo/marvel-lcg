@@ -20,6 +20,7 @@ internal static class AbilityCardDiscardExecution
                 var card = context.World.Random.Choice(hand.Cards);
                 types.UnionWith(Resources.GeneratedBy(card.FaceId, context.World.Facts));
                 Rules.Play.Discard.Card(context.World, card, context.Trigger, context.Events);
+                context.Result.Discarded.Add(card);
                 discarded++;
             }
             ActivityBatches.Complete(context.Events, start, "Discard", player);

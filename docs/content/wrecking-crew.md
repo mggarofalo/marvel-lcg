@@ -338,3 +338,23 @@ An empty active deck does not offer an inspection of a different nonempty deck.
 
 Integration verification: 12 inspection controls, full View336 and Content3,210
 pass. The original ordinary-deck lookup is a compiled four-failure negative control.
+
+
+### Discarded printed facts — MARVEL-661
+
+Random hand discards retain their exact physical cards in the resolution receipt.
+The numeric expressions `printedCostDiscarded` and `distinctCardTypesDiscarded`
+read printed facts from that receipt, excluding older discard-pile cards. Undefined
+X costs are zero under `rr:non-numerical-variable`; empty receipts also yield zero.
+Future-discard damage admission recognizes the pending random discard without
+predicting its hidden result. New enum members append after existing members.
+
+Local-book Headbutt and Leading the Charge controls cover both seats, hero and
+alter-ego branches, foreign hand/deck isolation, active-versus-source-paired schemes,
+resource/X/empty costs, repeated types, and short/empty decks. These are draft
+interpretation tests; the canonical two rows are not authored at this checkpoint.
+Twenty-four focused cases pass. The full Content suite passed 3,228 cases before
+the final six short-deck controls. Compiled mutants killed: omitted random physical
+receipt (eight failures), boost icons substituted for printed cost (seven), and
+card count substituted for distinct type count (three). Bounded independent review
+found the enum append correction and no further receipt source blocker.

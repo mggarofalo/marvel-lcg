@@ -52,6 +52,10 @@ internal sealed class AbilityExpressionEvaluation(
     {
         AbilityResolutionNumber.PowerAmount => context.PowerAmount,
         AbilityResolutionNumber.CardsDiscarded => context.Discarded.Length,
+        AbilityResolutionNumber.PrintedCostDiscarded => context.Discarded.Sum(card =>
+            context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players)),
+        AbilityResolutionNumber.DistinctCardTypesDiscarded => context.Discarded.Select(card =>
+            context.World.Facts.Kind(card.FaceId)).Distinct().LongCount(),
         AbilityResolutionNumber.ActivationAttacksAgainstYou =>
             context.Results.GetValueOrDefault(AbilityActivationReceipts.PlayerKey(context.Player)),
         AbilityResolutionNumber.PrintedBoostIconsDiscarded => context.Discarded.Sum(card =>
