@@ -42,6 +42,7 @@ public sealed class AbilityRunner : ICardAbilities
     public const string ChooseVerb = AbilityStructuralExecution.ChooseVerb;
     public IReadOnlySet<string> Authored => program.Authored;
     public bool ObservesPlayerTurnBeginning(World world) => AbilityPlayerTurnTiming.Observed(world, program);
+    public bool ObservesVillainStepOneCompletion(World world) => AbilityVillainPhaseTiming.Observed(world, program);
     public bool RequiresAllyPlayHistory(World world) => AbilityAllyPlayHistory.Required(world, program);
     public bool CanPlayFromStorage(World world, Card card, int player) => AbilityStoragePermission.CanPlay(world, program, card, player);
     public CardCounterPool? CounterPool(World world, Card card) => AbilityProgramQueries.CounterPool(world, program, card);

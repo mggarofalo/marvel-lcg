@@ -56,7 +56,7 @@ internal static class ThreatProcedure
             // does not create that response condition (FAQ 01138).
             if (placed > 0)
             {
-                occurrence.Also(Steps.VillainPhaseStepOneEnds);
+                occurrence.Also(VillainStepOneTiming.ThreatPlaced);
             }
         }
     }

@@ -9,6 +9,8 @@ public interface IWindowAbilities : IAbilityDescriptions
 {
     /// <summary>Whether an in-play authored ability observes player-turn beginnings.</summary>
     bool ObservesPlayerTurnBeginning(World world);
+    /// <summary>Whether an in-play authored ability observes completion of villain step one.</summary>
+    bool ObservesVillainStepOneCompletion(World world);
 
     /// <summary>The abilities currently eligible in this window.</summary>
     IReadOnlyList<PendingAbility> Waiting(World world, Occurrence occurrence, WindowKind window);

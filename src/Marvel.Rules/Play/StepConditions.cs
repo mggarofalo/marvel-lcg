@@ -56,6 +56,7 @@ public static class StepConditions
         [BasicPowerTiming.RecoveryUsed] = [BasicPowerTiming.RecoveryUsed],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
+        [VillainStepOneTiming.Completed] = [VillainStepOneTiming.Completed],
 
         // Two conditions at one moment, because `rr:villain-phase.step.6` is
         // titled "End of Villain Phase and Round" and both are reached there.
@@ -84,5 +85,5 @@ public static class StepConditions
         Conditions.Values.SelectMany(each => each).Concat(
                 // These are discovered while their occurrence applies rather
                 // than promised when its step is scheduled.
-                [DamageDealt, ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds]).ToFrozenSet(StringComparer.Ordinal);
+                [DamageDealt, ThreatPlaced, VillainStepOneTiming.ThreatPlaced, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds]).ToFrozenSet(StringComparer.Ordinal);
 }
