@@ -15,4 +15,6 @@ public enum PhaseTransitionKind
     EndPlayerPhase,
     /// <summary>EndPlayerTurn procedure stage.</summary>
     EndPlayerTurn,
+    /// <summary>Begin a participating player's turn.</summary>
+    BeginPlayerTurn,
 }
