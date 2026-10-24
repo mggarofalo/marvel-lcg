@@ -199,8 +199,8 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
             .Select(card => card.GetProperty("card_id").GetString()!).ToHashSet(StringComparer.Ordinal);
         // Reviewed authoring scope is distinct from runtime product admission.
         // RuntimeProductAdmissionTests keep these research faces unavailable to play.
-        permitted.UnionWith(["03001a", "03001b", "03002", "03003", "03004", "03005", "03007", "03008", "03009", "03010",
-            "03012", "03013", "03016", "03017", "03018", "03020", "03021", "03022", "03023", "03024", "03025", "03027", "03029", "03031", "03032", "03034"]);
+        permitted.UnionWith(["03001a", "03001b", "03002", "03003", "03004", "03005", "03006", "03007", "03008", "03009", "03010",
+            "03011", "03012", "03013", "03014", "03016", "03017", "03018", "03020", "03021", "03022", "03023", "03024", "03025", "03027", "03029", "03031", "03032", "03034"]);
         Assert.All(AuthoredCards.Book.Authored, face => Assert.Contains(face, permitted));
     }
 

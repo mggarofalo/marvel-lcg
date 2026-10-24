@@ -517,3 +517,27 @@ The full Content suite passed 2,865 after correcting a regression uncovered by
 its existing scenario-owned-character control: a zero additional cost needs no
 player controller lookup. The source review found no bounded cost-path blocker.
 Actual Wonder Man row, native interaction and full-pack acceptance remain open.
+
+
+### MARVEL-628 Shield Toss, Falcon and Wonder Man
+
+The actual 03006, 03011 and 03014 rows bring the research book to 29 of 35
+faces. Shield Toss pays selected hand discards and returns the controlled Shield
+before its counted attack; tests cover one through four discards, too few enemy
+targets, Stun, alter-ego, missing Shield and a Shield controlled by another seat.
+Falcon privately inspects the ordered top three and retains its treachery count;
+three bounded conditional choices allow each removal to choose a different
+scheme without admitting a hidden-result-dependent loop. Zero through three
+treacheries and declining the response are exercised. MARVEL-662 records this
+admission boundary and its bounded authored resolution. Wonder Man's actual row
+now drives all eight additional-basic-attack-cost cases.
+
+The full Content suite passes 2,878 cases. Seven executable authored mutants
+were killed: Shield damage/count/returned title, Falcon inspection size/removal
+amount/third threshold, and Wonder Man's additional-cost amount. Independent
+bounded source review found no blocker and prompted the foreign Shield control.
+Wrecking's integration commit 0482297f supplies active-deck inspection routing
+and four topology/privacy controls; it must survive combined integration.
+Avengers Assemble, Quinjet, Man Out of Time, Baron Zemo, Hail Hydra and Expert
+Defense remain unauthored. Full-pack games, native use, pack-specific restart
+and quantity authority still block admission.

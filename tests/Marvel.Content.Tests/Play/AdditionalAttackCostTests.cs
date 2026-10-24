@@ -7,12 +7,7 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class AdditionalAttackCostTests
 {
-    private static Marvel.Cards.Run.AbilityRunner CostRunner() => new(Marvel.Cards.Dsl.AbilityCatalog.Parse("""
-        {"cards":[{"card":"03014","abilities":[{
-          "trigger":{"timing":"Constant","subject":"this"},
-          "effect":{"grant":{"card":"this","keyword":"attack_hand_discard_cost","amount":1}}
-        }]}]}
-        """));
+    private static Marvel.Cards.Run.AbilityRunner CostRunner() => Marvel.Content.Tests.Cards.AuthoredCards.Runner();
 
     [Theory]
     [InlineData(false, false)]
