@@ -247,3 +247,26 @@ pack or replay schema change follows from this interpreter checkpoint.
 No pack starter, complete game, native journey, upgrade fixture, cross-platform
 certification or independent acceptance has passed. Product admission remains
 closed while this work proceeds.
+
+
+### MARVEL-628 private inspection foundation
+
+The typed `inspectEncounterTop` instruction opens one private acknowledgement
+for ordered encounter tops, retains the looked-at treachery count in the existing
+resolution result map, and leaves the deck unchanged. The View grants those
+context faces only for an explicitly exposed CardLook prompt and only to its
+acting seat. The native gallery uses the ordered context cards and one Done
+commitment rather than treating every inspected card as a separate choice.
+Eight focused View cases cover empty/short/full decks, zero/multiple treacheries,
+ordered identities, other-seat privacy, acknowledgement revocation and both
+exposure guards. The View suite passed 325 cases before two additional guard
+controls; Content passed 2,857. Four compiled mutations (reverse order omitted,
+wrong counted type, missing private faces, broadened exposure kind) were killed.
+Four Godot candidate tests passed; native usability and replay acceptance remain.
+
+Independent bounded source review by the Wrecking agent found the combined-pack
+routing requirement: its topology branch must change the single inspection deck
+owner to `EncounterRouting.Deck(world)` and prove active-group private inspection.
+This branch predates that topology API. That integration is required before full
+Captain acceptance; ordinary-deck tests do not establish Wrecking compatibility.
+No Falcon authored row or product admission is included in this foundation.
