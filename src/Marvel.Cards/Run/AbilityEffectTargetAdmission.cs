@@ -53,7 +53,8 @@ internal static class AbilityEffectTargetAdmission
         AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange) =>
         node.OperationName() switch
         {
-            "then" when ActiveChoices(EffectBody(node), cast).Any() =>
+            "then" when EffectBody(node) is AbilityEffect.ActivateEnemies { Dynamic: false }
+                || ActiveChoices(EffectBody(node), cast).Any() =>
                 TargetLegalityOf(
                     EffectBody(node), cast, bindingMayChange),
             "then" => ResolutionOf(EffectBody(node), cast)
@@ -67,6 +68,9 @@ internal static class AbilityEffectTargetAdmission
                     ])
                     : TargetLegalityOf(
                         EffectBody(node), cast, bindingMayChange),
+            "otherwise" when EffectBody(node) is AbilityEffect.ActivateEnemies { Dynamic: false } activation =>
+                TargetLegalityOf(ActivationCandidates(activation, cast).Count == 0
+                    ? EffectFollowing(node) : EffectBody(node), cast, bindingMayChange),
             "otherwise" when ActiveChoices(EffectBody(node), cast).Any() =>
                 TargetLegalityOf(
                     EffectBody(node), cast, bindingMayChange),

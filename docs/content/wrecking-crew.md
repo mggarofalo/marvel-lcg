@@ -151,9 +151,9 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07004 | Day of Reckoning / wrecker | 1 | Wrecker's Side Scheme. | Pending MARVEL-625 |
 | 07004:2 | Day of Reckoning / wrecker | 1 | This card cannot leave play while Wrecker is in play. | Pending MARVEL-625 |
 | 07004:3 | Day of Reckoning / wrecker | 1 | Hard Hitter — Forced Response: After threat is placed here, if there is 10 or more threat here, deal 2 damage to each friendly character. Remove all but 3 threat from this scheme. | Pending MARVEL-625 |
-| 07005 | Held Hostage / wrecker | 1 | Attach to the active villain's side scheme. | Pending MARVEL-625 |
-| 07005:2 | Held Hostage / wrecker | 1 | Threat cannot be removed from attacked scheme by thwarting. | Pending MARVEL-625 |
-| 07005:3 | Held Hostage / wrecker | 1 | Hero Action: The villain corresponding to the attached side scheme attacks you. Then discard this card. | Pending MARVEL-625 |
+| 07005 | Held Hostage / wrecker | 1 | Attach to the active villain's side scheme. | Authored; WreckingHeldHostageTests and permission/projection controls; MARVEL-659 full-product integration pending |
+| 07005:2 | Held Hostage / wrecker | 1 | Threat cannot be removed from attacked scheme by thwarting. | Authored; WreckingHeldHostageTests and permission/projection controls; MARVEL-659 full-product integration pending |
+| 07005:3 | Held Hostage / wrecker | 1 | Hero Action: The villain corresponding to the attached side scheme attacks you. Then discard this card. | Authored; WreckingHeldHostageTests and permission/projection controls; MARVEL-659 full-product integration pending |
 | 07006 | Magic Crowbar / wrecker | 1 | Attach to Wrecker. | Pending MARVEL-625 |
 | 07006:2 | Magic Crowbar / wrecker | 1 | star Forced Response: After Wrecker attacks, place 1 threat on the side scheme with the least threat. | Pending MARVEL-625 |
 | 07006:3 | Magic Crowbar / wrecker | 1 | Hero Action: Exhaust your hero and discard 1 card at random from your hand → discard this card. | Pending MARVEL-625 |
@@ -186,9 +186,9 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07020 | Ball and Chain / thunderball | 1 | Attach to Thunderball. | Pending MARVEL-625 |
 | 07020:2 | Ball and Chain / thunderball | 1 | star Forced Response: After Thunderball attacks, place 1 threat on the main scheme. | Pending MARVEL-625 |
 | 07020:3 | Ball and Chain / thunderball | 1 | Hero Action: Exhaust your hero and discard 1 card at random from your hand → discard this card. | Pending MARVEL-625 |
-| 07021 | Held Hostage / thunderball | 1 | Attach to the active villain's side scheme. | Pending MARVEL-625 |
-| 07021:2 | Held Hostage / thunderball | 1 | Threat cannot be removed from attached scheme by thwarting. | Pending MARVEL-625 |
-| 07021:3 | Held Hostage / thunderball | 1 | Hero Action: The villain corresponding to the attached side scheme attacks you. Then, discard this card. | Pending MARVEL-625 |
+| 07021 | Held Hostage / thunderball | 1 | Attach to the active villain's side scheme. | Authored; WreckingHeldHostageTests and permission/projection controls; MARVEL-659 full-product integration pending |
+| 07021:2 | Held Hostage / thunderball | 1 | Threat cannot be removed from attached scheme by thwarting. | Authored; WreckingHeldHostageTests and permission/projection controls; MARVEL-659 full-product integration pending |
+| 07021:3 | Held Hostage / thunderball | 1 | Hero Action: The villain corresponding to the attached side scheme attacks you. Then, discard this card. | Authored; WreckingHeldHostageTests and permission/projection controls; MARVEL-659 full-product integration pending |
 | 07022 | Radioactive Buildup / thunderball | 1 | Attach to Thunderball. | Pending MARVEL-625 |
 | 07022:2 | Radioactive Buildup / thunderball | 1 | Excess damage dealt by Thunderball is placed as threat on his corresponding side scheme. | Pending MARVEL-625 |
 | 07022:3 | Radioactive Buildup / thunderball | 1 | star Forced Response: After Thunderball attacks, discard this card. | Pending MARVEL-625 |
@@ -218,9 +218,9 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07035 | Distracting Taunts / piledriver | 2 | Attach to Piledriver. | Pending MARVEL-625 |
 | 07035:2 | Distracting Taunts / piledriver | 2 | Piledriver gets +3 hit points. Players cannot attack other villains. | Pending MARVEL-625 |
 | 07035:3 | Distracting Taunts / piledriver | 2 | Response: After your hero attacks Piledriver, spend physical physical resources → discard this card. | Pending MARVEL-625 |
-| 07036 | Held Hostage / piledriver | 1 | Attach to the active villain side scheme. | Pending MARVEL-625 |
-| 07036:2 | Held Hostage / piledriver | 1 | Threat cannot be removed from attached scheme by thwarting. | Pending MARVEL-625 |
-| 07036:3 | Held Hostage / piledriver | 1 | Hero Action: The villain corresponding to the attached side scheme attacks you. Then, discard this card. | Pending MARVEL-625 |
+| 07036 | Held Hostage / piledriver | 1 | Attach to the active villain side scheme. | Authored; WreckingHeldHostageTests and permission/projection controls; MARVEL-659 full-product integration pending |
+| 07036:2 | Held Hostage / piledriver | 1 | Threat cannot be removed from attached scheme by thwarting. | Authored; WreckingHeldHostageTests and permission/projection controls; MARVEL-659 full-product integration pending |
+| 07036:3 | Held Hostage / piledriver | 1 | Hero Action: The villain corresponding to the attached side scheme attacks you. Then, discard this card. | Authored; WreckingHeldHostageTests and permission/projection controls; MARVEL-659 full-product integration pending |
 | 07037 | Corrupt Prison Guard / piledriver | 1 | Guard. (While this minion is engaged with you, you cannot attack the villain.) | Authored; guard-query contract verified, full-pack journey pending MARVEL-631 |
 | 07038 | Escaped Convict / piledriver | 1 | Surge. | Pending MARVEL-625 |
 | 07038:2 | Escaped Convict / piledriver | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
@@ -248,9 +248,9 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07049 | Bulldozer's Helmet / bulldozer | 1 | Attach to Bulldozer. | Pending MARVEL-625 |
 | 07049:2 | Bulldozer's Helmet / bulldozer | 1 | star Forced Response: After Bulldozer attacks you, discard 1 card from the top of your deck for each point of damage dealt by this attack. | Pending MARVEL-625 |
 | 07049:3 | Bulldozer's Helmet / bulldozer | 1 | Hero Action: Exhaust your hero and discard 1 card at random from your hand → discard this card. | Pending MARVEL-625 |
-| 07050 | Held Hostage / bulldozer | 1 | Attach to the active villain side scheme. | Pending MARVEL-625 |
-| 07050:2 | Held Hostage / bulldozer | 1 | Threat cannot be removed from attached scheme by thwarting. | Pending MARVEL-625 |
-| 07050:3 | Held Hostage / bulldozer | 1 | Hero Action: The villain corresponding to the attached side scheme attacks you. Then, discard this card. | Pending MARVEL-625 |
+| 07050 | Held Hostage / bulldozer | 1 | Attach to the active villain side scheme. | Authored; WreckingHeldHostageTests and permission/projection controls; MARVEL-659 full-product integration pending |
+| 07050:2 | Held Hostage / bulldozer | 1 | Threat cannot be removed from attached scheme by thwarting. | Authored; WreckingHeldHostageTests and permission/projection controls; MARVEL-659 full-product integration pending |
+| 07050:3 | Held Hostage / bulldozer | 1 | Hero Action: The villain corresponding to the attached side scheme attacks you. Then, discard this card. | Authored; WreckingHeldHostageTests and permission/projection controls; MARVEL-659 full-product integration pending |
 | 07051 | Ramming Speed / bulldozer | 2 | Attach to Bulldozer. | Pending MARVEL-625 |
 | 07051:2 | Ramming Speed / bulldozer | 2 | star Forced Interrupt: When Bulldozer attacks you, you must defend against Bulldozer's attacks with an ally you control, if able. | Pending MARVEL-625 |
 | 07051:3 | Ramming Speed / bulldozer | 2 | star Forced Response: After Bulldozer attacks you, discard this card. | Pending MARVEL-625 |
@@ -277,3 +277,27 @@ Shared-book synchronization includes Squirrel Girl and Enraged rows plus consequ
 ## Activation completion (MARVEL-657)
 
 Crowbar Toss now uses completed activation receipts for its then clause. Sixteen focused cases cover attack/scheme cancellation, zero-damage completed attacks, post-activation target timing, sequential receipt isolation, and partial multi-enemy activation collections. The full Content suite passes 3,107 tests. Compiled any-activation-is-full and damage-is-activation mutants fail 1 and 4 cases. Held Hostage and whole-pack saved/native journeys remain required before acceptance.
+
+### Held Hostage contract verification (MARVEL-659)
+
+All four printed reprints attach to the active villain's physical side scheme.
+`preventThwarting` distinguishes labeled/basic thwarting from other threat removal;
+stacked copies continue to prohibit until every relevant copy departs. Area and
+power projections follow departed sources, and area projections follow changed
+attachment hosts. Unsupported conditional projected prohibitions raise explicitly.
+`villainOfAttachedScheme` resolves the current stage in that physical group,
+independent of the active counter and source deck, including projected promotion.
+
+Actual-card tests cover four faces, both seats, normal attacks, Stunned
+cancellation, Tough preventing all damage and alter-ego rejection (28 cases). Seventeen further controls
+cover permissions, action offers, stacked sources, projection, four physical pairs,
+promoted stages, projected reattachment and otherwise activation completion. Admission treats static activations as
+suspensions with potentially reachable dependent text; runtime completion receipts
+remain the authority for executing that text. Full-product/native/replay acceptance
+is still pending and this checkpoint does not admit the pack.
+
+Verification: full Content suite 3,151 green, followed by the final projected-host
+control (nine permission cases green). Compiled mutants killed: blanket removal
+prohibition (four failures), ignored departed source (one), active-villain fallback
+(four). Independent bounded review found and verified remediation of the otherwise
+admission gap. This evidence does not replace whole-product acceptance.

@@ -235,7 +235,7 @@ internal static class AbilityRepeatedStatusTrace
     internal static bool CanRemoveThreatFrom(AbilityEffect node, AbilityAdmissionScope cast, Card scheme) =>
         AbilityProgramQueries.CanRemoveThreat(
             cast.World, cast.Context.Program, scheme,
-            OverriddenThreatRemovalSource(node, cast))
+            OverriddenThreatRemovalSource(node, cast), cast.Context.Power == BasicPowers.ThwartVerb)
         && (IgnoresCrisis(node, cast)
             || scheme.Area.Type != DeckType.MainSchemesArea
             || !IsPlayerCard(cast)

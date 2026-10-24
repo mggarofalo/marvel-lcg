@@ -151,7 +151,9 @@ public static class Threat
     }
 
     internal static long Removable(World world, IThreatCardAbilities abilities, ThreatRemovalRequest request) =>
-        abilities.CanRemoveThreat(world, request.Scheme, request.OverridesCannotFrom)
+        (request.ByThwarting
+            ? abilities.CanThwartScheme(world, request.Scheme, request.OverridesCannotFrom)
+            : abilities.CanRemoveThreat(world, request.Scheme, request.OverridesCannotFrom))
             ? Math.Min(request.Scheme.Tokens.GetValueOrDefault("k_threat"), Math.Max(0, request.Amount)) : 0;
 
     internal static void ApplyRemoval(ThreatRemovalRequest request, long removed, List<GameEvent> events)

@@ -188,7 +188,7 @@ public static class BasicPowers
 
             schemes.AddRange(area.Cards.Where(scheme =>
                 scheme.Tokens.GetValueOrDefault("k_threat") > 0
-                && world.ThreatAbilities.CanRemoveThreat(world, scheme)));
+                && world.ThreatAbilities.CanThwartScheme(world, scheme)));
         }
 
         return schemes;

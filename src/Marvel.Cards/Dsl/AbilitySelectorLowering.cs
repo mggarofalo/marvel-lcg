@@ -78,6 +78,7 @@ internal static class AbilitySelectorLowering
     {
         "villain" => AbilityCardQuery.Villain,
         "activeVillainSideScheme" => AbilityCardQuery.ActiveVillainSideScheme,
+        "villainOfAttachedScheme" => AbilityCardQuery.VillainOfAttachedScheme,
         "villains" => AbilityCardQuery.Villains,
         "villainsWithLeastSchemeThreat" => AbilityCardQuery.VillainsWithLeastSchemeThreat,
         "villainsWithMostSchemeThreat" => AbilityCardQuery.VillainsWithMostSchemeThreat,

@@ -852,3 +852,12 @@ shift another target's result. The next stage of the same villain retains the
 shared retaliation behavior. After-attack forced-keyword ordering still blocks
 Captain America admission. The counted form does not admit arbitrary compound
 bodies.
+
+
+`preventThwarting` is a constant card selection prohibition scoped to threat removed
+by basic or labeled thwarting. Non-thwart threat removal remains legal. Projection
+supports unconditional `this`/`attachedTo` prohibitions, departed sources, and area
+projection attachment-host changes; unsupported projected predicates refuse.
+`villainOfAttachedScheme` selects the current physical villain paired with the
+source attachment's scheme, independently of the active counter. It requires an
+explicit encounter topology and never falls back to the active villain.

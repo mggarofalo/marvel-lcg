@@ -194,46 +194,8 @@ internal static class AbilityProgramQueries
     }
 
     internal static bool CanRemoveThreat(
-        World world, AbilityProgram program, Card scheme, int ignoredSource = -1)
-    {
-        foreach (var card in world.Cards.Where(card =>
-            card.ObjectId != ignoredSource && DeckTypes.IsInPlay(card.Area.Type)))
-        {
-            foreach (var ability in On(program, card).Where(ability =>
-                ability.Trigger.Timing == AbilityType.Constant))
-            {
-                var bindings = new AbilityQueryContext(
-                    world, card, new Occurrence(0, []),
-                    AbilityCardQueries.ControllerOf(world, card), card.Incarnation,
-                    null, null, null, []);
-                var selectors = new AbilitySelectorEvaluation(bindings, null, program);
-                var expressions = new AbilityExpressionEvaluation(
-                    new AbilityExpressionContext(
-                        bindings, ImmutableDictionary<string, long>.Empty, [],
-                        string.Empty, -1, false, null), selectors);
-                if (ProhibitsThreatRemoval(
-                    ability.Effect, scheme, selectors, expressions)) return false;
-            }
-        }
-        return true;
-    }
-
-    private static bool ProhibitsThreatRemoval(
-        AbilityEffect effect, Card scheme, AbilitySelectorEvaluation selectors,
-        AbilityExpressionEvaluation expressions) => effect switch
-        {
-            AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
-                ProhibitsThreatRemoval(step, scheme, selectors, expressions)),
-            AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
-                ProhibitsThreatRemoval(step, scheme, selectors, expressions)),
-            AbilityEffect.Conditional conditional => (expressions.Test(conditional.Test)
-                    ? conditional.Then : conditional.Else) is { } branch
-                && ProhibitsThreatRemoval(branch, scheme, selectors, expressions),
-            AbilityEffect.CardAction
-            { Instruction: AbilityCardInstruction.PreventThreatRemoval } prohibition =>
-                selectors.Find(prohibition.Selection)?.ObjectId == scheme.ObjectId,
-            _ => false,
-        };
+        World world, AbilityProgram program, Card scheme, int ignoredSource = -1, bool byThwarting = false) =>
+        AbilityThreatPermissions.CanRemoveThreat(world, program, scheme, ignoredSource, byThwarting);
 
     private static bool ProhibitsDamage(
         AbilityEffect effect, World world, Card source, AbilityExpressionEvaluation expressions) => effect switch

@@ -48,6 +48,7 @@ internal static class AbilityEffectLowering
             "attachCards" => AbilityAttachmentLowering.Attach(argument, child),
             "attachTo" => CardInstruction(argument, child, AbilityCardInstruction.AttachTo),
             "preventThreatRemoval" => CardInstruction(argument, child, AbilityCardInstruction.PreventThreatRemoval),
+            "preventThwarting" => CardInstruction(argument, child, AbilityCardInstruction.PreventThwarting),
             "preventReady" => CardInstruction(argument, child, AbilityCardInstruction.PreventReady),
             "giveAdditionalBoost" => FieldCardInstruction(argument, child, "enemy", AbilityCardInstruction.GiveAdditionalBoost),
             "soakDamage" => FieldCardInstruction(argument, child, "onto", AbilityCardInstruction.SoakDamage),

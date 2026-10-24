@@ -35,6 +35,8 @@ public class NoCardAbilities : ICardAbilities
     /// <inheritdoc/>
     public virtual bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1) => true;
     /// <inheritdoc/>
+    public virtual bool CanThwartScheme(World world, Card scheme, int ignoredSource = -1) => CanRemoveThreat(world, scheme, ignoredSource);
+    /// <inheritdoc/>
     public virtual Card? SchemeDestination(World world, Card enemy) => world.TheCardIn(DeckType.MainSchemesArea);
 
     /// <inheritdoc/>

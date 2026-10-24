@@ -119,6 +119,11 @@ internal static class AbilityAreaNumericProjection
                 foreach (var scheme in ProjectedEvery(
                              instruction.Schemes, state, projection.context))
                 {
+                    if (!AbilityThreatPermissions.CanRemoveThreat(
+                        projection.context.World, projection.context.Program, scheme,
+                        byThwarting: projection.context.Power == BasicPowers.ThwartVerb,
+                        projection: AbilityThreatPermissionProjection.From(projection.context.World, state)))
+                        continue;
                     long removed = AbilityAmounts.SaturatingMultiply(amount, repetitions);
                     state.Threat[scheme.ObjectId] = Math.Max(
                         0, state.ThreatOf(scheme) - removed);

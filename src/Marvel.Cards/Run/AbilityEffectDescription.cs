@@ -106,6 +106,7 @@ internal static class AbilityEffectDescription
     private static string Noun(AbilityCardSelection selection) => selection switch
     {
         AbilityCardSelection.Query { Kind: AbilityCardQuery.ActiveVillainSideScheme } => "active villain's side scheme",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainOfAttachedScheme } => "villain corresponding to the attached scheme",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainsWithLeastSchemeThreat } =>
             "villain whose side scheme has the least threat",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainsWithMostSchemeThreat } =>

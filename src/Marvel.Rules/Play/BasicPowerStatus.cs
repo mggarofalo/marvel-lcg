@@ -168,7 +168,8 @@ public static class BasicPowerStatus
         Threat.Remove(
             world, facts, world.ThreatAbilities, new ThreatRemovalRequest(scheme,
             ThwartStatSubstitution.Modified(world, character, power),
-            ThwartVerb, ThwartVerb, By: LabeledAbilities.IdentityPlayer(world, character)) { ResponsiblePlayer = player }, events);
+            ThwartVerb, ThwartVerb, By: LabeledAbilities.IdentityPlayer(world, character))
+            { ResponsiblePlayer = player, ByThwarting = true }, events);
     }
 
     internal static void Exhaust(Card character, string verb, List<GameEvent> events)

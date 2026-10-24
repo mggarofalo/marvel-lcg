@@ -148,7 +148,7 @@ internal sealed class AbilityConstantQueries
                 // The immutable profile supplies effective base characteristics
                 // to the assigned copy, rather than an additive modifier.
                 break;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventThreatRemoval }:
+            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventThreatRemoval or AbilityCardInstruction.PreventThwarting }:
             case AbilityEffect.DoubleResourceFor:
             case AbilityEffect.AllowPlayBeneath:
             case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RequireAllyDefender }:

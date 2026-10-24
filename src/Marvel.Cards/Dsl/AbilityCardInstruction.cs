@@ -36,6 +36,8 @@ public enum AbilityCardInstruction
     ResolveSpecials,
     /// <summary>Prohibit threat removal from the selected scheme.</summary>
     PreventThreatRemoval,
+    /// <summary>Prohibit removal from the selected scheme by thwarting.</summary>
+    PreventThwarting,
     /// <summary>Prohibit readying the selected card.</summary>
     PreventReady,
     /// <summary>Declare the selected character as defender.</summary>

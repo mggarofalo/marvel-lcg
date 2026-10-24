@@ -103,9 +103,10 @@ internal static class AbilityPowerOutcomeTrace
         AbilityEffect node, Card scheme, AbilityAdmissionScope cast,
         AbilityPowerState state) =>
         PowerThreat(state, scheme) > 0
-        && AbilityProgramQueries.CanRemoveThreat(
+        && AbilityThreatPermissions.CanRemoveThreat(
             cast.World, cast.Context.Program, scheme,
-            OverriddenThreatRemovalSource(node, cast))
+            OverriddenThreatRemovalSource(node, cast), cast.Context.Power == BasicPowers.ThwartVerb,
+            AbilityThreatPermissionProjection.From(cast.World, state))
         && (IgnoresCrisis(node, cast)
             || !(scheme.Area.Type == DeckType.MainSchemesArea
                 && IsPlayerCard(cast) && PowerCrisis(state, cast)));

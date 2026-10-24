@@ -65,7 +65,7 @@ public static class BasicPowerResolution
                 new ThreatRemovalRequest(world.Cards[thwart.Scheme],
                     thwart.Amount, thwart.Trigger, ThwartVerb,
                     LabeledAbilities.IdentityPlayer(world, world.Cards[thwart.Thwarter]))
-                    { ResponsiblePlayer = thwart.Player }, events);
+                    { ResponsiblePlayer = thwart.Player, ByThwarting = true }, events);
             return;
         }
 

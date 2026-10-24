@@ -65,8 +65,14 @@ internal static class AbilityResolutionAdmission
                 || OrderedEffects(node).Any(step => CanPartiallyResolve(step, cast)),
             "if" => ConditionalBranch(node, Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
                 is { } branch && CanPartiallyResolve(branch, cast),
+            // Activation windows determine completion at runtime. Initiation asks whether
+            // the activation itself can affect the game; it does not predict that receipt.
+            "then" when EffectBody(node) is AbilityEffect.ActivateEnemies { Dynamic: false } =>
+                CanPartiallyResolve(EffectBody(node), cast),
             "then" => ResolutionOf(EffectBody(node), cast)
                 is not AdmissionResolution.None,
+            "otherwise" when EffectBody(node) is AbilityEffect.ActivateEnemies { Dynamic: false } =>
+                CanPartiallyResolve(EffectBody(node), cast) || CanPartiallyResolve(EffectFollowing(node), cast),
             "otherwise" => ResolutionOf(EffectBody(node), cast) switch
             {
                 AdmissionResolution.None => CanPartiallyResolve(

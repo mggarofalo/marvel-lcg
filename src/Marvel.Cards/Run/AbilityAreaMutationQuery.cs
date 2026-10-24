@@ -182,6 +182,8 @@ internal sealed class AbilityAreaMutationQuery(
             [EventModifier(context, "eventThreatRemoval")]);
         return Every(effect.Schemes, context).Any(scheme =>
             EffectiveCards.Kind(scheme, context.World.Facts) == CardKind.EncounterSideScheme
+            && AbilityThreatPermissions.CanRemoveThreat(context.World, context.Program, scheme,
+                byThwarting: context.Power == BasicPowers.ThwartVerb)
             && scheme.Tokens.GetValueOrDefault("k_threat") <= amount
             && AbilityProjectedDefeat.DefeatTreeChangesArea(
                 scheme, queried, context));

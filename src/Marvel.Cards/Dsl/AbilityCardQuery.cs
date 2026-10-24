@@ -10,6 +10,8 @@ public enum AbilityCardQuery
     Villain,
     /// <summary>The side scheme paired with the current active villain.</summary>
     ActiveVillainSideScheme,
+    /// <summary>The current villain physically paired with the attached scheme.</summary>
+    VillainOfAttachedScheme,
     /// <summary>Living villains tied for the least threat on their corresponding schemes.</summary>
     VillainsWithLeastSchemeThreat,
     /// <summary>Living villains tied for the most threat on their corresponding schemes.</summary>

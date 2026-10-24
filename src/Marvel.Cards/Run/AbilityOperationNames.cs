@@ -134,6 +134,7 @@ internal static class AbilityOperationNames
             AbilityCardInstruction.ReplaceThreatWithDamage => "replaceThreatWithDamage",
             AbilityCardInstruction.ResolveSpecials => "resolveSpecials",
             AbilityCardInstruction.PreventThreatRemoval => "preventThreatRemoval",
+            AbilityCardInstruction.PreventThwarting => "preventThwarting",
             AbilityCardInstruction.PreventReady => "preventReady",
             AbilityCardInstruction.DeclareDefender => "declareDefender",
             _ => throw new InvalidOperationException("Unknown card instruction"),

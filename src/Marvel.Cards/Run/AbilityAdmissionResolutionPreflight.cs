@@ -289,11 +289,8 @@ internal static class AbilityAdmissionResolutionPreflight
             ? AdmissionResolution.Full
             : AdmissionResolution.None;
         bool answered = ActiveChoices(effect, cast).Any();
-        bool dependentCanRun = stateMayChange
-            || cast.Reachability.PaymentMayMutate
-            || bindingMayChange
-            || answered
-            || ResolutionOf(effect, cast) == required;
+        bool dependentCanRun = DependentBranchCanRun(effect, cast, required,
+            stateMayChange || bindingMayChange || answered);
         if (!dependentCanRun) return [(effect, stateMayChange, bindingMayChange)];
         bool predecessorMayMutate = stateMayChange
             || cast.Reachability.PaymentMayMutate
@@ -305,5 +302,12 @@ internal static class AbilityAdmissionResolutionPreflight
             (EffectFollowing(node), predecessorMayMutate, bindingMayChange),
         ];
     }
+
+    private static bool DependentBranchCanRun(AbilityEffect effect, AbilityAdmissionScope cast,
+        AdmissionResolution required, bool predecessorMayChange) =>
+        effect is AbilityEffect.ActivateEnemies { Dynamic: false }
+        || predecessorMayChange
+        || cast.Reachability.PaymentMayMutate
+        || ResolutionOf(effect, cast) == required;
 
 }

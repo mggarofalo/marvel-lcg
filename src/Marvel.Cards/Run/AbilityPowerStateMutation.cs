@@ -115,9 +115,10 @@ internal static class AbilityPowerStateMutation
     private static bool CanRemoveThreat(
         AbilityEffect node, AbilityAdmissionScope cast,
         AbilityPowerState state, Card scheme) =>
-        AbilityProgramQueries.CanRemoveThreat(
+        AbilityThreatPermissions.CanRemoveThreat(
             cast.World, cast.Context.Program, scheme,
-            OverriddenThreatRemovalSource(node, cast))
+            OverriddenThreatRemovalSource(node, cast), cast.Context.Power == BasicPowers.ThwartVerb,
+            AbilityThreatPermissionProjection.From(cast.World, state))
         && (IgnoresCrisis(node, cast)
             || scheme.Area.Type != DeckType.MainSchemesArea
             || !IsPlayerCard(cast)

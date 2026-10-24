@@ -11684,6 +11684,82 @@
           }
         }
       ]
+    },
+    {
+      "card": "07005",
+      "name": "Held Hostage",
+      "note": "The attached physical scheme determines the corresponding villain, independent of source deck and active counter. The thwart-only prohibition allows other threat removal; discard follows a completed attack, including zero damage, but not a canceled attack.",
+      "attachTo": { "query": "activeVillainSideScheme" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventThwarting": "attachedTo" }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "then": {
+            "effect": { "enemyAttacks": { "enemies": { "query": "villainOfAttachedScheme" }, "against": "you" } },
+            "then": { "discard": "this" }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "07021",
+      "name": "Held Hostage",
+      "note": "The attached physical scheme determines the corresponding villain, independent of source deck and active counter. The thwart-only prohibition allows other threat removal; discard follows a completed attack, including zero damage, but not a canceled attack.",
+      "attachTo": { "query": "activeVillainSideScheme" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventThwarting": "attachedTo" }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "then": {
+            "effect": { "enemyAttacks": { "enemies": { "query": "villainOfAttachedScheme" }, "against": "you" } },
+            "then": { "discard": "this" }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "07036",
+      "name": "Held Hostage",
+      "note": "The attached physical scheme determines the corresponding villain, independent of source deck and active counter. The thwart-only prohibition allows other threat removal; discard follows a completed attack, including zero damage, but not a canceled attack.",
+      "attachTo": { "query": "activeVillainSideScheme" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventThwarting": "attachedTo" }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "then": {
+            "effect": { "enemyAttacks": { "enemies": { "query": "villainOfAttachedScheme" }, "against": "you" } },
+            "then": { "discard": "this" }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "07050",
+      "name": "Held Hostage",
+      "note": "The attached physical scheme determines the corresponding villain, independent of source deck and active counter. The thwart-only prohibition allows other threat removal; discard follows a completed attack, including zero damage, but not a canceled attack.",
+      "attachTo": { "query": "activeVillainSideScheme" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventThwarting": "attachedTo" }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "then": {
+            "effect": { "enemyAttacks": { "enemies": { "query": "villainOfAttachedScheme" }, "against": "you" } },
+            "then": { "discard": "this" }
+          } }
+        }
+      ]
     }
   ]
 }

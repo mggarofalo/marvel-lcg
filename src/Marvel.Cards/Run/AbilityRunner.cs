@@ -48,6 +48,8 @@ public sealed class AbilityRunner : ICardAbilities
     public string ResourcesGeneratedBy(World world, Card source, Card? payingFor) => AbilityProgramQueries.ResourcesGeneratedBy(world, program, source, payingFor);
     public DefenderChoice Defenders(World world, EnemyAttack attack, IReadOnlyList<Card> candidates) => AbilityProgramQueries.Defenders(world, program, attack, candidates);
     public bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1) => AbilityProgramQueries.CanRemoveThreat(world, program, scheme, ignoredSource);
+    /// <inheritdoc/>
+    public bool CanThwartScheme(World world, Card scheme, int ignoredSource = -1) => AbilityProgramQueries.CanRemoveThreat(world, program, scheme, ignoredSource, byThwarting: true);
     public Card? SchemeDestination(World world, Card enemy) => AbilitySchemeDestinations.Resolve(world, program, enemy);
     public IReadOnlyList<PendingAbility> Waiting(World world, Occurrence occurrence, WindowKind window) => resolution.Waiting(world, occurrence, window);
     public Affordance Describe(World world, PendingAbility ability) => resolution.Describe(world, ability);

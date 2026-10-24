@@ -93,7 +93,8 @@ internal static class AbilityInitiationConstraints
     {
         var effect = EffectBody(node);
         AbilityCompletionSupport.Validate(effect, cast.Source.FaceId);
-        if (ActiveChoices(effect, cast).Any()) return CanInitiate(effect, cast);
+        if (effect is AbilityEffect.ActivateEnemies { Dynamic: false }
+            || ActiveChoices(effect, cast).Any()) return CanInitiate(effect, cast);
         var outcome = ResolutionOf(effect, cast);
         return outcome == required
             ? CanInitiate(ContinuationChild(node, branch), cast)
