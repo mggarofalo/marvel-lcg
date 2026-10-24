@@ -173,6 +173,7 @@ internal static class AbilitySelectorLowering
             "attack" => AbilityCardRank.Attack,
             "printedHealth" => AbilityCardRank.PrintedHealth,
             "remainingHealth" => AbilityCardRank.RemainingHealth,
+            "threat" => AbilityCardRank.Threat,
             _ => throw location.Child("by").Error($"'{by}' is not a card ranking"),
         };
         return new(SelectCards(Required(fields, "of", location), location.Child("of")), rank, maximum);

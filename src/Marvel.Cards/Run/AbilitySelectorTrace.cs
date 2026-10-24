@@ -102,10 +102,10 @@ internal static class AbilitySelectorTrace
     private static bool RankedIncludes(
         AbilityCardSelection.Ranked ranked, Card candidate, AbilitySelectorTraceContext trace)
     {
-        if (!TraceSelectorMatches(ranked.Cards, candidate, trace) || !Removable(candidate, trace)) return false;
-        var candidates = MatchingCandidates(ranked.Cards, trace).Where(card => Removable(card, trace)).ToList();
+        if (!TraceSelectorMatches(ranked.Cards, candidate, trace)) return false;
+        var candidates = MatchingCandidates(ranked.Cards, trace).ToList();
         return TraceRankedCandidatesInclude(candidates, candidate, ranked.By, ranked.Maximum,
-            trace.Cast, trace.Discarded, trace.Modifiers);
+            trace);
     }
 
     internal static IEnumerable<Card> MatchingCandidates(AbilityCardSelection selector, AbilitySelectorTraceContext trace)

@@ -889,3 +889,12 @@ exhaustion costs. Multiple random instructions, simultaneous resource spending o
 other cost kinds, and event printed-payment composition explicitly raise before
 payment. Descriptions state that the hand discard is random; no card-selection
 prompt is offered for this cost.
+
+### Ranked selection pools
+
+`minBy` and `maxBy` rank every card in their explicit `of` selector and retain
+all ties. Supported `by` values include `cost`, `attack`, `printedHealth`,
+`remainingHealth`, and `threat`. Threat reads the projected scheme state during
+admission. Ranking alone does not imply removal; a removal effect ranks an
+explicit `discardable` pool when permanent cards must be excluded before the
+comparison (rr:permanent.4.1).

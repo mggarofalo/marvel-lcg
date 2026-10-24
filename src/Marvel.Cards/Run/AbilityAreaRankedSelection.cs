@@ -5,19 +5,14 @@ using static Marvel.Cards.Run.AbilityProjectedStateQueries;
 
 namespace Marvel.Cards.Run;
 
-/// <summary>Ranks legally removable candidates on one projected board.</summary>
+/// <summary>Ranks the selected candidates on one projected board.</summary>
 internal static class AbilityAreaRankedSelection
 {
     internal static List<Card> Select(
         AbilityCardSelection.Ranked ranked, AreaProjectionState state,
         AbilityAdmissionContext context)
     {
-        var among = ProjectedEvery(ranked.Cards, state, context)
-            .Where(card => state.Entered.Contains(card.ObjectId)
-                ? Rules.Play.Discard.EffectCanRemove(
-                    context.World, context.World.Facts, context.Source, card)
-                : CanRemoveByEffect(ranked.Cards, context, card))
-            .ToList();
+        var among = ProjectedEvery(ranked.Cards, state, context).ToList();
         if (among.Count == 0)
         {
             return [];
@@ -31,6 +26,7 @@ internal static class AbilityAreaRankedSelection
         AbilityCardRank rank, Card card, AreaProjectionState state,
         AbilityAdmissionContext context) => rank switch
         {
+            AbilityCardRank.Threat => state.ThreatOf(card),
             AbilityCardRank.Cost => context.World.Facts.PrintedValue(
                 card.FaceId, "Cost", context.World.Players),
             AbilityCardRank.Attack => state.ModifiedOf(context, card, "attack"),

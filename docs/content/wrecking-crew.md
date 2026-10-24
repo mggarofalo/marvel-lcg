@@ -418,3 +418,22 @@ Compiled mutants killed first-card substitution (six failures), omitted discard
 (seven), and omitted paid receipt (one). Bounded independent source review found
 no blocker. Complete printed attachment rows and native/replay acceptance remain
 part of the ongoing full-pack work.
+
+
+### Threat ranking and Oversized Hands
+
+Selectors can rank by current threat on the live or projected board and preserve
+all ties. Ranking does not imply discarding: protected side schemes remain
+eligible for threat effects. A discard must explicitly restrict its input to
+removable cards before ranking. Missing projected threat raises rather than
+silently observing the live board. Eight selector controls cover min/max ties,
+projected changes, Permanent, explicit discard pools and strict trace context.
+The full Content suite passes 3,353 cases for the ranking change.
+
+Oversized Hands 07042 is authored against its printed text. Eight actual-card
+controls cover the highest removable support, both seats, foreign ownership,
+Permanent alternatives and empty eligible pools, tied highest costs chosen by
+the first player, the unrestricted boost choice by the resolving player, and
+two threat only on the active villain's paired scheme. Inverting max to min
+is killed by both ordinary highest-cost cases; the restored focused card and
+selector controls pass 16 cases. The complete pack remains unadmitted.

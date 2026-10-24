@@ -14,4 +14,6 @@ public enum AbilityCardRank
     PrintedHealth,
     /// <summary>Current maximum health minus damage, including active modifiers.</summary>
     RemainingHealth,
+    /// <summary>Current threat on a scheme.</summary>
+    Threat,
 }

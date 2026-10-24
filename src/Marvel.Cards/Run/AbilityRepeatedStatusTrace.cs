@@ -120,11 +120,16 @@ internal static class AbilityRepeatedStatusTrace
 
     internal static bool TraceRankedCandidatesInclude(
         List<Card> candidates, Card candidate, AbilityCardRank rank, bool maximum,
-        AbilityAdmissionScope cast, HashSet<int> discarded,
-        Dictionary<(int Card, string Field), long> modifiers)
+        AbilitySelectorTraceContext trace)
     {
+        var cast = trace.Cast;
+        var discarded = trace.Discarded;
+        var modifiers = trace.Modifiers;
         long Rank(Card card) => rank switch
         {
+            AbilityCardRank.Threat => (trace.SchemeThreat
+                ?? throw new RulesNotImplementedException("threat ranking requires projected scheme threat"))
+                .GetValueOrDefault(card.ObjectId, card.Tokens.GetValueOrDefault("k_threat")),
             AbilityCardRank.Cost => cast.World.Facts.PrintedValue(
                 card.FaceId, "Cost", cast.World.Players),
             AbilityCardRank.Attack => TraceModified(

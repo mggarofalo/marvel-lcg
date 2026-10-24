@@ -179,12 +179,11 @@ internal sealed class AbilitySelectorEvaluation(
 
     private IReadOnlyList<Card> Ranked(AbilityCardSelection.Ranked selection)
     {
-        // rr:permanent.4.1: the effect "instead targets the non-permanent card
-        // that fits its criteria." Filter before comparing and keep all ties.
-        var among = Every(selection.Cards).Where(card => CanRemove(selection.Cards, card)).ToList();
+        var among = Every(selection.Cards).ToList();
         if (among.Count == 0) return [];
         long Rank(Card card) => selection.By switch
         {
+            AbilityCardRank.Threat => card.Tokens.GetValueOrDefault("k_threat"),
             AbilityCardRank.Cost => context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players),
             AbilityCardRank.Attack => StateFields.Modified(context.World, card, "attack", context.World.Facts, context.World.Players),
             AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(card, context.World.Facts, "HP", context.World.Players),

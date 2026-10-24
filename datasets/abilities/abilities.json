@@ -12251,6 +12251,76 @@
           }
         }
       ]
+    },
+    {
+      "card": "07042",
+      "name": "Oversized Hands",
+      "note": "Printed 07042. Rank only supports that this discard can remove; Permanent substitutes the eligible alternative under rr:permanent.4.1. The first player breaks a tied highest cost under rr:first-player.1. No legal support means two threat on the active villain's paired scheme. Boost selects any removable support controlled by the resolving player.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "discardable": {
+                    "query": "supportsYouControl"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "chooser": "firstPlayer",
+                  "from": {
+                    "maxBy": {
+                      "of": {
+                        "discardable": {
+                          "query": "supportsYouControl"
+                        }
+                      },
+                      "by": "cost"
+                    }
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              },
+              "else": {
+                "placeThreat": {
+                  "scheme": {
+                    "query": "activeVillainSideScheme"
+                  },
+                  "amount": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "discardable": {
+                  "query": "supportsYouControl"
+                }
+              },
+              "effect": {
+                "discard": "chosen"
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
