@@ -364,3 +364,20 @@ Headbutt (07058) and Leading the Charge (07059) are now canonical authored rows.
 Their eighteen actual-card controls use the repository ability book, including the
 six short-deck cases. Both pass with the same physical receipt implementation.
 Authored face count is 37 of 60; whole-pack admission remains closed.
+
+
+### Canonical setup modes
+
+The canonical setup corpus contains nineteen Wrecking Crew recipes: Standard,
+Expert, Extreme, and all sixteen Custom A/B combinations in fixed Wrecker,
+Thunderball, Piledriver, Bulldozer order. Authored mode/variant metadata drives
+presentation. Closed product admission from `cd1b921f` excludes all these recipes
+from executable discovery while the pack is incomplete.
+
+Verification: seventy-seven canonical inventory/deal controls, 334 setup tests,
+four server product-gate/projection tests, and full Content 3,317 pass. Wrong
+starting active villain and wrong encounter component mutants each fail four
+player-count controls. Earlier independent setup mechanism controls also pin
+health, threat, shuffled physical ownership, and seeded RNG consumption. The
+canonical recipe diff awaits bounded independent review; no whole-pack acceptance
+is claimed.

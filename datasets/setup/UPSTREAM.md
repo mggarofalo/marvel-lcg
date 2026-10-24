@@ -29,8 +29,19 @@ Rise of Red Skull printed faces before exposing its runtime recipes.
 - every named encounter or modular set is defined;
 - every scenario has valid main schemes and villain stages;
 - every hero has two identity faces, an obligation, and a nemesis set;
-- the declared products contain 16 modes, 7 heroes, and 10 sets;
+- the declared products contain 35 authored modes, 7 heroes, and 10 sets;
 - required encounter sets remain fixed when optional modular sets change;
 - the header counts match the file.
 
 Every failure is one a game would otherwise meet while dealing a board.
+
+
+Wrecking Crew recipes cite `pack:mc03:additional-setup` and
+`pack:mc03:adjustable-difficulty` in the vendored rules corpus. Nineteen recipe
+keys expose Standard, Expert, Extreme, and all sixteen independently selected
+A/B combinations as Custom. Each physical villain group owns its printed side
+scheme and fifteen-card deck; no obligations, nemeses, standard/expert encounter
+sets, or modular sets are added. Wrecker starts active. Authored recipe presence
+does not confer product acceptance: RuntimeProductAdmission keeps Wrecking Crew
+outside playable discovery until whole-pack acceptance. WreckingCanonicalRecipeTests
+checks all nineteen recipes at one through four players.
