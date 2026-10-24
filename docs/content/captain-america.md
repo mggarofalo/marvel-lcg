@@ -595,3 +595,16 @@ entry completion, next-round scheduling, counter amount, printed-cost bound).
 Content passed 2,900 cases before the additional nested control; final focused
 card/conditional/group-thwart controls pass 18. Whole-pack native acceptance,
 remaining four faces and pack-level replay are still open.
+
+### MARVEL-670 selected hand discard
+
+Man Out of Time's remaining implementation uses one exact dynamic hand selection,
+with half the current hand rounded down. An off-book actual-face draft exercises
+both printed options while the shared ability book is owned by Wrecking Crew.
+Ten cases cover hand sizes zero through five across both seats, non-leading
+chosen cards, foreign/empty/duplicate rejection without state mutation, optional
+form change and ready Steve Rogers removal. Resource-icon discards share the
+validated physical commit command while retaining their own selection policy.
+Full Content passes 2,911 cases. Three mutations are killed: zero discard count
+(four failures), foreign-seat candidates (four), and wrong rounding divisor
+(five). Canonical row, restart/privacy and full-pack acceptance remain required.

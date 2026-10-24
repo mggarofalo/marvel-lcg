@@ -160,6 +160,7 @@ internal static class AbilityPlayerBindingAnalysis
 
     private static bool ContainsOther(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.DiscardHandCards => true,
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.You,
         AbilityEffect.AttachCards attach => Contains(attach.Cards) || Contains(attach.Host),
         AbilityEffect.ReleaseBeneath => false,

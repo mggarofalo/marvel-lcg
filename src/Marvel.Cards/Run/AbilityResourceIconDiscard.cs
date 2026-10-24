@@ -35,20 +35,7 @@ internal static class AbilityResourceIconDiscard
         answer.IsDecline || answer.Affordance != context.Expressions.Source.ObjectId
             || answer.Spent.Count != 0 || !Request(context, discard).Allows(answer.Targets)
             ? new Unsupported("select a minimal group of hand cards satisfying the printed resource discard")
-            : new DiscardResourceIconsCommand([.. answer.Targets]);
-
-    internal static void Commit(AbilityResolutionState cast, IReadOnlyList<int> targets)
-    {
-        int start = cast.Events.Count;
-        foreach (int id in targets)
-        {
-            var card = cast.World.Cards[id];
-            Discard.Card(cast.World, card, cast.Trigger, cast.Events);
-            cast.Discarded.Add(card);
-        }
-        cast.Results["discarded"] = cast.Discarded.Count;
-        ActivityBatches.Complete(cast.Events, start, "Discard", cast.Player);
-    }
+            : new DiscardSelectedHandCardsCommand([.. answer.Targets]);
 
     private static List<Card> Cards(AbilityStructuralContext context) =>
         [.. context.Expressions.World.Seats[context.Player].Hand.Cards.Where(card => Icons(context, card) > 0)];

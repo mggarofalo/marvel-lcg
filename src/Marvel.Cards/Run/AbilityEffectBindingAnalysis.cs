@@ -197,6 +197,7 @@ internal static class AbilityEffectBindingAnalysis
 
     private static bool NoBindingChange(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.DiscardHandCards discard => BindingCanChange(discard.Count),
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.ChosenPlayer,
         AbilityEffect.AttachCards attach => BindingCanChange(attach.Cards) || BindingCanChange(attach.Host),
         AbilityEffect.ReleaseBeneath => false,
