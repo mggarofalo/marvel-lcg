@@ -33,12 +33,14 @@ public static class SetupCatalogAdmission
                 throw new ArgumentException($"scenario '{scenario}' requires a main scheme and villain");
             ValidateFaces(campaign.Villain.Concat(campaign.Schemes).Concat(campaign.Encounters)
                 .Concat(campaign.SetAside).Concat(campaign.Challenges), cards, authored);
+            if (campaign.EncounterGroups is { } groups)
+                ValidateFaces(groups.Groups.SelectMany(group => group.Encounters.Prepend(group.Scheme)), cards, authored);
             foreach (string fixedSet in campaign.EncounterSets) _ = setup.EncounterSet(fixedSet);
             foreach (string modular in campaign.ModularSets)
                 if (!ModularEncounterSets.IsModular(setup, cards, modular))
                     throw new ArgumentException($"scenario '{scenario}' recommends non-modular set '{modular}'");
             foreach (string hero in setup.HeroNames)
-                _ = Blueprints.From(Dealer.DealOrder(setup, scenario, [hero], facts: cards), cards);
+                _ = ScenarioDealer.Prepare(setup, new DealRequest(scenario, [hero]), cards);
         }
     }
 

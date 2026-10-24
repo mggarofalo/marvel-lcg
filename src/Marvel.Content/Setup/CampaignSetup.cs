@@ -25,4 +25,8 @@ public sealed record CampaignSetup(
     IReadOnlyList<string> SetAside,
     IReadOnlyList<string> Encounters,
     IReadOnlyList<string> EncounterSets,
-    IReadOnlyList<string> ModularSets);
+    IReadOnlyList<string> ModularSets)
+{
+    /// <summary>Separate villain decks; absence retains ordinary single-deck setup.</summary>
+    public EncounterSetupRecipe? EncounterGroups { get; init; }
+}

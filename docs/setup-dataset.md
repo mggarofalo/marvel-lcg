@@ -80,6 +80,32 @@ choice the scenario permits.
 
 ## Card abilities during setup
 
+### Independent encounter groups
+
+A scenario may declare `encounter_groups`, containing `active_group` (a zero-based
+index) and ordered `groups`. Each group contains `stages`, one `scheme` and an
+ordered `encounters` array. The scenario's `villain` list must equal the flattened
+stage lists. These relationships are explicit authored composition, not inferred
+from card names. Missing, duplicate and unknown group fields are rejected.
+
+`ScenarioDealer.Prepare` returns blueprints and an optional `EncounterSetupPlan`.
+The rules-owned plan validation requires Wrecking Crew's four groups, fifteen
+encounter cards per group, legal component kinds, and either one stage per group
+or two for every group. Other encounter sets and caller-selected modular sets
+are forbidden. Hero obligations and nemesis sets are excluded before allocation,
+as required by `pack:mc03:additional-setup.prepare-encounter-decks`.
+
+The engine chooses this allocation spelling: ordinary player cards, main schemes
+and scenario set-aside cards precede complete group blocks in authored order.
+Each block contains its stages, paired scheme and encounter cards. Blueprint
+binding happens after linked player cards are inserted, so group IDs account for
+those insertions without guessing from face names. Each villain deck shuffles in
+group order after the player decks, on the one seeded stream. Recipes without
+groups retain their ordinary allocation and encounter-card composition.
+
+The group recipe contract does not itself admit a product. Whole-pack card,
+setup, client and compatibility acceptance still controls public discovery.
+
 The setup dataset says which cards a product supplies. It does not duplicate
 instructions printed on those cards.
 

@@ -41,6 +41,18 @@ a keyword or stat also needs its corresponding attribute correction and tests.
 
 ## Integration obligations
 
+### Authored setup recipe boundary
+
+`ScenarioDealer` binds explicit `EncounterSetupRecipe` component recipes to the
+rules-owned four-group setup plan. The isolated `WreckingRecipeTests` use real
+printed cards and all sixteen custom A/B combinations plus Extreme; all four
+player counts preserve independent HP, fixed starting threat, and deterministic
+separate deck shuffles. Malformed groups, foreign schemes, short decks, added
+modular sets and missing authored group faces are refused. Ordinary scenario
+allocation is checked separately. These setup tests intentionally use
+`NoCardAbilities`; they establish physical composition and setup placement, not
+complete card-text execution or public scenario admission.
+
 ### Projected stage continuity
 
 MARVEL-638 owns multi-villain card projection. `WreckingPowerProjectionTests`
