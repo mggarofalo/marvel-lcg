@@ -11760,6 +11760,374 @@
           } }
         }
       ]
+    },
+    {
+      "card": "07011",
+      "name": "Chaos In the Prison",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "query": "upgradesYouControl"
+                    }
+                  },
+                  "then": {
+                    "choose": {
+                      "options": [
+                        {
+                          "chooseCard": {
+                            "from": {
+                              "query": "upgradesYouControl"
+                            },
+                            "effect": {
+                              "discard": "chosen"
+                            }
+                          }
+                        },
+                        {
+                          "placeThreat": {
+                            "scheme": {
+                              "query": "activeVillainSideScheme"
+                            },
+                            "amount": {
+                              "count": {
+                                "query": "upgradesYouControl"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "not": {
+                      "exists": {
+                        "query": "upgradesYouControl"
+                      }
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "undefendedAttack": "you"
+                  },
+                  {
+                    "exists": {
+                      "query": "upgradesYouControl"
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "query": "upgradesYouControl"
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "ruling:de7450cad15c3dbd confirms that the zero-upgrade surge check runs after the chosen sentence, including after discarding the last upgrade."
+    },
+    {
+      "card": "07026",
+      "name": "Chaos In the Prison",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "query": "upgradesYouControl"
+                    }
+                  },
+                  "then": {
+                    "choose": {
+                      "options": [
+                        {
+                          "chooseCard": {
+                            "from": {
+                              "query": "upgradesYouControl"
+                            },
+                            "effect": {
+                              "discard": "chosen"
+                            }
+                          }
+                        },
+                        {
+                          "placeThreat": {
+                            "scheme": {
+                              "query": "activeVillainSideScheme"
+                            },
+                            "amount": {
+                              "count": {
+                                "query": "upgradesYouControl"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "not": {
+                      "exists": {
+                        "query": "upgradesYouControl"
+                      }
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "undefendedAttack": "you"
+                  },
+                  {
+                    "exists": {
+                      "query": "upgradesYouControl"
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "query": "upgradesYouControl"
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "ruling:de7450cad15c3dbd confirms that the zero-upgrade surge check runs after the chosen sentence, including after discarding the last upgrade."
+    },
+    {
+      "card": "07056",
+      "name": "Chaos In the Prison",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "query": "upgradesYouControl"
+                    }
+                  },
+                  "then": {
+                    "choose": {
+                      "options": [
+                        {
+                          "chooseCard": {
+                            "from": {
+                              "query": "upgradesYouControl"
+                            },
+                            "effect": {
+                              "discard": "chosen"
+                            }
+                          }
+                        },
+                        {
+                          "placeThreat": {
+                            "scheme": {
+                              "query": "activeVillainSideScheme"
+                            },
+                            "amount": {
+                              "count": {
+                                "query": "upgradesYouControl"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "not": {
+                      "exists": {
+                        "query": "upgradesYouControl"
+                      }
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "undefendedAttack": "you"
+                  },
+                  {
+                    "exists": {
+                      "query": "upgradesYouControl"
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "query": "upgradesYouControl"
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "ruling:de7450cad15c3dbd confirms that the zero-upgrade surge check runs after the chosen sentence, including after discarding the last upgrade."
+    },
+    {
+      "card": "07055",
+      "name": "Bull Rush",
+      "note": "Bulldozer activates and the sentence resumes after that activation fully resolves. In alter-ego form, discard one player-deck card for each threat that activation placed; in hero form, discard one for each damage dealt by the attack's damage step.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "you",
+                  "form": "hero"
+                }
+              },
+              "then": {
+                "seq": [
+                  {
+                    "enemyAttacks": {
+                      "enemies": {
+                        "titled": "Bulldozer"
+                      }
+                    }
+                  },
+                  {
+                    "discardTop": {
+                      "from": "yourDeck",
+                      "count": {
+                        "result": "activationDamage"
+                      }
+                    }
+                  }
+                ]
+              },
+              "else": {
+                "seq": [
+                  {
+                    "enemySchemes": {
+                      "enemies": {
+                        "titled": "Bulldozer"
+                      }
+                    }
+                  },
+                  {
+                    "discardTop": {
+                      "from": "yourDeck",
+                      "count": {
+                        "result": "activationThreat"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
