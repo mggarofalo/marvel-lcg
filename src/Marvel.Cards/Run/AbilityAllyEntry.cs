@@ -20,7 +20,10 @@ internal static class AbilityAllyEntry
             return false;
         var card = execution.Find(entry.Card, cast);
         if (card is null || !AllyCardEntry.CanPut(cast.World, card, cast.Player))
+        {
+            cast.CompletedOutcome = AbilityStructuralOutcome.None;
             return true;
+        }
         var owner = cast.World.Agenda.Current;
         var occurrence = cast.World.Agenda.Occurrence;
         CardPlay.PutAllyIntoPlay(cast.World, cast.World.Facts, execution.cardPlayAbilities,
@@ -29,6 +32,7 @@ internal static class AbilityAllyEntry
         // may still make that new incarnation stale before the suffix resumes.
         if (entry.Card is AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen })
             cast.ChooseSelection(card);
+        cast.CompletedOutcome = AbilityStructuralOutcome.Full;
         cast.ResolveEffect();
         execution.SuspendAfterProcedure(effect, cast, owner, occurrence);
         return true;

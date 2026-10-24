@@ -19,6 +19,9 @@ public class NoCardAbilities : ICardAbilities
     public virtual bool RequiresAllyPlayHistory(World world) => false;
 
     /// <inheritdoc/>
+    public virtual bool ObservesPlayerTurnBeginning(World world) => false;
+
+    /// <inheritdoc/>
     public virtual bool CanPlayFromStorage(World world, Card card, int player) => false;
 
     /// <inheritdoc/>

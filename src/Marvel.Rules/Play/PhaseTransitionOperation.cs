@@ -14,6 +14,7 @@ public sealed record PhaseTransitionOperation(PhaseTransitionKind Kind) : Agenda
         PhaseTransitionKind.DrawToHandSize => Steps.DrawToHandSize,
         PhaseTransitionKind.ReadyCards => Steps.ReadyCards,
         PhaseTransitionKind.EndPlayerTurn => PlayerTurnTiming.Ends,
+        PhaseTransitionKind.BeginPlayerTurn => PlayerTurnTiming.Begins,
         PhaseTransitionKind.EndPlayerPhase => Steps.EndPlayerPhase,
         _ => throw new ArgumentOutOfRangeException(nameof(Kind)),
     };

@@ -11657,6 +11657,79 @@
       ]
     },
     {
+      "card": "03019",
+      "name": "Quinjet",
+      "note": "Optional response after your turn begins adds one time counter. Action puts an Avenger ally with printed cost no greater than time counters from hand into play, then discards Quinjet.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenPlayerTurnBegins",
+            "timing": "Response",
+            "subject": "you"
+          },
+          "effect": {
+            "placeCounters": {
+              "card": "this",
+              "counter": "time",
+              "count": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "withTrait": {
+                  "cards": {
+                    "cardsIn": {
+                      "area": "yourHand",
+                      "kind": "Ally"
+                    }
+                  },
+                  "trait": "AVENGER"
+                }
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "countersOn": {
+                          "card": "this",
+                          "counter": "time"
+                        }
+                      },
+                      "count": {
+                        "sumPrintedCost": "chosen"
+                      }
+                    }
+                  },
+                  "then": {
+                    "then": {
+                      "effect": {
+                        "putIntoPlay": {
+                          "card": "chosen",
+                          "where": "yourPlayArea"
+                        }
+                      },
+                      "then": {
+                        "discard": "this"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       "card": "03015",
       "name": "Avengers Assemble!",
       "note": "Hero Action, max once per round. Ready controlled Avengers, then grant a live all-player Avenger character ATK/THW bonus until phase end.",

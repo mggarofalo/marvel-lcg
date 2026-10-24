@@ -834,3 +834,13 @@ trait, across players, including later entrants. It is not a snapshot. Only
 positive constant ATK/THW bonuses are admitted; other fields raise explicitly.
 Trait reads filter trait-modifying effects before testing live affected sets,
 so unrelated combat bonuses cannot recursively consult their own trait filter.
+
+
+`WhenPlayerTurnBegins` is an observed occurrence before the active player's
+ordinary actions, including the first turn and later rounds. A `subject: "you"`
+response belongs to the controller whose turn begins. Observation checks live
+printed ability declarations; an unobserved empty occurrence is omitted.
+`putIntoPlay` with `where: "yourPlayArea"` retains successful physical ally-entry
+completion through ally-limit and entry-response windows for dependent `then`
+text. Unavailable entry has no completion. A `chooseCard` conditional with no
+reachable branch does not offer an unaffected candidate.

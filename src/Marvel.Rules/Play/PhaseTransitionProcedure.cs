@@ -27,6 +27,9 @@ internal static class PhaseTransitionProcedure
             case Steps.ReadyCards:
                 PhaseEnd.ReadyCards(world, events);
                 break;
+            case PlayerTurnTiming.Begins:
+                // The scheduled occurrence owns the beginning windows; no state changes at its body.
+                break;
             case PlayerTurnTiming.Ends:
                 PhaseEnd.EndPlayerTurn(world, step.Seat, events);
                 break;

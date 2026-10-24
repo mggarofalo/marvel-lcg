@@ -564,3 +564,34 @@ Independent bounded review found no scope blocker and prompted duplicate-field
 rejection. The controlled-character scope was cohesively extracted to keep
 complexity within the existing limit. Native and saved whole-pack journeys are
 still required; the product gate remains closed.
+
+
+### MARVEL-665 Quinjet and player-turn beginnings
+
+03019 is the thirty-first research face. An observed player-turn-beginning
+occurrence now runs before first-turn, subsequent-seat and next-round actions.
+Observation is declarative from current in-play authored faces, not optional
+ability eligibility. Unobserved empty occurrences are omitted to preserve
+existing Core/Rise replay identity. The new phase-transition enum member is
+appended; no game-state or session-save field is added.
+
+Quinjet's optional response places one time counter only on its controller's
+turn. Its action selects an Avenger ally by printed cost, puts it into play,
+resolves ally-limit and entry-response windows, then discards Quinjet. The
+synchronous physical entry retains Full completion through suspension; an
+unavailable entry retains None. Card choices now reject a conditional chain
+with no reachable branch. This preserves existing target classification and
+does not predict arbitrary effect completion. A synthetic preview test for an
+unavailable no-op choice now asserts rejection; all five reachable preview
+cases remain. Both shallow and nested missing-branch controls pass.
+
+Fourteen actual-card cases cover both seats/forms, optional accept/decline,
+round transition, exact/below cost, reduction independence, uniqueness,
+non-Avenger/foreign hand exclusion, ally limit and entry responses. Two
+EngineHost tests save and reopen the actual pending beginning response, compare
+exact prompts/save bytes/digests and accept or decline against an uninterrupted
+control. Six authored/compiled mutants are killed (observer, conditional filter,
+entry completion, next-round scheduling, counter amount, printed-cost bound).
+Content passed 2,900 cases before the additional nested control; final focused
+card/conditional/group-thwart controls pass 18. Whole-pack native acceptance,
+remaining four faces and pack-level replay are still open.

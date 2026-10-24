@@ -7,6 +7,8 @@ namespace Marvel.Rules.Play;
 internal sealed class OptionalDamageInterrupts(IWindowAbilities inner)
     : IWindowAbilities
 {
+    public bool ObservesPlayerTurnBeginning(World world) => inner.ObservesPlayerTurnBeginning(world);
+
     public IReadOnlyList<PendingAbility> Waiting(
         World world, Occurrence occurrence, WindowKind window) =>
         [.. inner.Waiting(world, occurrence, window).Where(ability =>

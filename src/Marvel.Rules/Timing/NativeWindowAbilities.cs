@@ -8,6 +8,8 @@ namespace Marvel.Rules.Timing;
 /// <summary>Offers authored abilities and rules-defined keywords in one ordered window.</summary>
 internal sealed class NativeWindowAbilities(IWindowAbilities authored) : IWindowAbilities
 {
+    public bool ObservesPlayerTurnBeginning(World world) => authored.ObservesPlayerTurnBeginning(world);
+
     public IReadOnlyList<PendingAbility> Waiting(World world, Occurrence occurrence, WindowKind window)
     {
         var printed = authored.Waiting(world, occurrence, window);
