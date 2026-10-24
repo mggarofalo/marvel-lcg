@@ -44,7 +44,14 @@ internal static class AbilityContinuationResumption
             || state.Reason == AbilityResumeReason.EffectProcedure;
         return new ContinueAfterResumedNode(
             decoded.Ability,
-            state with { Reason = AbilityResumeReason.Choice },
+            state with
+            {
+                Reason = AbilityResumeReason.Choice,
+                CompletedOutcome = state.Reason == AbilityResumeReason.Activations
+                    ? AbilityCompletion.Amount(state.Memory.Results.GetValueOrDefault("activationMade"),
+                        state.Memory.Results.GetValueOrDefault("activationRequested"))
+                    : state.CompletedOutcome,
+            },
             effectApplied);
     }
 

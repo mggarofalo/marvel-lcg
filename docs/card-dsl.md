@@ -1,5 +1,11 @@
 # The card DSL
 
+Static `enemyAttacks` and `enemySchemes` support a following `then`: every
+requested activation must actually be made. Stun or confuse replacement does not
+complete an activation; an attack whose damage is prevented still does. The
+receipt survives suspension and waits for the activation and its responses.
+Dynamic activation collections remain unsupported as dependent predecessors.
+
 `activeVillainSideScheme` selects the side scheme physically paired with the
 current active villain. Execution and projected boards follow their own active
 counter, including movement and stage promotion. Missing topology or a missing

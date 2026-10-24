@@ -11588,6 +11588,24 @@
       ]
     },
     {
+      "card": "07012",
+      "name": "Crowbar Toss",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "then": {
+            "effect": { "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": { "enemyAttacks": { "enemies": { "titled": "Wrecker" }, "against": "you" } },
+              "else": { "enemySchemes": { "enemies": { "titled": "Wrecker" }, "against": "you" } }
+            } },
+            "then": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+              "effect": { "moveActiveCounter": "chosen" } } }
+          } }
+        }
+      ]
+    },
+    {
       "card": "07043",
       "name": "Escape Plan",
       "abilities": [

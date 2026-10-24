@@ -8,6 +8,7 @@ internal static class AbilityCompletionSupport
 {
     internal static void Validate(AbilityEffect effect, string source)
     {
+        if (effect is AbilityEffect.ActivateEnemies { Dynamic: false }) return;
         if (effect.OperationName() is "seq" or "and" or "if" or "then" or "otherwise"
             or "forEach" or "choose" or "chooseCard")
         {

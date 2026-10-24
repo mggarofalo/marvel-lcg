@@ -165,7 +165,7 @@ internal static class AbilityResolutionEffectChoices
                 cast.World.Agenda.Executions.DeferActivation(invocation);
             int abilityOrdinal = execution.AbilityOrdinal(command.Effect, cast);
             var capture = AbilityContinuationScheduling.ForActivations(
-                execution.Capture(cast, abilityOrdinal), command.Dynamic);
+                execution.Capture(cast, abilityOrdinal), command.Dynamic, command.Targets.Length);
             cast.World.Agenda.AfterActivations(activationIds, AbilityContinuations.Step(
                 capture, AbilityContinuationStage.Resume, round, plan: true, activationIds: activationIds));
             cast.WaitFor(activationIds);
@@ -175,6 +175,7 @@ internal static class AbilityResolutionEffectChoices
         {
             AbilityContinuations.CompleteDynamicActivation(cast.Results);
         }
+        else cast.CompletedOutcome = AbilityStructuralOutcome.None;
     }
 
     private static List<int> EnqueueActivations(AbilityResolutionExecution execution, ScheduleActivationsCommand command,

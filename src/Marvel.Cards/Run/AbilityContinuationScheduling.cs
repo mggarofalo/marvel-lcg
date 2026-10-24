@@ -16,12 +16,15 @@ internal static class AbilityContinuationScheduling
         { Reason = AbilityResumeReason.EffectProcedure };
 
     internal static AbilityContinuationState ForActivations(
-        AbilityContinuationState capture, bool dynamic)
+        AbilityContinuationState capture, bool dynamic, int requested)
     {
+        // This engine's numeric receipt counts requested activations, independently
+        // of damage or threat. Status replacement does not make an activation.
         var results = capture.Memory.Results
             .Remove("activationMade")
             .Remove("activationDamage")
-            .Remove("activationThreat");
+            .Remove("activationThreat")
+            .SetItem("activationRequested", requested);
         return capture with
         {
             Reason = dynamic ? AbilityResumeReason.DynamicActivations : AbilityResumeReason.Activations,
