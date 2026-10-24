@@ -60,9 +60,7 @@ internal static class GamePlayerSetup
             game.finishedTurns.Clear();
             game.Active = game.world.FirstPlayer;
             game.Phase = GamePhase.PlayerTurn;
-            game.Pending = game.TurnPrompt();
-            game.asking = Asker.Game;
-            return new Resolution(game.world, game.Pending, happened);
+            return game.BeginTurn(happened);
         }
     }
 }

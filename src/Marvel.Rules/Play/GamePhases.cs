@@ -148,9 +148,7 @@ internal static class GamePhases
         game.endingPlayerPhase = false;
         game.Phase = GamePhase.PlayerTurn;
         game.Active = game.world.FirstPlayer;
-        game.Pending = game.TurnPrompt();
-        game.asking = Asker.Game;
-        return new Resolution(game.world, game.Pending, happened);
+        return game.BeginTurn(happened);
     }
 
     /// <summary>Finish the active turn and find the next participating player.</summary>
@@ -169,9 +167,7 @@ internal static class GamePhases
             if (!game.finishedTurns.Contains(player) && !game.world.Seats[player].Eliminated)
             {
                 game.Active = player;
-                game.Pending = game.TurnPrompt();
-                game.asking = Asker.Game;
-                return new Resolution(game.world, game.Pending, happened);
+                return game.BeginTurn(happened);
             }
         }
 
