@@ -711,3 +711,20 @@ mutation results from the failing baseline are superseded by these reruns.
 
 Pack-level setup-to-ending integration and native acceptance remain in progress;
 no whole-pack admission is claimed by these focused results.
+
+### Whole-game integration and MARVEL-672
+
+Eight starter-deck games cover Rhino, Klaw and Ultron in Standard/Expert,
+plus two-player Rhino and Crossbones. Each decision is replayed in a second
+fresh game with exact prompt, event, information, digest and RNG-word equality.
+Every case reaches an ending and exercises paid cards and player attacks.
+
+The original Rhino seed 560 failed during Heroic Strike after stage advancement.
+The suspension classifier unnecessarily required a projected stage-entry board
+for its bound, immediate follow-up status. That instruction can wait for real
+stage settlement without selecting a new recipient or predicting health.
+Four actual Heroic Strike controls verify Rhino/Klaw stage entry and physical
+versus nonphysical payment; unsafe subsequent damage projections still reject.
+Restoring the refusal kills all four new controls. Full Content passes 2,952;
+the defense candidate's full Server regression passes 410. These eight games
+are integration evidence, not a substitute for native pack acceptance.
