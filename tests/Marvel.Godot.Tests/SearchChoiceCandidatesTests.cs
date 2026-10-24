@@ -7,6 +7,18 @@ namespace Marvel.Godot.Tests;
 public sealed class SearchChoiceCandidatesTests
 {
     [Fact]
+    public void InspectionUsesOrderedContextFacesAndExcludesSourceAndConcealedCards()
+    {
+        var board = new BoardPresentation([new(1, "Cards", "",
+            [Card(7, "First"), Card(8, "Second"), Card(9, "Source"),
+             Card(10, "Hidden") with { Concealed = true }], [])]);
+        var prompt = new Marvel.Rules.Prompts.Prompt(0, Question.Element,
+            Marvel.Rules.Timing.TimingPriority.Untimed, "test", "Inspect", false, [])
+        { ContextCardIds = [8, 10, 7, 11], CauseCardIds = [9] };
+        Assert.Equal([8, 7], SearchChoiceCandidates.Inspected(prompt, board).Select(card => card.TargetId));
+    }
+
+    [Fact]
     public void DuplicateTitlesKeepTheirOfferedPhysicalIdentitiesAndOrder()
     {
         BoardCardPresentation first = Card(7, "Same title"), second = Card(8, "Same title");

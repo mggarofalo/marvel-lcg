@@ -22,14 +22,14 @@ internal static class AbilityStructuralExecution
             "seq" or "and" or "then" or "otherwise" or "eachPlayer" or "if"
             or "forEach" or "eachTime" or "choose" or "chooseCard"
             or "resolveSpecials" or "payOrExhaust" or "payOrEffect"
-            or "chooseTopForHand" or "peekTop" or "discardResourceIcons" or "chooseDiscardToShuffle"
+            or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "discardResourceIcons" or "chooseDiscardToShuffle"
             or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall" or "legalPractice"
             or "attack" or "defense" or "thwart" or "thwartSchemes"
             or "placeThreat" or "enemyAttacks" or "enemySchemes");
 
     internal static AbilityStructuralTransition Decide(AbilityStructuralContext context, AbilityEffect effect)
     {
-        if (effect.OperationName() is "makeTheCall" or "legalPractice" or "peekTop")
+        if (effect.OperationName() is "makeTheCall" or "legalPractice" or "peekTop" or "inspectEncounterTop")
             return AskFor(context, effect);
         return effect switch
         {

@@ -309,7 +309,7 @@ heroes heroesAndAllies heroAndAllyTargets identities
 identitiesWithinPerPlayerLimit inForm indirectDamage isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou modified moveAttackDamage mul onto options overkill
-paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
+inspectEncounterTop paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
 placeAtRandom placeCounters placeThreat power powerAmount powerTargets cardsDiscarded
 preventDamage preventDamageFrom preventDamageWhile preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
@@ -332,6 +332,14 @@ including its full printed text, until acknowledgement. It neither moves the
 card nor shuffles. The selected card, area and incarnation live in the existing
 ability continuation; visibility is prompt-scoped rather than a face-up mutation.
 The villain and main-scheme decks expose their current in-play top stages.
+
+`inspectEncounterTop: {"count":3,"result":"treacheriesLookedAt"}` privately
+shows up to the requested number of encounter deck cards, in top-to-bottom
+order, without moving, revealing, shuffling or replenishing them. Its single
+acknowledgement retains the treachery count as `result: "treacheriesLookedAt"`
+for subsequent effects. Only the acting seat receives those prompt context
+faces; acknowledgement revokes that visibility. The pending decision excludes
+intervening game actions. This inspection does not support pre-then completion.
 
 `heroAndAllyTargets` selects hero-form identities and allies. The existing
 `heroesAndAllies` selector includes identities in either form for effects that

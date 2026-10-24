@@ -14,6 +14,7 @@ internal sealed class AbilityChoiceAnswer(
     private static readonly ImmutableArray<string> SpecialOperations =
     [
         "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardResourceIcons",
+        "peekTop", "inspectEncounterTop",
     ];
 
     internal List<Marvel.Rules.Events.GameEvent> Apply(AbilityEffect choice)
@@ -27,8 +28,6 @@ internal sealed class AbilityChoiceAnswer(
         if (operation is "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")
             return ApplyThwartChoice(choice);
         if (operation == "makeTheCall") return ApplyMakeTheCall(choice);
-        if (operation == "peekTop")
-            return AbilityDeckPeek.Answer(execution, choice, cast, input) ? Continue() : cast.Events;
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);
         if (operation == "attack") return ApplyCountedAttack((AbilityEffect.Power)choice);
         return ApplyGeneric(choice);
@@ -53,12 +52,20 @@ internal sealed class AbilityChoiceAnswer(
     private List<Marvel.Rules.Events.GameEvent> ApplySpecial(AbilityEffect choice) =>
         choice.OperationName() switch
         {
+            "peekTop" => AbilityDeckPeek.Answer(execution, choice, cast, input) ? Continue() : cast.Events,
+            "inspectEncounterTop" => ApplyInspection((AbilityEffect.InspectEncounterTop)choice),
             "resolveSpecials" => ApplyResolveSpecials(choice),
             "chooseTopForHand" => ApplyChooseTopForHand(choice),
             "chooseDiscardToShuffle" => ApplyChooseDiscardToShuffle(choice),
             "discardResourceIcons" => ApplyDiscardResourceIcons(choice),
             _ => throw new InvalidOperationException("Unknown special choice"),
         };
+
+    private List<Marvel.Rules.Events.GameEvent> ApplyInspection(AbilityEffect.InspectEncounterTop inspection)
+    {
+        AbilityEncounterInspection.Answer(cast, inspection);
+        return Continue();
+    }
 
     private List<Marvel.Rules.Events.GameEvent> ApplyResolveSpecials(AbilityEffect choice)
     {

@@ -215,6 +215,8 @@ public static class WorldProjection
             // target request. This metadata is the server's explicit signal
             // that those otherwise-concealed anchors are readable now.
             visible.UnionWith(prompt.Affordances.Select(option => option.AnchorId));
+            if (prompt.PublicKind == PublicDecisionKind.CardLook)
+                visible.UnionWith(prompt.ContextCardIds);
         }
 
         return visible;
