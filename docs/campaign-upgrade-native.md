@@ -145,6 +145,12 @@ container user. Client evidence records its own source and executable identity
 separately from the server artifact. The workflow retains screenshots, original
 proofs, stopped-server snapshots, logs, and container identities.
 
+Migration backups and remote campaign directories begin with a dot. Verification
+enumerates hidden files explicitly on every platform, and evidence upload includes
+hidden fixture files. These archives contain only the synthetic fixture's authority;
+the runner never uses a player's save root. The original-backup count, byte hash
+and complete campaign comparison remain required.
+
 The development driver uses the existing fixed SubViewport pointer harness.
 It does not establish OS accessibility behavior. A forced-accessibility
 SubViewport experiment produced an AccessKit diagnostic and is not counted as

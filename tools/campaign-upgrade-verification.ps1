@@ -63,7 +63,7 @@ function Assert-PlayedCampaignUpgrade {
     if (-not [Text.Json.Nodes.JsonNode]::DeepEquals($expected, $current)) {
         throw 'Upgrade changed original campaign gameplay, proof, authority, receipt, or record.'
     }
-    $backups = @(Get-ChildItem -LiteralPath "$($Fixture.Campaigns)/$id" -Filter '.upgrade-*.archive')
+    $backups = @(Get-ChildItem -LiteralPath "$($Fixture.Campaigns)/$id" -Force -Filter '.upgrade-*.archive')
     if ($backups.Count -ne 1) { throw 'Expected one retained original migration backup.' }
     $originalManifest = Get-Content -LiteralPath "$($Fixture.Source)/published/campaigns/$id/current" -Raw | ConvertFrom-Json
     if ((Get-FileHash -LiteralPath $backups[0].FullName).Hash -cne $originalManifest.sha256) {

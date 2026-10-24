@@ -72,6 +72,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: campaign-upgrade-linux-evidence
+          include-hidden-files: true
           path: |
             ${{ runner.temp }}/upgrade-embedded
             ${{ runner.temp }}/upgrade-remote
