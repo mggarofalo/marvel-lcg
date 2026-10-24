@@ -28,6 +28,7 @@ internal sealed class CampaignControls
 
     internal CampaignControls(Main main)
     {
+        ModalWindowFocus.Bind(Window);
         Window.Theme = main.Theme;
         main.AddChild(Window);
         var margin = new MarginContainer();
