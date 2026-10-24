@@ -11657,6 +11657,19 @@
       ]
     },
     {
+      "card": "03015",
+      "name": "Avengers Assemble!",
+      "note": "Hero Action, max once per round. Ready controlled Avengers, then grant a live all-player Avenger character ATK/THW bonus until phase end.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+        "maxPerRound": 1,
+        "effect": { "seq": [
+          { "ready": { "withTrait": { "cards": { "query": "charactersYouControl" }, "trait": "AVENGER" } } },
+          { "grantCharactersWithTrait": { "trait": "AVENGER", "fields": ["attack", "thwart"], "amount": 1, "until": "EndOfPhase" } }
+        ] }
+      }]
+    },
+    {
       "card": "03017",
       "name": "Strength In Numbers",
       "note": "Action: Exhaust any number of allies you control as the cost, then draw one card per physical ally in that committed exhaustion receipt.",

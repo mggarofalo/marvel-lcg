@@ -115,7 +115,9 @@ public abstract record AbilityEffect
     }
     /// <summary>Define the source's own basic-power base before modifiers.</summary>
     public sealed record DefineBaseValue(string Field, AbilityNumber Value) : AbilityEffect;
-    /// <summary>Grant modifiers to all characters controlled by the named player.</summary>
+    /// <summary>Grant lasting combat modifiers to the live set of characters with a trait.</summary>
+    public sealed record GrantTraitCharacters(string Trait, ImmutableArray<string> Fields, long Amount, string Until) : AbilityEffect;
+    /// <summary>Grant lasting modifiers to characters controlled by one player.</summary>
     public sealed record GrantControlledCharacters(AbilityPlayer Player, ImmutableArray<string> Fields, AbilityNumber Amount, string Until) : AbilityEffect;
     /// <summary>Prohibit damage to the source from matching damage sources.</summary>
     public sealed record PreventDamageFrom(CardKind SourceKind, string SourceTrait) : AbilityEffect;

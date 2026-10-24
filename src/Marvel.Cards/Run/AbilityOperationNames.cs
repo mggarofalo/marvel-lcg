@@ -60,6 +60,7 @@ internal static class AbilityOperationNames
         AbilityEffect.InitializeAuxiliaryDeck => "initializeAuxiliaryDeck",
         AbilityEffect.RevealAuxiliaryTop => "revealAuxiliaryTop",
         AbilityEffect.Shuffle => "shuffle",
+        AbilityEffect.GrantTraitCharacters => "grantCharactersWithTrait",
         AbilityEffect.GrantControlledCharacters => "grantCharactersControlledBy",
         AbilityEffect.PreventDamageFrom => "preventDamageFrom",
         AbilityEffect.PreventDamageWhile => "preventDamageWhile",

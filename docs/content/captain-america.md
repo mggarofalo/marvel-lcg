@@ -541,3 +541,26 @@ and four topology/privacy controls; it must survive combined integration.
 Avengers Assemble, Quinjet, Man Out of Time, Baron Zemo, Hail Hydra and Expert
 Defense remain unauthored. Full-pack games, native use, pack-specific restart
 and quantity authority still block admission.
+
+
+### MARVEL-663 Avengers Assemble live recipients
+
+03015 is the thirtieth research face. Its controlled Avenger readying is separate
+from a data-backed, all-player live Avenger character bonus. The ATK/THW set
+uses current effective traits, includes later entrants, drops departed cards,
+and expires at phase end. Only positive constant combat modifiers are admitted;
+duplicate fields and unsupported fields raise. Trait evaluation filters trait
+loss effects before consulting their affected sets, avoiding recursion through
+an unrelated combat bonus. No new registered state field is added.
+
+Eight focused cases and 2,886 Content cases pass. Tests cover actual payment,
+hero form, ready and exhausted recipients, foreign bonus without foreign readying,
+max across copies, later entry, effective trait gain/loss, departure, non-character
+exclusion and expiry. Eight authored/compiled mutants are killed. The initial
+max-two mutant survived because the all-ready board also rejected the second
+play. A new all-ready initial-board test reproduced that real admission gap;
+the live bonus now supplies a current valid recipient, and the max mutant fails.
+Independent bounded review found no scope blocker and prompted duplicate-field
+rejection. The controlled-character scope was cohesively extracted to keep
+complexity within the existing limit. Native and saved whole-pack journeys are
+still required; the product gate remains closed.

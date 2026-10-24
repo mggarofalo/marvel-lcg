@@ -825,3 +825,12 @@ them simultaneously with exhaustion. Stun cancels only after payment, including
 when no enemy can be targeted. Permission to attack without exhausting does not
 waive this separate cost. The suspended cost decision reconstructs through the
 ordinary session decision replay; it does not introduce a separate save format.
+
+
+`grantCharactersWithTrait` registers a live lasting combat bonus:
+`{"trait":"AVENGER","fields":["attack","thwart"],"amount":1,"until":"EndOfPhase"}`.
+The affected set includes all in-play characters with the current effective
+trait, across players, including later entrants. It is not a snapshot. Only
+positive constant ATK/THW bonuses are admitted; other fields raise explicitly.
+Trait reads filter trait-modifying effects before testing live affected sets,
+so unrelated combat bonuses cannot recursively consult their own trait filter.

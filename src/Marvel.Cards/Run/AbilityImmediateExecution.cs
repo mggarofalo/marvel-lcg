@@ -18,6 +18,7 @@ internal static class AbilityImmediateExecution
                 RunIdentityEffect(effect, context),
             AbilityEffect.Draw or AbilityEffect.DrawToHandSize or AbilityEffect.GainSurge =>
                 RunPlayerEffect(effect, context),
+            AbilityEffect.GrantTraitCharacters grant => AbilityTraitGroupExecution.Run(grant, context),
             AbilityEffect.GrantControlledCharacters or AbilityEffect.ReduceNextCardCost
                 or AbilityEffect.GrantField or AbilityEffect.GrantTrait =>
                 RunGrantEffect(effect, context),

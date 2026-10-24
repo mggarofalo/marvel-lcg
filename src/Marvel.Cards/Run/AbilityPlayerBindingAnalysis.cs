@@ -173,7 +173,7 @@ internal static class AbilityPlayerBindingAnalysis
             or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardResourceIcons
-            or AbilityEffect.RecoverDiscardedByResource => false,
+            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.GrantTraitCharacters => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled effect in player-binding analysis"),
     };

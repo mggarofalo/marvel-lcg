@@ -118,7 +118,7 @@ internal static class AbilityResolutionAdmission
             "useAttackForThwart" => ThwartStatSubstitution.CanUseAttack(cast.World, cast.Occurrence),
             "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false },
             "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
-            "grantCharactersControlledBy" or "reduceNextCardCost" => true,
+            "grantCharactersControlledBy" or "grantCharactersWithTrait" or "reduceNextCardCost" => true,
 
             // Target availability is the only state-dependent precondition
             // these currently expressible effects carry. Their own resolver
