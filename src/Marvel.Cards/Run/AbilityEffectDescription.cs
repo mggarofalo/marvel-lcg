@@ -16,6 +16,7 @@ internal static class AbilityEffectDescription
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),
         AbilityEffect.Draw draw => DrawSummary(draw),
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
+        AbilityEffect.RemoveStatuses => "Remove status cards",
         AbilityEffect.Power power => Summary(power.Effect),
         AbilityEffect.Sequence sequence when sequence.Effects.Length == 1 =>
             Summary(sequence.Effects[0]),
@@ -73,6 +74,7 @@ internal static class AbilityEffectDescription
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelWhenRevealed } =>
             "cancel the revealed treachery's When Revealed effects",
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
+        AbilityEffect.RemoveStatuses => "Remove status cards",
         AbilityEffect.AttackDamage => "attack",
         AbilityEffect.Damage => "deal damage to",
         AbilityEffect.RemoveThreat => "remove threat from",

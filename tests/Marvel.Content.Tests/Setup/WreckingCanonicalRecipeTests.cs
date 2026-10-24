@@ -52,10 +52,19 @@ public sealed class WreckingCanonicalRecipeTests
             var authored = recipe.EncounterGroups!.Groups[index];
             Assert.Equal(WreckingRecipeFixture.Schemes[index], group.Scheme.FaceId);
             Assert.Equal(WreckingRecipeFixture.Decks[index].Order(), group.Deck.Cards.Select(card => card.FaceId).Order());
-            Assert.Equal(authored.Stages[0], group.CurrentVillain!.FaceId);
+            string[] expectedStages = ExpectedStages(key, index);
+            Assert.Equal(expectedStages, authored.Stages);
+            Assert.Equal(expectedStages[0], group.CurrentVillain!.FaceId);
             Assert.Equal(key == "wrecking_crew_extreme" ? 2 : 1, authored.Stages.Count);
             Assert.Equal(key == "wrecking_crew_extreme" ? "A → B" : authored.Stages[0] == WreckingRecipeFixture.Stages[index][0] ? "A" : "B", authored.Variant);
         }
+    }
+    private static string[] ExpectedStages(string key, int index)
+    {
+        if (key == "wrecking_crew_extreme") return WreckingRecipeFixture.Stages[index];
+        string variant = key == "wrecking_crew_expert" ? "bbbb"
+            : key.Contains("_custom_", StringComparison.Ordinal) ? key[^4..] : "aaaa";
+        return [WreckingRecipeFixture.Stages[index][variant[index] == 'b' ? 1 : 0]];
     }
 }
 

@@ -102,6 +102,7 @@ internal static class AbilityCardStateExecution
             case AbilityEffect.PlaceCounters counters: PlaceCounters(counters, context); return true;
             case AbilityEffect.RemoveCounters counters: RemoveCounters(counters, context); return true;
             case AbilityEffect.GiveStatus status: GiveStatus(status, context); return true;
+            case AbilityEffect.RemoveStatuses removal: AbilityStatusRemoval.Execute(removal, context); return true;
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.MoveActiveCounter } action:
                 AbilityActiveCounterExecution.Move(action.Selection, context); return true;
             default: return false;

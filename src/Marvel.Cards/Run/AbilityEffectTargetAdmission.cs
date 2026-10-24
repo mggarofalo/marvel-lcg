@@ -140,6 +140,8 @@ internal static class AbilityEffectTargetAdmission
         AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange) =>
         node.OperationName() switch
         {
+            "removeStatuses" => AbilityStatusRemoval.Candidates((AbilityEffect.RemoveStatuses)node, cast).Count > 0
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             "enemyAttacks" or "enemySchemes" =>
                 CardsLegality(Every(ActivationOf(node, cast).Enemies, cast)),
             "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source)

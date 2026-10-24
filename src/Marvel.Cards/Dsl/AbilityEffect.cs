@@ -69,6 +69,9 @@ public abstract record AbilityEffect
     public sealed record IndirectDamage(AbilityCardSelection Among, AbilityNumber Amount) : AbilityEffect;
     /// <summary>Give a supported status to every selected card.</summary>
     public sealed record GiveStatus(AbilityCardSelection Cards, string Status) : AbilityEffect;
+
+    /// <summary>Remove every selected status kind from selected in-play characters.</summary>
+    public sealed record RemoveStatuses(AbilityCardSelection Cards, ImmutableArray<string> Statuses) : AbilityEffect;
     /// <summary>Change the selected player's form.</summary>
     public sealed record ChangeForm(AbilityPlayer Player, string Form) : AbilityEffect;
     /// <summary>Permit matching cards beneath the source to be played as if in hand.</summary>

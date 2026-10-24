@@ -39,7 +39,7 @@ internal static class AbilityEffectBindingAnalysis
         typeof(AbilityEffect.CardAction), typeof(AbilityEffect.Heal),
         typeof(AbilityEffect.Damage), typeof(AbilityEffect.AttackDamage),
         typeof(AbilityEffect.MoveDamage), typeof(AbilityEffect.IndirectDamage),
-        typeof(AbilityEffect.GiveStatus),
+        typeof(AbilityEffect.GiveStatus), typeof(AbilityEffect.RemoveStatuses),
     ];
     private static readonly ImmutableArray<Type> ThreatAndGrantTypes =
     [
@@ -137,6 +137,7 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.MoveDamage move => BindingCanChange(move.From) || BindingCanChange(move.To) || BindingCanChange(move.Amount),
         AbilityEffect.IndirectDamage damage => BindingCanChange(damage.Among) || BindingCanChange(damage.Amount),
         AbilityEffect.GiveStatus status => BindingCanChange(status.Cards),
+        AbilityEffect.RemoveStatuses status => BindingCanChange(status.Cards),
         _ => throw new InvalidOperationException("Unknown basic card binding effect"),
     };
 

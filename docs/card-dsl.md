@@ -869,3 +869,12 @@ projection attachment-host changes; unsupported projected predicates refuse.
 `villainOfAttachedScheme` selects the current physical villain paired with the
 source attachment's scheme, independently of the active counter. It requires an
 explicit encounter topology and never falls back to the active villain.
+
+
+`removeStatuses: { cards, statuses }` removes every physical status card of the
+listed kinds from selected in-play characters. `statuses` is a nonempty distinct
+list using `stunned`, `confused`, or `tough`. Completion is Full when at least one
+status card was actually removed and None when none was removed; dependent
+`otherwise` observes the committed removals. Invalid character targets are omitted,
+and unrelated status kinds remain. Unsupported projected compositions raise before
+execution rather than infer future status membership.

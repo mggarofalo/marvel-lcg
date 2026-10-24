@@ -30,6 +30,8 @@ internal static class AbilityCompletion
                 item.Field == "is_exhaust" && item.From == 0 && item.To == 1), requested),
             "ready" => Amount(committed.OfType<FieldSet>().Count(item =>
                 item.Field == "is_exhaust" && item.From == 1 && item.To == 0), requested),
+            "removeStatuses" => committed.OfType<CardsMoved>().Any(item => item.Verb == "Remove_Status")
+                ? AbilityStructuralOutcome.Full : AbilityStructuralOutcome.None,
             "discard" => committed.OfType<CardsMoved>().Any(item => item.Verb == "Discard")
                 ? AbilityStructuralOutcome.Full : AbilityStructuralOutcome.None,
             "changeForm" => committed.OfType<CardsFlipped>().Any(item => item.Verb == "Change_Form")

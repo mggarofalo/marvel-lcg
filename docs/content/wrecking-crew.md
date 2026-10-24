@@ -379,5 +379,23 @@ four server product-gate/projection tests, and full Content 3,317 pass. Wrong
 starting active villain and wrong encounter component mutants each fail four
 player-count controls. Earlier independent setup mechanism controls also pin
 health, threat, shuffled physical ownership, and seeded RNG consumption. The
-canonical recipe diff awaits bounded independent review; no whole-pack acceptance
+canonical recipe diff passed bounded independent review; the requested independent
+Custom suffix and Extreme successor-face assertions are added. No whole-pack acceptance
 is claimed.
+
+
+### Status removal — MARVEL-664
+
+A strict `removeStatuses` operation removes each selected physical status card
+from selected in-play characters. Completion observes committed `Remove_Status`
+events, so a dependent `otherwise` takes only the zero-removal branch. Local-book
+Uncanny Resilience controls cover both players, all four villains independently of
+the active counter, preserving Tough and friendly Stunned cards, and removing both
+copies on a Steady villain. An actual Action control distinguishes an affectable
+status from a Tough-only target; four malformed status lists are rejected.
+
+Ten focused controls and the full Content suite (3,327) pass. Compiled mutants
+killed removal of only one status copy (one failure), an incorrect completion event
+(three), and omission of Confused (three). Canonical Uncanny Resilience authoring
+awaits the shared book handoff; the pack remains closed. Independent source review
+is requested.

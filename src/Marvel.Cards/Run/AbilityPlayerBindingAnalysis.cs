@@ -96,6 +96,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.MoveDamage move => Contains(move.From) || Contains(move.To) || Contains(move.Amount),
         AbilityEffect.IndirectDamage damage => Contains(damage.Among) || Contains(damage.Amount),
         AbilityEffect.GiveStatus status => Contains(status.Cards),
+        AbilityEffect.RemoveStatuses status => Contains(status.Cards),
         _ => throw new InvalidOperationException("Unknown basic-card player-binding effect"),
     };
 
