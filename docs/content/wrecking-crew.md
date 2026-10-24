@@ -325,3 +325,16 @@ and damage/threat receipt substitution (four). A surge 1-to-2 mutant is equivale
 Full Content suite: 3,208 green before the final two defender controls; all ten
 Bull Rush cases then passed. Bounded independent review requested those defender
 controls and found no authored-row blocker. Full-pack acceptance remains pending.
+
+### Private encounter inspection integration
+
+Captain inspection foundation `dddb4ddc` is integrated here as `98f346ad`.
+Generic encounter inspection now reads `EncounterRouting.Deck(world)`. Four
+combined-topology cases (active Wrecker/Bulldozer, both seats) failed against the
+ordinary-deck lookup, then passed with active-deck routing. They retain exact
+ordered physical IDs, count only the inspected deck's treacheries, hide all other
+decks and both IDs/faces from the nonacting seat, and revoke inspection on Done.
+An empty active deck does not offer an inspection of a different nonempty deck.
+
+Integration verification: 12 inspection controls, full View336 and Content3,210
+pass. The original ordinary-deck lookup is a compiled four-failure negative control.

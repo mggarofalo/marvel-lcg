@@ -264,9 +264,10 @@ controls; Content passed 2,857. Four compiled mutations (reverse order omitted,
 wrong counted type, missing private faces, broadened exposure kind) were killed.
 Four Godot candidate tests passed; native usability and replay acceptance remain.
 
-Independent bounded source review by the Wrecking agent found the combined-pack
-routing requirement: its topology branch must change the single inspection deck
-owner to `EncounterRouting.Deck(world)` and prove active-group private inspection.
-This branch predates that topology API. That integration is required before full
-Captain acceptance; ordinary-deck tests do not establish Wrecking compatibility.
-No Falcon authored row or product admission is included in this foundation.
+Combined-pack inspection selects `EncounterRouting.Deck(world)`. Four Wrecking
+cases cover both seats and active Wrecker/Bulldozer groups, with an unrelated
+ordinary deck as a negative control. They prove private ordered faces, no foreign
+deck leakage, acknowledgement revocation, retained count and no offer when only
+the active deck is empty. Twelve inspection controls, all 336 View cases and all
+3,210 Content cases pass in the topology integration branch. No Falcon authored
+row or product admission is included in this foundation.

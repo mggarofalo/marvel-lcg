@@ -10,7 +10,7 @@ namespace Marvel.Cards.Run;
 internal static class AbilityEncounterInspection
 {
     internal static IReadOnlyList<Card> Cards(World world, AbilityEffect.InspectEncounterTop effect) =>
-        world.AreaOf(DeckType.EncounterDeck).Cards.Reverse().Take(effect.Count).ToArray();
+        EncounterRouting.Deck(world).Cards.Reverse().Take(effect.Count).ToArray();
 
     internal static Prompt Describe(AbilityStructuralContext context, AbilityEffect.InspectEncounterTop effect)
     {
