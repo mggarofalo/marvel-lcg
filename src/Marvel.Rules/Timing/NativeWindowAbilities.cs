@@ -9,6 +9,7 @@ namespace Marvel.Rules.Timing;
 internal sealed class NativeWindowAbilities(IWindowAbilities authored) : IWindowAbilities
 {
     public bool ObservesPlayerTurnBeginning(World world) => authored.ObservesPlayerTurnBeginning(world);
+    public bool ObservesVillainStepOneCompletion(World world) => authored.ObservesVillainStepOneCompletion(world);
 
     public IReadOnlyList<PendingAbility> Waiting(World world, Occurrence occurrence, WindowKind window)
     {

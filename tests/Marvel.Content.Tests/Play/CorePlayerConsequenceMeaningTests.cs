@@ -57,7 +57,7 @@ public sealed class CorePlayerConsequenceMeaningTests
         scheme.PlaceTokens("k_threat", 2);
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        var occurrence = new Occurrence(1, [Steps.VillainPhaseStepOneEnds]);
+        var occurrence = new Occurrence(1, [VillainStepOneTiming.ThreatPlaced]);
         var response = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
         runner.ResolveWindow(world, occurrence, response, new Decision(response.Card, [], []));
         var events = new List<GameEvent>();

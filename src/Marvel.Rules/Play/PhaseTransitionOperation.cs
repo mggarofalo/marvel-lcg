@@ -9,6 +9,7 @@ public sealed record PhaseTransitionOperation(PhaseTransitionKind Kind) : Agenda
     /// <inheritdoc/>
     public override string What => Kind switch
     {
+        PhaseTransitionKind.EndVillainStepOne => VillainStepOneTiming.Completed,
         PhaseTransitionKind.PassFirstPlayerToken => Steps.PassFirstPlayerToken,
         PhaseTransitionKind.EndVillainPhase => Steps.EndVillainPhase,
         PhaseTransitionKind.DrawToHandSize => Steps.DrawToHandSize,

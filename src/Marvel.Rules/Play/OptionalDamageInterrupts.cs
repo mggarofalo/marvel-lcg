@@ -8,6 +8,7 @@ internal sealed class OptionalDamageInterrupts(IWindowAbilities inner)
     : IWindowAbilities
 {
     public bool ObservesPlayerTurnBeginning(World world) => inner.ObservesPlayerTurnBeginning(world);
+    public bool ObservesVillainStepOneCompletion(World world) => inner.ObservesVillainStepOneCompletion(world);
 
     public IReadOnlyList<PendingAbility> Waiting(
         World world, Occurrence occurrence, WindowKind window) =>
