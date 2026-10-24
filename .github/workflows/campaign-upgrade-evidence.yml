@@ -75,6 +75,12 @@ jobs:
           include-hidden-files: true
           path: |
             ${{ runner.temp }}/upgrade-embedded
-            ${{ runner.temp }}/upgrade-remote
-            !${{ runner.temp }}/upgrade-remote/authority
+            ${{ runner.temp }}/upgrade-remote/*.json
+            ${{ runner.temp }}/upgrade-remote/*.log
+            ${{ runner.temp }}/upgrade-remote/*.png
+            ${{ runner.temp }}/upgrade-remote/access
+            ${{ runner.temp }}/upgrade-remote/predecessor
+            ${{ runner.temp }}/upgrade-remote/inspect-authority
+            ${{ runner.temp }}/upgrade-remote/continue-authority
+            ${{ runner.temp }}/upgrade-remote/restart-authority
           if-no-files-found: ignore
