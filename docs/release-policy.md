@@ -1,5 +1,10 @@
 # Release identity, signing and compatibility
 
+Protocol 37 adds explicit scenario mode, ordered component-version choices and
+modular-set availability to setup discovery. Game requests still identify an
+authored recipe key; save formats and replay semantics are unchanged by these
+presentation fields. Older protocol endpoints remain rejected.
+
 This document is the release contract for the desktop client and persistent
 multiplayer server. It defines the identities a build carries, which versions
 may communicate with or restore one another, and where signing authority lives.
@@ -46,7 +51,7 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `36` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `37` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
 | Engine replay contract | `engine-replay-v21` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
@@ -67,7 +72,7 @@ setup and recovery. The same Core setup and decisions can resolve differently
 under these mechanics, independently of expansion dataset admission. Internal
 agenda operations are reconstructed by full replay; they are not serialized as
 save authority. Schema 7 records ordered explicit decks and the exact campaign
-setup, including stable campaign seats and overlays. Protocol 36 carries campaign
+setup, including stable campaign seats and overlays. Protocol 37 carries campaign
 commands, engine-owned decision contracts and visibility-filtered independent
 villain/deck relationships. Older protocol and save
 identities remain rejected. Older replay identities are rejected except for the

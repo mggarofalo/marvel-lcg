@@ -29,4 +29,7 @@ public sealed record CampaignSetup(
 {
     /// <summary>Separate villain decks; absence retains ordinary single-deck setup.</summary>
     public EncounterSetupRecipe? EncounterGroups { get; init; }
+
+    /// <summary>Authored scenario mode identity; ordinary rows retain their expert flag.</summary>
+    public string? SetupMode { get; init; }
 }

@@ -19,13 +19,23 @@ internal static class EncounterRecipeReader
         var result = ImmutableArray.CreateBuilder<EncounterGroupRecipe>();
         foreach (var group in groups.EnumerateArray())
         {
-            RequireObject(group, ["stages", "scheme", "encounters"]);
+            RequireObject(group, group.TryGetProperty("variant", out var variant)
+                ? ["stages", "scheme", "encounters", "variant"] : ["stages", "scheme", "encounters"]);
             result.Add(new(Strings(group.GetProperty("stages")),
-                Text(group.GetProperty("scheme")), Strings(group.GetProperty("encounters"))));
+                Text(group.GetProperty("scheme")), Strings(group.GetProperty("encounters")))
+                { Variant = variant.ValueKind == JsonValueKind.Undefined ? null : Text(variant) });
         }
         if (result.Count < 2 || active < 0 || active >= result.Count)
             throw new JsonException("encounter groups require at least two groups and a valid active_group");
         return new(result.ToImmutable(), active);
+    }
+
+    internal static string? Mode(JsonElement campaign)
+    {
+        if (!campaign.TryGetProperty("setup_mode", out var mode)) return null;
+        string value = Text(mode);
+        return value is "standard" or "expert" or "custom" or "extreme" ? value
+            : throw new JsonException("setup_mode must name a supported scenario mode");
     }
 
     private static void RequireObject(JsonElement value, string[] names)

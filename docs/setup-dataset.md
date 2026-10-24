@@ -48,6 +48,14 @@ support from the broader card catalog. Standard and Expert remain separate
 campaign records even when a client presents their shared scenario name as one
 control.
 
+An optional `setup_mode` explicitly labels a recipe `standard`, `expert`,
+`custom`, or `extreme`. Without it, the existing `expert` flag supplies the
+ordinary mode. Independent encounter-group recipes may label each group with
+`variant`, such as `A`, `B`, or `A → B`. Discovery carries that ordered label
+beside the printed villain name and advertises that modular sets are unavailable.
+The client selects a complete returned recipe key; it does not construct stages
+or infer setup rules from those labels. Metadata alone does not admit a product.
+
 ## Dataset shape
 
 A campaign names its main schemes, villain stages, fixed encounter sets,

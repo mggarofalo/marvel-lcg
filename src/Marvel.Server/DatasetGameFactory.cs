@@ -187,8 +187,7 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
             .. setup.CampaignNames.Select(key =>
             {
                 CampaignSetup campaign = setup.Campaign(key);
-                return new ScenarioSetupChoice(
-                    key, campaign.Name, campaign.Expert, [.. campaign.ModularSets]);
+                return ScenarioSetupProjection.Describe(key, campaign, cards);
             }),
         ],
         ModularSets:
@@ -216,3 +215,4 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
     private static string Hash(byte[] bytes) =>
         Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
 }
+

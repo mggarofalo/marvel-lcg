@@ -336,7 +336,7 @@ visibility configuration, durable sessions and shutdown behavior.
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Both endpoints must use
-protocol 36. Setup and decisions replay under engine-replay-v21, with session
+protocol 37. Setup and decisions replay under engine-replay-v21, with session
 schema 7 retaining the exact ordered decks. Requests carry engine-authored
 commitments and explicit payment allocations; authorized responses include
 readable choices, active attack participants, attack completion events and
