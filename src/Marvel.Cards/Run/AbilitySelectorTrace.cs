@@ -12,6 +12,8 @@ internal static class AbilitySelectorTrace
 {
     internal static List<Card> TraceCandidateCards(AbilityCardSelection selector, AbilityAdmissionScope cast) => selector switch
     {
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.ActiveVillainSideScheme } =>
+            [.. AbilityActiveSchemeQuery.Candidates(cast.World)],
         AbilityCardSelection.Query query when AbilityEncounterSchemeQueries.IsRanked(query.Kind) =>
             [.. (cast.World.EncounterTopology?.Groups
                 ?? throw new Marvel.Rules.Play.RulesNotImplementedException("ranked encounter schemes require encounter topology"))

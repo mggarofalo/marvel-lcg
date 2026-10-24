@@ -183,7 +183,7 @@ public static class StateFieldCatalog
     /// <param name="field">The field name, as this class spells it.</param>
     public static bool IsModifiable(string field) =>
         PrintedFrom.ContainsKey(field)
-        || field is "health" or "ally_limit";
+        || field is "health" or "ally_limit" or "attack_consequential_damage";
 
     /// <summary>Whether a field is one of the five printed basic powers.</summary>
     public static bool IsBasicPowerField(string field) =>

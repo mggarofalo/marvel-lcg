@@ -1,5 +1,10 @@
 # The card DSL
 
+`activeVillainSideScheme` selects the side scheme physically paired with the
+current active villain. Execution and projected boards follow their own active
+counter, including movement and stage promotion. Missing topology or a missing
+live pair raises; an ordinary scenario never substitutes its main scheme.
+
 `revealFromVillainDeck: <single-card selection>` reveals the top card of a
 living physical villain's paired encounter deck. It preserves the active counter
 and resolving player. An empty draw resets only that deck from its paired discard

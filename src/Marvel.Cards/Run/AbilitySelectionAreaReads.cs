@@ -20,7 +20,7 @@ internal static class AbilitySelectionAreaReads
         {
             case AbilityCardSelection.Query { Kind: AbilityCardQuery.Villains }:
                 areas.Add(DeckType.VillainArea); break;
-            case AbilityCardSelection.Query query when AbilityEncounterSchemeQueries.IsRanked(query.Kind):
+            case AbilityCardSelection.Query query when ReadsPairedScheme(query.Kind):
                 areas.Add(DeckType.VillainArea);
                 areas.Add(DeckType.SideSchemesArea);
                 break;
@@ -41,6 +41,9 @@ internal static class AbilitySelectionAreaReads
             default: throw new InvalidOperationException("Unknown compiled selector in area-dependency analysis");
         }
     }
+
+    private static bool ReadsPairedScheme(AbilityCardQuery query) =>
+        query == AbilityCardQuery.ActiveVillainSideScheme || AbilityEncounterSchemeQueries.IsRanked(query);
 
     private static IEnumerable<DeckType> SearchTypes(AbilitySearchArea area) =>
         area == AbilitySearchArea.YourPlayArea ? Enum.GetValues<DeckType>().Where(DeckTypes.IsInPlay)

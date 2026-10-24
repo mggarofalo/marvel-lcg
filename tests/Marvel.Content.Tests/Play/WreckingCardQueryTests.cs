@@ -32,6 +32,7 @@ public sealed class WreckingCardQueryTests : CoreCardTestBase
             string before = world.Digest().Canonical();
             long words = world.Random.Generator.WordsConsumed;
             Assert.Same(groups[index].Villain, Assert.Single(evaluator.Evaluate(AbilityCardQuery.Villain)));
+            Assert.Same(groups[index].Scheme, Assert.Single(evaluator.Evaluate(AbilityCardQuery.ActiveVillainSideScheme)));
             Assert.Same(attachments[index], Assert.Single(evaluator.Evaluate(AbilityCardQuery.AttachmentsOnVillain)));
             Assert.Same(groups[index].Villain,
                 Assert.Single(Query(world, groups[(index + 1) % groups.Length].Villain).Evaluate(AbilityCardQuery.Villain)));

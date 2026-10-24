@@ -70,6 +70,13 @@ public sealed class WreckingActiveCounterProjectionTests
         var active = new AbilityCardSelection.Query(AbilityCardQuery.Villain);
         Assert.Same(target, AbilityPowerSelectionTrace.PowerFind(active, scope, changed));
         Assert.Same(target, AbilityProjectedStateQueries.ProjectedFind(active, changedArea, scope.Context));
+        var scheme = new AbilityCardSelection.Query(AbilityCardQuery.ActiveVillainSideScheme);
+        Assert.Same(groups[0].Scheme, AbilityPowerSelectionTrace.PowerFind(scheme, scope, changed));
+        Assert.Same(groups[0].Scheme, AbilityProjectedStateQueries.ProjectedFind(scheme, changedArea, scope.Context));
+        var trace = new AbilitySelectorTraceContext(changedRepeated.CurrentVillain, scope,
+            changedRepeated.Discarded, changedRepeated.Traits, changedRepeated.Modifiers, changedRepeated.Engagement)
+        { EncounterStages = changedRepeated.EncounterStages };
+        Assert.Same(groups[0].Scheme, AbilitySingularTraceSelection.Find(scheme, trace));
         Assert.True(new AbilityAreaProjection([effect], null,
             new HashSet<DeckType> { DeckType.VillainArea }, scope.Context, 1).MayChange());
         Assert.Equal(before.Item1, world.Digest().Canonical());

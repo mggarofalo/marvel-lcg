@@ -8,6 +8,8 @@ public enum AbilityCardQuery
 {
     /// <summary>The authored villain relation.</summary>
     Villain,
+    /// <summary>The side scheme paired with the current active villain.</summary>
+    ActiveVillainSideScheme,
     /// <summary>Living villains tied for the least threat on their corresponding schemes.</summary>
     VillainsWithLeastSchemeThreat,
     /// <summary>Living villains tied for the most threat on their corresponding schemes.</summary>

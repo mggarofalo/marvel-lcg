@@ -43,6 +43,8 @@ internal sealed class CardQueryEvaluator(
 
     internal IReadOnlyList<Card> Evaluate(AbilityCardQuery query)
     {
+        if (query == AbilityCardQuery.ActiveVillainSideScheme)
+            return AbilityActiveSchemeQuery.Live(cast.World);
         if (AbilityEncounterSchemeQueries.IsRanked(query))
             return EncounterSchemeRelations.AtThreatExtreme(cast.World,
                 query == AbilityCardQuery.VillainsWithMostSchemeThreat);
