@@ -10,6 +10,8 @@ internal static class AbilityDiscardReceiptAdmission
         AbilityAdmissionContext context, IReadOnlyList<int>? selected)
     {
         var costs = Flatten(ability.Cost).ToArray();
+        var random = costs.OfType<AbilityCost.RandomDiscardFromHand>().SingleOrDefault();
+        if (random is not null) return AbilityRandomHandReceiptAdmission.Admit(ability, context, random);
         var discards = costs.OfType<AbilityCost.DiscardFromHand>().ToArray();
         if (discards.Length == 0 || costs.OfType<AbilityCost.ExhaustChosen>().Any())
             return Accepted(ability.Effect, context);

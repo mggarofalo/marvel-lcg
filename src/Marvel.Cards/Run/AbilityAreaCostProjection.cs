@@ -66,7 +66,7 @@ internal static class AbilityAreaCostProjection
     }
 
     private static bool IsHandCost(AbilityCost payment) =>
-        payment is AbilityCost.DiscardFromHand or AbilityCost.Spend
+        payment is AbilityCost.RandomDiscardFromHand or AbilityCost.DiscardFromHand or AbilityCost.Spend
             or AbilityCost.SpendEnergy;
 
     private static Card? CostTarget(this AbilityAreaProjection projection, AbilityCostCard binding, AreaProjectionState state)

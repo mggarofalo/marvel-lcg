@@ -26,6 +26,8 @@ internal sealed class AbilityPaymentValidation(
         if (steps.Any(step => step is AbilityCost.DiscardFromHand) && paying.Intersect(chosen).Any())
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' cannot discard the same hand card for resources and an arrow cost");
+        if (!AbilityRandomHandCost.CanPayTogether(world, source, player, steps))
+            throw new RulesNotImplementedException("the random hand-discard cost cannot be paid in full");
         if (!AbilityDeckCosts.CanPayTogether(world, player, steps))
             throw new RulesNotImplementedException("the combined deck costs cannot be paid in full");
         if (EffectiveCards.Kind(source, world.Facts) == CardKind.Event

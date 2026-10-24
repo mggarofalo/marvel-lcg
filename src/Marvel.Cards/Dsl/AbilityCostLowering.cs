@@ -37,6 +37,7 @@ internal static class AbilityCostLowering
             "spendAny" => new AbilityCost.Spend("", PrintedOnly: false) { Generic = PositiveCount(argument, child) },
             "spendPrinted" => new AbilityCost.Spend(ResourceString(argument, child), PrintedOnly: true),
             "spendEnergyX" => EnergyCost(argument, child),
+            "discardRandomFromHand" => new AbilityCost.RandomDiscardFromHand(PositiveCount(argument, child)),
             "discardFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.Exact(PositiveCount(argument, child))),
             "discardUpToFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.UpTo(PositiveCount(argument, child))),
             "discardAnyFromHand" => AnyDiscardCost(argument, child),

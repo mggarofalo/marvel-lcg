@@ -399,3 +399,23 @@ killed removal of only one status copy (one failure), an incorrect completion ev
 (three), and omission of Confused (three). Canonical Uncanny Resilience authoring
 awaits the shared book handoff; the pack remains closed. Independent source review
 is requested.
+
+
+### Random hand-discard arrow costs — MARVEL-667
+
+`discardRandomFromHand` separates affordability from commitment: offer queries
+consume no RNG; the validated payment samples physical hand cards once without
+replacement and retains them in the paid receipt. One random instruction can
+combine with fixed exhaustion. Unsupported event/resource/multiple-random payment
+compositions and admission depending on random printed facts explicitly refuse
+before payment. Cardinality-only receipt reads use outcome-independent counts.
+
+Six local-book actual attachment-action controls cover Magic Crowbar, Ball and
+Chain, and Bulldozer's Helmet for both seats. Further controls cover empty hands,
+exhausted heroes, alter-ego form, stale empty-hand rejection without state/RNG
+mutation, exact seeded selection and word count, two-card receipt cardinality,
+and malformed/unsupported costs. Sixteen focused and full Content 3,343 pass.
+Compiled mutants killed first-card substitution (six failures), omitted discard
+(seven), and omitted paid receipt (one). Bounded independent source review found
+no blocker. Complete printed attachment rows and native/replay acceptance remain
+part of the ongoing full-pack work.

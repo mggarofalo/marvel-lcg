@@ -78,6 +78,7 @@ internal static class AbilityPaymentRules
             // discard can be: the card is the cost and what it would have
             // generated is not read at all. So the question is a count and not
             // a sum, and a card with no printed `RES` pays it.
+            AbilityCost.RandomDiscardFromHand random => AbilityRandomHandCost.CanPay(world, card, player, random),
             AbilityCost.DiscardFromHand discard => AbilityCostSelection.HandCandidates(world, card, player).Count
                 >= AbilityCostSelection.Range(discard.Range, int.MaxValue).Min,
             AbilityCost.ExhaustChosen exhaust => AbilityCostSelection.Choices(world, player, exhaust)
@@ -120,8 +121,7 @@ internal static class AbilityPaymentRules
         AbilityProgram program, IResourceCardAbilities resourceAbilities)
     {
         var steps = cost.Costs;
-        if (!CounterCostsPayable(world, card, player, cost)
-            || !AbilityDeckCosts.CanPayTogether(world, player, cost.Costs))
+        if (!PhysicalCostsPayable(world, card, player, cost))
         {
             return false;
         }
@@ -163,6 +163,11 @@ internal static class AbilityPaymentRules
             .All(step => Payable(
                 world, card, player, step, program, resourceAbilities));
     }
+
+    private static bool PhysicalCostsPayable(World world, Card card, int player, AbilityCost.Sequence cost) =>
+        AbilityRandomHandCost.CanPayTogether(world, card, player, cost.Costs)
+        && CounterCostsPayable(world, card, player, cost)
+        && AbilityDeckCosts.CanPayTogether(world, player, cost.Costs);
 
     internal static bool CounterCostsPayable(
         World world, Card card, int player, AbilityCost? cost)

@@ -108,16 +108,30 @@ internal sealed class AbilityCostPreparation
             ? new TakeDamage(Bind(damage.Card), damage.Amount)
             : new DealDamage(Bind(damage.Card), damage.Amount));
 
+    private bool PrepareHandDiscard(AbilityCost component)
+    {
+        switch (component)
+        {
+            case AbilityCost.RandomDiscardFromHand random:
+                ordered.Add(new RandomDiscardHand(world.Seats[player].Hand,
+                    [.. AbilityCostSelection.HandCandidates(world, source, player)
+                        .Select(card => new BoundCard(card, card.Incarnation))], random.Count));
+                return true;
+            case AbilityCost.DiscardFromHand:
+                ordered.Add(new DiscardHand(world.Seats[player].Hand,
+                    [.. selected.Select(id => new BoundCard(world.Cards[id], world.Cards[id].Incarnation))]));
+                return true;
+            default: return false;
+        }
+    }
+
     private void PreparePhysical(AbilityCost component)
     {
+        if (PrepareHandDiscard(component)) return;
         switch (component)
         {
             case AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou:
                 ordered.Add(new DeckCost(component));
-                break;
-            case AbilityCost.DiscardFromHand:
-                ordered.Add(new DiscardHand(world.Seats[player].Hand,
-                    [.. selected.Select(id => new BoundCard(world.Cards[id], world.Cards[id].Incarnation))]));
                 break;
             case AbilityCost.ExhaustChosen:
                 ordered.Add(new ExhaustSelected(

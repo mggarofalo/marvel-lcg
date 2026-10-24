@@ -878,3 +878,14 @@ status card was actually removed and None when none was removed; dependent
 `otherwise` observes the committed removals. Invalid character targets are omitted,
 and unrelated status kinds remain. Unsupported projected compositions raise before
 execution rather than infer future status membership.
+
+
+`discardRandomFromHand: N` is a positive fixed-count arrow cost. Offer and
+admission queries inspect only affordability; commitment samples physical cards
+from the seeded game RNG without replacement. The resulting discard receipt can
+supply a count to the effect, but admission that depends on the random cards'
+printed facts explicitly raises. One random instruction may combine with fixed
+exhaustion costs. Multiple random instructions, simultaneous resource spending or
+other cost kinds, and event printed-payment composition explicitly raise before
+payment. Descriptions state that the hand discard is random; no card-selection
+prompt is offered for this cost.

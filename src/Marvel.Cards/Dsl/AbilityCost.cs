@@ -39,6 +39,9 @@ public abstract record AbilityCost
     public sealed record SpendEnergy : AbilityCost;
     /// <summary>Discard selected cards from the resolving player's hand.</summary>
     public sealed record DiscardFromHand(AbilityCostRange Range) : AbilityCost;
+
+    /// <summary>Discard a fixed number of random hand cards as an arrow cost.</summary>
+    public sealed record RandomDiscardFromHand(int Count) : AbilityCost;
     /// <summary>Exhaust selected cards from a supported payment relation.</summary>
     public sealed record ExhaustChosen(AbilityCardQuery From, AbilityCostRange Range) : AbilityCost
     {

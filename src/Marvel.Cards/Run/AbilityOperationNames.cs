@@ -22,6 +22,7 @@ internal static class AbilityOperationNames
         AbilityCost.Spend { Generic: > 0 } => "spendAny",
         AbilityCost.Spend spend => spend.PrintedOnly ? "spendPrinted" : "spend",
         AbilityCost.SpendEnergy => "spendEnergyX",
+        AbilityCost.RandomDiscardFromHand => "discardRandomFromHand",
         AbilityCost.DiscardFromHand discard => discard.Range switch
         {
             AbilityCostRange.Exact => "discardFromHand",
