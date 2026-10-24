@@ -11629,6 +11629,32 @@
           }
         }
       ]
+    },
+    {
+      "card": "03013",
+      "name": "Squirrel Girl",
+      "note": "Response: After Squirrel Girl enters play, deal 1 damage to each enemy. The optional damage is not an attack; it includes enemies engaged with every player and does not trigger retaliate.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "Response", "subject": "this" },
+          "effect": { "dealDamage": { "cards": { "query": "enemies" }, "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "03031",
+      "name": "Enraged",
+      "note": "Attach to an ally. Max 1 per ally. Attached ally gets +2 ATK and takes +1 consequential damage after it attacks. The consequential modifier applies only to the attack field, not thwarting or nonbasic damage abilities.",
+      "attachTo": { "withoutAnotherCopyAttached": { "query": "allies" } },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "seq": [
+            { "grant": { "card": "attachedTo", "keyword": "attack", "amount": 2 } },
+            { "grant": { "card": "attachedTo", "keyword": "attack_consequential_damage", "amount": 1 } }
+          ] }
+        }
+      ]
     }
   ]
 }

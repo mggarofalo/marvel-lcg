@@ -389,3 +389,21 @@ are caught: two starting counters, missing Uses, unrestricted form, wrong
 exhaustion target, physical output and a two-counter cost. Independent source
 review found no blocker. The full Content suite passes 2,826 cases. This
 twentieth research face does not open the pack.
+
+## Squirrel Girl and Enraged
+
+03013's optional entry response damages every enemy, including minions engaged
+with other players. Actual play decisions distinguish declining the response,
+Tough prevention, nonattack damage despite Stunned and Retaliate, and lethal
+damage followed by each defeated Hydra Soldier dealing its engaged player an
+encounter card. 03031 attaches to an ally across player areas, rejects a second
+copy on the same ally, and grants +2 ATK and one additional attack consequential
+damage. Thwart and its consequential damage remain unchanged; discarding the
+attachment removes both modifiers. The existing registered attack consequential
+damage field is admitted as a continuous modifier; no state field is added.
+
+Seven focused cases and all 2,834 Content cases pass. Six executable authored
+mutants are caught: Squirrel Girl's damage, recipient set and optional timing;
+Enraged's attack bonus, consequential bonus and cross-player attachment scope.
+These two research interpretations keep the runtime product admission gate
+closed. They do not establish complete pack setup or native-client acceptance.
