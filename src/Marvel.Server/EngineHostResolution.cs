@@ -118,7 +118,9 @@ internal static class EngineHostResolution
                 PromptRecord.From(pending), candidatePrompt, "live prompt");
             Decision replayDecision = DurableDecision.From(actor, pending, decision)
                 .Resolve(candidatePrompt);
-            bool root = candidate.IsRootPrompt;
+            // Ledger choice: an initial setup sequence opens its own history unit.
+            // Later dependent decisions must still extend an existing open unit.
+            bool root = candidate.IsRootPrompt || access.Session.Save.Cursor == 0;
             int active = candidate.Active;
             int round = candidate.Round;
             string phase = candidate.Phase.ToString();
