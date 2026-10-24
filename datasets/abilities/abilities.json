@@ -11993,6 +11993,32 @@
           "keyword": "thwart_prohibited", "amount": 1
         } }
       }]
+    },
+    {
+      "card": "03033",
+      "name": "Expert Defense",
+      "note": "Hero Interrupt (defense): When your hero defends against an attack, it gets +3 DEF for that attack. Uses the committed hero-defense occurrence, including RR1.8 defense-labeled initiation.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenHeroDefends",
+            "timing": "Interrupt",
+            "subject": "you",
+            "form": "hero"
+          },
+          "labels": [
+            "defense"
+          ],
+          "effect": {
+            "grantUntil": {
+              "card": "you",
+              "keyword": "defense",
+              "amount": 3,
+              "until": "EndOfAttack"
+            }
+          }
+        }
+      ]
     }
   ]
 }

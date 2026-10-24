@@ -22,6 +22,9 @@ public class NoCardAbilities : ICardAbilities
     public virtual bool ObservesPlayerTurnBeginning(World world) => false;
 
     /// <inheritdoc/>
+    public virtual bool ObservesHeroDefense(World world) => false;
+
+    /// <inheritdoc/>
     public virtual bool CanPlayFromStorage(World world, Card card, int player) => false;
 
     /// <inheritdoc/>

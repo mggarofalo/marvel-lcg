@@ -70,14 +70,14 @@ internal static class AbilityImmediateExecution
                     context.Trigger, context.Events);
                 return new(true, false);
             case AbilityCardInstruction.DeclareDefender:
-                Attack.DeclareByAbility(
+                bool scheduled = Attack.DeclareByAbility(
                     world, world.Facts,
                     context.Admission.Selectors().Find(action.Selection)
                         ?? throw new RulesNotImplementedException(
                             $"'{source.FaceId}' cannot find the character it declares as defender"),
                     checked((int)context.Admission.Expressions.Results
                         .GetValueOrDefault("defenseAbilityDefender", -1)));
-                return new(true, true);
+                return new(true, true) { ProcedureScheduled = scheduled };
             default:
                 return new(false, false);
         }

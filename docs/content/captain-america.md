@@ -668,3 +668,46 @@ and whole-pack native/replay acceptance remain required before admission.
 Full Server regression passes 408 cases, including the Man Out of Time restart
 control. The integrated commit passes all 66 architecture policy tests plus
 complexity and file-size pre-commit gates.
+
+
+### MARVEL-649 committed defense candidate
+
+Expert Defense 03033 is authored, bringing research coverage to all 35 faces.
+The distinct hero-defense occurrence covers basic commitment, envelope and
+nested defense labels, and card-declared defense. The original basic and
+labeled-body reproductions failed before implementation. Extending the latter
+to declaration exposed a missing explicit procedure-scheduled result; that path
+now pauses before the next effect too.
+
+Actual-card controls distinguish +3 DEF, stacked copies, event discard and
+attack-end expiry. Multiplayer controls distinguish foreign identity ownership
+and ally defense from the defending hero. Context controls distinguish physical
+incarnations, activation identity, unique repeated occurrences and read-only
+context queries. Server tests reopen the committed-defense prompt, accept or
+decline it with exact event/RNG/digest equality, reject history edits while its
+parent unit remains open, and reopen again at the resulting prompt. These are
+prepared-scene controls, not whole-pack native acceptance.
+
+The operation and continuation are internal replay state, reconstructed by the
+existing save format. No registered card field or RNG format changes. Unobserved
+Core/Rise games do not schedule the new operation. Release build and unit checks
+passed before the additional declaration, multiplayer and context controls;
+final combined regression and whole-pack acceptance are still required.
+
+The final Content regression passes 2,948 cases. Actual Expert Defense also
+resolves during both synthetic defense-label encodings without granting basic
+DEF reduction, and a second attack cannot inherit its bonus. A repeated inner
+body test establishes the DSL convention that one triggered ability initiates
+its defense label once. A bounded independent static review found no confirmed
+blocker and raised that repeated-body question; the added control passes.
+
+The queued-occurrence shortcut initially dropped the new operation's captured
+roles. The visible defense prompt exposed that defect; hero-defense work now
+requires its context-aware occurrence, with a direct regression. Six executable
+mutants were rerun from the corrected passing baseline: wrong amount (one
+failure), round expiry (two), basic-only timing (two), stale hero incarnation
+(one), repeated occurrence id (one), and skipped suspended body (two). Initial
+mutation results from the failing baseline are superseded by these reruns.
+
+Pack-level setup-to-ending integration and native acceptance remain in progress;
+no whole-pack admission is claimed by these focused results.

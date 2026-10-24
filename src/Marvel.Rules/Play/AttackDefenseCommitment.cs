@@ -38,5 +38,6 @@ internal static class AttackDefenseCommitment
         {
             world.Activation = activation with { Player = defender.Area.PlayArea.Player };
         }
+        HeroDefenseTiming.Schedule(world, defender);
     }
 }
