@@ -1,3 +1,4 @@
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Core.Random;
@@ -86,7 +87,8 @@ public sealed class WreckingRandomCostTests
         Assert.True(world.Seats[0].IdentityCard.Ready);
     }
 
-    private static AbilityRunner Runner(string face, string title) => new(AbilityCatalog.Parse($$"""
+    private static AbilityRunner Runner(string face, string title) => face != "07049"
+        ? AuthoredCards.Runner() : new(AbilityCatalog.Parse($$"""
         {"cards":[{"card":"{{face}}","attachTo":{"titled":"{{title}}"},"abilities":[{
           "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
           "cost":{"seq":[{"exhaust":"you"},{"discardRandomFromHand":1}]},

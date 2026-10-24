@@ -12321,6 +12321,107 @@
           }
         }
       ]
+    },
+    {
+      "card": "07006",
+      "name": "Magic Crowbar",
+      "attachTo": {
+        "titled": "Wrecker"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "minBy": {
+                  "of": {
+                    "query": "sideSchemes"
+                  },
+                  "by": "threat"
+                }
+              },
+              "effect": {
+                "placeThreat": {
+                  "scheme": "chosen",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "you"
+              },
+              {
+                "discardRandomFromHand": 1
+              }
+            ]
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "07020",
+      "name": "Ball and Chain",
+      "attachTo": {
+        "titled": "Thunderball"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "mainScheme"
+              },
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "you"
+              },
+              {
+                "discardRandomFromHand": 1
+              }
+            ]
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
     }
   ]
 }

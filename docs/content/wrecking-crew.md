@@ -437,3 +437,18 @@ the first player, the unrestricted boost choice by the resolving player, and
 two threat only on the active villain's paired scheme. Inverting max to min
 is killed by both ordinary highest-cost cases; the restored focused card and
 selector controls pass 16 cases. The complete pack remains unadmitted.
+
+### Magic Crowbar and Ball and Chain
+
+07006 and 07020 now include their complete printed attachment rows. Actual
+reveal/attack controls verify named hosts independently of deck ownership and
+active counter, printed ATK modifiers, least-threat first-player ties, main-scheme
+placement, canceled attacks and unrelated attackers. Their removal controls use
+the canonical book for both player seats and retain seeded random discard,
+exhaustion, stale input and unpayable-action observations. Bulldozer's Helmet
+remains a local action-only draft in that shared test fixture.
+
+Six new response controls and ten cost controls pass. Changing minimum to maximum
+threat kills the tie/target case; removing attached-actor binding kills both
+foreign-attack controls. Full Content passes 3,367. This brings authored Wrecking
+Crew coverage to 41 of 60 faces; full-pack admission remains closed.
