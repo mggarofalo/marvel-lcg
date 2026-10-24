@@ -65,7 +65,8 @@ internal static class SetupEntryPresentation
     internal static void RefreshChoices(Main main)
     {
         if (!main.setupPanel.Visible || main.setupChoices is null) return;
-        foreach (OptionButton option in new[] { main.hero, main.secondHero, main.scenario, main.mode })
+        foreach (OptionButton option in new[] { main.hero, main.secondHero, main.scenario, main.mode }
+                     .Concat(main.setupController.VariantControls).Concat(main.setupController.AdditionalHeroes))
         {
             HFlowContainer row = EnsureRow(main.setupGrid, option);
             string? focus = FocusedChoice(row);
@@ -86,6 +87,8 @@ internal static class SetupEntryPresentation
             RestoreFocus(row, focus);
         }
         HFlowContainer modular = EnsureRow(main.setupGrid, main.modular);
+        modular.Visible = main.SelectedCampaign().AllowsModularSets;
+        main.setupGrid.GetNode<Control>("ModularLabel").Visible = modular.Visible;
         string? modularFocus = FocusedChoice(modular);
         Clear(modular);
         PopupMenu popup = main.modular.GetPopup();
@@ -119,7 +122,8 @@ internal static class SetupEntryPresentation
     internal static void RefreshAvailability(Main main)
     {
         foreach (BaseButton adapter in new BaseButton[]
-                 { main.hero, main.secondHero, main.scenario, main.mode, main.modular })
+                 { main.hero, main.secondHero, main.scenario, main.mode, main.modular }
+                     .Concat(main.setupController.VariantControls).Concat(main.setupController.AdditionalHeroes))
         {
             if (main.setupGrid.GetNodeOrNull<HFlowContainer>(adapter.Name + "Choices") is not { } row)
                 continue;
@@ -130,9 +134,11 @@ internal static class SetupEntryPresentation
     internal static void SetAssignmentEnabled(Main main, bool enabled)
     {
         foreach (BaseButton adapter in new BaseButton[]
-                 { main.hero, main.secondHero, main.scenario, main.mode, main.modular })
+                 { main.hero, main.secondHero, main.scenario, main.mode, main.modular }
+                     .Concat(main.setupController.VariantControls).Concat(main.setupController.AdditionalHeroes))
             adapter.Disabled = !enabled;
         main.seed.Editable = enabled;
+        main.setupController.RefreshHeroes();
         RefreshAvailability(main);
     }
 

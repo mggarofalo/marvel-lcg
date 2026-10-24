@@ -12,6 +12,42 @@ namespace Marvel.Godot.Tests;
 public sealed class CardMenuChoicesTests
 {
     [Fact]
+    public void FourVillainTargetsKeepEveryOfferedIdentityAndExplainThePublishedActiveCounter()
+    {
+        string[] names = ["Wrecker", "Thunderball", "Piledriver", "Bulldozer"];
+        int[] targets = [20, 21, 22, 23];
+        var world = new WorldDescriptor([], [new(1, "Villains", 0, -1,
+            targets.Select((id, index) => Card(id, names[index])).ToArray(), [])], [], Outcome.Unfinished)
+        { EncounterGroups = targets.Select((id, index) => new EncounterGroupDescriptor(index, names[index], id, null,
+            100 + index, 200 + index) { Active = index == 0 }).ToArray() };
+        var offer = new Affordance(3, "Attack", 10, 0, "Attack", new TargetRequest(targets, 1, 1));
+        var composer = Composer(offer);
+        var action = Assert.Single(CardMenuChoices.Build(composer, world, 10, [Visible(offer)]));
+        Assert.Equal(targets.Select(id => (int?)id), action.Children.Select(entry => entry.Choice!.Target));
+        Assert.Equal("Wrecker · active villain", action.Children[0].Label);
+        Assert.Equal("Piledriver · inactive villain", action.Children[2].Label);
+        Assert.True(CardMenuChoices.Select(composer, Binding(composer), action.Children[2].Choice!));
+        Assert.Equal([22], composer.Targets);
+        var moved = world with { EncounterGroups = world.EncounterGroups.Select(group => group with { Active = group.Group == 2 }).ToArray() };
+        action = Assert.Single(CardMenuChoices.Build(Composer(offer), moved, 10, [Visible(offer)]));
+        Assert.Equal("Piledriver · active villain", action.Children[2].Label);
+        var onlyActive = offer with { Targets = new TargetRequest([22], 1, 1) };
+        Assert.Equal(22, Assert.Single(Assert.Single(CardMenuChoices.Build(Composer(onlyActive), moved,
+            10, [Visible(onlyActive)])).Children).Choice!.Target);
+    }
+
+    [Fact]
+    public void ActiveCounterChoiceNamesTheOfferedVillainWithoutReplacingItsOwnInstruction()
+    {
+        var offer = new Affordance(20, "Choose", 20, 0, "Make Wrecker active") { SelectionSourceId = 10 };
+        var world = World() with { EncounterGroups = [new(0, "Wrecker", 20, null, 100, 200)] };
+        var entry = Assert.Single(CardMenuChoices.Build(Composer(offer), world, 10, [Visible(offer)]));
+        Assert.Equal("Make Wrecker active · inactive villain", entry.Label);
+        Assert.Equal(20, entry.Choice!.Offer);
+        Assert.Null(entry.Choice.Target);
+    }
+
+    [Fact]
     public void ResponseMenuUsesEngineRecipientInstructionAndNeverAnEmptyCommitDescription()
     {
         var offer = new Affordance(3, "Respond", 10, 0, "Mockingbird",

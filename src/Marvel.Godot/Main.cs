@@ -421,24 +421,18 @@ public sealed partial class Main : Control
     internal void RefreshSynchronizeAvailability() => eventController.RefreshSynchronizeAvailability();
     internal GameSetupSelection SelectedSetup()
     {
-        var heroes = new List<string> { setupChoices!.Heroes[hero.Selected].Key };
-        if (secondHero.Selected > 0)
-        {
-            heroes.Add(secondHero.GetItemMetadata(secondHero.Selected).AsString());
-        }
-
         return setupController.SelectDecks(new GameSetupSelection(
-            heroes,
+            setupController.SelectedHeroes(),
             SelectedCampaign().Key,
             modularConfiguration,
-            setupChoices.ModularSets
+            setupChoices!.ModularSets
                 .Where(set => selectedModularKeys.Contains(set.Key))
                 .Select(set => set.Key)
                 .ToArray(),
             seed.Text));
     }
 
-    internal ScenarioSetupChoice SelectedCampaign() => visibleModes[mode.Selected];
+    internal ScenarioSetupChoice SelectedCampaign() => setupController.SelectedCampaign();
 
     internal void SetSetupControlsEnabled(bool enabled)
     {

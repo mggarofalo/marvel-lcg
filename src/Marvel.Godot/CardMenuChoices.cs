@@ -12,7 +12,14 @@ internal static class CardMenuChoices
             .Select(offer => Action(composer, world, offer)),
             .. Group(world, [.. offers.Where(offer => offer.SelectionSourceId == source
                     && offer.CardAnchorId is not null)
-                .Select(offer => Action(composer, world, offer) with { Preview = offer.CardAnchorId })])];
+                .Select(offer => Selection(composer, world, offer))])];
+
+    private static CardMenuEntry Selection(DecisionComposer composer, WorldDescriptor world, AffordancePresentation offer)
+    {
+        var entry = Action(composer, world, offer);
+        return entry with { Preview = offer.CardAnchorId,
+            Label = EncounterTargetLabel(world, offer.CardAnchorId!.Value, entry.Label) };
+    }
 
     private static CardMenuEntry Action(DecisionComposer composer, WorldDescriptor world,
         AffordancePresentation offer)
@@ -37,6 +44,7 @@ internal static class CardMenuChoices
     {
         var windowChoice = offer.WindowChoices.FirstOrDefault(choice => choice.TargetId == target);
         string label = windowChoice?.Label ?? TargetName(world, target, offer.TargetRequest!.Legal);
+        label = EncounterTargetLabel(world, target, label);
         string detail = windowChoice?.Description ?? offer.TargetRequest?.Details?.GetValueOrDefault(target)
             ?? DecisionCopy.CompactActionSummary(offer);
         bool ready = Ready(composer, offer.Id, target);
@@ -47,6 +55,14 @@ internal static class CardMenuChoices
     private static string TargetCommitmentDetail(string detail, bool ready) =>
         string.IsNullOrWhiteSpace(detail) ? (ready ? "Commit now" : "Choose target")
             : (ready ? "Commit: " : "Choose: ") + detail;
+
+    private static string EncounterTargetLabel(WorldDescriptor world, int target, string label)
+    {
+        var group = world.EncounterGroups.FirstOrDefault(candidate => candidate.Villain == target);
+        if (group is null) return label;
+        string state = group.Active ? "active villain" : group.Defeated ? "defeated villain" : "inactive villain";
+        return $"{label} · {state}";
+    }
 
     private static string TargetName(WorldDescriptor world, int target, IReadOnlyList<int> legal)
     {
