@@ -13,6 +13,7 @@ public sealed class WreckingAdmissionBoundaryTests
     {
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var setup = SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
+        setup = RuntimeProductAdmission.Discover(setup, cards, AuthoredCards.Book.Authored).Setup;
         Assert.Contains("07027", AuthoredCards.Book.Authored);
         Assert.DoesNotContain("wrecking_crew", setup.CampaignNames);
         Assert.Throws<KeyNotFoundException>(() =>

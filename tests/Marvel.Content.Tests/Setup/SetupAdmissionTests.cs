@@ -72,7 +72,7 @@ public sealed class SetupAdmissionTests
         var setup = SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
         var program = AbilityLowering.Book(AbilityCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json"))));
 
-        setup = setup.WithoutPack(cards, "trors");
+        setup = RuntimeProductAdmission.Discover(setup, cards, program.Authored).Setup.WithoutPack(cards, "trors");
         SetupCatalogAdmission.Validate(setup, cards, program.Authored);
         Assert.Throws<ArgumentException>(() => SetupCatalogAdmission.Validate(setup, cards, program.Authored.Remove("01001a")));
         Assert.Throws<ArgumentException>(() => Dealer.DealOrder(setup, "rhino", ["spider_man"],
@@ -101,7 +101,7 @@ public sealed class SetupAdmissionTests
         data["campaigns"]!["rhino"]![missing] = new JsonArray();
         var setup = SetupCatalog.Parse(data.ToJsonString());
         var program = AbilityLowering.Book(AbilityCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json"))));
-        Assert.Throws<ArgumentException>(() => SetupCatalogAdmission.Validate(setup, cards, program.Authored));
+        Assert.Throws<ArgumentException>(() => RuntimeProductAdmission.Discover(setup, cards, program.Authored));
     }
 
 }

@@ -165,8 +165,8 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07009:2 | Escaped Convict / wrecker | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
 | 07010 | Buddy System / wrecker | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
 | 07010:2 | Buddy System / wrecker | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
-| 07011 | Chaos In the Prison / wrecker | 1 | When Revealed: Choose to either discard an upgrade you control or place 1 threat on the active villain's side scheme for each upgrade you control. If you do not control any upgrades, this card gains surge. | Pending MARVEL-625 |
-| 07011:2 | Chaos In the Prison / wrecker | 1 | star Boost: If this attack is undefended, discard an upgrade you control. | Pending MARVEL-625 |
+| 07011 | Chaos In the Prison / wrecker | 1 | When Revealed: Choose to either discard an upgrade you control or place 1 threat on the active villain's side scheme for each upgrade you control. If you do not control any upgrades, this card gains surge. | Authored; WreckingChaosTests / WreckingBullRushTests; full-pack integration pending |
+| 07011:2 | Chaos In the Prison / wrecker | 1 | star Boost: If this attack is undefended, discard an upgrade you control. | Authored; WreckingChaosTests / WreckingBullRushTests; full-pack integration pending |
 | 07012 | Crowbar Toss / wrecker | 2 | When Revealed (Alter-Ego): Wrecker schemes. Then, move the active villain counter to the villain whose side scheme has the least threat. | Authored; WreckingCrowbarTossTests verifies both forms, cancellation, unique/tied ranked movement after activation; full-pack acceptance pending MARVEL-657 |
 | 07012:2 | Crowbar Toss / wrecker | 2 | When Revealed (Hero): Wrecker attacks you. Then, move the active villain counter to the villain whose side scheme has the least threat. | Authored; WreckingCrowbarTossTests verifies both forms, cancellation, unique/tied ranked movement after activation; full-pack acceptance pending MARVEL-657 |
 | 07013 | Get Wrecked! / wrecker | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
@@ -197,8 +197,8 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07024:2 | Escaped Convict / thunderball | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
 | 07025 | Buddy System / thunderball | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
 | 07025:2 | Buddy System / thunderball | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
-| 07026 | Chaos In the Prison / thunderball | 1 | When Revealed: Choose to either discard an upgrade you control or place 1 threat on the active villain's side scheme for each upgrade you control. If you do not control any upgrades, this card gains surge. | Pending MARVEL-625 |
-| 07026:2 | Chaos In the Prison / thunderball | 1 | star Boost: If this attack is undefended, discard an upgrade you control. | Pending MARVEL-625 |
+| 07026 | Chaos In the Prison / thunderball | 1 | When Revealed: Choose to either discard an upgrade you control or place 1 threat on the active villain's side scheme for each upgrade you control. If you do not control any upgrades, this card gains surge. | Authored; WreckingChaosTests / WreckingBullRushTests; full-pack integration pending |
+| 07026:2 | Chaos In the Prison / thunderball | 1 | star Boost: If this attack is undefended, discard an upgrade you control. | Authored; WreckingChaosTests / WreckingBullRushTests; full-pack integration pending |
 | 07027 | Energy Projectiles / thunderball | 2 | When Revealed: Deal 1 damage to each friendly character you control. | Authored; owner/form resolution contracts verified; full journey pending MARVEL-631 |
 | 07027:2 | Energy Projectiles / thunderball | 2 | star Boost: Deal 1 damage to the defending character. | Authored; current defender and absent/departed defender contracts verified; full journey pending MARVEL-631 |
 | 07028 | Get Wrecked! / thunderball | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
@@ -259,10 +259,10 @@ Boost text is a separate obligation from When Revealed text; neither implies the
 | 07053:2 | Escaped Convict / bulldozer | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. If you are in hero form, that villain attacks you after this attack. That attack does not get a boost card. | Pending MARVEL-625 |
 | 07054 | Buddy System / bulldozer | 1 | When Revealed: Choose the villain whose side scheme has the least threat. Reveal the top card of his deck (top 2 cards instead if he is the only villain in play). | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
 | 07054:2 | Buddy System / bulldozer | 1 | star Boost: Move the active counter to the villain whose side scheme has the least threat. | Authored; WreckingBuddySystemTests, MARVEL-651 verification pending |
-| 07055 | Bull Rush / bulldozer | 2 | When Revealed (Alter-Ego): Bulldozer schemes. Discard the top card of your deck for each threat placed by this activation. | Pending MARVEL-625 |
-| 07055:2 | Bull Rush / bulldozer | 2 | When Revealed (Hero): Bulldozer attacks you. Discard the top card of your deck for each damage dealt by this attack. | Pending MARVEL-625 |
-| 07056 | Chaos In the Prison / bulldozer | 1 | When Revealed: Choose to either discard an upgrade you control or place 1 threat on the active villain's side scheme for each upgrade you control. If you do not control any upgrades, this card gains surge. | Pending MARVEL-625 |
-| 07056:2 | Chaos In the Prison / bulldozer | 1 | star Boost: If this attack is undefended, discard an upgrade you control. | Pending MARVEL-625 |
+| 07055 | Bull Rush / bulldozer | 2 | When Revealed (Alter-Ego): Bulldozer schemes. Discard the top card of your deck for each threat placed by this activation. | Authored; WreckingChaosTests / WreckingBullRushTests; full-pack integration pending |
+| 07055:2 | Bull Rush / bulldozer | 2 | When Revealed (Hero): Bulldozer attacks you. Discard the top card of your deck for each damage dealt by this attack. | Authored; WreckingChaosTests / WreckingBullRushTests; full-pack integration pending |
+| 07056 | Chaos In the Prison / bulldozer | 1 | When Revealed: Choose to either discard an upgrade you control or place 1 threat on the active villain's side scheme for each upgrade you control. If you do not control any upgrades, this card gains surge. | Authored; WreckingChaosTests / WreckingBullRushTests; full-pack integration pending |
+| 07056:2 | Chaos In the Prison / bulldozer | 1 | star Boost: If this attack is undefended, discard an upgrade you control. | Authored; WreckingChaosTests / WreckingBullRushTests; full-pack integration pending |
 | 07057 | Get Wrecked! / bulldozer | 1 | When Revealed (Alter-Ego): The villain whose side scheme has the most threat schemes. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
 | 07057:2 | Get Wrecked! / bulldozer | 1 | When Revealed (Hero): The villain whose side scheme has the least threat attacks you. | Authored; WreckingGetWreckedTests (two-seat choices, activation routing, boost ownership); MARVEL-648 integration pending |
 | 07058 | Headbutt / bulldozer | 2 | When Revealed: Discard 1 card at random from your hand. If you are in hero form, take damage equal to that card's printed cost. If you are in alter-ego form, place threat on Bulldozer's side scheme equal to that card's printed cost. | Pending MARVEL-625 |
@@ -301,3 +301,83 @@ control (nine permission cases green). Compiled mutants killed: blanket removal
 prohibition (four failures), ignored departed source (one), active-villain fallback
 (four). Independent bounded review found and verified remediation of the otherwise
 admission gap. This evidence does not replace whole-product acceptance.
+
+### Chaos In the Prison and Bull Rush verification
+
+All three Chaos reprints execute the chosen upgrade discard or counted threat
+placement, then check current upgrade control for surge. The independent trailing
+check is required by `ruling:de7450cad15c3dbd`: discarding the last upgrade gains
+surge. Six last-upgrade cases failed before the ordered check was corrected.
+Both seats, foreign controlled cards, active-deck surge, inactive source ownership,
+and defended/undefended/no-upgrade boost behavior are covered.
+
+Bull Rush consumes the completed Bulldozer activation's damage-dealt or threat
+receipt, retains the original revealing player, and routes boosts to the active
+villain's deck while scheming onto Bulldozer's own scheme. Tough prevents damage
+taken but does not reduce damage dealt (`rr:damage.3.2`); canceled activations
+produce zero. Fifty-eight focused cases pass, including hero basic defense reducing damage
+to zero and a foreign ally defender taking lethal damage with overkill. The original
+revealer discards in both cases (`ruling:fc57e61be5945ac9`). Authored mutants killed: removed surge
+(four failures), wrong counted threat (two), inverted boost defense condition (four),
+and damage/threat receipt substitution (four). A surge 1-to-2 mutant is equivalent:
+`rr:keywords.1` says additional unnumbered keyword instances have no effect.
+
+Full Content suite: 3,208 green before the final two defender controls; all ten
+Bull Rush cases then passed. Bounded independent review requested those defender
+controls and found no authored-row blocker. Full-pack acceptance remains pending.
+
+### Private encounter inspection integration
+
+Captain inspection foundation `dddb4ddc` is integrated here as `98f346ad`.
+Generic encounter inspection now reads `EncounterRouting.Deck(world)`. Four
+combined-topology cases (active Wrecker/Bulldozer, both seats) failed against the
+ordinary-deck lookup, then passed with active-deck routing. They retain exact
+ordered physical IDs, count only the inspected deck's treacheries, hide all other
+decks and both IDs/faces from the nonacting seat, and revoke inspection on Done.
+An empty active deck does not offer an inspection of a different nonempty deck.
+
+Integration verification: 12 inspection controls, full View336 and Content3,210
+pass. The original ordinary-deck lookup is a compiled four-failure negative control.
+
+
+### Discarded printed facts — MARVEL-661
+
+Random hand discards retain their exact physical cards in the resolution receipt.
+The numeric expressions `printedCostDiscarded` and `distinctCardTypesDiscarded`
+read printed facts from that receipt, excluding older discard-pile cards. Undefined
+X costs are zero under `rr:non-numerical-variable`; empty receipts also yield zero.
+Future-discard damage admission recognizes the pending random discard without
+predicting its hidden result. New enum members append after existing members.
+
+Local-book Headbutt and Leading the Charge controls cover both seats, hero and
+alter-ego branches, foreign hand/deck isolation, active-versus-source-paired schemes,
+resource/X/empty costs, repeated types, and short/empty decks. These are draft
+interpretation tests; the canonical two rows are not authored at this checkpoint.
+Twenty-four focused cases pass. The full Content suite passed 3,228 cases before
+the final six short-deck controls. Compiled mutants killed: omitted random physical
+receipt (eight failures), boost icons substituted for printed cost (seven), and
+card count substituted for distinct type count (three). Bounded independent review
+found the enum append correction and no further receipt source blocker.
+
+
+Headbutt (07058) and Leading the Charge (07059) are now canonical authored rows.
+Their eighteen actual-card controls use the repository ability book, including the
+six short-deck cases. Both pass with the same physical receipt implementation.
+Authored face count is 37 of 60; whole-pack admission remains closed.
+
+
+### Canonical setup modes
+
+The canonical setup corpus contains nineteen Wrecking Crew recipes: Standard,
+Expert, Extreme, and all sixteen Custom A/B combinations in fixed Wrecker,
+Thunderball, Piledriver, Bulldozer order. Authored mode/variant metadata drives
+presentation. Closed product admission from `cd1b921f` excludes all these recipes
+from executable discovery while the pack is incomplete.
+
+Verification: seventy-seven canonical inventory/deal controls, 334 setup tests,
+four server product-gate/projection tests, and full Content 3,317 pass. Wrong
+starting active villain and wrong encounter component mutants each fail four
+player-count controls. Earlier independent setup mechanism controls also pin
+health, threat, shuffled physical ownership, and seeded RNG consumption. The
+canonical recipe diff awaits bounded independent review; no whole-pack acceptance
+is claimed.
