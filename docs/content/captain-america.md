@@ -637,7 +637,11 @@ cancellation. Allies and nonthwart threat removal remain legal. Re-engagement,
 departure and a blank minion profile immediately change the prohibition. The
 engine owns the derived `thwart_prohibited` modifier; no registered state field
 or product admission is added. Printed Quickstrike uses the existing keyword
-path; this packet does not independently exercise its entry attack.
+path. Four actual reveal transcripts cover both players in hero and alter-ego
+form: only the engaged hero is offered defense and takes the printed three
+damage when defense is declined. The engaged identity restriction is active
+after entry in either form. Disabling Quickstrike kills both hero cases; the
+restored nine Zemo cases pass.
 
 Five focused cases pass. Two executable authored mutants (zero prohibition and
 allies instead of the identity) each fail four of those five cases. Expert Defense
@@ -660,3 +664,7 @@ Man Out of Time's restart control also compares the final journal's exact event
 sequence and RNG consumption against uninterrupted resolution. The combined
 Content suite passes 2,924 cases and Rules passes 1,010 cases. Expert Defense
 and whole-pack native/replay acceptance remain required before admission.
+
+Full Server regression passes 408 cases, including the Man Out of Time restart
+control. The integrated commit passes all 66 architecture policy tests plus
+complexity and file-size pre-commit gates.
