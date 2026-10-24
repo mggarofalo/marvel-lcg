@@ -27,6 +27,11 @@ The file has 3 groups:
 | `heroes` | 7 Core Set and Rise of Red Skull starter decks |
 | `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets |
 
+One additional declared research hero is Captain America. Its 40-card starter,
+obligation and nemesis set follow the vendored FFG divider; the runtime product
+gate excludes this recipe until complete pack acceptance. The file therefore
+contains eight hero records while public discovery still exposes seven.
+
 The scenario rows are Rhino, Klaw and Ultron in Standard and Expert modes. The
 hero rows are Spider-Man, Captain Marvel, She-Hulk, Iron Man and Black Panther.
 Rise of Red Skull adds Crossbones, Absorbing Man, Taskmaster, Zola and Red Skull

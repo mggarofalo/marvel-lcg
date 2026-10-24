@@ -72932,6 +72932,24 @@
       ]
     },
     {
+      "id": "setup:hero:captain_america",
+      "fingerprint": "sha256:384bb3c6f6e5cf6720f25ef8cd274a52dc8b91cc4bb35542bf458fc04467dd47",
+      "obligations": [
+        {
+          "key": "captain-america-setup",
+          "summary": "The Captain America hero record supplies the printed starter deck, obligation and nemesis set.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Captain America hero pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:hero:captain_marvel",
       "fingerprint": "sha256:e5b51e34b96a76c34e69c0d719b272d6456046a7e36d41934aa99e1fd907cefe",
       "obligations": [

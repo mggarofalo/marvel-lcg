@@ -96,6 +96,8 @@ public static class LabeledAbilities
         }
 
         var performer = Performer(world, facts, player, source);
+        if (normalized.Contains(BasicPowers.ThwartVerb, StringComparer.Ordinal))
+            ThwartPermissions.Require(world, performer);
         var cancelling = new List<string>();
         if (normalized.Contains(BasicPowers.AttackVerb, StringComparer.Ordinal))
         {

@@ -22,7 +22,8 @@ mode, campaign instruction or deckbuilding exception is outside this contract
 even when the Rules Reference describes it. Runtime product admission is separate:
 adding a complete expansion does not certify it through these Core transcripts.
 Every authored setup record is still enumerated and fingerprinted. The 15 Rise
-of Red Skull records are explicitly adjudicated `outside-core`; they are not
+of Red Skull records and the Captain America research recipe are explicitly
+adjudicated `outside-core`; they are not
 filtered out or marked executable by this corpus.
 
 The Rules Reference is nevertheless enumerated in full. Starting with the

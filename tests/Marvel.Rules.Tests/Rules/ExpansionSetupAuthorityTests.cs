@@ -16,7 +16,8 @@ public sealed class ExpansionSetupAuthorityTests
             "setup:campaign:taskmaster", "setup:campaign:taskmaster_expert",
             "setup:campaign:zola", "setup:campaign:zola_expert",
             "setup:encounter-set:hydra_assault", "setup:encounter-set:hydra_patrol",
-            "setup:encounter-set:weapon_master", "setup:hero:hawkeye", "setup:hero:spider_woman",
+            "setup:encounter-set:weapon_master", "setup:hero:captain_america",
+            "setup:hero:hawkeye", "setup:hero:spider_woman",
         };
         var expansion = Catalog.Build().Sources.Where(source =>
             source.Kind == "setup" && source.Disposition == "outside-core").ToArray();
@@ -27,7 +28,8 @@ public sealed class ExpansionSetupAuthorityTests
             Assert.Equal("outside-core", obligation.Disposition);
             Assert.Null(obligation.Implementation);
             Assert.Empty(obligation.Scenarios);
-            Assert.Contains("Rise of Red Skull", obligation.Reason);
+            Assert.Contains(obligation.Id == "behavior:setup:hero:captain_america:captain-america-setup"
+                ? "Captain America hero pack" : "Rise of Red Skull", obligation.Reason);
         });
     }
 

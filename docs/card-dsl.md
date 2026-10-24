@@ -851,3 +851,10 @@ cards. Zero completes without a selection prompt. The entire group is selected
 in one engine-owned request; invalid or foreign selections leave state unchanged.
 The physical discarded cards are retained in the ordinary discard receipt.
 This operation suspends and is not admitted as a dependent-completion predecessor.
+
+
+`grant`/`grantEach` may use the derived `thwart_prohibited` modifier. A positive
+value prevents the selected character from performing basic or labeled thwarts,
+including an attempt canceled by Confused. It does not prevent nonthwart threat
+removal or another character's thwart. The field is an engine-selected constant
+modifier name, not a registered card-state or digest field.
