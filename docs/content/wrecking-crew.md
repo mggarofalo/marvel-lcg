@@ -388,7 +388,7 @@ is claimed.
 
 A strict `removeStatuses` operation removes each selected physical status card
 from selected in-play characters. Completion observes committed `Remove_Status`
-events, so a dependent `otherwise` takes only the zero-removal branch. Local-book
+events, so a dependent `otherwise` takes only the zero-removal branch. Canonical-book
 Uncanny Resilience controls cover both players, all four villains independently of
 the active counter, preserving Tough and friendly Stunned cards, and removing both
 copies on a Steady villain. An actual Action control distinguishes an affectable
@@ -396,9 +396,8 @@ status from a Tough-only target; four malformed status lists are rejected.
 
 Ten focused controls and the full Content suite (3,327) pass. Compiled mutants
 killed removal of only one status copy (one failure), an incorrect completion event
-(three), and omission of Confused (three). Canonical Uncanny Resilience authoring
-awaits the shared book handoff; the pack remains closed. Independent source review
-is requested.
+(three), and omission of Confused (three). Uncanny Resilience is authored canonically; the pack remains closed. Bounded
+independent source review found no blocker.
 
 
 ### Random hand-discard arrow costs — MARVEL-667

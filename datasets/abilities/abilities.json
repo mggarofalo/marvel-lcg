@@ -12219,6 +12219,38 @@
         }
       ],
       "name": "Leading the Charge"
+    },
+    {
+      "card": "07045",
+      "name": "Uncanny Resilience",
+      "note": "When Revealed: Remove each stunned and confused status card from each villain. If no status cards were removed this way, this card gains surge. Completion counts physical removed statuses; Tough and friendly characters are unaffected.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "otherwise": {
+              "effect": {
+                "removeStatuses": {
+                  "cards": {
+                    "query": "villains"
+                  },
+                  "statuses": [
+                    "stunned",
+                    "confused"
+                  ]
+                }
+              },
+              "otherwise": {
+                "gainSurge": 1
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

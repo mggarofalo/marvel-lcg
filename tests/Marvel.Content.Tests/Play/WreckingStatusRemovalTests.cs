@@ -1,3 +1,4 @@
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
@@ -109,13 +110,5 @@ public sealed class WreckingStatusRemovalTests
         Assert.Throws<AbilityException>(() => new AbilityRunner(AbilityCatalog.Parse(book)));
     }
 
-    private static AbilityRunner Runner() => new(AbilityCatalog.Parse("""
-        {"cards":[{"card":"07045","abilities":[{
-          "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
-          "effect":{"otherwise":{
-            "effect":{"removeStatuses":{"cards":{"query":"villains"},"statuses":["stunned","confused"]}},
-            "otherwise":{"gainSurge":1}
-          }}
-        }]}]}
-        """));
+    private static AbilityRunner Runner() => AuthoredCards.Runner();
 }
