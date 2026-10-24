@@ -9,7 +9,7 @@ function Read-NativeManifest {
         if ($entry.markers.Count -eq 0 -or @($entry.markers | Where-Object { [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) { throw "Missing native completion marker: $($entry.id)" }
         if ($entry.timeoutSeconds -le 0 -or $entry.timeoutSeconds -gt 600) { throw "Invalid native deadline: $($entry.id)" }
         if ($entry.scale -notin (50..150 | Where-Object { $_ % 10 -eq 0 })) { throw "Unsupported native scale: $($entry.id)" }
-        if ($entry.players -notin @(1, 2) -or $entry.motion -notin @('enabled', 'disabled')) { throw "Invalid native input profile: $($entry.id)" }
+        if ($entry.players -notin @(1, 2, 3, 4) -or $entry.motion -notin @('enabled', 'disabled')) { throw "Invalid native input profile: $($entry.id)" }
         if ($entry.viewport -notmatch '^(\d+)x(\d+)$' -or [int]$Matches[1] -lt 1920 -or [int]$Matches[2] -lt 1080) { throw "Unsupported native viewport: $($entry.id)" }
         if ($entry.profiles.Count -eq 0 -or @($entry.profiles | Where-Object { $_ -notin @('representative', 'exhaustive', 'inspection-all-scales') }).Count -gt 0) { throw "Unknown native profile: $($entry.id)" }
         if (-not $entry.script.StartsWith('res://', [StringComparison]::Ordinal)) { throw "Invalid native script URI: $($entry.id)" }

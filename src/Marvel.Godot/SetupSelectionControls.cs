@@ -11,10 +11,20 @@ internal sealed class SetupSelectionControls
     private readonly Main main;
     private DeckSetupController? decks;
     private CampaignController? campaigns;
+    private readonly ScenarioModeControls modes;
+    private HeroSetupControls? heroes;
 
     internal GameSetupSelection ApplyDecks(GameSetupSelection setup) => decks?.Apply(setup) ?? setup;
 
-    internal SetupSelectionControls(Main main) => this.main = main;
+    internal SetupSelectionControls(Main main)
+    { this.main = main; modes = new(main); }
+
+    internal ScenarioSetupChoice SelectedCampaign() => modes.Selected;
+    internal IReadOnlyList<OptionButton> VariantControls => modes.Variants;
+    internal IReadOnlyList<OptionButton> AdditionalHeroes => heroes?.Additional ?? [];
+    internal IReadOnlyList<string> SelectedHeroes() => heroes!.Selected();
+    internal void AssignHero(string key, int seat) => heroes!.Assign(key, seat);
+    internal void RefreshHeroes() => heroes?.Refresh();
 
     internal void PopulateSetupChoices()
     {
@@ -44,23 +54,8 @@ internal sealed class SetupSelectionControls
 
     internal void PopulateSecondHeroChoices()
     {
-        main.secondHero.Clear();
-        main.secondHero.AddItem("Solo table · one hero");
-        if (main.setupChoices is null || main.setupChoices.Heroes.Count == 0)
-        {
-            return;
-        }
-
-        int primary = Math.Max(main.hero.Selected, 0);
-        string primaryKey = main.setupChoices.Heroes[primary].Key;
-        foreach (HeroSetupChoice choice in main.setupChoices.Heroes.Where(
-                     choice => choice.Key != primaryKey))
-        {
-            main.secondHero.AddItem(choice.Name);
-            main.secondHero.SetItemMetadata(main.secondHero.ItemCount - 1, choice.Key);
-        }
-
-        main.secondHero.Select(0);
+        heroes ??= new(main);
+        heroes.Refresh();
     }
 
     internal void OnScenarioSelected(long selected)
@@ -73,13 +68,7 @@ internal sealed class SetupSelectionControls
         main.visibleModes.Clear();
         main.visibleModes.AddRange(main.setupChoices.Scenarios.Where(choice =>
             choice.Name == main.scenarioNames[(int)selected]));
-        main.mode.Clear();
-        foreach (ScenarioSetupChoice choice in main.visibleModes)
-        {
-            main.mode.AddItem(choice.Expert ? "Expert" : "Standard");
-        }
-
-        main.mode.Select(0);
+        modes.Populate();
         PopulateModularChoices();
         RefreshBriefing();
     }
@@ -91,7 +80,16 @@ internal sealed class SetupSelectionControls
             return;
         }
 
+        modes.Refresh();
         ScenarioSetupChoice campaign = main.SelectedCampaign();
+        if (!campaign.AllowsModularSets)
+        {
+            main.modular.GetPopup().Clear();
+            main.modularConfiguration = ModularConfiguration.None;
+            main.selectedModularKeys.Clear();
+            main.modular.Text = "No modular sets";
+            return;
+        }
         string recommended = string.Join(
             ", ",
             campaign.RecommendedModularSets.Select(key =>
@@ -185,10 +183,11 @@ internal sealed class SetupSelectionControls
 
         ScenarioSetupChoice campaign = main.SelectedCampaign();
         main.briefingScenario.Text = campaign.Name;
-        main.briefingMode.Text = campaign.Expert ? "Expert" : "Standard";
-        main.briefingHero.Text = main.secondHero.Selected <= 0
-            ? main.setupChoices.Heroes[main.hero.Selected].Name
-            : $"{main.setupChoices.Heroes[main.hero.Selected].Name} + {main.secondHero.GetItemText(main.secondHero.Selected)}";
+        main.briefingMode.Text = ScenarioModeControls.Label(campaign.Mode)
+            + (campaign.Variants.Count == 0 ? "" : " · " + string.Join(" · ", campaign.Variants.Select(item => $"{item.Name} {item.Value}")));
+        heroes!.Refresh();
+        main.briefingHero.Text = string.Join(" + ", heroes.Selected().Select(key =>
+            main.setupChoices.Heroes.Single(hero => hero.Key == key).Name));
         main.briefingModular.Text = main.modular.Text;
         RefreshStartAvailability();
         SetupEntryPresentation.Configure(main);

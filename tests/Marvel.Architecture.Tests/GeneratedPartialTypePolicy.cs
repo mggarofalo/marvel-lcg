@@ -37,6 +37,7 @@ internal static class GeneratedPartialTypePolicy
             "src/Marvel.Godot/smoke/CampaignTrackerNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "CampaignTrackerNativeProbe"),
             "src/Marvel.Godot/smoke/GroupedDecisionNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "GroupedDecisionNativeProbe"),
             "src/Marvel.Godot/smoke/EncounterGroupsNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "EncounterGroupsNativeProbe"),
+            "src/Marvel.Godot/smoke/ScenarioSetupControlsProbe.cs" => (Namespace: "Marvel.Godot", Type: "ScenarioSetupControlsProbe"),
             "src/Marvel.Godot/smoke/DecisionDialogNativeProbe.cs" => (Namespace: "Marvel.Godot", Type: "DecisionDialogNativeProbe"),
             "src/Marvel.Godot/smoke/NativeGameWitness.cs" => (Namespace: "Marvel.Godot", Type: "NativeGameWitness"),
             "src/Marvel.Godot/smoke/TooltipPolicyProbe.cs" => (Namespace: "Marvel.Godot", Type: "TooltipPolicyProbe"),

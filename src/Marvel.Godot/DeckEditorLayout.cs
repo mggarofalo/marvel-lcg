@@ -112,6 +112,8 @@ internal static class DeckEditorLayout
         outer.AddChild(ui.Status);
         ui.Seat.AddItem("Seat 1");
         ui.Seat.AddItem("Seat 2");
+        ui.Seat.AddItem("Seat 3");
+        ui.Seat.AddItem("Seat 4");
         var selected = new HBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         ui.Selection.AutowrapMode = TextServer.AutowrapMode.Off;
         ui.Selection.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;

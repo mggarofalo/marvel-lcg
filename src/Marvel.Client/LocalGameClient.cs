@@ -144,6 +144,7 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
         if (choices?.Heroes is not { Count: > 0 }
             || choices.Scenarios is not { Count: > 0 }
             || choices.ModularSets is not { Count: > 0 }) return false;
+        if (!ScenarioChoiceContract.Complete(choices.Scenarios)) return false;
         return !choices.Scenarios.SelectMany(scenario => scenario.RecommendedModularSets)
             .Any(recommended => !choices.ModularSets.Any(modular => modular.Key == recommended));
     }
@@ -175,7 +176,8 @@ public sealed class LocalGameClient : IDisposable, IAsyncDisposable
                 "Choose one through four distinct heroes and a scenario offered by this game service.")));
         }
 
-        if (!TryResolveModularSets(available, selection, out IReadOnlyList<string>? modularSets))
+        if (!TryResolveModularSets(available, selection, out IReadOnlyList<string>? modularSets)
+            || !AllowsSelectedModularSets(available, selection))
         {
             return ValueTask.FromResult(LocalGameEntryClient.EntryFailed(Error(
                 "invalid_selection",
