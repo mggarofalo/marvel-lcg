@@ -1,4 +1,3 @@
-using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -85,24 +84,5 @@ public sealed class WreckingBulldozerDiscardTests
         Assert.Equal(0, groups[1].Scheme.Tokens.GetValueOrDefault("k_threat"));
     }
 
-    private static AbilityRunner Runner() => new(AbilityCatalog.Parse("""
-        {"cards":[
-          {"card":"07058","abilities":[{
-            "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
-            "effect":{"seq":[
-              {"discardAtRandom":{"player":"you","count":1}},
-              {"if":{"test":{"inForm":{"player":"you","form":"hero"}},
-                "then":{"dealDamage":{"cards":"you","amount":{"printedCostDiscarded":"game"}}},
-                "else":{"placeThreat":{"scheme":{"titled":"Clear the Road"},"amount":{"printedCostDiscarded":"game"}}}}}
-            ]}
-          }]},
-          {"card":"07059","abilities":[{
-            "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
-            "effect":{"seq":[
-              {"discardTop":{"from":"yourDeck","count":{"modified":{"card":{"titled":"Bulldozer"},"field":"attack"}}}},
-              {"placeThreat":{"scheme":{"titled":"Clear the Road"},"amount":{"distinctCardTypesDiscarded":"game"}}}
-            ]}
-          }]}
-        ]}
-        """));
+    private static AbilityRunner Runner() => Marvel.Content.Tests.Cards.AuthoredCards.Runner();
 }

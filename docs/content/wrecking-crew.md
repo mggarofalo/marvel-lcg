@@ -358,3 +358,9 @@ the final six short-deck controls. Compiled mutants killed: omitted random physi
 receipt (eight failures), boost icons substituted for printed cost (seven), and
 card count substituted for distinct type count (three). Bounded independent review
 found the enum append correction and no further receipt source blocker.
+
+
+Headbutt (07058) and Leading the Charge (07059) are now canonical authored rows.
+Their eighteen actual-card controls use the repository ability book, including the
+six short-deck cases. Both pass with the same physical receipt implementation.
+Authored face count is 37 of 60; whole-pack admission remains closed.
