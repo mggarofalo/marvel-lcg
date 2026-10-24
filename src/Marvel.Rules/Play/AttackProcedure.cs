@@ -15,6 +15,7 @@ internal static class AttackProcedure
     public static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        if (step.Operation is BasicAttackCostOperation) return BasicAttackCosts.Describe(world, step);
         if (step.Operation is NativeRetaliationOperation)
         {
             NativeRetaliationResolution.Resume(world, step, events);
@@ -124,6 +125,11 @@ internal static class AttackProcedure
         World world, ICardFacts facts, PhaseStep step, Decision input,
         List<GameEvent> events)
     {
+        if (step.Operation is BasicAttackCostOperation)
+        {
+            BasicAttackCosts.Answer(world, step, input, events);
+            return;
+        }
         switch (step.What)
         {
             case Steps.DeclareDefender:

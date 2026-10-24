@@ -35,6 +35,7 @@ public static class BasicPowerStatus
                 $"card {character.ObjectId} cannot make a targetless {verb} attempt");
         }
 
+        if (attacking && BasicAttackCosts.Schedule(world, character, null, exhaust: true)) return;
         Exhaust(character, verb, events);
         if (!Cancelled(world, facts, character, status, events))
         {

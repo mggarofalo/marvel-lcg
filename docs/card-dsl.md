@@ -814,3 +814,14 @@ shift another target's result. The next stage of the same villain retains the
 shared retaliation behavior. After-attack forced-keyword ordering still blocks
 Captain America admission. The counted form does not admit arbitrary compound
 bodies.
+
+
+`attack_hand_discard_cost` is an engine-selected derived modifier for additional
+hand cards paid to initiate a basic attack. A constant `grant` to the attacking
+character supplies the quantity. It does not add a registered digest field.
+The basic-power offer checks the controller's hand and describes this cost.
+The attack then asks for exactly that many physical hand cards before paying
+them simultaneously with exhaustion. Stun cancels only after payment, including
+when no enemy can be targeted. Permission to attack without exhausting does not
+waive this separate cost. The suspended cost decision reconstructs through the
+ordinary session decision replay; it does not introduce a separate save format.
