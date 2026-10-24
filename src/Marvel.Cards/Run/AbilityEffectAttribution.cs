@@ -7,7 +7,8 @@ namespace Marvel.Cards.Run;
 internal static class AbilityEffectAttribution
 {
     internal static int ResponsiblePlayer(AbilityDamageAndThreatContext context) =>
-        ResponsiblePlayer(context.World, context.Source, AbilityDamageAndThreatQueries.Resolver(context));
+        AbilityCardQueries.IsPlayerCard(context.World.Facts, context.Source)
+            ? ResponsiblePlayer(context.World, context.Source, AbilityDamageAndThreatQueries.Resolver(context)) : -1;
 
     internal static int ResponsiblePlayer(World world, Card source, int player) =>
         // rr:ownership-and-control.2: player cards enter play under their owner's control.
@@ -17,8 +18,9 @@ internal static class AbilityEffectAttribution
             ? player : -1;
 
     internal static int IdentityPlayer(AbilityDamageAndThreatContext context) =>
-        IdentityPlayer(context.World, context.Source,
-            AbilityDamageAndThreatQueries.Resolver(context), context.PowerActor ?? context.AbilityActor);
+        AbilityCardQueries.IsPlayerCard(context.World.Facts, context.Source)
+            ? IdentityPlayer(context.World, context.Source,
+                AbilityDamageAndThreatQueries.Resolver(context), context.PowerActor ?? context.AbilityActor) : -1;
 
     internal static int IdentityPlayer(World world, Card source, int player, Card? actor = null)
     {
