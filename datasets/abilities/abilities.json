@@ -11655,6 +11655,51 @@
           ] }
         }
       ]
+    },
+    {
+      "card": "03017",
+      "name": "Strength In Numbers",
+      "note": "Action: Exhaust any number of allies you control as the cost, then draw one card per physical ally in that committed exhaustion receipt.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+        "cost": { "exhaustChosen": { "from": { "query": "alliesYouControl" }, "anyNumber": "true" } },
+        "effect": { "forEach": { "count": { "cardsExhaustedForCost": "game" }, "effect": { "draw": { "player": "you", "count": 1 } } } }
+      }]
+    },
+    {
+      "card": "03025",
+      "name": "Honorary Avenger",
+      "note": "The printed play prerequisite requires the acting identity's current Avenger trait. Attach to a friendly character, max one per character; attached character gets +1 hit point and gains Avenger.",
+      "attachTo": { "withoutAnotherCopyAttached": { "query": "heroesAndAllies" } },
+      "abilities": [{
+        "trigger": { "timing": "Constant", "subject": "this" },
+        "effect": { "seq": [
+          { "grant": { "card": "attachedTo", "keyword": "health", "amount": 1 } },
+          { "grant": { "card": "attachedTo", "trait": "AVENGER" } }
+        ] }
+      }]
+    },
+    {
+      "card": "03027",
+      "name": "Hit Squad",
+      "note": "When revealed, in player order each player discards one encounter-deck card and takes damage equal to that discard's printed boost icons; boost stars are not boost icons and no boost ability resolves.",
+      "abilities": [{
+        "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+        "effect": { "eachPlayer": { "order": "playerOrder", "effect": { "seq": [
+          { "discardTop": { "from": "encounterDeck", "count": 1 } },
+          { "dealDamage": { "cards": "you", "amount": { "printedBoostIconsDiscarded": "game" } } }
+        ] } } }
+      }]
+    },
+    {
+      "card": "03032",
+      "name": "Followed",
+      "note": "Attach to a side scheme, max one per scheme. Optional Interrupt when that scheme is defeated deals four nonattack damage to a chosen enemy before the scheme and attachment leave play.",
+      "attachTo": { "withoutAnotherCopyAttached": { "query": "sideSchemes" } },
+      "abilities": [{
+        "trigger": { "event": "WhenCardDefeated", "timing": "Interrupt", "subject": "attachedTo" },
+        "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 4 } } } }
+      }]
     }
   ]
 }

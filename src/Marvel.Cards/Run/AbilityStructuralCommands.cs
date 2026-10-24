@@ -129,7 +129,8 @@ internal static class AbilityStructuralCommands
         }
         EachPlayerEffects.Schedule(cast.World, AbilityContinuations.Step(
             execution.Capture(cast, ordinal), AbilityContinuationStage.ResolvePlayer,
-            cast.World.Agenda.Current?.Round ?? 0), schedule.Effect.DefeaterOnly ? players[0] : null);
+            cast.World.Agenda.Current?.Round ?? 0), schedule.Effect.DefeaterOnly ? players[0] : null,
+            schedule.Effect.InPlayerOrder);
         cast.Suspend();
     }
 

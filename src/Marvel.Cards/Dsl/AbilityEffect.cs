@@ -36,6 +36,8 @@ public abstract record AbilityEffect
     {
         /// <summary>Resolve only for the credited defeating player when specified.</summary>
         public bool DefeaterOnly { get; init; }
+        /// <summary>Resolve in printed player order rather than a first-player-chosen order.</summary>
+        public bool InPlayerOrder { get; init; }
     }
     /// <summary>Repeat an effect according to a numeric expression.</summary>
     public sealed record ForEach(AbilityNumber Count, AbilityEffect Effect) : AbilityEffect;

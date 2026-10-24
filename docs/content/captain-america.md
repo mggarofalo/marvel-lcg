@@ -439,3 +439,34 @@ legal. Three compiled mutants are caught: unrestricted play, checking both
 identity faces, and ignoring granted/lost traits. The restored full Content
 suite passes 2,843 cases. This does not yet add the authored product row or
 complete the remaining card, restart and native-client evidence for MARVEL-658.
+
+Independent review found no blocker in that bounded prerequisite. Form-only
+printed restriction parsing now shares its cohesive reader, keeping CardCatalog
+below the source-layout debt threshold; all 23 focused form/trait cases pass.
+
+## Strength in Numbers, Honorary Avenger, Hit Squad and Followed
+
+03017 and 03025 now use the authored book. Actual Strength in Numbers decisions
+in both forms exhaust one/two/three selected allies before drawing; no ready
+ally offers no event. Empty, duplicate, foreign and self selections reject
+without changing card state. Honorary Avenger attaches to another player's
+alter-ego, grants health and trait, excludes a second copy and removes both
+modifiers when discarded.
+
+03032's optional interruption occurs while the defeated side scheme and its
+attachment are still in play. Declining deals no damage; choosing a villain
+deals four damage before both cards leave play. 03027's reveal checks both
+possible first players, each player's distinct discarded boost icons, Tough,
+and a boost star that neither counts nor resolves its ability.
+
+Hit Squad required MARVEL-660: an explicit `eachPlayer` player-order mode.
+Generic each-player effects retain their first-player ordering choice; printed
+player order uses the existing continuation frames directly. An audit of
+currently authored canonical text found no other explicit player-order clause.
+
+Eighteen focused cases and all 2,857 Content cases pass. Eight executable
+authored mutants are caught (Strength count/form, Honorary health/trait,
+Followed damage/timing, Hit Squad order/icons), plus a compiled mutant omitting
+ordered scheduling. These are 26 research faces; the nine remaining faces,
+whole-pack setup/games, restart evidence and native acceptance still block
+runtime admission.
