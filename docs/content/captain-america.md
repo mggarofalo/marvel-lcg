@@ -424,3 +424,18 @@ survived the draw-only cases; a positive-damage admission control now kills it.
 The restored full Content suite passes 2,839 cases. Actual 03017 authored
 integration, interrupted/replayed execution and native cost-selection evidence
 remain required before MARVEL-656 or the pack can be accepted.
+
+Independent source review of 4f8acd51 found no blocking issue within that
+receipt-count contract and its bounded evidence.
+
+## Current identity trait prerequisites (MARVEL-658)
+
+A regression first reproduced Honorary Avenger being offered while Carol
+Danvers lacked the required Avenger trait. The content facts now expose an
+explicit printed identity-trait prerequisite, and ordinary play legality checks
+the acting identity's current effective traits. Four local-book game cases cover
+hero, alter-ego, granted and lost traits, with cross-player attachment when
+legal. Three compiled mutants are caught: unrestricted play, checking both
+identity faces, and ignoring granted/lost traits. The restored full Content
+suite passes 2,843 cases. This does not yet add the authored product row or
+complete the remaining card, restart and native-client evidence for MARVEL-658.

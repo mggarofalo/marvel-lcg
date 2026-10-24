@@ -15,14 +15,6 @@ public static class CardPlayLegality
 {
 
     /// <summary>
-    /// <c>rr:initiating-abilities.step.2</c> — the play restrictions.
-    /// </summary>
-    /// <remarks>
-    /// Only the ones the rules state generally. A card's own restrictions are
-    /// its text, which is <c>src/Marvel.Cards</c>'s business, and a card that
-    /// has one is not filtered here — it fails when its ability runs.
-    /// </remarks>
-    /// <summary>
     /// Whether a team-up card's two characters are both on the table —
     /// <c>rr:team-up</c>.
     /// </summary>
@@ -114,6 +106,9 @@ public static class CardPlayLegality
         string.Equals(facts.Title(faceId), name, StringComparison.Ordinal)
         || string.Equals(facts.Subtitle(faceId), name, StringComparison.Ordinal);
 
+    // rr:initiating-abilities.step.2 checks play restrictions. Printed
+    // prerequisites arrive through facts; ability-owned attachment legality
+    // remains supplied by ICardPlayAbilities.
     internal static bool Permitted(
         World world, ICardFacts facts, Seat seat, Card card,
         IReadOnlyList<int>? targets = null, ICardPlayAbilities? abilities = null,
@@ -130,14 +125,7 @@ public static class CardPlayLegality
             return false;
         }
 
-        // `rr:play-put-into-play.1` and `rr:form-change-form.7`: cards with the
-        // text "[type] form only" can only be played by a player whose identity
-        // is in that form.
-        if (facts.RequiredForm(card.FaceId) is { } form
-            && !Forms.In(world, seat, facts, form))
-        {
-            return false;
-        }
+        if (!IdentityPermits(world, facts, seat, card)) return false;
 
         // `rr:team-up` -- "a card with the team-up keyword cannot be played
         // unless both of the named friendly characters (identity or ally) are
@@ -177,6 +165,16 @@ public static class CardPlayLegality
         outOfPlayPermission
             ? card.Owner == seat.Index && !DeckTypes.IsInPlay(card.Area.Type)
             : card.Area == seat.Hand || CardPlayOrigin.CanPlayEvent(world, card, seat.Index);
+
+    private static bool IdentityPermits(World world, ICardFacts facts, Seat seat, Card card)
+    {
+        // rr:form-change-form.7: "[type] form only" requires that identity form.
+        if (facts.RequiredForm(card.FaceId) is { } form && !Forms.In(world, seat, facts, form)) return false;
+        // rr:identity.4: only "the faceup side" is in play; effective traits
+        // include continuous grants and losses on that current identity.
+        return facts.RequiredIdentityTrait(card.FaceId) is not { } trait
+            || Traits.Has(world, seat.IdentityCard, trait, facts);
+    }
 
     private static bool PlayableKind(CardKind kind) =>
         kind is CardKind.Ally or CardKind.Upgrade or CardKind.Support or CardKind.Event;
