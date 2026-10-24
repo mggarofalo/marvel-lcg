@@ -407,3 +407,20 @@ mutants are caught: Squirrel Girl's damage, recipient set and optional timing;
 Enraged's attack bonus, consequential bonus and cross-player attachment scope.
 These two research interpretations keep the runtime product admission gate
 closed. They do not establish complete pack setup or native-client acceptance.
+
+Independent source review of cce68429 found no blocking issue in the two card
+interpretations, modifier admission or their bounded tests.
+
+## Selected exhaustion receipts (MARVEL-656)
+
+The Strength in Numbers prerequisite exposes the retained `exhaustChosen`
+receipt as a numeric binding. Admission considers legal physical selections
+without exhausting their members, and the resolved count survives later card
+departure. Five synthetic contract cases distinguish one/two/three paid cards,
+preexisting and foreign exhaustion, positive-effect admission and departure.
+Four compiled mutants are caught: zero count, omitted admission receipt, lost
+payment receipt and incorrectly unstable count. The admission mutant initially
+survived the draw-only cases; a positive-damage admission control now kills it.
+The restored full Content suite passes 2,839 cases. Actual 03017 authored
+integration, interrupted/replayed execution and native cost-selection evidence
+remain required before MARVEL-656 or the pack can be accepted.

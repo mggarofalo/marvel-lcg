@@ -763,6 +763,13 @@ multiple physical cards with the same title.
 `supportsYouControl` selects the resolving player's controlled supports in play.
 `forEach` takes a numeric `count` and an `effect` body, repeating that body for the resolved count. It supports printed counted instructions such as one additional boost card per side scheme.
 
+`cardsExhaustedForCost: "game"` counts the physical cards committed by the
+ability's `exhaustChosen` cost. It does not count resource generators, automatic
+source exhaustion, or allies that were already exhausted. The retained receipt
+survives later card movement and resolution continuations. Action admission
+checks legal physical cost selections without exhausting cards; a provided
+selection is validated against the exact ready candidates and selection range.
+
 `attackDamagedYou: "you"` checks whether the completed enemy attack caused the attacked identity to take damage, including overkill, independently of damage to an ally defender.
 
 `dealAttackDamage` accepts `simultaneous: 1` inside a labelled attack. It snapshots

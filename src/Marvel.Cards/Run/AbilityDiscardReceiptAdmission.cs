@@ -11,7 +11,10 @@ internal static class AbilityDiscardReceiptAdmission
     {
         var costs = Flatten(ability.Cost).ToArray();
         var discards = costs.OfType<AbilityCost.DiscardFromHand>().ToArray();
-        if (discards.Length == 0 || costs.OfType<AbilityCost.ExhaustChosen>().Any())
+        var exhausts = costs.OfType<AbilityCost.ExhaustChosen>().ToArray();
+        if (exhausts.Length > 0)
+            return Exhaustion(ability, context, exhausts, discards.Length, selected);
+        if (discards.Length == 0)
             return Accepted(ability.Effect, context);
         if (discards.Length != 1)
             throw new Marvel.Rules.Play.RulesNotImplementedException("multiple hand-discard receipt commitments");
@@ -31,6 +34,15 @@ internal static class AbilityDiscardReceiptAdmission
                 return result;
         }
         return null;
+    }
+
+    private static AbilityAdmissionResult? Exhaustion(CompiledCardAbility ability,
+        AbilityAdmissionContext context, AbilityCost.ExhaustChosen[] costs, int discardCosts,
+        IReadOnlyList<int>? selected)
+    {
+        if (costs.Length != 1 || discardCosts != 0)
+            throw new Marvel.Rules.Play.RulesNotImplementedException("multiple selected cost receipts");
+        return AbilityExhaustionReceiptAdmission.Admit(ability, context, costs[0], selected);
     }
 
     private static AbilityAdmissionResult? Selected(CompiledCardAbility ability,
