@@ -52,8 +52,11 @@ does not start or certify the remote server. Container mounts must grant the
 image's configured user access to the isolated root; never mount a player's
 real save directory.
 
-This is a verification tool, not acceptance by itself. All three journeys and
-the authority restarts must pass on the final artifacts. Evidence must
+This is an optional artifact verification tool, not acceptance by itself. Select
+it when a concrete packaging or OS risk remains uncovered, following
+[evidence selection](testing.md#selecting-additional-native-evidence). When claiming
+an artifact journey, all three stages and the authority restarts must pass on
+the identified artifacts. Evidence must
 distinguish Windows portable desktop packaging from Linux native development
 client execution: the current release policy has no Linux desktop package.
 A Linux remote campaign claim additionally requires an identified packaged
@@ -63,8 +66,7 @@ container smoke does not preserve its image for this separate journey.
 The fixture is Standard campaign/Standard scenario, with zero delay counters.
 Expert campaign evidence is tracked separately in MARVEL-642. Neither
 MARVEL-630 nor MARVEL-634 is accepted solely by these Standard checks. Native
-journeys are not yet certified until their exact artifact evidence is recorded
-in the work item.
+journeys are certified only to the scope of the evidence recorded in the work item.
 
 ## Recorded artifact run
 
@@ -111,8 +113,10 @@ The `modal-focus-100-motion` native case checks nested focus, repeated reopen,
 dialog cancellation, disposal and nonexclusive windows. Its parent-focus
 assertion also runs headlessly; removing the release compiles and fails that
 assertion. A rendered Windows run with `--accessibility always` additionally
-checks the actual Godot error path. These focused controls do not replace
-the packaged campaign journey or Windows/Linux acceptance evidence.
+checks the actual Godot error path. This is a synthetic lifecycle regression,
+not a player-input journey. Use it for the focus defect, the scripted campaign
+journey for real interaction and persistence, and the existing packaging gates
+for payload integrity and startup.
 
 ### Windows candidate evidence
 
@@ -157,3 +161,28 @@ SubViewport experiment produced an AccessKit diagnostic and is not counted as
 clean evidence; the exported Windows root-window journey above passes with
 accessibility enabled. A root-window variant of the development pointer driver
 failed its hit-area assertion and was not retained as the runner.
+
+## Evidence selection after the testing-protocol review
+
+The previous blanket requirement to repeat every journey through a Windows
+export is superseded by the repository's behavior-based evidence protocol.
+The following evidence remains distinct and reusable:
+
+| Behavior or risk | Evidence |
+|---|---|
+| Standard predecessor data, migration backup, continuation and restart | Scripted embedded and remote journeys, comparing the complete saved aggregate against both genuine predecessor controls. Linux run [40045482214](https://github.com/mggarofalo/marvel-lcg/actions/runs/40045482214) passed all six journeys at `4daf45d6`. |
+| Packaged authority configuration and process restart | The same Linux run used and retained an identified server image, stopped it between journeys, and compared its stopped storage. |
+| Windows export and accessibility focus | The recorded Windows candidate above passed all three embedded exported-app journeys. The focused modal regression isolates the native focus defect; ordinary CI validates current package construction and startup. |
+| Expert initial recovery and saved history | PR #436's hosted recovery and genuine Expert predecessor tests cover accept/decline, migration, original authority, backup, import and restart. This is separate from the Standard fixture. |
+
+Windows remote exported-app inspection also passed on the CI artifact from run
+`40045480991` (merge revision `a7ed8671963efccff2034019f2e74ffbfa31d9ea`).
+Continuation and restart in that manual run were interrupted and are not claimed
+as passes. Their persistence and transport behavior is covered by the scripted
+remote journey; repeating it manually is not an outstanding merge gate without
+an identified export-specific failure. Previous artifact evidence is historical
+evidence for those paths, not a claim that a later artifact was executed.
+
+Owner acceptance remains a review of the working product and its omissions,
+not a requirement to repeat these regression procedures. This reconciliation
+does not mark the broader content wave accepted.
