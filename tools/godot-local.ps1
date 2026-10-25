@@ -19,25 +19,29 @@ function Resolve-GodotDotNetExecutable {
         }
     }
 
-    $knownWindowsPaths = @(
-        "C:\Tools\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe",
-        "C:\Tools\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64.exe",
-        (Join-Path $env:USERPROFILE "scoop\apps\godot-mono\current\godot_console.exe"),
-        (Join-Path $env:USERPROFILE "scoop\apps\godot-mono\current\godot.exe")
-    )
-    foreach ($path in $knownWindowsPaths) {
-        [void]$candidates.Add($path)
-    }
+    if ($IsWindows) {
+        $knownWindowsPaths = @(
+            "C:\Tools\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe",
+            "C:\Tools\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64.exe"
+        )
+        if (-not [string]::IsNullOrWhiteSpace($env:USERPROFILE)) {
+            $knownWindowsPaths += Join-Path $env:USERPROFILE "scoop\apps\godot-mono\current\godot_console.exe"
+            $knownWindowsPaths += Join-Path $env:USERPROFILE "scoop\apps\godot-mono\current\godot.exe"
+        }
+        foreach ($path in $knownWindowsPaths) {
+            [void]$candidates.Add($path)
+        }
 
-    if (Test-Path -LiteralPath "C:\Tools" -PathType Container) {
-        Get-ChildItem -LiteralPath "C:\Tools" -Directory -Filter "Godot_v4.7*-mono_win64" `
-            -ErrorAction SilentlyContinue |
-            ForEach-Object {
-                Get-ChildItem -LiteralPath $_.FullName -File -Filter "Godot*_mono_win64*.exe" `
-                    -ErrorAction SilentlyContinue |
-                    Sort-Object { $_.Name -notlike "*_console.exe" } |
-                    ForEach-Object { [void]$candidates.Add($_.FullName) }
-            }
+        if (Test-Path -LiteralPath "C:\Tools" -PathType Container) {
+            Get-ChildItem -LiteralPath "C:\Tools" -Directory -Filter "Godot_v4.7*-mono_win64" `
+                -ErrorAction SilentlyContinue |
+                ForEach-Object {
+                    Get-ChildItem -LiteralPath $_.FullName -File -Filter "Godot*_mono_win64*.exe" `
+                        -ErrorAction SilentlyContinue |
+                        Sort-Object { $_.Name -notlike "*_console.exe" } |
+                        ForEach-Object { [void]$candidates.Add($_.FullName) }
+                }
+        }
     }
 
     foreach ($candidate in $candidates | Select-Object -Unique) {
@@ -65,8 +69,8 @@ function Resolve-GodotDotNetExecutable {
     }
 
     throw @"
-Godot 4.7 .NET was not found. Install the .NET/Mono build under C:\Tools,
-put it on PATH, or pass its executable once with -GodotBin. GODOT_BIN remains
+Godot 4.7 .NET was not found. Put the .NET/Mono build on PATH, install it under
+C:\Tools on Windows, or pass its executable with -GodotBin. GODOT_BIN remains
 supported for CI and custom installations but is not required for local play.
 "@
 }
