@@ -12766,6 +12766,29 @@
       ]
     },
     {
+      "card": "07015",
+      "name": "Mystical Link",
+      "note": "Printed 07015. The Boost grants Wrecker ATK only for the current activation, independently of the active counter, unless the player places threat on his scheme.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": { "query": "sideSchemes" }, "amount": 2 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": {
+            "choose": {
+              "descriptions": ["Wrecker gets +3 ATK for this activation", "Place 2 threat on Wrecker's side scheme"],
+              "options": [
+                { "grantUntil": { "card": { "titled": "Wrecker" }, "keyword": "attack", "amount": 3, "until": "EndOfActivation" } },
+                { "placeThreat": { "scheme": { "titled": "Day of Reckoning" }, "amount": 2 } }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "card": "07016",
       "name": "You're Dead Meat!",
       "note": "Printed 07016; rr:first-player.1 resolves tied lowest remaining health. ruling:28d343ac007bd784 preserves a defeat even when an interrupt returns that ally to hand. The damage receipt names the exact chosen incarnation.",
