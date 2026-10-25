@@ -41,6 +41,37 @@ func _create_campaign() -> bool:
         _fail("actual campaign did not open its mulligan")
         return false
     if not await _pointer_activate(_button_named("Keep hand")): return false
+    return await _finish_steve_rogers_setup()
+
+func _finish_steve_rogers_setup() -> bool:
+    if not await _wait_for(func(): return _button_named("End turn") != null or main.find_child("CompleteChoicesFrame", true, false) != null):
+        _fail("campaign did not expose its player turn or Steve Rogers setup search")
+        return false
+    if _button_named("End turn") != null: return true
+    var frame := main.find_child("CompleteChoicesFrame", true, false) as Control
+    if "Resolving Steve Rogers" not in _visible_text(frame):
+        _fail("campaign opened an unexpected setup choice")
+        return false
+    return await _select_steve_rogers_shield(frame)
+
+func _select_steve_rogers_shield(frame: Control) -> bool:
+    var shield: Control
+    for face in frame.find_children("SearchResult*", "Control", true, false):
+        if "Captain America's Shield" in _visible_text(face):
+            shield = face as Control
+            break
+    if shield == null:
+        _fail("Steve Rogers search did not offer Captain America's Shield")
+        return false
+    var select := shield.find_child("Affordance*", true, false) as Button
+    if select == null or not await _pointer_activate(select): return false
+    if not await _wait_for(func(): return _button_named("Add Captain America's Shield to your hand") != null):
+        _fail("selected Shield did not offer its named commitment")
+        return false
+    if not await _pointer_activate(_button_named("Add Captain America's Shield to your hand")): return false
+    if not await _wait_for(func(): return main.find_child("CompleteChoicesFrame", true, false) == null):
+        _fail("Steve Rogers setup search remained open")
+        return false
     return true
 
 func _campaign_activate(label: String) -> bool:

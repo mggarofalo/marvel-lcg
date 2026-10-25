@@ -97,13 +97,7 @@ func _check_library_discovery(library: Window) -> bool:
 	if identity == null or not _text_contains(library, "Identity"):
 		_fail("identity selection was not labelled")
 		return false
-	var original := identity.selected
-	identity.select(2 if original != 2 else 1)
-	identity.item_selected.emit(identity.selected)
-	if not await _wait(func(): return library.find_child("DeckCardPreview", true, false).get_child_count() > 1): return false
-	identity.select(original)
-	identity.item_selected.emit(original)
-	if not await _wait(func(): return not _button(library, "Use deck").disabled): return false
+	if not await _prepare_spider_man_fixture(library, identity): return false
 	var browser := library.find_child("CardBrowser", true, false) as ScrollContainer
 	if browser.find_child("Card_01005", true, false) != null:
 		_fail("signature cards appeared in the card pool")
@@ -114,6 +108,24 @@ func _check_library_discovery(library: Window) -> bool:
 		return false
 	if not await _check_range_selection(library, browser): return false
 	return await _check_research_paging(library, browser)
+
+func _prepare_spider_man_fixture(library: Window, identity: OptionButton) -> bool:
+	# Prepare two identities for the discovery assertions; these direct selections are fixture setup.
+	var spider_man := -1
+	var alternate := -1
+	for index in range(1, identity.item_count):
+		if identity.get_item_text(index) == "Spider-Man": spider_man = index
+		elif index != identity.selected: alternate = index
+	if spider_man < 0 or alternate < 0:
+		_fail("identity fixture needs Spider-Man and another hero")
+		return false
+	identity.select(alternate)
+	identity.item_selected.emit(alternate)
+	if not await _wait(func(): return library.find_child("DeckCardPreview", true, false).get_child_count() > 1): return false
+	identity.select(spider_man)
+	identity.item_selected.emit(spider_man)
+	if not await _wait(func(): return not _button(library, "Use deck").disabled): return false
+	return true
 
 func _check_research_paging(library: Window, browser: ScrollContainer) -> bool:
 	var scope := library.find_child("CardScope", true, false) as OptionButton
