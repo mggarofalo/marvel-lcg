@@ -17,14 +17,15 @@ SHA-256: `2077dda898d36a1c55ec9285557e59aa7d0f3a2f7669e3324df9013f6d09547e`.
 Its producer checks the actual runtime is v19; the console's v20 label is an
 inaccurate label only and has no role in saved compatibility or verification.
 
-Tests extract copies. PlayedCampaignReplayUpgradeTests verifies the genuine v19
-and v20 campaign aggregates through v21 file migration, all proofs and attempts,
-retained original backups, owner/game wire responses, exact next old decision,
-restart and portable import with fresh authority. RetaliationReplayUpgradeRejectionTests
-proves both genuine predecessor Black Panther histories fail strict original-event
-verification and remain byte-identical through two production-host restore attempts.
-These capabilities belong only to generated test games.
+Tests extract copies and never replace these archives. Under replay v22,
+PlayedCampaignReplayUpgradeTests proves the genuine v19/v20 aggregates diverge
+on nested reveal ordering and are rejected on restore and portable import, with
+source files unchanged through restart. The authentic five-decision Taskmaster
+attempt upgrades and passes strict replay independently. This is positive played
+attempt evidence; a compatible complete predecessor campaign aggregate remains
+outstanding. These capabilities belong only to generated test games.
 
-There is no actual affected campaign fixture here. Generic campaign divergence
-rejection tests cover that persistence boundary separately. This evidence is
-standard-mode only and does not establish expert or nonzero-delay campaign coverage.
+RetaliationReplayUpgradeRejectionTests proves both genuine predecessor Black
+Panther histories fail strict original-event verification and remain byte-identical
+through two production-host restore attempts. Evidence is standard-mode only and
+does not establish expert or nonzero-delay campaign coverage.

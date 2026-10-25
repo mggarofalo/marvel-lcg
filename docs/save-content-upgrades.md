@@ -19,13 +19,24 @@ The baseline is embedded in the executable; a save cannot supply a new baseline
 or authorize its own migration.
 
 This is a conservative product policy, not a rule inferred from the tabletop.
-The v21 delivery admits three explicit routes on this exact frozen content
-triple: `engine-replay-v19` to `engine-replay-v21`, `engine-replay-v20` to
-`engine-replay-v21`, and frozen-content v21 to v21 after additive content changes.
+The v22 delivery admits four explicit routes on this exact frozen content
+triple: `engine-replay-v19` to `engine-replay-v22`, `engine-replay-v20` to
+`engine-replay-v22`, `engine-replay-v21` to `engine-replay-v22`, and frozen-content
+v22 to v22 after additive content changes.
 Users do not need an intermediate installation. Every route requires the original
 RNG and state-digest identities, current save schema, unchanged admitted content,
 and complete deterministic verification. Unknown versions, other dataset triples
 and application downgrades are rejected. Exact current identities restore normally.
+
+Replay v22 completes a nested card reveal, including minion Quickstrike, before
+resuming its enclosing reveal effect (`rr:reveal.step.4`). The frozen v19 and v20
+played-campaign aggregates first differ at unit 7 decision 2: Shadows of the Past
+records scheme/shuffle events before the nested minion completes. Both aggregates
+are rejected unchanged on restore and import. The separately verified, authentic
+five-decision Taskmaster attempt remains compatible; this proves an unaffected
+played attempt, not a compatible complete campaign aggregate. A newly recorded,
+authentic compatible predecessor campaign aggregate is still required for positive
+full-campaign upgrade acceptance. No frozen expected gameplay value is rewritten.
 
 Replay v21 moves retaliation into the forced after-attack response window and
 corrects zero-damage retaliation. The actual predecessor Black Panther/Rhino trace
@@ -34,7 +45,7 @@ first differs at decision 9: the corrected runtime deals one retaliation damage.
 Such a history must be rejected before publication. The named adapters never
 rewrite expected events, decisions, RNG counts, state digests or campaign records.
 The v19 route also verifies the continuation and attribution corrections introduced
-by v20. Ordinary strict replay still rejects a predecessor identity under v21;
+by v20. Ordinary strict replay still rejects a predecessor identity under v22;
 only release-owned admission permits verification through a named adapter.
 
 After admission, `SessionContentUpgrade` replays the original save with the new

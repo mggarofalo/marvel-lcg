@@ -7,12 +7,12 @@ namespace Marvel.Server.Tests;
 public sealed class ReplayUpgradePublicationTests
 {
     [Fact]
-    public void StaleV19SessionCannotOverwriteSameDatasetV21Publication()
+    public void StaleV19SessionCannotOverwriteSameDatasetV22Publication()
     {
         AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>
         {
             var (previous, factory) = ReplayContractUpgradeTests.Fixture(root);
-            var target = previous.Save.Compatibility with { ReplayContract = "engine-replay-v21" };
+            var target = previous.Save.Compatibility with { ReplayContract = "engine-replay-v22" };
             var route = Assert.IsType<SessionContentUpgrade>(ReplayContractUpgradeTests.Admission(root, target)
                 .For(previous.Save.Compatibility));
             var candidate = previous with { Save = route.Verify(previous.Save,
