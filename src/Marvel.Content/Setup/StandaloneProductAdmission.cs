@@ -12,14 +12,13 @@ public static class StandaloneProductAdmission
     public static bool CaptainAmerica(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
         Complete("cap", ["03001a", "03001b", .. Enumerable.Range(2, 33).Select(number => $"03{number:000}")], cards, authored)
         && setup.HeroNames.Contains("captain_america")
-        && setup.Hero("captain_america").Hero.SequenceEqual(["03001a,03001b"]);
+        && StandaloneProductRecipes.CaptainAmerica(setup.Hero("captain_america"));
 
     /// <summary>Admits all Wrecking Crew modes together with the complete face inventory.</summary>
     public static bool WreckingCrew(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
         Complete("twc", ["07001a", "07001b", .. Enumerable.Range(2, 58).Select(number => $"07{number:000}")], cards, authored)
         && WreckingRecipes().All(key => setup.CampaignNames.Contains(key)
-            && setup.Campaign(key).Villain.SelectMany(spec => spec.Split(','))
-                .All(face => cards.Has(face) && cards.Pack(face) == "twc"));
+            && StandaloneProductRecipes.WreckingCrew(key, setup.Campaign(key)));
 
     private static IEnumerable<string> WreckingRecipes() =>
         FixedWreckingRecipes
@@ -29,7 +28,7 @@ public static class StandaloneProductAdmission
     private static bool Complete(string pack, string[] required, CardCatalog cards, IReadOnlySet<string> authored)
     {
         // Admission is repository policy. These pinned unique face inventories include
-        // both printed sides; physical extra-copy quantities are a separate source question.
+        // both printed sides and are independent of physical packaging quantities.
         var faces = cards.Faces.Where(face => cards.Pack(face) == pack).ToHashSet(StringComparer.Ordinal);
         return faces.SetEquals(required) && required.All(authored.Contains);
     }

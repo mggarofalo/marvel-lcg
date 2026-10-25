@@ -37,10 +37,10 @@ These datasets are authorities and research inputs. Their presence does not make
 a later product executable.
 
 The executable ability book contains the 209 Core Set, 181 Rise of Red Skull,
-35 Captain America and 60 Wrecking Crew faces. Captain America
-physical extra-copy quantities remain an open source-evidence gap (MARVEL-629);
-the independently pinned published starter and 35 unique printed faces do not
-resolve that quantity question. Language support for a later card pattern does not admit that product.
+35 Captain America and 60 Wrecking Crew faces. Product admission requires complete
+playable content and the verified published starter; physical packaging copy
+quantities are outside that requirement. Language support for a later card pattern
+does not admit that product.
 
 Some engine tests use synthetic cards or later-product patterns to prove a
 general rule or data shape. Those tests validate an engine primitive. They do
