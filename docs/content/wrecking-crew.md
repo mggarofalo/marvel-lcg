@@ -456,25 +456,25 @@ Crew coverage to 41 of 60 faces; full-pack admission remains closed.
 
 ### Integrated completion checkpoint — 2026-10-25
 
-At `3af531c9`, the research book contains 55 of 60 Wrecking Crew faces.
-The reviewed additions include Mystical Link, Wrecker's Command, Radioactive
-Buildup, Ramming Speed and Distracting Taunts. Shared simultaneous threat windows,
-exact excess-damage routing, required own-ally defense, promoted-host attack
-restrictions and typed threat movement are integrated. The minion-attack control
-prevents Distracting Taunts' removal response from firing for an unrelated target.
+At `486b2715`, the research book contains 56 of 60 Wrecking Crew faces.
+Tactical Prowess is authored with separate retained endpoint choices, exact
+movement receipts, and Surge based on the destination forced response actually
+triggering. Escaped Convict (07009, 07024, 07038, 07053) has a separate canonical
+candidate undergoing final behavioral verification and review.
 
-Threat movement retains exact endpoint incarnations and completes removal windows
-before placement. Its DSL continuation retains the actual removed/placed amounts
-and whether the destination's forced response triggered. Partial prevention does
-not count as complete movement. The reviewed runtime candidate passed 16 focused
-checks and 3,600 Content tests before integration; the current combined revision
-still requires verification. Earlier Content 3,559 / Rules 1,042 results apply to
-`90e07dde`, not to this final combined candidate.
+MARVEL-650 uses the accepted reading of ruling `ruling:8369361114d2929b`:
+a standalone scheme has no attack reference and does not cause the extra attack.
+A scheme caused by an attack retains that causal reference, so the boost can
+schedule the extra attack if the player is in hero form. Activations resolve
+sequentially. The integrated engine retains causal attack ancestry and the
+selected villain through deferred effects. A current active villain remains an
+eligible selection when the deferred attack can affect it, even though moving
+the counter to its existing location has no effect. Counter movement itself
+still requires a different destination.
 
-Tactical Prowess (07031) still needs its two retained endpoint choices and canonical
-interpretation. Escaped Convict (07009, 07024, 07038, 07053) remains blocked by
-MARVEL-650: the published ruling gives contradictory outcomes for its boost during
-a scheme activation. No house rule or whole-pack admission is implied. The next
-steps are canonical composition and review, resolution of that authority conflict,
-combined managed checks, setup-to-ending/replay evidence and native player journeys.
-Owner acceptance remains outstanding.
+The advanced Captain America packet and counter-admission change pass 34 focused
+combined Content cases at `486b2715`. The prior full integration lane at
+`96c2fece` passed Server 416, Godot 959 (one existing native journey skipped),
+Architecture 129 and Release 36. Those results do not certify the later combined
+candidate. Complete setup-to-ending/replay evidence, native player journeys and
+owner acceptance remain outstanding; whole-pack admission stays closed.
