@@ -20,6 +20,11 @@ internal sealed class AbilityChoiceAnswer(
     internal List<Marvel.Rules.Events.GameEvent> Apply(AbilityEffect choice)
     {
         string operation = choice.OperationName();
+        if (choice is AbilityEffect.MoveThreat move)
+        {
+            AbilityThreatMoveChoice.Answer(execution, cast, move, input);
+            return cast.Events;
+        }
         if (operation is "and" or "enemyAttacks" or "enemySchemes")
             return ApplyStructural(choice);
         if (SpecialOperations.Contains(operation)) return ApplySpecial(choice);

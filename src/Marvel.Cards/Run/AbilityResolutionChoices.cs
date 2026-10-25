@@ -66,6 +66,7 @@ internal static class AbilityResolutionChoices
     {
         var structural = execution.StructuralContext(cast);
         string operation = choice.OperationName();
+        if (choice is AbilityEffect.MoveThreat move) return AbilityThreatMoveChoice.Describe(cast, move);
         if (SpecialChoiceOperations.Contains(operation))
             return AbilityStructuralExecution.DescribeSpecialChoice(structural, choice);
         if (operation is "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")

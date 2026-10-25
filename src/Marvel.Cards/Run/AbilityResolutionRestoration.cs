@@ -65,6 +65,7 @@ internal static class AbilityResolutionRestoration
     {
         cast.DamageDefeats = state.Memory.DamageDefeats;
         cast.Execution = state.Execution;
+        cast.ThreatMovePairs = state.ThreatMovePairs;
         cast.PowerExecution = state.PowerExecution;
         if (state.PowerExecution is { } power)
         {

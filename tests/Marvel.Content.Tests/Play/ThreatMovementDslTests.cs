@@ -157,17 +157,4 @@ public sealed class ThreatMovementDslTests : CoreCardTestBase
         Assert.Equal(available, from.Tokens.GetValueOrDefault("k_threat"));
     }
 
-    [Theory]
-    [InlineData("{\"query\":\"sideSchemes\"}")]
-    [InlineData("{\"minBy\":{\"of\":{\"query\":\"sideSchemes\"},\"by\":\"threat\"}}")]
-    public void SyntheticMoveRejectsUnboundPluralEndpoints(string endpoint)
-    {
-        var error = Assert.Throws<AbilityException>(() => new AbilityRunner(AbilityCatalog.Parse("""
-            {"cards":[{"card":"01168","abilities":[{
-              "trigger":{"event":"WhenCardRevealed","subject":"this","timing":"WhenRevealed"},
-              "effect":{"moveThreat":{"from":ENDPOINT,"to":{"query":"mainScheme"},"amount":1}}
-            }]}]}
-            """.Replace("ENDPOINT", endpoint, StringComparison.Ordinal))));
-        Assert.Contains("single-card endpoint", error.Message, StringComparison.Ordinal);
-    }
 }

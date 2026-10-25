@@ -90,7 +90,11 @@ public abstract record AbilityEffect
         public bool Assigned { get; init; }
     }
     /// <summary>Move threat between exact selected schemes.</summary>
-    public sealed record MoveThreat(AbilityCardSelection From, AbilityCardSelection To, AbilityNumber Amount) : AbilityEffect;
+    public sealed record MoveThreat(AbilityCardSelection From, AbilityCardSelection To, AbilityNumber Amount) : AbilityEffect
+    {
+        /// <summary>Moves all threat present on the selected source when scheduled.</summary>
+        public bool All { get; init; }
+    }
     /// <summary>Prevent an amount of the imminent threat.</summary>
     public sealed record PreventThreat(AbilityNumber Amount) : AbilityEffect;
     /// <summary>Prevent damage to the interrupted occurrence's recipient.</summary>

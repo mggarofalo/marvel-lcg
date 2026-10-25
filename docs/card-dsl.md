@@ -942,3 +942,20 @@ defense still requires readiness; card-declared defense follows its own readines
 persistent scope contains the activation id, attacking enemy and attacked identity;
 other activations and other players cannot inherit it. This instruction differs
 from the constant `requireAllyDefender: "engagedPlayer"` policy.
+
+### Ordered threat-move endpoints
+
+`moveThreat` accepts singular endpoint selectors and the public `sideSchemes`
+pool, optionally wrapped in `minBy` or `maxBy` with `by: "threat"`. Both pools
+are evaluated independently before identical source/destination pairs are
+excluded (`rr:move.1`). More than one legal ordered pair asks the first player
+to choose; one pair resolves directly and no legal pair completes without moving.
+The engine chooses pair ordering by source and then destination object id.
+The exact offered incarnations survive suspension; leaving and reentering
+does not authorize a replacement endpoint. The existing move receipt owns the
+subsequent removal, destination placement and response windows.
+
+`amount: "all"` requests the selected source's threat when the move is scheduled;
+a numeric expression retains ordinary requested-amount semantics. Result slots
+still describe the completed move. These DSL spellings and the single pair prompt
+are engine choices. No expansion card is admitted by this syntax.

@@ -131,6 +131,7 @@ internal sealed record AbilityResolutionState(
     internal AbilityDamageCompletion? PendingDamageCompletion { get; set; }
     internal ThreatMoveReceipt? PendingThreatMove { get; set; }
     internal long ThreatMoveRequested { get; set; }
+    internal System.Collections.Immutable.ImmutableArray<AbilityThreatMovePair> ThreatMovePairs { get; set; } = [];
     public EffectCompletion? PendingCompletion { get; set; }
 
 
