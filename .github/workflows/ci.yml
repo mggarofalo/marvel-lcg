@@ -464,8 +464,8 @@ jobs:
 
   platform:
     name: Native integration (${{ matrix.os }})
-    # Keep the required check names while requiring every platform gate and journey shard.
-    if: ${{ always() && !(needs.changes.result == 'success' && needs.changes.outputs.run == 'false') }}
+    # Expand both required names even for Markdown-only changes; only the receipts run.
+    if: ${{ always() }}
     needs: [changes, platform-gates, native-journeys]
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.exhaustive && 90 || 40 }}
@@ -475,10 +475,15 @@ jobs:
         os: [windows-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v7
+        if: ${{ needs.changes.outputs.run == 'true' }}
       - name: Require successful scope selection
-        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.run != 'true' }}
+        if: ${{ needs.changes.result != 'success' || (needs.changes.outputs.run != 'true' && needs.changes.outputs.run != 'false') }}
         run: exit 1
+      - name: Complete the required check for Markdown-only changes
+        if: ${{ needs.changes.result == 'success' && needs.changes.outputs.run == 'false' }}
+        run: echo 'Markdown-only change; runtime validation is not required.'
       - name: Require every platform gate and native shard to succeed
+        if: ${{ needs.changes.outputs.run == 'true' }}
         shell: pwsh
         env:
           PLATFORM_GATES_RESULT: ${{ needs.platform-gates.result }}
