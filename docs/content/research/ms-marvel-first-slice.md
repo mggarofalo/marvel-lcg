@@ -1,5 +1,8 @@
 # Ms. Marvel (MARVEL-561): bounded first implementation slice
 
+This earlier bounded packet is retained for its initial code-slice framing. Use the [expanded research handoff](ms-marvel-deep-research.md) and current Plane record for updated source findings and dependency IDs.
+
+
 Research packet, 2026-10-25. **Status: ready for a bounded engine investigation and slice; whole-pack source completeness is partial and public admission is not ready.** Inspected the local research tree and the integration candidate `marvel-lcg-wave-engine-impl` at `1eb9767f`. The canonical issue MARVEL-561 requests the complete `msm` hero pack; this document does not certify it. The issue snapshot was `C:/Users/mggar/AppData/Local/Temp/marvel-pack-audit-issues.json`, `object.results`, item 561. Its description gives authority pointers and named risks, not an inventory or implementation proof. The earlier [audit](2026-10-25-early-packs.md) reports no inspected children/comments/links and identifies MARVEL-630 as a shared admission/compatibility dependency; that dependency's current acceptance state needs checking before integration.
 
 ## Local authority and inventory

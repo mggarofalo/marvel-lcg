@@ -24,8 +24,18 @@ Green Goblin and Ms. Marvel are the earliest untouched packets. Their proposed
 first-slice research is recorded separately so an implementer can use concrete
 authority and capability findings without reading the entire audit:
 
-- [Green Goblin](green-goblin-first-slice.md)
-- [Ms. Marvel](ms-marvel-first-slice.md)
+- [Green Goblin expanded research](green-goblin-deep-research.md): MARVEL-682,
+  689–693 divide activation replacement, flips, both scenarios, modules and admission.
+- [Ms. Marvel expanded research](ms-marvel-deep-research.md): MARVEL-683–688
+  divide source/setup integration, event recovery, deck search and remaining content.
+
+These two expanded packets received a bounded independent source review. The
+Ms. Marvel starter photograph confirms the proposed quantities; repository
+provenance integration remains MARVEL-683. Green Goblin's total matches the
+publisher's 78-card count, while per-card quantities still rely on the local
+snapshot. Its excess-damage replacement interpretation is explicitly an inference,
+not a card-specific ruling, and requires the stated distinguishing test. Neither
+packet constitutes implementation or exhaustive verification of every ruling.
 
 Fear No Evil's issue explicitly records missing villain/encounter faces in the
 snapshot. Elektra, Iron Fist and Shadowland lack pinned card/insert sources in

@@ -1,5 +1,8 @@
 # The Green Goblin: bounded implementation research for MARVEL-559
 
+This earlier bounded packet is retained for its initial code-slice framing. Use the [expanded research handoff](green-goblin-deep-research.md) and current Plane record for updated source findings and dependency IDs.
+
+
 Status: **ready for a bounded first slice; whole pack is not implementation ready**. Research compared the committed authority snapshot with the engine worktree at `1eb9767f` (2026-10-25). The existing MARVEL-559 issue states the product goal and names risks, but does not yet resolve these implementation decisions. This packet is a handoff for one first implementation assignment, not an admission or acceptance claim. No runtime code or Plane record was changed here.
 
 ## Authority and source completeness
