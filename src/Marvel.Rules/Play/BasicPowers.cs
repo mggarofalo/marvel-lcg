@@ -139,9 +139,12 @@ public static class BasicPowers
             && BasicPowerStatus.Engaged(world, enemy) == player
             && StateFields.Modified(world, enemy, "guard", facts, world.Players) > 0);
 
-        return guarded
-            ? [.. enemies.Where(enemy => EffectiveCards.Kind(enemy, facts) == CardKind.Minion)]
-            : enemies;
+        var restricted = enemies.Where(enemy => CardKinds.IsVillain(EffectiveCards.Kind(enemy, facts))
+            && StateFields.Modified(world, enemy, VillainAttackRestrictions.OtherVillains,
+                facts, world.Players) > 0).ToList();
+        return [.. enemies.Where(enemy =>
+            EffectiveCards.Kind(enemy, facts) == CardKind.Minion
+            || !guarded && VillainAttackRestrictions.Allows(enemy, restricted))];
     }
 
     /// <summary>

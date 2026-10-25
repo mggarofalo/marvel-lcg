@@ -12,7 +12,9 @@ internal static class AbilityEncounterCandidateOrder
         // Engine choice: a promoted stage is appended to its villain area, matching MoveCard.
         return world.Areas.SelectMany(area => area.Type == DeckType.VillainArea
                 ? order.Where(id => StageArea(world, id) == area.Id).Select(id => world.Cards[id]) : area.Cards.Where(card => !order.Contains(card.ObjectId)))
-            .Where(card => included.Contains(card.ObjectId));
+            // Selector modifier reads may materialize empty areas; the ordering
+            // is a snapshot of the candidate board, taken before those reads.
+            .Where(card => included.Contains(card.ObjectId)).ToArray();
     }
     private static int StageArea(World world, int id)
     {

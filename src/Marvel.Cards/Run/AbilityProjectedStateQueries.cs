@@ -130,6 +130,11 @@ internal static class AbilityProjectedStateQueries
             found.RemoveAll(card =>
                 CardKinds.IsVillain(EffectiveCards.Kind(card, context.World.Facts)));
         }
+        var restricting = ProjectedEvery(new AbilityCardSelection.Query(AbilityCardQuery.Villains), state, context)
+            .Where(card => state.ModifiedOf(context, card, VillainAttackRestrictions.OtherVillains) > 0)
+            .ToList();
+        found.RemoveAll(card => CardKinds.IsVillain(EffectiveCards.Kind(card, context.World.Facts))
+            && !VillainAttackRestrictions.Allows(card, restricting));
         return found;
     }
 

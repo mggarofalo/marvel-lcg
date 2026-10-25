@@ -102,6 +102,13 @@ escape hatch. Downloadable or user-authored content remains data.
 
 ## Ability rows
 
+The numeric modifier `other_villains_cannot_be_attacked` on a villain implements
+"players cannot attack other villains": a positive value permits attacks on that
+villain while prohibiting attacks on every other villain. Grant it to
+`attachedTo` from an attachment's constant ability to follow the current host and
+source lifecycle. Minion targets and damage without an attack label are unaffected;
+Guard still prohibits attacks on the host. The modifier spelling is an engine choice.
+
 One card row names a printed face and everything the engine knows how to execute
 from it:
 
