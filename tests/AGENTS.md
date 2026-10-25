@@ -67,6 +67,12 @@ platform checks remain required and are separate from product acceptance.
 Record the build and scenarios the owner reviewed, feedback and any follow-up
 changes. Approval of a design direction is not acceptance of its implementation.
 
+Owner review explores whether the working product meets the intended need. It
+can reveal omissions, an imprecise request or a requirement that should change.
+Treat those discoveries as input to the next delivery, not as a demand that the
+owner execute a regression checklist. Agents own repeatable correctness and
+interaction verification; passing those checks does not settle product fit.
+
 ## Independent comprehension review when requested
 
 When the owner requests independent comprehension testing,

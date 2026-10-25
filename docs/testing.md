@@ -153,6 +153,43 @@ their existing gameplay assertions. New scripts should use legal seeded or
 explicitly labelled prepared scenes, print their marker only after all assertions,
 and exit nonzero on failure. Owner acceptance remains separate from automation.
 
+### Selecting additional native evidence
+
+Use scripted interaction checks as the default. Start headless for composition,
+commitment and observable results; use rendered checks and inspect their images
+when layout or rendering is at issue. Use manifest profiles for scale, motion,
+viewport and player-count coverage beyond the standalone runner's fixed profile.
+Viewport input does not take over the user's mouse or keyboard. Keep interactive
+desktop exploration separate and respect any pause on computer interaction.
+
+Before adding a separate package or OS journey, identify the concrete failure it
+would detect and inspect the existing release, native and platform gates. Reuse
+their evidence when it covers the same behavior on the relevant candidate. A
+package check may verify bundled files, runtime startup or save paths; it does
+not automatically require replaying the gameplay suite through manual clicks.
+Conversely, a development-runtime pass alone does not prove an exported payload.
+Choose the narrowest check that actually crosses the boundary at risk.
+
+Native focus or accessibility behavior may be testable through a Godot script
+with the relevant window configuration and accessibility enabled. Check that
+possibility before requiring Computer Use. Use manual input only for a named gap
+that scripts cannot exercise, or requested exploratory review. Retain the scope
+of that observation without presenting it as repeatable regression coverage.
+
+For campaign and library journeys, explicitly isolate campaign access, deck
+libraries and remote storage as well as embedded saves. The process runner's
+automatic embedded-save isolation alone does not establish isolation of those
+other stores. Preserve genuine predecessor fixtures and complete replay/backup
+comparisons when verifying upgrades, regardless of the interaction mechanism.
+
+Record the exact revision, build configuration, fixture, command, profile and
+artifact identity with results. Do not combine different revisions into a claim
+of a passing final candidate, or infer exhaustive success from representative CI.
+Preserve distinguishing assertions and required gates. When an older work item
+prescribes redundant manual journeys, explicitly reconcile its criteria with the
+equivalent automated evidence and record any remaining gap; do not silently drop
+the required behavior or label an untested boundary as passed.
+
 ## Native contract evidence
 
 The manifest preserves the reviewed baseline union of 125 exhaustive and 115
