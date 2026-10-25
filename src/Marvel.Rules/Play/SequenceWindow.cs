@@ -70,6 +70,8 @@ internal static class SequenceWindow
         IWindowAbilities abilities = world.WindowAbilities;
         var window = world.Windows.Current
             ?? throw new InvalidOperationException("the bound window is no longer open");
+        var owner = ReferenceEquals(world.Agenda.Occurrence, window.Occurrence)
+            ? world.Agenda.Current : null;
         if (input.IsDecline)
         {
             DeclineWindow(world, asked, window);
@@ -89,6 +91,12 @@ internal static class SequenceWindow
         Statuses.RemoveAfflictionsIfStalwart(
             world, facts, "stalwart", events);
         world.Effects.SettleLostHealth(healthBefore, asked.Trigger, events);
+
+        if (owner is { } step && !world.Agenda.IsOutstanding(step, window.Occurrence))
+        {
+            CancelAttackWindow(world, step, window.Occurrence, cancelOccurrence: false);
+            return;
+        }
 
         if (window.Occurrence.Threat is { Replaced: true })
         {
@@ -167,9 +175,6 @@ internal static class SequenceWindow
                 string status = step.What == Steps.Attack ? Statuses.Stunned : Statuses.Confused;
                 CancelledImminent = BasicPowerStatus.Cancelled(
                     world, facts, world.Cards[step.Subject], status, events);
-                if (!CancelledImminent)
-                    CancelledImminent = GreenGoblinActivationReplacement.Resolve(
-                        world, facts, step, events);
             }
             if (!CancelledImminent && kind == WindowKind.Interrupt && step.What == Steps.Attack)
             {
