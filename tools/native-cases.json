@@ -52,6 +52,7 @@
     }
   },
   "cases": [
+    {"id":"wave-custom-selector-100","script":"res://smoke/automation/wave_custom_selector.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"disabled","viewport":"1920x1080","players":1,"timeoutSeconds":120,"markers":["UI_ACCEPTANCE_OK wave_custom_selector"],"evidenceKind":"live-session"},
     {"id":"wave-native-playable-100","script":"res://smoke/automation/wave_native_playable.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"disabled","viewport":"1920x1080","players":1,"timeoutSeconds":120,"markers":["UI_ACCEPTANCE_OK wave_native_playable"],"evidenceKind":"live-session"},
     {"id":"scenario-setup-controls-100","script":"res://smoke/scenario_setup_controls_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"enabled","viewport":"1920x1080","players":4,"timeoutSeconds":120,"markers":["PASS: 19 authored scenario recipes"],"evidenceKind":"synthetic-component"},
     {"id":"encounter-groups-100","script":"res://smoke/encounter_groups_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["WRECKING_LAYOUT_CONTRACT_OK"],"fixture":"encounter-groups","arguments":["{fixture}"],"evidenceKind":"synthetic-component"},
