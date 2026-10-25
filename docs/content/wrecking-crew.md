@@ -452,3 +452,29 @@ Six new response controls and ten cost controls pass. Changing minimum to maximu
 threat kills the tie/target case; removing attached-actor binding kills both
 foreign-attack controls. Full Content passes 3,367. This brings authored Wrecking
 Crew coverage to 41 of 60 faces; full-pack admission remains closed.
+
+
+### Integrated completion checkpoint — 2026-10-25
+
+At `3af531c9`, the research book contains 55 of 60 Wrecking Crew faces.
+The reviewed additions include Mystical Link, Wrecker's Command, Radioactive
+Buildup, Ramming Speed and Distracting Taunts. Shared simultaneous threat windows,
+exact excess-damage routing, required own-ally defense, promoted-host attack
+restrictions and typed threat movement are integrated. The minion-attack control
+prevents Distracting Taunts' removal response from firing for an unrelated target.
+
+Threat movement retains exact endpoint incarnations and completes removal windows
+before placement. Its DSL continuation retains the actual removed/placed amounts
+and whether the destination's forced response triggered. Partial prevention does
+not count as complete movement. The reviewed runtime candidate passed 16 focused
+checks and 3,600 Content tests before integration; the current combined revision
+still requires verification. Earlier Content 3,559 / Rules 1,042 results apply to
+`90e07dde`, not to this final combined candidate.
+
+Tactical Prowess (07031) still needs its two retained endpoint choices and canonical
+interpretation. Escaped Convict (07009, 07024, 07038, 07053) remains blocked by
+MARVEL-650: the published ruling gives contradictory outcomes for its boost during
+a scheme activation. No house rule or whole-pack admission is implied. The next
+steps are canonical composition and review, resolution of that authority conflict,
+combined managed checks, setup-to-ending/replay evidence and native player journeys.
+Owner acceptance remains outstanding.
