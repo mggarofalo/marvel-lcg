@@ -174,7 +174,7 @@ internal static class AbilityStructuralQueries
             || outcomes.MayBeEmpty && CanResolve(null);
     }
 
-    private static List<AbilityEffect> Remaining(
+    internal static List<AbilityEffect> Remaining(
         AbilityStructuralContext context, AbilityContinuationFacts continuation,
         AbilityAdmissionContext admission,
         AbilityAdmission.AdmissionResolution? pending,

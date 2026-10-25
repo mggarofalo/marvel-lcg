@@ -169,6 +169,7 @@ internal static class AbilityAreaMovementProjection
             or "engageTopAsMinion" or "indirectDamage" or "discardFromHand"
             or "returnOwnedToHand" or "addToHand" or "returnOwnedToDiscard"
             or "discardUpToFromHand" or "discardAnyFromHand" or "spend"
+            or "discardHandCards" or "discardResourceIcons"
             or "spendPrinted" or "spendEnergyX")
         {
             projection.couldDiscard |= MayChangeAnyArea(

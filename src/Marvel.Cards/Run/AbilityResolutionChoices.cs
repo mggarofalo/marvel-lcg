@@ -32,6 +32,9 @@ internal static class AbilityResolutionChoices
             ?? throw new InvalidOperationException("the continuation no longer asks for an answer");
         var assessment = DecisionAssessment.Assess(prompt, input);
         if (!assessment.IsAccepted) throw new ArgumentException(assessment.Reason ?? assessment.Rejection.ToString(), nameof(input));
+        if (choice.OperationName() is "discardHandCards" or "discardResourceIcons")
+            AbilitySelectedHandDiscardPreflight.Validate(execution.StructuralContext(cast), choice,
+                execution.ContinuationFacts(cast.Source, step, cast.Tier));
         cast.TrackResolution(cast.AbilityOrdinal);
         cast.At(Math.Max(0, step.Index - 1));
         var events = new AbilityChoiceAnswer(execution, step.Seat, step.Index, input, step, cast).Apply(choice);

@@ -27,6 +27,7 @@ internal sealed class AbilityAreaMutationQuery(
     private static readonly ImmutableArray<string> HandPaymentOperations =
     [
         "discardFromHand", "discardUpToFromHand", "discardAnyFromHand",
+        "discardHandCards", "discardResourceIcons",
         "spend", "spendPrinted", "spendEnergyX",
     ];
 
