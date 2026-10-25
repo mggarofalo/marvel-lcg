@@ -30,6 +30,9 @@ public sealed class ThreatPlacement
     /// <summary>The scheme receiving the threat, by object id.</summary>
     public int Scheme { get; }
 
+    /// <summary>The destination copy when captured, or -1 when not captured.</summary>
+    public int SchemeIncarnation { get; init; } = -1;
+
     /// <summary>The card that caused the placement, or -1 for a game step.</summary>
     public int Source { get; }
 

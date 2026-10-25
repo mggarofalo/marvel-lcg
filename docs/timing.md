@@ -503,7 +503,14 @@ false.
 
 `ThreatMovement.Schedule` owns one exact source/destination move. Removal uses
 ordinary threat permissions and side-scheme defeat; placement uses the ordinary
-interrupt and response windows. Its receipt retains the exact destination
+interrupt and response windows. The engine chooses removal-first sequencing:
+`rr:move.6` and `.7` define removal and placement but do not explicitly order
+the halves. Within that choice, reaching zero causes defeat (`rr:side-scheme.2`),
+and its When Defeated interrupt resolves before leaving play
+(`rr:when-defeated-abilities.1`, `.2.1`), before destination placement begins.
+Both move endpoints retain their captured incarnation (`rr:leaves-play.1`);
+the destination must still be that live scheme when placement commits, including
+after its placement interrupts. Its receipt retains the exact destination
 occurrence and observes that scheme's Forced Response initiation independently
 of effect application or a subsequent threat reset. Callers wait for the
 containing procedure before choosing later text from this fact. Ranked scheme

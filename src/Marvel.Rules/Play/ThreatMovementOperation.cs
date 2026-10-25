@@ -4,6 +4,8 @@ namespace Marvel.Rules.Play;
 public sealed record ThreatMovementOperation(ThreatMoveRequest Request,
     ThreatMoveReceipt Receipt) : AgendaOperation
 {
+    internal bool PlacementPending { get; init; }
+
     /// <inheritdoc/>
     public override string What => Steps.CardEffectResolved;
     /// <inheritdoc/>

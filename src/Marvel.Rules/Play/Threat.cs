@@ -60,7 +60,8 @@ public static class Threat
         EffectCompletion completion, int part, PhaseStep? current) =>
         new(new ThreatPlacementOperation(new ThreatPlacement(
                 scheme.ObjectId, batch.Source?.ObjectId ?? -1,
-                batch.Amount, batch.Cause, batch.Trigger, batch.Player), completion, part)
+                batch.Amount, batch.Cause, batch.Trigger, batch.Player)
+                { SchemeIncarnation = scheme.Incarnation }, completion, part)
                 { Movement = batch.Movement },
             current?.Round ?? 0, current?.Number ?? 0,
             Index: (current?.Index ?? 0) + part,
@@ -91,6 +92,12 @@ public static class Threat
         }
 
         var scheme = world.Cards[placement.Scheme];
+        // rr:move.2: without a "valid source or destination ... the move cannot
+        // be made". rr:leaves-play.1 calls a departed card "a new copy".
+        // Interrupts can invalidate the assignment after its window opens.
+        if (scheme.Area.Type is not (DeckType.MainSchemesArea or DeckType.SideSchemesArea)
+            || (placement.SchemeIncarnation >= 0
+                && scheme.Incarnation != placement.SchemeIncarnation)) return 0;
         long before = scheme.Tokens.GetValueOrDefault("k_threat");
         scheme.PlaceTokens("k_threat", placement.Remaining);
         events.Add(new FieldSet(

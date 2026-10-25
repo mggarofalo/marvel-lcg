@@ -124,6 +124,31 @@ public sealed class ThreatMovementTests : CoreCardTestBase
         Assert.False(receipt.DestinationForcedResponseTriggered);
     }
 
+    [Fact]
+    [Rule("rr:leaves-play.1")]
+    [Rule("rr:move.2")]
+    public void DestinationReenteringDuringPlacementWindowDoesNotReceiveThreat()
+    {
+        // A departed card is "a new copy"; a move needs a "valid ... destination".
+        var (world, runner, from, to) = Board("""
+            {"card":"01108","abilities":[{
+              "trigger":{"event":"WhenThreatWouldBePlaced","timing":"ForcedInterrupt","subject":"this"},
+              "effect":{"choose":{"options":[{"preventThreat":0},{"preventThreat":1}]}}
+            }]}
+            """);
+        var receipt = ThreatMovement.Schedule(world, new(from, to, 1, null, "synthetic", 0));
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, []));
+        Assert.Equal(1, receipt.Removed);
+        World.MoveToTop(to, world.AreaOf(DeckType.EncounterDiscardPile));
+        World.MoveToTop(to, world.AreaOf(DeckType.SideSchemesArea));
+        to.PlaceTokens("k_threat", 3);
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(0), []);
+        Assert.Null(Sequence.Work(world, Cards, runner, []));
+        Assert.Equal(3, to.Tokens["k_threat"]);
+        Assert.Equal(0, receipt.Placed);
+        Assert.False(receipt.DestinationForcedResponseTriggered);
+    }
+
     private static (World, AbilityRunner, Card, Card) Board(string row = "")
     {
         // Synthetic contracts isolate the move; they do not admit these alternate abilities.
