@@ -11779,6 +11779,22 @@
       ]
     },
     {
+      "card": "07051",
+      "name": "Ramming Speed",
+      "note": "Attach to Bulldozer. The printed ATK+ 2 is declarative attachment metadata. His forced interrupt requires the attacked player's own ally if able for this activation; the forced response discards this attachment only after his attack completes.",
+      "attachTo": { "titled": "Bulldozer" },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "attachedTo", "player": "trigger.player" },
+          "effect": { "requireAttackedPlayerAllyDefender": "attack" }
+        },
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "attachedTo", "player": "trigger.player" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
       "card": "07050",
       "name": "Held Hostage",
       "note": "The attached physical scheme determines the corresponding villain, independent of source deck and active counter. The thwart-only prohibition allows other threat removal; discard follows a completed attack, including zero damage, but not a canceled attack.",
