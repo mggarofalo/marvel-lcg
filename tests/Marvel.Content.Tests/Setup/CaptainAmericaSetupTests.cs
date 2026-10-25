@@ -13,7 +13,7 @@ public sealed class CaptainAmericaSetupTests
     {
         // Authority: datasets/rules-packs/mc04/UPSTREAM.md transcribes the pinned
         // FFG divider: 15 hero cards, 17 Leadership, eight Basic, one obligation
-        // and five nemesis cards. The recipe remains research until admission.
+        // and five nemesis cards.
         var setup = SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
         var hero = setup.Hero("captain_america");
         Assert.Equal(["03001a,03001b"], hero.Hero);
@@ -32,13 +32,13 @@ public sealed class CaptainAmericaSetupTests
     }
 
     [Fact]
-    public void ResearchRecipeStaysClosedEvenWhenEveryFaceIsSuppliedAsAuthored()
+    public void CompleteProductSuppliedAsAuthoredEntersRuntimeAdmission()
     {
         var setup = SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var admitted = RuntimeProductAdmission.Discover(setup, cards, cards.Faces.ToHashSet(StringComparer.Ordinal));
-        Assert.DoesNotContain("captain_america", admitted.Setup.HeroNames);
-        Assert.DoesNotContain("03001a", admitted.Playable);
+        Assert.Contains("captain_america", admitted.Setup.HeroNames);
+        Assert.Contains("03001a", admitted.Playable);
         Assert.Contains("spider_man", admitted.Setup.HeroNames);
         Assert.Contains("hawkeye", admitted.Setup.HeroNames);
     }

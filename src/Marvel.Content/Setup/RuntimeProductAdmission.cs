@@ -28,7 +28,16 @@ public sealed class RuntimeProductAdmission
         var campaign = RiseOfRedSkullAdmission.Discover(setup, cards, authored);
         // Product acceptance is repository policy, not a card rule. New authored
         // rows cannot extend this closed boundary; a product requires explicit review.
-        bool Accepted(string pack) => pack == "core" || pack == "trors" && campaign is not null;
+        bool captainAmerica = StandaloneProductAdmission.CaptainAmerica(setup, cards, authored);
+        bool wreckingCrew = StandaloneProductAdmission.WreckingCrew(setup, cards, authored);
+        bool Accepted(string pack) => pack switch
+        {
+            "core" => true,
+            "trors" => campaign is not null,
+            "cap" => captainAmerica,
+            "twc" => wreckingCrew,
+            _ => false,
+        };
         var playable = authored.Where(face => Accepted(cards.Pack(face)))
             .ToImmutableHashSet(StringComparer.Ordinal);
         foreach (string pack in cards.Faces.Select(cards.Pack).Distinct(StringComparer.Ordinal)

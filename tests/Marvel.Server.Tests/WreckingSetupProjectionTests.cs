@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marvel.Server.Tests;
 
-/// <summary>Canonical research metadata projection is independent of public product admission.</summary>
+/// <summary>Canonical product metadata remains complete through runtime discovery and serialization.</summary>
 public sealed class WreckingSetupProjectionTests
 {
     [Fact]
@@ -17,7 +17,7 @@ public sealed class WreckingSetupProjectionTests
         var choices = setup.CampaignNames.Where(key => key.StartsWith("wrecking_crew_", StringComparison.Ordinal))
             .Select(key => ScenarioSetupProjection.Describe(key, setup.Campaign(key), cards)).ToArray();
         var admitted = DatasetGameFactory.Load(RepositoryPaths.Root).DiscoverSetup();
-        Assert.DoesNotContain(admitted.Scenarios, choice => choice.Name == "Wrecking Crew");
+        Assert.Equal(19, admitted.Scenarios.Count(choice => choice.Name == "Wrecking Crew"));
         var response = new EngineResponse(EngineProtocol.Version, "canonical-research", "", null, null, [])
             { Setup = admitted with { Scenarios = choices } };
         var actual = EngineJson.ReadResponse(EngineJson.Write(response)).Setup!.Scenarios;

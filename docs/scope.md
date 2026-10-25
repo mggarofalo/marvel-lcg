@@ -1,18 +1,26 @@
 # Product and repository scope
 
-The executable products are the Marvel Champions Core Set and Rise of Red Skull. The runtime supports:
+The accepted executable products are the Marvel Champions Core Set and Rise of Red Skull.
+This candidate also admits the complete Captain America Hero Pack and Wrecking Crew
+Scenario Pack for native owner review; owner acceptance and merge remain pending.
+The candidate runtime supports:
 
-- Spider-Man, Captain Marvel, She-Hulk, Iron Man, Black Panther, Hawkeye and Spider-Woman;
+- Spider-Man, Captain Marvel, She-Hulk, Iron Man, Black Panther, Hawkeye, Spider-Woman and Captain America;
 - Rhino, Klaw, Ultron, Crossbones, Absorbing Man, Taskmaster, Zola and Red Skull in Standard and Expert modes;
 - Bomb Scare, Masters of Evil, Under Attack, Legions of Hydra and The Doomsday
   Chair, Hydra Assault, Weapon Master and Hydra Patrol;
-- all 390 printed faces across the two products;
+- all 485 unique printed faces across the four products;
+- Wrecking Crew Standard, Expert, Extreme and all sixteen custom A/B combinations;
 - one through four seats using authored starters or validated, ordered decks; and
 - the five-scenario Rise of Red Skull campaign, with persistent progress, rewards
   and saved games. Standard or Expert campaign rules are selected independently
   of scenario difficulty.
 
-`datasets/setup/setup.json` defines which products the runtime can start.
+`RuntimeProductAdmission` defines the closed product policy. The Captain America
+pack requires its exact 35-face inventory and published starter; Wrecking Crew
+requires its exact 60-face inventory and all nineteen setup recipes. Removing any
+required authored face or recipe closes that entire pack.
+`datasets/setup/setup.json` supplies the recipes the runtime can start.
 `datasets/abilities/abilities.json` defines which printed faces have executable
 card text. Both datasets fail closed outside that boundary.
 
@@ -28,8 +36,11 @@ The repository keeps broader source material for research and future work:
 These datasets are authorities and research inputs. Their presence does not make
 a later product executable.
 
-The executable ability book contains the 209 Core Set and 181 Rise of Red Skull
-faces. Language support for a later card pattern does not admit that product.
+The executable ability book contains the 209 Core Set, 181 Rise of Red Skull,
+35 Captain America and 60 Wrecking Crew faces. Captain America
+physical extra-copy quantities remain an open source-evidence gap (MARVEL-629);
+the independently pinned published starter and 35 unique printed faces do not
+resolve that quantity question. Language support for a later card pattern does not admit that product.
 
 Some engine tests use synthetic cards or later-product patterns to prove a
 general rule or data shape. Those tests validate an engine primitive. They do

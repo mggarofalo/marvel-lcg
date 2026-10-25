@@ -9,13 +9,13 @@ namespace Marvel.Content.Tests.Setup;
 public sealed class WreckingAdmissionBoundaryTests
 {
     [Fact]
-    public void AuthoredEncounterRowsDoNotAdvertiseAnIncompleteScenarioOrPlayerDeck()
+    public void MissingOneAuthoredFaceClosesEveryWreckingRecipeAndEncounterCardPlayerDeck()
     {
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var setup = SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
-        setup = RuntimeProductAdmission.Discover(setup, cards, AuthoredCards.Book.Authored).Setup;
+        setup = RuntimeProductAdmission.Discover(setup, cards, AuthoredCards.Book.Authored.Where(face => face != "07059").ToHashSet(StringComparer.Ordinal)).Setup;
         Assert.Contains("07027", AuthoredCards.Book.Authored);
-        Assert.DoesNotContain("wrecking_crew", setup.CampaignNames);
+        Assert.DoesNotContain(setup.CampaignNames, key => key.StartsWith("wrecking_crew_", StringComparison.Ordinal));
         Assert.Throws<KeyNotFoundException>(() =>
             Dealer.DealOrder(setup, "wrecking_crew", ["spider_man"], facts: cards));
         foreach (string scenario in setup.CampaignNames)
