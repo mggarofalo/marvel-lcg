@@ -59,7 +59,7 @@ public sealed class WreckingOtherVillainSchemeTests
         area.Departed.Add(groups[3].Villain.ObjectId);
         Assert.Empty(AbilityProjectedStateQueries.ProjectedEvery(Query, area, scope.Context));
         var power = AbilityPowerStateFactory.Initial(scope);
-        power.EncounterStages![groups[0].Villain.ObjectId] = groups[0].Stages[1].ObjectId;
+        power.EncounterStages![groups[0].Villain.ObjectId] = -1;
         Assert.Empty(AbilityPowerSelectionTrace.PowerEvery(Query, scope, power));
     }
 

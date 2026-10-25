@@ -32,11 +32,24 @@ internal static class AbilityOtherVillainSchemeQuery
         if (trace.Discarded.Contains(cast.Source.ObjectId)) return [];
         if (trace.EncounterStages is null)
             throw new RulesNotImplementedException("other villain schemes require projected encounter stages");
-        return Select(cast.World, cast.Source.Area.Host,
+        var host = ProjectedHost(trace);
+        if (host is null) return [];
+        return Select(cast.World, host.ObjectId,
             group => trace.EncounterStages.TryGetValue(group.Villain.ObjectId, out int id)
                 ? id < 0 || trace.Discarded.Contains(id) ? null : cast.World.Cards[id]
                 : throw new RulesNotImplementedException("other villain schemes are missing a projected group"),
             scheme => scheme.Area.Type == DeckType.SideSchemesArea && !trace.Discarded.Contains(scheme.ObjectId));
+    }
+
+    private static Card? ProjectedHost(AbilitySelectorTraceContext trace)
+    {
+        var cast = trace.Cast;
+        int originalHost = cast.Source.Area.Host;
+        if (!Groups(cast.World).Any(group => group.Stages.Any(stage => stage.ObjectId == originalHost)))
+            throw new RulesNotImplementedException("source is not attached to a paired encounter villain");
+        // rr:villain-defeat.3.2: "Attachments ... carry over to the new stage."
+        return AbilityPowerEncounterProjection.CurrentCharacter(
+            cast.World.Cards[originalHost], cast, trace.EncounterStages!);
     }
 
     private static Card[] Select(World world, int host, Func<EncounterDeckGroup, Card?> current,
