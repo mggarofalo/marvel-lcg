@@ -247,6 +247,7 @@ internal static class AbilityResolutionLifecycle
         cast.Execution ??= state.Execution;
         cast.TriggeringDefeat = state.Invocation.TriggeringDefeat;
         cast.TriggeringAttack = state.Invocation.TriggeringAttack;
+        cast.TriggeringThreat = state.Invocation.TriggeringThreat;
         cast.RestoreAbility(
             state.Invocation.Address.Ordinal,
             state.Cursor.Frames,

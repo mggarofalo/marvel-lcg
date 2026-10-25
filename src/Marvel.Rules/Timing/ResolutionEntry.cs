@@ -21,4 +21,7 @@ public sealed record ResolutionEntry(
 
     /// <summary>The exact attacked enemy answered within a shared attack window.</summary>
     public State.Attacked? TriggeringAttack { get; init; }
+
+    /// <summary>The game-local identity of the exact threat placement answered.</summary>
+    public int? TriggeringThreatId { get; init; }
 }

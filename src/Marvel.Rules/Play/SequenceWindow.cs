@@ -14,6 +14,11 @@ internal static class SequenceWindow
     {
         var kind = world.Agenda.Stage == Stage.Interrupts
             ? WindowKind.Interrupt : WindowKind.Response;
+        if (SharedThreatWindowHandles(step, kind))
+        {
+            world.Agenda.Advance();
+            return null;
+        }
         if (kind == WindowKind.Interrupt && step.What == Steps.RevealEncounterCard)
             EncounterRevealExposure.Prepare(world, world.Cards[step.Subject], step.Seat, events);
         var occurrence = world.Agenda.Begin(world, facts);
@@ -21,8 +26,7 @@ internal static class SequenceWindow
             && !DamageWindowPreparation.Prepare(world, step, occurrence, events)) return null;
 
         var status = new PriorityStatusResolution(world, facts, step, occurrence, kind, events);
-        IWindowAbilities offered = step.What is Steps.PrepareIndirectAttackDamage or Steps.DealAttackDamage
-            ? new OptionalDamageInterrupts(abilities) : abilities;
+        var offered = AbilitiesForStep(step, abilities);
         Prompt? question = Offering.Work(
             world, offered, occurrence, kind, events, scope, status.Resolve);
         if (question is not null) return AttackPromptContext.WithAttackContext(world, facts, step, question);
@@ -32,6 +36,10 @@ internal static class SequenceWindow
         FinishWindow(world, step, occurrence, status);
         return null;
     }
+
+    private static IWindowAbilities AbilitiesForStep(PhaseStep step, IWindowAbilities abilities) =>
+        step.What is Steps.PrepareIndirectAttackDamage or Steps.DealAttackDamage
+            ? new OptionalDamageInterrupts(abilities) : abilities;
 
     private static void FinishWindow(World world, PhaseStep step, Occurrence occurrence,
         PriorityStatusResolution status)
@@ -92,6 +100,10 @@ internal static class SequenceWindow
         // gives everybody another opportunity and the step stays where it is.
         world.Windows.Used();
     }
+
+    private static bool SharedThreatWindowHandles(PhaseStep step, WindowKind kind) =>
+        (kind == WindowKind.Response && step.Operation is ThreatPlacementOperation { Responses: not null })
+        || (kind == WindowKind.Interrupt && step.Operation is CompletedCardEffectOperation { Occurrence: not null });
 
     private static PendingAbility AcceptedAbility(
         World world, IWindowAbilities abilities, Window window, Prompt asked, Decision input)

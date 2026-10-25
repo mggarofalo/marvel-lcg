@@ -7,6 +7,8 @@ namespace Marvel.Rules.Play;
 public sealed record ThreatPlacementOperation(ThreatPlacement Placement,
     EffectCompletion Completion, int Part) : AgendaOperation
 {
+    /// <summary>The shared response occurrence for a multi-scheme instruction.</summary>
+    public Occurrence? Responses { get; init; }
     /// <inheritdoc/>
     public override string What => Steps.PlaceThreatEffect;
     /// <inheritdoc/>

@@ -90,7 +90,19 @@ public sealed record Occurrence
     /// <summary>The imminent threat placement, when this occurrence is one.</summary>
     public State.ThreatPlacement? Threat { get; }
 
-    private readonly HashSet<(WindowKind Window, int Card, AbilityType Type, int Ordinal, State.Defeated? Defeat, State.Attacked? Attack, NativeAbilityKind Native)> spent = [];
+    private readonly HashSet<(WindowKind Window, int Card, AbilityType Type, int Ordinal, State.Defeated? Defeat, State.Attacked? Attack, NativeAbilityKind Native, Occurrence? Threat)> spent = [];
+
+    private readonly List<Occurrence> threatPlacements = [];
+
+    /// <summary>Exact positive placements belonging to one threat instruction.</summary>
+    [JsonIgnore]
+    public IReadOnlyList<Occurrence> ThreatPlacements => threatPlacements;
+
+    internal void RecordThreatPlacement(Occurrence placement)
+    {
+        threatPlacements.Add(placement);
+        Also(Play.Steps.ThreatPlaced);
+    }
 
     // The positional parameter of the same name, copied. Inside this body
     // `Conditions` is the constructor's argument; outside it is the property
@@ -272,7 +284,7 @@ public sealed record Occurrence
     /// <param name="window">Which window.</param>
     /// <param name="ability">The ability and exact triggering fact.</param>
     public bool MayTrigger(WindowKind window, PendingAbility ability) =>
-        !spent.Contains((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat, ability.TriggeringAttack, ability.Native));
+        !spent.Contains((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat, ability.TriggeringAttack, ability.Native, ability.TriggeringThreat));
 
     /// <summary>Record that a card's ability has been triggered in this window.</summary>
     /// <remarks>
@@ -283,5 +295,5 @@ public sealed record Occurrence
     /// <param name="ability">The ability and exact triggering fact.</param>
     /// <returns>False when it had already been triggered.</returns>
     public bool Trigger(WindowKind window, PendingAbility ability) =>
-        spent.Add((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat, ability.TriggeringAttack, ability.Native));
+        spent.Add((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat, ability.TriggeringAttack, ability.Native, ability.TriggeringThreat));
 }

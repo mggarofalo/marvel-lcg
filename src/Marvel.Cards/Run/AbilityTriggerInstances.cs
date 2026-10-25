@@ -10,6 +10,13 @@ internal static class AbilityTriggerInstances
         AbilityWindowAdmission.Candidate candidate, Occurrence occurrence)
     {
         var trigger = candidate.Ability.Trigger;
+        if ((trigger.Event == Steps.ThreatPlaced || trigger.Also == Steps.ThreatPlaced)
+            && occurrence.ThreatPlacements.Count > 0)
+        {
+            foreach (var placement in occurrence.ThreatPlacements)
+                yield return candidate with { TriggeringThreat = placement };
+            yield break;
+        }
         bool targetedAttack = trigger.Target is not null
             && (trigger.Event == Steps.AttackEnds || trigger.Also == Steps.AttackEnds)
             && occurrence.Attacks.Count > 0;

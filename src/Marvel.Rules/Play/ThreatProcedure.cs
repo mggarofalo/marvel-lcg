@@ -71,6 +71,8 @@ internal static class ThreatProcedure
         long placed = Threat.Apply(world, facts, abilities, occurrence, events);
         var operation = step.Require<ThreatPlacementOperation>();
         operation.Completion.Complete(operation.Part, placed);
+        if (placed > 0 && operation.Responses is { } responses)
+            responses.RecordThreatPlacement(occurrence);
     }
 
     /// <summary>An enemy schemes. <c>rr:scheme-enemy-activation</c>.</summary>

@@ -23,6 +23,7 @@ internal sealed record AbilityResolutionState(
 
     public Defeated? TriggeringDefeat { get; set; }
     public Attacked? TriggeringAttack { get; set; }
+    public Occurrence? TriggeringThreat { get; set; }
     internal System.Collections.Immutable.ImmutableArray<(int Card, int Incarnation)> DamageDefeats { get; set; } = [];
     internal AbilityExecution? Execution { get; set; }
     internal AbilityPowerExecutionState? PowerExecution { get; set; }
@@ -161,7 +162,8 @@ internal sealed record AbilityResolutionState(
             return;
         }
         resolutionAbility = new PendingAbility(Source.ObjectId, tier, Player, ordinal)
-            { TriggeringDefeat = TriggeringDefeat, TriggeringAttack = TriggeringAttack };
+            { TriggeringDefeat = TriggeringDefeat, TriggeringAttack = TriggeringAttack,
+                TriggeringThreat = TriggeringThreat };
         if (!executionEntered)
         {
             if (Execution is null) Execution = World.Agenda.Executions.Begin(Occurrence, resolutionAbility.Value);
@@ -214,7 +216,8 @@ internal sealed record AbilityResolutionState(
     public void RestorePersistedSelection(Card card, int area, int incarnation, bool overwriteChosen) =>
         Bindings.RestorePersistedSelection(card, area, incarnation, overwriteChosen);
     public bool SourceBindingIsCurrent(Card card) => Bindings.SourceBindingIsCurrent(card);
-    public AbilityQueryContext QueryContext() => Bindings.QueryContext(this);
+    public AbilityQueryContext QueryContext() => TriggeringThreat is { } threat
+        ? Bindings.QueryContext(this) with { Occurrence = threat } : Bindings.QueryContext(this);
 
     public AbilityExpressionContext ExpressionContext() => new(
         QueryContext(), Results.ToImmutableDictionary(StringComparer.Ordinal),

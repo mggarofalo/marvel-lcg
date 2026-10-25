@@ -36,6 +36,20 @@ public static class Threat
         var current = world.Agenda.Current;
         var scheduled = batch.Schemes.Select((scheme, index) => Placement(
             batch, scheme, receipt, index, current)).ToList();
+        if (scheduled.Count > 1)
+        {
+            // rr:triggering-condition.2: "a single interrupt window and a single
+            // response window". Target assignments retain their prevention points;
+            // the instruction's resulting placements share response priority.
+            var responses = new Occurrence(world.Agenda.nextPlayerActionOccurrence--,
+                [], Player: batch.Player);
+            scheduled = scheduled.Select(step => step with
+            {
+                Operation = step.Require<ThreatPlacementOperation>() with { Responses = responses },
+            }).ToList();
+            scheduled.Add(new(new CompletedCardEffectOperation { Occurrence = responses },
+                current?.Round ?? 0, current?.Number ?? 0));
+        }
         if (continuation is { } resume) scheduled.Add(resume);
         if (current is not null) world.Agenda.Now(scheduled);
         else foreach (var operation in scheduled) world.Agenda.Add(operation);

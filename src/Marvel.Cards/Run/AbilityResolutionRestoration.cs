@@ -74,6 +74,7 @@ internal static class AbilityResolutionRestoration
         cast.DamageReplacement = state.DamageReplacement;
         cast.TriggeringDefeat = state.Invocation.TriggeringDefeat;
         cast.TriggeringAttack = state.Invocation.TriggeringAttack;
+        cast.TriggeringThreat = state.Invocation.TriggeringThreat;
         execution.ApplyRestored(cast,
             AbilityContinuationRestoration.RestoreState(cast.World.Cards, state));
     }

@@ -29,6 +29,10 @@ public readonly record struct PendingAbility(
     /// <summary>The exact attacked enemy answered within a shared attack window.</summary>
     public State.Attacked? TriggeringAttack { get; init; }
 
+    /// <summary>The exact committed threat placement answered in a shared window.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Occurrence? TriggeringThreat { get; init; }
+
     /// <summary>Prompt-local handle assigned when several instances share a source card.</summary>
     public int? OfferId { get; init; }
 }

@@ -181,7 +181,8 @@ public readonly record struct PhaseStep(
     }
 
     /// <summary>An occurrence that needs no live attack roles, or null.</summary>
-    public Occurrence? ScheduledOccurrence => Operation is EncounterEntryOperation ? null : What is
+    public Occurrence? ScheduledOccurrence => Operation is CompletedCardEffectOperation { Occurrence: { } response }
+        ? response : Operation is EncounterEntryOperation ? null : What is
         Steps.Attack or Steps.CharacterAttacks or Steps.CharacterThwarts or Steps.EndAttack
             or Steps.PlaceThreat or Steps.SchemeThreat or Steps.PlaceThreatEffect
             or Steps.PrepareIndirectAttackDamage

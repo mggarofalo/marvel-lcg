@@ -16,6 +16,7 @@ internal static class AbilityWindowAdmission
     {
         internal Defeated? TriggeringDefeat { get; init; }
         internal Attacked? TriggeringAttack { get; init; }
+        internal Occurrence? TriggeringThreat { get; init; }
     }
 
     internal static ImmutableHashSet<int> WaitingCards(
@@ -71,18 +72,23 @@ internal static class AbilityWindowAdmission
         Occurrence occurrence, WindowKind window, IResourceCardAbilities resourceAbilities)
     {
         var (card, ability, controller, _) = candidate;
+        if (!TriggerMatches(ability, occurrence)) return false;
+        occurrence = candidate.TriggeringThreat ?? occurrence;
         if (!Answers(program, world, candidate, occurrence, window,
                 ability.AnyPlayer ? controller : null)
             || !InForm(world, controller, ability.Trigger.Form, card)) return false;
         var context = Context(program, world, card, occurrence, controller, ability.Cost, resourceAbilities);
         context = context.WithQuery(context.Query with { TriggeringDefeat = candidate.TriggeringDefeat, TriggeringAttack = candidate.TriggeringAttack });
         return WhenHolds(ability, context)
-            && (controller < 0 || CanInitiate(ability, context))
+            && ControllerCanInitiate(controller, ability, context)
             && AbilityPaymentRules.Payable(world, card, controller, ability.Cost, program, resourceAbilities)
             && AbilityPaymentRules.EventPayable(world, card, controller, ability, resourceAbilities)
             && AbilityAvailability.Available(world, card, ability,
                 AbilityAvailability.IndexOf(program, card, ability), occurrence);
     }
+
+    private static bool ControllerCanInitiate(int controller, CompiledCardAbility ability,
+        AbilityAdmissionContext context) => controller < 0 || CanInitiate(ability, context);
 
     private static AbilityAdmissionContext Context(
         AbilityProgram program, World world, Card card, Occurrence occurrence,
@@ -161,10 +167,6 @@ internal static class AbilityWindowAdmission
         int? initiatingPlayer)
     {
         var (card, ability, _, _) = candidate;
-        if (!TriggerMatches(ability, occurrence))
-        {
-            return false;
-        }
         bool belongs = window switch
         {
             WindowKind.Interrupt => AbilityTypes.IsInterrupt(ability.Trigger.Timing),
