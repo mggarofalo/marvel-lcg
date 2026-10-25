@@ -7,8 +7,11 @@ Capture issue IDs/descriptions, child IDs, and inspected comment/link/relation
 results once; those are separate Plane endpoints. Check high-priority or ambiguous
 records first, respect rate limits, and mark failed or omitted requests unverified.
 Do not re-inventory an already reconciled product list merely because a new agent
-started. Audit all requested packs, but research upcoming dependencies deeply
-before spending the same effort on distant waves.
+started. Follow the requested depth and scope: a readiness audit is not deep
+research. When the owner requests all remaining content, research every requested
+pack in bounded batches, including distant waves; proximity determines order,
+not whether a pack receives the requested research. Keep an explicit coverage
+ledger so checkpointing cannot silently shrink the assignment.
 
 ## What an implementation packet needs
 

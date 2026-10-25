@@ -2,7 +2,9 @@
 
 Merged delivery: [PR #439](https://github.com/mggarofalo/marvel-lcg/pull/439),
 main commit `6776a8f4`. All 11 CI checks passed on candidate `6bedfa0a`.
-Owner exploration and acceptance are pending. This record supersedes the admission
+Content and engine acceptance are complete under the owner's delegated acceptance
+policy. Wrecking Crew's new multiple-villain UI remains available for owner
+interaction review. This record supersedes the admission
 status in earlier implementation checkpoints, without expanding their evidence.
 
 ## Delivered scope
@@ -60,8 +62,18 @@ recover is not claimed. Genuinely incompatible older traces still reject.
 
 ## Acceptance
 
-CI verified the published PR revision on Windows and Linux. The owner
-can explore Captain America and Wrecking Crew from ordinary New Game setup,
-including custom stages, and identify missing behavior or refine requirements.
-Automated regression work is not assigned to the owner. Acceptance and release
-remain separate from the passing implementation evidence above.
+CI verified the published PR revision on Windows and Linux. Agent authority
+review, behavioral evidence and the final integrated checks establish content
+and engine acceptance; ordinary card content does not wait for owner approval.
+The owner may review Wrecking Crew's materially new multiple-villain presentation
+and custom-stage interaction from New Game setup. That UI judgment is separate
+from content correctness, and no unresolved rules question is currently being
+referred to the owner. Release remains a separate activity.
+
+UI review is tracked in [MARVEL-694](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/81d1f4eb-c06e-4a2d-8fc6-9c797ae3e984),
+with three attached screenshots and focused comprehension questions. The fresh
+rendered `wave_native_playable.gd` journey passed at runtime `b44eb23b`, one seat,
+1920×1080, 100% scale and reduced motion. Agent visual review found the status
+strip overlapping Bulldozer's encounter-pile controls. MARVEL-695 owns that fix
+and recapture; the UI review is not ready for approval until it is resolved.
+This visual defect does not reopen the verified card/rules acceptance.

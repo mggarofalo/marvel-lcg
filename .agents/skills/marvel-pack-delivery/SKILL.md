@@ -62,7 +62,20 @@ the revision tested, including failures and untested scope; do not combine older
 passing runs into a claim of a final green candidate.
 
 Reuse existing CI/platform/package gates. Add native evidence for new interaction
-behavior, not automatically for every conventional card. Keep owner exploration
-and requirements refinement separate from agent regression work. Prepare the
-reviewable PR/build before any genuinely missing approval; never mark acceptance
-complete from test counts or a scripted journey.
+behavior, not automatically for every conventional card. Agents own content and
+engine acceptance through authority review, engine-context reasoning, relevant
+rulings and appropriate unit, integration and Godot evidence. Do not add an owner
+approval gate for ordinary content or engine expansion. Passing tests alone still
+do not replace authority review or resolution of known correctness findings.
+
+Reserve owner acceptance for materially new UI interactions, such as multiple
+villains or alternating villains sharing a location the heroes must protect, and
+for a concrete unresolved concern requiring human judgment. Name that concern or
+interaction separately from accepted content; do not hold every pack behind a
+generic owner-exploration requirement. Prepare the reviewable behavior and agent
+evidence before requesting that judgment.
+For UI review, capture screenshots or a short recording, inspect them, and create
+a specific Plane review/approval item with accessible media, the exact build,
+focused questions and a short optional hands-on path. Follow the global
+software-factory human-review protocol; fix known agent-diagnosable defects
+before marking the item ready for approval.

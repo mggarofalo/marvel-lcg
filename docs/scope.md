@@ -1,9 +1,12 @@
 # Product and repository scope
 
-The accepted executable products are the Marvel Champions Core Set and Rise of Red Skull.
-This candidate also admits the complete Captain America Hero Pack and Wrecking Crew
-Scenario Pack for native owner review; owner acceptance and merge remain pending.
-The candidate runtime supports:
+The accepted executable content comprises the Marvel Champions Core Set, Rise of
+Red Skull, Captain America Hero Pack and Wrecking Crew Scenario Pack. The latter
+two merged in PR #439 with final cross-platform verification. Ordinary content
+and engine acceptance is delegated to agents; owner review is reserved for
+materially new UI interactions or genuine concerns requiring human judgment.
+Wrecking Crew's multiple-villain UI remains a separate owner-review surface.
+The runtime supports:
 
 - Spider-Man, Captain Marvel, She-Hulk, Iron Man, Black Panther, Hawkeye, Spider-Woman and Captain America;
 - Rhino, Klaw, Ultron, Crossbones, Absorbing Man, Taskmaster, Zola and Red Skull in Standard and Expert modes;
