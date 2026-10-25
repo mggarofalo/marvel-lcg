@@ -18,9 +18,11 @@ The API documentation owns operation signatures and evidence behavior.
 Select checks by the behavior they prove. Follow the
 [evidence selection protocol](../../../docs/testing.md#selecting-additional-native-evidence)
 before adding separate package, OS or manual journeys; reuse existing gates and
-name a concrete uncovered failure. Product acceptance explores whether the
-working implementation meets the owner's needs, including missing behavior and
-requirements that need refinement; it does not assign regression testing to the owner.
+name a concrete uncovered failure. Agents accept ordinary content and engine
+expansion using authority review and appropriate tests. Owner acceptance applies
+to materially new UI interactions or a concrete concern needing human judgment;
+it explores comprehension and requirements, and does not assign regression
+testing or routine pack approval to the owner.
 
 ## Select and run evidence
 

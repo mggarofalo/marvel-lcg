@@ -1,5 +1,12 @@
 # Expansion research readiness — 2026-10-25
 
+**Historical readiness audit.** The owner subsequently requested deep research
+for all remaining content. Follow the [full research coverage ledger](remaining/README.md)
+for that work; the recommendation below to defer distant research is superseded.
+PR #439 has merged with all eleven final checks passing, and ordinary content
+acceptance is delegated to agents. Human review applies to materially new UI or
+a concrete unresolved concern, not routine pack correctness.
+
 Tracking: MARVEL-681. This audit covers all 64 canonical pack records,
 MARVEL-559–622, across the existing 11-wave inventory. It assesses recorded
 implementation context, not the current release status of products or the

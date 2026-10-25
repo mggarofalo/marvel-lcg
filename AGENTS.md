@@ -9,7 +9,7 @@ A rules engine for Marvel Champions: The Card Game, in C#. Work is tracked in
 the Plane project `MARVEL` — see [docs/plane.md](docs/plane.md).
 
 The accepted executable runtime covers the Core Set and Rise of Red Skull.
-Captain America and Wrecking Crew are complete runtime candidates for owner review.
+Captain America and Wrecking Crew have complete, verified runtime content.
 Broader card, rule and ruling datasets remain research inputs outside that boundary. See
 [docs/scope.md](docs/scope.md).
 
@@ -78,6 +78,13 @@ including when the work is in tests, tools, or docs outside that scope:
 These files prescribe acceptance standards; their presence does not certify
 that the current implementation meets them. Documentation-only changes do not
 constitute implementation or approval of the product behaviors they describe.
+
+Agents own ordinary content and engine acceptance through authority review,
+rulings and appropriate behavioral/integration/native evidence. Owner acceptance
+is reserved for materially new UI interactions or a concrete unresolved concern
+needing human judgment. For UI review, prepare screenshots or video and a
+specific Plane review/approval item with focused questions and accessible
+evidence; do not assign routine regression discovery to the owner.
 
 ## Non-negotiables
 
