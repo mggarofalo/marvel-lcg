@@ -13728,6 +13728,234 @@
         "trigger": { "timing": "Constant", "subject": "this" },
         "effect": { "grant": { "card": "this", "keyword": "attack_hand_discard_cost", "amount": 1 } }
       }]
+    },
+    {
+      "card": "07009",
+      "name": "Escaped Convict",
+      "note": "Printed Surge and minion stats come from the card catalog. ruling:8369361114d2929b: standalone scheme boosts have no this attack; schemes descended from attacks retain attack ancestry. Capture that villain before movement and resolve its boostless attack after the containing activation and responses, including when the counter cannot move.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "moveActiveCounter": "chosen"
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "and": [
+                          {
+                            "inForm": {
+                              "player": "you",
+                              "form": "hero"
+                            }
+                          },
+                          {
+                            "inAttackChain": "attack"
+                          }
+                        ]
+                      },
+                      "then": {
+                        "afterActivation": {
+                          "effect": {
+                            "enemyAttacks": {
+                              "enemies": "chosen",
+                              "against": "you",
+                              "dealBoostCards": "false"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07024",
+      "name": "Escaped Convict",
+      "note": "Printed Surge and minion stats come from the card catalog. ruling:8369361114d2929b: standalone scheme boosts have no this attack; schemes descended from attacks retain attack ancestry. Capture that villain before movement and resolve its boostless attack after the containing activation and responses, including when the counter cannot move.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "moveActiveCounter": "chosen"
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "and": [
+                          {
+                            "inForm": {
+                              "player": "you",
+                              "form": "hero"
+                            }
+                          },
+                          {
+                            "inAttackChain": "attack"
+                          }
+                        ]
+                      },
+                      "then": {
+                        "afterActivation": {
+                          "effect": {
+                            "enemyAttacks": {
+                              "enemies": "chosen",
+                              "against": "you",
+                              "dealBoostCards": "false"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07038",
+      "name": "Escaped Convict",
+      "note": "Printed Surge and minion stats come from the card catalog. ruling:8369361114d2929b: standalone scheme boosts have no this attack; schemes descended from attacks retain attack ancestry. Capture that villain before movement and resolve its boostless attack after the containing activation and responses, including when the counter cannot move.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "moveActiveCounter": "chosen"
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "and": [
+                          {
+                            "inForm": {
+                              "player": "you",
+                              "form": "hero"
+                            }
+                          },
+                          {
+                            "inAttackChain": "attack"
+                          }
+                        ]
+                      },
+                      "then": {
+                        "afterActivation": {
+                          "effect": {
+                            "enemyAttacks": {
+                              "enemies": "chosen",
+                              "against": "you",
+                              "dealBoostCards": "false"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07053",
+      "name": "Escaped Convict",
+      "note": "Printed Surge and minion stats come from the card catalog. ruling:8369361114d2929b: standalone scheme boosts have no this attack; schemes descended from attacks retain attack ancestry. Capture that villain before movement and resolve its boostless attack after the containing activation and responses, including when the counter cannot move.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "moveActiveCounter": "chosen"
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "and": [
+                          {
+                            "inForm": {
+                              "player": "you",
+                              "form": "hero"
+                            }
+                          },
+                          {
+                            "inAttackChain": "attack"
+                          }
+                        ]
+                      },
+                      "then": {
+                        "afterActivation": {
+                          "effect": {
+                            "enemyAttacks": {
+                              "enemies": "chosen",
+                              "against": "you",
+                              "dealBoostCards": "false"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
     }
 
   ]

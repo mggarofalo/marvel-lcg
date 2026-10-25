@@ -1,0 +1,9 @@
+# Escaped Convict authoring candidate
+
+The four canonical rows 07009/07024/07038/07053 implement the generated printed text using a captured least-threat villain, first-player tie choice, independent counter movement, hero-form and historical attack-ancestry conditions, and a delayed boostless attack. Interpretation follows the user's resolution of ruling:8369361114d2929b: an ordinary scheme has no this attack, while an attack-descended scheme retains ancestry; activations remain sequential.
+
+This is a diagnostic candidate, not acceptance or scenario admission. At base b1547ed8, the ordinary Piledriver boost with Piledriver already least/active and the real Waiting attack -> scheme -> Convict chain fail because the extra attack is skipped. The selected villain must attack even when the counter cannot move. Distinguishing cases live in WreckingEscapedConvictTests.AttackBoostQueuesSelectedVillainWithoutDealingAnotherBoost (07038,2) and WaitingAttackThenSchemeRetainsAttackAncestryAndChecksHeroForm(true). The engine owner is investigating chooseCard admission filtering a current-holder movement before independent delayed text.
+
+Independent controls cover all four ordinary boost draws, hero-form standalone schemes, alter-ego, first-player tied choice against a different player, no extra boost draw, physical discard ownership, printed minion statistics, and Surge dealing an additional encounter card. A synthetic identity attack-end response creates the checkpoint for moving the active counter before the captured villain's delayed attack.
+
+Evidence: C:/Users/mggar/Source/escaped-convict-focused.log. Full Content suite was not duplicated. Canonical mutation evidence and Extreme stage-promotion/departure controls remain outstanding; the diagnostic failures must be fixed by the separate engine owner before card acceptance.
