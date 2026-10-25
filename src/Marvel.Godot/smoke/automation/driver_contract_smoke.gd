@@ -73,6 +73,11 @@ func _run() -> void:
     var stale := Driver.new(scene, surface, _expected_failure)
     _check(not await stale.drag(Locator.control(source), Locator.control(target)), "moving destination must cancel the drag")
     _check(stale.failure.contains("destination changed") and releases == 2, "cancelled drag must release held input")
+    target.size.y = 100
+    source.button_down.connect(func() -> void: target.size.y = 31, CONNECT_ONE_SHOT)
+    var resized := Driver.new(scene, surface, _expected_failure)
+    _check(not await resized.drag(Locator.control(source), Locator.control(target)), "resized destination must cancel the drag")
+    _check(resized.failure.contains("destination changed") and releases == 3, "resized destination must release held input outside the surface")
     var label := Label.new()
     label.text = "Visible explanation"
     label.name = "Explanation"

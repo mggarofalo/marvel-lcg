@@ -75,15 +75,16 @@ func drag(source: RefCounted, target: RefCounted, frames: int = 8) -> bool:
     if finish == Vector2.INF: return false
     var destination: Control = target.all()[0]
     var destination_pose := destination.get_global_transform_with_canvas()
+    var destination_size := destination.size
     var start := await _ready_point(source)
     if start == Vector2.INF: return false
-    if not _same_destination(target, destination, destination_pose):
+    if not _same_destination(target, destination, destination_pose, destination_size):
         return _fail("Drag destination changed before press")
     _mouse_button(start, MOUSE_BUTTON_LEFT, true)
     for index in range(1, frames + 1):
         _move(start.lerp(finish, float(index) / frames), MOUSE_BUTTON_MASK_LEFT)
         await viewport.get_tree().process_frame
-        if not _same_destination(target, destination, destination_pose):
+        if not _same_destination(target, destination, destination_pose, destination_size):
             # Release outside the surface; never drop on a replacement control.
             _mouse_button(Vector2(-100, -100), MOUSE_BUTTON_LEFT, false)
             return _fail("Drag destination changed during gesture")
@@ -91,11 +92,11 @@ func drag(source: RefCounted, target: RefCounted, frames: int = 8) -> bool:
     await viewport.get_tree().process_frame
     return true
 
-func _same_destination(locator: RefCounted, target: Control, pose: Transform2D) -> bool:
+func _same_destination(locator: RefCounted, target: Control, pose: Transform2D, size: Vector2) -> bool:
     if not is_instance_valid(target): return false
     var current: Array = locator.all()
     return current.size() == 1 and current[0] == target and _enabled(target) \
-        and target.get_global_transform_with_canvas().is_equal_approx(pose)
+        and target.get_global_transform_with_canvas().is_equal_approx(pose) and target.size.is_equal_approx(size)
 
 func _ready_point(locator: RefCounted) -> Vector2:
     var end := Time.get_ticks_msec() + timeout_ms

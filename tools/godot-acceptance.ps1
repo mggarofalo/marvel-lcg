@@ -32,7 +32,8 @@ if ($ResultsDirectory.StartsWith($repoRoot + [IO.Path]::DirectorySeparatorChar, 
 $resolvedGodot = Resolve-GodotDotNetExecutable -GodotBin $GodotBin
 New-Item -ItemType Directory -Path $ResultsDirectory | Out-Null
 if (-not $NoBuild) {
-    $build = Invoke-NativeProcess 'dotnet' @('build', "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj", '-c', 'Release', '--nologo') @{} 180 "$ResultsDirectory/build.log" $repoRoot
+    # The editor executable loads Debug assemblies for project scripts.
+    $build = Invoke-NativeProcess 'dotnet' @('build', "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj", '-c', 'Debug', '--nologo') @{} 180 "$ResultsDirectory/build.log" $repoRoot
     if ($build.ExitCode -ne 0 -or $build.TimedOut) { throw "Build failed: $ResultsDirectory/build.log" }
 }
 $arguments = @('--audio-driver', 'Dummy', '--path', "$repoRoot/src/Marvel.Godot", '--script', $Script)

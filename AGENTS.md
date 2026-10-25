@@ -72,6 +72,7 @@ including when the work is in tests, tools, or docs outside that scope:
 | Prompt-bound draft composition | [src/Marvel.Decisions/AGENTS.md](src/Marvel.Decisions/AGENTS.md) |
 | Game interaction, information hierarchy and table behavior | [src/Marvel.Godot/AGENTS.md](src/Marvel.Godot/AGENTS.md) |
 | Behavioral evidence and independent product review | [tests/AGENTS.md](tests/AGENTS.md) |
+| Scripted native Godot interaction and acceptance tests | [marvel-godot-testing skill](.agents/skills/marvel-godot-testing/SKILL.md) |
 
 These files prescribe acceptance standards; their presence does not certify
 that the current implementation meets them. Documentation-only changes do not

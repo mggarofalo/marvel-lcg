@@ -96,7 +96,7 @@ pwsh tools/godot-acceptance.ps1 -Script res://smoke/automation/opening_hand_acce
 pwsh tools/godot-acceptance.ps1 -NoBuild -Rendered
 ```
 
-The runner discovers the installed .NET Godot, builds Release unless `-NoBuild`
+The runner discovers the installed .NET Godot, builds Debug unless `-NoBuild`
 is supplied, isolates saves, bounds the process lifetime and requires both a
 successful exit and `UI_ACCEPTANCE_OK`. Script errors fail even if a completion
 marker is printed. `-GodotBin`, `-TimeoutSeconds`, `-Marker` and a fresh external
@@ -104,7 +104,9 @@ marker is printed. `-GodotBin`, `-TimeoutSeconds`, `-Marker` and a fresh externa
 1920×1080, one player and reduced motion; use manifest cases for the scale matrix.
 Rendered runs use a minimized native window;
 on Linux they require a display such as Xvfb. Headless runs cannot certify pixels.
-The contract suite is explicitly invoked; it is not a new CI platform gate.
+The native CI jobs run the opening example through a fresh Debug build and the
+driver contract suite on Windows and Linux, once per platform. This checks the
+standalone runner as well as its scripts. The managed lanes still build Release.
 
 The opening example uses the existing seeded setup bootstrap. Its interaction
 reads like this (inside an async GDScript function):
