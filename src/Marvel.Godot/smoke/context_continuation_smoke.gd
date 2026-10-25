@@ -71,7 +71,7 @@ func _commit_payment_and_target() -> bool:
         return false
     if not await _capture_checkpoint("local-followup"): return false
     before = _recipient_revision()
-    _menu_key(KEY_ESCAPE)
+    await _menu_key(KEY_ESCAPE)
     if not await _wait_for(func() -> bool: return _payment_modal() == null): return false
     if _recipient_revision() != before:
         _fail("Escape committed or refunded the mandatory target choice")

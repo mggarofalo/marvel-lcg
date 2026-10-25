@@ -200,6 +200,11 @@ visible keyboard focus and reduced-motion behavior.
 
 ## Acceptance
 
+For repeatable interaction checks, use the repository-local
+[marvel-godot-testing skill](../../.agents/skills/marvel-godot-testing/SKILL.md).
+Write and run native scripts through the shared driver by default; manual
+Computer Use traversal is not required for automated acceptance evidence.
+
 Follow [tests/AGENTS.md](../../tests/AGENTS.md). Target experienced Marvel
 Champions players. The product owner accepts the tableau and decision area by
 affirming the working implementation; a proposed design or passing automated

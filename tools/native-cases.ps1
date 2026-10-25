@@ -73,7 +73,8 @@ foreach ($fixtureId in @($selected.fixture | Where-Object { $_ } | Select-Object
 $results = Join-Path $ResultsDirectory 'results.jsonl'
 foreach ($entry in $selected) {
     Write-Host "NATIVE_CASE_BEGIN $($entry.id)"
-    $environment = @{ MARVEL_UI_SCALE = $entry.scale; MARVEL_SMOKE_MOTION = $entry.motion;
+    $environment = @{ MARVEL_UI_EVIDENCE_DIRECTORY = "$ResultsDirectory/artifacts/$($entry.id)";
+        MARVEL_UI_SCALE = $entry.scale; MARVEL_SMOKE_MOTION = $entry.motion;
         MARVEL_SMOKE_VIEWPORT = $entry.viewport; MARVEL_SMOKE_TWO_PLAYER = ($entry.players -eq 2).ToString().ToLowerInvariant() }
     if ($entry.environment) { foreach ($key in $entry.environment.Keys) { $environment[$key] = $entry.environment[$key] } }
     $arguments = @('--headless', '--audio-driver', 'Dummy', '--path', "$repoRoot/src/Marvel.Godot", '--script', $entry.script)

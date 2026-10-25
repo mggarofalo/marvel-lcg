@@ -407,6 +407,16 @@ jobs:
           if ($null -eq $godot) { throw "Godot .NET console executable was not found" }
           "GODOT_BIN=$($godot.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Scripted acceptance builds the client and verifies its driver
+        if: matrix.shard == 0
+        shell: pwsh
+        run: |
+          ./tools/godot-acceptance.ps1 -GodotBin $env:GODOT_BIN `
+            -Script res://smoke/automation/opening_hand_acceptance.gd `
+            -ResultsDirectory "$env:RUNNER_TEMP/native-evidence-0/acceptance-opening"
+          ./tools/godot-acceptance.ps1 -GodotBin $env:GODOT_BIN -NoBuild `
+            -ResultsDirectory "$env:RUNNER_TEMP/native-evidence-0/acceptance-driver"
+
       - name: The selected native profile completes its exact shard
         shell: pwsh
         env:
