@@ -73,6 +73,9 @@ internal static class AbilityPowerTargetAdmission
 
     internal static bool CanTargetThwart(AbilityEffect node, AbilityAdmissionScope cast)
     {
+        if (!ThwartPermissions.CanThwart(cast.World,
+            LabeledAbilities.Performer(cast.World, cast.World.Facts, Resolver(cast), cast.Source)))
+            return false;
         var power = EffectOf<AbilityEffect.Power>(node, cast);
         var target = power.Target!;
         if (cast.Chosen is null && BindingCanChange(target)

@@ -38,6 +38,7 @@ public static class BasicThwartPowers
 
         var seat = world.Seats[player];
         var character = seat.IdentityCard;
+        ThwartPermissions.Require(world, character);
         Require(
             world, facts, seat, Forms.Hero, ThwartVerb,
             UsesAttack(world, facts, scheme) ? "ATK" : "THW");

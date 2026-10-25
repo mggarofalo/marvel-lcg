@@ -26,6 +26,10 @@ internal static class AbilityInitiation
         if (labels.Length == 0) return true;
 
         int resolver = AbilityCardQueries.Resolver(context.Query);
+        if (labels.Contains(BasicPowers.ThwartVerb, StringComparer.Ordinal)
+            && !ThwartPermissions.CanThwart(context.World,
+                LabeledAbilities.Performer(context.World, context.World.Facts, resolver, context.Source)))
+            return false;
         bool cancelled = LabeledAbilities.WouldBeCancelled(
             context.World, context.World.Facts, resolver, context.Source, labels);
 

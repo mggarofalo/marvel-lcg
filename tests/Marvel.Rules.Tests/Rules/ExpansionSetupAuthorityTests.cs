@@ -35,7 +35,8 @@ public sealed class ExpansionSetupAuthorityTests
             "setup:campaign:wrecking_crew_standard",
             "setup:campaign:zola", "setup:campaign:zola_expert",
             "setup:encounter-set:hydra_assault", "setup:encounter-set:hydra_patrol",
-            "setup:encounter-set:weapon_master", "setup:hero:hawkeye", "setup:hero:spider_woman",
+            "setup:encounter-set:weapon_master", "setup:hero:captain_america",
+            "setup:hero:hawkeye", "setup:hero:spider_woman",
         };
         var expansion = Catalog.Build().Sources.Where(source =>
             source.Kind == "setup" && source.Disposition == "outside-core").ToArray();
@@ -47,7 +48,8 @@ public sealed class ExpansionSetupAuthorityTests
             Assert.Null(obligation.Implementation);
             Assert.Empty(obligation.Scenarios);
             Assert.Contains(source.Id.StartsWith("setup:campaign:wrecking_crew_", StringComparison.Ordinal)
-                ? "The Wrecking Crew" : "Rise of Red Skull", obligation.Reason);
+                ? "The Wrecking Crew" : source.Id == "setup:hero:captain_america"
+                    ? "Captain America hero pack" : "Rise of Red Skull", obligation.Reason);
         }));
     }
 

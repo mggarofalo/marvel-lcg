@@ -1,4 +1,4 @@
-using Marvel.Cards.Dsl;
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Run;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -22,7 +22,7 @@ public sealed class ManOutOfTimeTests
     {
         // "If a player card is discarded, it is placed faceup on top of the owning player's discard pile."
         // Man Out of Time supplies the chosen half-hand count, rounded down.
-        var runner = new AbilityRunner(AbilityCatalog.Parse(ManOutOfTimeDraft.Json));
+        var runner = AuthoredCards.Runner();
         var (_, world) = Playing(_ => { }, heroes: ["spider_man", "captain_marvel"], abilities: runner);
         var seat = world.Seats[player];
         foreach (var card in seat.Hand.Cards.ToArray()) World.MoveToTop(card, seat.Deck);
@@ -67,7 +67,7 @@ public sealed class ManOutOfTimeTests
     public void RemovingTheObligationRequiresAReadySteveRogers(bool hero, bool flip, bool exhausted, bool removable)
     {
         // Abilities interacting with an alter-ego do not interact with an identity in hero form.
-        var runner = new AbilityRunner(AbilityCatalog.Parse(ManOutOfTimeDraft.Json));
+        var runner = AuthoredCards.Runner();
         var (_, world) = Playing(board =>
         {
             var seat = board.Seats[0];

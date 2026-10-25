@@ -639,8 +639,82 @@ Full Content passes 2,911 cases. Three mutations are killed: zero discard count
 (four failures), foreign-seat candidates (four), and wrong rounding divisor
 (five). Canonical row, restart/privacy and full-pack acceptance remain required.
 
-Integration on the current engine retains the temporary off-book draft pending
-canonical card admission. The focused selection, resource-icon, continuation
-binding and Wrecking discard-fact controls pass 64 cases before the additional
-four synthetic cap/physical-receipt cases. These focused checks do not constitute
-pack acceptance or a new full-suite result.
+### Man Out of Time and Hail Hydra canonical rows
+
+03026 and 03030 bring the authored research set to 33 of 35 faces. Man Out of
+Time now uses the canonical book in its ten execution controls. Hail Hydra has
+identical printed text to 04057/04147; its own face passes six additional cases
+for normal and canceled attacks, both heroes and alter-egos, empty search pool,
+and another player's defense changing the attacked-player receipt. Two authored
+mutants are killed: absent attacking trait (three failures) and wrong attack
+receipt threshold (four). Full Content passes 2,917 cases.
+
+The prepared Man Out of Time EngineHost test saves at the exact two-card hand
+selection, verifies foreign-view privacy, reopens with identical prompt and save
+bytes, and resolves against an uninterrupted digest control. Its sequence-owned
+initial decision reproduced MARVEL-655's save_failed bug. The independently
+reviewed initial-history fix is a required dependency; its integration retains
+replay contract 22 and protocol contract 37. This is prepared-scene acceptance, not a claim of
+native whole-pack readiness. Baron Zemo, Expert Defense and pack-level acceptance
+remain open; the product gate stays closed.
+
+
+### Baron Zemo identity thwart prohibition
+
+03028 brings the research book to 34 of 35 faces. Its live engaged-identity
+modifier prevents basic and labeled event thwarts before costs or Confused
+cancellation. Allies and nonthwart threat removal remain legal. Re-engagement,
+departure and a blank minion profile immediately change the prohibition. The
+engine owns the derived `thwart_prohibited` modifier; no registered state field
+or product admission is added. Printed Quickstrike uses the existing keyword
+path. Four actual reveal transcripts cover both players in hero and alter-ego
+form: only the engaged hero is offered defense and takes the printed three
+damage when defense is declined. The engaged identity restriction is active
+after entry in either form. Disabling Quickstrike kills both hero cases; the
+restored nine Zemo cases pass.
+
+Five focused cases pass. Two executable authored mutants (zero prohibition and
+allies instead of the identity) each fail four of those five cases. Expert Defense
+03033 remains unauthored: MARVEL-649 requires an actual committed-defense
+occurrence for both basic and defense-labeled hero defenses under current RR1.8.
+The existing preselection declaration window cannot satisfy that timing. Pack
+setup, restart and native acceptance remain separate obligations.
+
+
+### Integrated starter recipe and restart evidence
+
+The research setup recipe now preserves the divider's exact 15 signature and
+25 customization cards, the obligation and all five nemesis cards. It is
+fingerprinted and adjudicated outside the Core behavioral corpus. Tests check
+each printed quantity, deck legality, and continued exclusion from runtime
+admission even with every face supplied as authored. Removing a Heroic Strike
+copy kills the quantity control.
+
+Man Out of Time's restart control also compares the final journal's exact event
+sequence and RNG consumption against uninterrupted resolution. The combined
+Content suite passes 2,924 cases and Rules passes 1,010 cases. Expert Defense
+and whole-pack native/replay acceptance remain required before admission.
+
+Full Server regression passes 408 cases, including the Man Out of Time restart
+control. The integrated commit passes all 66 architecture policy tests plus
+complexity and file-size pre-commit gates.
+
+
+### Current encounter integration
+
+The canonical 03026, 03028 and 03030 rows and printed starter recipe are integrated
+with all nineteen Wrecking Crew recipes and the current ability book retained.
+The temporary Man Out of Time draft is removed. The StateFieldCatalog retains
+the independent villain restriction, basic-attack discard cost and identity
+thwart prohibition modifiers. Offline catalog generation adds only the new
+Captain America setup authority; existing fingerprints remain unchanged.
+
+On Windows, 170 focused Content card/setup/ability-gate cases pass. The prepared
+Man Out of Time restart control initially reproduced `save_failed` before the
+discard prompt and requires the separately reviewed initial-history dependency.
+This scope does not admit the pack or implement Expert Defense.
+
+With that dependency present, seven focused Server restart/initial-history cases
+and 25 authority-catalog cases pass. The behavior generator `check` passes.
+The source packet retains its earlier mutant evidence; these integration runs
+do not claim a new mutation campaign, Linux verification or native acceptance.

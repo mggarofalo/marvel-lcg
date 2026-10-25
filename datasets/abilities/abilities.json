@@ -13956,7 +13956,170 @@
           }
         }
       ]
+    },
+    {
+      "card": "03026",
+      "name": "Man Out of Time",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "descriptions": [
+                    "Change to alter-ego form",
+                    "Remain in your current form"
+                  ],
+                  "options": [
+                    {
+                      "changeForm": {
+                        "player": "you",
+                        "to": "alter-ego"
+                      }
+                    },
+                    {
+                      "seq": []
+                    }
+                  ]
+                }
+              },
+              {
+                "choose": {
+                  "descriptions": [
+                    "Exhaust Steve Rogers and remove Man Out of Time from the game",
+                    "Discard half your hand (rounded down), then discard Man Out of Time"
+                  ],
+                  "options": [
+                    {
+                      "then": {
+                        "effect": {
+                          "exhaust": "yourAlterEgo"
+                        },
+                        "then": {
+                          "removeFromGame": "this"
+                        }
+                      }
+                    },
+                    {
+                      "seq": [
+                        {
+                          "discardHandCards": {
+                            "floorDiv": {
+                              "value": {
+                                "count": {
+                                  "cardsIn": {
+                                    "area": "yourHand"
+                                  }
+                                }
+                              },
+                              "divisor": 2
+                            }
+                          }
+                        },
+                        {
+                          "discard": "this"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "note": "Printed Man Out of Time: optional alter-ego change, ready Steve Rogers exhaust-and-remove, or chosen half-hand discard rounded down followed by obligation discard."
+    },
+    {
+      "card": "03030",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "enemyAttacks": {
+                  "enemies": {
+                    "withTrait": {
+                      "cards": {
+                        "query": "minions"
+                      },
+                      "trait": "HYDRA"
+                    }
+                  },
+                  "against": "engagedHero"
+                }
+              },
+              {
+                "eachPlayer": {
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "not": {
+                          "atLeast": {
+                            "value": {
+                              "activationAttacksAgainstYou": "game"
+                            },
+                            "count": 1
+                          }
+                        }
+                      },
+                      "then": {
+                        "seq": [
+                          {
+                            "chooseCard": {
+                              "from": {
+                                "cardsIn": {
+                                  "areas": [
+                                    "encounterDeck",
+                                    "encounterDiscardPile"
+                                  ],
+                                  "kind": "Minion",
+                                  "trait": "HYDRA"
+                                }
+                              },
+                              "effect": {
+                                "putIntoPlay": {
+                                  "card": "chosen",
+                                  "where": "engagedWithYou"
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "shuffle": "encounterDeck"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "03028",
+      "name": "Baron Zemo",
+      "note": "Quickstrike is a printed keyword. The engaged player's current identity cannot perform basic or labeled thwarts; allies and nonthwart threat removal remain permitted (rr:you-your.12, .15). The prohibition is a live derived modifier and ends with engagement, blanking or departure.",
+      "abilities": [{
+        "trigger": { "timing": "Constant" },
+        "effect": { "grantEach": {
+          "cards": { "inPlayerArea": { "area": "identity", "player": "engagedPlayer" } },
+          "keyword": "thwart_prohibited", "amount": 1
+        } }
+      }]
     }
-
   ]
 }

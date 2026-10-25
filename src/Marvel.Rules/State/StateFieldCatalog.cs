@@ -214,9 +214,9 @@ public static class StateFieldCatalog
     /// <param name="field">The field name, as this class spells it.</param>
     public static bool IsModifiable(string field) =>
         PrintedFrom.ContainsKey(field)
-        || field is "health" or "ally_limit" or "attack_consequential_damage"
+        || field is  "health" or "ally_limit" or "attack_consequential_damage"
         or Marvel.Rules.Play.VillainAttackRestrictions.OtherVillains
-        or Play.BasicAttackCosts.DiscardField;
+        or Play.BasicAttackCosts.DiscardField or Play.ThwartPermissions.ProhibitedField;
 
     /// <summary>Whether a field is one of the five printed basic powers.</summary>
     public static bool IsBasicPowerField(string field) =>

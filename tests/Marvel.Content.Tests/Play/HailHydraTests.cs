@@ -12,6 +12,8 @@ namespace Marvel.Content.Tests.Play;
 public sealed class HailHydraTests
 {
     [Theory]
+    [InlineData("03030", false)]
+    [InlineData("03030", true)]
     [InlineData("04057", false)]
     [InlineData("04147", false)]
     [InlineData("04147", true)]
@@ -46,9 +48,11 @@ public sealed class HailHydraTests
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void EveryHeroAttackedAvoidsSearchWhileAlterEgosSearchIndependently(bool hero)
+    [InlineData("04147", true)]
+    [InlineData("04147", false)]
+    [InlineData("03030", true)]
+    [InlineData("03030", false)]
+    public void EveryHeroAttackedAvoidsSearchWhileAlterEgosSearchIndependently(string face, bool hero)
     {
         var runner = new AbilityRunner(AbilityCatalog.Parse(HailHydraFragment.Json));
         var (_, world) = Playing(_ => { }, hero: hero,
@@ -60,7 +64,7 @@ public sealed class HailHydraTests
         var reserve = world.CreateCard("04145", deck);
         var second = world.CreateCard("04145", deck);
         int[] before = deck.Cards.Select(card => card.ObjectId).ToArray();
-        runner.ExecuteReveal(world, world.CreateCard("04147", world.AreaOf(DeckType.RevealingArea)), 0);
+        runner.ExecuteReveal(world, world.CreateCard(face, world.AreaOf(DeckType.RevealingArea)), 0);
         var searches = new List<int>();
         var events = Finish(world, runner, prompt =>
         {
@@ -77,23 +81,27 @@ public sealed class HailHydraTests
         }
     }
 
-    [Fact]
-    public void EmptySearchPoolCompletesWithoutAnUnanswerableChoice()
+    [Theory]
+    [InlineData("04147")]
+    [InlineData("03030")]
+    public void EmptySearchPoolCompletesWithoutAnUnanswerableChoice(string face)
     {
         var runner = new AbilityRunner(AbilityCatalog.Parse(HailHydraFragment.Json));
         var (_, world) = Playing(_ => { }, hero: true, abilities: runner);
         foreach (var card in world.AreaOf(DeckType.EncounterDeck).Cards.ToArray())
             World.MoveToTop(card, world.AreaOf(DeckType.RemovedArea));
         world.CreateCard("04087", world.AreaOf(DeckType.EncounterDeck));
-        runner.ExecuteReveal(world, world.CreateCard("04147", world.AreaOf(DeckType.RevealingArea)), 0);
+        runner.ExecuteReveal(world, world.CreateCard(face, world.AreaOf(DeckType.RevealingArea)), 0);
         var events = Finish(world, runner, prompt => throw new InvalidOperationException(prompt.Description));
         Assert.Empty(events.OfType<AttackCompleted>());
         Assert.Empty(world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards);
     }
 
-    [Fact]
+    [Theory]
+    [InlineData("04147")]
+    [InlineData("03030")]
     [Rule("rr:defend-defense.5")]
-    public void AnotherPlayerDefendingBecomesTheAttackedPlayerForTheReceipt()
+    public void AnotherPlayerDefendingBecomesTheAttackedPlayerForTheReceipt(string face)
     {
         // The defender's player becomes the target player of the attack.
         var runner = new AbilityRunner(AbilityCatalog.Parse(HailHydraFragment.Json));
@@ -103,7 +111,7 @@ public sealed class HailHydraTests
         defender.TurnTo("01010a");
         world.CreateCard("04145", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var reserve = world.CreateCard("04145", world.AreaOf(DeckType.EncounterDeck));
-        runner.ExecuteReveal(world, world.CreateCard("04147", world.AreaOf(DeckType.RevealingArea)), 0);
+        runner.ExecuteReveal(world, world.CreateCard(face, world.AreaOf(DeckType.RevealingArea)), 0);
         var searches = new List<int>();
         Finish(world, runner, prompt =>
         {
