@@ -11041,6 +11041,23 @@
       "note": "Hero Action (thwart): Remove 2 threat from a scheme. If this removes the last threat on that scheme, draw 1 card."
     },
     {
+      "card": "07007",
+      "name": "Wrecker's Command",
+      "note": "Attach to Wrecker. Its printed SCH+1 is supplied by the attachment stat modifier. After its host schemes, one threat instruction affects each other living villain's paired side scheme. The Hero Action spends two physical resources to discard the attachment.",
+      "attachTo": { "titled": "Wrecker" },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenSchemeEnds", "timing": "ForcedResponse", "subject": "attachedTo" },
+          "effect": { "placeThreat": { "scheme": { "query": "otherVillainSideSchemes" }, "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "spend": "RR" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
       "card": "07008",
       "name": "Corrupt Prison Guard",
       "note": "Guard is supplied by the generated printed keyword. This Wrecker encounter card has no triggered or boost ability.",
