@@ -79,6 +79,12 @@ internal static class AttackCompletion
             .Where(id => id >= 0).Distinct().ToDictionary(id => id,
                 id => SubjectTitle(world, world.Facts, id));
 
+        // rr:attack-enemy-activation.step.6.a places forced responses before optional
+        // responses. The occurrence owns these fixed facts; its storage shape is ours.
+        if (world.Agenda.Occurrence is { } occurrence)
+            occurrence.CompletedEnemyAttack = new CompletedEnemyAttack(
+                world.Activation?.Id ?? -1, attack.Defender, world.Activation?.DamageDealt ?? 0);
+
         world.Effects.Expire(TimingPoints.EndOfAttack, events);
 
         // An attack is one of the two kinds of activation -- `rr:activation` --

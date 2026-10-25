@@ -6,7 +6,7 @@ namespace Marvel.Content.Tests.Play;
 internal sealed class WreckingEncounterCardFixture : CoreCardTestBase
 {
     internal static (World World, EncounterDeckGroup[] Groups, Card Source) Create(
-        string face, int owner, string identity = "01001a", int players = 1)
+        string face, int owner, string identity = "01001a", int players = 1, string boostFace = "07037")
     {
         var world = Hero(identity, players);
         world.CreateCard("01088", world.Seats[0].Deck);
@@ -17,7 +17,7 @@ internal sealed class WreckingEncounterCardFixture : CoreCardTestBase
         var groups = Enumerable.Range(0, 4).Select(index =>
         {
             var deck = world.CreateArea(DeckType.EncounterDeck);
-            Card[] boosts = [world.CreateCard("07037", deck), world.CreateCard("07037", deck)];
+            Card[] boosts = [world.CreateCard(boostFace, deck), world.CreateCard(boostFace, deck)];
             return new EncounterDeckGroup(
                 world.CreateCard(villains[index], world.AreaOf(DeckType.VillainArea)),
                 world.CreateCard(schemes[index], world.AreaOf(DeckType.SideSchemesArea)),

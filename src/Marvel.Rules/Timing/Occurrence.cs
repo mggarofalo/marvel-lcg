@@ -184,6 +184,10 @@ public sealed record Occurrence
     [JsonIgnore]
     public State.RetaliationContext? Retaliation { get; set; }
 
+    /// <summary>The enemy attack completed by this occurrence, when present.</summary>
+    [JsonIgnore]
+    public State.CompletedEnemyAttack? CompletedEnemyAttack { get; internal set; }
+
     private readonly List<State.Attacked> attacks = [];
 
     /// <summary>Ordered recipient facts for one multi-target attack.</summary>

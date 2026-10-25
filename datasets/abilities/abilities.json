@@ -12786,6 +12786,52 @@
           }
         }
       ]
+    },
+    {
+      "card": "07049",
+      "name": "Bulldozer's Helmet",
+      "attachTo": {
+        "titled": "Bulldozer"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "discardTop": {
+              "from": "yourDeck",
+              "count": {
+                "completedAttackDamageDealt": "game"
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "you"
+              },
+              {
+                "discardRandomFromHand": 1
+              }
+            ]
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
     }
   ]
 }

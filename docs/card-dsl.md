@@ -1,3 +1,8 @@
+`completedAttackDamageDealt: "game"` reads the damage dealt by the enemy attack
+completed in the current occurrence. Damage prevention does not reduce it;
+boost ability damage does not contribute. The value remains fixed throughout
+forced and optional attack-end responses and is zero without a completed attack.
+
 # The card DSL
 
 Static `enemyAttacks` and `enemySchemes` support a following `then`: every

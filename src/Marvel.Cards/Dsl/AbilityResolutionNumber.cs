@@ -11,6 +11,8 @@ public enum AbilityResolutionNumber
     CardsDiscarded,
     /// <summary>Completed attacks against the current player in the scheduled activation batch.</summary>
     ActivationAttacksAgainstYou,
+    /// <summary>Damage dealt by the enemy attack completed in this occurrence.</summary>
+    CompletedAttackDamageDealt,
     /// <summary>Printed boost icons on all cards discarded this way.</summary>
     PrintedBoostIconsDiscarded,
     /// <summary>All printed resource icons on cards discarded this way, without generator multipliers.</summary>
