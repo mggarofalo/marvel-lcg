@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Marvel.Server.Tests;
 
+[Collection(nameof(ProgramStartupScheduling))]
 public sealed class ProgramTests
 {
     [Fact]
