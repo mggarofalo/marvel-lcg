@@ -25,8 +25,7 @@ uses the existing simultaneous exhaustion and random-hand-discard cost.
 Engine choice: `CompletedEnemyAttack` retains activation identity, final defender,
 and attack-step damage dealt on the exact occurrence; `completedAttackDamageDealt`
 reads that occurrence and returns zero when it has no completed enemy attack.
-This increment does not implement Lightning Blast (07030), whose scheduled
-activation receipt still needs defendedness retained after responses.
+Lightning Blast's scheduled activation receipt is described below.
 
 Focused evidence: `WreckingHelmetTests` covers ordinary damage, Tough prevention,
 basic hero defense, lethal ally defense with overkill, stun replacement, foreign
@@ -38,3 +37,26 @@ Public admission remains closed. Mutation and final regression results are
 recorded in the agent handoff for independent review.
 
 Final Helmet review: 21 focused cases pass, including canonical overkill, helper-player deck ownership and boost-damage exclusion. The prevention mutant fails the Tough case as expected and was restored. Architecture: 129/129 passed. Logs: `%TEMP%/wrecking-helmet-reviewed.log`, `wrecking-helmet-mutant-prevention.log`, and `wrecking-helmet-architecture.log`.
+
+## Completed defendedness increment: Lightning Blast (07030)
+
+The activation carries its exact completed attack receipt through attack-end
+responses to its completion sentinel. `activationUndefended` counts completed
+undefended attacks in that scheduled collection and resets for a new collection.
+The receipt uses the final declared defender, independently of damage taken;
+stun and Webbed Up replacements supply no completed attack. These storage and
+DSL spellings are engine choices. The canonical hero text schedules Thunderball
+and places three threat on Thunderstruck only from that receipt. Alter-ego text
+ranks every side scheme by threat, with first-player choice among ties.
+
+Focused evidence passes 41 cases across Lightning Blast, Helmet and core
+activation regressions. Cases distinguish Tough prevention, hero and lethal ally
+defense, ally departure from boost damage before the attack damage step, another
+player defending, optional attack-end response acceptance and decline, stun and
+Webbed Up replacement, tied alter-ego targets including another side scheme,
+and a new canceled activation following an undefended one. Log:
+`%TEMP%/lightning-focused.log`. Removing the collection reset kills the stale
+receipt test; ignoring defendedness kills hero and lethal ally cases. Logs:
+`%TEMP%/lightning-mutant-stale.log`, `%TEMP%/lightning-mutant-defense.log`.
+Sources are restored and rebuilt. Public scenario admission remains closed;
+independent review and broader wave integration remain pending.

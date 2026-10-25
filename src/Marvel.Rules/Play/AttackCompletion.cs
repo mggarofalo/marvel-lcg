@@ -81,9 +81,12 @@ internal static class AttackCompletion
 
         // rr:attack-enemy-activation.step.6.a places forced responses before optional
         // responses. The occurrence owns these fixed facts; its storage shape is ours.
+        var completed = new CompletedEnemyAttack(
+            world.Activation?.Id ?? -1, attack.Defender, world.Activation?.DamageDealt ?? 0);
         if (world.Agenda.Occurrence is { } occurrence)
-            occurrence.CompletedEnemyAttack = new CompletedEnemyAttack(
-                world.Activation?.Id ?? -1, attack.Defender, world.Activation?.DamageDealt ?? 0);
+            occurrence.CompletedEnemyAttack = completed;
+        if (world.Activation is { } activation)
+            world.Activation = activation with { CompletedAttack = completed };
 
         world.Effects.Expire(TimingPoints.EndOfAttack, events);
 

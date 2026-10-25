@@ -11303,6 +11303,25 @@
       ]
     },
     {
+      "card": "07030",
+      "name": "Lightning Blast",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "seq": [
+            { "enemyAttacks": { "enemies": { "titled": "Thunderball" }, "against": "you" } },
+            { "if": { "test": { "atLeast": { "value": { "result": "activationUndefended" }, "count": 1 } },
+              "then": { "placeThreat": { "scheme": { "titled": "Thunderstruck" }, "amount": 3 } } } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "maxBy": { "of": { "query": "sideSchemes" }, "by": "threat" } },
+            "effect": { "placeThreat": { "scheme": "chosen", "amount": 3 } } } }
+        }
+      ]
+    },
+    {
       "card": "07010",
       "name": "Buddy System",
       "abilities": [

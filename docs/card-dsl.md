@@ -5,6 +5,11 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`result: "activationUndefended"` counts completed undefended enemy attacks in the
+most recent scheduled activation collection. Completion captures the final
+defender before attack-end responses; prevented damage still counts, while
+stun and other attack replacements do not. A new collection clears this receipt.
+
 Static `enemyAttacks` and `enemySchemes` support a following `then`: every
 requested activation must actually be made. Stun or confuse replacement does not
 complete an activation; an attack whose damage is prevented still does. The

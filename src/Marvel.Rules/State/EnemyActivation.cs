@@ -56,4 +56,7 @@ public sealed record EnemyActivation(
 
     /// <summary>Identity object ids dealt damage by this activation, in placement order.</summary>
     public IReadOnlyList<int> DamageRecipients { get; init; } = [];
+
+    /// <summary>Fixed attack-end facts retained through responses and activation completion.</summary>
+    public CompletedEnemyAttack? CompletedAttack { get; init; }
 }
