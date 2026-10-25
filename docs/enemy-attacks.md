@@ -129,3 +129,10 @@ completed scheme resolve after the threat placement.
 The Core villains, minions, attachments, statuses, and player responses are
 executable. Later attack patterns helped validate the general timing and DSL
 shapes, but they are not runtime content. See [scope.md](scope.md).
+
+A card-created attacked-player ally defense requirement belongs to the exact
+activation, enemy and attacked identity. The ordinary defender offer and execution
+both enforce it. An exhausted ally does not make the player able to defend, and
+another player's ally cannot satisfy it. While a ready controlled ally is required,
+a defense-labeled ability cannot establish the identity as the first defender.
+The activation completion sentinel expires the registration even after cancellation.

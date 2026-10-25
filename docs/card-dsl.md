@@ -927,3 +927,11 @@ selector spelling is an authored DSL choice motivated by Wrecker's Command
 (07007); it does not itself implement simultaneous threat placement.
 
 `grant: { card: "attachedTo", keyword: "excessDamageAsThreat" }` represents a continuous excess-damage routing instruction. This engine modifier is not a printed game keyword. Admission requires a direct, unconditional, cost-free Constant unit grant to attachedTo; conditional, scoped, lasting and activated forms raise during lowering. Attack and direct damage retain unprevented excess against preplacement remaining health and the physical corresponding scheme; routed excess replaces overkill spill and schedules normal threat placement before attack-end responses.
+
+`requireAttackedPlayerAllyDefender: "attack"` installs a forced-interrupt
+requirement for the current enemy attack activation. It requires an ally
+controlled by the originally attacked player when one can legally defend. Basic
+defense still requires readiness; card-declared defense follows its own readiness rules. Its
+persistent scope contains the activation id, attacking enemy and attacked identity;
+other activations and other players cannot inherit it. This instruction differs
+from the constant `requireAllyDefender: "engagedPlayer"` policy.

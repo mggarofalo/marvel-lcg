@@ -137,7 +137,8 @@ internal static class AbilityInitiationConstraints
         "attack" => CanTargetAttack(node, cast),
         "thwart" => CanTargetThwart(node, cast),
         "enemyAttacks" or "enemySchemes" => true,
-        "defense" => Attack.CanUseDefenseAbility(cast.World, cast.Player)
+        "defense" => Attack.CanUseDefenseAbility(cast.World, cast.Player,
+                LabeledAbilities.Performer(cast.World, cast.World.Facts, cast.Player, cast.Source))
             && CanInitiate(EffectBody(node), cast),
         // A missing dynamic target gets the resolver's specific exception
         // (for example, no activating enemy). When the target exists, the

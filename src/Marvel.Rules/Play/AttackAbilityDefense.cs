@@ -16,8 +16,14 @@ internal static class AttackAbilityDefense
     /// defending, whether the defender is that player's identity or ally.
     /// </remarks>
     internal static bool CanUseDefenseAbility(World world, int player)
+        => CanUseDefenseAbility(world, player, world.Seats[player].IdentityCard);
+
+    internal static bool CanUseDefenseAbility(World world, int player, Card performer)
     {
         ArgumentNullException.ThrowIfNull(world);
+        if (world.Attack is { IsDefended: false }
+            && EffectiveCards.Kind(performer, world.Facts) is CardKind.Hero or CardKind.AlterEgo or CardKind.Ally
+            && !AttackAllyDefenseRequirement.Allows(world, performer)) return false;
         if (world.Attack is not { Defender: >= 0 } attack)
         {
             return true;
@@ -47,10 +53,10 @@ internal static class AttackAbilityDefense
             return;
         }
 
-        if (!CanUseDefenseAbility(world, player))
+        if (!CanUseDefenseAbility(world, player, performer))
         {
             throw new RulesNotImplementedException(
-                $"player {player} cannot defend an attack already defended by another player");
+                $"player {player} cannot use card {performer.ObjectId} for this attack's defense");
         }
 
         if (attack.Defender >= 0)
@@ -108,6 +114,7 @@ internal static class AttackAbilityDefense
 
         var kind = EffectiveCards.Kind(defender, facts);
         return kind is CardKind.Hero or CardKind.Ally
+            && AttackAllyDefenseRequirement.Allows(world, defender)
             && (attack.Defender < 0
                 || attack.Defender == defender.ObjectId
                 || attack.Defender == replaceableDefender);

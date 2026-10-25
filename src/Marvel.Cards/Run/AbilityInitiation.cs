@@ -33,7 +33,8 @@ internal static class AbilityInitiation
 
         if (!cancelled
             && labels.Contains(Attack.DefenseVerb, StringComparer.Ordinal)
-            && !Attack.CanUseDefenseAbility(context.World, resolver))
+            && !Attack.CanUseDefenseAbility(context.World, resolver,
+                LabeledAbilities.Performer(context.World, context.World.Facts, resolver, context.Source)))
         {
             return false;
         }

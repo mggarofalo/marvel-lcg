@@ -161,6 +161,7 @@ internal static class AbilityOperationNames
             AbilityFixedInstruction.GainEnvironmentTraits => "gainEnvironmentTraits",
             AbilityFixedInstruction.PreventSideSchemeDeparture => "preventSideSchemeDeparture",
             AbilityFixedInstruction.RequireAllyDefender => "requireAllyDefender",
+            AbilityFixedInstruction.RequireAttackedPlayerAllyDefender => "requireAttackedPlayerAllyDefender",
             _ => throw new InvalidOperationException("Unknown fixed instruction"),
         },
         _ => throw new InvalidOperationException("Unknown compiled effect"),

@@ -127,6 +127,10 @@ public static class Attack
     public static bool CanUseDefenseAbility(World world, int player) =>
         AttackAbilityDefense.CanUseDefenseAbility(world, player);
 
+    /// <summary>Whether the attributed card may perform this player's defense ability.</summary>
+    public static bool CanUseDefenseAbility(World world, int player, Card performer) =>
+        AttackAbilityDefense.CanUseDefenseAbility(world, player, performer);
+
     /// <summary>Establish the roles created by a defense-labeled ability.</summary>
     /// <remarks>
     /// This runs before the ability's effect. It neither exhausts the identity

@@ -90,6 +90,7 @@ internal static class AbilityEffectLowering
             "gainEnvironmentTraits" => FixedEffect(argument, child, "this", AbilityFixedInstruction.GainEnvironmentTraits),
             "preventSideSchemeDeparture" => FixedEffect(argument, child, "this", AbilityFixedInstruction.PreventSideSchemeDeparture),
             "requireAllyDefender" => FixedEffect(argument, child, "engagedPlayer", AbilityFixedInstruction.RequireAllyDefender),
+            "requireAttackedPlayerAllyDefender" => FixedEffect(argument, child, "attack", AbilityFixedInstruction.RequireAttackedPlayerAllyDefender),
             "generate" => new AbilityEffect.Generate(ResourceString(argument, child)),
             "doubleResourceFor" => new AbilityEffect.DoubleResourceFor(Text(argument, child)),
             "reduceFirstAllyCost" => new AbilityEffect.ReduceFirstAllyCost(PositiveInteger(argument, child)),

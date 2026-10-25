@@ -123,6 +123,8 @@ internal static class AbilityResolutionAdmission
             "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source),
             "useAttackForThwart" => ThwartStatSubstitution.CanUseAttack(cast.World, cast.Occurrence),
             "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false },
+            "requireAttackedPlayerAllyDefender" => cast.World.Attack is not null
+                && cast.World.Activation is { Attacking: true, Id: >= 0 },
             "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
             "grantCharactersControlledBy" or "reduceNextCardCost" => true,
 

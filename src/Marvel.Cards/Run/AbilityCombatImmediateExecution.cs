@@ -10,6 +10,9 @@ internal static class AbilityCombatImmediateExecution
         var world = context.Admission.World;
         switch (effect.Instruction)
         {
+            case AbilityFixedInstruction.RequireAttackedPlayerAllyDefender:
+                AttackAllyDefenseRequirement.Install(world, context.Admission.Source);
+                return new(true, true);
             case AbilityFixedInstruction.UseAttackForThwart:
                 ThwartStatSubstitution.UseAttack(world, context.Admission.Query.Occurrence);
                 return new(true, true);

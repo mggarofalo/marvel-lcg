@@ -26,22 +26,13 @@ internal static class AttackDefenderCandidates
     internal static DefenderChoice Choice(
         World world, ICardFacts facts, IAttackCardAbilities abilities, EnemyAttack attack)
     {
-        List<Card> legal;
-        if (attack.IsDefended)
-        {
-            var current = world.Cards[attack.Defender];
-            legal = !attack.BasicDefense
-                && current.Ready
-                && EffectiveCards.Kind(current, facts) == CardKind.Hero
-                && BasicPowers.CanUsePower(facts, current, "DEF")
-                    ? [current]
-                    : [];
-        }
-        else
-        {
-            legal = Defenders(world, facts);
-        }
+        var legal = AvailableForAttack(world, facts, attack);
+        var required = AttackAllyDefenseRequirement.RequiredAllies(world);
+        if (!attack.IsDefended && required.Count > 0)
+            legal = [.. legal.Where(card => required.Contains(card))];
         var choice = abilities.Defenders(world, attack, legal);
+        if (!attack.IsDefended && required.Count > 0)
+            choice = new DefenderChoice(choice.Candidates, Required: true);
         if (choice.Required && choice.Candidates.Count == 0)
         {
             throw new RulesNotImplementedException(
@@ -56,6 +47,15 @@ internal static class AttackDefenderCandidates
         }
 
         return choice;
+    }
+
+    private static List<Card> AvailableForAttack(World world, ICardFacts facts, EnemyAttack attack)
+    {
+        if (!attack.IsDefended) return Defenders(world, facts);
+        var current = world.Cards[attack.Defender];
+        return !attack.BasicDefense && current.Ready
+            && EffectiveCards.Kind(current, facts) == CardKind.Hero
+            && BasicPowers.CanUsePower(facts, current, "DEF") ? [current] : [];
     }
 
     /// <summary>One player's characters that could defend.</summary>
