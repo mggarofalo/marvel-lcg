@@ -1,8 +1,9 @@
 # Captain America implementation and evidence ledger
 
-Work item: MARVEL-560. Product code: `cap`. This is a work-in-progress ledger,
-not an admission or acceptance record. The complete pack remains unsupported until
-all required mechanics, content, client journeys and compatibility checks pass.
+Work item: MARVEL-560. Product code: `cap`. The candidate admits all 35 playable
+faces and the verified printed starter. Owner acceptance remains pending.
+See [the integrated delivery record](wave-delivery.md) for current evidence;
+the implementation checkpoints below retain their original revision scope.
 
 ## Authorities and component reconciliation
 

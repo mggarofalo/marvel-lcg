@@ -1,10 +1,9 @@
 # Wrecking Crew admission ledger
 
-Canonical pack: MARVEL-562. Complete-product acceptance remains blocked by
-MARVEL-625 (runtime integration), MARVEL-630 (prior-save compatibility),
-MARVEL-631 (content admission and complete card behavior), and MARVEL-632
-(four-villain presentation and native journeys). MARVEL-624 owns source corrections and
-extractor text-override behavior. Nothing in this ledger admits the scenario.
+Canonical pack: MARVEL-562. The candidate admits all 60 playable faces and all
+19 recipes: Standard, Expert, Extreme and 16 custom A/B combinations. Owner
+acceptance remains pending. See [the integrated delivery record](wave-delivery.md)
+for current verification; checkpoints below retain their original revision scope.
 
 ## Components and authorities
 
