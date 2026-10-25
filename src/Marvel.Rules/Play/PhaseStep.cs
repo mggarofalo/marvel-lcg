@@ -20,6 +20,8 @@ public readonly record struct PhaseStep(
 
     /// <summary>The containing enemy activation, or -1 outside an activation.</summary>
     public int ActivationId { get; init; } = -1;
+    /// <summary>The nearest causal enemy attack, retained after its completion.</summary>
+    public EnemyAttackOrigin? AttackOrigin { get; init; }
     /// <summary>A dynamic occurrence identity, or null for round/number/index identity.</summary>
     public int? OccurrenceId { get; init; }
     /// <summary>The operation's timing vocabulary name.</summary>

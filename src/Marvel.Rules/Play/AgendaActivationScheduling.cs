@@ -25,7 +25,7 @@ public static class AgendaActivationScheduling
 
         agenda.BeginScheduling();
         int id = agenda.nextActivationId++;
-        var root = step with { ActivationId = id };
+        var root = Root(agenda, step, id, caused: true);
         var completion = agenda.Completion(root);
         var pair = new[]
         {
@@ -136,7 +136,7 @@ public static class AgendaActivationScheduling
     {
         agenda.BeginScheduling();
         int id = agenda.nextActivationId++;
-        var root = step with { ActivationId = id };
+        var root = Root(agenda, step, id, caused: false);
         var completion = agenda.Completion(root);
         agenda.items.Add(agenda.Frame(root, Stage.Interrupts, root.ScheduledOccurrence));
         agenda.items.Add(agenda.Frame(completion, Stage.Interrupts, completion.ScheduledOccurrence));
@@ -151,7 +151,7 @@ public static class AgendaActivationScheduling
         }
         agenda.BeginScheduling();
         int id = agenda.nextActivationId++;
-        var root = step with { ActivationId = id };
+        var root = Root(agenda, step, id, caused: true);
         var completion = agenda.Completion(root);
         agenda.items.InsertRange(0,
         [
@@ -240,6 +240,16 @@ public static class AgendaActivationScheduling
         }
     }
 
+    private static PhaseStep Root(Agenda agenda, PhaseStep step, int id, bool caused) => step with
+    {
+        ActivationId = id,
+        // ruling:8369361114d2929b: a scheme caused by an attack can initiate
+        // Escaped Convict's attack after the scheme; activations stay sequential.
+        AttackOrigin = step.What == Steps.Attack
+            ? new EnemyAttackOrigin(id, step.Subject, step.Seat)
+            : caused ? agenda.Current?.AttackOrigin : null,
+    };
+
     internal static bool IsActivation(this Agenda agenda, PhaseStep step) =>
         step.What is Steps.Attack or Steps.Scheme && step.ActivationId < 0;
 
@@ -252,5 +262,5 @@ public static class AgendaActivationScheduling
         Index: root.Index,
         Subject: root.Subject,
         Seat: root.Seat,
-        Plan: true) { ActivationId = root.ActivationId };
+        Plan: true) { ActivationId = root.ActivationId, AttackOrigin = root.AttackOrigin };
 }

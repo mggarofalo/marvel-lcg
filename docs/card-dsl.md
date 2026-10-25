@@ -994,3 +994,13 @@ them simultaneously with exhaustion. Stun cancels only after payment, including
 when no enemy can be targeted. Permission to attack without exhausting does not
 waive this separate cost. The suspended cost decision reconstructs through the
 ordinary session decision replay; it does not introduce a separate save format.
+
+`inAttackChain: "attack"` is a strict typed condition on the current scheduled
+work. It is true during an enemy attack and schemes causally initiated by that
+attack, including suspended boost choices and deeper causal activations. A
+standalone scheme is false even in hero form. The immutable historical attack
+origin survives completion and departure; unrelated later work has no origin.
+This spelling is an engine choice implementing ruling:8369361114d2929b's
+interpretation of "this attack". Combine it with the player's form condition and
+`afterActivation`; it neither moves the active counter nor schedules an attack.
+Activations remain sequential under rr:activation.8.
