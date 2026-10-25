@@ -82851,6 +82851,424 @@
       ]
     },
     {
+      "id": "setup:campaign:wrecking_crew_custom_aaaa",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:767b3241da67348cc5a96a204279bea2fce88e31146b98b3f52eb75db235cd9d",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_aaaa:wrecking-crew-setup",
+          "summary": "The wrecking crew custom aaaa campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_aaab",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:14e026f8758ea2f35a10ad8211112956c162bd3d2a69c868feea01d971bf3985",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_aaab:wrecking-crew-setup",
+          "summary": "The wrecking crew custom aaab campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_aaba",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:3198cee54fc280288c3060adae8c1940f99785ee1d05c2c677f4a0daed0dd4c6",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_aaba:wrecking-crew-setup",
+          "summary": "The wrecking crew custom aaba campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_aabb",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:1a295e4ba4b752a74ae38b001d76585c2f4a963b0c19cda9b8b58199e30d2c48",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_aabb:wrecking-crew-setup",
+          "summary": "The wrecking crew custom aabb campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_abaa",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:9b03cd2a567cea31366417776c9da0c6c7e075237d0ca860923282c47ab2615c",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_abaa:wrecking-crew-setup",
+          "summary": "The wrecking crew custom abaa campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_abab",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:29b9360b8e973c6f0e27587fd8b1fccb43652c609f24872b0ccec3a288f02dc0",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_abab:wrecking-crew-setup",
+          "summary": "The wrecking crew custom abab campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_abba",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:fab21bb966b391bc18257cc20c736ec6cede87226dc5480e995b0fb4727de555",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_abba:wrecking-crew-setup",
+          "summary": "The wrecking crew custom abba campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_abbb",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:6f361c5bd7439ea998beee31f98e7e09b28629e6ab1acbc99fa202bc37fa7fb9",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_abbb:wrecking-crew-setup",
+          "summary": "The wrecking crew custom abbb campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_baaa",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:ba669f33e64a540f92ef53dd95c6d54aaf2e46a0cc16598bd024ca94c3a50e11",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_baaa:wrecking-crew-setup",
+          "summary": "The wrecking crew custom baaa campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_baab",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:a53950e4ab4a4bf91957138f1caa79ea5bd663e9e28e2371e9f153ed9f12fa1f",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_baab:wrecking-crew-setup",
+          "summary": "The wrecking crew custom baab campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_baba",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:5d55b69a13e96d5d0068de8037d086174cc160d4e9e52d63c64a781c3e1938b3",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_baba:wrecking-crew-setup",
+          "summary": "The wrecking crew custom baba campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_babb",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:a6a4b3b2562742f8f7ffa68012921370e94631914fcf7e4ae05d30012c33da51",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_babb:wrecking-crew-setup",
+          "summary": "The wrecking crew custom babb campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_bbaa",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:2629307e35572013d16e6c4bd8f6cddb0367072d553258f3b5536124dd813b78",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_bbaa:wrecking-crew-setup",
+          "summary": "The wrecking crew custom bbaa campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_bbab",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:6d0bcf137ee243da56cc0d837198a6030165f29f01fe47d3461e43bac9657745",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_bbab:wrecking-crew-setup",
+          "summary": "The wrecking crew custom bbab campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_bbba",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:f60c2d2bf7043a66c096191e56635e08f3efbd5ed01a30a7625352ab60ca2e9e",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_bbba:wrecking-crew-setup",
+          "summary": "The wrecking crew custom bbba campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_custom_bbbb",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:e7f1b9e15b7aa90ed366984f721c54c0d8d9b1f508adc04b1ba341b22de40fed",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_custom_bbbb:wrecking-crew-setup",
+          "summary": "The wrecking crew custom bbbb campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_expert",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:0a22a9144add9cae275fe2f56b568e8d5647be8c1670eb9e198be8ff093aa020",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_expert:wrecking-crew-setup",
+          "summary": "The wrecking crew expert campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_extreme",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:941c6a4e7f92ab2537b63d9abe3703ad93bbf1ae7e6f3b24eb3f764258efab8a",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_extreme:wrecking-crew-setup",
+          "summary": "The wrecking crew extreme campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "setup:campaign:wrecking_crew_standard",
+      "kind": "setup",
+      "title": "Wrecking Crew",
+      "fingerprint": "sha256:f6a515754f2f618315784983876e6f1995d9201f3a4aaa153fe9be393fc0ae38",
+      "scope": "campaign",
+      "disposition": "outside-core",
+      "obligations": [
+        {
+          "id": "behavior:setup:campaign:wrecking_crew_standard:wrecking-crew-setup",
+          "summary": "The wrecking crew standard campaign record supplies Wrecking Crew components and setup.",
+          "disposition": "outside-core",
+          "reason": "This record requires The Wrecking Crew expansion, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:campaign:zola",
       "kind": "setup",
       "title": "Zola",
