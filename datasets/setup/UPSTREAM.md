@@ -2,14 +2,14 @@
 
 What Core Set and Rise of Red Skull games are dealt from: scenario, villain and
 main scheme decks, encounter sets, and seven admitted printed starter decks.
-The Captain America starter is declared as research and excluded by runtime product admission.
+The Captain America and Ms. Marvel starters are declared as research and excluded by runtime product admission.
 
 | | |
 |---|---|
 | Kind | authored |
-| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew (research); Captain America (research) |
-| Records | 35 scenario modes, 8 heroes, 10 encounter sets |
-| Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, complete-product admission |
+| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew (research); Captain America (research); Ms. Marvel (research) |
+| Records | 35 scenario modes, 9 heroes, 10 encounter sets |
+| Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, complete-product admission |
 
 ## Why it is authored
 
@@ -30,7 +30,7 @@ Rise of Red Skull printed faces before exposing its runtime recipes.
 - every named encounter or modular set is defined;
 - every scenario has valid main schemes and villain stages;
 - every hero has two identity faces, an obligation, and a nemesis set;
-- the declared products contain 35 authored modes, 8 heroes, and 10 sets;
+- the declared products contain 35 authored modes, 9 heroes, and 10 sets;
 - required encounter sets remain fixed when optional modular sets change;
 - the header counts match the file.
 
@@ -51,3 +51,8 @@ Captain America's 40-card starter, obligation and five-card nemesis set follow
 the pinned FFG divider and transcription in `datasets/rules-packs/mc04/UPSTREAM.md`.
 `CaptainAmericaSetupTests` verifies every quantity and ordinary deck legality,
 and proves that even complete authoring does not bypass explicit product admission.
+
+Ms. Marvel's 40-card starter, obligation and five-card nemesis set follow the
+pinned FFG divider photograph and transcription in `datasets/rules-packs/mc05/UPSTREAM.md`.
+`MsMarvelSetupTests` checks the exact quantities, ordinary deck legality and
+continued exclusion from runtime discovery until complete product acceptance.
