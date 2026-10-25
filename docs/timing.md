@@ -501,6 +501,14 @@ false.
 
 ## Supported boundary
 
+`ThreatMovement.Schedule` owns one exact source/destination move. Removal uses
+ordinary threat permissions and side-scheme defeat; placement uses the ordinary
+interrupt and response windows. Its receipt retains the exact destination
+occurrence and observes that scheme's Forced Response initiation independently
+of effect application or a subsequent threat reset. Callers wait for the
+containing procedure before choosing later text from this fact. Ranked scheme
+selection and Surge remain responsibilities of the authored ability.
+
 The timing spine, nested windows, agenda continuations, player-phase ending,
 and the lasting and delayed effects required by the Core Set are executable.
 Ability definitions are data in `datasets/abilities/abilities.json`; the

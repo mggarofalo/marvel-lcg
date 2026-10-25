@@ -7,6 +7,7 @@ namespace Marvel.Rules.Play;
 public sealed record ThreatPlacementOperation(ThreatPlacement Placement,
     EffectCompletion Completion, int Part) : AgendaOperation
 {
+    internal ThreatMoveReceipt? Movement { get; init; }
     /// <summary>The shared response occurrence for a multi-scheme instruction.</summary>
     public Occurrence? Responses { get; init; }
     /// <inheritdoc/>

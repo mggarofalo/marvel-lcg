@@ -60,7 +60,8 @@ public static class Threat
         EffectCompletion completion, int part, PhaseStep? current) =>
         new(new ThreatPlacementOperation(new ThreatPlacement(
                 scheme.ObjectId, batch.Source?.ObjectId ?? -1,
-                batch.Amount, batch.Cause, batch.Trigger, batch.Player), completion, part),
+                batch.Amount, batch.Cause, batch.Trigger, batch.Player), completion, part)
+                { Movement = batch.Movement },
             current?.Round ?? 0, current?.Number ?? 0,
             Index: (current?.Index ?? 0) + part,
             Subject: scheme.ObjectId, Seat: batch.Player);

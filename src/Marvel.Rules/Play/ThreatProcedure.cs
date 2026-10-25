@@ -12,6 +12,11 @@ internal static class ThreatProcedure
     internal static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        if (step.Operation is ThreatMovementOperation movement)
+        {
+            ThreatMovement.Apply(world, facts, movement, events);
+            return null;
+        }
         switch (step.What)
         {
             case Steps.PlaceThreat:
@@ -70,6 +75,7 @@ internal static class ThreatProcedure
             ?? throw new InvalidOperationException("a threat step has no occurrence");
         long placed = Threat.Apply(world, facts, abilities, occurrence, events);
         var operation = step.Require<ThreatPlacementOperation>();
+        operation.Movement?.Observe(occurrence);
         operation.Completion.Complete(operation.Part, placed);
         if (placed > 0 && operation.Responses is { } responses)
             responses.RecordThreatPlacement(occurrence);
