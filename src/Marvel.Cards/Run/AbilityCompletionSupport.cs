@@ -15,6 +15,7 @@ internal static class AbilityCompletionSupport
             foreach (var child in AbilityEffectStructure.AllEffectChildren(effect)) Validate(child, source);
             return;
         }
+        if (effect is AbilityEffect.PutIntoPlay { AllyUnderYourControl: true }) return;
         if (effect.OperationName() is  "draw" or "heal" or "setHitPoints" or "removeThreat" or "dealDamage" or "placeThreat"
             or "moveThreat" or "exhaust" or "ready" or "moveActiveCounter" or "discard" or "changeForm" or "declareDefender" or "giveStatus" or "removeStatuses") return;
         throw new RulesNotImplementedException(

@@ -50,8 +50,8 @@ public static class Traits
         var printed = EffectiveCards.InherentTraits(card, facts);
         var active = world.Effects.Active();
         var lost = active
-            .Where(effect => effect.AppliesTo(world, card)
-                && effect.Kind.StartsWith(Characteristics.Lost + Granted, StringComparison.Ordinal))
+            .Where(effect => effect.Kind.StartsWith(Characteristics.Lost + Granted, StringComparison.Ordinal)
+                && effect.AppliesTo(world, card))
             .Select(effect => effect.Kind[(Characteristics.Lost + Granted).Length..])
             .ToHashSet(StringComparer.Ordinal);
         List<string>? all = GrantedTraits(active, card, printed, lost);

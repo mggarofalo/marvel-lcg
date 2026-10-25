@@ -159,6 +159,7 @@ internal static class AbilityEffectTargetAdmission
             "draw" => DrawTargetLegality((AbilityEffect.Draw)node, cast, bindingMayChange),
             "search" => HasSearchableArea(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
+            "grantCharactersWithTrait" => TraitGroupTargetLegality((AbilityEffect.GrantTraitCharacters)node, cast),
             "inspectEncounterTop" => AbilityEncounterInspection.Cards(cast.World,
                 (AbilityEffect.InspectEncounterTop)node).Count > 0
                 ? TargetLegality.Valid : TargetLegality.Invalid,
@@ -166,6 +167,11 @@ internal static class AbilityEffectTargetAdmission
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             _ => TargetLegality.None,
         };
+
+    private static TargetLegality TraitGroupTargetLegality(
+        AbilityEffect.GrantTraitCharacters grant, AbilityAdmissionScope cast) =>
+        AbilityTraitGroupExecution.HasRecipients(grant, cast.World)
+            ? TargetLegality.Valid : TargetLegality.None;
 
     private static TargetLegality DrawTargetLegality(
         AbilityEffect.Draw draw, AbilityAdmissionScope cast, bool bindingMayChange)

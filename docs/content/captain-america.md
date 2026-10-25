@@ -547,3 +547,81 @@ The full Content suite passed 2,865 after correcting a regression uncovered by
 its existing scenario-owned-character control: a zero additional cost needs no
 player controller lookup. The source review found no bounded cost-path blocker.
 Actual Wonder Man row, native interaction and full-pack acceptance remain open.
+
+
+### MARVEL-628 Shield Toss, Falcon and Wonder Man
+
+The actual 03006, 03011 and 03014 rows bring the research book to 29 of 35
+faces. Shield Toss pays selected hand discards and returns the controlled Shield
+before its counted attack; tests cover one through four discards, too few enemy
+targets, Stun, alter-ego, missing Shield and a Shield controlled by another seat.
+Falcon privately inspects the ordered top three and retains its treachery count;
+three bounded conditional choices allow each removal to choose a different
+scheme without admitting a hidden-result-dependent loop. Zero through three
+treacheries and declining the response are exercised. MARVEL-662 records this
+admission boundary and its bounded authored resolution. Wonder Man's actual row
+now drives all eight additional-basic-attack-cost cases.
+
+The full Content suite passes 2,878 cases. Seven executable authored mutants
+were killed: Shield damage/count/returned title, Falcon inspection size/removal
+amount/third threshold, and Wonder Man's additional-cost amount. Independent
+bounded source review found no blocker and prompted the foreign Shield control.
+Wrecking's integration commit 0482297f supplies active-deck inspection routing
+and four topology/privacy controls; it must survive combined integration.
+Avengers Assemble, Quinjet, Man Out of Time, Baron Zemo, Hail Hydra and Expert
+Defense remain unauthored. Full-pack games, native use, pack-specific restart
+and quantity authority still block admission.
+
+
+### MARVEL-663 Avengers Assemble live recipients
+
+03015 is the thirtieth research face. Its controlled Avenger readying is separate
+from a data-backed, all-player live Avenger character bonus. The ATK/THW set
+uses current effective traits, includes later entrants, drops departed cards,
+and expires at phase end. Only positive constant combat modifiers are admitted;
+duplicate fields and unsupported fields raise. Trait evaluation filters trait
+loss effects before consulting their affected sets, avoiding recursion through
+an unrelated combat bonus. No new registered state field is added.
+
+Eight focused cases and 2,886 Content cases pass. Tests cover actual payment,
+hero form, ready and exhausted recipients, foreign bonus without foreign readying,
+max across copies, later entry, effective trait gain/loss, departure, non-character
+exclusion and expiry. Eight authored/compiled mutants are killed. The initial
+max-two mutant survived because the all-ready board also rejected the second
+play. A new all-ready initial-board test reproduced that real admission gap;
+the live bonus now supplies a current valid recipient, and the max mutant fails.
+Independent bounded review found no scope blocker and prompted duplicate-field
+rejection. The controlled-character scope was cohesively extracted to keep
+complexity within the existing limit. Native and saved whole-pack journeys are
+still required; the product gate remains closed.
+
+
+### MARVEL-665 Quinjet and player-turn beginnings
+
+03019 is the thirty-first research face. An observed player-turn-beginning
+occurrence now runs before first-turn, subsequent-seat and next-round actions.
+Observation is declarative from current in-play authored faces, not optional
+ability eligibility. Unobserved empty occurrences are omitted to preserve
+existing Core/Rise replay identity. The new phase-transition enum member is
+appended; no game-state or session-save field is added.
+
+Quinjet's optional response places one time counter only on its controller's
+turn. Its action selects an Avenger ally by printed cost, puts it into play,
+resolves ally-limit and entry-response windows, then discards Quinjet. The
+synchronous physical entry retains Full completion through suspension; an
+unavailable entry retains None. Card choices now reject a conditional chain
+with no reachable branch. This preserves existing target classification and
+does not predict arbitrary effect completion. A synthetic preview test for an
+unavailable no-op choice now asserts rejection; all five reachable preview
+cases remain. Both shallow and nested missing-branch controls pass.
+
+Fourteen actual-card cases cover both seats/forms, optional accept/decline,
+round transition, exact/below cost, reduction independence, uniqueness,
+non-Avenger/foreign hand exclusion, ally limit and entry responses. Two
+EngineHost tests save and reopen the actual pending beginning response, compare
+exact prompts/save bytes/digests and accept or decline against an uninterrupted
+control. Six authored/compiled mutants are killed (observer, conditional filter,
+entry completion, next-round scheduling, counter amount, printed-cost bound).
+Content passed 2,900 cases before the additional nested control; final focused
+card/conditional/group-thwart controls pass 18. Whole-pack native acceptance,
+remaining four faces and pack-level replay are still open.

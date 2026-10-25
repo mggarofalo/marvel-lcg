@@ -13556,6 +13556,92 @@
       ]
     },
     {
+      "card": "03019",
+      "name": "Quinjet",
+      "note": "Optional response after your turn begins adds one time counter. Action puts an Avenger ally with printed cost no greater than time counters from hand into play, then discards Quinjet.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenPlayerTurnBegins",
+            "timing": "Response",
+            "subject": "you"
+          },
+          "effect": {
+            "placeCounters": {
+              "card": "this",
+              "counter": "time",
+              "count": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "withTrait": {
+                  "cards": {
+                    "cardsIn": {
+                      "area": "yourHand",
+                      "kind": "Ally"
+                    }
+                  },
+                  "trait": "AVENGER"
+                }
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "countersOn": {
+                          "card": "this",
+                          "counter": "time"
+                        }
+                      },
+                      "count": {
+                        "sumPrintedCost": "chosen"
+                      }
+                    }
+                  },
+                  "then": {
+                    "then": {
+                      "effect": {
+                        "putIntoPlay": {
+                          "card": "chosen",
+                          "where": "yourPlayArea"
+                        }
+                      },
+                      "then": {
+                        "discard": "this"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03015",
+      "name": "Avengers Assemble!",
+      "note": "Hero Action, max once per round. Ready controlled Avengers, then grant a live all-player Avenger character ATK/THW bonus until phase end.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+        "maxPerRound": 1,
+        "effect": { "seq": [
+          { "ready": { "withTrait": { "cards": { "query": "charactersYouControl" }, "trait": "AVENGER" } } },
+          { "grantCharactersWithTrait": { "trait": "AVENGER", "fields": ["attack", "thwart"], "amount": 1, "until": "EndOfPhase" } }
+        ] }
+      }]
+    },
+    {
       "card": "03017",
       "name": "Strength In Numbers",
       "note": "Action: Exhaust any number of allies you control as the cost, then draw one card per physical ally in that committed exhaustion receipt.",
@@ -13599,6 +13685,50 @@
         "trigger": { "event": "WhenCardDefeated", "timing": "Interrupt", "subject": "attachedTo" },
         "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 4 } } } }
       }]
+    },
+    {
+      "card": "03006",
+      "name": "Shield Toss",
+      "note": "Discard X hand cards and return the controlled in-play Shield as costs. The physical discard receipt determines distinct attack targets; four damage is placed simultaneously before defeats.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+        "labels": ["attack"],
+        "cost": { "seq": [{ "discardAnyFromHand": "yourHand" }, { "returnTitledToHand": "Captain America's Shield" }] },
+        "effect": { "attack": {
+          "target": { "query": "attackableEnemies" }, "count": { "cardsDiscarded": "game" },
+          "effect": { "dealAttackDamage": { "cards": { "query": "powerTargets" }, "amount": 4, "simultaneous": 1 } }
+        } }
+      }]
+    },
+    {
+      "card": "03011",
+      "name": "Falcon",
+      "note": "The optional entry response privately inspects unchanged encounter tops. Each looked-at treachery independently removes one threat from a chosen scheme; this is not a thwart. Three bounded conditional choices preserve the printed inspection maximum without predicting the hidden count during admission.",
+      "abilities": [{
+        "trigger": { "event": "WhenCardEntersPlay", "timing": "Response", "subject": "this" },
+        "effect": { "seq": [
+          { "inspectEncounterTop": { "count": 3, "result": "treacheriesLookedAt" } },
+          { "if": { "test": { "atLeast": { "value": { "result": "treacheriesLookedAt" }, "count": 1 } },
+            "then": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } }
+          } },
+          { "if": { "test": { "atLeast": { "value": { "result": "treacheriesLookedAt" }, "count": 2 } },
+            "then": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } }
+          } },
+          { "if": { "test": { "atLeast": { "value": { "result": "treacheriesLookedAt" }, "count": 3 } },
+            "then": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } }
+          } }
+        ] }
+      }]
+    },
+    {
+      "card": "03014",
+      "name": "Wonder Man",
+      "note": "The additional hand discard is an attack cost paid simultaneously with exhaustion and before Stun cancellation, including attacks granted without exhausting.",
+      "abilities": [{
+        "trigger": { "timing": "Constant", "subject": "this" },
+        "effect": { "grant": { "card": "this", "keyword": "attack_hand_discard_cost", "amount": 1 } }
+      }]
     }
+
   ]
 }

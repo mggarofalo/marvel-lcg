@@ -127,7 +127,7 @@ internal static class AbilityResolutionAdmission
             "requireAttackedPlayerAllyDefender" => cast.World.Attack is not null
                 && cast.World.Activation is { Attacking: true, Id: >= 0 },
             "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
-            "grantCharactersControlledBy" or "reduceNextCardCost" => true,
+            "grantCharactersControlledBy" or "grantCharactersWithTrait" or "reduceNextCardCost" => true,
 
             // Target availability is the only state-dependent precondition
             // these currently expressible effects carry. Their own resolver
@@ -198,6 +198,8 @@ internal static class AbilityResolutionAdmission
         {
             "moveActiveCounter" => AbilityActiveCounterExecution.CanMove(node, cast)
                 ? AdmissionResolution.Full : AdmissionResolution.None,
+            "putIntoPlay" when node is AbilityEffect.PutIntoPlay { AllyUnderYourControl: true } entry =>
+                AbilityAllyEntry.HasTarget(entry, cast) ? AdmissionResolution.Full : AdmissionResolution.None,
             "exhaust" => ResolutionOfCards(
                 Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast), card => card.Ready),
             "ready" => ResolutionOfCards(

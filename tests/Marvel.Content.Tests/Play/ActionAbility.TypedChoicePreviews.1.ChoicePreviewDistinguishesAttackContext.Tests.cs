@@ -72,7 +72,6 @@ public sealed class ActionAbilityTypedChoicePreviewsChoicePreviewDistinguishesAt
     [InlineData("empty-leading")]
     [InlineData("then")]
     [InlineData("else")]
-    [InlineData("absent")]
     public void ChoicePreviewDescribesOnlyTheCurrentlyKnowableDamage(string structure)
     {
         // Preview scope is an engine choice. It follows the active branch,
@@ -94,8 +93,7 @@ public sealed class ActionAbilityTypedChoicePreviewsChoicePreviewDistinguishesAt
             """);
         Card? source = null;
         var(_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay), hero: true, abilities: runner);
-        // Reading the engine-owned choice directly also exercises the absent
-        // branch, which is not offered as a state-changing action on its own.
+        // Preview follows the reachable branch without predicting later state changes.
         var prompt = Assert.IsType<Prompt>(runner.PreviewChoice(world, source!, 0, 0, null, false));
         var choice = Assert.Single(prompt.Affordances);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
@@ -108,4 +106,21 @@ public sealed class ActionAbilityTypedChoicePreviewsChoicePreviewDistinguishesAt
         Assert.Equal(0, villain.Damage);
         Assert.False(world.Agenda.IsBusy);
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AnUntakenConditionalDoesNotOfferAnUnaffectedCardAsAChoice(bool nested)
+    {
+        string effect = """{"if":{"test":{"inForm":{"player":"you","form":"alter-ego"}},"then":{"dealDamage":{"cards":"chosen","amount":2}}}}""";
+        if (nested) effect = """{"if":{"test":{"inForm":{"player":"you","form":"hero"}},"then":EFFECT}}""".Replace("EFFECT", effect, StringComparison.Ordinal);
+        var runner = Runner(AuthoredCards.AuntMay, "Action",
+            """{"chooseCard":{"from":{"query":"villain"},"effect":EFFECT}}""".Replace("EFFECT", effect, StringComparison.Ordinal));
+        Card? source = null;
+        var (_, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true, abilities: runner);
+        Assert.DoesNotContain(runner.Actions(world, 0), action => action.Card == source!.ObjectId);
+        Assert.Throws<RulesNotImplementedException>(() => runner.PreviewChoice(world, source!, 0, 0, null, false));
+    }
+
 }

@@ -200,7 +200,7 @@ internal static class AbilityRepeatedEffectAnalysis
             or "exhaust" or "ready" or "heal" or "generate" or "giveStatus"
             or "gainSurge" or "preventDamage" or "preventThreat"
             or "cancelWhenRevealed" or "cancelOccurrence" or "grantUntil"
-            or "grantCharactersControlledBy" or "reduceNextCardCost"
+            or "grantCharactersControlledBy" or "grantCharactersWithTrait" or "reduceNextCardCost"
         || node.OperationName() == "removeThreat"
             && Every(ThreatSelectionOf(node, cast), cast) is { Count: > 0 } schemes
             && schemes.All(scheme => scheme.Area.Type == DeckType.MainSchemesArea

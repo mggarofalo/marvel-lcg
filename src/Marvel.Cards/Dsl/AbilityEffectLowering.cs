@@ -103,6 +103,7 @@ internal static class AbilityEffectLowering
             "shuffle" => new AbilityEffect.Shuffle(SearchArea(argument, child)),
             "payOrEffect" or "payOrExhaust" => PayAlternative(argument, child, node.Kind == "payOrExhaust"),
             "grant" or "grantEach" or "grantUntil" => GrantEffect(argument, child, node.Kind == "grantEach", node.Kind == "grantUntil"),
+            "grantCharactersWithTrait" => AbilityTraitGroupLowering.Lower(argument, child),
             "grantCharactersControlledBy" => GrantControlledEffect(argument, child),
             "defineBaseValue" => AbilityBaseDefinitions.Lower(argument, child),
             "preventDamageFrom" => DamageProhibition(argument, child),
