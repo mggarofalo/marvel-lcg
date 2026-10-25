@@ -190,6 +190,8 @@ public abstract record AbilityEffect
     }
     /// <summary>Discard hand cards providing one or two printed resource icons, as far as possible.</summary>
     public sealed record DiscardResourceIcons(int Count) : AbilityEffect;
+    /// <summary>Choose a counted set of cards from your hand to discard.</summary>
+    public sealed record DiscardHandCards(AbilityNumber Count) : AbilityEffect;
     /// <summary>Place named counters on a card.</summary>
     public sealed record PlaceCounters(AbilityCardSelection Card, string Counter, AbilityNumber Count) : AbilityEffect;
     /// <summary>Remove named counters from a card.</summary>

@@ -50,7 +50,7 @@ internal static class AbilityAdmissionAreaDependencies
         typeof(AbilityEffect.PreventThreat), typeof(AbilityEffect.PreventDamage),
         typeof(AbilityEffect.GrantControlledCharacters),
         typeof(AbilityEffect.DiscardAtRandom), typeof(AbilityEffect.DiscardTop),
-        typeof(AbilityEffect.ReduceNextCardCost),
+        typeof(AbilityEffect.ReduceNextCardCost), typeof(AbilityEffect.DiscardHandCards),
     ];
 
     // This engine-owned preflight collects dependencies of singular lookups,
@@ -204,6 +204,7 @@ internal static class AbilityAdmissionAreaDependencies
             AbilityEffect.PreventThreat threat => threat.Amount,
             AbilityEffect.PreventDamage damage => damage.Amount,
             AbilityEffect.GrantControlledCharacters grant => grant.Amount,
+            AbilityEffect.DiscardHandCards discard => discard.Count,
             AbilityEffect.DiscardAtRandom discard => discard.Count,
             AbilityEffect.DiscardTop discard => discard.Count,
             AbilityEffect.ReduceNextCardCost reduction => reduction.Amount,

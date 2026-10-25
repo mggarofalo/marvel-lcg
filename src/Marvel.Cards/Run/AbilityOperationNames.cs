@@ -82,6 +82,7 @@ internal static class AbilityOperationNames
         AbilityEffect.PutIntoPlay => "putIntoPlay",
         AbilityEffect.InspectEncounterTop => "inspectEncounterTop",
         AbilityEffect.ChooseTopForHand => "chooseTopForHand",
+        AbilityEffect.DiscardHandCards => "discardHandCards",
         AbilityEffect.DiscardResourceIcons => "discardResourceIcons",
         AbilityEffect.ChooseDiscardToShuffle => "chooseDiscardToShuffle",
         AbilityEffect.PlaceCounters => "placeCounters",

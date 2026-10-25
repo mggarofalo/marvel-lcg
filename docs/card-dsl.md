@@ -1026,3 +1026,10 @@ printed ability declarations; an unobserved empty occurrence is omitted.
 completion through ally-limit and entry-response windows for dependent `then`
 text. Unavailable entry has no completion. A `chooseCard` conditional with no
 reachable branch does not offer an unaffected candidate.
+
+`discardHandCards: <number>` asks the resolving player to choose exactly the
+computed number of distinct cards from their own hand, capped by available
+cards. Zero completes without a selection prompt. The entire group is selected
+in one engine-owned request; invalid or foreign selections leave state unchanged.
+The physical discarded cards are retained in the ordinary discard receipt.
+This operation suspends and is not admitted as a dependent-completion predecessor.
