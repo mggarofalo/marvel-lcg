@@ -87,7 +87,7 @@ internal sealed class EventTimelineController(Main main) : IDisposable
         if (panel is not null) return;
         panel = new PanelContainer { Name = "EventTimeline", ZIndex = 90,
             MouseFilter = Control.MouseFilterEnum.Stop };
-        panel.AddThemeStyleboxOverride("panel", Frame(4));
+        panel.AddThemeStyleboxOverride("panel", Frame(4, 0));
         main.AddChild(panel);
         var row = new HBoxContainer();
         panel.AddChild(row);
@@ -227,11 +227,11 @@ internal sealed class EventTimelineController(Main main) : IDisposable
 
     private void HidePreview() => popup?.Hide();
 
-    private static StyleBoxFlat Frame(int inset) => new()
+    private static StyleBoxFlat Frame(int inset, int verticalInset = 2) => new()
     {
         BgColor = CardFaceStyle.Ink, BorderColor = ClientTheme.ToGodot(VisualSystem.Palette.Accent),
         BorderWidthBottom = 1, ContentMarginLeft = inset, ContentMarginRight = inset,
-        ContentMarginTop = 2, ContentMarginBottom = 2,
+        ContentMarginTop = verticalInset, ContentMarginBottom = verticalInset,
     };
 
     public void Dispose()
