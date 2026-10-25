@@ -6,7 +6,7 @@ namespace Marvel.Content.Tests.Play;
 internal sealed class WreckingEncounterCardFixture : CoreCardTestBase
 {
     internal static (World World, EncounterDeckGroup[] Groups, Card Source) Create(
-        string face, int owner, string identity = "01001a", int players = 1, string boostFace = "07037")
+        string face, int owner, string identity = "01001a", int players = 1, string boostFace = "07037", bool extreme = false)
     {
         var world = Hero(identity, players);
         world.CreateCard("01088", world.Seats[0].Deck);
@@ -18,11 +18,15 @@ internal sealed class WreckingEncounterCardFixture : CoreCardTestBase
         {
             var deck = world.CreateArea(DeckType.EncounterDeck);
             Card[] boosts = [world.CreateCard(boostFace, deck), world.CreateCard(boostFace, deck)];
+            var villain = world.CreateCard(villains[index], world.AreaOf(DeckType.VillainArea));
+            Card[] stages = extreme
+                ? [villain, world.CreateCard((int.Parse(villains[index]) + 1).ToString("D5"), world.AreaOf(DeckType.VillainDeck))]
+                : [villain];
             return new EncounterDeckGroup(
-                world.CreateCard(villains[index], world.AreaOf(DeckType.VillainArea)),
+                villain,
                 world.CreateCard(schemes[index], world.AreaOf(DeckType.SideSchemesArea)),
                 deck, world.CreateArea(DeckType.EncounterDiscardPile),
-                index == owner ? [.. boosts, source] : boosts);
+                index == owner ? [.. boosts, source] : boosts, stages);
         }).ToArray();
         world.BindEncounterTopology(new EncounterTopology(world, groups, groups[1].Villain));
         return (world, groups, source);

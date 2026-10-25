@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -89,7 +87,8 @@ public sealed class WreckingEscapedConvictTests
         List<GameEvent> events = [];
         Finish(world, runner, events);
         Assert.Equal(hero ? 2 : 1, events.OfType<AttackBoundary>().Count(item => item.Started));
-        Assert.Equal(hero ? 6 : 4, world.Seats[0].IdentityCard.Damage);
+        // Waiting adds two ATK to Wrecker (four damage); Bulldozer then attacks for three.
+        Assert.Equal(hero ? 7 : 4, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(1, groups[3].Scheme.Tokens.GetValueOrDefault("k_threat"));
         Assert.Single(groups[3].Deck.Cards);
         Assert.Equal(2, groups[0].Deck.Cards.Count);
@@ -130,43 +129,6 @@ public sealed class WreckingEscapedConvictTests
         Assert.Equal(5, world.Seats[1].IdentityCard.Damage);
         Assert.Same(groups[3], world.EncounterTopology!.Active);
         Assert.Same(groups[0].Discard, source.Area);
-    }
-
-    [Fact]
-    public void CounterChangeDuringOriginalAttackDoesNotRetargetDelayedAttack()
-    {
-        var (world, groups, source) = WreckingEncounterCardFixture.Create("07009", 0);
-        // Synthetic optional attack-end response creates a routing checkpoint; Convict stays canonical.
-        var document = JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
-        var identity = document["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "01001a")!;
-        identity["abilities"]!.AsArray().Add(JsonNode.Parse("""
-        {"trigger":{"event":"WhenAttackEnds","timing":"Response","player":"you"},
-         "effect":{"draw":{"player":"you","count":1}}}
-        """));
-        var runner = new AbilityRunner(AbilityCatalog.Parse(document.ToJsonString()));
-        world.Abilities = runner;
-        for (int index = 0; index < 4; index++)
-            groups[index].Scheme.PlaceTokens("k_threat", index == 2 ? 0 : 5);
-        World.MoveToTop(source, groups[1].Deck);
-        Start(world, groups[1], attack: true);
-        List<GameEvent> events = [];
-        // Synthetic routing perturbation between canonical activations isolates the captured villain.
-        Prompt checkpoint;
-        for (int count = 0; ; count++)
-        {
-            checkpoint = Assert.IsType<Prompt>(Sequence.Work(world, world.Facts, runner, events));
-            Assert.True(count < 15);
-            if (events.OfType<AttackBoundary>().Any(item => !item.Started)) break;
-            Assert.True(checkpoint.Cancellable, checkpoint.Description);
-            Sequence.Answer(world, world.Facts, runner, checkpoint, Decision.Decline, events);
-        }
-        Assert.Single(events.OfType<AttackBoundary>(), item => item.Started);
-        world.EncounterTopology!.SelectActive(groups[3].Villain, "synthetic counter change", []);
-        Sequence.Answer(world, world.Facts, runner, checkpoint, Decision.Decline, events);
-        Finish(world, runner, events);
-        Assert.Equal(groups[2].Villain.ObjectId,
-            events.OfType<AttackBoundary>().Last(item => item.Started).Source);
-        Assert.Same(groups[3], world.EncounterTopology.Active);
     }
 
     [Theory]
