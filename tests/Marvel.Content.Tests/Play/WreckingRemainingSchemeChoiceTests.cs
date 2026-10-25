@@ -15,6 +15,7 @@ public sealed class WreckingRemainingSchemeChoiceTests
         world.Abilities = runner;
         foreach (var seat in world.Seats) world.CreateCard("01088", seat.Deck);
         var first = world.CreateCard("01056", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        first.PlaceTokens("attack", 3);
         var second = world.CreateCard("01092", first.Area);
         var cheaper = world.CreateCard("01057", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         var other = world.CreateCard("01092", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
@@ -28,12 +29,9 @@ public sealed class WreckingRemainingSchemeChoiceTests
         Assert.Equal(new[] { first.ObjectId, second.ObjectId }.Order(), choice.Affordances.Select(item => item.Id).Order());
         Assert.Equal(13, groups[2].Scheme.Tokens["k_threat"]);
         Sequence.Answer(world, world.Facts, runner, choice, Decision.Take(second.ObjectId), []);
-        choice = Sequence.Work(world, world.Facts, runner, [])!;
-        Assert.Equal(1, choice.Player);
-        Assert.Equal(other.ObjectId, Assert.Single(choice.Affordances).Id);
-        Assert.Equal(13, groups[2].Scheme.Tokens["k_threat"]);
-        Sequence.Answer(world, world.Facts, runner, choice, Decision.Take(other.ObjectId), []);
-        WreckingRemainingSchemeFixture.Finish(world, runner);
+        // rr:first-player.1 assigns selection when there are "multiple eligible targets".
+        // The other player's sole eligible card resolves without another choice.
+        Assert.Null(Sequence.Work(world, world.Facts, runner, []));
         Assert.Equal(3, groups[2].Scheme.Tokens["k_threat"]);
         Assert.Equal(DeckType.DiscardPile, second.Area.Type);
         Assert.Equal(DeckType.DiscardPile, other.Area.Type);

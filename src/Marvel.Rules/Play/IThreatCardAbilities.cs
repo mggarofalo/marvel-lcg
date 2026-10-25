@@ -15,7 +15,7 @@ public interface IThreatCardAbilities : IEncounterCardAbilities
     bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1);
 
     /// <summary>Whether threat may be removed specifically by a thwart.</summary>
-    bool CanThwartScheme(World world, Card scheme, int ignoredSource = -1) => CanRemoveThreat(world, scheme, ignoredSource);
+    bool CanThwartScheme(World world, Card scheme, int ignoredSource = -1);
 
     /// <summary>The scheme receiving this enemy's activation threat.</summary>
     Card? SchemeDestination(World world, Card enemy);

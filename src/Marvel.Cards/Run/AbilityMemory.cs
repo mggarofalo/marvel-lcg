@@ -9,5 +9,6 @@ internal sealed record AbilityMemory(ImmutableDictionary<string, long> Results,
     ImmutableHashSet<int> CrisisIgnoringThwarts, CardInstanceState SourceState,
     bool SurgeGained)
 {
+    internal System.Collections.Immutable.ImmutableArray<(int Card, int Incarnation)> DamageDefeats { get; init; } = [];
     internal ImmutableHashSet<int> ExhaustedForCost { get; init; } = [];
 }

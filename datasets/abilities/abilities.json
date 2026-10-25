@@ -12745,6 +12745,47 @@
           }
         }
       ]
+    },
+    {
+      "card": "07016",
+      "name": "You're Dead Meat!",
+      "note": "Printed 07016; rr:first-player.1 resolves tied lowest remaining health. ruling:28d343ac007bd784 preserves a defeat even when an interrupt returns that ally to hand. The damage receipt names the exact chosen incarnation.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "minBy": {
+                  "of": { "query": "heroAndAllyTargets" },
+                  "by": "remainingHealth"
+                }
+              },
+              "effect": {
+                "seq": [
+                  { "dealDamage": { "cards": "chosen", "amount": 1 } },
+                  {
+                    "if": {
+                      "test": { "wasDefeatedByDamage": "chosen" },
+                      "then": {
+                        "placeThreat": {
+                          "scheme": { "titled": "Day of Reckoning" },
+                          "amount": 3
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

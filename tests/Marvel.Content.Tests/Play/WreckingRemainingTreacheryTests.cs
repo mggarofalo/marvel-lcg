@@ -32,6 +32,7 @@ public sealed class WreckingRemainingTreacheryTests
     [InlineData(false, false)]
     [InlineData(true, false)]
     [InlineData(false, true)]
+    [InlineData(true, true)]
     public void DeadMeatRanksRemainingHealthAcrossPlayersAndThreatRequiresActualDefeat(bool lethal, bool tough)
     {
         // 07016: "Deal 1 damage to the hero or ally with the fewest remaining hit points."
@@ -40,14 +41,16 @@ public sealed class WreckingRemainingTreacheryTests
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
         var ally = world.CreateCard("01083", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+        world.CreateCard("01088", world.Seats[1].Deck);
         int initialDamage = lethal ? 2 : 1;
         ally.TakeDamage(initialDamage);
         if (tough) Statuses.Give(world, ally, Statuses.Tough);
         runner.ExecuteReveal(world, source, 0);
         Finish(world, runner);
-        Assert.Equal(lethal ? DeckType.DiscardPile : DeckType.AlliesArea, ally.Area.Type);
-        if (!lethal) Assert.Equal(initialDamage + (tough ? 0 : 1), ally.Damage);
-        Assert.Equal(lethal ? 3 : 0, groups[0].Scheme.Tokens.GetValueOrDefault("k_threat"));
+        bool defeated = lethal && !tough;
+        Assert.Equal(defeated ? DeckType.DiscardPile : DeckType.AlliesArea, ally.Area.Type);
+        if (!defeated) Assert.Equal(initialDamage + (tough ? 0 : 1), ally.Damage);
+        Assert.Equal(defeated ? 3 : 0, groups[0].Scheme.Tokens.GetValueOrDefault("k_threat"));
         Assert.All(groups.Skip(1), group => Assert.Equal(0, group.Scheme.Tokens.GetValueOrDefault("k_threat")));
         Assert.All(world.Seats, seat => Assert.Equal(0, seat.IdentityCard.Damage));
         Assert.Same(groups[1], world.EncounterTopology!.Active);

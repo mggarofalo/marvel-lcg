@@ -25,12 +25,11 @@ internal static class AbilityExpressionAreaDependencies
                 CollectSingularAreaDependencies(comparison.Value, cast, areas);
                 CollectSingularAreaDependencies(comparison.Count, cast, areas);
                 break;
-            case AbilityCondition.CardText text: CollectCardsInDependencies(text.Card, cast, areas); break;
-            case AbilityCondition.IsKind kind: CollectCardsInDependencies(kind.Card, cast, areas); break;
-            case AbilityCondition.IsEnemyAttacker attacker:
-                CollectCardsInDependencies(attacker.Card, cast, areas);
+            case AbilityCondition.CardText or AbilityCondition.IsKind
+                or AbilityCondition.IsEnemyAttacker or AbilityCondition.WasDefeatedByDamage
+                or AbilityCondition.WasDefeated:
+                CollectCardsInDependencies(CardReadBy(condition), cast, areas);
                 break;
-            case AbilityCondition.WasDefeated defeated: CollectCardsInDependencies(defeated.Card, cast, areas); break;
             case AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
                 or AbilityCondition.CausedThreat or AbilityCondition.Exists or AbilityCondition.LegalPractice
                 or AbilityCondition.AutomaticThwart or AbilityCondition.TitleInPlay or AbilityCondition.InForm
@@ -39,6 +38,16 @@ internal static class AbilityExpressionAreaDependencies
             default: throw new InvalidOperationException("Unknown compiled condition in area-dependency analysis");
         }
     }
+
+    private static AbilityCardSelection CardReadBy(AbilityCondition condition) => condition switch
+    {
+        AbilityCondition.CardText text => text.Card,
+        AbilityCondition.IsKind kind => kind.Card,
+        AbilityCondition.IsEnemyAttacker attacker => attacker.Card,
+        AbilityCondition.WasDefeatedByDamage defeated => defeated.Card,
+        AbilityCondition.WasDefeated defeated => defeated.Card,
+        _ => throw new InvalidOperationException("Condition does not read a card selector"),
+    };
 
     internal static void CollectSingularAreaDependencies(
         AbilityNumber number, AbilityAdmissionContext context, HashSet<DeckType> areas)

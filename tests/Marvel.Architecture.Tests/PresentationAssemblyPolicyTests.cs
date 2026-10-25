@@ -244,6 +244,9 @@ public sealed class PresentationAssemblyPolicyTests
             // The client selects and owns an explicitly queued embedded transport.
             "Marvel.Protocol.RuntimeIdentity",
             "Marvel.Protocol.ScenarioSetupChoice",
+            // Discovery variant values are wire data validated by ScenarioChoiceContract;
+            // scenario admission and legality remain server-owned.
+            "Marvel.Protocol.ScenarioVariantChoice",
             "Marvel.Protocol.SeatInvitation",
             "Marvel.Protocol.SetupChoices",
             "Marvel.View.AreaDescriptor",

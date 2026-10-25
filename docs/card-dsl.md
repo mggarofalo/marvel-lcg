@@ -491,6 +491,15 @@ qualify; overkill dealt to the identity does. Damage dealt remains distinct from
 damage taken or prevented under `rr:damage.3.2`. `activationDamage` retains the
 activation's aggregate damage result.
 
+`wasDefeatedByDamage` takes a card selector and tests whether the most recent
+direct damage node in this resolution defeated that exact card incarnation.
+The receipt survives suspended choices and the defeated card leaving play or
+returning; a retained `chosen` binding identifies the original incarnation.
+An empty receipt is false. An attack-damage completion clears this direct-damage
+receipt and does not supply attack-defeat results. Selecting the latest receipt is an
+engine convention for expressing printed "defeated this way" conditions; this
+does not change `wasDefeated`, which reads defeats in the current occurrence.
+
 An actor role of `you` requires the player's identity, rather than an ally they
 control. `WhenBasicAttackEnds` distinguishes completed basic attacks from card
 ability attacks within `WhenAttackEnds`, as required by One-Two Punch.

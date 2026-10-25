@@ -63,6 +63,7 @@ internal static class AbilityResolutionRestoration
     internal static void RestorePersisted(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, AbilityContinuationState state)
     {
+        cast.DamageDefeats = state.Memory.DamageDefeats;
         cast.Execution = state.Execution;
         cast.PowerExecution = state.PowerExecution;
         if (state.PowerExecution is { } power)

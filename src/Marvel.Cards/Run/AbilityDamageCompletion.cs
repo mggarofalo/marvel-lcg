@@ -14,6 +14,10 @@ internal sealed class AbilityDamageCompletion(Occurrence occurrence)
     internal void Add(DamageResult result, long requested, bool marksDamage) => direct.Add(new(result, requested, marksDamage));
     internal void Add(AttackDamageResult result, long requested) => attacks.Add(new(result, requested));
 
+    internal System.Collections.Immutable.ImmutableArray<(int Card, int Incarnation)> Defeats =>
+        [.. direct.Where(item => item.Result.Outcome == Damage.Outcome.Defeated)
+            .Select(item => (item.Result.Target, item.Result.TargetIncarnation))];
+
     internal AbilityStructuralOutcome Complete()
     {
         if (!IsComplete) throw new InvalidOperationException("the damage node still owns unfinished recipients");

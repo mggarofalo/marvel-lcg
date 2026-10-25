@@ -189,6 +189,7 @@ internal static class AbilityDamageAndThreatExecution
         long amount = ModifiedAbilityDamage(AbilityAmounts.SaturatingMultiply(
             Amount(damage.Amount, context), multiplier), context);
         string verb = damage.AttackVerb ? "Attack" : "Deal_Damage";
+        state.Damage = new(context.Occurrence);
         bool suspended = false;
         var occurrence = context.World.Agenda.Occurrence;
         foreach (var target in Every(damage.Cards, context))
@@ -198,7 +199,7 @@ internal static class AbilityDamageAndThreatExecution
                     AbilityEffectAttribution.IdentityPlayer(context))
                     { RecordDefeatOn = occurrence }, context.Events);
             suspended |= !result.IsComplete;
-            (state.Damage ??= new(context.Occurrence)).Add(result, amount, context.Power == BasicPowers.AttackVerb);
+            state.Damage.Add(result, amount, context.Power == BasicPowers.AttackVerb);
         }
         if (suspended) state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
     }

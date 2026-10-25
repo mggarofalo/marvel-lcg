@@ -22,6 +22,11 @@ public sealed class DamageResult
     private Damage.PlacedDamage Placement => placed
         ?? throw new InvalidOperationException("damage amounts are unresolved before placement");
 
+    /// <summary>The exact physical recipient and incarnation at damage initiation.</summary>
+    public int Target { get; internal init; }
+    /// <summary>The recipient incarnation, retained across defeat and re-entry.</summary>
+    public int TargetIncarnation { get; internal init; }
+
     internal void Place(Damage.PlacedDamage value) => placed = value;
     internal void Complete(Damage.Outcome value) => outcome = value;
 }

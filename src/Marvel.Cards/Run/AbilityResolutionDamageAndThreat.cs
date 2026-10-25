@@ -50,6 +50,7 @@ internal static class AbilityResolutionDamageAndThreat
     }
     private static void RetainDamageCompletion(AbilityDamageAndThreatResult result, AbilityResolutionState cast)
     {
+        if (result.Damage is { IsComplete: true } receipt) cast.DamageDefeats = receipt.Defeats;
         cast.CompletedOutcome = result.Damage is { IsComplete: true } damage ? damage.Complete() : result.Outcome;
         cast.PendingDamageCompletion = result.Damage is { IsComplete: false } ? result.Damage : null;
     }

@@ -24,7 +24,7 @@ internal static class DefeatedCardAbilityResolution
         var own = defeats.SelectMany(defeat => Own(execution, world, world.Cards[defeat.Card], defeat)).ToArray();
         var defeated = defeats[0];
         var card = world.Cards[defeated.Card];
-        if (own.Length == 0 && execution.Answering(world, card, occurrence, world.Agenda.Occurrence).Count == 0)
+        if (own.Length == 0 && execution.Answering(world, occurrence, world.Agenda.Occurrence).Count == 0)
             return [];
 
         var resume = new PhaseStep(

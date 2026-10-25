@@ -11,7 +11,7 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
     private DamageReplacement? replacement;
     private bool placed;
     private readonly int priorDefeats = request.RecordDefeatOn?.Defeats.Count ?? 0;
-    internal DamageResult Result { get; } = new(completion ?? execution);
+    internal DamageResult Result { get; } = new(completion ?? execution) { Target = request.Target.ObjectId, TargetIncarnation = request.Target.Incarnation };
     internal AbilityExecution Execution => execution;
 
     internal void Continue(List<GameEvent> events)

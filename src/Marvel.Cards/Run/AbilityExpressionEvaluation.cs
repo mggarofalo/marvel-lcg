@@ -110,11 +110,23 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityCondition.IsEnemyAttacker attacker => selectors.Find(attacker.Card) is { } source
             && DeckTypes.IsInPlay(source.Area.Type)
             && context.World.Attack is { } attack && attack.Enemy == source.ObjectId,
+        AbilityCondition.WasDefeatedByDamage defeated => WasDefeatedByDamage(defeated.Card),
         AbilityCondition.WasDefeated defeated => selectors.Find(defeated.Card) is { } card
             && context.Occurrence.Defeats.Any(defeat => defeat.Card == card.ObjectId),
         AbilityCondition.IsYourIdentity identity => selectors.Find(identity.Card)?.ObjectId == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,
         _ => throw new InvalidOperationException("Unknown compiled condition"),
     };
+
+    private bool WasDefeatedByDamage(AbilityCardSelection selection)
+    {
+        // Engine choice: receipts name the retained selection's exact incarnation,
+        // including after defeat moves the character out of play.
+        var retained = selection is AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen }
+            ? context.Bindings.ChosenBinding : null;
+        var card = retained?.Card ?? selectors.Find(selection);
+        int incarnation = retained?.Incarnation ?? card?.Incarnation ?? -1;
+        return card is not null && context.Bindings.DamageDefeats.Contains((card.ObjectId, incarnation));
+    }
 
     private bool IsKind(AbilityCondition.IsKind condition) => condition.Card is
         AbilityCardSelection.Bound { Binding: AbilityCardBinding.Defeated }

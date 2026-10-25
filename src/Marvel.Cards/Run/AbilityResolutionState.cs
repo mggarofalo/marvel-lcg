@@ -23,6 +23,7 @@ internal sealed record AbilityResolutionState(
 
     public Defeated? TriggeringDefeat { get; set; }
     public Attacked? TriggeringAttack { get; set; }
+    internal System.Collections.Immutable.ImmutableArray<(int Card, int Incarnation)> DamageDefeats { get; set; } = [];
     internal AbilityExecution? Execution { get; set; }
     internal AbilityPowerExecutionState? PowerExecution { get; set; }
     internal AbilityPaymentPlan? PendingPayment { get; set; }
