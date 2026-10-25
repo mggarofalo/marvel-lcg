@@ -190,6 +190,7 @@ Seven, all run by hand and none on any path a game takes.
 | what the engine tells a client the player can do | [affordances.md](docs/affordances.md) |
 | saves, deterministic replay, undo, redo, action reordering, session logs or telemetry | [session-ledger.md](docs/session-ledger.md) |
 | the supported product boundary | [scope.md](docs/scope.md) |
+| implementing a content pack/wave or auditing its research readiness | [marvel-pack-delivery skill](.agents/skills/marvel-pack-delivery/SKILL.md) |
 | Presentation, protocol, transport, observability or host composition projects | [presentation-layer.md](docs/presentation-layer.md) |
 | launching or smoke-testing the Godot client | [godot-client.md](docs/godot-client.md) |
 | releases, artifact versions, signing, compatibility, installation or upgrades | [release-policy.md](docs/release-policy.md) |
