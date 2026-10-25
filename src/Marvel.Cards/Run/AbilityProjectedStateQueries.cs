@@ -13,6 +13,8 @@ internal static class AbilityProjectedStateQueries
         AbilityCardSelection selector, AreaProjectionState state,
         AbilityAdmissionContext context)
     {
+        if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.OtherVillainSideSchemes })
+            return [.. AbilityOtherVillainSchemeQuery.InAreas(context, state)];
         if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainOfAttachedScheme })
             return [.. AbilityAttachedSchemeVillainQuery.InAreas(context, state)];
         if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.ActiveVillainSideScheme })

@@ -12,7 +12,7 @@ internal static class AbilityEncounterSchemeQueries
 
     internal static bool UsesGroupOrder(AbilityCardSelection selector) => selector switch
     {
-        AbilityCardSelection.Query query => IsRanked(query.Kind),
+        AbilityCardSelection.Query query => IsRanked(query.Kind) || query.Kind == AbilityCardQuery.OtherVillainSideSchemes,
         AbilityCardSelection.WithTrait filter => UsesGroupOrder(filter.Cards),
         AbilityCardSelection.FaceDown filter => UsesGroupOrder(filter.Cards),
         AbilityCardSelection.Last filter => UsesGroupOrder(filter.Cards),

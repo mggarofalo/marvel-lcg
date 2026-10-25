@@ -12,6 +12,8 @@ internal static class AbilitySelectorTrace
 {
     internal static List<Card> TraceCandidateCards(AbilityCardSelection selector, AbilityAdmissionScope cast) => selector switch
     {
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.OtherVillainSideSchemes } =>
+            [.. AbilityOtherVillainSchemeQuery.Candidates(cast.World)],
         AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainOfAttachedScheme } =>
             [.. AbilityAttachedSchemeVillainQuery.Candidates(cast.World)],
         AbilityCardSelection.Query { Kind: AbilityCardQuery.ActiveVillainSideScheme } =>

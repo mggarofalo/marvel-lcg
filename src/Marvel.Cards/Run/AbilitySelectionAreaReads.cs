@@ -43,7 +43,7 @@ internal static class AbilitySelectionAreaReads
     }
 
     private static bool ReadsPairedScheme(AbilityCardQuery query) =>
-        query is AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme || AbilityEncounterSchemeQueries.IsRanked(query);
+        query is AbilityCardQuery.OtherVillainSideSchemes or AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme || AbilityEncounterSchemeQueries.IsRanked(query);
 
     private static IEnumerable<DeckType> SearchTypes(AbilitySearchArea area) =>
         area == AbilitySearchArea.YourPlayArea ? Enum.GetValues<DeckType>().Where(DeckTypes.IsInPlay)

@@ -917,3 +917,11 @@ all ties. Supported `by` values include `cost`, `attack`, `printedHealth`,
 admission. Ranking alone does not imply removal; a removal effect ranks an
 explicit `discardable` pool when permanent cards must be excluded before the
 comparison (rr:permanent.4.1).
+
+`otherVillainSideSchemes` selects live schemes paired with living villains other
+than the source attachment's physical host, in scenario group order. It excludes
+unpaired schemes and follows projected stage membership and attachment hosts. A
+missing topology or unpaired host raises; a departed source or defeated host has
+no targets. A living selected villain must retain its live paired scheme. The
+selector spelling is an authored DSL choice motivated by Wrecker's Command
+(07007); it does not itself implement simultaneous threat placement.

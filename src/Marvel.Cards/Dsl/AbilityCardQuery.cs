@@ -86,4 +86,6 @@ public enum AbilityCardQuery
     CardsYouControl,
     /// <summary>All living villains, independently of the active counter.</summary>
     Villains,
+    /// <summary>Live schemes paired with living villains other than this attachment's host.</summary>
+    OtherVillainSideSchemes,
 }

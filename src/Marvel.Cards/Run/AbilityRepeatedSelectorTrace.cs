@@ -118,6 +118,8 @@ internal static class AbilityRepeatedSelectorTrace
     internal static bool TraceQueryMatches(
         AbilityCardQuery query, Card candidate, AbilitySelectorTraceContext trace)
     {
+        if (query == AbilityCardQuery.OtherVillainSideSchemes)
+            return AbilityOtherVillainSchemeQuery.InTrace(trace).Contains(candidate);
         if (query == AbilityCardQuery.VillainOfAttachedScheme)
             return AbilityAttachedSchemeVillainQuery.InTrace(trace).Contains(candidate);
         if (query == AbilityCardQuery.ActiveVillainSideScheme)
