@@ -11,14 +11,40 @@ Printed behavior comes from `datasets/cards/cards.json` (35 faces, 03001a/b and
 `datasets/marvelsdb/pack/cap.json`. The latter has 30 records with quantity sum54,
 including both sides of the one physical identity, and omits obligation/nemesis
 records supplied by the joined dataset. Therefore 54 is **not** the physical pack
-count. Reconcile the remaining physical quantities and supplied starter deck
-against the official rulesheet before creating executable setup; do not infer
-physical completeness from the 35-face count.
+count. The 35-face count does not establish physical completeness.
 
-The official insert is vendored at `datasets/rules-packs/mc04/leadership.md`, with
-source pin in `sources.manifest.json`. Its extracted paragraph describes play but
-does not itself enumerate the complete contents or starter deck. This source gap
-blocks component acceptance until the pinned PDF's printed list is checked.
+The pinned official rulesheet (SHA-256
+`a8e3bffc7953b7ca0a6182cdcaaaa80f3d79710efc3b0e289c9ff46c0110a87a`)
+refers to the reverse of the physical divider for the deck list. Its second
+page is artwork, not a component list. The extracted insert remains at
+`datasets/rules-packs/mc04/leadership.md`.
+
+The [printed divider photograph](https://hallofheroeslcg.com/wp-content/uploads/2020/06/capamericadeck-1.jpg)
+was inspected on 2026-10-25 and independently checked against the starter recipe.
+The photograph is 128,889 bytes, SHA-256
+`d4db6702c25c7d537d8700518aec5903aef7bd2ee9afa8e480f9c521384b9b6c`.
+It confirms these quantities:
+
+| Group | Printed card ids and quantities |
+|---|---|
+| Signature (15) | 03002 x1; 03003 x2; 03004 x3; 03005 x2; 03006 x2; 03007 x1; 03008 x1; 03009 x1; 03010 x2 |
+| Leadership (17) | 03011–03014 x1 each; 03015 x3; 03016 x2; 03017 x3; 03018 x2; 03019 x3 |
+| Basic (8) | 03020–03024 x1 each; 03025 x3 |
+| Obligation | 03026 x1 |
+| Nemesis (5) | 03027 x1; 03028 x1; 03029 x2; 03030 x1 |
+
+The [printed packaging photograph](https://hallofheroeslcg.com/wp-content/uploads/2020/01/backofcap.jpg)
+states 60 cards and a 40-card starter. It is 462,512 bytes, SHA-256
+`28b68f0c51922d32c24bb3d2c899f0002beb885e19c2f6f045efe083b7803e41`.
+The starter recipe agrees with the divider; no correction is demonstrated.
+These photographs are research evidence, not new runtime or build inputs.
+
+MARVEL-629 remains open for independent confirmation of the four extra designs'
+physical quantities (03031–03034) and whether the advertised count includes the
+divider. Acquisition quantities suggest three of each extra: one identity +15
+signature +25 aspect/basic +1 obligation +5 nemesis +12 extras =59 game cards,
+plus one divider =60. That arithmetic is an inference, not printed confirmation
+of the complete physical manifest.
 
 FAQ entries under `datasets/marvelcdb-faq/faq.json` for 03001a, 03006, 03024,
 03025, 03032 and 03033 are material. In particular: Shield setup cannot retrieve
