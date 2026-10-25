@@ -19,9 +19,11 @@ public sealed class WreckingThreatCardTests
         int attacker, bool placeThreat, int expectedDamage)
     {
         // 07015: "Wrecker gets +3 ATK for this activation unless you place 2 threat on his side scheme."
-        var (world, groups, source) = WreckingEncounterCardFixture.Create("07015", attacker);
+        var (world, groups, source) = WreckingEncounterCardFixture.Create("07015", 0);
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
+        // Synthetic cross-deck placement exercises active-deck dealing while
+        // preserving the printed card's physical ownership by Wrecker's deck.
         World.MoveToTop(source, groups[1].Deck);
         world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), 1, 2,
             Subject: groups[attacker].Villain.ObjectId, Seat: 0));
@@ -32,7 +34,7 @@ public sealed class WreckingThreatCardTests
         Assert.Equal(placeThreat ? 2 : 0, groups[0].Scheme.Tokens.GetValueOrDefault("k_threat"));
         Assert.All(groups.Skip(1), group => Assert.Equal(0, group.Scheme.Tokens.GetValueOrDefault("k_threat")));
         Assert.Same(groups[1], world.EncounterTopology!.Active);
-        Assert.Same(groups[attacker].Discard, source.Area);
+        Assert.Same(groups[0].Discard, source.Area);
         Assert.DoesNotContain(world.Effects.Active(), effect => effect.Card == source.ObjectId);
         Assert.Equal(2, StateFields.Modified(world, groups[0].Villain, "attack", world.Facts, 1));
     }
