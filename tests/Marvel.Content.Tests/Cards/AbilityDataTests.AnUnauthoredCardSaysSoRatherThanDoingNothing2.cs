@@ -197,7 +197,10 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         var permitted = cards.RootElement.GetProperty("cards").EnumerateArray()
             .Where(card => card.GetProperty("pack").GetString() is "core" or "trors" or "twc")
             .Select(card => card.GetProperty("card_id").GetString()!).ToHashSet(StringComparer.Ordinal);
-        permitted.UnionWith(["03001a", "03001b", "03002", "03003", "03004", "03005", "03007", "03008", "03009", "03010", "03013", "03031"]);
+        permitted.UnionWith(["03001a", "03001b", "03002", "03003", "03004", "03005", "03007", "03008", "03009", "03010",
+            "03012", "03013", "03016", "03017", "03018", "03020", "03021", "03022", "03023", "03024", "03025", "03027", "03029", "03031", "03032", "03034"]);
+
+
         Assert.All(AuthoredCards.Book.Authored, face => Assert.Contains(face, permitted));
     }
 

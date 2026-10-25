@@ -58,6 +58,7 @@ internal sealed class AbilityExpressionEvaluation(
             context.World.Facts.Kind(card.FaceId)).Distinct().LongCount(),
         AbilityResolutionNumber.CompletedAttackDamageDealt =>
             context.Occurrence.CompletedEnemyAttack?.DamageDealt ?? 0,
+        AbilityResolutionNumber.CardsExhaustedForCost => context.Bindings.ExhaustedForCost.Count,
         AbilityResolutionNumber.ActivationAttacksAgainstYou =>
             context.Results.GetValueOrDefault(AbilityActivationReceipts.PlayerKey(context.Player)),
         AbilityResolutionNumber.PrintedBoostIconsDiscarded => context.Discarded.Sum(card =>

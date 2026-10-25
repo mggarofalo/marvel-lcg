@@ -156,11 +156,13 @@ public sealed class CoreLastingEffectCardsTests
 
     [Rule("rr:play-put-into-play")]
     [Rule("rr:ownership-and-control.7.2")]
-    [Fact]
-    public void MakeTheCallPricesTheChosenAllyAndPutsItUnderYourControl()
+    [Theory]
+    [InlineData("01071")]
+    [InlineData("03016")]
+    public void MakeTheCallPricesTheChosenAllyAndPutsItUnderYourControl(string face)
     {
         var world = Board();
-        var source = world.CreateCard("01071", world.Seats[0].Hand);
+        var source = world.CreateCard(face, world.Seats[0].Hand);
         world.CreateCard("01005", world.Seats[0].Deck);
         var doubleResource = world.CreateCard("01088", world.Seats[0].Hand);
         var singleResource = world.CreateCard("01003", world.Seats[0].Hand);
@@ -191,15 +193,17 @@ public sealed class CoreLastingEffectCardsTests
         Assert.Equal(DeckType.DiscardPile, singleResource.Area.Type);
     }
 
-    [Fact]
-    public void PowerOfLeadershipGeneratesTwoForMakeTheCallsLeadershipAlly()
+    [Theory]
+    [InlineData("01071", "01072")]
+    [InlineData("03016", "03018")]
+    public void PowerOfLeadershipGeneratesTwoForMakeTheCallsLeadershipAlly(string callFace, string powerFace)
     {
         // The official FAQ for 01071 says Make the Call pays the ally's own
         // cost. A matching Power of Aspect card therefore generates two
         // resources even though Make the Call, rather than the ally, is played.
         var world = Board();
-        var source = world.CreateCard("01071", world.Seats[0].Hand);
-        var power = world.CreateCard("01072", world.Seats[0].Hand);
+        var source = world.CreateCard(callFace, world.Seats[0].Hand);
+        var power = world.CreateCard(powerFace, world.Seats[0].Hand);
         world.CreateCard("01005", world.Seats[0].Deck);
         var theirDiscard = world.AreaOf(
             DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1);

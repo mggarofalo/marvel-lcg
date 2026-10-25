@@ -97,7 +97,7 @@ Reprints need pack-face admission and representative execution, not empty rows.
 | 03030 Hail Hydra! | Every Hydra minion engaged with a hero attacks that hero; each player not attacked searches deck/discard for Hydra minion; only searched deck shuffles; alter-ego, none/many, defeated/eliminated and attack-cancellation accounting. |
 | 03031 Enraged | Ally attachment max1; +2ATK and +1 attack consequential damage; thwart unchanged; damage-prevention/defeat and control changes. |
 | 03032 Followed | Side-scheme max1; optional interrupt before scheme defeat;4 to legal enemy while scheme still in play; Madame Hydra immunity negative control; attached card discarded afterward. |
-| 03033 Expert Defense | Hero actual basic defense declaration, before boost reveal; +3DEF for that attack only; no ally defense or defense-event-only trigger; multiplayer defender. |
+| 03033 Expert Defense | Current RR1.8 hero-defends timing, including defense-labeled abilities under rr:defend-defense.4.2; basic declaration before boost reveal; +3DEF for that attack only; ally/foreign/nonattack and multiplayer controls. MARVEL-649 owns the committed-defense occurrence and authority reconciliation; the pre-1.5 basic-only ruling does not override current RR. |
 | 03034 Enhanced Awareness | Uses3 mental, Hero Resource exhaust+counter cost; removes final counter and discards; no alter-ego or exhausted use; generator remains committed through final departure. |
 
 ## Confirmed mechanic blockers
@@ -107,6 +107,8 @@ Reprints need pack-face admission and representative execution, not empty rows.
 - Shield Toss variable simultaneous composition: childd673eba4-e4a8-4b37-8715-811cc21d9dc9.
 - Falcon private multi-card look and Wonder Man mandatory attack cost:
   child30e1d631-8063-4a66-8025-9df30695213e.
+- Committed hero-defense timing for Expert Defense under RR1.8:
+  MARVEL-649, child5229cb6c-b82c-421d-a79b-eda7ab649b3e.
 
 All are in Content Expansion, linked as blockers of MARVEL-560. Additional
 implementation findings must become actionable dependencies, not exemptions from
@@ -375,3 +377,128 @@ wrong character and premature discard. Independent source review found no
 blocking finding within this bounded mechanic scope. Evidence-producing entry
 methods now have their own owner; the prior admission class shrinks from 425 to
 398 lines without relaxing its debt gate.
+
+## Reprinted faces
+
+Nine further research interpretations cover Hawkeye (03012), Make the Call
+(03016), The Power of Leadership (03018), Mockingbird (03020), Energy/Genius/
+Strength (03021–03023), Avengers Tower (03024) and Hydra Soldier (03029).
+Each face's canonical printed text matches its existing Core or RoRS printing;
+the Captain version of Hydra Soldier retains its distinct nemesis metadata.
+
+Existing lifecycle, payment and Tower controls run against both printings.
+They distinguish four arrows from Uses, arrow payment and damage, foreign ally
+ownership versus control, resource doubling for the chosen ally, conditional
+ally limits, cross-player discounts and phase expiry. The Hydra Soldier control
+supplies its defeat occurrence and proves encounter-card recipient attribution;
+it is not a complete nemesis reveal/defeat journey. Additional game-decision
+tests play Mockingbird, decline or choose a villain/another player's minion,
+and verify that only the chosen enemy is stunned. The three double resources
+pay for a support, and Leadership's doubled output is excluded for Basic cards.
+
+These additions remain behind the closed product gate. Complete deck limits,
+nemesis setup, starter composition and client journeys are still pack acceptance
+obligations, not conclusions from these bounded card tests.
+
+Verification: 49 focused cases and all 2,820 Content tests pass. Eight executable
+authored mutations are caught: arrow count, arrow damage, Uses, resource aspect,
+forced Mockingbird timing, encounter-card recipient, Tower reduction amount and
+Tower exhaustion target. Independent review verified the canonical text matches,
+the interpreted rows, the counter pool and the tests without finding a blocker.
+
+## Enhanced Awareness
+
+03034 uses the existing resource-ability and Uses contracts: three mental
+counters on entry, hero-only exhaustion plus one counter for one mental resource.
+Actual game decisions play the upgrade and pay for a support with it. The last
+counter discards the upgrade while its committed resource still pays for the
+support. Alter-ego, exhausted and foreign-controlled copies are excluded; these
+availability checks preserve digest and RNG, without claiming the stronger
+paired pending-work/event-stream purity evidence used for Helmet above.
+
+Six focused cases distinguish those outcomes. Six executable authored mutations
+are caught: two starting counters, missing Uses, unrestricted form, wrong
+exhaustion target, physical output and a two-counter cost. Independent source
+review found no blocker. The full Content suite passes 2,826 cases. This
+twentieth research face does not open the pack.
+
+## Squirrel Girl and Enraged
+
+03013's optional entry response damages every enemy, including minions engaged
+with other players. Actual play decisions distinguish declining the response,
+Tough prevention, nonattack damage despite Stunned and Retaliate, and lethal
+damage followed by each defeated Hydra Soldier dealing its engaged player an
+encounter card. 03031 attaches to an ally across player areas, rejects a second
+copy on the same ally, and grants +2 ATK and one additional attack consequential
+damage. Thwart and its consequential damage remain unchanged; discarding the
+attachment removes both modifiers. The existing registered attack consequential
+damage field is admitted as a continuous modifier; no state field is added.
+
+Seven focused cases and all 2,834 Content cases pass. Six executable authored
+mutants are caught: Squirrel Girl's damage, recipient set and optional timing;
+Enraged's attack bonus, consequential bonus and cross-player attachment scope.
+These two research interpretations keep the runtime product admission gate
+closed. They do not establish complete pack setup or native-client acceptance.
+
+Independent source review of cce68429 found no blocking issue in the two card
+interpretations, modifier admission or their bounded tests.
+
+## Selected exhaustion receipts (MARVEL-656)
+
+The Strength in Numbers prerequisite exposes the retained `exhaustChosen`
+receipt as a numeric binding. Admission considers legal physical selections
+without exhausting their members, and the resolved count survives later card
+departure. Five synthetic contract cases distinguish one/two/three paid cards,
+preexisting and foreign exhaustion, positive-effect admission and departure.
+Four compiled mutants are caught: zero count, omitted admission receipt, lost
+payment receipt and incorrectly unstable count. The admission mutant initially
+survived the draw-only cases; a positive-damage admission control now kills it.
+The restored full Content suite passes 2,839 cases. Actual 03017 authored
+integration, interrupted/replayed execution and native cost-selection evidence
+remain required before MARVEL-656 or the pack can be accepted.
+
+Independent source review of 4f8acd51 found no blocking issue within that
+receipt-count contract and its bounded evidence.
+
+## Current identity trait prerequisites (MARVEL-658)
+
+A regression first reproduced Honorary Avenger being offered while Carol
+Danvers lacked the required Avenger trait. The content facts now expose an
+explicit printed identity-trait prerequisite, and ordinary play legality checks
+the acting identity's current effective traits. Four local-book game cases cover
+hero, alter-ego, granted and lost traits, with cross-player attachment when
+legal. Three compiled mutants are caught: unrestricted play, checking both
+identity faces, and ignoring granted/lost traits. The restored full Content
+suite passes 2,843 cases. This does not yet add the authored product row or
+complete the remaining card, restart and native-client evidence for MARVEL-658.
+
+Independent review found no blocker in that bounded prerequisite. Form-only
+printed restriction parsing now shares its cohesive reader, keeping CardCatalog
+below the source-layout debt threshold; all 23 focused form/trait cases pass.
+
+## Strength in Numbers, Honorary Avenger, Hit Squad and Followed
+
+03017 and 03025 now use the authored book. Actual Strength in Numbers decisions
+in both forms exhaust one/two/three selected allies before drawing; no ready
+ally offers no event. Empty, duplicate, foreign and self selections reject
+without changing card state. Honorary Avenger attaches to another player's
+alter-ego, grants health and trait, excludes a second copy and removes both
+modifiers when discarded.
+
+03032's optional interruption occurs while the defeated side scheme and its
+attachment are still in play. Declining deals no damage; choosing a villain
+deals four damage before both cards leave play. 03027's reveal checks both
+possible first players, each player's distinct discarded boost icons, Tough,
+and a boost star that neither counts nor resolves its ability.
+
+Hit Squad required MARVEL-660: an explicit `eachPlayer` player-order mode.
+Generic each-player effects retain their first-player ordering choice; printed
+player order uses the existing continuation frames directly. An audit of
+currently authored canonical text found no other explicit player-order clause.
+
+Eighteen focused cases and all 2,857 Content cases pass. Eight executable
+authored mutants are caught (Strength count/form, Honorary health/trait,
+Followed damage/timing, Hit Squad order/icons), plus a compiled mutant omitting
+ordered scheduling. These are 26 research faces; the nine remaining faces,
+whole-pack setup/games, restart evidence and native acceptance still block
+runtime admission.

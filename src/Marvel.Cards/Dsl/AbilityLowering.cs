@@ -80,6 +80,7 @@ public static class AbilityLowering
             "printedCostDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedCostDiscarded),
             "distinctCardTypesDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.DistinctCardTypesDiscarded),
             "cardsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.CardsDiscarded),
+            "cardsExhaustedForCost" => FixedNumber(argument, child, "game", AbilityResolutionNumber.CardsExhaustedForCost),
             "powerAmount" => FixedNumber(argument, child, "cardsDiscarded", AbilityResolutionNumber.PowerAmount),
             "printedBoostIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedBoostIconsDiscarded),
             "printedResourceIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedResourceIconsDiscarded),

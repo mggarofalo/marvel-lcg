@@ -25,4 +25,6 @@ public enum AbilityResolutionNumber
     PrintedCostDiscarded,
     /// <summary>Distinct printed card types among cards discarded this way.</summary>
     DistinctCardTypesDiscarded,
+    /// <summary>Physical cards selected and exhausted for this ability's exhaustChosen cost.</summary>
+    CardsExhaustedForCost,
 }

@@ -72,6 +72,8 @@ internal static class AbilityBindingAnalysis
 
     internal static bool AmountMayChange(AbilityNumber number) => number switch
     {
+        // The accepted exhaustion receipt survives state changes and continuations.
+        AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.CardsExhaustedForCost } => false,
         AbilityNumber.Constant or AbilityNumber.PerPlayer => false,
         AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PowerAmount } => false,
         AbilityNumber.Sum sum => sum.Operands.Any(AmountMayChange),
