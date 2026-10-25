@@ -33,9 +33,28 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  changes:
+    name: Select CI scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.changes.outputs.run }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Verify change selection
+        run: python3 tools/ci_changes_tests.py
+      - name: Check the complete change range
+        id: changes
+        env:
+          CI_EXHAUSTIVE: ${{ inputs.exhaustive }}
+        run: python3 tools/ci_changes.py
+
   managed:
     name: Managed correctness
-    if: ${{ !inputs.exhaustive }}
+    needs: changes
+    if: ${{ !inputs.exhaustive && needs.changes.outputs.run == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -89,6 +108,8 @@ jobs:
 
   platform-gates:
     name: Platform gates (${{ matrix.os }})
+    needs: changes
+    if: ${{ needs.changes.outputs.run == 'true' }}
     runs-on: ${{ matrix.os }}
     # Certification includes the complete scale matrix and rendered acceptance.
     timeout-minutes: ${{ inputs.exhaustive && 90 || 40 }}
@@ -361,6 +382,8 @@ jobs:
         run: ./tools/godot-wall.ps1
 
   native-journeys:
+    needs: changes
+    if: ${{ needs.changes.outputs.run == 'true' }}
     name: Native journeys (${{ matrix.os }}, shard ${{ matrix.shard }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: ${{ inputs.exhaustive && 90 || 40 }}
@@ -436,8 +459,8 @@ jobs:
   platform:
     name: Native integration (${{ matrix.os }})
     # Keep the required check names while requiring every platform gate and journey shard.
-    if: ${{ always() }}
-    needs: [platform-gates, native-journeys]
+    if: ${{ always() && !(needs.changes.result == 'success' && needs.changes.outputs.run == 'false') }}
+    needs: [changes, platform-gates, native-journeys]
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.exhaustive && 90 || 40 }}
     strategy:
@@ -446,6 +469,9 @@ jobs:
         os: [windows-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v7
+      - name: Require successful scope selection
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.run != 'true' }}
+        run: exit 1
       - name: Require every platform gate and native shard to succeed
         shell: pwsh
         env:
@@ -455,6 +481,8 @@ jobs:
 
   desktop-package:
     name: Windows desktop community package
+    needs: changes
+    if: ${{ needs.changes.outputs.run == 'true' }}
     runs-on: windows-latest
     timeout-minutes: 30
 

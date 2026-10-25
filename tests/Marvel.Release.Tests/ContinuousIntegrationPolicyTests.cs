@@ -14,7 +14,7 @@ public sealed class ContinuousIntegrationPolicyTests
             StringComparison.Ordinal);
         Assert.Contains("platform:\n    name: Native integration (${{ matrix.os }})", workflow,
             StringComparison.Ordinal);
-        Assert.Contains("if: ${{ !inputs.exhaustive }}", workflow,
+        Assert.Contains("if: ${{ !inputs.exhaustive && needs.changes.outputs.run == 'true' }}", workflow,
             StringComparison.Ordinal);
         Assert.Contains("platform-gates:\n    name: Platform gates (${{ matrix.os }})", workflow,
             StringComparison.Ordinal);
@@ -53,8 +53,11 @@ public sealed class ContinuousIntegrationPolicyTests
         Assert.Contains("native-evidence-${{ matrix.os }}-shard-${{ matrix.shard }}", journeys, StringComparison.Ordinal);
         Assert.DoesNotContain("Marvel.UnitTests", journeys, StringComparison.Ordinal);
         Assert.DoesNotContain("Marvel.Acceptance.Tests", journeys, StringComparison.Ordinal);
-        Assert.Contains("if: ${{ always() }}", required, StringComparison.Ordinal);
-        Assert.Contains("needs: [platform-gates, native-journeys]", required, StringComparison.Ordinal);
+        Assert.Contains("if: ${{ always() && !(needs.changes.result == 'success' && needs.changes.outputs.run == 'false') }}",
+            required, StringComparison.Ordinal);
+        Assert.Contains("needs: [changes, platform-gates, native-journeys]", required, StringComparison.Ordinal);
+        Assert.Contains("needs.changes.result != 'success' || needs.changes.outputs.run != 'true'",
+            required, StringComparison.Ordinal);
         Assert.Contains("PLATFORM_GATES_RESULT: ${{ needs.platform-gates.result }}", required, StringComparison.Ordinal);
         Assert.Contains("NATIVE_JOURNEYS_RESULT: ${{ needs.native-journeys.result }}", required, StringComparison.Ordinal);
         Assert.Contains("./tools/native-integration-result.ps1 -PlatformGates $env:PLATFORM_GATES_RESULT -NativeJourneys $env:NATIVE_JOURNEYS_RESULT",

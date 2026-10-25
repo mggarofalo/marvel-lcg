@@ -326,6 +326,15 @@ unit-test lane.
 
 ## CI assurance profiles
 
+Routine PR and main-push runs first inspect the complete Git change range. A
+nonempty diff containing only `.md` paths (case-insensitive) skips the managed,
+platform, native and packaging jobs. Required check names remain present as
+skipped jobs, avoiding the pending checks caused by workflow-level path filters.
+PRs compare against the merge base; pushes cover the entire before/after range.
+Renames inspect both paths. Unknown, empty or unavailable comparisons run full
+CI; a failed scope-selection job fails the native required checks. Manual runs
+and exhaustive release certification always retain their full gates.
+
 Routine pull-request, main and default manual runs execute `Managed correctness`
 once on Linux: complexity, unit, acceptance, behavioral-catalog,
 executable-specification and deterministic dataset checks. `Platform gates`
