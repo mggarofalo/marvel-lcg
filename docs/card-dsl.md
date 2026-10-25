@@ -43,6 +43,10 @@ legality excludes the current holder. A unique extreme at the current holder
 therefore leaves no destination. Subsequent text still resolves unless its DSL
 explicitly requires completed movement with `then`. Power, area and repeated
 projections carry the active relation independently of immutable group ownership.
+When a `chooseCard` body also schedules an `afterActivation` effect against the
+chosen villain, that effect participates in target admission. The current counter
+holder remains eligible if the deferred effect can affect it, even though the
+counter move itself cannot resolve.
 
 `schemeDestination: "correspondingSideScheme"` declares an enemy's printed
 replacement for the main-scheme destination. Its compiled relation resolves the

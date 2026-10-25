@@ -139,6 +139,9 @@ internal static class AbilityEffectTargetAdmission
         AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange) =>
         node.OperationName() switch
         {
+            // rr:target.3.4: "at least one of those effects must be able to
+            // affect the target." Deferring resolution retains the bound target.
+            "afterActivation" => TargetLegalityOf(EffectBody(node), cast, bindingMayChange),
             "removeStatuses" => AbilityStatusRemoval.Candidates((AbilityEffect.RemoveStatuses)node, cast).Count > 0
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "enemyAttacks" or "enemySchemes" =>
