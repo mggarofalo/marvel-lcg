@@ -67,7 +67,7 @@ internal static class AbilityTargetAdmission
         }
         if (operation is "dealEncounterCard" or "heal" or "dealDamage"
             or "dealAttackDamage" or "indirectDamage" or "placeThreat"
-            or "removeThreat" or "moveDamage" or "moveAttackDamage")
+            or "removeThreat" or "moveThreat" or "moveDamage" or "moveAttackDamage")
         {
             return DamageAndThreatTargetLegality(node, cast);
         }

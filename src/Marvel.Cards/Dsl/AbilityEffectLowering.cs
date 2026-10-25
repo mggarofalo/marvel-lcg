@@ -67,6 +67,7 @@ internal static class AbilityEffectLowering
             "allowPlayBeneath" => AbilityStoragePermissionLowering.Lower(argument, child),
             "drawToHandSize" or "drawToPrintedHandSize" => new AbilityEffect.DrawToHandSize(
                 LowerPlayer(argument, child), node.Kind == "drawToPrintedHandSize"),
+            "moveThreat" => AbilityThreatMovementLowering.Lower(argument, child),
             "placeThreat" => PlaceThreatEffect(argument, child),
             "removeThreat" => RemoveThreatEffect(argument, child),
             "preventThreat" => new AbilityEffect.PreventThreat(Number(argument, child)),

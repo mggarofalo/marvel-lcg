@@ -99,6 +99,7 @@ internal static class AbilityResolutionAdmission
                 && Amount(EffectOf<AbilityEffect.AttackDamage>(node, cast).Amount, cast) > 0,
             "placeThreat" => HasPartialResolutionTargets(node, cast)
                 && Amount(EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount, cast) > 0,
+            "moveThreat" => AbilityThreatMovementAdmission.CanMove((AbilityEffect.MoveThreat)node, cast),
             "removeThreat" => CanRemoveThreat(node, cast),
             "gainSurge" => EffectOf<AbilityEffect.GainSurge>(node, cast).Instances > 0,
             "draw" => CanDraw(node, cast),
@@ -231,6 +232,7 @@ internal static class AbilityResolutionAdmission
                 Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast)?.Damage ?? 0,
                 Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast)),
             "removeThreat" => ResolutionOfThreat(node, cast),
+            "moveThreat" => AbilityThreatMovementAdmission.Resolution((AbilityEffect.MoveThreat)node, cast),
             "placeThreat" => Every(((AbilityEffect.PlaceThreat)node).Schemes, cast).Count > 0
                 && Amount(((AbilityEffect.PlaceThreat)node).Amount, cast) > 0
                     ? AdmissionResolution.Full : AdmissionResolution.None,

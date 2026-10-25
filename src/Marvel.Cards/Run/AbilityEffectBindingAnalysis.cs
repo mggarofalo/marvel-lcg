@@ -38,7 +38,7 @@ internal static class AbilityEffectBindingAnalysis
     [
         typeof(AbilityEffect.CardAction), typeof(AbilityEffect.Heal),
         typeof(AbilityEffect.Damage), typeof(AbilityEffect.AttackDamage),
-        typeof(AbilityEffect.MoveDamage), typeof(AbilityEffect.IndirectDamage),
+        typeof(AbilityEffect.MoveThreat), typeof(AbilityEffect.MoveDamage), typeof(AbilityEffect.IndirectDamage),
         typeof(AbilityEffect.GiveStatus), typeof(AbilityEffect.RemoveStatuses),
     ];
     private static readonly ImmutableArray<Type> ThreatAndGrantTypes =
@@ -134,6 +134,7 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.Heal heal => BindingCanChange(heal.Card) || BindingCanChange(heal.Amount),
         AbilityEffect.Damage damage => BindingCanChange(damage.Cards) || BindingCanChange(damage.Amount),
         AbilityEffect.AttackDamage damage => BindingCanChange(damage.Cards) || BindingCanChange(damage.Amount),
+        AbilityEffect.MoveThreat move => BindingCanChange(move.From) || BindingCanChange(move.To) || BindingCanChange(move.Amount),
         AbilityEffect.MoveDamage move => BindingCanChange(move.From) || BindingCanChange(move.To) || BindingCanChange(move.Amount),
         AbilityEffect.IndirectDamage damage => BindingCanChange(damage.Among) || BindingCanChange(damage.Amount),
         AbilityEffect.GiveStatus status => BindingCanChange(status.Cards),

@@ -189,15 +189,7 @@ internal static class AbilityResolutionLifecycle
         ContinueAfterResumedNode completed)
     {
         execution.RestoreContinuationCursor(cast, completed.State);
-        if (completed.State.DamageCompletion is { } damageReceipt) cast.DamageDefeats = damageReceipt.Defeats;
-        cast.CompletedOutcome = completed.State.DamageCompletion is { } damage ? damage.Complete()
-            : completed.State.Completion is { } receipt
-            ? AbilityCompletion.Amount(receipt.Applied, receipt.Requested)
-            : completed.State.CompletedOutcome ?? cast.CompletedOutcome;
-        cast.PendingCompletion = null;
-        cast.PendingDamageCompletion = null;
-        if (cast.CompletedOutcome is AbilityStructuralOutcome.Full or AbilityStructuralOutcome.Partial
-            || completed.EffectApplied && completed.State.Completion is null && completed.State.DamageCompletion is null) cast.ResolveEffect();
+        AbilityResumedEffectCompletion.Apply(cast, completed);
         return AbilityContinuations.Advance(
             execution.StructuralContext(cast), completed.Ability, completed.State,
             new AbilityStructuralObservation(false, Outcome: cast.CompletedOutcome));

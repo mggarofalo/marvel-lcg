@@ -272,7 +272,7 @@ internal static class AbilityResolutionEffectChoices
                 [.. cast.Discarded.Select(card => card.ObjectId)], binding, crisis,
                 cast.CaptureSourceState(), cast.GainedKeywords.Contains("surge"))
             { ExhaustedForCost = cast.ExhaustedForCost.ToImmutableHashSet(), DamageDefeats = cast.DamageDefeats })
-        { Execution = cast.Execution, Completion = cast.PendingCompletion, DamageCompletion = cast.PendingDamageCompletion,
+        { Execution = cast.Execution, ThreatMove = cast.PendingThreatMove, ThreatMoveRequested = cast.ThreatMoveRequested, Completion = cast.PendingCompletion, DamageCompletion = cast.PendingDamageCompletion,
             CompletedOutcome = cast.CompletedOutcome, Payment = cast.PendingPayment, DamageReplacement = cast.DamageReplacement,
             PowerExecution = cast.PowerExecution is { } power
                 ? power with { Attacked = [.. cast.Attacked.Select(card => card.ObjectId)] } : null };

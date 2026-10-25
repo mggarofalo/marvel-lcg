@@ -30,7 +30,7 @@ internal static class AbilityAdmissionAreaDependencies
     private static readonly ImmutableArray<Type> SelectionDependencyTypes =
     [
         typeof(AbilityEffect.CardAction), typeof(AbilityEffect.Heal),
-        typeof(AbilityEffect.MoveDamage), typeof(AbilityEffect.RemoveThreat),
+        typeof(AbilityEffect.MoveThreat), typeof(AbilityEffect.MoveDamage), typeof(AbilityEffect.RemoveThreat),
         typeof(AbilityEffect.GrantTrait), typeof(AbilityEffect.GrantField),
         typeof(AbilityEffect.PreventDamageWhile),
     ];
@@ -173,6 +173,11 @@ internal static class AbilityAdmissionAreaDependencies
             case AbilityEffect.Heal heal:
                 CollectCardsInDependencies(heal.Card, context, areas);
                 CollectSingularAreaDependencies(heal.Amount, context, areas);
+                break;
+            case AbilityEffect.MoveThreat move:
+                CollectCardsInDependencies(move.From, context, areas);
+                CollectCardsInDependencies(move.To, context, areas);
+                CollectSingularAreaDependencies(move.Amount, context, areas);
                 break;
             case AbilityEffect.MoveDamage move:
                 CollectCardsInDependencies(move.From, context, areas);

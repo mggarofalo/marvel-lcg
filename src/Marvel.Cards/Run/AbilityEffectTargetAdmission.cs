@@ -112,6 +112,8 @@ internal static class AbilityEffectTargetAdmission
         AbilityEffect node, AbilityAdmissionScope cast) =>
         node.OperationName() switch
         {
+            "moveThreat" => AbilityThreatMovementAdmission.CanMove((AbilityEffect.MoveThreat)node, cast)
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             "moveDamage" or "moveAttackDamage" => MoveDamageTargetLegality((AbilityEffect.MoveDamage)node, cast),
             "dealEncounterCard" => Find(EffectOf<AbilityEffect.DealEncounterCard>(node, cast).Card, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
@@ -128,11 +130,7 @@ internal static class AbilityEffectTargetAdmission
             "placeThreat" => Amount(EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount, cast) <= 0
                 ? TargetLegality.Invalid
                 : CardsLegality(Every(ThreatSelectionOf(node, cast), cast)),
-            "removeThreat" => Every(ThreatSelectionOf(node, cast), cast).Any(scheme =>
-                scheme.Tokens.GetValueOrDefault("k_threat") > 0
-                && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
-                && CanRemoveThreatFrom(node, cast, scheme))
-                ? TargetLegality.Valid : TargetLegality.Invalid,
+            "removeThreat" => RemoveThreatTargetLegality(node, cast),
             _ => throw new InvalidOperationException("Unknown damage or threat target operation"),
         };
 
@@ -178,6 +176,14 @@ internal static class AbilityEffectTargetAdmission
             return TargetLegality.Invalid;
         return AbilityRepeatedStatusTrace.CanDraw(draw, cast) ? TargetLegality.Valid : TargetLegality.Invalid;
     }
+
+    private static TargetLegality RemoveThreatTargetLegality(
+        AbilityEffect node, AbilityAdmissionScope cast) =>
+        Every(ThreatSelectionOf(node, cast), cast).Any(scheme =>
+            scheme.Tokens.GetValueOrDefault("k_threat") > 0
+            && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
+            && CanRemoveThreatFrom(node, cast, scheme))
+            ? TargetLegality.Valid : TargetLegality.Invalid;
 
     private static TargetLegality MoveDamageTargetLegality(
         AbilityEffect.MoveDamage move, AbilityAdmissionScope cast)

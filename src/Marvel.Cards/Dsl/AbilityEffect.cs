@@ -89,6 +89,8 @@ public abstract record AbilityEffect
         /// <summary>Remove the quantity assigned to each power target.</summary>
         public bool Assigned { get; init; }
     }
+    /// <summary>Move threat between exact selected schemes.</summary>
+    public sealed record MoveThreat(AbilityCardSelection From, AbilityCardSelection To, AbilityNumber Amount) : AbilityEffect;
     /// <summary>Prevent an amount of the imminent threat.</summary>
     public sealed record PreventThreat(AbilityNumber Amount) : AbilityEffect;
     /// <summary>Prevent damage to the interrupted occurrence's recipient.</summary>

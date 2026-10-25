@@ -7,6 +7,11 @@ internal static class AbilityResolutionDamageAndThreat
 {
     internal static bool TryRunDamageAndThreat(this AbilityResolutionExecution execution, AbilityEffect instruction, AbilityEffect syntax, AbilityResolutionState cast)
     {
+        if (instruction is AbilityEffect.MoveThreat move)
+        {
+            execution.MoveThreat(move, cast);
+            return true;
+        }
         var result = AbilityDamageAndThreatExecution.Run(instruction, syntax, execution.DamageAndThreatContext(cast));
         if (!result.Handled)
         {

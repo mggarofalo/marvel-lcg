@@ -129,6 +129,8 @@ internal sealed record AbilityResolutionState(
 
     public AbilityStructuralOutcome? CompletedOutcome { get; set; }
     internal AbilityDamageCompletion? PendingDamageCompletion { get; set; }
+    internal ThreatMoveReceipt? PendingThreatMove { get; set; }
+    internal long ThreatMoveRequested { get; set; }
     public EffectCompletion? PendingCompletion { get; set; }
 
 

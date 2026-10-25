@@ -93,6 +93,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.Heal heal => Contains(heal.Card) || Contains(heal.Amount),
         AbilityEffect.Damage damage => Contains(damage.Cards) || Contains(damage.Amount),
         AbilityEffect.AttackDamage damage => Contains(damage.Cards) || Contains(damage.Amount),
+        AbilityEffect.MoveThreat move => Contains(move.From) || Contains(move.To) || Contains(move.Amount),
         AbilityEffect.MoveDamage move => Contains(move.From) || Contains(move.To) || Contains(move.Amount),
         AbilityEffect.IndirectDamage damage => Contains(damage.Among) || Contains(damage.Amount),
         AbilityEffect.GiveStatus status => Contains(status.Cards),

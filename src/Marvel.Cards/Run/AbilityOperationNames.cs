@@ -97,6 +97,7 @@ internal static class AbilityOperationNames
         AbilityEffect.ChooseCard => "chooseCard",
         AbilityEffect.AfterActivation => "afterActivation",
         AbilityEffect.Dependent dependent => dependent.OnFull ? "then" : "otherwise",
+        AbilityEffect.MoveThreat => "moveThreat",
         AbilityEffect.MoveDamage move => move.Attack ? "moveAttackDamage" : "moveDamage",
         AbilityEffect.DrawToHandSize draw => draw.Printed ? "drawToPrintedHandSize" : "drawToHandSize",
         AbilityEffect.PayOrEffect payment => payment.ExhaustOnly ? "payOrExhaust" : "payOrEffect",
