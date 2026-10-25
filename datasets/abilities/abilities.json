@@ -12415,6 +12415,22 @@
       ]
     },
     {
+      "card": "07022",
+      "name": "Radioactive Buildup",
+      "attachTo": { "titled": "Thunderball" },
+      "note": "Excess damage dealt by Thunderball becomes threat on his physical corresponding side scheme. The printed +3 ATK is read from the attachment's attributes.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant" },
+          "effect": { "grant": { "card": "attachedTo", "keyword": "excessDamageAsThreat" } }
+        },
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "attachedTo" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
       "card": "07020",
       "name": "Ball and Chain",
       "attachTo": {

@@ -10,6 +10,8 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
     private readonly int incarnation = request.Target.Incarnation;
     private DamageReplacement? replacement;
     private bool placed;
+    private Damage.PlacedDamage? placement;
+    private EffectCompletion? excessThreat;
     private readonly int priorDefeats = request.RecordDefeatOn?.Defeats.Count ?? 0;
     internal DamageResult Result { get; } = new(completion ?? execution) { Target = request.Target.ObjectId, TargetIncarnation = request.Target.Incarnation };
     internal AbilityExecution Execution => execution;
@@ -19,10 +21,9 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
         world.Agenda.Executions.RequireActive(execution);
         if (placed)
         {
-            Result.Complete(request.RecordDefeatOn?.Defeats.Skip(priorDefeats).Any(defeat =>
+            Complete(request.RecordDefeatOn?.Defeats.Skip(priorDefeats).Any(defeat =>
                 defeat.Card == request.Target.ObjectId && defeat.Incarnation == incarnation) == true
-                ? Damage.Outcome.Defeated : Damage.Outcome.NotDefeated);
-            execution.Finish(events);
+                ? Damage.Outcome.Defeated : Damage.Outcome.NotDefeated, events);
             return;
         }
         replacement ??= DamagePlacement.Replace(world, request, events);
@@ -44,11 +45,26 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
     {
         world.Agenda.Executions.RequireActive(execution);
         Result.Place(damage);
+        placement = damage;
         if (damage.Landed) request.RecordDefeatOn?.Also(Steps.DamageDealt);
         placed = true;
         var outcome = DamagePlacement.FinishPlaced(world, facts, request.Source, damage,
             request.Trigger, request.Verb, events, request.By, request.RecordDefeatOn);
         if (outcome == Damage.Outcome.Suspended) { Suspend(events); return; }
+        Complete(outcome, events);
+    }
+
+    private void Complete(Damage.Outcome outcome, List<GameEvent> events)
+    {
+        long excess = Math.Max(0, placement!.Taken - placement.RemainingHealth);
+        if (excessThreat is null && placement.ExcessThreat is { } route
+            && outcome == Damage.Outcome.Defeated && excess > 0)
+        {
+            excessThreat = route.Schedule(world, excess, request.Trigger);
+            Suspend(events);
+            return;
+        }
+        if (excessThreat is { IsComplete: false }) { Suspend(events); return; }
         Result.Complete(outcome);
         execution.Finish(events);
     }

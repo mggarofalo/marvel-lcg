@@ -64,7 +64,8 @@ internal static class AbilityModifierLowering
     internal static string Modifier(AbilityValue value, AbilityLocation location, bool keyword)
     {
         string name = Text(value, location);
-        return StateFieldCatalog.IsModifiable(name) || keyword && Keywords.Granted.Contains(name)
+        return StateFieldCatalog.IsModifiable(name) || keyword && (Keywords.Granted.Contains(name)
+            || name == ExcessDamageThreat.Modifier)
             ? name : throw location.Error($"'{name}' is not a modifier implemented by the engine");
     }
 

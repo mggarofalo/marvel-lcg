@@ -22,6 +22,7 @@ internal sealed class AttackDamageResolution
     private AttackDamageResult? spill;
     private bool aftermath;
     private bool pierced;
+    private EffectCompletion? excessThreat;
 
     internal AttackDamageResolution(World world, ICardFacts facts, AttackDamageRequest request,
         AbilityExecution execution, bool spillOnly, AbilityExecution? completion = null)
@@ -47,10 +48,24 @@ internal sealed class AttackDamageResolution
         if (placed is null && !Place(events)) { Suspend(events); return; }
         CompleteDefeatAndBeginSpill(events);
         if (spill is { IsComplete: false }) { Suspend(events); return; }
+        if (!CompleteExcessThreat(events)) return;
         if (policy.Retaliate && request.Target.Incarnation == incarnation)
             DamageAttacks.Retaliate(world, facts, request.Target, request.Attacker, request.Trigger, events);
         Result.Publish(placed!, spill?.Amount ?? 0, outcome == Damage.Outcome.Defeated ? Excess : 0);
         Execution.Finish(events);
+    }
+
+    private bool CompleteExcessThreat(List<GameEvent> events)
+    {
+        if (excessThreat is null && policy.ExcessThreat is { } route
+            && outcome == Damage.Outcome.Defeated && Excess > 0)
+        {
+            excessThreat = route.Schedule(world, Excess, request.Trigger);
+            Suspend(events);
+            return false;
+        }
+        if (excessThreat is { IsComplete: false }) { Suspend(events); return false; }
+        return true;
     }
 
     private void CompleteDefeatAndBeginSpill(List<GameEvent> events)
@@ -131,7 +146,8 @@ internal sealed class AttackDamageResolution
     private void BeginSpill(List<GameEvent> events)
     {
         // rr:overkill.1: excess goes to the ally controller's identity or the villain.
-        if (!policy.Overkill || outcome != Damage.Outcome.Defeated || Excess <= 0) return;
+        if (policy.ExcessThreat is not null || !policy.Overkill
+            || outcome != Damage.Outcome.Defeated || Excess <= 0) return;
         Card? onto = kind switch
         {
             CardKind.Ally when controller >= 0 => world.Seats[controller].IdentityCard,
