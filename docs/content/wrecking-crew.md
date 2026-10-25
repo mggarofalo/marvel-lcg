@@ -478,3 +478,16 @@ combined Content cases at `486b2715`. The prior full integration lane at
 Architecture 129 and Release 36. Those results do not certify the later combined
 candidate. Complete setup-to-ending/replay evidence, native player journeys and
 owner acceptance remain outstanding; whole-pack admission stays closed.
+
+### Complete authored candidate — 2026-10-25
+
+All 60 faces are integrated at `f9ddea28`. Escaped Convict's final review and
+canonical mutations cover ancestry, hero form, boost suppression and selected
+villain retention through counter changes, promotion and departure. The combined
+Convict/counter/Shield Toss run passes 31 cases.
+
+Eight canonical Standard, Expert, Extreme and custom ABAB games at one and two
+seats are integrated at `08332074`. Each reaches defeat and reproduces every
+accepted decision's observations on replay. These are loss-path games, not
+victory or Extreme-promotion evidence. Complete-product admission checks, native
+journeys and owner acceptance remain open.

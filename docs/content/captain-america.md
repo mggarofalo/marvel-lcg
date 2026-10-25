@@ -39,12 +39,11 @@ states 60 cards and a 40-card starter. It is 462,512 bytes, SHA-256
 The starter recipe agrees with the divider; no correction is demonstrated.
 These photographs are research evidence, not new runtime or build inputs.
 
-MARVEL-629 remains open for independent confirmation of the four extra designs'
-physical quantities (03031–03034) and whether the advertised count includes the
-divider. Acquisition quantities suggest three of each extra: one identity +15
-signature +25 aspect/basic +1 obligation +5 nemesis +12 extras =59 game cards,
-plus one divider =60. That arithmetic is an inference, not printed confirmation
-of the complete physical manifest.
+MARVEL-629 is satisfied under the owner's 2026-10-25 scope decision: complete
+playable content and the verified printed starter are required. Independent
+reconstruction of physical extra-copy quantities and whether the packaging count
+includes the divider is outside this delivery. All 35 printed faces are accounted
+for; this component prerequisite does not certify runtime or owner acceptance.
 
 FAQ entries under `datasets/marvelcdb-faq/faq.json` for 03001a, 03006, 03024,
 03025, 03032 and 03033 are material. In particular: Shield setup cannot retrieve
@@ -792,3 +791,14 @@ exact per-decision replay comparison. These are integration results, distinct
 from the source packet's full-suite and mutation results above. Independent
 review, Linux verification and native pack acceptance remain outstanding; this
 change does not admit the pack.
+
+
+### Complete authored candidate — 2026-10-25
+
+All 35 faces are integrated at `53c9488d`, including Expert Defense and Heroic
+Strike's stage-settlement continuation. Independent reviews retain Wrecking Crew
+required-ally defense, attributed performers, captured occurrences and exact
+receipts. Eight Captain starter games reach an ending with per-decision replay.
+Current main is merged at `79362300`; the driver and Markdown-only CI policy are
+part of this candidate. Final combined and native checks, complete-product
+admission review and owner acceptance remain outstanding.
