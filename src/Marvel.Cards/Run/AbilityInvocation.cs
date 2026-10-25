@@ -8,4 +8,6 @@ internal sealed record AbilityInvocation(AbilityContinuationAddress Address,
     string Trigger, int AbilityPlayer, int AbilityActor)
 {
     internal Marvel.Rules.State.Defeated? TriggeringDefeat { get; init; }
+    internal Marvel.Rules.State.Attacked? TriggeringAttack { get; init; }
+    internal Occurrence? TriggeringThreat { get; init; }
 }

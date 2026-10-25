@@ -256,12 +256,14 @@ public sealed class CoreCardDslTests : CoreCardTestBase
 
     [Rule("rr:when-defeated-abilities")]
     [Rule("rr:deal-deal-an-encounter-card")]
-    [Fact]
-    public void HydraSoldierDealsOnlyItsEngagedPlayerAnEncounterCard()
+    [Theory]
+    [InlineData("01182")]
+    [InlineData("03029")]
+    public void HydraSoldierDealsOnlyItsEngagedPlayerAnEncounterCard(string face)
     {
         var world = Hero("01010a", players: 2);
         var soldier = world.CreateCard(
-            "01182", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+            face, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
         var encounter = world.CreateCard("01186", world.AreaOf(DeckType.EncounterDeck));
         var runner = AuthoredCards.Runner();
         var occurrence = new Occurrence(

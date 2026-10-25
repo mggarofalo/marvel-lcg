@@ -32,7 +32,7 @@ public static class AbilityCatalog
         new[]
         {
             "card", "name", "note", "abilities", "attachTo", "controlledBy",
-            "startingCounters",
+            "startingCounters", "schemeDestination",
         }.ToFrozenSet(StringComparer.Ordinal);
 
     internal static readonly FrozenSet<string> StartingCounterKeys =

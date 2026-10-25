@@ -24,6 +24,12 @@ internal sealed class MainSetupController
     internal Task LoadSetupAsync() => discovery.LoadAsync();
 
     internal GameSetupSelection SelectDecks(GameSetupSelection setup) => selection.ApplyDecks(setup);
+    internal ScenarioSetupChoice SelectedCampaign() => selection.SelectedCampaign();
+    internal IReadOnlyList<OptionButton> VariantControls => selection.VariantControls;
+    internal IReadOnlyList<OptionButton> AdditionalHeroes => selection.AdditionalHeroes;
+    internal IReadOnlyList<string> SelectedHeroes() => selection.SelectedHeroes();
+    internal void AssignHero(string key, int seat) => selection.AssignHero(key, seat);
+    internal void RefreshHeroes() => selection.RefreshHeroes();
 
     internal bool IsCurrentSetupLoad(long generation, string requestedEndpoint) =>
         InteractionControl.IsUsable(main) && main.lifecycle.IsCurrentEntry(generation)

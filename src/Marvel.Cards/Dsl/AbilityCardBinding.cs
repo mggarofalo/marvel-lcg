@@ -32,4 +32,6 @@ public enum AbilityCardBinding
     AttachedTo,
     /// <summary>The authored trigger.subject binding.</summary>
     TriggerSubject,
+    /// <summary>The live defending character of the current enemy attack, if any.</summary>
+    DefendingCharacter,
 }

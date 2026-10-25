@@ -501,6 +501,21 @@ false.
 
 ## Supported boundary
 
+`ThreatMovement.Schedule` owns one exact source/destination move. Removal uses
+ordinary threat permissions and side-scheme defeat; placement uses the ordinary
+interrupt and response windows. The engine chooses removal-first sequencing:
+`rr:move.6` and `.7` define removal and placement but do not explicitly order
+the halves. Within that choice, reaching zero causes defeat (`rr:side-scheme.2`),
+and its When Defeated interrupt resolves before leaving play
+(`rr:when-defeated-abilities.1`, `.2.1`), before destination placement begins.
+Both move endpoints retain their captured incarnation (`rr:leaves-play.1`);
+the destination must still be that live scheme when placement commits, including
+after its placement interrupts. Its receipt retains the exact destination
+occurrence and observes that scheme's Forced Response initiation independently
+of effect application or a subsequent threat reset. Callers wait for the
+containing procedure before choosing later text from this fact. Ranked scheme
+selection and Surge remain responsibilities of the authored ability.
+
 The timing spine, nested windows, agenda continuations, player-phase ending,
 and the lasting and delayed effects required by the Core Set are executable.
 Ability definitions are data in `datasets/abilities/abilities.json`; the
@@ -511,3 +526,24 @@ only Core Set abilities are admitted to runtime. Adding a later product means
 adding its authority, setup, ability rows, behavioral scenes, and any missing
 interpreter operations as one coherent boundary. See [scope.md](scope.md) and
 [card-dsl.md](card-dsl.md).
+
+
+## Committed hero defense
+
+`WhenHeroDefends` names the committed defense, separate from the preselection
+`WhenDefenderDeclared` stage. Basic defense captures the selected hero after
+exhaustion and role transfer. A defense-labeled ability captures its performer
+before its effect body; a card instruction declaring a defender captures that
+declaration before subsequent text. RR1.8 `rr:defend-defense.4.2` explicitly
+allows the labeled path, including a hero already defending. A card declaration establishes basic DEF reduction under `.2.1`. Ally,
+noncharacter and outside-attack paths create no hero defense occurrence. Multiple
+inner defense bodies within one triggered ability retain one ability performer;
+they do not reinitiate its label. This is the DSL authoring convention.
+
+The Rules-owned operation retains both physical incarnations, the defending seat,
+role facts and activation id. A fresh dynamic occurrence id distinguishes repeated
+defenses. Authored observer presence is declarative; unobserved empty windows are
+omitted to preserve existing-content replay identity. The Cards-owned
+`DefenseBody` continuation resumes the root or nested body without initiating the
+label again. A declaration uses the existing after-procedure continuation.
+The window describes the defending hero and attacking enemy explicitly.

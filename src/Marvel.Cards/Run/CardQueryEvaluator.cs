@@ -20,7 +20,7 @@ internal sealed class CardQueryEvaluator(
     private static readonly ImmutableArray<AbilityCardQuery> EnemyQueries =
     [
         AbilityCardQuery.MinionsEngagedWithYou, AbilityCardQuery.Minions,
-        AbilityCardQuery.Enemies, AbilityCardQuery.AttackableEnemies,
+        AbilityCardQuery.Villains, AbilityCardQuery.Enemies, AbilityCardQuery.AttackableEnemies,
         AbilityCardQuery.AttackableMinions, AbilityCardQuery.ThwartableSchemes,
         AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
     ];
@@ -43,6 +43,15 @@ internal sealed class CardQueryEvaluator(
 
     internal IReadOnlyList<Card> Evaluate(AbilityCardQuery query)
     {
+        if (query == AbilityCardQuery.OtherVillainSideSchemes)
+            return AbilityOtherVillainSchemeQuery.Live(cast);
+        if (query == AbilityCardQuery.VillainOfAttachedScheme)
+            return AbilityAttachedSchemeVillainQuery.Live(cast);
+        if (query == AbilityCardQuery.ActiveVillainSideScheme)
+            return AbilityActiveSchemeQuery.Live(cast.World);
+        if (AbilityEncounterSchemeQueries.IsRanked(query))
+            return EncounterSchemeRelations.AtThreatExtreme(cast.World,
+                query == AbilityCardQuery.VillainsWithMostSchemeThreat);
         if (ScenarioQueries.Contains(query)) return EvaluateScenario(query);
         if (EnemyQueries.Contains(query)) return EvaluateEnemies(query);
         if (ControlledQueries.Contains(query)) return EvaluateControlled(query);
@@ -72,7 +81,9 @@ internal sealed class CardQueryEvaluator(
              .. InArea(cast.World, DeckType.SideSchemesArea, PlayArea.Villains)],
         AbilityCardQuery.PowerTargets => cast.PowerTargets,
         AbilityCardQuery.YourAsidePile => [.. cast.World.Seats[cast.Player].Nemesis.Cards],
-        AbilityCardQuery.Villain => SingleIn(DeckType.VillainArea),
+        // pack:mc03:new-rules.the-active-villain: a card reference to "the
+        // villain" names the active villain; selecting an enemy remains plural.
+        AbilityCardQuery.Villain => EncounterRouting.Villain(cast.World) is { } villain ? [villain] : [],
         AbilityCardQuery.MainScheme => SingleIn(DeckType.MainSchemesArea),
         AbilityCardQuery.YourAsideMinion => AsideOfKind(CardKind.Minion),
         AbilityCardQuery.YourAsideSideScheme => AsideOfKind(CardKind.EncounterSideScheme),
@@ -81,7 +92,7 @@ internal sealed class CardQueryEvaluator(
 
     private Card[] VillainAttachments()
     {
-        var villain = cast.World.TheCardIn(DeckType.VillainArea);
+        var villain = EncounterRouting.Villain(cast.World);
         if (villain is null) return [];
         return [.. cast.World.Areas.Where(area => area.Host == villain.ObjectId && DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
@@ -99,6 +110,7 @@ internal sealed class CardQueryEvaluator(
                 .SelectMany(area => area.Cards)
                 .Where(card => EffectiveCards.Kind(card, cast.World.Facts)
                     == CardKind.Minion)],
+        AbilityCardQuery.Villains => [.. InArea(cast.World, DeckType.VillainArea, PlayArea.Villains)],
         AbilityCardQuery.Enemies =>
             [.. cast.World.Areas.Where(area => area.Type is DeckType.VillainArea
                     or DeckType.EngagedEnemiesArea)

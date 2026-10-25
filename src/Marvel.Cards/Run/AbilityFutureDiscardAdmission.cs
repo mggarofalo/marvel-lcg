@@ -11,13 +11,22 @@ internal static class AbilityFutureDiscardAdmission
 
     private static bool HasPendingAmount(AbilityNumber number, AbilityAdmissionScope scope) =>
         UsesDiscardReceipt(number) && scope.Reachability.PriorSteps.Any(effect =>
-            effect is AbilityEffect.DiscardTop discard
-                && AbilityInitiationPrimitives.Amount(discard.Count, scope) > 0);
+            ProducesReceipt(effect, scope));
+
+    private static bool ProducesReceipt(AbilityEffect effect, AbilityAdmissionScope scope) => effect switch
+    {
+        AbilityEffect.DiscardTop discard => AbilityInitiationPrimitives.Amount(discard.Count, scope) > 0,
+        AbilityEffect.DiscardAtRandom discard => AbilityInitiationPrimitives.Amount(discard.Count, scope) > 0,
+        _ => false,
+    };
 
     private static bool UsesDiscardReceipt(AbilityNumber number) => number switch
     {
-        AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PrintedBoostIconsDiscarded
+        AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.CardsDiscarded
+            or AbilityResolutionNumber.PrintedBoostIconsDiscarded
             or AbilityResolutionNumber.PrintedResourceIconsDiscarded
+            or AbilityResolutionNumber.PrintedCostDiscarded
+            or AbilityResolutionNumber.DistinctCardTypesDiscarded
             or AbilityResolutionNumber.DistinctPrintedResourceTypesDiscarded
             or AbilityResolutionNumber.TopEncounterDiscardBoostPlusOne } => true,
         AbilityNumber.PrintedResourcesDiscarded or AbilityNumber.DiscardedWithResource => true,

@@ -9,11 +9,13 @@ public sealed record PhaseTransitionOperation(PhaseTransitionKind Kind) : Agenda
     /// <inheritdoc/>
     public override string What => Kind switch
     {
+        PhaseTransitionKind.EndVillainStepOne => VillainStepOneTiming.Completed,
         PhaseTransitionKind.PassFirstPlayerToken => Steps.PassFirstPlayerToken,
         PhaseTransitionKind.EndVillainPhase => Steps.EndVillainPhase,
         PhaseTransitionKind.DrawToHandSize => Steps.DrawToHandSize,
         PhaseTransitionKind.ReadyCards => Steps.ReadyCards,
         PhaseTransitionKind.EndPlayerTurn => PlayerTurnTiming.Ends,
+        PhaseTransitionKind.BeginPlayerTurn => PlayerTurnTiming.Begins,
         PhaseTransitionKind.EndPlayerPhase => Steps.EndPlayerPhase,
         _ => throw new ArgumentOutOfRangeException(nameof(Kind)),
     };

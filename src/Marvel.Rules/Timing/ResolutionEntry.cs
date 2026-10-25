@@ -12,6 +12,16 @@ public sealed record ResolutionEntry(
     int Card, AbilityType? Ability, int Ordinal, ResolutionStatus Status,
     bool Applied = false)
 {
+    /// <summary>Engine-owned identity; authored card abilities retain their ordinary ordinal.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public NativeAbilityKind Native { get; init; }
+
     /// <summary>The particular defeat answered by this resolution.</summary>
     public State.Defeated? TriggeringDefeat { get; init; }
+
+    /// <summary>The exact attacked enemy answered within a shared attack window.</summary>
+    public State.Attacked? TriggeringAttack { get; init; }
+
+    /// <summary>The game-local identity of the exact threat placement answered.</summary>
+    public int? TriggeringThreatId { get; init; }
 }

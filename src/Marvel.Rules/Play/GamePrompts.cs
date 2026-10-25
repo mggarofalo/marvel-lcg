@@ -193,7 +193,8 @@ internal static class GamePrompts
         if (BasicPowers.CanUsePower(game.facts, seat.IdentityCard, "ATK"))
             game.Offer(options, seat.IdentityCard, BasicPowers.AttackVerb,
                 BasicPowers.Attackable(game.world, game.facts, seat.Index));
-        if (BasicPowers.CanUsePower(game.facts, seat.IdentityCard, "THW"))
+        if (BasicPowers.CanUsePower(game.facts, seat.IdentityCard, "THW")
+            && ThwartPermissions.CanThwart(game.world, seat.IdentityCard))
             game.Offer(options, seat.IdentityCard, BasicPowers.ThwartVerb,
                 BasicPowers.Thwartable(game.world, game.facts, seat.Index));
     }

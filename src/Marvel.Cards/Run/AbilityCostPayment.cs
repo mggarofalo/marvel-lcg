@@ -102,6 +102,9 @@ internal sealed class AbilityCostPayment
                 outcome.Suspended = !resourcePayment.IsComplete;
                 if (spend.Energy is { } x) outcome.Energy = x;
                 return true;
+            case RandomDiscardHand random:
+                outcome.Discarded.AddRange(AbilityRandomHandCost.Pay(world, random, player, trigger, events));
+                return true;
             case DiscardHand discard:
                 CommitDiscardHand(discard, events);
                 return true;

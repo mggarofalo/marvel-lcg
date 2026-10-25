@@ -89,6 +89,7 @@ internal static class AbilityRuntimeQueries
 
     private static bool AmountMayChange(AbilityNumber number) => number switch
     {
+        AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.CardsExhaustedForCost } => false,
         AbilityNumber.Constant or AbilityNumber.PerPlayer
             or AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PowerAmount } => false,
         AbilityNumber.Sum sum => sum.Operands.Any(AmountMayChange),

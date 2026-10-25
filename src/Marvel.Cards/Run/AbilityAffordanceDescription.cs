@@ -22,7 +22,7 @@ internal static class AbilityAffordanceDescription
         // because the engine carries one -- see the remarks on `Affordance.Id`.
         var price = AbilityPaymentPricing.CombinedPrice(
             world, card, ability.Player, found, execution.resourceAbilities);
-        TargetRequest? recipients = AbilityRecipientCommitment.Targets(execution, world, card, found, ability.Player, ability.TriggeringDefeat);
+        TargetRequest? recipients = AbilityRecipientCommitment.Targets(execution, world, card, found, ability.Player, ability);
         string? contextual = AbilityReplacementDescription.Caption(execution, world, card, found, ability.Player);
         string? caption = Caption(world, found, ability, contextual);
         return new Affordance(
@@ -31,11 +31,11 @@ internal static class AbilityAffordanceDescription
             AnchorId: ability.Card,
             AnchorPlayer: ability.Player,
             Label: found.Name,
-            Targets: recipients ?? AbilityCostSelection.Ask(world, ability.Player, found.Cost),
+            Targets: recipients ?? AbilityCostSelection.Ask(world, card, ability.Player, found.Cost),
             Costs: price is null ? null : [price], Description: Description(found.Effect, contextual))
         {
             Timing = found.Trigger.Timing,
-            WindowChoices = AbilityWindowChoiceDescription.Describe(execution, world, card, found, ability.Player, ability.TriggeringDefeat),
+            WindowChoices = AbilityWindowChoiceDescription.Describe(execution, world, card, found, ability.Player, ability),
             DisplayLabel = caption,
             CommitLabel = caption,
             PlaysCard = EffectiveCards.Kind(card, world.Facts) == CardKind.Event,
@@ -50,6 +50,10 @@ internal static class AbilityAffordanceDescription
     {
         string? caption = contextual ?? AbilitySourceActionDescription.Caption(found.Effect)
             ?? AbilitySearchDescription.Action(found.Effect);
+        if (ability.TriggeringThreat is { } threat && threat.Target >= 0)
+            return $"{caption ?? found.Name} after threat is placed on {threat.TargetFacts?.EffectiveTitle ?? EffectiveCards.Title(world.Cards[threat.Target], world.Facts)}";
+        if (ability.TriggeringAttack is { } attack)
+            return $"{caption ?? found.Name} after attacking {attack.Title ?? "an enemy"}";
         return ability.TriggeringDefeat is { } defeat && world.Windows.Current?.Occurrence.Defeats.Count > 1
             ? $"{caption ?? found.Name} after {defeat.Title ?? EffectiveCards.Title(world.Cards[defeat.Card], world.Facts)} is defeated"
             : caption;

@@ -143,6 +143,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.Protocol.ModularSetupChoice",
             "Marvel.Protocol.RuntimeIdentity",
             "Marvel.Protocol.ScenarioSetupChoice",
+            // Synthetic setup probes construct authored variant values; no legality enters Godot.
+            "Marvel.Protocol.ScenarioVariantChoice",
             "Marvel.Protocol.SeatInvitation",
             "Marvel.Protocol.SetupChoices",
             "Marvel.View.AffordancePresentation",
@@ -189,6 +191,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.EventCuePlanner",
             "Marvel.View.EventMotionKind",
             "Marvel.View.EventPresentation",
+            // Passive, visibility-filtered group identity and pile ownership.
+            "Marvel.View.EncounterGroupDescriptor",
             // Typed facts derived locally from visibility-filtered events.
             "Marvel.View.EventActivityDescriptor",
             "Marvel.View.EventActivityKind",

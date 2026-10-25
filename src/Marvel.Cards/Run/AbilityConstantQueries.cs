@@ -103,6 +103,11 @@ internal sealed class AbilityConstantQueries
             case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.GainEnvironmentTraits }:
                 found.AddRange(EnvironmentTraitGrants.For(bindings.World, bindings.Source));
                 return true;
+            case AbilityEffect.ReduceFirstAllyCost reduction:
+                found.Add(new ContinuousEffect(EffectSource.ConstantAbility,
+                    Kind: AllyPlayHistory.Reduction, Amount: reduction.Amount,
+                    Card: bindings.Source.ObjectId, Lasts: Duration.WhileInPlay));
+                return true;
             case AbilityEffect.DefineBaseValue definition:
                 found.Add(new ContinuousEffect(
                     EffectSource.ConstantAbility, Kind: definition.Field,
@@ -143,7 +148,7 @@ internal sealed class AbilityConstantQueries
                 // The immutable profile supplies effective base characteristics
                 // to the assigned copy, rather than an additive modifier.
                 break;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventThreatRemoval }:
+            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventThreatRemoval or AbilityCardInstruction.PreventThwarting }:
             case AbilityEffect.DoubleResourceFor:
             case AbilityEffect.AllowPlayBeneath:
             case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RequireAllyDefender }:

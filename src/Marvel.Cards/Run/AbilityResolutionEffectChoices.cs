@@ -75,11 +75,11 @@ internal static class AbilityResolutionEffectChoices
             execution.Resolver(cast), cast.Source, command.Target, command.Amount, cast.Trigger)
         {
             Performer = cast.AbilityActor,
+            Targets = command.Effect.TargetCount is null ? default : command.Targets,
             UsesThwartStat = command.Verb == BasicPowers.ThwartVerb
                 && AbilityThwartStatUsage.ReadsActor(command.Effect.Effect, cast.QueryContext(),
                     cast.AbilityActor ?? cast.World.Seats[execution.Resolver(cast)].IdentityCard),
-            Continuation = AbilityContinuationScheduling.Power(
-                capture, command.PowerOrdinal, [.. command.Targets.Select(card => card.ObjectId)]),
+            Continuation = AbilityContinuationScheduling.Power(capture, command, cast.World.Facts),
             SurgeGained = capture.Memory.SurgeGained,
             Origin = capture.Invocation.Occurrence,
         };
@@ -165,7 +165,7 @@ internal static class AbilityResolutionEffectChoices
                 cast.World.Agenda.Executions.DeferActivation(invocation);
             int abilityOrdinal = execution.AbilityOrdinal(command.Effect, cast);
             var capture = AbilityContinuationScheduling.ForActivations(
-                execution.Capture(cast, abilityOrdinal), command.Dynamic);
+                execution.Capture(cast, abilityOrdinal), command.Dynamic, command.Targets.Length);
             cast.World.Agenda.AfterActivations(activationIds, AbilityContinuations.Step(
                 capture, AbilityContinuationStage.Resume, round, plan: true, activationIds: activationIds));
             cast.WaitFor(activationIds);
@@ -175,6 +175,7 @@ internal static class AbilityResolutionEffectChoices
         {
             AbilityContinuations.CompleteDynamicActivation(cast.Results);
         }
+        else cast.CompletedOutcome = AbilityStructuralOutcome.None;
     }
 
     private static List<int> EnqueueActivations(AbilityResolutionExecution execution, ScheduleActivationsCommand command,
@@ -263,14 +264,15 @@ internal static class AbilityResolutionEffectChoices
             new AbilityInvocation(new(cast.AbilityFace, cast.Tier, ordinal),
                 new(cast.Source.ObjectId, cast.Source.Area.Id, cast.SourceBindingIncarnation),
                 cast.Occurrence, cast.Trigger, cast.AbilityPlayer, cast.AbilityActor?.ObjectId ?? -1)
-                { TriggeringDefeat = cast.TriggeringDefeat },
+                { TriggeringAttack = cast.TriggeringAttack, TriggeringDefeat = cast.TriggeringDefeat,
+                    TriggeringThreat = cast.TriggeringThreat },
             new AbilityCursor([.. frames ?? cast.StructuralPath], cast.Position, cast.Player,
                 cast.HasContinuation, cast.FinalStep, cast.FinalPlayer, cast.EachPlayerFrame),
             new AbilityMemory(cast.Results.ToImmutableDictionary(StringComparer.Ordinal),
                 [.. cast.Discarded.Select(card => card.ObjectId)], binding, crisis,
                 cast.CaptureSourceState(), cast.GainedKeywords.Contains("surge"))
-            { ExhaustedForCost = cast.ExhaustedForCost.ToImmutableHashSet() })
-        { Execution = cast.Execution, Completion = cast.PendingCompletion, DamageCompletion = cast.PendingDamageCompletion,
+            { ExhaustedForCost = cast.ExhaustedForCost.ToImmutableHashSet(), DamageDefeats = cast.DamageDefeats })
+        { Execution = cast.Execution, ThreatMovePairs = cast.ThreatMovePairs, ThreatMove = cast.PendingThreatMove, ThreatMoveRequested = cast.ThreatMoveRequested, Completion = cast.PendingCompletion, DamageCompletion = cast.PendingDamageCompletion,
             CompletedOutcome = cast.CompletedOutcome, Payment = cast.PendingPayment, DamageReplacement = cast.DamageReplacement,
             PowerExecution = cast.PowerExecution is { } power
                 ? power with { Attacked = [.. cast.Attacked.Select(card => card.ObjectId)] } : null };

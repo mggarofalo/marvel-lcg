@@ -20,8 +20,7 @@ internal sealed record AbilityCardReference(Card Card, int Area, int Incarnation
 
         // rr:villain-defeat.3.1: same-title stages are "the same character".
         // Incarnation provenance above still prevents following a reentered copy.
-        var stages = world.Areas.Where(area => area.Id == Area && area.Type == DeckType.VillainArea)
-            .SelectMany(area => area.Cards)
+        var stages = Successors(world)
             .Where(candidate => CardKinds.IsVillain(EffectiveCards.Kind(candidate, world.Facts))
                 && string.Equals(world.Facts.Title(Card.FaceId), world.Facts.Title(candidate.FaceId),
                     StringComparison.Ordinal)).ToArray();
@@ -31,5 +30,18 @@ internal sealed record AbilityCardReference(Card Card, int Area, int Incarnation
             1 => stages[0],
             _ => throw new RulesNotImplementedException("a chosen villain has multiple same-title replacement stages"),
         };
+    }
+
+    private Card[] Successors(World world)
+    {
+        if (world.EncounterTopology is { } topology)
+        {
+            var group = topology.Groups.SingleOrDefault(group => group.Stages.Contains(Card))
+                ?? throw new RulesNotImplementedException("a chosen villain has no configured stage lineage");
+            return group.CurrentVillain is { } current && current.Area.Id == Area ? [current] : [];
+        }
+        return world.Areas.Where(area => area.Id == Area && area.Type == DeckType.VillainArea)
+            .SelectMany(area => area.Cards)
+            .ToArray();
     }
 }

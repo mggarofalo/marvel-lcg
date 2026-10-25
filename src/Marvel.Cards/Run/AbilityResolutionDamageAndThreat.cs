@@ -7,6 +7,11 @@ internal static class AbilityResolutionDamageAndThreat
 {
     internal static bool TryRunDamageAndThreat(this AbilityResolutionExecution execution, AbilityEffect instruction, AbilityEffect syntax, AbilityResolutionState cast)
     {
+        if (instruction is AbilityEffect.MoveThreat move)
+        {
+            execution.MoveThreat(move, cast);
+            return true;
+        }
         var result = AbilityDamageAndThreatExecution.Run(instruction, syntax, execution.DamageAndThreatContext(cast));
         if (!result.Handled)
         {
@@ -19,7 +24,11 @@ internal static class AbilityResolutionDamageAndThreat
     internal static AbilityDamageAndThreatContext DamageAndThreatContext(this AbilityResolutionExecution execution, AbilityResolutionState cast) =>
         new(cast.ExpressionContext(), execution.program, cast.Trigger, cast.Events,
             cast.AbilityActor, cast.PowerActor, cast.Power, cast.HasContinuation,
-            cast.ImminentThreat, cast.ResolutionAbility, cast.Incoming, execution.threatAbilities);
+            cast.ImminentThreat, cast.ResolutionAbility, cast.Incoming, execution.threatAbilities)
+        {
+            PowerOccurrence = cast.PowerExecution?.Occurrence,
+            DeclaredAttackRecipients = cast.PowerExecution?.Continuation.DeclaredRecipients ?? default,
+        };
 
     internal static void ApplyDamageAndThreat(this AbilityResolutionExecution execution,
         AbilityDamageAndThreatResult result, AbilityEffect syntax, AbilityResolutionState cast)
@@ -46,6 +55,7 @@ internal static class AbilityResolutionDamageAndThreat
     }
     private static void RetainDamageCompletion(AbilityDamageAndThreatResult result, AbilityResolutionState cast)
     {
+        if (result.Damage is { IsComplete: true } receipt) cast.DamageDefeats = receipt.Defeats;
         cast.CompletedOutcome = result.Damage is { IsComplete: true } damage ? damage.Complete() : result.Outcome;
         cast.PendingDamageCompletion = result.Damage is { IsComplete: false } ? result.Damage : null;
     }

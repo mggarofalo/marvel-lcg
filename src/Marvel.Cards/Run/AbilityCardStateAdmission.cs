@@ -20,6 +20,8 @@ internal static class AbilityCardStateAdmission
     internal static bool? CardStatePartialResolution(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "removeStatuses" => AbilityStatusRemoval.Candidates((AbilityEffect.RemoveStatuses)node, cast).Count > 0,
+            "moveActiveCounter" => AbilityActiveCounterExecution.CanMove(node, cast),
             "removeFromGame" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } card
                 && CanRemoveByEffect(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, card),
             "exhaust" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)?.Ready == true,
@@ -40,6 +42,7 @@ internal static class AbilityCardStateAdmission
                 && DiscardTopHasCards((AbilityEffect.DiscardTop)node, cast),
             "heal" => Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { Damage: > 0 }
                 && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0,
+            "setHitPoints" => AbilityHitPointAssignment.Outcome(node, cast) != AdmissionResolution.None,
             _ => null,
         };
 

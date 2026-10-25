@@ -74,7 +74,7 @@ internal static class AbilityDamageAndThreatExecution
                 DealDamage(damage, syntax, context, state);
                 return true;
             case AbilityEffect.AttackDamage damage:
-                DealAttackDamage(damage, syntax, context, state);
+                AbilityAttackDamageExecution.Run(damage, context, state);
                 return true;
             case AbilityEffect.MoveDamage { Attack: false } movement:
                 MoveDamage(movement, syntax, context, state);
@@ -87,6 +87,9 @@ internal static class AbilityDamageAndThreatExecution
                 return true;
             case AbilityEffect.Heal heal:
                 Heal(heal, context, state); return true;
+            case AbilityEffect.SetHitPoints assignment:
+                state.Outcome = AbilityHitPointAssignment.Execute(assignment, context);
+                return true;
             case AbilityEffect.PreventDamage prevention:
                 PreventDamage(prevention, context); state.ResolveEffect = true; return true;
             default: return false;
@@ -189,6 +192,7 @@ internal static class AbilityDamageAndThreatExecution
         long amount = ModifiedAbilityDamage(AbilityAmounts.SaturatingMultiply(
             Amount(damage.Amount, context), multiplier), context);
         string verb = damage.AttackVerb ? "Attack" : "Deal_Damage";
+        state.Damage = new(context.Occurrence);
         bool suspended = false;
         var occurrence = context.World.Agenda.Occurrence;
         foreach (var target in Every(damage.Cards, context))
@@ -198,7 +202,7 @@ internal static class AbilityDamageAndThreatExecution
                     AbilityEffectAttribution.IdentityPlayer(context))
                     { RecordDefeatOn = occurrence }, context.Events);
             suspended |= !result.IsComplete;
-            (state.Damage ??= new(context.Occurrence)).Add(result, amount, context.Power == BasicPowers.AttackVerb);
+            state.Damage.Add(result, amount, context.Power == BasicPowers.AttackVerb);
         }
         if (suspended) state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
     }
@@ -229,39 +233,6 @@ internal static class AbilityDamageAndThreatExecution
         if (DamagePlacement.Resolve(context.World, context.World.Facts, request,
             context.Events).Outcome == Damage.Outcome.Suspended)
             state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
-    }
-
-    private static void DealAttackDamage(AbilityEffect.AttackDamage damage, AbilityEffect node,
-        AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state)
-    {
-        AbilityEffectBoundary.Begin(context, state);
-        var attacker = context.PowerActor ?? context.AbilityActor
-            ?? context.World.Seats[Resolver(context)].IdentityCard;
-        ContinuousEffect? temporaryOverkill = null;
-        if (damage.Overkill)
-        {
-            temporaryOverkill = new ContinuousEffect(EffectSource.LastingEffect, Kind: Keywords.Overkill,
-                Amount: 1, Card: context.Source.ObjectId, Affects: attacker.ObjectId,
-                Lasts: new Duration(Uses: 1));
-            context.World.Effects.Register(temporaryOverkill);
-        }
-        var attackModifiers = AbilityEventModifiers.Effects(context.World, context.Source, "attackDamage");
-        long amount = AbilityAmounts.SaturatingSum(Amount(damage.Amount, context),
-            [AbilityEventModifiers.Amount(context.World, context.Source, "eventDamage"),
-             AbilityAmounts.SaturatingSum(0, attackModifiers.Select(effect => effect.Amount))]);
-        bool suspended = false;
-        foreach (var target in DamageTargets(Every(damage.Cards, context), context))
-        {
-            var damaged = DamageAttacks.Attack(context.World, context.World.Facts, attacker, context.Source, target,
-                amount, context.Trigger, "Attack", context.Events, retaliate: false);
-            state.Attacked.Add(target);
-            (state.Damage ??= new(context.Occurrence)).Add(damaged, amount);
-            suspended |= !damaged.IsComplete;
-        }
-        foreach (var modifier in context.Power == BasicPowers.AttackVerb ? [] : attackModifiers)
-            context.World.Effects.Use(modifier);
-        if (temporaryOverkill is not null) context.World.Effects.Use(temporaryOverkill);
-        if (suspended) state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
     }
 
     private static void MoveAttackDamage(AbilityEffect.MoveDamage movement, AbilityEffect node,

@@ -188,7 +188,7 @@
       "source": "mc03_wrecking_crew_rules_insert-compressed.pdf",
       "page": 2,
       "fragment": "Prepare Villains and Dials",
-      "hash": "sha256:dab1493a225dd344b529d3baab8a330ccaecd36b271e31aba647c76ff949c812",
+      "hash": "sha256:e2fb47dec9360590ec7026c430a80ea57cf8e2561aad70bcdc309b012ceb8ee9",
       "rules": 4
     },
     {
@@ -219,7 +219,7 @@
       "source": "mc03_wrecking_crew_rules_insert-compressed.pdf",
       "page": 2,
       "fragment": "Each villain in The Wrecking Crew has its own encounter deck of 15 cards, identified by the villain’s name in the bottom-left corner of each card.",
-      "hash": "sha256:fac25040d705eeac14602603a7ad428d6500718c9d24e9d991e7a7c46ff12d5f"
+      "hash": "sha256:21849349e995af486399fd47041c7e9a208fbfe62bcb07d9efbe14ffee556ce6"
     },
     {
       "id": "pack:mc03:additional-setup.the-final-layout",
@@ -239,7 +239,7 @@
       "source": "mc03_wrecking_crew_rules_insert-compressed.pdf",
       "page": 6,
       "fragment": "The Active Villain",
-      "hash": "sha256:c7fc2e0229d0c23eb8a13df86131cc0e5252ea6905cdec6a888ae34458727fdd",
+      "hash": "sha256:6e5b7bb9c644008786b2068b640203916955ada8a9145c865ae1e7153f707434",
       "rules": 2
     },
     {
@@ -250,7 +250,7 @@
       "source": "mc03_wrecking_crew_rules_insert-compressed.pdf",
       "page": 6,
       "fragment": "There are 4 villains in play at the beginning of the scenario, but only the active villain will activate during the villain phase.",
-      "hash": "sha256:cca16b629424c9f92c848e62c837bfc8216524790fddecb7b5d200ac429336db"
+      "hash": "sha256:de6f6765e9a96542dabc513145bde70220ca6c32c95762c36d329c6a4a603bb7"
     },
     {
       "id": "pack:mc03:new-rules.multiple-villains-and-encounter-decks",
@@ -260,7 +260,7 @@
       "source": "mc03_wrecking_crew_rules_insert-compressed.pdf",
       "page": 6,
       "fragment": "When an encounter card leaves play, it is placed in the discard pile of its corresponding encounter deck.",
-      "hash": "sha256:a3863ed3344361e685f3ad33aa0385b636cd1a1947a442d9c3f37529de24a7ca"
+      "hash": "sha256:70162fafd0302471185fffa89e209999776c715f4c1062521165112d8f5599a9"
     },
     {
       "id": "pack:mc03:signature-side-schemes",

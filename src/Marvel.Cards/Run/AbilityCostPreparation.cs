@@ -108,16 +108,30 @@ internal sealed class AbilityCostPreparation
             ? new TakeDamage(Bind(damage.Card), damage.Amount)
             : new DealDamage(Bind(damage.Card), damage.Amount));
 
+    private bool PrepareHandDiscard(AbilityCost component)
+    {
+        switch (component)
+        {
+            case AbilityCost.RandomDiscardFromHand random:
+                ordered.Add(new RandomDiscardHand(world.Seats[player].Hand,
+                    [.. AbilityCostSelection.HandCandidates(world, source, player)
+                        .Select(card => new BoundCard(card, card.Incarnation))], random.Count));
+                return true;
+            case AbilityCost.DiscardFromHand:
+                ordered.Add(new DiscardHand(world.Seats[player].Hand,
+                    [.. selected.Select(id => new BoundCard(world.Cards[id], world.Cards[id].Incarnation))]));
+                return true;
+            default: return false;
+        }
+    }
+
     private void PreparePhysical(AbilityCost component)
     {
+        if (PrepareHandDiscard(component)) return;
         switch (component)
         {
             case AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou:
                 ordered.Add(new DeckCost(component));
-                break;
-            case AbilityCost.DiscardFromHand:
-                ordered.Add(new DiscardHand(world.Seats[player].Hand,
-                    [.. selected.Select(id => new BoundCard(world.Cards[id], world.Cards[id].Incarnation))]));
                 break;
             case AbilityCost.ExhaustChosen:
                 ordered.Add(new ExhaustSelected(
@@ -130,7 +144,8 @@ internal sealed class AbilityCostPreparation
             case AbilityCost.Exhaust exhaust:
                 ordered.Add(new Exhaust(Bind(exhaust.Card)));
                 break;
-            case AbilityCost.ConsumeCampaignCard or AbilityCost.Discard or AbilityCost.ReturnSourceToHand:
+            case AbilityCost.ConsumeCampaignCard or AbilityCost.Discard
+                or AbilityCost.ReturnSourceToHand or AbilityCost.ReturnTitledToHand:
                 ordered.Add(PrepareDeparture(component));
                 break;
             case AbilityCost.RemoveCounters counters:
@@ -149,11 +164,18 @@ internal sealed class AbilityCostPreparation
         }
     }
 
+    private BoundCard BindNamed(string title)
+    {
+        Card target = NamedAbilityCost.RequireTarget(world, player, title);
+        return new BoundCard(target, target.Incarnation);
+    }
+
     private Step PrepareDeparture(AbilityCost component) => component switch
     {
         AbilityCost.ConsumeCampaignCard consume => new ConsumeCampaignBound(Bind(consume.Card)),
         AbilityCost.Discard discard => new DiscardBound(Bind(discard.Card)),
         AbilityCost.ReturnSourceToHand => new ReturnBound(Bind(AbilityCostCard.Source)),
+        AbilityCost.ReturnTitledToHand named => new ReturnBound(BindNamed(named.Title)),
         _ => throw new InvalidOperationException("Unknown departure cost"),
     };
 }

@@ -51,6 +51,14 @@ internal sealed class AbilityExpressionEvaluation(
     private long ResolutionAmount(AbilityResolutionNumber kind) => kind switch
     {
         AbilityResolutionNumber.PowerAmount => context.PowerAmount,
+        AbilityResolutionNumber.CardsDiscarded => context.Discarded.Length,
+        AbilityResolutionNumber.PrintedCostDiscarded => context.Discarded.Sum(card =>
+            context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players)),
+        AbilityResolutionNumber.DistinctCardTypesDiscarded => context.Discarded.Select(card =>
+            context.World.Facts.Kind(card.FaceId)).Distinct().LongCount(),
+        AbilityResolutionNumber.CompletedAttackDamageDealt =>
+            context.Occurrence.CompletedEnemyAttack?.DamageDealt ?? 0,
+        AbilityResolutionNumber.CardsExhaustedForCost => context.Bindings.ExhaustedForCost.Count,
         AbilityResolutionNumber.ActivationAttacksAgainstYou =>
             context.Results.GetValueOrDefault(AbilityActivationReceipts.PlayerKey(context.Player)),
         AbilityResolutionNumber.PrintedBoostIconsDiscarded => context.Discarded.Sum(card =>
@@ -102,11 +110,26 @@ internal sealed class AbilityExpressionEvaluation(
         AbilityCondition.ActivationIs activation => context.World.Activation is { } current && current.Attacking == activation.Attack,
         AbilityCondition.CardText text => TestCardText(text),
         AbilityCondition.IsKind kind => IsKind(kind),
+        AbilityCondition.IsEnemyAttacker attacker => selectors.Find(attacker.Card) is { } source
+            && DeckTypes.IsInPlay(source.Area.Type)
+            && context.World.Attack is { } attack && attack.Enemy == source.ObjectId,
+        AbilityCondition.WasDefeatedByDamage defeated => WasDefeatedByDamage(defeated.Card),
         AbilityCondition.WasDefeated defeated => selectors.Find(defeated.Card) is { } card
             && context.Occurrence.Defeats.Any(defeat => defeat.Card == card.ObjectId),
         AbilityCondition.IsYourIdentity identity => selectors.Find(identity.Card)?.ObjectId == context.World.Seats[AbilityCardQueries.Resolver(context.Bindings)].IdentityCard.ObjectId,
         _ => throw new InvalidOperationException("Unknown compiled condition"),
     };
+
+    private bool WasDefeatedByDamage(AbilityCardSelection selection)
+    {
+        // Engine choice: receipts name the retained selection's exact incarnation,
+        // including after defeat moves the character out of play.
+        var retained = selection is AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen }
+            ? context.Bindings.ChosenBinding : null;
+        var card = retained?.Card ?? selectors.Find(selection);
+        int incarnation = retained?.Incarnation ?? card?.Incarnation ?? -1;
+        return card is not null && context.Bindings.DamageDefeats.Contains((card.ObjectId, incarnation));
+    }
 
     private bool IsKind(AbilityCondition.IsKind condition) => condition.Card is
         AbilityCardSelection.Bound { Binding: AbilityCardBinding.Defeated }
@@ -130,6 +153,7 @@ internal sealed class AbilityExpressionEvaluation(
 
     private bool TestFact(AbilityConditionFact fact) => fact switch
     {
+        AbilityConditionFact.InAttackChain => context.World.Agenda.Current?.AttackOrigin is not null,
         AbilityConditionFact.FinalStep => context.FinalStep,
         AbilityConditionFact.CanMakeTheCall => CanMakeTheCall(),
         AbilityConditionFact.AttackDamaged => context.World.FinishedAttack is { Damaged: true } attack

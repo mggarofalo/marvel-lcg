@@ -46,19 +46,20 @@ internal static class AbilityProjection
             or AbilityCardQuery.MinionsEngagedWithYou
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer or AbilityCardQuery.UpgradesYouControl
             or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.UpgradesAndSupportsYouControl
-            or AbilityCardQuery.CardsYouControl,
+            or AbilityCardQuery.CardsYouControl or AbilityCardQuery.OtherVillainSideSchemes or AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme
+            || AbilityEncounterSchemeQueries.IsRanked(query.Kind),
         _ => false,
     };
 
     internal static bool PotentialVillainSelector(AbilityCardSelection selector, AbilityAdmissionScope cast)
     {
-        if (cast.World.TheCardIn(DeckType.VillainArea) is null) return false;
+        if (!HasLivingVillain(cast.World)) return false;
         return selector switch
         {
             AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.Villain
-                or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters,
-            AbilityCardSelection.Titled titled => cast.World.AreaOf(DeckType.VillainDeck).Cards
-                .Prepend(cast.World.TheCardIn(DeckType.VillainArea)!)
+                or AbilityCardQuery.Villains or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters
+                || AbilityEncounterSchemeQueries.IsRanked(query.Kind),
+            AbilityCardSelection.Titled titled => PotentialStages(cast.World)
                 .Any(stage => string.Equals(titled.Title, cast.World.Facts.Title(stage.FaceId), StringComparison.Ordinal)),
             AbilityCardSelection.EnemiesWithTrait => true,
             AbilityCardSelection.WithTrait filtered => PotentialVillainSelector(filtered.Cards, cast),
@@ -76,6 +77,14 @@ internal static class AbilityProjection
             _ => false,
         };
     }
+
+    private static bool HasLivingVillain(World world) => world.EncounterTopology is { } topology
+        ? topology.Groups.Any(group => group.CurrentVillain is not null)
+        : world.TheCardIn(DeckType.VillainArea) is not null;
+
+    private static IEnumerable<Card> PotentialStages(World world) => world.EncounterTopology is { } topology
+        ? topology.Groups.SelectMany(group => group.Stages)
+        : world.AreaOf(DeckType.VillainDeck).Cards.Prepend(world.TheCardIn(DeckType.VillainArea)!);
 
     internal static bool TryTraceCount(
         AbilityCardSelection selector, Card next, AbilityAdmissionScope cast, HashSet<int> discarded,

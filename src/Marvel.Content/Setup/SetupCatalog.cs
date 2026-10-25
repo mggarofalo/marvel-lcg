@@ -135,7 +135,11 @@ public sealed class SetupCatalog
         SetAside: Strings(element, "set_aside"),
         Encounters: Strings(element, "encounters"),
         EncounterSets: Strings(element, "encounter_sets"),
-        ModularSets: Strings(element, "modular_sets"));
+        ModularSets: Strings(element, "modular_sets"))
+    {
+        EncounterGroups = EncounterRecipeReader.Read(element),
+        SetupMode = EncounterRecipeReader.Mode(element),
+    };
 
     private static HeroSetup ReadHero(JsonElement element) => new(
         Name: Text(element, "name"),

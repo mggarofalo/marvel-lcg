@@ -63,7 +63,7 @@ public sealed record Occurrence
         this.TargetFacts = TargetFacts;
         this.Threat = Threat;
         conditions = [.. Conditions];
-        resolutions = [.. Resolutions ?? []];
+        Resolution = new OccurrenceResolutions(Resolutions);
     }
 
     /// <summary>Distinguishes this occurrence from another of the same shape.</summary>
@@ -90,7 +90,19 @@ public sealed record Occurrence
     /// <summary>The imminent threat placement, when this occurrence is one.</summary>
     public State.ThreatPlacement? Threat { get; }
 
-    private readonly HashSet<(WindowKind Window, int Card, AbilityType Type, int Ordinal, State.Defeated? Defeat)> spent = [];
+    private readonly HashSet<(WindowKind Window, int Card, AbilityType Type, int Ordinal, State.Defeated? Defeat, State.Attacked? Attack, NativeAbilityKind Native, Occurrence? Threat)> spent = [];
+
+    private readonly List<Occurrence> threatPlacements = [];
+
+    /// <summary>Exact positive placements belonging to one threat instruction.</summary>
+    [JsonIgnore]
+    public IReadOnlyList<Occurrence> ThreatPlacements => threatPlacements;
+
+    internal void RecordThreatPlacement(Occurrence placement)
+    {
+        threatPlacements.Add(placement);
+        Also(Play.Steps.ThreatPlaced);
+    }
 
     // The positional parameter of the same name, copied. Inside this body
     // `Conditions` is the constructor's argument; outside it is the property
@@ -100,7 +112,9 @@ public sealed record Occurrence
 
     private readonly List<State.Defeated> defeats = [];
 
-    private readonly List<ResolutionEntry> resolutions;
+    /// <summary>The lifecycle owner for abilities and cards resolving in this occurrence.</summary>
+    [JsonIgnore]
+    public OccurrenceResolutions Resolution { get; }
 
     /// <summary>An occurrence creating a single triggering condition.</summary>
     /// <param name="id">Distinguishes this occurrence from another of the same shape.</param>
@@ -125,20 +139,8 @@ public sealed record Occurrence
         State.ICardFacts facts,
         int actor,
         int target,
-        int player = -1)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-
-        return new Occurrence(
-            id,
-            conditions,
-            Player: player,
-            Actor: actor,
-            Target: target,
-            ActorFacts: OccurrenceCard.Capture(world.Cards[actor], facts),
-            TargetFacts: OccurrenceCard.Capture(world.Cards[target], facts));
-    }
+        int player = -1) =>
+        OccurrenceCapture.Attack(id, conditions, world, facts, actor, target, player);
 
     /// <summary>Create a thwart occurrence with explicit actor and scheme roles.</summary>
     /// <remarks>
@@ -154,49 +156,14 @@ public sealed record Occurrence
         State.ICardFacts facts,
         int actor,
         int scheme,
-        int player)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-
-        return new Occurrence(
-            id,
-            conditions,
-            Subject: scheme,
-            Player: player,
-            Actor: actor,
-            Target: scheme,
-            ActorFacts: OccurrenceCard.Capture(world.Cards[actor], facts),
-            TargetFacts: OccurrenceCard.Capture(world.Cards[scheme], facts));
-    }
+        int player) =>
+        OccurrenceCapture.Thwart(id, conditions, world, facts, actor, scheme, player);
 
     /// <summary>Create an occurrence for one imminent threat assignment.</summary>
     public static Occurrence ForThreat(
         int id, IReadOnlyList<string> conditions, State.World world,
-        State.ICardFacts facts, State.ThreatPlacement placement, int? subject = null)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(placement);
-
-        OccurrenceCard? source = placement.Source >= 0
-            ? OccurrenceCard.Capture(world.Cards[placement.Source], facts)
-            : null;
-        OccurrenceCard? target = placement.Scheme >= 0
-            ? OccurrenceCard.Capture(world.Cards[placement.Scheme], facts)
-            : null;
-
-        return new Occurrence(
-            id,
-            conditions,
-            Subject: subject ?? placement.Scheme,
-            Player: placement.Player,
-            Actor: placement.Source,
-            Target: placement.Scheme,
-            ActorFacts: source,
-            TargetFacts: target,
-            Threat: placement);
-    }
+        State.ICardFacts facts, State.ThreatPlacement placement, int? subject = null) =>
+        OccurrenceCapture.Threat(id, conditions, world, facts, placement, subject);
 
     /// <summary>
     /// Every triggering condition this occurrence has created so far.
@@ -225,6 +192,28 @@ public sealed record Occurrence
     /// </remarks>
     public IReadOnlyList<State.Defeated> Defeats => defeats;
 
+    /// <summary>Engine-owned completion facts for native retaliate responses.</summary>
+    [JsonIgnore]
+    public State.RetaliationContext? Retaliation { get; set; }
+
+    /// <summary>The enemy attack completed by this occurrence, when present.</summary>
+    [JsonIgnore]
+    public State.CompletedEnemyAttack? CompletedEnemyAttack { get; internal set; }
+
+    private readonly List<State.Attacked> attacks = [];
+
+    /// <summary>Ordered recipient facts for one multi-target attack.</summary>
+    public IReadOnlyList<State.Attacked> Attacks => attacks;
+
+    /// <summary>Record a recipient without creating another attack or window.</summary>
+    public void Also(State.Attacked what)
+    {
+        ArgumentNullException.ThrowIfNull(what);
+        if (attacks.Any(item => item.Card == what.Card && item.Incarnation == what.Incarnation))
+            throw new InvalidOperationException("an attack recipient was recorded twice");
+        attacks.Add(what);
+    }
+
     /// <summary>Ability and card resolution state accumulated in this occurrence.</summary>
     /// <remarks>
     /// These are data because a resolution can cross a player prompt, an enemy
@@ -232,147 +221,7 @@ public sealed record Occurrence
     /// response window. The address spelling is the engine's choice; the
     /// resolved/unresolved distinction is <c>rr:resolve.2-.8</c>.
     /// </remarks>
-    public IReadOnlyList<ResolutionEntry> Resolutions => resolutions;
-
-    /// <summary>Begin resolving one exact triggered ability.</summary>
-    public void Begin(PendingAbility ability)
-    {
-        int found = ResolutionIndex(ability);
-        if (found < 0)
-        {
-            resolutions.Add(new ResolutionEntry(
-                ability.Card, ability.Type, ability.Ordinal,
-                ability.Type == AbilityType.Constant
-                    ? ResolutionStatus.Unresolved
-                    : ResolutionStatus.Pending) { TriggeringDefeat = ability.TriggeringDefeat });
-        }
-    }
-
-    /// <summary>Begin resolving an event or treachery and all of its abilities.</summary>
-    public void BeginCard(int card, IReadOnlyList<PendingAbility> abilities)
-    {
-        if (resolutions.All(entry => entry.Card != card || entry.Ability is not null))
-        {
-            resolutions.Add(new ResolutionEntry(
-                card, null, -1, ResolutionStatus.Pending));
-        }
-        foreach (var ability in abilities)
-        {
-            Begin(ability);
-        }
-        RefreshCard(card);
-    }
-
-    /// <summary>Record that at least one effect applied while the ability remains in progress.</summary>
-    public void Resolve(PendingAbility ability)
-    {
-        int found = ResolutionIndex(ability);
-        if (found < 0)
-        {
-            Begin(ability);
-            found = ResolutionIndex(ability);
-        }
-        if (ability.Type != AbilityType.Constant)
-        {
-            resolutions[found] = resolutions[found] with
-            {
-                Applied = true,
-                Status = resolutions[found].Status == ResolutionStatus.Unresolved
-                    ? ResolutionStatus.Resolved
-                    : resolutions[found].Status,
-            };
-            RefreshCard(ability.Card);
-        }
-    }
-
-    /// <summary>Finish an ability whose effects did or did not apply.</summary>
-    public void Complete(PendingAbility ability)
-    {
-        int found = ResolutionIndex(ability);
-        if (found < 0)
-        {
-            Begin(ability);
-            found = ResolutionIndex(ability);
-        }
-        if (resolutions[found].Status == ResolutionStatus.Pending)
-        {
-            resolutions[found] = resolutions[found] with
-            {
-                Status = resolutions[found].Applied
-                    ? ResolutionStatus.Resolved
-                    : ResolutionStatus.Unresolved,
-            };
-        }
-        RefreshCard(ability.Card);
-    }
-
-    /// <summary>Cancel an ability before any of its effects resolve.</summary>
-    public void Cancel(PendingAbility ability)
-    {
-        Set(ability, ResolutionStatus.Unresolved, applied: false);
-        RefreshCard(ability.Card);
-    }
-
-    /// <summary>The current status of an exact ability; absent abilities are unresolved.</summary>
-    public ResolutionStatus StatusOf(PendingAbility ability)
-    {
-        int found = ResolutionIndex(ability);
-        return found < 0 ? ResolutionStatus.Unresolved : resolutions[found].Status;
-    }
-
-    /// <summary>The current status of a card; absent cards are unresolved.</summary>
-    public ResolutionStatus CardStatus(int card) => resolutions.FirstOrDefault(entry =>
-        entry.Card == card && entry.Ability is null)?.Status
-        ?? ResolutionStatus.Unresolved;
-
-    private int ResolutionIndex(PendingAbility ability) => resolutions.FindIndex(entry =>
-        entry.Card == ability.Card
-        && entry.Ability == ability.Type
-        && entry.Ordinal == ability.Ordinal
-        && entry.TriggeringDefeat == ability.TriggeringDefeat);
-
-    private void Set(
-        PendingAbility ability, ResolutionStatus status, bool applied = false)
-    {
-        if (ability.Type == AbilityType.Constant)
-        {
-            status = ResolutionStatus.Unresolved;
-        }
-        int found = ResolutionIndex(ability);
-        if (found < 0)
-        {
-            resolutions.Add(new ResolutionEntry(
-                ability.Card, ability.Type, ability.Ordinal, status, applied)
-                { TriggeringDefeat = ability.TriggeringDefeat });
-        }
-        else
-        {
-            resolutions[found] = resolutions[found] with
-            {
-                Status = status,
-                Applied = applied,
-            };
-        }
-    }
-
-    private void RefreshCard(int card)
-    {
-        int cardEntry = resolutions.FindIndex(entry =>
-            entry.Card == card && entry.Ability is null);
-        if (cardEntry < 0)
-        {
-            return;
-        }
-
-        var abilities = resolutions.Where(entry =>
-            entry.Card == card && entry.Ability is not null).ToList();
-        var status = abilities.Any(entry => entry.Status == ResolutionStatus.Resolved)
-            ? ResolutionStatus.Resolved
-            : abilities.Any(entry => entry.Status == ResolutionStatus.Pending)
-                ? ResolutionStatus.Pending
-                : ResolutionStatus.Unresolved;
-        resolutions[cardEntry] = resolutions[cardEntry] with { Status = status };
-    }
+    public IReadOnlyList<ResolutionEntry> Resolutions => Resolution.Entries;
 
     /// <summary>
     /// The one card this occurrence defeated, or null.
@@ -435,7 +284,7 @@ public sealed record Occurrence
     /// <param name="window">Which window.</param>
     /// <param name="ability">The ability and exact triggering fact.</param>
     public bool MayTrigger(WindowKind window, PendingAbility ability) =>
-        !spent.Contains((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat));
+        !spent.Contains((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat, ability.TriggeringAttack, ability.Native, ability.TriggeringThreat));
 
     /// <summary>Record that a card's ability has been triggered in this window.</summary>
     /// <remarks>
@@ -446,5 +295,5 @@ public sealed record Occurrence
     /// <param name="ability">The ability and exact triggering fact.</param>
     /// <returns>False when it had already been triggered.</returns>
     public bool Trigger(WindowKind window, PendingAbility ability) =>
-        spent.Add((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat));
+        spent.Add((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat, ability.TriggeringAttack, ability.Native, ability.TriggeringThreat));
 }

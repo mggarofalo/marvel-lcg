@@ -48,7 +48,7 @@ public static class RevealKeywords
             // Keyword-provided abilities have no authored-data ordinal. These
             // stable negative addresses are the engine's spelling, kept apart
             // from every printed/data-order ordinal used by the card DSL.
-            occurrence.BeginCard(
+            occurrence.Resolution.BeginCard(
                 card.ObjectId,
                 keywordAbilities);
         }
@@ -106,9 +106,9 @@ public static class RevealKeywords
         }
         if (applied)
         {
-            occurrence.Resolve(pending);
+            occurrence.Resolution.Resolve(pending);
         }
-        occurrence.Complete(pending);
+        occurrence.Resolution.Complete(pending);
     }
 
     /// <summary>The stable ledger addresses of keyword-provided reveal abilities.</summary>

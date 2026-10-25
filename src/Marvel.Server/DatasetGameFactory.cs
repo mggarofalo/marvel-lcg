@@ -30,12 +30,10 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
         AbilityProgram abilities,
         SessionCompatibility compatibility)
     {
-        CampaignDefinition = RiseOfRedSkullAdmission.Discover(setup, cards, abilities.Authored);
-        playable = abilities.Authored.Where(face => CampaignDefinition is not null || cards.Pack(face) != "trors")
-            .ToImmutableHashSet(StringComparer.Ordinal);
-        if (CampaignDefinition is null) setup = setup.WithoutPack(cards, "trors");
-        SetupCatalogAdmission.Validate(setup, cards, playable);
-        this.setup = setup;
+        var admitted = RuntimeProductAdmission.Discover(setup, cards, abilities.Authored);
+        CampaignDefinition = admitted.Campaign;
+        playable = admitted.Playable;
+        this.setup = admitted.Setup;
         this.cards = cards;
         this.abilities = abilities;
         Compatibility = compatibility;
@@ -117,10 +115,11 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
         var runner = new AbilityRunner(abilities);
         var setupEvents = new List<GameEvent>();
         var campaign = setup.Campaign(specification.Scenario);
-        var ordinary = Blueprints.From(Dealer.Deal(setup,
+        var scenario = ScenarioDealer.Prepare(setup,
             new DealRequest(specification.Scenario, specification.Heroes, specification.ModularSets,
                 PlayerDecks: specification.PlayerDecks)
-            { CampaignExcludedAllies = specification.Campaign?.BannedAllyFaces ?? [] }, cards), cards);
+            { CampaignExcludedAllies = specification.Campaign?.BannedAllyFaces ?? [] }, cards);
+        var ordinary = scenario.Blueprints;
         var plan = specification.Campaign is { } input
             ? CampaignBlueprints.From(ordinary, input, CampaignDefinition!) : new CampaignDealPlan(ordinary, [], []);
         var world = WorldSetup.DealConfigured(
@@ -128,7 +127,8 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
             [.. specification.Heroes.Select(hero => setup.Hero(hero).Name)],
             specification.Seed,
             runner,
-            new WorldSetupOptions(campaign.Expert, specification.Campaign, plan.Bindings, plan.ExperimentalWeapons),
+            new WorldSetupOptions(campaign.Expert, specification.Campaign, plan.Bindings, plan.ExperimentalWeapons,
+                scenario.EncounterGroups),
             setupEvents);
         return new OpenedGame(Game.Begin(world, cards, runner), setupEvents);
     }
@@ -189,8 +189,7 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
             .. setup.CampaignNames.Select(key =>
             {
                 CampaignSetup campaign = setup.Campaign(key);
-                return new ScenarioSetupChoice(
-                    key, campaign.Name, campaign.Expert, [.. campaign.ModularSets]);
+                return ScenarioSetupProjection.Describe(key, campaign, cards);
             }),
         ],
         ModularSets:

@@ -68,6 +68,7 @@ public static class Dealer
         ValidateDeckSelections(heroNames, facts, playerDeckNames, playerDecks);
 
         var campaign = catalog.Campaign(campaignName);
+        EncounterRecipeDeal.Validate(campaign, modularSetNames);
         if (facts is not null)
         {
             ValidateModularSets(catalog, facts, modularSetNames ?? campaign.ModularSets);
@@ -82,36 +83,11 @@ public static class Dealer
             dealt.Add(new Creation(challenge, CreationSource.Challenge, Creation.Scenario));
         }
 
-        for (int seat = 0; seat < heroNames.Count; seat++)
-        {
-            var hero = CampaignDeckExclusions.Apply(catalog.Hero(heroNames[seat]), request.CampaignExcludedAllies);
-            // The rulebook decides whether the resulting deck is legal;
-            // choosing a published starter's 25-card customization block as a
-            // compact deterministic deck recipe is this engine's test format.
-            var customization = playerDeckNames is null
-                ? hero
-                : catalog.Hero(playerDeckNames[seat]);
-            Add(hero.Hero, CreationSource.Identity, seat);
-            Add(hero.Obligations, CreationSource.Obligation, seat);
-            foreach (string spec in hero.NemesisSet)
-                dealt.Add(new(spec, CreationSource.Nemesis, seat, hero.NemesisSetIcon));
-
-            // One call over the concatenation in the engine, so the two lists
-            // are a single unbroken run of ids rather than two.
-            if (playerDecks is not null)
-                dealt.AddRange(PlayerDeckAdmission.Admit(playerDecks[seat], hero.HeroDeck, seat, facts!, hero.Hero[0], hero.AspectRule));
-            else
-            {
-                if (facts is not null)
-                    _ = PlayerDeckAdmission.Admit(new([.. hero.HeroDeck, .. customization.PlayerDeck]),
-                        hero.HeroDeck, seat, facts, hero.Hero[0], hero.AspectRule);
-                Add(hero.HeroDeck, CreationSource.HeroDeck, seat);
-                Add(customization.PlayerDeck, CreationSource.PlayerDeck, seat);
-            }
-        }
+        HeroRecipeDeal.Append(catalog, request, facts, campaign.EncounterGroups is null, dealt);
 
         Add(campaign.Schemes, CreationSource.MainScheme, Creation.Scenario);
-        Add(campaign.Villain, CreationSource.Villain, Creation.Scenario);
+        if (campaign.EncounterGroups is null)
+            Add(campaign.Villain, CreationSource.Villain, Creation.Scenario);
         Add(campaign.Encounters, CreationSource.Encounter, Creation.Scenario);
 
         // The printed contents line says which cards begin set aside, not when
@@ -124,6 +100,7 @@ public static class Dealer
         {
             Add(catalog.EncounterSet(setName), CreationSource.EncounterSet, Creation.Scenario);
         }
+        if (campaign.EncounterGroups is { } groups) EncounterRecipeDeal.Append(groups, dealt);
 
         if (facts is not null)
         {

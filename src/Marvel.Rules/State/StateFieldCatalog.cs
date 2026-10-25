@@ -165,6 +165,37 @@ public static class StateFieldCatalog
         ["vulnerable"] = "Vulnerable",
     });
 
+    // What a card attached to another adds to it. The engine's own attribute
+    // names, and a closed set: 116 cards carry `ATK+`, 50 carry `SCH+`, four
+    // carry `THW+`, and all but one of the 170 are attachments.
+    //
+    // Declarative, so no card ability is involved. Charge takes Rhino's attack
+    // from 2 to 5 because it is attached to him and prints `ATK+ 3`.
+    internal static readonly ReadOnlyDictionary<string, string> ModifiedBy = new(
+        new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["attack"] = "ATK+",
+        ["scheme"] = "SCH+",
+        ["thwart"] = "THW+",
+    });
+
+    internal static readonly ImmutableArray<string> PowerAttributes =
+        ["ATK", "THW", "DEF", "REC", "SCH"];
+
+    // The two fields whose value is a count of icons printed *inside* another
+    // attribute rather than an attribute of its own.
+    internal static readonly ImmutableArray<(string Field, string Power)> ConsequentialFrom =
+    [
+        ("attack_consequential_damage", "ATK"),
+        ("thwart_consequential_damage", "THW"),
+    ];
+
+    /// <summary>The default ally limit an identity registers.</summary>
+    public const long AllyLimit = 3;
+
+    /// <summary>The default restricted-upgrade limit an identity registers.</summary>
+    public const long RestrictedLimit = 2;
+
     /// <summary>Whether a name is a field the engine reads modifiers into.</summary>
     /// <remarks>
     /// <para>
@@ -183,28 +214,13 @@ public static class StateFieldCatalog
     /// <param name="field">The field name, as this class spells it.</param>
     public static bool IsModifiable(string field) =>
         PrintedFrom.ContainsKey(field)
-        || field is "health" or "ally_limit";
+        || field is  "health" or "ally_limit" or "attack_consequential_damage"
+        or Marvel.Rules.Play.VillainAttackRestrictions.OtherVillains
+        or Play.BasicAttackCosts.DiscardField or Play.ThwartPermissions.ProhibitedField;
 
     /// <summary>Whether a field is one of the five printed basic powers.</summary>
     public static bool IsBasicPowerField(string field) =>
         PrintedFrom.TryGetValue(field, out string? attribute) && PowerAttributes.Contains(attribute);
-
-    // What a card attached to another adds to it. The engine's own attribute
-    // names, and a closed set: 116 cards carry `ATK+`, 50 carry `SCH+`, four
-    // carry `THW+`, and all but one of the 170 are attachments.
-    //
-    // Declarative, so no card ability is involved. Charge takes Rhino's attack
-    // from 2 to 5 because it is attached to him and prints `ATK+ 3`.
-    internal static readonly ReadOnlyDictionary<string, string> ModifiedBy = new(
-        new Dictionary<string, string>(StringComparer.Ordinal)
-    {
-        ["attack"] = "ATK+",
-        ["scheme"] = "SCH+",
-        ["thwart"] = "THW+",
-    });
-
-    internal static readonly ImmutableArray<string> PowerAttributes =
-        ["ATK", "THW", "DEF", "REC", "SCH"];
 
     /// <summary>Whether one of the five basic powers prints a usable value.</summary>
     /// <remarks>
@@ -236,18 +252,4 @@ public static class StateFieldCatalog
     /// <c>PrintedKeywordTests</c>.
     /// </remarks>
     public static IReadOnlyDictionary<string, string> FilledFrom => PrintedFrom;
-
-    // The two fields whose value is a count of icons printed *inside* another
-    // attribute rather than an attribute of its own.
-    internal static readonly ImmutableArray<(string Field, string Power)> ConsequentialFrom =
-    [
-        ("attack_consequential_damage", "ATK"),
-        ("thwart_consequential_damage", "THW"),
-    ];
-
-    /// <summary>The default ally limit an identity registers.</summary>
-    public const long AllyLimit = 3;
-
-    /// <summary>The default restricted-upgrade limit an identity registers.</summary>
-    public const long RestrictedLimit = 2;
 }

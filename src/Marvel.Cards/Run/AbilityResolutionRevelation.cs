@@ -72,7 +72,7 @@ internal static class AbilityResolutionRevelation
             card.ObjectId, AbilityType.WhenRevealed, player, entry.Ordinal)).ToList();
         if (EffectiveCards.Kind(card, world.Facts) == CardKind.Treachery)
         {
-            occurrence.BeginCard(card.ObjectId, addresses);
+            occurrence.Resolution.BeginCard(card.ObjectId, addresses);
         }
 
         var events = new List<GameEvent>();
@@ -124,11 +124,11 @@ internal static class AbilityResolutionRevelation
 
         if (EffectiveCards.Kind(card, world.Facts) == CardKind.Treachery)
         {
-            occurrence.BeginCard(card.ObjectId, addresses);
+            occurrence.Resolution.BeginCard(card.ObjectId, addresses);
         }
         foreach (var address in addresses)
         {
-            occurrence.Cancel(address);
+            occurrence.Resolution.Cancel(address);
         }
         var subjects = new Dictionary<int, string> { [card.ObjectId] = world.Facts.Title(card.FaceId) };
         if (cancellation.Card is { } source)

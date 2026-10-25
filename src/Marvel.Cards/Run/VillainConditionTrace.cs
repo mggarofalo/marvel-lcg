@@ -250,6 +250,7 @@ internal sealed class VillainConditionTrace(
             AbilityCondition.Any any => any.Operands.Any(child => TestCanChange(child, depth)),
             AbilityCondition.Negated negated => TestCanChange(negated.Operand, depth),
             AbilityCondition.InForm form => FormCanChange(form),
+            AbilityCondition.IsEnemyAttacker => true,
             AbilityCondition.TitleInPlay title => TitleCanChange(title.Title),
             AbilityCondition.Exists exists => TraceCardsInPlayMayDiffer(changes.Discarded, cast)
                 || PotentialVillainSelector(exists.Cards, cast),

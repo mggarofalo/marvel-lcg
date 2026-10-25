@@ -65,7 +65,7 @@ internal static class AbilityRepeatedCharacteristicTrace
         Card current, string grantedKind, AbilityAdmissionScope cast,
         HashSet<int> discarded)
     {
-        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        int boardVillain = AbilityProjectedAttachmentHosts.BoardVillain(current, cast);
         var carriedIds = TraceCarriedAttachments(current, cast, discarded)
             .Select(card => card.ObjectId).ToHashSet();
         return cast.World.Effects.Active().Any(effect =>
@@ -78,7 +78,7 @@ internal static class AbilityRepeatedCharacteristicTrace
     internal static List<Card> TraceCarriedAttachments(
         Card current, AbilityAdmissionScope cast, HashSet<int> discarded)
     {
-        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        int boardVillain = AbilityProjectedAttachmentHosts.BoardVillain(current, cast);
         if (boardVillain < 0 || !string.Equals(
                 cast.World.Facts.Title(cast.World.Cards[boardVillain].FaceId),
                 cast.World.Facts.Title(current.FaceId),
@@ -121,7 +121,7 @@ internal static class AbilityRepeatedCharacteristicTrace
         value -= DiscardedAttachmentModifier(current, printed, cast, discarded);
         value -= DiscardedConstantModifier(current, field, cast, discarded);
 
-        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        int boardVillain = AbilityProjectedAttachmentHosts.BoardVillain(current, cast);
         if (current.ObjectId == boardVillain)
         {
             return value;

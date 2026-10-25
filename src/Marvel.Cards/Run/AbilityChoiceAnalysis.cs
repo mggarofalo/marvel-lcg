@@ -64,9 +64,9 @@ internal static class AbilityChoiceAnalysis
         };
 
     internal static bool IsChoice(AbilityEffect node) =>
-        node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
-            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop"
-            or "discardResourceIcons" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
+        node is AbilityEffect.MoveThreat or AbilityEffect.Power { TargetCount: not null } || node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
+            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop"
+            or "discardHandCards" or "discardResourceIcons" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
             or "legalPractice" or "payOrEffect" or "enemyAttacks" or "enemySchemes";
 
     /// <summary>Choice nodes on the control-flow path that can execute now.</summary>

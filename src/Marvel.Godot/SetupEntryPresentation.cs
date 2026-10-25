@@ -52,6 +52,7 @@ internal static class SetupEntryPresentation
         fields.MoveChild(main.seedHelp, 6);
         fields.MoveChild(main.start, fields.GetChildCount() - 1);
         RefreshChoices(main);
+        RefreshAdditionalSeats(main);
         foreach (Control control in fields.FindChildren("*", "Control", true, false).OfType<Control>())
         {
             if (control is Label or BaseButton or LineEdit)
@@ -62,10 +63,25 @@ internal static class SetupEntryPresentation
         }
     }
 
+    private static void RefreshAdditionalSeats(Main main)
+    {
+        // Reveal another seat when the preceding seat is occupied, keeping the
+        // default solo setup and its commitment within the sheet.
+        var additional = main.setupController.AdditionalHeroes;
+        int playerCount = main.setupChoices is null ? 1 : main.setupController.SelectedHeroes().Count;
+        for (int index = 0; index < additional.Count; index++)
+        {
+            bool visible = playerCount >= index + 2;
+            main.setupGrid.GetNode<Control>(additional[index].Name + "Choices").Visible = visible;
+            main.setupGrid.GetNode<Control>("HeroSeatLabel" + (index + 2)).Visible = visible;
+        }
+    }
+
     internal static void RefreshChoices(Main main)
     {
         if (!main.setupPanel.Visible || main.setupChoices is null) return;
-        foreach (OptionButton option in new[] { main.hero, main.secondHero, main.scenario, main.mode })
+        foreach (OptionButton option in new[] { main.hero, main.secondHero, main.scenario, main.mode }
+                     .Concat(main.setupController.VariantControls).Concat(main.setupController.AdditionalHeroes))
         {
             HFlowContainer row = EnsureRow(main.setupGrid, option);
             string? focus = FocusedChoice(row);
@@ -86,6 +102,8 @@ internal static class SetupEntryPresentation
             RestoreFocus(row, focus);
         }
         HFlowContainer modular = EnsureRow(main.setupGrid, main.modular);
+        modular.Visible = main.SelectedCampaign().AllowsModularSets;
+        main.setupGrid.GetNode<Control>("ModularLabel").Visible = modular.Visible;
         string? modularFocus = FocusedChoice(modular);
         Clear(modular);
         PopupMenu popup = main.modular.GetPopup();
@@ -119,7 +137,8 @@ internal static class SetupEntryPresentation
     internal static void RefreshAvailability(Main main)
     {
         foreach (BaseButton adapter in new BaseButton[]
-                 { main.hero, main.secondHero, main.scenario, main.mode, main.modular })
+                 { main.hero, main.secondHero, main.scenario, main.mode, main.modular }
+                     .Concat(main.setupController.VariantControls).Concat(main.setupController.AdditionalHeroes))
         {
             if (main.setupGrid.GetNodeOrNull<HFlowContainer>(adapter.Name + "Choices") is not { } row)
                 continue;
@@ -130,9 +149,11 @@ internal static class SetupEntryPresentation
     internal static void SetAssignmentEnabled(Main main, bool enabled)
     {
         foreach (BaseButton adapter in new BaseButton[]
-                 { main.hero, main.secondHero, main.scenario, main.mode, main.modular })
+                 { main.hero, main.secondHero, main.scenario, main.mode, main.modular }
+                     .Concat(main.setupController.VariantControls).Concat(main.setupController.AdditionalHeroes))
             adapter.Disabled = !enabled;
         main.seed.Editable = enabled;
+        main.setupController.RefreshHeroes();
         RefreshAvailability(main);
     }
 

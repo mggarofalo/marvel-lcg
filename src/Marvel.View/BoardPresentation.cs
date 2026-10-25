@@ -12,6 +12,9 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
         ["attack", "defense", "recover", "scheme", "thwart"],
         StringComparer.Ordinal);
 
+    /// <summary>Detached public independent-villain relationships used to arrange scenario objects.</summary>
+    public IReadOnlyList<EncounterGroupDescriptor> EncounterGroups { get; init; } = [];
+
     /// <summary>Scenario, player, and fallback lanes used by the tabletop renderer.</summary>
     public IReadOnlyList<BoardLanePresentation> Lanes { get; init; } = [];
 
@@ -55,6 +58,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             PlayerSummaries = world.PlayerSummaries,
             Table = world.Table,
             Relationships = [.. world.Relationships],
+            EncounterGroups = world.EncounterGroups.Select(group => group with { Stages = group.Stages.ToArray() }).ToArray(),
         };
     }
 

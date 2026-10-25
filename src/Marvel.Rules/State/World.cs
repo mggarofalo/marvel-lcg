@@ -16,6 +16,9 @@ namespace Marvel.Rules.State;
 /// </remarks>
 public sealed class World
 {
+    /// <summary>Physical ownership of separate encounter decks, when required by scenario setup.</summary>
+    public EncounterTopology? EncounterTopology { get; internal set; }
+
     /// <summary>Persistent campaign facts for this attempt; absent in standalone games.</summary>
     public Campaign.CampaignAttemptState? Campaign { get; internal set; }
 
@@ -27,6 +30,9 @@ public sealed class World
     private readonly List<InformationSignal> informationSignals = [];
     private readonly ICardFacts facts;
     private readonly GameConclusion conclusion = new();
+
+    /// <summary>The seat value meaning "the scenario", not a player.</summary>
+    public const int Scenario = -1;
 
     /// <summary>The interpreter state owned exclusively by this game.</summary>
     public AbilityRuntime? AbilityRuntime { get; private set; }
@@ -68,16 +74,7 @@ public sealed class World
         Windows = new Timing.Windows(this);
         Agenda = new Play.Agenda();
 
-        // An ordinary game has exactly one game area holding every play area,
-        // and nothing in the rules distinguishes that from having none. Making
-        // it here rather than lazily means every predicate about reach has the
-        // same shape whether or not a scenario ever splits.
-        var whole = this.CreateGameArea();
-        whole.Add(PlayArea.Villains);
-        for (int seat = 0; seat < players; seat++)
-        {
-            whole.Add(PlayArea.Of(seat));
-        }
+        WorldTopology.Initialize(this);
     }
 
     /// <summary>
@@ -109,9 +106,6 @@ public sealed class World
     /// game can stop in the middle of one. See <c>docs/timing.md</c>.
     /// </remarks>
     public Play.Agenda Agenda { get; }
-
-    /// <summary>The seat value meaning "the scenario", not a player.</summary>
-    public const int Scenario = -1;
 
     /// <summary>How many players are in the game.</summary>
     public int Players { get; }
@@ -324,7 +318,7 @@ public sealed class World
     /// <summary>The action-specific card capability.</summary>
     public Play.ICardActionAbilities ActionAbilities => (Play.ICardActionAbilities)Abilities;
     /// <summary>The timing-window card capability.</summary>
-    public Timing.IWindowAbilities WindowAbilities => Abilities;
+    public Timing.IWindowAbilities WindowAbilities => new Timing.NativeWindowAbilities(Abilities);
     /// <summary>The enemy-attack card capability.</summary>
     public Play.IAttackCardAbilities AttackAbilities => (Play.IAttackCardAbilities)Abilities;
     /// <summary>The enter-play card capability.</summary>

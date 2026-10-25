@@ -14,6 +14,9 @@ internal readonly record struct AbilityPowerState(
     Dictionary<int, int> Engagement,
     int CurrentVillain, int VillainStagesDrawn, bool Finished)
 {
+    // Only multi-villain scenarios need a projected current stage per immutable group.
+    internal Dictionary<int, int>? EncounterStages { get; init; }
+    internal int[]? EncounterOrder { get; init; }
     // Projection-only uncertainty, not a gameplay state or serialized field.
     // Prefix settlement is still checked; dependent reads must reject this state.
     internal string? UnprojectedStageEntry { get; init; }

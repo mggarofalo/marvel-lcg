@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityPowerSelectionTrace;
 using static Marvel.Cards.Run.AbilityPowerSuspension;
 using static Marvel.Cards.Run.AbilityAdmission;
 using static Marvel.Cards.Run.AbilityChoiceAnalysis;
@@ -30,6 +31,8 @@ internal static class AbilityPowerOutcomeTrace
     {
         HashSet<AdmissionResolution>? known = node.OperationName() switch
         {
+            "moveActiveCounter" => [AbilityActiveCounterProjection.CanMovePower(node, cast, reachability)
+                ? AdmissionResolution.Full : AdmissionResolution.None],
             "draw" => DrawOutcomes(node, cast, reachability),
             "heal" => HealOutcomes(node, cast, reachability),
             "discard" => DiscardOutcomes(node, cast, bindingMayChange, reachability),
@@ -100,9 +103,10 @@ internal static class AbilityPowerOutcomeTrace
         AbilityEffect node, Card scheme, AbilityAdmissionScope cast,
         AbilityPowerState state) =>
         PowerThreat(state, scheme) > 0
-        && AbilityProgramQueries.CanRemoveThreat(
+        && AbilityThreatPermissions.CanRemoveThreat(
             cast.World, cast.Context.Program, scheme,
-            OverriddenThreatRemovalSource(node, cast))
+            OverriddenThreatRemovalSource(node, cast), cast.Context.Power == BasicPowers.ThwartVerb,
+            AbilityThreatPermissionProjection.From(cast.World, state))
         && (IgnoresCrisis(node, cast)
             || !(scheme.Area.Type == DeckType.MainSchemesArea
                 && IsPlayerCard(cast) && PowerCrisis(state, cast)));

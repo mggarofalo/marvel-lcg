@@ -51,7 +51,9 @@ internal static class EncounterRevealDiscard
             return;
         }
 
-        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
+        var discard = world.EncounterTopology is { } topology
+            ? topology.ForCard(card).Discard
+            : world.AreaOf(DeckType.EncounterDiscardPile);
         var from = card.Area;
         World.MoveToTop(card, discard);
         events.Add(new CardsMoved(

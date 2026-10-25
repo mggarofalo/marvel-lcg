@@ -26,6 +26,7 @@ internal static class AbilityCostDescription
     private static string? Bound(World world, Card source, int player, AbilityCost cost) => cost switch
     {
         AbilityCost.ExhaustTitled named => $"Exhaust {named.Title}",
+        AbilityCost.ReturnTitledToHand named => $"Return {named.Title} to its owner's hand",
         AbilityCost.ReturnSourceToHand => $"Return {world.Facts.Title(source.FaceId)} to its owner's hand",
         AbilityCost.DiscardTop discard => $"Discard {discard.Count} from the top of "
             + (discard.From == AbilitySearchArea.YourDeck ? "your deck" : "the encounter deck"),
@@ -43,6 +44,7 @@ internal static class AbilityCostDescription
 
     private static string Chosen(AbilityCost cost) => cost switch
     {
+        AbilityCost.RandomDiscardFromHand discard => $"Discard {discard.Count} card(s) at random from your hand",
         AbilityCost.DiscardFromHand discard => $"Discard {Range(discard.Range)} cards from your hand",
         AbilityCost.ExhaustChosen exhaust => $"Exhaust {Range(exhaust.Range)} {exhaust.Trait + (exhaust.Trait is null ? "" : " ")}{Relation(exhaust.From)}",
         _ => throw new RulesNotImplementedException($"Cost description for {cost.GetType().Name}"),

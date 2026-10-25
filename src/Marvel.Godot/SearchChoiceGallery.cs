@@ -31,15 +31,29 @@ internal sealed class SearchChoiceGallery(DecisionPanel panel)
         Vector2 viewport = panel.GetViewportRect().Size;
         capacity = CardChoiceLayout.Capacity(viewport);
         cardScale = CardChoiceLayout.CardScale(viewport);
-        int pages = Math.Max(1, (prompt.Affordances.Count + capacity - 1) / capacity);
+        BoardPresentation board = BoardPresentation.From(panel.world!);
+        bool inspecting = InitialTableDraft.IsInspectionAcknowledgement(panel.composer!.Prompt);
+        IReadOnlyList<BoardCardPresentation> cards = inspecting
+            ? SearchChoiceCandidates.Inspected(panel.composer.Prompt, board)
+            : SearchChoiceCandidates.From(prompt, board);
+        int count = inspecting ? cards.Count : prompt.Affordances.Count;
+        int pages = Math.Max(1, (count + capacity - 1) / capacity);
         page = Math.Clamp(page, 0, pages - 1);
         var row = new HBoxContainer { Name = "SearchCards", Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 24);
         panel.AddContent(row);
-        BoardPresentation board = BoardPresentation.From(panel.world!);
-        IReadOnlyList<BoardCardPresentation> cards = SearchChoiceCandidates.From(prompt, board);
         var inspection = new SearchChoiceInspection(panel, cards, board, generation);
-        foreach (AffordancePresentation option in prompt.Affordances.Skip(page * capacity).Take(capacity))
+        if (inspecting)
+        {
+            foreach (var card in cards.Skip(page * capacity).Take(capacity))
+            {
+                var face = CardControl.Create(card, CardDisplaySize.Full, cardScale, ClientSceneHost.MainFor(panel).art);
+                face.Name = $"InspectedCard{card.TargetId}";
+                inspection.Bind(face, card);
+                row.AddChild(CardStateDetails.Wrap(face, card, beside: false));
+            }
+        }
+        else foreach (AffordancePresentation option in prompt.Affordances.Skip(page * capacity).Take(capacity))
         {
             BoardCardPresentation? card = cards.FirstOrDefault(candidate => candidate.TargetId == option.CardAnchorId);
             SearchChoiceCard.Add(panel, row, option, card, generation, cardScale, inspection);

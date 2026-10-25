@@ -164,7 +164,7 @@ internal static class AbilityStructuralQueries
             }
 
             var sequence = new AbilityEffect.Sequence([.. remaining]);
-            var admitted = AbilityAdmission.AdmitStructure(sequence, selected);
+            var admitted = AbilityEntryAdmission.AdmitStructure(sequence, selected);
             AddEvidence(evidence, admitted);
             return admitted.IsAdmissible
                 && AbilityAdmission.TargetsAreValid(sequence, selected);
@@ -174,7 +174,7 @@ internal static class AbilityStructuralQueries
             || outcomes.MayBeEmpty && CanResolve(null);
     }
 
-    private static List<AbilityEffect> Remaining(
+    internal static List<AbilityEffect> Remaining(
         AbilityStructuralContext context, AbilityContinuationFacts continuation,
         AbilityAdmissionContext admission,
         AbilityAdmission.AdmissionResolution? pending,
@@ -246,7 +246,7 @@ internal static class AbilityStructuralQueries
             if (Test(repeated.Parent.When, altered.Expressions)
                 && AbilityChoiceAnalysis.ActiveChoices(repeated.Parent.Then, altered).Any())
             {
-                var admitted = AbilityAdmission.Admit(repeated.Parent.Then, altered);
+                var admitted = AbilityEntryAdmission.Admit(repeated.Parent.Then, altered);
                 AddEvidence(evidence, admitted);
                 if (admitted.IsAdmissible)
                     return true;

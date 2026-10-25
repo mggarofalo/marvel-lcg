@@ -10,5 +10,7 @@ namespace Marvel.Rules.Play;
 /// <summary>Card text used by card play and its enter-play transition.</summary>
 public interface ICardPlayAbilities : ICardPlacementAbilities, IEncounterCardAbilities, ICardCounterPools
 {
+    /// <summary>Whether selected identities require first-ally history, including their inactive forms.</summary>
+    bool RequiresAllyPlayHistory(World world);
 }
 #pragma warning restore CS1591

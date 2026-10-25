@@ -20,6 +20,8 @@ internal static class AbilityCompletion
         var committed = events.Skip(start);
         return effect.OperationName() switch
         {
+            "moveActiveCounter" => Amount(committed.OfType<FieldSet>().Count(item =>
+                item.Field == "active_villain" && item.From == 0 && item.To == 1), requested),
             "placeThreat" => AbilityStructuralOutcome.None,
             "giveStatus" => Amount(committed.OfType<CardAttached>().Count(item => item.Verb == "Give_Status"), requested),
             "draw" => Amount(committed.OfType<CardsMoved>().Where(item => item.Verb == "Draw")
@@ -28,6 +30,8 @@ internal static class AbilityCompletion
                 item.Field == "is_exhaust" && item.From == 0 && item.To == 1), requested),
             "ready" => Amount(committed.OfType<FieldSet>().Count(item =>
                 item.Field == "is_exhaust" && item.From == 1 && item.To == 0), requested),
+            "removeStatuses" => committed.OfType<CardsMoved>().Any(item => item.Verb == "Remove_Status")
+                ? AbilityStructuralOutcome.Full : AbilityStructuralOutcome.None,
             "discard" => committed.OfType<CardsMoved>().Any(item => item.Verb == "Discard")
                 ? AbilityStructuralOutcome.Full : AbilityStructuralOutcome.None,
             "changeForm" => committed.OfType<CardsFlipped>().Any(item => item.Verb == "Change_Form")
@@ -39,6 +43,7 @@ internal static class AbilityCompletion
     internal static long Requested(AbilityResolutionExecution execution, AbilityEffect effect,
         AbilityResolutionState cast) => effect switch
     {
+        AbilityEffect.CardAction { Instruction: AbilityCardInstruction.MoveActiveCounter } => 1,
         AbilityEffect.Draw draw => draw.Count * (long)(draw.Players is AbilityPlayerSelection.AllPlayers ? cast.World.PlayerOrder.Count() : 1),
         AbilityEffect.GiveStatus status => execution.Every(status.Cards, cast).Count,
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust } action =>

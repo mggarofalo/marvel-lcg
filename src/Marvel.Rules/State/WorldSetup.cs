@@ -52,6 +52,8 @@ public static class WorldSetup
         Setup.PlayerCountRules.Validate(seats.Count);
 
         RefuseUnsupportedKinds(facts, blueprints);
+        if (options.EncounterGroups is { } encounterGroups)
+            EncounterSetupValidation.Validate(encounterGroups, blueprints, facts);
 
         int players = seats.Count;
         var happened = events ?? [];
@@ -115,7 +117,9 @@ public static class WorldSetup
         }
 
         // 5. The first villain stage enters play; the later stages wait.
-        if (villainDeck.Cards.Count > 0)
+        if (options.EncounterGroups is { } separateDecks)
+            EncounterSetupPlacement.Place(world, separateDecks);
+        else if (villainDeck.Cards.Count > 0)
         {
             World.MoveToTop(villainDeck.Cards[0], villainArea);
         }
@@ -127,12 +131,19 @@ public static class WorldSetup
             World.MoveToTop(obligation, encounterDeck);
         }
 
-        world.Shuffle(encounterDeck);
+        ShuffleEncounterDecks(world);
 
         world.ScenarioSetup = new ScenarioSetup();
         world.ScenarioSetup.Advance(world, happened, happened.Count);
 
         return world;
+    }
+
+    private static void ShuffleEncounterDecks(World world)
+    {
+        if (world.EncounterTopology is { } topology)
+            foreach (var group in topology.Groups) world.Shuffle(group.Deck);
+        else world.Shuffle(world.AreaOf(DeckType.EncounterDeck));
     }
 
     private sealed record OpeningCards(List<Card> Obligations, Card[] Identities);

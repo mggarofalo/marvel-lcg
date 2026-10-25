@@ -12,6 +12,16 @@ internal static class AbilitySelectorTrace
 {
     internal static List<Card> TraceCandidateCards(AbilityCardSelection selector, AbilityAdmissionScope cast) => selector switch
     {
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.OtherVillainSideSchemes } =>
+            [.. AbilityOtherVillainSchemeQuery.Candidates(cast.World)],
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainOfAttachedScheme } =>
+            [.. AbilityAttachedSchemeVillainQuery.Candidates(cast.World)],
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.ActiveVillainSideScheme } =>
+            [.. AbilityActiveSchemeQuery.Candidates(cast.World)],
+        AbilityCardSelection.Query query when AbilityEncounterSchemeQueries.IsRanked(query.Kind) =>
+            [.. (cast.World.EncounterTopology?.Groups
+                ?? throw new Marvel.Rules.Play.RulesNotImplementedException("ranked encounter schemes require encounter topology"))
+                .SelectMany(group => group.Stages)],
         AbilityCardSelection.Ranked ranked => TraceCandidateCards(ranked.Cards, cast),
         AbilityCardSelection.WithTrait filtered => TraceCandidateCards(filtered.Cards, cast),
         AbilityCardSelection.FirstAvailable fallback => [.. fallback.Options.SelectMany(option => TraceCandidateCards(option, cast)).Distinct()],
@@ -26,7 +36,7 @@ internal static class AbilitySelectorTrace
                 .Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion)],
         AbilityCardSelection.EnemiesWithTrait or AbilityCardSelection.Query
         {
-            Kind: AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies
+            Kind: AbilityCardQuery.Villains or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies
                 or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.EnemiesEngagedWithChosenPlayer
         } => [.. cast.World.Areas.SelectMany(area => area.Cards)
             .Where(card => CardKinds.IsEnemy(EffectiveCards.Kind(card, cast.World.Facts)))],
@@ -45,8 +55,7 @@ internal static class AbilitySelectorTrace
     internal static bool TraceSelectorMatches(
         AbilityCardSelection selector, Card candidate, AbilitySelectorTraceContext trace) => selector switch
     {
-        AbilityCardSelection.Query query => TraceQueryMatches(query.Kind, candidate, trace.CurrentVillain,
-            trace.Cast, trace.Discarded, trace.Traits, trace.Modifiers, trace.Engagement),
+        AbilityCardSelection.Query query => TraceQueryMatches(query.Kind, candidate, trace),
         AbilityCardSelection.Titled titled => string.Equals(titled.Title,
             EffectiveCards.Title(candidate, trace.Cast.World.Facts), StringComparison.Ordinal),
         AbilityCardSelection.EnemiesWithTrait filtered => HasTrait(candidate, filtered.Trait, trace),
@@ -69,9 +78,21 @@ internal static class AbilitySelectorTrace
             && TraceEngagedWith(candidate, Seat(area.Player, trace.Cast), trace.Engagement),
         AbilityCardSelection.InPlayerArea or AbilityCardSelection.WithMatchingPlayerArea
             or AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.InAreas
-            or AbilityCardSelection.Bound => Every(selector, trace.Cast).Contains(candidate),
+            => Every(selector, trace.Cast).Contains(candidate),
+        AbilityCardSelection.Bound bound => BoundMatches(bound, candidate, trace),
         _ => throw new InvalidOperationException("Unknown compiled selector in projected membership"),
     };
+
+    private static bool BoundMatches(
+        AbilityCardSelection.Bound bound, Card candidate, AbilitySelectorTraceContext trace)
+    {
+        var found = Every(bound, trace.Cast);
+        if (trace.EncounterStages is null) return found.Contains(candidate);
+        return found.Any(original =>
+            AbilityPowerEncounterProjection.Current(original, trace.Cast, trace.EncounterStages) == candidate
+            && string.Equals(trace.Cast.World.Facts.Title(original.FaceId),
+                trace.Cast.World.Facts.Title(candidate.FaceId), StringComparison.Ordinal));
+    }
 
     private static bool HasTrait(Card candidate, string trait, AbilitySelectorTraceContext trace) =>
         TraceHasTrait(candidate, trait, trace.Cast, trace.Discarded, trace.Traits);
@@ -83,13 +104,13 @@ internal static class AbilitySelectorTrace
     private static bool RankedIncludes(
         AbilityCardSelection.Ranked ranked, Card candidate, AbilitySelectorTraceContext trace)
     {
-        if (!TraceSelectorMatches(ranked.Cards, candidate, trace) || !Removable(candidate, trace)) return false;
-        var candidates = MatchingCandidates(ranked.Cards, trace).Where(card => Removable(card, trace)).ToList();
+        if (!TraceSelectorMatches(ranked.Cards, candidate, trace)) return false;
+        var candidates = MatchingCandidates(ranked.Cards, trace).ToList();
         return TraceRankedCandidatesInclude(candidates, candidate, ranked.By, ranked.Maximum,
-            trace.Cast, trace.Discarded, trace.Modifiers);
+            trace);
     }
 
-    private static IEnumerable<Card> MatchingCandidates(AbilityCardSelection selector, AbilitySelectorTraceContext trace)
+    internal static IEnumerable<Card> MatchingCandidates(AbilityCardSelection selector, AbilitySelectorTraceContext trace)
     {
         // Engagement projections retain membership, not move chronology.
         // An explicit object order supplies a complete order; an area's last
@@ -97,15 +118,27 @@ internal static class AbilitySelectorTrace
         if (trace.Engagement.Count > 0 && !UsesObjectIdOrder(selector) && UsesEngagedAreaOrder(selector))
             throw new Rules.Play.RulesNotImplementedException(
                 "Last-card area order after projected engagement changes is not implemented");
-        int boardVillain = trace.Cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        var candidates = TraceCandidateCards(selector, trace.Cast)
-            .Select(card => card.ObjectId == boardVillain
-                ? trace.CurrentVillain >= 0 ? trace.Cast.World.Cards[trace.CurrentVillain] : null : card)
+        int boardVillain = Rules.Play.EncounterRouting.Villain(trace.Cast.World)?.ObjectId ?? -1;
+        IEnumerable<Card> source = TraceCandidateCards(selector, trace.Cast);
+        if (trace.EncounterStages is not null)
+            source = source.Concat(trace.Cast.World.EncounterTopology!.Groups.SelectMany(group => group.Stages));
+        var candidates = source
+            .Select(card => ProjectedCard(card, boardVillain, trace))
             .Where(card => card is not null).Cast<Card>().DistinctBy(card => card.ObjectId)
             .Where(card => !trace.Discarded.Contains(card.ObjectId)
                 && TraceSelectorMatches(selector, card, trace));
         return UsesObjectIdOrder(selector)
-            ? candidates.OrderBy(card => card.ObjectId) : candidates;
+            ? candidates.OrderBy(card => card.ObjectId)
+            : AbilityEncounterCandidateOrder.Apply(candidates, trace.Cast.World,
+                AbilityEncounterSchemeQueries.UsesGroupOrder(selector) ? null : trace.EncounterOrder);
+    }
+
+    private static Card? ProjectedCard(Card card, int boardVillain, AbilitySelectorTraceContext trace)
+    {
+        if (trace.EncounterStages is { } stages)
+            return AbilityPowerEncounterProjection.Current(card, trace.Cast, stages);
+        if (card.ObjectId != boardVillain) return card;
+        return trace.CurrentVillain >= 0 ? trace.Cast.World.Cards[trace.CurrentVillain] : null;
     }
 
     private static bool UsesEngagedAreaOrder(AbilityCardSelection selector) => selector switch
@@ -122,7 +155,7 @@ internal static class AbilitySelectorTrace
         _ => false,
     };
 
-    private static bool UsesObjectIdOrder(AbilityCardSelection selector) => selector switch
+    internal static bool UsesObjectIdOrder(AbilityCardSelection selector) => selector switch
     {
         AbilityCardSelection.InObjectIdOrder => true,
         AbilityCardSelection.WithTrait filtered => UsesObjectIdOrder(filtered.Cards),

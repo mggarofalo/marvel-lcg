@@ -85,6 +85,9 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.State.DeckTypes",
             // Passive active-characteristic reads; no legality or mutation authority.
             "Marvel.Rules.State.EffectiveCards",
+            // Passive engine-owned topology; filtered relationship projection only.
+            "Marvel.Rules.State.EncounterDeckGroup",
+            "Marvel.Rules.State.EncounterTopology",
             "Marvel.Rules.State.GameArea",
             "Marvel.Rules.State.ICardFacts",
             "Marvel.Rules.State.PersistentAbility",
@@ -220,6 +223,8 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.TargetRequest",
             "Marvel.Rules.Prompts.VariableRequest",
             "Marvel.Rules.Play.Decision",
+            // Wire referential integrity, not game legality.
+            "Marvel.Protocol.EncounterGroupContract",
             "Marvel.Protocol.EngineError",
             "Marvel.Protocol.EngineFailureDisposition",
             "Marvel.Protocol.EngineJson",
@@ -239,6 +244,9 @@ public sealed class PresentationAssemblyPolicyTests
             // The client selects and owns an explicitly queued embedded transport.
             "Marvel.Protocol.RuntimeIdentity",
             "Marvel.Protocol.ScenarioSetupChoice",
+            // Discovery variant values are wire data validated by ScenarioChoiceContract;
+            // scenario admission and legality remain server-owned.
+            "Marvel.Protocol.ScenarioVariantChoice",
             "Marvel.Protocol.SeatInvitation",
             "Marvel.Protocol.SetupChoices",
             "Marvel.View.AreaDescriptor",

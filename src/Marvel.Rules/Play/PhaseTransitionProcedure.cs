@@ -15,6 +15,9 @@ internal static class PhaseTransitionProcedure
         int start = events.Count;
         switch (step.What)
         {
+            case VillainStepOneTiming.Completed:
+                // Breakout 07001b observes completion, including prevented or replaced threat.
+                break;
             case Steps.PassFirstPlayerToken:
                 PassFirstPlayerToken(world);
                 break;
@@ -26,6 +29,9 @@ internal static class PhaseTransitionProcedure
                 break;
             case Steps.ReadyCards:
                 PhaseEnd.ReadyCards(world, events);
+                break;
+            case PlayerTurnTiming.Begins:
+                // The scheduled occurrence owns the beginning windows; no state changes at its body.
                 break;
             case PlayerTurnTiming.Ends:
                 PhaseEnd.EndPlayerTurn(world, step.Seat, events);

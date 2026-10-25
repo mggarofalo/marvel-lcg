@@ -10,6 +10,7 @@ internal sealed class ScenarioSetup
 {
     private int stage;
     private int nextReveal;
+    private int nextVillain;
     private List<Card>? pendingCards;
     private readonly List<(int Card, int Incarnation)> reveals = [];
     private readonly HashSet<(int Card, int Incarnation)> seen = [];
@@ -48,8 +49,31 @@ internal sealed class ScenarioSetup
                 world.ScenarioSetup = null;
                 return;
             }
+            if (AdvanceMultipleVillains(world, events)) continue;
             RunStage(world, events, stage++);
         }
+    }
+
+    private bool AdvanceMultipleVillains(World world, List<GameEvent> events)
+    {
+        if (stage is not (5 or 6) || world.EncounterTopology is null) return false;
+        if (!RunNextVillain(world, events)) { stage++; nextVillain = 0; }
+        return true;
+    }
+
+    private bool RunNextVillain(World world, List<GameEvent> events)
+    {
+        var groups = world.EncounterTopology!.Groups;
+        while (nextVillain < groups.Count)
+        {
+            var villain = groups[nextVillain++].CurrentVillain;
+            if (villain is null) continue;
+            var result = stage == 5 ? world.SetupAbilities.ExecuteSetup(world, villain)
+                : world.EncounterAbilities.ExecuteReveal(world, villain, world.FirstPlayer);
+            ActivityBatches.Append(events, result.Events);
+            return true;
+        }
+        return false;
     }
 
     private void RunStage(World world, List<GameEvent> events, int current)

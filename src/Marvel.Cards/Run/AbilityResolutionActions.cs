@@ -13,11 +13,10 @@ namespace Marvel.Cards.Run;
 internal static class AbilityResolutionActions
 {
     internal static IReadOnlyList<PendingAbility> Answering(this AbilityResolutionExecution execution,
-        World world, Card card, Occurrence occurrence, Occurrence? spent)
+        World world, Occurrence occurrence, Occurrence? spent)
     {
         var tiers = AbilityWindow.Tiers(
             execution.Waiting(world, occurrence, WindowKind.Interrupt)
-                .Where(pending => pending.Card != card.ObjectId)
                 .Where(pending => spent?.MayTrigger(WindowKind.Interrupt, pending) ?? true),
             WindowKind.Interrupt,
             occurrence);
@@ -113,7 +112,7 @@ internal static class AbilityResolutionActions
         execution.Use(world, card, found, occurrence);
         if (EffectiveCards.Kind(card, world.Facts) == CardKind.Event)
         {
-            occurrence.BeginCard(card.ObjectId, [ability]);
+            occurrence.Resolution.BeginCard(card.ObjectId, [ability]);
         }
         cast.RestoreAbility(ability.Ordinal, []);
         cast.TrackResolution(ability.Ordinal);

@@ -35,6 +35,8 @@ public static class BasicPowerStatus
                 $"card {character.ObjectId} cannot make a targetless {verb} attempt");
         }
 
+        if (!attacking) ThwartPermissions.Require(world, character);
+        if (attacking && BasicAttackCosts.Schedule(world, character, null, exhaust: true)) return;
         Exhaust(character, verb, events);
         if (!Cancelled(world, facts, character, status, events))
         {
@@ -168,7 +170,8 @@ public static class BasicPowerStatus
         Threat.Remove(
             world, facts, world.ThreatAbilities, new ThreatRemovalRequest(scheme,
             ThwartStatSubstitution.Modified(world, character, power),
-            ThwartVerb, ThwartVerb, By: LabeledAbilities.IdentityPlayer(world, character)) { ResponsiblePlayer = player }, events);
+            ThwartVerb, ThwartVerb, By: LabeledAbilities.IdentityPlayer(world, character))
+            { ResponsiblePlayer = player, ByThwarting = true }, events);
     }
 
     internal static void Exhaust(Card character, string verb, List<GameEvent> events)

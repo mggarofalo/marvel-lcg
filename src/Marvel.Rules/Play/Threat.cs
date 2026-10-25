@@ -36,6 +36,20 @@ public static class Threat
         var current = world.Agenda.Current;
         var scheduled = batch.Schemes.Select((scheme, index) => Placement(
             batch, scheme, receipt, index, current)).ToList();
+        if (scheduled.Count > 1)
+        {
+            // rr:triggering-condition.2: "a single interrupt window and a single
+            // response window". Target assignments retain their prevention points;
+            // the instruction's resulting placements share response priority.
+            var responses = new Occurrence(world.Agenda.nextPlayerActionOccurrence--,
+                [], Player: batch.Player);
+            scheduled = scheduled.Select(step => step with
+            {
+                Operation = step.Require<ThreatPlacementOperation>() with { Responses = responses },
+            }).ToList();
+            scheduled.Add(new(new CompletedCardEffectOperation { Occurrence = responses },
+                current?.Round ?? 0, current?.Number ?? 0));
+        }
         if (continuation is { } resume) scheduled.Add(resume);
         if (current is not null) world.Agenda.Now(scheduled);
         else foreach (var operation in scheduled) world.Agenda.Add(operation);
@@ -46,7 +60,9 @@ public static class Threat
         EffectCompletion completion, int part, PhaseStep? current) =>
         new(new ThreatPlacementOperation(new ThreatPlacement(
                 scheme.ObjectId, batch.Source?.ObjectId ?? -1,
-                batch.Amount, batch.Cause, batch.Trigger, batch.Player), completion, part),
+                batch.Amount, batch.Cause, batch.Trigger, batch.Player)
+                { SchemeIncarnation = scheme.Incarnation }, completion, part)
+                { Movement = batch.Movement },
             current?.Round ?? 0, current?.Number ?? 0,
             Index: (current?.Index ?? 0) + part,
             Subject: scheme.ObjectId, Seat: batch.Player);
@@ -76,6 +92,12 @@ public static class Threat
         }
 
         var scheme = world.Cards[placement.Scheme];
+        // rr:move.2: without a "valid source or destination ... the move cannot
+        // be made". rr:leaves-play.1 calls a departed card "a new copy".
+        // Interrupts can invalidate the assignment after its window opens.
+        if (scheme.Area.Type is not (DeckType.MainSchemesArea or DeckType.SideSchemesArea)
+            || (placement.SchemeIncarnation >= 0
+                && scheme.Incarnation != placement.SchemeIncarnation)) return 0;
         long before = scheme.Tokens.GetValueOrDefault("k_threat");
         scheme.PlaceTokens("k_threat", placement.Remaining);
         events.Add(new FieldSet(
@@ -151,7 +173,9 @@ public static class Threat
     }
 
     internal static long Removable(World world, IThreatCardAbilities abilities, ThreatRemovalRequest request) =>
-        abilities.CanRemoveThreat(world, request.Scheme, request.OverridesCannotFrom)
+        (request.ByThwarting
+            ? abilities.CanThwartScheme(world, request.Scheme, request.OverridesCannotFrom)
+            : abilities.CanRemoveThreat(world, request.Scheme, request.OverridesCannotFrom))
             ? Math.Min(request.Scheme.Tokens.GetValueOrDefault("k_threat"), Math.Max(0, request.Amount)) : 0;
 
     internal static void ApplyRemoval(ThreatRemovalRequest request, long removed, List<GameEvent> events)

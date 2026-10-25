@@ -63,7 +63,9 @@ internal static class AbilityResolutionRestoration
     internal static void RestorePersisted(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, AbilityContinuationState state)
     {
+        cast.DamageDefeats = state.Memory.DamageDefeats;
         cast.Execution = state.Execution;
+        cast.ThreatMovePairs = state.ThreatMovePairs;
         cast.PowerExecution = state.PowerExecution;
         if (state.PowerExecution is { } power)
         {
@@ -72,6 +74,8 @@ internal static class AbilityResolutionRestoration
         }
         cast.DamageReplacement = state.DamageReplacement;
         cast.TriggeringDefeat = state.Invocation.TriggeringDefeat;
+        cast.TriggeringAttack = state.Invocation.TriggeringAttack;
+        cast.TriggeringThreat = state.Invocation.TriggeringThreat;
         execution.ApplyRestored(cast,
             AbilityContinuationRestoration.RestoreState(cast.World.Cards, state));
     }

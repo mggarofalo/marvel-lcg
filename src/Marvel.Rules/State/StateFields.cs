@@ -135,7 +135,14 @@ public static class StateFields
         }
 
         FillCampaign(fields, world, card);
+        FillEncounterTopology(fields, world, card);
         return fields;
+    }
+
+    private static void FillEncounterTopology(Dictionary<string, long> fields, World? world, Card card)
+    {
+        if (world?.EncounterTopology is not { } topology) return;
+        foreach (var pair in topology.Fields(card)) Merge(fields, pair.Key, pair.Value);
     }
 
     private static void FillCampaign(Dictionary<string, long> fields, World? world, Card card)

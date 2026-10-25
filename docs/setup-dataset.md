@@ -4,6 +4,13 @@
 admission determines which declared products the runtime can start; an incomplete
 expansion is excluded from public discovery as a whole.
 
+`RuntimeProductAdmission` owns the closed accepted-product policy: Core Set and
+the complete Rise of Red Skull expansion. Merely adding an authored ability or
+setup recipe does not admit another product. Unaccepted product-owned recipes
+are excluded; a retained accepted recipe that references an unavailable face
+still fails validation. The same admitted face set controls discovery, research
+cards' runtime-support flags, deck assessment and game creation.
+
 The dataset is authored. Scenario composition and starter-deck contents are
 printed in rules inserts, Learn to Play material and product lists rather than
 on individual cards. There is no upstream dataset that can generate the same
@@ -19,6 +26,11 @@ The file has 3 groups:
 | `campaigns` | 16 Core Set and Rise of Red Skull scenario/mode combinations |
 | `heroes` | 7 Core Set and Rise of Red Skull starter decks |
 | `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets |
+
+One additional declared research hero is Captain America. Its 40-card starter,
+obligation and nemesis set follow the vendored FFG divider; the runtime product
+gate excludes this recipe until complete pack acceptance. The file therefore
+contains eight hero records while public discovery still exposes seven.
 
 The scenario rows are Rhino, Klaw and Ultron in Standard and Expert modes. The
 hero rows are Spider-Man, Captain Marvel, She-Hulk, Iron Man and Black Panther.
@@ -40,6 +52,14 @@ Clients submit the returned keys rather than reading this file or deriving
 support from the broader card catalog. Standard and Expert remain separate
 campaign records even when a client presents their shared scenario name as one
 control.
+
+An optional `setup_mode` explicitly labels a recipe `standard`, `expert`,
+`custom`, or `extreme`. Without it, the existing `expert` flag supplies the
+ordinary mode. Independent encounter-group recipes may label each group with
+`variant`, such as `A`, `B`, or `A → B`. Discovery carries that ordered label
+beside the printed villain name and advertises that modular sets are unavailable.
+The client selects a complete returned recipe key; it does not construct stages
+or infer setup rules from those labels. Metadata alone does not admit a product.
 
 ## Dataset shape
 
@@ -79,6 +99,32 @@ modular sets remain separate from fixed sets so the caller can make the setup
 choice the scenario permits.
 
 ## Card abilities during setup
+
+### Independent encounter groups
+
+A scenario may declare `encounter_groups`, containing `active_group` (a zero-based
+index) and ordered `groups`. Each group contains `stages`, one `scheme` and an
+ordered `encounters` array. The scenario's `villain` list must equal the flattened
+stage lists. These relationships are explicit authored composition, not inferred
+from card names. Missing, duplicate and unknown group fields are rejected.
+
+`ScenarioDealer.Prepare` returns blueprints and an optional `EncounterSetupPlan`.
+The rules-owned plan validation requires Wrecking Crew's four groups, fifteen
+encounter cards per group, legal component kinds, and either one stage per group
+or two for every group. Other encounter sets and caller-selected modular sets
+are forbidden. Hero obligations and nemesis sets are excluded before allocation,
+as required by `pack:mc03:additional-setup.prepare-encounter-decks`.
+
+The engine chooses this allocation spelling: ordinary player cards, main schemes
+and scenario set-aside cards precede complete group blocks in authored order.
+Each block contains its stages, paired scheme and encounter cards. Blueprint
+binding happens after linked player cards are inserted, so group IDs account for
+those insertions without guessing from face names. Each villain deck shuffles in
+group order after the player decks, on the one seeded stream. Recipes without
+groups retain their ordinary allocation and encounter-card composition.
+
+The group recipe contract does not itself admit a product. Whole-pack card,
+setup, client and compatibility acceptance still controls public discovery.
 
 The setup dataset says which cards a product supplies. It does not duplicate
 instructions printed on those cards.

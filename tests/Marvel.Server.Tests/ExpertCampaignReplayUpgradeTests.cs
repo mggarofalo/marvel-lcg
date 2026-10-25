@@ -47,7 +47,7 @@ public sealed class ExpertCampaignReplayUpgradeTests
                 var host = new CampaignHost(factory, store, new MemorySessionStore());
                 var resumed = host.Exchange(EngineRequest.SyncGame("resume", request.GameId, request.Capability!));
                 Assert.Null(resumed.Error);
-                var oldResponse = EngineJson.ReadResponse(File.ReadAllBytes(Path.Combine(published, "resumed-wire-response.json")));
+                var oldResponse = HistoricalProtocol35Response.Read(File.ReadAllBytes(Path.Combine(published, "resumed-wire-response.json")));
                 Equal(oldResponse.Prompt, resumed.Prompt);
                 Equal(oldResponse.World, resumed.World);
                 var upgraded = Assert.Single(store.Load()).Campaign!;
@@ -107,7 +107,7 @@ public sealed class ExpertCampaignReplayUpgradeTests
                 var resumed = host.Exchange(EngineRequest.SyncGame("resume", imported.CampaignGame!.GameId,
                     imported.CampaignGame.Capability));
                 Assert.Null(resumed.Error);
-                var expected = EngineJson.ReadResponse(File.ReadAllBytes(Path.Combine(published, "resumed-wire-response.json")));
+                var expected = HistoricalProtocol35Response.Read(File.ReadAllBytes(Path.Combine(published, "resumed-wire-response.json")));
                 Equal(expected.Prompt, resumed.Prompt);
                 Equal(expected.World, resumed.World);
             }

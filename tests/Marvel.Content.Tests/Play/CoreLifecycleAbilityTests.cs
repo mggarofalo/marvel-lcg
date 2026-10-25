@@ -87,12 +87,14 @@ public sealed class CoreLifecycleAbilityTests
     }
 
     [Rule("rr:enters-play")]
-    [Fact]
-    public void HawkeyeGetsFourArrowsBeforeAnsweringAMinionsEntry()
+    [Theory]
+    [InlineData("01066")]
+    [InlineData("03012")]
+    public void HawkeyeGetsFourArrowsBeforeAnsweringAMinionsEntry(string face)
     {
         var world = Board("01040a");
         var hawkeye = world.CreateCard(
-            "01066", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            face, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         var runner = AuthoredCards.Runner();
         Reveal.EnterPlay(world, Cards, hawkeye, [], abilities: runner);
         var minion = world.CreateCard(
@@ -111,8 +113,10 @@ public sealed class CoreLifecycleAbilityTests
 
     [Rule("rr:cost.1")]
     [Rule("rr:ability.11")]
-    [Fact]
-    public void HawkeyesOptionalCounterCostDoesNotGiveHimUses()
+    [Theory]
+    [InlineData("01066")]
+    [InlineData("03012")]
+    public void HawkeyesOptionalCounterCostDoesNotGiveHimUses(string face)
     {
         // "Unless prefaced by the word Forced, all interrupt and response
         // abilities are optional." The cost arrow distinguishes the arrow
@@ -120,7 +124,7 @@ public sealed class CoreLifecycleAbilityTests
         // is not Uses, so paying his last arrow leaves him in play.
         var world = Board("01040a");
         var hawkeye = world.CreateCard(
-            "01066", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            face, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         var runner = AuthoredCards.Runner();
         Reveal.EnterPlay(world, Cards, hawkeye, [], abilities: runner);
         hawkeye.PlaceTokens("c_arrow", -3);

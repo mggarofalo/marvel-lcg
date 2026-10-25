@@ -8,6 +8,14 @@ public enum AbilityCardQuery
 {
     /// <summary>The authored villain relation.</summary>
     Villain,
+    /// <summary>The side scheme paired with the current active villain.</summary>
+    ActiveVillainSideScheme,
+    /// <summary>The current villain physically paired with the attached scheme.</summary>
+    VillainOfAttachedScheme,
+    /// <summary>Living villains tied for the least threat on their corresponding schemes.</summary>
+    VillainsWithLeastSchemeThreat,
+    /// <summary>Living villains tied for the most threat on their corresponding schemes.</summary>
+    VillainsWithMostSchemeThreat,
     /// <summary>The authored mainScheme relation.</summary>
     MainScheme,
     /// <summary>The authored yourAsideMinion relation.</summary>
@@ -76,4 +84,8 @@ public enum AbilityCardQuery
     OtherEnvironments,
     /// <summary>Every in-play card controlled by the resolving player.</summary>
     CardsYouControl,
+    /// <summary>All living villains, independently of the active counter.</summary>
+    Villains,
+    /// <summary>Live schemes paired with living villains other than this attachment's host.</summary>
+    OtherVillainSideSchemes,
 }

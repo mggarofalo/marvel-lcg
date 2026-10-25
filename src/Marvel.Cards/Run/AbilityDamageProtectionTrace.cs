@@ -62,10 +62,10 @@ internal static class AbilityDamageProtectionTrace
         AbilityAdmissionScope cast, int target, HashSet<int> discarded,
         int currentVillain)
     {
-        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        int boardVillain = AbilityProjectedAttachmentHosts.BoardVillain(cast.World.Cards[target], cast);
         // A carried attachment replaces damage to its own villain character only.
-        bool followsVillain = target == currentVillain
-            && SameVillainTitle(cast, currentVillain, boardVillain);
+        bool followsVillain = (cast.World.EncounterTopology is not null || target == currentVillain)
+            && SameVillainTitle(cast, target, boardVillain);
         return cast.World.Areas
             .Where(area => area.Host == target
                 || followsVillain && area.Host == boardVillain)

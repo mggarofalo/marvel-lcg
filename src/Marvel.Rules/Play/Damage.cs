@@ -97,6 +97,8 @@ public static class Damage
     /// <summary>Damage fixed through step 4, ready for simultaneous placement.</summary>
     internal sealed record PlacedDamage(Card Target, long Dealt, long Taken)
     {
+        internal long RemainingHealth { get; init; }
+        internal ExcessDamageThreat? ExcessThreat { get; init; }
         internal int Incarnation { get; } = Target.Incarnation;
         /// <summary>Whether the character actually took damage.</summary>
         public bool Landed => Taken > 0;

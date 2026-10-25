@@ -8,6 +8,8 @@ namespace Marvel.Content.Tests.Play;
 public sealed class DiscardedPrintedNumberTests
 {
     [Theory]
+    [InlineData("cardsDiscarded", "yourDeck", "01088,01088,01089", 3)]
+    [InlineData("cardsDiscarded", "yourDeck", "", 0)]
     [InlineData("printedResourceIconsDiscarded", "yourDeck", "01088,01088,01089,01090,01055", 9)]
     [InlineData("distinctPrintedResourceTypesDiscarded", "yourDeck", "01088,01088,01089,01090,01055", 4)]
     [InlineData("distinctPrintedResourceTypesDiscarded", "yourDeck", "01088,01088", 1)]

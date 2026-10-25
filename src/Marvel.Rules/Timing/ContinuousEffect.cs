@@ -66,6 +66,9 @@ public sealed record ContinuousEffect(
     /// <summary>A live set containing the characters one player controls.</summary>
     public const string CharactersControlledBy = "charactersControlledBy";
 
+    /// <summary>A live set of in-play characters with the named effective trait.</summary>
+    public const string CharactersWithTrait = "charactersWithTrait:";
+
     /// <summary>
     /// Always <see cref="TimingPriority.Continuous"/>.
     /// </summary>
@@ -90,12 +93,22 @@ public sealed record ContinuousEffect(
             return Affects == card.ObjectId;
         }
 
+        if (Scope.StartsWith(CharactersWithTrait, StringComparison.Ordinal))
+            return DeckTypes.IsInPlay(card.Area.Type)
+                && CardKinds.IsCharacter(EffectiveCards.Kind(card, world.Facts))
+                && Traits.Has(world, card, Scope[CharactersWithTrait.Length..], world.Facts);
+
         if (!string.Equals(Scope, CharactersControlledBy, StringComparison.Ordinal))
         {
             throw new RulesNotImplementedException(
                 $"continuous-effect scope '{Scope}' is not implemented");
         }
 
+        return AppliesToControlledCharacter(world, card);
+    }
+
+    private bool AppliesToControlledCharacter(World world, Card card)
+    {
         if (Affects is not int identity
             || identity < 0
             || identity >= world.Cards.Count)

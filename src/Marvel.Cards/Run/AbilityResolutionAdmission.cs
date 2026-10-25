@@ -65,8 +65,14 @@ internal static class AbilityResolutionAdmission
                 || OrderedEffects(node).Any(step => CanPartiallyResolve(step, cast)),
             "if" => ConditionalBranch(node, Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
                 is { } branch && CanPartiallyResolve(branch, cast),
+            // Activation windows determine completion at runtime. Initiation asks whether
+            // the activation itself can affect the game; it does not predict that receipt.
+            "then" when EffectBody(node) is AbilityEffect.ActivateEnemies { Dynamic: false } =>
+                CanPartiallyResolve(EffectBody(node), cast),
             "then" => ResolutionOf(EffectBody(node), cast)
                 is not AdmissionResolution.None,
+            "otherwise" when EffectBody(node) is AbilityEffect.ActivateEnemies { Dynamic: false } =>
+                CanPartiallyResolve(EffectBody(node), cast) || CanPartiallyResolve(EffectFollowing(node), cast),
             "otherwise" => ResolutionOf(EffectBody(node), cast) switch
             {
                 AdmissionResolution.None => CanPartiallyResolve(
@@ -93,6 +99,7 @@ internal static class AbilityResolutionAdmission
                 && Amount(EffectOf<AbilityEffect.AttackDamage>(node, cast).Amount, cast) > 0,
             "placeThreat" => HasPartialResolutionTargets(node, cast)
                 && Amount(EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount, cast) > 0,
+            "moveThreat" => AbilityThreatMovementAdmission.CanMove((AbilityEffect.MoveThreat)node, cast),
             "removeThreat" => CanRemoveThreat(node, cast),
             "gainSurge" => EffectOf<AbilityEffect.GainSurge>(node, cast).Instances > 0,
             "draw" => CanDraw(node, cast),
@@ -109,14 +116,18 @@ internal static class AbilityResolutionAdmission
     private static bool OtherPartialResolution(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "inspectEncounterTop" => AbilityEncounterInspection.Cards(cast.World,
+                (AbilityEffect.InspectEncounterTop)node).Count > 0,
             "peekTop" => AbilityDeckPeek.Decks(cast.World).Count > 0,
             "preventThreat" => cast.Occurrence.Threat is { Remaining: > 0 }
                 && Amount(EffectOf<AbilityEffect.PreventThreat>(node, cast).Amount, cast) > 0,
             "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source),
             "useAttackForThwart" => ThwartStatSubstitution.CanUseAttack(cast.World, cast.Occurrence),
             "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false },
+            "requireAttackedPlayerAllyDefender" => cast.World.Attack is not null
+                && cast.World.Activation is { Attacking: true, Id: >= 0 },
             "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
-            "grantCharactersControlledBy" or "reduceNextCardCost" => true,
+            "grantCharactersControlledBy" or "grantCharactersWithTrait" or "reduceNextCardCost" => true,
 
             // Target availability is the only state-dependent precondition
             // these currently expressible effects carry. Their own resolver
@@ -124,7 +135,7 @@ internal static class AbilityResolutionAdmission
             "generate" or "soakDamage" or "preventDamage" or "cancelWhenRevealed"
                 or "cancelOccurrence"
                 or "dealEncounterCards" or "dealEncounterCard"
-                or "revealTop" or "reveal" or "placeAtRandom"
+                or "revealFromVillainDeck" or "revealTop" or "reveal" or "placeAtRandom"
                 or "returnToHand" or "discardUntil" or "recoverDiscardedByResource"
                 or "shuffleInto" or "search" or "giveStatus" or "declareDefender"
                 or "attachTo"
@@ -154,8 +165,8 @@ internal static class AbilityResolutionAdmission
     internal static AdmissionResolution ResolutionOf(AbilityEffect node, AbilityAdmissionScope cast)
     {
         if (node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
-            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop"
-            or "discardResourceIcons" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
+            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop"
+            or "discardHandCards" or "discardResourceIcons" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
             or "legalPractice" or "payOrEffect")
         {
             throw new RulesNotImplementedException(
@@ -185,6 +196,10 @@ internal static class AbilityResolutionAdmission
     private static AdmissionResolution? CardResolutionOf(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "moveActiveCounter" => AbilityActiveCounterExecution.CanMove(node, cast)
+                ? AdmissionResolution.Full : AdmissionResolution.None,
+            "putIntoPlay" when node is AbilityEffect.PutIntoPlay { AllyUnderYourControl: true } entry =>
+                AbilityAllyEntry.HasTarget(entry, cast) ? AdmissionResolution.Full : AdmissionResolution.None,
             "exhaust" => ResolutionOfCards(
                 Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast), card => card.Ready),
             "ready" => ResolutionOfCards(
@@ -213,10 +228,14 @@ internal static class AbilityResolutionAdmission
                     + cast.World.AreaOf(
                         DeckType.DiscardPile, PlayArea.Of(player)).Cards.Count,
                     EffectOf<AbilityEffect.Draw>(node, cast).Count))),
+            "removeStatuses" => AbilityStatusRemoval.Candidates((AbilityEffect.RemoveStatuses)node, cast).Count > 0
+                ? AdmissionResolution.Full : AdmissionResolution.None,
             "heal" => ResolutionOfAmount(
                 Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast)?.Damage ?? 0,
                 Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast)),
+            "setHitPoints" => AbilityHitPointAssignment.Outcome(node, cast),
             "removeThreat" => ResolutionOfThreat(node, cast),
+            "moveThreat" => AbilityThreatMovementAdmission.Resolution((AbilityEffect.MoveThreat)node, cast),
             "placeThreat" => Every(((AbilityEffect.PlaceThreat)node).Schemes, cast).Count > 0
                 && Amount(((AbilityEffect.PlaceThreat)node).Amount, cast) > 0
                     ? AdmissionResolution.Full : AdmissionResolution.None,

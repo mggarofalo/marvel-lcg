@@ -105,10 +105,14 @@ internal static class ClientResponseValidation
         return false;
     }
 
+    internal static bool AllowsSelectedModularSets(SetupChoices available, GameSetupSelection selection) =>
+        selection.Modular != ModularConfiguration.Selected
+        || available.Scenarios.Single(scenario => scenario.Key == selection.ScenarioKey).AllowsModularSets;
+
     internal static bool ValidHeroSelection(
         SetupChoices available,
         IReadOnlyList<string>? heroKeys) =>
-        heroKeys is { Count: 1 or 2 }
+        heroKeys is { Count: >= Marvel.Rules.Setup.PlayerCountRules.Minimum and <= Marvel.Rules.Setup.PlayerCountRules.Maximum }
         && heroKeys.All(key =>
             !string.IsNullOrWhiteSpace(key)
             && available.Heroes.Any(hero => hero.Key == key))
@@ -151,7 +155,8 @@ internal static class ClientResponseValidation
         return world.Players.All(CompletePlayer)
             && world.GameAreas.All(CompleteGameArea)
             && world.Areas.All(CompleteArea)
-            && ClientTableValidation.Complete(world);
+            && ClientTableValidation.Complete(world)
+            && EncounterGroupContract.IsValid(world);
     }
 
     private static bool CompletePlayer(PlayerDescriptor player) =>

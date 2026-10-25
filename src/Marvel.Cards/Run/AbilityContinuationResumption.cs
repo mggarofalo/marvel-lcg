@@ -16,10 +16,12 @@ internal static class AbilityContinuationResumption
     {
         var decoded = Decode(program, source, step, null);
         var state = decoded.State;
+        if (state.Reason == AbilityResumeReason.PowerAftermath)
+            return new ResumeComplete(state with { Reason = AbilityResumeReason.Choice });
         if (state.Reason == AbilityResumeReason.StartAbility)
             return new RunResumedNode(decoded.Ability, decoded.Ability.Effect,
                 state with { Reason = AbilityResumeReason.Choice });
-        if (state.Reason == AbilityResumeReason.DelayedEffect)
+        if (state.Reason is AbilityResumeReason.DelayedEffect or AbilityResumeReason.DefenseBody)
             return new RunResumedNode(decoded.Ability, decoded.Node,
                 state with { Reason = AbilityResumeReason.Choice });
         if (state.Reason == AbilityResumeReason.RepeatSpecial)
@@ -42,7 +44,14 @@ internal static class AbilityContinuationResumption
             || state.Reason == AbilityResumeReason.EffectProcedure;
         return new ContinueAfterResumedNode(
             decoded.Ability,
-            state with { Reason = AbilityResumeReason.Choice },
+            state with
+            {
+                Reason = AbilityResumeReason.Choice,
+                CompletedOutcome = state.Reason == AbilityResumeReason.Activations
+                    ? AbilityCompletion.Amount(state.Memory.Results.GetValueOrDefault("activationMade"),
+                        state.Memory.Results.GetValueOrDefault("activationRequested"))
+                    : state.CompletedOutcome,
+            },
             effectApplied);
     }
 

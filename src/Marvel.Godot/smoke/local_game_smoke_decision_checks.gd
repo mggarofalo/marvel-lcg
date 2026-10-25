@@ -293,8 +293,8 @@ func _start_fields_are_safe(
 	if second_hero == null or second_hero.item_count < 2:
 		_fail("the start flow does not offer an optional second hero")
 		return false
-	if not second_hero.get_item_text(0).begins_with("Solo table"):
-		_fail("the first second-hero option is not the solo table")
+	if second_hero.get_item_text(0) != "No additional player" or second_hero.selected != 0:
+		_fail("the optional second seat does not default to no additional player")
 		return false
 	if reload_setup == null or reload_setup.disabled:
 		_fail("the start flow has no operable setup reload action")
@@ -305,9 +305,11 @@ func _start_fields_are_safe(
 func _second_hero_is_safe(second_hero: OptionButton) -> bool:
 	var briefing := _node("Setup/Briefing/Frame/Copy/Hero") as Label
 	var host_name := briefing.text
+	if not _optional_seats_are_safe(): return false
 	second_hero.select(1)
 	second_hero.item_selected.emit(1)
 	await process_frame
+	if not _optional_seats_are_safe(): return false
 	var guest_name := second_hero.get_item_text(1)
 	if host_name not in briefing.text or guest_name not in briefing.text:
 		_fail("selecting a second hero did not refresh the encounter briefing")
@@ -315,9 +317,46 @@ func _second_hero_is_safe(second_hero: OptionButton) -> bool:
 	second_hero.select(0)
 	second_hero.item_selected.emit(0)
 	await process_frame
+	if not _optional_seats_are_safe(): return false
 	if briefing.text != host_name:
 		_fail("returning to solo did not refresh the encounter briefing")
 		return false
+	return true
+
+
+func _optional_seats_are_safe() -> bool:
+	var grid := "Setup/Selections/Fields/Grid/"
+	var host := _node(grid + "Hero") as OptionButton
+	var used: Array[String] = [host.get_item_text(host.selected)]
+	var previous_selected := true
+	for name in ["SecondHero", "HeroSeat2", "HeroSeat3"]:
+		var choice := _node(grid + name) as OptionButton
+		if choice == null or choice.item_count < 2 \
+				or choice.get_item_text(0) != "No additional player":
+			_fail("an optional seat has no explicit no-additional-player choice")
+			return false
+		if name != "SecondHero":
+			var row := _node(grid + name + "Choices") as Control
+			if row.visible != previous_selected:
+				_fail("optional seat choices do not follow the occupied preceding seat")
+				return false
+		if choice.disabled == previous_selected:
+			_fail("optional seats do not require a contiguous table")
+			return false
+		if not previous_selected and choice.selected != 0:
+			_fail("an inactive optional seat retained a hero")
+			return false
+		var offered: Array[String] = []
+		for index in range(1, choice.item_count):
+			var hero_key := str(choice.get_item_metadata(index))
+			if hero_key.is_empty() or hero_key in offered \
+					or choice.get_item_text(index) in used:
+				_fail("an optional seat offers an empty, duplicate or already seated hero")
+				return false
+			offered.append(hero_key)
+		previous_selected = choice.selected > 0
+		if previous_selected:
+			used.append(choice.get_item_text(choice.selected))
 	return true
 
 

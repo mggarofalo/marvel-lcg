@@ -240,7 +240,7 @@ internal static class AbilityInitiationPrimitives
 
     internal static bool ContainsForEachTarget(AbilityEffect node) =>
         node is AbilityEffect.DelayedStun
-        || node.OperationName() is "removeFromGame" or "exhaust" or "ready" or "reveal"
+        || node.OperationName() is "removeFromGame" or "exhaust" or "ready" or "revealFromVillainDeck" or "reveal"
             or "returnToHand" or "returnOwnedToHand" or "soakDamage"
             or "addToHand" or "giveStatus" or "attachTo" or "grantUntil"
             or "discard" or "heal" or "placeCounters" or "shuffleInto" or "search"

@@ -16,6 +16,8 @@ internal static class AbilityDeckAndRevealExecution
         {
             AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Reveal } reveal =>
                 RevealCard(Find(reveal.Selection, context), context),
+            AbilityEffect.CardAction { Instruction: AbilityCardInstruction.RevealFromVillainDeck } reveal =>
+                RevealFromVillainDeck(reveal, context),
             AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RevealTop } =>
                 RevealCard(EncounterDeck.TakeTop(
                     context.World, context.Trigger, context.Events), context),
@@ -36,6 +38,14 @@ internal static class AbilityDeckAndRevealExecution
             AbilityEffect.PutIntoPlay placement => PutIntoPlay(placement, context),
             _ => AbilityDeckAndRevealResult.NotHandled,
         };
+    }
+
+    private static AbilityDeckAndRevealResult RevealFromVillainDeck(
+        AbilityEffect.CardAction effect, AbilityDeckAndRevealContext context)
+    {
+        var villain = Find(effect.Selection, context);
+        return RevealCard(villain is null ? null : EncounterDeck.TakeTopFromVillain(
+            context.World, villain, context.Trigger, context.Events), context);
     }
 
     internal static AbilityDeckAndRevealResult RevealCard(

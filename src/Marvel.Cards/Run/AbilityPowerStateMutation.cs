@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityPowerSelectionTrace;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -24,12 +25,16 @@ internal static class AbilityPowerStateMutation
         RefuseMutableAmountAfterDamage(node, cast, state);
         return node.OperationName() switch
         {
+            "revealFromVillainDeck" => throw new RulesNotImplementedException(
+                "projected selected-deck reveal requires unresolved encounter effects"),
+            "moveActiveCounter" => AbilityActiveCounterProjection.MovePower(node, cast, state),
             "exhaust" or "ready" => Readiness(node, cast, state),
             "grantUntil" => Grant(node, cast, state),
             "putIntoPlay" => AbilityPowerCardMovement.Enter(node, cast, state),
             "draw" => AbilityPowerCardMovement.Draw(node, cast, state),
             "discard" => AbilityPowerCardMovement.Discard(node, cast, state),
             "removeThreat" => RemoveThreat(node, cast, state, multiplier),
+            "setHitPoints" => AbilityHitPointAssignment.ProjectPower(node, cast, state),
             _ => Targeted(node, cast, bindingMayChange, state, multiplier),
         };
     }
@@ -111,9 +116,10 @@ internal static class AbilityPowerStateMutation
     private static bool CanRemoveThreat(
         AbilityEffect node, AbilityAdmissionScope cast,
         AbilityPowerState state, Card scheme) =>
-        AbilityProgramQueries.CanRemoveThreat(
+        AbilityThreatPermissions.CanRemoveThreat(
             cast.World, cast.Context.Program, scheme,
-            OverriddenThreatRemovalSource(node, cast))
+            OverriddenThreatRemovalSource(node, cast), cast.Context.Power == BasicPowers.ThwartVerb,
+            AbilityThreatPermissionProjection.From(cast.World, state))
         && (IgnoresCrisis(node, cast)
             || scheme.Area.Type != DeckType.MainSchemesArea
             || !IsPlayerCard(cast)

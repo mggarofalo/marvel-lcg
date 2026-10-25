@@ -127,17 +127,21 @@ public static class Attack
     public static bool CanUseDefenseAbility(World world, int player) =>
         AttackAbilityDefense.CanUseDefenseAbility(world, player);
 
+    /// <summary>Whether the attributed card may perform this player's defense ability.</summary>
+    public static bool CanUseDefenseAbility(World world, int player, Card performer) =>
+        AttackAbilityDefense.CanUseDefenseAbility(world, player, performer);
+
     /// <summary>Establish the roles created by a defense-labeled ability.</summary>
     /// <remarks>
     /// This runs before the ability's effect. It neither exhausts the identity
     /// nor marks a basic defense, so DEF is not applied —
     /// <c>rr:defend-defense.4.1</c>, <c>.4.3</c>, and <c>.4.4</c>.
     /// </remarks>
-    public static void BeginDefenseAbility(World world, int player)
+    public static bool BeginDefenseAbility(World world, int player)
         => BeginDefenseAbility(world, player, world.Seats[player].IdentityCard);
 
     /// <summary>Establish the roles for a defense performed by an attributed card.</summary>
-    public static void BeginDefenseAbility(World world, int player, Card performer) =>
+    public static bool BeginDefenseAbility(World world, int player, Card performer) =>
         AttackAbilityDefense.BeginDefenseAbility(world, player, performer);
 
     /// <summary>Whether a card instruction can declare this character the defender.</summary>
@@ -162,7 +166,7 @@ public static class Attack
     /// and <c>.2.2</c>/<c>.3.3</c> allow declarations that explicitly happen
     /// without exhausting even when the character is already exhausted.
     /// </remarks>
-    public static void DeclareByAbility(
+    public static bool DeclareByAbility(
         World world, ICardFacts facts, Card defender, int replaceableDefender = -1) =>
         AttackAbilityDefense.DeclareByAbility(world, facts, defender, replaceableDefender);
 

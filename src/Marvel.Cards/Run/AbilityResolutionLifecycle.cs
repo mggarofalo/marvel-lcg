@@ -102,7 +102,7 @@ internal static class AbilityResolutionLifecycle
             execution.Use(world, source, ability, cast.Occurrence);
             if (EffectiveCards.Kind(source, world.Facts) == CardKind.Event)
             {
-                cast.Occurrence.BeginCard(
+                cast.Occurrence.Resolution.BeginCard(
                     source.ObjectId,
                     [new PendingAbility(
                         source.ObjectId,
@@ -126,6 +126,7 @@ internal static class AbilityResolutionLifecycle
             world, source, continuation.Seat, resumed.Invocation.Address.Tier, resumed.Cursor.FinalStep,
             resumed.Invocation.Occurrence) with
         {
+            DamageDefeats = resumed.Memory.DamageDefeats,
             Power = resumed.PowerExecution?.Kind,
             PowerAmount = resumed.PowerExecution?.Amount ?? -1,
             PowerActor = resumed.PowerExecution?.Actor is { } actor ? world.Cards[actor] : null,
@@ -188,14 +189,7 @@ internal static class AbilityResolutionLifecycle
         ContinueAfterResumedNode completed)
     {
         execution.RestoreContinuationCursor(cast, completed.State);
-        cast.CompletedOutcome = completed.State.DamageCompletion is { } damage ? damage.Complete()
-            : completed.State.Completion is { } receipt
-            ? AbilityCompletion.Amount(receipt.Applied, receipt.Requested)
-            : completed.State.CompletedOutcome ?? cast.CompletedOutcome;
-        cast.PendingCompletion = null;
-        cast.PendingDamageCompletion = null;
-        if (cast.CompletedOutcome is AbilityStructuralOutcome.Full or AbilityStructuralOutcome.Partial
-            || completed.EffectApplied && completed.State.Completion is null && completed.State.DamageCompletion is null) cast.ResolveEffect();
+        AbilityResumedEffectCompletion.Apply(cast, completed);
         return AbilityContinuations.Advance(
             execution.StructuralContext(cast), completed.Ability, completed.State,
             new AbilityStructuralObservation(false, Outcome: cast.CompletedOutcome));
@@ -244,6 +238,8 @@ internal static class AbilityResolutionLifecycle
     {
         cast.Execution ??= state.Execution;
         cast.TriggeringDefeat = state.Invocation.TriggeringDefeat;
+        cast.TriggeringAttack = state.Invocation.TriggeringAttack;
+        cast.TriggeringThreat = state.Invocation.TriggeringThreat;
         cast.RestoreAbility(
             state.Invocation.Address.Ordinal,
             state.Cursor.Frames,

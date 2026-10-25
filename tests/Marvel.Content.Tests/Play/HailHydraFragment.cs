@@ -15,7 +15,7 @@ internal static class HailHydraFragment
         var book = JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
         var cards = new JsonArray();
         foreach (var row in book["cards"]!.AsArray())
-            if (row!["card"]!.GetValue<string>() is "04057" or "04147")
+            if (row!["card"]!.GetValue<string>() is "03030" or "04057" or "04147")
                 cards.Add(row.DeepClone());
         return new JsonObject { ["cards"] = cards }.ToJsonString();
     }

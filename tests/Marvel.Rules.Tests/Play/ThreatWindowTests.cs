@@ -84,7 +84,7 @@ public sealed class ThreatWindowTests
 
         Assert.False(scheme.Tokens.ContainsKey("k_threat"));
         Assert.DoesNotContain(Steps.ThreatPlaced, occurrence.Conditions);
-        Assert.DoesNotContain(Steps.VillainPhaseStepOneEnds, occurrence.Conditions);
+        Assert.DoesNotContain(VillainStepOneTiming.ThreatPlaced, occurrence.Conditions);
     }
 
     [Rule("rr:scheme-enemy-activation.step.3")]

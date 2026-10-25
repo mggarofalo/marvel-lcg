@@ -142,7 +142,7 @@ internal static class AbilityAdmissionResolutionPreflight
             var prior = cast.CaptureChosen();
             try
             {
-                var target = Find(EffectOf<AbilityEffect.Power>(node, cast).Target!, cast);
+                var target = PowerPreflightTarget(EffectOf<AbilityEffect.Power>(node, cast), cast);
                 bool targetWillBind = target is null;
                 if (target is not null)
                 {
@@ -174,6 +174,13 @@ internal static class AbilityAdmissionResolutionPreflight
             ContainsUnsupportedPower(
                 child.Node, cast, child.StateMayChange,
                 child.BindingMayChange, repeatedEffect));
+    }
+
+    private static Card? PowerPreflightTarget(AbilityEffect.Power power, AbilityAdmissionScope cast)
+    {
+        if (power.TargetCount is null) return Find(power.Target!, cast);
+        var available = Every(power.Target!, cast);
+        return available.Count > 0 ? available[0] : null;
     }
 
     /// <summary>Executable children that can be reached after an ability is offered.</summary>
@@ -282,11 +289,8 @@ internal static class AbilityAdmissionResolutionPreflight
             ? AdmissionResolution.Full
             : AdmissionResolution.None;
         bool answered = ActiveChoices(effect, cast).Any();
-        bool dependentCanRun = stateMayChange
-            || cast.Reachability.PaymentMayMutate
-            || bindingMayChange
-            || answered
-            || ResolutionOf(effect, cast) == required;
+        bool dependentCanRun = DependentBranchCanRun(effect, cast, required,
+            stateMayChange || bindingMayChange || answered);
         if (!dependentCanRun) return [(effect, stateMayChange, bindingMayChange)];
         bool predecessorMayMutate = stateMayChange
             || cast.Reachability.PaymentMayMutate
@@ -298,5 +302,12 @@ internal static class AbilityAdmissionResolutionPreflight
             (EffectFollowing(node), predecessorMayMutate, bindingMayChange),
         ];
     }
+
+    private static bool DependentBranchCanRun(AbilityEffect effect, AbilityAdmissionScope cast,
+        AdmissionResolution required, bool predecessorMayChange) =>
+        effect is AbilityEffect.ActivateEnemies { Dynamic: false }
+        || predecessorMayChange
+        || cast.Reachability.PaymentMayMutate
+        || ResolutionOf(effect, cast) == required;
 
 }

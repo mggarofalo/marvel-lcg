@@ -17,6 +17,8 @@ public abstract record AbilityCost
     public sealed record Discard(AbilityCostCard Card) : AbilityCost;
     /// <summary>Return the source from play to its owner's hand.</summary>
     public sealed record ReturnSourceToHand : AbilityCost;
+    /// <summary>Return the single named controlled card from play to its owner's hand.</summary>
+    public sealed record ReturnTitledToHand(string Title) : AbilityCost;
     /// <summary>Discard an exact number from the top of the specified deck.</summary>
     public sealed record DiscardTop(AbilitySearchArea From, int Count) : AbilityCost;
     /// <summary>Deal one facedown encounter card to the resolving player.</summary>
@@ -37,6 +39,9 @@ public abstract record AbilityCost
     public sealed record SpendEnergy : AbilityCost;
     /// <summary>Discard selected cards from the resolving player's hand.</summary>
     public sealed record DiscardFromHand(AbilityCostRange Range) : AbilityCost;
+
+    /// <summary>Discard a fixed number of random hand cards as an arrow cost.</summary>
+    public sealed record RandomDiscardFromHand(int Count) : AbilityCost;
     /// <summary>Exhaust selected cards from a supported payment relation.</summary>
     public sealed record ExhaustChosen(AbilityCardQuery From, AbilityCostRange Range) : AbilityCost
     {

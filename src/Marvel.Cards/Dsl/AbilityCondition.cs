@@ -43,8 +43,12 @@ public abstract record AbilityCondition
     /// <summary>The selected card has the specified kind.</summary>
     public sealed record IsKind(AbilityCardSelection Card, CardKind Kind) : AbilityCondition;
     /// <summary>The occurrence defeated the selected card.</summary>
+    public sealed record WasDefeatedByDamage(AbilityCardSelection Card) : AbilityCondition;
+    /// <summary>Tests defeat in the invoking occurrence.</summary>
     public sealed record WasDefeated(AbilityCardSelection Card) : AbilityCondition;
     /// <summary>The selected card is the resolver's identity.</summary>
     public sealed record IsYourIdentity(AbilityCardSelection Card) : AbilityCondition;
+    /// <summary>The selected in-play card is the current enemy attack's attacker.</summary>
+    public sealed record IsEnemyAttacker(AbilityCardSelection Card) : AbilityCondition;
 }
 

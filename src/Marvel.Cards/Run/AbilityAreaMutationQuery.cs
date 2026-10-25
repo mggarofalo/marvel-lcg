@@ -27,6 +27,7 @@ internal sealed class AbilityAreaMutationQuery(
     private static readonly ImmutableArray<string> HandPaymentOperations =
     [
         "discardFromHand", "discardUpToFromHand", "discardAnyFromHand",
+        "discardHandCards", "discardResourceIcons",
         "spend", "spendPrinted", "spendEnergyX",
     ];
 
@@ -72,6 +73,8 @@ internal sealed class AbilityAreaMutationQuery(
 
     private bool? DeckOperationChange(string operation) => operation switch
     {
+        "revealFromVillainDeck" => queried.Count > 0,
+        "moveActiveCounter" => queried.Contains(DeckType.VillainArea),
         _ when DrawOperations.Contains(operation) =>
             Includes(DeckType.PlayerDeck, DeckType.HandsArea),
         // Engaging a player card can empty its deck and reset its discard pile;
@@ -180,6 +183,8 @@ internal sealed class AbilityAreaMutationQuery(
             [EventModifier(context, "eventThreatRemoval")]);
         return Every(effect.Schemes, context).Any(scheme =>
             EffectiveCards.Kind(scheme, context.World.Facts) == CardKind.EncounterSideScheme
+            && AbilityThreatPermissions.CanRemoveThreat(context.World, context.Program, scheme,
+                byThwarting: context.Power == BasicPowers.ThwartVerb)
             && scheme.Tokens.GetValueOrDefault("k_threat") <= amount
             && AbilityProjectedDefeat.DefeatTreeChangesArea(
                 scheme, queried, context));

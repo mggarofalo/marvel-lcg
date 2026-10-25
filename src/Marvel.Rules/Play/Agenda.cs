@@ -67,8 +67,11 @@ public sealed class Agenda
     internal int nextPlayerActionOccurrence = -1;
 
     internal (PhaseStep Step, Stage Stage, Occurrence? Occurrence) Frame(
-        PhaseStep step, Stage stage, Occurrence? occurrence) =>
-        (Executions.Register(step with { FrameId = checked(++nextFrameId), FrameGame = Executions.Identity },
+        PhaseStep step, Stage stage, Occurrence? occurrence, bool inheritAttackOrigin = true) =>
+        (Executions.Register(step with { FrameId = checked(++nextFrameId), FrameGame = Executions.Identity,
+            AttackOrigin = step.AttackOrigin ?? (inheritAttackOrigin
+                && step.Operation is not (EnemyAttackOperation or EnemySchemeOperation or ActivationCompletionOperation)
+                    ? Current?.AttackOrigin : null) },
             ContinuationExecution.Of(step)), stage, occurrence);
 
     /// <summary>Whether the game is part-way through anything.</summary>
@@ -212,7 +215,7 @@ public sealed class Agenda
             return;
         }
 
-        items.Add(Frame(step, Stage.Interrupts, step.ScheduledOccurrence));
+        items.Add(Frame(step, Stage.Interrupts, step.ScheduledOccurrence, inheritAttackOrigin: false));
     }
 
     /// <summary>Schedule one accepted Action with a game-unique dynamic occurrence id.</summary>

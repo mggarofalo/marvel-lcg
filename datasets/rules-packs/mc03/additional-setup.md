@@ -5,7 +5,7 @@ pack: "mc03"
 kind: "insert"
 source: "mc03_wrecking_crew_rules_insert-compressed.pdf"
 page: 2
-hash: "sha256:dab1493a225dd344b529d3baab8a330ccaecd36b271e31aba647c76ff949c812"
+hash: "sha256:e2fb47dec9360590ec7026c430a80ea57cf8e2561aad70bcdc309b012ceb8ee9"
 rules: ["prepare-villains-and-dials", "add-side-schemes", "prepare-encounter-decks", "the-final-layout"]
 ---
 
@@ -25,6 +25,8 @@ Add the following side schemes to the play area: Day of Reckoning, Thunderstruck
 ## Prepare Encounter Decks
 
 Each villain in The Wrecking Crew has its own encounter deck of 15 cards, identified by the villain’s name in the bottom-left corner of each card. Find the cards for Wrecker, shuffle them, place this deck above Wrecker and his side scheme, and leave additional space for his discard pile. Repeat this process for the other three villains.
+
+Note: Nemesis cards and obligations are not used when playing this scenario.
 
 <a id="the-final-layout"></a>
 ## The Final Layout

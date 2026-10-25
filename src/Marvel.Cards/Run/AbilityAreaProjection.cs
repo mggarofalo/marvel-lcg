@@ -33,29 +33,6 @@ internal sealed class AbilityAreaProjection
         this.baseMultiplier = baseMultiplier;
     }
 
-    private bool DiscardedByDamage(AreaProjectionState state, Card target) =>
-        state.DamageOf(target) >= state.HealthOf(context, target)
-        && DefeatTreeChangesArea(target, queried, context);
-
-    private bool RootLeavesOnDefeat(Card root)
-    {
-        var kind = EffectiveCards.Kind(root, context.World.Facts);
-        if (kind is CardKind.Minion or CardKind.Ally
-            or CardKind.EncounterSideScheme)
-        {
-            return true;
-        }
-        if (!CardKinds.IsVillain(kind))
-        {
-            return false;
-        }
-        var villainDeck = context.World.AreaOf(DeckType.VillainDeck).Cards;
-        var next = villainDeck.Count > 0 ? villainDeck[^1] : null;
-        return next is null || !string.Equals(
-            context.World.Facts.Title(root.FaceId),
-            context.World.Facts.Title(next.FaceId),
-            StringComparison.Ordinal);
-    }
 
     internal void MarkDiscardedTree(AreaProjectionState state, Card root)
     {
@@ -75,14 +52,14 @@ internal sealed class AbilityAreaProjection
         }
     }
 
-    private IEnumerable<Card> ProjectedHostedCards(
+    internal IEnumerable<Card> ProjectedHostedCards(
         AreaProjectionState state, int host) => context.World.Cards
         .Where(card => !state.Departed.Contains(card.ObjectId))
         .Where(card => state.Hosts.TryGetValue(card.ObjectId, out int projected)
             ? projected == host
             : card.Area.Host == host);
 
-    private void MarkHostedCardsDiscarded(AreaProjectionState state, int host)
+    internal void MarkHostedCardsDiscarded(AreaProjectionState state, int host)
     {
         foreach (var child in ProjectedHostedCards(state, host).ToList())
         {
@@ -94,23 +71,6 @@ internal sealed class AbilityAreaProjection
         ProjectedHostedCards(state, host)
         .Any(card => DiscardTreeChangesArea(card));
 
-    private bool DefeatedHostsCardsChangeArea(
-        AreaProjectionState state, int host) =>
-        ProjectedHostedCards(state, host).Any(card =>
-        {
-            bool movesToVictory = EffectiveCards.Kind(card, context.World.Facts) is
-                    CardKind.Attachment or CardKind.Upgrade
-                && Keywords.Has(
-                    context.World, card, "victory", context.World.Facts);
-            return movesToVictory
-                ? ProjectedHostedCards(state, card.ObjectId)
-                    .Any(child => DiscardTreeChangesArea(child))
-                : DiscardTreeChangesArea(card);
-        });
-
-    private Card? NextVillainStage(AreaProjectionState state) =>
-        context.World.AreaOf(DeckType.VillainDeck).Cards
-            .LastOrDefault(card => !state.Entered.Contains(card.ObjectId));
 
     internal bool DiscardTreeChangesArea(Card root)
     {
@@ -142,114 +102,10 @@ internal sealed class AbilityAreaProjection
         return false;
     }
 
-    internal void DealProjected(
-        AreaProjectionState state, Card target, long amount,
-        long repetitions)
-    {
-        target = ProjectedDamageTarget(state, target);
-        if (!CanDealProjectedDamage(state, target, amount, repetitions))
-        {
-            return;
-        }
 
-        long prevented = Math.Min(state.ToughOf(context, target), repetitions);
-        state.Tough[target.ObjectId] = state.ToughOf(context, target) - prevented;
-        long dealt = AbilityAmounts.SaturatingMultiply(amount, repetitions - prevented);
-        state.Damage[target.ObjectId] = AbilityAmounts.SaturatingSum(
-            state.DamageOf(target), [dealt]);
-        couldDiscard |= DiscardedByDamage(state, target);
-        if (state.DamageOf(target) < state.HealthOf(context, target))
-        {
-            return;
-        }
 
-        if (CardKinds.IsVillain(EffectiveCards.Kind(target, context.World.Facts)))
-        {
-            DefeatProjectedVillain(state, target);
-        }
-        else if (RootLeavesOnDefeat(target))
-        {
-            couldDiscard |= DefeatedHostsCardsChangeArea(state, target.ObjectId);
-            MarkDiscardedTree(state, target);
-        }
-    }
-
-    private Card ProjectedDamageTarget(AreaProjectionState state, Card target) =>
-        CardKinds.IsVillain(EffectiveCards.Kind(target, context.World.Facts))
-            && state.ActiveVillain >= 0
-                ? context.World.Cards[state.ActiveVillain]
-                : target;
-
-    private bool CanDealProjectedDamage(
-        AreaProjectionState state, Card target, long amount, long repetitions) =>
-        amount > 0
-        && repetitions > 0
-        && !state.Departed.Contains(target.ObjectId)
-        && AbilityProgramQueries.CanTakeDamage(
-            context.World, context.Program, target, context.Source);
-
-    private void DefeatProjectedVillain(AreaProjectionState state, Card target)
-    {
-        var next = NextVillainStage(state);
-        bool carries = next is not null && string.Equals(
-            context.World.Facts.Title(target.FaceId),
-            context.World.Facts.Title(next.FaceId),
-            StringComparison.Ordinal);
-        int attachmentHost = state.VillainAttachmentHost >= 0
-            ? state.VillainAttachmentHost : target.ObjectId;
-        if (!carries)
-        {
-            couldDiscard |= HostedCardsChangeArea(state, attachmentHost);
-            MarkHostedCardsDiscarded(state, attachmentHost);
-        }
-        state.Departed.Add(target.ObjectId);
-        state.ActiveVillain = next?.ObjectId ?? -1;
-        if (next is null)
-        {
-            return;
-        }
-
-        EnterVillainStage(state, next);
-        if (carries)
-        {
-            CarryVillainState(state, target, next, attachmentHost);
-        }
-    }
-
-    private void EnterVillainStage(AreaProjectionState state, Card next)
-    {
-        state.Entered.Add(next.ObjectId);
-        state.Damage[next.ObjectId] = 0;
-        if (StateFields.Modified(
-                context.World, next, "toughness",
-                context.World.Facts, context.World.Players) > 0)
-        {
-            state.Tough[next.ObjectId] = Math.Max(1, state.ToughOf(context, next));
-        }
-    }
-
-    private void CarryVillainState(
-        AreaProjectionState state, Card target, Card next, int attachmentHost)
-    {
-        foreach (string status in new[] { Statuses.Tough, Statuses.Stunned, Statuses.Confused })
-        {
-            long carried = state.StatusOf(context, target, status);
-            if (status == Statuses.Tough)
-            {
-                state.Tough[next.ObjectId] = Math.Max(
-                    state.ToughOf(context, next), carried);
-            }
-            else
-            {
-                state.Status[(next.ObjectId, status)] = carried;
-            }
-        }
-        foreach (var attachment in ProjectedHostedCards(state, attachmentHost).ToList())
-        {
-            state.Hosts[attachment.ObjectId] = next.ObjectId;
-        }
-        state.VillainAttachmentHost = next.ObjectId;
-    }
+    internal void DealProjected(AreaProjectionState state, Card target, long amount, long repetitions) =>
+        new AbilityAreaDamageProjection(this).DealProjected(state, target, amount, repetitions);
 
     internal List<AreaProjectionState> TraceSequence(
         IEnumerable<AbilityEffect> sequence,
@@ -315,6 +171,9 @@ internal sealed class AbilityAreaProjection
 
 
 
+        if (effect.OperationName() == "revealFromVillainDeck")
+            throw new RulesNotImplementedException(
+                "projected selected-deck reveal requires unresolved encounter effects");
         return TraceNumeric(effect, states, repetitions, baseMultiplier)
             ?? TraceModifiers(effect, states, repetitions, baseMultiplier)
             ?? TraceFlow(effect, states, repetitions, baseMultiplier)
@@ -349,7 +208,7 @@ internal sealed class AbilityAreaProjection
         long repetitions, long baseMultiplier) =>
         this.TryTraceDamage(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceMoveDamage(effect, states, repetitions, baseMultiplier)
-        ?? this.TryTraceHeal(effect, states, repetitions, baseMultiplier)
+        ?? this.TryTraceHealth(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceRemoveThreat(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceForEach(effect, states, repetitions, baseMultiplier);
 
@@ -374,7 +233,8 @@ internal sealed class AbilityAreaProjection
     private List<AreaProjectionState>? TraceMovement(
         AbilityEffect effect, List<AreaProjectionState> states,
         long repetitions, long baseMultiplier) =>
-        this.TryTraceDelayedStun(effect, states, repetitions, baseMultiplier)
+        AbilityActiveCounterProjection.TraceArea(this, effect, states)
+        ?? this.TryTraceDelayedStun(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceDelayedBody(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceDiscard(effect, states, repetitions, baseMultiplier)
         ?? this.TryTraceAttach(effect, states, repetitions, baseMultiplier)

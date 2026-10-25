@@ -102,7 +102,7 @@ internal static class AbilityRepeatedStatusTrace
     internal static bool AnotherCopyAttachedInTrace(
         Card current, AbilityAdmissionScope cast, HashSet<int> discarded)
     {
-        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
+        int boardVillain = AbilityProjectedAttachmentHosts.BoardVillain(current, cast);
         string sourceTitle = cast.World.Facts.Title(cast.Source.FaceId);
         bool carried = boardVillain >= 0 && string.Equals(
             cast.World.Facts.Title(cast.World.Cards[boardVillain].FaceId),
@@ -120,11 +120,16 @@ internal static class AbilityRepeatedStatusTrace
 
     internal static bool TraceRankedCandidatesInclude(
         List<Card> candidates, Card candidate, AbilityCardRank rank, bool maximum,
-        AbilityAdmissionScope cast, HashSet<int> discarded,
-        Dictionary<(int Card, string Field), long> modifiers)
+        AbilitySelectorTraceContext trace)
     {
+        var cast = trace.Cast;
+        var discarded = trace.Discarded;
+        var modifiers = trace.Modifiers;
         long Rank(Card card) => rank switch
         {
+            AbilityCardRank.Threat => (trace.SchemeThreat
+                ?? throw new RulesNotImplementedException("threat ranking requires projected scheme threat"))
+                .GetValueOrDefault(card.ObjectId, card.Tokens.GetValueOrDefault("k_threat")),
             AbilityCardRank.Cost => cast.World.Facts.PrintedValue(
                 card.FaceId, "Cost", cast.World.Players),
             AbilityCardRank.Attack => TraceModified(
@@ -235,7 +240,7 @@ internal static class AbilityRepeatedStatusTrace
     internal static bool CanRemoveThreatFrom(AbilityEffect node, AbilityAdmissionScope cast, Card scheme) =>
         AbilityProgramQueries.CanRemoveThreat(
             cast.World, cast.Context.Program, scheme,
-            OverriddenThreatRemovalSource(node, cast))
+            OverriddenThreatRemovalSource(node, cast), cast.Context.Power == BasicPowers.ThwartVerb)
         && (IgnoresCrisis(node, cast)
             || scheme.Area.Type != DeckType.MainSchemesArea
             || !IsPlayerCard(cast)

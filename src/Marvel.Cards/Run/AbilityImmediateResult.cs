@@ -6,4 +6,7 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-internal readonly record struct AbilityImmediateResult(bool Handled, bool ResolveEffect);
+internal readonly record struct AbilityImmediateResult(bool Handled, bool ResolveEffect)
+{
+    internal bool ProcedureScheduled { get; init; }
+}

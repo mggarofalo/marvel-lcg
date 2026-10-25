@@ -32,9 +32,24 @@ internal static class AbilityBookLowering
                 ?? ImmutableHashSet.Create<string>(StringComparer.Ordinal),
             book.PlacementOnly?.ToImmutableHashSet(StringComparer.Ordinal) ?? ImmutableHashSet.Create<string>(StringComparer.Ordinal),
             book.CounterPools?.ToImmutableDictionary(StringComparer.Ordinal)
-                ?? ImmutableDictionary.Create<string, CardCounterPool>(StringComparer.Ordinal), effects.ToImmutable());
+                ?? ImmutableDictionary.Create<string, CardCounterPool>(StringComparer.Ordinal), effects.ToImmutable())
+        {
+            SchemeDestinations = LowerSchemeDestinations(book),
+        };
         AbilityProfileReferences.Validate(book, program.Profiles);
         return program;
+    }
+
+    private static ImmutableDictionary<string, AbilitySchemeDestination> LowerSchemeDestinations(AbilityBook book)
+    {
+        var destinations = book.SchemeDestinations?.ToImmutableDictionary(StringComparer.Ordinal)
+            ?? ImmutableDictionary.Create<string, AbilitySchemeDestination>(StringComparer.Ordinal);
+        foreach (var (card, destination) in destinations.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            if (!book.Authored.Contains(card) || !Enum.IsDefined(destination))
+                throw new AbilityException($"card '{card}' has an unauthored or unsupported schemeDestination");
+        }
+        return destinations;
     }
 
     private static CompiledCardAbility CompileAbility(
@@ -49,7 +64,11 @@ internal static class AbilityBookLowering
         Index(effect, address, effects);
         AbilityStoragePermissionLowering.Validate(ability, effect, location, effects
             .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
+        AbilityAllyCostLowering.Validate(ability, effect, location, effects
+            .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
         AbilityAttackKeywordLowering.Validate(ability, ordinal, effects, location);
+        AbilityExcessDamageLowering.Validate(ability, effect, location, effects
+            .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
         return new CompiledCardAbility(ability.Card, ability.Name, ability.Trigger, effect,
         ability.Cost is { } cost ? LowerCost(Syntax(cost), location with { Path = "cost" }) : null,
         ability.When is { } when ? LowerCondition(Syntax(when), location with { Path = "when" }) : null,

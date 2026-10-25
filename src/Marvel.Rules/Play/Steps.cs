@@ -485,7 +485,4 @@ public static class Steps
     /// <summary>A positive amount of threat was placed.</summary>
     public const string ThreatPlaced = "WhenThreatPlaced";
 
-    /// <summary>Step one of the villain phase finished resolving.</summary>
-    public const string VillainPhaseStepOneEnds = "WhenVillainPhaseStepOneEnds";
-
 }

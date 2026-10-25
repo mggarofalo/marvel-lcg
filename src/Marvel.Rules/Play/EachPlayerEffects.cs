@@ -9,12 +9,14 @@ namespace Marvel.Rules.Play;
 public static class EachPlayerEffects
 {
     /// <summary>Schedule frames from an opaque continuation template built by Cards.</summary>
-    public static void Schedule(World world, PhaseStep template, int? onlyPlayer = null)
+    public static void Schedule(World world, PhaseStep template, int? onlyPlayer = null, bool inPlayerOrder = false)
     {
         ArgumentNullException.ThrowIfNull(world);
         var players = world.PlayerOrder.Where(player => onlyPlayer is null || player == onlyPlayer).ToList();
         if (players.Count == 0) return;
-        if (players.Count == 1)
+        // rr:each-player.1 permits the first player to choose only when card
+        // text does not specify an order; rr:in-player-order starts at first player.
+        if (players.Count == 1 || inPlayerOrder)
         {
             ScheduleFrames(world, template, players);
             return;

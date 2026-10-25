@@ -12,13 +12,15 @@ public sealed class AvengersSupportTests
     private static readonly CardCatalog Cards = CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
-    [Fact]
+    [Theory]
+    [InlineData("04021")]
+    [InlineData("03024")]
     [Rule("rr:ally-limit")]
-    public void TowerLimitRequiresEveryControlledAllyToBeAnAvenger()
+    public void TowerLimitRequiresEveryControlledAllyToBeAnAvenger(string face)
     {
         // Printed 04021: "If each of your allies has the Avenger trait".
         var world = Board();
-        world.CreateCard("04021", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard(face, world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
         world.Abilities = AvengersSupportCards.Runner();
         Assert.Equal(4, Limit(world, 0));
         Assert.Equal(3, Limit(world, 1));
@@ -31,13 +33,15 @@ public sealed class AvengersSupportTests
         Assert.Equal(4, Limit(world, 0));
     }
 
-    [Fact]
+    [Theory]
+    [InlineData("04021")]
+    [InlineData("03024")]
     [Rule("rr:lasting-effects.5")]
-    public void TowerReductionMatchesTraitAndTypeAcrossPlayersWithoutBeingSpentByPricing()
+    public void TowerReductionMatchesTraitAndTypeAcrossPlayersWithoutBeingSpentByPricing(string face)
     {
         // Printed 04021: "the next Avenger ally played this phase", without a player restriction.
         var world = Board();
-        var tower = world.CreateCard("04021", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var tower = world.CreateCard(face, world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
         var runner = AvengersSupportCards.Runner();
         world.Abilities = runner;
         var action = Assert.Single(runner.Actions(world, 0), item => item.Card == tower.ObjectId);
@@ -45,7 +49,7 @@ public sealed class AvengersSupportTests
         Assert.False(tower.Ready);
         var ally = world.CreateCard("01068", world.Seats[1].Hand);
         var other = world.CreateCard("01067", world.Seats[1].Hand);
-        var avengerSupport = world.CreateCard("04021", world.Seats[1].Hand);
+        var avengerSupport = world.CreateCard(face, world.Seats[1].Hand);
         Assert.Equal(3, CardPayment.CostOf(world, Cards, world.Seats[1], ally).Amount);
         Assert.Equal(2, CardPayment.CostOf(world, Cards, world.Seats[1], other).Amount);
         Assert.Equal(2, CardPayment.CostOf(world, Cards, world.Seats[1], avengerSupport).Amount);
@@ -55,12 +59,14 @@ public sealed class AvengersSupportTests
         Assert.Equal(4, CardPayment.CostOf(world, Cards, world.Seats[1], ally).Amount);
     }
 
-    [Fact]
+    [Theory]
+    [InlineData("04021")]
+    [InlineData("03024")]
     [Rule("rr:lasting-effects.5")]
-    public void UnusedTowerReductionExpiresAtPhaseEnd()
+    public void UnusedTowerReductionExpiresAtPhaseEnd(string face)
     {
         var world = Board();
-        var tower = world.CreateCard("04021", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var tower = world.CreateCard(face, world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
         var runner = AvengersSupportCards.Runner();
         world.Abilities = runner;
         runner.ExecuteAction(world, new PlayerAction(Assert.Single(runner.Actions(world, 0)), [], []));

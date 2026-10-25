@@ -98,6 +98,9 @@ public static class Discard
             return;
         }
 
+        // Status components use RemovedArea; encounter ownership is resolved
+        // before departure so missing topology cannot partially mutate a card.
+        var pile = DiscardPile(world, card);
         var constantsEnding = world.Effects.PreflightConstantsEnding(card);
         using var departure = constantsEnding.Begin();
 
@@ -109,12 +112,6 @@ public static class Discard
             Attachments(world, card, trigger, events);
             ResetLeavingState(world, card, trigger, events);
         }
-
-        // A status card is discarded by its keyword rule, but it is not an
-        // encounter card and therefore has no encounter discard pile. The
-        // engine chooses RemovedArea as the out-of-play home for spent status
-        // components; the Rules Reference does not name a separate status pile.
-        var pile = DiscardPile(world, card);
 
         var from = card.Area;
         bool exposesIdentity = DeckTypes.IsConcealedPile(from.Type)
@@ -170,7 +167,9 @@ public static class Discard
         if (card.Area.Type == DeckType.StatusArea) return world.AreaOf(DeckType.RemovedArea);
         if (AuxiliaryDeck.UsesSideSchemeDiscard(world, card))
             return world.AreaOf(DeckType.SideSchemeDiscardPile);
-        if (card.Owner < 0) return world.AreaOf(DeckType.EncounterDiscardPile);
+        if (card.Owner < 0) return world.EncounterTopology is { } topology
+            ? topology.ForCard(card).Discard
+            : world.AreaOf(DeckType.EncounterDiscardPile);
         return world.AreaOf(DeckType.DiscardPile,
             PlayArea.Of(card.Owner), cardOwner: card.Owner);
     }

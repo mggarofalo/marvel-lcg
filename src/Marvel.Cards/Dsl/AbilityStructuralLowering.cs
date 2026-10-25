@@ -89,9 +89,12 @@ internal static class AbilityStructuralLowering
 
     internal static AbilityEffect.ChooseCard ChooseCardEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "from", "effect");
+        var fields = Fields(value, location, "from", "effect", "chooser");
+        bool firstPlayer = fields.TryGetValue("chooser", out var chooser);
+        if (firstPlayer) FixedWord(chooser!, location.Child("chooser"), "firstPlayer");
         return new(Selected(fields, "from", location),
-            LowerEffect(Required(fields, "effect", location), location.Child("effect")));
+            LowerEffect(Required(fields, "effect", location), location.Child("effect")))
+        { FirstPlayerChooses = firstPlayer };
     }
 
 }

@@ -25,7 +25,8 @@ internal static class AbilityWindowResolution
                 candidate.Controller, candidate.Ordinal)
             {
                 Would = candidate.Ability.Trigger.Would,
-                TriggeringDefeat = candidate.TriggeringDefeat,
+                TriggeringThreat = candidate.TriggeringThreat,
+                TriggeringAttack = candidate.TriggeringAttack, TriggeringDefeat = candidate.TriggeringDefeat,
             }), world.Cards.Count);
     }
 
@@ -71,7 +72,8 @@ internal static class AbilityWindowResolution
         // word points at.
         int resolving = ability.Player >= 0 ? ability.Player : occurrence.Player;
         var cast = CreateAbilityState(world, card, occurrence, resolving, events, found)
-            with { TriggeringDefeat = ability.TriggeringDefeat, DamageReplacement = replacement };
+            with { TriggeringAttack = ability.TriggeringAttack, TriggeringDefeat = ability.TriggeringDefeat, DamageReplacement = replacement };
+        cast.TriggeringThreat = ability.TriggeringThreat;
         cast.EnterExecution(invocation);
         EnsureAvailable(execution, world, card, found, occurrence);
         if (!CanPayAbility(execution, world, card, found, resolving)) return invocation.Finish(events);

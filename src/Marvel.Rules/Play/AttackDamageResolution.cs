@@ -14,8 +14,7 @@ internal sealed class AttackDamageResolution
     private long remaining;
     private CardKind kind;
     private int controller = -1;
-    private readonly bool overkill;
-    private readonly bool retaliate;
+    private readonly AttackDamagePolicy policy;
     private readonly int priorDefeats;
     private DamageReplacement? replacement;
     private Damage.PlacedDamage? placed;
@@ -23,6 +22,7 @@ internal sealed class AttackDamageResolution
     private AttackDamageResult? spill;
     private bool aftermath;
     private bool pierced;
+    private EffectCompletion? excessThreat;
 
     internal AttackDamageResolution(World world, ICardFacts facts, AttackDamageRequest request,
         AbilityExecution execution, bool spillOnly, AbilityExecution? completion = null)
@@ -35,9 +35,8 @@ internal sealed class AttackDamageResolution
         Execution = execution;
         Result = new(completion ?? execution);
         priorDefeats = execution.Occurrence.Defeats.Count;
-        incarnation = request.Replacement?.TargetIncarnation ?? request.Target.Incarnation;
-        overkill = !spillOnly && AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Overkill, request.Basic);
-        retaliate = !spillOnly && request.Retaliate && !AttackKeywords.Has(world, request.Attacker, request.Source, Keywords.Ranged, request.Basic);
+        incarnation = request.Prepared?.Incarnation ?? request.Replacement?.TargetIncarnation ?? request.Target.Incarnation;
+        policy = request.Prepared?.Policy ?? AttackDamagePolicy.Capture(world, request, spillOnly);
     }
 
     internal AttackDamageResult Result { get; }
@@ -49,10 +48,24 @@ internal sealed class AttackDamageResolution
         if (placed is null && !Place(events)) { Suspend(events); return; }
         CompleteDefeatAndBeginSpill(events);
         if (spill is { IsComplete: false }) { Suspend(events); return; }
-        if (retaliate && request.Target.Incarnation == incarnation)
+        if (!CompleteExcessThreat(events)) return;
+        if (policy.Retaliate && request.Target.Incarnation == incarnation)
             DamageAttacks.Retaliate(world, facts, request.Target, request.Attacker, request.Trigger, events);
         Result.Publish(placed!, spill?.Amount ?? 0, outcome == Damage.Outcome.Defeated ? Excess : 0);
         Execution.Finish(events);
+    }
+
+    private bool CompleteExcessThreat(List<GameEvent> events)
+    {
+        if (excessThreat is null && policy.ExcessThreat is { } route
+            && outcome == Damage.Outcome.Defeated && Excess > 0)
+        {
+            excessThreat = route.Schedule(world, Excess, request.Trigger);
+            Suspend(events);
+            return false;
+        }
+        if (excessThreat is { IsComplete: false }) { Suspend(events); return false; }
+        return true;
     }
 
     private void CompleteDefeatAndBeginSpill(List<GameEvent> events)
@@ -68,6 +81,14 @@ internal sealed class AttackDamageResolution
 
     private bool Place(List<GameEvent> events)
     {
+        if (request.Prepared is { } prepared)
+        {
+            remaining = prepared.RemainingHealth;
+            kind = prepared.Kind;
+            controller = prepared.Controller;
+            placed = prepared.Placement;
+            return Settle(events);
+        }
         PrepareReplacement(events);
         if (!replacement!.IsComplete) return false;
         if (request.Target.Incarnation != incarnation || !DeckTypes.IsInPlay(request.Target.Area.Type))
@@ -83,9 +104,16 @@ internal sealed class AttackDamageResolution
             new DamageRequest(request.Source, request.Target, replacement.ResolvedAmount, request.Trigger, request.Verb)
             { PreventAllDamage = request.EnemyAttack?.PreventAllDamage == true }, events);
         DamagePlacement.ApplyPlaced(world, facts, placed, request.Trigger, request.Verb, events);
-        RecordDamage(placed);
-        DamageAttacks.ResolveLandedDamage(world, request.ActivationId, request.Target, placed, events);
-        outcome = DamagePlacement.FinishPlaced(world, facts, request.Source, placed, request.Trigger,
+        return Settle(events);
+    }
+
+    private bool Settle(List<GameEvent> events)
+    {
+        if (request.Target.Incarnation != incarnation || !DeckTypes.IsInPlay(request.Target.Area.Type))
+            return true;
+        RecordDamage(placed!);
+        DamageAttacks.ResolveLandedDamage(world, request.ActivationId, request.Target, placed!, events);
+        outcome = DamagePlacement.FinishPlaced(world, facts, request.Source, placed!, request.Trigger,
             request.Verb, events, LabeledAbilities.IdentityPlayer(world, request.Attacker), Execution.Occurrence);
         return outcome != Damage.Outcome.Suspended;
     }
@@ -118,17 +146,18 @@ internal sealed class AttackDamageResolution
     private void BeginSpill(List<GameEvent> events)
     {
         // rr:overkill.1: excess goes to the ally controller's identity or the villain.
-        if (!overkill || outcome != Damage.Outcome.Defeated || Excess <= 0) return;
+        if (policy.ExcessThreat is not null || !policy.Overkill
+            || outcome != Damage.Outcome.Defeated || Excess <= 0) return;
         Card? onto = kind switch
         {
             CardKind.Ally when controller >= 0 => world.Seats[controller].IdentityCard,
-            CardKind.Minion => world.TheCardIn(DeckType.VillainArea),
+            CardKind.Minion => EncounterRouting.Villain(world),
             _ => null,
         };
         if (onto is not null)
             spill = DamageAttacks.Begin(world, facts,
                 request with { Target = onto, Amount = Excess, Verb = Keywords.Overkill, Retaliate = false,
-                    Replacement = null, EnemyAttack = null },
+                    Replacement = null, EnemyAttack = null, Prepared = null },
                 events, spillOnly: true);
     }
 

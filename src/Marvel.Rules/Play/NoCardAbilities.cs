@@ -16,6 +16,17 @@ namespace Marvel.Rules.Play;
 public class NoCardAbilities : ICardAbilities
 {
     /// <inheritdoc/>
+    public virtual bool RequiresAllyPlayHistory(World world) => false;
+
+    /// <inheritdoc/>
+    public virtual bool ObservesPlayerTurnBeginning(World world) => false;
+    /// <inheritdoc/>
+    public virtual bool ObservesVillainStepOneCompletion(World world) => false;
+
+    /// <inheritdoc/>
+    public virtual bool ObservesHeroDefense(World world) => false;
+
+    /// <inheritdoc/>
     public virtual bool CanPlayFromStorage(World world, Card card, int player) => false;
 
     /// <inheritdoc/>
@@ -31,6 +42,10 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1) => true;
+    /// <inheritdoc/>
+    public virtual bool CanThwartScheme(World world, Card scheme, int ignoredSource = -1) => CanRemoveThreat(world, scheme, ignoredSource);
+    /// <inheritdoc/>
+    public virtual Card? SchemeDestination(World world, Card enemy) => world.TheCardIn(DeckType.MainSchemesArea);
 
     /// <inheritdoc/>
     public virtual string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>

@@ -3,6 +3,16 @@
   "note": "Printed facts `datasets/marvelsdb/` does not record, and cards it does not have. Read by tools/Marvel.Cards.Extract, which is the only thing that writes datasets/cards/cards.json. Every group says why it is here: a supplement nobody can audit is a place for a made-up number to live. Core-set entries are checked against English printed cards; expansion entries remain unchecked until expansion work begins.",
   "groups": [
     {
+      "why": "Wrecking Crew English card illustration on official FFG rules insert page 3 identifies Piledriver as the villain whose presence keeps Pile It On! in play. The upstream transcription names Wrecker instead.",
+      "cards": [
+        {
+          "card_id": "07034",
+          "authority": "FFG mc03_wrecking_crew_rules_insert-compressed.pdf p.3; SHA256 443f135a8c5d90a8bfd3719323e6c00501ed166d88f517bec37b59ee9d10124c; https://images-cdn.fantasyflightgames.com/filer_public/87/8c/878c0089-00d6-4485-9696-49e623936c6c/mc03_wrecking_crew_rules_insert-compressed.pdf",
+          "text": "<b>Piledriver's Side Scheme.</b>\nThis card cannot leave play while Piledriver is in play.\nPile Drive — <b>Forced Response</b>: After threat is placed here, if there is 10 or more threat here, each player discards the upgrade or support they control with the highest cost. Remove all but 3 threat from this scheme."
+        }
+      ]
+    },
+    {
       "why": "A printed stat modifier on an attachment or an upgrade -- the small `ATK +1` in the stat box, which `rr:attachment.1` makes declarative. MarvelSDB records one for most of the 170 cards that carry one and not for these.",
       "cards": [
         {

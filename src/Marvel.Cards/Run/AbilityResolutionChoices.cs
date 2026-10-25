@@ -11,7 +11,7 @@ namespace Marvel.Cards.Run;
 internal static class AbilityResolutionChoices
 {
     private static readonly System.Collections.Immutable.ImmutableArray<string> SpecialChoiceOperations =
-        ["resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardResourceIcons"];
+        ["resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardHandCards", "discardResourceIcons"];
 
     internal static Prompt? Choosing(this AbilityResolutionExecution execution, World world, PhaseStep step)
     {
@@ -32,6 +32,9 @@ internal static class AbilityResolutionChoices
             ?? throw new InvalidOperationException("the continuation no longer asks for an answer");
         var assessment = DecisionAssessment.Assess(prompt, input);
         if (!assessment.IsAccepted) throw new ArgumentException(assessment.Reason ?? assessment.Rejection.ToString(), nameof(input));
+        if (choice.OperationName() is "discardHandCards" or "discardResourceIcons")
+            AbilitySelectedHandDiscardPreflight.Validate(execution.StructuralContext(cast), choice,
+                execution.ContinuationFacts(cast.Source, step, cast.Tier));
         cast.TrackResolution(cast.AbilityOrdinal);
         cast.At(Math.Max(0, step.Index - 1));
         var events = new AbilityChoiceAnswer(execution, step.Seat, step.Index, input, step, cast).Apply(choice);
@@ -66,6 +69,7 @@ internal static class AbilityResolutionChoices
     {
         var structural = execution.StructuralContext(cast);
         string operation = choice.OperationName();
+        if (choice is AbilityEffect.MoveThreat move) return AbilityThreatMoveChoice.Describe(cast, move);
         if (SpecialChoiceOperations.Contains(operation))
             return AbilityStructuralExecution.DescribeSpecialChoice(structural, choice);
         if (operation is "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")
@@ -73,6 +77,8 @@ internal static class AbilityResolutionChoices
                 structural, (AbilityEffect.ThwartGroup)choice);
         Prompt? prompt = operation switch
         {
+            "attack" => AbilityCountedAttackSelection.Describe(structural, (AbilityEffect.Power)choice),
+            "inspectEncounterTop" => AbilityEncounterInspection.Describe(structural, (AbilityEffect.InspectEncounterTop)choice),
             "peekTop" => AbilityDeckPeek.Describe(structural),
             "indirectDamage" => AbilityStructuralExecution.DescribeIndirectDamage(
                 structural, (AbilityEffect.IndirectDamage)choice),

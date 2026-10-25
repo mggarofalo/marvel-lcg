@@ -32,17 +32,25 @@ public sealed class SessionContentUpgrade(SessionCompatibility source, SessionCo
     }
     private void RequireSupportedRuntime(SessionCompatibility actual)
     {
-        var expected = replayUpgrade switch
+        string expectedReplay = replayUpgrade switch
         {
-            SessionReplayUpgrade.Unchanged => target,
-            SessionReplayUpgrade.CoreRorsV19ToV20
-                when source.ReplayContract == "engine-replay-v19" && target.ReplayContract == "engine-replay-v20"
-                => target with { ReplayContract = source.ReplayContract },
+            SessionReplayUpgrade.Unchanged => target.ReplayContract,
+            SessionReplayUpgrade.CoreRorsV19ToV20 => RequireNamedReplay("engine-replay-v19", "engine-replay-v20"),
+            SessionReplayUpgrade.CoreRorsV19ToV21 => RequireNamedReplay("engine-replay-v19", "engine-replay-v21"),
+            SessionReplayUpgrade.CoreRorsV20ToV21 => RequireNamedReplay("engine-replay-v20", "engine-replay-v21"),
+            SessionReplayUpgrade.CoreRorsV19ToV22 => RequireNamedReplay("engine-replay-v19", "engine-replay-v22"),
+            SessionReplayUpgrade.CoreRorsV20ToV22 => RequireNamedReplay("engine-replay-v20", "engine-replay-v22"),
+            SessionReplayUpgrade.CoreRorsV21ToV22 => RequireNamedReplay("engine-replay-v21", "engine-replay-v22"),
             _ => throw new SessionCompatibilityException("replay_identity_mismatch", "unsupported named replay upgrade"),
         };
         // Application downgrade, RNG and digest checks remain exact. Source identity and
         // every original gameplay fact are checked by ordinary strict replay below this boundary.
-        SessionReplay.RequireRuntimeCompatibility(expected, actual);
+        SessionReplay.RequireRuntimeCompatibility(target with { ReplayContract = expectedReplay }, actual);
     }
-
+    private string RequireNamedReplay(string expectedSource, string expectedTarget)
+    {
+        if (source.ReplayContract != expectedSource || target.ReplayContract != expectedTarget)
+            throw new SessionCompatibilityException("replay_identity_mismatch", "unsupported named replay upgrade");
+        return expectedSource;
+    }
 }

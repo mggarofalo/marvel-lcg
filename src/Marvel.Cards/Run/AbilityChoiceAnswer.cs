@@ -13,12 +13,18 @@ internal sealed class AbilityChoiceAnswer(
 {
     private static readonly ImmutableArray<string> SpecialOperations =
     [
-        "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardResourceIcons",
+        "resolveSpecials", "chooseTopForHand", "chooseDiscardToShuffle", "discardHandCards", "discardResourceIcons",
+        "peekTop", "inspectEncounterTop",
     ];
 
     internal List<Marvel.Rules.Events.GameEvent> Apply(AbilityEffect choice)
     {
         string operation = choice.OperationName();
+        if (choice is AbilityEffect.MoveThreat move)
+        {
+            AbilityThreatMoveChoice.Answer(execution, cast, move, input);
+            return cast.Events;
+        }
         if (operation is "and" or "enemyAttacks" or "enemySchemes")
             return ApplyStructural(choice);
         if (SpecialOperations.Contains(operation)) return ApplySpecial(choice);
@@ -27,9 +33,8 @@ internal sealed class AbilityChoiceAnswer(
         if (operation is "distributeThreat" or "thwartDifferentSchemes" or "legalPractice")
             return ApplyThwartChoice(choice);
         if (operation == "makeTheCall") return ApplyMakeTheCall(choice);
-        if (operation == "peekTop")
-            return AbilityDeckPeek.Answer(execution, choice, cast, input) ? Continue() : cast.Events;
         if (operation == "indirectDamage") return ApplyIndirectDamage(choice);
+        if (operation == "attack") return ApplyCountedAttack((AbilityEffect.Power)choice);
         return ApplyGeneric(choice);
     }
 
@@ -52,12 +57,20 @@ internal sealed class AbilityChoiceAnswer(
     private List<Marvel.Rules.Events.GameEvent> ApplySpecial(AbilityEffect choice) =>
         choice.OperationName() switch
         {
+            "peekTop" => AbilityDeckPeek.Answer(execution, choice, cast, input) ? Continue() : cast.Events,
+            "inspectEncounterTop" => ApplyInspection((AbilityEffect.InspectEncounterTop)choice),
             "resolveSpecials" => ApplyResolveSpecials(choice),
             "chooseTopForHand" => ApplyChooseTopForHand(choice),
             "chooseDiscardToShuffle" => ApplyChooseDiscardToShuffle(choice),
-            "discardResourceIcons" => ApplyDiscardResourceIcons(choice),
+            "discardHandCards" or "discardResourceIcons" => ApplySelectedHandDiscard(choice),
             _ => throw new InvalidOperationException("Unknown special choice"),
         };
+
+    private List<Marvel.Rules.Events.GameEvent> ApplyInspection(AbilityEffect.InspectEncounterTop inspection)
+    {
+        AbilityEncounterInspection.Answer(cast, inspection);
+        return Continue();
+    }
 
     private List<Marvel.Rules.Events.GameEvent> ApplyResolveSpecials(AbilityEffect choice)
     {
@@ -135,11 +148,11 @@ internal sealed class AbilityChoiceAnswer(
         return Continue();
     }
 
-    private List<Marvel.Rules.Events.GameEvent> ApplyDiscardResourceIcons(AbilityEffect choice)
+    private List<Marvel.Rules.Events.GameEvent> ApplySelectedHandDiscard(AbilityEffect choice)
     {
         var answer = AbilityStructuralExecution.AnswerSpecialChoice(execution.StructuralContext(cast), choice, input);
         ThrowIfUnsupported(answer);
-        AbilityResourceIconDiscard.Commit(cast, ((DiscardResourceIconsCommand)answer).Targets);
+        AbilitySelectedHandDiscard.Commit(cast, ((DiscardSelectedHandCardsCommand)answer).Targets);
         cast.ResolveEffect();
         return Continue();
     }
@@ -231,6 +244,13 @@ internal sealed class AbilityChoiceAnswer(
             AbilityStructuralFlowExecution.AnswerGenericChoice(
                 execution.StructuralContext(cast), choice,
                 execution.ContinuationFacts(cast.Source, persisted, cast.Tier), input), cast);
+        return cast.Suspended ? cast.Events : Continue();
+    }
+
+    private List<Marvel.Rules.Events.GameEvent> ApplyCountedAttack(AbilityEffect.Power choice)
+    {
+        execution.ApplyStructuralDecision(AbilityCountedAttackSelection.Answer(
+            execution.StructuralContext(cast), choice, input), cast);
         return cast.Suspended ? cast.Events : Continue();
     }
 

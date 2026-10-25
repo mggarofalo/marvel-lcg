@@ -41,13 +41,15 @@ namespace Marvel.Cards.Dsl;
 /// <param name="CounterPools">
 /// Card-defined starting counter pools, including whether each is Uses.
 /// </param>
+/// <param name="SchemeDestinations">Explicit printed scheme destinations by enemy face.</param>
 public sealed record AbilityBook(
     IReadOnlyList<CardAbility> Abilities,
     IReadOnlySet<string> Authored,
     IReadOnlyDictionary<string, AbilityValue>? AttachTo = null,
     IReadOnlySet<string>? ControlledByFirstPlayer = null,
     IReadOnlySet<string>? PlacementOnly = null,
-    IReadOnlyDictionary<string, CardCounterPool>? CounterPools = null)
+    IReadOnlyDictionary<string, CardCounterPool>? CounterPools = null,
+    IReadOnlyDictionary<string, AbilitySchemeDestination>? SchemeDestinations = null)
 {
     /// <summary>An empty book. No card has been read.</summary>
     public static AbilityBook None =>

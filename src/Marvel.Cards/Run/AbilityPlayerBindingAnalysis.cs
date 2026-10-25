@@ -23,9 +23,9 @@ internal static class AbilityPlayerBindingAnalysis
         null => false,
         AbilityCost.ReturnSourceToHand => false,
         AbilityCost.DiscardTop discard => discard.From == AbilitySearchArea.YourDeck,
-        AbilityCost.DealEncounterToYou => true,
+        AbilityCost.DealEncounterToYou or AbilityCost.RandomDiscardFromHand => true,
         AbilityCost.Sequence sequence => sequence.Costs.Any(Contains),
-        AbilityCost.ExhaustTitled => true,
+        AbilityCost.ExhaustTitled or AbilityCost.ReturnTitledToHand => true,
         AbilityCost.Exhaust exhaust => exhaust.Card == AbilityCostCard.Identity,
         AbilityCost.ConsumeCampaignCard consume => consume.Card == AbilityCostCard.Identity,
         AbilityCost.Discard discard => discard.Card == AbilityCostCard.Identity,
@@ -91,11 +91,14 @@ internal static class AbilityPlayerBindingAnalysis
     {
         AbilityEffect.CardAction action => Contains(action.Selection),
         AbilityEffect.Heal heal => Contains(heal.Card) || Contains(heal.Amount),
+        AbilityEffect.SetHitPoints assignment => Contains(assignment.Card),
         AbilityEffect.Damage damage => Contains(damage.Cards) || Contains(damage.Amount),
         AbilityEffect.AttackDamage damage => Contains(damage.Cards) || Contains(damage.Amount),
+        AbilityEffect.MoveThreat move => Contains(move.From) || Contains(move.To) || Contains(move.Amount),
         AbilityEffect.MoveDamage move => Contains(move.From) || Contains(move.To) || Contains(move.Amount),
         AbilityEffect.IndirectDamage damage => Contains(damage.Among) || Contains(damage.Amount),
         AbilityEffect.GiveStatus status => Contains(status.Cards),
+        AbilityEffect.RemoveStatuses status => Contains(status.Cards),
         _ => throw new InvalidOperationException("Unknown basic-card player-binding effect"),
     };
 
@@ -159,6 +162,7 @@ internal static class AbilityPlayerBindingAnalysis
 
     private static bool ContainsOther(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.DiscardHandCards => true,
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.You,
         AbilityEffect.AttachCards attach => Contains(attach.Cards) || Contains(attach.Host),
         AbilityEffect.ReleaseBeneath => false,
@@ -168,11 +172,11 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
-            or AbilityEffect.AllowPlayBeneath or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
+            or AbilityEffect.AllowPlayBeneath or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardResourceIcons
-            or AbilityEffect.RecoverDiscardedByResource => false,
+            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.GrantTraitCharacters => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled effect in player-binding analysis"),
     };
@@ -250,6 +254,8 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCondition.InForm form => form.Player == AbilityPlayer.You,
         AbilityCondition.CardText text => Contains(text.Card),
         AbilityCondition.IsKind kind => Contains(kind.Card),
+        AbilityCondition.IsEnemyAttacker attacker => Contains(attacker.Card),
+        AbilityCondition.WasDefeatedByDamage defeated => Contains(defeated.Card),
         AbilityCondition.WasDefeated defeated => Contains(defeated.Card),
         AbilityCondition.IsYourIdentity => true,
         AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait

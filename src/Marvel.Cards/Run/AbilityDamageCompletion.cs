@@ -6,11 +6,17 @@ namespace Marvel.Cards.Run;
 /// <summary>Publishes one authored damage node's semantic result after all of its recipients finish.</summary>
 internal sealed class AbilityDamageCompletion(Occurrence occurrence)
 {
+    private readonly List<AbilitySimultaneousDamageCompletion> batches = [];
     private readonly List<Direct> direct = [];
     private readonly List<Attack> attacks = [];
-    internal bool IsComplete => direct.All(item => item.Result.IsComplete) && attacks.All(item => item.Result.IsComplete);
+    internal bool IsComplete => batches.All(item => item.IsComplete) && direct.All(item => item.Result.IsComplete) && attacks.All(item => item.Result.IsComplete);
+    internal void Add(AbilitySimultaneousDamageCompletion batch) => batches.Add(batch);
     internal void Add(DamageResult result, long requested, bool marksDamage) => direct.Add(new(result, requested, marksDamage));
     internal void Add(AttackDamageResult result, long requested) => attacks.Add(new(result, requested));
+
+    internal System.Collections.Immutable.ImmutableArray<(int Card, int Incarnation)> Defeats =>
+        [.. direct.Where(item => item.Result.Outcome == Damage.Outcome.Defeated)
+            .Select(item => (item.Result.Target, item.Result.TargetIncarnation))];
 
     internal AbilityStructuralOutcome Complete()
     {
@@ -26,6 +32,8 @@ internal sealed class AbilityDamageCompletion(Occurrence occurrence)
             outcome = AbilityCompletion.Combine(outcome, AbilityCompletion.Amount(item.Result.Dealt, item.Requested));
             if (item.Result.Characters.Count > 0) occurrence.Also(Steps.DamageDealt);
         }
+        foreach (var batch in batches)
+            outcome = AbilityCompletion.Combine(outcome, batch.Complete());
         return outcome ?? AbilityStructuralOutcome.None;
     }
 

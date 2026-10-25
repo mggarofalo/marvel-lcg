@@ -33,6 +33,19 @@ internal static class AbilityRepeatedSelectorTrace
         var selected = dynamic
             ? TraceCandidateCards(value, cast)
             : Every(value, cast).ToList();
+        if (dynamic && cast.World.EncounterTopology is { } topology)
+        {
+            // A dynamic trace follows one living character per group, not one
+            // candidate for every physical stage waiting in its villain deck.
+            // Include every group because the active counter can move before
+            // this selection is evaluated in a subsequent trace frame.
+            selected = selected.Concat(topology.Groups.Select(group => group.CurrentVillain).OfType<Card>())
+                .Select(card =>
+            {
+                var group = topology.Groups.SingleOrDefault(group => group.Stages.Contains(card));
+                return group is null ? card : group.CurrentVillain;
+            }).OfType<Card>().Distinct().ToList();
+        }
         var current = cast.World.TheCardIn(DeckType.VillainArea);
         var traced = selected.Select(card => new TraceCard(
             card, dynamic ? value : VillainSelector(value, card, cast))).ToList();
@@ -74,7 +87,8 @@ internal static class AbilityRepeatedSelectorTrace
         AbilityCardSelection selector, Card current, AbilityAdmissionScope cast) => selector switch
         {
             AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.Villain
-                or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters,
+                or AbilityCardQuery.Villains or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters
+                || AbilityEncounterSchemeQueries.IsRanked(query.Kind),
             AbilityCardSelection.Titled titled => string.Equals(
                 titled.Title, cast.World.Facts.Title(current.FaceId), StringComparison.Ordinal),
             AbilityCardSelection.EnemiesWithTrait trait => TraceHasTrait(current, trait.Trait, cast, []),
@@ -90,42 +104,45 @@ internal static class AbilityRepeatedSelectorTrace
         };
 
     internal static int? TraceSelectorIncludesCard(
-        AbilityCardSelection value, int bound, int currentVillain, AbilityAdmissionScope cast,
-        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
-        Dictionary<(int Card, string Field), long> modifiers,
-        Dictionary<int, int> engagement)
+        AbilityCardSelection value, int bound, AbilitySelectorTraceContext trace)
     {
-        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        int candidateId = bound == boardVillain ? currentVillain : bound;
-        if (candidateId < 0 || discarded.Contains(candidateId))
-        {
-            return null;
-        }
-        var candidate = cast.World.Cards[candidateId];
-        return TraceSelectorMatches(
-            value, candidate, new(currentVillain, cast, discarded, traits, modifiers,
-            engagement))
-            ? candidateId
-            : null;
+        var world = trace.Cast.World;
+        int boardVillain = Rules.Play.EncounterRouting.Villain(world)?.ObjectId ?? -1;
+        int candidateId = trace.EncounterStages is { } stages
+            ? AbilityPowerEncounterProjection.Current(world.Cards[bound], trace.Cast, stages)?.ObjectId ?? -1
+            : bound == boardVillain ? trace.CurrentVillain : bound;
+        if (candidateId < 0 || trace.Discarded.Contains(candidateId)) return null;
+        return TraceSelectorMatches(value, world.Cards[candidateId], trace) ? candidateId : null;
     }
 
     internal static bool TraceQueryMatches(
-        AbilityCardQuery query, Card candidate, int currentVillain, AbilityAdmissionScope cast,
-        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
-        Dictionary<(int Card, string Field), long> modifiers,
-        Dictionary<int, int> engagement)
+        AbilityCardQuery query, Card candidate, AbilitySelectorTraceContext trace)
     {
-        bool villain = candidate.ObjectId == currentVillain;
+        if (query == AbilityCardQuery.OtherVillainSideSchemes)
+            return AbilityOtherVillainSchemeQuery.InTrace(trace).Contains(candidate);
+        if (query == AbilityCardQuery.VillainOfAttachedScheme)
+            return AbilityAttachedSchemeVillainQuery.InTrace(trace).Contains(candidate);
+        if (query == AbilityCardQuery.ActiveVillainSideScheme)
+            return AbilityActiveSchemeQuery.InTrace(trace).Contains(candidate);
+        if (AbilityEncounterSchemeQueries.IsRanked(query))
+            return AbilityEncounterSchemeQueries.InTrace(query, trace).Contains(candidate);
+        var cast = trace.Cast;
+        var discarded = trace.Discarded;
+        var modifiers = trace.Modifiers;
+        var engagement = trace.Engagement;
+        bool villain = trace.EncounterStages is { } stages
+            ? stages.Values.Contains(candidate.ObjectId) : candidate.ObjectId == trace.CurrentVillain;
         var kind = EffectiveCards.Kind(candidate, cast.World.Facts);
         return query switch
         {
-            AbilityCardQuery.Villain => villain,
+            AbilityCardQuery.Villain => candidate.ObjectId == trace.CurrentVillain,
+            AbilityCardQuery.Villains => villain,
             AbilityCardQuery.Enemies => villain
                 || kind == CardKind.Minion,
             AbilityCardQuery.Minions => kind == CardKind.Minion,
             AbilityCardQuery.Characters => IsCharacter(villain, kind),
             AbilityCardQuery.AttackableEnemies => IsAttackableEnemy(
-                villain, kind, candidate, cast, discarded, modifiers, engagement),
+                villain, kind, candidate, trace),
             AbilityCardQuery.MinionsEngagedWithYou => IsEngagedMinion(
                 kind, candidate, cast.Player, engagement),
             AbilityCardQuery.EnemiesEngagedWithChosenPlayer =>
@@ -148,12 +165,11 @@ internal static class AbilityRepeatedSelectorTrace
         villain || kind is CardKind.Minion or CardKind.Hero or CardKind.AlterEgo or CardKind.Ally;
 
     private static bool IsAttackableEnemy(
-        bool villain, CardKind kind, Card candidate, AbilityAdmissionScope cast,
-        HashSet<int> discarded, Dictionary<(int Card, string Field), long> modifiers,
-        Dictionary<int, int> engagement) =>
+        bool villain, CardKind kind, Card candidate, AbilitySelectorTraceContext trace) =>
         villain
-            ? VillainIsAttackableInTrace(cast, candidate, discarded, modifiers, engagement)
-            : kind == CardKind.Minion && AbilityDamageProtectionTrace.CanTakeDamageInTrace(cast, candidate, discarded);
+            ? VillainIsAttackableInTrace(trace, candidate)
+            : kind == CardKind.Minion && AbilityDamageProtectionTrace.CanTakeDamageInTrace(
+                trace.Cast, candidate, trace.Discarded);
 
     private static bool IsEngagedMinion(
         CardKind kind, Card candidate, int player, Dictionary<int, int> engagement) =>
@@ -189,10 +205,12 @@ internal static class AbilityRepeatedSelectorTrace
             : card.Area.PlayArea.Player;
 
     internal static bool VillainIsAttackableInTrace(
-        AbilityAdmissionScope cast, Card current, HashSet<int> discarded,
-        Dictionary<(int Card, string Field), long> modifiers,
-        Dictionary<int, int> engagement)
+        AbilitySelectorTraceContext trace, Card current)
     {
+        var cast = trace.Cast;
+        var discarded = trace.Discarded;
+        var modifiers = trace.Modifiers;
+        var engagement = trace.Engagement;
         int player = Resolver(cast);
         bool guarded = cast.World
             .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player))
@@ -206,8 +224,22 @@ internal static class AbilityRepeatedSelectorTrace
                 && TraceModified(
                     cast.World.Cards[pair.Key], "guard",
                     cast, discarded, modifiers) > 0);
-        return !guarded && AbilityDamageProtectionTrace.CanTakeDamageInTrace(cast, current, discarded);
+        return !guarded && VillainAttackRestrictions.Allows(current, RestrictingVillains(trace))
+            && AbilityDamageProtectionTrace.CanTakeDamageInTrace(cast, current, discarded);
     }
 
+    private static IEnumerable<Card> RestrictingVillains(AbilitySelectorTraceContext trace)
+    {
+        var cast = trace.Cast;
+        // Snapshot candidates before evaluating modifiers; projected successors
+        // remain in the live villain deck until the proposed effect executes.
+        var candidates = trace.EncounterStages is { } stages
+            ? stages.Values.Where(id => id >= 0).Order().Select(id => cast.World.Cards[id]).ToArray()
+            : cast.World.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type)
+                && CardKinds.IsVillain(EffectiveCards.Kind(card, cast.World.Facts))).ToArray();
+        return candidates.Where(card => !trace.Discarded.Contains(card.ObjectId)
+            && TraceModified(card, VillainAttackRestrictions.OtherVillains,
+                cast, trace.Discarded, trace.Modifiers) > 0);
+    }
 
 }

@@ -31,33 +31,6 @@ internal static class AbilityAdmission
         Full,
     }
 
-    internal static AbilityAdmissionResult Admit(
-        AbilityEffect effect, AbilityAdmissionContext context)
-    {
-        var evidence = new HashSet<AbilityEffect>(ReferenceEqualityComparer.Instance);
-        var scope = new AbilityAdmissionScope(
-            context.WithReachability(context.Reachability with { CheckingInitiation = true }),
-            evidence);
-        bool admissible = CanInitiate(effect, scope)
-            && TargetLegalityOf(effect, scope) != TargetLegality.Invalid;
-        return new AbilityAdmissionResult(
-            admissible,
-            ImmutableHashSet.CreateRange<AbilityEffect>(
-                ReferenceEqualityComparer.Instance, evidence));
-    }
-
-    internal static AbilityAdmissionResult AdmitStructure(
-        AbilityEffect effect, AbilityAdmissionContext context)
-    {
-        var evidence = new HashSet<AbilityEffect>(ReferenceEqualityComparer.Instance);
-        bool admissible = CanInitiate(
-            effect, new AbilityAdmissionScope(context, evidence));
-        return new AbilityAdmissionResult(
-            admissible,
-            ImmutableHashSet.CreateRange<AbilityEffect>(
-                ReferenceEqualityComparer.Instance, evidence));
-    }
-
     internal static bool TargetsAreValid(
         AbilityEffect effect, AbilityAdmissionContext context) =>
         TargetLegalityOf(effect, new AbilityAdmissionScope(context, []))
@@ -92,7 +65,8 @@ internal static class AbilityAdmission
         {
             var candidate = scope.ForReachability(scope.Reachability);
             candidate.ChooseSelection(card);
-            if (TargetLegalityOf(EffectBody(choice), candidate) != TargetLegality.Invalid)
+            if (AbilityConditionalCardChoice.HasEffect(EffectBody(choice), candidate)
+                && TargetLegalityOf(EffectBody(choice), candidate) != TargetLegality.Invalid)
             {
                 legal.Add(card);
             }
@@ -184,40 +158,8 @@ internal static class AbilityAdmission
         }
     }
 
-    /// <summary>Target existence for leaf options without a dedicated partial-resolution check.</summary>
-    internal static bool HasPartialResolutionTargets(AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
-    {
-        "reveal" or "returnToHand" =>
-            Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Count > 0,
-        "soakDamage" or "attachTo" or "discard" =>
-            Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is not null,
-        "giveStatus" => StatusTargets(node, cast).Count > 0,
-        "declareDefender" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } declared
-            && Attack.CanDeclareByAbility(
-                cast.World, cast.World.Facts, declared,
-                ReplaceableDefenseDefender(cast)),
-        "grantUntil" => Find(GrantSelectionOf(node, cast), cast) is not null,
-        "dealEncounterCard" => Find(EffectOf<AbilityEffect.DealEncounterCard>(node, cast).Card, cast) is not null,
-        "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) <= 0
-            || Assignable(DamageSelectionOf(node, cast), cast).Count > 0,
-        "dealDamage" or "dealAttackDamage" => DamageTargets(DamageSelectionOf(node, cast), cast).Count > 0,
-        "placeThreat" => Every(ThreatSelectionOf(node, cast), cast).Count > 0,
-        "placeAccelerationToken" => cast.World.TheCardIn(DeckType.MainSchemesArea) is not null,
-        "enemyAttacks" or "enemySchemes" => Every(ActivationOf(node, cast).Enemies, cast).Count > 0,
-        "putIntoPlay" => AbilityAllyEntry.HasTarget(EffectOf<AbilityEffect.PutIntoPlay>(node, cast), cast),
-        "placeAtRandom" => Find(EffectOf<AbilityEffect.PlaceAtRandom>(node, cast).Host, cast) is not null,
-        "search" => HasSearchableArea(node, cast),
-
-        // The delayed effect's game element comes from its future occurrence;
-        // rr:target.5 requires no target at initiation.
-        "delayUntil" => true,
-        "generate" or "preventDamage" or "cancelWhenRevealed" or "cancelOccurrence"
-            or "dealEncounterCards" or "revealTop" or "discardUntil"
-            or "recoverDiscardedByResource" or "shuffleInto" or "shuffle" => true,
-        _ => throw new RulesNotImplementedException(
-            $"'{cast.Source.FaceId}' uses '{node.OperationName()}' in an option whose target "
-            + "legality is not implemented"),
-    };
+    internal static bool HasPartialResolutionTargets(AbilityEffect node, AbilityAdmissionScope cast) =>
+        AbilityLeafTargetAvailability.HasTargets(node, cast);
 
     /// <summary>Whether every choice required to initiate this effect has an answer.</summary>
     internal static bool CanInitiate(AbilityEffect node, AbilityAdmissionScope cast)
@@ -277,125 +219,8 @@ internal static class AbilityAdmission
         }
         return CanInitiate(steps[step], scope)
             && (step + 1 == steps.Count
-                || ChoicesHaveStableAreaContinuation(
+                || AbilityChoiceStability.ChoicesHaveStableAreaContinuation(
                     steps[step], steps.Skip(step + 1).ToList(), scope));
-    }
-
-    internal static bool ChoicesHaveStableAreaContinuation(
-        AbilityEffect effect, IReadOnlyList<AbilityEffect> suffix, AbilityAdmissionScope cast)
-    {
-        var sensitiveAreas = new HashSet<DeckType>();
-        foreach (var step in suffix)
-        {
-            AbilityAdmissionAreaDependencies.Collect(
-                step, cast.Context, sensitiveAreas);
-        }
-        if (sensitiveAreas.Count == 0)
-        {
-            return true;
-        }
-
-        return ChoicesAreStable(effect, sensitiveAreas, cast);
-    }
-
-    internal static bool ChoicesAreStable(
-        AbilityEffect effect, HashSet<DeckType> sensitiveAreas, AbilityAdmissionScope cast)
-    {
-        if (effect.OperationName() == "seq")
-        {
-            return SequenceChoicesAreStable(effect, sensitiveAreas, cast);
-        }
-
-        var priorChosen = cast.CaptureChosen();
-        var priorSelection = cast.CapturePlayerSelection();
-        try
-        {
-            return ChoicesAreStableByOperation(effect, sensitiveAreas, cast);
-        }
-        finally
-        {
-            cast.RestoreChosen(priorChosen);
-            cast.RestorePlayerSelection(priorSelection);
-        }
-    }
-
-    private static bool SequenceChoicesAreStable(
-        AbilityEffect effect, HashSet<DeckType> sensitiveAreas, AbilityAdmissionScope cast)
-    {
-        var steps = OrderedEffects(effect).ToList();
-        for (int step = 0; step < steps.Count; step++)
-        {
-            var after = new HashSet<DeckType>(sensitiveAreas);
-            foreach (var later in steps.Skip(step + 1))
-            {
-                AbilityAdmissionAreaDependencies.Collect(later, cast.Context, after);
-            }
-            if (!ChoicesAreStable(steps[step], after, cast))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static bool ChoicesAreStableByOperation(
-        AbilityEffect effect, HashSet<DeckType> sensitiveAreas, AbilityAdmissionScope cast) =>
-        effect.OperationName() switch
-        {
-            "choose" => ChoiceOptionsAreStable(effect, sensitiveAreas, cast),
-            "chooseCard" => CardChoicesAreStable(effect, sensitiveAreas, cast),
-            "forEach" when CurrentlyZeroForEach(effect, cast) => true,
-            "eachPlayer" => EachPlayerChoicesAreStable(effect, sensitiveAreas, cast),
-            _ => ChildChoicesAreStable(effect, sensitiveAreas, cast),
-        };
-
-    private static bool ChoiceOptionsAreStable(
-        AbilityEffect effect, HashSet<DeckType> sensitiveAreas, AbilityAdmissionScope cast) =>
-        ((AbilityEffect.Choose)effect).Options.Any(option =>
-            OptionIsLegal(option, cast)
-            && !MayChangeAnyArea(option, sensitiveAreas, cast)
-            && ChoicesAreStable(option, sensitiveAreas, cast));
-
-    private static bool CardChoicesAreStable(
-        AbilityEffect effect, HashSet<DeckType> sensitiveAreas, AbilityAdmissionScope cast)
-    {
-        var chosenEffect = EffectBody(effect);
-        return LegalCardChoices(effect, cast).Any(candidate =>
-        {
-            cast.ChooseSelection(candidate);
-            return !MayChangeAnyArea(chosenEffect, sensitiveAreas, cast)
-                && ChoicesAreStable(chosenEffect, sensitiveAreas, cast);
-        });
-    }
-
-    private static bool EachPlayerChoicesAreStable(
-        AbilityEffect effect, HashSet<DeckType> sensitiveAreas, AbilityAdmissionScope cast)
-    {
-        int priorPlayer = cast.Player;
-        try
-        {
-            return AbilityEachPlayerSelection.Players(effect, cast.Context.Expressions).All(player =>
-            {
-                cast.RestorePlayer(player);
-                return ChoicesAreStable(EffectBody(effect), sensitiveAreas, cast);
-            });
-        }
-        finally
-        {
-            cast.RestorePlayer(priorPlayer);
-        }
-    }
-
-    private static bool ChildChoicesAreStable(
-        AbilityEffect effect, HashSet<DeckType> sensitiveAreas, AbilityAdmissionScope cast)
-    {
-        var children = effect.OperationName() switch
-        {
-            "if" => ReachableMutationBranches(effect, cast),
-            "forEach" => [EffectBody(effect)],
-            _ => ResolutionChildren(effect),
-        };
-        return children.All(child => ChoicesAreStable(child, sensitiveAreas, cast));
     }
 
     private sealed class SequenceAdmissionState

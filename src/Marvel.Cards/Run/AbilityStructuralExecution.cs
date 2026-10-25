@@ -22,14 +22,14 @@ internal static class AbilityStructuralExecution
             "seq" or "and" or "then" or "otherwise" or "eachPlayer" or "if"
             or "forEach" or "eachTime" or "choose" or "chooseCard"
             or "resolveSpecials" or "payOrExhaust" or "payOrEffect"
-            or "chooseTopForHand" or "peekTop" or "discardResourceIcons" or "chooseDiscardToShuffle"
+            or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "discardHandCards" or "discardResourceIcons" or "chooseDiscardToShuffle"
             or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall" or "legalPractice"
             or "attack" or "defense" or "thwart" or "thwartSchemes"
             or "placeThreat" or "enemyAttacks" or "enemySchemes");
 
     internal static AbilityStructuralTransition Decide(AbilityStructuralContext context, AbilityEffect effect)
     {
-        if (effect.OperationName() is "makeTheCall" or "legalPractice" or "peekTop")
+        if (effect.OperationName() is "makeTheCall" or "legalPractice" or "peekTop" or "inspectEncounterTop")
             return AskFor(context, effect);
         return effect switch
         {
@@ -48,6 +48,8 @@ internal static class AbilityStructuralExecution
                 AbilityPaymentChoiceDescription.Describe(context, payment).Affordances.Count == 0
                     ? new Complete(context.Frames) : AskFor(context, payment),
             AbilityEffect.ChooseTopForHand top => ChooseTopForHand(context, top),
+            AbilityEffect.DiscardHandCards discard => AbilitySelectedHandDiscard.Count(context, discard) > 0
+                ? AskFor(context, discard) : new Complete(context.Frames),
             AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.HasCards(context)
                 ? AskFor(context, discard) : new Complete(context.Frames),
             AbilityEffect.ChooseDiscardToShuffle discard => AskFor(context, discard),
@@ -57,6 +59,8 @@ internal static class AbilityStructuralExecution
             AbilityEffect.ActivateEnemies activation => Activation(context, activation),
             AbilityEffect.Power { Kind: AbilityPowerKind.Defense } defense =>
                 new RunDefenseCommand(defense),
+            AbilityEffect.Power { TargetCount: not null } counted =>
+                AbilityCountedAttackSelection.Start(context, counted),
             AbilityEffect.Power power => Power(context, power),
             AbilityEffect.ThwartGroup { Selection: AbilityThwartSelection.All } group =>
                 ThwartAll(context, group),
@@ -127,6 +131,7 @@ internal static class AbilityStructuralExecution
             AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ResolveSpecials } specials =>
                 AbilitySpecialSequence.Describe(context, specials),
             AbilityEffect.ChooseTopForHand top => DescribeTopForHand(context, top),
+            AbilityEffect.DiscardHandCards discard => AbilitySelectedHandDiscard.Describe(context, discard),
             AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.Describe(context, discard),
             AbilityEffect.ChooseDiscardToShuffle discard => DescribeDiscardShuffle(context, discard),
             _ => throw new InvalidOperationException($"'{context.SourceFace}' has no special prompt for '{choice.OperationName()}'"),
@@ -138,6 +143,7 @@ internal static class AbilityStructuralExecution
             AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ResolveSpecials } specials =>
                 AbilitySpecialSequence.Answer(context, specials, answer),
             AbilityEffect.ChooseTopForHand top => AnswerTopForHand(context, top, answer),
+            AbilityEffect.DiscardHandCards discard => AbilitySelectedHandDiscard.Answer(context, discard, answer),
             AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.Answer(context, discard, answer),
             AbilityEffect.ChooseDiscardToShuffle discard => AnswerDiscardShuffle(context, discard, answer),
             _ => new Unsupported($"'{context.SourceFace}' has no special answer for '{choice.OperationName()}'"),

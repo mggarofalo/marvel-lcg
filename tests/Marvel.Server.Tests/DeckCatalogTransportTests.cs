@@ -22,7 +22,7 @@ public sealed class DeckCatalogTransportTests : TransportTestBase
         Assert.Null(response.World);
         Assert.Null(response.Capability);
         var catalog = response.Decks!.Catalog!;
-        Assert.Equal(["spider_man", "captain_marvel", "she_hulk", "iron_man", "black_panther", "hawkeye", "spider_woman"],
+        Assert.Equal(["captain_america", "spider_man", "captain_marvel", "she_hulk", "iron_man", "black_panther", "hawkeye", "spider_woman"],
             catalog.Heroes.Select(hero => hero.Key));
         var kick = Assert.Single(catalog.Cards, card => card.Face == "01005");
         Assert.Equal("3", kick.Cost);
@@ -97,7 +97,8 @@ public sealed class DeckCatalogTransportTests : TransportTestBase
         Assert.Equal([0, 1], quantities["01088"]);
         Assert.Equal([0, 1, 2, 3], quantities["01087"]);
         Assert.All(hero.Signature, face => Assert.False(quantities.ContainsKey(face)));
-        Assert.False(quantities.ContainsKey("03001a"));
+        Assert.Equal([0], quantities["03001a"]);
+        Assert.False(quantities.ContainsKey("05001a"));
     }
 
     [Fact]

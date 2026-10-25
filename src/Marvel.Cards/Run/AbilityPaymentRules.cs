@@ -29,6 +29,8 @@ internal static class AbilityPaymentRules
         {
             null => true,
             AbilityCost.ReturnSourceToHand => AbilityPhysicalPayment.CanReturnToHand(world, card),
+            AbilityCost.ReturnTitledToHand named => NamedAbilityCost.Target(world, player, named.Title) is { } returning
+                && AbilityPhysicalPayment.CanReturnToHand(world, returning),
             AbilityCost.DiscardTop discard => AbilityDeckCosts.CanDiscard(world, player, discard),
             AbilityCost.DealEncounterToYou => player >= 0 && AbilityDeckCosts.EncounterAvailable(world) > 0,
             AbilityCost.Sequence sequence => SequencePayable(
@@ -76,7 +78,8 @@ internal static class AbilityPaymentRules
             // discard can be: the card is the cost and what it would have
             // generated is not read at all. So the question is a count and not
             // a sum, and a card with no printed `RES` pays it.
-            AbilityCost.DiscardFromHand discard => world.Seats[player].Hand.Cards.Count
+            AbilityCost.RandomDiscardFromHand random => AbilityRandomHandCost.CanPay(world, card, player, random),
+            AbilityCost.DiscardFromHand discard => AbilityCostSelection.HandCandidates(world, card, player).Count
                 >= AbilityCostSelection.Range(discard.Range, int.MaxValue).Min,
             AbilityCost.ExhaustChosen exhaust => AbilityCostSelection.Choices(world, player, exhaust)
                 .Count(card => card.Ready) >= AbilityCostSelection.Range(exhaust.Range, int.MaxValue).Min,
@@ -108,7 +111,8 @@ internal static class AbilityPaymentRules
     {
         AbilityCost.DiscardTop or AbilityCost.DealEncounterToYou => true,
         AbilityCost.Sequence sequence => sequence.Costs.All(MandatoryCostIsAutomatic),
-        AbilityCost.ReturnSourceToHand or AbilityCost.ConsumeCampaignCard or AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.ExhaustTitled or AbilityCost.RemoveCounters => true,
+        AbilityCost.ReturnSourceToHand or AbilityCost.ReturnTitledToHand or AbilityCost.ConsumeCampaignCard
+            or AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.ExhaustTitled or AbilityCost.RemoveCounters => true,
         _ => false,
     };
 
@@ -117,8 +121,7 @@ internal static class AbilityPaymentRules
         AbilityProgram program, IResourceCardAbilities resourceAbilities)
     {
         var steps = cost.Costs;
-        if (!CounterCostsPayable(world, card, player, cost)
-            || !AbilityDeckCosts.CanPayTogether(world, player, cost.Costs))
+        if (!PhysicalCostsPayable(world, card, player, cost))
         {
             return false;
         }
@@ -160,6 +163,11 @@ internal static class AbilityPaymentRules
             .All(step => Payable(
                 world, card, player, step, program, resourceAbilities));
     }
+
+    private static bool PhysicalCostsPayable(World world, Card card, int player, AbilityCost.Sequence cost) =>
+        AbilityRandomHandCost.CanPayTogether(world, card, player, cost.Costs)
+        && CounterCostsPayable(world, card, player, cost)
+        && AbilityDeckCosts.CanPayTogether(world, player, cost.Costs);
 
     internal static bool CounterCostsPayable(
         World world, Card card, int player, AbilityCost? cost)
@@ -229,7 +237,7 @@ internal static class AbilityPaymentRules
 
     internal static bool EventPayable(
         World world, Card card, int player, CompiledCardAbility ability,
-        IResourceCardAbilities resourceAbilities)
+        IResourceCardAbilities resourceAbilities, IReadOnlyList<int>? discarded = null, int? discardCount = null)
     {
         if (EffectiveCards.Kind(card, world.Facts) != CardKind.Event)
         {
@@ -247,10 +255,12 @@ internal static class AbilityPaymentRules
             + ResourceRequirement(ability.Cost, card);
         cost += required.Length
             - Resources.Required(world, card, world.Facts).Length + GenericResourceAmount(ability.Cost);
-        string pool = string.Concat(AbilityPaymentPricing.EventGenerators(
-                world, card, player, ability.Effect, resourceAbilities)
-            .SelectMany(source => source.Generates));
-        return Resources.Pays(pool, cost, required);
+        var generators = AbilityPaymentPricing.EventGenerators(world, card, player, ability.Effect, resourceAbilities);
+        if (discarded is not null)
+            return Resources.Pays(new string([.. generators
+                .Where(source => !discarded.Contains(source.Effect)).SelectMany(source => source.Generates)]), cost, required);
+        return AbilityHandDiscardAvailability.CanPay(ability.Cost,
+            AbilityCostSelection.HandCandidates(world, card, player), generators, cost, required, discardCount);
     }
 
     internal static int GenericResourceAmount(AbilityCost? cost) => cost switch

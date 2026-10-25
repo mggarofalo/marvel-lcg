@@ -2,6 +2,12 @@
   "schema": 1,
   "description": "One cross-platform native membership. Completion markers assert the named script contract; they do not certify product acceptance.",
   "fixtures": {
+    "encounter-groups": {
+      "environment": "MARVEL_GROUP_FIXTURE",
+      "testFilter": "FullyQualifiedName~EncounterGroupFixtureTests",
+      "file": "encounter-groups.json",
+      "timeoutSeconds": 120
+    },
     "raid-order": {
       "environment": "MARVEL_RAID_ORDER_FIXTURE",
       "testFilter": "FullyQualifiedName~RaidOrderingFixtureTests",
@@ -46,6 +52,13 @@
     }
   },
   "cases": [
+    {"id":"wave-custom-selector-100","script":"res://smoke/automation/wave_custom_selector.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"disabled","viewport":"1920x1080","players":1,"timeoutSeconds":120,"markers":["UI_ACCEPTANCE_OK wave_custom_selector"],"evidenceKind":"live-session"},
+    {"id":"wave-native-playable-100","script":"res://smoke/automation/wave_native_playable.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"disabled","viewport":"1920x1080","players":1,"timeoutSeconds":120,"markers":["UI_ACCEPTANCE_OK wave_native_playable"],"evidenceKind":"live-session"},
+    {"id":"scenario-setup-controls-100","script":"res://smoke/scenario_setup_controls_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"enabled","viewport":"1920x1080","players":4,"timeoutSeconds":120,"markers":["PASS: 19 authored scenario recipes, all custom versions, four distinct seats, modular isolation"],"evidenceKind":"synthetic-component"},
+    {"id":"encounter-groups-100","script":"res://smoke/encounter_groups_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["WRECKING_LAYOUT_CONTRACT_OK"],"fixture":"encounter-groups","arguments":["{fixture}"],"evidenceKind":"synthetic-component"},
+    {"id":"encounter-groups-extreme-100","script":"res://smoke/encounter_groups_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["WRECKING_LAYOUT_CONTRACT_OK"],"fixture":"encounter-groups","arguments":["{fixture}","--extreme"],"evidenceKind":"synthetic-component"},
+    {"id":"encounter-groups-150","script":"res://smoke/encounter_groups_smoke.gd","profiles":["representative","exhaustive"],"scale":150,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["WRECKING_LAYOUT_CONTRACT_OK"],"fixture":"encounter-groups","arguments":["{fixture}"],"evidenceKind":"synthetic-component"},
+    {"id":"encounter-groups-extreme-150","script":"res://smoke/encounter_groups_smoke.gd","profiles":["representative","exhaustive"],"scale":150,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["WRECKING_LAYOUT_CONTRACT_OK"],"fixture":"encounter-groups","arguments":["{fixture}","--extreme"],"evidenceKind":"synthetic-component"},
     {"id":"raid-dialog-80","script":"res://smoke/decision_dialog_smoke.gd","profiles":["representative","exhaustive"],"scale":80,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["DECISION_DIALOG_OK"],"fixture":"raid-order","arguments":["{fixture}"],"evidenceKind":"synthetic-component"},
     {"id":"raid-dialog-100","script":"res://smoke/decision_dialog_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["DECISION_DIALOG_OK"],"fixture":"raid-order","arguments":["{fixture}"],"evidenceKind":"synthetic-component"},
     {"id":"raid-dialog-150","script":"res://smoke/decision_dialog_smoke.gd","profiles":["representative","exhaustive"],"scale":150,"motion":"enabled","viewport":"1920x1080","players":1,"timeoutSeconds":90,"markers":["DECISION_DIALOG_OK"],"fixture":"raid-order","arguments":["{fixture}"],"evidenceKind":"synthetic-component"},

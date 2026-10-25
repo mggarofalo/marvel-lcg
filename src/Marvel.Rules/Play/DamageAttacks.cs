@@ -153,7 +153,8 @@ public static class DamageAttacks
     /// <param name="attacker">Who attacked them.</param>
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="events">Where to record what happened.</param>
-    public static void Retaliate(
+    /// <returns>The damage execution, or null when the attacked character is absent.</returns>
+    public static DamageResult? Retaliate(
         World world, ICardFacts facts, Card attacked, Card attacker,
         string trigger, List<GameEvent> events)
     {
@@ -169,7 +170,7 @@ public static class DamageAttacks
         // now represented by the next stage.
         if (!DeckTypes.IsInPlay(attacked.Area.Type)
             && CardKinds.IsVillain(EffectiveCards.Kind(attacked, facts))
-            && world.TheCardIn(DeckType.VillainArea) is { } next
+            && CurrentStage(world, attacked) is { } next
             && string.Equals(
                 facts.Title(attacked.FaceId), facts.Title(next.FaceId),
                 StringComparison.Ordinal))
@@ -179,13 +180,18 @@ public static class DamageAttacks
 
         if (!DeckTypes.IsInPlay(attacked.Area.Type))
         {
-            return;
+            return null;
         }
 
         long retaliate = StateFields.Modified(
             world, attacked, "retaliate", facts, world.Players);
 
-        DamagePlacement.Resolve(world, facts,
+        return DamagePlacement.Resolve(world, facts,
             new(attacked, attacker, retaliate, trigger, "Retaliate"), events);
     }
+    private static Card? CurrentStage(World world, Card prior) =>
+        world.EncounterTopology is { } topology
+            ? topology.Groups.Single(group => group.Stages.Contains(prior)).CurrentVillain
+            : world.TheCardIn(DeckType.VillainArea);
+
 }

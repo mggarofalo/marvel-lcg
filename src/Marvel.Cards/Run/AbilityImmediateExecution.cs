@@ -18,6 +18,7 @@ internal static class AbilityImmediateExecution
                 RunIdentityEffect(effect, context),
             AbilityEffect.Draw or AbilityEffect.DrawToHandSize or AbilityEffect.GainSurge =>
                 RunPlayerEffect(effect, context),
+            AbilityEffect.GrantTraitCharacters grant => AbilityTraitGroupExecution.Run(grant, context),
             AbilityEffect.GrantControlledCharacters or AbilityEffect.ReduceNextCardCost
                 or AbilityEffect.GrantField or AbilityEffect.GrantTrait =>
                 RunGrantEffect(effect, context),
@@ -69,14 +70,14 @@ internal static class AbilityImmediateExecution
                     context.Trigger, context.Events);
                 return new(true, false);
             case AbilityCardInstruction.DeclareDefender:
-                Attack.DeclareByAbility(
+                bool scheduled = Attack.DeclareByAbility(
                     world, world.Facts,
                     context.Admission.Selectors().Find(action.Selection)
                         ?? throw new RulesNotImplementedException(
                             $"'{source.FaceId}' cannot find the character it declares as defender"),
                     checked((int)context.Admission.Expressions.Results
                         .GetValueOrDefault("defenseAbilityDefender", -1)));
-                return new(true, true);
+                return new(true, true) { ProcedureScheduled = scheduled };
             default:
                 return new(false, false);
         }

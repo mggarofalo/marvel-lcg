@@ -58,16 +58,16 @@ internal static class AbilityTargetAdmission
         {
             return StructuralTargetLegality(node, cast, bindingMayChange);
         }
-        if (operation is "removeFromGame" or "reveal" or "returnToHand"
+        if (operation is "removeFromGame" or "revealFromVillainDeck" or "reveal" or "returnToHand"
             or "returnOwnedToHand" or "addToHand"
-            or "exhaust" or "ready" or "giveStatus" or "declareDefender"
+            or "exhaust" or "ready" or "moveActiveCounter" or "giveStatus" or "declareDefender"
             or "attachTo" or "grantUntil" or "discard")
         {
             return AbilityCardActionTargetAdmission.Of(node, cast);
         }
-        if (operation is "dealEncounterCard" or "heal" or "dealDamage"
+        if (operation is "dealEncounterCard" or "heal" or "setHitPoints" or "dealDamage"
             or "dealAttackDamage" or "indirectDamage" or "placeThreat"
-            or "removeThreat" or "moveDamage" or "moveAttackDamage")
+            or "removeThreat" or "moveThreat" or "moveDamage" or "moveAttackDamage")
         {
             return DamageAndThreatTargetLegality(node, cast);
         }

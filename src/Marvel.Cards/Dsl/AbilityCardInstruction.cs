@@ -36,8 +36,14 @@ public enum AbilityCardInstruction
     ResolveSpecials,
     /// <summary>Prohibit threat removal from the selected scheme.</summary>
     PreventThreatRemoval,
+    /// <summary>Prohibit removal from the selected scheme by thwarting.</summary>
+    PreventThwarting,
     /// <summary>Prohibit readying the selected card.</summary>
     PreventReady,
     /// <summary>Declare the selected character as defender.</summary>
     DeclareDefender,
+    /// <summary>Move the active villain counter to a different living villain.</summary>
+    MoveActiveCounter,
+    /// <summary>Reveal the top card of the selected living villain's paired encounter deck.</summary>
+    RevealFromVillainDeck,
 }

@@ -45,7 +45,9 @@ internal static class AbilityProjectedDefeat
                 or CardKind.EncounterSideScheme;
         }
         var villainDeck = context.World.AreaOf(DeckType.VillainDeck).Cards;
-        var next = villainDeck.Count > 0 ? villainDeck[^1] : null;
+        var next = context.World.EncounterTopology is null
+            ? villainDeck.Count > 0 ? villainDeck[^1] : null
+            : AbilityAreaEncounterProjection.Next(context.World, root);
         return next is null || !string.Equals(
             context.World.Facts.Title(root.FaceId),
             context.World.Facts.Title(next.FaceId),

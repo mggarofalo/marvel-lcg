@@ -65,7 +65,7 @@ public static class BasicPowerResolution
                 new ThreatRemovalRequest(world.Cards[thwart.Scheme],
                     thwart.Amount, thwart.Trigger, ThwartVerb,
                     LabeledAbilities.IdentityPlayer(world, world.Cards[thwart.Thwarter]))
-                    { ResponsiblePlayer = thwart.Player }, events);
+                    { ResponsiblePlayer = thwart.Player, ByThwarting = true }, events);
             return;
         }
 
@@ -131,11 +131,17 @@ public static class BasicPowerResolution
             ? attack.Amount
             : StateFields.Modified(world, attacker, "attack", facts, world.Players);
 
+        var target = world.Cards[attack.Enemy];
+        occurrence.Retaliation = new(attacker.ObjectId, attacker.Incarnation,
+            AttackKeywords.Has(world, attacker, source, Keywords.Ranged,
+                basic: attack.Amount < 0 && attack.Source < 0),
+            [new(Attacked.Capture(target, facts), target.Area.Id)], attack.Trigger);
+
         ContinuousEffect? temporaryOverkill = RegisterOverkill(world, attack, source, attacker);
         amount = MoveDamage(world, facts, attack, source, amount, events);
 
         DamageAttacks.Resolve(world, facts,
-            new AttackDamageRequest(attacker, source, world.Cards[attack.Enemy], amount, attack.Trigger, AttackVerb)
+            new AttackDamageRequest(attacker, source, world.Cards[attack.Enemy], amount, attack.Trigger, AttackVerb, Retaliate: false)
             { Basic = attack.Amount < 0 && attack.Source < 0 }, events);
 
         if (temporaryOverkill is not null)

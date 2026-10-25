@@ -6,6 +6,7 @@ func _run() -> void:
 	if not await _choose_setup_upgrade(): return
 	if not await _reach_android_boost(): return
 	if not await _choose_android_consequence(): return
+	if not await _resolve_attack_response_order(): return
 	if not await _engage_post_attack_drone(): return
 	for _frame in 3: await process_frame
 	if not await _choose_one_minion(): return

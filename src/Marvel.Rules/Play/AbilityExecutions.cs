@@ -154,6 +154,8 @@ public sealed class AbilityExecutions
         if (permit.Dependencies.Any(invocation.Frames.Contains)
             || invocation.Children.Any(child => !child.IsComplete && !child.DeferredActivation))
             throw new InvalidOperationException($"the continuation has unfinished child work: {string.Join(", ", agenda.items.Where(item => permit.Dependencies.Contains(item.Step.FrameId)).Select(item => item.Step.What + "#" + item.Step.FrameId))}");
+        invocation.ResponseBoundary?.RequireFinished(agenda, current.Value);
+        invocation.ResponseBoundary = null;
         permit.Consumed = true;
         invocation.Frames.Remove(permit.Frame);
         invocation.SegmentOwnerFrame = current.Value.FrameId;
@@ -210,6 +212,7 @@ public sealed class AbilityExecutions
     {
         if (invocation.DeferredActivation) return;
         var owned = AbilityOwnedWork.Segment(invocation);
+        if (invocation.ResponseBoundary is { } boundary) owned.Remove(boundary.Continuation);
         var children = agenda.items.Where(item => owned.Contains(item.Step.FrameId)).ToList();
         if (children.Count == 0) return;
         int first = agenda.items.FindIndex(item => owned.Contains(item.Step.FrameId));
@@ -263,7 +266,7 @@ public sealed class AbilityExecutions
     {
         if (!invocation.ReadyToComplete) return;
         invocation.State = AbilityExecutionState.Complete;
-        if (invocation.Resolution is { } ability) invocation.Occurrence.Complete(ability);
+        if (invocation.Resolution is { } ability) invocation.Occurrence.Resolution.Complete(ability);
         invocations.Remove(invocation);
         if (invocation.Parent is { } parent)
         {

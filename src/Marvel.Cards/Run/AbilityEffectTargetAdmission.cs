@@ -53,7 +53,8 @@ internal static class AbilityEffectTargetAdmission
         AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange) =>
         node.OperationName() switch
         {
-            "then" when ActiveChoices(EffectBody(node), cast).Any() =>
+            "then" when EffectBody(node) is AbilityEffect.ActivateEnemies { Dynamic: false }
+                || ActiveChoices(EffectBody(node), cast).Any() =>
                 TargetLegalityOf(
                     EffectBody(node), cast, bindingMayChange),
             "then" => ResolutionOf(EffectBody(node), cast)
@@ -67,6 +68,9 @@ internal static class AbilityEffectTargetAdmission
                     ])
                     : TargetLegalityOf(
                         EffectBody(node), cast, bindingMayChange),
+            "otherwise" when EffectBody(node) is AbilityEffect.ActivateEnemies { Dynamic: false } activation =>
+                TargetLegalityOf(ActivationCandidates(activation, cast).Count == 0
+                    ? EffectFollowing(node) : EffectBody(node), cast, bindingMayChange),
             "otherwise" when ActiveChoices(EffectBody(node), cast).Any() =>
                 TargetLegalityOf(
                     EffectBody(node), cast, bindingMayChange),
@@ -108,12 +112,15 @@ internal static class AbilityEffectTargetAdmission
         AbilityEffect node, AbilityAdmissionScope cast) =>
         node.OperationName() switch
         {
+            "moveThreat" => AbilityThreatMovementAdmission.CanMove((AbilityEffect.MoveThreat)node, cast)
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             "moveDamage" or "moveAttackDamage" => MoveDamageTargetLegality((AbilityEffect.MoveDamage)node, cast),
             "dealEncounterCard" => Find(EffectOf<AbilityEffect.DealEncounterCard>(node, cast).Card, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "heal" => Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { Damage: > 0 }
                 && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0
                     ? TargetLegality.Valid : TargetLegality.Invalid,
+            "setHitPoints" => AbilityHitPointAssignment.TargetLegalityOf(node, cast),
             "dealDamage" or "dealAttackDamage" =>
                 AbilityFutureDiscardAdmission.MayDealDamage(DamageAmountOf(node, cast), cast)
                     ? CardsLegality(DamageTargets(DamageSelectionOf(node, cast), cast))
@@ -124,11 +131,7 @@ internal static class AbilityEffectTargetAdmission
             "placeThreat" => Amount(EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount, cast) <= 0
                 ? TargetLegality.Invalid
                 : CardsLegality(Every(ThreatSelectionOf(node, cast), cast)),
-            "removeThreat" => Every(ThreatSelectionOf(node, cast), cast).Any(scheme =>
-                scheme.Tokens.GetValueOrDefault("k_threat") > 0
-                && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
-                && CanRemoveThreatFrom(node, cast, scheme))
-                ? TargetLegality.Valid : TargetLegality.Invalid,
+            "removeThreat" => RemoveThreatTargetLegality(node, cast),
             _ => throw new InvalidOperationException("Unknown damage or threat target operation"),
         };
 
@@ -136,6 +139,11 @@ internal static class AbilityEffectTargetAdmission
         AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange) =>
         node.OperationName() switch
         {
+            // rr:target.3.4: "at least one of those effects must be able to
+            // affect the target." Deferring resolution retains the bound target.
+            "afterActivation" => TargetLegalityOf(EffectBody(node), cast, bindingMayChange),
+            "removeStatuses" => AbilityStatusRemoval.Candidates((AbilityEffect.RemoveStatuses)node, cast).Count > 0
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             "enemyAttacks" or "enemySchemes" =>
                 CardsLegality(Every(ActivationOf(node, cast).Enemies, cast)),
             "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source)
@@ -154,10 +162,19 @@ internal static class AbilityEffectTargetAdmission
             "draw" => DrawTargetLegality((AbilityEffect.Draw)node, cast, bindingMayChange),
             "search" => HasSearchableArea(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
+            "grantCharactersWithTrait" => TraitGroupTargetLegality((AbilityEffect.GrantTraitCharacters)node, cast),
+            "inspectEncounterTop" => AbilityEncounterInspection.Cards(cast.World,
+                (AbilityEffect.InspectEncounterTop)node).Count > 0
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             "peekTop" => AbilityDeckPeek.Decks(cast.World).Count > 0
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             _ => TargetLegality.None,
         };
+
+    private static TargetLegality TraitGroupTargetLegality(
+        AbilityEffect.GrantTraitCharacters grant, AbilityAdmissionScope cast) =>
+        AbilityTraitGroupExecution.HasRecipients(grant, cast.World)
+            ? TargetLegality.Valid : TargetLegality.None;
 
     private static TargetLegality DrawTargetLegality(
         AbilityEffect.Draw draw, AbilityAdmissionScope cast, bool bindingMayChange)
@@ -169,6 +186,14 @@ internal static class AbilityEffectTargetAdmission
             return TargetLegality.Invalid;
         return AbilityRepeatedStatusTrace.CanDraw(draw, cast) ? TargetLegality.Valid : TargetLegality.Invalid;
     }
+
+    private static TargetLegality RemoveThreatTargetLegality(
+        AbilityEffect node, AbilityAdmissionScope cast) =>
+        Every(ThreatSelectionOf(node, cast), cast).Any(scheme =>
+            scheme.Tokens.GetValueOrDefault("k_threat") > 0
+            && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
+            && CanRemoveThreatFrom(node, cast, scheme))
+            ? TargetLegality.Valid : TargetLegality.Invalid;
 
     private static TargetLegality MoveDamageTargetLegality(
         AbilityEffect.MoveDamage move, AbilityAdmissionScope cast)

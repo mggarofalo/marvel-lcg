@@ -91,6 +91,7 @@ internal static class EventFieldPresentation
     {
         "is_exhaust" => set.To == 1 ? $"{subject} became exhausted." : $"{subject} became ready.",
         "is_completed" when set.To == 1 => $"{subject} was completed.",
+        "active_villain" => set.To == 1 ? $"{subject} became the active villain." : $"{subject} is no longer the active villain.",
         _ => null,
     };
 

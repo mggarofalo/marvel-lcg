@@ -20,6 +20,8 @@ public readonly record struct PhaseStep(
 
     /// <summary>The containing enemy activation, or -1 outside an activation.</summary>
     public int ActivationId { get; init; } = -1;
+    /// <summary>The nearest causal enemy attack, retained after its completion.</summary>
+    public EnemyAttackOrigin? AttackOrigin { get; init; }
     /// <summary>A dynamic occurrence identity, or null for round/number/index identity.</summary>
     public int? OccurrenceId { get; init; }
     /// <summary>The operation's timing vocabulary name.</summary>
@@ -45,6 +47,7 @@ public readonly record struct PhaseStep(
     public Occurrence OccurrenceOf(World world, ICardFacts facts)
     {
         int id = OccurrenceId ?? Moment.Id(Round, Number, Index);
+        if (Operation is HeroDefenseOperation defense) return defense.Occurrence(id, world);
 
         if (Operation is EncounterEntryOperation entry)
             return new Occurrence(id, EncounterEntry.IsCurrent(world, entry.Entry)
@@ -114,7 +117,7 @@ public readonly record struct PhaseStep(
                 facts,
                 attack.Enemy,
                 attack.Target,
-                attack.Player),
+                attack.Player) with { Retaliation = attack.Retaliation },
             _ => new Occurrence(id, Conditions, Subject, Seat),
         };
     }
@@ -146,13 +149,14 @@ public readonly record struct PhaseStep(
 
     private Occurrence SchemeThreat(int id, World world, ICardFacts facts)
     {
-        if (world.TheCardIn(DeckType.MainSchemesArea) is not { } scheme
-            || Subject < 0 || Subject >= world.Cards.Count)
+        if (Subject < 0 || Subject >= world.Cards.Count)
         {
             return new Occurrence(id, []);
         }
 
         var enemy = world.Cards[Subject];
+        if (world.ThreatAbilities.SchemeDestination(world, enemy) is not { } scheme)
+            return new Occurrence(id, []);
         long amount = StateFields.Modified(
             world, enemy, "scheme", facts, world.Players);
         if (amount <= 0)
@@ -180,7 +184,8 @@ public readonly record struct PhaseStep(
     }
 
     /// <summary>An occurrence that needs no live attack roles, or null.</summary>
-    public Occurrence? ScheduledOccurrence => Operation is EncounterEntryOperation ? null : What is
+    public Occurrence? ScheduledOccurrence => Operation is CompletedCardEffectOperation { Occurrence: { } response }
+        ? response : Operation is EncounterEntryOperation or HeroDefenseOperation ? null : What is
         Steps.Attack or Steps.CharacterAttacks or Steps.CharacterThwarts or Steps.EndAttack
             or Steps.PlaceThreat or Steps.SchemeThreat or Steps.PlaceThreatEffect
             or Steps.PrepareIndirectAttackDamage

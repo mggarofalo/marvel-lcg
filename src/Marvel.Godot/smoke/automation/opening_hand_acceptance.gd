@@ -6,6 +6,7 @@ const Driver = preload("res://smoke/automation/ui_driver.gd")
 var ui: RefCounted
 
 func _run() -> void:
+    _configure_evidence()
     if not await _open_setup(load("res://Main.tscn") as PackedScene): return
     await _configure_seeded_game()
     ui = Driver.new(main, render_viewport, _fail)
@@ -25,3 +26,8 @@ func _run() -> void:
 
 func _revision() -> int:
     return int((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
+
+func _configure_evidence() -> void:
+    if DisplayServer.get_name() != "headless":
+        OS.set_environment("MARVEL_SMOKE_CAPTURE_DIR",
+            OS.get_environment("MARVEL_UI_EVIDENCE_DIRECTORY"))

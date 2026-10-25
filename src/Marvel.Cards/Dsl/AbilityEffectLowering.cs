@@ -36,6 +36,8 @@ internal static class AbilityEffectLowering
             "chooseCard" => ChooseCardEffect(argument, child),
             "exhaust" => CardInstruction(argument, child, AbilityCardInstruction.Exhaust),
             "ready" => CardInstruction(argument, child, AbilityCardInstruction.Ready),
+            "revealFromVillainDeck" => CardInstruction(argument, child, AbilityCardInstruction.RevealFromVillainDeck),
+            "moveActiveCounter" => CardInstruction(argument, child, AbilityCardInstruction.MoveActiveCounter),
             "discard" => DiscardEffect(argument, child),
             "removeFromGame" => CardInstruction(argument, child, AbilityCardInstruction.RemoveFromGame),
             "returnToHand" => CardInstruction(argument, child, AbilityCardInstruction.ReturnToHand),
@@ -46,6 +48,7 @@ internal static class AbilityEffectLowering
             "attachCards" => AbilityAttachmentLowering.Attach(argument, child),
             "attachTo" => CardInstruction(argument, child, AbilityCardInstruction.AttachTo),
             "preventThreatRemoval" => CardInstruction(argument, child, AbilityCardInstruction.PreventThreatRemoval),
+            "preventThwarting" => CardInstruction(argument, child, AbilityCardInstruction.PreventThwarting),
             "preventReady" => CardInstruction(argument, child, AbilityCardInstruction.PreventReady),
             "giveAdditionalBoost" => FieldCardInstruction(argument, child, "enemy", AbilityCardInstruction.GiveAdditionalBoost),
             "soakDamage" => FieldCardInstruction(argument, child, "onto", AbilityCardInstruction.SoakDamage),
@@ -53,16 +56,19 @@ internal static class AbilityEffectLowering
             "resolveSpecials" => FieldCardInstruction(argument, child, "cards", AbilityCardInstruction.ResolveSpecials),
             "declareDefender" => FieldCardInstruction(argument, child, "card", AbilityCardInstruction.DeclareDefender),
             "heal" => HealEffect(argument, child),
+            "setHitPoints" => AbilityHitPointLowering.Lower(argument, child),
             "dealDamage" => DamageEffect(argument, child),
             "dealAttackDamage" => AttackDamageEffect(argument, child),
             "moveDamage" or "moveAttackDamage" => MoveDamageEffect(argument, child, node.Kind == "moveAttackDamage"),
             "indirectDamage" => IndirectEffect(argument, child),
             "giveStatus" => StatusEffect(argument, child),
+            "removeStatuses" => AbilityStatusRemovalLowering.Lower(argument, child),
             "changeForm" => FormEffect(argument, child),
             "draw" => DrawEffect(argument, child),
             "allowPlayBeneath" => AbilityStoragePermissionLowering.Lower(argument, child),
             "drawToHandSize" or "drawToPrintedHandSize" => new AbilityEffect.DrawToHandSize(
                 LowerPlayer(argument, child), node.Kind == "drawToPrintedHandSize"),
+            "moveThreat" => AbilityThreatMovementLowering.Lower(argument, child),
             "placeThreat" => PlaceThreatEffect(argument, child),
             "removeThreat" => RemoveThreatEffect(argument, child),
             "preventThreat" => new AbilityEffect.PreventThreat(Number(argument, child)),
@@ -77,6 +83,7 @@ internal static class AbilityEffectLowering
             "reflectAttackDamage" => FixedEffect(argument, child, "attack", AbilityFixedInstruction.ReflectAttackDamage),
             "preventAttackDamage" => FixedEffect(argument, child, "attack", AbilityFixedInstruction.PreventAttackDamage),
             "revealTop" => FixedEffect(argument, child, 1, AbilityFixedInstruction.RevealTop),
+            "inspectEncounterTop" => AbilityInspectionLowering.Lower(argument, child),
             "peekTop" => FixedEffect(argument, child, "anyDeck", AbilityFixedInstruction.PeekAnyDeck),
             "placeAccelerationToken" => FixedEffect(argument, child, 1, AbilityFixedInstruction.PlaceAccelerationToken),
             "generateTopDiscard" => FixedEffect(argument, child, "printed", AbilityFixedInstruction.GenerateTopDiscard),
@@ -85,8 +92,10 @@ internal static class AbilityEffectLowering
             "gainEnvironmentTraits" => FixedEffect(argument, child, "this", AbilityFixedInstruction.GainEnvironmentTraits),
             "preventSideSchemeDeparture" => FixedEffect(argument, child, "this", AbilityFixedInstruction.PreventSideSchemeDeparture),
             "requireAllyDefender" => FixedEffect(argument, child, "engagedPlayer", AbilityFixedInstruction.RequireAllyDefender),
+            "requireAttackedPlayerAllyDefender" => FixedEffect(argument, child, "attack", AbilityFixedInstruction.RequireAttackedPlayerAllyDefender),
             "generate" => new AbilityEffect.Generate(ResourceString(argument, child)),
             "doubleResourceFor" => new AbilityEffect.DoubleResourceFor(Text(argument, child)),
+            "reduceFirstAllyCost" => new AbilityEffect.ReduceFirstAllyCost(PositiveInteger(argument, child)),
             "releaseBeneath" => AbilityBeneathLowering.Release(argument, child),
             "storeBeneath" => AbilityBeneathLowering.Store(argument, child),
             "initializeAuxiliaryDeck" => AbilityAuxiliaryDeckLowering.Initialize(argument, child),
@@ -94,6 +103,7 @@ internal static class AbilityEffectLowering
             "shuffle" => new AbilityEffect.Shuffle(SearchArea(argument, child)),
             "payOrEffect" or "payOrExhaust" => PayAlternative(argument, child, node.Kind == "payOrExhaust"),
             "grant" or "grantEach" or "grantUntil" => GrantEffect(argument, child, node.Kind == "grantEach", node.Kind == "grantUntil"),
+            "grantCharactersWithTrait" => AbilityTraitGroupLowering.Lower(argument, child),
             "grantCharactersControlledBy" => GrantControlledEffect(argument, child),
             "defineBaseValue" => AbilityBaseDefinitions.Lower(argument, child),
             "preventDamageFrom" => DamageProhibition(argument, child),
@@ -111,6 +121,7 @@ internal static class AbilityEffectLowering
             "putIntoPlay" => PutIntoPlayEffect(argument, child),
             "chooseTopForHand" or "chooseDiscardToShuffle" => ChoiceFromPile(argument, child, node.Kind == "chooseTopForHand"),
             "placeCounters" or "removeCounters" => CountersEffect(argument, child, node.Kind == "removeCounters"),
+            "discardHandCards" => new AbilityEffect.DiscardHandCards(Number(argument, child)),
             "discardResourceIcons" => AbilityResourceIconDiscardLowering.Lower(argument, child),
             "discardHandWithResource" => new AbilityEffect.DiscardHandWithResource(Resource(argument, child)),
             "recoverDiscardedByResource" => new AbilityEffect.RecoverDiscardedByResource(Resource(argument, child)),
@@ -164,8 +175,9 @@ internal static class AbilityEffectLowering
 
     internal static AbilityEffect.AttackDamage AttackDamageEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "cards", "amount", "overkill");
-        return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "overkill", location));
+        var fields = Fields(value, location, "cards", "amount", "overkill", "simultaneous");
+        return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "overkill", location))
+        { SimultaneousPlacement = Marker(fields, "simultaneous", location) };
     }
 
     internal static AbilityEffect.MoveDamage MoveDamageEffect(AbilityValue value, AbilityLocation location, bool attack)

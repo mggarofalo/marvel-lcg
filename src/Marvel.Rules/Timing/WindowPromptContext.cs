@@ -11,6 +11,7 @@ internal static class WindowPromptContext
     {
         if (kind == WindowKind.Response) return Response(world, occurrence, prompt);
         if (kind != WindowKind.Interrupt) return prompt;
+        if (occurrence.Is(HeroDefenseTiming.Defends)) return Defense(world, occurrence, prompt);
         if (occurrence.Threat is { } threat) return Threat(world, threat, prompt);
         if (occurrence.Is(Steps.CardRevealed) && occurrence.Subject >= 0
             && world.Cards[occurrence.Subject] is { FaceUp: true } card)
@@ -28,6 +29,18 @@ internal static class WindowPromptContext
             };
         }
         return prompt;
+    }
+
+    private static Prompt Defense(World world, Occurrence occurrence, Prompt prompt)
+    {
+        string hero = EffectiveCards.Title(world.Cards[occurrence.Actor], world.Facts);
+        string enemy = EffectiveCards.Title(world.Cards[occurrence.Target], world.Facts);
+        return prompt with
+        {
+            DisplayQuestion = $"{hero} is defending — interrupt?",
+            Description = $"{hero} is defending against {enemy}. Resolve an interrupt or pass to continue.",
+            ContextCardIds = [occurrence.Actor, occurrence.Target],
+        };
     }
 
     private static Prompt Response(World world, Occurrence occurrence, Prompt prompt)

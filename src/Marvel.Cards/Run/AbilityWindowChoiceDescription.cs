@@ -9,14 +9,14 @@ namespace Marvel.Cards.Run;
 internal static class AbilityWindowChoiceDescription
 {
     internal static IReadOnlyList<WindowChoice> Describe(AbilityResolutionExecution execution,
-        World world, Card source, CompiledCardAbility ability, int player, Defeated? triggeringDefeat = null)
+        World world, Card source, CompiledCardAbility ability, int player, PendingAbility? triggeringAbility = null)
     {
-        if (ability.Trigger.Timing is not (AbilityType.Interrupt or AbilityType.Response)
-            || ability.Cost is not null || ability.Labels.Length != 0
-            || EffectiveCards.Kind(source, world.Facts) == CardKind.Event
+        if (!OffersImmediateChoice(world, source, ability)
             || world.Windows.Current?.Occurrence is not { } occurrence) return [];
         var cast = new AbilityResolutionState(world, source, occurrence, player, [])
-            { Tier = ability.Trigger.Timing, TriggeringDefeat = triggeringDefeat };
+            { Tier = ability.Trigger.Timing, TriggeringDefeat = triggeringAbility?.TriggeringDefeat,
+                TriggeringAttack = triggeringAbility?.TriggeringAttack,
+                TriggeringThreat = triggeringAbility?.TriggeringThreat };
         if (AbilityRecipientCommitment.Choice(world, source, ability) is { } choice)
             return Recipients(execution, cast, choice);
         if (ability.Effect is AbilityEffect.Draw
@@ -30,6 +30,11 @@ internal static class AbilityWindowChoiceDescription
         }
         return [];
     }
+
+    private static bool OffersImmediateChoice(World world, Card source, CompiledCardAbility ability) =>
+        ability.Trigger.Timing is AbilityType.Interrupt or AbilityType.Response
+        && ability.Cost is null && ability.Labels.Length == 0
+        && EffectiveCards.Kind(source, world.Facts) != CardKind.Event;
 
     private static WindowChoice[] Recipients(AbilityResolutionExecution execution,
         AbilityResolutionState cast, AbilityEffect.ChooseCard choice)

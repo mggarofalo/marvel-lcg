@@ -16,6 +16,7 @@ internal static class AbilityEffectDescription
         AbilityEffect.ChooseCard choice => ChoiceSummary(choice),
         AbilityEffect.Draw draw => DrawSummary(draw),
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
+        AbilityEffect.RemoveStatuses => "Remove status cards",
         AbilityEffect.Power power => Summary(power.Effect),
         AbilityEffect.Sequence sequence when sequence.Effects.Length == 1 =>
             Summary(sequence.Effects[0]),
@@ -69,9 +70,11 @@ internal static class AbilityEffectDescription
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Discard } => "discard",
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust } => "exhaust",
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Ready } => "ready",
+        AbilityEffect.CardAction { Instruction: AbilityCardInstruction.MoveActiveCounter } => "move the active counter to",
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelWhenRevealed } =>
             "cancel the revealed treachery's When Revealed effects",
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
+        AbilityEffect.RemoveStatuses => "Remove status cards",
         AbilityEffect.AttackDamage => "attack",
         AbilityEffect.Damage => "deal damage to",
         AbilityEffect.RemoveThreat => "remove threat from",
@@ -104,6 +107,13 @@ internal static class AbilityEffectDescription
 
     private static string Noun(AbilityCardSelection selection) => selection switch
     {
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.OtherVillainSideSchemes } => "each other villain's side scheme",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.ActiveVillainSideScheme } => "active villain's side scheme",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainOfAttachedScheme } => "villain corresponding to the attached scheme",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainsWithLeastSchemeThreat } =>
+            "villain whose side scheme has the least threat",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainsWithMostSchemeThreat } =>
+            "villain whose side scheme has the most threat",
         AbilityCardSelection.Discardable discardable => Noun(discardable.Cards),
         AbilityCardSelection.WithTrait trait => $"{(trait.Exclude ? "non-" : "")}{trait.Trait} {Noun(trait.Cards)}",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.CharactersYouControlExceptCost } =>

@@ -8,7 +8,7 @@ internal static class NamedAbilityCost
 {
     internal static Card RequireTarget(World world, int player, string title) =>
         Target(world, player, title)
-        ?? throw new RulesNotImplementedException("Named exhaust cost has no single controlled card");
+        ?? throw new RulesNotImplementedException("Named card cost has no single controlled card");
 
     internal static Card? Target(World world, int player, string title)
     {

@@ -22,10 +22,15 @@ internal sealed record AbilityResolutionState(
     public int Player { get; private set; } = InitialPlayer;
 
     public Defeated? TriggeringDefeat { get; set; }
+    public Attacked? TriggeringAttack { get; set; }
+    public Occurrence? TriggeringThreat { get; set; }
+    internal System.Collections.Immutable.ImmutableArray<(int Card, int Incarnation)> DamageDefeats { get; set; } = [];
     internal AbilityExecution? Execution { get; set; }
     internal AbilityPowerExecutionState? PowerExecution { get; set; }
     internal AbilityPaymentPlan? PendingPayment { get; set; }
     private bool executionEntered;
+
+    private PendingAbility? resolutionAbility;
 
     /// <summary>The resolver to restore after leaving an each-player frame.</summary>
     public int AbilityPlayer { get; init; } = InitialPlayer;
@@ -124,6 +129,9 @@ internal sealed record AbilityResolutionState(
 
     public AbilityStructuralOutcome? CompletedOutcome { get; set; }
     internal AbilityDamageCompletion? PendingDamageCompletion { get; set; }
+    internal ThreatMoveReceipt? PendingThreatMove { get; set; }
+    internal long ThreatMoveRequested { get; set; }
+    internal System.Collections.Immutable.ImmutableArray<AbilityThreatMovePair> ThreatMovePairs { get; set; } = [];
     public EffectCompletion? PendingCompletion { get; set; }
 
 
@@ -138,8 +146,6 @@ internal sealed record AbilityResolutionState(
         StructuralPath.Clear();
         StructuralPath.AddRange(frames);
     }
-
-    private PendingAbility? resolutionAbility;
 
     /// <summary>The exact ability whose status this cast updates.</summary>
     public PendingAbility? ResolutionAbility => resolutionAbility;
@@ -159,7 +165,8 @@ internal sealed record AbilityResolutionState(
             return;
         }
         resolutionAbility = new PendingAbility(Source.ObjectId, tier, Player, ordinal)
-            { TriggeringDefeat = TriggeringDefeat };
+            { TriggeringDefeat = TriggeringDefeat, TriggeringAttack = TriggeringAttack,
+                TriggeringThreat = TriggeringThreat };
         if (!executionEntered)
         {
             if (Execution is null) Execution = World.Agenda.Executions.Begin(Occurrence, resolutionAbility.Value);
@@ -167,7 +174,7 @@ internal sealed record AbilityResolutionState(
             executionEntered = true;
         }
         if (Execution?.IsBatch == true) resolutionAbility = null;
-        else Occurrence.Begin(resolutionAbility.Value);
+        else Occurrence.Resolution.Begin(resolutionAbility.Value);
     }
 
     /// <summary>Record that one effect in the tracked ability applied.</summary>
@@ -175,7 +182,7 @@ internal sealed record AbilityResolutionState(
     {
         if (resolutionAbility is { } ability)
         {
-            Occurrence.Resolve(ability);
+            Occurrence.Resolution.Resolve(ability);
         }
     }
 
@@ -212,7 +219,8 @@ internal sealed record AbilityResolutionState(
     public void RestorePersistedSelection(Card card, int area, int incarnation, bool overwriteChosen) =>
         Bindings.RestorePersistedSelection(card, area, incarnation, overwriteChosen);
     public bool SourceBindingIsCurrent(Card card) => Bindings.SourceBindingIsCurrent(card);
-    public AbilityQueryContext QueryContext() => Bindings.QueryContext(this);
+    public AbilityQueryContext QueryContext() => TriggeringThreat is { } threat
+        ? Bindings.QueryContext(this) with { Occurrence = threat } : Bindings.QueryContext(this);
 
     public AbilityExpressionContext ExpressionContext() => new(
         QueryContext(), Results.ToImmutableDictionary(StringComparer.Ordinal),

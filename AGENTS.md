@@ -8,8 +8,9 @@ holds the rules you can break without noticing; everything else is a pointer.
 A rules engine for Marvel Champions: The Card Game, in C#. Work is tracked in
 the Plane project `MARVEL` — see [docs/plane.md](docs/plane.md).
 
-The executable runtime covers the Core Set and Rise of Red Skull. Broader card, rule and ruling datasets
-remain available for research without making expansion content playable. See
+The accepted executable runtime covers the Core Set and Rise of Red Skull.
+Captain America and Wrecking Crew are complete runtime candidates for owner review.
+Broader card, rule and ruling datasets remain research inputs outside that boundary. See
 [docs/scope.md](docs/scope.md).
 
 ```

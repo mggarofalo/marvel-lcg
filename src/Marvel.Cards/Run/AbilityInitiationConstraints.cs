@@ -93,7 +93,8 @@ internal static class AbilityInitiationConstraints
     {
         var effect = EffectBody(node);
         AbilityCompletionSupport.Validate(effect, cast.Source.FaceId);
-        if (ActiveChoices(effect, cast).Any()) return CanInitiate(effect, cast);
+        if (effect is AbilityEffect.ActivateEnemies { Dynamic: false }
+            || ActiveChoices(effect, cast).Any()) return CanInitiate(effect, cast);
         var outcome = ResolutionOf(effect, cast);
         return outcome == required
             ? CanInitiate(ContinuationChild(node, branch), cast)
@@ -136,7 +137,8 @@ internal static class AbilityInitiationConstraints
         "attack" => CanTargetAttack(node, cast),
         "thwart" => CanTargetThwart(node, cast),
         "enemyAttacks" or "enemySchemes" => true,
-        "defense" => Attack.CanUseDefenseAbility(cast.World, cast.Player)
+        "defense" => Attack.CanUseDefenseAbility(cast.World, cast.Player,
+                LabeledAbilities.Performer(cast.World, cast.World.Facts, cast.Player, cast.Source))
             && CanInitiate(EffectBody(node), cast),
         // A missing dynamic target gets the resolver's specific exception
         // (for example, no activating enemy). When the target exists, the

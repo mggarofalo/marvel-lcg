@@ -17,6 +17,7 @@ internal static class GamePowerOffers
     internal static void Offer(this Game game,
         List<Affordance> options, Card character, string verb, IReadOnlyList<Card> targets)
     {
+        if (verb == BasicPowers.AttackVerb && !BasicAttackCosts.CanPay(game.world, character)) return;
         string cancellingStatus = string.Equals(
             verb, BasicPowers.AttackVerb, StringComparison.Ordinal)
                 ? Statuses.Stunned
@@ -38,6 +39,7 @@ internal static class GamePowerOffers
         bool ranged = AttackKeywords.Has(game.world, character, character, Keywords.Ranged, basic: true);
         options.Add(game.Anchored(verb, character, game.world.Seats[game.Active]) with
         {
+            CostDescription = AdditionalAttackCost(game, character, verb),
             Description = PowerDescription(game, character, verb, power, ranged,
                 cancelledByStatus, cancellingStatus),
             // Exactly one target: `rr:attack-player-ability-type.1` and
@@ -54,6 +56,11 @@ internal static class GamePowerOffers
             },
         });
     }
+
+    private static string? AdditionalAttackCost(Game game, Card character, string verb) =>
+        verb == BasicPowers.AttackVerb && BasicAttackCosts.Count(game.world, character) is > 0 and var count
+            ? $"Discard {count} card(s) from your hand in addition to exhausting the attacker."
+            : null;
 
     private static string PowerDescription(Game game, Card character, string verb,
         long power, bool ranged, bool cancelled, string status) =>

@@ -75,7 +75,12 @@ public static class AbilityLowering
             "if" => ConditionalNumber(argument, child),
             "printedResourceCountDiscarded" => new AbilityNumber.PrintedResourcesDiscarded(Resource(argument, child)),
             "discardedWithResource" => new AbilityNumber.DiscardedWithResource(Resource(argument, child)),
+            "completedAttackDamageDealt" => FixedNumber(argument, child, "game", AbilityResolutionNumber.CompletedAttackDamageDealt),
             "activationAttacksAgainstYou" => FixedNumber(argument, child, "game", AbilityResolutionNumber.ActivationAttacksAgainstYou),
+            "printedCostDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedCostDiscarded),
+            "distinctCardTypesDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.DistinctCardTypesDiscarded),
+            "cardsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.CardsDiscarded),
+            "cardsExhaustedForCost" => FixedNumber(argument, child, "game", AbilityResolutionNumber.CardsExhaustedForCost),
             "powerAmount" => FixedNumber(argument, child, "cardsDiscarded", AbilityResolutionNumber.PowerAmount),
             "printedBoostIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedBoostIconsDiscarded),
             "printedResourceIconsDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedResourceIconsDiscarded),
@@ -172,7 +177,8 @@ public static class AbilityLowering
     {
         string name = Text(value, location);
         return name is "healed" or "discarded" or "found" or "energy" or "resourceTypes" or "schemesCleared"
-            or "activationDamage" or "activationDamageToYou" or "activationThreat" or "activationMade"
+            or "threatMoved" or "threatRemovedByMove" or "destinationForcedResponseTriggered"
+            or "treacheriesLookedAt" or "activationDamage" or "activationDamageToYou" or "activationThreat" or "activationMade" or "activationUndefended"
             ? name : throw location.Error($"'{name}' is not an authored resolution result");
     }
 }

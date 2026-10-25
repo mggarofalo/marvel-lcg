@@ -11039,6 +11039,3113 @@
       ],
       "name": "Clear the Area",
       "note": "Hero Action (thwart): Remove 2 threat from a scheme. If this removes the last threat on that scheme, draw 1 card."
+    },
+    {
+      "card": "07007",
+      "name": "Wrecker's Command",
+      "note": "Attach to Wrecker. Its printed SCH+1 is supplied by the attachment stat modifier. After its host schemes, one threat instruction affects each other living villain's paired side scheme. The Hero Action spends two physical resources to discard the attachment.",
+      "attachTo": { "titled": "Wrecker" },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenSchemeEnds", "timing": "ForcedResponse", "subject": "attachedTo" },
+          "effect": { "placeThreat": { "scheme": { "query": "otherVillainSideSchemes" }, "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "cost": { "spend": "RR" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "07008",
+      "name": "Corrupt Prison Guard",
+      "note": "Guard is supplied by the generated printed keyword. This Wrecker encounter card has no triggered or boost ability.",
+      "abilities": []
+    },
+    {
+      "card": "07023",
+      "name": "Corrupt Prison Guard",
+      "note": "Guard is supplied by the generated printed keyword. This Thunderball encounter card has no triggered or boost ability.",
+      "abilities": []
+    },
+    {
+      "card": "07037",
+      "name": "Corrupt Prison Guard",
+      "note": "Guard is supplied by the generated printed keyword. This Piledriver encounter card has no triggered or boost ability.",
+      "abilities": []
+    },
+    {
+      "card": "07052",
+      "name": "Corrupt Prison Guard",
+      "note": "Guard is supplied by the generated printed keyword. This Bulldozer encounter card has no triggered or boost ability.",
+      "abilities": []
+    },
+    {
+      "card": "07002",
+      "name": "Wrecker",
+      "note": "Schemes onto his corresponding side scheme. His ATK bonus reads his own current undefended attack.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "and": [ { "isEnemyAttacker": "this" }, { "undefendedAttack": "you" } ] },
+              "then": { "grant": { "card": "this", "keyword": "attack", "amount": 2 } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07003",
+      "name": "Wrecker",
+      "note": "Schemes onto his corresponding side scheme. His ATK bonus reads his own current undefended attack.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": {
+            "if": {
+              "test": { "and": [ { "isEnemyAttacker": "this" }, { "undefendedAttack": "you" } ] },
+              "then": { "grant": { "card": "this", "keyword": "attack", "amount": 2 } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07017",
+      "name": "Thunderball",
+      "note": "Schemes onto his corresponding side scheme. After his attack, damage each character controlled by its final target player, including after ally defense.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player" },
+          "effect": { "dealDamage": { "cards": { "query": "charactersYouControl" }, "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "07018",
+      "name": "Thunderball",
+      "note": "Schemes onto his corresponding side scheme. After his attack, damage each character controlled by its final target player, including after ally defense.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "player": "trigger.player" },
+          "effect": { "dealDamage": { "cards": { "query": "charactersYouControl" }, "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "07032",
+      "name": "Piledriver",
+      "note": "Printed Retaliate 1 is engine-owned keyword behavior. Piledriver's scheme activations place threat on his corresponding side scheme.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": []
+    },
+    {
+      "card": "07033",
+      "name": "Piledriver",
+      "note": "Printed Retaliate 1 is engine-owned keyword behavior. Piledriver's scheme activations place threat on his corresponding side scheme.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": []
+    },
+    {
+      "card": "07046",
+      "name": "Bulldozer",
+      "note": "Schemes onto his corresponding side scheme. His forced interrupt grants overkill only to his current attack.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this" },
+          "effect": { "grantUntil": { "keyword": "overkill", "card": "trigger.actor", "until": "EndOfAttack" } }
+        }
+      ]
+    },
+    {
+      "card": "07047",
+      "name": "Bulldozer",
+      "note": "Schemes onto his corresponding side scheme. His forced interrupt grants overkill only to his current attack.",
+      "schemeDestination": "correspondingSideScheme",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "this" },
+          "effect": { "grantUntil": { "keyword": "overkill", "card": "trigger.actor", "until": "EndOfAttack" } }
+        }
+      ]
+    },
+    {
+      "card": "07044",
+      "name": "Pummel",
+      "note": "Piledriver activates against the revealing player in either form. His tough status grants +2 to this activation only; the named villain is independent of the active counter.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "enemyAttacks": {
+            "enemies": { "titled": "Piledriver" }, "against": "you",
+            "modifier": { "if": { "test": { "hasStatus": { "card": { "titled": "Piledriver" }, "status": "tough" } }, "then": 2, "else": 0 } }
+          } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "enemySchemes": {
+            "enemies": { "titled": "Piledriver" }, "against": "you",
+            "modifier": { "if": { "test": { "hasStatus": { "card": { "titled": "Piledriver" }, "status": "tough" } }, "then": 2, "else": 0 } }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "07013",
+      "name": "Get Wrecked!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+            "effect": { "enemyAttacks": { "enemies": "chosen", "against": "you" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithMostSchemeThreat" },
+            "effect": { "enemySchemes": { "enemies": "chosen", "against": "you" } } } }
+        }
+      ]
+    },
+    {
+      "card": "07028",
+      "name": "Get Wrecked!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+            "effect": { "enemyAttacks": { "enemies": "chosen", "against": "you" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithMostSchemeThreat" },
+            "effect": { "enemySchemes": { "enemies": "chosen", "against": "you" } } } }
+        }
+      ]
+    },
+    {
+      "card": "07040",
+      "name": "Get Wrecked!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+            "effect": { "enemyAttacks": { "enemies": "chosen", "against": "you" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithMostSchemeThreat" },
+            "effect": { "enemySchemes": { "enemies": "chosen", "against": "you" } } } }
+        }
+      ]
+    },
+    {
+      "card": "07057",
+      "name": "Get Wrecked!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+            "effect": { "enemyAttacks": { "enemies": "chosen", "against": "you" } } } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithMostSchemeThreat" },
+            "effect": { "enemySchemes": { "enemies": "chosen", "against": "you" } } } }
+        }
+      ]
+    },
+    {
+      "card": "07027",
+      "name": "Energy Projectiles",
+      "note": "When Revealed damages each character controlled by the resolving player, including an alter-ego. The Boost ability damages only the current defending character; an undefended attack or scheme has none.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "dealDamage": { "cards": { "query": "charactersYouControl" }, "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "dealDamage": { "cards": "defendingCharacter", "amount": 1 } }
+        }
+      ]
+    },
+    {
+      "card": "07014",
+      "name": "I've Been Waiting For This!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "heal": { "card": { "query": "villain" }, "amount": 3 } },
+            { "giveStatus": { "card": { "query": "villain" }, "status": "tough" } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+              "effect": { "moveActiveCounter": "chosen" } } },
+            { "enemySchemes": { "enemies": { "query": "villain" }, "against": "you" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "07029",
+      "name": "I've Been Waiting For This!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "heal": { "card": { "query": "villain" }, "amount": 3 } },
+            { "giveStatus": { "card": { "query": "villain" }, "status": "tough" } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+              "effect": { "moveActiveCounter": "chosen" } } },
+            { "enemySchemes": { "enemies": { "query": "villain" }, "against": "you" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "07030",
+      "name": "Lightning Blast",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "hero" },
+          "effect": { "seq": [
+            { "enemyAttacks": { "enemies": { "titled": "Thunderball" }, "against": "you" } },
+            { "if": { "test": { "atLeast": { "value": { "result": "activationUndefended" }, "count": 1 } },
+              "then": { "placeThreat": { "scheme": { "titled": "Thunderstruck" }, "amount": 3 } } } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this", "form": "alter-ego" },
+          "effect": { "chooseCard": { "chooser": "firstPlayer", "from": { "maxBy": { "of": { "query": "sideSchemes" }, "by": "threat" } },
+            "effect": { "placeThreat": { "scheme": "chosen", "amount": 3 } } } }
+        }
+      ]
+    },
+    {
+      "card": "07010",
+      "name": "Buddy System",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "count": {
+                          "query": "villains"
+                        }
+                      },
+                      "count": 2
+                    }
+                  },
+                  "then": {
+                    "revealFromVillainDeck": "chosen"
+                  },
+                  "else": {
+                    "seq": [
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      },
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "moveActiveCounter": "chosen"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07025",
+      "name": "Buddy System",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "count": {
+                          "query": "villains"
+                        }
+                      },
+                      "count": 2
+                    }
+                  },
+                  "then": {
+                    "revealFromVillainDeck": "chosen"
+                  },
+                  "else": {
+                    "seq": [
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      },
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "moveActiveCounter": "chosen"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07039",
+      "name": "Buddy System",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "count": {
+                          "query": "villains"
+                        }
+                      },
+                      "count": 2
+                    }
+                  },
+                  "then": {
+                    "revealFromVillainDeck": "chosen"
+                  },
+                  "else": {
+                    "seq": [
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      },
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "moveActiveCounter": "chosen"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07054",
+      "name": "Buddy System",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "count": {
+                          "query": "villains"
+                        }
+                      },
+                      "count": 2
+                    }
+                  },
+                  "then": {
+                    "revealFromVillainDeck": "chosen"
+                  },
+                  "else": {
+                    "seq": [
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      },
+                      {
+                        "revealFromVillainDeck": "chosen"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "moveActiveCounter": "chosen"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07041",
+      "name": "I've Been Waiting For This!",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "heal": { "card": { "query": "villain" }, "amount": 3 } },
+            { "giveStatus": { "card": { "query": "villain" }, "status": "tough" } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "seq": [
+            { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+              "effect": { "moveActiveCounter": "chosen" } } },
+            { "enemySchemes": { "enemies": { "query": "villain" }, "against": "you" } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "07012",
+      "name": "Crowbar Toss",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "then": {
+            "effect": { "if": {
+              "test": { "inForm": { "player": "you", "form": "hero" } },
+              "then": { "enemyAttacks": { "enemies": { "titled": "Wrecker" }, "against": "you" } },
+              "else": { "enemySchemes": { "enemies": { "titled": "Wrecker" }, "against": "you" } }
+            } },
+            "then": { "chooseCard": { "chooser": "firstPlayer", "from": { "query": "villainsWithLeastSchemeThreat" },
+              "effect": { "moveActiveCounter": "chosen" } } }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "07043",
+      "name": "Escape Plan",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "if": {
+            "test": { "hasStatus": { "card": "you", "status": "confused" } },
+            "then": { "enemySchemes": { "enemies": { "titled": "Piledriver" }, "against": "you" } },
+            "else": { "giveStatus": { "card": "you", "status": "confused" } }
+          } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "if": {
+            "test": { "hasStatus": { "card": { "query": "villain" }, "status": "tough" } },
+            "then": { "placeThreat": { "scheme": { "query": "activeVillainSideScheme" }, "amount": 2 } },
+            "else": { "giveStatus": { "card": { "query": "villain" }, "status": "tough" } }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "03013",
+      "name": "Squirrel Girl",
+      "note": "Response: After Squirrel Girl enters play, deal 1 damage to each enemy. The optional damage is not an attack; it includes enemies engaged with every player and does not trigger retaliate.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": {
+                "query": "enemies"
+              },
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03031",
+      "name": "Enraged",
+      "note": "Attach to an ally. Max 1 per ally. Attached ally gets +2 ATK and takes +1 consequential damage after it attacks. The consequential modifier applies only to the attack field, not thwarting or nonbasic damage abilities.",
+      "attachTo": {
+        "withoutAnotherCopyAttached": {
+          "query": "allies"
+        }
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "attachedTo",
+                  "keyword": "attack",
+                  "amount": 2
+                }
+              },
+              {
+                "grant": {
+                  "card": "attachedTo",
+                  "keyword": "attack_consequential_damage",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "07005",
+      "name": "Held Hostage",
+      "note": "The attached physical scheme determines the corresponding villain, independent of source deck and active counter. The thwart-only prohibition allows other threat removal; discard follows a completed attack, including zero damage, but not a canceled attack.",
+      "attachTo": { "query": "activeVillainSideScheme" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventThwarting": "attachedTo" }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "then": {
+            "effect": { "enemyAttacks": { "enemies": { "query": "villainOfAttachedScheme" }, "against": "you" } },
+            "then": { "discard": "this" }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "07021",
+      "name": "Held Hostage",
+      "note": "The attached physical scheme determines the corresponding villain, independent of source deck and active counter. The thwart-only prohibition allows other threat removal; discard follows a completed attack, including zero damage, but not a canceled attack.",
+      "attachTo": { "query": "activeVillainSideScheme" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventThwarting": "attachedTo" }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "then": {
+            "effect": { "enemyAttacks": { "enemies": { "query": "villainOfAttachedScheme" }, "against": "you" } },
+            "then": { "discard": "this" }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "07035",
+      "name": "Distracting Taunts",
+      "attachTo": { "titled": "Piledriver" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant" },
+          "effect": { "grant": { "card": "attachedTo", "keyword": "health", "amount": 3 } }
+        },
+        {
+          "trigger": { "timing": "Constant" },
+          "effect": { "grant": { "card": "attachedTo", "keyword": "other_villains_cannot_be_attacked", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "you", "target": "attachedTo", "player": "trigger.player" },
+          "cost": { "spend": "RR" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "07036",
+      "name": "Held Hostage",
+      "note": "The attached physical scheme determines the corresponding villain, independent of source deck and active counter. The thwart-only prohibition allows other threat removal; discard follows a completed attack, including zero damage, but not a canceled attack.",
+      "attachTo": { "query": "activeVillainSideScheme" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventThwarting": "attachedTo" }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "then": {
+            "effect": { "enemyAttacks": { "enemies": { "query": "villainOfAttachedScheme" }, "against": "you" } },
+            "then": { "discard": "this" }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "07051",
+      "name": "Ramming Speed",
+      "note": "Attach to Bulldozer. The printed ATK+ 2 is declarative attachment metadata. His forced interrupt requires the attacked player's own ally if able for this activation; the forced response discards this attachment only after his attack completes.",
+      "attachTo": { "titled": "Bulldozer" },
+      "abilities": [
+        {
+          "trigger": { "event": "WhenAttackInitiated", "timing": "ForcedInterrupt", "actor": "attachedTo", "player": "trigger.player" },
+          "effect": { "requireAttackedPlayerAllyDefender": "attack" }
+        },
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "attachedTo", "player": "trigger.player" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "07050",
+      "name": "Held Hostage",
+      "note": "The attached physical scheme determines the corresponding villain, independent of source deck and active counter. The thwart-only prohibition allows other threat removal; discard follows a completed attack, including zero damage, but not a canceled attack.",
+      "attachTo": { "query": "activeVillainSideScheme" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant", "subject": "this" },
+          "effect": { "preventThwarting": "attachedTo" }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "effect": { "then": {
+            "effect": { "enemyAttacks": { "enemies": { "query": "villainOfAttachedScheme" }, "against": "you" } },
+            "then": { "discard": "this" }
+          } }
+        }
+      ]
+    },
+    {
+      "card": "07011",
+      "name": "Chaos In the Prison",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "query": "upgradesYouControl"
+                    }
+                  },
+                  "then": {
+                    "choose": {
+                      "options": [
+                        {
+                          "chooseCard": {
+                            "from": {
+                              "query": "upgradesYouControl"
+                            },
+                            "effect": {
+                              "discard": "chosen"
+                            }
+                          }
+                        },
+                        {
+                          "placeThreat": {
+                            "scheme": {
+                              "query": "activeVillainSideScheme"
+                            },
+                            "amount": {
+                              "count": {
+                                "query": "upgradesYouControl"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "not": {
+                      "exists": {
+                        "query": "upgradesYouControl"
+                      }
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "undefendedAttack": "you"
+                  },
+                  {
+                    "exists": {
+                      "query": "upgradesYouControl"
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "query": "upgradesYouControl"
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "ruling:de7450cad15c3dbd confirms that the zero-upgrade surge check runs after the chosen sentence, including after discarding the last upgrade."
+    },
+    {
+      "card": "07026",
+      "name": "Chaos In the Prison",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "query": "upgradesYouControl"
+                    }
+                  },
+                  "then": {
+                    "choose": {
+                      "options": [
+                        {
+                          "chooseCard": {
+                            "from": {
+                              "query": "upgradesYouControl"
+                            },
+                            "effect": {
+                              "discard": "chosen"
+                            }
+                          }
+                        },
+                        {
+                          "placeThreat": {
+                            "scheme": {
+                              "query": "activeVillainSideScheme"
+                            },
+                            "amount": {
+                              "count": {
+                                "query": "upgradesYouControl"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "not": {
+                      "exists": {
+                        "query": "upgradesYouControl"
+                      }
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "undefendedAttack": "you"
+                  },
+                  {
+                    "exists": {
+                      "query": "upgradesYouControl"
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "query": "upgradesYouControl"
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "ruling:de7450cad15c3dbd confirms that the zero-upgrade surge check runs after the chosen sentence, including after discarding the last upgrade."
+    },
+    {
+      "card": "07056",
+      "name": "Chaos In the Prison",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "query": "upgradesYouControl"
+                    }
+                  },
+                  "then": {
+                    "choose": {
+                      "options": [
+                        {
+                          "chooseCard": {
+                            "from": {
+                              "query": "upgradesYouControl"
+                            },
+                            "effect": {
+                              "discard": "chosen"
+                            }
+                          }
+                        },
+                        {
+                          "placeThreat": {
+                            "scheme": {
+                              "query": "activeVillainSideScheme"
+                            },
+                            "amount": {
+                              "count": {
+                                "query": "upgradesYouControl"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "not": {
+                      "exists": {
+                        "query": "upgradesYouControl"
+                      }
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "undefendedAttack": "you"
+                  },
+                  {
+                    "exists": {
+                      "query": "upgradesYouControl"
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "query": "upgradesYouControl"
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "note": "ruling:de7450cad15c3dbd confirms that the zero-upgrade surge check runs after the chosen sentence, including after discarding the last upgrade."
+    },
+    {
+      "card": "07055",
+      "name": "Bull Rush",
+      "note": "Bulldozer activates and the sentence resumes after that activation fully resolves. In alter-ego form, discard one player-deck card for each threat that activation placed; in hero form, discard one for each damage dealt by the attack's damage step.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "you",
+                  "form": "hero"
+                }
+              },
+              "then": {
+                "seq": [
+                  {
+                    "enemyAttacks": {
+                      "enemies": {
+                        "titled": "Bulldozer"
+                      }
+                    }
+                  },
+                  {
+                    "discardTop": {
+                      "from": "yourDeck",
+                      "count": {
+                        "result": "activationDamage"
+                      }
+                    }
+                  }
+                ]
+              },
+              "else": {
+                "seq": [
+                  {
+                    "enemySchemes": {
+                      "enemies": {
+                        "titled": "Bulldozer"
+                      }
+                    }
+                  },
+                  {
+                    "discardTop": {
+                      "from": "yourDeck",
+                      "count": {
+                        "result": "activationThreat"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07058",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardAtRandom": {
+                  "player": "you",
+                  "count": 1
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "inForm": {
+                      "player": "you",
+                      "form": "hero"
+                    }
+                  },
+                  "then": {
+                    "dealDamage": {
+                      "cards": "you",
+                      "amount": {
+                        "printedCostDiscarded": "game"
+                      }
+                    }
+                  },
+                  "else": {
+                    "placeThreat": {
+                      "scheme": {
+                        "titled": "Clear the Road"
+                      },
+                      "amount": {
+                        "printedCostDiscarded": "game"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Headbutt"
+    },
+    {
+      "card": "07059",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "yourDeck",
+                  "count": {
+                    "modified": {
+                      "card": {
+                        "titled": "Bulldozer"
+                      },
+                      "field": "attack"
+                    }
+                  }
+                }
+              },
+              {
+                "placeThreat": {
+                  "scheme": {
+                    "titled": "Clear the Road"
+                  },
+                  "amount": {
+                    "distinctCardTypesDiscarded": "game"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Leading the Charge"
+    },
+    {
+      "card": "07045",
+      "name": "Uncanny Resilience",
+      "note": "When Revealed: Remove each stunned and confused status card from each villain. If no status cards were removed this way, this card gains surge. Completion counts physical removed statuses; Tough and friendly characters are unaffected.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "otherwise": {
+              "effect": {
+                "removeStatuses": {
+                  "cards": {
+                    "query": "villains"
+                  },
+                  "statuses": [
+                    "stunned",
+                    "confused"
+                  ]
+                }
+              },
+              "otherwise": {
+                "gainSurge": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07042",
+      "name": "Oversized Hands",
+      "note": "Printed 07042. Rank only supports that this discard can remove; Permanent substitutes the eligible alternative under rr:permanent.4.1. The first player breaks a tied highest cost under rr:first-player.1. No legal support means two threat on the active villain's paired scheme. Boost selects any removable support controlled by the resolving player.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "discardable": {
+                    "query": "supportsYouControl"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "chooser": "firstPlayer",
+                  "from": {
+                    "maxBy": {
+                      "of": {
+                        "discardable": {
+                          "query": "supportsYouControl"
+                        }
+                      },
+                      "by": "cost"
+                    }
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              },
+              "else": {
+                "placeThreat": {
+                  "scheme": {
+                    "query": "activeVillainSideScheme"
+                  },
+                  "amount": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "discardable": {
+                  "query": "supportsYouControl"
+                }
+              },
+              "effect": {
+                "discard": "chosen"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07006",
+      "name": "Magic Crowbar",
+      "attachTo": {
+        "titled": "Wrecker"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "minBy": {
+                  "of": {
+                    "query": "sideSchemes"
+                  },
+                  "by": "threat"
+                }
+              },
+              "effect": {
+                "placeThreat": {
+                  "scheme": "chosen",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "you"
+              },
+              {
+                "discardRandomFromHand": 1
+              }
+            ]
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "07022",
+      "name": "Radioactive Buildup",
+      "attachTo": { "titled": "Thunderball" },
+      "note": "Excess damage dealt by Thunderball becomes threat on his physical corresponding side scheme. The printed +3 ATK is read from the attachment's attributes.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant" },
+          "effect": { "grant": { "card": "attachedTo", "keyword": "excessDamageAsThreat" } }
+        },
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "attachedTo" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
+      "card": "07020",
+      "name": "Ball and Chain",
+      "attachTo": {
+        "titled": "Thunderball"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "mainScheme"
+              },
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "you"
+              },
+              {
+                "discardRandomFromHand": 1
+              }
+            ]
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "07004",
+      "name": "Day of Reckoning",
+      "note": "Printed signature scheme: cannot leave play while its corresponding villain remains. The threshold is checked after placement; the penalty precedes removal to three. ",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Wrecker"
+                }
+              },
+              "then": {
+                "preventSideSchemeDeparture": "this"
+              }
+            }
+          }
+        },
+        {
+          "name": "Hard Hitter",
+          "trigger": {
+            "event": "WhenThreatPlaced",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "when": {
+            "atLeast": {
+              "value": {
+                "tokensOn": "this"
+              },
+              "count": 10
+            }
+          },
+          "effect": {
+            "seq": [
+              {
+                "dealDamage": {
+                  "cards": {
+                    "query": "heroesAndAllies"
+                  },
+                  "amount": 2
+                }
+              },
+              {
+                "removeThreat": {
+                  "scheme": "this",
+                  "amount": {
+                    "add": [
+                      {
+                        "tokensOn": "this"
+                      },
+                      -3
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "07019",
+      "name": "Thunderstruck",
+      "note": "Printed signature scheme: cannot leave play while its corresponding villain remains. The threshold is checked after placement; the penalty precedes removal to three. ",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Thunderball"
+                }
+              },
+              "then": {
+                "preventSideSchemeDeparture": "this"
+              }
+            }
+          }
+        },
+        {
+          "name": "Gamma Blast",
+          "trigger": {
+            "event": "WhenThreatPlaced",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "when": {
+            "atLeast": {
+              "value": {
+                "tokensOn": "this"
+              },
+              "count": 10
+            }
+          },
+          "effect": {
+            "seq": [
+              {
+                "giveStatus": {
+                  "card": {
+                    "query": "heroesAndAllies"
+                  },
+                  "status": "stunned"
+                }
+              },
+              {
+                "removeThreat": {
+                  "scheme": "this",
+                  "amount": {
+                    "add": [
+                      {
+                        "tokensOn": "this"
+                      },
+                      -3
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "07034",
+      "name": "Pile It On!",
+      "note": "Printed signature scheme: cannot leave play while its corresponding villain remains. The threshold is checked after placement; the penalty precedes removal to three. ruling: Pile It On! ranks upgrades and supports together; rr:permanent.4.1 excludes cards that cannot be discarded before ranking. The first player resolves tied highest costs under rr:first-player.1.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Piledriver"
+                }
+              },
+              "then": {
+                "preventSideSchemeDeparture": "this"
+              }
+            }
+          }
+        },
+        {
+          "name": "Pile Drive",
+          "trigger": {
+            "event": "WhenThreatPlaced",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "when": {
+            "atLeast": {
+              "value": {
+                "tokensOn": "this"
+              },
+              "count": 10
+            }
+          },
+          "effect": {
+            "seq": [
+              {
+                "eachPlayer": {
+                  "effect": {
+                    "chooseCard": {
+                      "chooser": "firstPlayer",
+                      "from": {
+                        "maxBy": {
+                          "of": {
+                            "discardable": {
+                              "query": "upgradesAndSupportsYouControl"
+                            }
+                          },
+                          "by": "cost"
+                        }
+                      },
+                      "effect": {
+                        "discard": "chosen"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "removeThreat": {
+                  "scheme": "this",
+                  "amount": {
+                    "add": [
+                      {
+                        "tokensOn": "this"
+                      },
+                      -3
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "07048",
+      "name": "Clear the Road",
+      "note": "Printed signature scheme: cannot leave play while its corresponding villain remains. The threshold is checked after placement; the penalty precedes removal to three. ",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Bulldozer"
+                }
+              },
+              "then": {
+                "preventSideSchemeDeparture": "this"
+              }
+            }
+          }
+        },
+        {
+          "name": "Charge!",
+          "trigger": {
+            "event": "WhenThreatPlaced",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "when": {
+            "atLeast": {
+              "value": {
+                "tokensOn": "this"
+              },
+              "count": 10
+            }
+          },
+          "effect": {
+            "seq": [
+              {
+                "eachPlayer": {
+                  "effect": {
+                    "discardTop": {
+                      "from": "yourDeck",
+                      "count": 10
+                    }
+                  }
+                }
+              },
+              {
+                "removeThreat": {
+                  "scheme": "this",
+                  "amount": {
+                    "add": [
+                      {
+                        "tokensOn": "this"
+                      },
+                      -3
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "07001a",
+      "name": "Breakout",
+      "note": "Scenario setup composition owns the four paired villains, encounter decks, initial signature schemes and active counter. This face has no runtime ability; no public Wrecking Crew setup recipe is admitted.",
+      "abilities": []
+    },
+    {
+      "card": "07001b",
+      "name": "Breakout",
+      "note": "After step one, place the complete threat batch before selecting the most-threat paired villain. MARVEL-669 remains an integration blocker for shared response ordering; this definition does not admit the scenario.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenVillainPhaseStepOneCompleted",
+            "timing": "ForcedResponse",
+            "subject": "game"
+          },
+          "effect": {
+            "seq": [
+              {
+                "placeThreat": {
+                  "scheme": {
+                    "query": "sideSchemes"
+                  },
+                  "amount": 1
+                }
+              },
+              {
+                "chooseCard": {
+                  "chooser": "firstPlayer",
+                  "from": {
+                    "query": "villainsWithMostSchemeThreat"
+                  },
+                  "effect": {
+                    "moveActiveCounter": "chosen"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "07015",
+      "name": "Mystical Link",
+      "note": "Printed 07015. The Boost grants Wrecker ATK only for the current activation, independently of the active counter, unless the player places threat on his scheme.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "placeThreat": { "scheme": { "query": "sideSchemes" }, "amount": 2 } }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": {
+            "choose": {
+              "descriptions": ["Wrecker gets +3 ATK for this activation", "Place 2 threat on Wrecker's side scheme"],
+              "options": [
+                { "grantUntil": { "card": { "titled": "Wrecker" }, "keyword": "attack", "amount": 3, "until": "EndOfActivation" } },
+                { "placeThreat": { "scheme": { "titled": "Day of Reckoning" }, "amount": 2 } }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07016",
+      "name": "You're Dead Meat!",
+      "note": "Printed 07016; rr:first-player.1 resolves tied lowest remaining health. ruling:28d343ac007bd784 preserves a defeat even when an interrupt returns that ally to hand. The damage receipt names the exact chosen incarnation.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "minBy": {
+                  "of": { "query": "heroAndAllyTargets" },
+                  "by": "remainingHealth"
+                }
+              },
+              "effect": {
+                "seq": [
+                  { "dealDamage": { "cards": "chosen", "amount": 1 } },
+                  {
+                    "if": {
+                      "test": { "wasDefeatedByDamage": "chosen" },
+                      "then": {
+                        "placeThreat": {
+                          "scheme": { "titled": "Day of Reckoning" },
+                          "amount": 3
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07049",
+      "name": "Bulldozer's Helmet",
+      "attachTo": {
+        "titled": "Bulldozer"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "discardTop": {
+              "from": "yourDeck",
+              "count": {
+                "completedAttackDamageDealt": "game"
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "you"
+              },
+              {
+                "discardRandomFromHand": 1
+              }
+            ]
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "07031",
+      "name": "Tactical Prowess",
+      "note": "Printed 07031. Rank both side-scheme pools independently; rr:first-player.1 chooses tied distinct endpoints. Wait for the exact destination's actual Forced Response initiation before deciding surge, including a response that resets its threat.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "moveThreat": {
+              "from": { "minBy": { "of": { "query": "sideSchemes" }, "by": "threat" } },
+              "to": { "maxBy": { "of": { "query": "sideSchemes" }, "by": "threat" } },
+              "amount": "all"
+            } },
+            { "if": {
+              "test": { "not": { "atLeast": { "value": { "result": "destinationForcedResponseTriggered" }, "count": 1 } } },
+              "then": { "gainSurge": 1 }
+            } }
+          ] }
+        }
+      ]
+    },
+    {
+      "card": "03001a",
+      "name": "Captain America",
+      "note": "Printed discard is a cost; readying this identity must change the game. The instance-specific once-per-round limit persists through form changes.",
+      "abilities": [
+        {
+          "name": "I Can Do This All Day!",
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "discardFromHand": 1
+          },
+          "limitPerRound": 1,
+          "effect": {
+            "ready": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "03001b",
+      "name": "Steve Rogers",
+      "note": "Living Legend discounts the globally first ally played this round only while this face is active. Setup searches only the printed deck/discard locations after mulligans; a held or facedown Drone Shield is not a match. The searched deck is shuffled even without a match.",
+      "abilities": [
+        {
+          "name": "Living Legend",
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "reduceFirstAllyCost": 1
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Setup",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "areas": [
+                      "yourDeck",
+                      "yourDiscardPile"
+                    ],
+                    "kind": "Upgrade",
+                    "title": "Captain America's Shield"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "areas": [
+                        "yourDeck",
+                        "yourDiscardPile"
+                      ],
+                      "kind": "Upgrade",
+                      "title": "Captain America's Shield"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "addToHand": "chosen"
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "shuffle": "yourDeck"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03002",
+      "name": "Agent 13",
+      "note": "The optional response follows entering play, including put-into-play effects. Threat removal is not a thwart ability and therefore does not consume confused.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "removeThreat": {
+                  "scheme": "chosen",
+                  "amount": 2
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03003",
+      "name": "Fearless Determination",
+      "note": "Hero Action grants the named Captain America one THW until phase end, then draws one card. The title reference follows current form rather than granting an unrelated controller the modifier.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "titled": "Captain America"
+                    }
+                  },
+                  "then": {
+                    "grantUntil": {
+                      "card": {
+                        "titled": "Captain America"
+                      },
+                      "keyword": "thwart",
+                      "amount": 1,
+                      "until": "EndOfPhase"
+                    }
+                  }
+                }
+              },
+              {
+                "draw": {
+                  "player": "you",
+                  "count": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "03007",
+      "name": "Steve's Apartment",
+      "note": "Exhaust is paid before the alter-ego action draws and heals the named Steve Rogers. Drawing remains meaningful while undamaged; the named heal does not apply to another identity.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "draw": {
+                  "player": "you",
+                  "count": 1
+                }
+              },
+              {
+                "heal": {
+                  "card": {
+                    "titled": "Steve Rogers"
+                  },
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "03008",
+      "name": "Captain America's Helmet",
+      "note": "The optional would-be-defeated interrupt names Captain America, not Steve Rogers. Assign remaining hit points to one independently of excess damage, then discard the Helmet only after the assignment resolves in full.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardWouldBeDefeated", "timing": "Interrupt", "subject": "game" },
+          "when": { "isTitle": { "card": "trigger.subject", "title": "Captain America" } },
+          "effect": {
+            "then": {
+              "effect": { "setHitPoints": { "card": "trigger.subject", "amount": 1 } },
+              "then": { "discard": "this" }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03009",
+      "name": "Captain America's Shield",
+      "note": "Restricted is printed card data. Both constant bonuses name the currently faceup Captain America; exhaustion does not blank them, and Steve Rogers receives neither bonus.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Captain America"
+                }
+              },
+              "then": {
+                "seq": [
+                  {
+                    "grant": {
+                      "card": {
+                        "titled": "Captain America"
+                      },
+                      "keyword": "defense",
+                      "amount": 1
+                    }
+                  },
+                  {
+                    "grant": {
+                      "card": {
+                        "titled": "Captain America"
+                      },
+                      "keyword": "retaliate",
+                      "amount": 1
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03010",
+      "name": "Super-Soldier Serum",
+      "note": "The controlled ready Serum exhausts to generate one physical resource during an eligible payment in either form.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "printedResources": "R",
+          "effect": {
+            "generate": "R"
+          }
+        }
+      ]
+    },
+    {
+      "card": "03012",
+      "name": "Hawkeye",
+      "note": "Hawkeye enters play with four arrow counters before the entry response window opens. After a minion enters play, his optional response removes one arrow counter as its cost and deals two damage to that entered minion.",
+      "startingCounters": {
+        "type": "arrow",
+        "count": 4,
+        "uses": false
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "game"
+          },
+          "when": {
+            "isKind": {
+              "card": "trigger.subject",
+              "kind": "minion"
+            }
+          },
+          "cost": {
+            "removeCounters": {
+              "card": "this",
+              "counter": "arrow",
+              "count": 1
+            }
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": "trigger.subject",
+              "amount": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03016",
+      "name": "Make the Call",
+      "note": "The Action offers each affordable ally in every player's discard pile, priced at that ally's printed resource cost from the resolving player's generators. The chosen exact card keeps its owner but enters the resolving player's ally area under their control; putting it into play is not playing it and therefore does not spend next-card cost reductions or produce a Card Played response.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "when": {
+            "canMakeTheCall": "game"
+          },
+          "effect": {
+            "makeTheCall": "game"
+          }
+        }
+      ]
+    },
+    {
+      "card": "03018",
+      "name": "The Power of Leadership",
+      "note": "This card generates one wild resource normally and doubles that output while paying for a Leadership card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "doubleResourceFor": "Leadership"
+          }
+        }
+      ]
+    },
+    {
+      "card": "03020",
+      "name": "Mockingbird",
+      "note": "Response: after Mockingbird enters play, stun an enemy. The response asks the resolving player which enemy receives the status.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "enemies"
+              },
+              "effect": {
+                "giveStatus": {
+                  "card": "chosen",
+                  "status": "stunned"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03021",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "03022",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "03023",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "03024",
+      "name": "Avengers Tower",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "atLeast": {
+                  "value": {
+                    "count": {
+                      "withTrait": {
+                        "cards": {
+                          "query": "alliesYouControl"
+                        },
+                        "trait": "AVENGER"
+                      }
+                    }
+                  },
+                  "count": {
+                    "count": {
+                      "query": "alliesYouControl"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "grant": {
+                  "card": "you",
+                  "keyword": "ally_limit",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "reduceNextCardCost": {
+              "player": "any",
+              "kind": "ally",
+              "trait": "AVENGER",
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03029",
+      "name": "Hydra Soldier",
+      "note": "Guard is a printed keyword. When Hydra Soldier is defeated, its engaged player is dealt one facedown encounter card; the player comes from the minion's engaged play area, not from whichever effect dealt the final damage.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "WhenDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "dealEncounterCards": {
+              "player": "engagedPlayer",
+              "count": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03034",
+      "name": "Enhanced Awareness",
+      "note": "Uses (3 mental counters). Hero Resource: Exhaust Enhanced Awareness and remove 1 mental counter from it to generate a mental resource. The last counter discards this upgrade under rr:uses-x-type; the committed resource ability still generates its resource.",
+      "startingCounters": {
+        "type": "mental",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "removeCounters": {
+                  "card": "this",
+                  "counter": "mental",
+                  "count": 1
+                }
+              }
+            ]
+          },
+          "printedResources": "B",
+          "effect": {
+            "generate": "B"
+          }
+        }
+      ]
+    },
+    {
+      "card": "03004",
+      "name": "Heroic Strike",
+      "note": "Hero Action attack deals six damage. The chosen enemy is stunned only if the captured payment includes a physical resource; a declared wild follows its allocated type. Damage prevention does not prevent the subsequent status effect.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 6
+                        }
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "paidWithResource": "R"
+                          },
+                          "then": {
+                            "giveStatus": {
+                              "card": "chosen",
+                              "status": "stunned"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03005",
+      "name": "Shield Block",
+      "note": "The defense interrupt prevents damage to your identity after exhausting your controlled ready Captain America's Shield. The printed interrupt has no form restriction and may trigger outside an attack without defending an attack (rr:defend-defense.4.8).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenDamageWouldBeDealt",
+            "timing": "Interrupt",
+            "target": "you"
+          },
+          "labels": [
+            "defense"
+          ],
+          "when": {
+            "isYourIdentity": "trigger.target"
+          },
+          "cost": {
+            "exhaustTitled": "Captain America's Shield"
+          },
+          "effect": {
+            "preventDamage": "trigger.target"
+          }
+        }
+      ]
+    },
+    {
+      "card": "03019",
+      "name": "Quinjet",
+      "note": "Optional response after your turn begins adds one time counter. Action puts an Avenger ally with printed cost no greater than time counters from hand into play, then discards Quinjet.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenPlayerTurnBegins",
+            "timing": "Response",
+            "subject": "you"
+          },
+          "effect": {
+            "placeCounters": {
+              "card": "this",
+              "counter": "time",
+              "count": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "withTrait": {
+                  "cards": {
+                    "cardsIn": {
+                      "area": "yourHand",
+                      "kind": "Ally"
+                    }
+                  },
+                  "trait": "AVENGER"
+                }
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "countersOn": {
+                          "card": "this",
+                          "counter": "time"
+                        }
+                      },
+                      "count": {
+                        "sumPrintedCost": "chosen"
+                      }
+                    }
+                  },
+                  "then": {
+                    "then": {
+                      "effect": {
+                        "putIntoPlay": {
+                          "card": "chosen",
+                          "where": "yourPlayArea"
+                        }
+                      },
+                      "then": {
+                        "discard": "this"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03015",
+      "name": "Avengers Assemble!",
+      "note": "Hero Action, max once per round. Ready controlled Avengers, then grant a live all-player Avenger character ATK/THW bonus until phase end.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+        "maxPerRound": 1,
+        "effect": { "seq": [
+          { "ready": { "withTrait": { "cards": { "query": "charactersYouControl" }, "trait": "AVENGER" } } },
+          { "grantCharactersWithTrait": { "trait": "AVENGER", "fields": ["attack", "thwart"], "amount": 1, "until": "EndOfPhase" } }
+        ] }
+      }]
+    },
+    {
+      "card": "03017",
+      "name": "Strength In Numbers",
+      "note": "Action: Exhaust any number of allies you control as the cost, then draw one card per physical ally in that committed exhaustion receipt.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
+        "cost": { "exhaustChosen": { "from": { "query": "alliesYouControl" }, "anyNumber": "true" } },
+        "effect": { "forEach": { "count": { "cardsExhaustedForCost": "game" }, "effect": { "draw": { "player": "you", "count": 1 } } } }
+      }]
+    },
+    {
+      "card": "03025",
+      "name": "Honorary Avenger",
+      "note": "The printed play prerequisite requires the acting identity's current Avenger trait. Attach to a friendly character, max one per character; attached character gets +1 hit point and gains Avenger.",
+      "attachTo": { "withoutAnotherCopyAttached": { "query": "heroesAndAllies" } },
+      "abilities": [{
+        "trigger": { "timing": "Constant", "subject": "this" },
+        "effect": { "seq": [
+          { "grant": { "card": "attachedTo", "keyword": "health", "amount": 1 } },
+          { "grant": { "card": "attachedTo", "trait": "AVENGER" } }
+        ] }
+      }]
+    },
+    {
+      "card": "03027",
+      "name": "Hit Squad",
+      "note": "When revealed, in player order each player discards one encounter-deck card and takes damage equal to that discard's printed boost icons; boost stars are not boost icons and no boost ability resolves.",
+      "abilities": [{
+        "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+        "effect": { "eachPlayer": { "order": "playerOrder", "effect": { "seq": [
+          { "discardTop": { "from": "encounterDeck", "count": 1 } },
+          { "dealDamage": { "cards": "you", "amount": { "printedBoostIconsDiscarded": "game" } } }
+        ] } } }
+      }]
+    },
+    {
+      "card": "03032",
+      "name": "Followed",
+      "note": "Attach to a side scheme, max one per scheme. Optional Interrupt when that scheme is defeated deals four nonattack damage to a chosen enemy before the scheme and attachment leave play.",
+      "attachTo": { "withoutAnotherCopyAttached": { "query": "sideSchemes" } },
+      "abilities": [{
+        "trigger": { "event": "WhenCardDefeated", "timing": "Interrupt", "subject": "attachedTo" },
+        "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 4 } } } }
+      }]
+    },
+    {
+      "card": "03006",
+      "name": "Shield Toss",
+      "note": "Discard X hand cards and return the controlled in-play Shield as costs. The physical discard receipt determines distinct attack targets; four damage is placed simultaneously before defeats.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+        "labels": ["attack"],
+        "cost": { "seq": [{ "discardAnyFromHand": "yourHand" }, { "returnTitledToHand": "Captain America's Shield" }] },
+        "effect": { "attack": {
+          "target": { "query": "attackableEnemies" }, "count": { "cardsDiscarded": "game" },
+          "effect": { "dealAttackDamage": { "cards": { "query": "powerTargets" }, "amount": 4, "simultaneous": 1 } }
+        } }
+      }]
+    },
+    {
+      "card": "03011",
+      "name": "Falcon",
+      "note": "The optional entry response privately inspects unchanged encounter tops. Each looked-at treachery independently removes one threat from a chosen scheme; this is not a thwart. Three bounded conditional choices preserve the printed inspection maximum without predicting the hidden count during admission.",
+      "abilities": [{
+        "trigger": { "event": "WhenCardEntersPlay", "timing": "Response", "subject": "this" },
+        "effect": { "seq": [
+          { "inspectEncounterTop": { "count": 3, "result": "treacheriesLookedAt" } },
+          { "if": { "test": { "atLeast": { "value": { "result": "treacheriesLookedAt" }, "count": 1 } },
+            "then": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } }
+          } },
+          { "if": { "test": { "atLeast": { "value": { "result": "treacheriesLookedAt" }, "count": 2 } },
+            "then": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } }
+          } },
+          { "if": { "test": { "atLeast": { "value": { "result": "treacheriesLookedAt" }, "count": 3 } },
+            "then": { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 1 } } } }
+          } }
+        ] }
+      }]
+    },
+    {
+      "card": "03014",
+      "name": "Wonder Man",
+      "note": "The additional hand discard is an attack cost paid simultaneously with exhaustion and before Stun cancellation, including attacks granted without exhausting.",
+      "abilities": [{
+        "trigger": { "timing": "Constant", "subject": "this" },
+        "effect": { "grant": { "card": "this", "keyword": "attack_hand_discard_cost", "amount": 1 } }
+      }]
+    },
+    {
+      "card": "07009",
+      "name": "Escaped Convict",
+      "note": "Printed Surge and minion stats come from the card catalog. ruling:8369361114d2929b: standalone scheme boosts have no this attack; schemes descended from attacks retain attack ancestry. Capture that villain before movement and resolve its boostless attack after the containing activation and responses, including when the counter cannot move.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "moveActiveCounter": "chosen"
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "and": [
+                          {
+                            "inForm": {
+                              "player": "you",
+                              "form": "hero"
+                            }
+                          },
+                          {
+                            "inAttackChain": "attack"
+                          }
+                        ]
+                      },
+                      "then": {
+                        "afterActivation": {
+                          "effect": {
+                            "enemyAttacks": {
+                              "enemies": "chosen",
+                              "against": "you",
+                              "dealBoostCards": "false"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07024",
+      "name": "Escaped Convict",
+      "note": "Printed Surge and minion stats come from the card catalog. ruling:8369361114d2929b: standalone scheme boosts have no this attack; schemes descended from attacks retain attack ancestry. Capture that villain before movement and resolve its boostless attack after the containing activation and responses, including when the counter cannot move.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "moveActiveCounter": "chosen"
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "and": [
+                          {
+                            "inForm": {
+                              "player": "you",
+                              "form": "hero"
+                            }
+                          },
+                          {
+                            "inAttackChain": "attack"
+                          }
+                        ]
+                      },
+                      "then": {
+                        "afterActivation": {
+                          "effect": {
+                            "enemyAttacks": {
+                              "enemies": "chosen",
+                              "against": "you",
+                              "dealBoostCards": "false"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07038",
+      "name": "Escaped Convict",
+      "note": "Printed Surge and minion stats come from the card catalog. ruling:8369361114d2929b: standalone scheme boosts have no this attack; schemes descended from attacks retain attack ancestry. Capture that villain before movement and resolve its boostless attack after the containing activation and responses, including when the counter cannot move.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "moveActiveCounter": "chosen"
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "and": [
+                          {
+                            "inForm": {
+                              "player": "you",
+                              "form": "hero"
+                            }
+                          },
+                          {
+                            "inAttackChain": "attack"
+                          }
+                        ]
+                      },
+                      "then": {
+                        "afterActivation": {
+                          "effect": {
+                            "enemyAttacks": {
+                              "enemies": "chosen",
+                              "against": "you",
+                              "dealBoostCards": "false"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "07053",
+      "name": "Escaped Convict",
+      "note": "Printed Surge and minion stats come from the card catalog. ruling:8369361114d2929b: standalone scheme boosts have no this attack; schemes descended from attacks retain attack ancestry. Capture that villain before movement and resolve its boostless attack after the containing activation and responses, including when the counter cannot move.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "chooser": "firstPlayer",
+              "from": {
+                "query": "villainsWithLeastSchemeThreat"
+              },
+              "effect": {
+                "seq": [
+                  {
+                    "moveActiveCounter": "chosen"
+                  },
+                  {
+                    "if": {
+                      "test": {
+                        "and": [
+                          {
+                            "inForm": {
+                              "player": "you",
+                              "form": "hero"
+                            }
+                          },
+                          {
+                            "inAttackChain": "attack"
+                          }
+                        ]
+                      },
+                      "then": {
+                        "afterActivation": {
+                          "effect": {
+                            "enemyAttacks": {
+                              "enemies": "chosen",
+                              "against": "you",
+                              "dealBoostCards": "false"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "03026",
+      "name": "Man Out of Time",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "descriptions": [
+                    "Change to alter-ego form",
+                    "Remain in your current form"
+                  ],
+                  "options": [
+                    {
+                      "changeForm": {
+                        "player": "you",
+                        "to": "alter-ego"
+                      }
+                    },
+                    {
+                      "seq": []
+                    }
+                  ]
+                }
+              },
+              {
+                "choose": {
+                  "descriptions": [
+                    "Exhaust Steve Rogers and remove Man Out of Time from the game",
+                    "Discard half your hand (rounded down), then discard Man Out of Time"
+                  ],
+                  "options": [
+                    {
+                      "then": {
+                        "effect": {
+                          "exhaust": "yourAlterEgo"
+                        },
+                        "then": {
+                          "removeFromGame": "this"
+                        }
+                      }
+                    },
+                    {
+                      "seq": [
+                        {
+                          "discardHandCards": {
+                            "floorDiv": {
+                              "value": {
+                                "count": {
+                                  "cardsIn": {
+                                    "area": "yourHand"
+                                  }
+                                }
+                              },
+                              "divisor": 2
+                            }
+                          }
+                        },
+                        {
+                          "discard": "this"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "note": "Printed Man Out of Time: optional alter-ego change, ready Steve Rogers exhaust-and-remove, or chosen half-hand discard rounded down followed by obligation discard."
+    },
+    {
+      "card": "03030",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "enemyAttacks": {
+                  "enemies": {
+                    "withTrait": {
+                      "cards": {
+                        "query": "minions"
+                      },
+                      "trait": "HYDRA"
+                    }
+                  },
+                  "against": "engagedHero"
+                }
+              },
+              {
+                "eachPlayer": {
+                  "effect": {
+                    "if": {
+                      "test": {
+                        "not": {
+                          "atLeast": {
+                            "value": {
+                              "activationAttacksAgainstYou": "game"
+                            },
+                            "count": 1
+                          }
+                        }
+                      },
+                      "then": {
+                        "seq": [
+                          {
+                            "chooseCard": {
+                              "from": {
+                                "cardsIn": {
+                                  "areas": [
+                                    "encounterDeck",
+                                    "encounterDiscardPile"
+                                  ],
+                                  "kind": "Minion",
+                                  "trait": "HYDRA"
+                                }
+                              },
+                              "effect": {
+                                "putIntoPlay": {
+                                  "card": "chosen",
+                                  "where": "engagedWithYou"
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "shuffle": "encounterDeck"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "03028",
+      "name": "Baron Zemo",
+      "note": "Quickstrike is a printed keyword. The engaged player's current identity cannot perform basic or labeled thwarts; allies and nonthwart threat removal remain permitted (rr:you-your.12, .15). The prohibition is a live derived modifier and ends with engagement, blanking or departure.",
+      "abilities": [{
+        "trigger": { "timing": "Constant" },
+        "effect": { "grantEach": {
+          "cards": { "inPlayerArea": { "area": "identity", "player": "engagedPlayer" } },
+          "keyword": "thwart_prohibited", "amount": 1
+        } }
+      }]
+    },
+    {
+      "card": "03033",
+      "name": "Expert Defense",
+      "note": "Hero Interrupt (defense): When your hero defends against an attack, it gets +3 DEF for that attack. Uses the committed hero-defense occurrence, including RR1.8 defense-labeled initiation.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenHeroDefends",
+            "timing": "Interrupt",
+            "subject": "you",
+            "form": "hero"
+          },
+          "labels": [
+            "defense"
+          ],
+          "effect": {
+            "grantUntil": {
+              "card": "you",
+              "keyword": "defense",
+              "amount": 3,
+              "until": "EndOfAttack"
+            }
+          }
+        }
+      ]
     }
   ]
 }

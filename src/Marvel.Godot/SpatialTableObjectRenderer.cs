@@ -35,8 +35,16 @@ internal sealed class SpatialTableObjectRenderer
         piles = new SpatialTablePileRenderer(surface, result, scale, art, openingMulligan);
     }
 
-    internal void RenderScenario(IReadOnlyList<BoardAreaPresentation> areas)
+    internal void RenderScenario(IReadOnlyList<BoardAreaPresentation> areas,
+        IReadOnlyList<EncounterGroupDescriptor>? groups = null)
     {
+        if (groups is { Count: > 0 })
+        {
+            foreach (var card in new EncounterGroupTableRenderer(surface, result, faces, piles)
+                .Render(areas, groups, geometry))
+                if (card.TargetId is { } id) hosts[id] = (card, card.Position);
+            return;
+        }
         if (!piles.Render(areas, "EncounterDiscardPile", geometry.EncounterDiscard))
         {
             piles.RenderEmpty("EncounterDiscard", "Discard\nEmpty", geometry.EncounterDiscard, false);

@@ -77,10 +77,12 @@ internal static class AbilityAreaNumericProjection
         return null;
     }
 
-    internal static List<AreaProjectionState>? TryTraceHeal(
+    internal static List<AreaProjectionState>? TryTraceHealth(
         this AbilityAreaProjection projection, AbilityEffect effect, List<AreaProjectionState> states,
         long repetitions, long baseMultiplier)
     {
+        if (effect is AbilityEffect.SetHitPoints)
+            return AbilityHitPointAssignment.Trace(projection, effect, states);
         if (effect.OperationName() == "heal")
         {
             var instruction = EffectOf<AbilityEffect.Heal>(effect, projection.context);
@@ -119,6 +121,11 @@ internal static class AbilityAreaNumericProjection
                 foreach (var scheme in ProjectedEvery(
                              instruction.Schemes, state, projection.context))
                 {
+                    if (!AbilityThreatPermissions.CanRemoveThreat(
+                        projection.context.World, projection.context.Program, scheme,
+                        byThwarting: projection.context.Power == BasicPowers.ThwartVerb,
+                        projection: AbilityThreatPermissionProjection.From(projection.context.World, state)))
+                        continue;
                     long removed = AbilityAmounts.SaturatingMultiply(amount, repetitions);
                     state.Threat[scheme.ObjectId] = Math.Max(
                         0, state.ThreatOf(scheme) - removed);

@@ -122,7 +122,11 @@ public static class DamagePlacement
         assignment = assignment.AfterPrevention(
             world.DamageAbilities.WouldTake(world, target, source, assignment.Taken, events));
         if (request.PreventAllDamage) assignment = assignment.AfterPrevention(0);
-        return new PlacedDamage(target, assignment.Dealt, assignment.Taken);
+        return new PlacedDamage(target, assignment.Dealt, assignment.Taken)
+        {
+            RemainingHealth = Math.Max(0, Health(world, facts, target) - target.Damage),
+            ExcessThreat = ExcessDamageThreat.Capture(world, source),
+        };
     }
 
     /// <summary>Place one already-fixed share of simultaneous damage at step 5.</summary>

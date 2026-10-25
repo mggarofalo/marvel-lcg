@@ -1,5 +1,10 @@
 # Release identity, signing and compatibility
 
+Protocol 37 adds explicit scenario mode, ordered component-version choices and
+modular-set availability to setup discovery. Game requests still identify an
+authored recipe key; save formats and replay semantics are unchanged by these
+presentation fields. Older protocol endpoints remain rejected.
+
 This document is the release contract for the desktop client and persistent
 multiplayer server. It defines the identities a build carries, which versions
 may communicate with or restore one another, and where signing authority lives.
@@ -46,12 +51,24 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `35` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `37` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v20` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v22` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
+
+Replay v22 completes nested reveals, including minion Quickstrike, before the
+parent reveal continues. This changes recorded event and decision boundaries;
+v21 saves require named source admission and full exact replay verification.
+The frozen v19/v20 played campaigns contain an affected Shadows of the Past
+history and are rejected without changing their files. Protocol 37, save schema 7,
+RNG and state-digest identities remain unchanged.
+
+Replay v21 orders native retaliation with printed forced after-attack responses
+and applies retaliation even when attack damage is zero. The strict named v19/v20
+upgrade paths verify original histories and reject changed outcomes before
+publication; see [save-content-upgrades.md](save-content-upgrades.md).
 
 Replay v20 preserves the responsible player through scheme defeat and follows
 same-title villain stages through card continuations. Corrected outcomes can
@@ -62,8 +79,9 @@ setup and recovery. The same Core setup and decisions can resolve differently
 under these mechanics, independently of expansion dataset admission. Internal
 agenda operations are reconstructed by full replay; they are not serialized as
 save authority. Schema 7 records ordered explicit decks and the exact campaign
-setup, including stable campaign seats and overlays. Protocol 35 carries campaign
-commands and the engine-owned decision contracts. Older protocol and save
+setup, including stable campaign seats and overlays. Protocol 37 carries campaign
+commands, engine-owned decision contracts and visibility-filtered independent
+villain/deck relationships. Older protocol and save
 identities remain rejected. Older replay identities are rejected except for the
 named predecessor upgrade described in
 [save-content-upgrades.md](save-content-upgrades.md). That adapter

@@ -23,6 +23,8 @@ internal static class AbilityBindingAnalysis
         AbilityCondition.InForm form => form.Player == AbilityPlayer.ChosenPlayer,
         AbilityCondition.CardText text => BindingCanChange(text.Card),
         AbilityCondition.IsKind kind => BindingCanChange(kind.Card),
+        AbilityCondition.IsEnemyAttacker attacker => BindingCanChange(attacker.Card),
+        AbilityCondition.WasDefeatedByDamage defeated => BindingCanChange(defeated.Card),
         AbilityCondition.WasDefeated defeated => BindingCanChange(defeated.Card),
         AbilityCondition.IsYourIdentity identity => BindingCanChange(identity.Card),
         AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource or AbilityCondition.DiscardedWithTrait
@@ -70,6 +72,8 @@ internal static class AbilityBindingAnalysis
 
     internal static bool AmountMayChange(AbilityNumber number) => number switch
     {
+        // The accepted exhaustion receipt survives state changes and continuations.
+        AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.CardsExhaustedForCost } => false,
         AbilityNumber.Constant or AbilityNumber.PerPlayer => false,
         AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PowerAmount } => false,
         AbilityNumber.Sum sum => sum.Operands.Any(AmountMayChange),
@@ -110,7 +114,8 @@ internal static class AbilityBindingAnalysis
             or AbilityCondition.CausedThreat or AbilityCondition.Exists or AbilityCondition.LegalPractice
             or AbilityCondition.AutomaticThwart or AbilityCondition.TitleInPlay or AbilityCondition.InForm
             or AbilityCondition.ActivationIs or AbilityCondition.CardText or AbilityCondition.IsKind
-            or AbilityCondition.WasDefeated or AbilityCondition.IsYourIdentity => false,
+            or AbilityCondition.WasDefeatedByDamage or AbilityCondition.WasDefeated or AbilityCondition.IsYourIdentity
+            or AbilityCondition.IsEnemyAttacker => false,
         _ => throw new InvalidOperationException("Unknown compiled condition in power-binding analysis"),
     };
 

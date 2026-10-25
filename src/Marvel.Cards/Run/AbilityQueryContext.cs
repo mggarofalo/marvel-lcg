@@ -14,9 +14,11 @@ internal sealed record AbilityQueryContext(
     AbilityCardReference? PlayerSelectionBinding, Card? Altered,
     ImmutableArray<Card> PowerTargets)
 {
+    internal System.Collections.Immutable.ImmutableArray<(int Card, int Incarnation)> DamageDefeats { get; init; } = [];
     internal ImmutableHashSet<int> ExhaustedForCost { get; init; } = [];
 
     internal Defeated? TriggeringDefeat { get; init; }
+    internal Attacked? TriggeringAttack { get; init; }
     internal Defeated? Defeat => TriggeringDefeat ?? Occurrence.Defeat;
 
     internal CardInstanceState SourceState { get; init; } = Source.InstanceState;

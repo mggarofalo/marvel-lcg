@@ -36,10 +36,10 @@ internal static class AbilityEffectBindingAnalysis
     ];
     private static readonly ImmutableArray<Type> BasicCardTypes =
     [
-        typeof(AbilityEffect.CardAction), typeof(AbilityEffect.Heal),
+        typeof(AbilityEffect.CardAction), typeof(AbilityEffect.Heal), typeof(AbilityEffect.SetHitPoints),
         typeof(AbilityEffect.Damage), typeof(AbilityEffect.AttackDamage),
-        typeof(AbilityEffect.MoveDamage), typeof(AbilityEffect.IndirectDamage),
-        typeof(AbilityEffect.GiveStatus),
+        typeof(AbilityEffect.MoveThreat), typeof(AbilityEffect.MoveDamage), typeof(AbilityEffect.IndirectDamage),
+        typeof(AbilityEffect.GiveStatus), typeof(AbilityEffect.RemoveStatuses),
     ];
     private static readonly ImmutableArray<Type> ThreatAndGrantTypes =
     [
@@ -131,12 +131,15 @@ internal static class AbilityEffectBindingAnalysis
     private static bool BasicCardBindingCanChange(AbilityEffect effect) => effect switch
     {
         AbilityEffect.CardAction action => BindingCanChange(action.Selection),
+        AbilityEffect.SetHitPoints assignment => BindingCanChange(assignment.Card),
         AbilityEffect.Heal heal => BindingCanChange(heal.Card) || BindingCanChange(heal.Amount),
         AbilityEffect.Damage damage => BindingCanChange(damage.Cards) || BindingCanChange(damage.Amount),
         AbilityEffect.AttackDamage damage => BindingCanChange(damage.Cards) || BindingCanChange(damage.Amount),
+        AbilityEffect.MoveThreat move => BindingCanChange(move.From) || BindingCanChange(move.To) || BindingCanChange(move.Amount),
         AbilityEffect.MoveDamage move => BindingCanChange(move.From) || BindingCanChange(move.To) || BindingCanChange(move.Amount),
         AbilityEffect.IndirectDamage damage => BindingCanChange(damage.Among) || BindingCanChange(damage.Amount),
         AbilityEffect.GiveStatus status => BindingCanChange(status.Cards),
+        AbilityEffect.RemoveStatuses status => BindingCanChange(status.Cards),
         _ => throw new InvalidOperationException("Unknown basic card binding effect"),
     };
 
@@ -196,6 +199,7 @@ internal static class AbilityEffectBindingAnalysis
 
     private static bool NoBindingChange(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.DiscardHandCards discard => BindingCanChange(discard.Count),
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.ChosenPlayer,
         AbilityEffect.AttachCards attach => BindingCanChange(attach.Cards) || BindingCanChange(attach.Host),
         AbilityEffect.ReleaseBeneath => false,
@@ -203,11 +207,11 @@ internal static class AbilityEffectBindingAnalysis
         AbilityEffect.InitializeAuxiliaryDeck initialize => BindingCanChange(initialize.Cards),
         AbilityEffect.RevealAuxiliaryTop => false,
         AbilityEffect.Shuffle or AbilityEffect.Search => false,
-        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.DoubleResourceFor
+        AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate or AbilityEffect.AllowPlayBeneath or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor
             or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardResourceIcons
-            or AbilityEffect.RecoverDiscardedByResource => false,
+            or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.GrantTraitCharacters => false,
         _ => throw new InvalidOperationException("Unknown compiled effect in player-binding analysis"),
     };
 

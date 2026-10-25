@@ -24,7 +24,7 @@ public sealed class AbilityEffectLoweringTests
     [InlineData("""{"dealDamage":{"card":"you","amount":1}}""")]
     [InlineData("""{"generate":"E"}""")]
     [InlineData("""{"choose":{"chooser":"firstPlayer","options":[{"draw":{"player":"you","count":1}},{"heal":{"card":"you","amount":1}}]}}""")]
-    [InlineData("""{"chooseCard":{"chooser":"firstPlayer","from":{"query":"villain"},"effect":{"heal":{"card":"chosen","amount":1}}}}""")]
+    [InlineData("""{"chooseCard":{"chooser":"chosenPlayer","from":{"query":"villain"},"effect":{"heal":{"card":"chosen","amount":1}}}}""")]
     public void UnimplementedSpellingsAreRejectedEvenInAnUnselectedBranch(string effect)
     {
         var failure = Assert.Throws<AbilityException>(() => Lower($$$"""
@@ -48,6 +48,20 @@ public sealed class AbilityEffectLoweringTests
                     new AbilityLocation(ability.Card, ordinal++, "effect")));
             }
         }
+    }
+
+    [Fact]
+    public void FirstPlayerCardChoiceChangesOnlyTheAnsweringSeatDeclaration()
+    {
+        var original = Assert.IsType<AbilityEffect.ChooseCard>(Lower(
+            """{"chooseCard":{"from":{"query":"villain"},"effect":{"heal":{"card":"chosen","amount":1}}}}"""));
+        var firstPlayer = Assert.IsType<AbilityEffect.ChooseCard>(Lower(
+            """{"chooseCard":{"chooser":"firstPlayer","from":{"query":"villain"},"effect":{"heal":{"card":"chosen","amount":1}}}}"""));
+
+        Assert.False(original.FirstPlayerChooses);
+        Assert.True(firstPlayer.FirstPlayerChooses);
+        Assert.Equal(original.From, firstPlayer.From);
+        Assert.Equal(original.Effect, firstPlayer.Effect);
     }
 
     [Fact]

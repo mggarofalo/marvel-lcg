@@ -34,7 +34,8 @@ internal static class AbilityAreaCostProjection
             case AbilityCost.Heal heal:
                 projection.TraceHealCost(heal, state);
                 return;
-            case AbilityCost.ConsumeCampaignCard or AbilityCost.Discard or AbilityCost.ReturnSourceToHand:
+            case AbilityCost.ConsumeCampaignCard or AbilityCost.Discard
+                or AbilityCost.ReturnSourceToHand or AbilityCost.ReturnTitledToHand:
                 projection.TraceDepartureCost(payment, state);
                 return;
             case AbilityCost.RemoveCounters counters:
@@ -51,7 +52,11 @@ internal static class AbilityAreaCostProjection
 
     private static void TraceDepartureCost(this AbilityAreaProjection projection, AbilityCost cost, AreaProjectionState state)
     {
-        if (cost is AbilityCost.ReturnSourceToHand) projection.TraceReturnCost(state);
+        if (cost is AbilityCost.ReturnSourceToHand)
+            projection.TraceReturnCost(state, projection.CostTarget(AbilityCostCard.Source, state));
+        else if (cost is AbilityCost.ReturnTitledToHand named)
+            projection.TraceReturnCost(state, NamedAbilityCost.Target(
+                projection.context.World, projection.context.Query.Player, named.Title));
         else projection.TraceDiscardCost(cost switch
         {
             AbilityCost.Discard discard => discard,
@@ -61,7 +66,7 @@ internal static class AbilityAreaCostProjection
     }
 
     private static bool IsHandCost(AbilityCost payment) =>
-        payment is AbilityCost.DiscardFromHand or AbilityCost.Spend
+        payment is AbilityCost.RandomDiscardFromHand or AbilityCost.DiscardFromHand or AbilityCost.Spend
             or AbilityCost.SpendEnergy;
 
     private static Card? CostTarget(this AbilityAreaProjection projection, AbilityCostCard binding, AreaProjectionState state)
@@ -123,9 +128,9 @@ internal static class AbilityAreaCostProjection
         projection.MarkDiscardedTree(state, target);
     }
 
-    private static void TraceReturnCost(this AbilityAreaProjection projection, AreaProjectionState state)
+    private static void TraceReturnCost(this AbilityAreaProjection projection, AreaProjectionState state, Card? target)
     {
-        if (projection.CostTarget(AbilityCostCard.Source, state) is not { } target) return;
+        if (target is null || state.Departed.Contains(target.ObjectId)) return;
         projection.couldDiscard |= projection.queried.Contains(target.Area.Type)
             || projection.queried.Contains(DeckType.HandsArea)
             || projection.HostedCardsChangeArea(state, target.ObjectId);

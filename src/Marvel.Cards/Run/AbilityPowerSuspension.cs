@@ -37,7 +37,7 @@ internal static class AbilityPowerSuspension
         AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange = false,
         bool bindingMayChange = false, PowerReachability? reachability = null)
     {
-        var state = reachability ?? InitialPowerReachability(cast);
+        var state = reachability ?? AbilityPowerStateFactory.Initial(cast);
         // Enumerate every supported path before accepting a suspension answer;
         // unsupported is a missing calculation, never an absent legal option.
         var paths = PowerPaths(state).ToArray();
@@ -47,6 +47,8 @@ internal static class AbilityPowerSuspension
             || IsChoice(node)
             || node.OperationName() is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
                 or "placeThreat" or "enemyAttacks" or "enemySchemes"
+                or "revealFromVillainDeck" or "reveal" or "revealTop" or "revealAuxiliaryTop"
+                or "search" or "discardUntil"
             || paths.SelectMany(path => PowerSuspensionChildren(
                 node, cast, stateMayChange, bindingMayChange, path)).Any(child =>
                 SuspendsPowerEffect(

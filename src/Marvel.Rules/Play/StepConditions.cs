@@ -26,6 +26,7 @@ public static class StepConditions
         [EndSchemeEarly] = [SchemeEnds],
         [GiveBoostCard] = ["WhenBoostCardGiven"],
         [DeclareDefender] = ["WhenDefenderDeclared"],
+        [HeroDefenseTiming.Defends] = [HeroDefenseTiming.Defends],
         [FlipBoostCards] = ["WhenBoostCardsFlipped"],
         // Damage from an attack is imminent before this step applies. Whether
         // it was dealt is known only afterwards: Tough may prevent it, so the
@@ -52,9 +53,11 @@ public static class StepConditions
         [CardEntersPlay] = [CardEntersPlay],
         [FormChanged] = [FormChanged],
         [PlayerTurnTiming.Ends] = [PlayerTurnTiming.Ends],
+        [PlayerTurnTiming.Begins] = [PlayerTurnTiming.Begins],
         [BasicPowerTiming.RecoveryUsed] = [BasicPowerTiming.RecoveryUsed],
         [ChooseOption] = ["WhenOptionChosen"],
         [PassFirstPlayerToken] = ["WhenFirstPlayerTokenPassed"],
+        [VillainStepOneTiming.Completed] = [VillainStepOneTiming.Completed],
 
         // Two conditions at one moment, because `rr:villain-phase.step.6` is
         // titled "End of Villain Phase and Round" and both are reached there.
@@ -83,5 +86,5 @@ public static class StepConditions
         Conditions.Values.SelectMany(each => each).Concat(
                 // These are discovered while their occurrence applies rather
                 // than promised when its step is scheduled.
-                [DamageDealt, ThreatPlaced, VillainPhaseStepOneEnds, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds]).ToFrozenSet(StringComparer.Ordinal);
+                [DamageDealt, ThreatPlaced, VillainStepOneTiming.ThreatPlaced, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds]).ToFrozenSet(StringComparer.Ordinal);
 }

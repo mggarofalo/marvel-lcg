@@ -23,6 +23,11 @@ internal sealed class AbilityPaymentValidation(
         }
 
         IReadOnlyList<AbilityCost> steps = cost is AbilityCost.Sequence sequence ? sequence.Costs : [cost];
+        if (steps.Any(step => step is AbilityCost.DiscardFromHand) && paying.Intersect(chosen).Any())
+            throw new RulesNotImplementedException(
+                $"'{source.FaceId}' cannot discard the same hand card for resources and an arrow cost");
+        if (!AbilityRandomHandCost.CanPayTogether(world, source, player, steps))
+            throw new RulesNotImplementedException("the random hand-discard cost cannot be paid in full");
         if (!AbilityDeckCosts.CanPayTogether(world, player, steps))
             throw new RulesNotImplementedException("the combined deck costs cannot be paid in full");
         if (EffectiveCards.Kind(source, world.Facts) == CardKind.Event
@@ -122,8 +127,8 @@ internal sealed class AbilityPaymentValidation(
     private void ValidateHandDiscard(
         AbilityCost.DiscardFromHand discard, IReadOnlyList<int> chosen)
     {
-        var hand = world.Seats[player].Hand;
-        var (minimum, maximum) = AbilityCostSelection.Range(discard.Range, hand.Cards.Count);
+        var candidates = AbilityCostSelection.HandCandidates(world, source, player);
+        var (minimum, maximum) = AbilityCostSelection.Range(discard.Range, candidates.Count);
         if (chosen.Count < minimum || chosen.Count > maximum
             || chosen.Distinct().Count() != chosen.Count)
         {
@@ -132,9 +137,9 @@ internal sealed class AbilityPaymentValidation(
                 $"'{source.FaceId}' costs {required} card(s) from hand and {chosen.Count} were chosen; rr:initiating-abilities.step.5 aborts without paying");
         }
         foreach (int id in chosen)
-            if (world.Cards[id].Area != hand)
+            if (!candidates.Any(card => card.ObjectId == id))
                 throw new RulesNotImplementedException(
-                    $"card {id} is not in {world.Seats[player].Name}'s hand and cannot be discarded from it");
+                    $"card {id} is not eligible for {world.Seats[player].Name}'s hand-discard cost");
     }
 
     private void ValidateChosenExhaust(

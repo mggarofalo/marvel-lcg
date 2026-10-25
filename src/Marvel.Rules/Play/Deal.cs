@@ -38,7 +38,7 @@ public static class Deal
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
 
-        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var deck = EncounterRouting.Deck(world);
 
         // `rr:encounter-deck.3`: "if the encounter deck empties during the
         // resolution of any other type of game effect *(for example, the

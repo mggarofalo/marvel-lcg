@@ -13,7 +13,15 @@ internal static class AbilityProjectedStateQueries
         AbilityCardSelection selector, AreaProjectionState state,
         AbilityAdmissionContext context)
     {
-        var found = Every(selector, context)
+        if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.OtherVillainSideSchemes })
+            return [.. AbilityOtherVillainSchemeQuery.InAreas(context, state)];
+        if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainOfAttachedScheme })
+            return [.. AbilityAttachedSchemeVillainQuery.InAreas(context, state)];
+        if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.ActiveVillainSideScheme })
+            return [.. AbilityActiveSchemeQuery.InAreas(context.World, state)];
+        if (selector is AbilityCardSelection.Query rankedQuery && AbilityEncounterSchemeQueries.IsRanked(rankedQuery.Kind))
+            return [.. AbilityEncounterSchemeQueries.InAreas(rankedQuery.Kind, context.World, state)];
+        var found = ProjectedCandidates(selector, state, context)
             .Where(card => !state.Departed.Contains(card.ObjectId))
             .ToList();
         return selector switch
@@ -23,7 +31,7 @@ internal static class AbilityProjectedStateQueries
             AbilityCardSelection.EnemiesWithTrait enemies =>
                 ProjectedEnemiesWithTrait(enemies, state, context),
             AbilityCardSelection.Ranked ranked =>
-                ProjectedRanked(ranked, state, context),
+                AbilityAreaRankedSelection.Select(ranked, state, context),
             AbilityCardSelection.FirstAvailable fallback => fallback.Options.Select(option => ProjectedEvery(option, state, context)).FirstOrDefault(cards => cards.Count > 0) ?? [],
             AbilityCardSelection.Last last => [.. ProjectedEvery(last.Cards, state, context).TakeLast(1)],
             AbilityCardSelection.FaceDown filtered => [.. ProjectedEvery(filtered.Cards, state, context).Where(card => !card.FaceUp)],
@@ -40,6 +48,22 @@ internal static class AbilityProjectedStateQueries
         };
     }
 
+    private static IEnumerable<Card> ProjectedCandidates(
+        AbilityCardSelection selector, AreaProjectionState state, AbilityAdmissionContext context)
+    {
+        var candidates = Every(selector, context);
+        if (context.World.EncounterTopology is null
+            || selector is not AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen })
+            return candidates;
+        // rr:villain-defeat.3.1: same-title villain stages are "the same character".
+        return candidates.Select(card => (Original: card,
+                Current: AbilityAreaEncounterProjection.Current(context.World, state, card)))
+            .Where(pair => pair.Current is not null && string.Equals(
+                context.World.Facts.Title(pair.Original.FaceId), context.World.Facts.Title(pair.Current.FaceId),
+                StringComparison.Ordinal))
+            .Select(pair => pair.Current!);
+    }
+
     private static List<Card> ProjectedBound(
         AbilityCardSelection.Bound bound, List<Card> found,
         AreaProjectionState state) =>
@@ -52,39 +76,6 @@ internal static class AbilityProjectedStateQueries
         [.. ProjectedEvery(
                 new AbilityCardSelection.Query(AbilityCardQuery.Enemies), state, context)
             .Where(card => state.HasTrait(context, card, enemies.Trait))];
-
-    private static List<Card> ProjectedRanked(
-        AbilityCardSelection.Ranked ranked, AreaProjectionState state,
-        AbilityAdmissionContext context)
-    {
-        var among = ProjectedEvery(ranked.Cards, state, context)
-            .Where(card => state.Entered.Contains(card.ObjectId)
-                ? Rules.Play.Discard.EffectCanRemove(
-                    context.World, context.World.Facts, context.Source, card)
-                : CanRemoveByEffect(ranked.Cards, context, card))
-            .ToList();
-        if (among.Count == 0)
-        {
-            return [];
-        }
-        long Rank(Card card) => ProjectedRank(ranked.By, card, state, context);
-        long extreme = ranked.Maximum ? among.Max(Rank) : among.Min(Rank);
-        return [.. among.Where(card => Rank(card) == extreme)];
-    }
-
-    private static long ProjectedRank(
-        AbilityCardRank rank, Card card, AreaProjectionState state,
-        AbilityAdmissionContext context) => rank switch
-        {
-            AbilityCardRank.Cost => context.World.Facts.PrintedValue(
-                card.FaceId, "Cost", context.World.Players),
-            AbilityCardRank.Attack => state.ModifiedOf(context, card, "attack"),
-            AbilityCardRank.PrintedHealth => EffectiveCards.BaseValue(
-                card, context.World.Facts, "HP", context.World.Players),
-            AbilityCardRank.RemainingHealth => Math.Max(0, state.HealthOf(context, card) - state.DamageOf(card)),
-            _ => throw new InvalidOperationException(
-                "Unknown compiled card rank in area projection"),
-        };
 
     private static List<Card> ProjectedWithTrait(
         AbilityCardSelection.WithTrait trait, AreaProjectionState state,
@@ -139,6 +130,11 @@ internal static class AbilityProjectedStateQueries
             found.RemoveAll(card =>
                 CardKinds.IsVillain(EffectiveCards.Kind(card, context.World.Facts)));
         }
+        var restricting = ProjectedEvery(new AbilityCardSelection.Query(AbilityCardQuery.Villains), state, context)
+            .Where(card => state.ModifiedOf(context, card, VillainAttackRestrictions.OtherVillains) > 0)
+            .ToList();
+        found.RemoveAll(card => CardKinds.IsVillain(EffectiveCards.Kind(card, context.World.Facts))
+            && !VillainAttackRestrictions.Allows(card, restricting));
         return found;
     }
 
@@ -165,6 +161,7 @@ internal static class AbilityProjectedStateQueries
                 kind == CardKind.Minion
                 && state.EngagedWith.GetValueOrDefault(card.ObjectId, -1)
                     == ChosenPlayer(context).Owner,
+            AbilityCardQuery.Villains => CardKinds.IsVillain(kind),
             AbilityCardQuery.Enemies => CardKinds.IsEnemy(kind),
             AbilityCardQuery.Characters => CardKinds.IsCharacter(kind),
             _ => IsSchemeQuery(query) && kind == CardKind.EncounterSideScheme,
@@ -254,6 +251,8 @@ internal static class AbilityProjectedStateQueries
         AbilityEffect effect, AreaProjectionState state, AbilityAdmissionContext context) =>
         effect.OperationName() switch
         {
+            "moveActiveCounter" => AbilityActiveCounterProjection.CanMoveArea(effect, state, context)
+                ? AbilityProjectionResolution.Full : AbilityProjectionResolution.None,
             "seq" or "and" => CombinedOutcomes(
                 OrderedEffects(effect).Select(child =>
                     ProjectedResolution(child, state, context))),
@@ -274,6 +273,7 @@ internal static class AbilityProjectedStateQueries
                 ProjectedFind(EffectOf<AbilityEffect.Heal>(effect, context).Card, state, context) is { } healed
                     ? state.DamageOf(healed) : 0,
                 Amount(EffectOf<AbilityEffect.Heal>(effect, context).Amount, context)),
+            "setHitPoints" => AbilityHitPointAssignment.ProjectedOutcome(effect, state, context),
             "removeThreat" => CombinedOutcomes(
                 ProjectedEvery(EffectOf<AbilityEffect.RemoveThreat>(effect, context).Schemes, state, context).Select(scheme =>
                     ResolutionOfAmount(

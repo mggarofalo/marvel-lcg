@@ -8,6 +8,8 @@ public enum AbilityConditionFact
 {
     /// <summary>The current Special is the last in the ordered group.</summary>
     FinalStep,
+    /// <summary>Scheduled work belongs to an enemy attack or its causal descendants.</summary>
+    InAttackChain,
     /// <summary>An ally can be played from a discard pile.</summary>
     CanMakeTheCall,
     /// <summary>The completed attack damaged its target.</summary>

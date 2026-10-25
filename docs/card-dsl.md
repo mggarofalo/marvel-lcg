@@ -1,4 +1,67 @@
+`completedAttackDamageDealt: "game"` reads the damage dealt by the enemy attack
+completed in the current occurrence. Damage prevention does not reduce it;
+boost ability damage does not contribute. The value remains fixed throughout
+forced and optional attack-end responses and is zero without a completed attack.
+
 # The card DSL
+
+`result: "activationUndefended"` counts completed undefended enemy attacks in the
+most recent scheduled activation collection. Completion captures the final
+defender before attack-end responses; prevented damage still counts, while
+stun and other attack replacements do not. A new collection clears this receipt.
+
+Static `enemyAttacks` and `enemySchemes` support a following `then`: every
+requested activation must actually be made. Stun or confuse replacement does not
+complete an activation; an attack whose damage is prevented still does. The
+receipt survives suspension and waits for the activation and its responses.
+Dynamic activation collections remain unsupported as dependent predecessors.
+
+`activeVillainSideScheme` selects the side scheme physically paired with the
+current active villain. Execution and projected boards follow their own active
+counter, including movement and stage promotion. Missing topology or a missing
+live pair raises; an ordinary scenario never substitutes its main scheme.
+
+`revealFromVillainDeck: <single-card selection>` reveals the top card of a
+living physical villain's paired encounter deck. It preserves the active counter
+and resolving player. An empty draw resets only that deck from its paired discard
+pile; taking its last card resets immediately, before the child reveal resolves.
+The parent continuation waits for the child reveal, including its responses.
+Missing or foreign group ownership raises instead of falling back to the active
+deck. Admission inspects the public group relation, never hidden deck contents.
+Power, area and repeated traces refuse to invent the board after an unresolved
+selected-deck reveal.
+
+`villains` selects all living villains independently of the active counter.
+Projected queries use projected stage membership, so promotion replaces one
+physical stage and final defeat removes that villain from the count.
+
+`moveActiveCounter: <single-card selection>` moves the scenario counter only to a
+different living physical villain. It does not change an activation in progress.
+The operation requires configured encounter groups; ordinary scenarios do not
+substitute a singleton villain. Ranked target selection happens before movement
+legality excludes the current holder. A unique extreme at the current holder
+therefore leaves no destination. Subsequent text still resolves unless its DSL
+explicitly requires completed movement with `then`. Power, area and repeated
+projections carry the active relation independently of immutable group ownership.
+When a `chooseCard` body also schedules an `afterActivation` effect against the
+chosen villain, that effect participates in target admission. The current counter
+holder remains eligible if the deferred effect can affect it, even though the
+counter move itself cannot resolve.
+
+`schemeDestination: "correspondingSideScheme"` declares an enemy's printed
+replacement for the main-scheme destination. Its compiled relation resolves the
+scheming villain's immutable scenario group, independently of the active villain
+counter. The villain and paired side scheme must remain in play. Unknown values
+are rejected, and this metadata alone does not declare a card implemented.
+Scheme steps consult this relation before constructing the threat occurrence,
+so the existing placement, interruption and response procedures receive the
+selected scheme. Whole-pack verification remains tracked by MARVEL-643; the
+declaration does not admit Wrecking Crew into public scenario setup.
+
+`defendingCharacter` names the live defender of the current enemy attack.
+It selects nothing during an undefended attack, a scheme, after the defender
+leaves play, or when only a finished attack remains. It does not fall back to
+the attacked identity.
 
 `startingCounters` accepts optional boolean `perPlayer` (default false). Its
 positive `count` is multiplied by the number of players who started the scenario
@@ -10,6 +73,16 @@ Identity-specific cards retain their printed aspect classification for this test
 
 The card DSL turns printed card text into inert JSON that the rules engine can
 execute. `Marvel.Cards` owns the parser and interpreter.
+
+`setHitPoints` takes `card` and a positive constant `amount`, assigning that
+many remaining hit points on an in-play identity or villain dial. It uses the
+modified maximum, independently of excess lethal damage. Zero, values above
+that maximum and targets without such a dial raise as unsupported. It records
+the existing health assignment event and a full result only when the dial
+changes; a following `then` uses that committed result.
+Repeated `eachPlayer`, `forEach` and `eachTime` frames containing this operation
+are explicitly unsupported: their transfer analysis does not model absolute
+assignment. Admission refuses them before costs or effects change state.
 
 The executable ability book is `datasets/abilities/abilities.json`. It contains
 all 209 Core Set card faces. A face with no executable text still has an explicit
@@ -42,6 +115,13 @@ The DSL contains no delegate, callback, source code or general expression
 escape hatch. Downloadable or user-authored content remains data.
 
 ## Ability rows
+
+The numeric modifier `other_villains_cannot_be_attacked` on a villain implements
+"players cannot attack other villains": a positive value permits attacks on that
+villain while prohibiting attacks on every other villain. Grant it to
+`attachedTo` from an attachment's constant ability to follow the current host and
+source lifecycle. Minion targets and damage without an attack label are unaffected;
+Guard still prohibits attacks on the host. The modifier spelling is an engine choice.
 
 One card row names a printed face and everything the engine knows how to execute
 from it:
@@ -246,6 +326,28 @@ player in the most recent scheduled activation collection. Canceled attacks do
 not count; a different defending player receives the attack receipt. Each-player
 continuations retain these receipts, and an empty new collection resets them.
 `undefendedAttack` reads the matching completed attack in an attack-end window.
+`villainsWithLeastSchemeThreat` and `villainsWithMostSchemeThreat` select every
+living villain tied at the corresponding scheme-threat extreme, including the
+active villain. Engine choice: their order follows immutable setup groups,
+including after stage promotion. Projected evaluation uses projected threat and
+physical stage membership; a trace without those facts raises. These queries
+select activation targets; they do not move the active counter.
+
+`chooseCard` accepts `chooser: "firstPlayer"` when the first player must select
+the target. A mandatory encounter instruction with this declaration resolves its
+sole legal target without a prompt; multiple targets ask the first player.
+`you`, the original resolving player, and continuation bindings retain their
+meanings. Omission uses the resolving player and retains explicit target selection.
+Other chooser values are rejected.
+`isEnemyAttacker` accepts a singular card selector and tests whether that in-play
+card is the current enemy attack's attacker. It does not use the active-villain
+counter or a completed attack. Stage-transition projection refuses this condition
+when it cannot establish the future attack relationship.
+With no active enemy attack, promotion can prove a newly entering constant
+inactive when its sole branch requires `isEnemyAttacker: "this"` (directly or
+as the first AND operand). An earlier test, an ability-level `when`, an ELSE
+branch, another selector, or an active attack keeps
+the existing unsupported-stage-constant boundary.
 Form-qualified `WhenRevealed` abilities retain their authored ordinals while only
 the revealing player's current form is offered and resolved.
 
@@ -288,7 +390,7 @@ automaticTarget canAutomaticThwart canLegalPractice
 canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters
 charactersYouControl choose chooseCard chooseDiscardToShuffle chooseTopForHand
 countersOn damageOn dealAttackDamage dealDamage dealEncounterCards
-deck defeatedByYou delayUntil discardAtRandom discardFromHand
+deck defeatedByYou delayUntil discardAtRandom discardAnyFromHand discardFromHand
 discardHandWithResource discardTop discardUntil discardable discardedWithResource
 doubleResourceFor drawToPrintedHandSize dynamic
 eachPlayer else encounterDeck encounterDiscardPile enemies
@@ -296,11 +398,11 @@ enemiesEngagedWithChosenPlayer enemiesWithTrait enemyAttacks enemySchemes exists
 finalStep generate generateTopDiscard giveAdditionalBoost
 grantCharactersControlledBy grantEach grantUntil hasStatus hasTrait heroDefended
 heroes heroesAndAllies heroAndAllyTargets identities
-identitiesWithinPerPlayerLimit inForm indirectDamage isKind isTitle
+identitiesWithinPerPlayerLimit inForm indirectDamage isEnemyAttacker isKind isTitle
 isYourIdentity keyword kind legalPractice mainScheme makeTheCall maxBy minions
 minionsEngagedWithYou modified moveAttackDamage mul onto options overkill
-paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
-placeAtRandom placeCounters placeThreat power powerAmount powerTargets
+inspectEncounterTop paidWithResource payOrEffect payOrExhaust peekTop perPlayer placeAccelerationToken
+placeAtRandom placeCounters placeThreat power powerAmount powerTargets cardsDiscarded
 preventDamage preventDamageFrom preventDamageWhile preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
 recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters
@@ -322,6 +424,14 @@ including its full printed text, until acknowledgement. It neither moves the
 card nor shuffles. The selected card, area and incarnation live in the existing
 ability continuation; visibility is prompt-scoped rather than a face-up mutation.
 The villain and main-scheme decks expose their current in-play top stages.
+
+`inspectEncounterTop: {"count":3,"result":"treacheriesLookedAt"}` privately
+shows up to the requested number of encounter deck cards, in top-to-bottom
+order, without moving, revealing, shuffling or replenishing them. Its single
+acknowledgement retains the treachery count as `result: "treacheriesLookedAt"`
+for subsequent effects. Only the acting seat receives those prompt context
+faces; acknowledgement revokes that visibility. The pending decision excludes
+intervening game actions. This inspection does not support pre-then completion.
 
 `heroAndAllyTargets` selects hero-form identities and allies. The existing
 `heroesAndAllies` selector includes identities in either form for effects that
@@ -411,6 +521,15 @@ This is recipient evidence, not a damage quantity. Ally-only damage does not
 qualify; overkill dealt to the identity does. Damage dealt remains distinct from
 damage taken or prevented under `rr:damage.3.2`. `activationDamage` retains the
 activation's aggregate damage result.
+
+`wasDefeatedByDamage` takes a card selector and tests whether the most recent
+direct damage node in this resolution defeated that exact card incarnation.
+The receipt survives suspended choices and the defeated card leaving play or
+returning; a retained `chosen` binding identifies the original incarnation.
+An empty receipt is false. An attack-damage completion clears this direct-damage
+receipt and does not supply attack-defeat results. Selecting the latest receipt is an
+engine convention for expressing printed "defeated this way" conditions; this
+does not change `wasDefeated`, which reads defeats in the current occurrence.
 
 An actor role of `you` requires the player's identity, rather than an ally they
 control. `WhenBasicAttackEnds` distinguishes completed basic attacks from card
@@ -574,6 +693,22 @@ damage-prevention and imminent-threat windows already isolate those conditions.
 
 ### Campaign rewards and physical storage
 
+`reduceFirstAllyCost` takes a positive integer in a direct, unconditional Constant
+ability on an identity face. It reduces the first ally played by any player each
+round while that face is active. The selected identities' compiled abilities on
+all forms determine whether the engine records ally-play history; unrelated Core
+and Rise of Red Skull games allocate no history effects. An accepted ally play
+records history even while the reducing face is inactive. Putting an ally into
+play and rejected payments do not. Pricing is read-only, and the marker expires
+at the end of the round. This is the Living Legend prerequisite, not pack admission.
+
+`returnTitledToHand` is a cost naming the single controlled card with that printed
+title in play. It returns that card to its owner's hand before the post-arrow
+effect and discards its attachments through ordinary departure handling. The card
+may be exhausted. Missing, uncontrolled, out-of-play and ambiguous matches are
+unpayable; a named card is bound by incarnation when payment is prepared. This
+primitive is required by Shield Toss; it does not admit Captain America by itself.
+
 `exhaustTitled` is a cost naming the single ready card with the printed title under
 its acting player's control. Missing or ambiguous cards cannot pay it.
 `consumeCampaignCard` binds a campaign TECH reward, discards it, and records its
@@ -616,7 +751,7 @@ can pay an aspect card's printed cost or a cost within its ability
 resource multipliers. The restriction is valid only on a Resource ability and
 unknown values fail admission. Printed wild icons use `G` as elsewhere in this DSL.
 
-Discard receipts expose `printedResourceIconsDiscarded` and `distinctPrintedResourceTypesDiscarded` numeric expressions (value `"game"`). They count printed resource icons, including wild as its own type, without payment multipliers. `printedBoostIconsDiscarded` counts numeric boost icons and excludes boost stars. Empty receipts yield zero.
+Discard receipts expose `printedResourceIconsDiscarded` and `distinctPrintedResourceTypesDiscarded` numeric expressions (value `"game"`). They count printed resource icons, including wild as its own type, without payment multipliers. `printedBoostIconsDiscarded` counts numeric boost icons and excludes boost stars. Empty receipts yield zero. `printedCostDiscarded` sums the printed resource costs of the physical cards discarded in this resolution, with undefined X equal to zero. `distinctCardTypesDiscarded` counts distinct printed card types in that same receipt. Both take `"game"`; random hand discards retain the same physical receipt as top-deck discards.
 Arrow costs support `spendAny: N` for a positive number of resources without a required type, and `returnToHand: "this"` for returning the source from play to its owner. Event payment combines generic arrow costs with its printed price without charging twice. Returning a source discards attachments and ends its continuous effects before the post-arrow effect.
 ### Environment trait copying
 
@@ -737,4 +872,171 @@ multiple physical cards with the same title.
 `supportsYouControl` selects the resolving player's controlled supports in play.
 `forEach` takes a numeric `count` and an `effect` body, repeating that body for the resolved count. It supports printed counted instructions such as one additional boost card per side scheme.
 
+`cardsExhaustedForCost: "game"` counts the physical cards committed by the
+ability's `exhaustChosen` cost. It does not count resource generators, automatic
+source exhaustion, or allies that were already exhausted. The retained receipt
+survives later card movement and resolution continuations. Action admission
+checks legal physical cost selections without exhausting cards; a provided
+selection is validated against the exact ready candidates and selection range.
+`exhaustChosen` accepts `anyNumber: "true"` for a variable positive number of
+ready cards from its declared relation. A zero-card payment that produces no
+effect cannot initiate Strength in Numbers.
+
+`eachPlayer` accepts `order: "playerOrder"` when printed text explicitly
+requires first-player-then-clockwise resolution (`rr:in-player-order`). Without
+that field, the first player chooses the ordering (`rr:each-player.1`). Both
+forms use the same continuation frames and skip eliminated players.
+
 `attackDamagedYou: "you"` checks whether the completed enemy attack caused the attacked identity to take damage, including overkill, independently of damage to an ally defender.
+
+`dealAttackDamage` accepts `simultaneous: 1` inside a labelled attack. It snapshots
+its distinct recipients, places all damage before settling any recipient defeat,
+and publishes incarnation-bound attacked/damaged facts on that attack's response
+window. Retaliation remains the containing attack's aftermath. Ordinary attack
+damage retains its default path. Multiple simultaneous damage nodes in one power
+are explicitly unsupported; this marker does not supply multi-target selection,
+Guard admission or discard-cost cardinality by itself.
+
+An `attack` may specify `count` (a constant or `cardsDiscarded`) alongside its
+target selector. This bounded form requires one `dealAttackDamage` body with constant `amount`,
+`simultaneous: 1`, and `cards: { "query": "powerTargets" }`. It presents one
+engine-owned selection of distinct, jointly legal enemies. Under
+`rr:choose-game-element.3`, selection uses the lesser of the requested count and
+the number of available legal targets. `cardsDiscarded` can supply the count from
+the physical cost receipt; event resource payments do not contribute. The
+ordinary attack form remains a single declared target.
+
+Counted targets retain incarnation bindings and public attack facts through
+interrupts. Damage resolves only against the original copies still in play;
+departed recipients retain their attacked facts with zero damage taken. A new copy
+receives neither the old attack's damage nor its retaliation obligation. Damage
+results are correlated by physical recipient, so a missing earlier target cannot
+shift another target's result. The next stage of the same villain retains the
+shared retaliation behavior. After-attack forced-keyword ordering still blocks
+Captain America admission. The counted form does not admit arbitrary compound
+bodies.
+
+
+`preventThwarting` is a constant card selection prohibition scoped to threat removed
+by basic or labeled thwarting. Non-thwart threat removal remains legal. Projection
+supports unconditional `this`/`attachedTo` prohibitions, departed sources, and area
+projection attachment-host changes; unsupported projected predicates refuse.
+`villainOfAttachedScheme` selects the current physical villain paired with the
+source attachment's scheme, independently of the active counter. It requires an
+explicit encounter topology and never falls back to the active villain.
+
+
+`removeStatuses: { cards, statuses }` removes every physical status card of the
+listed kinds from selected in-play characters. `statuses` is a nonempty distinct
+list using `stunned`, `confused`, or `tough`. Completion is Full when at least one
+status card was actually removed and None when none was removed; dependent
+`otherwise` observes the committed removals. Invalid character targets are omitted,
+and unrelated status kinds remain. Unsupported projected compositions raise before
+execution rather than infer future status membership.
+
+
+`discardRandomFromHand: N` is a positive fixed-count arrow cost. Offer and
+admission queries inspect only affordability; commitment samples physical cards
+from the seeded game RNG without replacement. The resulting discard receipt can
+supply a count to the effect, but admission that depends on the random cards'
+printed facts explicitly raises. One random instruction may combine with fixed
+exhaustion costs. Multiple random instructions, simultaneous resource spending or
+other cost kinds, and event printed-payment composition explicitly raise before
+payment. Descriptions state that the hand discard is random; no card-selection
+prompt is offered for this cost.
+
+### Ranked selection pools
+
+`minBy` and `maxBy` rank every card in their explicit `of` selector and retain
+all ties. Supported `by` values include `cost`, `attack`, `printedHealth`,
+`remainingHealth`, and `threat`. Threat reads the projected scheme state during
+admission. Ranking alone does not imply removal; a removal effect ranks an
+explicit `discardable` pool when permanent cards must be excluded before the
+comparison (rr:permanent.4.1).
+
+`otherVillainSideSchemes` selects live schemes paired with living villains other
+than the source attachment's physical host, in scenario group order. It excludes
+unpaired schemes and follows projected stage membership and attachment hosts. A
+missing topology or unpaired host raises; a departed source or defeated host has
+no targets. A living selected villain must retain its live paired scheme. The
+selector spelling is an authored DSL choice motivated by Wrecker's Command
+(07007); it does not itself implement simultaneous threat placement.
+
+`grant: { card: "attachedTo", keyword: "excessDamageAsThreat" }` represents a continuous excess-damage routing instruction. This engine modifier is not a printed game keyword. Admission requires a direct, unconditional, cost-free Constant unit grant to attachedTo; conditional, scoped, lasting and activated forms raise during lowering. Attack and direct damage retain unprevented excess against preplacement remaining health and the physical corresponding scheme; routed excess replaces overkill spill and schedules normal threat placement before attack-end responses.
+
+`requireAttackedPlayerAllyDefender: "attack"` installs a forced-interrupt
+requirement for the current enemy attack activation. It requires an ally
+controlled by the originally attacked player when one can legally defend. Basic
+defense still requires readiness; card-declared defense follows its own readiness rules. Its
+persistent scope contains the activation id, attacking enemy and attacked identity;
+other activations and other players cannot inherit it. This instruction differs
+from the constant `requireAllyDefender: "engagedPlayer"` policy.
+
+### Ordered threat-move endpoints
+
+`moveThreat` accepts singular endpoint selectors and the public `sideSchemes`
+pool, optionally wrapped in `minBy` or `maxBy` with `by: "threat"`. Both pools
+are evaluated independently before identical source/destination pairs are
+excluded (`rr:move.1`). More than one legal ordered pair asks the first player
+to choose; one pair resolves directly and no legal pair completes without moving.
+The engine chooses pair ordering by source and then destination object id.
+The exact offered incarnations survive suspension; leaving and reentering
+does not authorize a replacement endpoint. The existing move receipt owns the
+subsequent removal, destination placement and response windows.
+
+`amount: "all"` requests the selected source's threat when the move is scheduled;
+a numeric expression retains ordinary requested-amount semantics. Result slots
+still describe the completed move. These DSL spellings and the single pair prompt
+are engine choices. No expansion card is admitted by this syntax.
+
+`attack_hand_discard_cost` is an engine-selected derived modifier for additional
+hand cards paid to initiate a basic attack. A constant `grant` to the attacking
+character supplies the quantity. It does not add a registered digest field.
+The basic-power offer checks the controller's hand and describes this cost.
+The attack then asks for exactly that many physical hand cards before paying
+them simultaneously with exhaustion. Stun cancels only after payment, including
+when no enemy can be targeted. Permission to attack without exhausting does not
+waive this separate cost. The suspended cost decision reconstructs through the
+ordinary session decision replay; it does not introduce a separate save format.
+
+`inAttackChain: "attack"` is a strict typed condition on the current scheduled
+work. It is true during an enemy attack and schemes causally initiated by that
+attack, including suspended boost choices and deeper causal activations. A
+standalone scheme is false even in hero form. The immutable historical attack
+origin survives completion and departure; unrelated later work has no origin.
+This spelling is an engine choice implementing ruling:8369361114d2929b's
+interpretation of "this attack". Combine it with the player's form condition and
+`afterActivation`; it neither moves the active counter nor schedules an attack.
+Activations remain sequential under rr:activation.8.
+
+`grantCharactersWithTrait` registers a live lasting combat bonus:
+`{"trait":"AVENGER","fields":["attack","thwart"],"amount":1,"until":"EndOfPhase"}`.
+The affected set includes all in-play characters with the current effective
+trait, across players, including later entrants. It is not a snapshot. Only
+positive constant ATK/THW bonuses are admitted; other fields raise explicitly.
+Trait reads filter trait-modifying effects before testing live affected sets,
+so unrelated combat bonuses cannot recursively consult their own trait filter.
+
+
+`WhenPlayerTurnBegins` is an observed occurrence before the active player's
+ordinary actions, including the first turn and later rounds. A `subject: "you"`
+response belongs to the controller whose turn begins. Observation checks live
+printed ability declarations; an unobserved empty occurrence is omitted.
+`putIntoPlay` with `where: "yourPlayArea"` retains successful physical ally-entry
+completion through ally-limit and entry-response windows for dependent `then`
+text. Unavailable entry has no completion. A `chooseCard` conditional with no
+reachable branch does not offer an unaffected candidate.
+
+`discardHandCards: <number>` asks the resolving player to choose exactly the
+computed number of distinct cards from their own hand, capped by available
+cards. Zero completes without a selection prompt. The entire group is selected
+in one engine-owned request; invalid or foreign selections leave state unchanged.
+The physical discarded cards are retained in the ordinary discard receipt.
+This operation suspends and is not admitted as a dependent-completion predecessor.
+
+
+`grant`/`grantEach` may use the derived `thwart_prohibited` modifier. A positive
+value prevents the selected character from performing basic or labeled thwarts,
+including an attempt canceled by Confused. It does not prevent nonthwart threat
+removal or another character's thwart. The field is an engine-selected constant
+modifier name, not a registered card-state or digest field.

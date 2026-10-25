@@ -63,6 +63,7 @@ internal static class AbilityEffectStructure
         if (EffectAmount(effect) is { } amount) yield return amount;
         var count = effect switch
         {
+            AbilityEffect.Power power => power.TargetCount,
             AbilityEffect.ForEach repeated => repeated.Count,
             AbilityEffect.DiscardAtRandom random => random.Count,
             AbilityEffect.PlaceAtRandom random => random.Count,

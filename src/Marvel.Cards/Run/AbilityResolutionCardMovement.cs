@@ -1,6 +1,5 @@
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
-using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
@@ -32,18 +31,32 @@ internal static class AbilityResolutionCardMovement
             cast.Suspend();
         }
         if (result.Reveal is { } reveal)
-            execution.ScheduleReveal(reveal, cast.World);
+            execution.ScheduleReveal(instruction, reveal, cast);
         if (result.ResolveEffect)
             cast.ResolveEffect();
         return true;
     }
 
-    internal static void ScheduleReveal(this AbilityResolutionExecution execution, AbilityRevealRequest reveal, World world) =>
-        world.Agenda.Then(new PhaseStep(
-            new RevealStageOperation(RevealStageKind.RevealEncounterCard),
-            world.Agenda.Current?.Round ?? 0,
-            4,
-            Index: reveal.Player,
-            Subject: reveal.Card,
-            Seat: reveal.Player));
+    private static void ScheduleReveal(this AbilityResolutionExecution execution,
+        AbilityEffect instruction, AbilityRevealRequest reveal, AbilityResolutionState cast)
+    {
+        // rr:reveal.step.4: "this same resolution procedure applies" to card-text reveals.
+        // The child resolves completely before the containing ability advances.
+        // The receipt concerns revealing the card, even if its own effects are canceled.
+        cast.CompletedOutcome = AbilityStructuralOutcome.Full;
+        var capture = AbilityContinuationScheduling.ForEffectProcedure(
+            execution.Capture(cast, execution.AbilityOrdinal(instruction, cast)));
+        int round = cast.World.Agenda.Current?.Round ?? 0;
+        var child = new PhaseStep(
+            new RevealStageOperation(RevealStageKind.RevealEncounterCard), round, 4,
+            Index: reveal.Player, Subject: reveal.Card, Seat: reveal.Player);
+        var continuation = AbilityContinuations.Step(capture, AbilityContinuationStage.Resume, round, plan: true);
+        if (cast.World.Agenda.Current is not null) cast.World.Agenda.Now([child, continuation]);
+        else
+        {
+            cast.World.Agenda.Add(child);
+            cast.World.Agenda.Add(continuation);
+        }
+        cast.Suspend();
+    }
 }

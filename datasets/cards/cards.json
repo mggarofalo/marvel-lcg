@@ -5,7 +5,7 @@
   "note": "Printed card text and stats, derived from the vendored MarvelSDB snapshot and from datasets/cards/supplement.json where MarvelSDB records nothing. Regenerate rather than edit: `-- check` fails the build on a hand edit.",
   "counts": {
     "cards": 4422,
-    "supplemented": 68,
+    "supplemented": 69,
     "engine_only": 44
   },
   "cards": [
@@ -11115,8 +11115,8 @@
         "CorrespondingCard": "Piledriver",
         "StartingThreat": "3"
       },
-      "text": "<b>Piledriver's Side Scheme.</b>\nThis card cannot leave play while Wrecker is in play.\nPile Drive — <b>Forced Response</b>: After threat is placed here, if there is 10 or more threat here, each player discards the upgrade or support they control with the highest cost. Remove all but 3 threat from this scheme.",
-      "text_plain": "Piledriver's Side Scheme.\nThis card cannot leave play while Wrecker is in play.\nPile Drive — Forced Response: After threat is placed here, if there is 10 or more threat here, each player discards the upgrade or support they control with the highest cost. Remove all but 3 threat from this scheme.",
+      "text": "<b>Piledriver's Side Scheme.</b>\nThis card cannot leave play while Piledriver is in play.\nPile Drive — <b>Forced Response</b>: After threat is placed here, if there is 10 or more threat here, each player discards the upgrade or support they control with the highest cost. Remove all but 3 threat from this scheme.",
+      "text_plain": "Piledriver's Side Scheme.\nThis card cannot leave play while Piledriver is in play.\nPile Drive — Forced Response: After threat is placed here, if there is 10 or more threat here, each player discards the upgrade or support they control with the highest cost. Remove all but 3 threat from this scheme.",
       "pack": "twc",
       "set": "piledriver"
     },

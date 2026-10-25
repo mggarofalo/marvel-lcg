@@ -28,6 +28,7 @@ internal sealed class DeckSetupController
         main.endpoint.TextChanged += _ => { chosen.Clear(); catalog = null; workspace = null; Refresh(); };
         main.hero.ItemSelected += _ => Refresh();
         main.secondHero.ItemSelected += _ => Refresh();
+        foreach (var control in main.setupController.AdditionalHeroes) control.ItemSelected += _ => Refresh();
     }
 
     internal GameSetupSelection Apply(GameSetupSelection selection)
@@ -88,22 +89,7 @@ internal sealed class DeckSetupController
     private void Assign(DeckDraft draft, int seat)
     {
         var hero = catalog!.Heroes.Single(item => item.IdentityFaces.Contains(draft.HeroCode, StringComparer.Ordinal));
-        if (seat == 0)
-        {
-            int index = main.setupChoices!.Heroes.ToList().FindIndex(item => item.Key == hero.Key);
-            if (main.hero.Selected != index)
-            {
-                main.hero.Select(index);
-                main.setupController.PopulateSecondHeroChoices();
-            }
-        }
-        else
-        {
-            int index = Enumerable.Range(1, main.secondHero.ItemCount - 1)
-                .FirstOrDefault(item => main.secondHero.GetItemMetadata(item).AsString() == hero.Key, -1);
-            if (index < 0) throw new InvalidOperationException("Choose a different hero for seat 2.");
-            main.secondHero.Select(index);
-        }
+        main.setupController.AssignHero(hero.Key, seat);
         chosen[hero.Key] = draft;
         main.setupController.RefreshBriefing();
         Refresh();

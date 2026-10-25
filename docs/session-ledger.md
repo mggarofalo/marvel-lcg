@@ -143,9 +143,10 @@ The narrow [named save upgrade path](save-content-upgrades.md) admits a
 pinned predecessor only after checking unchanged admitted content. It verifies
 the complete retained trace and all campaign proof sessions, then preserves the
 original archive before atomic publication. The save schema remains unchanged.
-Only the explicit Core/RoRS v19-to-v20 replay transition is supported, and only
-when every original recorded fact verifies under the corrected runtime; unknown
-contracts and divergent histories remain unsupported.
+The explicit frozen Core/RoRS v19, v20 and v21 routes target replay v22, and only
+when every original recorded fact verifies under the corrected runtime. Unknown
+contracts and divergent histories remain unsupported; admission is not a promise
+that every predecessor trace can migrate.
 
 ### Setup
 
@@ -246,7 +247,7 @@ answers from another seat.
 Initial campaign recovery therefore belongs to one setup unit through the
 opening-hand boundary, including recovery decisions from every participating
 seat. This is a ledger grouping choice, not a tabletop rule. It uses schema 7
-and replay v20 unchanged: setup, accepted decisions, outcomes and replay
+and replay v22 unchanged: setup, accepted decisions, outcomes and replay
 verification retain their existing formats and meaning. The host initializes
 the active prefix at cursor zero, including after an authorized undo; later
 dependent decisions still require an open unit.
@@ -691,14 +692,16 @@ publishes success. Closing the campaign table preserves its resumable attempt.
 A campaign's history cannot cross a committed campaign-fact frontier, and a
 completed attempt cannot be edited into a different campaign outcome.
 
-Campaign schema 1 and protocol 35 are strict compatibility boundaries. No
+Campaign schema 1 and protocol 37 are strict compatibility boundaries. No
 migration invents missing campaign meaning. Complete content admission is
 required before the host advertises a campaign or starts its first attempt.
 
-The current replay identity is `engine-replay-v20`. Scheme defeat preserves the
-responsible player separately from identity-only credit, and selected villains
-retain same-character meaning across same-title stage promotion. A named v19
-upgrade verifies the complete original history before changing compatibility
+The current replay identity is `engine-replay-v22`. Nested reveals finish before
+their parent continues, including minion Quickstrike. Native retaliation shares the
+forced after-attack window and applies after zero-damage attacks. Scheme defeat
+preserves the responsible player separately from identity-only credit, and selected villains
+retain same-character meaning across same-title stage promotion. Named v19, v20 and v21
+upgrades verify the complete original history before changing compatibility
 metadata; see [save-content-upgrades.md](save-content-upgrades.md). Histories
 containing a corrected outcome are rejected rather than rewritten.
 Attack reflection, typed
@@ -707,7 +710,7 @@ live in reconstructed agenda state. Session saves persist setup and decisions,
 not these internal operation objects. A restart rebuilds them by replaying the
 complete active prefix and verifies every recorded prompt, event, RNG count and
 state digest before publication. Earlier replay identities are rejected even if
-the Core dataset hashes are unchanged; protocol 35 and schema 7 remain unchanged
+the Core dataset hashes are unchanged; protocol 37 and schema 7 remain unchanged
 by these internal operation additions.
 
 ### Campaign library operations

@@ -35,6 +35,7 @@ internal static class AbilitySelectorLowering
                 "you" => AbilityCardBinding.You,
                 "attachedTo" => AbilityCardBinding.AttachedTo,
                 "trigger.subject" => AbilityCardBinding.TriggerSubject,
+                "defendingCharacter" => AbilityCardBinding.DefendingCharacter,
                 _ => throw location.Error($"'{word.Value}' is not a card binding"),
             });
         }
@@ -76,6 +77,12 @@ internal static class AbilitySelectorLowering
     internal static AbilityCardQuery Query(string name, AbilityLocation location) => name switch
     {
         "villain" => AbilityCardQuery.Villain,
+        "otherVillainSideSchemes" => AbilityCardQuery.OtherVillainSideSchemes,
+        "activeVillainSideScheme" => AbilityCardQuery.ActiveVillainSideScheme,
+        "villainOfAttachedScheme" => AbilityCardQuery.VillainOfAttachedScheme,
+        "villains" => AbilityCardQuery.Villains,
+        "villainsWithLeastSchemeThreat" => AbilityCardQuery.VillainsWithLeastSchemeThreat,
+        "villainsWithMostSchemeThreat" => AbilityCardQuery.VillainsWithMostSchemeThreat,
         "mainScheme" => AbilityCardQuery.MainScheme,
         "yourAsideMinion" => AbilityCardQuery.YourAsideMinion,
         "yourAsideSideScheme" => AbilityCardQuery.YourAsideSideScheme,
@@ -167,6 +174,7 @@ internal static class AbilitySelectorLowering
             "attack" => AbilityCardRank.Attack,
             "printedHealth" => AbilityCardRank.PrintedHealth,
             "remainingHealth" => AbilityCardRank.RemainingHealth,
+            "threat" => AbilityCardRank.Threat,
             _ => throw location.Child("by").Error($"'{by}' is not a card ranking"),
         };
         return new(SelectCards(Required(fields, "of", location), location.Child("of")), rank, maximum);
