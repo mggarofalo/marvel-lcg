@@ -1,8 +1,8 @@
 # Signature scheme verification
 
 MARVEL-625 includes all four signature schemes and both Breakout faces. The
-printed interpretations are exercised in `WreckingSchemeFixture` before canonical
-book integration. Setup recipes own the four paired schemes, their starting threat,
+printed interpretations are exercised through the canonical ability book by
+`WreckingSchemeFixture`. Setup recipes own the four paired schemes, their starting threat,
 the selected stages and Wrecker's initial counter. The rules corpus confirms that
 these schemes remain at zero threat while their paired villain is in play and
 leave only on its final defeat, including Extreme-mode promotion.
@@ -29,5 +29,7 @@ This is not full-pack acceptance. MARVEL-669 requires one shared response window
 for a multi-scheme threat instruction, including first-player ordering when two
 signature schemes reach their thresholds together. That obligation follows
 `rr:response.3`, `rr:triggering-condition.2`, and `rr:simultaneous-resolution`.
-Canonical row admission, simultaneous-window integration, saved full games and
-native acceptance remain required. The Windows desktop helper remains unavailable.
+Simultaneous-window integration, full-pack admission, saved full games and
+native acceptance remain required.
+
+Integration on 2026-10-25 combines the observed turn/phase boundary foundation with the canonical scheme rows. Draft row injection is removed. Duplicate `WreckingSignatureSchemeTests` and `WreckingSchemeChoiceTests` are superseded by `WreckingRemainingSchemeTests` and `WreckingRemainingSchemeChoiceTests`, retaining their assertions and corrected first-player/sole-target semantics. The focused canonical foundation run passes 75 cases (`%TEMP%/wrecking-foundation-focused.log`).
