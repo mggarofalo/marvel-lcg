@@ -38,18 +38,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      run: ${{ steps.changes.outputs.run }}
+      run: ${{ inputs.exhaustive || (github.event_name != 'push' && github.event_name != 'pull_request') || steps.filter.outputs.non_markdown != 'false' || steps.filter.outputs.any != 'true' }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: Verify change selection
-        run: python3 tools/ci_changes_tests.py
-      - name: Check the complete change range
-        id: changes
-        env:
-          CI_EXHAUSTIVE: ${{ inputs.exhaustive }}
-        run: python3 tools/ci_changes.py
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
+        id: filter
+        if: ${{ !inputs.exhaustive && (github.event_name == 'push' || github.event_name == 'pull_request') }}
+        with:
+          # Git comparison avoids extra API permissions in release callers.
+          token: ''
+          base: ${{ github.event.pull_request.base.sha || github.ref }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          filters: |
+            any:
+              - '**'
+            non_markdown:
+              - '!**/*.[mM][dD]'
 
   managed:
     name: Managed correctness
