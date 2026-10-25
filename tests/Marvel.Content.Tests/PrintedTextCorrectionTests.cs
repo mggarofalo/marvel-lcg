@@ -50,4 +50,24 @@ public sealed class PrintedTextCorrectionTests
         Assert.DoesNotContain("while Wrecker is in play", cards.Text("07034"));
         Assert.Contains("while Wrecker is in play", cards.Text("07004"));
     }
+
+    [Fact]
+    public void BurningHungerRetainsBothPrintedTraitBranches()
+    {
+        // Phoenix #28: "search the encounter deck, discard pile, and set-aside
+        // area for Dark Phoenix and reveal her"; "this card gains surge."
+        var cards = CardCatalog.Parse(File.ReadAllText(
+            RepositoryPaths.Dataset("cards", "cards.json")));
+        var plain = cards.Text("34028");
+        var formatted = cards.FormattedText("34028");
+
+        Assert.Contains("Give to the Jean Grey player.", plain);
+        Assert.Contains("If you have the UNLEASHED trait", plain);
+        Assert.Contains("area for Dark Phoenix and reveal her. Then, remove Burning Hunger from the game.", plain);
+        Assert.Contains("If you have the RESTRAINED trait", plain);
+        Assert.Contains("remove 1 power counter from Phoenix Force and this card gains surge. Discard this card.", plain);
+        Assert.Contains("<b>When Revealed</b>", formatted);
+        Assert.Contains("[[UNLEASHED]]", formatted);
+        Assert.Contains("[[RESTRAINED]]", formatted);
+    }
 }
