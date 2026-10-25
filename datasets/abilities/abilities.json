@@ -12422,6 +12422,329 @@
           }
         }
       ]
+    },
+    {
+      "card": "07004",
+      "name": "Day of Reckoning",
+      "note": "Printed signature scheme: cannot leave play while its corresponding villain remains. The threshold is checked after placement; the penalty precedes removal to three. ",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Wrecker"
+                }
+              },
+              "then": {
+                "preventSideSchemeDeparture": "this"
+              }
+            }
+          }
+        },
+        {
+          "name": "Hard Hitter",
+          "trigger": {
+            "event": "WhenThreatPlaced",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "when": {
+            "atLeast": {
+              "value": {
+                "tokensOn": "this"
+              },
+              "count": 10
+            }
+          },
+          "effect": {
+            "seq": [
+              {
+                "dealDamage": {
+                  "cards": {
+                    "query": "heroesAndAllies"
+                  },
+                  "amount": 2
+                }
+              },
+              {
+                "removeThreat": {
+                  "scheme": "this",
+                  "amount": {
+                    "add": [
+                      {
+                        "tokensOn": "this"
+                      },
+                      -3
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "07019",
+      "name": "Thunderstruck",
+      "note": "Printed signature scheme: cannot leave play while its corresponding villain remains. The threshold is checked after placement; the penalty precedes removal to three. ",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Thunderball"
+                }
+              },
+              "then": {
+                "preventSideSchemeDeparture": "this"
+              }
+            }
+          }
+        },
+        {
+          "name": "Gamma Blast",
+          "trigger": {
+            "event": "WhenThreatPlaced",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "when": {
+            "atLeast": {
+              "value": {
+                "tokensOn": "this"
+              },
+              "count": 10
+            }
+          },
+          "effect": {
+            "seq": [
+              {
+                "giveStatus": {
+                  "card": {
+                    "query": "heroesAndAllies"
+                  },
+                  "status": "stunned"
+                }
+              },
+              {
+                "removeThreat": {
+                  "scheme": "this",
+                  "amount": {
+                    "add": [
+                      {
+                        "tokensOn": "this"
+                      },
+                      -3
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "07034",
+      "name": "Pile It On!",
+      "note": "Printed signature scheme: cannot leave play while its corresponding villain remains. The threshold is checked after placement; the penalty precedes removal to three. ruling: Pile It On! ranks upgrades and supports together; rr:permanent.4.1 excludes cards that cannot be discarded before ranking. The first player resolves tied highest costs under rr:first-player.1.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Piledriver"
+                }
+              },
+              "then": {
+                "preventSideSchemeDeparture": "this"
+              }
+            }
+          }
+        },
+        {
+          "name": "Pile Drive",
+          "trigger": {
+            "event": "WhenThreatPlaced",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "when": {
+            "atLeast": {
+              "value": {
+                "tokensOn": "this"
+              },
+              "count": 10
+            }
+          },
+          "effect": {
+            "seq": [
+              {
+                "eachPlayer": {
+                  "effect": {
+                    "chooseCard": {
+                      "chooser": "firstPlayer",
+                      "from": {
+                        "maxBy": {
+                          "of": {
+                            "discardable": {
+                              "query": "upgradesAndSupportsYouControl"
+                            }
+                          },
+                          "by": "cost"
+                        }
+                      },
+                      "effect": {
+                        "discard": "chosen"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "removeThreat": {
+                  "scheme": "this",
+                  "amount": {
+                    "add": [
+                      {
+                        "tokensOn": "this"
+                      },
+                      -3
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "07048",
+      "name": "Clear the Road",
+      "note": "Printed signature scheme: cannot leave play while its corresponding villain remains. The threshold is checked after placement; the penalty precedes removal to three. ",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Bulldozer"
+                }
+              },
+              "then": {
+                "preventSideSchemeDeparture": "this"
+              }
+            }
+          }
+        },
+        {
+          "name": "Charge!",
+          "trigger": {
+            "event": "WhenThreatPlaced",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "when": {
+            "atLeast": {
+              "value": {
+                "tokensOn": "this"
+              },
+              "count": 10
+            }
+          },
+          "effect": {
+            "seq": [
+              {
+                "eachPlayer": {
+                  "effect": {
+                    "discardTop": {
+                      "from": "yourDeck",
+                      "count": 10
+                    }
+                  }
+                }
+              },
+              {
+                "removeThreat": {
+                  "scheme": "this",
+                  "amount": {
+                    "add": [
+                      {
+                        "tokensOn": "this"
+                      },
+                      -3
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "07001a",
+      "name": "Breakout",
+      "note": "Scenario setup composition owns the four paired villains, encounter decks, initial signature schemes and active counter. This face has no runtime ability; no public Wrecking Crew setup recipe is admitted.",
+      "abilities": []
+    },
+    {
+      "card": "07001b",
+      "name": "Breakout",
+      "note": "After step one, place the complete threat batch before selecting the most-threat paired villain. MARVEL-669 remains an integration blocker for shared response ordering; this definition does not admit the scenario.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenVillainPhaseStepOneCompleted",
+            "timing": "ForcedResponse",
+            "subject": "game"
+          },
+          "effect": {
+            "seq": [
+              {
+                "placeThreat": {
+                  "scheme": {
+                    "query": "sideSchemes"
+                  },
+                  "amount": 1
+                }
+              },
+              {
+                "chooseCard": {
+                  "chooser": "firstPlayer",
+                  "from": {
+                    "query": "villainsWithMostSchemeThreat"
+                  },
+                  "effect": {
+                    "moveActiveCounter": "chosen"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }
