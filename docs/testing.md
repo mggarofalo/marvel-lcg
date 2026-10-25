@@ -81,6 +81,76 @@ already containing `results.jsonl` is rejected before any log, build or fixture
 is changed; choose a fresh directory for each run. This applies equally to
 `-ResultsDirectory` and `MARVEL_NATIVE_RESULTS_DIRECTORY`.
 
+## Scripted Godot acceptance
+
+Agents should write and run native scripts for repeatable interaction checks.
+Computer Use is not required. The shared driver is
+`src/Marvel.Godot/smoke/automation/ui_driver.gd`; it injects viewport input into
+the running client, with no engine mutation or button-signal shortcut.
+
+Run its contract suite and the small real-game example from the repository root:
+
+```powershell
+pwsh tools/godot-acceptance.ps1
+pwsh tools/godot-acceptance.ps1 -Script res://smoke/automation/opening_hand_acceptance.gd
+pwsh tools/godot-acceptance.ps1 -NoBuild -Rendered
+```
+
+The runner discovers the installed .NET Godot, builds Release unless `-NoBuild`
+is supplied, isolates saves, bounds the process lifetime and requires both a
+successful exit and `UI_ACCEPTANCE_OK`. Script errors fail even if a completion
+marker is printed. `-GodotBin`, `-TimeoutSeconds`, `-Marker` and a fresh external
+`-ResultsDirectory` are available. The runner fixes scale at 100%, viewport at
+1920×1080, one player and reduced motion; use manifest cases for the scale matrix.
+Rendered runs use a minimized native window;
+on Linux they require a display such as Xvfb. Headless runs cannot certify pixels.
+The contract suite is explicitly invoked; it is not a new CI platform gate.
+
+The opening example uses the existing seeded setup bootstrap. Its interaction
+reads like this (inside an async GDScript function):
+
+```gdscript
+var ui = preload("res://smoke/automation/ui_driver.gd").new(main, render_viewport, _fail)
+if not await ui.click(ui.button("Start game")): return
+if not await ui.expect_visible(ui.button("Keep hand")): return
+if not await ui.click(ui.button("Keep hand")): return
+if not await ui.expect_visible(ui.button("End turn")): return
+```
+
+Available operations are `click(locator, mouse_button)`, `hover(locator)`,
+`press_key(key, shift, ctrl)`, `drag(source, destination, frames)`,
+`expect_visible(locator)` and `expect(predicate, description, deadline_ms)`.
+`button(text)` matches exact visible button text; `button(text, false)` matches
+a case-insensitive substring. `text(value)` matches visible Label/RichTextLabel
+text; `named(name)` matches an exact Control name. `UiLocator.button(scope, text)`
+scopes duplicate names to a particular panel. `UiLocator.control(control)` pins
+a control already discovered through the game's existing semantic helpers.
+`locator.all()` is a read-only immediate query.
+
+Actions require one visible match and a native hit point, waiting for enabled,
+stable, exposed geometry. Duplicate matches fail rather than picking one.
+Composite controls can own descendant hit surfaces. Actions do not scroll,
+force focus, dismiss overlays or infer game choices: make those steps explicit.
+Keyboard input goes to the current focus. Drags send held intermediate frames,
+pin the destination and release outside the surface if it moves or is replaced.
+Assertions must check the intended result and authoritative commitment count;
+input delivery alone does not prove success. No action retries after a press.
+
+A failure latches the driver, blocks subsequent input and captures `failure.json`
+with the step trace and visible control descriptions. Editable field values and
+arbitrary object/engine properties are omitted. Rendered runs additionally save
+`failure.png`; headless evidence explicitly records that pixels are unavailable.
+Artifacts go under the runner's results directory, or the OS cache for a direct
+Godot invocation. A failure callback normally terminates the test through `_fail`;
+without one the driver reports a Godot error. Only negative contract tests should
+use a callback that records an expected failure and continues.
+
+For existing manifest scenarios, continue using `tools/native-cases.ps1`.
+The context-menu journey and its descendants use the shared driver and preserve
+their existing gameplay assertions. New scripts should use legal seeded or
+explicitly labelled prepared scenes, print their marker only after all assertions,
+and exit nonzero on failure. Owner acceptance remains separate from automation.
+
 ## Native contract evidence
 
 The manifest preserves the reviewed baseline union of 125 exhaustive and 115
