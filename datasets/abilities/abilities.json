@@ -12943,6 +12943,27 @@
           }
         }
       ]
+    },
+    {
+      "card": "07031",
+      "name": "Tactical Prowess",
+      "note": "Printed 07031. Rank both side-scheme pools independently; rr:first-player.1 chooses tied distinct endpoints. Wait for the exact destination's actual Forced Response initiation before deciding surge, including a response that resets its threat.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "moveThreat": {
+              "from": { "minBy": { "of": { "query": "sideSchemes" }, "by": "threat" } },
+              "to": { "maxBy": { "of": { "query": "sideSchemes" }, "by": "threat" } },
+              "amount": "all"
+            } },
+            { "if": {
+              "test": { "not": { "atLeast": { "value": { "result": "destinationForcedResponseTriggered" }, "count": 1 } } },
+              "then": { "gainSurge": 1 }
+            } }
+          ] }
+        }
+      ]
     }
   ]
 }
