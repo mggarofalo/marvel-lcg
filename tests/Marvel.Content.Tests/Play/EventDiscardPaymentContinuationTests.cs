@@ -11,8 +11,11 @@ namespace Marvel.Content.Tests.Play;
 public sealed class EventDiscardPaymentContinuationTests
 {
     [Rule("rr:initiating-abilities.step.5")]
-    [Fact]
-    public void ADiscardCostWaitsForTheEventsSuspendedResourcePayment()
+    [Rule("rr:leaves-play.1")]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ADiscardCostWaitsForTheEventsSuspendedResourcePayment(bool reenter)
     {
         // "Pay the cost(s)." This synthetic resource ability suspends at its
         // lethal damage cost, before the event may pay its remaining discard.
@@ -56,6 +59,23 @@ public sealed class EventDiscardPaymentContinuationTests
         Assert.Equal(DeckType.RevealingArea, eventCard!.Area.Type);
         Assert.Same(world.Seats[0].Hand, discarded.Area);
         Assert.Equal(0, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_test"));
+
+        if (reenter)
+        {
+            // A returning card is "a new copy of the card". The accepted
+            // discard names its original incarnation across the suspension.
+            int accepted = discarded.Incarnation;
+            World.MoveToTop(discarded, world.AreaOf(
+                DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+            World.MoveToTop(discarded, world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+            World.MoveToTop(discarded, world.Seats[0].Hand);
+            Assert.NotEqual(accepted, discarded.Incarnation);
+            Assert.Throws<RulesNotImplementedException>(() => game.Resolve(Decision.Decline));
+            Assert.Same(world.Seats[0].Hand, discarded.Area);
+            Assert.Equal(0, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_test"));
+            return;
+        }
 
         game.Resolve(Decision.Decline);
 
