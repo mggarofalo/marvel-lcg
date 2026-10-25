@@ -9,6 +9,12 @@ internal static class AbilityPowerContinuationDependencies
     {
         null => true,
         AbilityEffect.Draw { Players: AbilityPlayerSelection.OnePlayer { Player: AbilityPlayer.You } } => true,
+        // The bound recipient is retained across stage settlement. Giving its
+        // status is immediate; immunity is evaluated on the settled live board.
+        AbilityEffect.GiveStatus
+        {
+            Cards: AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen },
+        } => true,
         AbilityEffect.Sequence sequence => sequence.Effects.All(IsIndependent),
         AbilityEffect.Conditional conditional => SupportedCondition(conditional.Test)
             && IsIndependent(conditional.Then) && IsIndependent(conditional.Else),

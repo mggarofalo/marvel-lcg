@@ -7,6 +7,8 @@ namespace Marvel.Rules.Play;
 internal sealed class OptionalDamageInterrupts(IWindowAbilities inner)
     : IWindowAbilities
 {
+    public bool ObservesHeroDefense(World world) => inner.ObservesHeroDefense(world);
+
     public bool ObservesPlayerTurnBeginning(World world) => inner.ObservesPlayerTurnBeginning(world);
     public bool ObservesVillainStepOneCompletion(World world) => inner.ObservesVillainStepOneCompletion(world);
 

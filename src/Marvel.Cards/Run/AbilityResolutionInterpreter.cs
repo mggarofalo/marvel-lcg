@@ -139,7 +139,8 @@ internal static class AbilityResolutionInterpreter
             if (labels.Contains(Attack.DefenseVerb, StringComparer.Ordinal))
             {
                 cast.Results["defenseAbilityDefender"] = performer.ObjectId;
-                Attack.BeginDefenseAbility(cast.World, execution.Resolver(cast), performer);
+                if (AbilityDefenseSuspension.Begin(execution, cast, performer, ability.Effect, nested: false))
+                    return;
             }
         }
 
@@ -206,7 +207,9 @@ internal static class AbilityResolutionInterpreter
         if (cast.AbilityActor is null)
         {
             cast.Results["defenseAbilityDefender"] = defender.ObjectId;
-            Attack.BeginDefenseAbility(cast.World, execution.Resolver(cast), defender);
+            cast.AbilityActor = defender;
+            if (AbilityDefenseSuspension.Begin(execution, cast, defender, command.Effect.Effect, nested: true))
+                return;
         }
         execution.RunChild(command.Effect.Effect, new DefenseFrame(), cast);
     }

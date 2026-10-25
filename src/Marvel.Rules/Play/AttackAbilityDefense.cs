@@ -38,11 +38,11 @@ internal static class AttackAbilityDefense
     /// nor marks a basic defense, so DEF is not applied —
     /// <c>rr:defend-defense.4.1</c>, <c>.4.3</c>, and <c>.4.4</c>.
     /// </remarks>
-    internal static void BeginDefenseAbility(World world, int player)
+    internal static bool BeginDefenseAbility(World world, int player)
         => BeginDefenseAbility(world, player, world.Seats[player].IdentityCard);
 
     /// <summary>Establish the roles for a defense performed by an attributed card.</summary>
-    internal static void BeginDefenseAbility(World world, int player, Card performer)
+    internal static bool BeginDefenseAbility(World world, int player, Card performer)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(performer);
@@ -50,7 +50,7 @@ internal static class AttackAbilityDefense
         {
             // `rr:defend-defense.4.8`: the label may resolve outside an attack
             // without making an identity the defender of anything.
-            return;
+            return false;
         }
 
         if (!CanUseDefenseAbility(world, player, performer))
@@ -63,7 +63,7 @@ internal static class AttackAbilityDefense
         {
             // `rr:defend-defense.4.7`: a defense ability remains legal while
             // this player's ally defends, but the identity does not replace it.
-            return;
+            return HeroDefenseTiming.Schedule(world, performer);
         }
 
         bool character = EffectiveCards.Kind(performer, world.Facts) is
@@ -73,7 +73,7 @@ internal static class AttackAbilityDefense
             // `rr:support.3` excludes support defenses from the identity. A
             // support is not a character, so it performs the labeled effect
             // without becoming the defending character of the attack.
-            return;
+            return false;
         }
 
         world.Attack = attack with
@@ -87,6 +87,7 @@ internal static class AttackAbilityDefense
         {
             world.Activation = activation with { Player = player };
         }
+        return HeroDefenseTiming.Schedule(world, performer);
     }
 
     /// <summary>Whether a card instruction can declare this character the defender.</summary>
@@ -129,7 +130,7 @@ internal static class AttackAbilityDefense
     /// and <c>.2.2</c>/<c>.3.3</c> allow declarations that explicitly happen
     /// without exhausting even when the character is already exhausted.
     /// </remarks>
-    internal static void DeclareByAbility(
+    internal static bool DeclareByAbility(
         World world, ICardFacts facts, Card defender, int replaceableDefender = -1)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -171,6 +172,7 @@ internal static class AttackAbilityDefense
         {
             world.Activation = activation with { Player = player };
         }
+        return HeroDefenseTiming.Schedule(world, defender);
     }
 
 }
