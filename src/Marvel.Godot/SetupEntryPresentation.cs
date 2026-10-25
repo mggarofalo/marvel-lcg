@@ -52,6 +52,7 @@ internal static class SetupEntryPresentation
         fields.MoveChild(main.seedHelp, 6);
         fields.MoveChild(main.start, fields.GetChildCount() - 1);
         RefreshChoices(main);
+        RefreshAdditionalSeats(main);
         foreach (Control control in fields.FindChildren("*", "Control", true, false).OfType<Control>())
         {
             if (control is Label or BaseButton or LineEdit)
@@ -59,6 +60,20 @@ internal static class SetupEntryPresentation
             if (control is BaseButton)
                 control.CustomMinimumSize = new Vector2(control.CustomMinimumSize.X,
                     Math.Max(44, VisualSystem.Controls(main.interfaceScale).MinimumHeight));
+        }
+    }
+
+    private static void RefreshAdditionalSeats(Main main)
+    {
+        // Reveal another seat when the preceding seat is occupied, keeping the
+        // default solo setup and its commitment within the sheet.
+        var additional = main.setupController.AdditionalHeroes;
+        int playerCount = main.setupChoices is null ? 1 : main.setupController.SelectedHeroes().Count;
+        for (int index = 0; index < additional.Count; index++)
+        {
+            bool visible = playerCount >= index + 2;
+            main.setupGrid.GetNode<Control>(additional[index].Name + "Choices").Visible = visible;
+            main.setupGrid.GetNode<Control>("HeroSeatLabel" + (index + 2)).Visible = visible;
         }
     }
 
