@@ -11760,6 +11760,26 @@
       ]
     },
     {
+      "card": "07035",
+      "name": "Distracting Taunts",
+      "attachTo": { "titled": "Piledriver" },
+      "abilities": [
+        {
+          "trigger": { "timing": "Constant" },
+          "effect": { "grant": { "card": "attachedTo", "keyword": "health", "amount": 3 } }
+        },
+        {
+          "trigger": { "timing": "Constant" },
+          "effect": { "grant": { "card": "attachedTo", "keyword": "other_villains_cannot_be_attacked", "amount": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "you", "target": "attachedTo", "player": "trigger.player" },
+          "cost": { "spend": "RR" },
+          "effect": { "discard": "this" }
+        }
+      ]
+    },
+    {
       "card": "07036",
       "name": "Held Hostage",
       "note": "The attached physical scheme determines the corresponding villain, independent of source deck and active counter. The thwart-only prohibition allows other threat removal; discard follows a completed attack, including zero damage, but not a canceled attack.",
