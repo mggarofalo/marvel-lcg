@@ -57,6 +57,17 @@ normalize only explicitly migrated compatibility and import identity fields.
 This is standard-mode evidence with zero delay counters; it does not establish
 expert-mode or nonzero-delay campaign coverage.
 
+`played-campaign-91098022-continued.archive.gz` preserves the exact persisted
+archive from that original predecessor continuation copy, after the recorded
+End turn request advanced Taskmaster from revision 5 to revision 6. SHA-256:
+`970501B99649ED1B2FBC5EB18DD337C9F7CA3A355D7FD01D137EEF02F5970DC6`.
+It was compressed from the original retained store, without rebuilding the
+engine or modifying its JSON. The packaged native upgrade probe compares its
+entire resulting archive, including the new decision's events, RNG and digest,
+against this control, normalizing only explicitly migrated compatibility.
+The original ZIP's `control/continuation-request.json`, response, producer
+source and provenance identify the actual request and predecessor runtime.
+
 `expert-campaign-91098022.zip` preserves an actual Expert campaign from the
 same untouched predecessor, SHA-256
 `1A7B953709EE3E390863BFD28A6C920EE00B53F7F24853B197013AA72903538B`.

@@ -33,6 +33,7 @@ internal sealed class PublishedDeckBrowser : IDisposable
 
     internal PublishedDeckBrowser(Window parent, DeckCatalog catalog, Action<string> import)
     {
+        ModalWindowFocus.Bind(window);
         this.import = import;
         this.catalog = catalog.Cards.OrderBy(card => card.Title, StringComparer.Ordinal).ToArray();
         window.Theme = parent.Theme;
