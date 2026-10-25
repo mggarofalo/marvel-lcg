@@ -238,10 +238,19 @@ One UI action can open several prompts. Playing a card may choose targets and
 payment, then open interrupts, responses or forced effects. Reordering only the
 first answer would split one operation into an invented history.
 
-A history unit starts when the engine accepts a root menu decision. It ends
+A history unit starts when the engine accepts a root menu decision, or the
+first decision in an initial setup sequence before any history exists. It ends
 when the game reaches the next root menu, a phase boundary or a terminal state.
 Every dependent answer between those points belongs to the same unit, including
 answers from another seat.
+
+Initial campaign recovery therefore belongs to one setup unit through the
+opening-hand boundary, including recovery decisions from every participating
+seat. This is a ledger grouping choice, not a tabletop rule. It uses schema 7
+and replay v22 unchanged: setup, accepted decisions, outcomes and replay
+verification retain their existing formats and meaning. The host initializes
+the active prefix at cursor zero, including after an authorized undo; later
+dependent decisions still require an open unit.
 
 The first accepted root decision creates an `open` unit and commits that save
 before acknowledgement. Every later dependent answer appends to the same open
