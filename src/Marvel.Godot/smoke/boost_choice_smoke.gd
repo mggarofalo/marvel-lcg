@@ -6,6 +6,7 @@ func _run() -> void:
 	if not await _choose_setup_upgrade(): return
 	if not await _reach_android_boost(): return
 	if not await _choose_android_consequence(): return
+	if not await _resolve_attack_response_order(): return
 	if not await _select_ultron_threat(): return
 	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/HistoryOccurrences") as Control
 	if "boost icon" not in str(history.get_meta("chronology", "")) or "is now" not in str(history.get_meta("chronology", "")):
@@ -162,6 +163,23 @@ func _select_ultron_threat() -> bool:
 		_fail("the offered threat preview is missing from keyboard accessibility")
 		return false
 	return await _staged_choice_once(choice)
+
+
+func _resolve_attack_response_order() -> bool:
+	var response := "Retaliate 1: deal 1 damage to Ultron"
+	if not await _wait_for(func() -> bool: return _button_named(response) != null):
+		_fail("the after-attack Retaliate ordering choice did not arrive")
+		return false
+	var dialog := main.find_child("CompleteChoicesFrame", true, false) as Control
+	if dialog == null or "End attack · Response window" not in _visible_text(dialog):
+		_fail("Retaliate was offered outside the after-attack ordering window")
+		return false
+	if not await _staged_choice_once(_button_named(response)): return false
+	var ultron := _tabletop_card_named("Ultron")
+	if ultron == null or "16/17" not in _visible_text(ultron):
+		_fail("committed Retaliate did not damage Ultron")
+		return false
+	return true
 
 
 func _discard_seeded_resources() -> bool:
