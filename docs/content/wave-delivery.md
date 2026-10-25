@@ -1,7 +1,8 @@
 # Captain America and Wrecking Crew delivery
 
-Candidate implementation: `edc6d13e` on `feat/wave-wrecking-engine`, including
-main `80ef568b`. Owner acceptance is pending. This record supersedes the admission
+Merged delivery: [PR #439](https://github.com/mggarofalo/marvel-lcg/pull/439),
+main commit `6776a8f4`. All 11 CI checks passed on candidate `6bedfa0a`.
+Owner exploration and acceptance are pending. This record supersedes the admission
 status in earlier implementation checkpoints, without expanding their evidence.
 
 ## Delivered scope
@@ -22,8 +23,12 @@ status in earlier implementation checkpoints, without expanding their evidence.
 
 ## Verification and revision scope
 
-Windows local evidence is under `%TEMP%`; it is not a claim of Linux CI or a
-published signed artifact. Logs are retained outside the repository.
+Final [CI run 40230657540](https://github.com/mggarofalo/marvel-lcg/actions/runs/40230657540)
+passed managed correctness, both platform gates, all four native shards, both
+native aggregate receipts and Windows community packaging on `6bedfa0a`.
+There were no failed, skipped, cancelled or pending checks. This is not a signed
+release. Earlier local evidence below remains scoped to its recorded revisions;
+logs are retained outside the repository under `%TEMP%`.
 
 | Revision | Check | Result / log |
 |---|---|---|
@@ -55,7 +60,7 @@ recover is not claimed. Genuinely incompatible older traces still reject.
 
 ## Acceptance
 
-CI must verify the published PR revision on its configured platforms. The owner
+CI verified the published PR revision on Windows and Linux. The owner
 can explore Captain America and Wrecking Crew from ordinary New Game setup,
 including custom stages, and identify missing behavior or refine requirements.
 Automated regression work is not assigned to the owner. Acceptance and release
