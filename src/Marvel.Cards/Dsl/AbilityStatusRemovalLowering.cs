@@ -21,5 +21,3 @@ internal static class AbilityStatusRemovalLowering
         return new(SelectCards(Required(fields, "cards", location), location.Child("cards")), [.. statuses]);
     }
 }
-
-

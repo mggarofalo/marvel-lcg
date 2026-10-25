@@ -40,4 +40,3 @@ public sealed class StandaloneProductBoundaryTests
         Assert.DoesNotContain("wrecking_crew_expert", result.Setup.CampaignNames);
     }
 }
-

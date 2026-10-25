@@ -60,4 +60,3 @@ internal static class StandaloneProductRecipes
         && group.Encounters.Order(StringComparer.Ordinal).SequenceEqual(Decks[index])
         && group.Variant == (stages.Length == 2 ? "A → B" : stages[0] == Stages[index][0] ? "A" : "B");
 }
-

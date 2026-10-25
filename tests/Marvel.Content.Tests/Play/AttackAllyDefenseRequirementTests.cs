@@ -108,5 +108,3 @@ public sealed class AttackAllyDefenseRequirementTests
         return (world, enemy, runner);
     }
 }
-
-

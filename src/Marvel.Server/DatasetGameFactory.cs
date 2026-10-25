@@ -217,4 +217,3 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
     private static string Hash(byte[] bytes) =>
         Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
 }
-

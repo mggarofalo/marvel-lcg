@@ -62,5 +62,3 @@ func _campaign_press(button: Button) -> bool:
 
 func _revision() -> int:
     return int((_node("Toolbar/SyncStatus") as Label).get_meta("response_revision", -1))
-
-

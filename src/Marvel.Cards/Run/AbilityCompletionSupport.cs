@@ -22,4 +22,3 @@ internal static class AbilityCompletionSupport
             $"'{source}' has no completed-result semantics for '{effect.OperationName()}'");
     }
 }
-

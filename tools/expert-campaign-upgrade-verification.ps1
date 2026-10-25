@@ -39,5 +39,3 @@ function Assert-ExpertCampaignUpgrade {
     $manifest = Get-Content "$Published/campaigns/$id/current" -Raw | ConvertFrom-Json
     if ($backup.Count -ne 1 -or (Get-FileHash $backup[0].FullName).Hash -cne $manifest.sha256) { throw 'Original Expert migration backup bytes changed.' }
 }
-
-

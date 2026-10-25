@@ -43,4 +43,3 @@ public sealed class ScenarioSetupProjectionTests
         return ScenarioSetupProjection.Describe(mode + "-" + bits, campaign, Cards);
     }
 }
-

@@ -156,4 +156,3 @@ public sealed class FirstAllyCostTests
         return events;
     }
 }
-

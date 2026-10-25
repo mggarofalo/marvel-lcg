@@ -132,5 +132,3 @@ public sealed class SimultaneousCardAttackTests
         Assert.Equal(1, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_whole"));
     }
 }
-
-

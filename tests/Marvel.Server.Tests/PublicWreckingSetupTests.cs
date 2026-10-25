@@ -84,4 +84,3 @@ public sealed class PublicWreckingSetupTests
         Assert.DoesNotContain(world.Cards, card => world.Facts.Kind(card.FaceId) == CardKind.Obligation);
     }
 }
-

@@ -94,5 +94,3 @@ public sealed class WreckingCrewGameTests(ITestOutputHelper output)
         result?.Information,
     });
 }
-
-

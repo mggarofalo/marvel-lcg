@@ -67,4 +67,3 @@ public sealed class WreckingCanonicalRecipeTests
         return [WreckingRecipeFixture.Stages[index][variant[index] == 'b' ? 1 : 0]];
     }
 }
-

@@ -44,5 +44,3 @@ foreach ($choice in @('decline')) {
 }
 @{ sourceCommit = (git -C $repo rev-parse HEAD); fixtureSha256 = $hash; executable = $godot; executableSha256 = (Get-FileHash $godot).Hash; rendered = $false; viewport = '1920x1080'; scale = 100; isolation = 'Separate embedded authority, campaign access and deck library per recovery branch'; journeys = @('inspect', 'decline', 'restart') } | ConvertTo-Json | Set-Content "$Root/evidence.json"
 Write-Host "EXPERT_CAMPAIGN_UPGRADE_OK evidence=$Root"
-
-

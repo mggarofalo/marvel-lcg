@@ -61,4 +61,3 @@ public sealed class RadioactiveExcessReviewTests
             item.Card == groups[1].Scheme.ObjectId && item.Field == "k_threat"));
     }
 }
-

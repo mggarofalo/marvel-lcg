@@ -14,7 +14,8 @@ $probes = [ordered]@{
     'profile' = { param($m) $m.cases[0].profiles = @('unregistered-profile') }
     'scale' = { param($m) $m.cases[0].scale = 55 }
     'viewport' = { param($m) $m.cases[0].viewport = '800x600' }
-    'players' = { param($m) $m.cases[0].players = 3 }
+    'players' = { param($m) $m.cases[0].players = 5 }
+    'players-zero' = { param($m) $m.cases[0].players = 0 }
     'completion-marker' = { param($m) $m.cases[0].markers = @() }
     'fixture-parent' = { param($m) $m.fixtures.faces.file = '../escaped.json' }
     'fixture-windows-parent' = { param($m) $m.fixtures.faces.file = '..\escaped.json' }
@@ -30,6 +31,7 @@ $diagnostics = @{
     'scale' = 'Unsupported native scale:'
     'viewport' = 'Unsupported native viewport:'
     'players' = 'Invalid native input profile:'
+    'players-zero' = 'Invalid native input profile:'
     'completion-marker' = 'Missing native completion marker:'
     'fixture-parent' = 'Native fixture must use a leaf filename.'
     'fixture-windows-parent' = 'Native fixture must use a leaf filename.'
@@ -85,6 +87,14 @@ try {
     foreach ($uncommitted in @('{"operation":"resolve"}', $accepted.Replace('"accepted"', '"rejected"'), $accepted.Replace('true', 'false'))) {
         if (Test-NativeCompletion $uncommitted '"operation":"resolve"') { throw 'An uncommitted resolve falsely satisfied close-drain evidence.' }
     }
+    foreach ($players in 1..4) {
+        $candidate = Get-Content -LiteralPath $source -Raw | ConvertFrom-Json -AsHashtable
+        $candidate.cases[0].players = $players
+        [IO.File]::WriteAllText($candidatePath, ($candidate | ConvertTo-Json -Depth 20))
+        $admitted = Read-NativeManifest $candidatePath $project
+        if ($admitted.cases[0].players -ne $players) { throw 'Native player count changed during admission.' }
+    }
+    Write-Host 'NATIVE_MANIFEST_PLAYERS_OK supported=1..4'
     foreach ($name in $probes.Keys) {
         $candidate = Get-Content -LiteralPath $source -Raw | ConvertFrom-Json -AsHashtable
         & $probes[$name] $candidate

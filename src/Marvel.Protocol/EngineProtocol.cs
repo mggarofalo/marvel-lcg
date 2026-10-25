@@ -53,4 +53,3 @@ public static class EngineProtocol
     /// <summary>Releases an open game.</summary>
     public const string Close = "close";
 }
-

@@ -89,7 +89,3 @@ public sealed class StandaloneProductCompositionTests
         Assert.Contains(pack == "cap" ? "07002" : "03001a", result.Playable);
     }
 }
-
-
-
-

@@ -144,5 +144,3 @@ public sealed class ThreatMovementReviewTests : CoreCardTestBase
         return (world, runner, from, to);
     }
 }
-
-

@@ -73,4 +73,3 @@ public sealed class WreckingAttackRoutingTests
         Assert.Same(fixture.Groups[0].Villain, EncounterRouting.Villain(world));
     }
 }
-

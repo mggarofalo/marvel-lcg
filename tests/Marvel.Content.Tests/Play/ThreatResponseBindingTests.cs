@@ -56,4 +56,3 @@ public sealed class ThreatResponseBindingTests : CoreCardTestBase
         Assert.All(occurrence.Resolutions, entry => Assert.Equal(ResolutionStatus.Resolved, entry.Status));
     }
 }
-

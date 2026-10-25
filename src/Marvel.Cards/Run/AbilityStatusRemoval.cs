@@ -22,4 +22,3 @@ internal static class AbilityStatusRemoval
             && CardKinds.IsCharacter(EffectiveCards.Kind(host, world.Facts)))
             .SelectMany(host => statuses.SelectMany(status => Statuses.On(world, host, status)))];
 }
-

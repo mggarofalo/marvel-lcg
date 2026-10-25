@@ -140,5 +140,3 @@ public sealed class RammingSpeedTests
         return (world, enemy, attachment, runner);
     }
 }
-
-

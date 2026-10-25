@@ -97,4 +97,3 @@ public sealed class CaptainAmericaSupportTests
         Assert.Equal(2, StateFields.Modified(world, world.Seats[0].IdentityCard, "thwart", world.Facts, world.Players));
     }
 }
-
