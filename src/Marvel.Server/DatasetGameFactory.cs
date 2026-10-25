@@ -115,10 +115,11 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
         var runner = new AbilityRunner(abilities);
         var setupEvents = new List<GameEvent>();
         var campaign = setup.Campaign(specification.Scenario);
-        var ordinary = Blueprints.From(Dealer.Deal(setup,
+        var scenario = ScenarioDealer.Prepare(setup,
             new DealRequest(specification.Scenario, specification.Heroes, specification.ModularSets,
                 PlayerDecks: specification.PlayerDecks)
-            { CampaignExcludedAllies = specification.Campaign?.BannedAllyFaces ?? [] }, cards), cards);
+            { CampaignExcludedAllies = specification.Campaign?.BannedAllyFaces ?? [] }, cards);
+        var ordinary = scenario.Blueprints;
         var plan = specification.Campaign is { } input
             ? CampaignBlueprints.From(ordinary, input, CampaignDefinition!) : new CampaignDealPlan(ordinary, [], []);
         var world = WorldSetup.DealConfigured(
@@ -126,7 +127,8 @@ public sealed class DatasetGameFactory : ICampaignGameFactory, ISetupDiscovery, 
             [.. specification.Heroes.Select(hero => setup.Hero(hero).Name)],
             specification.Seed,
             runner,
-            new WorldSetupOptions(campaign.Expert, specification.Campaign, plan.Bindings, plan.ExperimentalWeapons),
+            new WorldSetupOptions(campaign.Expert, specification.Campaign, plan.Bindings, plan.ExperimentalWeapons,
+                scenario.EncounterGroups),
             setupEvents);
         return new OpenedGame(Game.Begin(world, cards, runner), setupEvents);
     }
