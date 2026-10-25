@@ -81,6 +81,115 @@ already containing `results.jsonl` is rejected before any log, build or fixture
 is changed; choose a fresh directory for each run. This applies equally to
 `-ResultsDirectory` and `MARVEL_NATIVE_RESULTS_DIRECTORY`.
 
+## Scripted Godot acceptance
+
+Agents should write and run native scripts for repeatable interaction checks.
+Computer Use is not required. The shared driver is
+`src/Marvel.Godot/smoke/automation/ui_driver.gd`; it injects viewport input into
+the running client, with no engine mutation or button-signal shortcut.
+
+Run its contract suite and the small real-game example from the repository root:
+
+```powershell
+pwsh tools/godot-acceptance.ps1
+pwsh tools/godot-acceptance.ps1 -Script res://smoke/automation/opening_hand_acceptance.gd
+pwsh tools/godot-acceptance.ps1 -NoBuild -Rendered
+```
+
+The runner discovers the installed .NET Godot, builds Debug unless `-NoBuild`
+is supplied, isolates saves, bounds the process lifetime and requires both a
+successful exit and `UI_ACCEPTANCE_OK`. Script errors fail even if a completion
+marker is printed. `-GodotBin`, `-TimeoutSeconds`, `-Marker` and a fresh external
+`-ResultsDirectory` are available. The runner fixes scale at 100%, viewport at
+1920×1080, one player and reduced motion; use manifest cases for the scale matrix.
+Rendered runs use a minimized native window;
+on Linux they require a display such as Xvfb. Headless runs cannot certify pixels.
+The native CI jobs run the opening example through a fresh Debug build and the
+driver contract suite on Windows and Linux, once per platform. This checks the
+standalone runner as well as its scripts. The managed lanes still build Release.
+
+The opening example uses the existing seeded setup bootstrap. Its interaction
+reads like this (inside an async GDScript function):
+
+```gdscript
+var ui = preload("res://smoke/automation/ui_driver.gd").new(main, render_viewport, _fail)
+if not await ui.click(ui.button("Start game")): return
+if not await ui.expect_visible(ui.button("Keep hand")): return
+if not await ui.click(ui.button("Keep hand")): return
+if not await ui.expect_visible(ui.button("End turn")): return
+```
+
+Available operations are `click(locator, mouse_button)`, `hover(locator)`,
+`press_key(key, shift, ctrl)`, `drag(source, destination, frames)`,
+`expect_visible(locator)` and `expect(predicate, description, deadline_ms)`.
+`button(text)` matches exact visible button text; `button(text, false)` matches
+a case-insensitive substring. `text(value)` matches visible Label/RichTextLabel
+text; `named(name)` matches an exact Control name. `UiLocator.button(scope, text)`
+scopes duplicate names to a particular panel. `UiLocator.control(control)` pins
+a control already discovered through the game's existing semantic helpers.
+`locator.all()` is a read-only immediate query.
+
+Actions require one visible match and a native hit point, waiting for enabled,
+stable, exposed geometry. Duplicate matches fail rather than picking one.
+Composite controls can own descendant hit surfaces. Actions do not scroll,
+force focus, dismiss overlays or infer game choices: make those steps explicit.
+Keyboard input goes to the current focus. Drags send held intermediate frames,
+pin the destination and release outside the surface if it moves or is replaced.
+Assertions must check the intended result and authoritative commitment count;
+input delivery alone does not prove success. No action retries after a press.
+
+A failure latches the driver, blocks subsequent input and captures `failure.json`
+with the step trace and visible control descriptions. Editable field values and
+arbitrary object/engine properties are omitted. Rendered runs additionally save
+`failure.png`; headless evidence explicitly records that pixels are unavailable.
+Artifacts go under the runner's results directory, or the OS cache for a direct
+Godot invocation. A failure callback normally terminates the test through `_fail`;
+without one the driver reports a Godot error. Only negative contract tests should
+use a callback that records an expected failure and continues.
+
+For existing manifest scenarios, continue using `tools/native-cases.ps1`.
+The context-menu journey and its descendants use the shared driver and preserve
+their existing gameplay assertions. New scripts should use legal seeded or
+explicitly labelled prepared scenes, print their marker only after all assertions,
+and exit nonzero on failure. Owner acceptance remains separate from automation.
+
+### Selecting additional native evidence
+
+Use scripted interaction checks as the default. Start headless for composition,
+commitment and observable results; use rendered checks and inspect their images
+when layout or rendering is at issue. Use manifest profiles for scale, motion,
+viewport and player-count coverage beyond the standalone runner's fixed profile.
+Viewport input does not take over the user's mouse or keyboard. Keep interactive
+desktop exploration separate and respect any pause on computer interaction.
+
+Before adding a separate package or OS journey, identify the concrete failure it
+would detect and inspect the existing release, native and platform gates. Reuse
+their evidence when it covers the same behavior on the relevant candidate. A
+package check may verify bundled files, runtime startup or save paths; it does
+not automatically require replaying the gameplay suite through manual clicks.
+Conversely, a development-runtime pass alone does not prove an exported payload.
+Choose the narrowest check that actually crosses the boundary at risk.
+
+Native focus or accessibility behavior may be testable through a Godot script
+with the relevant window configuration and accessibility enabled. Check that
+possibility before requiring Computer Use. Use manual input only for a named gap
+that scripts cannot exercise, or requested exploratory review. Retain the scope
+of that observation without presenting it as repeatable regression coverage.
+
+For campaign and library journeys, explicitly isolate campaign access, deck
+libraries and remote storage as well as embedded saves. The process runner's
+automatic embedded-save isolation alone does not establish isolation of those
+other stores. Preserve genuine predecessor fixtures and complete replay/backup
+comparisons when verifying upgrades, regardless of the interaction mechanism.
+
+Record the exact revision, build configuration, fixture, command, profile and
+artifact identity with results. Do not combine different revisions into a claim
+of a passing final candidate, or infer exhaustive success from representative CI.
+Preserve distinguishing assertions and required gates. When an older work item
+prescribes redundant manual journeys, explicitly reconcile its criteria with the
+equivalent automated evidence and record any remaining gap; do not silently drop
+the required behavior or label an untested boundary as passed.
+
 ## Native contract evidence
 
 The manifest preserves the reviewed baseline union of 125 exhaustive and 115
@@ -216,6 +325,16 @@ CI step makes their cost and failures visible instead of charging them to the
 unit-test lane.
 
 ## CI assurance profiles
+
+Routine PR and main-push runs use `dorny/paths-filter` in CI YAML to inspect the
+Git change range. A
+nonempty diff containing only `.md` paths (case-insensitive) skips the managed,
+platform, native and packaging jobs. Required check names remain present as
+skipped jobs, avoiding the pending checks caused by workflow-level path filters.
+PRs compare against the merge base; pushes cover the entire before/after range.
+Renames inspect both paths. Empty comparisons run full CI; failed change
+detection fails the native required checks. Manual runs
+and exhaustive release certification always retain their full gates.
 
 Routine pull-request, main and default manual runs execute `Managed correctness`
 once on Linux: complexity, unit, acceptance, behavioral-catalog,

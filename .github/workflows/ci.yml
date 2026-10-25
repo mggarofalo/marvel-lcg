@@ -33,9 +33,34 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  changes:
+    name: Select CI scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run: ${{ inputs.exhaustive || (github.event_name != 'push' && github.event_name != 'pull_request') || steps.filter.outputs.non_markdown != 'false' || steps.filter.outputs.any != 'true' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
+        id: filter
+        if: ${{ !inputs.exhaustive && (github.event_name == 'push' || github.event_name == 'pull_request') }}
+        with:
+          # Git comparison avoids extra API permissions in release callers.
+          token: ''
+          base: ${{ github.event.pull_request.base.sha || github.ref }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          filters: |
+            any:
+              - '**'
+            non_markdown:
+              - '!**/*.[mM][dD]'
+
   managed:
     name: Managed correctness
-    if: ${{ !inputs.exhaustive }}
+    needs: changes
+    if: ${{ !inputs.exhaustive && needs.changes.outputs.run == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -89,6 +114,8 @@ jobs:
 
   platform-gates:
     name: Platform gates (${{ matrix.os }})
+    needs: changes
+    if: ${{ needs.changes.outputs.run == 'true' }}
     runs-on: ${{ matrix.os }}
     # Certification includes the complete scale matrix and rendered acceptance.
     timeout-minutes: ${{ inputs.exhaustive && 90 || 40 }}
@@ -361,6 +388,8 @@ jobs:
         run: ./tools/godot-wall.ps1
 
   native-journeys:
+    needs: changes
+    if: ${{ needs.changes.outputs.run == 'true' }}
     name: Native journeys (${{ matrix.os }}, shard ${{ matrix.shard }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: ${{ inputs.exhaustive && 90 || 40 }}
@@ -407,6 +436,16 @@ jobs:
           if ($null -eq $godot) { throw "Godot .NET console executable was not found" }
           "GODOT_BIN=$($godot.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Scripted acceptance builds the client and verifies its driver
+        if: matrix.shard == 0
+        shell: pwsh
+        run: |
+          ./tools/godot-acceptance.ps1 -GodotBin $env:GODOT_BIN `
+            -Script res://smoke/automation/opening_hand_acceptance.gd `
+            -ResultsDirectory "$env:RUNNER_TEMP/native-evidence-0/acceptance-opening"
+          ./tools/godot-acceptance.ps1 -GodotBin $env:GODOT_BIN -NoBuild `
+            -ResultsDirectory "$env:RUNNER_TEMP/native-evidence-0/acceptance-driver"
+
       - name: The selected native profile completes its exact shard
         shell: pwsh
         env:
@@ -426,8 +465,8 @@ jobs:
   platform:
     name: Native integration (${{ matrix.os }})
     # Keep the required check names while requiring every platform gate and journey shard.
-    if: ${{ always() }}
-    needs: [platform-gates, native-journeys]
+    if: ${{ always() && !(needs.changes.result == 'success' && needs.changes.outputs.run == 'false') }}
+    needs: [changes, platform-gates, native-journeys]
     runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.exhaustive && 90 || 40 }}
     strategy:
@@ -436,6 +475,9 @@ jobs:
         os: [windows-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v7
+      - name: Require successful scope selection
+        if: ${{ needs.changes.result != 'success' || needs.changes.outputs.run != 'true' }}
+        run: exit 1
       - name: Require every platform gate and native shard to succeed
         shell: pwsh
         env:
@@ -445,6 +487,8 @@ jobs:
 
   desktop-package:
     name: Windows desktop community package
+    needs: changes
+    if: ${{ needs.changes.outputs.run == 'true' }}
     runs-on: windows-latest
     timeout-minutes: 30
 

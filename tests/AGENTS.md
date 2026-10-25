@@ -5,6 +5,11 @@ Apply the root instructions. For presentation or interaction work, also read
 [the UI guidance](../src/Marvel.Godot/AGENTS.md), even when only tests change.
 Read [testing.md](../docs/testing.md) for the existing test-lane boundaries.
 
+For Godot interaction verification, read the repository-local
+[marvel-godot-testing skill](../.agents/skills/marvel-godot-testing/SKILL.md).
+Prefer repeatable native scripts over manual Computer Use; reserve exploratory
+review for the distinct comprehension/product questions below.
+
 Architecture gates reject empty test bodies and exact same-class test bodies with
 the same declared inputs. This is a narrow safeguard, not a test-quality score:
 helpers, theory data, concurrency and negative compile probes need semantic
@@ -61,6 +66,12 @@ platform checks remain required and are separate from product acceptance.
 
 Record the build and scenarios the owner reviewed, feedback and any follow-up
 changes. Approval of a design direction is not acceptance of its implementation.
+
+Owner review explores whether the working product meets the intended need. It
+can reveal omissions, an imprecise request or a requirement that should change.
+Treat those discoveries as input to the next delivery, not as a demand that the
+owner execute a regression checklist. Agents own repeatable correctness and
+interaction verification; passing those checks does not settle product fit.
 
 ## Independent comprehension review when requested
 
