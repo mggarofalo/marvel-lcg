@@ -68,6 +68,9 @@ internal sealed class DeckEditorControls
 
     internal DeckEditorControls(Main main)
     {
+        ModalWindowFocus.Bind(Window);
+        ModalWindowFocus.Bind(Confirm);
+        ModalWindowFocus.Bind(File);
         Scale = main.interfaceScale;
         Window.Theme = DeckEditorTheme.Create(Scale);
         Cards.UiScale = Deck.UiScale = Scale;

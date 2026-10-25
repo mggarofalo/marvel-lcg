@@ -56,3 +56,36 @@ condition/HP bonus, restart, continuation and independent-copy import. They
 normalize only explicitly migrated compatibility and import identity fields.
 This is standard-mode evidence with zero delay counters; it does not establish
 expert-mode or nonzero-delay campaign coverage.
+
+`played-campaign-91098022-continued.archive.gz` preserves the exact persisted
+archive from that original predecessor continuation copy, after the recorded
+End turn request advanced Taskmaster from revision 5 to revision 6. SHA-256:
+`970501B99649ED1B2FBC5EB18DD337C9F7CA3A355D7FD01D137EEF02F5970DC6`.
+It was compressed from the original retained store, without rebuilding the
+engine or modifying its JSON. The packaged native upgrade probe compares its
+entire resulting archive, including the new decision's events, RNG and digest,
+against this control, normalizing only explicitly migrated compatibility.
+The original ZIP's `control/continuation-request.json`, response, producer
+source and provenance identify the actual request and predecessor runtime.
+
+`expert-campaign-91098022.zip` preserves an actual Expert campaign from the
+same untouched predecessor, SHA-256
+`1A7B953709EE3E390863BFD28A6C920EE00B53F7F24853B197013AA72903538B`.
+Spider-Man's published starter plays seed 528 with Expert campaign rules and
+Standard scenario difficulty. Six Crossbones attempts include five defeats and
+one victory; all 395 terminal decisions were independently matched for prompt,
+choice, events, RNG word count and digest. Recorded health is 7, the carried
+experimental weapon is 04072, and the awarded tech is 04155. The seventh attempt
+is Absorbing Man at its initial recovery prompt, revision zero. A fresh
+predecessor process restored the exact authority, synchronized owner and game,
+and exported the campaign.
+
+MARVEL-655 prevents that old host from committing either recovery choice.
+The archive includes both original rejected requests/responses and verification
+that neither changes the durable campaign. It therefore does not claim an old
+Absorbing Man victory, acquired recovery obligations, or successful predecessor
+continuation. The current host's accepted recovery is checked against a separate
+engine execution, while migration comparisons preserve the entire original
+aggregate, proofs, authority and backup bytes. Import creates new authority and
+preserves all played records. Harness sources, the independent trace, and logs
+are included; capabilities belong only to this generated test campaign.
