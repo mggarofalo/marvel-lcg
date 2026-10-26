@@ -61,7 +61,7 @@ public sealed class MsMarvelSetupTests
     }
 
     [Fact]
-    public void ResearchRecipeStaysOutsideRuntimeDiscovery()
+    public void CompleteRecipeEntersRuntimeDiscovery()
     {
         var setup = SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
@@ -69,8 +69,9 @@ public sealed class MsMarvelSetupTests
             cards.Faces.ToHashSet(StringComparer.Ordinal));
 
         Assert.Contains("ms_marvel", setup.HeroNames);
-        Assert.DoesNotContain("ms_marvel", admitted.Setup.HeroNames);
-        Assert.DoesNotContain("05001a", admitted.Playable);
+        Assert.Contains("ms_marvel", admitted.Setup.HeroNames);
+        Assert.Equal(34, admitted.Playable.Count(face => cards.Pack(face) == "msm"));
+        Assert.Equal(9, admitted.Setup.HeroNames.Count);
         Assert.Contains("spider_man", admitted.Setup.HeroNames);
     }
 

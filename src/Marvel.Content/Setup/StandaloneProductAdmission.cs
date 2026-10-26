@@ -28,6 +28,12 @@ public static class StandaloneProductAdmission
             .. Enumerable.Range(19, 31).Select(number => $"02{number:000}")], cards, authored)
         && GreenGoblinRecipes.Complete(setup);
 
+    /// <summary>Admits Ms. Marvel's complete face inventory and published starter.</summary>
+    public static bool MsMarvel(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        Complete("msm", ["05001a", "05001b", .. Enumerable.Range(2, 32).Select(number => $"05{number:000}")], cards, authored)
+        && setup.HeroNames.Contains("ms_marvel")
+        && MsMarvelRecipe.Complete(setup.Hero("ms_marvel"));
+
     private static IEnumerable<string> WreckingRecipes() =>
         FixedWreckingRecipes
         .Concat(Enumerable.Range(0, 16).Select(value => "wrecking_crew_custom_"

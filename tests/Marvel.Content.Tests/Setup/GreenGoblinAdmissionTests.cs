@@ -28,8 +28,8 @@ public sealed class GreenGoblinAdmissionTests
         Assert.Equal(57, result.Playable.Count(face => Cards.Pack(face) == "gob"));
         Assert.All(Scenarios, key => Assert.Contains(key, result.Setup.CampaignNames));
         Assert.All(Modulars, key => Assert.Contains(key, result.Setup.EncounterSetNames));
-        Assert.DoesNotContain("ms_marvel", result.Setup.HeroNames);
-        Assert.DoesNotContain(result.Playable, face => Cards.Pack(face) == "msm");
+        Assert.Contains("ms_marvel", result.Setup.HeroNames);
+        Assert.DoesNotContain(result.Playable, face => Cards.Pack(face) == "thor");
     }
 
     [Theory]
