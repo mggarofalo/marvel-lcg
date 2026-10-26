@@ -30,7 +30,8 @@ internal sealed class AbilityCostPayment
     private BasicUseAllyReceipt? basicUseAlly;
     private AbilityMinionEntryCost? minionEntry;
     internal bool HasMinionEntryCost => minionEntry is not null;
-    internal bool Unpaid => minionEntry is { IsComplete: true, Paid: false };
+    internal bool Unpaid => damageUnpaid || minionEntry is { IsComplete: true, Paid: false };
+    private bool damageUnpaid;
     private long? requiredTakenDamage;
 
     internal AbilityCostPayment(
@@ -180,9 +181,9 @@ internal sealed class AbilityCostPayment
         {
             // rr:cost.12: "If any of the damage is prevented, then the cost has
             // not been paid." Remaining costs and the post-arrow effect do not run.
-            throw new RulesNotImplementedException(
-                $"'{source.FaceId}' requires {required} damage to be taken as a "
-                + $"cost, but only {damagePayment.Taken} was taken; rr:cost.12 leaves it unpaid");
+            // The damage procedure still settles the actual taken amount.
+            damageUnpaid = true;
+            nextStep = steps.Length;
         }
         damagePayment = null;
         requiredTakenDamage = null;

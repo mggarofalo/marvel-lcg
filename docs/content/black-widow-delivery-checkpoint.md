@@ -245,3 +245,5 @@ Barrier during ordinary effect damage. MARVEL-788 records the separately
 identified cost-payment path; no claim of complete cost interruption is made here.
 
 The combined occurrence receipts exceeded the 300-line class gate. Exact trigger-use and event-play generation bookkeeping now lives in the cohesive TriggerUses owner, with unchanged Occurrence entry points and serialized facts. All 82 Timing checks and the 227 combined Content checks pass after extraction (widow-trigger-uses-rules.log and widow-34face-final-focused.log). No architecture baseline was expanded.
+
+MARVEL-788 damage-cost implementation845668e3 and independent review1c36a519 are integrated. Actual Focused Rage/Energy Barrier use, decline and nested targeting now preserve unpaid-cost semantics; compound attempts retain actual damage without treating incomplete taking costs as paid. Combined63 Content and3 strict-JSON fresh-host checks pass in widow-damage-cost-integrated-{content,server}.log. No archived bytes, schema or new product admission changed.

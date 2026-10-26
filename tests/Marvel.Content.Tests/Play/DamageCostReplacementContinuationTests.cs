@@ -61,8 +61,9 @@ public sealed class DamageCostReplacementContinuationTests
         Decision choice = Decision.Take(game.Pending.Affordances[prevent ? 0 : 1].Id);
         if (kind == "takeDamage" && prevent)
         {
-            Assert.Contains("leaves it unpaid", Assert.Throws<RulesNotImplementedException>(
-                () => game.Resolve(choice)).Message);
+            game.Resolve(choice);
+            Assert.Equal(Question.TurnOption, game.Pending!.Asking);
+            Assert.False(world.Agenda.IsBusy);
             Assert.True(source.Ready);
             Assert.Equal(0, source.Tokens.GetValueOrDefault("c_test"));
         }
