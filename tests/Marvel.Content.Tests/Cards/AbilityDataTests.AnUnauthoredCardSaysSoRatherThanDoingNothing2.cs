@@ -17,11 +17,10 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         // card produces a board that is plausible and wrong.
         var world = new World(Printed, players: 1);
         world.CreateSeat("p0");
-        // Every core face is now authored. Norman Osborn is printed in the
-        // Green Goblin pack and deliberately remains outside this slice, so he
-        // keeps the fail-closed contract observable without making a core game
-        // stop on missing data.
-        var card = world.CreateCard("02001a", world.AreaOf(DeckType.RevealingArea));
+        // Mutagen Formula remains unauthored. Its stage I face keeps the
+        // fail-closed contract observable while Risky Business stage faces
+        // have bounded research authoring without public pack admission.
+        var card = world.CreateCard("02014", world.AreaOf(DeckType.RevealingArea));
         var thrown = Assert.Throws<RulesNotImplementedException>(() => AuthoredCards.Runner().ExecuteReveal(world, card, 0));
         Assert.Contains("no ability data", thrown.Message, StringComparison.Ordinal);
     }
@@ -201,6 +200,7 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
             "03011", "03012", "03013", "03014", "03015", "03016", "03017", "03018", "03019", "03020", "03021", "03022", "03023", "03024", "03025", "03026", "03027", "03028", "03029", "03030", "03031", "03032", "03033", "03034"]);
 
 
+        permitted.UnionWith(["02001a", "02001b", "02002a", "02002b", "02003a", "02003b", "02006a", "02006b"]);
         permitted.UnionWith(["02037", "02038", "02039", "02040"]);
         Assert.All(AuthoredCards.Book.Authored, face => Assert.Contains(face, permitted));
     }

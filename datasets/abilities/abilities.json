@@ -14208,6 +14208,134 @@
           }
         }
       ]
+    },
+    {
+      "card": "02001a",
+      "name": "Norman Osborn",
+      "note": "Printed 02001a: would attack places 1 infamy instead; would take any damage removes that many available infamy instead. GreenGoblinActivationReplacement and GreenGoblinDamageReplacement own these Forced Interrupts, including status priority, simultaneous forced ordering and whole-instance replacement. No DSL interrupt duplicates the native abilities. No When Revealed text.",
+      "abilities": []
+    },
+    {
+      "card": "02001b",
+      "name": "Green Goblin",
+      "note": "Printed 02001b: deal 3 indirect damage to each player in hero form. Each player resolves with their own identity and controlled characters; the first player chooses resolution order (rr:each-player.1). GreenGoblinActivationReplacement owns the Forced Interrupt removing 1 madness instead of scheming. Native counter exhaustion reveals this authored face on a form change; villain promotion reveals the corresponding next stage.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "if": {
+                  "test": {
+                    "inForm": {
+                      "player": "you",
+                      "form": "hero"
+                    }
+                  },
+                  "then": {
+                    "indirectDamage": {
+                      "among": {
+                        "query": "charactersYouControl"
+                      },
+                      "amount": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02002a",
+      "name": "Norman Osborn",
+      "note": "Printed 02002a: would attack places 2 infamy instead; would take any damage removes that many available infamy instead. GreenGoblinActivationReplacement and GreenGoblinDamageReplacement own these Forced Interrupts, including status priority, simultaneous forced ordering and whole-instance replacement. No DSL interrupt duplicates the native abilities. No When Revealed text.",
+      "abilities": []
+    },
+    {
+      "card": "02002b",
+      "name": "Green Goblin",
+      "note": "Printed 02002b: deal 3 indirect damage to each player. Each player resolves with their own identity and controlled characters; the first player chooses resolution order (rr:each-player.1). GreenGoblinActivationReplacement owns the Forced Interrupt removing 1 madness instead of scheming. Native counter exhaustion reveals this authored face on a form change; villain promotion reveals the corresponding next stage.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "indirectDamage": {
+                  "among": {
+                    "query": "charactersYouControl"
+                  },
+                  "amount": 3
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02003a",
+      "name": "Norman Osborn",
+      "note": "Printed 02003a: would attack places 3 infamy instead; would take any damage removes that many available infamy instead. GreenGoblinActivationReplacement and GreenGoblinDamageReplacement own these Forced Interrupts, including status priority, simultaneous forced ordering and whole-instance replacement. No DSL interrupt duplicates the native abilities. No When Revealed text.",
+      "abilities": []
+    },
+    {
+      "card": "02003b",
+      "name": "Green Goblin",
+      "note": "Printed 02003b: deal 4 direct damage to each player; allies cannot take an allocation. Each player resolves with their own identity and controlled characters; the first player chooses resolution order (rr:each-player.1). GreenGoblinActivationReplacement owns the Forced Interrupt removing 2 madness instead of scheming. Native counter exhaustion reveals this authored face on a form change; villain promotion reveals the corresponding next stage.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "dealDamage": {
+                  "cards": "you",
+                  "amount": 4
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02006a",
+      "name": "Criminal Enterprise",
+      "note": "Printed 02006a: enters play with 2 per-player infamy counters. startingCounters supplies the ordinary entry pool without Uses discard. GreenGoblinTransition owns the zero-counter condition: immediately flip this physical environment and the villain, initialize the opposite printed pool and resolve the Goblin reveal when applicable (pack:mc02:new-rules#when-the-villain-changes-form). This condition is native rather than a duplicated DSL response.",
+      "startingCounters": {
+        "type": "infamy",
+        "count": 2,
+        "uses": false,
+        "perPlayer": true
+      },
+      "abilities": []
+    },
+    {
+      "card": "02006b",
+      "name": "State of Madness",
+      "note": "Printed 02006b: enters play with 2 per-player madness counters. startingCounters supplies the ordinary entry pool without Uses discard. GreenGoblinTransition owns the zero-counter condition: immediately flip this physical environment and the villain, initialize the opposite printed pool and resolve the Goblin reveal when applicable (pack:mc02:new-rules#when-the-villain-changes-form). This condition is native rather than a duplicated DSL response.",
+      "startingCounters": {
+        "type": "madness",
+        "count": 2,
+        "uses": false,
+        "perPlayer": true
+      },
+      "abilities": []
     }
   ]
 }
