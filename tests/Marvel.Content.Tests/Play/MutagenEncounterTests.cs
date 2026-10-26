@@ -115,6 +115,40 @@ public sealed class MutagenEncounterTests : CoreCardTestBase
         Assert.Equal(0, f.World.Seats[0].IdentityCard.Damage);
     }
 
+    [Fact]
+    [Rule("rr:guard.1")]
+    public void ThrallBoostBlocksOnlyItsEngagedPlayersAttackUntilItLeaves()
+    {
+        // rr:guard.1: "cannot attack the villain" while this minion is engaged.
+        var f = Create();
+        Assert.Contains(f.Villain, BasicPowers.Attackable(f.World, Cards, 1));
+        var source = f.World.CreateCard("02024", f.World.AreaOf(DeckType.EncounterDeck));
+        Attack(f, f.Villain, 1);
+        Assert.Same(source, Assert.Single(BasicPowers.Attackable(f.World, Cards, 1)));
+        Assert.Contains(f.Villain, BasicPowers.Attackable(f.World, Cards, 0));
+        World.MoveToTop(source, f.World.AreaOf(DeckType.RemovedArea));
+        Assert.Contains(f.Villain, BasicPowers.Attackable(f.World, Cards, 1));
+    }
+
+    [Theory]
+    [InlineData("02022")]
+    [InlineData("02025")]
+    public void SchemeBoostShufflesOnlyItsExactSourceAfterPlacingThreat(string face)
+    {
+        var f = Create();
+        var main = f.World.CreateCard("02018b", f.World.AreaOf(DeckType.MainSchemesArea));
+        var source = f.World.CreateCard(face, f.World.AreaOf(DeckType.EncounterDeck));
+        var other = f.World.CreateCard(face, f.World.AreaOf(DeckType.EncounterDiscardPile));
+        f.World.Agenda.Add(new PhaseStep(new EnemySchemeOperation(), 1, 2,
+            Subject: f.Villain.ObjectId, Seat: 1));
+        f.Finish();
+        Assert.Equal(DeckType.EncounterDeck, source.Area.Type);
+        Assert.Equal(DeckType.EncounterDiscardPile, other.Area.Type);
+        Assert.Equal(3, main.Tokens["k_threat"]);
+        Assert.All(f.World.Seats, seat => Assert.Equal(0, seat.IdentityCard.Damage));
+        Assert.Null(f.World.Activation);
+    }
+
     private static RedSkullFixture Create(bool fill = true)
     {
         var world = Hero("01001a", 2);
