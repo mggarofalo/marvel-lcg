@@ -4,6 +4,11 @@ Canonical parent: MARVEL-565. The [40-face handoff](research/remaining/doctor-st
 defines complete scope. This branch contains nonpublic prerequisites and authored
 rows; Doctor Strange is not publicly admitted.
 
+Black Widow PR #453 is merged at `ffb26f66`; this branch rebased cleanly onto
+that accepted baseline. The reviewed 38-commit Strange stack now ends at
+`22d67804` (pre-rebase head `4d95d05c`). Earlier hashes below name the revisions
+actually tested and remain evidence references. No source packets were dropped.
+
 Latest integration: 672 authored rows, 27 of the 40 Strange faces. Exact printed-set
 search source `4261d57f` and review `f7e59a6c` are integrated at `36628a0b`; its
 combined search checks pass 40 cases. Four response-event rows from `4953b480`

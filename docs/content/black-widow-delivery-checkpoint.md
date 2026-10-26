@@ -2,8 +2,13 @@
 
 Canonical parent: MARVEL-564. This record supplements the
 [34-face implementation handoff](research/remaining/black-widow-implementation-handoff.md),
-which defines the complete scope and authority. The candidate admits Black Widow;
-final regression certification and merge remain outstanding.
+which defines the complete scope and authority. Black Widow is merged and
+agent-accepted in PR #453 at `ffb26f66d0ab43e4dcf1969f3361f84d3eef095a`.
+All eleven CI jobs passed on exact candidate `cf175e56` in run `40404335331`: managed
+correctness, Windows/Linux platform and native gates, and Windows packaging.
+The twenty parent/prerequisite Plane records are Done; remaining content work
+continues with Doctor Strange. The sections below retain the earlier evidence
+and resolved findings, rather than treating old failed runs as final results.
 
 ## Integrated candidate
 
@@ -14,7 +19,8 @@ review. The verified printed starter, public admission, eight complete public ga
 and reviewed damage-cost interruption are integrated. Native cost/consequence
 repairs have independent managed and rendered evidence. Historical replay
 regressions are resolved with unchanged-archive rejection and corrected owning
-receipts in MARVEL-783/795. The candidate awaits required CI and merge.
+receipts in MARVEL-783/795. The final viewport repair has independent review and
+the exact merged candidate passed required CI.
 
 Earlier integration evidence follows; these runs do not certify the current head.
 All 6,104 Content tests passed on prerequisite revision `f601932b` (2026-10-26);
