@@ -150,6 +150,9 @@ internal static class AbilityEffectTargetAdmission
         AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange) =>
         node.OperationName() switch
         {
+            // ruling:8c9c9d30f4c01189: an Invocation can affect itself by
+            // entering its discard pile even when its other targets are invalid.
+            "discardInvocation" => InvocationDiscardTargetLegality(cast),
             // rr:target.3.4: "at least one of those effects must be able to
             // affect the target." Deferring resolution retains the bound target.
             "cancelBoostIcons" or "cancelBoostAbility" => BoostCancellationTargetLegality(node, cast),
@@ -188,6 +191,11 @@ internal static class AbilityEffectTargetAdmission
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             _ => TargetLegality.None,
         };
+
+    private static TargetLegality InvocationDiscardTargetLegality(AbilityAdmissionScope cast) =>
+        cast.Player >= 0 && cast.Player < cast.World.Seats.Count
+            && cast.World.Seats[cast.Player].InvocationDeck?.CanDiscardTop(cast.Source) == true
+                ? TargetLegality.Valid : TargetLegality.Invalid;
 
     private static TargetLegality CharacterChangeTargetLegality(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch

@@ -58,12 +58,17 @@ public sealed class InvocationDeck
         return invocation;
     }
 
+    /// <summary>Whether this bound physical card is the owned public top in its draw pile.</summary>
+    public bool CanDiscardTop(Card card) => duringGame && cards.Contains(card)
+        && card.Owner == Player && ReferenceEquals(card, PublicTop)
+        && card.Area == Deck && Deck.Cards.Contains(card);
+
     /// <summary>Discards the exact current public top without touching the player deck.</summary>
     public void DiscardTop(Card card, string trigger, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
-        if (!ReferenceEquals(card, PublicTop))
+        if (!CanDiscardTop(card))
             throw new ArgumentException("only this player's current public Invocation can be discarded", nameof(card));
         global::Marvel.Rules.Play.Discard.Card(world, card, trigger, events);
     }

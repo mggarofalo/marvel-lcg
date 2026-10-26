@@ -1,4 +1,4 @@
-# Master of the Mystic Arts — MARVEL-798
+# Master of the Mystic Arts â€” MARVEL-798
 
 Base `e9584f11`, branch `feat/master-of-mystic-arts`, 2026-10-26.
 This is a bounded nonpublic engine packet. Production ability rows, setup,
@@ -70,3 +70,47 @@ Independent evidence, outside the repository:
   observes the intermediate public top before exact-card return, with and
   without recycling. No production ability rows are added.
 - `strange-master-independent-deck.log`: all 17 Invocation deck cases pass.
+
+
+## Invocation self-discard admission repair
+
+The bounded repair on `fix/invocation-self-discard-admission`, based on `fc93062f`,
+classifies explicit `discardInvocation` as affecting its source only when the
+resolving player's typed Invocation deck confirms that exact owned, bound physical
+card is its current public top in its draw pile. Execution uses the same query.
+The unchanged independent synthetic regression now discards and returns correctly.
+The completed-procedure receipt remains unchanged: it records finishing the owned
+child procedure, rather than requiring every child effect to change state. Wakanda
+Forever's existing policy for an unresolvable Special remains covered and unchanged.
+
+The new nonpublic cases cover both arrows, last-card reset, ordered intermediate
+reveal before exact physical return, card conservation, and bound top versus
+non-top, discarded, unbound same-face and foreign-resolver sources. The Images
+control uses its printed effects with a direct binding to this fixture's sole main
+scheme; it does not establish complete Images target-choice handling or pack
+admission. Current authority is `ruling:8c9c9d30f4c01189`, whose graph relationship
+explicitly reconciles its Invocation self-target reasoning with Rules Reference 1.8.
+
+A genuine Images `chooseCard` version remains a blocking choice-handling finding:
+`CanInitiateSequence` requires every child's `CanInitiate`, and
+`CanInitiateChooseCard` rejects the zero-threat scheme choice even when a sibling
+self-discard has valid target legality. The whole Special is skipped. This separate
+finding must be resolved before complete Images/Vapors coverage or Doctor Strange
+readiness is claimed. Its reproducible test source and four failing cases are
+preserved outside the repository in `C:/Users/mggar/Source/invocation-empty-choice-review.cs`
+and `invocation-empty-choice-review.log`; the delivery lead owns follow-up.
+
+Repair evidence outside the repository under `C:/Users/mggar/Source/`:
+
+- `invocation-admission-red.log`: unchanged independent regression fails at missing self-discard.
+- `invocation-admission-mutant-build.log` and `invocation-admission-mutant.log`:
+  omission of explicit admission compiles; six distinguishing cases fail while four
+  invalid-source controls pass.
+- `invocation-admission-restored-build.log` and `invocation-admission-restored.log`:
+  non-incremental Release restoration builds cleanly; 76 focused content cases pass,
+  including Master, Spell Mastery, variable-event payment, Black Panther Specials,
+  new admission cases and citation validation.
+- `invocation-admission-deck.log`: all 17 Invocation lifecycle cases pass.
+- `invocation-admission-architecture.log`: 92 focused architecture cases pass.
+
+Independent review and integrated wider checks remain with the delivery lead.

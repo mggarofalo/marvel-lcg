@@ -13,7 +13,8 @@ namespace Marvel.Content.Tests.Play;
 internal static class SpellMasteryFixture
 {
     private static readonly CardCatalog Cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
-    private static AbilityRunner Runner(bool paid, bool unsupported, bool choice, string? special = null) => new(AbilityCatalog.Parse("""
+    private static AbilityRunner Runner(bool paid, bool unsupported, bool choice, string? special = null,
+        string face = "09036") => new(AbilityCatalog.Parse("""
         {"cards":[{"card":"09001a","abilities":[{
           "name":"Spell Mastery",
           "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
@@ -35,7 +36,7 @@ internal static class SpellMasteryFixture
         }]}]}
         """.Replace("""{"seq":[{"draw":{"player":"you","count":3}},{"discardInvocation":"this"}]}""",
             special ?? """{"seq":[{"draw":{"player":"you","count":3}},{"discardInvocation":"this"}]}""", StringComparison.Ordinal)
-        .Replace("09036", paid && !unsupported ? "09032" : "09036", StringComparison.Ordinal)
+        .Replace("09036", paid && !unsupported ? "09032" : face, StringComparison.Ordinal)
         .Replace("""{"draw":{"player":"you","count":3}}""", paid
             ? """{"if":{"test":{"finalStep":"true"},"then":{"draw":{"player":"you","count":9}},"else":{"draw":{"player":"you","count":3}}}}"""
             : """{"draw":{"player":"you","count":3}}""", StringComparison.Ordinal)
@@ -48,14 +49,14 @@ internal static class SpellMasteryFixture
 
     internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) Board(int player, bool last = false, bool paid = false, bool live = false, bool unsupported = false,
         int master = 0, bool choice = false) =>
-        CreateBoard(Runner(paid, unsupported, choice), player, last, paid, live, master);
+        CreateBoard(Runner(paid, unsupported, choice), player, last, paid ? "09032" : "09036", live, master);
 
     // Synthetic Special control: a real decision can occur after the Invocation has left its deck.
-    internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) BoardWithSpecial(string special, bool last) =>
-        CreateBoard(Runner(false, false, false, special), 1, last, false, false, 1);
+    internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) BoardWithSpecial(string special, bool last, string face = "09036", int master = 1) =>
+        CreateBoard(Runner(false, false, false, special, face), 1, last, face, false, master);
 
     private static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) CreateBoard(
-        AbilityRunner runner, int player, bool last, bool paid, bool live, int master)
+        AbilityRunner runner, int player, bool last, string topFace, bool live, int master)
     {
         // Master mode 3 supplies a fixed shuffle control whose resolved copy is below the new top.
         var world = new World(Cards, player + 1, Seed(master));
@@ -71,9 +72,9 @@ internal static class SpellMasteryFixture
         var cards = Enumerable.Range(32, 5).Select(id => world.CreateCard($"090{id}", aside)).ToArray();
         var deck = InvocationDeck.Initialize(world, player, cards, "setup", []);
         // Fixture arrangement precedes public top exposure and keeps all five physical cards.
-        World.MoveToTop(cards.Single(card => card.FaceId == (paid ? "09032" : "09036")), deck.Deck);
+        World.MoveToTop(cards.Single(card => card.FaceId == topFace), deck.Deck);
         if (last)
-            foreach (var card in deck.Deck.Cards.Where(card => card.FaceId != "09036").ToArray())
+            foreach (var card in deck.Deck.Cards.Where(card => card.FaceId != topFace).ToArray())
                 World.MoveToTop(card, deck.Discard);
         if (live)
         {
