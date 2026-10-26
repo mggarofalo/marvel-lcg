@@ -105,6 +105,7 @@ internal static class AbilityEffectLowering
             "generate" => new AbilityEffect.Generate(ResourceString(argument, child)),
             "doubleResourceFor" => new AbilityEffect.DoubleResourceFor(Text(argument, child)),
             "reduceSelfCostPerEngagedMinion" => new AbilityEffect.ReduceSelfCostPerEngagedMinion(PositiveInteger(argument, child)),
+            "reduceSelfCostPerControlledTrait" => AbilitySelfPlayCostLowering.LowerControlledTrait(argument, child),
             "reduceFirstAllyCost" => new AbilityEffect.ReduceFirstAllyCost(PositiveInteger(argument, child)),
             "releaseBeneath" => AbilityBeneathLowering.Release(argument, child),
             "chooseCardsToHand" => AbilityBeneathLowering.ChooseToHand(argument, child),

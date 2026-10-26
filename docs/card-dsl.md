@@ -1299,6 +1299,18 @@ behavior. The accepted cost snapshot survives resource-generator suspension.
 This mechanism does not admit the Thor product or author its actual ability row.
 
 
+`reduceSelfCostPerControlledTrait` takes `{ "trait": "PREPARATION", "amount": 1 }`.
+The engine chooses this instruction spelling. Like the engaged-minion variant,
+it requires a direct unconditional Constant ability on `this` and supplies only
+a candidate pricing reduction. Printed 08002 requires one reduction for every
+Preparation card its future controller currently controls in play, across card
+kinds and in-play areas. The census uses live traits and `CardControl`, so
+ownership does not replace changed control; cards in hand or discard are excluded.
+Final payment validation owns the zero floor, discount consumption, uniqueness
+and ally limit. An accepted payment retains its price through resource suspension.
+Test-local Winter Soldier coverage does not admit Black Widow publicly.
+
+
 ## Basic-use interrupt prerequisite
 
 `WhenHeroBasicAttackInitiated` joins the existing attack occurrence only for a

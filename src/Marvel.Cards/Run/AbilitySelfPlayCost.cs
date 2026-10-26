@@ -16,15 +16,25 @@ internal static class AbilitySelfPlayCost
         if (!world.Cards.Contains(card) || card.Area.Type != DeckType.HandsArea
             || card.Area.PlayArea != PlayArea.Of(player) || card.Owner != player) return 0;
         long reduction = 0;
-        // Printed 06011: "Reduce the cost to play Hercules by 1 for each minion engaged with you."
         // This query's explicit player is the candidate's future controller, not the active turn seat.
         foreach (var ability in AbilityProgramQueries.ActiveOn(world, program, card))
-            if (ability.Trigger.Timing == AbilityType.Constant
-                && ability.Effect is AbilityEffect.ReduceSelfCostPerEngagedMinion discount)
-                reduction = checked(reduction + discount.Amount * world.Areas
-                    .Where(area => area.Type == DeckType.EngagedEnemiesArea && area.PlayArea == PlayArea.Of(player))
-                    .SelectMany(area => area.Cards)
-                    .LongCount(minion => EffectiveCards.Kind(minion, world.Facts) == CardKind.Minion));
+            if (ability.Trigger.Timing == AbilityType.Constant)
+                reduction = checked(reduction + ReductionFor(world, ability.Effect, player));
         return reduction;
     }
+
+    private static long ReductionFor(World world, AbilityEffect effect, int player) => effect switch
+    {
+        // Printed 06011: "for each minion engaged with you."
+        AbilityEffect.ReduceSelfCostPerEngagedMinion discount => checked(discount.Amount * world.Areas
+                    .Where(area => area.Type == DeckType.EngagedEnemiesArea && area.PlayArea == PlayArea.Of(player))
+                    .SelectMany(area => area.Cards)
+                    .LongCount(minion => EffectiveCards.Kind(minion, world.Facts) == CardKind.Minion)),
+        // Printed 08002: "for each Preparation card you control." No card-kind restriction.
+        AbilityEffect.ReduceSelfCostPerControlledTrait discount => checked(discount.Amount * world.Cards
+            .LongCount(controlled => DeckTypes.IsInPlay(controlled.Area.Type)
+                && CardControl.ControllerOf(world, controlled) == player
+                && Traits.Has(world, controlled, discount.Trait, world.Facts))),
+        _ => 0,
+    };
 }

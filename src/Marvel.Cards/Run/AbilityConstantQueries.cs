@@ -40,7 +40,7 @@ internal sealed class AbilityConstantQueries
         {
             // Candidate pricing has its own read-only port and never supplies an in-play grant.
             if (ability.Trigger.Timing != AbilityType.Constant
-                || ability.Effect is AbilityEffect.ReduceSelfCostPerEngagedMinion) continue;
+                || ability.Effect is AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceSelfCostPerControlledTrait) continue;
 
             var bindings = new AbilityQueryContext(
                 world, card, new Occurrence(0, []),

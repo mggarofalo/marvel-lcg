@@ -59,6 +59,7 @@ internal static class AbilityOperationNames
         AbilityEffect.GainSurge => "gainSurge",
         AbilityEffect.Generate => "generate",
         AbilityEffect.DoubleResourceFor => "doubleResourceFor",
+        AbilityEffect.ReduceSelfCostPerControlledTrait => "reduceSelfCostPerControlledTrait",
         AbilityEffect.ReduceSelfCostPerEngagedMinion => "reduceSelfCostPerEngagedMinion",
         AbilityEffect.ReduceFirstAllyCost => "reduceFirstAllyCost",
         AbilityEffect.AllowPlayBeneath => "allowPlayBeneath",

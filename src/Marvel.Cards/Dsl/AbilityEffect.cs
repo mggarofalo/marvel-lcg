@@ -139,6 +139,8 @@ public abstract record AbilityEffect
     public sealed record ReduceFirstAllyCost(long Amount) : AbilityEffect;
     /// <summary>Reduce only this candidate's play cost for each minion engaged with its future controller.</summary>
     public sealed record ReduceSelfCostPerEngagedMinion(long Amount) : AbilityEffect;
+    /// <summary>Reduce this candidate's play cost per controlled in-play card with a trait.</summary>
+    public sealed record ReduceSelfCostPerControlledTrait(string Trait, long Amount) : AbilityEffect;
     /// <summary>Shuffle an engine-supported search area.</summary>
     public sealed record Shuffle(AbilitySearchArea Area) : AbilityEffect;
     /// <summary>Pay resources or resolve the alternative effect.</summary>
