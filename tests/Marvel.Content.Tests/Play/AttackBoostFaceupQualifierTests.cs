@@ -68,12 +68,41 @@ public sealed class AttackBoostFaceupQualifierTests : CoreCardTestBase
         Assert.False(world.Activation!.Attacking);
         Assert.Equal(nested, world.Attack is not null);
         Assert.False(world.Agenda.Current!.Value.Require<BoostFaceupOperation>().Attacking);
+        Assert.DoesNotContain("uncancelled boost", prompt.Description ?? "");
         Assert.Equal(2, world.Agenda.Occurrence!.BoostIcons!.Remaining);
         Assert.True(world.Agenda.Occurrence.Is(BoostFaceupOperation.Faceup));
         Assert.False(world.Agenda.Occurrence.Is(BoostFaceupOperation.AttackFaceup));
         Assert.Contains(prompt.Affordances, a => a.AnchorId == observer.ObjectId);
         Assert.DoesNotContain(prompt.Affordances, a => a.AnchorId == source.ObjectId);
         Assert.Equal(DeckType.HandsArea, source.Area.Type);
+    }
+
+    [Fact]
+    public void RemainingObserverSeesZeroAfterTheCurrentCardIconsAreCancelled()
+    {
+        // Synthetic observer keeps the same physical card's interrupt window open.
+        var (world, runner, source, observer) = Board();
+        var payment = world.CreateCard("01089", world.Seats[0].Hand);
+        var events = new List<GameEvent>();
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), 1, 2,
+            Subject: world.TheCardIn(DeckType.VillainArea)!.ObjectId, Seat: 0));
+        var prompt = Faceup(world, runner, events);
+        var occurrence = world.Agenda.Occurrence!;
+        Assert.Contains("2 uncancelled boost icons", prompt.Description);
+        Sequence.Answer(world, Cards, runner, prompt,
+            new Decision(Assert.Single(prompt.Affordances, a => a.AnchorId == source.ObjectId).Id,
+                [], [payment.ObjectId]), events);
+
+        prompt = Sequence.Work(world, Cards, runner, events)!;
+        Assert.Same(occurrence, world.Agenda.Occurrence);
+        Assert.Equal(0, occurrence.BoostIcons!.Remaining);
+        Assert.Contains("0 uncancelled boost icons", prompt.Description);
+        Assert.Contains(prompt.Affordances, a => a.AnchorId == observer.ObjectId);
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
+        Sequence.Finish(world, Cards, runner, events);
+        Assert.Equal(0, Assert.Single(events.OfType<BoostResolved>()).Icons);
+        Assert.Null(world.Activation);
+        Assert.False(world.Agenda.IsBusy);
     }
 
     [Fact]

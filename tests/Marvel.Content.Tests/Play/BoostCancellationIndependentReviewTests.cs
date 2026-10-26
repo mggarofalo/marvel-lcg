@@ -42,6 +42,7 @@ public sealed class BoostCancellationIndependentReviewTests : CoreCardTestBase
         Assert.False(modifierSource.Ready);
         Assert.Equal(expected, Modified(world, boost, "boost_const"));
         Assert.Equal(expected, world.Agenda.Occurrence!.BoostIcons!.Remaining);
+        Assert.Contains($"{expected} uncancelled boost icon", prompt.Description);
         var offer = Assert.Single(prompt.Affordances, a => a.AnchorId == source.ObjectId);
         Sequence.Answer(world, Cards, runner, prompt, new Decision(offer.Id, [], [payment.ObjectId]), events);
         Sequence.Finish(world, Cards, runner, events);
