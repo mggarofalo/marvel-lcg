@@ -23,6 +23,7 @@ internal static class AbilityContinuationScheduling
         var results = capture.Memory.Results
             .Remove("activationMade")
             .Remove("activationDamage")
+            .Remove("activationDamagePlaced")
             .Remove("activationThreat")
             .SetItem("activationRequested", requested);
         return capture with

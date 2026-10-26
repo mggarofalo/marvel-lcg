@@ -138,6 +138,7 @@ internal static class AbilityContinuations
         var values = state.Memory.Results
             .SetItem("activationMade", state.Memory.Results.GetValueOrDefault("activationMade") + (result.Made ? 1 : 0))
             .SetItem("activationDamage", state.Memory.Results.GetValueOrDefault("activationDamage") + result.DamageDealt)
+            .SetItem("activationDamagePlaced", state.Memory.Results.GetValueOrDefault("activationDamagePlaced") + result.DamagePlaced)
             .SetItem("activationThreat", state.Memory.Results.GetValueOrDefault("activationThreat") + result.ThreatPlaced);
         values = AbilityActivationReceipts.Record(values, result);
         var remaining = step.Require<AbilityContinuationAgendaOperation>().AwaitedActivations.Where(id => id != result.Id).ToImmutableArray();
@@ -149,6 +150,7 @@ internal static class AbilityContinuations
         IDictionary<string, long> results, EnemyActivation activation)
     {
         results["activationDamage"] = activation.DamageDealt;
+        results["activationDamagePlaced"] = activation.DamagePlaced;
         results["activationThreat"] = activation.ThreatPlaced;
         results["activationMade"] = activation.Made ? 1 : 0;
     }

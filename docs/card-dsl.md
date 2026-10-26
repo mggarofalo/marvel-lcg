@@ -17,6 +17,15 @@ most recent scheduled activation collection. Completion captures the final
 defender before attack-end responses; prevented damage still counts, while
 stun and other attack replacements do not. A new collection clears this receipt.
 
+`result: "activationDamagePlaced"` sums step-5 damage taken after prevention in
+the most recent scheduled attack collection, including each overkill placement.
+Ally damage is the specified token placement, including excess beyond its remaining
+hit points (`rr:damage.2`); overkill places additional damage on the identity.
+The exact activation id binds each share. Unrelated damage and boost-card ability
+damage are excluded. `activationDamage` retains its separate damage-dealt meaning.
+This attack-step receipt does not settle whether printed "by this activation"
+also includes damage from a boost ability; that scope needs an authority review.
+
 Static `enemyAttacks` and `enemySchemes` support a following `then`: every
 requested activation must actually be made. Stun or confuse replacement does not
 complete an activation; an attack whose damage is prevented still does. The
