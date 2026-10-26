@@ -21,7 +21,8 @@ public sealed class AttackDamageIsFixedTests : AttackTestBase
         var printed = Printed(atk: 2, boost: 0);
         var world = Board(printed);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        Attack.Initiate(world, printed, new PhaseStep(new EnemyAttackOperation(), Round: 1, Number: 2, Subject: villain.ObjectId, Seat: 0), []);
+        // The scheduled step owns the activation identity retained by its damage receipt.
+        Attack.Initiate(world, printed, world.Agenda.Current!.Value, []);
         Attack.CalculateDamage(world, printed);
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "attack", Amount: 5, Affects: villain.ObjectId));
         Attack.DealDamage(world, printed, []);

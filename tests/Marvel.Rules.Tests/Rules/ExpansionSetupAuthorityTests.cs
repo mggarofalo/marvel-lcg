@@ -12,6 +12,7 @@ public sealed class ExpansionSetupAuthorityTests
         {
             "setup:campaign:absorbing_man", "setup:campaign:absorbing_man_expert",
             "setup:campaign:crossbones", "setup:campaign:crossbones_expert",
+            "setup:campaign:mutagen_formula", "setup:campaign:mutagen_formula_expert",
             "setup:campaign:red_skull", "setup:campaign:red_skull_expert",
             "setup:campaign:risky_business", "setup:campaign:risky_business_expert",
             "setup:campaign:taskmaster", "setup:campaign:taskmaster_expert",
@@ -60,6 +61,7 @@ public sealed class ExpansionSetupAuthorityTests
         "setup:hero:ms_marvel" => "Ms. Marvel hero pack",
         "setup:encounter-set:a_mess_of_things" or "setup:encounter-set:goblin_gimmicks"
             or "setup:encounter-set:power_drain" or "setup:encounter-set:running_interference" or "setup:campaign:risky_business" or "setup:campaign:risky_business_expert"
+            or "setup:campaign:mutagen_formula" or "setup:campaign:mutagen_formula_expert"
             => "Green Goblin scenario pack",
         _ when source.StartsWith("setup:campaign:wrecking_crew_", StringComparison.Ordinal) => "The Wrecking Crew",
         _ => "Rise of Red Skull",

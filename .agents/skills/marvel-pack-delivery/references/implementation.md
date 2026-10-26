@@ -22,6 +22,11 @@ missing offer cannot pass because the fixture was already ineligible. A mutant
 only proves the check when it compiles, fails for the intended behavior, and the
 restored revision passes that same check.
 
+Restoring a compiled mutant with a timestamp-preserving copy can leave its binary
+cached. Force a non-incremental rebuild of restored sources before claiming the
+restored run passes. Serialize mutation, restoration, verification and hooks in
+each worktree; preserve evidence outside the repository.
+
 Use the full encounter procedure when proving entry, surge and cleanup together;
 a direct placement or When Revealed call may deliberately omit later lifecycle
 steps. When extending a shared player/encounter operation, also run an existing
@@ -99,6 +104,8 @@ checks as well as the setup tests before handing off the packet. Include the glo
 `RiseOfRedSkullSetupDataTests` recipe inventory even when the new pack is unrelated
 to Rise of Red Skull; its declared counts cover every research recipe. Preserve
 separate accepted-product counts until the product admission gate actually changes.
+Also update `ExpansionSetupAuthorityTests`: its independent source inventory and
+product reasons must include new research recipes without claiming Core transcripts.
 Whole-game replays supplement focused rules evidence; record whether they exercise
 victory, defeat, promotion and campaign continuation rather than inferring it.
 
