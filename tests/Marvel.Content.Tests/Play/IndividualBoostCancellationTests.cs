@@ -53,11 +53,15 @@ public sealed class IndividualBoostCancellationTests : CoreCardTestBase
         var prompt = Sequence.Work(world, Cards, runner, events)!;
         while (prompt is not null && !prompt.Affordances.Any(a => a.AnchorId == source.ObjectId))
         {
+            if (prompt.Asking == Question.Defender)
+                Assert.DoesNotContain("uncancelled boost", prompt.Description ?? "");
             Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
             prompt = Sequence.Work(world, Cards, runner, events)!;
         }
         Assert.True(prompt is not null, $"No offer; boosted {string.Join(",", events.OfType<BoostResolved>().Select(e => e.Icons))}");
         Assert.Contains("Boost card revealed", prompt.Description);
+        Assert.Contains("2 uncancelled boost icons", prompt.Description);
+        Assert.Contains("Boost abilities and later effects can change the result", prompt.Description);
         Assert.DoesNotContain(BoostFaceupOperation.Faceup, prompt.Description);
         var occurrence = world.Agenda.Occurrence!;
         Assert.Equal(first.ObjectId, occurrence.Subject);
@@ -74,7 +78,8 @@ public sealed class IndividualBoostCancellationTests : CoreCardTestBase
         Assert.Equal(second.ObjectId, world.Agenda.Occurrence!.Subject);
         Assert.Equal(1, world.Agenda.Occurrence.BoostIcons!.Remaining);
         Assert.Throws<InvalidOperationException>(() => occurrence.BoostIcons.Cancel(world));
-        Assert.Contains(prompt!.Affordances, a => a.AnchorId == secondEvent.ObjectId);
+        Assert.Contains("1 uncancelled boost icon", prompt!.Description);
+        Assert.Contains(prompt.Affordances, a => a.AnchorId == secondEvent.ObjectId);
         Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
         Sequence.Finish(world, Cards, runner, events);
         Assert.Equal(new long[] { 0, 1 }, events.OfType<BoostResolved>().Select(e => e.Icons));

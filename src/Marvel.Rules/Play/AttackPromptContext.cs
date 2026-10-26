@@ -27,6 +27,7 @@ internal static class AttackPromptContext
             world, facts, attack, enemy, target, step);
         if (!defenseContext && world.Attack is not null)
             situation = AttackOverkillDescription.Context(world, facts, enemy) + situation;
+        situation += AttackBoostDescription.Faceup(world, facts, step);
         situation += AttackedPlayerContext(world, attack);
         string[] attachments = AttackAttachments(world, facts, enemy);
         situation = AppendAttackContext(situation, attachments, prompt.Description, attack.PreventAllDamage);
