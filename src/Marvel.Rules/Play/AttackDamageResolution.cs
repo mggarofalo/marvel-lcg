@@ -11,6 +11,7 @@ internal sealed class AttackDamageResolution
     private readonly AttackDamageRequest request;
     private readonly bool spillOnly;
     private readonly int incarnation;
+    private readonly Timing.OccurrenceCard attacker;
     private long remaining;
     private CardKind kind;
     private int controller = -1;
@@ -31,6 +32,7 @@ internal sealed class AttackDamageResolution
         this.facts = facts;
         this.request = request;
         this.spillOnly = spillOnly;
+        attacker = Timing.OccurrenceCard.Capture(request.Attacker, facts);
         replacement = request.Replacement;
         Execution = execution;
         Result = new(completion ?? execution);
@@ -122,12 +124,22 @@ internal sealed class AttackDamageResolution
     {
         if (request.EnemyAttack is not null || spillOnly)
             AttackDamageAccounting.RecordPlacement(world, request.ActivationId, damage);
-        if (damage.Landed) Execution.Occurrence.Also(Steps.DamageDealt);
+        if (damage.Landed && request.EnemyAttack is null && !spillOnly)
+            Execution.Occurrence.Also(Steps.DamageDealt);
+        RecordReceivedDamage(damage);
         if (!spillOnly && request.EnemyAttack is { } attack)
             AttackDamageAccounting.RecordAttackDamage(world, attack, damage);
         AttackDamageAccounting.RecordRecipient(world, request.Source, request.Target, damage.Dealt);
         if (request.EnemyAttack is not null || spillOnly)
             AttackDamageAccounting.RecordIdentityDamage(world, request.Source, damage);
+    }
+
+    private void RecordReceivedDamage(Damage.PlacedDamage damage)
+    {
+        // rr:damage.3.2: prevention changes damage taken, not damage dealt.
+        // rr:overkill.2: excess damage is part of the same attack.
+        if (damage.Landed && attacker.IsEnemy && (request.EnemyAttack is not null || spillOnly))
+            AttackDamageReceipts.Record(world, attacker, damage);
     }
 
     private void PrepareReplacement(List<GameEvent> events)

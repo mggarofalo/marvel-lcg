@@ -45,6 +45,11 @@ internal sealed class AbilityCostPreparation
     {
         AttachedUpgradeCostBound.Validate(world, source, player, cost, paying);
         var price = AbilityPaymentPricing.Price(world, source, player, cost, resourceAbilities);
+        // Engine choice: a standalone discard-source arrow cannot consume resource generators.
+        // Events retain their separately validated printed-price payment.
+        if (cost is AbilityCost.Discard { Card: AbilityCostCard.Source } && paying.Length > 0
+            && EffectiveCards.Kind(source, world.Facts) != CardKind.Event)
+            throw new RulesNotImplementedException("this ability has no resource cost to pay");
         if (!resourcesPaidByEvent && price is not null
             && price.ResourceCosts.Any(component => component.DistinctTypes)
             && !Marvel.Rules.Prompts.ResourcePayment.Allows(price, paying, variables, selection.Allocations))

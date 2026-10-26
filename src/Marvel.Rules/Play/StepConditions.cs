@@ -33,9 +33,9 @@ public static class StepConditions
         [FlipBoostCards] = ["WhenBoostCardsFlipped"],
         // Damage from an attack is imminent before this step applies. Whether
         // it was dealt is known only afterwards: Tough may prevent it, so the
-        // applying step adds `DamageDealt` only when damage actually lands.
-        // `rr:triggering-condition.2` still gives both one occurrence and one
-        // pair of windows.
+        // completed attack adds `DamageDealt` only when damage actually lands.
+        // rr:attack-enemy-activation.step.6 groups its damage responses with
+        // the other attack-end responses after the attack finishes.
         [DealAttackDamage] = [DamageWouldBeDealt],
         [PrepareIndirectAttackDamage] = [DamageWouldBeDealt],
         [EndAttack] = [AttackEnds],

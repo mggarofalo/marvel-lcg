@@ -99,6 +99,18 @@ internal static class AbilityCardQueries
     {
         if (cast.Occurrence.Actor < 0) return null;
         var actor = cast.World.Cards[cast.Occurrence.Actor];
+        // rr:villain-defeat.3.1: a configured same-title successor is the same character.
+        if (cast.Occurrence.ActorFacts?.IsVillain == true && !DeckTypes.IsInPlay(actor.Area.Type))
+        {
+            var stages = cast.Occurrence.ReceivedAttackDamage
+                .Where(damage => damage.Attacker.Card == actor.ObjectId
+                    && damage.Attacker.Incarnation == cast.Occurrence.ActorFacts.Incarnation)
+                .SelectMany(damage => damage.AttackerStages);
+            return stages.Select(stage => (Facts: stage, Card: cast.World.Cards[stage.Card]))
+                .Where(stage => stage.Card.Incarnation == stage.Facts.Incarnation
+                    && DeckTypes.IsInPlay(stage.Card.Area.Type))
+                .Select(stage => stage.Card).FirstOrDefault();
+        }
         // rr:leaves-play.1: a departed card is "a new copy of the card".
         // Retained facts still identify what happened; effects cannot follow a new copy.
         return cast.Occurrence.ActorFacts?.Incarnation is { } incarnation

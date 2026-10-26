@@ -184,3 +184,25 @@ same-character villain promotion. Rapid Response and Attacrobatics partial
 attack sources are under independent review. The four-face prevention packet
 also has an unresolved zero-threat admission probe (MARVEL-785); it must not be
 hidden by auto-declining the offer.
+
+
+## Combined response mechanisms
+
+Rapid Response import/source/review `9fb39b8b` / `e7739447` / `0a741978`
+and the final Counterattack chain `52fcde6b` / `cc92090f` / `a4258184` /
+`d0ef0685` / `c65cd85f` are integrated as reviewed mechanisms, with both
+response evidence sections retained. Combined focused Content checks pass
+**48/48**, and strict-JSON/fresh-host Server journeys pass **6/6** in
+`widow-counter-rapid-integrated-{content,server}.log`. Counterattack's current
+RR order and same-title promotion controls pass unchanged. Production rows
+08030/08031 and complete-pack acceptance remain outstanding.
+
+The seven-face source `fbdd33b8` passed 209 restored focused/data checks and
+normal hooks; its compiled Quake-incarnation mutant was killed. It remains
+outside this branch pending independent review. The frozen four-prevention
+source, reviewed Guard mechanism and zero-threat source `695d64ae` are under
+combined independent review. The book in this branch remains 632 rows and
+21/34 Black Widow faces.
+
+Thor's post-merge main run `40349177660` also passed all eleven jobs on
+`c14a045c`; its accepted status no longer relies only on pre-merge certification.

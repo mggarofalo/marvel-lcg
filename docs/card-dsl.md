@@ -1463,3 +1463,22 @@ A conditional guarded by `exists(thwartableSchemes)` may choose from that same
 query for removal plus status, or use an identical independent status sentence.
 Both branches retain the same outer thwart label and its whole-ability cancellation.
 Other power suspension and conditional admission shapes retain their existing gates.
+
+
+### Received enemy-attack damage
+
+`{"receivedAttackDamage":"game"}` reads the positive damage actually taken by
+this resolving player's exact identity from the matching enemy-attack damage
+occurrence. It is independent of damage dealt, current health and later damage.
+The engine retains attacker and recipient incarnations, controller at placement,
+and each actual placement, including overkill. Tough, complete prevention, zero,
+boost effects, and an ally's own damage supply no identity credit. The spelling
+and occurrence-local receipt are engine choices implementing `rr:damage.3.2`.
+
+Damage responses bind the captured actual recipient; an overkill identity need
+not be the original defending ally. The same receipt survives a suspended ability
+and its labeled counterattack. Ordinary attack legality, Guard, Stun and retaliate
+continue to apply. Receipts are transient, omitted from diagnostic occurrence
+serialization and reconstructed by accepted-decision replay. They add no digest,
+card-state or protocol field. This capability neither authors Counterattack
+(08030) nor admits Black Widow.

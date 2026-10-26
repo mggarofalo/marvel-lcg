@@ -71,6 +71,8 @@ internal static class IndirectAttackResolution
             DamagePlacement.ApplyPlaced(
                 world, facts, damage, Steps.AttackInitiated, "Attack", events);
             AttackDamageAccounting.RecordPlacement(world, step.ActivationId, damage);
+            if (damage.Landed)
+                AttackDamageReceipts.Record(world, OccurrenceCard.Capture(attacker, facts), damage);
         }
 
         // rr:indirect-damage.3 -- every assigned share is dealt

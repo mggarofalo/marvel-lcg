@@ -17,6 +17,11 @@ internal static class AbilityTriggerInstances
                 yield return candidate with { TriggeringThreat = placement };
             yield break;
         }
+        if (HasReceivedDamageTargets(candidate, occurrence))
+        {
+            foreach (var instance in ReceivedDamageInstances(candidate, occurrence)) yield return instance;
+            yield break;
+        }
         bool targetedAttack = trigger.Target is not null
             && (trigger.Event == Steps.AttackEnds || trigger.Also == Steps.AttackEnds)
             && occurrence.Attacks.Count > 0;
@@ -25,6 +30,26 @@ internal static class AbilityTriggerInstances
             if (!targetedAttack) { yield return instance; continue; }
             foreach (var attack in occurrence.Attacks)
                 if (Matches(instance, attack)) yield return instance with { TriggeringAttack = attack };
+        }
+    }
+
+    private static bool HasReceivedDamageTargets(AbilityWindowAdmission.Candidate candidate, Occurrence occurrence)
+    {
+        var trigger = candidate.Ability.Trigger;
+        return trigger.Target is not null && occurrence.ReceivedAttackDamage.Count > 0
+            && (trigger.Event == Steps.DamageDealt || trigger.Also == Steps.DamageDealt);
+    }
+
+    private static IEnumerable<AbilityWindowAdmission.Candidate> ReceivedDamageInstances(
+        AbilityWindowAdmission.Candidate candidate, Occurrence occurrence)
+    {
+        foreach (var damage in occurrence.ReceivedAttackDamage)
+        {
+            var recipient = damage.Recipient;
+            var attacked = new Marvel.Rules.State.Attacked(recipient.Card,
+                recipient.Incarnation!.Value, recipient, damage.Amount);
+            foreach (var instance in DefeatInstances(candidate, occurrence))
+                if (Matches(instance, attacked)) yield return instance with { TriggeringAttack = attacked };
         }
     }
 

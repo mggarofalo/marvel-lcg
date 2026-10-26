@@ -131,6 +131,10 @@ public sealed record Occurrence
 
     private readonly AttackRecipients attacks = new();
 
+    /// <summary>Actual enemy-attack placements belonging only to this occurrence.</summary>
+    [JsonIgnore]
+    public ReceivedAttackDamagePlacements ReceivedAttackDamage { get; } = new();
+
     /// <summary>The next play generation of this physical event in this occurrence.</summary>
     public int EventPlay(int card) => completedEventPlays.GetValueOrDefault(card);
 
