@@ -16,6 +16,7 @@
     <ProjectReference Include="../../src/Marvel.Sim/Marvel.Sim.csproj" />
     <ProjectReference Include="../../src/Marvel.Content/Marvel.Content.csproj" />
     <ProjectReference Include="../../src/Marvel.Cards/Marvel.Cards.csproj" />
+    <ProjectReference Include="../../src/Marvel.Server/Marvel.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>
