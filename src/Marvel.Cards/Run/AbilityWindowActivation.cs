@@ -28,7 +28,7 @@ internal static class AbilityWindowActivation
             world, card, cast.Player, found, execution.resourceAbilities,
             AbilityPaymentSelection.Capture(paying, [], answer.DefinedValues, allocations: answer.Allocated));
         if (eventPayment is not null)
-            AbilityPaymentReceiptAdmission.Validate(found, execution.AdmissionContext(cast), eventPayment.PreviewPaid);
+            AbilityPaymentReceiptAdmission.Validate(found, execution.AdmissionContext(cast), eventPayment.PreviewPaid, eventPayment.Energy);
         return new AbilityInitiationPayment(eventPayment, arrowPayment);
     }
 

@@ -100,7 +100,7 @@ internal static class AbilityResolutionActions
             AbilityPaymentSelection.Capture(paying, [], values, allocations: allocations));
         cast.TrackResolution(ability.Ordinal);
         if (eventPayment is not null)
-            AbilityPaymentReceiptAdmission.Validate(found, execution.AdmissionContext(cast), eventPayment.PreviewPaid);
+            AbilityPaymentReceiptAdmission.Validate(found, execution.AdmissionContext(cast), eventPayment.PreviewPaid, eventPayment.Energy);
         cast.PendingPayment = new AbilityInitiationPayment(eventPayment, arrowPayment);
         cast.PendingPayment.Commit(execution, cast);
         if (cast.Suspended)

@@ -43,7 +43,10 @@ internal static class AbilityResolutionAdmissionAdapter
             return true;
         }
 
-        return execution.ApplyAdmission(AbilityEntryAdmission.Admit(ability.Effect, context), cast);
+        var admission = ability.Cost is AbilityCost.SpendEnergy
+            ? AbilityPaymentReceiptAdmission.Admit(ability, context, null)
+            : AbilityEntryAdmission.Admit(ability.Effect, context);
+        return admission is not null && execution.ApplyAdmission(admission, cast);
     }
 
     internal static bool CanInitiate(this AbilityResolutionExecution execution, AbilityEffect effect, AbilityResolutionState cast) =>

@@ -1268,6 +1268,14 @@ once. Wild declarations, overgeneration and suspended resource abilities use the
 ordinary payment pipeline. Printed-price reductions affect only that component;
 the committed `result: "energy"` remains the chosen X.
 
+Action admission evaluates feasible future positive X receipts against the same
+adjusted combined price and typed allocation bounds as payment. Effect admission
+reads the proposed energy result without committing generators, discounts or RNG.
+Payment-dependent branches additionally require a feasible declared receipt; the
+selected payment and X are checked again for a valid effect before any cost is
+committed. Synthetic damage, trait-conditional, no-effect and suspended-generator
+coverage exercises this boundary without admitting an expansion ability.
+
 This bounded spelling retains the existing positive-X requirement. It does not
 admit zero-X variants whose other effects or modifiers make them significant,
 or sequences containing variable arrow costs. Synthetic payment coverage does
