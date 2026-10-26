@@ -1060,3 +1060,10 @@ occurrence only while it remains in the playing owner's discard pile and that
 owner is the resolving player. It binds nothing before discard or after removal
 from the game. This engine-selected binding supports post-resolution recovery
 without selecting a different copy of the same printed card.
+
+`recruitDiscarded: {"trait":"GOBLIN"}` puts the first physical discarded minion
+with that printed trait into play engaged with the resolving player. Receipt order
+is discard order, including after the encounter deck resets; current discard-pile
+membership is not the selection. The string form continues to require at most one
+physical match for its named face. Putting the card into play does not reveal it.
+The object spelling and printed-trait filter are engine choices.
