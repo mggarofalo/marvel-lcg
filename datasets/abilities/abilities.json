@@ -17944,6 +17944,135 @@
           }
         }
       ]
+    },
+    {
+      "card": "06021",
+      "name": "Invulnerability",
+      "note": "Hero Action: Give your hero a tough status card. The hero form restriction and yourHero selection identify only the controller's hero.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "giveStatus": {
+              "card": "yourHero",
+              "status": "tough"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06025",
+      "name": "Avengers Mansion",
+      "note": "The action exhausts the support, chooses a player through that player's identity, and has that player draw 1 card.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "identities"
+              },
+              "effect": {
+                "draw": {
+                  "player": "chosenPlayer",
+                  "count": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06033",
+      "name": "Second Wind",
+      "note": "Action: Heal 4 damage from an identity, or 5 when the committed payment includes mental. The identity choice includes alter-egos and other players.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "identities"
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "paidWithResource": "B"
+                  },
+                  "then": {
+                    "heal": {
+                      "card": "chosen",
+                      "amount": 5
+                    }
+                  },
+                  "else": {
+                    "heal": {
+                      "card": "chosen",
+                      "amount": 4
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06034",
+      "name": "Enhanced Physique",
+      "note": "Uses (3 physical counters). Hero Resource: Exhaust Enhanced Physique and remove 1 physical counter from it to generate a physical resource. The last counter discards this upgrade under rr:uses-x-type; the committed resource ability still generates its resource.",
+      "startingCounters": {
+        "type": "physical",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "removeCounters": {
+                  "card": "this",
+                  "counter": "physical",
+                  "count": 1
+                }
+              }
+            ]
+          },
+          "printedResources": "R",
+          "effect": {
+            "generate": "R"
+          }
+        }
+      ]
     }
   ]
 }

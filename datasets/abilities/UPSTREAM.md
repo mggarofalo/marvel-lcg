@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
-| Records | 587 printed card faces, including explicit empty rows |
+| Records | 595 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -236,3 +236,5 @@ Defender clarifications 6e301a347a5392fb and a1f4982cfebcd768. Family Feud
 adds the complete in-play Asgard census to ordinary printed starting threat.
 ThorDefenderCardTests and ThorFamilyFeudCardTests use the full canonical book.
 See docs/content/thor-next-actual-evidence.md. Public admission remains closed.
+
+Thor utility research rows 06021, 06025, 06033 and 06034 bring the exact inventory to 19 Thor faces and 595 total. Full-book behavior and mutation evidence: `docs/content/thor-utility-evidence.md`.
