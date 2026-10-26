@@ -88,7 +88,7 @@ public sealed class SpellMasteryTests
     [InlineData("form")]
     public void RejectionPreservesPromptCardsRngAndPendingWork(string invalid)
     {
-        var (world, game, deck, runner) = Board(1);
+        var (world, game, deck, runner) = invalid == "form" ? BoardWithSpellMasteryOnBothForms() : Board(1);
         var hero = world.Seats[1].IdentityCard;
         var offer = Mastery(game, hero);
         var top = deck.PublicTop!;

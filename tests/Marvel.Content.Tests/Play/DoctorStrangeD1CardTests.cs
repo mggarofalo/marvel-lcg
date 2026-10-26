@@ -50,6 +50,38 @@ public sealed class DoctorStrangeD1CardTests
         Assert.Contains(game.Pending!.Affordances, offer => offer.AnchorId == master.ObjectId);
     }
 
+    [Fact]
+    public void AnActualNaturalTalentAnswerAfterOrdinaryFormChangePreservesTheNewPrompt()
+    {
+        var (world, game, deck, runner) = SpellMasteryFixture.BoardInAlterEgo();
+        var identity = world.Seats[1].IdentityCard;
+        var top = deck.PublicTop!;
+        var natural = SpellMasteryFixture.Mastery(game, identity);
+        Assert.Equal("Natural Talent", natural.Label);
+        var answer = Decision.Take(natural.Id);
+        Assert.True(DecisionAssessment.Assess(game.Pending!, answer).IsAccepted);
+        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances,
+            offer => offer.Verb == Game.ChangeForm).Id));
+        var prompt = game.Pending!;
+        var spell = Assert.Single(prompt.Affordances,
+            offer => offer.AnchorId == identity.ObjectId && offer.Verb == Game.ActionVerb);
+        Assert.Equal("Spell Mastery", spell.Label);
+        Assert.Equal(spell.Id, natural.Id);
+        // Handles are prompt-local. The unmodified former answer had no target;
+        // Spell Mastery requires the public Invocation, so current-prompt
+        // assessment rejects it. Public stale requests also carry a revision.
+        Assert.Equal(DecisionRejection.InvalidTargets, DecisionAssessment.Assess(prompt, answer).Rejection);
+        string before = SpellMasteryFixture.Snapshot(world);
+        Assert.Throws<ArgumentException>(() => game.Resolve(answer));
+        Assert.Equal(before, SpellMasteryFixture.Snapshot(world));
+        Assert.Same(prompt, game.Pending);
+        Assert.DoesNotContain(runner.Actions(world, 1), action => action.Card == identity.ObjectId
+            && runner.Describe(world, action).Label == "Natural Talent");
+        game.Resolve(Decision.Take(spell.Id, [top.ObjectId], []));
+        Assert.Same(deck.Discard, top.Area);
+        Assert.False(identity.Ready);
+    }
+
     private static JsonElement Face(JsonElement[] rows, string face) =>
         Assert.Single(rows, row => row.GetProperty("card_id").GetString() == face);
 }

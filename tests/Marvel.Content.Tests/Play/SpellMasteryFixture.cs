@@ -54,6 +54,20 @@ internal static class SpellMasteryFixture
     internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) BoardInAlterEgo() =>
         CreateBoard(Runner(false, false, false), 1, false, "09036", false, 1, false);
 
+    internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) BoardWithSpellMasteryOnBothForms()
+    {
+        // Synthetic form-gate control: retain the exact production Spell Mastery
+        // program on either face, including its hero requirement. This makes a
+        // direct TurnTo probe address Spell Mastery instead of Natural Talent.
+        var book = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(
+            RepositoryPaths.Dataset("abilities", "abilities.json")))!;
+        var spell = book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "09001a")!
+            .DeepClone();
+        spell["card"] = "09001b";
+        var runner = DoctorStrangeAbilityFixture.WithReplacements([spell]);
+        return CreateBoard(runner, 1, false, "09036", false, 0);
+    }
+
     private static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) CreateBoard(
         AbilityRunner runner, int player, bool last, string topFace, bool live, int master, bool startHero = true)
     {

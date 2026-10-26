@@ -68,3 +68,68 @@ inventory classes: 162 passed and the one direct-form-mutation case failed
 `C:/Users/mggar/Source/strange-d1-initial.trx`. Normal commit hooks remain enabled; their result is recorded
 in `strange-d1-hooks.log`. Independent review and integrated wider gates remain
 with the delivery lead.
+
+## Independent row review
+
+Reviewed `ede4159f82b3e344591b66a07040c3260d44aad7` against `05cb51c2`
+on `review/strange-d1-rows`. Accept the five-row nonpublic content increment
+with the test-fixture correction described below. No production correction was
+identified. An independent raw JSON substring comparison confirms 654 exact
+predecessor objects, exactly the five stated additional faces and 659 total rows.
+Review checked generated printed costs/text, the complete mc08 insert and current
+audited Master ruling against the linked engine evidence. Form/phase limits,
+controller healing versus singular-deck selection, combined payment, exhausted
+Strange with Master, captured physical identity, intermediate reveal/recycle,
+return and ordinary player-deck penalty have characteristic behavioral coverage.
+The five earlier lowered-data mutant logs were inspected; their failure counts
+match the implementation record above. This review changes tests and this record
+only; production abilities, engine code and public admission remain unchanged.
+
+The original direct-form-mutation failure is reproduced and preserved in
+`strange-d1-review-original.log` and `strange-d1-review-original-results/`.
+It does not establish that Spell Mastery passed its form requirement: Game
+rediscovers the current action by card/type/ordinal/player, and both printed
+identity actions use ordinal zero. `PendingAbility` likewise has no face address;
+constructing one before changing form would not capture the old compiled program.
+The former fixture's missing alter-ego row made rediscovery fail for a different
+reason. The unchanged exception, snapshot, RNG, pending-work and prompt assertions
+now use an explicitly synthetic form-control fixture only for the `form` member.
+That fixture copies the exact production Spell Mastery program onto both faces,
+including its hero requirement, so the probe always names Spell Mastery. Removing
+that production requirement is parsed/lowered at runtime and kills precisely the
+form member (four other rejection controls pass). This correction preserves a
+meaningful wrong-form rejection instead of excluding legitimate Natural Talent.
+
+A separate actual-row control captures a valid Natural Talent answer, accepts
+ordinary Change Form, then submits that unchanged prior answer to the new prompt.
+It explicitly observes the shared handle. Current-prompt `DecisionAssessment`
+rejects `InvalidTargets` because Spell Mastery requires its physical Invocation
+target; state/RNG/pending work and the current prompt remain unchanged. A fresh
+valid Spell Mastery answer then completes. This is an exact earlier-answer
+control, not a general guarantee of unique handles across prompts. Public
+`EngineHostResolution` additionally checks `ExpectedRevision` before resolution;
+the existing supported host stale-revision test passes. No reachable supported
+path misresolving a stale answer was established, and no general handle redesign
+is claimed or included.
+
+Independent Release evidence, outside the repository under
+`C:/Users/mggar/Source/`:
+
+- `strange-d1-review-content.log`: 164/164 affected cases pass, including whole
+  SpellMastery, Master, Invocation, DoctorStrange, AbilityData, citation and four
+  affected BlackWidow inventory classes.
+- `strange-d1-review-form-mutant.log`: lowered data mutant removes Spell Mastery's
+  hero requirement; exactly the corrected form member fails. Exact book bytes
+  are restored; `strange-d1-review-content-restored.log` passes the same 164 cases.
+  No compiled source was mutated, so the restored runtime data is the tested input.
+- `strange-d1-review-rules.log`: 23/23 InvocationDeck, RulesGraph and citation cases.
+- `strange-d1-review-revision.log`: the existing
+  `ADecisionForAnEarlierRevisionIsRejectedWithoutAdvancingTheGame` host case passes.
+- `strange-d1-review-dataset.log`: offline generated card/search check passes.
+- `strange-d1-review-hooks.log`: normal review-commit hooks; `git diff --check`
+  also passes.
+
+This verdict covers the five actual rows and the stated fixture correction.
+Integrated wider gates, remaining production faces, public setup/admission,
+save/restart and native interaction remain with the delivery lead. It is not
+complete Doctor Strange pack acceptance.
