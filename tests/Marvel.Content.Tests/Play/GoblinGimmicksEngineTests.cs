@@ -44,7 +44,7 @@ public sealed class GoblinGimmicksEngineTests : CoreCardTestBase
         string face, int damage, int remaining)
     {
         // 02036: "double the villain's stage number"; "If no damage was healed this way".
-        // rr:heal: "remove an amount of damage ... up to the specified amount".
+        // rr:heal: "damage the character has sustained can be removed".
         // rr:surge.1: "deal yourself 1 facedown encounter card".
         var (world, runner, villain) = Create(face);
         villain.TakeDamage(damage);
@@ -67,7 +67,7 @@ public sealed class GoblinGimmicksEngineTests : CoreCardTestBase
     public void RegenerativeHealingBoostHealsTwoIndependentlyOfStageWithoutSurge(string face, int damage)
     {
         // 02036 Boost: "The villain heals 2 damage."
-        // rr:heal: "up to the specified amount".
+        // rr:heal: "damage the character has sustained can be removed".
         var (world, runner, villain) = Create(face);
         villain.TakeDamage(damage);
         var source = world.CreateCard("02036", world.AreaOf(DeckType.BoostingArea));
