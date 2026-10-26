@@ -43,4 +43,45 @@ the final restored results are in `thor-standard-restored-build.log` and
 `thor-standard-restored-tests.log`. Normal Husky hooks remain enabled.
 
 No full game, public setup, native UI, or whole-solution run is claimed by this
-content packet. Independent authority and adversarial review follows integration.
+content packet. Independent review of this packet is recorded below.
+
+
+## Independent card review
+
+Reviewed candidate `a1c49c54bfc55a3db20405da25e44ff5120e67f3` against the
+five corrected printed faces, the vendored `06018`/`06019` FAQ entries, and
+`rr:you-your` / `rr:player-deck.3`. The six-file candidate diff and its existing
+20 card cases were reviewed. No additional card-row correction was identified.
+This verdict covers these five authored faces and their conventional engine
+paths; it does not establish complete Thor admission or native acceptance.
+
+`ThorStandardIndependentTests` adds four executed cases: Hall of Heroes credits
+only the defeating identity's controller with each seat attacking in turn;
+Battle Fury remains unavailable when the attacked minion survives; Trickster
+counts three distinct discarded types without including an older discard type.
+The Hall fixtures retain a minion engaged with player zero while player one
+attacks, so engagement cannot substitute for defeat credit.
+
+Two sequential compiled data mutants distinguish the added ownership and defeat
+checks. Removing Hall's `defeatedByYou` condition exposed the foreign Hall response
+and failed both seat cases. Removing Battle Fury's `wasDefeated` condition exposed
+its response after a surviving minion attack and failed that case. Both mutations
+were restored in `finally`; the ability book's restored SHA256 is
+`15130b5a8723c992ef21c335e97b8120677fc7e5774b159a2d688c75418fd9e0`.
+
+Restored verification uses `dotnet build
+ tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --no-incremental`
+followed by `dotnet test` of that project with `-c Release --no-build` and this
+`FullyQualifiedName` selection: `ThorGloryCardTests`, `ThorWeaponFuryCardTests`,
+`ThorTricksterSurveillanceTests`, `ThorStandardIndependentTests`, `AbilityDataTests`,
+`AbilityLoweringTests`, `AbilityProgramTests`, `AbilityCostLoweringTests`,
+`AbilityEffectLoweringTests`, and `RuleCitationTests` (OR-combined). Build: zero
+warnings/errors. Tests: 120 passed, zero failed/skipped, including the same three
+cases that rejected the two mutants. The four independent cases also passed
+before mutation. Normal `dotnet tool restore` succeeded; commit hooks remain
+enabled.
+
+Raw logs are outside the repository at
+`C:/Users/mggar/Source/thor-standard-independent-{baseline,hall-mutant,fury-mutant,restored-build,restored-tests}.log`.
+This records a Windows managed review run, without a whole-solution, public setup,
+full-game or native UI claim.
