@@ -1049,3 +1049,9 @@ value prevents the selected character from performing basic or labeled thwarts,
 including an attempt canceled by Confused. It does not prevent nonthwart threat
 removal or another character's thwart. The field is an engine-selected constant
 modifier name, not a registered card-state or digest field.
+
+`trigger.discardedEvent` binds the exact physical event named by a card-play
+occurrence only while it remains in the playing owner's discard pile and that
+owner is the resolving player. It binds nothing before discard or after removal
+from the game. This engine-selected binding supports post-resolution recovery
+without selecting a different copy of the same printed card.

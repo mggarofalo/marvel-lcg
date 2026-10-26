@@ -79,9 +79,9 @@ public sealed class CommunityReleasePolicyTests
             workflow, StringComparison.Ordinal);
         Assert.Contains("needs: [identity, acceptance-record, server-sign]",
             workflow, StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v22 · protocol 37 · save 7", workflow,
+        Assert.Contains("engine-replay-v23 · protocol 37 · save 7", workflow,
             StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v22 · protocol 37 · save 7", serverUpgrade,
+        Assert.Contains("engine-replay-v23 · protocol 37 · save 7", serverUpgrade,
             StringComparison.Ordinal);
         Assert.Contains("protocol:37,save_schema:7", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("protocol:14", workflow, StringComparison.Ordinal);
@@ -167,7 +167,7 @@ public sealed class CommunityReleasePolicyTests
             "Linux server interrupted candidate",
             "Linux server downgrade",
             "unsupported_downgrade",
-            "engine-replay-v22",
+            "engine-replay-v23",
             "protocol `37`",
             "TrustedPeople",
         })

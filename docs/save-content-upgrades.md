@@ -19,6 +19,12 @@ The baseline is embedded in the executable; a save cannot supply a new baseline
 or authorize its own migration.
 
 This is a conservative product policy, not a rule inferred from the tabletop.
+The current v23 delivery retains named routes from the exact frozen v19/v20/v21
+content triple to `engine-replay-v23`, plus frozen-content v23 additive upgrades.
+Every original recorded fact must verify; none is regenerated. V22 has no named
+source admission and is quarantined unchanged. Stacked damage prevention and
+recovered-event replay can change outcomes even with identical Core datasets.
+The v22 routes below remain explicit historical adapters, not v22-to-v23 admission.
 The v22 delivery admits four explicit routes on this exact frozen content
 triple: `engine-replay-v19` to `engine-replay-v22`, `engine-replay-v20` to
 `engine-replay-v22`, `engine-replay-v21` to `engine-replay-v22`, and frozen-content

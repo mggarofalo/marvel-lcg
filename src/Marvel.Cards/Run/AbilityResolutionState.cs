@@ -166,7 +166,8 @@ internal sealed record AbilityResolutionState(
         }
         resolutionAbility = new PendingAbility(Source.ObjectId, tier, Player, ordinal)
             { TriggeringDefeat = TriggeringDefeat, TriggeringAttack = TriggeringAttack,
-                TriggeringThreat = TriggeringThreat };
+                TriggeringThreat = TriggeringThreat,
+                EventPlay = Execution is { IsBatch: false } invocation ? invocation.Ability.EventPlay : 0 };
         if (!executionEntered)
         {
             if (Execution is null) Execution = World.Agenda.Executions.Begin(Occurrence, resolutionAbility.Value);

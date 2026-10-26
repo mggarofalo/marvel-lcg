@@ -35,4 +35,8 @@ public readonly record struct PendingAbility(
 
     /// <summary>Prompt-local handle assigned when several instances share a source card.</summary>
     public int? OfferId { get; init; }
+
+    /// <summary>Event-play generation within the containing triggering occurrence.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public int EventPlay { get; init; }
 }

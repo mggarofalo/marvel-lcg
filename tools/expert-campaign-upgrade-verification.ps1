@@ -5,7 +5,7 @@ function Assert-ExpertCampaignUpgrade {
     $current = Read-CampaignGeneration $CurrentDirectory
     $save = $current['save']; $before = $original['save']
     $compatibility = $save['compatibility'].DeepClone()
-    if ($compatibility['replay_contract'].ToString() -cne 'engine-replay-v22') { throw 'Expert campaign was not upgraded to replay v22.' }
+    if ($compatibility['replay_contract'].ToString() -cne 'engine-replay-v23') { throw 'Expert campaign was not upgraded to replay v23.' }
     if ($save['attempts'].Count -ne 7 -or $save['journal'].Count -ne $before['journal'].Count) { throw 'Expert history length changed.' }
     $save['compatibility'] = $before['compatibility'].DeepClone()
     for ($i = 0; $i -lt 7; $i++) {

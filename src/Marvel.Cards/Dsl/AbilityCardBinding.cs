@@ -34,4 +34,6 @@ public enum AbilityCardBinding
     TriggerSubject,
     /// <summary>The live defending character of the current enemy attack, if any.</summary>
     DefendingCharacter,
+    /// <summary>The played physical event, while in its playing owner's discard pile.</summary>
+    DiscardedEvent,
 }

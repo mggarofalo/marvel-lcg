@@ -25,6 +25,8 @@ internal static class AbilityWindowResolution
                 candidate.Controller, candidate.Ordinal)
             {
                 Would = candidate.Ability.Trigger.Would,
+                EventPlay = EffectiveCards.Kind(candidate.Card, world.Facts) == CardKind.Event
+                    ? occurrence.EventPlay(candidate.Card.ObjectId) : 0,
                 TriggeringThreat = candidate.TriggeringThreat,
                 TriggeringAttack = candidate.TriggeringAttack, TriggeringDefeat = candidate.TriggeringDefeat,
             }), world.Cards.Count);
@@ -74,6 +76,9 @@ internal static class AbilityWindowResolution
         var cast = CreateAbilityState(world, card, occurrence, resolving, events, found)
             with { TriggeringAttack = ability.TriggeringAttack, TriggeringDefeat = ability.TriggeringDefeat, DamageReplacement = replacement };
         cast.TriggeringThreat = ability.TriggeringThreat;
+        if (!execution.WhenHolds(found, cast))
+            throw new RulesNotImplementedException(
+                $"'{card.FaceId}' cannot initiate this ability while its printed condition is false");
         cast.EnterExecution(invocation);
         EnsureAvailable(execution, world, card, found, occurrence);
         if (!CanPayAbility(execution, world, card, found, resolving)) return invocation.Finish(events);

@@ -547,3 +547,16 @@ omitted to preserve existing-content replay identity. The Cards-owned
 `DefenseBody` continuation resumes the root or nested body without initiating the
 label again. A declaration uses the existing after-procedure continuation.
 The window describes the defending hero and attacking enemy explicitly.
+
+## Replaying a recovered event
+
+An event's completed play advances its generation within the triggering
+occurrence. Trigger consumption and resolution results retain that generation,
+so a recovered physical event can be played again in the still-open outer
+window (ruling `b144656def387a1e`). Permanent abilities retain generation zero
+and remain consumed for that occurrence. The generation advances only after
+the event finishes its effects and reaches its owner's discard pile.
+
+This is runtime bookkeeping reconstructed from the session's accepted decision
+trace, not a new save field or card-digest field. Diagnostic ability and
+resolution JSON omits generation zero and retains a later generation explicitly.
