@@ -49,10 +49,13 @@ internal sealed class PreparationPrintedFixture
     internal Card Minion { get; }
     internal List<GameEvent> Events { get; } = [];
 
-    private static AbilityRunner CreateRunner(bool boardRead, string? interruptEffect)
+    private static AbilityRunner CreateRunner(bool boardRead, string? interruptEffect, string? tail)
     {
         var root = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
         var rows = System.Text.Json.Nodes.JsonNode.Parse(Rows)!["cards"]!.AsArray();
+        if (tail is not null)
+            rows[0]!["abilities"]![0]!["effect"]!["attack"]!["effect"]!["seq"]![1] =
+                System.Text.Json.Nodes.JsonNode.Parse(tail);
         if (boardRead)
             rows[0]!["abilities"]![0]!["effect"]!["attack"]!["effect"]!["seq"]!.AsArray()
                 .Add(System.Text.Json.Nodes.JsonNode.Parse("""{"dealDamage":{"cards":"you","amount":{"count":{"cardsIn":{"area":"encounterDeck"}}}}}"""));
@@ -64,9 +67,9 @@ internal sealed class PreparationPrintedFixture
     }
 
     internal PreparationPrintedFixture(string minion = "01167", bool reveal = false,
-        bool boardRead = false, string? interruptEffect = null)
+        bool boardRead = false, string? interruptEffect = null, string? tail = null)
     {
-        Runner = CreateRunner(boardRead, interruptEffect);
+        Runner = CreateRunner(boardRead, interruptEffect, tail);
         World = new World(Cards, 2, 12345) { Abilities = Runner };
         var first = World.CreateSeat("Spider-Man");
         first.IdentityCard = World.CreateCard("01001a", first.Hero);
