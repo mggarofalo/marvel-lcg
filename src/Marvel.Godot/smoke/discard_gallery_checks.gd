@@ -41,6 +41,7 @@ static func _narrow_gallery(driver: SceneTree) -> bool:
 		driver._fail("narrow target gallery did not offer pages")
 		return false
 	if not await _all_pages(driver): return false
+	if not await driver._capture_checkpoint("ancestral-gallery-compact-empty", Vector2i(1280, 900)): return false
 	print("DISCARD_CHECKPOINT all pages reached")
 	return true
 
@@ -96,6 +97,7 @@ static func _reopen_compact_views(driver: SceneTree) -> bool:
 		if not _fits(driver) or not _selected(driver, 2): return false
 		if not await _dismiss_and_reopen(driver): return false
 		if not _selected(driver, 2): return false
+		if not await driver._capture_checkpoint("ancestral-gallery-selected-%dx%d" % [size.x, size.y], size): return false
 		print("DISCARD_CHECKPOINT compact dismiss and reopen %s" % size)
 	return true
 
@@ -178,6 +180,11 @@ static func _fits(driver: SceneTree) -> bool:
 	if frame == null or not driver._control_is_fully_visible(frame):
 		driver._fail("target gallery exceeds the fixed viewport")
 		return false
+	for name in ["CompleteChoiceSummary", "VisibleTargetSelection", "CommitBar"]:
+		var fixed_control := frame.find_child(name, true, false) as Control
+		if fixed_control == null or not driver._control_is_fully_visible(fixed_control):
+			driver._fail("target gallery clips its explanation, selection or commitment: %s" % name)
+			return false
 	if not frame.find_children("*", "ScrollContainer", true, false).is_empty():
 		driver._fail("target gallery introduced scrolling")
 		return false
