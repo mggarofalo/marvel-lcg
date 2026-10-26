@@ -91,7 +91,7 @@ internal sealed class AbilityOfferQueries
             {
                 AbilityName = ability.Name,
                 Restriction = ability.ResourceRestriction,
-                CostDescription = AbilityCostDescription.Summary(world, card, player, ability.Cost),
+                CostDescription = ResourceCostDescription(world, card, player, ability),
             });
         }
         return sources;
@@ -104,6 +104,14 @@ internal sealed class AbilityOfferQueries
         if (source.Area.Type == DeckType.HandsArea) return world.Facts.Title(source.FaceId);
 
         return ResourceAbility(world, player, source)?.Name ?? world.Facts.Title(source.FaceId);
+    }
+
+    private static string? ResourceCostDescription(World world, Card card, int player, CompiledCardAbility ability)
+    {
+        string? cost = AbilityCostDescription.Summary(world, card, player, ability.Cost);
+        return ability.ResourceRestriction == ResourceRestriction.PreparationCard
+            ? string.Join("; ", new[] { cost, "For a Preparation card's resource or ability cost" }.Where(part => part is not null))
+            : cost;
     }
 
     internal IReadOnlyList<ResourceSource> PrintedResourceAbilities(World world, int player)
