@@ -42,7 +42,11 @@ public abstract record AbilityEffect
     /// <summary>Repeat an effect according to a numeric expression.</summary>
     public sealed record ForEach(AbilityNumber Count, AbilityEffect Effect) : AbilityEffect;
     /// <summary>Resolve a follow-up for each matching result of the preceding effect.</summary>
-    public sealed record EachTime(AbilityEffect Effect, AbilityCondition When, AbilityEffect Then) : AbilityEffect;
+    public sealed record EachTime(AbilityEffect Effect, AbilityCondition When, AbilityEffect Then) : AbilityEffect
+    {
+        /// <summary>Finish the discard before traversing its ordered physical receipt.</summary>
+        public bool AfterDiscard { get; init; }
+    }
     /// <summary>A player chooses among authored effect options.</summary>
     public sealed record Choose(ImmutableArray<AbilityEffect> Options, ImmutableArray<string> Descriptions) : AbilityEffect;
     /// <summary>A player selects a card before resolving the effect with that binding.</summary>

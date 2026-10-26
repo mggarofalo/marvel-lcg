@@ -182,14 +182,19 @@ internal static class AbilityResolutionStructure
         AbilityEffect.EachTime repeated, AbilityResolutionState cast, long from, long? count)
     {
         bool outerContinuation = cast.HasContinuation;
-        var transition = AbilityStructuralFlowExecution.EachTimeStart(
-            execution.StructuralContext(cast), repeated, from, count);
-        while (transition is DiscardEachTime discard)
+        ImmutableArray<int> receipt = default;
+        if (repeated.AfterDiscard)
         {
             int before = cast.Discarded.Count;
-            if (!execution.TryRunCardState(discard.Effect, cast))
+            if (!execution.TryRunCardState(repeated.Effect, cast))
                 throw new InvalidOperationException("The card-state owner refused discardTop");
-            var discarded = cast.Discarded.Skip(before).SingleOrDefault();
+            receipt = [.. cast.Discarded.Skip(before).Select(card => card.ObjectId)];
+        }
+        var transition = AbilityStructuralFlowExecution.EachTimeStart(
+            execution.StructuralContext(cast), repeated, from, count, receipt);
+        while (transition is DiscardEachTime discard)
+        {
+            var discarded = execution.EachTimeDiscard(cast, discard.Frame);
             if (discarded is not null)
                 cast.BindAlteration(discarded);
             transition = AbilityStructuralFlowExecution.AfterEachTimeDiscard(

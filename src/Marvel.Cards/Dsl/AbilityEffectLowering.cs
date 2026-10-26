@@ -32,6 +32,7 @@ internal static class AbilityEffectLowering
             "afterActivation" => new AbilityEffect.AfterActivation(OnlyEffect(argument, child)),
             "forEach" => RepeatedEffect(argument, child),
             "eachTime" => EachTimeEffect(argument, child),
+            "forEachDiscarded" => EachTimeEffect(argument, child) with { AfterDiscard = true },
             "choose" => ChooseEffect(argument, child),
             "chooseCard" => ChooseCardEffect(argument, child),
             "exhaust" => CardInstruction(argument, child, AbilityCardInstruction.Exhaust),

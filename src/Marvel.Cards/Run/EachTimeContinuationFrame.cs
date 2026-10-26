@@ -8,4 +8,7 @@ using Marvel.Rules.Timing;
 namespace Marvel.Cards.Run;
 internal sealed record EachTimeContinuationFrame(
     AbilityEffect.EachTime Parent, long Current, long Count)
-    : AbilityContinuationFrame;
+    : AbilityContinuationFrame
+{
+    internal ImmutableArray<int> Receipt { get; init; }
+}

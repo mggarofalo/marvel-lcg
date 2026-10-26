@@ -5,6 +5,13 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`forEachDiscarded` uses the `eachTime` fields (`effect`, `when`, `then`) for an
+encounter-deck `discardTop`, but finishes that discard before traversing its own
+ordered physical receipt. `that` binds each discarded card, including after an
+immediate deck reset or a suspended child choice. Nested discards do not join this
+receipt. This spelling and shared traversal representation are engine choices;
+printed "each time" timing continues to use `eachTime`.
+
 `result: "activationUndefended"` counts completed undefended enemy attacks in the
 most recent scheduled activation collection. Completion captures the final
 defender before attack-end responses; prevented damage still counts, while
