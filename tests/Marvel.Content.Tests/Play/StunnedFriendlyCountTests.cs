@@ -196,7 +196,7 @@ public sealed class StunnedFriendlyCountTests
 
     [Rule("rr:stun-stunned.3")]
     [Fact]
-    public void VillainTransitionCountReportsChangedStatusAsUnknown()
+    public void VillainTransitionKeepsStatusDependentCountsAndConditionsUnknown()
     {
         // "A character is stunned if it has a stunned status card."
         var world = Board();
@@ -215,6 +215,15 @@ public sealed class StunnedFriendlyCountTests
         statuses.Add((ally.ObjectId, Statuses.Stunned));
         Assert.False(AbilityProjection.TryTraceCount(selection, scheme, scope,
             changes, 0, out _));
+        var trace = new VillainConditionTrace(scheme, scheme, scope, changes, 0, world.FirstPlayer);
+        var condition = new AbilityCondition.Exists(selection);
+        var amount = new AbilityNumber.Conditional(condition,
+            new AbilityNumber.Constant(2), new AbilityNumber.Constant(0));
+        Assert.False(trace.TryTest(condition, out _));
+        Assert.True(trace.AmountCanDiffer(amount, 16));
+        Statuses.Give(world, ally, Statuses.Stunned);
+        Assert.False(trace.TryTest(condition, out _));
+        Assert.True(trace.AmountCanDiffer(amount, 16));
     }
 
     private static AbilityAdmissionContext Admission(World world, Card source)

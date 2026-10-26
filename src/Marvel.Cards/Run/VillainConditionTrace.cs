@@ -249,7 +249,8 @@ internal sealed class VillainConditionTrace(
             AbilityCondition.IsEnemyAttacker => true,
             AbilityCondition.TitleInPlay title => TitleCanChange(title.Title),
             AbilityCondition.Exists exists => TraceCardsInPlayMayDiffer(changes.Discarded, cast)
-                || PotentialVillainSelector(exists.Cards, cast),
+                || PotentialVillainSelector(exists.Cards, cast)
+                || AbilitySelectorTrace.SelectorReadsStatus(exists.Cards),
             AbilityCondition.IsKind kind => PotentialVillainSelector(kind.Card, cast)
                 || Find(kind.Card, cast) is { } card
                     && changes.Discarded.Contains(card.ObjectId),
