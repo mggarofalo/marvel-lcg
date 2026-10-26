@@ -57,6 +57,8 @@ internal static class AbilityConditionProjection
         {
             AbilityCardSelection.WithTrait filtered =>
                 ValueReadsVillain(filtered.Cards, cast),
+            AbilityCardSelection.WithStatus filtered =>
+                ValueReadsVillain(filtered.Cards, cast),
             AbilityCardSelection.WithoutAnotherCopyAttached filtered =>
                 ValueReadsVillain(filtered.Cards, cast),
             AbilityCardSelection.Discardable filtered =>

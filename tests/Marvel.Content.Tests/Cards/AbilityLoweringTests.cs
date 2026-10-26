@@ -141,6 +141,9 @@ public sealed class AbilityLoweringTests
 
     [Theory]
     [InlineData("{\"withTrait\":{\"cards\":\"you\",\"trait\":\"TECH\",\"optional\":1}}", "withTrait/optional")]
+    [InlineData("{\"withStatus\":{\"cards\":{\"query\":\"heroesAndAllies\"},\"status\":\"stun\"}}", "withStatus/status")]
+    [InlineData("{\"withStatus\":{\"cards\":{\"query\":\"heroesAndAllies\"},\"status\":\"stunned\",\"optional\":1}}", "withStatus/optional")]
+    [InlineData("{\"withStatus\":{\"status\":\"stunned\"}}", "withStatus/cards")]
     [InlineData("{\"cardsIn\":{\"area\":\"encounterDeck\",\"areas\":[]}}", "cardsIn")]
     [InlineData("{\"cardsIn\":{\"areas\":\"encounterDeck\"}}", "cardsIn/areas")]
     [InlineData("{\"cardsIn\":{\"area\":\"unknown\"}}", "cardsIn/area")]

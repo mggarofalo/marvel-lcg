@@ -10,6 +10,7 @@ internal static class AbilityPlayerSelectorRelations
         AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.EnemiesEngagedWithChosenPlayer
            ,
         AbilityCardSelection.WithTrait filtered => RequiresChosenPlayer(filtered.Cards),
+        AbilityCardSelection.WithStatus filtered => RequiresChosenPlayer(filtered.Cards),
         AbilityCardSelection.FaceDown filtered => RequiresChosenPlayer(filtered.Cards),
         AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(RequiresChosenPlayer),
         AbilityCardSelection.Last filtered => RequiresChosenPlayer(filtered.Cards),
@@ -27,6 +28,7 @@ internal static class AbilityPlayerSelectorRelations
             or AbilityCardBinding.YourHero or AbilityCardBinding.YourAlterEgo,
         AbilityCardSelection.Query query => query.Kind == AbilityCardQuery.CharactersYouControl,
         AbilityCardSelection.WithTrait trait => RebindsToEachPlayer(trait.Cards),
+        AbilityCardSelection.WithStatus status => RebindsToEachPlayer(status.Cards),
         AbilityCardSelection.FaceDown trait => RebindsToEachPlayer(trait.Cards),
         AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(RebindsToEachPlayer),
         AbilityCardSelection.Last trait => RebindsToEachPlayer(trait.Cards),

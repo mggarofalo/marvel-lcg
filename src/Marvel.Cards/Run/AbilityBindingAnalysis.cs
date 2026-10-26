@@ -58,6 +58,7 @@ internal static class AbilityBindingAnalysis
         AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.PowerTargets
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
         AbilityCardSelection.WithTrait trait => BindingCanChange(trait.Cards),
+        AbilityCardSelection.WithStatus status => BindingCanChange(status.Cards),
         AbilityCardSelection.FaceDown trait => BindingCanChange(trait.Cards),
         AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(BindingCanChange),
         AbilityCardSelection.Last trait => BindingCanChange(trait.Cards),

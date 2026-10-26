@@ -38,6 +38,9 @@ internal static class AbilityProjectedStateQueries
             AbilityCardSelection.InObjectIdOrder ordered => [.. ProjectedEvery(ordered.Cards, state, context).OrderBy(card => card.ObjectId)],
             AbilityCardSelection.WithTrait trait =>
                 ProjectedWithTrait(trait, state, context),
+            AbilityCardSelection.WithStatus status =>
+                [.. ProjectedEvery(status.Cards, state, context)
+                    .Where(card => ProjectedAfflicted(status.Status, card, state, context))],
             AbilityCardSelection.Query { Kind: AbilityCardQuery.Villain } =>
                 ProjectedVillain(found, state, context),
             AbilityCardSelection.Query query =>
@@ -82,6 +85,16 @@ internal static class AbilityProjectedStateQueries
         AbilityAdmissionContext context) =>
         [.. ProjectedEvery(trait.Cards, state, context)
             .Where(card => state.HasTrait(context, card, trait.Trait) != trait.Exclude)];
+
+    private static bool ProjectedAfflicted(string status, Card card,
+        AreaProjectionState state, AbilityAdmissionContext context)
+    {
+        if (status is Statuses.Stunned or Statuses.Confused
+            && state.ModifiedOf(context, card, "stalwart") > 0) return false;
+        long needed = status is Statuses.Stunned or Statuses.Confused
+            && state.ModifiedOf(context, card, "steady") > 0 ? 2 : 1;
+        return state.StatusOf(context, card, status) >= needed;
+    }
 
     private static List<Card> ProjectedVillain(
         List<Card> found, AreaProjectionState state, AbilityAdmissionContext context)

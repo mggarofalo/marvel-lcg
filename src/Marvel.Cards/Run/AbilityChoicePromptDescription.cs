@@ -141,6 +141,7 @@ internal static class AbilityChoicePromptDescription
         AbilityCardSelection.InAreas areas => areas.Areas.Any(area => area is
             AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck),
         AbilityCardSelection.WithTrait filtered => InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.WithStatus filtered => InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.FaceDown filtered => InspectsConcealedPile(filtered.Cards),
         AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(InspectsConcealedPile),
         AbilityCardSelection.Last filtered => InspectsConcealedPile(filtered.Cards),

@@ -32,7 +32,7 @@ internal static class AbilitySelectionAreaReads
             case AbilityCardSelection.InPlayerArea named: areas.Add(named.Area); break;
             case AbilityCardSelection.WithMatchingPlayerArea filtered:
                 areas.Add(filtered.Area); break;
-            case AbilityCardSelection.WithTrait or AbilityCardSelection.FaceDown
+            case AbilityCardSelection.WithTrait or AbilityCardSelection.WithStatus or AbilityCardSelection.FaceDown
                 or AbilityCardSelection.Last or AbilityCardSelection.InObjectIdOrder
                 or AbilityCardSelection.WithoutAnotherCopyAttached or AbilityCardSelection.Discardable
                 or AbilityCardSelection.Ranked:
@@ -53,6 +53,7 @@ internal static class AbilitySelectionAreaReads
     {
         AbilityCardSelection.WithMatchingPlayerArea filtered => filtered.Cards,
         AbilityCardSelection.WithTrait filtered => filtered.Cards,
+        AbilityCardSelection.WithStatus filtered => filtered.Cards,
         AbilityCardSelection.FaceDown filtered => filtered.Cards,
         AbilityCardSelection.Last filtered => filtered.Cards,
         AbilityCardSelection.InObjectIdOrder ordered => ordered.Cards,

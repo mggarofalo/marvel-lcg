@@ -24,6 +24,7 @@ internal static class AbilitySelectorTrace
                 .SelectMany(group => group.Stages)],
         AbilityCardSelection.Ranked ranked => TraceCandidateCards(ranked.Cards, cast),
         AbilityCardSelection.WithTrait filtered => TraceCandidateCards(filtered.Cards, cast),
+        AbilityCardSelection.WithStatus filtered => TraceCandidateCards(filtered.Cards, cast),
         AbilityCardSelection.FirstAvailable fallback => [.. fallback.Options.SelectMany(option => TraceCandidateCards(option, cast)).Distinct()],
         AbilityCardSelection.Last filtered => TraceCandidateCards(filtered.Cards, cast),
         AbilityCardSelection.FaceDown filtered => TraceCandidateCards(filtered.Cards, cast),
@@ -59,8 +60,8 @@ internal static class AbilitySelectorTrace
         AbilityCardSelection.Titled titled => string.Equals(titled.Title,
             EffectiveCards.Title(candidate, trace.Cast.World.Facts), StringComparison.Ordinal),
         AbilityCardSelection.EnemiesWithTrait filtered => HasTrait(candidate, filtered.Trait, trace),
-        AbilityCardSelection.WithTrait filtered => TraceSelectorMatches(filtered.Cards, candidate, trace)
-            && HasTrait(candidate, filtered.Trait, trace) != filtered.Exclude,
+        AbilityCardSelection.WithTrait or AbilityCardSelection.WithStatus =>
+            TraceFilterMatches(selector, candidate, trace),
         AbilityCardSelection.FaceDown filtered => !candidate.FaceUp
             && TraceSelectorMatches(filtered.Cards, candidate, trace),
         AbilityCardSelection.InObjectIdOrder ordered => TraceSelectorMatches(ordered.Cards, candidate, trace),
@@ -81,6 +82,20 @@ internal static class AbilitySelectorTrace
             => Every(selector, trace.Cast).Contains(candidate),
         AbilityCardSelection.Bound bound => BoundMatches(bound, candidate, trace),
         _ => throw new InvalidOperationException("Unknown compiled selector in projected membership"),
+    };
+
+    private static bool TraceFilterMatches(AbilityCardSelection selector,
+        Card candidate, AbilitySelectorTraceContext trace) => selector switch
+    {
+        AbilityCardSelection.WithTrait filtered =>
+            TraceSelectorMatches(filtered.Cards, candidate, trace)
+            && HasTrait(candidate, filtered.Trait, trace) != filtered.Exclude,
+        AbilityCardSelection.WithStatus filtered =>
+            TraceSelectorMatches(filtered.Cards, candidate, trace)
+            && DeckTypes.IsInPlay(candidate.Area.Type)
+            && Statuses.Afflicted(trace.Cast.World, trace.Cast.World.Facts,
+                candidate, filtered.Status),
+        _ => throw new InvalidOperationException("Unknown compiled card filter in projected membership"),
     };
 
     private static bool BoundMatches(
@@ -147,6 +162,7 @@ internal static class AbilitySelectorTrace
         AbilityCardSelection.Query { Kind: AbilityCardQuery.MinionsEngagedWithYou
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer } => true,
         AbilityCardSelection.WithTrait filtered => UsesEngagedAreaOrder(filtered.Cards),
+        AbilityCardSelection.WithStatus filtered => UsesEngagedAreaOrder(filtered.Cards),
         AbilityCardSelection.FaceDown filtered => UsesEngagedAreaOrder(filtered.Cards),
         AbilityCardSelection.WithMatchingPlayerArea filtered => UsesEngagedAreaOrder(filtered.Cards),
         AbilityCardSelection.WithoutAnotherCopyAttached filtered => UsesEngagedAreaOrder(filtered.Cards),
@@ -159,6 +175,7 @@ internal static class AbilitySelectorTrace
     {
         AbilityCardSelection.InObjectIdOrder => true,
         AbilityCardSelection.WithTrait filtered => UsesObjectIdOrder(filtered.Cards),
+        AbilityCardSelection.WithStatus filtered => UsesObjectIdOrder(filtered.Cards),
         AbilityCardSelection.FaceDown filtered => UsesObjectIdOrder(filtered.Cards),
         AbilityCardSelection.WithMatchingPlayerArea filtered => UsesObjectIdOrder(filtered.Cards),
         AbilityCardSelection.WithoutAnotherCopyAttached filtered => UsesObjectIdOrder(filtered.Cards),

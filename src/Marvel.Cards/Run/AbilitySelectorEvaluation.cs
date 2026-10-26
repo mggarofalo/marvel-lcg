@@ -82,8 +82,7 @@ internal sealed class AbilitySelectorEvaluation(
             .Where(area => area.Type is DeckType.VillainArea or DeckType.EngagedEnemiesArea)
             .SelectMany(area => area.Cards)
             .Where(card => Rules.State.Traits.Of(context.World, card, context.World.Facts).Contains(trait.Trait, StringComparer.Ordinal))],
-        AbilityCardSelection.WithTrait trait => [.. Every(trait.Cards)
-            .Where(card => Rules.State.Traits.Has(context.World, card, trait.Trait, context.World.Facts) != trait.Exclude)],
+        AbilityCardSelection.WithTrait or AbilityCardSelection.WithStatus => FilterEvery(selector),
         AbilityCardSelection.InObjectIdOrder ordered => [.. Every(ordered.Cards).OrderBy(card => card.ObjectId)],
         AbilityCardSelection.DefeatedWithProfile defeated => [.. context.Occurrence.Defeats
             .Where(fact => fact.ProfileId == defeated.Profile && (!defeated.RequiresFaceDown || fact.WasFaceDown))
@@ -104,6 +103,16 @@ internal sealed class AbilitySelectorEvaluation(
         AbilityCardSelection.Ranked ranked => Ranked(ranked),
         AbilityCardSelection.InAreas areas => CardsIn(areas),
         _ => throw new InvalidOperationException("Unknown compiled card selection"),
+    };
+
+    private IReadOnlyList<Card> FilterEvery(AbilityCardSelection selector) => selector switch
+    {
+        AbilityCardSelection.WithTrait trait => [.. Every(trait.Cards)
+            .Where(card => Rules.State.Traits.Has(context.World, card, trait.Trait, context.World.Facts) != trait.Exclude)],
+        AbilityCardSelection.WithStatus status => [.. Every(status.Cards)
+            .Where(card => DeckTypes.IsInPlay(card.Area.Type)
+                && Statuses.Afflicted(context.World, context.World.Facts, card, status.Status))],
+        _ => throw new InvalidOperationException("Unknown compiled card filter"),
     };
 
     private static Card? LastCard(IReadOnlyList<Card> cards) => cards.Count == 0 ? null : cards[^1];
@@ -221,6 +230,7 @@ internal sealed class AbilitySelectorEvaluation(
     {
         AbilityCardSelection.InAreas areas => CardsIn(areas).Any(card => card.ObjectId == target.ObjectId),
         AbilityCardSelection.WithTrait trait => ExplicitlySelectsOutOfPlayCard(trait.Cards, target),
+        AbilityCardSelection.WithStatus => false,
         AbilityCardSelection.InObjectIdOrder ordered => ExplicitlySelectsOutOfPlayCard(ordered.Cards, target),
         AbilityCardSelection.DefeatedWithProfile defeated => Every(defeated).Contains(target),
         AbilityCardSelection.FaceDown filtered => ExplicitlySelectsOutOfPlayCard(filtered.Cards, target),

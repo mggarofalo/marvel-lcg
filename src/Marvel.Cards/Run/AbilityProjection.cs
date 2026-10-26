@@ -40,7 +40,7 @@ internal static class AbilityProjection
         AbilityCardSelection.FirstAvailable or AbilityCardSelection.FaceDown or AbilityCardSelection.Last or AbilityCardSelection.WithMatchingPlayerArea => true,
         AbilityCardSelection.InObjectIdOrder ordered => SelectorMembershipCanChange(ordered.Cards),
         AbilityCardSelection.InPlayerArea { Area: DeckType.EngagedEnemiesArea } => true,
-        AbilityCardSelection.WithTrait or AbilityCardSelection.EnemiesWithTrait
+        AbilityCardSelection.WithTrait or AbilityCardSelection.WithStatus or AbilityCardSelection.EnemiesWithTrait
             or AbilityCardSelection.Ranked or AbilityCardSelection.WithoutAnotherCopyAttached => true,
         AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.AttackableEnemies
             or AbilityCardQuery.MinionsEngagedWithYou
@@ -63,6 +63,7 @@ internal static class AbilityProjection
                 .Any(stage => string.Equals(titled.Title, cast.World.Facts.Title(stage.FaceId), StringComparison.Ordinal)),
             AbilityCardSelection.EnemiesWithTrait => true,
             AbilityCardSelection.WithTrait filtered => PotentialVillainSelector(filtered.Cards, cast),
+            AbilityCardSelection.WithStatus filtered => PotentialVillainSelector(filtered.Cards, cast),
 
             AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => PotentialVillainSelector(option, cast)),
             AbilityCardSelection.Last filtered => PotentialVillainSelector(filtered.Cards, cast),
@@ -251,6 +252,7 @@ internal static class AbilityProjection
             AbilityCardSelection.Query { Kind: AbilityCardQuery.Heroes } =>
                 Enumerable.Range(0, cast.World.Seats.Count).Any(seat => SeatMayChange(formsMayChange, seat)),
             AbilityCardSelection.WithTrait filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
+            AbilityCardSelection.WithStatus filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
 
             AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => CountSelectorFormsMayChange(option, cast, formsMayChange)),
             AbilityCardSelection.Last filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
