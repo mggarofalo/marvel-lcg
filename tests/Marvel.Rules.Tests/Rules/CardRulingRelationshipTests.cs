@@ -114,4 +114,21 @@ public sealed class CardRulingRelationshipTests
         Assert.Contains("rr:then", references);
         Assert.Contains("rr:special", references);
     }
+
+    [Fact]
+    public void ShadowUniquenessClarificationSupersedesOnlyItsHistoricalCardInteraction()
+    {
+        using var graph = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("rules-graph.json")));
+        var current = graph.RootElement.GetProperty("card_clarifications")
+            .GetProperty("ruling:a956304c470dac6c");
+        Assert.Equal("01190", Assert.Single(current.GetProperty("cards").EnumerateObject()).Name);
+        Assert.Equal("ruling:ead76dd0b3c966ee",
+            Assert.Single(current.GetProperty("supersedes").EnumerateObject()).Name);
+        Assert.Contains("ruling:a956304c470dac6c", RuleCitations.Citable);
+        Assert.DoesNotContain("ruling:ead76dd0b3c966ee", RuleCitations.Citable);
+        Assert.False(graph.RootElement.GetProperty("modifications")
+            .TryGetProperty("ruling:a956304c470dac6c", out _));
+        Assert.Contains("absent-nemesis surge", current.GetProperty("why").GetString(), StringComparison.Ordinal);
+    }
+
 }

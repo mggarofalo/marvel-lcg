@@ -32,6 +32,20 @@
     }
   },
   "card_clarifications": {
+    "ruling:a956304c470dac6c": {
+      "ruling_hash": "sha256:8a7d00119d4da162d35ddd1b87fd1ae32b7de362e806771f36bca8fe6d5a320b",
+      "cards": {
+        "01190": "sha256:f20c52f016cf73860611d8eb27ef84702d1ae990e117812ab8d8a25cacf577a5"
+      },
+      "references": [
+        "rr:nemesis-encounter-set.3.1",
+        "rr:unique-icon.4.2"
+      ],
+      "supersedes": {
+        "ruling:ead76dd0b3c966ee": "sha256:9c6610d92254ba4fc673cabcc4bb574641ff2e7b2e5e7f793f1fd854dcad3847"
+      },
+      "why": "The March 2026 answer (RR scope 1.7-1.8), repeated in ruling:95f5bab9a8a768fd, clarifies Shadow of the Past when its set-aside nemesis cannot enter play because of uniqueness: discard that nemesis and deal one facedown encounter card, then discard Shadow without surge. This supersedes the pre-1.5 Taskmaster/Black Widow answer only for this printed card and uniqueness interaction. It does not change the absent-nemesis surge branch or the rest of the nemesis set instructions. The historical Hall of Heroes and MarvelCDB FAQ texts remain preserved as research records."
+    },
     "ruling:7075a85e02f2203e": {
       "ruling_hash": "sha256:2f33c800298828b5fded7f90645fd92c5f07af0ee16bd93535208cb2084e91cc",
       "cards": {

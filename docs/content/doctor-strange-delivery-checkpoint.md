@@ -16,15 +16,40 @@ reset repair `a6bb7ddd` and independent closure `7cdb2e23`. All 672 predecessor
 ability objects are retained unchanged. Public admission stays closed.
 
 The remaining ten faces are 09003, 09004, 09007, 09014, 09015, and 09027–09031.
-The three signature events now have reviewed prerequisites: reveal origin
+The three signature events have reviewed prerequisites: reveal origin
 `530f156e`, simultaneous powers and Magic Blast stage repair `00f23ff2`, and
 Astral pre-arrow target/payment/inspection continuation `1abb96a2`. Their combined
-Content check passes 1,178 cases. The sole book writer is authoring the three
-events and matching Core reveal-origin restrictions. A separate engine packet
-handles Physical Toll's next-event price. Setup/starter admission, complete-game
-and fresh-host proof, Invocation client meaning and native verification remain
-explicit downstream work. The thirteen-ruling authority refresh has a separate
-catalog repair/re-review; harvesting alone does not settle behavioral coverage.
+Content check passes 1,178 cases. Their actual rows and matching Core reveal-origin
+restrictions are authored at `4131304f`; independent review `fec49e75` requires
+truthful reveal-origin receipts in older transcript/fixture helpers before acceptance.
+The initial broad run with transcript repair passed 7,152 of 7,154 Content tests;
+the two Media Coverage fixture failures are repaired. All 7,154 now pass on that
+source candidate; independent repair closure remains separate.
+Iron Fist authoring and the separate Desperate Defense engine prerequisite
+(MARVEL-833) are active. No failed gate is waived by these checkpoints.
+
+Physical Toll's next-event price and Invocation interaction meaning are independently
+reviewed and integrated at `4f1a5512`. Combined Content checks pass 1,060 cases;
+the complete View lane passes 405. Actual 09027 remains unauthored. Invocation
+contract tests cover captured top, resource cost, ordinary discard versus exact
+Master return, hidden order and detached snapshots; native nested context and
+staged choices remain open. Setup/starter admission, complete-game and fresh-host
+proof also remain downstream work.
+
+The thirteen-ruling authority catalog repair `10c8cd84` was independently rechecked
+and integrated at `cfec0321`: 2,667 sources, 4,434 obligations and 685 executable
+Core scenarios. The integrated behavioral/citation selection passes 134 cases.
+Harvesting and behavioral adjudication are both complete for that refresh.
+
+The designated-nemesis fix `365c5223` and independent review `89d6d493` are
+integrated. Shadow of the Past selects the printed designated minion from the
+complete set, preserving singleton Core sets and refusing unresolved ambiguous
+sets. A secondary minion cannot replace an absent designated minion. Current
+uniqueness guidance discards a blocked designated minion and deals an encounter
+card; historical FAQ evidence remains intact. Combined Content checks pass 134
+cases and Rules/graph/citations pass 14. The lead extracted review-test setup to
+satisfy the normal complexity gate; all seven review cases passed afterward,
+and every assertion remains. Logs: `strange-designated-nemesis-integrated*.log`.
 
 Earlier integration evidence follows. Exact printed-set
 search source `4261d57f` and review `f7e59a6c` are integrated at `36628a0b`; its
