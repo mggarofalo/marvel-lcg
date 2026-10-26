@@ -104,6 +104,12 @@ internal static class AbilityCostLowering
         {
             builder.Add(LowerCost(list.Values[index], location.Item(index)));
         }
+        // rr:cost.5: multiple costs "must be paid simultaneously."
+        // Entry responses suspend payment, so this cost is admitted only standalone.
+        // Recursive lowering applies the same refusal to every nested sequence.
+        if (builder.Any(cost => cost is AbilityCost.DiscardUntilMinionEngaged))
+            throw new RulesNotImplementedException(
+                "discardUntilMinionEngaged in a compound arrow cost requires simultaneous payment");
         return new(builder.MoveToImmutable());
     }
 

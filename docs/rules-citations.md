@@ -28,9 +28,10 @@ what it asserts:
 
 `[Rule]` goes on tests only. On the implementation it would name a rule without
 claiming anything about it; the claim is the assertion. Most citations use the
-`rr:` forms above. A test that specifically asserts a published modification
-uses its audited `ruling:` id from `datasets/rules-graph.json`; an arbitrary
-Hall of Heroes ruling is not a rules citation until that relationship exists.
+`rr:` forms above. A test that specifically asserts a published modification or card clarification
+uses its audited `ruling:` id from `modifications` or `card_clarifications` in
+`datasets/rules-graph.json`; an arbitrary Hall of Heroes ruling is not a rules
+citation until that relationship exists.
 
 ## Why an attribute rather than a comment
 

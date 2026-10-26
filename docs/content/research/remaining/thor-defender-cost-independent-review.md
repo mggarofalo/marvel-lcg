@@ -72,3 +72,29 @@ Full UTF-8 logs are outside the repository under
 `dotnet tool restore` and `dotnet husky install` ran normally; no hook bypass was
 used. No production source or ability dataset was edited. No new mutation trial,
 whole-game acceptance, saved-session replay or broad integration run is claimed.
+
+
+## Bounded follow-up candidate
+
+The `fix/thor-defender-review` follow-up refuses any cost `seq` containing
+`discardUntilMinionEngaged` during lowering, including either component order
+and nested or single-component sequences. The exception names the unsupported
+simultaneous payment. Standalone arrow-cost entry, nested responses, decline,
+query purity and acting-player ownership retain their positive tests. This is a
+bounded refusal under `rr:cost.5`, not implementation of compound payment or
+printed 06003 admission.
+
+The shared citation consumer admits explicit `card_clarifications` keys alongside
+`modifications`. The existing hash/printed-text provenance checks remain in place;
+a new control rejects unrelated vendored rulings and unknown ruling/rule IDs.
+The earlier four passing Rules-project checks did not exercise Content's citation
+gate. The follow-up focused Content run includes that gate and passes 77 tests;
+the Rules/provenance filter passes 18 tests.
+
+Two targeted mutants were killed: removing the composition refusal fails all four
+order/nesting cases, and admitting all vendored rulings fails the unrelated-ruling
+control. Both source files were restored before nonincremental final rebuilds.
+UTF-8 logs are outside the repository in the temporary directory with prefix
+`thor-defender-fix-`. No whole-game, native-client, saved-session replay, or broad
+integration acceptance is claimed. Independent review of this follow-up remains
+separate from these author checks.

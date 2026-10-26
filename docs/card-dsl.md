@@ -641,6 +641,11 @@ encounter exhaustion still resets the deck and adds acceleration. The current
 Defender clarifications are pinned in `datasets/rules-graph.json` as
 `ruling:6e301a347a5392fb` and `ruling:a1f4982cfebcd768`.
 
+This cost is admitted only as a standalone arrow cost. Any `seq` containing it,
+including nested or single-component sequences, raises `RulesNotImplementedException`
+during lowering before payment. Entry responses cannot expose partially paid
+compound costs under `rr:cost.5`; simultaneous compound payment remains unsupported.
+
 
 Target selection and payment are separate. A target answers what the effect will
 act on. A payment records what the player spent to initiate it.

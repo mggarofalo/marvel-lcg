@@ -67,31 +67,36 @@ public sealed class MinionEntryArrowCostReviewTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
     [Rule("rr:cost.5")]
-    public void OtherPhysicalCostsArePaidBeforeEntryResponses(bool entryFirst)
+    public void CompoundEntryCostsRefuseBeforePayment(bool entryFirst, bool nested)
     {
         // "If multiple costs ... require payment, those costs must be paid simultaneously."
+        // The bounded engine refuses composition rather than exposing an unpaid component.
         var world = Board();
         string entry = """{"discardUntilMinionEngaged":"you"}""";
         string exhaust = """{"exhaust":"you"}""";
-        var runner = Runner("{\"seq\":[" + (entryFirst ? entry + "," + exhaust : exhaust + "," + entry) + "]}",
-            """{"draw":{"player":"you","count":1}}""");
+        if (nested) entry = "{\"seq\":[" + entry + "]}";
+        string cost = "{\"seq\":[" + (entryFirst ? entry + "," + exhaust : exhaust + "," + entry) + "]}";
         world.CreateCard("06003", world.Seats[0].Hand);
         world.CreateCard("01101", world.AreaOf(DeckType.EncounterDeck));
-        var action = Assert.Single(runner.Actions(world, 0));
-        var events = new List<GameEvent>(runner.ExecuteAction(world, new PlayerAction(action, [], [])).Events);
-        int responses = 0;
-        Finish(world, runner, events, prompt =>
-        {
-            responses++;
-            Assert.False(world.Seats[0].IdentityCard.Ready);
-            return Decision.Decline;
-        });
-        Assert.Equal(1, responses);
-        Assert.Equal(3, world.AreaOf(DeckType.MainSchemesArea).Cards.Single().Tokens["k_threat"]);
-        Assert.Empty(world.Agenda.Outstanding);
+        string before = world.Digest().Canonical();
+        var random = world.Random.Generator.GetState();
+        var agenda = world.Agenda.Outstanding.ToArray();
+
+        var failure = Assert.Throws<RulesNotImplementedException>(() => Runner(cost,
+            """{"draw":{"player":"you","count":1}}"""));
+
+        Assert.Contains("discardUntilMinionEngaged", failure.Message, StringComparison.Ordinal);
+        Assert.Contains("simultaneous payment", failure.Message, StringComparison.Ordinal);
+        Assert.True(world.Seats[0].IdentityCard.Ready);
+        Assert.Equal(before, world.Digest().Canonical());
+        Assert.Equal(random.Index, world.Random.Generator.GetState().Index);
+        Assert.Equal(random.Words, world.Random.Generator.GetState().Words);
+        Assert.Equal(agenda, world.Agenda.Outstanding);
     }
 
     [Fact]

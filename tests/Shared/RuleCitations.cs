@@ -5,12 +5,11 @@ using Xunit;
 namespace Marvel.Tests;
 
 /// <summary>
-/// Reads the Rules Reference index, and the citations one test assembly makes
-/// against it.
+/// Reads the Rules Reference index, audited ruling relationships, and one test assembly's citations.
 /// </summary>
 internal static class RuleCitations
 {
-    /// <summary>Every citable id in the vendored Rules Reference.</summary>
+    /// <summary>Every vendored Rules Reference id and explicitly audited ruling id.</summary>
     /// <remarks>
     /// Entry ids and clause ids alike — a test may cite either, because a rule
     /// with no clauses (<c>rr:target-threat</c>) is stated in its entry.
@@ -70,6 +69,11 @@ internal static class RuleCitations
         foreach (var modification in graph.RootElement.GetProperty("modifications").EnumerateObject())
         {
             ids.Add(modification.Name);
+        }
+
+        foreach (var clarification in graph.RootElement.GetProperty("card_clarifications").EnumerateObject())
+        {
+            ids.Add(clarification.Name);
         }
 
         return ids;

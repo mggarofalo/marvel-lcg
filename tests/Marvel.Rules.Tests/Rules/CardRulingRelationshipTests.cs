@@ -11,6 +11,25 @@ namespace Marvel.Rules.Tests.Rules;
 public sealed class CardRulingRelationshipTests
 {
     [Fact]
+    public void OnlyAuditedRulingRelationshipsAreCitable()
+    {
+        using var graph = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("rules-graph.json")));
+        using var published = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("rulings", "rulings.json")));
+        var audited = graph.RootElement.GetProperty("modifications").EnumerateObject()
+            .Concat(graph.RootElement.GetProperty("card_clarifications").EnumerateObject())
+            .Select(relationship => relationship.Name).ToHashSet(StringComparer.Ordinal);
+        Assert.NotEmpty(audited);
+        Assert.All(audited, id => Assert.Contains(id, RuleCitations.Citable));
+        var unrelated = published.RootElement.GetProperty("rulings").EnumerateArray()
+            .Select(ruling => ruling.GetProperty("id").GetString()!)
+            .Where(id => !audited.Contains(id)).ToArray();
+        Assert.NotEmpty(unrelated);
+        Assert.All(unrelated, id => Assert.DoesNotContain(id, RuleCitations.Citable));
+        Assert.DoesNotContain("ruling:0000000000000000", RuleCitations.Citable);
+        Assert.DoesNotContain("rr:missing-citation", RuleCitations.Citable);
+    }
+
+    [Fact]
     public void EveryCardClarificationNamesCurrentPrintedTextAndPinnedRulings()
     {
         using var graph = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("rules-graph.json")));
