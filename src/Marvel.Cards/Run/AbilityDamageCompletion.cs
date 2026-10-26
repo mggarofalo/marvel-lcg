@@ -21,10 +21,11 @@ internal sealed class AbilityDamageCompletion(Occurrence occurrence)
         Occurrence? attackOccurrence = null) => attacks.Add(new(result, requested, recipient, attackOccurrence));
 
     internal System.Collections.Immutable.ImmutableArray<(int Card, int Incarnation)> Defeats =>
+        // Engine choice: retain settled defeat identities for ordinary and staged
+        // attacks alike. Recipient snapshots are only needed for staged aftermath.
         [.. DirectResults().Where(item => item.Result.Outcome == Damage.Outcome.Defeated)
             .Select(item => (item.Result.Target, item.Result.TargetIncarnation))
-            .Concat(attacks.Where(item => item.Recipient is not null)
-                .SelectMany(item => item.Result.Execution.Occurrence.Defeats)
+            .Concat(attacks.SelectMany(item => item.Result.Execution.Occurrence.Defeats)
                 .Select(item => (item.Card, item.Incarnation))).Distinct()];
 
     internal AbilityStructuralOutcome Complete()
