@@ -16457,6 +16457,28 @@
       ]
     },
     {
+      "card": "05008",
+      "name": "Nakia Bahadir",
+      "note": "Printed 05008: Alter-Ego Action, exhaust to reduce the next card you play this phase by 1. The player-bound lasting reduction survives form changes and expires at the end of the player phase.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "alter-ego" },
+        "cost": { "exhaust": "this" },
+        "effect": { "reduceNextCardCost": { "player": "you", "amount": 1 } }
+      }]
+    },
+    {
+      "card": "05009",
+      "name": "Biokinetic Polymer Suit",
+      "note": "Printed 05009: Hero Resource, exhaust to generate one wild resource for an event. ruling:5b44b2adcc60d4b7 includes an event ability cost but excludes a selected ally's cost. Wild is authored as G, the engine's resource spelling.",
+      "abilities": [{
+        "trigger": { "event": "WhenActionTriggered", "timing": "Resource", "subject": "this", "form": "hero" },
+        "resourceRestriction": "event",
+        "printedResources": "G",
+        "cost": { "exhaust": "this" },
+        "effect": { "generate": "G" }
+      }]
+    },
+    {
       "card": "05010",
       "name": "Embiggen!",
       "note": "Printed Hero Interrupt when you play the qualifying trait event: exhaust this upgrade to increase its damage by 2. WhenEventPlayInitiated is the engine timing choice after paid costs and before the event body (rr:initiating-abilities.step.6). Each instance is modified (rr:event.5; faq:05010); printed maxima still apply (ruling:88369b11361157e4).",

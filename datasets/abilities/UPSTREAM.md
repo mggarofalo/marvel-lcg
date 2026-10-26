@@ -124,3 +124,13 @@ instance (`rr:event.5`, `faq:05010`, `faq:05011`) and preserve printed caps
 (`ruling:88369b11361157e4`). `MsMarvelEventCardTests`,
 `MsMarvelIdentityEventTests` and `MsMarvelTeenSpiritTests` exercise these actual
 rows. This partial authoring keeps Ms. Marvel outside public admission.
+
+The persona/resource packet adds actual rows 05008 Nakia Bahadir and 05009
+Biokinetic Polymer Suit, from the joined printed text in `datasets/cards/cards.json`.
+Nakia uses the controlled player's one-use player-phase reduction, preserving it
+across form changes and rejected payments. Suit uses the event resource restriction
+and explicit hero form; ruling:5b44b2adcc60d4b7 distinguishes an event ability's
+own cost from a selected ally's cost. `MsMarvelPersonaTests` and
+`MsMarvelSuitCardTests` exercise these rows. Aamir (05006) and Bruno (05007)
+remain unauthored pending bottom-of-deck movement and optional bounded stored-card
+selection respectively. See `docs/content/ms-marvel-persona-evidence.md`.
