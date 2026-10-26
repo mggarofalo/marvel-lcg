@@ -103,3 +103,36 @@ Windows Release focused evidence in `C:/Users/mggar/Source/robot-semantics-*.log
 These are bounded semantic and regression checks. Independent review and combined
 integration gates remain lead-owned; no new native interaction or full-product
 acceptance claim is made.
+
+## Independent semantic rereview
+
+Reviewed `e6e8855d5c717cb92b8dea827544931a444550bf` in an isolated worktree.
+The exact production diff changes descriptions and formatting plus protocol 39;
+it changes no gameplay implementation, card/ability data or public admission.
+The prior offer-description and internal-field findings are resolved for actual
+`05028`. The checked matcher requires the source binding, unit blanking amount,
+non-per-card grant and phase expiry; ordinary retaliate remains a numeric Grant.
+The actual projected action retains its hero restriction, mental cost, source
+identity and duration through both transports. Protocol 38 is rejected by the
+host and client. The presentation change does not require a save/replay bump.
+
+Independent Windows Release runs, all passing, with fresh TRX output under
+`C:/Users/mggar/Source/robot-semantics-rereview-results/` and console logs at
+`C:/Users/mggar/Source/robot-semantics-rereview-<lane>.log`:
+
+- Content: `RobotActualReviewTests|PrintedTextBlanking`, 23 tests.
+- View: `PrintedTextMeaningTests|Persistent`, 24 tests.
+- Godot: `PrintedTextSummaryTests|CardSourceFixtureTests|OpenRejectsMismatchedResponseEnvelopes`, 6 tests.
+- Server: `PrintedTextMeaningTransportTests|EncounterGroupTransportTests|UnsupportedVersionIsRejectedBeforeItCanOpenAGame|TableContractTransportTests`, 20 tests.
+
+Each filter term above uses `FullyQualifiedName~`; each lane runs its matching
+`tests/Marvel.<lane>.Tests/Marvel.<lane>.Tests.csproj` with `dotnet test -c Release`.
+Existing actual-card and ordinary-Grant controls already distinguish the changed
+semantics, so this rereview adds no redundant regression test.
+
+Verdict: no remaining correctness finding in this bounded semantic correction.
+Godot evidence verifies the actual projection's formatted summary, not rendered
+pixels or a played Robot UI journey. The existing native source fixture selects
+controlled/attached Core sources and does not establish this minion's visible
+presentation. No foreground computer interaction, native run, complete-pack
+admission, full suite or product acceptance is claimed by this rereview.
