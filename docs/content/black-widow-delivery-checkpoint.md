@@ -158,3 +158,29 @@ characterizations, not implemented gameplay: three cases need an actual received
 attack-damage amount (MARVEL-781), and five need exact defeated ally/controller
 return eligibility (MARVEL-782). These red packets do not enter the integration
 branch until their independent engine pairs restore them.
+
+
+## Restored regression candidate
+
+The reviewed MARVEL-783 fix `139a2435` / `ca2b15bd` is integrated. Its complete
+Content suite passes **6295/6295** on the source candidate; the independent
+review adds four passing attachment/Surge ownership and decline controls.
+`widow-regression-full-content.log` records the full run. The integrated View
+suite passes **362/362** (`widow-21face-full-view.log`).
+
+The subsequent full Server run reports **551 passed / 3 failed** out of 554.
+All three failures are the named-v26 runtime-guard fixture accidentally using
+the current v27 destination. The fixture now explicitly pins its historical
+v26 destination; original RNG, digest and downgrade expectations are retained.
+The corrected old/current guard group passes **15/15** in
+`widow-v27-runtime-guard-corrected.log`. This does not claim a new full Server
+pass. No historical save bytes or production compatibility guards changed.
+
+Counterattack's first implementation is not accepted: independent current-RR
+review `a4258184` found the optional response before forced retaliation. RR 1.8
+`attack-enemy-activation.step.6` governs over the historical pre-1.5/1.6 rulings.
+Remediation preserves received-damage receipts into the attack-end window and
+same-character villain promotion. Rapid Response and Attacrobatics partial
+attack sources are under independent review. The four-face prevention packet
+also has an unresolved zero-threat admission probe (MARVEL-785); it must not be
+hidden by auto-declining the offer.
