@@ -210,3 +210,9 @@ and gains surge only when none exhausted. The committed effect receipt differs
 from exhaustion costs and remains zero when every Persona is already exhausted.
 HarvestEffectReceiptTests uses the full book for normal and zero/surge reveals;
 synthetic continuation variants isolate the receipt. Public admission stays closed.
+
+Lockjaw (05018) adds one face (33 of 34 Ms. Marvel; 575 total). Joined printed
+text grants ordinary own-discard play during the player's turn, paying the
+printed resource cost. DiscardPlayDecisionTests uses the full book for actual
+permission, second-seat payment/discount and rejection-purity cases; synthetic
+entry variants remain isolated. Public Ms. Marvel admission remains closed.

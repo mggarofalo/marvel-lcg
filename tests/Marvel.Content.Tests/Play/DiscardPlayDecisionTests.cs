@@ -1,3 +1,4 @@
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Events;
@@ -8,15 +9,10 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Synthetic permission tests the ordinary decision boundary without pack admission.</summary>
+/// <summary>Actual discard permission and synthetic entry controls exercise ordinary decisions without pack admission.</summary>
 public sealed class DiscardPlayDecisionTests
 {
-    private static AbilityRunner Permission() => new(AbilityCatalog.Parse("""
-        {"cards":[{"card":"05018","abilities":[{
-          "trigger":{"timing":"Constant","subject":"this"},
-          "effect":{"allowPlayFromDiscard":"this"}
-        }]}]}
-        """));
+    private static AbilityRunner Permission() => AuthoredCards.Runner();
 
     [Theory]
     [InlineData(false)]

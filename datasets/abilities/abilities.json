@@ -17490,6 +17490,22 @@
           }
         }
       ]
+    },
+    {
+      "card": "05018",
+      "name": "Lockjaw",
+      "note": "Printed permission allows ordinary play from the controlling player's own discard pile during their turn, with the printed resource cost and ordinary ally entry rules.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "allowPlayFromDiscard": "this"
+          }
+        }
+      ]
     }
   ]
 }

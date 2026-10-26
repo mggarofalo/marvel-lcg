@@ -1188,3 +1188,13 @@ including exhaustion in prior sequence steps, before payment. The guard is
 conservative across branches and instruction order; it raises
 `RulesNotImplementedException` rather than substituting a live or zero receipt.
 Ordinary When Revealed exhaustion followed by healing or Surge resolves live.
+
+## Ordinary play from discard
+
+`{"allowPlayFromDiscard":"this"}` is a standalone, unconditional, cost-free
+Constant permission on an ally. It permits that physical card to be offered
+through ordinary play from its owner's own discard pile during that player's
+turn. It neither makes the discard pile a hand nor makes its cards resources.
+Printed cost, discounts, generators, uniqueness and mandatory ally-limit entry
+all use the ordinary play pipeline. The bounded permission has no `when`, cost,
+limit or maximum and does not generalize to other card kinds or another owner.
