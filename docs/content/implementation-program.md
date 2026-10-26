@@ -48,17 +48,20 @@ multiplayer, restart and native proofs remain recorded. Environment-layout
 review MARVEL-732 remains a separate UI decision, not a content gate.
 
 Thor is the active pack. Its integration branch was rebuilt from merged main
-as `feat/thor-completion` at `dfd27afc`; the old branch is retained as evidence.
-It contains 19 independently reviewed Thor faces (595 total), engagement
+as `feat/thor-completion`; the old branch is retained as evidence.
+Candidate `ecdc64fd` contains 22 independently reviewed Thor faces (598 total), engagement
 semantics, replay v26, Worthy search meaning, the standalone Defender cost,
 in-play census, variable typed payment, candidate self-pricing and basic-attack
 Weapon costs. Public Thor admission remains closed. See the per-face handoff
 and [checkpoint](thor-delivery-checkpoint.md) for evidence boundaries. The
-private inspection prerequisite is under independent review. Simultaneous
-damage defeat stages are being repaired against preserved independent failing
-probes; Lightning Strike is withheld. The next actual-row packet covers Hammer
-Throw, Hercules and Mean Swing; Valkyrie's ally-entry payment receipt needs a
-separate engine fix.
+private inspection prerequisite has independent ordering, privacy, transport and
+save/replay review. Hammer Throw, Hercules and Mean Swing have actual-row review.
+The rebuilt candidate passed 152 focused Content checks. Simultaneous damage
+defeat stages passed independent timing probes and 38 complete Core/Captain
+America games; exact per-offer recipient meaning is being corrected before
+integration. Lightning Strike remains withheld. Valkyrie's original ally-play
+payment receipt (MARVEL-753) is in independent review; Teamwork is completing
+adversarial verification. Thirteen faces and complete public pack proof remain.
 
 The intermittent Linux drag assertion from an earlier CI run remains recorded
 in MARVEL-752. Its strict assertion now captures gesture geometry; focused
