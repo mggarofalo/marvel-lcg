@@ -44,3 +44,40 @@ Focused evidence:
 External logs are retained in `C:/Users/mggar/Source/photonic-*.log`: baseline,
 observer diagnosis, mutant, restored build, restored focused, public and hooks.
 These are focused managed checks; no broad suite or native client claim is made.
+
+## Independent engine review
+
+Reviewed production revision `30574a1e674086480f2d1687ba506a7874fecd6e` in
+`C:/Users/mggar/Source/marvel-lcg-photonic-review`. No correctness finding remains
+for this change. Raw printed text confirms Spider-Tracer is the defeat observer;
+Goblin Thrall only supplies Guard and a boost entry ability. The vendored FAQ has
+no entry for 01007, 01013 or 02024. Damage steps 7 and 8, and
+`rr:when-defeated-abilities.1`, support resolving the forced interrupt before
+departure and the event's following draw.
+
+Independent tests add conditional, paid, optional and unattached observer refusal
+controls, with a matching unconditional attached positive control. They assert
+refusal before exhaustion, damage or departure. The Photonic fixture also checks
+both observer controllers against energy and nonenergy payment; this is a
+nonpublic ownership probe and does not claim a legal mixed-identity deck.
+
+Removing the condition/cost restriction in a compiled mutant makes both matching
+negative controls fail because no exception is thrown (2 failed, 3 passed).
+Restoration used a successful nonincremental Release build before verification.
+Production sources have no review edits. Existing continuation board-read and
+multiple-recipient damage guards remain intact and covered.
+
+Verification on the reviewed production revision plus these review tests:
+
+- Content tests, Release, filter
+  `AttachedDefeatProjectionReviewTests|PhotonicBlastAttachedDefeatTests|Power|SpiderManCardsTests|CaptainMarvelCardsTests`
+  (each term a `FullyQualifiedName~` predicate): **272 passed**.
+- Acceptance tests, Release, `FullyQualifiedName~GreenGoblinMultiplayerTests`:
+  **4 passed**, all public modes with exact per-decision replay.
+- External logs: `C:/Users/mggar/Source/photonic-review-mutant.log`,
+  `photonic-review-restored-build.log`, `photonic-review-focused.log`, and
+  `photonic-review-public.log`. Normal commit-hook output is retained in
+  `photonic-review-hooks.log` beside them.
+
+Verdict: accept this engine continuation fix. This review makes no complete-pack,
+native interaction, broad-suite or second-platform acceptance claim.

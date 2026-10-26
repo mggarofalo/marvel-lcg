@@ -40,11 +40,13 @@ public sealed class PhotonicBlastAttachedDefeatTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [InlineData(true, 0)]
+    [InlineData(false, 0)]
+    [InlineData(true, 1)]
+    [InlineData(false, 1)]
     [Rule("rr:damage.step.7")]
     [Rule("rr:damage.step.8")]
-    public void AnotherPlayersTracerChoosesItsSchemeBeforeBlastsPaidDraw(bool energy)
+    public void TracerControllerChoosesItsSchemeBeforeBlastsPaidDraw(bool energy, int tracerController)
     {
         // Step 7 resolves abilities "when [character] is defeated" before
         // step 8 discards it. 01007: "remove 3 threat from a scheme".
@@ -60,7 +62,7 @@ public sealed class PhotonicBlastAttachedDefeatTests : CoreCardTestBase
         var scheme = world.CreateCard("01097a", world.AreaOf(DeckType.MainSchemesArea));
         scheme.PlaceTokens("k_threat", 4);
         var thrall = world.CreateCard("02024", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-        var tracer = world.CreateCard("01007", world.AreaOf(DeckType.UpgradesArea, thrall.Area.PlayArea, thrall.ObjectId, 0));
+        var tracer = world.CreateCard("01007", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(tracerController), thrall.ObjectId, tracerController));
         var blast = world.CreateCard("01013", world.Seats[1].Hand);
         var resource = world.CreateCard(energy ? "01014" : "01015", world.Seats[1].Hand);
         int[] payment = energy ? [resource.ObjectId]
@@ -74,7 +76,7 @@ public sealed class PhotonicBlastAttachedDefeatTests : CoreCardTestBase
         var target = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
         Sequence.Answer(world, Cards, runner, target, Decision.Take(thrall.ObjectId), events);
         var selection = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
-        Assert.Equal(0, selection.Player);
+        Assert.Equal(tracerController, selection.Player);
         Assert.Equal(Question.Element, selection.Asking);
         Assert.Equal(DeckType.EngagedEnemiesArea, thrall.Area.Type);
         Assert.Equal(thrall.ObjectId, tracer.Area.Host);
