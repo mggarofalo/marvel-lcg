@@ -70,10 +70,6 @@ public sealed class MediaCoverageIndependentReviewTests
         var f = RedSkullFixture.Create(players: 2);
         var root = JsonNode.Parse(AuthoredCards.Text)!;
         var cards = root["cards"]!.AsArray();
-        cards.Add(JsonNode.Parse("""
-        {"card":"02049","abilities":[{"trigger":{"timing":"Constant","subject":"this"},
-          "effect":{"grant":{"card":"attachedTo","keyword":"additionalWhenRevealed","amount":1}}}]}
-        """));
         if (syntheticTreachery)
         {
             // A synthetic damage body distinguishes both repetitions; cancellation uses the canonical event.

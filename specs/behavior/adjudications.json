@@ -73114,6 +73114,24 @@
       ]
     },
     {
+      "id": "setup:encounter-set:running_interference",
+      "fingerprint": "sha256:91a3bfb262355ef3589b6430dbadb5c07468658b5c1039d7baf09a45e70e5410",
+      "obligations": [
+        {
+          "key": "running-interference-setup",
+          "summary": "The Running Interference record supplies four distinct faces and five physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Green Goblin scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:encounter-set:standard",
       "fingerprint": "sha256:1ce8f495f8dc6ff30b623e89d6d4e38e11cdf0ec9c8cfc2fedf2f2c0207de2c0",
       "obligations": [

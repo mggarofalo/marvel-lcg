@@ -38,7 +38,7 @@ public sealed class ExpansionSetupAuthorityTests
             "setup:encounter-set:a_mess_of_things",
             "setup:encounter-set:goblin_gimmicks",
             "setup:encounter-set:hydra_assault", "setup:encounter-set:hydra_patrol",
-            "setup:encounter-set:power_drain", "setup:encounter-set:weapon_master", "setup:hero:captain_america",
+            "setup:encounter-set:power_drain", "setup:encounter-set:running_interference", "setup:encounter-set:weapon_master", "setup:hero:captain_america",
             "setup:hero:hawkeye", "setup:hero:ms_marvel", "setup:hero:spider_woman",
         };
         var expansion = Catalog.Build().Sources.Where(source =>
@@ -59,7 +59,7 @@ public sealed class ExpansionSetupAuthorityTests
         "setup:hero:captain_america" => "Captain America hero pack",
         "setup:hero:ms_marvel" => "Ms. Marvel hero pack",
         "setup:encounter-set:a_mess_of_things" or "setup:encounter-set:goblin_gimmicks"
-            or "setup:encounter-set:power_drain" or "setup:campaign:risky_business" or "setup:campaign:risky_business_expert"
+            or "setup:encounter-set:power_drain" or "setup:encounter-set:running_interference" or "setup:campaign:risky_business" or "setup:campaign:risky_business_expert"
             => "Green Goblin scenario pack",
         _ when source.StartsWith("setup:campaign:wrecking_crew_", StringComparison.Ordinal) => "The Wrecking Crew",
         _ => "Rise of Red Skull",

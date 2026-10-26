@@ -25,11 +25,11 @@ The file has 3 groups:
 |---|---:|---:|
 | `campaigns` | 35 Core Set, Rise of Red Skull and Wrecking Crew scenario/mode combinations | 37 |
 | `heroes` | 8 Core Set, Rise of Red Skull and Captain America starter decks | 9 |
-| `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets | 13 |
+| `encounter_sets` | 10 Core Set and Rise of Red Skull fixed/modular sets | 14 |
 
 Ms. Marvel is a declared research hero. Her 40-card starter, obligation and
 nemesis set follow a pinned FFG divider; the runtime product gate excludes her
-recipe until complete pack acceptance. Three Green Goblin modular sets are
+recipe until complete pack acceptance. Four Green Goblin modular sets are
 also declared research recipes: A Mess of Things contains 02037, 02038, 02039
 and two copies of 02040; Goblin Gimmicks contains two copies each of
 02033–02036; Power Drain contains one copy each of 02041–02045. The Green

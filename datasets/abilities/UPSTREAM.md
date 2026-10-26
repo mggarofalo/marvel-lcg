@@ -67,3 +67,10 @@ recruitment, numeric boost receipts through exhaustion, indirect damage and
 healing. The vendored MarvelCDB FAQ for Electro requires its response after ally
 defense; ruling `ruling:a9007ff3a4727a80` confirms Power Drain resolves before
 leaving play. Other faces have no card FAQ entry. Green Goblin stays publicly excluded.
+Running Interference completes research authoring of 02046–02049. The scheme
+uses each-player payment, Tombstone requires a completed attack that actually
+damaged the identity, and Media Coverage attaches to the revealing identity,
+repeats reveal effects finitely and has an alter-ego mental removal action.
+The printed authority is `datasets/cards/cards.json`; `faq:02049` and vendored
+rulings `ruling:49dc5a965dcd4028` and `ruling:c516c82788ea8d77` distinguish
+cancellation and villain promotion. Green Goblin remains publicly excluded.

@@ -15336,6 +15336,94 @@
           }
         }
       ]
+    },
+    {
+      "card": "02046",
+      "name": "Running Interference",
+      "note": "Each player in player order chooses to spend mental and physical resources or place two threat on this scheme. Printed crisis and starting threat are engine-owned facts. Choice/payment spelling is an engine choice.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "order": "playerOrder",
+              "effect": {
+                "payOrEffect": {
+                  "resources": "BR",
+                  "otherwise": {
+                    "placeThreat": {
+                      "scheme": "this",
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02047",
+      "name": "Tombstone",
+      "note": "After the completed attack, require actual damage to the attacked identity, not damage dealt before prevention or damage to an ally. Discard one printed mental or physical hand resource if able; wild cannot substitute outside payment (rr:wild-resource.3).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "when": {
+            "attackDamagedYou": "you"
+          },
+          "effect": {
+            "discardResourceIcons": {
+              "count": 1,
+              "resources": "BR"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02049",
+      "name": "Media Coverage",
+      "note": "Attach to the revealing identity in either form. Each live copy adds one resolution to each When Revealed ability revealed by that player; cancellation suppresses all copies (faq:02049). Villain promotion is not a player reveal (ruling:c516c82788ea8d77). Its controller may spend mental in alter-ego to discard it. Modifier spelling is an engine choice.",
+      "attachTo": "you",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grant": {
+              "card": "attachedTo",
+              "keyword": "additionalWhenRevealed",
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "game",
+            "form": "alter-ego"
+          },
+          "cost": {
+            "spend": "B"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
     }
   ]
 }
