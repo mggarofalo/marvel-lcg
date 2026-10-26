@@ -33,6 +33,15 @@ tests. Reconcile explicit authored-face and starting-counter inventories with th
 printed facts, and keep unknown-card negative controls genuinely unauthored.
 Do not permit an entire incomplete pack merely to satisfy a face-inventory gate.
 
+Use explicit UTF-8 when editing dataset and authority text. Inspect unrelated
+non-ASCII diff changes; changing both a test input and its expected value can hide
+encoding damage from the test itself.
+
+For full activation probes, assert that the activation completed and no unintended
+game-ending condition abandoned its responses. Supply legal encounter/player deck
+state for the path under test. A missing attack-end response after encounter-deck
+exhaustion ended the game is a fixture finding, not evidence of a receipt defect.
+
 Capture causal facts when an effect needs them later. Current active villain,
 current defender or current board membership may no longer describe the attack
 that caused a continuation. Distinguish declared defense, completed attacks,
