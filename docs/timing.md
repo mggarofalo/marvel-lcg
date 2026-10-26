@@ -568,7 +568,10 @@ printed and arrow costs finish and before the event effect body begins
 (`rr:initiating-abilities.step.6`). An observed interrupt suspends the paid event
 through the existing cost continuation, including an event played inside another
 interrupt or response window. The physical event remains faceup out of play.
-Declining or resolving the initiation interrupt resumes the event once.
+Declining or resolving the initiation interrupt resumes the event once. Canceling
+the initiation records cancellation on that exact event. Its effects do not run;
+its costs remain paid, its resolution remains unresolved, and normal discard and
+card-play completion responses still follow (`rr:event.2`).
 
 This condition is separate from `WhenCardPlayed`, whose completion responses
 follow the event's effects and discard. The initiation occurrence is omitted

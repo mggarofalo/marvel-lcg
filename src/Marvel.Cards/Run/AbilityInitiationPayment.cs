@@ -5,6 +5,8 @@ internal sealed class AbilityInitiationPayment(
     AbilityEventPayment? eventPayment, AbilityCostPayment arrowPayment) : AbilityPaymentPlan
 {
     private bool initiationOpened;
+    private Marvel.Rules.Play.EventPlayInitiation? initiation;
+    internal override bool Cancelled => initiation?.Cancelled == true;
 
     internal override bool Commit(AbilityResolutionExecution execution, AbilityResolutionState cast)
     {
@@ -23,7 +25,8 @@ internal sealed class AbilityInitiationPayment(
         if (eventPayment is not null && !initiationOpened)
         {
             initiationOpened = true;
-            if (AbilityEventInitiation.Open(execution, cast))
+            initiation = AbilityEventInitiation.Open(execution, cast);
+            if (initiation is not null)
             {
                 cast.Suspend();
                 return false;
