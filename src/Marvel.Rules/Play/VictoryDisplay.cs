@@ -192,10 +192,8 @@ public static class VictoryDisplay
     {
         var deck = world.AreaOf(DeckType.VillainDeck);
         var following = deck.Cards.Count > 0 ? deck.Cards[^1] : null;
-        string? followingFace = following is not null
-            && villain.FaceId is ("02001a" or "02002a" or "02003a" or "02001b" or "02002b" or "02003b")
-            ? following.Faces.FirstOrDefault(face => face == following.FaceId[..5] + villain.FaceId[^1])
-            : null;
+        string? followingFace = following is null ? null
+            : VillainStageIdentity.PromotionFace(villain.FaceId, following);
         bool carriesToFollowing = following is not null && string.Equals(
             facts.Title(villain.FaceId), facts.Title(followingFace ?? following.FaceId),
             StringComparison.Ordinal);

@@ -7,6 +7,11 @@ internal static class AbilityResolutionDamageAndThreat
 {
     internal static bool TryRunDamageAndThreat(this AbilityResolutionExecution execution, AbilityEffect instruction, AbilityEffect syntax, AbilityResolutionState cast)
     {
+        if (instruction is AbilityEffect.AttackAnotherEnemy staged)
+        {
+            AbilityStagedAttack.Start(execution, cast, staged);
+            return true;
+        }
         if (instruction is AbilityEffect.MoveThreat move)
         {
             execution.MoveThreat(move, cast);
@@ -27,6 +32,7 @@ internal static class AbilityResolutionDamageAndThreat
             cast.ImminentThreat, cast.ResolutionAbility, cast.Incoming, execution.threatAbilities)
         {
             PowerOccurrence = cast.PowerExecution?.Occurrence,
+            StagedAttack = cast.PowerExecution is { ExcludedEnemyStages.IsEmpty: false },
             DamageActivationId = cast.DamageOrigin?.AccountingId(cast.World),
             DeclaredAttackRecipients = cast.PowerExecution?.Continuation.DeclaredRecipients ?? default,
         };

@@ -38,6 +38,8 @@ internal static class AbilityResolutionChoices
         if (choice is AbilityEffect.ChooseCardsToHand group
             && AbilityGroupRetrieval.Answer(execution.StructuralContext(cast), group, input) is Unsupported rejected)
             throw new ArgumentException(rejected.Reason, nameof(input));
+        if (choice is AbilityEffect.AttackAnotherEnemy)
+            AbilityStagedAttack.ValidateAnswer(cast, execution.program, input);
         cast.TrackResolution(cast.AbilityOrdinal);
         cast.At(Math.Max(0, step.Index - 1));
         var events = new AbilityChoiceAnswer(execution, step.Seat, step.Index, input, step, cast).Apply(choice);
@@ -70,6 +72,7 @@ internal static class AbilityResolutionChoices
         this AbilityResolutionExecution execution, Card source, AbilityType? tier,
         PhaseStep? persisted, AbilityEffect choice, AbilityResolutionState cast)
     {
+        if (choice is AbilityEffect.AttackAnotherEnemy staged) return AbilityStagedAttack.Describe(cast, staged, execution.program);
         var structural = execution.StructuralContext(cast);
         string operation = choice.OperationName();
         if (choice is AbilityEffect.MoveThreat move) return AbilityThreatMoveChoice.Describe(cast, move);

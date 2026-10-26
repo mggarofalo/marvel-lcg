@@ -185,7 +185,9 @@ internal static class AbilityProcedureLowering
             { SimultaneousPlacement: true, Amount: AbilityNumber.Constant,
               Cards: AbilityCardSelection.Query { Kind: AbilityCardQuery.PowerTargets } })
             throw location.Child("effect").Error("a counted attack requires one simultaneous constant-damage effect over powerTargets");
-        return new(kind, kind == AbilityPowerKind.Defense ? null : Selected(fields, "target", location),
+        var target = kind == AbilityPowerKind.Defense ? null : Selected(fields, "target", location);
+        AbilityStagedAttackLowering.Validate(body, kind, target, count, location);
+        return new(kind, target,
             body, automatic) { TargetCount = count };
     }
 

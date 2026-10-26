@@ -12,6 +12,9 @@ public abstract record AbilityEffect
     /// <summary>Select up to a bounded number of physical out-of-play cards to add to your hand.</summary>
     public sealed record ChooseCardsToHand(AbilityCardSelection From, int Maximum) : AbilityEffect;
 
+    /// <summary>Select a distinct second enemy within the current attack, then deal constant damage.</summary>
+    public sealed record AttackAnotherEnemy(long Amount) : AbilityEffect;
+
     /// <summary>Return this host's stored cards to their owners, optionally removing the host.</summary>
     public sealed record ReleaseBeneath(bool RemoveHost, bool Rescue = false) : AbilityEffect;
 

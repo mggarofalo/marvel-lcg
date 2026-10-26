@@ -107,6 +107,11 @@ internal static class AbilityPowerResolution
             cast.PowerAmount, [.. attackModifiers]) { ThwartActorUsingAttack = cast.ThwartActorUsingAttack, Occurrence = occurrence, WindowOwner = world.Agenda.Current };
         if (power == BasicPowers.AttackVerb)
         {
+            if (Marvel.Cards.Dsl.AbilityStagedAttackLowering.IsBody(restored.Body))
+                cast.PowerExecution = cast.PowerExecution with
+                { FirstEnemyIncarnation = cast.Chosen!.Incarnation,
+                    ExcludedEnemyStages = AbilityStagedAttack.CaptureIdentity(world,
+                    cast.Chosen ?? throw new InvalidOperationException("A staged attack requires its first enemy.")) };
             var attacker = cast.PowerActor ?? world.Seats[player].IdentityCard;
             occurrence.Retaliation = new(attacker.ObjectId, attacker.Incarnation,
                 AttackKeywords.Has(world, attacker, source, Keywords.Ranged),
@@ -141,7 +146,11 @@ internal static class AbilityPowerResolution
         RestoreOuterChosen(state.Continuation.Capture.Memory.Chosen, cast);
         cast.RestoreAbility(state.Decoded.Ordinal, state.Decoded.Frames,
             state.Continuation.Capture.Invocation.Address.Face);
-        execution.CompletePower(state.Decoded, cast with { Power = null, PowerActor = null, PowerTargets = [], PowerAmount = -1 });
+        cast.Power = null;
+        cast.PowerActor = null;
+        cast.PowerTargets = [];
+        cast.PowerAmount = -1;
+        execution.CompletePower(state.Decoded, cast);
     }
 
     private static void RestoreOuterChosen(

@@ -8,6 +8,9 @@ internal sealed record AbilityPowerExecutionState(
     DecodedPowerContinuation Decoded, AbilityPowerContinuation Continuation,
     string Kind, int? Actor, long Amount, ImmutableArray<ContinuousEffect> Modifiers)
 {
+    internal ImmutableArray<int> ExcludedEnemyStages { get; init; } = [];
+    internal int FirstEnemyIncarnation { get; init; }
+    internal ImmutableDictionary<int, int> OfferedEnemies { get; init; } = ImmutableDictionary<int, int>.Empty;
     internal Marvel.Rules.Play.PhaseStep? WindowOwner { get; init; }
     internal Marvel.Rules.Timing.Occurrence? Occurrence { get; init; }
     internal ImmutableArray<int> Attacked { get; init; } = [];

@@ -218,7 +218,7 @@ internal static class AbilityAdmissionAreaDependencies
     private static bool HasNoAreaDependencies(AbilityEffect effect) =>
         effect switch
         {
-            AbilityEffect.GiveStatus or AbilityEffect.RemoveStatuses or AbilityEffect.ChangeForm or AbilityEffect.Draw
+            AbilityEffect.AttackAnotherEnemy or AbilityEffect.GiveStatus or AbilityEffect.RemoveStatuses or AbilityEffect.ChangeForm or AbilityEffect.Draw
                 or AbilityEffect.DrawToHandSize or AbilityEffect.GainSurge
                 or AbilityEffect.Fixed or AbilityEffect.Generate
                 or AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop

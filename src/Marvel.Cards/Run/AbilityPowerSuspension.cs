@@ -37,6 +37,7 @@ internal static class AbilityPowerSuspension
         AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange = false,
         bool bindingMayChange = false, PowerReachability? reachability = null)
     {
+        if (AbilityStagedAttackLowering.IsBody(node) || node is AbilityEffect.AttackAnotherEnemy) return false;
         var state = reachability ?? AbilityPowerStateFactory.Initial(cast);
         // Enumerate every supported path before accepting a suspension answer;
         // unsupported is a missing calculation, never an absent legal option.
