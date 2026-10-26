@@ -11,4 +11,5 @@ internal sealed record AbilitySelectorTraceContext(
     internal IReadOnlyDictionary<int, int>? EncounterStages { get; init; }
     internal int[]? EncounterOrder { get; init; }
     internal IReadOnlyDictionary<int, long>? SchemeThreat { get; init; }
+    internal IReadOnlyDictionary<(int Card, string Status), int>? StatusCounts { get; init; }
 }

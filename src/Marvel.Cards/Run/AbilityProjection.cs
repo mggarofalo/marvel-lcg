@@ -88,49 +88,48 @@ internal static class AbilityProjection
         : world.AreaOf(DeckType.VillainDeck).Cards.Prepend(world.TheCardIn(DeckType.VillainArea)!);
 
     internal static bool TryTraceCount(
-        AbilityCardSelection selector, Card next, AbilityAdmissionScope cast, HashSet<int> discarded,
-        IReadOnlyDictionary<int, HashSet<string>> traitChanges,
-        IReadOnlyDictionary<(int Card, string Field), long> modifierChanges,
-        IReadOnlyDictionary<int, int> engagementChanges,
-        ulong formsMayChange, out long count)
+        AbilityCardSelection selector, Card next, AbilityAdmissionScope cast,
+        VillainTraceChanges changes, ulong formsMayChange, out long count)
     {
+        // Villain-transition evidence records status membership, not its count.
+        // Steady can change from one status card to two without that flag changing.
+        if (SelectorReadsStatus(selector))
+        {
+            count = 0;
+            return false;
+        }
         if (selector is AbilityCardSelection.Bound
             { Binding: AbilityCardBinding.YourHero or AbilityCardBinding.YourAlterEgo } formSelector)
-            return TryTraceFormCount(formSelector, cast, discarded, formsMayChange, out count);
+            return TryTraceFormCount(formSelector, cast, changes.Discarded, formsMayChange, out count);
         if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.Heroes })
-            return TryTraceHeroCount(cast, discarded, formsMayChange, out count);
+            return TryTraceHeroCount(cast, changes.Discarded, formsMayChange, out count);
         if (CountSelectorFormsMayChange(selector, cast, formsMayChange))
         {
             count = 0;
             return false;
         }
-        count = TraceGeneralCount(
-            selector, next, cast, discarded, traitChanges,
-            modifierChanges, engagementChanges);
+        count = TraceGeneralCount(selector, next, cast, changes);
         return true;
     }
 
     private static long TraceGeneralCount(
         AbilityCardSelection selector, Card next, AbilityAdmissionScope cast,
-        HashSet<int> discarded,
-        IReadOnlyDictionary<int, HashSet<string>> traitChanges,
-        IReadOnlyDictionary<(int Card, string Field), long> modifierChanges,
-        IReadOnlyDictionary<int, int> engagementChanges)
+        VillainTraceChanges changes)
     {
-        var traits = traitChanges.ToDictionary(pair => pair.Key,
+        var traits = changes.Traits.ToDictionary(pair => pair.Key,
             pair => new HashSet<string>(pair.Value, StringComparer.Ordinal));
-        var modifiers = new Dictionary<(int Card, string Field), long>(modifierChanges);
-        var engagement = new Dictionary<int, int>(engagementChanges);
+        var modifiers = new Dictionary<(int Card, string Field), long>(changes.Modifiers);
+        var engagement = new Dictionary<int, int>(changes.Engagement);
         long count = 0;
         foreach (var card in cast.World.Cards)
         {
             bool projectedInPlay = card.ObjectId == next.ObjectId
-                || DeckTypes.IsInPlay(card.Area.Type) && !discarded.Contains(card.ObjectId)
+                || DeckTypes.IsInPlay(card.Area.Type) && !changes.Discarded.Contains(card.ObjectId)
                 || !DeckTypes.IsInPlay(card.Area.Type)
                     && EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion
-                    && !discarded.Contains(card.ObjectId);
+                    && !changes.Discarded.Contains(card.ObjectId);
             if (projectedInPlay && TraceSelectorMatches(selector, card, new(next.ObjectId,
-                cast, discarded, traits, modifiers, engagement))) count++;
+                cast, changes.Discarded, traits, modifiers, engagement))) count++;
         }
         return count;
     }
@@ -160,11 +159,8 @@ internal static class AbilityProjection
     }
 
     internal static bool TryTraceCountAmount(
-        AbilityNumber number, Card next, AbilityAdmissionScope cast, HashSet<int> discarded,
-        IReadOnlyDictionary<int, HashSet<string>> traitChanges,
-        IReadOnlyDictionary<(int Card, string Field), long> modifierChanges,
-        IReadOnlyDictionary<int, int> engagementChanges,
-        ulong formsMayChange, out long amount)
+        AbilityNumber number, Card next, AbilityAdmissionScope cast,
+        VillainTraceChanges changes, ulong formsMayChange, out long amount)
     {
         if (number is AbilityNumber.Constant constant)
         {
@@ -173,8 +169,7 @@ internal static class AbilityProjection
         }
         if (number is AbilityNumber.Count count)
         {
-            return TryTraceCount(count.Cards, next, cast, discarded, traitChanges,
-                modifierChanges, engagementChanges, formsMayChange, out amount);
+            return TryTraceCount(count.Cards, next, cast, changes, formsMayChange, out amount);
         }
         AbilityCardSelection? target = number switch
         {
@@ -188,7 +183,7 @@ internal static class AbilityProjection
             _ => null,
         };
         if (target is not null && !PotentialVillainSelector(target, cast)
-            && Find(target, cast) is { } removed && discarded.Contains(removed.ObjectId)
+            && Find(target, cast) is { } removed && changes.Discarded.Contains(removed.ObjectId)
             && cast.World.Seats.Any(seat => seat.IdentityCard.ObjectId == removed.ObjectId))
         {
             // Amount reads zero after the identity's selector stops finding it.
@@ -199,8 +194,7 @@ internal static class AbilityProjection
         var operands = CompositeOperands(number);
         if (!operands.IsDefault)
             return TryTraceCompositeAmount(
-                number, operands, next, cast, discarded, traitChanges,
-                modifierChanges, engagementChanges, formsMayChange, out amount);
+                number, operands, next, cast, changes, formsMayChange, out amount);
         amount = 0;
         return false;
     }
@@ -217,17 +211,14 @@ internal static class AbilityProjection
 
     private static bool TryTraceCompositeAmount(
         AbilityNumber number, System.Collections.Immutable.ImmutableArray<AbilityNumber> operands,
-        Card next, AbilityAdmissionScope cast, HashSet<int> discarded,
-        IReadOnlyDictionary<int, HashSet<string>> traitChanges,
-        IReadOnlyDictionary<(int Card, string Field), long> modifierChanges,
-        IReadOnlyDictionary<int, int> engagementChanges, ulong formsMayChange,
-        out long amount)
+        Card next, AbilityAdmissionScope cast, VillainTraceChanges changes,
+        ulong formsMayChange, out long amount)
     {
         var values = new List<long>();
         foreach (var operand in operands)
         {
-            if (!TryTraceCountAmount(operand, next, cast, discarded, traitChanges,
-                modifierChanges, engagementChanges, formsMayChange, out long traced))
+            if (!TryTraceCountAmount(operand, next, cast, changes,
+                formsMayChange, out long traced))
             {
                 amount = 0;
                 return false;
@@ -243,29 +234,6 @@ internal static class AbilityProjection
         };
         return true;
     }
-
-    internal static bool CountSelectorFormsMayChange(AbilityCardSelection selector, AbilityAdmissionScope cast, ulong formsMayChange) =>
-        selector switch
-        {
-            AbilityCardSelection.Bound { Binding: AbilityCardBinding.YourHero or AbilityCardBinding.YourAlterEgo } =>
-                SeatMayChange(formsMayChange, Resolver(cast)),
-            AbilityCardSelection.Query { Kind: AbilityCardQuery.Heroes } =>
-                Enumerable.Range(0, cast.World.Seats.Count).Any(seat => SeatMayChange(formsMayChange, seat)),
-            AbilityCardSelection.WithTrait filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
-            AbilityCardSelection.WithStatus filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
-
-            AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => CountSelectorFormsMayChange(option, cast, formsMayChange)),
-            AbilityCardSelection.Last filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
-
-            AbilityCardSelection.FaceDown filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
-
-            AbilityCardSelection.InObjectIdOrder filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
-
-            AbilityCardSelection.WithMatchingPlayerArea filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
-            AbilityCardSelection.Ranked ranked => CountSelectorFormsMayChange(ranked.Cards, cast, formsMayChange),
-            AbilityCardSelection.WithoutAnotherCopyAttached filtered => CountSelectorFormsMayChange(filtered.Cards, cast, formsMayChange),
-            _ => false,
-        };
 
     internal static bool IsProjectedVillainSelector(AbilityCardSelection selector) =>
         selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.Villain };

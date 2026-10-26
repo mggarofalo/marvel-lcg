@@ -40,7 +40,10 @@ internal static class AbilityProjectedStateQueries
                 ProjectedWithTrait(trait, state, context),
             AbilityCardSelection.WithStatus status =>
                 [.. ProjectedEvery(status.Cards, state, context)
-                    .Where(card => ProjectedAfflicted(status.Status, card, state, context))],
+                    .Where(card => (DeckTypes.IsInPlay(card.Area.Type)
+                            || state.Entered.Contains(card.ObjectId))
+                        && !state.Departed.Contains(card.ObjectId)
+                        && ProjectedAfflicted(status.Status, card, state, context))],
             AbilityCardSelection.Query { Kind: AbilityCardQuery.Villain } =>
                 ProjectedVillain(found, state, context),
             AbilityCardSelection.Query query =>
@@ -177,6 +180,9 @@ internal static class AbilityProjectedStateQueries
             AbilityCardQuery.Villains => CardKinds.IsVillain(kind),
             AbilityCardQuery.Enemies => CardKinds.IsEnemy(kind),
             AbilityCardQuery.Characters => CardKinds.IsCharacter(kind),
+            AbilityCardQuery.Allies => kind == CardKind.Ally,
+            AbilityCardQuery.HeroesAndAllies => kind is CardKind.Hero or CardKind.AlterEgo or CardKind.Ally,
+            AbilityCardQuery.HeroAndAllyTargets => kind is CardKind.Hero or CardKind.Ally,
             _ => IsSchemeQuery(query) && kind == CardKind.EncounterSideScheme,
         };
     }

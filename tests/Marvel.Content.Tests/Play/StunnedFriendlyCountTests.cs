@@ -112,6 +112,121 @@ public sealed class StunnedFriendlyCountTests
         Assert.Equal(2, scheme.Tokens.GetValueOrDefault("k_threat"));
     }
 
+    [Rule("rr:stun-stunned.3")]
+    [Fact]
+    public void ProjectedStatusFilterRequiresACharacterInPlay()
+    {
+        // "A character is stunned if it has a stunned status card."
+        var world = Board();
+        var scheme = world.CreateCard("02037", world.AreaOf(DeckType.SideSchemesArea));
+        var ally = world.CreateCard("01002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        Statuses.Give(world, ally, Statuses.Stunned);
+        World.MoveToTop(ally, world.Seats[0].Hand);
+        var selection = new AbilityCardSelection.WithStatus(
+            new AbilityCardSelection.InAreas([AbilitySearchArea.YourHand], null, null, null),
+            Statuses.Stunned);
+        var admission = Admission(world, scheme);
+        var projected = new AreaProjectionState(admission);
+
+        Assert.Empty(AbilityProjectedStateQueries.ProjectedEvery(selection, projected, admission));
+        projected.Entered.Add(ally.ObjectId);
+        Assert.Equal([ally], AbilityProjectedStateQueries.ProjectedEvery(selection, projected, admission));
+        projected.Departed.Add(ally.ObjectId);
+        Assert.Empty(AbilityProjectedStateQueries.ProjectedEvery(selection, projected, admission));
+    }
+
+    [Rule("rr:friendly")]
+    [Rule("rr:stun-stunned.3")]
+    [Fact]
+    public void NewlyEnteredAllyParticipatesInProjectedFriendlyCount()
+    {
+        // "Friendly is a blanket term that refers to cards the players control."
+        // "A character is stunned if it has a stunned status card."
+        var world = Board();
+        var scheme = world.CreateCard("02037", world.AreaOf(DeckType.SideSchemesArea));
+        var ally = world.CreateCard("01002", world.Seats[0].Hand);
+        var admission = Admission(world, scheme);
+        var projected = new AreaProjectionState(admission);
+        var friendly = new AbilityCardSelection.Query(AbilityCardQuery.HeroesAndAllies);
+        var allies = new AbilityCardSelection.Query(AbilityCardQuery.Allies);
+        var stunned = new AbilityCardSelection.WithStatus(friendly, Statuses.Stunned);
+
+        Assert.DoesNotContain(ally, AbilityProjectedStateQueries.ProjectedEvery(friendly, projected, admission));
+        projected.Entered.Add(ally.ObjectId);
+        projected.Status[(ally.ObjectId, Statuses.Stunned)] = 1;
+        Assert.Contains(ally, AbilityProjectedStateQueries.ProjectedEvery(allies, projected, admission));
+        Assert.Contains(ally, AbilityProjectedStateQueries.ProjectedEvery(stunned, projected, admission));
+        projected.Status[(ally.ObjectId, Statuses.Stunned)] = 0;
+        Assert.DoesNotContain(ally, AbilityProjectedStateQueries.ProjectedEvery(stunned, projected, admission));
+        projected.Departed.Add(ally.ObjectId);
+        Assert.DoesNotContain(ally, AbilityProjectedStateQueries.ProjectedEvery(allies, projected, admission));
+    }
+
+    [Rule("rr:stun-stunned.3")]
+    [Rule("rr:stun-stunned.3.1")]
+    [Fact]
+    public void PowerTraceUsesProjectedStatusCountAndSteadyThreshold()
+    {
+        // "A character is stunned if it has a stunned status card."
+        // "A character with the steady keyword is stunned only if it has two stunned status cards."
+        var world = Board();
+        var scheme = world.CreateCard("02037", world.AreaOf(DeckType.SideSchemesArea));
+        var ally = world.CreateCard("01002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var admission = Admission(world, scheme);
+        var scope = new AbilityAdmission.AbilityAdmissionScope(admission, []);
+        var selection = new AbilityCardSelection.WithStatus(
+            new AbilityCardSelection.Query(AbilityCardQuery.HeroesAndAllies), Statuses.Stunned);
+        var state = AbilityPowerStateFactory.Initial(scope);
+
+        Assert.Empty(AbilityPowerSelectionTrace.PowerEvery(selection, scope, state));
+        state.StatusCounts[(ally.ObjectId, Statuses.Stunned)] = 1;
+        Assert.Contains(ally, AbilityPowerSelectionTrace.PowerEvery(selection, scope, state));
+        state.Modifiers[(ally.ObjectId, "steady")] = 1;
+        Assert.DoesNotContain(ally, AbilityPowerSelectionTrace.PowerEvery(selection, scope, state));
+        state.StatusCounts[(ally.ObjectId, Statuses.Stunned)] = 2;
+        Assert.Contains(ally, AbilityPowerSelectionTrace.PowerEvery(selection, scope, state));
+        state.StatusCounts[(ally.ObjectId, Statuses.Stunned)] = 0;
+        Assert.DoesNotContain(ally, AbilityPowerSelectionTrace.PowerEvery(selection, scope, state));
+        Statuses.Give(world, ally, Statuses.Stunned);
+        state.Modifiers.Remove((ally.ObjectId, "steady"));
+        Assert.DoesNotContain(ally, AbilityPowerSelectionTrace.PowerEvery(selection, scope, state));
+        state.StatusCounts.Remove((ally.ObjectId, Statuses.Stunned));
+        Assert.Contains(ally, AbilityPowerSelectionTrace.PowerEvery(selection, scope, state));
+    }
+
+    [Rule("rr:stun-stunned.3")]
+    [Fact]
+    public void VillainTransitionCountReportsChangedStatusAsUnknown()
+    {
+        // "A character is stunned if it has a stunned status card."
+        var world = Board();
+        var scheme = world.CreateCard("02037", world.AreaOf(DeckType.SideSchemesArea));
+        var ally = world.CreateCard("01002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var scope = new AbilityAdmission.AbilityAdmissionScope(Admission(world, scheme), []);
+        var selection = new AbilityCardSelection.WithStatus(
+            new AbilityCardSelection.Query(AbilityCardQuery.HeroesAndAllies), Statuses.Stunned);
+        var statuses = new HashSet<(int Card, string Status)>();
+        var changes = new VillainTraceChanges([], new Dictionary<int, long>(),
+            new Dictionary<int, long>(), new Dictionary<(int Card, string Field), long>(),
+            new Dictionary<int, HashSet<string>>(), statuses, new Dictionary<int, int>());
+
+        Assert.False(AbilityProjection.TryTraceCount(selection, scheme, scope,
+            changes, 0, out _));
+        statuses.Add((ally.ObjectId, Statuses.Stunned));
+        Assert.False(AbilityProjection.TryTraceCount(selection, scheme, scope,
+            changes, 0, out _));
+    }
+
+    private static AbilityAdmissionContext Admission(World world, Card source)
+    {
+        var query = new AbilityQueryContext(world, source, new Occurrence(1, []), 0,
+            source.Incarnation, null, null, null, []);
+        var expressions = new AbilityExpressionContext(query, ImmutableDictionary<string, long>.Empty,
+            [], "", 0, false, null);
+        return new AbilityAdmissionContext(AbilityLowering.Book(AuthoredCards.Book),
+            world.ResourceAbilities, expressions, new(), null);
+    }
+
     private static World Board()
     {
         var world = new World(Cards, 2);
