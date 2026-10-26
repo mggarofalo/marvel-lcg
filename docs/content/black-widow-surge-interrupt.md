@@ -108,3 +108,27 @@ expectation was also corrected against the predecessor: ordinary When Revealed
 results have no forced-ability association. No metadata regression is claimed.
 No full suite, native UI, public admission or complete historical-save matrix is
 claimed by this bounded review.
+
+### Corrected-source verdict
+
+The lead's four-file correction `5d6c446822a0361a97e9e0b545104540ea80f921`
+was applied unchanged as review-tree commit
+`806005dcc80b6032600c03112f924c9af4610b75`, on independent test commit `208d99a0`.
+It captures the originating gained-surge trigger and preserves the printed
+keyword's `surge` spelling. No metadata or version changes were needed.
+
+On that exact corrected tree, 49 focused content checks pass: the independent
+predecessor-sensitive history regression, all 11 Espionage cases, keyword stacking,
+reveal resolution status, printed Preparation completion and independent
+Preparation continuations. All four durable JSON/fresh-host cases also pass.
+Logs: `C:/Users/mggar/Source/bw-surge-review-final-content.log` and
+`C:/Users/mggar/Source/bw-surge-review-final-durable.log`. The source's earlier
+86-case sweep supplies the separately recorded playerless setup evidence; this
+49-case filter does not claim an additional playerless setup run.
+
+The reported compatibility defect is resolved. This bounded B7 engine-capability
+review has no remaining diagnosed correctness finding. It covers timing,
+provenance and durable continuations, without expanding public admission or
+claiming a complete historical-save matrix, full suite or native acceptance.
+Independent test commit hooks passed 66 architecture checks, complexity and file
+length. Final review-note hooks are recorded in `bw-surge-review-final-hooks.log`.
