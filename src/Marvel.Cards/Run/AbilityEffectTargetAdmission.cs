@@ -125,9 +125,10 @@ internal static class AbilityEffectTargetAdmission
                 AbilityFutureDiscardAdmission.MayDealDamage(DamageAmountOf(node, cast), cast)
                     ? CardsLegality(DamageTargets(DamageSelectionOf(node, cast), cast))
                     : TargetLegality.Invalid,
-            "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) <= 0
-                ? TargetLegality.Invalid
-                : CardsLegality(Assignable(DamageSelectionOf(node, cast), cast)),
+            "indirectDamage" => AbilityFutureDiscardAdmission.MayDealDamage(
+                EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast)
+                    ? CardsLegality(Assignable(DamageSelectionOf(node, cast), cast))
+                    : TargetLegality.Invalid,
             "placeThreat" => Amount(EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount, cast) <= 0
                 ? TargetLegality.Invalid
                 : CardsLegality(Every(ThreatSelectionOf(node, cast), cast)),
