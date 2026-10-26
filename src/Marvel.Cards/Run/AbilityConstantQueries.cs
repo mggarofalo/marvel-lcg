@@ -151,6 +151,7 @@ internal sealed class AbilityConstantQueries
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventThreatRemoval or AbilityCardInstruction.PreventThwarting }:
             case AbilityEffect.DoubleResourceFor:
             case AbilityEffect.AllowPlayBeneath:
+            case AbilityEffect.AllowPlayFromDiscard:
             case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RequireAllyDefender }:
             case AbilityEffect.PreventDamageFrom:
             case AbilityEffect.PreventDamageWhile:

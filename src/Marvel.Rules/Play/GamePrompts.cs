@@ -142,7 +142,7 @@ internal static class GamePrompts
 
     private static void AddCardPlays(Game game, Seat seat, List<Affordance> options)
     {
-        foreach (Card card in seat.Hand.Cards.OrderBy(card => card.ObjectId))
+        foreach (Card card in CardPlayOrigin.Candidates(game.world, seat.Index))
         {
             if (CardPayment.Price(game.world, game.facts, seat, card) is not { } price) continue;
             var hosts = CardPlayLegality.LegalAttachmentTargets(

@@ -69,6 +69,7 @@ internal static class AbilityEffectLowering
             "changeForm" => FormEffect(argument, child),
             "draw" => DrawEffect(argument, child),
             "allowPlayBeneath" => AbilityStoragePermissionLowering.Lower(argument, child),
+            "allowPlayFromDiscard" => AbilityStoragePermissionLowering.LowerDiscard(argument, child),
             "drawToHandSize" or "drawToPrintedHandSize" => new AbilityEffect.DrawToHandSize(
                 LowerPlayer(argument, child), node.Kind == "drawToPrintedHandSize"),
             "moveThreat" => AbilityThreatMovementLowering.Lower(argument, child),

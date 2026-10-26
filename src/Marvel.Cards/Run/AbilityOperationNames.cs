@@ -59,6 +59,7 @@ internal static class AbilityOperationNames
         AbilityEffect.DoubleResourceFor => "doubleResourceFor",
         AbilityEffect.ReduceFirstAllyCost => "reduceFirstAllyCost",
         AbilityEffect.AllowPlayBeneath => "allowPlayBeneath",
+        AbilityEffect.AllowPlayFromDiscard => "allowPlayFromDiscard",
         AbilityEffect.AttachCards => "attachCards",
         AbilityEffect.ReleaseBeneath => "releaseBeneath",
         AbilityEffect.ChooseCardsToHand => "chooseCardsToHand",

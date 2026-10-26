@@ -222,7 +222,7 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.DrawToHandSize or AbilityEffect.GainSurge
                 or AbilityEffect.Fixed or AbilityEffect.Generate
                 or AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop
-                or AbilityEffect.ChooseCardsToHand or AbilityEffect.ReleaseBeneath or AbilityEffect.AllowPlayBeneath or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.Shuffle
+                or AbilityEffect.ChooseCardsToHand or AbilityEffect.ReleaseBeneath or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.Shuffle
                 or AbilityEffect.PreventDamageFrom or AbilityEffect.DelayedStun
                 or AbilityEffect.DealEncounterCards or AbilityEffect.EngageTopAsMinion
                 or AbilityEffect.DiscardUntil or AbilityEffect.ShuffleInto
