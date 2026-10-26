@@ -33,9 +33,9 @@ public sealed class BlackWidowEncounterReviewTests
     {
         // Printed 08026 counts every upgrade, including non-Preparation upgrades.
         var world = WidowEncounterFixture.Board();
-        var ordinary = WidowEncounterFixture.Upgrade(world, "01004");
+        var ordinary = WidowEncounterFixture.Upgrade(world, "01007");
         WidowEncounterFixture.Upgrade(world);
-        WidowEncounterFixture.Upgrade(world, "01004", 0);
+        WidowEncounterFixture.Upgrade(world, "01007", 0);
         world.CreateCard("08010", world.Seats[1].Hand);
         world.CreateCard("08010", world.AreaOf(DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1));
         world.CreateCard("08023", world.AreaOf(DeckType.SupportsArea,
@@ -58,7 +58,7 @@ public sealed class BlackWidowEncounterReviewTests
             Assert.Equal(2, StateFields.Modified(world, minion, "attack", world.Facts, 2));
             Discard.Card(world, ordinary, "fixture", []);
             Assert.Equal(1, StateFields.Modified(world, minion, "scheme", world.Facts, 2));
-            WidowEncounterFixture.Upgrade(world, "01004", 0);
+            WidowEncounterFixture.Upgrade(world, "01007", 0);
             World.MoveToTop(minion, world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
             Assert.Equal(2, StateFields.Modified(world, minion, "attack", world.Facts, 2));
         }

@@ -244,9 +244,12 @@ internal static class AbilityImmediateExecution
             ending.Complete(context.Trigger, context.Events);
             return;
         }
+        var liveAmount = AbilityLastingAmount.Capture(amount, context.Admission);
+        if (liveAmount is not null && kind is not ("attack" or "scheme"))
+            throw new RulesNotImplementedException($"live lasting field '{kind}' is not implemented");
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: kind,
-            Amount: resolveAmount(amount), Card: context.Admission.Source.ObjectId,
-            Affects: target.ObjectId, Lasts: Duration.UntilEndOf(until)));
+            Amount: liveAmount is null ? resolveAmount(amount) : 0, Card: context.Admission.Source.ObjectId,
+            Affects: target.ObjectId, Lasts: Duration.UntilEndOf(until)) { LiveAmount = liveAmount });
         if (string.Equals(kind, "stalwart", StringComparison.Ordinal))
             Statuses.RemoveAfflictionsIfStalwart(world, world.Facts, target, context.Trigger, context.Events);
     }

@@ -177,7 +177,15 @@ entry names a condition, and the condition is re-read.
 A lasting effect outlives the card that made it and has to survive a save, so an
 entry has to be something that can be written down. Anything holding a delegate
 could not be. What an entry *does* is decided by reading its `Kind` and `Amount`,
-which is the price of a game that can be put down and picked up.
+which is the price of a game that can be put down and picked up. A numeric
+lasting modifier can also carry an immutable `ContinuousAmount`. Its captured
+player stays bound to the original resolution while current controlled upgrades,
+engaged minions with an effective trait, or counters on the current main scheme
+are read whenever the stat is evaluated. The card interpreter lowers these
+supported relations explicitly and raises for unsupported live numeric forms.
+Resolution receipts remain fixed values. Registered effects retain their identity
+and source snapshot during these reads; querying does not rewrite the effect.
+
 
 ## Ending a phase
 

@@ -42,6 +42,9 @@ public sealed record ContinuousEffect(
     Duration? Lasts = null,
     string Scope = "")
 {
+    /// <summary>A live magnitude; null means the fixed Amount applies.</summary>
+    public ContinuousAmount? LiveAmount { get; init; }
+
     /// <summary>Only matching played cards may consume this cost reduction.</summary>
     public CardCostFilter? CostFilter { get; init; }
 
