@@ -18802,6 +18802,108 @@
       "name": "Hydra Mercenary",
       "note": "Guard, and nothing else. rr:guard is a keyword the engine reads off the printed field -- see docs/keywords.md -- so there is no ability here to author.",
       "abilities": []
+    },
+    {
+      "card": "08001b",
+      "name": "Natasha Romanoff",
+      "note": "Mission Prep responds only to the controller playing a Preparation card and has one use per phase; changing form retains that use.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardPlayed",
+            "timing": "Response",
+            "subject": "game",
+            "player": "you"
+          },
+          "when": {
+            "hasTrait": {
+              "card": "trigger.subject",
+              "trait": "PREPARATION"
+            }
+          },
+          "limitPerPhase": 1,
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "08002",
+      "name": "Winter Soldier",
+      "note": "The in-hand cost is reduced by one for each live Preparation card controlled by the prospective player.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "reduceSelfCostPerControlledTrait": {
+              "trait": "PREPARATION",
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "08011",
+      "name": "Agent Coulson",
+      "note": "The entry response chooses a physical Preparation from the controller deck or discard, adds it to hand, and shuffles the deck even without a match.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "areas": [
+                      "yourDeck",
+                      "yourDiscardPile"
+                    ],
+                    "trait": "PREPARATION"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "areas": [
+                        "yourDeck",
+                        "yourDiscardPile"
+                      ],
+                      "trait": "PREPARATION"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "addToHand": "chosen"
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "shuffle": "yourDeck"
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
