@@ -56,4 +56,24 @@ public sealed class OrdinaryArrowPriceCompatibilityReviewTests
             generic => Assert.Equal([""], generic.Rule),
             typed => Assert.Equal(["Y"], typed.Rule));
     }
+
+    [Fact]
+    public void CombinedEventWithOrdinarySequenceRetainsOneAggregateArrowComponent()
+    {
+        var runner = Runner("01005", "Action", """{"draw":{"player":"you","count":1}}""",
+            cost: """{"seq":[{"spendAny":1},{"spend":"Y"}]}""");
+        var (_, world) = Playing(_ => { }, abilities: runner);
+        var source = world.CreateCard("01005", world.Seats[0].Hand);
+        foreach (string face in new[] { "01088", "01089", "01090" })
+            world.CreateCard(face, world.Seats[0].Hand);
+        var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
+        var price = Assert.Single(runner.Describe(world, action).CostOptions);
+        Assert.Equal("5", price.Cost);
+        Assert.Equal(["", "Y"], price.Rule);
+        // Engine choice: predecessor CombinedPrice captures the printed cost
+        // plus one aggregate arrow cost, even when that arrow is a sequence.
+        Assert.Collection(price.Components!,
+            printed => { Assert.Equal("3", printed.Cost); Assert.Null(printed.Rule); },
+            arrow => { Assert.Equal("2", arrow.Cost); Assert.Equal(["Y"], arrow.Rule); });
+    }
 }
