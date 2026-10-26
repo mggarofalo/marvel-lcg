@@ -46,6 +46,10 @@ public sealed partial class EncounterStackReceiptProbe : Node
         return first.GetGlobalRect().Intersects(second.GetGlobalRect());
     }
 
+    public float DenseSecondTop() => denseSecond!.Position.Y;
+
+    public void ShrinkReceipt() => EventActivityCardRendering.Apply(denseFirst!, densePresentation!);
+
     public string VerifyReceipt()
     {
         var before = new BoardCardPresentation(7, 1, false, "Synthetic environment", "", "ENVIRONMENT", "", [])
