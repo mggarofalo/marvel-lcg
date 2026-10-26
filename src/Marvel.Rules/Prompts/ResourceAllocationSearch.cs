@@ -11,8 +11,6 @@ internal sealed class ResourceAllocationSearch
     private readonly bool[] used;
     private readonly Choice[] choices;
     private readonly bool[] assigned;
-    private bool[] best = [];
-    private int bestCount = -1;
 
     internal ResourceAllocationSearch(List<Slot> slots, IReadOnlyList<ResourceSource> sources)
     {
@@ -49,60 +47,12 @@ internal sealed class ResourceAllocationSearch
         return false;
     }
 
-    // Repository choice: maximize covered slots, then prefer the supplied slot order.
-    // This is guidance only; it neither declares nor commits the player's allocation.
-    internal IReadOnlyList<Slot> Uncovered()
-    {
-        SearchCoverage(0, 0);
-        return slots.Where((_, index) => !best[index]).ToArray();
-    }
-
-    private void SearchCoverage(int slotIndex, int count)
-    {
-        int possible = count + Math.Min(slots.Count - slotIndex, icons.Count - count);
-        if (possible <= bestCount) return;
-        if (slotIndex == slots.Count)
-        {
-            bestCount = count;
-            best = (bool[])assigned.Clone();
-            return;
-        }
-        CoverSlot(slotIndex, count);
-        assigned[slotIndex] = false;
-        SearchCoverage(slotIndex + 1, count);
-    }
-
-    private void CoverSlot(int slotIndex, int count)
-    {
-        Slot slot = slots[slotIndex];
-        foreach (int index in Candidates(slot))
-        {
-            used[index] = true;
-            foreach (char declared in Declarations(slot, icons[index]))
-            {
-                if (AlreadyPaid(slotIndex, slot, declared)) continue;
-                assigned[slotIndex] = true;
-                choices[slotIndex] = new Choice(icons[index].Source, slot.Component, declared);
-                SearchCoverage(slotIndex + 1, count + 1);
-            }
-            assigned[slotIndex] = false;
-            used[index] = false;
-        }
-    }
-
     private bool AlreadyPaid(int slotIndex, Slot slot, char declared) =>
         slot.DistinctTypes && Enumerable.Range(0, slotIndex).Any(index => assigned[index]
             && choices[index].Component == slot.Component && choices[index].Declared == declared);
 
-    private static IEnumerable<char> Declarations(Slot slot, Icon icon)
-    {
-        if (slot.Required is { } required) return [required];
-        // rr:wild-resource.1: the player may specify energy, mental, physical,
-        // or wild. Search each declaration when the cost distinguishes types.
-        return slot.DistinctTypes && !slot.Printed && icon.Printed == Resources.Wild
-            ? Resources.Types.OrderBy(type => type == Resources.Wild ? 0 : 1)
-            : [icon.Printed];
-    }
+    private static IEnumerable<char> Declarations(Slot slot, Icon icon) =>
+        ResourcePaymentRequirements.Declarations(slot, icon.Printed);
 
     private IEnumerable<int> Candidates(Slot slot)
     {

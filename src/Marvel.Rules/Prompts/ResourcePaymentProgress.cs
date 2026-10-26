@@ -51,7 +51,7 @@ public static class ResourcePaymentProgress
         if (slots is null) return null;
         // Repository policy: reserve scarce typed icons before showing generic shortages.
         slots = slots.OrderBy(slot => slot.Required is null ? 1 : 0).ToList();
-        var uncovered = new ResourceAllocationSearch(slots, sources).Uncovered();
+        var uncovered = new ResourceCoverageSearch(slots, sources).Uncovered();
         return Array.AsReadOnly(option.ResourceCosts.Select((cost, index) =>
             new ResourceComponentProgress(index, slots.Count(slot => slot.Component == index),
                 uncovered.Count(slot => slot.Component == index),
