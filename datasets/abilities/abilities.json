@@ -18582,6 +18582,226 @@
           }
         }
       ]
+    },
+    {
+      "card": "08014",
+      "name": "The Power of Justice",
+      "note": "This card generates one wild resource normally and doubles that output while paying for a Justice card.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "doubleResourceFor": "Justice"
+          }
+        }
+      ]
+    },
+    {
+      "card": "08015",
+      "name": "Interrogation Room",
+      "note": "After a character controlled by this support's controller defeats a minion, its response exhausts the support and removes 1 threat from a chosen scheme.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardDefeated",
+            "timing": "Response",
+            "subject": "game"
+          },
+          "when": {
+            "and": [
+              {
+                "isKind": {
+                  "card": "defeated",
+                  "kind": "minion"
+                }
+              },
+              {
+                "defeatedByYou": "you"
+              }
+            ]
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "schemes"
+              },
+              "effect": {
+                "removeThreat": {
+                  "scheme": "chosen",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "08016",
+      "name": "Surveillance Team",
+      "note": "Uses 3 snoop counters is a printed keyword. Its Action exhausts the support and removes one counter to remove 1 threat from a scheme.",
+      "startingCounters": {
+        "type": "snoop",
+        "count": 3,
+        "uses": true
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "removeCounters": {
+                  "card": "this",
+                  "counter": "snoop",
+                  "count": 1
+                }
+              }
+            ]
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "schemes"
+              },
+              "effect": {
+                "removeThreat": {
+                  "scheme": "chosen",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "08019",
+      "name": "Nick Fury",
+      "note": "After Nick Fury enters play, choose one printed effect. The same response records the delayed end-of-round discard, which does nothing if he has already left play.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "ForcedResponse",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "descriptions": [
+                    "Remove 2 threat from a scheme",
+                    "Draw 3 cards",
+                    "Deal 4 damage to an enemy"
+                  ],
+                  "options": [
+                    {
+                      "chooseCard": {
+                        "from": {
+                          "query": "schemes"
+                        },
+                        "effect": {
+                          "removeThreat": {
+                            "scheme": "chosen",
+                            "amount": 2
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "draw": {
+                        "player": "you",
+                        "count": 3
+                      }
+                    },
+                    {
+                      "chooseCard": {
+                        "from": {
+                          "query": "enemies"
+                        },
+                        "effect": {
+                          "dealDamage": {
+                            "cards": "chosen",
+                            "amount": 4
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "delayUntil": {
+                  "condition": "WhenRoundEnds",
+                  "effect": {
+                    "discard": "this"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "08020",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "08021",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "08022",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "08027",
+      "name": "Killer for Hire",
+      "note": "Printed 08027: add one threat per starting player when revealed, in addition to its printed starting threat. Acceleration and three numeric boost icons are read from the printed catalog.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": "this",
+              "amount": {
+                "perPlayer": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "08028",
+      "name": "Hydra Mercenary",
+      "note": "Guard, and nothing else. rr:guard is a keyword the engine reads off the printed field -- see docs/keywords.md -- so there is no ability here to author.",
+      "abilities": []
     }
   ]
 }
