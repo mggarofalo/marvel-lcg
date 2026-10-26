@@ -11,8 +11,8 @@ public sealed class StatusRecipientContractTests
     [Fact]
     public void OfferQueriesPreserveRngPendingWorkAndUnprobedCompletion()
     {
-        var (world, game, deck, runner) = BoardWithSpecial(SevenRingsRecipientTests.Special, true, "09034", 1);
-        var (control, controlGame, controlDeck, _) = BoardWithSpecial(SevenRingsRecipientTests.Special, true, "09034", 1);
+        var (world, game, deck, runner) = BoardActual("09034", true, true);
+        var (control, controlGame, controlDeck, _) = BoardActual("09034", true, true);
         string before = Snapshot(world);
         for (int i = 0; i < 3; i++)
             foreach (var action in runner.Actions(world, 1)) _ = runner.Describe(world, action);

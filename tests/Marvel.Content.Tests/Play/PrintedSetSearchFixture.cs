@@ -7,8 +7,8 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Test-local 09006 program uses its printed text on nonpublic prepared boards.
-// It proves the shared selector prerequisite, not production content admission.
+// Actual Studies by default; altered selectors are explicit synthetic controls.
+// Prepared boards do not establish product admission.
 internal static class PrintedSetSearchFixture
 {
     internal const string Areas = "\"areas\":[\"yourDeck\",\"yourDiscardPile\"]";
@@ -38,7 +38,7 @@ internal static class PrintedSetSearchFixture
         var cards = Enumerable.Range(32, 5).Select(id => world.CreateCard($"090{id}", aside)).ToArray();
         var invocation = InvocationDeck.Initialize(world, 1, cards, "test setup", []);
         World.MoveToTop(cards.Single(c => c.FaceId == "09032"), invocation.Discard);
-        world.Abilities = runner ?? Runner();
+        world.Abilities = runner ?? Marvel.Content.Tests.Cards.AuthoredCards.Runner();
         return world;
     }
 

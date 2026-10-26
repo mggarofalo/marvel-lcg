@@ -157,10 +157,10 @@ public sealed class DoctorStrangeResponseEventTests
         using var book = System.Text.Json.JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
         string[] added = ["09016", "09021", "09037", "09038"];
-        Assert.Equal(667, rows.Length);
+        Assert.Equal(671, rows.Length);
         Assert.Equal(added, rows.Skip(661).Take(4).Select(row => row.GetProperty("card").GetString()));
         Assert.All(rows.Skip(661).Take(4), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.Equal(22, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
+        Assert.Equal(26, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
         Assert.Contains("09001a", AuthoredCards.Book.Authored);
         Assert.DoesNotContain("09020", AuthoredCards.Book.Authored);
     }

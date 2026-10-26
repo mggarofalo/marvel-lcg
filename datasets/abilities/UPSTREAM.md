@@ -308,3 +308,14 @@ Doctor Strange remains outside complete-product public admission.
 Doctor Strange constant/resource research adds 09009, 09011 and 09026 (MARVEL-801). The preceding 651 raw row objects remain intact; 9/40 faces are authored. Printed authority is datasets/cards/cards.json; no starting counters or public admission changes. See docs/content/doctor-strange-constants-evidence.md.
 
 Doctor Strange response-event research adds 09016, 09021, 09037 and 09038 (MARVEL-803), preserving the preceding 654 raw row objects. There are 13/40 authored faces; public admission remains closed. See docs/content/doctor-strange-response-events-evidence.md.
+Doctor Strange's next four actual rows (MARVEL-810/813) append 09006 Mystical
+Studies, 09010 Magical Enhancements, 09032 Crimson Bands of Cyttorak and 09034
+Seven Rings of Raggadorr. There are 671 authored rows and 26/40 Strange faces.
+All 667 predecessor raw objects remain byte-identical. Printed authority is
+`datasets/cards/cards.json`; current RR 1.8 search, control, forced, target and
+status clauses govern, with the current-compatible Invocation rulings recorded
+in `docs/content/doctor-strange-next-four-rows.md`. The rows add no starting
+counters and change no engine capability, setup or public admission. Actual-book
+search, multiplayer ownership/form/round-end and both Invocation caller lifecycle
+tests gate these authored interpretations. Synthetic alternate effects remain
+explicit fixture replacements; duplicate admission remains strict.

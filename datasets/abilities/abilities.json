@@ -20527,6 +20527,187 @@
           }
         }
       ]
+    },
+    {
+      "card": "09006",
+      "name": "Mystical Studies",
+      "note": "Printed alter-ego search uses the exact Doctor Strange set in your deck and discard; the searched deck is shuffled even without a match. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "areas": [
+                      "yourDeck",
+                      "yourDiscardPile"
+                    ],
+                    "set": "doctor_strange"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "areas": [
+                        "yourDeck",
+                        "yourDiscardPile"
+                      ],
+                      "set": "doctor_strange"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "addToHand": "chosen"
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "shuffle": "yourDeck"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09010",
+      "name": "Magical Enhancements",
+      "note": "Printed play-under-control instruction uses the existing identity attachment contract. The current controller hero receives all three bonuses; mandatory round-end discard also applies in alter-ego. Research content; no complete-product admission.",
+      "attachTo": {
+        "query": "identities"
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "yourHero",
+                  "keyword": "thwart",
+                  "amount": 1
+                }
+              },
+              {
+                "grant": {
+                  "card": "yourHero",
+                  "keyword": "attack",
+                  "amount": 1
+                }
+              },
+              {
+                "grant": {
+                  "card": "yourHero",
+                  "keyword": "defense",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenRoundEnds",
+            "timing": "ForcedInterrupt",
+            "subject": "game"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "09032",
+      "name": "Crimson Bands of Cyttorak",
+      "note": "Printed enemy sentence gives Stun and seven ordinary damage to the chosen enemy; independent self-discard resolves even without an effective enemy. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Special",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "chooseCard": {
+                  "from": {
+                    "query": "enemies"
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "giveStatus": {
+                          "card": "chosen",
+                          "status": "stunned"
+                        }
+                      },
+                      {
+                        "dealDamage": {
+                          "cards": "chosen",
+                          "amount": 7
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "discardInvocation": "this"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09034",
+      "name": "Seven Rings of Raggadorr",
+      "note": "Printed Special gives up to three distinct characters Tough, including enemies; an explicit empty selection still independently discards this physical Invocation. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Special",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "chooseStatusRecipients": {
+                  "from": {
+                    "query": "characters"
+                  },
+                  "status": "tough",
+                  "maximum": 3
+                }
+              },
+              {
+                "discardInvocation": "this"
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

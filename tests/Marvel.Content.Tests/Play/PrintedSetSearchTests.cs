@@ -23,7 +23,7 @@ public sealed class PrintedSetSearchTests
         var seat = world.Seats[1];
         var deck = world.CreateCard("09007", seat.Deck);
         var pile = world.CreateCard("09007", Discard(world));
-        var otherHero = world.CreateCard("01005", seat.Deck);
+        var otherHero = world.CreateCard("01016", seat.Deck);
         var samePack = world.CreateCard("09012", seat.Deck);
         var foreign = world.CreateCard("09007", world.Seats[0].Deck);
         var foreignDiscard = world.CreateCard("09007", Discard(world, 0));
@@ -68,7 +68,7 @@ public sealed class PrintedSetSearchTests
     public void NoExactMatchStillPaysPrintedCostAndShuffles(string set)
     {
         // "If any portion of a deck is searched ... shuffle that entire deck."
-        var world = Board(Runner(Areas + ",\"set\":\"" + set + "\""));
+        var world = Board(set == "doctor_strange" ? null : Runner(Areas + ",\"set\":\"" + set + "\""));
         if (set != "doctor_strange") world.CreateCard("09007", world.Seats[1].Deck);
         long words = world.Random.Generator.WordsConsumed;
         PlayStudies(world);

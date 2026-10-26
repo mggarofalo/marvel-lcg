@@ -4,7 +4,7 @@ Canonical parent: MARVEL-565. The [40-face handoff](research/remaining/doctor-st
 defines complete scope. This branch contains nonpublic prerequisites, not admitted
 Doctor Strange content.
 
-Latest integration: 667 authored rows, 22 of the 40 Strange faces. Exact printed-set
+Latest integration: 671 authored rows, 26 of the 40 Strange faces. Exact printed-set
 search source `4261d57f` and review `f7e59a6c` are integrated at `36628a0b`; its
 combined search checks pass 40 cases. Four response-event rows from `4953b480`
 and independent event review `de7310c9` now accompany the complete healing-cost
@@ -27,15 +27,16 @@ closed until the complete pack and its integration evidence are ready.
 
 Images/Vapors production source `06fcca2a` and independent review `706fa8bf`
 are integrated, preserving all 665 predecessor raw objects. Crimson's prerequisite
-source `b0eb9178` and review `4e192432` are integrated; its production row remains
-to author. Combined content/Invocation/Black Widow checks pass 479 cases with no
+source `b0eb9178` and review `4e192432` are integrated; production-row integration
+is recorded below. Combined content/Invocation/Black Widow checks pass 479 cases with no
 failures or skips (`Source/evidence/strange-invocation-crimson-integration.log`).
 Seven Rings prerequisite source `8733cc9b` and independent review `5fe8b7ad` are
 also integrated. Its final combined selection/Invocation/Crimson checks pass 127
 cases (`Source/evidence/strange-seven-rings-integration.log`). The existing fixture
 keeps one optional-last-card overload; DSL documentation preserves exact-set,
 independent enemy choice and complete status-subset contracts together.
-The Seven Rings production row and downstream native/contract proof remain open.
+Seven Rings production-row integration follows below; downstream native/contract
+proof remains open.
 
 Hosted Invocation source `76866793` and independent review `68dd71c6` are
 integrated. The printed Open the Dark Dimension return is a When Defeated
@@ -48,6 +49,17 @@ The integrated Content selection passes 146 cases, with no failures/skips:
 `Source/evidence/strange-hosted-integration-content.log`. See
 [hosted prerequisite evidence](doctor-strange-hosted-invocation-prerequisite.md).
 The production 09029 row and public save/replay/native proofs remain open.
+
+Four production rows from `e4081bcb`, independently reviewed at `cadc8a2a`, add
+Mystical Studies, Magical Enhancements, Crimson Bands and Seven Rings. All 667
+predecessor raw objects are unchanged. Source evidence includes five distinguishing
+actual-program mutants, restored nonincremental build, 250 affected cases and the
+offline generated-card check. Independent review adds six controls for simultaneous
+two-copy Enhancements cleanup and Seven Rings ally/minion recipients; 256 cases
+and normal hooks pass. Integration with hosted lifecycle, existing Strange and
+Black Widow content passes 526 cases, none failed/skipped:
+`Source/evidence/strange-next-four-integration.log`. See
+[four-row evidence](doctor-strange-next-four-rows.md).
 
 Reviewed lifecycle source 3a20ae07 and review dd5b2f4a reuse player-owned additional
 deck/discard zones with exact physical binding, seeded shuffle, post-mulligan top

@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Test-local printed 09034; no production book row or pack admission.</summary>
+/// <summary>Actual printed 09034 on nonpublic boards; no pack admission.</summary>
 public sealed class SevenRingsRecipientTests
 {
     internal const string Special = """
@@ -28,7 +28,7 @@ public sealed class SevenRingsRecipientTests
     {
         // "The same target cannot be chosen multiple times this way."
         // Printed 09034: "Give up to 3 characters each a tough status card."
-        var (world, game, deck, _) = BoardWithSpecial(Special, last, "09034", master ? 1 : 0);
+        var (world, game, deck, _) = BoardActual("09034", last, master);
         var hero = world.Seats[1].IdentityCard;
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var other = world.Seats[0].IdentityCard;
@@ -81,7 +81,7 @@ public sealed class SevenRingsRecipientTests
     [InlineData("resources")]
     public void InvalidGroupPreservesCurrentChoiceAndEntireResolution(string kind)
     {
-        var (world, game, deck, _) = BoardWithSpecial(Special, false, "09034", 0);
+        var (world, game, deck, _) = BoardActual("09034", false, false);
         var extra = world.CreateCard("01002", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
         game.Resolve(Payment(world, game, false, deck.PublicTop!));
         var offer = Assert.Single(game.Pending!.Affordances);
@@ -117,7 +117,7 @@ public sealed class SevenRingsRecipientTests
     {
         // "A character cannot have more than one status card of each type at a time."
         // A target "is not valid" when another ability says it cannot perform the function.
-        var (world, game, deck, _) = BoardWithSpecial(Special, false, "09034", master ? 1 : 0);
+        var (world, game, deck, _) = BoardActual("09034", false, master);
         foreach (var seat in world.Seats)
             world.CreateCard(Statuses.Tough, world.AreaOf(DeckType.StatusArea, host: seat.IdentityCard.ObjectId));
         var villain = world.TheCardIn(DeckType.VillainArea)!;

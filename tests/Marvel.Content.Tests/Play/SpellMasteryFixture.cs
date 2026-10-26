@@ -37,6 +37,13 @@ internal static class SpellMasteryFixture
             replacements.Add(System.Text.Json.Nodes.JsonNode.Parse(
                 $$"""{"card":"{{selected}}","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Special","subject":"this"},"effect":{{effect}}}]}"""));
         }
+        return WithUnsupportedControl(replacements, unsupported);
+    }
+
+    private static AbilityRunner WithUnsupportedControl(System.Text.Json.Nodes.JsonArray replacements, bool unsupported)
+    {
+        if (unsupported)
+            replacements.Add(System.Text.Json.Nodes.JsonNode.Parse("""{"card":"09032","abilities":[]}"""));
         return DoctorStrangeAbilityFixture.WithReplacements(replacements);
     }
 

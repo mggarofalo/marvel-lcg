@@ -9,7 +9,7 @@ using static Marvel.Content.Tests.Play.SpellMasteryFixture;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Exact proposed Crimson row with an explicitly synthetic damage prohibition.</summary>
+/// <summary>Actual Crimson row with an explicitly synthetic damage prohibition.</summary>
 internal static class CrimsonIndependentDiscardFixture
 {
     internal const string EnemySentence = """
@@ -21,7 +21,8 @@ internal static class CrimsonIndependentDiscardFixture
     internal static AbilityRunner Runner(bool blocked, string? special = null)
     {
         string effect = special ?? $$"""{"seq":[{{EnemySentence}},{"discardInvocation":"this"}]}""";
-        var replacements = new JsonArray(JsonNode.Parse($$"""
+        var replacements = new JsonArray();
+        if (special is not null) replacements.Add(JsonNode.Parse($$"""
             {"card":"09032","abilities":[{"trigger":{"event":"WhenActionTriggered",
              "timing":"Special","subject":"this"},"effect":{{effect}}}]}
             """));

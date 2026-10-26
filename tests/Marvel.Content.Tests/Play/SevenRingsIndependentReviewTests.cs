@@ -22,7 +22,7 @@ public sealed class SevenRingsIndependentReviewTests
     {
         // Printed 09034: "Give up to 3 characters each a tough status card."
         // "The same target cannot be chosen multiple times this way."
-        var (world, game, deck, _) = BoardWithSpecial(SevenRingsRecipientTests.Special, last, "09034", master ? 1 : 0);
+        var (world, game, deck, _) = BoardActual("09034", last, master);
         var original = deck.PublicTop!;
         var hero = world.Seats[0].IdentityCard;
         var villain = world.TheCardIn(DeckType.VillainArea)!;
@@ -115,7 +115,7 @@ public sealed class SevenRingsIndependentReviewTests
     public void NewlyForbiddenSecondRecipientRejectsTheEntireSubsetBeforeGivingTheFirst(bool master)
     {
         // A target is invalid if another ability says it "cannot perform" the function.
-        var (world, game, deck, _) = BoardWithSpecial(SevenRingsRecipientTests.Special, false, "09034", master ? 1 : 0);
+        var (world, game, deck, _) = BoardActual("09034", false, master);
         var original = deck.PublicTop!;
         var first = world.Seats[0].IdentityCard;
         var second = world.TheCardIn(DeckType.VillainArea)!;
