@@ -123,6 +123,11 @@ preserving every rejection assertion. Supported identity faces have zero permitt
 player-deck quantity; unsupported faces remain absent from the quantity map.
 Whole-game replays supplement focused rules evidence; record whether they exercise
 victory, defeat, promotion and campaign continuation rather than inferring it.
+Apply the canonical pack's outcome requirements: scenario packs need their stated
+victory/defeat matrix; hero packs need representative complete games and focused
+characteristic, nemesis, obligation and extra-card evidence. Do not invent a
+hero-specific victory gate or spend repeated tactical-policy packets pursuing one
+unless a stated requirement or concrete unproved behavior needs that outcome.
 
 ## Select verification by consequence
 

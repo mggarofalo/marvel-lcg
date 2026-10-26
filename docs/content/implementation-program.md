@@ -61,10 +61,12 @@ Hammer Throw now survives admitted villain-stage reveals and its exact upgrade
 return. Independent review adds actual two-player Absorbing Man stage effects,
 health settlement/elimination and nested continuation refusal; 53 restored
 Hammer Throw checks and all ten unchanged public replay games pass. These games
-are losses, so victory proof remains open. Heimdall's native ordered return and
+are losses and satisfy the canonical hero-pack representative-game requirement;
+the explicit victory/defeat matrix applies to scenario packs. Heimdall's native ordered return and
 150% footer fix pass final affected checks with inspected captures. Lightning
-Strike's actual combined payment exposes a remaining-cost explanation gap
-(MARVEL-761); its separate engine-owned progress fix is in flight. Combined
+Strike's actual combined payment explanation (MARVEL-761) is independently
+reviewed and integrated through `63937f6d`, including bounded partial-coverage
+search. Rendered 100%/150% payment journeys pass. Combined
 managed/replay/platform certification and the Thor PR remain open. The
 [checkpoint](thor-delivery-checkpoint.md) records exact evidence boundaries.
 

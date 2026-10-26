@@ -1,6 +1,6 @@
 # Thor delivery checkpoint
 
-MARVEL-563, integration `707a0ed1`, 2026-10-26. The branch contains a complete
+MARVEL-563, runtime integration `63937f6d`, 2026-10-26. The branch contains a complete
 public Thor admission candidate; it is not merged or accepted. This record
 supplements the 35-face implementation handoff and does not replace complete
 pack acceptance.
@@ -33,13 +33,17 @@ elimination, and nested nonterminal refusal. The restored review passes 53
 Hammer Throw checks and all ten unchanged public games; a compiled terminal
 admission mutant kills the intended health-settlement cases. See the
 [independent stage review](thor-hammer-terminal-stage-review.md). All ten public
-outcomes are losses; victory evidence remains open.
+outcomes are losses. They satisfy the canonical hero-pack requirement for
+representative complete games across Core and Rise of Red Skull. The explicit
+victory/defeat matrix belongs to scenario-pack acceptance. Exploratory attempts to
+produce an additional Thor victory are optional strategy research, not a Thor gate.
 
 Actual Lightning Strike printed-plus-energy payment native proof exposed
-MARVEL-761: the generic payment progress omits useful remaining typed cost after
-choosing X. The managed prepared fixture proves actual payment and damage, but
-the native journey stops at that explanation. The fix must extend engine-owned
-progress facts; the renderer may not recreate allocation rules. Final combined
+MARVEL-761. The independently reviewed fix is integrated through `63937f6d`,
+including efficient engine-owned partial coverage and deterministic typed
+preference. Rendered 100%/150% journeys now pass full payment/cancel/reopen and
+single-commit damage assertions; captures were inspected. See
+[typed payment evidence](thor-typed-payment-progress.md). Final combined
 managed/replay/platform checks remain open. These are agent-owned gates, not a
 content approval request.
 
@@ -60,6 +64,18 @@ Logs are `C:/Users/mggar/Source/evidence/thor-combined-{build,unit,integration}.
 `thor-rules-count-corrected.log`, `thor-admission-and-predecessor-corrected.log`
 and `thor-socket-isolated-rerun.log` in that evidence directory. These precede
 integration of the typed payment-progress fix and are not final certification.
+
+After typed progress integration, the Release solution build passes with zero
+warnings. All 524 Server tests and all 160 Acceptance tests pass. The full Godot
+run passes 974 tests with one intentional native-environment skip and identifies
+the missing exact dependency registration for `ResourceComponentProgress`.
+Registering that independently reviewed immutable contract passes all 19 focused
+Godot boundary, composition and actual Lightning scene checks. This adds no
+allocation authority to Godot. The architecture and release checks pass 129 and
+36 tests respectively. Logs: `thor-final-build.log`, `thor-final-integration.log`,
+`thor-final-godot-boundary.log`, and `thor-final-acceptance.log` in the same
+external evidence directory. Required PR CI must certify the final revision on
+both platforms before merge and acceptance.
 
 All 35 actual Thor faces have independent review. Lightning Strike and Get Over
 Here are integrated at `17ae7218`/`1c2a63a4`; Loki is authored at `ad1ec15a`

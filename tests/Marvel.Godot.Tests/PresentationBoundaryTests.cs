@@ -95,6 +95,8 @@ public sealed class PresentationBoundaryTests
             // Public prompt purpose selects a presentation surface, not game legality.
             "Marvel.Rules.Prompts.PublicDecisionKind",
             "Marvel.Rules.Prompts.ResourceCost",
+            // Read-only engine-suggested shortages; Godot does not allocate resources.
+            "Marvel.Rules.Prompts.ResourceComponentProgress",
             "Marvel.Rules.Prompts.ResourceSource",
             "Marvel.Rules.Prompts.TargetRequest",
             "Marvel.Rules.Prompts.VariableRequest",
