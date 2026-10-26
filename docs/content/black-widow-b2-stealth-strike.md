@@ -60,8 +60,56 @@ and `Preparation`, alongside Stealth Strike.
 
 ## Remaining proof
 
-Independent review and integrated broader gates remain required. This packet
-does not include durable JSON replay/host-restart evidence. The supported
-`IDurableGameFactory` injection seam used by `PreparationReplayReviewFactory`
-can supply this same nonpublic row for that evidence. No public Black Widow
-setup journey is claimed.
+Integrated broader gates remain required. No public Black Widow setup journey
+is claimed.
+
+## Independent review and durable evidence
+
+Independent source/authority review of `527b6aedb9a23627aa50b4027e3f9b3069a64401`
+found no correctness defect in this bounded engine prerequisite. The printed
+08013 text requires actual defeat by this attack; RR 1.8 damage steps 6–9 and
+the current defeat definition govern. The historical Loki answer's conclusion
+for Stealth Strike agrees with this requirement; its older overkill explanation
+does not govern RR 1.8. The implementation reads the owned attack execution's
+settled occurrence, and the condition compares the retained card/incarnation.
+The only production `wasDefeatedByDamage` composition in the reviewed ability
+book is 07016's direct damage; this patch does not alter that path.
+
+`StealthStrikeAttributionReviewTests` adds three independent controls. A stunned
+attack pays and discards its event/payment but damages no enemy and removes no
+threat. A synthetic nested response's direct damage may defeat either the
+attacked survivor or a different enemy; neither defeat earns Stealth Strike's
+threat removal. Together with the original eleven cases, these challenge
+unrelated causal attribution, cancellation, Loki replacement, reentry, no threat,
+query purity and invalid-answer retry.
+
+`StealthStrikeReplayReviewFactory` uses the existing supported
+`IDurableGameFactory` injection seam, with a test-only full printed 08013
+composition and a synthetic 08023 defeat-response choice. Its two main/side
+cases strictly round-trip session and stored-session JSON, replay the complete
+prefix, and instantiate fresh `EngineHost` objects from copied stores at the
+suspended response and again at the following scheme choice. They compare
+uninterrupted/replayed/restarted state digest, full RNG state and consumed-word
+count, prompt records, phase, round and subsequent raw event traces. A foreign
+scheme answer preserves the canonical save and live state/prompt/RNG before a
+valid retry. Both paths finish the action with the expected two threat removed.
+This proves reconstruction through the host's startup path, not a separate
+process or filesystem durability test. No production row or admission changes
+are included.
+
+Review validation on Windows:
+
+- All fourteen Stealth Strike content cases passed.
+- Both new durable cases passed; the combined restored server selection also
+  includes the existing Preparation replay review.
+- A compiled regression mutant restores the staged-recipient filter in
+  `AbilityDamageCompletion.Defeats`; both durable cases fail because the scheme
+  continuation disappears. The source was restored byte-for-byte and rebuilt
+  with `--no-incremental` before the restored verification.
+
+Logs are outside the repository under
+`C:/Users/mggar/AppData/Local/Temp/bw-stealth-review-*`: `content.log`,
+`server.log`, `mutant.log`, `restored-build.log`, `restored-server.log` and
+`restored-content.log`. Ordinary pre-commit gates remain enabled for the review
+commit. Verdict: accept the B2 engine mechanism and its nonpublic durable
+evidence; broader integration and public content admission remain separate.
