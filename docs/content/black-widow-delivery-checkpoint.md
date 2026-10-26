@@ -318,3 +318,25 @@ existing targetless-thwart visibility filter. Its exact EventCauseKind equality
 operator is a passive event-fact comparison, independently reviewed; no gameplay
 call, wildcard exemption or debt baseline is admitted. All 129 architecture tests
 and 368 View tests pass with that exact allowlist addition.
+
+## Compact choice gallery regression
+
+CI run `40379535871` on `e7a109ef` exposed the same Ancestral Knowledge 150%
+viewport failure on Windows and Linux. The Windows desktop package passed;
+that does not establish the native gallery gate. MARVEL-800 tracks the repair.
+
+Source `63407425`, integrated as `1d6f1ac9`, removes a resolution label only
+when its complete text is already visible in the draft summary and places
+selection status beside page navigation. Card geometry, the 80% minimum,
+no-scroll rule and every-card visibility assertions remain unchanged. Additional
+checks require the summary, selection and commit bar to remain fully visible.
+
+Seven targeted native cases pass, covering Ancestral Knowledge 150% and
+Safe House 100%/150% plus Preparation 150% headless/rendered paths. Separate
+rendered Ancestral captures were inspected at 1280x900 and 1060x1080. Independent
+review rebuilt the exact source, passed Ancestral's complete compact journey
+and inspected these captures plus the longer Safe House explanation. No findings
+remain. Normal source hooks pass all 66 architecture checks, complexity and
+file length. Artifacts are under `Source/evidence/complete-sheet-final-20261026`,
+`complete-sheet-rendered-20261026` and `complete-sheet-independent-20261026`.
+Replacement CI on the updated PR candidate remains required before merge.
