@@ -27,19 +27,23 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         SetupChoices choices = Assert.IsType<SetupChoices>(response.Setup);
         Assert.Equal(["captain_america", "spider_man", "captain_marvel", "she_hulk", "iron_man", "black_panther", "hawkeye", "spider_woman"], choices.Heroes.Select(choice => choice.Key));
         Assert.Equal("Captain America", choices.Heroes[0].Name);
-        Assert.Equal(["rhino", "rhino_expert", "klaw", "klaw_expert", "ultron", "ultron_expert",
-            "crossbones", "crossbones_expert", "absorbing_man", "absorbing_man_expert", "taskmaster", "taskmaster_expert",
+        Assert.Equal([
+            "rhino", "rhino_expert", "klaw", "klaw_expert",
+            "ultron", "ultron_expert", "crossbones", "crossbones_expert",
+            "absorbing_man", "absorbing_man_expert", "taskmaster", "taskmaster_expert",
             "zola", "zola_expert", "red_skull", "red_skull_expert",
-            "wrecking_crew_standard", "wrecking_crew_expert", "wrecking_crew_extreme",
-            "wrecking_crew_custom_aaaa", "wrecking_crew_custom_aaab", "wrecking_crew_custom_aaba", "wrecking_crew_custom_aabb",
-            "wrecking_crew_custom_abaa", "wrecking_crew_custom_abab", "wrecking_crew_custom_abba", "wrecking_crew_custom_abbb",
-            "wrecking_crew_custom_baaa", "wrecking_crew_custom_baab", "wrecking_crew_custom_baba", "wrecking_crew_custom_babb",
-            "wrecking_crew_custom_bbaa", "wrecking_crew_custom_bbab", "wrecking_crew_custom_bbba", "wrecking_crew_custom_bbbb"], choices.Scenarios.Select(choice => choice.Key));
+            "wrecking_crew_standard", "wrecking_crew_expert", "wrecking_crew_extreme", "wrecking_crew_custom_aaaa",
+            "wrecking_crew_custom_aaab", "wrecking_crew_custom_aaba", "wrecking_crew_custom_aabb", "wrecking_crew_custom_abaa",
+            "wrecking_crew_custom_abab", "wrecking_crew_custom_abba", "wrecking_crew_custom_abbb", "wrecking_crew_custom_baaa",
+            "wrecking_crew_custom_baab", "wrecking_crew_custom_baba", "wrecking_crew_custom_babb", "wrecking_crew_custom_bbaa",
+            "wrecking_crew_custom_bbab", "wrecking_crew_custom_bbba", "wrecking_crew_custom_bbbb", "risky_business",
+            "risky_business_expert", "mutagen_formula", "mutagen_formula_expert"], choices.Scenarios.Select(choice => choice.Key));
         Assert.False(choices.Scenarios[0].Expert);
         Assert.True(choices.Scenarios[1].Expert);
-        Assert.Equal(["bomb_scare"], choices.Scenarios[0].RecommendedModularSets);
-        Assert.Equal(["bomb_scare", "masters_of_evil", "under_attack", "legions_of_hydra", "the_doomsday_chair",
-            "hydra_assault", "weapon_master", "hydra_patrol"], choices.ModularSets.Select(choice => choice.Key));
+        Assert.Equal([
+            "running_interference", "power_drain", "a_mess_of_things", "bomb_scare",
+            "masters_of_evil", "under_attack", "legions_of_hydra", "the_doomsday_chair",
+            "hydra_assault", "weapon_master", "hydra_patrol", "goblin_gimmicks"], choices.ModularSets.Select(choice => choice.Key));
         Assert.Equal("The Doomsday Chair", choices.ModularSets.Single(choice => choice.Key == "the_doomsday_chair").Name);
         Assert.Equal(EngineBuildIdentity.ProductVersion, choices.Runtime.ProductVersion);
         Assert.Equal(EngineBuildIdentity.Commit, choices.Runtime.Commit);

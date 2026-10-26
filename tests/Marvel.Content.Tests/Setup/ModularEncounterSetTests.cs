@@ -17,17 +17,16 @@ public sealed class ModularEncounterSetTests
     {
         var admitted = RuntimeProductAdmission.Discover(Setup, Cards,
             Cards.Faces.ToHashSet(StringComparer.Ordinal)).Setup;
-        Assert.DoesNotContain("a_mess_of_things", admitted.EncounterSetNames);
+        Assert.Contains("a_mess_of_things", admitted.EncounterSetNames);
         var modular = admitted.EncounterSetNames
             .Where(name => ModularEncounterSets.IsModular(admitted, Cards, name))
             .ToList();
 
         Assert.Equal(
             [
-                "bomb_scare", "masters_of_evil", "under_attack",
-                "legions_of_hydra", "the_doomsday_chair",
-                "hydra_assault", "weapon_master", "hydra_patrol",
-            ],
+                "running_interference", "power_drain", "a_mess_of_things", "bomb_scare",
+                "masters_of_evil", "under_attack", "legions_of_hydra", "the_doomsday_chair",
+                "hydra_assault", "weapon_master", "hydra_patrol", "goblin_gimmicks"],
             modular);
         foreach (string name in modular)
         {

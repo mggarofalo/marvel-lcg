@@ -30,12 +30,11 @@ public sealed class PowerDrainSetupTests
     }
 
     [Fact]
-    public void ResearchModularRecipeStaysOutsideRuntimeDiscoveryEvenWithEveryFaceAuthored()
+    public void IncompleteProductClosesModularRecipeDiscovery()
     {
-        // Product acceptance is repository policy. Complete authoring alone
-        // cannot admit the Green Goblin product or one of its modular sets.
+        // Product admission requires every face, including faces outside this modular set.
         var admitted = RuntimeProductAdmission.Discover(Setup, Cards,
-            Cards.Faces.ToHashSet(StringComparer.Ordinal));
+            Cards.Faces.Where(face => face != "02049").ToHashSet(StringComparer.Ordinal));
 
         Assert.Contains("power_drain", Setup.EncounterSetNames);
         Assert.DoesNotContain("power_drain", admitted.Setup.EncounterSetNames);

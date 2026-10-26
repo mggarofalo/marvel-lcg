@@ -18,7 +18,7 @@ public sealed class RiseOfRedSkullSetupDataTests
         var admitted = RuntimeProductAdmission.Discover(Setup, cards, cards.Faces.ToHashSet(StringComparer.Ordinal));
         Assert.Equal(8, admitted.Setup.HeroNames.Count);
         Assert.Equal(14, Setup.EncounterSetNames.Count);
-        Assert.Equal(10, admitted.Setup.EncounterSetNames.Count);
+        Assert.Equal(14, admitted.Setup.EncounterSetNames.Count);
         foreach (string scenario in new[] { "crossbones", "absorbing_man", "taskmaster", "zola", "red_skull" })
         {
             var standard = Setup.Campaign(scenario);
