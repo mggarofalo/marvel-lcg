@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Test-local printed interpretation with an explicit unsupported receipt selector.
+// Test-local printed interpretation; this does not admit the Black Widow pack.
 public sealed class BlackWidowRapidResponseCompositionTests
 {
     [Theory]
@@ -104,7 +104,7 @@ public sealed class BlackWidowRapidResponseCompositionTests
           "cost":{"discard":"this"},
           "effect":{"seq":[
             {"putIntoPlay":{"card":{"defeatedAllyInYourDiscardPile":"you"},"where":"yourPlayArea"}},
-            {"dealDamage":{"cards":"defeated","amount":1}}
+            {"dealDamage":{"cards":"chosen","amount":1}}
           ]}
         }]}
         """;

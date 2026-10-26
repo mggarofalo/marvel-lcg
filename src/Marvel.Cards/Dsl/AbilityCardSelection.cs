@@ -37,6 +37,8 @@ public abstract record AbilityCardSelection
         CardKind? Kind, string? Trait) : AbilityCardSelection;
     /// <summary>Cards defeated with an assignment in this occurrence, still the same copy.</summary>
     public sealed record DefeatedWithProfile(string Profile, bool RequiresFaceDown) : AbilityCardSelection;
+    /// <summary>The exact defeated controlled ally, still that incarnation in your discard.</summary>
+    public sealed record DefeatedAllyInYourDiscardPile : AbilityCardSelection;
     /// <summary>Selected cards in ascending stable object-id order.</summary>
     public sealed record InObjectIdOrder(AbilityCardSelection Cards) : AbilityCardSelection;
     /// <summary>Cards without another attached copy of the source.</summary>

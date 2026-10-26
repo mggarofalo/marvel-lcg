@@ -52,6 +52,8 @@ public sealed record Defeated(int Card, int By, string How)
     public string? Title { get; init; }
     /// <summary>The copy that was defeated, for response target provenance.</summary>
     public int Incarnation { get; init; } = -1;
+    /// <summary>The controller before departure returns the card to its owner.</summary>
+    public int Controller { get; init; } = -1;
     /// <summary>The temporary assignment that ended in this defeat.</summary>
     public string? ProfileId { get; init; }
     /// <summary>The physical facing at the triggering condition.</summary>

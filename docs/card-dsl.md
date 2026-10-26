@@ -5,6 +5,17 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`defeatedAllyInYourDiscardPile: "you"` selects the exact physical ally from the
+current defeat receipt when its captured controller was the resolving player,
+its incarnation has not reentered play, and it is currently in that player's
+own discard pile. Ownership and present discard control do not prove control at
+defeat. Out-of-play movement followed by return to that discard remains eligible;
+reentry into play creates a new incarnation and invalidates the old receipt.
+This selector spelling is an engine choice. Putting this selection into
+`yourPlayArea` uses the ordinary ally-entry lifecycle and binds `chosen` to the
+returned incarnation for subsequent instructions, including after entry windows.
+These primitives do not admit Rapid Response or the Black Widow product.
+
 `villainAndMinionsEngagedWithYou` selects the current villain and every effective
 minion engaged with the resolving player. It follows the active villain and
 projected stage/engagement changes, excludes other players' minions, and can feed

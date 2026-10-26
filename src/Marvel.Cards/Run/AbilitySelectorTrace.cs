@@ -118,6 +118,7 @@ internal static class AbilitySelectorTrace
             && !trace.Discarded.Contains(candidate.ObjectId)
             && TraceEngagedWith(candidate, Seat(area.Player, trace.Cast), trace.Engagement),
         AbilityCardSelection.InPlayerArea or AbilityCardSelection.WithMatchingPlayerArea
+            or AbilityCardSelection.DefeatedAllyInYourDiscardPile
             or AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.InAreas
             => Every(selector, trace.Cast).Contains(candidate),
         AbilityCardSelection.Bound bound => BoundMatches(bound, candidate, trace),

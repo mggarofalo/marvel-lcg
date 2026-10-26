@@ -68,7 +68,7 @@ internal static class AbilityBindingAnalysis
         AbilityCardSelection.WithoutAnotherCopyAttached other => BindingCanChange(other.Cards),
         AbilityCardSelection.Discardable discardable => BindingCanChange(discardable.Cards),
         AbilityCardSelection.Ranked ranked => BindingCanChange(ranked.Cards),
-        AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait or AbilityCardSelection.InAreas => false,
+        AbilityCardSelection.DefeatedAllyInYourDiscardPile or AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait or AbilityCardSelection.InAreas => false,
         _ => throw new InvalidOperationException("Unknown compiled selector in binding analysis"),
     };
 
