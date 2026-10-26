@@ -261,6 +261,7 @@ internal sealed class AbilityAreaProjection
 
     internal bool MayChange()
     {
+        AbilityExhaustionResultProjection.Validate(effects, []);
         var initial = new AreaProjectionState(context);
         if (cost is not null) this.TraceCost(cost, initial);
         _ = TraceSequence(effects, [initial], baseMultiplier);

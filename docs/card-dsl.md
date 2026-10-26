@@ -1172,3 +1172,19 @@ reentered new copy. An ongoing ability may finish after its source leaves play. 
 choice; accepting an empty group does not undo costs. This operation suspends and
 resumes the ordinary ability continuation once. Its spelling and movement order
 (the submitted physical-id order) are engine choices.
+
+### Committed effect exhaustion
+
+`{ "result": "exhausted" }` is the number of ready-to-exhausted transitions
+committed by the latest `exhaust` effect in the current resolution. Each exhaust
+instruction replaces it, including with zero; later readying does not change it.
+The engine chooses this result name and replacement behavior. Exhaustion paid as
+a cost remains in the separate `cardsExhaustedForCost` receipt.
+
+Live resolution can consume this receipt after the exhaustion commits, including
+after nested choices. Area and labelled-power projections cannot produce it.
+They reject projected trees combining exhaustion and reads of this receipt,
+including exhaustion in prior sequence steps, before payment. The guard is
+conservative across branches and instruction order; it raises
+`RulesNotImplementedException` rather than substituting a live or zero receipt.
+Ordinary When Revealed exhaustion followed by healing or Surge resolves live.

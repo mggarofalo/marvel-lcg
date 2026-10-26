@@ -164,8 +164,12 @@ internal static class AbilityCardStateExecution
 
     private static void Exhaust(AbilityCardSelection selection, AbilityCardStateContext context)
     {
+        long exhausted = 0;
         foreach (var card in Every(selection, context))
-            AbilityCardOperations.Exhaust(card, context.Trigger, context.Events);
+            if (AbilityCardOperations.Exhaust(card, context.Trigger, context.Events)) exhausted++;
+        // Engine choice: the latest exhaust instruction replaces this resolution result,
+        // including zero. Only committed ready-to-exhausted transitions contribute.
+        context.Result.Values["exhausted"] = exhausted;
     }
 
     private static void Ready(AbilityCardSelection selection, AbilityCardStateContext context)
