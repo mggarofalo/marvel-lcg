@@ -48,6 +48,12 @@ that caused a continuation. Distinguish declared defense, completed attacks,
 damage prevented/dealt, defeat and replacement; do not substitute one receipt for
 another. Expected behavior must come from the card/rule/ruling, not these examples.
 
+Use the selected ability body and reachable branch when deciding whether an event
+has a qualifying effect. An inactive branch or another ability on the same card
+does not establish eligibility. Preflight must consider payment-dependent branches
+before committing costs; an empty payment receipt is not evidence of the eventual
+branch. Compare the preview with execution after modifiers and printed caps.
+
 When a bespoke engine effect implements a printed interrupt or response, preserve
 its timing tier and ordering alongside data-authored abilities. A priority hook
 must not silently resolve it before another simultaneous forced ability. For
