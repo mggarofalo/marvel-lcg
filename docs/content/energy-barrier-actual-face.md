@@ -20,3 +20,26 @@ actual play-to-final-use cases; restored 182 pass. External logs are
 energy-barrier-actual*.log and energy-barrier-uses-mutant.log. Explicit authored
 counter inventory includes reflection 3 Uses. Independent actual-row review remains
 required. Public Ms. Marvel admission remains closed.
+
+## Independent actual-face review
+
+Reviewed actual row e7c61942 as contained in candidate 5801f3ae in isolated
+marvel-lcg-energy-review. Read joined 05017 and raw faq:05017 alongside the
+previously accepted remaining-damage contract. Cost 2, reflection 3 Uses,
+identity-only recipient, either form, any damage and a chosen enemy agree with
+the printed face. The reflected dealDamage has no attack label. The explicit
+starting-counter inventory includes reflection 3 Uses.
+
+EnergyBarrierActualReviewTests adds four actual-book discovery cases: nonattack
+damage to seat 1's identity in either form offers its barrier despite stunned;
+another identity and its controller's ally cannot use it. These are prepared
+replacement/discovery probes, not full damage continuation. The existing actual
+paid-entry tests cover both forms, all three uses and reflected continuation
+after final-counter disposal. Twelve focused cases pass. A temporary data mutant
+removing the identity predicate fails the own-ally exclusion case; three controls
+pass. Original book bytes were restored, and the same twelve cases pass again.
+External evidence: C:/Users/mggar/Source/energy-barrier-review-{final,identity-mutant,restored}.log.
+
+Independent verdict: accept this bounded actual Energy Barrier face. No blocker
+remains in this scope. Public Ms. Marvel admission, hosted journeys, native
+interaction and integration-wide gates are not established by this review.
