@@ -10,16 +10,18 @@ namespace Marvel.Content.Tests.Play;
 public sealed class ThorStandardIndependentTests : CoreCardTestBase
 {
     [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
+    [InlineData(0, 0)]
+    [InlineData(0, 1)]
+    [InlineData(1, 0)]
+    [InlineData(1, 1)]
     [Rule("rr:you-your.6")]
-    public void OnlyTheDefeatingIdentitiesControllerGainsGlory(int attacker)
+    public void OnlyTheDefeatingIdentitiesControllerGainsGlory(int attacker, int controller)
     {
         // "the controlling player’s identity attacks and defeats a minion".
         var world = ThorActualFixture.Board("06001a", 2);
         var runner = AuthoredCards.Runner();
-        var halls = Enumerable.Range(0, 2).Select(player => world.CreateCard("06017",
-            world.AreaOf(DeckType.SupportsArea, PlayArea.Of(player), cardOwner: player))).ToArray();
+        var hall = world.CreateCard("06017",
+            world.AreaOf(DeckType.SupportsArea, PlayArea.Of(controller), cardOwner: controller));
         var minion = world.CreateCard("01101", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         minion.TakeDamage(2);
         BasicPowerInitiation.BasicAttack(world, world.Facts, attacker, minion, []);
@@ -28,15 +30,15 @@ public sealed class ThorStandardIndependentTests : CoreCardTestBase
         {
             var prompt = Sequence.Work(world, world.Facts, runner, []);
             if (prompt is null) break;
-            Assert.DoesNotContain(prompt.Affordances, offer => offer.AnchorId == halls[1 - attacker].ObjectId);
-            var offered = prompt.Affordances.SingleOrDefault(offer => offer.AnchorId == halls[attacker].ObjectId);
+            if (attacker != controller)
+                Assert.DoesNotContain(prompt.Affordances, offer => offer.AnchorId == hall.ObjectId);
+            var offered = prompt.Affordances.SingleOrDefault(offer => offer.AnchorId == hall.ObjectId);
             if (offered is not null) answers++;
             Sequence.Answer(world, world.Facts, runner, prompt,
                 offered is null ? Decision.Decline : Decision.Take(offered.Id), []);
         }
-        Assert.Equal(1, answers);
-        Assert.Equal(1, halls[attacker].Tokens.GetValueOrDefault("c_glory"));
-        Assert.Equal(0, halls[1 - attacker].Tokens.GetValueOrDefault("c_glory"));
+        Assert.Equal(attacker == controller ? 1 : 0, answers);
+        Assert.Equal(attacker == controller ? 1 : 0, hall.Tokens.GetValueOrDefault("c_glory"));
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
         Assert.Empty(world.Agenda.Outstanding);
     }

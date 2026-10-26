@@ -85,3 +85,16 @@ Raw logs are outside the repository at
 `C:/Users/mggar/Source/thor-standard-independent-{baseline,hall-mutant,fury-mutant,restored-build,restored-tests}.log`.
 This records a Windows managed review run, without a whole-solution, public setup,
 full-game or native UI claim.
+
+## Legal Hall ownership fixture correction
+
+Independent closeout identified that the first ownership test placed two unique
+Halls of Heroes in play. That board is not evidence of legal supported play.
+The corrected test uses one Hall across all four attacker/controller seat
+combinations. Together with the surviving-minion Battle Fury control and the
+three-type Trickster case, six independent cases pass. Removing Hall's
+`defeatedByYou` condition fails both foreign-controller cases. The original book
+bytes were restored, a nonincremental Release rebuild passed, and the identical
+six cases passed again. External evidence is
+`C:/Users/mggar/Source/thor-standard-legal-hall-{baseline,mutant,restored-build,restored}.log`.
+The corrected fixture supersedes the earlier two-Hall ownership evidence.
