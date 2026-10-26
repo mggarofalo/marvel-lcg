@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin research rows remain publicly excluded |
-| Records | 509 printed card faces, including explicit empty rows |
+| Records | 513 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -51,3 +51,12 @@ live blanking/departure, dependent projections and multiplayer reveal placement.
 The interpretation includes vendored ruling `ruling:6cc2957c6bbe4596` on
 card-forced flips; the queried MarvelCDB FAQ has no entry for this face.
 Green Goblin remains outside public admission.
+
+Goblin Gimmicks adds four authored research faces (02033–02036), with two physical
+copies each in its existing eight-card recipe. Goblin Glider ranks eligible enemies
+by printed hit points and has an energy/energy Hero Action; Pumpkin Bombs attaches
+to the villain and has a physical/physical Hero Action. Completed attack binding,
+persistent facedown boosts and actual-healing receipts are exercised against the
+authored rows. The queried MarvelCDB FAQ has no entry for these four faces;
+vendored ruling `ruling:e6531edb529e342d` supports Pumpkin Bombs with ally defense.
+These rows do not admit Green Goblin publicly.

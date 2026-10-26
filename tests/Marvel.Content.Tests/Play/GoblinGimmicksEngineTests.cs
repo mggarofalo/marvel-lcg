@@ -1,4 +1,5 @@
 using Marvel.Cards.Dsl;
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Run;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -9,29 +10,9 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Test-local interpretations; these cards are not publicly admitted.</summary>
+/// <summary>Actual authored research rows; these cards are not publicly admitted.</summary>
 public sealed class GoblinGimmicksEngineTests : CoreCardTestBase
 {
-    private const string Book = """
-    {"cards":[
-      {"card":"02034","abilities":[
-        {"trigger":{"event":"WhenAttackEnds","timing":"ForcedResponse","actor":"attachedTo","player":"trigger.player"},
-         "effect":{"seq":[{"discard":"this"},{"indirectDamage":{"among":{"query":"charactersYouControl"},"amount":2}}]}}
-      ]},
-      {"card":"02035","abilities":[
-        {"trigger":{"timing":"WhenRevealed","event":"WhenCardRevealed","subject":"this"},"effect":{"payOrEffect":{"generic":2,"otherwise":{"giveAdditionalBoost":{"enemy":{"query":"villain"}}}}}},
-        {"trigger":{"timing":"Boost","event":"WhenCardRevealed","subject":"this"},"effect":{"giveAdditionalBoost":{"enemy":{"query":"villain"}}}}
-      ]},
-      {"card":"02036","abilities":[
-        {"trigger":{"timing":"WhenRevealed","event":"WhenCardRevealed","subject":"this"},"effect":{"seq":[
-          {"heal":{"card":{"query":"villain"},"amount":{"mul":[2,{"modified":{"card":{"query":"villain"},"field":"printed_stage"}}]}}},
-          {"if":{"test":{"not":{"atLeast":{"value":{"result":"healed"},"count":1}}},"then":{"gainSurge":1}}}
-        ]}},
-        {"trigger":{"timing":"Boost","event":"WhenCardRevealed","subject":"this"},"effect":{"heal":{"card":{"query":"villain"},"amount":2}}}
-      ]}
-    ]}
-    """;
-
     [Theory]
     [InlineData("01094", 9, 7)]
     [InlineData("01095", 9, 5)]
@@ -163,7 +144,7 @@ public sealed class GoblinGimmicksEngineTests : CoreCardTestBase
     private static (World World, AbilityRunner Runner, Card Villain) Create(string face)
     {
         var world = Hero("01001a", players: 2);
-        var runner = new AbilityRunner(AbilityCatalog.Parse(Book));
+        var runner = AuthoredCards.Runner();
         world.Abilities = runner;
         var villain = world.CreateCard(face, world.AreaOf(DeckType.VillainArea));
         foreach (var seat in world.Seats)
@@ -196,7 +177,9 @@ public sealed class GoblinGimmicksEngineTests : CoreCardTestBase
     [InlineData("\"two\"")]
     public void GenericPaymentRequiresAPositiveInteger(string value) =>
         Assert.Throws<AbilityException>(() => new AbilityRunner(
-            AbilityCatalog.Parse(Book.Replace("\"generic\":2", "\"generic\":" + value))));
+            AbilityCatalog.Parse("{\"cards\":[{\"card\":\"02035\",\"abilities\":[{" +
+                "\"trigger\":{\"timing\":\"WhenRevealed\"},\"effect\":{\"payOrEffect\":{\"generic\":" +
+                value + ",\"otherwise\":{\"gainSurge\":1}}}}]}]}")));
 
     private static void Finish(World world, AbilityRunner runner, int defender = -1)
     {

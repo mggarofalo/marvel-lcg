@@ -14122,6 +14122,217 @@
       }]
     },
     {
+      "card": "02033",
+      "name": "Goblin Glider",
+      "note": "Printed 02033: attach to the enemy with the highest printed hit points and without another Goblin Glider attached; if unable, gain surge. Rank the eligible enemies by printedHealth, not remaining or modified health (rr:attach-to). Printed ATK+1 is read by StateFields under rr:attachment.1. Hero Action spends two energy resources to discard this card. Selector and resource-code spellings are engine choices. The queried MarvelCDB FAQ has no entry for this face.",
+      "attachTo": {
+        "maxBy": {
+          "of": {
+            "withoutAnotherCopyAttached": {
+              "query": "enemies"
+            }
+          },
+          "by": "printedHealth"
+        }
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "not": {
+                  "exists": {
+                    "withoutAnotherCopyAttached": {
+                      "query": "enemies"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "gainSurge": 1
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "YY"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "02034",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discard": "this"
+              },
+              {
+                "indirectDamage": {
+                  "among": {
+                    "query": "charactersYouControl"
+                  },
+                  "amount": 2
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "RR"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ],
+      "name": "Pumpkin Bombs",
+      "note": "Printed 02034: attach to the villain. After the villain attacks you, discard this attachment and take 2 indirect damage. rr:you-your.7 binds the completed attack player, including ally defense; rr:defend-defense.5.1 transfers that player when another player defends. The completed attack retains this binding across the source discard. rr:stun-stunned.7 excludes canceled attacks. Hero Action spends two physical resources to discard this card. The queried MarvelCDB FAQ has no entry; vendored ruling:e6531edb529e342d agrees on ally defense.",
+      "attachTo": {
+        "query": "villain"
+      }
+    },
+    {
+      "card": "02035",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "payOrEffect": {
+              "generic": 2,
+              "otherwise": {
+                "giveAdditionalBoost": {
+                  "enemy": {
+                    "query": "villain"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "giveAdditionalBoost": {
+              "enemy": {
+                "query": "villain"
+              }
+            }
+          }
+        }
+      ],
+      "name": "Intimidation",
+      "note": "Printed 02035: choose to spend 2 resources of any type or give the villain 1 facedown boost card. Generic payment is two resources, independent of type (rr:cost.3). Outside an activation the facedown card remains hosted until that enemy next activates (rr:boost-boost-icon.6). Its Boost instruction adds a card to the current activation. The queried MarvelCDB FAQ has no entry for this face; DSL payment and selector spellings are engine choices."
+    },
+    {
+      "card": "02036",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "heal": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "amount": {
+                    "mul": [
+                      2,
+                      {
+                        "modified": {
+                          "card": {
+                            "query": "villain"
+                          },
+                          "field": "printed_stage"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "not": {
+                      "atLeast": {
+                        "value": {
+                          "result": "healed"
+                        },
+                        "count": 1
+                      }
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "heal": {
+              "card": {
+                "query": "villain"
+              },
+              "amount": 2
+            }
+          }
+        }
+      ],
+      "name": "Regenerative Healing",
+      "note": "Printed 02036: heal double the current villain stage number; gain surge only when no damage was actually healed (rr:heal; rr:surge.1). Read the printed stage through the engine-selected printed_stage field and the committed healed receipt. Boost heals exactly 2, independently of stage, without surge. The queried MarvelCDB FAQ has no entry for this face."
+    },
+    {
       "card": "02037",
       "name": "A Mess of Things",
       "note": "When revealed, place 2 additional threat here for each stunned friendly character. Friendly characters include identities in either form and allies in play; a character with steady needs two stunned status cards (rr:friendly; rr:character; rr:stun-stunned.3.1). Printed starting threat and the hazard icon are engine-owned.",

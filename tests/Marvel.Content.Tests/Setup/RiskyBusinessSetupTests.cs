@@ -111,7 +111,7 @@ public sealed class RiskyBusinessSetupTests
         Assert.DoesNotContain("risky_business_expert", admitted.Setup.CampaignNames);
         Assert.DoesNotContain("goblin_gimmicks", admitted.Setup.EncounterSetNames);
         Assert.DoesNotContain("02004b", admitted.Playable);
-        Assert.False(AuthoredCards.Book.Authored.Contains("02033"));
+        Assert.Contains("02033", AuthoredCards.Book.Authored);
         Assert.Contains("rhino", admitted.Setup.CampaignNames);
     }
 }
