@@ -60,9 +60,9 @@ that makes the old answer override RR1.8 would reverse the authority direction.
 
 ## Focused evidence and limits
 
-`LokiRr18Fixture` loads actual printed Loki's mandatory interrupt as a test-local
-row. `LokiRr18OverkillTests` exercises the current engine after pending work has
-finished:
+`LokiRr18OverkillTests` loads the production authored ability book, including
+actual `06028`, and exercises the current engine after pending work has finished.
+The independent actual-row review removes the earlier test-local substitution:
 
 - Six attack damage: treachery heals Loki, leaves its incarnation in play, and
   gives zero villain damage and zero completed excess; a non-treachery defeats
@@ -70,6 +70,11 @@ finished:
   before the villain's damage.
 - Actual Relentless Assault with physical payment: healing gives zero spill
   and no Hall of Heroes response; defeat gives one spill and one glory.
+
+Both controls run with an ordinary deck and a last-card deck. The latter resets
+the encounter deck before Loki heals or departs; an opposite-kind older discard
+does not change the result. See [actual-row review](thor-loki-actual-evidence.md)
+for the independent row mutation and restored verification.
 
 Full Stealth Strike execution remains unverified. A trial test-local row with
 the scheme choice inside the labeled power raises the engine's explicit
