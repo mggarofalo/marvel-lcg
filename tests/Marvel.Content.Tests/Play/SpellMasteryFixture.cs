@@ -14,35 +14,31 @@ internal static class SpellMasteryFixture
 {
     private static readonly CardCatalog Cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
     private static AbilityRunner Runner(bool paid, bool unsupported, bool choice, string? special = null,
-        string face = "09036") => new(AbilityCatalog.Parse("""
-        {"cards":[{"card":"09001a","abilities":[{
-          "name":"Spell Mastery",
-          "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
-          "cost":{"seq":[{"exhaust":"this"},{"invocationTop":"you"}]},
-          "effect":{"resolveInvocation":"you"}
-        }]},{"card":"09005","abilities":[{
-          "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
-          "cost":{"invocationTop":"you"},
-          "effect":{"then":{"effect":{"resolveInvocation":"you"},"then":{"returnInvocation":"you"}}}
-        }]},{"card":"09036","abilities":[{
-          "trigger":{"event":"WhenActionTriggered","timing":"Special","subject":"this"},
-          "effect":{"seq":[{"draw":{"player":"you","count":3}},{"discardInvocation":"this"}]}
-        }]},{"card":"01030","abilities":[{
-          "trigger":{"event":"WhenActionTriggered","timing":"Resource","subject":"game"},
-          "cost":{"dealDamage":{"cards":"this","amount":2}},"effect":{"generate":"YY"}
-        }]},{"card":"01092","abilities":[{
-          "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
-          "effect":{"draw":{"player":"you","count":1}}
-        }]}]}
-        """.Replace("""{"seq":[{"draw":{"player":"you","count":3}},{"discardInvocation":"this"}]}""",
-            special ?? """{"seq":[{"draw":{"player":"you","count":3}},{"discardInvocation":"this"}]}""", StringComparison.Ordinal)
-        .Replace("09036", paid && !unsupported ? "09032" : face, StringComparison.Ordinal)
-        .Replace("""{"draw":{"player":"you","count":3}}""", paid
-            ? """{"if":{"test":{"finalStep":"true"},"then":{"draw":{"player":"you","count":9}},"else":{"draw":{"player":"you","count":3}}}}"""
-            : """{"draw":{"player":"you","count":3}}""", StringComparison.Ordinal)
-        .Replace("\"seq\":[{\"draw\":{\"player\":\"you\",\"count\":3}}",
-            choice ? "\"seq\":[{\"choose\":{\"options\":[{\"draw\":{\"player\":\"you\",\"count\":3}},{\"draw\":{\"player\":\"you\",\"count\":1}}]}}"
-                : "\"seq\":[{\"draw\":{\"player\":\"you\",\"count\":3}}", StringComparison.Ordinal)));
+        string face = "09036")
+    {
+        var replacements = new System.Text.Json.Nodes.JsonArray();
+        // These resource-window controls deliberately replace their production programs.
+        replacements.Add(System.Text.Json.Nodes.JsonNode.Parse("""
+            {"card":"01030","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Resource","subject":"game"},
+              "cost":{"dealDamage":{"cards":"this","amount":2}},"effect":{"generate":"YY"}}]}
+            """));
+        replacements.Add(System.Text.Json.Nodes.JsonNode.Parse("""
+            {"card":"01092","abilities":[{
+              "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
+              "effect":{"draw":{"player":"you","count":1}}}]}
+            """));
+        if (special is not null || choice || paid && !unsupported)
+        {
+            string effect = special ?? (choice
+                ? """{"seq":[{"choose":{"options":[{"draw":{"player":"you","count":3}},{"draw":{"player":"you","count":1}}]}},{"discardInvocation":"this"}]}"""
+                : """{"seq":[{"if":{"test":{"finalStep":"true"},"then":{"draw":{"player":"you","count":9}},"else":{"draw":{"player":"you","count":3}}}},{"discardInvocation":"this"}]}""");
+            string selected = paid && !unsupported ? "09032" : face;
+            replacements.Add(System.Text.Json.Nodes.JsonNode.Parse(
+                $$"""{"card":"{{selected}}","abilities":[{"trigger":{"event":"WhenActionTriggered","timing":"Special","subject":"this"},"effect":{{effect}}}]}"""));
+        }
+        return DoctorStrangeAbilityFixture.WithReplacements(replacements);
+    }
 
     internal static Affordance Mastery(Game game, Card hero) => Assert.Single(game.Pending!.Affordances,
         offer => offer.AnchorId == hero.ObjectId && offer.Verb == Game.ActionVerb);
@@ -55,8 +51,11 @@ internal static class SpellMasteryFixture
     internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) BoardWithSpecial(string special, bool last, string face = "09036", int master = 1) =>
         CreateBoard(Runner(false, false, false, special, face), 1, last, face, false, master);
 
+    internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) BoardInAlterEgo() =>
+        CreateBoard(Runner(false, false, false), 1, false, "09036", false, 1, false);
+
     private static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) CreateBoard(
-        AbilityRunner runner, int player, bool last, string topFace, bool live, int master)
+        AbilityRunner runner, int player, bool last, string topFace, bool live, int master, bool startHero = true)
     {
         // Master mode 3 supplies a fixed shuffle control whose resolved copy is below the new top.
         var world = new World(Cards, player + 1, Seed(master));
@@ -90,7 +89,8 @@ internal static class SpellMasteryFixture
             game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
         while (game.Active != player)
             game.Resolve(Decision.Decline);
-        game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances, offer => offer.Verb == Game.ChangeForm).Id));
+        if (startHero)
+            game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances, offer => offer.Verb == Game.ChangeForm).Id));
         return (world, game, deck, runner);
     }
 

@@ -20076,6 +20076,150 @@
           }
         }
       ]
+    },
+    {
+      "card": "09001a",
+      "name": "Doctor Strange",
+      "note": "Printed Spell Mastery exhausts this hero and pays the captured Invocation cost. The initialized typed Invocation deck is supplied by the insert lifecycle; this row does not admit the incomplete product.",
+      "abilities": [
+        {
+          "name": "Spell Mastery",
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "seq": [
+              {
+                "exhaust": "this"
+              },
+              {
+                "invocationTop": "you"
+              }
+            ]
+          },
+          "effect": {
+            "resolveInvocation": "you"
+          }
+        }
+      ]
+    },
+    {
+      "card": "09001b",
+      "name": "Stephen Strange",
+      "note": "Printed Natural Talent discards the public top of the unique typed Invocation deck once per phase. Beginning with the separate deck is owned by the insert lifecycle.",
+      "abilities": [
+        {
+          "name": "Natural Talent",
+          "limitPerPhase": 1,
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "discard": {
+              "query": "invocationTop"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09002",
+      "name": "Wong",
+      "note": "Printed exhaust cost precedes the choice. Your identity follows the controller; the Invocation deck denotes the unique typed deck even after control changes.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "choose": {
+              "descriptions": [
+                "Heal 1 damage from your identity",
+                "Discard the top Invocation"
+              ],
+              "options": [
+                {
+                  "heal": {
+                    "card": "you",
+                    "amount": 1
+                  }
+                },
+                {
+                  "discard": {
+                    "query": "invocationTop"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09005",
+      "name": "Master of the Mystic Arts",
+      "note": "Printed Hero Action pays the event cost and the captured Invocation printed cost. Per ruling:b07d53e12625ab23, resolve its Special including discard/reveal/reset before returning that same physical card faceup.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "invocationTop": "you"
+          },
+          "effect": {
+            "then": {
+              "effect": {
+                "resolveInvocation": "you"
+              },
+              "then": {
+                "returnInvocation": "you"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09036",
+      "name": "Winds of Watoomb",
+      "note": "Printed Special draws from the ordinary player deck, then discards this physical Invocation through its separate typed lifecycle. It is resolved only by an explicit Special instruction.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Special",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "draw": {
+                  "player": "you",
+                  "count": 3
+                }
+              },
+              {
+                "discardInvocation": "this"
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

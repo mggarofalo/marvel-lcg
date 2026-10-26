@@ -130,11 +130,11 @@ public sealed class DoctorStrangeConstantCardTests : CoreCardTestBase
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(654, rows.Length);
+        Assert.Equal(659, rows.Length);
         string[] added = ["09009", "09011", "09026"];
-        Assert.Equal(added, rows.Skip(651).Select(r => r.GetProperty("card").GetString()));
-        Assert.All(rows.Skip(651), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
-        Assert.Equal(9, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
+        Assert.Equal(added, rows.Skip(651).Take(3).Select(r => r.GetProperty("card").GetString()));
+        Assert.All(rows.Skip(651).Take(3), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
+        Assert.Equal(14, AuthoredCards.Book.Authored.Count(face => face.StartsWith("09", StringComparison.Ordinal)));
     }
 
     [Fact]
@@ -172,11 +172,7 @@ public sealed class DoctorStrangeConstantCardTests : CoreCardTestBase
         var world = Hero("01001a", 2);
         World.MoveToTop(world.Seats[1].IdentityCard, world.AreaOf(DeckType.RemovedArea));
         world.Seats[1].IdentityCard = world.CreateCard("09001a,09001b", world.Seats[1].Hero);
-        // Synthetic empty identity bodies isolate constants without admitting Invocation actions.
-        var text = AuthoredCards.Text;
-        int end = text.LastIndexOf(']');
-        text = text.Insert(end, ",{\"card\":\"09001a\",\"abilities\":[]},{\"card\":\"09001b\",\"abilities\":[]}");
-        var runner = new AbilityRunner(AbilityCatalog.Parse(text));
+        var runner = AuthoredCards.Runner();
         world.Abilities = runner;
         return (world, runner);
     }

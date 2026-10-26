@@ -5,6 +5,16 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`invocationTop: "you"` captures the resolving player's exact public typed
+Invocation top and adds its printed resource cost to the ability payment.
+`resolveInvocation: "you"` resolves that captured physical card's Special through
+the existing Special scheduler. `discardInvocation: "this"` sends the resolving
+Invocation to its own discard, immediately revealing or recycling its typed deck.
+`returnInvocation: "you"` returns the captured physical copy faceup after the
+Special procedure completes, including its intermediate discard/reveal/reset.
+These spellings are engine choices. Production Doctor Strange rows use them on
+nonpublic research boards; complete pack admission remains separate.
+
 `defeatedAllyInYourDiscardPile: "you"` selects the exact physical ally from the
 current defeat receipt when its captured controller was the resolving player,
 its incarnation has not reentered play, and it is currently in that player's

@@ -8,23 +8,11 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Test-local actual printed 09001b/09002; no public pack admission.</summary>
+/// <summary>Production printed 09001b/09002; no public pack admission.</summary>
 internal static class InvocationTopDiscardFixture
 {
     internal static readonly CardCatalog Cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
-    internal static AbilityRunner Runner() => new(AbilityCatalog.Parse("""
-        {"cards":[{"card":"09001b","abilities":[{
-          "name":"Natural Talent","limitPerPhase":1,
-          "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"alter-ego"},
-          "effect":{"discard":{"query":"invocationTop"}}
-        }]},{"card":"09002","abilities":[{
-          "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this"},
-          "cost":{"exhaust":"this"},
-          "effect":{"choose":{"descriptions":["Heal 1 damage from your identity","Discard the top Invocation"],"options":[
-            {"heal":{"card":"you","amount":1}}, {"discard":{"query":"invocationTop"}}
-          ]}}
-        }]}]}
-        """));
+    internal static AbilityRunner Runner() => Marvel.Content.Tests.Cards.AuthoredCards.Runner();
 
     internal static (World World, Game Game, InvocationDeck Deck, Card Wong, AbilityRunner Runner) Board(
         int controller = 1, bool last = false, bool damaged = false, bool start = true)

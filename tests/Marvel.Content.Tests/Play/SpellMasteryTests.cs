@@ -110,7 +110,8 @@ public sealed class SpellMasteryTests
         Assert.Equal(before, Snapshot(world));
         Assert.Same(prompt, game.Pending);
         if (invalid is "form" or "exhausted")
-            Assert.DoesNotContain(runner.Actions(world, 1), pending => pending.Card == hero.ObjectId);
+            Assert.DoesNotContain(runner.Actions(world, 1), pending => pending.Card == hero.ObjectId
+                && runner.Describe(world, pending).Label == "Spell Mastery");
     }
 
     [Fact]
