@@ -179,7 +179,7 @@ internal static class AbilityDamageAndThreatExecution
         {
             var request = new DamageRequest(context.Source, context.World.Cards[card], damage,
                 context.Trigger, "Indirect_Damage", AbilityEffectAttribution.IdentityPlayer(context))
-                { RecordDefeatOn = occurrence };
+                { RecordDefeatOn = occurrence, ActivationId = context.DamageActivationId };
             suspended |= DamagePlacement.Resolve(context.World, context.World.Facts, request,
                 context.Events).Outcome == Damage.Outcome.Suspended;
         }
@@ -201,7 +201,7 @@ internal static class AbilityDamageAndThreatExecution
             var result = DamagePlacement.Resolve(context.World, context.World.Facts,
                 new DamageRequest(context.Source, target, amount, context.Trigger, verb,
                     AbilityEffectAttribution.IdentityPlayer(context))
-                    { RecordDefeatOn = occurrence }, context.Events);
+                    { RecordDefeatOn = occurrence, ActivationId = context.DamageActivationId }, context.Events);
             suspended |= !result.IsComplete;
             state.Damage.Add(result, amount, context.Power == BasicPowers.AttackVerb);
         }

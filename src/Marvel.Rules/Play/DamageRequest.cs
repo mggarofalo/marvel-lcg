@@ -9,5 +9,7 @@ public sealed record DamageRequest(
 {
     /// <summary>The cause retaining the defeat when nested procedures change the current frame.</summary>
     public Occurrence? RecordDefeatOn { get; init; }
+    /// <summary>The exact activation whose boost ability creates this damage, when present.</summary>
+    public int? ActivationId { get; init; }
     internal bool PreventAllDamage { get; init; }
 }

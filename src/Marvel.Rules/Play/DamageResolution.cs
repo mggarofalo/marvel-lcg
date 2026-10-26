@@ -45,6 +45,7 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
     {
         world.Agenda.Executions.RequireActive(execution);
         Result.Place(damage);
+        AttackDamageAccounting.RecordPlacement(world, request.ActivationId, damage);
         placement = damage;
         if (damage.Landed) request.RecordDefeatOn?.Also(Steps.DamageDealt);
         placed = true;

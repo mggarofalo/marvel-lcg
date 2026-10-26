@@ -27,6 +27,7 @@ internal static class AbilityResolutionDamageAndThreat
             cast.ImminentThreat, cast.ResolutionAbility, cast.Incoming, execution.threatAbilities)
         {
             PowerOccurrence = cast.PowerExecution?.Occurrence,
+            DamageActivationId = cast.DamageActivationId,
             DeclaredAttackRecipients = cast.PowerExecution?.Continuation.DeclaredRecipients ?? default,
         };
 
