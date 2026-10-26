@@ -90,12 +90,27 @@ Counterattack and ability-data classes, with no failures/skips. Log:
 `Take(4)` in the earlier four-row inventory is simplified without changing its
 bounded face set or assertions.
 
-Next packets: MARVEL-820 repairs eliminated-owner routing before Clea;
-MARVEL-821 independently reviews physical-status selection before Night Nurse;
-MARVEL-822 supplies exact upgrade-host pricing before ally Iron Man.
-Actual Astral Projection and the remaining event/nemesis programs follow their
-accepted prerequisites. Public admission remains closed while thirteen playable
-faces are unauthored.
+Owner-deck shuffle source `cf09e734`, independent finding `023bc113`, repair
+`80ddfbba` and independent acceptance `c303d99d` are integrated. Cards owned by
+an eliminated player leave play into RemovedArea without consuming shuffle RNG;
+active owners retain deterministic deck grouping. Status-host source `d7dcfe92`
+and independent reviews `5cd1f848` / `0bbe6106` are also integrated, including
+exact paid-prompt purity and local nested binding evidence. The shared player
+binding analyzer retains both the typed shuffle destination and bound status-host
+case. Combined affected Content/citation checks pass 255 cases, with no failures
+or skips (`Source/evidence/strange-owner-status-integration.log`).
+The earlier Clea probe now exercises physical-owner routing; the unsupported
+spelling control remains genuinely unknown. Night Nurse's legacy spelling test
+is named as an unknown-input control, not a claim that status choice is absent.
+See [owner-shuffle evidence](doctor-strange-owner-shuffle-prerequisite.md) and
+[status-host evidence](doctor-strange-status-host-prerequisite.md).
+
+Next packets: MARVEL-822 independently reviews exact upgrade-host pricing before
+ally Iron Man; MARVEL-819 then authors Clea, Night Nurse and Iron Man.
+MARVEL-823 authors the three remaining signature events and isolates demonstrated
+engine gaps. MARVEL-824 covers Iron Fist/Desperate Defense; MARVEL-825 covers the
+five obligation/nemesis faces. Public admission remains closed while thirteen
+playable faces are unauthored.
 
 Reviewed lifecycle source 3a20ae07 and review dd5b2f4a reuse player-owned additional
 deck/discard zones with exact physical binding, seeded shuffle, post-mulligan top

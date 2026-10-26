@@ -75,7 +75,9 @@ internal static class AbilityInitiationConstraints
             foreach (var effect in effects)
             {
                 cast.SetContinuation(outerContinuation || effects.Count > 1);
-                if (!CanInitiate(effect, cast))
+                // rr:and.1: "Resolve as much of each effect as possible."
+                if (!AbilityIndependentStatusChoice.IsEmpty(effect, cast)
+                    && !CanInitiate(effect, cast))
                 {
                     return false;
                 }

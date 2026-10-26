@@ -85,6 +85,7 @@ internal sealed class AbilitySelectorEvaluation(
     {
         AbilityCardSelection.FirstAvailable fallback => fallback.Options.Select(Every).FirstOrDefault(cards => cards.Count > 0) ?? [],
         AbilityCardSelection.Bound bound => AbilityCardQueries.Named(bound.Binding, context) is { } card ? [card] : [],
+        AbilityCardSelection.StatusCardsOn statuses => StatusCardsOn(statuses.Host),
         AbilityCardSelection.Query query => AbilityCardQueries.Cards(query.Kind, context, program),
         AbilityCardSelection.DefeatedAllyInYourDiscardPile => AbilityDefeatedAllySelection.Every(context),
         AbilityCardSelection.Titled titled => AbilityCardQueries.ReferencedByTitle(titled.Title, context),
@@ -114,6 +115,18 @@ internal sealed class AbilitySelectorEvaluation(
         AbilityCardSelection.InAreas areas => CardsIn(areas),
         _ => throw new InvalidOperationException("Unknown compiled card selection"),
     };
+
+    private IReadOnlyList<Card> StatusCardsOn(AbilityCardBinding binding)
+    {
+        var host = AbilityCardQueries.Named(binding, context);
+        if (host is null || !DeckTypes.IsInPlay(host.Area.Type)
+            || !CardKinds.IsCharacter(EffectiveCards.Kind(host, context.World.Facts))) return [];
+        // rr:status-cards: a physical status is placed "on that character".
+        // Stable object-id ordering is an engine choice, never an automatic answer.
+        return [.. context.World.Areas.Where(area => area.Type == DeckType.StatusArea
+                && area.Host == host.ObjectId).SelectMany(area => area.Cards)
+            .OrderBy(card => card.ObjectId)];
+    }
 
     private IReadOnlyList<Card> FilterEvery(AbilityCardSelection selector) => selector switch
     {

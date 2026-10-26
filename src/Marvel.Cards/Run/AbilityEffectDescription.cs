@@ -123,6 +123,7 @@ internal static class AbilityEffectDescription
             "villain whose side scheme has the least threat",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainsWithMostSchemeThreat } =>
             "villain whose side scheme has the most threat",
+        AbilityCardSelection.StatusCardsOn statuses => $"status card on {Noun(new AbilityCardSelection.Bound(statuses.Host))}",
         AbilityCardSelection.Discardable discardable => Noun(discardable.Cards),
         AbilityCardSelection.WithTrait trait => $"{(trait.Exclude ? "non-" : "")}{trait.Trait} {Noun(trait.Cards)}",
         AbilityCardSelection.WithStatus status => $"{status.Status} {Noun(status.Cards)}",

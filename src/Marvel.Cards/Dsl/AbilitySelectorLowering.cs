@@ -45,6 +45,9 @@ internal static class AbilitySelectorLowering
         return node.Kind switch
         {
             "query" => new AbilityCardSelection.Query(Query(Text(node.Argument, child), child)),
+            "statusCardsOn" => SelectCards(node.Argument, child) is AbilityCardSelection.Bound host
+                ? new AbilityCardSelection.StatusCardsOn(host.Binding)
+                : throw child.Error("expected a card binding for the status host"),
             "titled" => new AbilityCardSelection.Titled(Text(node.Argument, child)),
             "enemiesWithTrait" => new AbilityCardSelection.EnemiesWithTrait(Text(node.Argument, child)),
             "withTrait" => WithTrait(node.Argument, child),

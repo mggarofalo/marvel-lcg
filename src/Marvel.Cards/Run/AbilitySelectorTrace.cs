@@ -12,7 +12,7 @@ internal static class AbilitySelectorTrace
 {
     internal static bool SelectorReadsStatus(AbilityCardSelection selector) => selector switch
     {
-        AbilityCardSelection.WithStatus => true,
+        AbilityCardSelection.StatusCardsOn or AbilityCardSelection.WithStatus => true,
         AbilityCardSelection.WithTrait filtered => SelectorReadsStatus(filtered.Cards),
         AbilityCardSelection.InObjectIdOrder ordered => SelectorReadsStatus(ordered.Cards),
         AbilityCardSelection.Last last => SelectorReadsStatus(last.Cards),
@@ -117,6 +117,8 @@ internal static class AbilitySelectorTrace
             EffectiveCards.Kind(candidate, trace.Cast.World.Facts) == CardKind.Minion
             && !trace.Discarded.Contains(candidate.ObjectId)
             && TraceEngagedWith(candidate, Seat(area.Player, trace.Cast), trace.Engagement),
+        AbilityCardSelection.StatusCardsOn => throw new Marvel.Rules.Play.RulesNotImplementedException(
+            "physical status-host selection in projected membership is not implemented"),
         AbilityCardSelection.InPlayerArea or AbilityCardSelection.WithMatchingPlayerArea
             or AbilityCardSelection.DefeatedAllyInYourDiscardPile
             or AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.InAreas

@@ -17,13 +17,13 @@ public sealed class DoctorStrangeSupportPrerequisiteTests
     [InlineData(true, false)]
     [InlineData(false, true)]
     [InlineData(true, true)]
-    public void CleaCurrentCompositionUsesControllerDeckAndSurvivesDefeat(bool accept, bool foreignControl)
+    public void CleaOwnerCompositionUsesPhysicalOwnerDeckAndSurvivesDefeat(bool accept, bool foreignControl)
     {
         var world = ThorActualFixture.Board("06001a", 2);
         var runner = Runner("""
             {"card":"09013","abilities":[{
               "trigger":{"event":"WhenCardDefeated","timing":"Interrupt","subject":"this"},
-              "effect":{"shuffleInto":{"cards":"this","deck":"yourDeck"}}}]}
+              "effect":{"shuffleInto":{"cards":"this","deck":"ownerDeck"}}}]}
             """);
         world.Abilities = runner;
         var source = world.CreateCard("09013", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(foreignControl ? 1 : 0), cardOwner: 0));
@@ -36,7 +36,7 @@ public sealed class DoctorStrangeSupportPrerequisiteTests
         Sequence.Finish(world, world.Facts, runner, events);
         // Control: the accepted shuffle survives ordinary defeat cleanup.
         Assert.Equal(accept ? DeckType.PlayerDeck : DeckType.DiscardPile, source.Area.Type);
-        Assert.Equal(accept && foreignControl ? 1 : 0, source.Area.PlayArea.Player);
+        Assert.Equal(0, source.Area.PlayArea.Player);
         Assert.Equal(1, events.OfType<CardsMoved>().Count(move =>
             move.Cards.Any(card => card.Card == source.ObjectId)));
         Assert.False(world.Agenda.IsBusy);
@@ -68,7 +68,7 @@ public sealed class DoctorStrangeSupportPrerequisiteTests
     }
 
     [Fact]
-    public void PrintedNightNurseCompositionNeedsOnePhysicalStatusOnTheChosenHero()
+    public void UnknownStatusChoiceSpellingIsRejected()
     {
         var error = Assert.ThrowsAny<Exception>(() => Runner("""
             {"card":"09019","startingCounters":{"type":"medical","count":3,"uses":true},"abilities":[{
@@ -83,9 +83,9 @@ public sealed class DoctorStrangeSupportPrerequisiteTests
     }
 
     [Theory]
-    [InlineData("09013", "{\"shuffleInto\":{\"cards\":\"this\",\"deck\":\"ownerDeck\"}}", "ownerDeck")]
+    [InlineData("09013", "{\"shuffleInto\":{\"cards\":\"this\",\"deck\":\"unknownOwnerDeck\"}}", "unknownOwnerDeck")]
     [InlineData("09039", "{\"reduceUpgradeCostOn\":{\"card\":\"this\",\"amount\":1}}", "reduceUpgradeCostOn")]
-    public void OwnerDeckAndExactAllyUpgradeCostHaveNoLoweredOperation(string face, string effect, string word)
+    public void UnknownDestinationAndUnimplementedUpgradeOperationAreRejected(string face, string effect, string word)
     {
         var root = JsonNode.Parse("""{"card":"FACE","abilities":[{"trigger":{"timing":"Constant","subject":"this"},"effect":EFFECT}]}"""
             .Replace("FACE", face, StringComparison.Ordinal).Replace("EFFECT", effect, StringComparison.Ordinal))!;

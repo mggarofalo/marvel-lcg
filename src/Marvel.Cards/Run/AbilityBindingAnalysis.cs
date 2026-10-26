@@ -54,6 +54,7 @@ internal static class AbilityBindingAnalysis
 
     internal static bool BindingCanChange(AbilityCardSelection selector) => selector switch
     {
+        AbilityCardSelection.StatusCardsOn statuses => statuses.Host is AbilityCardBinding.Chosen or AbilityCardBinding.That,
         AbilityCardSelection.InPlayerArea area => area.Player == AbilityPlayer.ChosenPlayer,
         AbilityCardSelection.Bound bound => bound.Binding is AbilityCardBinding.Chosen or AbilityCardBinding.That,
         AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.PowerTargets

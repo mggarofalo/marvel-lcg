@@ -142,7 +142,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.DiscardTop discard => discard.From == AbilitySearchArea.YourDeck
             || discard.Players is { } players && Contains(players) || Contains(discard.Count),
         AbilityEffect.ShuffleInto shuffle =>
-            Contains(shuffle.Cards) || shuffle.Deck == AbilitySearchArea.YourDeck,
+            Contains(shuffle.Cards) || shuffle.Deck == AbilityShuffleDestination.YourDeck,
         AbilityEffect.PutIntoPlay entering =>
             entering is { PrintedDestination: false, FirstPlayer: false } || Contains(entering.Card),
         AbilityEffect.PlaceCounters counters => Contains(counters.Card) || Contains(counters.Count),
@@ -210,6 +210,7 @@ internal static class AbilityPlayerBindingAnalysis
             or AbilityCardQuery.CharactersYouControlExceptCost
             or AbilityCardQuery.UpgradesYouControl or AbilityCardQuery.AlliesYouControl
            ,
+        AbilityCardSelection.StatusCardsOn statuses => Contains(new AbilityCardSelection.Bound(statuses.Host)),
         AbilityCardSelection.WithTrait trait => Contains(trait.Cards),
         AbilityCardSelection.WithStatus status => Contains(status.Cards),
         AbilityCardSelection.FaceDown trait => Contains(trait.Cards),

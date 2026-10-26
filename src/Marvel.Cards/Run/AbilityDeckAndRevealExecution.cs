@@ -35,7 +35,7 @@ internal static class AbilityDeckAndRevealExecution
             AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PlaceOnBottomOfDeck } bottom =>
                 AbilityDeckBottomMovement.Run(bottom.Selection, context),
             AbilityEffect.Shuffle shuffle => Shuffle(shuffle, context),
-            AbilityEffect.ShuffleInto shuffle => ShuffleInto(shuffle, context),
+            AbilityEffect.ShuffleInto shuffle => AbilityShuffleIntoExecution.Run(shuffle, context),
             AbilityEffect.Search search => Search(search, context),
             AbilityEffect.RecruitDiscarded recruit => AbilityDiscardedRecruitment.Run(recruit, context),
             AbilityEffect.PutIntoPlay placement => PutIntoPlay(placement, context),
@@ -135,31 +135,6 @@ internal static class AbilityDeckAndRevealExecution
         new(true, context.World.Shuffle(Area(shuffle.Area, context)), null,
             ImmutableDictionary<string, long>.Empty);
 
-    /// <summary>Moves every selected card, then shuffles once â€” <c>rr:shuffle</c>.</summary>
-    /// <remarks>The single shuffle is part of the seeded RNG wire format.</remarks>
-    private static AbilityDeckAndRevealResult ShuffleInto(
-        AbilityEffect.ShuffleInto shuffle, AbilityDeckAndRevealContext context)
-    {
-        var deck = Area(shuffle.Deck, context);
-        bool applied = false;
-        foreach (var card in Every(shuffle.Cards, context))
-        {
-            if (!SideSchemeDeparture.Allowed(context.World, card)) continue;
-            var from = card.Area;
-            World.MoveToTop(card, deck);
-            context.Events.Add(new CardsMoved(
-                Places.Reference(from), Places.Reference(deck),
-                [new Landing(card.ObjectId, deck.Cards.Count - 1)])
-            {
-                Trigger = context.Trigger,
-                Verb = "Shuffle_Into",
-            });
-            applied = true;
-        }
-        applied |= context.World.Shuffle(deck);
-        return new(true, applied, null, ImmutableDictionary<string, long>.Empty);
-    }
-
     /// <summary>Searches without moving inspected cards â€” <c>rr:search.2</c>.</summary>
     /// <remarks>
     /// A found card leaves before <c>rr:search.3</c> shuffles the searched deck.
@@ -230,13 +205,6 @@ internal static class AbilityDeckAndRevealExecution
     {
         var evaluation = new AbilitySelectorEvaluation(context.Expressions.Bindings);
         return Publish(evaluation.Result(evaluation.Find(selection)), context.World);
-    }
-
-    private static IReadOnlyList<Card> Every(
-        AbilityCardSelection selection, AbilityDeckAndRevealContext context)
-    {
-        var evaluation = new AbilitySelectorEvaluation(context.Expressions.Bindings);
-        return Publish(evaluation.Result(evaluation.Every(selection)), context.World);
     }
 
     private static Area Area(

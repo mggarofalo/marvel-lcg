@@ -34,7 +34,7 @@ internal static class AbilitySelectionAreaReads
                 or AbilityCardSelection.Last or AbilityCardSelection.InObjectIdOrder
                 or AbilityCardSelection.WithoutAnotherCopyAttached or AbilityCardSelection.Discardable
                 or AbilityCardSelection.Ranked:
-            case AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.Bound
+            case AbilityCardSelection.StatusCardsOn or AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.Bound
                 or AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait: break;
             default: throw new InvalidOperationException("Unknown compiled selector in area-dependency analysis");
         }

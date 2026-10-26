@@ -221,7 +221,7 @@ public abstract record AbilityEffect
         public string? Set { get; init; }
     }
     /// <summary>Move selected cards into a deck and shuffle it.</summary>
-    public sealed record ShuffleInto(AbilityCardSelection Cards, AbilitySearchArea Deck) : AbilityEffect;
+    public sealed record ShuffleInto(AbilityCardSelection Cards, AbilityShuffleDestination Deck) : AbilityEffect;
     /// <summary>Search ordered areas for a printed face and reveal it.</summary>
     public sealed record Search(string Face, ImmutableArray<AbilitySearchArea> Areas) : AbilityEffect;
     /// <summary>Put a matching physical discarded minion into play engaged with the resolver.</summary>

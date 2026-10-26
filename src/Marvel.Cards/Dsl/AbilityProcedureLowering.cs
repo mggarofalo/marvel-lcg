@@ -88,7 +88,15 @@ internal static class AbilityProcedureLowering
     internal static AbilityEffect.ShuffleInto ShuffleIntoEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "cards", "deck");
-        return new(Selected(fields, "cards", location), SearchArea(Required(fields, "deck", location), location.Child("deck")));
+        var at = location.Child("deck");
+        var deck = Text(Required(fields, "deck", location), at) switch
+        {
+            "yourDeck" => AbilityShuffleDestination.YourDeck,
+            "encounterDeck" => AbilityShuffleDestination.EncounterDeck,
+            "ownerDeck" => AbilityShuffleDestination.OwnerDeck,
+            var name => throw at.Error($"'{name}' is not a supported shuffle destination"),
+        };
+        return new(Selected(fields, "cards", location), deck);
     }
 
     internal static AbilityEffect.Search SearchEffect(AbilityValue value, AbilityLocation location)

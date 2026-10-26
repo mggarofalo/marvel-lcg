@@ -37,6 +37,7 @@ internal static class AbilityProjection
 
     internal static bool SelectorMembershipCanChange(AbilityCardSelection selector) => selector switch
     {
+        AbilityCardSelection.StatusCardsOn => true,
         AbilityCardSelection.FirstAvailable or AbilityCardSelection.FaceDown or AbilityCardSelection.Last or AbilityCardSelection.WithMatchingPlayerArea => true,
         AbilityCardSelection.InObjectIdOrder ordered => SelectorMembershipCanChange(ordered.Cards),
         AbilityCardSelection.InPlayerArea { Area: DeckType.EngagedEnemiesArea } => true,

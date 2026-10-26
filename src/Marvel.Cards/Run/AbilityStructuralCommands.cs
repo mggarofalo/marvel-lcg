@@ -110,10 +110,17 @@ internal static class AbilityStructuralCommands
         AbilityResolutionState cast)
     {
         _ = execution.ApplyAdmission(choice.Admission, cast);
+        var outer = cast.CaptureChosen();
+        var outerSelection = cast.CapturePlayerSelection();
         if (choice.BindsPlayerSelection) cast.ChooseSelection(choice.Selection);
         execution.RunStructuralLeaf(new RunLeaf(
             choice.Effect, [.. cast.StructuralPath, choice.Frame],
             cast.Position, cast.HasContinuation), cast);
+        if (choice.RestoreOuterBinding)
+        {
+            cast.RestoreChosen(outer);
+            cast.RestorePlayerSelection(outerSelection);
+        }
     }
 
     private static void ApplyScheduleEachPlayer(
