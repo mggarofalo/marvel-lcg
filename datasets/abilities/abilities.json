@@ -18432,6 +18432,118 @@
           }
         }
       ]
+    },
+    {
+      "card": "06006",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spendEnergyX": "Y"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "hasTrait": {
+                  "card": "you",
+                  "trait": "AERIAL"
+                }
+              },
+              "then": {
+                "dealDamage": {
+                  "cards": {
+                    "query": "villainAndMinionsEngagedWithYou"
+                  },
+                  "amount": {
+                    "result": "energy"
+                  },
+                  "ignoresTough": 1
+                }
+              },
+              "else": {
+                "dealDamage": {
+                  "cards": {
+                    "query": "villainAndMinionsEngagedWithYou"
+                  },
+                  "amount": {
+                    "result": "energy"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "name": "Lightning Strike",
+      "note": "Printed 06006 and vendored MarvelCDB FAQ 06006: direct damage, not an attack. Printed price and X energy use distinct components; Aerial ignores Tough without discarding it. Payment and selector spellings are engine choices."
+    },
+    {
+      "card": "06014",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "attack"
+          ],
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableMinions"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 1
+                        }
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "and": [
+                              {
+                                "hasTrait": {
+                                  "card": "you",
+                                  "trait": "AERIAL"
+                                }
+                              },
+                              {
+                                "isInPlay": "chosen"
+                              }
+                            ]
+                          },
+                          "then": {
+                            "putIntoPlay": {
+                              "card": "chosen",
+                              "where": "engagedWithYou"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "name": "Get Over Here!",
+      "note": "Printed 06014 and vendored MarvelCDB FAQ 06014: attack a minion, then engage the surviving enemy with Aerial. An already engaged enemy cannot engage the same player again. Retained incarnation and in-play guard spellings are engine choices."
     }
   ]
 }
