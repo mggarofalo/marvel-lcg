@@ -30,6 +30,7 @@ internal static class AbilityCardDiscardExecution
 
     internal static void DiscardTop(AbilityEffect.DiscardTop discard, AbilityCardStateContext context)
     {
+        // One instruction fixes its quantity before any deck changes or reset work.
         long count = Amount(discard.Count, context);
         if (discard.Players is null && discard.From == AbilitySearchArea.EncounterDeck)
         {

@@ -62,6 +62,8 @@ public enum AbilityCardQuery
     IdentitySpecificInYourHand,
     /// <summary>The authored supportsYouControl relation.</summary>
     SupportsYouControl,
+    /// <summary>Every support in play, independently of its controller.</summary>
+    Supports,
     /// <summary>The authored charactersYouControl relation.</summary>
     CharactersYouControl,
     /// <summary>Controlled characters other than those exhausted for this ability cost.</summary>

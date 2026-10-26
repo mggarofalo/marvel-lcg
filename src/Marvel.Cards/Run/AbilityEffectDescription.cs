@@ -127,7 +127,7 @@ internal static class AbilityEffectDescription
         AbilityCardSelection.Query { Kind: AbilityCardQuery.UpgradesAndSupportsYouControl } =>
             "upgrade or support",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.UpgradesYouControl } => "upgrade",
-        AbilityCardSelection.Query { Kind: AbilityCardQuery.SupportsYouControl } => "support",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.SupportsYouControl or AbilityCardQuery.Supports } => "support",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.Enemies
             or AbilityCardQuery.AttackableEnemies
             or AbilityCardQuery.Minions

@@ -1,0 +1,11 @@
+# Global support count prerequisite (MARVEL-733)
+
+Base: `a18d4f81`. Engine prerequisite for the printed `05026` Generation Why? effect in `datasets/cards/cards.json`; the actual ability-book row and public admission remain separate work.
+
+`{ "query": "supports" }` selects every effective support in play, independently of controller and play-area ownership, in physical card order. It supports existing trait filtering and numeric counts. The existing `discardTop` operation with `player: "each"` evaluates its numeric count once before traversing player decks, so one `add` expression combining global ally and Persona-support counts freezes the quota without a new snapshot language construct. Its player-deck boundary remains `rr:player-deck.3`: no further cards are discarded from the newly shuffled deck.
+
+`GlobalPersonaCountTests` uses a synthetic actual 05026 effect body. Its nine cases distinguish the two-player global count from resolver-local counting, exclude ordinary supports and out-of-play Personas, cover empty/short/exactly exhausted decks and zero count, distinguish ownership from location, verify eliminated recipients, and compare an unqueried control after query purity checks including RNG state and pending agenda state. A separate dynamic deck-count expression proves that the first deck changing cannot alter the second player's quota.
+
+The current deck-discard operation is synchronous and supplies no interleaved per-player discard response window. This packet does not add such a window or claim an intervening-reaction test. The count is fixed before the first discard and all immediate resets; later responses cannot cause it to be reread.
+
+Validation logs outside the repository: `C:/Users/mggar/Source/global-count-{regression,mutant,restored-build,restored,hooks}.log`. The focused regression filter includes the new cases, `DiscardCountAdmissionTests`, `DiscardedPrintedNumberTests`, `WreckingCardQueryTests`, `MutagenOrderedDiscardTests` and Ms. Marvel nemesis tests. A compiled resolver-local Supports query mutant fails the global count and query assertions; restoration uses `finally`, followed by a forced `-t:Rebuild` and the same regression filter. No generated dataset, ability book, setup, public admission or UI files change.
