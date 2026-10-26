@@ -1,0 +1,23 @@
+# Thor signature composition packet
+
+Base: `3a8c8f64`. This packet authors actual 06005 Hammer Throw, 06011 Hercules and 06015 Mean Swing in the complete ability book. It brings the exact inventory from 595 to 598 faces, including 22 Thor faces. No starting-counter pool changes. Thor public admission, setup, replay versions and native product acceptance remain outside this packet.
+
+Authority is generated `datasets/cards/cards.json`. The vendored MarvelCDB FAQ has no matching entries for these four card IDs; the vendored rulings search supplies no contrary card-specific timing. Hercules uses the independently reviewed E4 direct unconditional self-price contract. Mean Swing uses the independently reviewed E5 hero-basic-attack condition and attached Weapon exhaustion contract at printed zero resource cost.
+
+Synthetic supported board fixtures exercise the complete actual book. Hammer Throw pays three plus real Mjolnir exhaustion, deals eight with overkill, and returns Mjolnir, ending its ATK/Aerial benefits. Stun pays the costs but cancels the attack and its return effect. RR1.8 `rr:and` says effects joined by “and” resolve simultaneously: Mjolnir is already returned during the later optional Chase Them Down defeat response and its nested scheme choice. The older preserved probe expected the opposite and is not authority.
+
+Hercules pricing counts only its prospective controller’s current engaged minions, at zero/two/seven yielding six/four/zero, and actual ally play pays that price. Repeated query and invalid underpayment preserve digest, RNG words/index/consumption, agenda and registered effects; a retry reaches the same committed state as an unprobed control. Mean Swing’s actual basic attack explains its Weapon cost and three-point bonus, exhausts attached actual Mjolnir, and changes only this attack. Missing, exhausted and wrong-host Weapons do not pay. A complete paid Swinging Web Kick with a ready Weapon does not offer Mean Swing.
+
+## Withheld composition
+
+06012 Valkyrie is deliberately unauthored. An ordinary ally play paid with actual Energy deals two instead of the required three. A full Game probe declaring the Power of Aggression wild icons as energy also reaches the response and deals two instead of three. CardPaymentEntry does not persist a paid-icon receipt for ally entry, while AbilityExpressionEvaluation can read only the current response payment or a paid marker. This needs an engine-owned entry-payment receipt and incarnation lifecycle proof before actual Valkyrie authoring. No engine change or approximation is included.
+
+Raw probes and logs are preserved outside the repository at `C:/Users/mggar/Source/thor-signature-b-evidence/`: `ThorSignatureAllyCardTests-composition-red.cs`, `valkyrie-composition-red-row.json`, `composition-focused4.log`. The declared-energy case and ordinary direct energy case fail expected 3 / actual 2. Other experimental Game cases encountered fixture payment validation errors and are not evidence of the receipt gap. The reentry probe stops at the first failed three-damage assertion; stale-receipt/put-into-play behavior remains unverified.
+
+## Verification
+
+`dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --filter "FullyQualifiedName~Thor|FullyQualifiedName~AbilityData"` passed 694 tests (1m47s), logged in `composition-safe-focused.log`. The broad substring also selects Authored names; this is the observed count, not 694 Thor tests. The restored exact three-class/AbilityData filter passed 47 tests (8s), `composition-restored.log`.
+
+Four data mutations were exercised against the actual compiled test assembly: Hammer Throw seven damage fails expected overkill spill five / actual four; omitted overkill fails expected spill five / actual zero; Hercules scalar two fails expected cost four / actual two; Mean Swing bonus two fails the three-point semantic/behavior checks. The zero-valued overkill marker experiment is rejected during parsing and is preserved separately as `composition-mutant-hammer-invalid-zero-marker.log`; it is not a killed behavioral mutant. Valid mutation logs are `composition-mutant-{hammer-seven,hammer-no-overkill,hercules-double,swing-two}.log`. The restored Hammer Throw checks pass again (`composition-overkill-restored.log`). These are dataset-only mutations; production sources and binaries were not mutated.
+
+Normal hooks are installed through `dotnet tool restore` and `dotnet husky install`. The normal-hook commit log is `composition-commit.log`. Independent review and integration gates follow this packet. No broader product readiness claim is made.

@@ -18073,6 +18073,99 @@
           }
         }
       ]
+    },
+    {
+      "card": "06005",
+      "name": "Hammer Throw",
+      "note": "Printed 06005 exhausts Mjolnir as a cost. Damage and return joined by and resolve before the later optional defeat response (rr:and). The attack carries overkill.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "attack"
+          ],
+          "cost": {
+            "exhaustTitled": "Mjolnir"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "dealAttackDamage": {
+                          "cards": "chosen",
+                          "amount": 8,
+                          "overkill": 1
+                        }
+                      },
+                      {
+                        "returnToHand": {
+                          "titled": "Mjolnir"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06011",
+      "name": "Hercules",
+      "note": "The direct unconditional Constant supplies live self play-cost reduction per own engaged minion; it does not install a continuous effect from hand.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "reduceSelfCostPerEngagedMinion": 1
+          }
+        }
+      ]
+    },
+    {
+      "card": "06015",
+      "name": "Mean Swing",
+      "note": "Only the current hero basic attack receives +3. One ready controlled Weapon attached to that hero pays the arrow cost; the printed zero price requires no resource generation.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenHeroBasicAttackInitiated",
+            "timing": "Interrupt",
+            "actor": "you",
+            "form": "hero",
+            "player": "you"
+          },
+          "cost": {
+            "exhaustChosen": {
+              "from": {
+                "query": "upgradesOnYourHero"
+              },
+              "trait": "WEAPON",
+              "count": 1
+            }
+          },
+          "effect": {
+            "boostBasicUse": 3
+          }
+        }
+      ]
     }
   ]
 }
