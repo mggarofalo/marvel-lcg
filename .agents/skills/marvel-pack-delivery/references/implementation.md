@@ -80,7 +80,10 @@ Every new setup record also enters the behavioral authority universe. Add its
 reviewed adjudication, regenerate/check the behavior catalog and update the
 enumeration assertions. Expansion records remain `outside-core`; implementing
 them does not give them executable Core transcript coverage. Run those authority
-checks as well as the setup tests before handing off the packet.
+checks as well as the setup tests before handing off the packet. Include the global
+`RiseOfRedSkullSetupDataTests` recipe inventory even when the new pack is unrelated
+to Rise of Red Skull; its declared counts cover every research recipe. Preserve
+separate accepted-product counts until the product admission gate actually changes.
 Whole-game replays supplement focused rules evidence; record whether they exercise
 victory, defeat, promotion and campaign continuation rather than inferring it.
 
