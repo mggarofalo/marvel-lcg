@@ -80,6 +80,7 @@ internal static class AbilityEffectLowering
             "gainSurge" => new AbilityEffect.GainSurge(Integer(argument, child)),
             "useAttackForThwart" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.UseAttackForThwart),
             "advanceMainScheme" => FixedEffect(argument, child, "next", AbilityFixedInstruction.AdvanceMainScheme),
+            "cancelBoostIcons" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostIcons),
             "cancelOccurrence" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelOccurrence),
             "cancelWhenRevealed" => FixedEffect(argument, child, "trigger.subject", AbilityFixedInstruction.CancelWhenRevealed),
             "alsoAttackEachOtherHero" => FixedEffect(argument, child, "this", AbilityFixedInstruction.AlsoAttackEachOtherHero),

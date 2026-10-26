@@ -14,6 +14,7 @@ internal static class AbilityLeafTargetAvailability
     /// <summary>Target existence for leaf options without a dedicated partial-resolution check.</summary>
     internal static bool HasTargets(AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
     {
+        "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World),
         "modifyPlayedEvent" => AbilityPlayedEventModifier.CanModify(EffectOf<AbilityEffect.ModifyPlayedEvent>(node, cast), cast.Context),
         "revealFromVillainDeck" => AbilitySelectedDeckReveal.HasTarget(node, cast),
         "reveal" or "returnToHand" =>

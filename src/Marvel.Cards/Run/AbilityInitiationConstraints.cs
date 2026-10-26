@@ -97,7 +97,7 @@ internal static class AbilityInitiationConstraints
             || ActiveChoices(effect, cast).Any()) return CanInitiate(effect, cast);
         var outcome = ResolutionOf(effect, cast);
         return outcome == required
-            ? CanInitiate(ContinuationChild(node, branch), cast)
+            ? CanInitiate(ContinuationChild(node, branch), cast.AfterBoostCancellation(effect))
             : CanInitiate(effect, cast);
     }
 

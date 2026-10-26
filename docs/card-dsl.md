@@ -16,6 +16,15 @@ checks constant-ending consequences before costs. Actual 05028 admission to the
 ability book is gated by `PrintedTextBlankingTests` and the ability-data inventory;
 it does not admit the incomplete Ms. Marvel product.
 
+`cancelBoostIcons: "trigger"` cancels the remaining numeric icons on the exact
+physical boost card in its faceup interrupt occurrence. Constants and amplify
+are included; its star ability still resolves, and icons gained by that later
+Boost ability are not cancelled (ruling `1ea208998735ef4b`). A zero or previously
+cancelled contribution cannot initiate this effect. The captured result is
+`{"result":"cancelledBoostIcons"}`. Admission projects this result only through
+a direct dependent `then` predecessor; an unbound or unsupported projection
+raises before costs. These instruction/result spellings are engine choices.
+
 `attackAnotherEnemy: { "amount": <positive constant> }` is the second sentence
 of one attack whose first sentence deals constant damage to its chosen enemy.
 It waits for the first damage and defeat procedures, then offers another legal

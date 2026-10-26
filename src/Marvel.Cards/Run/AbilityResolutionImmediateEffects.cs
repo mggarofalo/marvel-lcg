@@ -12,6 +12,11 @@ internal static class AbilityResolutionImmediateEffects
         var result = AbilityImmediateExecution.TryRun(effect, new AbilityImmediateContext(
             execution.AdmissionContext(cast), cast.Trigger, cast.Events, cast.GainedKeywords,
             execution.encounterAbilities));
+        if (effect is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelBoostIcons })
+        {
+            cast.Results["cancelledBoostIcons"] = result.CancelledBoostIcons;
+            cast.CompletedOutcome = result.CancelledBoostIcons > 0 ? AbilityStructuralOutcome.Full : AbilityStructuralOutcome.None;
+        }
         if (result.ResolveEffect) cast.ResolveEffect();
         if (result.ResolveEffect && effect is AbilityEffect.CardAction
             { Instruction: AbilityCardInstruction.DeclareDefender })

@@ -121,6 +121,12 @@ internal static class AbilityAdmission
         internal long PowerAmount => Context.Expressions.PowerAmount;
         internal string? Power => Context.Power;
 
+        internal AbilityAdmissionScope AfterBoostCancellation(AbilityEffect effect) =>
+            effect is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelBoostIcons }
+                ? new(Context with { Expressions = Context.Expressions with
+                    { Results = Context.Expressions.Results.SetItem("cancelledBoostIcons", Occurrence.BoostIcons?.Remaining ?? 0) } }, evidence)
+                : this;
+
         internal AbilityAdmissionScope ForReachability(AbilityReachabilityContext reachability) =>
             new(Context.WithReachability(reachability), evidence);
 

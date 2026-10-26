@@ -22,6 +22,8 @@ internal sealed class AbilityExpressionEvaluation(
     {
         AbilityNumber.Constant constant => constant.Value,
         AbilityNumber.PerPlayer perPlayer => perPlayer.Value * context.World.Players,
+        AbilityNumber.Result { Name: "cancelledBoostIcons" } when !context.Results.ContainsKey("cancelledBoostIcons") =>
+            throw new RulesNotImplementedException("cancelled boost icons require an executed or directly projected cancellation receipt"),
         AbilityNumber.Result result => context.Results.GetValueOrDefault(result.Name),
         AbilityNumber.Sum sum => sum.Operands.Sum(operand => Amount(operand)),
         AbilityNumber.Product product => product.Operands.Aggregate(1L, (value, operand) => value * Amount(operand)),

@@ -64,7 +64,7 @@ internal static class AbilityEffectTargetAdmission
                         TargetLegalityOf(
                             EffectBody(node), cast, bindingMayChange),
                         TargetLegalityOf(
-                            EffectFollowing(node), cast, bindingMayChange),
+                            EffectFollowing(node), cast.AfterBoostCancellation(EffectBody(node)), bindingMayChange),
                     ])
                     : TargetLegalityOf(
                         EffectBody(node), cast, bindingMayChange),
@@ -77,7 +77,7 @@ internal static class AbilityEffectTargetAdmission
             "otherwise" => ResolutionOf(EffectBody(node), cast)
                 == AdmissionResolution.None
                     ? TargetLegalityOf(
-                        EffectFollowing(node), cast, bindingMayChange)
+                        EffectFollowing(node), cast.AfterBoostCancellation(EffectBody(node)), bindingMayChange)
                     : TargetLegalityOf(
                         EffectBody(node), cast, bindingMayChange),
             _ => throw new InvalidOperationException("Unknown dependent target operation"),
@@ -138,12 +138,17 @@ internal static class AbilityEffectTargetAdmission
             _ => throw new InvalidOperationException("Unknown damage or threat target operation"),
         };
 
+    private static TargetLegality BoostCancellationTargetLegality(AbilityAdmissionScope cast) =>
+        cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World)
+            ? TargetLegality.Valid : TargetLegality.Invalid;
+
     internal static TargetLegality OtherTargetLegality(
         AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange) =>
         node.OperationName() switch
         {
             // rr:target.3.4: "at least one of those effects must be able to
             // affect the target." Deferring resolution retains the bound target.
+            "cancelBoostIcons" => BoostCancellationTargetLegality(cast),
             "modifyPlayedEvent" => AbilityPlayedEventModifier.CanModify(EffectOf<AbilityEffect.ModifyPlayedEvent>(node, cast), cast.Context)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "afterActivation" => TargetLegalityOf(EffectBody(node), cast, bindingMayChange),

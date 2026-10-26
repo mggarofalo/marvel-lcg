@@ -157,6 +157,7 @@ internal static class AbilityOperationNames
         {
             AbilityFixedInstruction.UseAttackForThwart => "useAttackForThwart",
             AbilityFixedInstruction.AdvanceMainScheme => "advanceMainScheme",
+            AbilityFixedInstruction.CancelBoostIcons => "cancelBoostIcons",
             AbilityFixedInstruction.CancelOccurrence => "cancelOccurrence",
             AbilityFixedInstruction.CancelWhenRevealed => "cancelWhenRevealed",
             AbilityFixedInstruction.AlsoAttackEachOtherHero => "alsoAttackEachOtherHero",

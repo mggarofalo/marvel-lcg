@@ -61,6 +61,9 @@ internal static class AttackProcedure
             case Steps.FlipBoostCards:
                 Attack.FlipBoostCards(world, facts, world.AttackAbilities, events);
                 return true;
+            case BoostFaceupOperation.Faceup:
+                AttackBoost.ResolveFaceup(world, facts, world.AttackAbilities, step, events);
+                return true;
             case Steps.FinishBoostCard:
                 Attack.FinishBoostCard(world, facts, world.AttackAbilities, step, events);
                 return true;
