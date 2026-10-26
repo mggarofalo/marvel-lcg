@@ -61,4 +61,26 @@ internal static class AbilityInvocationPayment
         // Reuse the existing owned Special continuation, without Wakanda Forever's final bonus.
         return new NextSpecialCommand(top.ObjectId, true) { Invocation = true };
     }
+
+    // The predecessor completes the instructed Special procedure, whose child effects
+    // still resolve as much as possible before the parent resumes.
+    internal static AbilityAdmission.AdmissionResolution? ResolutionOf(AbilityEffect effect, AbilityAdmission.AbilityAdmissionScope scope) =>
+        effect is AbilityEffect.ResolveInvocation
+            ? Top(scope.World, scope.Player) is not null
+                ? AbilityAdmission.AdmissionResolution.Full : AbilityAdmission.AdmissionResolution.None
+            : null;
+
+    internal static void Return(AbilityResolutionState cast)
+    {
+        if (!cast.Results.TryGetValue(CardKey, out long id)
+            || !cast.Results.TryGetValue(OwnerKey, out long owner) || owner != cast.Player
+            || id < 0 || id >= cast.World.Cards.Count)
+            throw new RulesNotImplementedException("no captured owned Invocation to return");
+        var card = cast.World.Cards[checked((int)id)];
+        if (!cast.Results.TryGetValue(CopyKey, out long copy) || card.Incarnation != copy)
+            throw new RulesNotImplementedException("the captured Invocation incarnation cannot return");
+        var deck = cast.World.Seats[cast.Player].InvocationDeck
+            ?? throw new RulesNotImplementedException("no resolving player Invocation deck");
+        deck.ReturnToTop(card, cast.Trigger, cast.Events);
+    }
 }

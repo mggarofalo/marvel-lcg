@@ -15,6 +15,9 @@ public abstract record AbilityEffect
     /// <summary>Place this Invocation in its own discard pile and refresh its public top.</summary>
     public sealed record DiscardInvocation : AbilityEffect;
 
+    /// <summary>Return the captured physical Invocation after its Special completes.</summary>
+    public sealed record ReturnInvocation : AbilityEffect;
+
     /// <summary>Increase only the current basic use, optionally from its selected ally receipt.</summary>
     public sealed record BoostBasicUse(int Amount, bool MatchingAlly = false) : AbilityEffect;
 

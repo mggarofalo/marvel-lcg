@@ -77,6 +77,25 @@ public sealed class InvocationDeck
         return invocation;
     }
 
+    /// <summary>Return the resolved physical card from its discard or recycled deck.</summary>
+    public void ReturnToTop(Card card, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(events);
+        if (!duringGame || !cards.Contains(card) || card.Owner != Player
+            || card.Area != Discard && card.Area != Deck)
+            throw new ArgumentException("only this player's resolved Invocation can return", nameof(card));
+        // ruling:b07d53e12625ab23: expose/recycle before returning this same copy.
+        // A recycled copy can occupy any position, so move it within its deck too.
+        if (PublicTop is { } previous)
+        {
+            previous.TurnFaceDown();
+            events.Add(new CardsFlipped([previous.ObjectId], false) { Trigger = trigger, Verb = "Conceal" });
+        }
+        Move(card, Deck, trigger, "Return", events);
+        RefreshTop(trigger, events);
+    }
+
     internal void BeginGame(string trigger, List<GameEvent> events)
     {
         duringGame = true;

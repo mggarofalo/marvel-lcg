@@ -27,6 +27,7 @@ internal static class AbilityEffectLowering
         {
             "discardInvocation" => InvocationDiscard(argument, child),
             "resolveInvocation" => InvocationEffect(argument, child),
+            "returnInvocation" => InvocationReturn(argument, child),
             "attackAnotherEnemy" => AbilityStagedAttackLowering.Lower(argument, child),
             "boostBasicUse" => argument is AbilityValue.Word { Value: "exhaustedAllyPower" }
                 ? new AbilityEffect.BoostBasicUse(0, MatchingAlly: true)
@@ -302,6 +303,11 @@ internal static class AbilityEffectLowering
     private static AbilityEffect.DiscardInvocation InvocationDiscard(AbilityValue value, AbilityLocation location)
     {
         FixedWord(value, location, "this");
+        return new();
+    }
+    private static AbilityEffect.ReturnInvocation InvocationReturn(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "you");
         return new();
     }
 }

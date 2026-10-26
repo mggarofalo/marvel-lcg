@@ -44,6 +44,7 @@ internal static class AbilityOperationNames
     {
         AbilityEffect.DiscardInvocation => "discardInvocation",
         AbilityEffect.ResolveInvocation => "resolveInvocation",
+        AbilityEffect.ReturnInvocation => "returnInvocation",
         AbilityEffect.AttackAnotherEnemy => "attackAnotherEnemy",
         AbilityEffect.BoostBasicUse => "boostBasicUse",
         AbilityEffect.ModifyPlayedEvent => "modifyPlayedEvent",

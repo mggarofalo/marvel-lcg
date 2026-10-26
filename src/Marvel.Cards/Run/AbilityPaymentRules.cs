@@ -244,6 +244,8 @@ internal static class AbilityPaymentRules
             return true;
         }
 
+        ability = ability with { Cost = AbilityInvocationPayment.Expand(world, player, ability.Cost) };
+
         AttachedUpgradeCostBound.Validate(world, card, player, ability.Cost, []);
         if (!Resources.HasPlayableCost(card.FaceId, world.Facts))
         {
@@ -274,7 +276,7 @@ internal static class AbilityPaymentRules
 
     internal static bool EventPaysResources(World world, Card card, AbilityCost? cost) =>
         EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-        && (cost is AbilityCost.SpendEnergy
+        && (AbilityInvocationPayment.Contains(cost) || cost is AbilityCost.SpendEnergy
             || ResourceRequirement(cost, card).Length + GenericResourceAmount(cost) > 0);
 
     internal static int GenericResourceAmount(AbilityCost? cost) => cost switch

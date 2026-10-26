@@ -164,7 +164,7 @@ internal static class AbilityPlayerBindingAnalysis
 
     private static bool ContainsOther(AbilityEffect effect) => effect switch
     {
-        AbilityEffect.ResolveInvocation or AbilityEffect.DiscardInvocation => true,
+        AbilityEffect.ResolveInvocation or AbilityEffect.DiscardInvocation or AbilityEffect.ReturnInvocation => true,
         AbilityEffect.DiscardHandCards => true,
         AbilityEffect.DiscardResourceIcons => true,
         AbilityEffect.RecruitDiscarded => true,

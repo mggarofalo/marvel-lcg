@@ -79,7 +79,7 @@ internal sealed class AbilityEventPayment
 
         string generated = GeneratedResources(sources.Generators, paying);
         var requirements = EventPaymentRequirements.Create(
-            world, card, adjusted, ability.Cost, energy);
+            world, card, adjusted, AbilityInvocationPayment.Expand(world, player, ability.Cost), energy);
         ValidateGeneratedPayment(generated, requirements);
 
         var assigned = allocations;

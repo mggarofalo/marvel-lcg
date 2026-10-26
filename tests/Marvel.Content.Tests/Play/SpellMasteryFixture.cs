@@ -13,12 +13,16 @@ namespace Marvel.Content.Tests.Play;
 internal static class SpellMasteryFixture
 {
     private static readonly CardCatalog Cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
-    private static AbilityRunner Runner(bool paid, bool unsupported) => new(AbilityCatalog.Parse("""
+    private static AbilityRunner Runner(bool paid, bool unsupported, bool choice) => new(AbilityCatalog.Parse("""
         {"cards":[{"card":"09001a","abilities":[{
           "name":"Spell Mastery",
           "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
           "cost":{"seq":[{"exhaust":"this"},{"invocationTop":"you"}]},
           "effect":{"resolveInvocation":"you"}
+        }]},{"card":"09005","abilities":[{
+          "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
+          "cost":{"invocationTop":"you"},
+          "effect":{"then":{"effect":{"resolveInvocation":"you"},"then":{"returnInvocation":"you"}}}
         }]},{"card":"09036","abilities":[{
           "trigger":{"event":"WhenActionTriggered","timing":"Special","subject":"this"},
           "effect":{"seq":[{"draw":{"player":"you","count":3}},{"discardInvocation":"this"}]}
@@ -32,15 +36,20 @@ internal static class SpellMasteryFixture
         """.Replace("09036", paid && !unsupported ? "09032" : "09036", StringComparison.Ordinal)
         .Replace("""{"draw":{"player":"you","count":3}}""", paid
             ? """{"if":{"test":{"finalStep":"true"},"then":{"draw":{"player":"you","count":9}},"else":{"draw":{"player":"you","count":3}}}}"""
-            : """{"draw":{"player":"you","count":3}}""", StringComparison.Ordinal)));
+            : """{"draw":{"player":"you","count":3}}""", StringComparison.Ordinal)
+        .Replace("\"seq\":[{\"draw\":{\"player\":\"you\",\"count\":3}}",
+            choice ? "\"seq\":[{\"choose\":{\"options\":[{\"draw\":{\"player\":\"you\",\"count\":3}},{\"draw\":{\"player\":\"you\",\"count\":1}}]}}"
+                : "\"seq\":[{\"draw\":{\"player\":\"you\",\"count\":3}}", StringComparison.Ordinal)));
 
     internal static Affordance Mastery(Game game, Card hero) => Assert.Single(game.Pending!.Affordances,
         offer => offer.AnchorId == hero.ObjectId && offer.Verb == Game.ActionVerb);
 
-    internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) Board(int player, bool last = false, bool paid = false, bool live = false, bool unsupported = false)
+    internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) Board(int player, bool last = false, bool paid = false, bool live = false, bool unsupported = false,
+        int master = 0, bool choice = false)
     {
-        var runner = Runner(paid, unsupported);
-        var world = new World(Cards, player + 1, 5489);
+        var runner = Runner(paid, unsupported, choice);
+        // Master mode 3 supplies a fixed shuffle control whose resolved copy is below the new top.
+        var world = new World(Cards, player + 1, Seed(master));
         for (int index = 0; index <= player; index++)
         {
             var seat = world.CreateSeat($"p{index}");
@@ -65,6 +74,7 @@ internal static class SpellMasteryFixture
             world.CreateCard("01092",
                 world.AreaOf(DeckType.SupportsArea, PlayArea.Of(player), cardOwner: player));
         }
+        ConfigureMaster(world, player, master);
         var game = Game.Begin(world, Cards, runner);
         while (game.Phase == GamePhase.Mulligan)
             game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances).Id));
@@ -72,6 +82,14 @@ internal static class SpellMasteryFixture
             game.Resolve(Decision.Decline);
         game.Resolve(Decision.Take(Assert.Single(game.Pending!.Affordances, offer => offer.Verb == Game.ChangeForm).Id));
         return (world, game, deck, runner);
+    }
+
+    private static uint Seed(int master) => master == 3 ? 1u : 5489u;
+
+    private static void ConfigureMaster(World world, int player, int master)
+    {
+        if (master > 0) world.CreateCard("09005", world.Seats[player].Hand);
+        if (master == 2) CardPayment.ReduceNextCardCost(world, world.Seats[player].IdentityCard, player, 2);
     }
 
     internal static string Snapshot(World world) => JsonSerializer.Serialize(new

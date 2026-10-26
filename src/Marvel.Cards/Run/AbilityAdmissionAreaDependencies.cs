@@ -61,7 +61,7 @@ internal static class AbilityAdmissionAreaDependencies
         AbilityEffect? effect, AbilityAdmissionContext context, HashSet<DeckType> areas)
     {
         if (effect is null) return;
-        if (effect is AbilityEffect.ResolveInvocation or AbilityEffect.DiscardInvocation)
+        if (effect is AbilityEffect.ResolveInvocation or AbilityEffect.DiscardInvocation or AbilityEffect.ReturnInvocation)
         {
             areas.Add(DeckType.AdditionalDeck);
             return;
