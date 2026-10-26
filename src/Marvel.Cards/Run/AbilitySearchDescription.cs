@@ -51,19 +51,26 @@ internal static class AbilitySearchDescription
         _ => null,
     };
 
-    private static string? AreaCriterion(AbilityCardSelection.InAreas selection) => selection switch
+    private static string? AreaCriterion(AbilityCardSelection.InAreas selection)
     {
-        AbilityCardSelection.InAreas
+        if (selection.Set is { } set)
+            return AreaCriterion(selection with { Set = null }) is { } criterion
+                ? $"{criterion} from the {System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(set.Replace('_', ' '))} set"
+                : null;
+        return selection switch
         {
-            Title: { } title, Trait: null, AspectOnly: false, CardClass: null,
-        } area when SearchExtent(area) is not null =>
-            area.Kind is { } kind ? $"the {title} {kind.ToString().ToLowerInvariant()}" : title,
-        AbilityCardSelection.InAreas { Title: null } area when SearchExtent(area) is not null =>
-            Article(string.Join(" ", new[] { area.AspectOnly ? "aspect" : null,
-                area.CardClass == "Hero" ? "hero-specific" : area.CardClass?.ToLowerInvariant(), area.Trait?.Replace('_', ' '),
-                area.Kind?.ToString().ToLowerInvariant() ?? "card" }.Where(value => value is not null))),
-        _ => null,
-    };
+            AbilityCardSelection.InAreas
+            {
+                Title: { } title, Trait: null, AspectOnly: false, CardClass: null,
+            } area when SearchExtent(area) is not null =>
+                area.Kind is { } kind ? $"the {title} {kind.ToString().ToLowerInvariant()}" : title,
+            AbilityCardSelection.InAreas { Title: null } area when SearchExtent(area) is not null =>
+                Article(string.Join(" ", new[] { area.AspectOnly ? "aspect" : null,
+                    area.CardClass == "Hero" ? "hero-specific" : area.CardClass?.ToLowerInvariant(), area.Trait?.Replace('_', ' '),
+                    area.Kind?.ToString().ToLowerInvariant() ?? "card" }.Where(value => value is not null))),
+            _ => null,
+        };
+    }
 
     private static string? SearchExtent(AbilityCardSelection selector) => selector switch
     {
@@ -89,8 +96,11 @@ internal static class AbilitySearchDescription
             (AbilityCardSelection.WithTrait a, AbilityCardSelection.WithTrait b) =>
                 a.Trait == b.Trait && a.Exclude == b.Exclude && SameSelection(a.Cards, b.Cards),
             (AbilityCardSelection.InAreas a, AbilityCardSelection.InAreas b) =>
-                a == b || a.Areas.SequenceEqual(b.Areas) && a.Kind == b.Kind && a.Trait == b.Trait
-                && a.Title == b.Title && a.Top == b.Top && a.AspectOnly == b.AspectOnly && a.CardClass == b.CardClass,
+                SameAreaCriteria(a, b),
             _ => false,
         };
+    private static bool SameAreaCriteria(AbilityCardSelection.InAreas left, AbilityCardSelection.InAreas right) =>
+        left.Areas.SequenceEqual(right.Areas) && left.Kind == right.Kind && left.Trait == right.Trait
+        && left.Title == right.Title && left.Top == right.Top && left.AspectOnly == right.AspectOnly
+        && left.CardClass == right.CardClass && left.Set == right.Set;
 }

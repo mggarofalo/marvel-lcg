@@ -1532,3 +1532,13 @@ selecting a seat. This spelling and ambiguity policy are engine choices.
 An explicit `discard` uses ordinary discard routing, separate Invocation
 recycling and top disclosure. This primitive creates no Special execution path
 or public pack admission.
+
+### Exact printed-set search
+
+`cardsIn` accepts optional `set: "doctor_strange"`. This engine-chosen spelling
+compares the current face catalog set exactly with ordinal case sensitivity,
+using the existing `ICardFacts.EncounterSet` metadata port. It combines with all
+other search filters and never broadens the named areas. `top` bounds the physical
+search range before set or other criteria apply. Omitting `set` retains existing
+search behavior. This prerequisite does not author Mystical Studies or admit the
+Doctor Strange product.

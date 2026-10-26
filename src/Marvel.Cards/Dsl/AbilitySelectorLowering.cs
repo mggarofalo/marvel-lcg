@@ -202,7 +202,7 @@ internal static class AbilitySelectorLowering
 
     internal static AbilityCardSelection.InAreas InAreas(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "area", "areas", "kind", "trait", "title", "top", "aspectOnly", "cardClass");
+        var fields = Fields(value, location, "area", "areas", "kind", "trait", "title", "top", "aspectOnly", "cardClass", "set");
         if (fields.ContainsKey("area") == fields.ContainsKey("areas"))
         {
             throw location.Error("expected exactly one of 'area' and 'areas'");

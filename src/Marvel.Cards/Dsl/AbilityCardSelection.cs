@@ -57,5 +57,7 @@ public abstract record AbilityCardSelection
         public bool AspectOnly { get; init; }
         /// <summary>Match one printed card classification.</summary>
         public string? CardClass { get; init; }
+        /// <summary>Match one exact printed catalog set.</summary>
+        public string? Set { get; init; }
     }
 }

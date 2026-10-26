@@ -159,6 +159,8 @@ internal sealed class AbilitySelectorEvaluation(
         if (selection.Areas.Any(area => area is AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck))
             information.Add(InformationKind.Search);
         return [.. selection.Areas.SelectMany(area => SearchRange(area, selection.Top))
+            .Where(card => selection.Set is null || string.Equals(selection.Set,
+                context.World.Facts.EncounterSet(card.FaceId), StringComparison.Ordinal))
             .Where(card => !selection.AspectOnly || IsAspect(card))
             .Where(card => selection.CardClass is null || string.Equals(selection.CardClass,
                 context.World.Facts.Attributes(card.FaceId).GetValueOrDefault("Class"), StringComparison.Ordinal))
