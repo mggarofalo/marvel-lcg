@@ -32,6 +32,8 @@ internal static class AbilityWindowActivation
         var eventPayment = AbilityEventPayment.Prepare(
             world, card, cast.Player, paying, found,
             execution.resourceAbilities, answer.Allocated);
+        if (eventPayment is not null)
+            AbilityPaymentReceiptAdmission.Validate(found, execution.AdmissionContext(cast), eventPayment.PreviewPaid);
         cast.PendingPayment = new AbilityInitiationPayment(eventPayment, arrowPayment);
         if (cast.PendingPayment.Commit(execution, cast))
         {

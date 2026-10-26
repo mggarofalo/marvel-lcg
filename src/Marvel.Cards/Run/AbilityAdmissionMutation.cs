@@ -57,7 +57,7 @@ internal static class AbilityAdmissionMutation
         // continuation boundary now, while no cost has been paid, then use
         // only the currently active branch for ordinary target eligibility.
         var test = ConditionalOf(node, cast).Test;
-        bool paymentCanSwitch = cast.Reachability.PaymentMayMutate && PaymentCanChange(test);
+        bool paymentCanSwitch = PaymentCanSwitch(test, cast);
         bool bindingCanSwitch = cast.Reachability.PriorBindingMayChange
             && BindingCanChange(test);
         bool stateCanSwitch = bindingCanSwitch
@@ -76,6 +76,19 @@ internal static class AbilityAdmissionMutation
         return ConditionalBranch(node, Test(test, cast) ? "then" : "else")
             is not { } active || CanInitiate(active, cast);
     }
+
+    private static bool PaymentCanSwitch(AbilityCondition test, AbilityAdmissionScope cast) =>
+        cast.Reachability.PaymentMayMutate && PaymentCanChange(test)
+        && !(cast.Reachability.PaymentReceiptKnown && OnlyReadsPayment(test));
+
+    private static bool OnlyReadsPayment(AbilityCondition condition) => condition switch
+    {
+        AbilityCondition.PaidWithResource => true,
+        AbilityCondition.All all => all.Operands.All(OnlyReadsPayment),
+        AbilityCondition.Any any => any.Operands.All(OnlyReadsPayment),
+        AbilityCondition.Negated negated => OnlyReadsPayment(negated.Operand),
+        _ => false,
+    };
 
     private static bool PreflightConditionalBranches(
         AbilityEffect.Conditional conditional, AbilityAdmissionScope cast,
@@ -154,7 +167,7 @@ internal static class AbilityAdmissionMutation
         var test = ConditionalOf(node, cast).Test;
         bool canSwitch = bindingMayChange && BindingCanChange(test)
             || PriorStepCanChange(test, cast)
-            || cast.Reachability.PaymentMayMutate && PaymentCanChange(test);
+            || PaymentCanSwitch(test, cast);
         var branches = canSwitch
             ? ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
             : ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active
@@ -272,7 +285,7 @@ internal static class AbilityAdmissionMutation
         var test = ConditionalOf(node, cast).Test;
         bool canSwitch = before && BindingCanChange(test)
             || PriorStepCanChange(test, cast)
-            || cast.Reachability.PaymentMayMutate && PaymentCanChange(test);
+            || PaymentCanSwitch(test, cast);
         var branches = canSwitch
             ? ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
             : ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active

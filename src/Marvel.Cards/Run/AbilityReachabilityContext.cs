@@ -11,6 +11,7 @@ internal sealed record AbilityReachabilityContext
     internal bool CheckingInitiation { get; init; }
     internal bool FilteringContinuationOption { get; init; }
     internal bool PaymentMayMutate { get; init; }
+    internal bool PaymentReceiptKnown { get; init; }
     internal AbilityCost? PaymentCost { get; init; }
     internal ImmutableList<AbilityEffect> PriorSteps { get; init; } = [];
     internal bool PriorStepMayMutate { get; init; }

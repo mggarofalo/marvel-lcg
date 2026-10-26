@@ -99,6 +99,8 @@ internal static class AbilityResolutionActions
         var eventPayment = AbilityEventPayment.Prepare(
             world, card, cast.Player, paying, found, execution.resourceAbilities, allocations);
         cast.TrackResolution(ability.Ordinal);
+        if (eventPayment is not null)
+            AbilityPaymentReceiptAdmission.Validate(found, execution.AdmissionContext(cast), eventPayment.PreviewPaid);
         cast.PendingPayment = new AbilityInitiationPayment(eventPayment, arrowPayment);
         cast.PendingPayment.Commit(execution, cast);
         if (cast.Suspended)
