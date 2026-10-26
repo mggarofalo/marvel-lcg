@@ -16207,6 +16207,76 @@
           }
         }
       ]
+    },
+    {
+      "card": "02030",
+      "name": "I See You",
+      "note": "Printed authority: datasets/cards/cards.json 02030. Official FAQ 02030 and ruling:ab735d7ce752f211 confirm attacks against alter-ego identities. The form branch controls normal/additional boost dealing; pre-existing boosts remain assigned. The conditional extra boost_const icon belongs to this exact source through its activation. Selector and modifier spellings are engine choices. Public Green Goblin admission stays closed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "you",
+                  "form": "alter-ego"
+                }
+              },
+              "then": {
+                "enemyAttacks": {
+                  "enemies": {
+                    "titled": "Green Goblin"
+                  },
+                  "against": "you",
+                  "dealBoostCards": "false"
+                }
+              },
+              "else": {
+                "enemyAttacks": {
+                  "enemies": {
+                    "titled": "Green Goblin"
+                  },
+                  "against": "you"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "withTrait": {
+                    "cards": {
+                      "query": "minionsEngagedWithYou"
+                    },
+                    "trait": "GOBLIN"
+                  }
+                }
+              },
+              "then": {
+                "grantUntil": {
+                  "card": "this",
+                  "keyword": "boost_const",
+                  "amount": 1,
+                  "until": "EndOfActivation"
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

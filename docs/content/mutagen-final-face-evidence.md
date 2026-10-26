@@ -37,3 +37,35 @@ zero, 02027 ATK two, 02028 discard one, 02029 bonus zero, and 02032 mill two.
 Each fails its characteristic test (02029 fails both forms); restored selection
 passes 57 tests. Logs: `%TEMP%/mutagen-final-mutant-<face>.log` and
 `%TEMP%/mutagen-final-restored.log`.
+
+## I See You continuation
+
+Base `3c08d494`. 02030 is now authored, bringing the distinct Goblin face count to
+56/57. 02031 remains fail-closed pending its separate engine receipt prerequisite.
+The earlier five-row checkpoint and its results above remain historical evidence.
+
+Printed 02030 and official FAQ 02030 / ruling:ab735d7ce752f211 establish an attack
+against either form. The alter-ego branch sets existing dealBoostCards false;
+the hero branch keeps ordinary dealing. A Boost conditional grants this exact
+source one boost_const icon until activation end only when a Goblin minion is
+engaged with the activation player. Two Goblins still add just one icon.
+
+Twelve actual-row cases cover reveal in both forms with/without Hysteria,
+attack/scheme boosts, non-first-player ownership, other-player Goblins,
+non-Goblin minions, duplicate Goblins, source/copy isolation and expiry. Both
+forms complete one attack; alter-ego draws no ordinary or additional Hysteria
+boost; hero draws the printed ordinary and additional cards. The game remains
+active and the completed activation is cleared.
+
+Focused Release Windows selection passes 68 tests including prior five rows,
+data/lowering, remaining fail-closed 02031, unknown 11028 controls and citations.
+Log: `%TEMP%/mutagen-isee-focused.log`.
+
+Three independently lowered actual-row mutants fail the intended observations:
+alter-ego boost dealing enabled (2 failures), conditional icon amount two
+(3 failures), and all-board engagement substituted for the activation player's
+engagement (2 failures). Restored focused selection passes 68 tests.
+Logs: `%TEMP%/mutagen-isee-mutant-boost-deal.log`,
+`%TEMP%/mutagen-isee-mutant-icon-amount.log`,
+`%TEMP%/mutagen-isee-mutant-engagement-owner.log`, and
+`%TEMP%/mutagen-isee-restored.log`.

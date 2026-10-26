@@ -91,7 +91,6 @@ public sealed class MutagenStageAbilityTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData("02030")]
     [InlineData("02031")]
     public void RemainingEncounterFacesFailClosed(string face)
     {
