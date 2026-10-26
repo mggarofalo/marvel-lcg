@@ -177,8 +177,7 @@ internal static class AbilityEffectTargetAdmission
             "search" => HasSearchableArea(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "grantCharactersWithTrait" => TraitGroupTargetLegality((AbilityEffect.GrantTraitCharacters)node, cast),
-            "inspectEncounterTop" => AbilityEncounterInspection.Cards(cast.World,
-                (AbilityEffect.InspectEncounterTop)node).Count > 0
+            "inspectEncounterTop" or "inspectDiscardOrderEncounterTop" => EncounterRouting.Deck(cast.World).Cards.Count > 0
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "peekTop" => AbilityDeckPeek.Decks(cast.World).Count > 0
                 ? TargetLegality.Valid : TargetLegality.Invalid,

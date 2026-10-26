@@ -117,6 +117,7 @@ internal static class AbilityResolutionAdmission
     private static bool OtherPartialResolution(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "inspectDiscardOrderEncounterTop" => EncounterRouting.Deck(cast.World).Cards.Count > 0,
             "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World),
             "inspectEncounterTop" => AbilityEncounterInspection.Cards(cast.World,
                 (AbilityEffect.InspectEncounterTop)node).Count > 0,
@@ -167,7 +168,7 @@ internal static class AbilityResolutionAdmission
     internal static AdmissionResolution ResolutionOf(AbilityEffect node, AbilityAdmissionScope cast)
     {
         if (node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
-            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop"
+            or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop"
             or "discardHandCards" or "discardResourceIcons" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
             or "legalPractice" or "payOrEffect")
         {

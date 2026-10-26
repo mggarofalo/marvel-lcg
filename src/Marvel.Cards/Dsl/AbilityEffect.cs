@@ -217,6 +217,8 @@ public abstract record AbilityEffect
     public sealed record ChooseTopForHand(int Count) : AbilityEffect;
     /// <summary>Privately inspect encounter deck tops and retain the number of treacheries.</summary>
     public sealed record InspectEncounterTop(int Count, string Result) : AbilityEffect;
+    /// <summary>Privately look at a bounded encounter group, discard one, and order survivors.</summary>
+    public sealed record InspectDiscardOrderEncounterTop(int Count) : AbilityEffect;
     /// <summary>Choose differently titled discarded cards to shuffle into the deck.</summary>
     public sealed record ChooseDiscardToShuffle(int Maximum) : AbilityEffect
     {

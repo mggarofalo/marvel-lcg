@@ -90,6 +90,7 @@ internal static class AbilityOperationNames
         AbilityEffect.RecruitDiscarded => "recruitDiscarded",
         AbilityEffect.PutIntoPlay => "putIntoPlay",
         AbilityEffect.InspectEncounterTop => "inspectEncounterTop",
+        AbilityEffect.InspectDiscardOrderEncounterTop => "inspectDiscardOrderEncounterTop",
         AbilityEffect.ChooseTopForHand => "chooseTopForHand",
         AbilityEffect.DiscardHandCards => "discardHandCards",
         AbilityEffect.DiscardResourceIcons => "discardResourceIcons",

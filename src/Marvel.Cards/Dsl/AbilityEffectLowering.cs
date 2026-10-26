@@ -90,6 +90,7 @@ internal static class AbilityEffectLowering
             "preventAttackDamage" => FixedEffect(argument, child, "attack", AbilityFixedInstruction.PreventAttackDamage),
             "revealTop" => FixedEffect(argument, child, 1, AbilityFixedInstruction.RevealTop),
             "inspectEncounterTop" => AbilityInspectionLowering.Lower(argument, child),
+            "inspectDiscardOrderEncounterTop" => AbilityInspectionLowering.DiscardOrder(argument, child),
             "peekTop" => FixedEffect(argument, child, "anyDeck", AbilityFixedInstruction.PeekAnyDeck),
             "placeAccelerationToken" => FixedEffect(argument, child, 1, AbilityFixedInstruction.PlaceAccelerationToken),
             "generateTopDiscard" => FixedEffect(argument, child, "printed", AbilityFixedInstruction.GenerateTopDiscard),
