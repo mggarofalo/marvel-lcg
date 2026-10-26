@@ -17876,6 +17876,74 @@
           }
         }
       ]
+    },
+    {
+      "card": "06003",
+      "name": "Defender of the Nine Realms",
+      "note": "The full pre-arrow discard and engagement cost must complete before the hero thwart; current rulings 6e301a347a5392fb and a1f4982cfebcd768 govern failed payment and post-payment legality.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "thwart"
+          ],
+          "cost": {
+            "discardUntilMinionEngaged": "you"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06027",
+      "name": "Family Feud",
+      "note": "Printed starting threat belongs to encounter reveal. The When Revealed ability places one additional threat for each effective Asgard card in play across all reachable play areas.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": "this",
+              "amount": {
+                "count": {
+                  "withTrait": {
+                    "cards": {
+                      "query": "cardsInPlay"
+                    },
+                    "trait": "ASGARD"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

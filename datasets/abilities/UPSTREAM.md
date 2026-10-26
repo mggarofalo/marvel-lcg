@@ -228,3 +228,11 @@ synthetic boost-star variants. Full inventory does not itself admit the product;
 whole-pack public setup, gameplay, restart and native evidence remain separate.
 
 Thor adds eleven nonpublic research faces: 06001b, 06002, 06007–06010, 06013, 06016 and 06022–06024. Actual full-book tests exercise searches, named-character entry responses, constants and resources. See `docs/content/thor-batch-a-evidence.md` for the semantic description gap and proof limits. Public admission remains closed.
+
+Defender of the Nine Realms (06003) and Family Feud (06027) add two actual
+Thor research faces (15 authored Thor faces; 591 total). The standalone
+engagement arrow cost precedes the chosen scheme thwart and uses current
+Defender clarifications 6e301a347a5392fb and a1f4982cfebcd768. Family Feud
+adds the complete in-play Asgard census to ordinary printed starting threat.
+ThorDefenderCardTests and ThorFamilyFeudCardTests use the full canonical book.
+See docs/content/thor-next-actual-evidence.md. Public admission remains closed.
