@@ -51,3 +51,34 @@ were accepted in a diagnostic probe. The Counterattack worker owns that narrow
 cost-preflight correction. This packet tests an unavailable discard source and
 does not duplicate that shared fix. Re-run the extraneous-payment control when
 the reviewed correction is integrated.
+
+Independent review of engine revision `e7739447` found no additional production
+defect in the packet's owned behavior. `Defeat.Record` captures controller before
+the step-7 defeated-card abilities and departure; current ownership and discard
+membership remain separate selector requirements. The return binding captures
+the entered incarnation before entry windows suspend the suffix. An intervening
+departure invalidates that binding, including departure without reentry.
+
+Independent tests add two departure-only entry cases (hand and discard) and a
+nonpublic characteristic restart through the existing `IDurableGameFactory`
+seam. The latter uses printed Rapid Response, Hawkeye counters, Widowmaker and
+Synth-Suit, plus explicitly synthetic Action and entry-choice scaffolding.
+Strict request/response, stored-session and session-save JSON round trips rebuild
+fresh hosts at the defeat response, suspended entry choice and Preparation
+completion. Both Widowmaker/Synth-Suit orders complete with one returned-ally
+damage and one villain damage. The tests compare reconstructed defeat facts,
+completion receipts, prompt records, digest, RNG state/consumption and accepted
+event journals with an uninterrupted control. An unknown `defeats` save field is
+rejected, preserving replay as authority for occurrence facts.
+
+Review verification: `RapidResponseReplayReviewTests` passed 2/2; the combined
+Rapid Response, `SafeHouseCostSuspension` and `WreckingDefeatReceiptTests` filter
+passed 27/27 in Release. Logs are outside the tree at
+`%LOCALAPPDATA%/Temp/rapid-response-review-{server,content}.log`. Initial independent
+fixture failures exposed ready-option filtering, a misspelled zone constant and
+immutable-collection reference equality; the final fixtures assert semantic
+cross-world values. These runs establish this prerequisite's focused behavior,
+not full-pack admission, platform certification or predecessor-save migration.
+No production ability row, compatibility identity or public content admission
+changes in this review. The shared extraneous-payment finding remains owned by
+the Counterattack packet.
