@@ -41,10 +41,56 @@ public sealed class BoostCancellationIndependentReviewTests : CoreCardTestBase
         prompt = Sequence.Work(world, Cards, runner, events)!;
         Assert.False(modifierSource.Ready);
         Assert.Equal(expected, Modified(world, boost, "boost_const"));
+        Assert.Equal(expected, world.Agenda.Occurrence!.BoostIcons!.Remaining);
         var offer = Assert.Single(prompt.Affordances, a => a.AnchorId == source.ObjectId);
         Sequence.Answer(world, Cards, runner, prompt, new Decision(offer.Id, [], [payment.ObjectId]), events);
         Sequence.Finish(world, Cards, runner, events);
         Assert.Equal(expected, world.TheCardIn(DeckType.VillainArea)!.Damage);
+        Assert.Equal(0, Assert.Single(events.OfType<BoostResolved>()).Icons);
+        Assert.Equal(2, Assert.Single(events.OfType<AttackCompleted>()).DamageDealt);
+        Assert.Null(world.Activation);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Theory]
+    [InlineData(-2)]
+    [InlineData(-3)]
+    [Rule("rr:modifiers.4")]
+    public void EarlierInterruptRemovingEveryIconWithdrawsCancellationWithoutSpending(int modifier)
+    {
+        // "A card cannot have 'negative' icons". Both zero and an over-reduced
+        // total leave nothing to cancel; synthetic faceup effects isolate admission.
+        var runner = Runner("""
+            ,{"card":"01092","abilities":[{
+              "trigger":{"event":"WhenBoostCardTurnedFaceup","timing":"Interrupt","actor":"villain"},
+              "cost":{"exhaust":"this"},
+              "effect":{"grantUntil":{"card":"trigger.subject","keyword":"boost_const",
+                "amount":MODIFIER,"until":"EndOfActivation"}}
+            }]}
+            """.Replace("MODIFIER", modifier.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal));
+        var world = Board(runner);
+        var modifierSource = world.CreateCard("01092", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        // A second optional modifier keeps the faceup window open for inspection.
+        world.CreateCard("01092", modifierSource.Area);
+        var source = world.CreateCard("05014", world.Seats[0].Hand);
+        var payment = world.CreateCard("01089", world.Seats[0].Hand);
+        world.CreateCard("01102", world.AreaOf(DeckType.EncounterDeck));
+        var events = new List<GameEvent>();
+        var prompt = Faceup(world, runner, source, events);
+        var receipt = world.Agenda.Occurrence!.BoostIcons!;
+        Assert.Equal(2, receipt.Remaining);
+        Sequence.Answer(world, Cards, runner, prompt,
+            Decision.Take(Assert.Single(prompt.Affordances, a => a.AnchorId == modifierSource.ObjectId).Id), events);
+        var next = Sequence.Work(world, Cards, runner, events);
+        Assert.NotNull(next);
+        Assert.False(modifierSource.Ready);
+        Assert.Equal(0, receipt.Remaining);
+        Assert.DoesNotContain(next?.Affordances ?? [], a => a.AnchorId == source.ObjectId);
+        Sequence.Answer(world, Cards, runner, next!, Decision.Decline, events);
+        Sequence.Finish(world, Cards, runner, events);
+        Assert.Equal(DeckType.HandsArea, source.Area.Type);
+        Assert.Equal(DeckType.HandsArea, payment.Area.Type);
+        Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
         Assert.Equal(0, Assert.Single(events.OfType<BoostResolved>()).Icons);
         Assert.Equal(2, Assert.Single(events.OfType<AttackCompleted>()).DamageDealt);
         Assert.Null(world.Activation);

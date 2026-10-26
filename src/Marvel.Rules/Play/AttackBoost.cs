@@ -137,10 +137,7 @@ internal static class AttackBoost
 
         // Ruling 1ea208998735ef4b: amplify/constants precede faceup interrupts,
         // which precede the star ability. Numeric cancellation leaves the star intact.
-        long icons = Characteristics.IsLost(world, boost, "boost_const") ? 0
-            : StateFields.Modified(world, boost, "boost_const", facts, world.Players)
-                + MainScheme.Amplify(world, facts);
-        var receipt = new BoostIconCancellation(world, boost, activation.Id, icons);
+        var receipt = new BoostIconCancellation(world, boost, activation.Id, facts);
         world.Agenda.Then(new PhaseStep(new BoostFaceupOperation(activation.Enemy, activation.Attacking, receipt),
             world.Agenda.Current?.Round ?? 0, 3, Subject: boost.ObjectId, Seat: activation.Player)
         { OccurrenceId = world.Agenda.nextPlayerActionOccurrence--, ActivationId = activation.Id });
