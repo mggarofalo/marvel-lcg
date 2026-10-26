@@ -37,7 +37,7 @@ internal static class AbilityPowerHealthTrace
         {
             if (state.DefeatWindowDeferred)
                 throw new RulesNotImplementedException(
-                    "A labelled-power damage batch reads the board after an unprojected defeat window.");
+                    $"A labelled-power damage batch reads the board after an {AbilityProjectedDefeatWindows.DeferredWindowDescription(state)}.");
             if (state.UnprojectedStageEntry is { } reason)
                 throw new RulesNotImplementedException(reason);
             var damage = new Dictionary<int, long>(state.CardDamage);
