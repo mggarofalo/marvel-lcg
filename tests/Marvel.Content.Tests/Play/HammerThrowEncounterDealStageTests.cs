@@ -57,9 +57,9 @@ public sealed class HammerThrowEncounterDealStageTests
         Assert.Equal(Snapshot(control.World), Snapshot(probed.World));
     }
 
-    internal static Prepared Prepare(AbilityRunner runner, string first, string next)
+    internal static Prepared Prepare(AbilityRunner runner, string first, string next, int players = 1)
     {
-        var world = ThorActualFixture.Board("06001a");
+        var world = ThorActualFixture.Board("06001a", players);
         world.Abilities = runner;
         World.MoveToTop(world.TheCardIn(DeckType.VillainArea)!, world.AreaOf(DeckType.RemovedArea));
         var villain = world.CreateCard(first, world.AreaOf(DeckType.VillainArea));
