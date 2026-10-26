@@ -98,3 +98,43 @@ UTF-8 logs are outside the repository in the temporary directory with prefix
 `thor-defender-fix-`. No whole-game, native-client, saved-session replay, or broad
 integration acceptance is claimed. Independent review of this follow-up remains
 separate from these author checks.
+
+## Independent follow-up closeout
+
+Reviewed exact candidate `47f3556076b64e7bef371f3327ec6cbbd9fc71b4` in
+`C:/Users/mggar/Source/marvel-thor-defender-fix-review`, branch
+`review/thor-defender-fix`. **Approved for the bounded engine prerequisite;
+both findings above are closed.** No production source, test assertion or ability
+dataset was changed during this closeout.
+
+The refusal occurs in cost lowering, before a runner can execute payment.
+Recursive lowering refuses the innermost sequence containing the entry cost,
+so nesting cannot hide it. Both component orders and their nested forms pass
+the four explicit refusal cases, including the required operation and
+simultaneous-payment exception text. Standalone entry continues to pass its
+positive timing, nested-response, decline, acting-player and query-purity tests.
+Public runner construction from an ability book still requires lowering, and
+the validated program constructor remains internal.
+
+Citation admission adds only explicit graph `card_clarifications` keys. The
+unrelated-vendored-ruling and unknown-id controls pass; the pinned printed-text
+and ruling-hash relationship gates remain intact. No relationship was moved
+into general Rules Reference modifications.
+
+Independent Release nonincremental builds of Content and Rules each produced
+**0 warnings and 0 errors**. The Content filter documented above passed
+**71 tests**, including all eight `MinionEntryArrowCostReviewTests` cases and
+the assembly citation gate. The Rules filter
+`CardRulingRelationshipTests|RuleCitationTests|RulesModificationTests` passed
+**18 tests**. Counts describe these exact independent filters, rather than the
+author's broader Content filter. Test runs left the worktree clean before this
+documentation update.
+
+UTF-8 logs are outside the repository in the temporary directory with prefix
+`thor-defender-fix-independent-`, suffixes `content-build.log`, `content.log`,
+`rules-build.log`, and `provenance.log`. Tool restoration and Husky installation
+ran normally. This closeout inspected the author's mutation evidence but did
+not repeat mutation trials. Actual printed 06003 remains unauthored; no pack,
+whole-game, saved-session replay, native-client, Linux or broad integration
+acceptance is claimed. The next delivery must author and accept the actual row
+within its own tracked scope.
