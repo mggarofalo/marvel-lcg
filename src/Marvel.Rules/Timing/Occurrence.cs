@@ -125,7 +125,7 @@ public sealed record Occurrence
 
     private readonly List<State.Defeated> defeats = [];
 
-    private readonly List<State.Attacked> attacks = [];
+    private readonly AttackRecipients attacks = new();
 
     /// <summary>The next play generation of this physical event in this occurrence.</summary>
     public int EventPlay(int card) => completedEventPlays.GetValueOrDefault(card);
@@ -236,16 +236,10 @@ public sealed record Occurrence
     public State.CompletedEnemyAttack? CompletedEnemyAttack { get; internal set; }
 
     /// <summary>Ordered recipient facts for one multi-target attack.</summary>
-    public IReadOnlyList<State.Attacked> Attacks => attacks;
+    public IReadOnlyList<State.Attacked> Attacks => attacks.Items;
 
     /// <summary>Record a recipient without creating another attack or window.</summary>
-    public void Also(State.Attacked what)
-    {
-        ArgumentNullException.ThrowIfNull(what);
-        if (attacks.Any(item => item.Card == what.Card && item.Incarnation == what.Incarnation))
-            throw new InvalidOperationException("an attack recipient was recorded twice");
-        attacks.Add(what);
-    }
+    public void Also(State.Attacked what) => attacks.Add(what);
 
     /// <summary>Ability and card resolution state accumulated in this occurrence.</summary>
     /// <remarks>
