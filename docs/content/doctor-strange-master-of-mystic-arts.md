@@ -91,14 +91,13 @@ scheme; it does not establish complete Images target-choice handling or pack
 admission. Current authority is `ruling:8c9c9d30f4c01189`, whose graph relationship
 explicitly reconciles its Invocation self-target reasoning with Rules Reference 1.8.
 
-A genuine Images `chooseCard` version remains a blocking choice-handling finding:
+The genuine Images `chooseCard` version exposed a separate choice-handling finding:
 `CanInitiateSequence` requires every child's `CanInitiate`, and
 `CanInitiateChooseCard` rejects the zero-threat scheme choice even when a sibling
-self-discard has valid target legality. The whole Special is skipped. This separate
-finding must be resolved before complete Images/Vapors coverage or Doctor Strange
-readiness is claimed. Its reproducible test source and four failing cases are
+self-discard has valid target legality. The whole Special is skipped. The bounded Images choice repair is recorded below; Vapors status replacement
+and Doctor Strange readiness remain separate work. Its reproducible test source and four failing cases are
 preserved outside the repository in `C:/Users/mggar/Source/invocation-empty-choice-review.cs`
-and `invocation-empty-choice-review.log`; the delivery lead owns follow-up.
+and `invocation-empty-choice-review.log`.
 
 Repair evidence outside the repository under `C:/Users/mggar/Source/`:
 
@@ -130,6 +129,65 @@ Independent evidence outside the repository under `C:/Users/mggar/Source/`:
 - `invocation-admission-independent-hooks.log`: normal review-commit hooks,
   including architecture policy, complexity and file-length checks.
 
-The genuine empty-choice Images finding above remains unresolved; this verdict
-does not accept complete Master/Images/Vapors behavior, all Invocations or Doctor
-Strange admission. Integrated wider checks remain with the delivery lead.
+That review verdict covers only the non-choice repair; the subsequent Images
+choice repair is recorded below. Neither verdict establishes Vapors behavior,
+all Invocations or Doctor Strange admission. Integrated wider checks remain with the delivery lead.
+
+
+## Independent empty scheme-choice sentence — MARVEL-806
+
+The bounded repair on `fix/invocation-empty-choice`, based on `081c443a`, admits
+an empty direct `chooseCard` from schemes with `removeThreat` on its chosen
+scheme as an independent sequence step. Whole-ability target admission remains
+unchanged: another effect must supply a valid target. The existing choice
+executor completes an empty choice without asking a mandatory question. A
+nonempty choice still offers only legal schemes and waits for its answer.
+`discardInvocation` is classified as independent of player/card selection,
+since it always addresses its captured physical source.
+
+Current `ruling:8c9c9d30f4c01189` explicitly includes the Invocation itself as a
+target; `ruling:8883bc6b0af1c9b8` limits an ineffective choose instruction to its
+own sentence. These results remain consistent with RR 1.8 `rr:target.2`,
+`rr:target.3`, `rr:ability.4` and `rr:and.1` (resolve as much as possible).
+The test-local 09033 program follows the printed confuse, choose scheme/remove
+four, and self-discard structure. The original direct-scheme control remains a
+separate simplified admission test.
+
+Ten new nonpublic cases cover both Spell Mastery and Master with ordinary and
+last-card decks, no manufactured confusion or threat removal, exact physical
+self-discard and intermediate reveal/reset, subsequent top or Master return,
+card conservation, one resource discard and event commitment, and a real
+positive scheme-choice suspension. An all-ineffective ordinary action stays
+unavailable without paying its exhaust cost; an empty independent choice does
+not satisfy a dependent `Then`. Nested/dependent choice bodies and other empty
+choice effects retain their existing structural admission. This packet does not
+implement Vapors status replacement, production Invocation rows or pack admission.
+
+Evidence outside the repository under `C:/Users/mggar/Source/`:
+
+- `invocation-empty-choice-admission-mutant.log`: compiled omission of the
+  sequence admission allowance fails five of ten new cases.
+- `invocation-empty-choice-binding-mutant.log`: compiled omission of fixed-source
+  binding classification fails all four positive chosen-scheme variants.
+- `invocation-empty-choice-completion-mutant.log`: explicit empty-choice receipt
+  removal is equivalent on these paths; that redundant production change is
+  omitted. The dependent-completion control is retained.
+- `invocation-empty-choice-restored-build.log` and
+  `invocation-empty-choice-restored-tests.log`: restored non-incremental Release
+  build (zero warnings/errors) and all 172 focused content cases passed.
+- `invocation-empty-choice-rules.log`: all 23 Invocation lifecycle and authority cases passed.
+- `invocation-empty-choice-architecture.log` and
+  `invocation-empty-choice-hooks.log`: all 89 focused architecture cases passed;
+  normal commit hooks run on this packet. The initial hook identified a CCN16
+  lifecycle test; its discard/reveal/return assertions are cohesively extracted
+  before restored verification and the final normal hook run.
+
+Independent review and integrated wider checks remain with the delivery lead.
+
+Lead closeout restores the RNG assertion to the test scope that owns its baseline
+after the lifecycle extraction. The final nonincremental build passes with zero
+warnings/errors, and 103 focused Invocation, Master, Spell Mastery, Covert Ops,
+existing Special and citation cases pass. These final logs are
+`Source/evidence/invocation-empty-choice-root-restored-build.log` and
+`invocation-empty-choice-root-focused.log`; earlier 172-case evidence precedes
+that test-only extraction. Normal hooks and independent review follow.

@@ -223,6 +223,11 @@ internal static class AbilityAdmission
         {
             PreflightDependentOutcomesAfterMutation(steps[step], scope);
         }
+        // An independent sentence with no eligible scheme does not prevent a
+        // later effect from resolving. Target legality is still checked for
+        // the complete ability, so an ineffective choice cannot admit itself.
+        if (AbilityIndependentCardChoice.IsEmptyThreatChoice(steps[step], scope))
+            return true;
         return CanInitiate(steps[step], scope)
             && (step + 1 == steps.Count
                 || AbilityChoiceStability.ChoicesHaveStableAreaContinuation(

@@ -31,8 +31,7 @@ public sealed class InvocationSelfDiscardAdmissionTests
     public void SingleSchemeImagesEffectsSelfDiscardThroughBothArrowsWhenMainEffectsCannotChangeState(bool master, bool last)
     {
         // "Each Invocation card always has a valid target" includes its own discard.
-        // Test-local 09033 follows its printed confuse, remove four, discard instructions.
-        // This board has one scheme, so its direct main-scheme binding needs no target choice.
+        // Simplified direct-scheme control isolates self-discard target admission.
         var (world, game, deck, _) = BoardWithSpecial(Images, last, "09033", master ? 1 : 0);
         var hero = world.Seats[1].IdentityCard;
         var villain = world.TheCardIn(DeckType.VillainArea)!;
