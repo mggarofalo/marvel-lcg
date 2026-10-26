@@ -2,16 +2,16 @@
 
 What Core Set, Rise of Red Skull, Captain America, Wrecking Crew and Green
 Goblin games are dealt from: scenario, villain and main scheme decks, encounter
-sets, and printed starter decks. The complete Ms. Marvel and Thor integration candidates
+sets, and printed starter decks. The complete Ms. Marvel, Thor and Black Widow integration candidates
 also admit their pinned starters, obligations and nemesis sets; declared data alone never
 admits a product without its complete face and recipe gates.
 
 | | |
 |---|---|
 | Kind | authored |
-| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Thor; Green Goblin (both scenarios and four modular sets) |
-| Records | 39 scenario modes, 10 heroes, 14 encounter sets; candidate runtime admission exposes 39 modes, 10 heroes and 14 sets |
-| Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `ThorSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, complete-product admission |
+| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Thor; Black Widow; Green Goblin (both scenarios and four modular sets) |
+| Records | 39 scenario modes, 11 heroes, 14 encounter sets; candidate runtime admission exposes 39 modes, 11 heroes and 14 sets |
+| Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `ThorSetupTests`, `BlackWidowSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, complete-product admission |
 
 ## Why it is authored
 
@@ -113,8 +113,9 @@ Extra customization cards 06031–06034 are admitted but absent from the starter
 This candidate remains on hold for independent Loki and Hammer Throw preflight
 review; setup evidence does not establish whole-game or native acceptance.
 
-Black Widow research setup follows the pinned FFG divider transcription in
+Black Widow candidate setup follows the pinned FFG divider transcription in
 `datasets/rules-packs/mc07/UPSTREAM.md`: 15 signature, 17 Justice and 8 Basic
 cards, plus one obligation and five nemesis cards outside the player deck.
 Extra customization cards 08030–08033 are absent from the starter.
-`BlackWidowSetupTests` checks exact composition and continued public exclusion.
+`BlackWidowSetupTests`, `BlackWidowAdmissionTests` and inventory closure tests
+check exact composition and complete-product public admission.

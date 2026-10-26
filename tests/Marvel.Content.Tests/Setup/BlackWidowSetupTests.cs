@@ -34,15 +34,15 @@ public sealed class BlackWidowSetupTests
     }
 
     [Fact]
-    public void ResearchRecipeDoesNotOpenIncompleteProduct()
+    public void CompleteRecipeEntersRuntimeDiscovery()
     {
         var setup = SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
         var cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var admitted = RuntimeProductAdmission.Discover(setup, cards, cards.Faces.ToHashSet(StringComparer.Ordinal));
         Assert.Contains("black_widow", setup.HeroNames);
-        Assert.DoesNotContain("black_widow", admitted.Setup.HeroNames);
-        Assert.DoesNotContain(admitted.Playable, face => cards.Pack(face) == "bkw");
+        Assert.Contains("black_widow", admitted.Setup.HeroNames);
+        Assert.Equal(34, admitted.Playable.Count(face => cards.Pack(face) == "bkw"));
         Assert.Contains("thor", admitted.Setup.HeroNames);
-        Assert.Equal(10, admitted.Setup.HeroNames.Count);
+        Assert.Equal(11, admitted.Setup.HeroNames.Count);
     }
 }

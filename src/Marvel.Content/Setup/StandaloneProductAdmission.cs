@@ -40,6 +40,12 @@ public static class StandaloneProductAdmission
         && setup.HeroNames.Contains("thor")
         && ThorRecipe.Complete(setup.Hero("thor"));
 
+    /// <summary>Admits Black Widow's complete face inventory and published starter.</summary>
+    public static bool BlackWidow(SetupCatalog setup, CardCatalog cards, IReadOnlySet<string> authored) =>
+        Complete("bkw", ["08001a", "08001b", .. Enumerable.Range(2, 32).Select(number => $"08{number:000}")], cards, authored)
+        && setup.HeroNames.Contains("black_widow")
+        && BlackWidowRecipe.Complete(setup.Hero("black_widow"));
+
     private static IEnumerable<string> WreckingRecipes() =>
         FixedWreckingRecipes
         .Concat(Enumerable.Range(0, 16).Select(value => "wrecking_crew_custom_"
