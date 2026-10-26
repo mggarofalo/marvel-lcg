@@ -8,7 +8,7 @@ namespace Marvel.Server;
 public static class EngineBuildIdentity
 {
     /// <summary>The deterministic replay contract implemented by this build.</summary>
-    public const string ReplayContract = "engine-replay-v24";
+    public const string ReplayContract = "engine-replay-v25";
 
     /// <summary>The seeded random-stream contract implemented by this build.</summary>
     public const string RngContract = "mt19937-iso-cxx";

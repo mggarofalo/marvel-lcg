@@ -10,6 +10,7 @@ public sealed class AttachmentReplayCompatibilityTests
     [Theory]
     [InlineData("engine-replay-v22", SessionReplayUpgrade.CoreRorsV19ToV22)]
     [InlineData("engine-replay-v23", SessionReplayUpgrade.CoreRorsV19ToV23)]
+    [InlineData("engine-replay-v24", SessionReplayUpgrade.CoreRorsV19ToV24)]
     public void UnsupportedPredecessorRemainsQuarantinedWithoutChangingAnySourceFile(
         string replay, SessionReplayUpgrade historicalRoute)
     {

@@ -19,10 +19,13 @@ The baseline is embedded in the executable; a save cannot supply a new baseline
 or authorize its own migration.
 
 This is a conservative product policy, not a rule inferred from the tabletop.
-The current v24 delivery retains named routes from the exact frozen v19/v20/v21
-content triple to `engine-replay-v24`, plus frozen-content v24 additive upgrades.
-Every original recorded fact must verify; none is regenerated. V22 and v23 have no
-named source admission and are quarantined unchanged. V24 discards unattached
+The current v25 delivery retains named routes from the exact frozen v19/v20/v21
+content triple to `engine-replay-v25`, plus frozen-content v25 additive upgrades.
+Every original recorded fact must verify; none is regenerated. V22, v23 and v24
+have no named source admission and are quarantined unchanged. V25 emits one
+ally-entry response occurrence after the mandatory ally-limit choice, including
+ordinary play and put-into-play. Core Nick Fury, Maria Hill and Mockingbird can
+therefore change a recorded trace independently of content hashes. V24 discards unattached
 revealed attachments after reveal/surge completion: Core 01163/01185 and RoRS
 04117–04119/04135 can change recorded digests and later shuffles even with
 identical datasets. Historical v22/v23 adapters remain explicit destination-bound
