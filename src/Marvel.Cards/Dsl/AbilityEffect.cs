@@ -178,6 +178,8 @@ public abstract record AbilityEffect
     public sealed record ShuffleInto(AbilityCardSelection Cards, AbilitySearchArea Deck) : AbilityEffect;
     /// <summary>Search ordered areas for a printed face and reveal it.</summary>
     public sealed record Search(string Face, ImmutableArray<AbilitySearchArea> Areas) : AbilityEffect;
+    /// <summary>Put the exact matching discarded minion into play engaged with the resolver.</summary>
+    public sealed record RecruitDiscarded(string Face) : AbilityEffect;
     /// <summary>Put a selected card into play by its printed destination or engaged with the resolver.</summary>
     public sealed record PutIntoPlay(AbilityCardSelection Card, bool PrintedDestination) : AbilityEffect
     {

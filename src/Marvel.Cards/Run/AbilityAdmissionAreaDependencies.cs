@@ -227,7 +227,7 @@ internal static class AbilityAdmissionAreaDependencies
                 or AbilityEffect.ChooseTopForHand
                 or AbilityEffect.ChooseDiscardToShuffle or AbilityEffect.DiscardResourceIcons
                 or AbilityEffect.DiscardHandWithResource
-                or AbilityEffect.RecoverDiscardedByResource
+                or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.RecruitDiscarded
                 or AbilityEffect.ActivateEnemies or AbilityEffect.GrantTraitCharacters => true,
             _ => false,
         };

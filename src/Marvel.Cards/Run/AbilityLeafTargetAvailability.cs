@@ -44,7 +44,7 @@ internal static class AbilityLeafTargetAvailability
         "delayUntil" => true,
         "generate" or "preventDamage" or "cancelWhenRevealed" or "cancelOccurrence"
             or "dealEncounterCards" or "revealTop"
-            or "recoverDiscardedByResource" or "shuffleInto" or "shuffle" => true,
+            or "recoverDiscardedByResource" or "shuffleInto" or "recruitDiscarded" or "shuffle" => true,
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' uses '{node.OperationName()}' in an option whose target "
             + "legality is not implemented"),

@@ -79,6 +79,7 @@ internal static class AbilityOperationNames
         AbilityEffect.DiscardUntil => "discardUntil",
         AbilityEffect.ShuffleInto => "shuffleInto",
         AbilityEffect.Search => "search",
+        AbilityEffect.RecruitDiscarded => "recruitDiscarded",
         AbilityEffect.PutIntoPlay => "putIntoPlay",
         AbilityEffect.InspectEncounterTop => "inspectEncounterTop",
         AbilityEffect.ChooseTopForHand => "chooseTopForHand",

@@ -35,6 +35,7 @@ internal static class AbilityDeckAndRevealExecution
             AbilityEffect.Shuffle shuffle => Shuffle(shuffle, context),
             AbilityEffect.ShuffleInto shuffle => ShuffleInto(shuffle, context),
             AbilityEffect.Search search => Search(search, context),
+            AbilityEffect.RecruitDiscarded recruit => AbilityDiscardedRecruitment.Run(recruit, context),
             AbilityEffect.PutIntoPlay placement => PutIntoPlay(placement, context),
             _ => AbilityDeckAndRevealResult.NotHandled,
         };
