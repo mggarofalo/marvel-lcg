@@ -14,6 +14,42 @@ namespace Marvel.Content.Tests.Play;
 /// <summary>Nonpublic real-card composition; no production pack admission.</summary>
 public sealed class SpellMasteryTests
 {
+    [Fact]
+    [Rule("rr:player-deck.1")]
+    [Rule("rr:player-deck.2")]
+    public void ActualWindsRecyclesBothDecksButOnlyPlayerDeckDealsAnEncounterCard()
+    {
+        // A player deck reset "immediately deals themself one facedown encounter card"
+        // and drawing "continues ... up to the specified number". The mc08 insert
+        // separately says Invocation recycling has "no penalty".
+        var (world, game, deck, _) = Board(1, last: true);
+        var seat = world.Seats[1];
+        var discard = world.AreaOf(DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1);
+        foreach (var card in seat.Deck.Cards.Skip(1).ToArray()) World.MoveToTop(card, discard);
+        var encounter = world.AreaOf(DeckType.EncounterDeck);
+        world.CreateCard("01148", encounter);
+        var penalty = world.CreateCard("01148", encounter);
+        int hand = seat.Hand.Cards.Count;
+        int recycled = discard.Cards.Count;
+        var top = deck.PublicTop!;
+
+        var result = game.Resolve(Decision.Take(Mastery(game, seat.IdentityCard).Id, [top.ObjectId], []));
+
+        Assert.Equal(hand + 3, seat.Hand.Cards.Count);
+        Assert.Equal(recycled - 2, seat.Deck.Cards.Count);
+        Assert.Empty(discard.Cards);
+        Assert.Equal(DeckType.DealtEncounterCardsDeck, penalty.Area.Type);
+        Assert.Equal(PlayArea.Of(1), penalty.Area.PlayArea);
+        Assert.False(penalty.FaceUp);
+        Assert.Single(encounter.Cards);
+        Assert.Equal(5, deck.Deck.Cards.Count);
+        Assert.Empty(deck.Discard.Cards);
+        Assert.Single(deck.Deck.Cards, card => card.FaceUp);
+        Assert.Equal(2, result.Events.OfType<AreaReordered>().Count());
+        Assert.False(seat.IdentityCard.Ready);
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+
     [Rule("rr:special")]
     [Theory]
     [InlineData(0, false)]
