@@ -24,7 +24,7 @@ The file has 3 groups:
 | Group | Admitted rows | Declared rows |
 |---|---:|---:|
 | `campaigns` | 39 Core Set, Rise of Red Skull, Wrecking Crew and Green Goblin scenario/mode combinations | 39 |
-| `heroes` | 10 Core Set, Rise of Red Skull, Captain America, Ms. Marvel and Thor starter decks | 10 |
+| `heroes` | 10 Core Set, Rise of Red Skull, Captain America, Ms. Marvel and Thor starter decks | 11 |
 | `encounter_sets` | 14 Core Set, Rise of Red Skull and Green Goblin fixed/modular sets | 14 |
 
 Ms. Marvel is admitted as a complete integration candidate. Her 40-card starter,
@@ -276,3 +276,7 @@ components resolve its quantity discrepancy as two Frost Giants and one Trickste
 Extra customization cards 06031–06034 are admitted but absent from the starter.
 This candidate remains on hold for independent Loki and Hammer Throw preflight
 review; setup evidence does not establish whole-game or native acceptance.
+
+Black Widow has a declared research recipe from the pinned mc07 divider: 40
+player cards, one separate obligation and five nemesis cards. Public admission
+remains closed until the complete pack and its engine prerequisites are verified.

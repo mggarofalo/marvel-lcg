@@ -112,3 +112,9 @@ components resolve its quantity discrepancy as two Frost Giants and one Trickste
 Extra customization cards 06031–06034 are admitted but absent from the starter.
 This candidate remains on hold for independent Loki and Hammer Throw preflight
 review; setup evidence does not establish whole-game or native acceptance.
+
+Black Widow research setup follows the pinned FFG divider transcription in
+`datasets/rules-packs/mc07/UPSTREAM.md`: 15 signature, 17 Justice and 8 Basic
+cards, plus one obligation and five nemesis cards outside the player deck.
+Extra customization cards 08030–08033 are absent from the starter.
+`BlackWidowSetupTests` checks exact composition and continued public exclusion.

@@ -6,10 +6,16 @@ which defines the complete scope and authority. Black Widow is not publicly admi
 
 ## Integrated candidate
 
-`feat/black-widow-completion` at `373767c7`, based on Thor PR #452's original
-candidate `4c6f5af9`. Thor candidate `286d0d44` is recertifying after correcting
-the platform job budget; see its checkpoint. Rebuild this branch on Thor's squash merge before opening the Black
-Widow PR. All 6,104 Content tests passed on prerequisite revision `f601932b` (2026-10-26);
+`feat/black-widow-completion` at `29aa293f`, based on Thor's certified squash
+merge `c14a045c`. Counterattack and Rapid Response mechanisms are independently
+reviewed and integrated. The seven-face packet is independently reviewed but not
+yet integrated. The four-prevention review found missing optional prevention for
+nonattack damage; MARVEL-787 owns that engine fix and separate review. The final
+two actual rows are being authored. Public admission and pack-wide proof remain
+outstanding.
+
+Earlier integration evidence follows; these runs do not certify the current head.
+All 6,104 Content tests passed on prerequisite revision `f601932b` (2026-10-26);
 log: `C:/Users/mggar/Source/evidence/black-widow-first-combined-content.log`.
 The subsequent three-face integration passed 51 focused Content checks at
 `279e8398`, including Preparation receipt consumers

@@ -39,7 +39,7 @@ public sealed class ExpansionSetupAuthorityTests
             "setup:encounter-set:a_mess_of_things",
             "setup:encounter-set:goblin_gimmicks",
             "setup:encounter-set:hydra_assault", "setup:encounter-set:hydra_patrol",
-            "setup:encounter-set:power_drain", "setup:encounter-set:running_interference", "setup:encounter-set:weapon_master", "setup:hero:captain_america",
+            "setup:encounter-set:power_drain", "setup:encounter-set:running_interference", "setup:encounter-set:weapon_master", "setup:hero:black_widow", "setup:hero:captain_america",
             "setup:hero:hawkeye", "setup:hero:ms_marvel", "setup:hero:spider_woman", "setup:hero:thor",
         };
         var expansion = Catalog.Build().Sources.Where(source =>
@@ -57,6 +57,7 @@ public sealed class ExpansionSetupAuthorityTests
 
     private static string Product(string source) => source switch
     {
+        "setup:hero:black_widow" => "Black Widow hero pack",
         "setup:hero:captain_america" => "Captain America hero pack",
         "setup:hero:ms_marvel" => "Ms. Marvel hero pack",
         "setup:hero:thor" => "Thor hero pack",
