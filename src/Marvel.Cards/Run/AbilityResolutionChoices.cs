@@ -53,15 +53,7 @@ internal static class AbilityResolutionChoices
         var source = world.Cards[step.Subject];
         var decoded = Decode(execution.program, source, step, null);
         var state = decoded.State;
-        var cast = execution.Resuming(world, source, step.Seat, state.Invocation.Address.Tier,
-            state.Cursor.FinalStep, state.Invocation.Occurrence) with
-        {
-            EachPlayerFrame = state.Cursor.EachPlayerFrame,
-            FinalPlayer = state.Cursor.FinalPlayer,
-            AbilityPlayer = state.Invocation.AbilityPlayer,
-            EventTrigger = state.Invocation.Trigger,
-            GainedKeywords = state.Memory.SurgeGained ? new(["surge"], StringComparer.Ordinal) : new(StringComparer.Ordinal),
-        };
+        var cast = AbilityResolutionLifecycle.CreateResumedState(execution, world, source, step, state);
         execution.RestorePersisted(cast, step);
         execution.RestoreContinuationCursor(cast, state);
         execution.RestoreAlteredFromFrames(cast, state.Cursor.Frames);
