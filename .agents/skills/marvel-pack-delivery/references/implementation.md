@@ -57,6 +57,11 @@ and prove adjacent unsupported content stays excluded.
 
 For shared setup changes, compare ordinary supported scenarios as well as the new
 pack. Research-game coverage does not establish public catalog/setup correctness.
+Every new setup record also enters the behavioral authority universe. Add its
+reviewed adjudication, regenerate/check the behavior catalog and update the
+enumeration assertions. Expansion records remain `outside-core`; implementing
+them does not give them executable Core transcript coverage. Run those authority
+checks as well as the setup tests before handing off the packet.
 Whole-game replays supplement focused rules evidence; record whether they exercise
 victory, defeat, promotion and campaign continuation rather than inferring it.
 

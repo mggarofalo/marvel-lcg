@@ -34,9 +34,10 @@ public sealed class ExpansionSetupAuthorityTests
             "setup:campaign:wrecking_crew_extreme",
             "setup:campaign:wrecking_crew_standard",
             "setup:campaign:zola", "setup:campaign:zola_expert",
+            "setup:encounter-set:a_mess_of_things",
             "setup:encounter-set:hydra_assault", "setup:encounter-set:hydra_patrol",
             "setup:encounter-set:weapon_master", "setup:hero:captain_america",
-            "setup:hero:hawkeye", "setup:hero:spider_woman",
+            "setup:hero:hawkeye", "setup:hero:ms_marvel", "setup:hero:spider_woman",
         };
         var expansion = Catalog.Build().Sources.Where(source =>
             source.Kind == "setup" && source.Disposition == "outside-core").ToArray();
@@ -47,11 +48,18 @@ public sealed class ExpansionSetupAuthorityTests
             Assert.Equal("outside-core", obligation.Disposition);
             Assert.Null(obligation.Implementation);
             Assert.Empty(obligation.Scenarios);
-            Assert.Contains(source.Id.StartsWith("setup:campaign:wrecking_crew_", StringComparison.Ordinal)
-                ? "The Wrecking Crew" : source.Id == "setup:hero:captain_america"
-                    ? "Captain America hero pack" : "Rise of Red Skull", obligation.Reason);
+            Assert.Contains(Product(source.Id), obligation.Reason);
         }));
     }
+
+    private static string Product(string source) => source switch
+    {
+        "setup:hero:captain_america" => "Captain America hero pack",
+        "setup:hero:ms_marvel" => "Ms. Marvel hero pack",
+        "setup:encounter-set:a_mess_of_things" => "Green Goblin scenario pack",
+        _ when source.StartsWith("setup:campaign:wrecking_crew_", StringComparison.Ordinal) => "The Wrecking Crew",
+        _ => "Rise of Red Skull",
+    };
 
     [Fact]
     public void CorePrintedFactsDoNotBorrowAnExpansionScenarioForSharedCards()

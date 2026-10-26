@@ -201,6 +201,7 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
             "03011", "03012", "03013", "03014", "03015", "03016", "03017", "03018", "03019", "03020", "03021", "03022", "03023", "03024", "03025", "03026", "03027", "03028", "03029", "03030", "03031", "03032", "03033", "03034"]);
 
 
+        permitted.UnionWith(["02037", "02038", "02039", "02040"]);
         Assert.All(AuthoredCards.Book.Authored, face => Assert.Contains(face, permitted));
     }
 

@@ -72812,6 +72812,24 @@
       ]
     },
     {
+      "id": "setup:encounter-set:a_mess_of_things",
+      "fingerprint": "sha256:303f51fe29b73d58d98a2254f749d9001ed4d986b59bd66209cf2b1ef83a4e38",
+      "obligations": [
+        {
+          "key": "a-mess-of-things-setup",
+          "summary": "The A Mess of Things record supplies its four distinct faces and five physical encounter cards.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Green Goblin scenario pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:encounter-set:bomb_scare",
       "fingerprint": "sha256:7a64d598e2ac8dd9e60bcd8c7cd1718c4d6a2a6b33ca6009fa16c2573af2efe3",
       "obligations": [
@@ -73506,6 +73524,24 @@
             "specs/behavior/core/setup-authorities.feature::The Iron Man setup record deals every owned and set-aside card"
           ],
           "mutation": "Change or omit this authored setup field; the transcript no longer matches the complete dealt scene."
+        }
+      ]
+    },
+    {
+      "id": "setup:hero:ms_marvel",
+      "fingerprint": "sha256:1b831b6750bdd042ab61d8cf0bc95e0871ca0bb30678a7e9fe8b279ece9d1bd4",
+      "obligations": [
+        {
+          "key": "ms-marvel-setup",
+          "summary": "The Ms. Marvel hero record supplies the printed starter deck, obligation and nemesis set.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Ms. Marvel hero pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
         }
       ]
     },
