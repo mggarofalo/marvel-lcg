@@ -69,8 +69,12 @@ public static class CardAbilityEntries
     /// <summary>Resolve all interrupts to one imminent defeat before deciding whether it still happens.</summary>
     public static AbilityExecutionResult ExecuteWouldDefeat(this ICardDamageAbilities abilities,
         World world, Card target, DefeatCause cause) =>
-        world.Agenda.Executions.RunBatch(
-            new Occurrence(0, [Steps.CardWouldBeDefeated], Subject: target.ObjectId, Player: target.Owner),
+        abilities.ExecuteWouldDefeat(world, target, cause,
+            new Occurrence(0, [Steps.CardWouldBeDefeated], Subject: target.ObjectId, Player: target.Owner));
+
+    internal static AbilityExecutionResult ExecuteWouldDefeat(this ICardDamageAbilities abilities,
+        World world, Card target, DefeatCause cause, Occurrence origin) =>
+        world.Agenda.Executions.RunBatch(origin,
             entry => abilities.WouldBeDefeated(world, entry, target, cause));
 
 }

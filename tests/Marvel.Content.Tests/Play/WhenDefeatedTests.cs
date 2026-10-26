@@ -251,7 +251,7 @@ public sealed class WhenDefeatedTests
     /// this" to answer says which seat instead.
     /// </remarks>
     private static Defeated Killed(Card card) => new(card.ObjectId, -1, "test")
-        { Kind = EffectiveCards.Kind(card, Cards) };
+        { Kind = EffectiveCards.Kind(card, Cards), Incarnation = card.Incarnation };
 
     private static World Board(string json, out AbilityRunner runner)
     {

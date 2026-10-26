@@ -583,3 +583,26 @@ This condition is separate from `WhenCardPlayed`, whose completion responses
 follow the event's effects and discard. The initiation occurrence is omitted
 when no interrupt observes it. The condition supplies timing only; event-specific
 damage or threat modifiers and their lifetime require their own implementation.
+
+## Simultaneous direct-damage defeat stages
+
+`SimultaneousCharacterDefeats` holds direct-damage recipients at each shared
+stage: all step-6 would-be-defeated interrupts, all step-7 when-defeated
+interrupts, then step-8 departures. The damage occurrence retains every exact
+causal defeat; response opportunities remain after the complete procedure.
+This follows `ruling:304a4798e0b453b4`: "each step is resolved simultaneously for
+both targets", together with `rr:damage.step.6` through `.step.8`.
+
+Step 6 combines live eligible tiers across exact recipient occurrences. The
+first player orders simultaneous forced abilities (`rr:forced.5`); optional
+opportunities retain the normal eligible-player choice and can select either
+recipient first. Each offered handle resolves against its original occurrence,
+so spending one global observer's interrupt does not consume its opportunity for
+a second recipient. Healing and departure invalidate only the affected imminent
+defeat. A per-occurrence typed shared-window marker lets card entry hooks execute
+without scheduling duplicate authored windows; unrelated nested occurrences have
+no such marker. Step 7 uses the existing shared defeated-card window, retaining
+own When Defeated handles only for the exact defeated incarnation still in play.
+
+The attack-specific simultaneous coordinator remains a separate consumer and is
+not covered by this direct-damage repair.

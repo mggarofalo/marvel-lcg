@@ -48,6 +48,7 @@ internal static class DefeatChoiceResolution
             .Where(ability => abilities.Describe(world, ability).Id == input.Affordance)
             .Select(ability => (PendingAbility?)ability).SingleOrDefault()
             ?? throw new RulesNotImplementedException("the selected defeat ability was not offered");
+        occurrence = DefeatWindowEligibility.Origin(world, abilities, step, chosen);
         Occurrence containing = world.Agenda.Occurrence
             ?? throw new InvalidOperationException("a defeat choice has no containing occurrence");
         ActivityBatches.Append(events, abilities.ResolveWindow(world, occurrence, chosen, input, () =>

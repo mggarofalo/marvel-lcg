@@ -76,3 +76,68 @@ new mutation evidence, adversarial projection-purity comparisons against an
 unprobed control, save/replay or frozen-route evidence, a full suite, or public
 Lightning Strike integration. Existing passing flag/projection evidence does not
 accept those untested scopes or the simultaneous defeat procedure.
+
+## Repair candidate: shared defeat stages
+
+Branch `fix/simultaneous-defeat-stages`, based on review revision
+`6c068c3c7c0c96575357f1da55726270e5d74215`, introduces a Rules-owned staged
+coordinator and exact per-recipient step-6 occurrence binding. Narrow Cards
+integration defers individual authored-window scheduling only for marked shared
+occurrences; per-target damage-ability entry hooks remain active.
+
+The observer probes now assert and answer the required two-instance mandatory
+order prompt. The suspended optional probe asserts both available occurrences in
+its first opportunity, then the remaining occurrence. These changes strengthen
+the review's timing requirements: no automatic declaration-order choice is
+assumed. The threat history, two observer effects, first-player authority,
+completion, and departure assertions remain in place.
+
+Five additional synthetic continuation cases cover step-6 forced healing in both
+declaration orders with seat 1 as first player; selecting the second optional
+recipient first; re-entry during step 6; and a re-entered own When Defeated source
+during step 7. The re-entry receipt test uses an explicit causal occurrence to
+check the actual defeat list rather than the root execution wrapper.
+
+Measured focused evidence in `%TEMP%/simultaneous-defeat-*.log`:
+
+- Content review and new continuation cases: 13/13 passed.
+- Expanded restored Content focused set including Tough, singleton defeat,
+  Shocker and Whirlwind controls: 54/54 passed before the final added step-7
+  incarnation case; that case is included in the 13/13 run.
+- Rules focused controls: 22/22 passed, including existing synthetic per-target
+  observer and suspended-defeat hooks.
+- A compiled mutant removing the step-7 completion barrier fails
+  `FirstPlayerOrdersMandatoryDefeatAbilitiesAcrossRecipients`: the required
+  ordering prompt is absent. A non-incremental restored build passes and the
+  restored focused suite passes. An initial `if (false)` mutation did not compile
+  because warnings are errors; it is not counted as mutation evidence.
+
+This candidate still needs independent review and integration compatibility
+proof. It does not claim to repair simultaneous attack damage, establish genuine
+predecessor save/replay compatibility, or admit Lightning Strike. One early broad
+Content run was interrupted before completion and is not passing evidence.
+
+The complete Content run exposed the admitted Squirrel Girl / two Weapons Runner
+case's immediate-completion assumption. Its test now asserts the first player's
+two-ability order prompt and both soldiers remaining in play, explicitly chooses
+the second soldier, and retains all original departure, each owner's dealt card,
+villain damage, and Squirrel Girl damage assertions. This is the printed-card
+cross-recipient defeat case missing from the initial synthetic review.
+
+The same broad run found two direct-entry When Defeated probes whose synthetic
+`Killed(card)` fact omitted its incarnation. Their fixture now captures the
+current incarnation; the original effect and missing-resolving-player assertions
+remain intact. These corrections postdate the broad binary, so that run is not
+final-source full-suite evidence.
+
+Final closeout evidence: non-incremental Release build passed with zero warnings
+and errors; the final-source focused Content set passed 68/68, including all
+review probes, all five continuation cases, Squirrel Girl's actual two-soldier
+order, corrected direct-entry When Defeated probes, singleton replacements,
+Tough, Shocker, Whirlwind, and rule citations. Full Rules passed 1112/1112.
+
+The completed earlier full Content binary passed 5553 and failed exactly three
+of 5556 cases: Squirrel Girl's immediate-completion assertion and the two
+missing-incarnation direct-entry fixtures described above. Their corrected
+sources passed the final focused run; full Content has not been rerun on those
+final sources. This is a partial integration result, not a final full green.

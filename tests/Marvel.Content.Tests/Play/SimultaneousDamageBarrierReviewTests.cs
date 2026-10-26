@@ -60,7 +60,11 @@ public sealed class SimultaneousDamageBarrierReviewTests
         // step 8 removes it. Reversing declaration order is the distinguishing control.
         var (world, observer, other, scheme) = Board(GlobalObserver(condition, "ForcedInterrupt"));
         var result = Resolve(world, observerFirst ? [observer, other] : [other, observer], []);
-        Sequence.Finish(world, Cards, world.Abilities, []);
+        var order = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, []));
+        Assert.Equal(Question.Order, order.Asking);
+        Assert.Equal(2, order.Affordances.Count);
+        Sequence.Answer(world, Cards, world.Abilities, order, Decision.Take(order.Affordances[0].Id), []);
+        Assert.Null(Sequence.Work(world, Cards, world.Abilities, []));
 
         Assert.True(result.IsComplete);
         Assert.All(new[] { observer, other }, card => Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type));
@@ -80,8 +84,9 @@ public sealed class SimultaneousDamageBarrierReviewTests
         var first = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
         Assert.Equal(Question.Opportunity, first.Asking);
         Assert.False(result.IsComplete);
+        Assert.Equal(2, first.Affordances.Count);
         Assert.All(new[] { observer, other }, card => Assert.Equal(DeckType.EngagedEnemiesArea, card.Area.Type));
-        Sequence.Answer(world, Cards, world.Abilities, first, Decision.Take(Assert.Single(first.Affordances).Id), events);
+        Sequence.Answer(world, Cards, world.Abilities, first, Decision.Take(first.Affordances[0].Id), events);
 
         var second = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, events));
         Assert.Equal(Question.Opportunity, second.Asking);

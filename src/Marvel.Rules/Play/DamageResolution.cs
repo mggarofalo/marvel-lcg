@@ -42,15 +42,15 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
         Settle(damage, events);
     }
 
-    internal void Settle(Damage.PlacedDamage damage, List<GameEvent> events)
+    internal void Settle(Damage.PlacedDamage damage, List<GameEvent> events, Damage.Outcome? settledOutcome = null)
     {
         world.Agenda.Executions.RequireActive(execution);
         Result.Place(damage);
-        AttackDamageAccounting.RecordPlacement(world, request.ActivationId, damage);
+        if (settledOutcome is null) AttackDamageAccounting.RecordPlacement(world, request.ActivationId, damage);
         placement = damage;
         if (damage.Landed) request.RecordDefeatOn?.Also(Steps.DamageDealt);
         placed = true;
-        var outcome = DamagePlacement.FinishPlaced(world, facts, request.Source, damage,
+        var outcome = settledOutcome ?? DamagePlacement.FinishPlaced(world, facts, request.Source, damage,
             request.Trigger, request.Verb, events, request.By, request.RecordDefeatOn);
         if (outcome == Damage.Outcome.Suspended) { Suspend(events); return; }
         Complete(outcome, events);

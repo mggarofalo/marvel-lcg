@@ -40,7 +40,7 @@ internal static class DefeatWindowResumption
         PhaseStep step, PendingAbility next, List<GameEvent> events)
     {
         DefeatAbilityOperation operation = step.Require<DefeatAbilityOperation>();
-        Occurrence origin = operation.Window.Origin!;
+        Occurrence origin = DefeatWindowEligibility.Origin(world, abilities, step, next);
         Occurrence containing = world.Agenda.Occurrence
             ?? throw new InvalidOperationException("a defeat resume has no containing occurrence");
         ActivityBatches.Append(events, abilities.ResolveWindow(world, origin, next, new Decision(next.Card, [], []), () =>

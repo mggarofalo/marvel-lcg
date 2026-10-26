@@ -109,7 +109,8 @@ internal static class DefeatProcedure
         List<GameEvent> events)
     {
         var target = world.Cards[step.Subject];
-        if (DamagePlacement.Health(world, facts, target) - target.Damage > 0)
+        if (step.Require<DefeatAbilityOperation>().Window.Sources.Count == 0
+            && DamagePlacement.Health(world, facts, target) - target.Damage > 0)
         {
             return;
         }

@@ -12,6 +12,7 @@ internal sealed class SimultaneousDirectDamageResolution
     private int replacementIndex;
     private int settlementIndex;
     private bool placed;
+    private SimultaneousCharacterDefeats? defeats;
     internal SimultaneousDirectDamageResolution(World world, ICardFacts facts,
         IReadOnlyList<DamageRequest> requests, AbilityExecution execution, AbilityExecution? completion)
     {
@@ -41,6 +42,8 @@ internal sealed class SimultaneousDirectDamageResolution
             foreach (var recipient in recipients) recipient.Place(world, facts, events);
             placed = true;
         }
+        defeats ??= new(world, facts, recipients);
+        if (!defeats.Continue(events)) { Suspend(events); return; }
         while (settlementIndex < recipients.Length)
         {
             if (!recipients[settlementIndex].Settle(world, facts, Execution, events)) { Suspend(events); return; }
