@@ -15,6 +15,7 @@ internal static class AbilitySelectionAreaReads
 
     private static void Collect(AbilityCardSelection selection, HashSet<DeckType> areas)
     {
+        AbilityInPlayCardQuery.CollectAreas(selection, areas);
         if (Operand(selection) is { } child) Collect(child, areas);
         switch (selection)
         {

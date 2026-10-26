@@ -90,4 +90,6 @@ public enum AbilityCardQuery
     Villains,
     /// <summary>Live schemes paired with living villains other than this attachment's host.</summary>
     OtherVillainSideSchemes,
+    /// <summary>Every physical in-play card reachable from the source.</summary>
+    CardsInPlay,
 }

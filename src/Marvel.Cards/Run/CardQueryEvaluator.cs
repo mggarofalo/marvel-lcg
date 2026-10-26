@@ -43,6 +43,8 @@ internal sealed class CardQueryEvaluator(
 
     internal IReadOnlyList<Card> Evaluate(AbilityCardQuery query)
     {
+        if (query == AbilityCardQuery.CardsInPlay)
+            return AbilityInPlayCardQuery.Live(cast);
         if (query == AbilityCardQuery.OtherVillainSideSchemes)
             return AbilityOtherVillainSchemeQuery.Live(cast);
         if (query == AbilityCardQuery.VillainOfAttachedScheme)

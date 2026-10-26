@@ -128,6 +128,8 @@ internal static class AbilityRepeatedSelectorTrace
             return AbilityActiveSchemeQuery.InTrace(trace).Contains(candidate);
         if (AbilityEncounterSchemeQueries.IsRanked(query))
             return AbilityEncounterSchemeQueries.InTrace(query, trace).Contains(candidate);
+        if (query == AbilityCardQuery.CardsInPlay)
+            throw new RulesNotImplementedException("cardsInPlay in a repeated projection requires complete projected placement");
         var cast = trace.Cast;
         var discarded = trace.Discarded;
         var modifiers = trace.Modifiers;

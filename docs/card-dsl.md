@@ -1232,3 +1232,16 @@ turn. It neither makes the discard pile a hand nor makes its cards resources.
 Printed cost, discounts, generators, uniqueness and mandatory ally-limit entry
 all use the ordinary play pipeline. The bounded permission has no `when`, cost,
 limit or maximum and does not generalize to other card kinds or another owner.
+
+### Complete in-play census
+
+`{"query":"cardsInPlay"}` selects physical cards in in-play engine areas, in
+object-id order, independently of controller, card kind or attachment host.
+It uses `Places.CanAffect` for game-area reach, including central shared cards.
+Use the existing `withTrait` selector and one `count` numeric expression to
+snapshot the additional threat quantity of Family Feud (06027). Its printed
+starting threat remains the ordinary reveal pipeline's responsibility.
+Out-of-play areas, including beneath-card storage in either orientation, do not
+contribute or produce search information. This engine selector does not admit
+Thor or author its actual ability row. Area-changing and repeated projections
+requiring complete projected placement explicitly refuse this selector.
