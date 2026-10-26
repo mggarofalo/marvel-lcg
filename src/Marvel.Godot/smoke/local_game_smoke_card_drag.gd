@@ -21,14 +21,16 @@ static func perform(driver, card: Control, finish: Vector2, expected_drop_surfac
 	press.global_position = start
 	driver.render_viewport.push_input(press, true)
 	await driver.process_frame
+	var pressed_origin := card.global_position
 	var midpoint := start.lerp(finish, 0.55)
 	var move := InputEventMouseMotion.new()
 	move.position = midpoint
 	move.global_position = midpoint
 	driver.render_viewport.push_input(move, true)
+	var immediate_origin := card.global_position
 	await driver.process_frame
 	if card.global_position.distance_to(origin + midpoint - start) > 4.0 or card.z_index < 120:
-		driver._fail("dragging '%s' produced no lifted intermediate frame" % card.name)
+		driver._fail("dragging '%s' produced no lifted intermediate frame: %s" % [card.name, _lift_diagnostic(driver, card, origin, pressed_origin, immediate_origin, start, midpoint)])
 		return false
 	if not card.is_set_as_top_level():
 		driver._fail("lifted card still inherits collection clipping")
@@ -67,3 +69,13 @@ static func bounds(card: Control) -> Rect2:
 static func _return_diagnostic(card: Control, expected: Transform2D) -> String:
 	if not is_instance_valid(card): return "retired"
 	return "%s expected=%s actual=%s local=%s resting=%s returning=%s lifted=%s tint=%s" % [card.name, expected, card.get_global_transform(), card.position, card.get_meta("spatial_resting_position", Vector2.INF), card.get_meta("card_return_active", false), card.is_set_as_top_level(), card.modulate]
+
+
+static func _lift_diagnostic(driver, card: Control, origin: Vector2, pressed: Vector2, immediate: Vector2, start: Vector2, midpoint: Vector2) -> String:
+	var expected := origin + midpoint - start
+	var hovered: Control = driver.render_viewport.gui_get_hovered_control()
+	return "origin=%s after_press=%s after_motion=%s expected=%s actual=%s error=%s z=%s top_level=%s pointer=%s hovered=%s resting=%s" % [
+		origin, pressed, immediate, expected, card.global_position,
+		card.global_position.distance_to(expected), card.z_index, card.is_set_as_top_level(),
+		driver.render_viewport.get_mouse_position(), hovered.get_path() if hovered != null else "none",
+		card.get_meta("spatial_resting_position", Vector2.INF)]
