@@ -931,7 +931,7 @@
     {
       "card": "01189",
       "name": "Gang-Up",
-      "note": "When Revealed (Alter-Ego): This card gains surge. When Revealed (Hero): The villain and each minion engaged with you attacks you. Two activations rather than one attack by several enemies -- rr:attack-enemy-activation is one enemy's -- and a minion engaged with you attacking is the same thing villain phase step 2.b would have done. The order is the play area's, for the reason rr:minion.3 is taken that way there.",
+      "note": "When Revealed (Alter-Ego): This card gains surge. When Revealed (Hero): The villain and each minion engaged with you attacks you. Resolve the villain first, then minions in the attacked player's chosen order (rr:activation.5). Activations initiated during another activation wait for it to finish and are ordered by the first player (rr:activation.8.1).",
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
@@ -14119,6 +14119,17 @@
           "cards": { "inPlayerArea": { "area": "identity", "player": "engagedPlayer" } },
           "keyword": "thwart_prohibited", "amount": 1
         } }
+      }]
+    },
+    {
+      "card": "02037",
+      "name": "A Mess of Things",
+      "note": "When revealed, place 2 additional threat here for each stunned friendly character. Friendly characters include identities in either form and allies in play; a character with steady needs two stunned status cards (rr:friendly; rr:character; rr:stun-stunned.3.1). Printed starting threat and the hazard icon are engine-owned.",
+      "abilities": [{
+        "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+        "effect": { "placeThreat": { "scheme": "this", "amount": { "mul": [2,
+          { "count": { "withStatus": { "cards": { "query": "heroesAndAllies" }, "status": "stunned" } } }
+        ] } } }
       }]
     },
     {

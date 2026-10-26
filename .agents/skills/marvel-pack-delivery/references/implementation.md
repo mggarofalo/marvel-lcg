@@ -20,6 +20,19 @@ that caused a continuation. Distinguish declared defense, completed attacks,
 damage prevented/dealt, defeat and replacement; do not substitute one receipt for
 another. Expected behavior must come from the card/rule/ruling, not these examples.
 
+When a bespoke engine effect implements a printed interrupt or response, preserve
+its timing tier and ordering alongside data-authored abilities. A priority hook
+must not silently resolve it before another simultaneous forced ability. For
+example, Norman Osborn's would-attack replacement and Webbed Up require the
+first player's ordering choice (`rr:forced.5`); status cancellation still has
+priority (`rr:status-cards.2`). Prove both orders and suppression of the remaining
+ability after replacement, using an already admitted conflicting card where possible.
+
+Distinguish references to "you", "your hero" and "your identity" in both forms;
+an enemy attack primitive may legitimately support alter-ego targets when a card
+explicitly allows them. For player-specific ordering or selection, exercise a
+non-first player so a hardcoded first-player prompt cannot pass unnoticed.
+
 ## Independent review
 
 Give the reviewer raw authority, exact diff and evidence, without a desired verdict.

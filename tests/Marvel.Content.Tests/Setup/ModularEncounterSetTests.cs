@@ -15,8 +15,11 @@ public sealed class ModularEncounterSetTests
     [Fact]
     public void DiscoveryClassificationAndDealerValidationShareOneBoundary()
     {
-        var modular = Setup.EncounterSetNames
-            .Where(name => ModularEncounterSets.IsModular(Setup, Cards, name))
+        var admitted = RuntimeProductAdmission.Discover(Setup, Cards,
+            Cards.Faces.ToHashSet(StringComparer.Ordinal)).Setup;
+        Assert.DoesNotContain("a_mess_of_things", admitted.EncounterSetNames);
+        var modular = admitted.EncounterSetNames
+            .Where(name => ModularEncounterSets.IsModular(admitted, Cards, name))
             .ToList();
 
         Assert.Equal(
@@ -29,14 +32,14 @@ public sealed class ModularEncounterSetTests
         foreach (string name in modular)
         {
             Assert.NotEmpty(Dealer.DealOrder(
-                Setup, "rhino", ["spider_man"], [name], Cards));
+                admitted, "rhino", ["spider_man"], [name], Cards));
         }
 
         foreach (string name in (string[])["standard", "expert"])
         {
-            Assert.False(ModularEncounterSets.IsModular(Setup, Cards, name));
+            Assert.False(ModularEncounterSets.IsModular(admitted, Cards, name));
             Assert.Throws<ArgumentException>(() => Dealer.DealOrder(
-                Setup, "rhino", ["spider_man"], [name], Cards));
+                admitted, "rhino", ["spider_man"], [name], Cards));
         }
     }
 

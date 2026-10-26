@@ -3017,10 +3017,21 @@
   "contract": "docs/setup-dataset.md",
   "counts": {
     "campaigns": 35,
-    "encounter_sets": 10,
+    "encounter_sets": 11,
     "heroes": 9
   },
   "encounter_sets": {
+    "a_mess_of_things": {
+      "role": "modular",
+      "encounters": [
+        "02037",
+        "02038",
+        "02039",
+        "02040",
+        "02040"
+      ],
+      "name": "A Mess of Things"
+    },
     "standard": {
       "role": "standard",
       "encounters": [
@@ -3604,6 +3615,6 @@
       "aspect_rule": "equal_two_aspects"
     }
   },
-  "note": "Authored Core Set, Rise of Red Skull, and Wrecking Crew setup, admitted by complete-product runtime gates: what a scenario is dealt from is printed in its rules insert rather than on any card, so there is nothing to derive it from and no upstream to copy it from. Gated by SetupDatasetTests -- see datasets/setup/UPSTREAM.md.",
+  "note": "Authored scenario, hero, and encounter-set setup recipes, admitted by complete-product runtime gates: what a scenario is dealt from is printed in its rules insert rather than on any card, so there is nothing to derive it from and no upstream to copy it from. Gated by SetupDatasetTests -- see datasets/setup/UPSTREAM.md.",
   "setup_version": 1
 }

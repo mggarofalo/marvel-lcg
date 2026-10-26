@@ -162,6 +162,7 @@ public sealed class GreenGoblinActivationReplacementTests
         // same side; rr:villain-defeat.3 carries hosted cards to that stage.
         var (world, facts, villain, environment, _) = Board(face);
         var next = world.CreateCard("02002a,02002b", world.AreaOf(DeckType.VillainDeck));
+        next.TurnTo(nextFace.EndsWith('a') ? "02002b" : "02002a");
         var status = world.CreateCard("status", world.AreaOf(
             DeckType.StatusArea, villain.Area.PlayArea, villain.ObjectId));
 

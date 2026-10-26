@@ -50,14 +50,34 @@ MARVEL-559/561 are the two canonical parents. Green Goblin implementation is alr
 3. Author and review complete Goblin Risky Business (690), Mutagen Formula (691), four modular sets (692), and all printed modes. Author Ms. Marvel's complete signature, aspect/basic/reprint, obligation and nemesis behavior from the 34-face ledger. Merge serialized ability/setup edits after the prerequisite engine contracts are reviewed. A first scenario or one event does not close either parent.
 4. Use 693 for Goblin whole-product public admission/client/replay/native proof; close Ms. Marvel's corresponding parent acceptance only after its complete ledger and public Core/RoRS journey. For each, prove missing-face and wrong-recipe rejection, seeded action and pending-choice restart, real victory/defeat or complete hero games as applicable, prior accepted content compatibility, and visible choice/cost/consequence. Run final gates on the **same integrated revision**; record failing and untested modes explicitly.
 
-The smallest next dispatch after the current Goblin 682 work: a bounded independent review of its authority, exact diff, rejected-activation controls and mutant; then 689 on the reviewed contract. In a disjoint source lane, 683 can pin the already verified Ms. Marvel divider and author the exact setup input; it may not claim public admission. The next timing/ability runner implementation is 684 only after 682/689 ownership of shared timing paths is released. MARVEL-695 remains an independent Godot layout fix, not a blocker on content authority or engine acceptance.
+The integrated prerequisite candidate includes reviewed 682 activation replacement,
+689 flip/damage mechanics, 705 status-aware selection and 711 activation ordering.
+689 still needs stage-appropriate authored reveal coverage with the complete Risky
+Business rows; its component tests are not full scenario acceptance. A Mess of
+Things has all four executable faces and its exact five-card research recipe.
+683's pinned Ms. Marvel divider and starter are integrated, as is 698's Phoenix
+Burning Hunger source correction. These changes do not admit Green Goblin or
+Ms. Marvel. Record final combined verification and merge on MARVEL-703 before
+closing individual prerequisites.
+
+The next timing packet is 684, exact played-event recovery for Morphogenetics,
+with a separate engine reviewer. Goblin scenario authoring 690/691 and remaining
+modular authoring 692 follow the reviewed contracts. The latter has explicit
+shared prerequisites: 706 persistent boost/stage healing, 707 encounter-mill
+receipts and Electro recruitment, 708 resource-constrained hand discard, 709 live
+attachment prohibitions, and 710 repeated player-revealed abilities. Each packet
+first proves whether existing primitives suffice, then extends only the missing
+behavior. Serialize ability-book integration and shared timing changes.
+
+MARVEL-695 is merged in PR #445 with all eleven CI checks passing. The focused
+Wrecking Crew UI review remains MARVEL-694; neither is a content dependency.
 
 ## Source and readiness gates
 
 | Plane work | What it unblocks | Completion condition and current limit |
 |---|---|---|
 | 697 Fear No Evil encounter authority | 617 scenario/campaign setup and all MC60 encounter abilities | Verify every numbered printed face and quantity, pin source, repair vendored/supplement input, regenerate offline and pass card extract `-- check`. The 62 inspected scan filenames of 201 and existing hero-side cards do not certify the absent 60065–60210 scenario corpus. |
-| 698 Phoenix Burning Hunger text | 591 obligation/nemesis and full Phoenix admission | Pin image/text source and errata, repair `supplement.json`, regenerate and check; generated 34028 currently has no behavior text. |
+| 698 Phoenix Burning Hunger text | 591 obligation/nemesis and full Phoenix admission | Source image pinned, supplement repaired and generated 34028 text restored in the prerequisite candidate; extract check and distinguishing text regression passed. Final integration/merge evidence remains required; Phoenix abilities are not implemented by this source repair. |
 | 699 Elektra; 700 Iron Fist; 701 Shadowland | 620, 621, 622 respectively | Acquire complete published English faces, physical quantities and rules/side decks/campaign, pin offline authority and gates. Current previews are hypotheses for mechanic research only. Each parent remains source incomplete until its own gate passes. |
 | 702 Printed hero starter lists | Per-pack authored setup for position-derived starters, beginning 563–566 and proceeding through 618–619 | Record original printed list, URL/hash, exact names/quantities and joined IDs. Complete per pack; a verified pack proceeds without waiting for 702's entire queue. Existing verified Ms. Marvel and campaign-box lists are not repeated. Permanent components and non-Permanent set-asides affect legal deck size differently. |
 

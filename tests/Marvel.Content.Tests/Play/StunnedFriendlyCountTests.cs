@@ -15,14 +15,7 @@ public sealed class StunnedFriendlyCountTests
     private static readonly CardCatalog Cards = CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
-    private static AbilityRunner Runner() => new(AbilityCatalog.Parse("""
-        {"cards":[{"card":"02037","abilities":[{
-          "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
-          "effect":{"placeThreat":{"scheme":"this","amount":{"mul":[2,
-            {"count":{"withStatus":{"cards":{"query":"heroesAndAllies"},"status":"stunned"}}}
-          ]}}}
-        }]}]}
-        """));
+    private static AbilityRunner Runner() => AuthoredCards.Runner();
 
     [Rule("rr:friendly")]
     [Rule("rr:character")]
