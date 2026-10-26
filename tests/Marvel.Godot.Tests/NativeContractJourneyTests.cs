@@ -89,6 +89,7 @@ public sealed class NativeContractJourneyTests
         if (contract == "melee-sequential") MeleeNativeAssertions.Verify(server, mutations);
         if (contract == "preemptive-strike") PreemptiveStrikeNativeAssertions.Verify(server, mutations);
         if (contract == "defeat-context") DefeatContextNativeAssertions.Verify(server, mutations);
+        if (contract == "lightning-payment") LightningNativeAssertions.Verify(server, mutations);
         if (contract == "heimdall-order") HeimdallNativeAssertions.Verify(server, mutations);
         if (contract.StartsWith("bruno-", StringComparison.Ordinal)) BrunoNativeAssertions.Verify(contract, server, mutations);
     }

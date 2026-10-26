@@ -36,6 +36,12 @@ internal sealed class NativeSceneGameFactory(string contract) : IGameFactory, IS
 
     private OpenedGame CreateScene(GameSpecification specification)
     {
+        if (contract == "lightning-payment")
+        {
+            OpenedGame opened = LightningNativeScene.Create(discovery, specification);
+            prepared = opened.Game;
+            return opened;
+        }
         if (contract == "heimdall-order")
         {
             OpenedGame opened = HeimdallNativeScene.Create(discovery, specification);

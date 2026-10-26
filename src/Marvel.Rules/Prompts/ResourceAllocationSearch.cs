@@ -10,6 +10,9 @@ internal sealed class ResourceAllocationSearch
     private readonly List<Icon> icons;
     private readonly bool[] used;
     private readonly Choice[] choices;
+    private readonly bool[] assigned;
+    private bool[] best = [];
+    private int bestCount = -1;
 
     internal ResourceAllocationSearch(List<Slot> slots, IReadOnlyList<ResourceSource> sources)
     {
@@ -18,6 +21,7 @@ internal sealed class ResourceAllocationSearch
             new Icon(source.Effect, resource))).ToList();
         used = new bool[icons.Count];
         choices = new Choice[slots.Count];
+        assigned = new bool[slots.Count];
     }
 
     internal IReadOnlyList<ResourceAllocation>? Allocate() =>
@@ -35,17 +39,60 @@ internal sealed class ResourceAllocationSearch
             foreach (char declared in Declarations(slot, icons[index]))
             {
                 if (AlreadyPaid(slotIndex, slot, declared)) continue;
+                assigned[slotIndex] = true;
                 choices[slotIndex] = new Choice(icons[index].Source, slot.Component, declared);
                 if (Search(slotIndex + 1)) return true;
             }
             used[index] = false;
+            assigned[slotIndex] = false;
         }
         return false;
     }
 
+    // Repository choice: maximize covered slots, then prefer the supplied slot order.
+    // This is guidance only; it neither declares nor commits the player's allocation.
+    internal IReadOnlyList<Slot> Uncovered()
+    {
+        SearchCoverage(0, 0);
+        return slots.Where((_, index) => !best[index]).ToArray();
+    }
+
+    private void SearchCoverage(int slotIndex, int count)
+    {
+        int possible = count + Math.Min(slots.Count - slotIndex, icons.Count - count);
+        if (possible <= bestCount) return;
+        if (slotIndex == slots.Count)
+        {
+            bestCount = count;
+            best = (bool[])assigned.Clone();
+            return;
+        }
+        CoverSlot(slotIndex, count);
+        assigned[slotIndex] = false;
+        SearchCoverage(slotIndex + 1, count);
+    }
+
+    private void CoverSlot(int slotIndex, int count)
+    {
+        Slot slot = slots[slotIndex];
+        foreach (int index in Candidates(slot))
+        {
+            used[index] = true;
+            foreach (char declared in Declarations(slot, icons[index]))
+            {
+                if (AlreadyPaid(slotIndex, slot, declared)) continue;
+                assigned[slotIndex] = true;
+                choices[slotIndex] = new Choice(icons[index].Source, slot.Component, declared);
+                SearchCoverage(slotIndex + 1, count + 1);
+            }
+            assigned[slotIndex] = false;
+            used[index] = false;
+        }
+    }
+
     private bool AlreadyPaid(int slotIndex, Slot slot, char declared) =>
-        slot.DistinctTypes && choices.Take(slotIndex).Any(choice =>
-            choice.Component == slot.Component && choice.Declared == declared);
+        slot.DistinctTypes && Enumerable.Range(0, slotIndex).Any(index => assigned[index]
+            && choices[index].Component == slot.Component && choices[index].Declared == declared);
 
     private static IEnumerable<char> Declarations(Slot slot, Icon icon)
     {
