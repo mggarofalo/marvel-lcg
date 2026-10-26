@@ -163,7 +163,7 @@ internal static class AbilityEffectTargetAdmission
             "afterActivation" => TargetLegalityOf(EffectBody(node), cast, bindingMayChange),
             // rr:target.1 includes "you"; rr:target.3.5 excludes a target
             // that "cannot perform" the requested game function.
-            "changeForm" or "removeStatuses" => CharacterChangeTargetLegality(node, cast),
+            "changeForm" or "replaceStatus" or "removeStatuses" => CharacterChangeTargetLegality(node, cast),
             "enemyAttacks" or "enemySchemes" =>
                 CardsLegality(Every(ActivationOf(node, cast).Enemies, cast)),
             "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source)
@@ -201,6 +201,8 @@ internal static class AbilityEffectTargetAdmission
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
     {
         "changeForm" => CanChangeForm(FormChangeOf(node, cast), cast)
+            ? TargetLegality.Valid : TargetLegality.Invalid,
+        "replaceStatus" => AbilityStatusReplacement.CanReplace((AbilityEffect.ReplaceStatus)node, cast)
             ? TargetLegality.Valid : TargetLegality.Invalid,
         "removeStatuses" => AbilityStatusRemoval.Candidates((AbilityEffect.RemoveStatuses)node, cast).Count > 0
             ? TargetLegality.Valid : TargetLegality.Invalid,

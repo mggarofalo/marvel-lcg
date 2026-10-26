@@ -98,6 +98,7 @@ internal static class AbilitySelectorLowering
         "attachmentsOnThis" => AbilityCardQuery.AttachmentsOnThis,
         "beneathThis" => AbilityCardQuery.BeneathThis,
         "invocationTop" => AbilityCardQuery.InvocationTop,
+        "statusCards" => AbilityCardQuery.StatusCards,
         "heroesAndAllies" => AbilityCardQuery.HeroesAndAllies,
         "heroAndAllyTargets" => AbilityCardQuery.HeroAndAllyTargets,
         "sideSchemes" => AbilityCardQuery.SideSchemes,

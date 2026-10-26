@@ -99,6 +99,9 @@ public abstract record AbilityEffect
     /// <summary>Assign indirect damage among eligible characters.</summary>
     public sealed record IndirectDamage(AbilityCardSelection Among, AbilityNumber Amount) : AbilityEffect;
     /// <summary>Give a supported status to every selected card.</summary>
+    public sealed record ReplaceStatus(AbilityCardSelection Card, string Status) : AbilityEffect;
+
+    /// <summary>Gives a status to selected characters.</summary>
     public sealed record GiveStatus(AbilityCardSelection Cards, string Status) : AbilityEffect;
 
     /// <summary>Remove every selected status kind from selected in-play characters.</summary>

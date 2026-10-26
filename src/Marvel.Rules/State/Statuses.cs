@@ -101,6 +101,10 @@ public static class Statuses
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(host);
 
+        // Engine modifier spellings for explicit cannot-have-status restrictions.
+        if (StateFields.Modified(world, host, $"cannot_be_{status}", facts, world.Players) > 0)
+            return 0;
+
         // `rr:status-cards.1` caps **every** type: "a character cannot have more
         // than one status card of each type at a time." Tough included --
         // `rr:tough.2.1` describes what happens to a character that has more

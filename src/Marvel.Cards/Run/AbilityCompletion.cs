@@ -18,20 +18,17 @@ internal static class AbilityCompletion
         AbilityEffect effect, IReadOnlyList<GameEvent> events, int start, long requested)
     {
         var committed = events.Skip(start);
-        return effect.OperationName() switch
+        return ObserveFieldChanges(effect.OperationName(), committed.OfType<FieldSet>(), requested)
+            ?? effect.OperationName() switch
         {
-            "moveActiveCounter" => Amount(committed.OfType<FieldSet>().Count(item =>
-                item.Field == "active_villain" && item.From == 0 && item.To == 1), requested),
             "placeOnBottomOfDeck" => Amount(committed.OfType<CardsMoved>()
                 .Where(item => item.Verb == "Place_On_Bottom").Sum(item => (long)item.Cards.Count), requested),
             "placeThreat" => AbilityStructuralOutcome.None,
             "giveStatus" => Amount(committed.OfType<CardAttached>().Count(item => item.Verb == "Give_Status"), requested),
             "draw" => Amount(committed.OfType<CardsMoved>().Where(item => item.Verb == "Draw")
                 .Sum(item => (long)item.Cards.Count), requested),
-            "exhaust" => Amount(committed.OfType<FieldSet>().Count(item =>
-                item.Field == "is_exhaust" && item.From == 0 && item.To == 1), requested),
-            "ready" => Amount(committed.OfType<FieldSet>().Count(item =>
-                item.Field == "is_exhaust" && item.From == 1 && item.To == 0), requested),
+            "replaceStatus" => committed.OfType<CardAttached>().Any(item => item.Verb == "Replace_Status")
+                ? AbilityStructuralOutcome.Full : AbilityStructuralOutcome.None,
             "removeStatuses" => committed.OfType<CardsMoved>().Any(item => item.Verb == "Remove_Status")
                 ? AbilityStructuralOutcome.Full : AbilityStructuralOutcome.None,
             "discard" => committed.OfType<CardsMoved>().Any(item => item.Verb == "Discard")
@@ -41,6 +38,18 @@ internal static class AbilityCompletion
             _ => null,
         };
     }
+
+    private static AbilityStructuralOutcome? ObserveFieldChanges(
+        string operation, IEnumerable<FieldSet> fields, long requested) => operation switch
+    {
+        "moveActiveCounter" => Amount(fields.Count(item =>
+            item.Field == "active_villain" && item.From == 0 && item.To == 1), requested),
+        "exhaust" => Amount(fields.Count(item =>
+            item.Field == "is_exhaust" && item.From == 0 && item.To == 1), requested),
+        "ready" => Amount(fields.Count(item =>
+            item.Field == "is_exhaust" && item.From == 1 && item.To == 0), requested),
+        _ => null,
+    };
 
     internal static long Requested(AbilityResolutionExecution execution, AbilityEffect effect,
         AbilityResolutionState cast) => effect switch

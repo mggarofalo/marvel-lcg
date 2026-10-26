@@ -53,6 +53,7 @@ internal static class AbilityOperationNames
         AbilityEffect.Damage => "dealDamage",
         AbilityEffect.AttackDamage => "dealAttackDamage",
         AbilityEffect.IndirectDamage => "indirectDamage",
+        AbilityEffect.ReplaceStatus => "replaceStatus",
         AbilityEffect.GiveStatus => "giveStatus",
         AbilityEffect.RemoveStatuses => "removeStatuses",
         AbilityEffect.ChangeForm => "changeForm",

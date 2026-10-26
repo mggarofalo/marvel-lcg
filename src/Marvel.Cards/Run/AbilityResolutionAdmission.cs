@@ -178,7 +178,11 @@ internal static class AbilityResolutionAdmission
                 + "suspends for a player choice");
         }
 
-        return StructuralResolutionOf(node, cast) ?? AbilityCardResolutionAdmission.ResolutionOf(node, cast) ?? AbilityInvocationPayment.ResolutionOf(node, cast) ?? LeafResolutionOf(node, cast);
+        return StructuralResolutionOf(node, cast)
+            ?? StatusResolutionOf(node, cast)
+            ?? AbilityCardResolutionAdmission.ResolutionOf(node, cast)
+            ?? AbilityInvocationPayment.ResolutionOf(node, cast)
+            ?? LeafResolutionOf(node, cast);
     }
 
     private static AdmissionResolution? StructuralResolutionOf(
@@ -210,8 +214,6 @@ internal static class AbilityResolutionAdmission
                     + cast.World.AreaOf(
                         DeckType.DiscardPile, PlayArea.Of(player)).Cards.Count,
                     EffectOf<AbilityEffect.Draw>(node, cast).Count))),
-            "removeStatuses" => AbilityStatusRemoval.Candidates((AbilityEffect.RemoveStatuses)node, cast).Count > 0
-                ? AdmissionResolution.Full : AdmissionResolution.None,
             "heal" => ResolutionOfAmount(
                 Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast)?.Damage ?? 0,
                 Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast)),

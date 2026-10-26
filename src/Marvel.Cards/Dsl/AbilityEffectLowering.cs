@@ -71,7 +71,8 @@ internal static class AbilityEffectLowering
             "dealAttackDamage" => AttackDamageEffect(argument, child),
             "moveDamage" or "moveAttackDamage" => MoveDamageEffect(argument, child, node.Kind == "moveAttackDamage"),
             "indirectDamage" => IndirectEffect(argument, child),
-            "giveStatus" => StatusEffect(argument, child),
+            "replaceStatus" => AbilityStatusLowering.Replacement(argument, child),
+            "giveStatus" => AbilityStatusLowering.Given(argument, child),
             "removeStatuses" => AbilityStatusRemovalLowering.Lower(argument, child),
             "changeForm" => FormEffect(argument, child),
             "draw" => DrawEffect(argument, child),
@@ -198,17 +199,6 @@ internal static class AbilityEffectLowering
 
     internal static AbilityEffect.IndirectDamage IndirectEffect(AbilityValue value, AbilityLocation location) =>
         AbilityDamageLowering.IndirectEffect(value, location);
-
-    internal static AbilityEffect.GiveStatus StatusEffect(AbilityValue value, AbilityLocation location)
-    {
-        var fields = Fields(value, location, "card", "status");
-        string status = Text(Required(fields, "status", location), location.Child("status"));
-        if (status is not (Statuses.Tough or Statuses.Stunned or Statuses.Confused))
-        {
-            throw location.Child("status").Error($"'{status}' is not a supported status");
-        }
-        return new(Selected(fields, "card", location), status);
-    }
 
     internal static AbilityEffect.ChangeForm FormEffect(AbilityValue value, AbilityLocation location)
     {
