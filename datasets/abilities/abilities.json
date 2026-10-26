@@ -18281,6 +18281,157 @@
           }
         }
       ]
+    },
+    {
+      "card": "06026",
+      "name": "Odin's Anger",
+      "note": "Printed 06026. The named Odinson player may flip, then either exhausts the alter-ego to remove this obligation or discards their Mjolnir from hand or play, becomes stunned, and discards this obligation. Sequential choices and selectors are engine spellings.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "descriptions": [
+                    "Change to alter-ego form",
+                    "Remain in your current form"
+                  ],
+                  "options": [
+                    {
+                      "changeForm": {
+                        "player": "you",
+                        "to": "alter-ego"
+                      }
+                    },
+                    {
+                      "seq": []
+                    }
+                  ]
+                }
+              },
+              {
+                "choose": {
+                  "descriptions": [
+                    "Exhaust Odinson and remove Odin's Anger from the game",
+                    "Discard Mjolnir, become stunned, and discard this obligation"
+                  ],
+                  "options": [
+                    {
+                      "then": {
+                        "effect": {
+                          "exhaust": "yourAlterEgo"
+                        },
+                        "then": {
+                          "removeFromGame": "this"
+                        }
+                      }
+                    },
+                    {
+                      "seq": [
+                        {
+                          "discard": {
+                            "cardsIn": {
+                              "areas": [
+                                "yourHand",
+                                "yourPlayArea"
+                              ],
+                              "title": "Mjolnir"
+                            }
+                          }
+                        },
+                        {
+                          "giveStatus": {
+                            "card": "you",
+                            "status": "stunned"
+                          }
+                        },
+                        {
+                          "discard": "this"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "06029",
+      "name": "Frost Giant",
+      "note": "Printed 06029. Toughness uses the normal minion-entry keyword. The boost delayed stun is bounded to the attacking villain activation; prevented damage and later unrelated damage do not stun. The condition and duration spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "and": [
+                  {
+                    "activationIs": "attack"
+                  },
+                  {
+                    "isEnemyAttacker": {
+                      "query": "villain"
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "delayUntil": {
+                  "condition": "WhenDamageDealt",
+                  "within": "EndOfActivation",
+                  "effect": {
+                    "giveStatus": {
+                      "card": "damaged",
+                      "status": "stunned"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06032",
+      "name": "Teamwork",
+      "note": "Printed 06032. This hero basic attack or thwart interrupt exhausts one controlled ally, adds its current modified matching power for that use, and causes no ally attack, thwart, or consequential damage. The exact physical cost receipt and basic-use vocabulary are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenHeroBasicUseInitiated",
+            "timing": "Interrupt",
+            "actor": "you",
+            "form": "hero",
+            "player": "you"
+          },
+          "cost": {
+            "exhaustChosen": {
+              "from": {
+                "query": "alliesYouControl"
+              },
+              "count": 1,
+              "matchingBasicPower": "true"
+            }
+          },
+          "effect": {
+            "boostBasicUse": "exhaustedAllyPower"
+          }
+        }
+      ]
     }
   ]
 }
