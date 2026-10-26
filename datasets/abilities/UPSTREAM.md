@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
-| Records | 569 printed card faces, including explicit empty rows |
+| Records | 587 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -226,3 +226,5 @@ Boost-star resolution intact. Vendored rulings 1ea208998735ef4b,
 IndividualBoostCancellationTests uses the actual full book except for explicitly
 synthetic boost-star variants. Full inventory does not itself admit the product;
 whole-pack public setup, gameplay, restart and native evidence remain separate.
+
+Thor adds eleven nonpublic research faces: 06001b, 06002, 06007–06010, 06013, 06016 and 06022–06024. Actual full-book tests exercise searches, named-character entry responses, constants and resources. See `docs/content/thor-batch-a-evidence.md` for the semantic description gap and proof limits. Public admission remains closed.

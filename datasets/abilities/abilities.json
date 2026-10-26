@@ -17539,6 +17539,262 @@
           }
         }
       ]
+    },
+    {
+      "card": "06001b",
+      "name": "Odinson",
+      "note": "Worthy searches the controller deck and discard for the Mjolnir upgrade, then shuffles even without a match. The Action has one use per round.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Action",
+            "subject": "this",
+            "event": "WhenActionTriggered"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "cardsIn": {
+                        "areas": [
+                          "yourDeck",
+                          "yourDiscardPile"
+                        ],
+                        "title": "Mjolnir",
+                        "kind": "Upgrade"
+                      }
+                    }
+                  },
+                  "then": {
+                    "chooseCard": {
+                      "from": {
+                        "cardsIn": {
+                          "areas": [
+                            "yourDeck",
+                            "yourDiscardPile"
+                          ],
+                          "title": "Mjolnir",
+                          "kind": "Upgrade"
+                        }
+                      },
+                      "effect": {
+                        "returnOwnedToHand": "chosen"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "shuffle": "yourDeck"
+              }
+            ]
+          },
+          "limitPerRound": 1
+        }
+      ]
+    },
+    {
+      "card": "06007",
+      "name": "Asgard",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; Thor research remains outside public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "you",
+              "keyword": "hand_size",
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06008",
+      "name": "God of Thunder",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; Thor research remains outside public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "printedResources": "Y",
+          "effect": {
+            "generate": "Y"
+          }
+        }
+      ]
+    },
+    {
+      "card": "06009",
+      "name": "Mjolnir",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; Thor research remains outside public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Thor"
+                }
+              },
+              "then": {
+                "seq": [
+                  {
+                    "grant": {
+                      "card": {
+                        "titled": "Thor"
+                      },
+                      "keyword": "attack",
+                      "amount": 1
+                    }
+                  },
+                  {
+                    "grant": {
+                      "card": {
+                        "titled": "Thor"
+                      },
+                      "trait": "AERIAL"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06010",
+      "name": "Thor's Helmet",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; Thor research remains outside public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "you",
+              "keyword": "health",
+              "amount": 5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06013",
+      "name": "Chase Them Down",
+      "note": "After the player's hero attacks and that attack defeats its enemy target, the response chooses a scheme and removes 2 threat.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "Response",
+            "actor": "you",
+            "target": "enemy"
+          },
+          "when": {
+            "wasDefeated": "trigger.target"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "thwartableSchemes"
+              },
+              "effect": {
+                "thwart": {
+                  "target": "chosen",
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06016",
+      "name": "The Power of Aggression",
+      "note": "This card generates one wild resource normally and doubles that output while paying for an Aggression card. The card being paid for is payment context supplied by the engine, not inferred from the hand.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "doubleResourceFor": "Aggression"
+          }
+        }
+      ]
+    },
+    {
+      "card": "06022",
+      "name": "Energy",
+      "note": "This resource card has no ability. Its two printed energy resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "06023",
+      "name": "Genius",
+      "note": "This resource card has no ability. Its two printed mental resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "06024",
+      "name": "Strength",
+      "note": "This resource card has no ability. Its two printed physical resources are read from datasets/cards by the resource rules.",
+      "abilities": []
+    },
+    {
+      "card": "06002",
+      "name": "Lady Sif",
+      "note": "The optional entry response readies the named in-play Thor or Odinson, including an identity controlled by another player.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "ready": {
+              "firstAvailable": [
+                {
+                  "titled": "Thor"
+                },
+                {
+                  "titled": "Odinson"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
