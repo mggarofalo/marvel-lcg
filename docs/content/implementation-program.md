@@ -28,22 +28,30 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 PRs #446, #447 and #448 are merged. Main is `08f330df`; #448 passed all eleven
 CI checks at `98fc5194`, with local Release build, 6,072 unit tests, 1,567
 integration tests (one existing opt-in skip), and 122 acceptance tests. Risky
-Business and all four Goblin modular sets are authored. The next candidate
-contains reviewed Mutagen stages and encounters. The final six-face packet at
-`12ac4fde` has independent review with 80 passing focused checks, bringing the
-reviewed Goblin inventory to 56 of 57 faces. The subsequent Overconfidence
-research row brings authoring to 57/57, with actual full-encounter threshold and
-cleanup evidence in `mutagen-final-face-evidence.md`. Independent review of this
-final row and complete-pack proof remain separate. MARVEL-720 separately
-investigates expired synthetic boost-child accounting. Neither pack has public
-admission yet.
+Business and all four Goblin modular sets are authored. PR #449 at `aec3a3d3`
+completes all 57 Goblin faces and seven Ms. Marvel faces, with independent
+review including Overconfidence and the MARVEL-720 expired boost fix. Its
+managed CI gate is green; platform/native/package gates remain pending.
 
 Ms. Marvel's exact-event modifier mechanism, including indirect damage, printed
-removal caps and payment-dependent preflight, has independent review. Actual
-identity/event authoring follows in one serialized ability-book packet. Persona,
-Red Dagger, obligation/nemesis and remaining aspect/basic faces still require
-their characteristic proofs. Canonical Plane records retain current revisions
-and distinguish prerequisites from complete playable products.
+removal caps and payment-dependent preflight, has independent review. The next
+candidate `272600c6` adds reviewed public Goblin admission and Nakia/Suit,
+bringing Ms. Marvel to nine of 34 faces. Ten complete public Goblin games cover
+all modes, defeats and most promotions, including two games that exposed and
+now prove MARVEL-726's reviewed Heroic Strike/Soldier continuation fix.
+Four additional public-session tests prove dependent-choice restart against
+uninterrupted events, fingerprints and RNG. Winning games, Expert Mutagen
+promotion, multiplayer complete games and selected native evidence remain open.
+Whole-pack acceptance remains open; no routine owner approval is required.
+
+MARVEL-724 bottom movement is implemented at `26b3823f` and in independent
+review. MARVEL-723 distinct arrow payment is held for correction: its reviewer
+proved an ordinary saved-prompt shape regression under unchanged replay v24.
+The approved distinct-allocation foundation does not approve that later path.
+Bruno's bounded stored-card retrieval (725), actual Aamir/Red Dagger, remaining
+aspect/basic/reprint faces and obligation/nemesis authoring follow their
+prerequisites. Canonical Plane records retain current revisions and distinguish
+prerequisites from complete playable products.
 
 ## Delivery order and shared capability queue
 
@@ -65,56 +73,27 @@ The ordering is a dependency graph, not a claim that every earlier hero must fin
 
 ## First integrated delivery: Green Goblin plus Ms. Marvel
 
-MARVEL-559/561 are the two canonical parents. Green Goblin implementation is already owned separately; **do not duplicate MARVEL-682 work**. The immediate integration queue is:
+MARVEL-559/561 are the canonical parents. Completed prerequisites stay closed;
+use the current checkpoint above and the linked Plane children for exact status.
+The remaining delivery queue is:
 
-1. Finish and independently review 682's activation replacement/status priority, then 689's villain flip/damage/stage capability. Use the nonpublic distinguishing cases in the [Goblin first slice](research/green-goblin-first-slice.md), including single-instance excess damage. An unresolved card-specific inference gets a bounded ruling check, not guessed behavior.
-2. In parallel only where ownership is disjoint, complete 683's Ms. Marvel original-divider provenance and exact starter setup; 684's played-event occurrence is the first engine packet after shared timing ownership is free. Then 685, 686–688 in dependency order, with a separate reviewer for each new shared engine decision. [Ms. Marvel first slice](research/ms-marvel-first-slice.md) defines exact-copy and deck-search controls.
-3. Author and review complete Goblin Risky Business (690), Mutagen Formula (691), four modular sets (692), and all printed modes. Author Ms. Marvel's complete signature, aspect/basic/reprint, obligation and nemesis behavior from the 34-face ledger. Merge serialized ability/setup edits after the prerequisite engine contracts are reviewed. A first scenario or one event does not close either parent.
-4. Use 693 for Goblin whole-product public admission/client/replay/native proof; close Ms. Marvel's corresponding parent acceptance only after its complete ledger and public Core/RoRS journey. For each, prove missing-face and wrong-recipe rejection, seeded action and pending-choice restart, real victory/defeat or complete hero games as applicable, prior accepted content compatibility, and visible choice/cost/consequence. Run final gates on the **same integrated revision**; record failing and untested modes explicitly.
-
-The integrated prerequisite candidate includes reviewed 682 activation replacement,
-689 flip/damage mechanics, 705 status-aware selection and 711 activation ordering.
-689's stage-appropriate authored reveals and promotion are covered by the eight
-stage/environment faces. Seven Risky Business encounter faces are also authored
-and independently reviewed; main schemes and setup remain in 690. A Mess of
-Things has all four executable faces and its exact five-card research recipe.
-683's pinned Ms. Marvel divider and starter are integrated, as is 698's Phoenix
-Burning Hunger source correction. Thor's original starter divider and numbered
-nemesis components are pinned for 563/702, including reconciliation of the
-divider's swapped nemesis quantities. These changes do not admit Green Goblin or
-Ms. Marvel. Record final combined verification and merge on MARVEL-703 before
-closing individual prerequisites.
-
-684's exact played-event recovery, same-window event replay and stacked prevention
-are implemented and independently reviewed. Replay v23 covers these corrections
-and 711's changed activation ordering; its named predecessor routes verify exact
-histories and otherwise quarantine incompatible saves unchanged. Goblin scenario
-authoring 690/691 and remaining
-modular authoring 692 follow the reviewed contracts. The latter has explicit
-shared prerequisites: 706 persistent boost/stage healing, 707 encounter-mill
-receipts and Electro recruitment, 708 resource-constrained hand discard, 709 live
-attachment prohibitions, and 710 repeated player-revealed abilities. Each packet
-first proves whether existing primitives suffice, then extends only the missing
-behavior. Serialize ability-book integration and shared timing changes.
-
-MARVEL-712's reviewed main-scheme When Completed resolution is integrated in
-the next candidate, including Hostile Takeover (02004b), both forced-interrupt
-orders, suspended choices, advancement and final loss. All four Risky Business
-main-scheme faces and Standard/Expert research recipes have independent review
-and production Dealer coverage at 1–4 players. The combined content suite passed
-4,332 tests before the later packets below; that run does not certify those additions.
-
-The next candidate also contains reviewed 709 live prohibitions and actual
-All Tied Up authoring. MARVEL-713 supplies the explicit resolving player needed
-by encounter attachment placement; it preserves player-card ownership defaults
-and explicit-host overrides. Its independent review includes both seats and forms.
-706's generic payment alternative is reviewed, while existing persistent boosts,
-printed-stage healing and completed-attack player binding passed characteristic
-tests. Goblin Gimmicks authoring follows that proof. 685's player-deck search and
-its composed-effect refusal are independently reviewed and integrated: hidden-deck
-changes cannot precede an unresolved dependent lookup. 707's exact encounter
-discard receipts are in implementation. Public Green Goblin and Ms. Marvel
-admission remains closed.
+1. Complete Goblin public proof (693): reviewed admission, all four modes,
+   complete games including victories, characteristic pending-choice restart,
+   multiplayer and native interactions. The Soldier continuation finding (726)
+   is independently fixed and its original public failures now complete.
+2. Finish Ms. Marvel's shared prerequisites with independent review: distinct
+   arrow payment (723), bottom placement (724), bounded stored-card retrieval
+   (725). Author the dependent actual rows only after their mechanisms pass.
+3. Serialize the remaining 25 Ms. Marvel faces into the ability book: signature
+   gaps, aspect/basic/reprints, obligation and nemesis. Every row needs printed
+   authority, relevant rulings and characteristic behavior evidence; catalog
+   presence alone does not implement a reprint.
+4. Admit the complete Ms. Marvel pack with verified starter, missing-face and
+   wrong-recipe controls, public legal setup, characteristic action/restart and
+   complete Core/RoRS games. Select native checks by new interaction class.
+5. Run final combined gates at the exact integrated revision, merge and update
+   each canonical parent separately. Continue to Thor and the remaining first
+   wave packs using their existing research and source-qualified starters.
 
 Original starter dividers for Thor, Black Widow, Doctor Strange and Hulk are
 pinned and reviewed under `datasets/rules-packs/mc06` through `mc09`. Each has
@@ -122,19 +101,10 @@ a verified 40-card player starter; Doctor Strange's five Invocation cards form
 a separate deck. These resolve those portions of 702 without closing its global
 queue or establishing playable hero support.
 
-PR #446 merged as `fb97804c` after all eleven CI checks passed on `3dff9bbc`.
-Its exact local candidate passed the Release build, 5,858 unit, 1,564 integration
-(one existing opt-in skip) and 122 acceptance tests. Prerequisites 682–684,
-689, 698, 705 and 711 are Done; the pack parents remain open.
-
-The next candidate's failed-attachment cleanup (714) also corrects admitted
-Core/RoRS behavior, including Genetically Enhanced without a legal minion host.
-MARVEL-715 therefore supplies replay v24 and explicit predecessor/quarantine
-evidence before integration can be accepted. Keeping the existing phase-step
-spelling does not make the changed game history compatible by itself.
-
-MARVEL-695 is merged in PR #445 with all eleven CI checks passing. The focused
-Wrecking Crew UI review remains MARVEL-694; neither is a content dependency.
+Wrecking Crew layout work 695 is merged in PR #445; focused UI review 694 is
+separate and does not block these content parents. Content acceptance is
+agent-owned. Any genuine human UI concern gets its own review item with
+inspected screenshots/video and precise questions.
 
 ## Source and readiness gates
 
