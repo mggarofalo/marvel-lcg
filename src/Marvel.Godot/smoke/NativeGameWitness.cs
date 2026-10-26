@@ -44,6 +44,9 @@ public sealed partial class NativeGameWitness : RefCounted
     /// <summary>Reports authorized candidates from the displayed engine prompt.</summary>
     public int[] CandidateIds() => table?.CurrentGame?.Prompt?.Affordances.SingleOrDefault()?.Targets?.Legal.ToArray() ?? [];
 
+    /// <summary>Reports exact currently offered anchor identities, preserving engine order.</summary>
+    public int[] OfferedAnchors() => table?.CurrentGame?.Prompt?.Affordances.Select(offer => offer.AnchorId).ToArray() ?? [];
+
     /// <summary>Reports the current draft's selected physical targets.</summary>
     public int[] SelectedTargets() => table?.decisions.composer?.Targets.ToArray() ?? [];
 

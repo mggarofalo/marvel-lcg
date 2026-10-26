@@ -74,7 +74,8 @@ internal sealed class NativeSceneGameFactory(string contract) : IGameFactory, IS
 
     private void PrepareCards(CanonicalCoreScene scene, bool wakanda)
     {
-        if (wakanda) PrepareWakanda(scene);
+        if (contract == "melee-sequential") MeleeNativeScene.Prepare(scene);
+        else if (wakanda) PrepareWakanda(scene);
         else if (contract == "variable-payment") PrepareEnergyChannel(scene);
         else if (contract == "repeated-targets") PrepareExplosion(scene);
         else if (contract == "card-look") PrepareLook(scene);

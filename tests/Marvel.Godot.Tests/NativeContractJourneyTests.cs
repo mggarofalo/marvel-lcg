@@ -66,6 +66,7 @@ public sealed class NativeContractJourneyTests
         int expected = contract switch
         {
             "dense-table" => 0,
+            "melee-sequential" => 3,
             "end-phase" or "card-look" or "bruno-0" or "bruno-1" or "bruno-3" => 2,
             "wakanda-daggers-first" or "wakanda-claws-first" => 4,
             _ => 1,
@@ -78,6 +79,7 @@ public sealed class NativeContractJourneyTests
         if (contract == "variable-payment") VerifyVariable(server, mutations);
         if (contract == "repeated-targets") VerifyRepeated(server, mutations);
         VerifyCardChoices(contract, server, mutations);
+        if (contract == "melee-sequential") MeleeNativeAssertions.Verify(server, mutations);
         if (contract.StartsWith("bruno-", StringComparison.Ordinal)) BrunoNativeAssertions.Verify(contract, server, mutations);
     }
 
