@@ -15,6 +15,10 @@ namespace Marvel.Rules.Timing;
 /// <param name="Controller">The card's controller when the occurrence began.</param>
 public sealed record OccurrenceCard(int Card, CardKind Kind, int Owner, int Controller)
 {
+    /// <summary>The exact participant copy, reconstructed from accepted decisions.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int? Incarnation { get; init; }
+
     /// <summary>Completed Preparation ability retaining this source snapshot.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public Play.ResolvedPreparationAbility? PreparationAbility { get; init; }
@@ -57,6 +61,6 @@ public sealed record OccurrenceCard(int Card, CardKind Kind, int Owner, int Cont
             : World.Scenario;
 
         return new OccurrenceCard(card.ObjectId, kind, card.Owner, controller)
-        { EffectiveTitle = card.InstanceState.Profile?.Title };
+        { EffectiveTitle = card.InstanceState.Profile?.Title, Incarnation = card.Incarnation };
     }
 }
