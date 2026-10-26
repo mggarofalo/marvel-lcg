@@ -60,3 +60,38 @@ Logs are outside the worktree under `C:/Users/mggar/Source/`:
   18 passed, zero failed or skipped.
 
 The lead owns final integrated broader lanes and Plane reconciliation.
+
+## Encounter-topology ordering closeout
+
+The previous review left non-null projected `EncounterOrder` unverified. Against
+selector revision `b142d156`, that concern reproduced as a concrete defect: actual
+encounter topology with an engaged area created before the villain area returned
+minions before the current villain. The same mismatch occurs after projected
+stage promotion. The ordinary-world ordering correction above did not cover this
+final chronology pass.
+
+`LightningTopologyOrderTests` constructs validated two-group encounter topology,
+reverses the minions' object order within their physical area, and uses the real
+power-state factory and encounter-stage advancement. Both repeated matching and
+power selection now apply this query's villain-first choice after encounter
+chronology. Wrapper filters and the selected `FirstAvailable` branch retain that
+choice; explicit object ordering still wins. `Last` resolves against the same
+ordered cohort. Controls retain ordinary `Enemies` chronology, including when it
+is the first nonempty fallback before the new query.
+
+Evidence outside the worktree under `C:/Users/mggar/Source/`:
+
+- `lightning-topology-before.log`: compiled baseline, two ordering failures at
+  the repeated-matching assertion, with and without projected promotion.
+- `lightning-topology-mutant.log`: compiled mutant disables only the new query's
+  villain-first policy; the same two cases fail with minions first.
+- `lightning-topology-restored-build.log`: restored sources rebuilt with
+  `dotnet build tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --no-incremental`;
+  zero warnings and errors.
+- `lightning-topology-restored-tests.log`: restored selector, simultaneous-damage,
+  topology-order, Wrecking power/repeated/singular/ranked/other-scheme projections;
+  55 passed, zero failed or skipped.
+
+The topology finding is corrected within this selector primitive's scope. This
+adds no Lightning Strike ability row or public Thor admission. Final integrated
+broader lanes and Plane reconciliation remain with the lead.

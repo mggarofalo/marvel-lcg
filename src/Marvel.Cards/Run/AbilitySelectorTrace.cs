@@ -200,10 +200,10 @@ internal static class AbilitySelectorTrace
             .Where(card => card is not null).Cast<Card>().DistinctBy(card => card.ObjectId)
             .Where(card => !trace.Discarded.Contains(card.ObjectId)
                 && TraceSelectorMatches(selector, card, trace));
-        return UsesObjectIdOrder(selector)
+        return AbilityEncounterCandidateOrder.ApplySelectorOrder(UsesObjectIdOrder(selector)
             ? candidates.OrderBy(card => card.ObjectId)
             : AbilityEncounterCandidateOrder.Apply(candidates, trace.Cast.World,
-                AbilityEncounterSchemeQueries.UsesGroupOrder(selector) ? null : trace.EncounterOrder);
+                AbilityEncounterSchemeQueries.UsesGroupOrder(selector) ? null : trace.EncounterOrder), selector, trace);
     }
 
     private static Card? ProjectedCard(Card card, int boardVillain, AbilitySelectorTraceContext trace)
