@@ -22,6 +22,7 @@ internal static class AbilityPlayerBindingAnalysis
     {
         null => false,
         AbilityCost.ReturnSourceToHand => false,
+        AbilityCost.ChooseFromDiscard => true,
         AbilityCost.DiscardTop discard => discard.From == AbilitySearchArea.YourDeck,
         AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DealEncounterToYou or AbilityCost.RandomDiscardFromHand => true,
         AbilityCost.Sequence sequence => sequence.Costs.Any(Contains),
@@ -176,7 +177,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
         AbilityEffect.DefineProfile or AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
-            or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
+            or AbilityEffect.AllowPlayBeneath or AbilityEffect.AllowPlayFromDiscard or AbilityEffect.ReduceSelfCostPerEngagedMinion or AbilityEffect.ReduceSelfCostPerControlledTrait or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun
             or AbilityEffect.AttackAnotherEnemy or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
             or AbilityEffect.DiscardHandWithResource
@@ -218,6 +219,7 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityCardSelection.Discardable discardable => Contains(discardable.Cards),
         AbilityCardSelection.Ranked ranked => Contains(ranked.Cards),
         AbilityCardSelection.InPlayerArea area => area.Player is AbilityPlayer.You or AbilityPlayer.Controller,
+        AbilityCardSelection.DefeatedAllyInYourDiscardPile => true,
         AbilityCardSelection.InAreas areas => areas.Areas.Any(area => area is AbilitySearchArea.YourDeck or AbilitySearchArea.YourDiscardPile or AbilitySearchArea.YourHand or AbilitySearchArea.YourPlayArea),
         AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait => false,
         _ => throw new InvalidOperationException(

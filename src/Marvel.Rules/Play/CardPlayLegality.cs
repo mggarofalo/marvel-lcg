@@ -125,7 +125,7 @@ public static class CardPlayLegality
             return false;
         }
 
-        if (!IdentityPermits(world, facts, seat, card)) return false;
+        if (!PrintedCardPlayPrerequisites.Permits(world, facts, seat, card)) return false;
 
         // `rr:team-up` -- "a card with the team-up keyword cannot be played
         // unless both of the named friendly characters (identity or ally) are
@@ -165,16 +165,6 @@ public static class CardPlayLegality
         outOfPlayPermission
             ? card.Owner == seat.Index && !DeckTypes.IsInPlay(card.Area.Type)
             : CardPlayOrigin.CanPlay(world, card, seat.Index);
-
-    private static bool IdentityPermits(World world, ICardFacts facts, Seat seat, Card card)
-    {
-        // rr:form-change-form.7: "[type] form only" requires that identity form.
-        if (facts.RequiredForm(card.FaceId) is { } form && !Forms.In(world, seat, facts, form)) return false;
-        // rr:identity.4: only "the faceup side" is in play; effective traits
-        // include continuous grants and losses on that current identity.
-        return facts.RequiredIdentityTrait(card.FaceId) is not { } trait
-            || Traits.Has(world, seat.IdentityCard, trait, facts);
-    }
 
     private static bool PlayableKind(CardKind kind) =>
         kind is CardKind.Ally or CardKind.Upgrade or CardKind.Support or CardKind.Event;

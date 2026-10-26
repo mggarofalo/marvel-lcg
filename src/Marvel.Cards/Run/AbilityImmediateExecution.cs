@@ -47,6 +47,7 @@ internal static class AbilityImmediateExecution
         AbilityEffect.Fixed effect, AbilityImmediateContext context)
     {
         var world = context.Admission.World;
+        if (AbilityBoostCancellation.TryRun(effect, context) is { } boost) return boost;
         switch (effect.Instruction)
         {
             case AbilityFixedInstruction.DiscardOtherEnvironments:
@@ -57,11 +58,6 @@ internal static class AbilityImmediateExecution
             case AbilityFixedInstruction.CancelWhenRevealed:
                 CancelWhenRevealed(context);
                 return new(true, true);
-            case AbilityFixedInstruction.CancelBoostIcons:
-                long cancelled = (context.Admission.Query.Occurrence.BoostIcons
-                    ?? throw new RulesNotImplementedException("boost cancellation requires a faceup card occurrence"))
-                    .Cancel(world);
-                return new(true, cancelled > 0) { CancelledBoostIcons = cancelled };
             case AbilityFixedInstruction.CancelOccurrence:
                 if (world.Agenda.IsOutstanding(context.Admission.Query.Occurrence))
                     world.Agenda.Cancel(context.Admission.Query.Occurrence);
@@ -136,22 +132,23 @@ internal static class AbilityImmediateExecution
         }
         else
         {
-            GainSurge((AbilityEffect.GainSurge)effect, context);
+            return new(true, false) { ProcedureScheduled = GainSurge((AbilityEffect.GainSurge)effect, context) };
         }
         return new(true, false);
     }
 
-    private static void GainSurge(
+    private static bool GainSurge(
         AbilityEffect.GainSurge surge, AbilityImmediateContext context)
     {
         var world = context.Admission.World;
         var source = context.Admission.Source;
         if (surge.Instances <= 0
             || StateFields.Modified(world, source, "surge", world.Facts, world.Players) > 0
-            || !context.GainedKeywords.Add("surge")) return;
+            || !context.GainedKeywords.Add("surge")) return false;
         RememberGainedSurge(world, source.ObjectId, context.Admission.Query.Occurrence);
-        Deal.EncounterCard(
-            world, context.Admission.Query.Player, context.Trigger, context.Events);
+        RevealKeywords.ScheduleSurge(world, source, context.Admission.Query.Player, context.Events,
+            dealTrigger: context.Trigger);
+        return world.Agenda.Current is not null;
     }
 
     private static AbilityImmediateResult RunGrantEffect(
@@ -247,9 +244,12 @@ internal static class AbilityImmediateExecution
             ending.Complete(context.Trigger, context.Events);
             return;
         }
+        var liveAmount = AbilityLastingAmount.Capture(amount, context.Admission);
+        if (liveAmount is not null && kind is not ("attack" or "scheme"))
+            throw new RulesNotImplementedException($"live lasting field '{kind}' is not implemented");
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: kind,
-            Amount: resolveAmount(amount), Card: context.Admission.Source.ObjectId,
-            Affects: target.ObjectId, Lasts: Duration.UntilEndOf(until)));
+            Amount: liveAmount is null ? resolveAmount(amount) : 0, Card: context.Admission.Source.ObjectId,
+            Affects: target.ObjectId, Lasts: Duration.UntilEndOf(until)) { LiveAmount = liveAmount });
         if (string.Equals(kind, "stalwart", StringComparison.Ordinal))
             Statuses.RemoveAfflictionsIfStalwart(world, world.Facts, target, context.Trigger, context.Events);
     }

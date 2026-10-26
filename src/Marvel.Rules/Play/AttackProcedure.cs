@@ -15,6 +15,11 @@ internal static class AttackProcedure
     public static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        if (step.Operation is BoostAbilityOperation)
+        {
+            BoostAbilityResolution.ResolveAbility(world, facts, world.AttackAbilities, step, events);
+            return null;
+        }
         if (step.Operation is BasicAttackCostOperation) return BasicAttackCosts.Describe(world, step);
         if (step.Operation is NativeRetaliationOperation)
         {
@@ -62,7 +67,7 @@ internal static class AttackProcedure
                 Attack.FlipBoostCards(world, facts, world.AttackAbilities, events);
                 return true;
             case BoostFaceupOperation.Faceup:
-                AttackBoost.ResolveFaceup(world, facts, world.AttackAbilities, step, events);
+                BoostAbilityResolution.ResolveFaceup(world, step);
                 return true;
             case Steps.FinishBoostCard:
                 Attack.FinishBoostCard(world, facts, world.AttackAbilities, step, events);

@@ -17,6 +17,8 @@ internal sealed class CompleteDecisionSheet : IDisposable
     private DecisionComposer? draft;
     private int focusGeneration;
     private Label notice = null!;
+    private Label selectedSummary = null!;
+    private Label? resolution;
     private Main main = null!;
     private Node inspectorParent = null!;
 
@@ -106,13 +108,33 @@ internal sealed class CompleteDecisionSheet : IDisposable
             if (!DecisionCardChoices.IsChoice(composer.Prompt))
                 content.AddChild(DecisionPanel.Text(prompt.Heading, GodotThemeVariations.Heading, wrap: true));
             if (!string.IsNullOrWhiteSpace(prompt.Resolution))
-                content.AddChild(DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Body, wrap: true));
+            {
+                resolution = DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Body, wrap: true);
+                content.AddChild(resolution);
+            }
         }
+        selectedSummary = DecisionPanel.Text(string.Empty, GodotThemeVariations.Body, wrap: true);
+        selectedSummary.Name = "CompleteChoiceSummary";
+        content.AddChild(selectedSummary);
+        panel.ProgressChanged += RefreshSummary;
+        RefreshSummary(null);
         panel.Reparent(content);
         panel.Visible = true;
         panel.CustomMinimumSize = Vector2.Zero;
         panel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         panel.SetCompleteChoicesVisibility(true);
+    }
+
+    private void RefreshSummary(DecisionProgressPresentation? _)
+    {
+        var prompt = panel.composer is { } composer && panel.world is { } world
+            ? Marvel.View.PromptPresentation.From(composer.Prompt, world) : null;
+        selectedSummary.Text = TableDraftSummary.From(panel.composer, prompt, panel.world) ?? string.Empty;
+        selectedSummary.Visible = selectedSummary.Text.Length > 0;
+        // The selected action already includes its description. Keep an independent
+        // resolution only when it adds meaning beyond that complete draft summary.
+        if (resolution is not null)
+            resolution.Visible = !selectedSummary.Text.Contains(resolution.Text, StringComparison.Ordinal);
     }
 
     private Control openerFallback = null!;
@@ -227,6 +249,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
 
     public void Dispose()
     {
+        panel.ProgressChanged -= RefreshSummary;
         if (GodotObject.IsInstanceValid(layer) && !layer.IsQueuedForDeletion()) layer.QueueFree();
     }
 

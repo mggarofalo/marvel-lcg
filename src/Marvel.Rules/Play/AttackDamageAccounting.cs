@@ -105,7 +105,6 @@ internal static class AttackDamageAccounting
             {
                 world.FinishedAttack = finishedAttack with { Damaged = true };
             }
-            occurrence.Also(Steps.DamageDealt);
         }
         if ((world.Activation ?? world.FinishedActivation) is { } activation)
             foreach (var damage in placed)

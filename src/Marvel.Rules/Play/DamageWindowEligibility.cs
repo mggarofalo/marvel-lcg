@@ -9,6 +9,7 @@ public static class DamageWindowEligibility
     /// <summary>Whether the window's recipient still has damage available to prevent.</summary>
     public static bool HasRemainingDamage(World world, Occurrence occurrence)
     {
+        if (occurrence.DirectDamage is { } direct) return direct.Remaining > 0;
         if (occurrence.Damage is not { } damage) return true;
         long remaining = damage.CurrentAmount;
         // rr:prevent.1: "reduce the amount of damage the target takes".

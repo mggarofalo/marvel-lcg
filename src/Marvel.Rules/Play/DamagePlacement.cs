@@ -57,7 +57,7 @@ public static class DamagePlacement
             Subject: request.Target.ObjectId, Player: request.Target.Owner, Target: request.Target.ObjectId,
             Actor: request.Source.ObjectId,
             ActorFacts: OccurrenceCard.Capture(request.Source, world.Facts),
-            TargetFacts: OccurrenceCard.Capture(request.Target, world.Facts));
+            TargetFacts: OccurrenceCard.Capture(request.Target, world.Facts)) { DamageFromAttack = request.FromAttack };
         DamageReplacement? replacement = null;
         var result = world.Agenda.Executions.RunBatch(occurrence, entry =>
         {

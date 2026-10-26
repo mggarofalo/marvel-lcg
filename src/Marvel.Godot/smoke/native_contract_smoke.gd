@@ -34,6 +34,7 @@ func _run() -> void:
     print("NATIVE_CONTRACT_STAGE ready " + contract)
     var passed := false
     match contract:
+        "widow-safe-house", "widow-preparation": passed = await preload("res://smoke/native_widow_contract.gd").run(self)
         "lightning-payment": passed = await preload("res://smoke/native_lightning_contract.gd").run(self)
         "heimdall-order": passed = await preload("res://smoke/native_heimdall_contract.gd").run(self)
         "defeat-context": passed = await preload("res://smoke/native_defeat_context_contract.gd").run(self)
@@ -64,6 +65,7 @@ func _scene_ready() -> bool:
     if not witness.CanResolve(): return false
     if contract == "dense-table": return true
     if contract == "heimdall-order": return witness.DecisionKind() == "Response"
+    if contract == "widow-preparation": return witness.DecisionKind() == "Response"
     if contract == "repeated-targets": return witness.HasRepeatedTargets()
     if contract == "preemptive-strike": return witness.DecisionKind() == "Interrupt"
     if contract == "defeat-context": return witness.DecisionKind() == "Interrupt"

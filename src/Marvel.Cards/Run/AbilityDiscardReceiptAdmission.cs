@@ -9,6 +9,14 @@ internal static class AbilityDiscardReceiptAdmission
     internal static AbilityAdmissionResult? Admit(CompiledCardAbility ability,
         AbilityAdmissionContext context, IReadOnlyList<int>? selected)
     {
+        if (AbilityCostSelection.DiscardChoice(ability.Cost) is { } choice)
+            return AbilityDiscardChoiceAdmission.Admit(ability, context, choice, selected);
+        return PhysicalReceipts(ability, context, selected);
+    }
+
+    private static AbilityAdmissionResult? PhysicalReceipts(CompiledCardAbility ability,
+        AbilityAdmissionContext context, IReadOnlyList<int>? selected)
+    {
         var costs = Flatten(ability.Cost).ToArray();
         var random = costs.OfType<AbilityCost.RandomDiscardFromHand>().SingleOrDefault();
         if (random is not null) return AbilityRandomHandReceiptAdmission.Admit(ability, context, random);

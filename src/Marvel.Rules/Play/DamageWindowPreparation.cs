@@ -30,7 +30,7 @@ internal static class DamageWindowPreparation
         operation.Replacement ??= DamagePlacement.Replace(world,
             new DamageRequest(world.Cards[attack.Enemy], world.Cards[attack.Target],
                 attack.CalculatedDamage ?? throw new InvalidOperationException("attack damage is not calculated"),
-                Steps.AttackInitiated, "Attack"), events);
+                Steps.AttackInitiated, "Attack") { FromAttack = true }, events);
         occurrence.Damage = operation.Replacement;
         return operation.Replacement.IsComplete;
     }

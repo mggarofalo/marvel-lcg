@@ -11,4 +11,6 @@ public enum ResourceRestriction
     AspectCard,
     /// <summary>An event's resource or ability cost, as printed on Biokinetic Polymer Suit.</summary>
     Event,
+    /// <summary>A Preparation card's resource or ability cost, as printed on Black Widow's Gauntlet.</summary>
+    PreparationCard,
 }

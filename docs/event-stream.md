@@ -293,6 +293,13 @@ unrelated payment, attack or later-window events from the enclosing response.
 Visibility filtering removes the association whenever its source is unreadable,
 and filters each result through the normal event policy before any summary.
 
+An optional direct-damage prevention window retains that initial association for
+the captured forced invocation's resumed damage segment and subsequent authored
+instructions. Placement and synchronous defeat disposal remain associated,
+including simultaneous recipients. Nested prevention and reflection execute in
+their own invocation; an optional child never borrows a forced ancestor's receipt.
+Separately suspended defeat procedures retain their existing event boundary.
+
 The native chronology groups those authorized results under the forced receipt,
 with ordered component details retained. Its notification describes actual
 outcomes (for example, cards discarded and cards returned), while its separately

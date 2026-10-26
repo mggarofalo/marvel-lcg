@@ -233,6 +233,7 @@ public static class Sequence
 
     private static bool QuestionAdvancesByIdentity(PhaseStep step) =>
         step.What is Steps.ChooseOption
+            or Steps.ChooseAttachmentTarget
             or Steps.ChooseWouldBeDefeated
             or Steps.ChooseCardDefeatedAbility
             or Steps.ChooseRevealAbility

@@ -73418,6 +73418,24 @@
       ]
     },
     {
+      "id": "setup:hero:black_widow",
+      "fingerprint": "sha256:07698c85744ae698118938302fb9fe78b775e802b9132d9253dda45c90f163a1",
+      "obligations": [
+        {
+          "key": "black-widow-setup",
+          "summary": "The Black Widow hero record supplies the printed starter deck, obligation and nemesis set.",
+          "disposition": "outside-core",
+          "reason": "This record requires the Black Widow hero pack, absent from the five-identity, three-scenario Core behavioral corpus. Runtime expansion admission is a separate contract.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "setup:hero:captain_america",
       "fingerprint": "sha256:384bb3c6f6e5cf6720f25ef8cd274a52dc8b91cc4bb35542bf458fc04467dd47",
       "obligations": [

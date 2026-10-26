@@ -8,6 +8,7 @@ public sealed class RestrictedResourceAdmissionTests
     [Theory]
     [InlineData("Action", "\"aspectCard\"")]
     [InlineData("Action", "\"event\"")]
+    [InlineData("Action", "\"preparationCard\"")]
     [InlineData("Resource", "\"unknown\"")]
     [InlineData("Resource", "null")]
     [InlineData("Resource", "1")]

@@ -14,6 +14,8 @@ public sealed record BoostFaceupOperation(int Enemy, bool Attacking, BoostIconCa
     public override string What => Faceup;
     /// <inheritdoc/>
     private protected override AgendaProcedureKind ProcedureOwner => AgendaProcedureKind.Attack;
+    /// <summary>The independently cancellable star ability.</summary>
+    public BoostAbilityCancellation? Ability { get; init; }
     internal Occurrence Occurrence(int id, World world, int subject, int player)
     {
         var enemy = world.Cards[Enemy];
@@ -21,8 +23,9 @@ public sealed record BoostFaceupOperation(int Enemy, bool Attacking, BoostIconCa
         // belongs to this boost operation, even while another attack is suspended.
         var occurrence = new Occurrence(id, Attacking ? [Faceup, AttackFaceup] : [Faceup], subject, player, Enemy, subject,
             OccurrenceCard.Capture(enemy, world.Facts), OccurrenceCard.Capture(world.Cards[subject], world.Facts))
-        { BoostIcons = Icons };
+        { BoostIcons = Icons, BoostAbility = Ability };
         Icons.Occurrence = occurrence;
+        if (Ability is not null) Ability.Occurrence = occurrence;
         return occurrence;
     }
 }

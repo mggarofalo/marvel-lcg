@@ -11,7 +11,10 @@ internal sealed class SimultaneousDirectDamageResolution
     private readonly SimultaneousDirectRecipient[] recipients;
     private int replacementIndex;
     private int settlementIndex;
+    private int interruptIndex;
     private bool placed;
+    private bool preventionSuspended;
+    private readonly DamageEventProvenance provenance;
     private SimultaneousCharacterDefeats? defeats;
     internal SimultaneousDirectDamageResolution(World world, ICardFacts facts,
         IReadOnlyList<DamageRequest> requests, AbilityExecution execution, AbilityExecution? completion)
@@ -19,6 +22,7 @@ internal sealed class SimultaneousDirectDamageResolution
         this.world = world;
         this.facts = facts;
         Execution = execution;
+        provenance = new(execution);
         Result = new(completion ?? execution);
         recipients = [.. requests.Select(request => new SimultaneousDirectRecipient(
             request with { RecordDefeatOn = request.RecordDefeatOn ?? execution.Occurrence }))];
@@ -27,11 +31,27 @@ internal sealed class SimultaneousDirectDamageResolution
     internal SimultaneousDirectDamageResult Result { get; }
     internal void Continue(List<GameEvent> events)
     {
+        int start = events.Count;
+        ContinueSegment(events);
+        if (preventionSuspended) provenance.Associate(events, start);
+    }
+    private void ContinueSegment(List<GameEvent> events)
+    {
         world.Agenda.Executions.RequireActive(Execution);
         while (replacementIndex < recipients.Length)
         {
             if (!recipients[replacementIndex].Replace(world, events)) { Suspend(events); return; }
             replacementIndex++;
+        }
+        while (interruptIndex < recipients.Length)
+        {
+            if (!recipients[interruptIndex].Interrupt(world, facts, events))
+            {
+                preventionSuspended = true;
+                Suspend(events);
+                return;
+            }
+            interruptIndex++;
         }
         if (!placed)
         {

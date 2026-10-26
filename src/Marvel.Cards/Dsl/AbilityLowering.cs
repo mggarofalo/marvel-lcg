@@ -75,6 +75,7 @@ public static class AbilityLowering
             "if" => ConditionalNumber(argument, child),
             "printedResourceCountDiscarded" => new AbilityNumber.PrintedResourcesDiscarded(Resource(argument, child)),
             "discardedWithResource" => new AbilityNumber.DiscardedWithResource(Resource(argument, child)),
+            "receivedAttackDamage" => FixedNumber(argument, child, "game", AbilityResolutionNumber.ReceivedAttackDamage),
             "completedAttackDamageDealt" => FixedNumber(argument, child, "game", AbilityResolutionNumber.CompletedAttackDamageDealt),
             "activationAttacksAgainstYou" => FixedNumber(argument, child, "game", AbilityResolutionNumber.ActivationAttacksAgainstYou),
             "printedCostDiscarded" => FixedNumber(argument, child, "game", AbilityResolutionNumber.PrintedCostDiscarded),

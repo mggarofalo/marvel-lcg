@@ -84,7 +84,12 @@ internal static class AttackCompletion
         var completed = new CompletedEnemyAttack(
             world.Activation?.Id ?? -1, attack.Defender, world.Activation?.DamageDealt ?? 0);
         if (world.Agenda.Occurrence is { } occurrence)
+        {
             occurrence.CompletedEnemyAttack = completed;
+            foreach (var placement in attack.ReceivedDamage)
+                occurrence.ReceivedAttackDamage.Record(placement);
+            if (attack.ReceivedDamage.Count > 0) occurrence.Also(Steps.DamageDealt);
+        }
         if (world.Activation is { } activation)
             world.Activation = activation with { CompletedAttack = completed };
 

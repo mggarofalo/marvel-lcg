@@ -1,7 +1,7 @@
 {
   "tier": "pack",
   "documents": 62,
-  "record_count": 902,
+  "record_count": 903,
   "packs": [
     "mc02",
     "mc03",
@@ -337,6 +337,17 @@
       "page": 1,
       "fragment": "Black Widow’s power comes from her years of training, making her ready for any situation.",
       "hash": "sha256:8466863f6774eebf40234c86b50848be1ca9186faab875b1d76d20afec84fc6c",
+      "rules": 0
+    },
+    {
+      "id": "pack:mc08:the-invocation-deck",
+      "title": "The Invocation Deck",
+      "pack": "mc08",
+      "kind": "rulesheet",
+      "source": "mc08_doctor_strange_rulesheet.pdf",
+      "page": 1,
+      "fragment": "Doctor Strange is the Master of the Mystic Arts and Sorcerer Supreme.",
+      "hash": "sha256:e430647a5ce61eb02c7e08e896a22f7f51ad791037bc72a9fd2e40df1cee0fe6",
       "rules": 0
     },
     {

@@ -42,11 +42,13 @@ internal sealed class VisibleTargetCardGallery(DecisionPanel panel)
             BoardCardPresentation? card = cards.FirstOrDefault(candidate => candidate.TargetId == target);
             VisibleTargetChoiceCard.Add(panel, row, target, card, scale, inspection, operations);
         }
-        AddSelection(cards);
-        AddNavigation(generation);
+        var footer = new HBoxContainer { Name = "VisibleTargetFooter" };
+        panel.AddContent(footer);
+        AddSelection(footer, cards);
+        AddNavigation(footer, generation);
     }
 
-    private void AddSelection(IReadOnlyList<BoardCardPresentation> cards)
+    private void AddSelection(HBoxContainer footer, IReadOnlyList<BoardCardPresentation> cards)
     {
         string selected = string.Join(", ", draft!.Targets.Select(id =>
             cards.FirstOrDefault(card => card.TargetId == id)?.Title ?? "Card"));
@@ -54,20 +56,22 @@ internal sealed class VisibleTargetCardGallery(DecisionPanel panel)
         {
             Name = "VisibleTargetSelection", AutowrapMode = TextServer.AutowrapMode.WordSmart,
             HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             Text = draft.Targets.Count == 0 ? "No cards selected. Use a card's select control; open its face to inspect."
                 : $"{draft.Targets.Count} selected: {selected}",
         };
-        panel.AddContent(label);
+        footer.AddChild(label);
     }
 
-    private void AddNavigation(int generation)
+    private void AddNavigation(HBoxContainer footer, int generation)
     {
         if (pages.Count == 1) return;
         var row = new HBoxContainer { Name = "VisibleTargetPages", Alignment = BoxContainer.AlignmentMode.Center };
         AddPageButton(row, "PreviousTargetPage", "‹", -1, pages.Page > 0, generation);
         row.AddChild(new Label { Text = $"{pages.Page + 1} / {pages.Count}", VerticalAlignment = VerticalAlignment.Center });
         AddPageButton(row, "NextTargetPage", "›", 1, pages.Page + 1 < pages.Count, generation);
-        panel.AddContent(row);
+        footer.AddChild(row);
     }
 
     private void AddPageButton(HBoxContainer row, string name, string symbol, int offset, bool enabled, int generation)

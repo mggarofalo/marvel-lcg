@@ -3,6 +3,8 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Marvel.Protocol;
 using Marvel.Rules.Campaign;
+using Marvel.Rules.Play;
+using Marvel.Rules.State;
 using Marvel.Session;
 using Marvel.Tests;
 using Xunit;
@@ -12,7 +14,8 @@ namespace Marvel.Server.Tests;
 public sealed class ExpertCampaignReplayUpgradeTests
 {
     [Fact]
-    public void StackedPreventionDivergenceQuarantinesTheExpertCampaignWithoutChangingSourceFiles()
+    [Rule("rr:damage.step.3")]
+    public void DirectDamageWindowDivergenceQuarantinesTheExpertCampaignWithoutChangingSourceFiles()
     {
         WithFixture((published, factory) =>
         {
@@ -35,8 +38,8 @@ public sealed class ExpertCampaignReplayUpgradeTests
                 var failure = Assert.Throws<ReplayDivergenceException>(() => route.Verify(original.Save,
                     factory.CampaignDefinition!, setup => ReplayContractUpgradeTests.Open(factory, setup),
                     factory.InspectCampaign));
-                Assert.Equal("unit 31 decision 3 events diverged: expected 10, got 11", failure.Message);
-                if (restart == 0) AssertPreventionCause(original.Save, factory);
+                Assert.Equal("unit 28 decision 1 events diverged: expected 4, got 1", failure.Message);
+                if (restart == 0) AssertDirectDamageCause(original.Save, factory);
                 var host = new CampaignHost(factory, store, new MemorySessionStore());
                 Assert.Equal("campaign_not_found", host.Exchange(new(EngineProtocol.Version, "owner",
                     EngineProtocol.Campaign, access.RootElement.GetProperty("id").GetString()!,
@@ -101,40 +104,28 @@ public sealed class ExpertCampaignReplayUpgradeTests
         });
     }
 
-    private static void AssertPreventionCause(CampaignSave campaign, DatasetGameFactory factory)
+    private static void AssertDirectDamageCause(CampaignSave campaign, DatasetGameFactory factory)
     {
         var proof = campaign.Journal[13].Proof!;
         Assert.Equal("crossbones", proof.Setup.Scenario);
         Assert.Equal(4, proof.Setup.Campaign!.Attempt);
-        var game = ReplayContractUpgradeTests.Open(factory, proof.Setup).Game;
-        for (int unit = 0; unit <= 31; unit++)
-        {
-            int decisions = unit == 31 ? 2 : proof.Units[unit].Decisions.Count;
-            for (int decision = 0; decision < decisions; decision++)
-            {
-                var step = proof.Units[unit].Decisions[decision];
-                _ = game.Resolve(step.Decision.Resolve(game.Pending!));
-            }
-        }
-        // Both Backflips (unit 28) commit prevention before the defended Crossbones attack.
-        // Each registration belongs to that damage; neither can protect a later minion attack.
-        var preventions = game.State.Effects.Active().Where(effect => effect.Kind == "preventDamage").ToArray();
-        Assert.Equal(new int?[] { 9, 10 }, preventions.Select(effect => effect.Card));
-        Assert.All(preventions, effect => Assert.Equal(1, effect.Lasts!.Uses));
-        var defended = proof.Units[31].Decisions[2];
-        _ = game.Resolve(defended.Decision.Resolve(game.Pending!));
-        Assert.DoesNotContain(game.State.Effects.Active(), effect => effect.Kind == "preventDamage");
-        var mercenary = proof.Units[31].Decisions[3];
-        Assert.Equal("01182", mercenary.Decision.Selector.Label);
-        Assert.DoesNotContain(mercenary.Events, happened => happened.GetProperty("kind").GetString() == "FieldSet"
-            && happened.GetProperty("verb").GetString() == "Deal_Damage"
-            && happened.GetProperty("attack_identity").GetProperty("id").GetInt32() == 10);
-        var result = game.Resolve(mercenary.Decision.Resolve(game.Pending!));
-        var damage = result.Events.Select(JournalJson.Event).First(happened =>
-            happened.GetProperty("kind").GetString() == "FieldSet"
-            && happened.GetProperty("verb").GetString() == "Deal_Damage");
-        Assert.Equal(7, damage.GetProperty("from").GetInt64());
-        Assert.Equal(5, damage.GetProperty("to").GetInt64());
+        var game = FrozenReplayPrefixAssertions.Before(proof, factory, 28, 1);
+        var step = proof.Units[28].Decisions[1];
+        Assert.Equal("Great Responsibility", step.Decision.Selector.Label);
+        // Damage step 3: abilities that trigger "when [character] would take any amount of damage...".
+        // This compatibility probe uses the frozen unscoped Backflip book, not current authored content.
+        var result = game.Resolve(step.Decision.Resolve(game.Pending!));
+        Assert.Equal(step.Events[0].GetRawText(), JournalJson.Event(Assert.Single(result.Events)).GetRawText());
+        Assert.Equal(6, CardValues.RemainingHealth(game.State, game.State.Seats[0].IdentityCard, game.State.Facts));
+        Assert.Equal("WhenDamageWouldBeDealt", game.Pending!.Trigger);
+        Assert.Collection(game.Pending.Affordances, action => Assert.Equal(9, action.AnchorId),
+            action => Assert.Equal(10, action.AnchorId));
+        Assert.All(game.Pending.Affordances, action => Assert.Equal("Backflip", action.Verb));
+        Assert.False(game.State.Agenda.Occurrence!.DamageFromAttack);
+        var continued = game.Resolve(Decision.Decline);
+        var expectedDamage = Assert.Single(step.Events, happened => happened.GetProperty("kind").GetString() == "FieldSet");
+        Assert.Contains(continued.Events.Select(JournalJson.Event), happened => happened.GetRawText() == expectedDamage.GetRawText());
+        Assert.Equal(5, CardValues.RemainingHealth(game.State, game.State.Seats[0].IdentityCard, game.State.Facts));
     }
 
     private static string[] Snapshot(string directory) => Directory.GetFiles(directory, "*", SearchOption.AllDirectories)

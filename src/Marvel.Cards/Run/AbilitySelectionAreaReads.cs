@@ -27,6 +27,7 @@ internal static class AbilitySelectionAreaReads
             case AbilityCardSelection.InAreas searched:
                 areas.UnionWith(searched.Areas.SelectMany(SearchTypes)); break;
             case AbilityCardSelection.InPlayerArea named: areas.Add(named.Area); break;
+            case AbilityCardSelection.DefeatedAllyInYourDiscardPile: areas.Add(DeckType.DiscardPile); break;
             case AbilityCardSelection.WithMatchingPlayerArea filtered:
                 areas.Add(filtered.Area); break;
             case AbilityCardSelection.WithTrait or AbilityCardSelection.WithStatus or AbilityCardSelection.FaceDown

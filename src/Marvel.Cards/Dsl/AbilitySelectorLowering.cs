@@ -52,6 +52,9 @@ internal static class AbilitySelectorLowering
             "withoutTrait" => WithTrait(node.Argument, child) with { Exclude = true },
             "inObjectIdOrder" => new AbilityCardSelection.InObjectIdOrder(SelectCards(node.Argument, child)),
             "defeatedWithProfile" => DefeatedProfile(node.Argument, child),
+            "defeatedAllyInYourDiscardPile" => Text(node.Argument, child) == "you"
+                ? new AbilityCardSelection.DefeatedAllyInYourDiscardPile()
+                : throw child.Error("expected 'you'"),
             "faceDown" => new AbilityCardSelection.FaceDown(SelectCards(node.Argument, child)),
             "firstAvailable" => FirstAvailable(node.Argument, child),
             "last" => new AbilityCardSelection.Last(SelectCards(node.Argument, child)),

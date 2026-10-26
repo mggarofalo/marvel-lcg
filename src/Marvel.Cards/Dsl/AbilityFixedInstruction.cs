@@ -14,6 +14,8 @@ public enum AbilityFixedInstruction
     CancelOccurrence,
     /// <summary>Cancel numeric icons on the exact faceup boost card.</summary>
     CancelBoostIcons,
+    /// <summary>Cancel the ability on the exact faceup boost card.</summary>
+    CancelBoostAbility,
     /// <summary>Cancel the revealed card's When Revealed effects.</summary>
     CancelWhenRevealed,
     /// <summary>Also resolve the attack against each other hero.</summary>

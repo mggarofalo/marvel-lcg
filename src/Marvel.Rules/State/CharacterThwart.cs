@@ -28,7 +28,7 @@ namespace Marvel.Rules.State;
 /// player's identity, so a card acting on "the thwarting character" needs the
 /// character itself.
 /// </param>
-/// <param name="Scheme">The object id of the scheme being thwarted.</param>
+/// <param name="Scheme">The scheme object id, or -1 for a labeled ability resolving only an independent sentence.</param>
 /// <param name="Player">
 /// The seat whose turn it is. <c>rr:you-your.6</c> is why this travels beside
 /// the thwarter: an ability triggering "after <b>you</b> thwart" is about the

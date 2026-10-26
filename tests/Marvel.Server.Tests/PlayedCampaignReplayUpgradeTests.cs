@@ -2,6 +2,8 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Marvel.Protocol;
+using Marvel.Rules.Play;
+using Marvel.Rules.State;
 using Marvel.Session;
 using Marvel.Tests;
 using Xunit;
@@ -68,25 +70,88 @@ public sealed class PlayedCampaignReplayUpgradeTests
     [Theory]
     [InlineData("v19")]
     [InlineData("v20")]
-    public void UnaffectedAuthenticPlayedTaskmasterAttemptStillUpgradesExactly(string version)
+    [Rule("rr:damage.step.3")]
+    public void AuthenticPlayedTaskmasterAttemptRejectsDirectDamageWindowWithoutChangingHistory(string version)
     {
         WithFixture(version, (fixture, factory) =>
         {
+            var before = Snapshot(fixture);
             var campaign = CampaignSaveJson.Read(File.ReadAllBytes(Path.Combine(fixture, "campaign.json")));
             var original = campaign.Attempts[^1];
             Assert.Equal("taskmaster", original.Setup.Scenario);
             Assert.Equal(5, original.Units.Sum(unit => unit.Decisions.Count));
             string bytes = SessionSaveJson.Write(original);
             var route = Assert.IsType<SessionContentUpgrade>(factory.ContentUpgrade(original.Compatibility));
-            var candidate = route.Verify(original, setup => ReplayContractUpgradeTests.Open(factory, setup));
-            Assert.Equal("engine-replay-v26", candidate.Compatibility.ReplayContract);
-            Assert.Equal(bytes, SessionSaveJson.Write(candidate with { Compatibility = original.Compatibility }));
+            var failure = Assert.Throws<ReplayDivergenceException>(() =>
+                route.Verify(original, setup => ReplayContractUpgradeTests.Open(factory, setup)));
+            Assert.Equal("unit 1 decision 0 events diverged: expected 5, got 4", failure.Message);
+            AssertTaskmasterDirectDamagePause(original, factory);
+            AssertAttemptNotPublished(original, factory, fixture);
             Assert.Equal(bytes, SessionSaveJson.Write(original));
-            _ = SessionReplay.Verify(candidate, factory.Compatibility,
-                setup => ReplayContractUpgradeTests.Open(factory, setup));
-            Assert.Throws<SessionCompatibilityException>(() => SessionReplay.Verify(original,
-                factory.Compatibility, setup => ReplayContractUpgradeTests.Open(factory, setup)));
+            Assert.Equal(before, Snapshot(fixture));
         });
+    }
+
+    [Fact]
+    public void CurrentAuthoredBackflipDoesNotInterruptTaskmastersDirectDamage()
+    {
+        WithFixture("v19", (fixture, _) =>
+        {
+            var campaign = CampaignSaveJson.Read(File.ReadAllBytes(Path.Combine(fixture, "campaign.json")));
+            var original = campaign.Attempts[^1];
+            var current = DatasetGameFactory.Load(RepositoryPaths.Root);
+            var game = FrozenReplayPrefixAssertions.Before(original, current, 1, 0);
+            var step = original.Units[1].Decisions[0];
+            // Printed 01003 requires "damage from an attack"; 04093's form-change damage is direct.
+            var result = game.Resolve(step.Decision.Resolve(game.Pending!));
+            JournalReplay.RequireEvents(step.Events, result.Events, "current Taskmaster direct damage");
+            Assert.Equal(11, CardValues.RemainingHealth(game.State, game.State.Seats[0].IdentityCard, game.State.Facts));
+            Assert.NotEqual("WhenDamageWouldBeDealt", game.Pending!.Trigger);
+            Assert.Contains(game.State.Seats[0].Hand.Cards, card => card.FaceId == "01003");
+        });
+    }
+
+    private static void AssertTaskmasterDirectDamagePause(SessionSave original, DatasetGameFactory factory)
+    {
+        var game = FrozenReplayPrefixAssertions.Before(original, factory, 1, 0);
+        var step = original.Units[1].Decisions[0];
+        // Damage step 3: abilities that trigger "when [character] would take any amount of damage...".
+        // This target deliberately retains the frozen unscoped Backflip ability book.
+        var result = game.Resolve(step.Decision.Resolve(game.Pending!));
+        Assert.Equal(step.Events.Where(happened => happened.GetProperty("kind").GetString() != "FieldSet")
+            .Select(happened => happened.GetRawText()), result.Events.Select(JournalJson.Event).Select(happened => happened.GetRawText()));
+        Assert.Equal(12, CardValues.RemainingHealth(game.State, game.State.Seats[0].IdentityCard, game.State.Facts));
+        Assert.Equal("WhenDamageWouldBeDealt", game.Pending!.Trigger);
+        var backflip = Assert.Single(game.Pending.Affordances);
+        Assert.Equal("Backflip", backflip.Verb);
+        Assert.Equal(10, backflip.AnchorId);
+        Assert.False(game.State.Agenda.Occurrence!.DamageFromAttack);
+        var continued = game.Resolve(Decision.Decline);
+        var expectedDamage = Assert.Single(step.Events, happened => happened.GetProperty("kind").GetString() == "FieldSet");
+        Assert.Contains(continued.Events.Select(JournalJson.Event), happened => happened.GetRawText() == expectedDamage.GetRawText());
+        Assert.Equal(11, CardValues.RemainingHealth(game.State, game.State.Seats[0].IdentityCard, game.State.Facts));
+    }
+
+    private static void AssertAttemptNotPublished(SessionSave original, DatasetGameFactory factory, string fixture)
+    {
+        // Only this standalone storage/authority envelope is authored; the authentic session is unchanged.
+        const string capability = "taskmaster-replay-quarantine-control";
+        var stored = new StoredSession(original,
+            [new(SessionAuthorityRegistry.Verifier(capability), [0], Owner: true, Invitation: false)]);
+        var store = new FileSessionStore(Path.Combine(Path.GetDirectoryName(fixture)!, "taskmaster-quarantine"));
+        _ = store.Commit(stored);
+        string directory = Path.Combine(Path.GetDirectoryName(fixture)!, "taskmaster-quarantine");
+        var before = Snapshot(directory);
+        for (int restart = 0; restart < 2; restart++)
+        {
+            var host = new EngineHost(factory, store: store);
+            var refused = host.Exchange(EngineRequest.SyncGame("quarantined-" + restart,
+                original.Session.StorageId, capability));
+            Assert.Equal("session_not_found", refused.Error?.Code);
+            Assert.Equal(before, Snapshot(directory));
+            Assert.Equal(StoredSessionJson.Write(stored), StoredSessionJson.Write(Assert.Single(store.Load())));
+        }
+        Assert.Empty(Directory.GetFiles(directory, ".upgrade-*", SearchOption.AllDirectories));
     }
 
     private static string[] Snapshot(string directory) => Directory.GetFiles(directory, "*", SearchOption.AllDirectories)

@@ -136,3 +136,10 @@ both enforce it. An exhausted ally does not make the player able to defend, and
 another player's ally cannot satisfy it. While a ready controlled ally is required,
 a defense-labeled ability cannot establish the identity as the first defender.
 The activation completion sentinel expires the registration even after cancellation.
+
+Enemy attack damage-taking responses use RR 1.8 step six: the attack finishes,
+forced abilities (including retaliate) resolve, then non-forced abilities. Positive
+actual placement receipts, with original attacker and recipient facts, survive
+into that shared attack-end occurrence; child damage execution does not open a
+separate earlier damage-response window. Same-title villain succession preserves
+the character, while a reentered minion is a new copy.

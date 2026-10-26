@@ -26,4 +26,6 @@ public enum AbilityConditionFact
     UndefendedAttack,
     /// <summary>The defeat was caused by consequential damage.</summary>
     DefeatedByConsequentialDamage,
+    /// <summary>The invoking window owns imminent damage from an attack.</summary>
+    DamageFromAttack,
 }

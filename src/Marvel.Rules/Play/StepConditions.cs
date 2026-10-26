@@ -29,17 +29,19 @@ public static class StepConditions
         [DeclareDefender] = ["WhenDefenderDeclared"],
         [HeroDefenseTiming.Defends] = [HeroDefenseTiming.Defends],
         [BoostFaceupOperation.Faceup] = [BoostFaceupOperation.Faceup],
+        [BoostAbilityOperation.Resolve] = [],
         [FlipBoostCards] = ["WhenBoostCardsFlipped"],
         // Damage from an attack is imminent before this step applies. Whether
         // it was dealt is known only afterwards: Tough may prevent it, so the
-        // applying step adds `DamageDealt` only when damage actually lands.
-        // `rr:triggering-condition.2` still gives both one occurrence and one
-        // pair of windows.
+        // completed attack adds `DamageDealt` only when damage actually lands.
+        // rr:attack-enemy-activation.step.6 groups its damage responses with
+        // the other attack-end responses after the attack finishes.
         [DealAttackDamage] = [DamageWouldBeDealt],
         [PrepareIndirectAttackDamage] = [DamageWouldBeDealt],
         [EndAttack] = [AttackEnds],
         [DealEncounterCards] = ["WhenEncounterCardsDealt"],
         [RevealEncounterCard] = [CardRevealed],
+        [SurgeKeywordOperation.Condition] = [SurgeKeywordOperation.Condition],
         [TurnAction] = [TurnAction],
         [CardDefeated] = [CardDefeated],
         [CharacterAttacks] = [AttackInitiated],
@@ -89,6 +91,6 @@ public static class StepConditions
         Conditions.Values.SelectMany(each => each).Concat(
                 // These depend on the concrete occurrence rather than solely
                 // on its scheduled step name.
-                [BasicPowerTiming.HeroAttackInitiated, BasicPowerTiming.HeroUseInitiated, DamageDealt, ThreatPlaced, MinionEngagement.Engaged, VillainStepOneTiming.ThreatPlaced, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds,
+                [PreparationAbilityResolvedOperation.Condition, BasicPowerTiming.HeroAttackInitiated, BasicPowerTiming.HeroUseInitiated, DamageDealt, ThreatPlaced, MinionEngagement.Engaged, VillainStepOneTiming.ThreatPlaced, SchemeEnds, BasicAttackEnds, BasicPowerTiming.ThwartEnds,
                     BoostFaceupOperation.AttackFaceup]).ToFrozenSet(StringComparer.Ordinal);
 }

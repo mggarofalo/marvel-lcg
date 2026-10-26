@@ -38,6 +38,7 @@ public sealed class AbilityDataPrintedTextBoxResourceIconsTests : AbilityDataTes
             ["01008"] = new("web", 3, Uses: true),
             ["01056"] = new("attack", 3, Uses: true),
             ["01064"] = new("snoop", 3, Uses: true),
+            ["08016"] = new("snoop", 3, Uses: true),
             ["01066"] = new("arrow", 4, Uses: false),
             ["01080"] = new("medical", 3, Uses: true),
             // Both Risky Business environments enter with "2 [per player]" counters;

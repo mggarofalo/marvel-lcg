@@ -72,7 +72,7 @@ internal sealed class AttackEventScope(World world, List<GameEvent> events) : ID
             Resumed = started && openBefore.Any(prior => prior.Identity == attack.Identity),
             Trigger = started ? Steps.AttackInitiated : Steps.AttackEnds,
             Verb = started ? "Attack_Initiated" : "Attack_Finished",
-            Subjects = new[] { attack.Source, attack.Target }.Distinct().ToDictionary(id => id,
+            Subjects = new[] { attack.Source, attack.Target }.Where(id => id >= 0).Distinct().ToDictionary(id => id,
                 id => AttackCompletion.SubjectTitle(world, world.Facts, id)),
         };
 }

@@ -139,9 +139,11 @@ public sealed class MsMarvelNemesisCardTests : ChoosingCardsTestBase
     private static void Choose(World world, Card source, int id)
     {
         var runner = AuthoredCards.Runner();
-        var pending = AbilityContinuationFixtures.Pending(world, source);
-        var prompt = runner.Choosing(world, pending)!;
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        var prompt = Sequence.Work(world, Cards, runner, events)!;
+        Assert.Equal(source.ObjectId, world.Agenda.Current!.Value.Subject);
         Assert.Contains(prompt.Affordances, offer => offer.Id == id);
-        runner.Chose(world, pending, Decision.Take(id));
+        Sequence.Answer(world, Cards, runner, prompt, Decision.Take(id), events);
+        Sequence.Work(world, Cards, runner, events);
     }
 }

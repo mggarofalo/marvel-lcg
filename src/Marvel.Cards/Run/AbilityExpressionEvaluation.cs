@@ -53,6 +53,7 @@ internal sealed class AbilityExpressionEvaluation(
     private long ResolutionAmount(AbilityResolutionNumber kind) => kind switch
     {
         AbilityResolutionNumber.PowerAmount => context.PowerAmount,
+        AbilityResolutionNumber.ReceivedAttackDamage => ReceivedAttackDamageQuery.Amount(context),
         AbilityResolutionNumber.CardsDiscarded => context.Discarded.Length,
         AbilityResolutionNumber.PrintedCostDiscarded => context.Discarded.Sum(card =>
             context.World.Facts.PrintedValue(card.FaceId, "Cost", context.World.Players)),
@@ -161,6 +162,7 @@ internal sealed class AbilityExpressionEvaluation(
 
     private bool TestFact(AbilityConditionFact fact) => fact switch
     {
+        AbilityConditionFact.DamageFromAttack => context.Occurrence.DamageFromAttack,
         AbilityConditionFact.InAttackChain => context.World.Agenda.Current?.AttackOrigin is not null,
         AbilityConditionFact.FinalStep => context.FinalStep,
         AbilityConditionFact.CanMakeTheCall => CanMakeTheCall(),

@@ -32,6 +32,7 @@ internal static class AbilityOperationNames
             AbilityCostRange.Any => "discardAnyFromHand",
             _ => throw new InvalidOperationException("Unknown discard cost range"),
         },
+        AbilityCost.ChooseFromDiscard => "chooseFromDiscard",
         AbilityCost.ExhaustChosen => "exhaustChosen",
         AbilityCost.Heal => "heal",
         AbilityCost.Damage damage => damage.MustTakeAll ? "takeDamage" : "dealDamage",
@@ -59,6 +60,7 @@ internal static class AbilityOperationNames
         AbilityEffect.GainSurge => "gainSurge",
         AbilityEffect.Generate => "generate",
         AbilityEffect.DoubleResourceFor => "doubleResourceFor",
+        AbilityEffect.ReduceSelfCostPerControlledTrait => "reduceSelfCostPerControlledTrait",
         AbilityEffect.ReduceSelfCostPerEngagedMinion => "reduceSelfCostPerEngagedMinion",
         AbilityEffect.ReduceFirstAllyCost => "reduceFirstAllyCost",
         AbilityEffect.AllowPlayBeneath => "allowPlayBeneath",
@@ -161,6 +163,7 @@ internal static class AbilityOperationNames
         {
             AbilityFixedInstruction.UseAttackForThwart => "useAttackForThwart",
             AbilityFixedInstruction.AdvanceMainScheme => "advanceMainScheme",
+            AbilityFixedInstruction.CancelBoostAbility => "cancelBoostAbility",
             AbilityFixedInstruction.CancelBoostIcons => "cancelBoostIcons",
             AbilityFixedInstruction.CancelOccurrence => "cancelOccurrence",
             AbilityFixedInstruction.CancelWhenRevealed => "cancelWhenRevealed",

@@ -189,8 +189,7 @@ public sealed class ActionAbilityPaymentPlansAChosenCostRevalidatesItsExactCardT
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "preventDamage", Amount: 1, Card: source!.ObjectId, Affects: identity.ObjectId, Lasts: new Duration(Uses: 1)));
         if (mustTakeAll)
         {
-            var failure = Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(ability, [generator!.ObjectId], [])));
-            Assert.Contains("only 1 was taken", failure.Message, StringComparison.Ordinal);
+            runner.ExecuteAction(world, new PlayerAction(ability, [generator!.ObjectId], []));
             Assert.True(source.Ready);
             Assert.Same(world.Seats[0].Hand, generator!.Area);
         }

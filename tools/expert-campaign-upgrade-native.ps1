@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$Root, [string]$GodotBin, [switch]$NoBuild,
-    [string]$ReplayContract = 'engine-replay-v26')
+    [string]$ReplayContract = 'engine-replay-v27')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repo = Split-Path $PSScriptRoot -Parent

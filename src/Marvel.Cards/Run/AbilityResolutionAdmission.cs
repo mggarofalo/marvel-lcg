@@ -118,6 +118,7 @@ internal static class AbilityResolutionAdmission
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
             "inspectDiscardOrderEncounterTop" => EncounterRouting.Deck(cast.World).Cards.Count > 0,
+            "cancelBoostAbility" => cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World),
             "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World),
             "inspectEncounterTop" => AbilityEncounterInspection.Cards(cast.World,
                 (AbilityEffect.InspectEncounterTop)node).Count > 0,
@@ -227,6 +228,8 @@ internal static class AbilityResolutionAdmission
     private static AdmissionResolution LeafResolutionOf(
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
+            "cancelBoostAbility" => cast.Occurrence.BoostAbility is { } boost && boost.CanCancel(cast.World)
+                ? AdmissionResolution.Full : AdmissionResolution.None,
             "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World)
                 ? AdmissionResolution.Full : AdmissionResolution.None,
             "draw" => CombinedOutcomes(Seats(EffectOf<AbilityEffect.Draw>(node, cast).Players, cast).Select(player =>

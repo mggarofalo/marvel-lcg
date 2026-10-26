@@ -1,5 +1,11 @@
 # Release identity, signing and compatibility
 
+Protocol 41 adds the Preparation-card resource restriction (numeric enum value 4).
+Protocol 40 peers do not know this cost meaning and are rejected before gameplay
+or client interpretation. This wire change alone leaves replay v26, session
+schema 7, RNG and state digest unchanged. Black Widow content admission has its
+own complete-product and dataset compatibility gates.
+
 Protocol 40 adds per-offer `ContextCardIds`, identifying causal cards independently
 of source anchors and effect targets. View filters and copies the identities and
 names readable physical copies in their location. Protocol 39 peers are rejected.
@@ -63,12 +69,18 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `40` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `41` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
-| Engine replay contract | `engine-replay-v26` | The same setup and decision trace may resolve differently. |
+| Engine replay contract | `engine-replay-v27` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v3` | The canonical hidden-state serialization changes. |
 | Runtime datasets | Three SHA-256 values | Any byte in `cards.json`, `setup.json` or `abilities.json` changes. |
+
+Replay v27 evaluates dynamic lasting amounts against current state and preserves
+captured actor incarnation across suspended responses. These corrections can change
+accepted Core/RoRS outcomes. V26 saves have no named source admission; original
+saves remain unchanged. Explicit frozen v19/v20/v21 routes verify every historical
+fact before changing compatibility metadata. Protocol 41 and save schema 7 apply.
 
 Replay v26 completes minion Quickstrike before optional engagement and entry
 responses. Real Core Hawkeye and Vulture can therefore reach the same optional

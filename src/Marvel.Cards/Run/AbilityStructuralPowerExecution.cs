@@ -28,7 +28,7 @@ internal static class AbilityStructuralPowerExecution
             _ => throw new InvalidOperationException("A defense power is not scheduled"),
         };
         target ??= power.Target is { } selector ? Find(selector, context) : null;
-        if (target is null)
+        if (target is null && (power.Kind != AbilityPowerKind.Thwart || power.Target is not null))
             return new Unsupported($"'{context.SourceFace}' cannot find the target of its {verb}");
 
         var selected = PowerAdmission(context, power, target, targets);
@@ -39,6 +39,16 @@ internal static class AbilityStructuralPowerExecution
                 $"'{context.SourceFace}' suspends inside a {verb.ToLowerInvariant()}, which is not implemented");
         }
 
+        if (target is not null && AbilityIndependentAttack.HasIndependentCancellation(power)
+            && !AbilityIndependentAttack.CanAttack(context.Expressions.World,
+                context.Player, context.Expressions.Source, target)) target = null;
+        return SchedulePower(context, power, target, targets, amount, verb);
+    }
+
+    private static AbilityStructuralTransition SchedulePower(
+        AbilityStructuralContext context, AbilityEffect.Power power, Card? target,
+        IReadOnlyList<Card>? targets, long amount, string verb)
+    {
         var abilities = Abilities(context);
         var addresses = abilities
             .Where(ability => context.Tier is null || ability.Trigger.Timing == context.Tier)
@@ -59,15 +69,15 @@ internal static class AbilityStructuralPowerExecution
             || context.CrisisIgnoringThwarts.Contains(power)
             || context.PersistedCrisisIgnoringThwarts.Contains(address.Ordinal);
         return new SchedulePowerCommand(
-            power, verb, target, [.. targets ?? [target]], amount,
+            power, verb, target, [.. targets ?? (target is null ? [] : new[] { target })], amount,
             address.Index, address.Ordinal, automatic);
     }
 
     private static AbilityAdmissionContext PowerAdmission(
-        AbilityStructuralContext context, AbilityEffect.Power power, Card target, IReadOnlyList<Card>? targets)
+        AbilityStructuralContext context, AbilityEffect.Power power, Card? target, IReadOnlyList<Card>? targets)
     {
-        var selected = context.Admission().WithSelection(target);
-        return power.TargetCount is null ? selected : selected.WithPowerTargets(targets ?? [target]);
+        var selected = target is null ? context.Admission() : context.Admission().WithSelection(target);
+        return power.TargetCount is null ? selected : selected.WithPowerTargets(targets ?? (target is null ? [] : new[] { target }));
     }
 
     internal static AbilityStructuralTransition ThwartAll(

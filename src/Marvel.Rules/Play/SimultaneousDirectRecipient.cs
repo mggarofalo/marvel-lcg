@@ -9,6 +9,7 @@ internal sealed class SimultaneousDirectRecipient(DamageRequest request)
     private readonly int incarnation = request.Target.Incarnation;
     private DamageReplacement? replacement;
     private Damage.PlacedDamage? prepared;
+    private DirectDamagePrevention? prevention;
     internal DamageResult? Result { get; private set; }
     internal DamageRequest Request => request;
     internal Defeated? Defeated { get; private set; }
@@ -27,9 +28,20 @@ internal sealed class SimultaneousDirectRecipient(DamageRequest request)
         replacement ??= DamagePlacement.Replace(world, request, events);
         return replacement.IsComplete;
     }
+    internal bool Interrupt(World world, ICardFacts facts, List<GameEvent> events)
+    {
+        if (!IsCurrent) return true;
+        if (prevention is null)
+        {
+            Prepare(world, facts, events);
+            prevention = DirectDamagePrevention.Begin(world, request, replacement!, prepared!);
+        }
+        return prevention.IsComplete;
+    }
     internal void Prepare(World world, ICardFacts facts, List<GameEvent> events)
     {
         AttackDamageAccounting.ValidateBoostPlacement(world, request.ActivationId);
+        if (prevention is not null) { prepared = prevention.Placement; return; }
         prepared = IsCurrent && replacement is { IsComplete: true }
             ? DamagePlacement.PrepareAfterReplacement(world, facts,
                 request with { Amount = replacement.ResolvedAmount }, events)

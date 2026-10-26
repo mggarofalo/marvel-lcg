@@ -315,7 +315,7 @@
   ],
   "snapshot": {
     "algorithm": "sha256-length-prefixed-path-and-bytes",
-    "files": 554,
-    "hash": "sha256:b650cd8627333c7c5b6193c81245721eb082ee46fa2407d098f14980e0838bf0"
+    "files": 555,
+    "hash": "sha256:da0aa7a26fb74e6690bcb2576f16fad75cc79b6c5b7f3eca5298e381f5d07c82"
   }
 }

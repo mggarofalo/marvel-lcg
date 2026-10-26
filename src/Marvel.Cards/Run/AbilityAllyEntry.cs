@@ -30,7 +30,8 @@ internal static class AbilityAllyEntry
             card, cast.Player, cast.Trigger, cast.Events);
         // The instruction follows this physical card into play. Later entry windows
         // may still make that new incarnation stale before the suffix resumes.
-        if (entry.Card is AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen })
+        if (entry.Card is AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen }
+            or AbilityCardSelection.DefeatedAllyInYourDiscardPile)
             cast.ChooseSelection(card);
         cast.CompletedOutcome = AbilityStructuralOutcome.Full;
         cast.ResolveEffect();

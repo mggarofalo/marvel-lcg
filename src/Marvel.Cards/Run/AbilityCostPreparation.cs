@@ -45,6 +45,11 @@ internal sealed class AbilityCostPreparation
     {
         AttachedUpgradeCostBound.Validate(world, source, player, cost, paying);
         var price = AbilityPaymentPricing.Price(world, source, player, cost, resourceAbilities);
+        // Engine choice: a standalone discard-source arrow cannot consume resource generators.
+        // Events retain their separately validated printed-price payment.
+        if (cost is AbilityCost.Discard { Card: AbilityCostCard.Source } && paying.Length > 0
+            && EffectiveCards.Kind(source, world.Facts) != CardKind.Event)
+            throw new RulesNotImplementedException("this ability has no resource cost to pay");
         if (!resourcesPaidByEvent && price is not null
             && price.ResourceCosts.Any(component => component.DistinctTypes)
             && !Marvel.Rules.Prompts.ResourcePayment.Allows(price, paying, variables, selection.Allocations))
@@ -68,7 +73,7 @@ internal sealed class AbilityCostPreparation
     {
         new AbilityPaymentValidation(world, source, player, program, resourceAbilities)
             .Validate(component, paying, selected, variables);
-        if (component is null) return;
+        if (component is null or AbilityCost.ChooseFromDiscard) return;
         if (component is AbilityCost.Sequence sequence)
         {
             PrepareSequence(sequence);
@@ -88,21 +93,32 @@ internal sealed class AbilityCostPreparation
 
     private void PrepareSequence(AbilityCost.Sequence sequence)
     {
+        var components = Flatten(sequence).ToArray();
         // Engine choice: establish the taken-damage amount before other physical
         // payment. rr:cost.12 requires that "all of that damage was taken."
         // Defeat settlement waits until the combined costs have been committed.
-        foreach (var taking in sequence.Costs.OfType<AbilityCost.Damage>()
+        foreach (var taking in components.OfType<AbilityCost.Damage>()
                      .Where(damage => damage.MustTakeAll))
             PrepareSteps(taking);
-        var spends = sequence.Costs.OfType<AbilityCost.Spend>().ToList();
+        var spends = components.OfType<AbilityCost.Spend>().ToList();
         if (!resourcesPaidByEvent && spends.Count > 0)
             ordered.Add(new Spend(string.Concat(spends.Select(step => step.Resources)),
                 Generic: spends.Sum(step => step.Generic))
                 { Price = resourcePrice, Allocations = selection.Allocations });
-        foreach (var remaining in sequence.Costs.Where(step =>
+        foreach (var remaining in components.Where(step =>
                      step is not (AbilityCost.Spend
                          or AbilityCost.Damage { MustTakeAll: true })))
             PrepareSteps(remaining);
+    }
+
+    private static IEnumerable<AbilityCost> Flatten(AbilityCost cost)
+    {
+        if (cost is AbilityCost.Sequence sequence)
+        {
+            foreach (var child in sequence.Costs)
+                foreach (var component in Flatten(child)) yield return component;
+        }
+        else yield return cost;
     }
 
     private void PrepareResource(AbilityCost component)

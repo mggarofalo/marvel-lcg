@@ -191,19 +191,13 @@ func _setup_control_is_visible(page: ScrollContainer, path: String) -> bool:
 		_fail("setup control '%s' is smaller than the pointer-target floor" % path)
 		return false
 	control.grab_focus()
-	await process_frame
-	await process_frame
-	var page_rect := page.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
-	var control_rect := control.get_global_rect()
-	if control_rect.end.y > page_rect.end.y:
-		page.scroll_vertical += ceili(control_rect.end.y - page_rect.end.y)
-	elif control_rect.position.y < page_rect.position.y:
-		page.scroll_vertical -= ceili(page_rect.position.y - control_rect.position.y)
-	await process_frame
-	var visible := control.get_global_rect().intersection(page_rect)
-	if visible.size.x >= expected and visible.size.y >= expected:
+	var observations: Array[String] = []
+	if await preload("res://smoke/setup_control_reveal.gd").settle(page, control, self, expected, observations):
 		return true
-	_fail("setup control '%s' cannot be brought into the viewport" % path)
+	_fail("setup control '%s' cannot be brought into the viewport; target=%s page=%s scroll=%s range=%s" % [
+		path, control.get_global_rect(), page.get_global_rect(), page.scroll_vertical,
+		page.get_v_scroll_bar().max_value - page.get_v_scroll_bar().page]
+		+ "\nLayout frames:\n" + "\n".join(observations))
 	return false
 
 

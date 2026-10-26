@@ -11,6 +11,11 @@ public static class ResourceSourceEligibility
         source.Restriction switch
         {
             ResourceRestriction.None => true,
+            // Printed 08007 generates a resource "for a Preparation card".
+            // Matching ability costs follow the Finesse/event-cost interpretation
+            // of rulings 6800619dc41a043c and 5b44b2adcc60d4b7 (see card-dsl.md).
+            ResourceRestriction.PreparationCard => target is not null
+                && Traits.Has(world, target, "PREPARATION", facts),
             ResourceRestriction.Event => target is not null
                 && EffectiveCards.Kind(target, facts) == CardKind.Event,
             ResourceRestriction.ArrowEvent => target is not null

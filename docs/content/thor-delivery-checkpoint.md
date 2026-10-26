@@ -1,5 +1,13 @@
 # Thor delivery checkpoint
 
+## Accepted delivery
+
+PR #452 merged as `c14a045c5ce1df8ebe6afce83a2b6fab2b802cb1` after all
+eleven jobs passed on `286d0d4463dffa5341bae90f177f3bd0c1429f74` in run
+`40342273427`. MARVEL-563 and its twenty prerequisites are Done. The earlier
+timeout below remains diagnostic evidence, not the final certification result.
+
+
 ## Certification run 40335536213
 
 PR #452 candidate `4c6f5af9` passed managed correctness, the Windows package,
@@ -13,11 +21,11 @@ canceled. Logs remain in `C:/Users/mggar/Source/evidence/thor-ci-windows-platfor
 
 Routine platform jobs have a 60-minute bounded budget for integration and hosted
 smoke checks; individual process deadlines, assertions, required checks and the
-90-minute exhaustive limit are unchanged. The new exact candidate must complete
+90-minute exhaustive limit are unchanged. The final exact candidate completed
 certification before merge. No passing result is inferred from the canceled job.
 
 MARVEL-563, runtime integration `63937f6d`, 2026-10-26. The branch contains a complete
-public Thor admission candidate; it is not merged or accepted. This record
+public Thor admission candidate now merged and agent-accepted as recorded above. This record
 supplements the 35-face implementation handoff and does not replace complete
 pack acceptance.
 
@@ -91,7 +99,7 @@ allocation authority to Godot. The architecture and release checks pass 129 and
 36 tests respectively. Logs: `thor-final-build.log`, `thor-final-integration.log`,
 `thor-final-godot-boundary.log`, and `thor-final-acceptance.log` in the same
 external evidence directory. Required PR CI must certify the final revision on
-both platforms before merge and acceptance.
+both platforms before merge and acceptance; final run `40342273427` passed.
 
 All 35 actual Thor faces have independent review. Lightning Strike and Get Over
 Here are integrated at `17ae7218`/`1c2a63a4`; Loki is authored at `ad1ec15a`

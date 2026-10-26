@@ -5,6 +5,17 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`defeatedAllyInYourDiscardPile: "you"` selects the exact physical ally from the
+current defeat receipt when its captured controller was the resolving player,
+its incarnation has not reentered play, and it is currently in that player's
+own discard pile. Ownership and present discard control do not prove control at
+defeat. Out-of-play movement followed by return to that discard remains eligible;
+reentry into play creates a new incarnation and invalidates the old receipt.
+This selector spelling is an engine choice. Putting this selection into
+`yourPlayArea` uses the ordinary ally-entry lifecycle and binds `chosen` to the
+returned incarnation for subsequent instructions, including after entry windows.
+These primitives do not admit Rapid Response or the Black Widow product.
+
 `villainAndMinionsEngagedWithYou` selects the current villain and every effective
 minion engaged with the resolving player. It follows the active villain and
 projected stage/engagement changes, excludes other players' minions, and can feed
@@ -694,6 +705,20 @@ Damage descriptions report uncertainty without turning it into a predicted
 health value. See [shared domain calculations](architecture-domain-calculations.md)
 for the ownership boundary and remaining extraction candidates.
 
+A labelled-power sequence may finish with an independent live tail, including
+`giveStatus` on `chosen` guarded by `isInPlay: "chosen"`. The targeted power
+retains that recipient's incarnation; use `chosen` inside its body when later
+instructions must affect the same copy. Departure makes the guard false, even
+if the physical card reenters before the tail runs. Damage and its defeat
+interrupts, choices and responses settle before the tail and ability completion.
+Suspension admission still projects the prefix to validate damage batches and
+unsupported departures. Only an independent final tail permits an opaque minion
+defeat interrupt to settle live. Full state projection preserves every ordered
+predecessor, including a nested sequence ending with an independent draw.
+If any later instruction needs a projected board read, ordinary projection and
+unsupported-window guards still apply before costs. This bounded composition
+does not predict hidden encounter draws or admit Black Widow content.
+
 `AbilityInitiationEvidence` holds the checks that live resolution must retain,
 including label validation and scoped target exceptions. It belongs to one
 ability resolution, not the shared program. Payment or suspension cannot erase
@@ -855,7 +880,12 @@ host as if in hand; the query never moves them to hand or makes them resources.
 
 A resource ability may declare `"resourceRestriction": "arrowEvent"` (Expert
 Marksman), `"resourceRestriction": "aspectCard"` (Finesse), or
-`"resourceRestriction": "event"` (Biokinetic Polymer Suit). The payment engine
+`"resourceRestriction": "event"` (Biokinetic Polymer Suit). The test-local
+Black Widow's Gauntlet interpretation uses `"resourceRestriction": "preparationCard"`
+for a Preparation card's resource or ability cost, excluding unrelated ability
+costs. Its Resource
+trigger has no form restriction. This spelling is an engine choice and does not
+admit Black Widow content. The payment engine
 checks the cost's actual card before offering or spending the source. Finesse
 can pay an aspect card's printed cost or a cost within its ability
 (`ruling:6800619dc41a043c`); ability-cost context does not activate card-play-only
@@ -864,6 +894,14 @@ unknown values fail admission. Printed wild icons use `G` as elsewhere in this D
 The event restriction includes a cost within the event's own ability; a cost paid
 for a chosen ally uses that ally's context instead. The distinction follows
 `ruling:5b44b2adcc60d4b7`. Hero-form requirements remain explicit trigger fields.
+The Preparation interpretation applies the same matching-card semantics inferred
+from the Finesse and event-cost rulings to 08007's "for a Preparation card".
+The Finesse clarification is scoped pre-1.5, while the October 2024 event-cost
+ruling is scoped 1.6 and reiterates the distinction between the actual card's
+cost and an enclosing action. Current RR 1.8 `rr:resource-ability.1.1` requires
+the specific cost type without limiting it to card play; neither cited ruling
+is a Gauntlet-specific clarification. The restriction never supplies the
+card context of an enclosing action to an unrelated nested ability payment.
 
 Discard receipts expose `printedResourceIconsDiscarded` and `distinctPrintedResourceTypesDiscarded` numeric expressions (value `"game"`). They count printed resource icons, including wild as its own type, without payment multipliers. `printedBoostIconsDiscarded` counts numeric boost icons and excludes boost stars. Empty receipts yield zero. `printedCostDiscarded` sums the printed resource costs of the physical cards discarded in this resolution, with undefined X equal to zero. `distinctCardTypesDiscarded` counts distinct printed card types in that same receipt. Both take `"game"`; random hand discards retain the same physical receipt as top-deck discards.
 Arrow costs support `spendAny: N` for a positive number of resources without a required type, and `returnToHand: "this"` for returning the source from play to its owner. Event payment combines generic arrow costs with its printed price without charging twice. Returning a source discards attachments and ends its continuous effects before the post-arrow effect.
@@ -1299,6 +1337,18 @@ behavior. The accepted cost snapshot survives resource-generator suspension.
 This mechanism does not admit the Thor product or author its actual ability row.
 
 
+`reduceSelfCostPerControlledTrait` takes `{ "trait": "PREPARATION", "amount": 1 }`.
+The engine chooses this instruction spelling. Like the engaged-minion variant,
+it requires a direct unconditional Constant ability on `this` and supplies only
+a candidate pricing reduction. Printed 08002 requires one reduction for every
+Preparation card its future controller currently controls in play, across card
+kinds and in-play areas. The census uses live traits and `CardControl`, so
+ownership does not replace changed control; cards in hand or discard are excluded.
+Final payment validation owns the zero floor, discount consumption, uniqueness
+and ally limit. An accepted payment retains its price through resource suspension.
+Test-local Winter Soldier coverage does not admit Black Widow publicly.
+
+
 ## Basic-use interrupt prerequisite
 
 `WhenHeroBasicAttackInitiated` joins the existing attack occurrence only for a
@@ -1386,3 +1436,78 @@ where an earlier departure changes a later defeat interrupt. Lightning Strike
 admission remains withheld pending that review and any required defeat-stage
 barrier. Save/replay and frozen-route compatibility also require integration
 evidence against the eventual admitted candidate.
+
+### Choosing a discard card before the arrow
+
+The bounded cost `{"seq":[{"exhaust":"this"},{"chooseFromDiscard":"PREPARATION"}]}`
+requires one explicit own-discard card in the activation's target request before
+any exhaustion is paid. Its only admitted effect is `{"addToHand":"chosen"}` in
+an unlabelled Action. This models the cost-side choice printed on Safe House #29
+(08005); it does not admit Black Widow as a playable product.
+
+Lowering refuses other cost/effect compositions. The engine validates the exact
+selection before paying, preserves the existing incarnation-aware chosen binding
+across suspended payment, and never substitutes a different discard card. Recovery
+follows completion of the exhaustion cost. If the captured card has left its
+selected area or incarnation while payment settles, recovery has no remaining
+card to move. This contract adds no wire, RNG, digest or save fields and changes
+no already authored ability or existing replay prompt.
+
+A `thwart` with no `target` represents only an independent villain-status sentence.
+Its body must be a single `giveStatus` over `villain`; `automaticTarget` and other
+bodies are rejected. This engine spelling preserves one saved thwart occurrence,
+its performer, and no thwarted-scheme facts. RR 1.8 `target.3`,
+`labeled-ability.4`, and ruling `0fc2a7cc9197e127` permit Covert Ops to resolve
+confusion alone, including when Patrol prevents thwarting the main scheme.
+A conditional guarded by `exists(thwartableSchemes)` may choose from that same
+query for removal plus status, or use an identical independent status sentence.
+Both branches retain the same outer thwart label and its whole-ability cancellation.
+Other power suspension and conditional admission shapes retain their existing gates.
+
+
+### Received enemy-attack damage
+
+`{"receivedAttackDamage":"game"}` reads the positive damage actually taken by
+this resolving player's exact identity from the matching enemy-attack damage
+occurrence. It is independent of damage dealt, current health and later damage.
+The engine retains attacker and recipient incarnations, controller at placement,
+and each actual placement, including overkill. Tough, complete prevention, zero,
+boost effects, and an ally's own damage supply no identity credit. The spelling
+and occurrence-local receipt are engine choices implementing `rr:damage.3.2`.
+
+Damage responses bind the captured actual recipient; an overkill identity need
+not be the original defending ally. The same receipt survives a suspended ability
+and its labeled counterattack. Ordinary attack legality, Guard, Stun and retaliate
+continue to apply. Receipts are transient, omitted from diagnostic occurrence
+serialization and reconstructed by accepted-decision replay. They add no digest,
+card-state or protocol field. This capability neither authors Counterattack
+(08030) nor admits Black Widow.
+`cancelBoostAbility: "trigger"` cancels only the exact faceup boost card ability
+receipt in its Response window. Numeric icons retain their separate receipt.
+Target Acquired uses this operation after the flip and before the star resolves
+(ruling a66ca21bca34a71f); invalid activation or card incarnation cannot cancel.
+## Independent boost cancellation in an attack
+
+The closed `attack` body `then(cancelBoostIcons(trigger),
+dealAttackDamage(chosen, cancelledBoostIcons))` with the automatic villain query
+can resolve its cancellation sentence when the villain is not a valid attack
+target. Current RR 1.8 `rr:target.3`, `.3.8`, `rr:guard.1`, and
+`rr:labeled-ability.2` agree with ruling `0fc2a7cc9197e127` (October 2024).
+The earlier pre-1.5 ruling `6919a92cb0376eac` does not govern this case.
+
+The interpreter retains one labeled attack, its identity performer and its exact
+live boost-icon receipt. A blocked villain is absent from the attack's targets,
+damage and retaliation recipients. Its source-only attack boundary can support
+an after-you-attack response, without an attacked-enemy response. The discard
+cost and successful Preparation completion remain part of the original ability.
+Stun cancels both sentences after costs; zero remaining icons cannot admit an
+otherwise ineffective ability. Explicit player-selected targets and all other
+attack body shapes keep their existing target validation. This adds no general
+targetless attack syntax, public pack admission, protocol or save format change.
+
+`damageFromAttack: "trigger"` tests the exact imminent damage assignment owned by
+this occurrence. Attack step damage, indirect attack assignments, and overkill
+qualify; boost ability damage, nested nonattack damage and damage costs do not
+borrow an enclosing attack. The spelling and occurrence marker are engine choices.
+Backflip combines this condition with its identity target and remaining damage.
+A defense label alone does not impose it (`rr:defend-defense.4.8`).

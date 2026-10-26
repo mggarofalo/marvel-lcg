@@ -121,8 +121,12 @@ public sealed class EvictionNoticeTests
         int queued = world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards.Count;
 
         var runner = AuthoredCards.Runner();
-        runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(1));
-        runner.Chose(world, AbilityContinuationFixtures.Pending(world, card), Decision.Take(1));
+        var events = new List<Marvel.Rules.Events.GameEvent>();
+        var flip = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(world, Cards, runner, flip, Decision.Take(1), events);
+        var option = Sequence.Work(world, Cards, runner, events)!;
+        Sequence.Answer(world, Cards, runner, option, Decision.Take(1), events);
+        Sequence.Finish(world, Cards, runner, events);
 
         Assert.Equal(held - 1, world.Seats[0].Hand.Cards.Count);
         Assert.Equal(

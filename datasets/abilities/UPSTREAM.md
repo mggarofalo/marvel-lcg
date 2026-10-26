@@ -247,3 +247,52 @@ erratum, and ruling:2001c6705b63bf4f confirms private looking.
 `ThorHeimdallPrivacyTests` exercise the unmodified full book.
 See `docs/content/thor-valkyrie-heimdall-evidence.md`. Public admission remains
 closed; Lightning Strike remains unauthored pending its simultaneous target group.
+
+Black Widow identity/Preparation research adds five actual rows: Black Widow
+(08001a), Safe House #29 (08005), Black Widow's Gauntlet (08007), Synth-Suit
+(08009), and Widow's Bite (08010). Printed authority is datasets/cards/cards.json;
+RR 1.8 resolve and ruling:420bd5b1763b9506 require resolved abilities for
+Widowmaker and Synth-Suit. The 623 existing rows are unchanged; there are 628
+rows, including 17 of Black Widow's 34 playable faces. No new starting counter
+pools are printed on these five faces. BlackWidowPreparationCardTests,
+PreparationPrintedResolutionTests, PreparationContinuationIndependentTests,
+PreparationResourceTests/IndependentTests and SafeHouseCostChoiceTests/SuspensionTests
+exercise actual rows with explicitly labelled synthetic suspension support.
+Public Black Widow admission remains excluded pending complete pack delivery.
+See docs/content/black-widow-preparation-batch.md for evidence and limits.
+
+
+The next Black Widow batch adds actual 08023, 08025, 08026 and 08029: 632
+rows and 21/34 Black Widow faces. The existing 628 rows retain their exact raw
+prefix/order/semantics. No starting counters or public admission changes.
+Quake 08012 remains unauthored: a compiled characteristic incarnation probe
+found that the completed scheme actor selector damages a departed/reentered
+copy. See `docs/content/black-widow-allies-encounters.md` for bounded evidence.
+
+
+The seven-face Black Widow batch adds actual 08003, 08004, 08012, 08013,
+08018, 08024 and 08033, giving 639 rows and 28/34 playable Black Widow faces.
+The preceding 632-row text is preserved. These rows print no starting counters.
+Printed authority is datasets/cards/cards.json; current RR 1.8 governs Surge,
+defeat and labeled attacks. The reviewed mechanism authority and bounded actual-row
+evidence are linked in docs/content/black-widow-seven-faces.md. Public admission
+remains closed. This later batch includes the reviewed exact-incarnation Quake
+mechanism; the preceding batch's unauthored status describes that earlier batch.
+
+Counterattack (08030) and Rapid Response (08031) add two actual Black Widow
+research rows: 634 rows, 23/34 Black Widow faces on base 29aa293f. The exact
+632-row prefix is retained. Printed authority is datasets/cards/cards.json;
+neither face prints starting counters. Current RR 1.8 attack step 6(a)/(b)
+places forced responses and retaliate before optional Counterattack, superseding
+the pre-1.5/1.6 Counterattack rulings. Rapid Response binds captured controller
+at defeat, the exact discard incarnation and ordinary ally entry before damage.
+The characteristic, receipt, timing, entry and durable restart tests now use
+the actual canonical rows. See docs/content/black-widow-final-response-rows.md.
+This packet changes no engine mechanism, product admission, setup or version.
+
+The combined Black Widow book contains 645 unique rows and all 34 printed faces.
+Its raw predecessor rows and incoming source row objects are retained; four
+prevention rows and the final two response rows complete the seven-face batch.
+Every row has independent authority review. Exact membership and starting-counter
+checks remain explicit. The product is not yet publicly admitted; focused source
+and combined evidence is recorded in `docs/content/black-widow-delivery-checkpoint.md`.

@@ -1,3 +1,4 @@
+using static Marvel.Cards.Dsl.AbilityPowerLowering;
 using static Marvel.Cards.Dsl.AbilityStructuralLowering;
 using static Marvel.Cards.Dsl.AbilityLowering;
 using static Marvel.Cards.Dsl.AbilityBookLowering;
@@ -83,6 +84,7 @@ internal static class AbilityEffectLowering
             "gainSurge" => new AbilityEffect.GainSurge(Integer(argument, child)),
             "useAttackForThwart" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.UseAttackForThwart),
             "advanceMainScheme" => FixedEffect(argument, child, "next", AbilityFixedInstruction.AdvanceMainScheme),
+            "cancelBoostAbility" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostAbility),
             "cancelBoostIcons" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostIcons),
             "cancelOccurrence" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelOccurrence),
             "cancelWhenRevealed" => FixedEffect(argument, child, "trigger.subject", AbilityFixedInstruction.CancelWhenRevealed),
@@ -105,6 +107,7 @@ internal static class AbilityEffectLowering
             "generate" => new AbilityEffect.Generate(ResourceString(argument, child)),
             "doubleResourceFor" => new AbilityEffect.DoubleResourceFor(Text(argument, child)),
             "reduceSelfCostPerEngagedMinion" => new AbilityEffect.ReduceSelfCostPerEngagedMinion(PositiveInteger(argument, child)),
+            "reduceSelfCostPerControlledTrait" => AbilitySelfPlayCostLowering.LowerControlledTrait(argument, child),
             "reduceFirstAllyCost" => new AbilityEffect.ReduceFirstAllyCost(PositiveInteger(argument, child)),
             "releaseBeneath" => AbilityBeneathLowering.Release(argument, child),
             "chooseCardsToHand" => AbilityBeneathLowering.ChooseToHand(argument, child),

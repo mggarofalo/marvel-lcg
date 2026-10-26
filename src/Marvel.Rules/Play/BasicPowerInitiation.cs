@@ -200,20 +200,30 @@ public static class BasicPowerInitiation
             world, facts, power.Player, power.Source, [AttackVerb], events);
         if (attacker is null) return false;
 
-        if (!Attackable(world, facts, power.Player).Any(card => card.ObjectId == power.Target.ObjectId)
-            || !world.DamageAbilities.CanTakeDamage(world, power.Target, power.Source))
+        RequireCardAttackTarget(world, facts, power);
+        ScheduleAttack(world, new CharacterAttack(
+            attacker.ObjectId, power.Target?.ObjectId ?? -1, power.Player, power.Amount,
+            power.Source.ObjectId, moveFrom?.ObjectId ?? -1, overkill, power.Trigger,
+            power.Continuation, power.Origin, power.SurgeGained, power.Target?.Incarnation ?? -1), nested);
+        return true;
+    }
+
+    private static void RequireCardAttackTarget(World world, ICardFacts facts, CardPowerInvocation power)
+    {
+        // rr:labeled-ability.2 and ruling 0fc2a7cc9197e127 allow an attack
+        // whose independent effect resolves without an attacked enemy. Only
+        // an interpreter continuation can own that effect body.
+        if (power.Target is null && power.Continuation is null)
+            throw new RulesNotImplementedException("an enemy-less attack requires an interpreter continuation");
+        if (power.Target is not null
+            && (!Attackable(world, facts, power.Player).Any(card => card.ObjectId == power.Target.ObjectId)
+                || !world.DamageAbilities.CanTakeDamage(world, power.Target, power.Source)))
         {
             throw new RulesNotImplementedException(
                 $"card {power.Target.ObjectId} is not an enemy {world.Seats[power.Player].Name} can attack");
         }
 
         CardAttackTargets.Validate(world, facts, power);
-
-        ScheduleAttack(world, new CharacterAttack(
-            attacker.ObjectId, power.Target.ObjectId, power.Player, power.Amount,
-            power.Source.ObjectId, moveFrom?.ObjectId ?? -1, overkill, power.Trigger,
-            power.Continuation, power.Origin, power.SurgeGained, power.Target.Incarnation), nested);
-        return true;
     }
 
     /// <summary>

@@ -19,10 +19,14 @@ The baseline is embedded in the executable; a save cannot supply a new baseline
 or authorize its own migration.
 
 This is a conservative product policy, not a rule inferred from the tabletop.
-The current v26 delivery retains named routes from the exact frozen v19/v20/v21
-content triple to `engine-replay-v26`, plus frozen-content v26 additive upgrades.
-Every original recorded fact must verify; none is regenerated. V22, v23, v24 and v25
-have no named source admission and are quarantined unchanged. V26 completes
+The current v27 delivery retains named routes from the exact frozen v19/v20/v21
+content triple to `engine-replay-v27`, plus frozen-content v27 additive upgrades.
+Every original recorded fact must verify; none is regenerated. V22, v23, v24, v25
+and v26 have no named source admission and are quarantined unchanged. V27 evaluates
+dynamic lasting amounts against current state and preserves captured actor incarnation
+across suspended responses. These corrections can change accepted Core/RoRS outcomes.
+Protocol 41 and save schema 7 apply. Historical v26 routes remain exact v26
+destination routes. V26 completes
 minion Quickstrike before optional engagement and entry responses;
 real Core Hawkeye/Vulture traces can therefore change independently of content
 hashes. Historical v25 routes remain exact v25 destination routes. V25 emits one
@@ -30,7 +34,7 @@ ally-entry response occurrence after the mandatory ally-limit choice, including
 ordinary play and put-into-play. Core Nick Fury, Maria Hill and Mockingbird can
 therefore change a recorded trace independently of content hashes. V24 discards unattached
 revealed attachments after reveal/surge completion: Core 01163/01185 and RoRS
-04117â€“04119/04135 can change recorded digests and later shuffles even with
+04117â€"04119/04135 can change recorded digests and later shuffles even with
 identical datasets. Historical v22/v23 adapters remain explicit destination-bound
 routes; they do not authorize a v22/v23 source upgrade to v24.
 The v22 delivery admits four explicit routes on this exact frozen content
@@ -46,20 +50,48 @@ Replay v22 completes a nested card reveal, including minion Quickstrike, before
 resuming its enclosing reveal effect (`rr:reveal.step.4`). The frozen v19 and v20
 played-campaign aggregates first differ at unit 7 decision 2: Shadows of the Past
 records scheme/shuffle events before the nested minion completes. Both aggregates
-are rejected unchanged on restore and import. The separately verified, authentic
-five-decision Taskmaster attempt remains compatible; this proves an unaffected
-played attempt, not a compatible complete campaign aggregate. A newly recorded,
-authentic compatible predecessor campaign aggregate is still required for positive
-full-campaign upgrade acceptance. No frozen expected gameplay value is rewritten.
+are rejected unchanged on restore and import. The authentic five-decision Taskmaster attempt is also rejected by the deliberate
+frozen-content v27 compatibility probe. Its first difference is unit 1 decision
+0: changing form invokes Taskmaster (04093), which discards 04153 and deals one
+direct damage. The original five events include identity health 12 to 11; the
+new runtime emits the other four events and pauses before placing that damage.
+The frozen ability book's Backflip (card 10) lacks the printed attack-only
+condition and is offered at this new optional damage window. This is a probe of
+new runtime behavior with frozen content, not current authored Backflip behavior.
+The actual current book does not offer Backflip for Taskmaster's direct damage;
+the same setup and recorded initial decisions produce the original five events.
 
-The frozen Expert campaign is also quarantined unchanged under v24. Its journal
-entry 13 (Crossbones attempt 4) first differs at unit 31 decision 3: two Backflip
-prevention registrations are consumed together by the preceding defended
-Crossbones attack. The original history leaves one registration to erase Hydra
-Mercenary's subsequent two damage; the corrected runtime reduces the hero from
-7 to 5 hit points. Restore and import reject the aggregate before publication.
+The frozen Expert campaign remains quarantined unchanged. Its journal entry 13
+(Crossbones attempt 4) first differs at unit 28 decision 1 under the same
+frozen-content v27 probe. Great Responsibility (01061, card 27) replaces threat
+with one direct damage. The original four events are Play, identity health 6 to
+5, Discard and AttackBoundary. The new runtime emits Play and pauses at the new
+optional damage window, offering the frozen book's Backflip cards 9 and 10.
+Declining that window places the original damage. This earlier difference
+prevents replay from reaching the separately recorded stacked-prevention
+sequence at unit 31; that original history is retained unchanged.
+
+RR `rr:damage.step.3` requires abilities that trigger "when [character] would
+take any amount of damage..." before damage placement at step 5.
+`DirectDamagePrevention`, introduced in `3684923b`, supplies that window. Current
+Backflip's printed 01003 condition additionally requires damage from an attack;
+the frozen book does not encode that restriction. The compatibility probe does
+not retrofit the frozen book or substitute an expected event. Strict prefix
+verification and exact first-divergence checks live in
+`ExpertCampaignReplayUpgradeTests` and `PlayedCampaignReplayUpgradeTests`.
+The Taskmaster session is also checked in an explicitly authored standalone
+storage envelope: two restores reject publication while every stored byte and
+the original authentic session remain unchanged. Whole-campaign restore/import
+quarantine remains covered for both archives.
+
 The unaffected initial Absorbing Man attempt still upgrades exactly and permits
-both recovery and decline; this is not full-campaign upgrade acceptance.
+both recovery and decline. The nonempty authentic Core session in
+`core-session-91098022.zip` still upgrades exactly through named v19/v20/v21
+routes (`ReplayContractUpgradeTests.CurrentNamedAdapterVerifiesTheOriginalHistory`).
+These controls do not establish complete-campaign upgrade acceptance. A newly
+recorded authentic compatible predecessor campaign aggregate is still required
+for positive full-campaign upgrade acceptance. No frozen expected gameplay value
+or historical archive is rewritten.
 
 Replay v21 moves retaliation into the forced after-attack response window and
 corrects zero-damage retaliation. The actual predecessor Black Panther/Rhino trace

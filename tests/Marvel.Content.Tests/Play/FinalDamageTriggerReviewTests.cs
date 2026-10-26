@@ -32,7 +32,7 @@ public sealed class FinalDamageTriggerReviewTests : CoreCardTestBase
         world.CreateCard("01088", world.Seats[0].Deck);
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
-        var replacement = DamagePlacement.Replace(world, new(source, hero, 2, "Review", "Attack"), []);
+        var replacement = DamagePlacement.Replace(world, new(source, hero, 2, "Review", "Attack") { FromAttack = true }, []);
         var occurrence = replacement.Execution.Occurrence;
         Assert.Contains(runner.Waiting(world, occurrence, WindowKind.Interrupt), item => item.Card == card.ObjectId);
         world.Effects.Register(new(EffectSource.LastingEffect, "preventDamage", 1,

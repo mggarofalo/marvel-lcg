@@ -264,6 +264,7 @@ public static class Defeat
             Kind = EffectiveCards.Kind(card, world.Facts),
             Title = EffectiveCards.Title(card, world.Facts),
             Incarnation = card.Incarnation,
+            Controller = card.Area.PlayArea.IsPlayers ? card.Area.PlayArea.Player : -1,
             ProfileId = card.InstanceState.Profile?.Id,
             WasFaceDown = !card.FaceUp,
         };

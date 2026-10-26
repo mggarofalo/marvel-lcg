@@ -102,6 +102,14 @@ public sealed record Occurrence
     [JsonIgnore]
     public Play.DamageReplacement? Damage { get; internal set; }
 
+    /// <summary>Whether this exact imminent assignment is damage from an attack.</summary>
+    [JsonIgnore]
+    public bool DamageFromAttack { get; internal init; }
+
+    /// <summary>The exact damage-taking assignment, reconstructed during replay.</summary>
+    [JsonIgnore]
+    public Play.DirectDamagePrevention? DirectDamage { get; internal set; }
+
     /// <summary>The shared step-six window owning this exact recipient's authored interrupts.</summary>
     [JsonIgnore]
     public Play.DefeatWindow? SharedDefeatWindow { get; internal set; }
@@ -111,9 +119,11 @@ public sealed record Occurrence
     [JsonIgnore]
     public Play.BoostIconCancellation? BoostIcons { get; internal set; }
 
-    private readonly HashSet<(WindowKind Window, int Card, AbilityType Type, int Ordinal, State.Defeated? Defeat, State.Attacked? Attack, NativeAbilityKind Native, Occurrence? Threat, int EventPlay)> spent = [];
+    /// <summary>The exact boost ability available before its execution.</summary>
+    [JsonIgnore]
+    public Play.BoostAbilityCancellation? BoostAbility { get; internal set; }
 
-    private readonly Dictionary<int, int> completedEventPlays = [];
+    private readonly TriggerUses triggers = new();
 
     private readonly List<Occurrence> threatPlacements = [];
 
@@ -123,15 +133,19 @@ public sealed record Occurrence
     // to it -- see `Also`.
     private readonly List<string> conditions;
 
-    private readonly List<State.Defeated> defeats = [];
+    private readonly OccurrenceDefeats defeats = new();
 
     private readonly AttackRecipients attacks = new();
 
+    /// <summary>Actual enemy-attack placements belonging only to this occurrence.</summary>
+    [JsonIgnore]
+    public ReceivedAttackDamagePlacements ReceivedAttackDamage { get; } = new();
+
     /// <summary>The next play generation of this physical event in this occurrence.</summary>
-    public int EventPlay(int card) => completedEventPlays.GetValueOrDefault(card);
+    public int EventPlay(int card) => triggers.EventPlay(card);
 
     /// <summary>Complete one played event after its effects finish and it is discarded.</summary>
-    public void CompleteEventPlay(int card) => completedEventPlays[card] = checked(EventPlay(card) + 1);
+    public void CompleteEventPlay(int card) => triggers.CompleteEventPlay(card);
 
     /// <summary>Exact positive placements belonging to one threat instruction.</summary>
     [JsonIgnore]
@@ -225,7 +239,7 @@ public sealed record Occurrence
     /// field on <see cref="State.World"/> would have to be set before that and
     /// cleared after it, and the clearing is what nobody remembers.
     /// </remarks>
-    public IReadOnlyList<State.Defeated> Defeats => defeats;
+    public IReadOnlyList<State.Defeated> Defeats => defeats.Items;
 
     /// <summary>Engine-owned completion facts for native retaliate responses.</summary>
     [JsonIgnore]
@@ -258,13 +272,7 @@ public sealed record Occurrence
     /// singular defeated-card reference must bind the chosen triggering fact;
     /// only an unambiguous singleton can be read without that binding.
     /// </remarks>
-    public State.Defeated? Defeat => defeats.Count switch
-    {
-        0 => null,
-        1 => defeats[0],
-        _ => throw new Play.RulesNotImplementedException(
-            "a singular defeated-card reference requires its exact triggering instance in a multiple-defeat window"),
-    };
+    public State.Defeated? Defeat => defeats.Single;
 
     /// <summary>Whether this occurrence creates a named triggering condition.</summary>
     /// <param name="condition">One of <c>rr:triggering-condition</c>'s occurrences.</param>
@@ -307,20 +315,9 @@ public sealed record Occurrence
         Also(Play.Steps.CardDefeated);
     }
 
-    /// <summary>Whether a card's ability may still be triggered in this window.</summary>
-    /// <param name="window">Which window.</param>
-    /// <param name="ability">The ability and exact triggering fact.</param>
-    public bool MayTrigger(WindowKind window, PendingAbility ability) =>
-        !spent.Contains((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat, ability.TriggeringAttack, ability.Native, ability.TriggeringThreat, ability.EventPlay));
+    /// <summary>Whether the exact ability and triggering fact remain unused.</summary>
+    public bool MayTrigger(WindowKind window, PendingAbility ability) => triggers.MayTrigger(window, ability);
 
-    /// <summary>Record that a card's ability has been triggered in this window.</summary>
-    /// <remarks>
-    /// Each physical copy and authored ability can answer each matching
-    /// triggering fact once — <c>rr:triggering-condition.1-.1.1</c>.
-    /// </remarks>
-    /// <param name="window">Which window.</param>
-    /// <param name="ability">The ability and exact triggering fact.</param>
-    /// <returns>False when it had already been triggered.</returns>
-    public bool Trigger(WindowKind window, PendingAbility ability) =>
-        spent.Add((window, ability.Card, ability.Type, ability.Ordinal, ability.TriggeringDefeat, ability.TriggeringAttack, ability.Native, ability.TriggeringThreat, ability.EventPlay));
+    /// <summary>Consume one exact ability use in this occurrence.</summary>
+    public bool Trigger(WindowKind window, PendingAbility ability) => triggers.Trigger(window, ability);
 }

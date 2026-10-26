@@ -109,7 +109,7 @@ internal static class AbilityPowerTrace
         bool bindingMayChange, AbilityPowerState reachability)
     {
         var advanced = ApplyPowerLeafState(node, cast, bindingMayChange, reachability);
-        var children = PowerSuspensionChildren(
+        var children = PowerProjectionChildren(
             node, cast, stateMayChange, bindingMayChange, advanced).ToList();
         if (children.Count == 0)
         {

@@ -81,3 +81,11 @@ A later product becomes supported only when one coherent change supplies:
 Do not add isolated expansion cards to the runtime. A few working cards can make
 an unsupported product look playable while unresolved cards silently produce a
 plausible, wrong board.
+
+
+Black Widow now has candidate public admission for the complete 34-face inventory
+and exact printed 40-card starter, obligation and nemesis composition. All four
+extra customization cards enter legal custom decks. Missing authored faces,
+changed catalog membership or wrong required recipes close the whole product.
+Public setup and Natasha Preparation-play response restart checks provide focused
+integration evidence; they do not establish complete-game or native acceptance.

@@ -8,8 +8,11 @@ namespace Marvel.Rules.Play;
 internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequest request, AbilityExecution execution, AbilityExecution? completion = null, int? targetIncarnation = null)
 {
     private readonly int incarnation = targetIncarnation ?? request.Target.Incarnation;
+    private readonly DamageEventProvenance provenance = new(execution);
     private DamageReplacement? replacement;
     private bool placed;
+    private DirectDamagePrevention? prevention;
+    private bool preventionSuspended;
     private Damage.PlacedDamage? placement;
     private EffectCompletion? excessThreat;
     private readonly int priorDefeats = request.RecordDefeatOn?.Defeats.Count ?? 0;
@@ -17,6 +20,13 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
     internal AbilityExecution Execution => execution;
 
     internal void Continue(List<GameEvent> events)
+    {
+        int start = events.Count;
+        ContinueSegment(events);
+        if (preventionSuspended) provenance.Associate(events, start);
+    }
+
+    private void ContinueSegment(List<GameEvent> events)
     {
         world.Agenda.Executions.RequireActive(execution);
         if (placed)
@@ -37,9 +47,20 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
             return;
         }
         AttackDamageAccounting.ValidateBoostPlacement(world, request.ActivationId);
-        var damage = DamagePlacement.PrepareAfterReplacement(world, facts, request with { Amount = replacement.ResolvedAmount }, events);
+        var damage = PrepareDamage(events);
+        if (damage is null) { Suspend(events); return; }
         DamagePlacement.ApplyPlaced(world, facts, damage, request.Trigger, request.Verb, events);
         Settle(damage, events);
+    }
+
+    private Damage.PlacedDamage? PrepareDamage(List<GameEvent> events)
+    {
+        prevention ??= DirectDamagePrevention.Begin(world, request, replacement!,
+            DamagePlacement.PrepareAfterReplacement(world, facts,
+                request with { Amount = replacement!.ResolvedAmount }, events));
+        if (prevention.IsComplete) return prevention.Placement;
+        preventionSuspended = true;
+        return null;
     }
 
     internal void Settle(Damage.PlacedDamage damage, List<GameEvent> events, Damage.Outcome? settledOutcome = null)

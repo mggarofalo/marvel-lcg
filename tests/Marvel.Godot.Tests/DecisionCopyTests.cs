@@ -19,6 +19,31 @@ public sealed class DecisionCopyTests
         Assert.Empty(DecisionCopy.AbilityDetail(action with { CostDescription = null }, "Stun Rhino", null));
     }
 
+    [Fact]
+    public void WindowButtonsExposeSuppliedCostsAndKnownEffectsWithoutHover()
+    {
+        var action = new AffordancePresentation(1, "Response", "Ready your identity", "Response",
+            "Synthetic source", 7, 0, null, "", [])
+        {
+            CostDescription = "Exhaust Synthetic source",
+            ContextDescription = "After the prepared effect",
+            Consequence = "Later effects can change the result",
+        };
+        string label = DecisionCopy.AbilityLabel(action, "Use source", "Printed damage: 1");
+        Assert.StartsWith("Use source\n", label);
+        Assert.Contains("Exhaust Synthetic source", label);
+        Assert.DoesNotContain("Ready your identity", label);
+        Assert.Contains("Ready your identity", DecisionCopy.AbilityLabel(action, "Use source"));
+        Assert.Contains("Ready your identity", DecisionCopy.AbilityDetail(action, "Use source", "Printed damage: 1"));
+        Assert.Contains("Printed damage: 1", label);
+        Assert.Contains("After the prepared effect", label);
+        Assert.Contains("Later effects can change the result", label);
+        Assert.Equal("Use source", DecisionCopy.AbilityLabel(action with
+        {
+            Description = null, CostDescription = null, ContextDescription = null, Consequence = null,
+        }, "Use source"));
+    }
+
     [Theory]
     [InlineData(true, "Scientist", "Discard Peter Parker")]
     [InlineData(false, "Scientist", "Scientist · Peter Parker")]

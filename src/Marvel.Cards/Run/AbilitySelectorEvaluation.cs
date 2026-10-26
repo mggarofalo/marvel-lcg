@@ -34,6 +34,8 @@ internal sealed class AbilitySelectorEvaluation(
             return LastCard(Every(last.Cards));
         }
         if (selector is AbilityCardSelection.InAreas areas) return FindInAreas(areas);
+        if (selector is AbilityCardSelection.DefeatedAllyInYourDiscardPile)
+            return AbilityDefeatedAllySelection.Find(context);
         throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' uses a selector whose single-card resolution is not implemented");
     }
@@ -77,6 +79,7 @@ internal sealed class AbilitySelectorEvaluation(
         AbilityCardSelection.FirstAvailable fallback => fallback.Options.Select(Every).FirstOrDefault(cards => cards.Count > 0) ?? [],
         AbilityCardSelection.Bound bound => AbilityCardQueries.Named(bound.Binding, context) is { } card ? [card] : [],
         AbilityCardSelection.Query query => AbilityCardQueries.Cards(query.Kind, context, program),
+        AbilityCardSelection.DefeatedAllyInYourDiscardPile => AbilityDefeatedAllySelection.Every(context),
         AbilityCardSelection.Titled titled => AbilityCardQueries.ReferencedByTitle(titled.Title, context),
         AbilityCardSelection.EnemiesWithTrait trait => [.. context.World.Areas
             .Where(area => area.Type is DeckType.VillainArea or DeckType.EngagedEnemiesArea)
@@ -233,6 +236,7 @@ internal sealed class AbilitySelectorEvaluation(
         AbilityCardSelection.WithStatus => false,
         AbilityCardSelection.InObjectIdOrder ordered => ExplicitlySelectsOutOfPlayCard(ordered.Cards, target),
         AbilityCardSelection.DefeatedWithProfile defeated => Every(defeated).Contains(target),
+        AbilityCardSelection.DefeatedAllyInYourDiscardPile => Every(selector).Contains(target),
         AbilityCardSelection.FaceDown filtered => ExplicitlySelectsOutOfPlayCard(filtered.Cards, target),
         AbilityCardSelection.FirstAvailable fallback => fallback.Options.Any(option => ExplicitlySelectsOutOfPlayCard(option, target)),
         AbilityCardSelection.Last last => ExplicitlySelectsOutOfPlayCard(last.Cards, target),

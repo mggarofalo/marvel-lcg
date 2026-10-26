@@ -28,7 +28,7 @@ internal sealed class SimultaneousAttackRecipient(AttackDamageRequest request)
         replacement ??= DamagePlacement.Replace(world,
             new(request.Source, request.Target, request.Amount, request.Trigger, request.Verb,
                 LabeledAbilities.IdentityPlayer(world, request.Attacker))
-            { RecordDefeatOn = execution.Occurrence }, events);
+            { RecordDefeatOn = execution.Occurrence, FromAttack = true }, events);
         return replacement.IsComplete;
     }
 

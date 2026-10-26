@@ -9,6 +9,7 @@ internal sealed class DamageCostPlacement(World world, ICardFacts facts, DamageR
 {
     private readonly int incarnation = request.Target.Incarnation;
     private DamageReplacement? replacement;
+    private DirectDamagePrevention? prevention;
     internal AbilityExecution Execution => receipt.PlacementExecution;
 
     internal void Continue(List<GameEvent> events)
@@ -17,18 +18,26 @@ internal sealed class DamageCostPlacement(World world, ICardFacts facts, DamageR
         replacement ??= DamagePlacement.Replace(world, request, events);
         if (!replacement.IsComplete)
         {
-            world.Agenda.ThenContinuation(new PhaseStep(new DamageCostPlacementOperation(this),
-                world.Agenda.Current?.Round ?? 0, 5, Plan: true), Execution.Occurrence);
-            Execution.Yield(events);
+            Suspend(events);
             return;
         }
-        var damage = request.Target.Incarnation == incarnation && DeckTypes.IsInPlay(request.Target.Area.Type)
-            ? DamagePlacement.PrepareAfterReplacement(world, facts, request.Source, request.Target,
-                replacement.ResolvedAmount, request.Trigger, events)
-            : new Damage.PlacedDamage(request.Target, 0, 0);
+        prevention ??= DirectDamagePrevention.Begin(world, request, replacement,
+            request.Target.Incarnation == incarnation && DeckTypes.IsInPlay(request.Target.Area.Type)
+                ? DamagePlacement.PrepareAfterReplacement(world, facts,
+                    request with { Amount = replacement.ResolvedAmount }, events)
+                : new Damage.PlacedDamage(request.Target, 0, 0));
+        if (!prevention.IsComplete) { Suspend(events); return; }
+        var damage = prevention.Placement;
         DamagePlacement.ApplyPlaced(world, facts, damage, request.Trigger, request.Verb, events);
         receipt.Place(damage);
         Execution.Finish(events);
+    }
+
+    private void Suspend(List<GameEvent> events)
+    {
+        world.Agenda.ThenContinuation(new PhaseStep(new DamageCostPlacementOperation(this),
+            world.Agenda.Current?.Round ?? 0, 5, Plan: true), Execution.Occurrence);
+        Execution.Yield(events);
     }
 
     internal static void Resume(World world, PhaseStep step, List<GameEvent> events)

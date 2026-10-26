@@ -16,11 +16,13 @@ public sealed class EngagementReplayReviewTests
         AdditiveContentUpgradeTests.WithAddedScenario((root, _) =>
         {
             var (previous, factory) = ReplayContractUpgradeTests.Fixture(root);
+            // This named historical route pins its destination independently of the current build.
+            var destination = factory.Compatibility with { ReplayContract = "engine-replay-v26" };
             var target = contract switch
             {
-                "downgrade" => factory.Compatibility with { Application = "0.0.0" },
-                "rng" => factory.Compatibility with { RngContract = "unknown" },
-                _ => factory.Compatibility with { StateDigest = "unknown" },
+                "downgrade" => destination with { Application = "0.0.0" },
+                "rng" => destination with { RngContract = "unknown" },
+                _ => destination with { StateDigest = "unknown" },
             };
             bool opened = false;
             var failure = Assert.Throws<SessionCompatibilityException>(() =>

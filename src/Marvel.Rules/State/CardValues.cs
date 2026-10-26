@@ -76,8 +76,10 @@ public static class CardValues
 
         foreach (ContinuousEffect effect in Modifiers(world, card, field, active))
         {
-            current += effect.Amount;
-            steps.Add(new(CardValueStepKind.Add, effect.Amount, current, Source(world, effect), effect.Lasts));
+            // rr:lasting-effects.3: "Lasting effects update whenever the game state updates."
+            long amount = effect.LiveAmount?.Evaluate(world) ?? effect.Amount;
+            current += amount;
+            steps.Add(new(CardValueStepKind.Add, amount, current, Source(world, effect), effect.Lasts));
         }
 
         // `rr:modifiers.4`: clamp complete values, not adjustment-only fields.

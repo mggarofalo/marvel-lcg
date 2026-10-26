@@ -355,7 +355,7 @@ func _disabled_motion_is_settled(skip: Button) -> bool:
 	return true
 
 
-func _capture_checkpoint(checkpoint: String) -> bool:
+func _capture_checkpoint(checkpoint: String, expected_size := Vector2i.ZERO) -> bool:
 	var capture_dir := OS.get_environment("MARVEL_SMOKE_CAPTURE_DIR")
 	if capture_dir.is_empty():
 		return true
@@ -366,13 +366,13 @@ func _capture_checkpoint(checkpoint: String) -> bool:
 		_fail("visual checkpoint '%s' needs a non-headless rendering driver" % checkpoint)
 		return false
 	var requested_viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT").split("x")
-	if requested_viewport.size() == 2 \
-			and image.get_size() != Vector2i(
-				int(requested_viewport[0]), int(requested_viewport[1])):
+	if expected_size == Vector2i.ZERO and requested_viewport.size() == 2:
+		expected_size = Vector2i(int(requested_viewport[0]), int(requested_viewport[1]))
+	if expected_size != Vector2i.ZERO and image.get_size() != expected_size:
 		_fail("visual checkpoint '%s' has size %s instead of %s" % [
 			checkpoint,
 			image.get_size(),
-			OS.get_environment("MARVEL_SMOKE_VIEWPORT"),
+			expected_size,
 		])
 		return false
 

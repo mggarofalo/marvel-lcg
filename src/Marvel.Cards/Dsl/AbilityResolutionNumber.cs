@@ -27,4 +27,6 @@ public enum AbilityResolutionNumber
     DistinctCardTypesDiscarded,
     /// <summary>Physical cards selected and exhausted for this ability's exhaustChosen cost.</summary>
     CardsExhaustedForCost,
+    /// <summary>Actual damage taken by the resolving identity from this occurrence's enemy attack.</summary>
+    ReceivedAttackDamage,
 }

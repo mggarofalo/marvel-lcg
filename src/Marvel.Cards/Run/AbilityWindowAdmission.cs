@@ -191,9 +191,7 @@ internal static class AbilityWindowAdmission
     }
 
     private static bool TriggerMatches(CompiledCardAbility ability, Occurrence occurrence) =>
-        ability.Trigger.Event is { } condition
-        && occurrence.Is(condition)
-        && (ability.Trigger.Also is not { } also || occurrence.Is(also));
+        PreparationAbilityTriggerMatching.Matches(ability.Trigger, occurrence);
 
     private static bool RolesMatch(
         World world, Candidate candidate, Occurrence occurrence, int? restricted)

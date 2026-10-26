@@ -177,7 +177,15 @@ entry names a condition, and the condition is re-read.
 A lasting effect outlives the card that made it and has to survive a save, so an
 entry has to be something that can be written down. Anything holding a delegate
 could not be. What an entry *does* is decided by reading its `Kind` and `Amount`,
-which is the price of a game that can be put down and picked up.
+which is the price of a game that can be put down and picked up. A numeric
+lasting modifier can also carry an immutable `ContinuousAmount`. Its captured
+player stays bound to the original resolution while current controlled upgrades,
+engaged minions with an effective trait, or counters on the current main scheme
+are read whenever the stat is evaluated. The card interpreter lowers these
+supported relations explicitly and raises for unsupported live numeric forms.
+Resolution receipts remain fixed values. Registered effects retain their identity
+and source snapshot during these reads; querying does not rewrite the effect.
+
 
 ## Ending a phase
 
@@ -456,6 +464,17 @@ occurrence's once-per-trigger ledger. Enemy attacks finish that forced tier befo
 opening their optional damage interrupt tier. Dealt and taken amounts remain
 separate: prevention at a later damage step does not rewrite damage dealt.
 
+Direct nonattack damage also schedules an optional interrupt window after forced
+replacement and Tough, before placement. Its transient `DirectDamagePrevention`
+receipt owns the remaining taken amount for one exact target incarnation. An
+accepted prevention effect changes that receipt immediately; nested damage cannot
+consume it, and a departed recipient cannot pass it to a reentered copy. All
+recipients of simultaneous direct damage finish replacement and optional windows
+before any of their damage is placed. Existing attack windows retain their owner.
+New optional answers change historical decision sequences; replay compatibility
+with ledgers that omitted those answers is not claimed. Wire and digest schemas
+are unchanged.
+
 Damage paid as a cost separates placement from defeat settlement. The placement
 child fixes the amount actually paid, then the cost owner pays the remaining
 simultaneous costs (`rr:cost.5`). Only that exact active owner may release the
@@ -609,3 +628,15 @@ own When Defeated handles only for the exact defeated incarnation still in play.
 
 The attack-specific simultaneous coordinator remains a separate consumer and is
 not covered by this direct-damage repair.
+
+## Faceup boost responses
+
+Each physical boost card opens its own faceup interrupt and response windows before
+its star ability executes. Target Acquired's printed Hero Response retains that tier:
+local ruling `a66ca21bca34a71f` explicitly permits its cancellation before Boost resolves.
+A typed `BoostAbilityOperation` follows the completed faceup window. Its exact-card
+cancellation receipt is independent of numeric icon cancellation; cancelling the star
+preserves the card's numeric contribution and the next boost card's ability.
+A successful cancellation resolves an effect and therefore publishes the usual
+completed Preparation receipt after its discard cost. Pending windows and receipts
+are reconstructed by accepted-decision replay; no new persisted field is introduced.

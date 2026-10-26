@@ -176,7 +176,7 @@ public sealed class PackRulesHarvestTests
         var records = index.RootElement.GetProperty("entries").EnumerateArray().ToList();
         var ids = records.Select(record => record.GetProperty("id").GetString()!).ToList();
 
-        Assert.Equal(902, records.Count);
+        Assert.Equal(903, records.Count);
         Assert.Equal(62, index.RootElement.GetProperty("documents").GetInt32());
         Assert.Equal(records.Count, index.RootElement.GetProperty("record_count").GetInt32());
         Assert.Equal(ids.Count, ids.Distinct(StringComparer.Ordinal).Count());

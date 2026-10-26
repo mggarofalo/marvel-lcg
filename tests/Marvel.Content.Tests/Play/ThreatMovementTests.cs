@@ -133,7 +133,7 @@ public sealed class ThreatMovementTests : CoreCardTestBase
         var (world, runner, from, to) = Board("""
             {"card":"01108","abilities":[{
               "trigger":{"event":"WhenThreatWouldBePlaced","timing":"ForcedInterrupt","subject":"this"},
-              "effect":{"choose":{"options":[{"preventThreat":0},{"preventThreat":1}]}}
+              "effect":{"choose":{"options":[{"exhaust":"you"},{"preventThreat":1}]}}
             }]}
             """);
         var receipt = ThreatMovement.Schedule(world, new(from, to, 1, null, "synthetic", 0));
@@ -144,6 +144,7 @@ public sealed class ThreatMovementTests : CoreCardTestBase
         to.PlaceTokens("k_threat", 3);
         Sequence.Answer(world, Cards, runner, prompt, Decision.Take(0), []);
         Assert.Null(Sequence.Work(world, Cards, runner, []));
+        Assert.False(world.Seats[0].IdentityCard.Ready);
         Assert.Equal(3, to.Tokens["k_threat"]);
         Assert.Equal(0, receipt.Placed);
         Assert.False(receipt.DestinationForcedResponseTriggered);

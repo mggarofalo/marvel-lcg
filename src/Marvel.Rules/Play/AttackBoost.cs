@@ -138,58 +138,10 @@ internal static class AttackBoost
         // Ruling 1ea208998735ef4b: amplify/constants precede faceup interrupts,
         // which precede the star ability. Numeric cancellation leaves the star intact.
         var receipt = new BoostIconCancellation(world, boost, activation.Id, facts);
-        world.Agenda.Then(new PhaseStep(new BoostFaceupOperation(activation.Enemy, activation.Attacking, receipt),
+        world.Agenda.Then(new PhaseStep(new BoostFaceupOperation(activation.Enemy, activation.Attacking, receipt)
+            { Ability = new BoostAbilityCancellation(world, boost, activation.Id) },
             world.Agenda.Current?.Round ?? 0, 3, Subject: boost.ObjectId, Seat: activation.Player)
         { OccurrenceId = world.Agenda.nextPlayerActionOccurrence--, ActivationId = activation.Id });
-    }
-
-    internal static void ResolveFaceup(World world, ICardFacts facts, IAttackCardAbilities abilities,
-        PhaseStep step, List<GameEvent> events)
-    {
-        var operation = step.Require<BoostFaceupOperation>();
-        var activation = AttackCompletion.Activating(world);
-        var boost = world.Cards[step.Subject];
-        // rr:attack-enemy-activation.step.3.b and rr:boost-boost-icon.2 --
-        // resolve the ability before its icons are applied or it is discarded.
-        var occurrence = world.Agenda.Occurrence
-            ?? throw new RulesNotImplementedException(
-                "a boost ability has no activation occurrence");
-        PhaseStep owner = world.Agenda.Current
-            ?? throw new InvalidOperationException("a boost ability has no agenda owner");
-        int beforeAbility = world.Agenda.Count;
-        ActivityBatches.Append(events, abilities.ExecuteBoost(world, boost, activation.Player).Events);
-        if (world.Agenda.Count > beforeAbility)
-        {
-            // An ordinary authored choice is still scheduled after the flip;
-            // move that child ahead first. A nested rules procedure has
-            // already done this for itself and made its child current.
-            if (world.Agenda.Current is { What: BoostFaceupOperation.Faceup })
-            {
-                world.Agenda.BeforeResponses(owner, occurrence);
-            }
-            world.Agenda.BeforeOwnerAfterContinuations(
-                occurrence,
-                owner,
-                new PhaseStep(
-                    new BoostCompletionOperation(Enemy: activation.Enemy, Attacking: activation.Attacking) { Icons = operation.Icons },
-                    world.Agenda.Current?.Round ?? 0,
-                    3,
-                    Subject: boost.ObjectId,
-                    Seat: activation.Player
-                ) { ActivationId = activation.Id });
-            return;
-        }
-
-        FinishBoostCard(
-            world, facts, abilities,
-            new PhaseStep(
-                new BoostCompletionOperation(Enemy: activation.Enemy, Attacking: activation.Attacking) { Icons = operation.Icons },
-                0,
-                3,
-                Subject: boost.ObjectId,
-                Seat: activation.Player
-            ) { ActivationId = activation.Id },
-            events);
     }
 
     /// <summary>Apply step 3c and 3d after one boost ability has completed.</summary>

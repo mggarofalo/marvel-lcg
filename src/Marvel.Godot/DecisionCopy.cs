@@ -63,6 +63,15 @@ internal static class DecisionCopy
         return string.Join(" · ", parts.Where(part => !string.IsNullOrWhiteSpace(part)).Distinct());
     }
 
+    internal static string AbilityLabel(AffordancePresentation view, string label, string? choice = null)
+    {
+        string? effect = string.IsNullOrWhiteSpace(choice) ? view.Description : choice;
+        string?[] parts = [view.ContextDescription, view.CostDescription, effect, view.Consequence];
+        string detail = string.Join("\n", parts.Where(part => !string.IsNullOrWhiteSpace(part)
+            && !TooltipPolicy.Restates(label, part)).Distinct());
+        return detail.Length == 0 ? label : $"{label}\n{detail}";
+    }
+
     internal static string AbilityDetail(AffordancePresentation view, string label, string? choice)
     {
         string?[] parts = [view.ContextDescription, choice, view.CostDescription, view.Description, view.Consequence];

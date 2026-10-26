@@ -76,19 +76,30 @@ public static class BasicThwartPowers
             world, facts, power.Player, power.Source, [ThwartVerb], events);
         if (thwarter is null) return false;
 
-        if (automaticTarget
+        RequireCardThwartTarget(world, facts, power, automaticTarget);
+
+        ScheduleThwart(world, new CharacterThwart(
+            thwarter.ObjectId, power.Target?.ObjectId ?? -1, power.Player, power.Amount,
+            power.Source.ObjectId, power.Trigger, power.Continuation, power.Origin, power.SurgeGained,
+            imminentThreat, power.Target?.Incarnation ?? -1) { UsesThwartStat = power.UsesThwartStat }, nested);
+        return true;
+    }
+
+    private static void RequireCardThwartTarget(
+        World world, ICardFacts facts, CardPowerInvocation power, bool automaticTarget)
+    {
+        // rr:labeled-ability.4 and ruling 0fc2a7cc9197e127: an independent
+        // sentence can resolve as a thwart without any thwarted scheme.
+        if (power.Target is null && (power.Continuation is null || automaticTarget))
+            throw new RulesNotImplementedException("a scheme-less thwart requires an interpreter continuation");
+        if (power.Target is not null && (automaticTarget
             ? !CanAutomaticallyThwart(world, facts, power.Player, power.Target)
-            : !Thwartable(world, facts, power.Player).Any(card => card.ObjectId == power.Target.ObjectId))
+            : !Thwartable(world, facts, power.Player).Any(card => card.ObjectId == power.Target.ObjectId)))
         {
             throw new RulesNotImplementedException(
                 $"card {power.Target.ObjectId} is not a scheme {world.Seats[power.Player].Name} can thwart");
         }
 
-        ScheduleThwart(world, new CharacterThwart(
-            thwarter.ObjectId, power.Target.ObjectId, power.Player, power.Amount,
-            power.Source.ObjectId, power.Trigger, power.Continuation, power.Origin, power.SurgeGained,
-            imminentThreat, power.Target.Incarnation) { UsesThwartStat = power.UsesThwartStat }, nested);
-        return true;
     }
 
     /// <summary>Whether a card's already-determined scheme may be thwarted.</summary>

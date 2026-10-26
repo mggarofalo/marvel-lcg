@@ -142,6 +142,14 @@ internal static class AbilityResolutionLifecycle
     internal static List<GameEvent> ResumeContinuation(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, Card source, AbilityContinuationTransition transition)
     {
+        var events = execution.ResumeSegment(cast, source, transition);
+        if (cast.Execution is { DamagePreventionSuspended: true }) AbilityWindowReceipt.Associate(cast);
+        return events;
+    }
+
+    private static List<GameEvent> ResumeSegment(this AbilityResolutionExecution execution,
+        AbilityResolutionState cast, Card source, AbilityContinuationTransition transition)
+    {
         while (true)
         {
             switch (transition)

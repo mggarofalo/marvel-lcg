@@ -64,6 +64,10 @@ public sealed record EnemyAttack(
     bool Damaged = false, long? CalculatedDamage = null,
     IReadOnlyList<int>? AdditionalPlayers = null, bool Indirect = false)
 {
+    /// <summary>Actual placements retained until this attack's shared response window.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Timing.ReceivedAttackDamagePlacements ReceivedDamage { get; init; } = new();
+
     /// <summary>Captured physical retaliation recipients for the final shared response window.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public RetaliationContext? Retaliation { get; init; }

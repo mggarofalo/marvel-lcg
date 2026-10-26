@@ -161,7 +161,8 @@ internal static class AbilityAdmissionResolutionPreflight
 
     private static Card? PowerPreflightTarget(AbilityEffect.Power power, AbilityAdmissionScope cast)
     {
-        if (power.TargetCount is null) return Find(power.Target!, cast);
+        if (power.Target is null) return null;
+        if (power.TargetCount is null) return Find(power.Target, cast);
         var available = Every(power.Target!, cast);
         return available.Count > 0 ? available[0] : null;
     }

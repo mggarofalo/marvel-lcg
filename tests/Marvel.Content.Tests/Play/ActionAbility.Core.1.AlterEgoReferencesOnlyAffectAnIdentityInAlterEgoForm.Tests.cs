@@ -140,8 +140,7 @@ public sealed class ActionAbilityCoreAlterEgoReferencesOnlyAffectAnIdentityInAlt
         var action = Assert.Single(runner.Actions(world, 0), pending => pending.Card == source!.ObjectId);
         int held = world.Seats[0].Hand.Cards.Count;
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "preventDamage", Amount: 1, Card: source!.ObjectId, Affects: world.Seats[0].IdentityCard.ObjectId, Lasts: new Duration(Uses: 1)));
-        var failure = Assert.Throws<RulesNotImplementedException>(() => runner.ExecuteAction(world, new PlayerAction(action, [], [])));
-        Assert.Contains("only 1 was taken", failure.Message);
+        runner.ExecuteAction(world, new PlayerAction(action, [], []));
         Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
         Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
     }

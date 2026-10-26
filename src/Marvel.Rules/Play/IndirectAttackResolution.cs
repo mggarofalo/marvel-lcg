@@ -37,7 +37,7 @@ internal static class IndirectAttackResolution
         }
         operation.Replacement ??= DamagePlacement.Replace(world,
             new DamageRequest(attacker, target, operation.Amount, Steps.AttackInitiated, "Attack")
-                { RecordDefeatOn = procedure }, events);
+                { RecordDefeatOn = procedure, FromAttack = true }, events);
         if (!operation.Replacement.IsComplete) return null;
         long amount = target.Incarnation == operation.Replacement.TargetIncarnation
             && DeckTypes.IsInPlay(target.Area.Type) ? operation.Replacement.ResolvedAmount : 0;
@@ -71,6 +71,8 @@ internal static class IndirectAttackResolution
             DamagePlacement.ApplyPlaced(
                 world, facts, damage, Steps.AttackInitiated, "Attack", events);
             AttackDamageAccounting.RecordPlacement(world, step.ActivationId, damage);
+            if (damage.Landed)
+                AttackDamageReceipts.Record(world, OccurrenceCard.Capture(attacker, facts), damage);
         }
 
         // rr:indirect-damage.3 -- every assigned share is dealt

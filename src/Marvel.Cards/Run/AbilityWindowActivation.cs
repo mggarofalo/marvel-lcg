@@ -41,6 +41,11 @@ internal static class AbilityWindowActivation
         if (cast.PendingPayment.Commit(execution, cast))
         {
             cast.PendingPayment = null;
+            if (payment.StopsEffect)
+            {
+                execution.DiscardEvent(cast.Source, cast);
+                return false;
+            }
             return true;
         }
         execution.SuspendAfterCost(cast, address.Ordinal, costOwner, costOccurrence);

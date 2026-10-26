@@ -22,7 +22,7 @@ internal static class AbilityAreaCostProjection
             return;
         }
 
-        if (IsExhaustionCost(payment)) return;
+        if (IsAreaPreservingCost(payment)) return;
         switch (payment)
         {
             case AbilityCost.Sequence sequence:
@@ -47,8 +47,9 @@ internal static class AbilityAreaCostProjection
         }
     }
 
-    private static bool IsExhaustionCost(AbilityCost payment) =>
-        payment is AbilityCost.Exhaust or AbilityCost.ExhaustChosen or AbilityCost.ExhaustTitled;
+    private static bool IsAreaPreservingCost(AbilityCost payment) =>
+        payment is AbilityCost.Exhaust or AbilityCost.ExhaustChosen or AbilityCost.ExhaustTitled
+            or AbilityCost.ChooseFromDiscard;
 
     private static void TraceDepartureCost(this AbilityAreaProjection projection, AbilityCost cost, AreaProjectionState state)
     {

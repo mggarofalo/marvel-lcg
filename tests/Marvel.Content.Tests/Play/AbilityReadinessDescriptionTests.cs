@@ -6,6 +6,49 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class AbilityReadinessDescriptionTests
 {
+    [Theory]
+    [InlineData("Black Widow")]
+    [InlineData("Iron Man")]
+    [InlineData("Synthetic public title")]
+    public void DirectReadyNamesTheCheckedTitleWithoutAssumingAnIdentityOrController(string title)
+    {
+        // Synthetic instructions verify the general title-reference shape.
+        var effect = new AbilityEffect.CardAction(AbilityCardInstruction.Ready,
+            new AbilityCardSelection.Titled(title));
+
+        Assert.Equal($"Ready {title}.", AbilityEffectDescription.Summary(effect));
+    }
+
+    [Theory]
+    [InlineData("exhaust")]
+    [InlineData("discard")]
+    [InlineData("trigger-target")]
+    [InlineData("chosen")]
+    [InlineData("conditional")]
+    [InlineData("extra-effect")]
+    public void DirectReadySummaryDoesNotGuessAnotherInstructionBindingOrBranch(string shape)
+    {
+        var ready = new AbilityEffect.CardAction(AbilityCardInstruction.Ready,
+            new AbilityCardSelection.Titled("Synthetic public title"));
+        AbilityEffect effect = shape switch
+        {
+            "exhaust" => ready with { Instruction = AbilityCardInstruction.Exhaust },
+            "discard" => ready with { Instruction = AbilityCardInstruction.Discard },
+            "trigger-target" => ready with
+                { Selection = new AbilityCardSelection.Bound(AbilityCardBinding.TriggerTarget) },
+            "chosen" => ready with
+                { Selection = new AbilityCardSelection.Bound(AbilityCardBinding.Chosen) },
+            "conditional" => new AbilityEffect.Conditional(
+                new AbilityCondition.Exists(new AbilityCardSelection.Bound(AbilityCardBinding.TriggerActor)),
+                ready, null),
+            "extra-effect" => new AbilityEffect.Sequence([ready,
+                new AbilityEffect.Fixed(AbilityFixedInstruction.PlaceAccelerationToken)]),
+            _ => throw new ArgumentOutOfRangeException(nameof(shape)),
+        };
+
+        Assert.Null(AbilityEffectDescription.Summary(effect));
+    }
+
     [Fact]
     public void CompleteCheckedSequenceNamesTheSourceDiscardAndIdentityReadying()
     {
