@@ -226,6 +226,16 @@ named comparison policy outside the digest format.
 
 ## Validation
 
+Doctor Strange's nonpublic Invocation lifecycle uses the existing
+`AdditionalDeck` and `AdditionalDiscardPile` zone spellings. Each belongs to
+the identity's player, and each physical Invocation retains that player as its
+`owner`. The draw pile is facedown through every mulligan; during play only its
+top is faceup. The discard is faceup. These choices use existing v3 record
+fields and add no zones, fields, allocation changes or areas to ordinary Core
+games. The typed binding is reconstructed by setup, rather than serialized as
+a new digest field. Complete public setup, replay/save admission and
+visibility-safe Invocation projections remain outside this foundation.
+
 Rise of Red Skull uses three additional zone names: `ExperimentalWeaponsDeck`,
 `SideSchemeDeck`, and `SideSchemeDiscardPile`. They are engine-chosen spellings
 for the separate piles required by `pack:mc10:experimental-weapons-deck` and

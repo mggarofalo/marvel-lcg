@@ -34,6 +34,9 @@ public sealed class Seat
         SetAside = setAside;
     }
 
+    /// <summary>The identity's separately owned Invocation lifecycle, when initialized.</summary>
+    public Play.InvocationDeck? InvocationDeck { get; internal set; }
+
     /// <summary>Which seat this is, from 0.</summary>
     public int Index { get; }
 

@@ -69,4 +69,35 @@ public sealed class CardRulingRelationshipTests
         Assert.True(current.GetProperty("cards").TryGetProperty("04028", out _));
         Assert.True(current.GetProperty("supersedes").TryGetProperty("ruling:681d243446872e43", out _));
     }
+
+    [Theory]
+    [InlineData("ruling:b07d53e12625ab23", "09005", "ruling:ea32bb34b1e7b1b0")]
+    [InlineData("ruling:8883bc6b0af1c9b8", "09035", "ruling:5bafad5aafa9093b")]
+    [InlineData("ruling:8c9c9d30f4c01189", "09033,09035", "ruling:5bafad5aafa9093b")]
+    public void InvocationClarificationsSupersedeConflictingAnswersWithinReviewedCardScope(
+        string rulingId, string cardIds, string historicalId)
+    {
+        using var graph = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("rules-graph.json")));
+        using var published = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("rulings", "rulings.json")));
+        var current = graph.RootElement.GetProperty("card_clarifications").GetProperty(rulingId);
+        Assert.Equal(cardIds.Split(','), current.GetProperty("cards").EnumerateObject().Select(card => card.Name));
+        Assert.Equal(historicalId, Assert.Single(current.GetProperty("supersedes").EnumerateObject()).Name);
+        Assert.Contains(rulingId, RuleCitations.Citable);
+        Assert.DoesNotContain(historicalId, RuleCitations.Citable);
+        Assert.Contains(published.RootElement.GetProperty("rulings").EnumerateArray(),
+            ruling => ruling.GetProperty("id").GetString() == historicalId);
+        Assert.False(graph.RootElement.GetProperty("modifications").TryGetProperty(rulingId, out _));
+    }
+
+    [Fact]
+    public void MasterClarificationRetainsInvocationInsertAndThenSequenceAsAuthorities()
+    {
+        using var graph = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("rules-graph.json")));
+        var references = graph.RootElement.GetProperty("card_clarifications")
+            .GetProperty("ruling:b07d53e12625ab23").GetProperty("references")
+            .EnumerateArray().Select(reference => reference.GetString()).ToArray();
+        Assert.Contains("pack:mc08:the-invocation-deck", references);
+        Assert.Contains("rr:then", references);
+        Assert.Contains("rr:special", references);
+    }
 }

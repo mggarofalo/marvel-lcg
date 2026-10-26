@@ -32,6 +32,56 @@
     }
   },
   "card_clarifications": {
+    "ruling:b07d53e12625ab23": {
+      "ruling_hash": "sha256:eab706034466af8f3530e852a59ac9426fe1ca1bf5ba2290c389d1b4ddfa9b94",
+      "cards": {
+        "09005": "sha256:ddc813741af2905271e27ee1aff9e04e0333c4656334ce905a43f8dbdd09376c"
+      },
+      "references": [
+        "rr:special",
+        "rr:then",
+        "pack:mc08:the-invocation-deck"
+      ],
+      "supersedes": {
+        "ruling:ea32bb34b1e7b1b0": "sha256:541ee215c92730386836fc25bbee9cb346c6021b340d0edcc2be0998460426cb"
+      },
+      "why": "The September 15, 2025 answer (RR scope 1.6) applies to Master of the Mystic Arts: resolving the Invocation Special discards that physical card and reveals the next top; if the deck empties, recycle the Invocation discard pile first, then return the resolved physical card to the top faceup. This supersedes the conflicting pre-1.5 no-look/no-reshuffle answer for this event, consistent with the MC08 faceup-top and immediate empty-deck rules and the printed Then sequence."
+    },
+    "ruling:8883bc6b0af1c9b8": {
+      "ruling_hash": "sha256:1a3c497a66bb0af95ce8338ef64cf4edf416e9594379d2aaec6a833db1827ef8",
+      "cards": {
+        "09035": "sha256:23acfbf19eace2b149270386cf56049158fa05c1e7879c23c31dfd9ced12a50d"
+      },
+      "references": [
+        "rr:choose-game-element.2",
+        "rr:target.2",
+        "rr:target.3",
+        "rr:initiating-abilities.step.2",
+        "rr:special"
+      ],
+      "supersedes": {
+        "ruling:5bafad5aafa9093b": "sha256:5fd4cd0b160d86618e89c1eb44076b1af7b5912de331f3a16774118c03519555"
+      },
+      "why": "The May 2024 answer (RR scope 1.5) explicitly permits resolving Vapors of Valtorr without a status card in play: the choose instruction limits that sentence, not the entire Special. Its separate self-discard supplies a valid target under RR 1.8 any-part target rules. This supersedes the pre-1.5 answer forbidding initiation without a status card; Special still requires another ability to instruct its resolution."
+    },
+    "ruling:8c9c9d30f4c01189": {
+      "ruling_hash": "sha256:f7f38ed0570b7a543e44dc1b00ddad8f29cb6766c51dbead2872026e52d7c9a6",
+      "cards": {
+        "09033": "sha256:1e9f31fe70e9e0e18b5be9764489e6e4a36e1f1b38cec3919ba0612cde75e742",
+        "09035": "sha256:23acfbf19eace2b149270386cf56049158fa05c1e7879c23c31dfd9ced12a50d"
+      },
+      "references": [
+        "rr:choose-game-element.2",
+        "rr:target.2",
+        "rr:target.3",
+        "rr:initiating-abilities.step.2",
+        "rr:special"
+      ],
+      "supersedes": {
+        "ruling:5bafad5aafa9093b": "sha256:5fd4cd0b160d86618e89c1eb44076b1af7b5912de331f3a16774118c03519555"
+      },
+      "why": "The November 2023 answer (RR scope 1.5) explicitly confirms Images of Ikonn with an already-confused villain and no scheme threat, and explains that each Invocation can target itself for its separate discard. Applied here to Images of Ikonn and Vapors of Valtorr, self-discard permits initiation even when their other effects cannot affect a target, consistent with RR 1.8. For Vapors this supersedes the conflicting pre-1.5 status-card requirement; it does not waive costs or the explicit instruction required to resolve a Special."
+    },
     "ruling:420bd5b1763b9506": {
       "ruling_hash": "sha256:d70101036c168ba7943b1b0ae0a92d294b2045b6887338f667bccda656e933ec",
       "cards": {

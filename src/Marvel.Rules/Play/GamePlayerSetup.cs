@@ -15,6 +15,11 @@ internal static class GamePlayerSetup
     {
         game.Phase = GamePhase.PlayerSetup;
 
+        // pack:mc08:the-invocation-deck: the top is faceup "During the game".
+        // Every player's mulligan has completed before this setup boundary.
+        foreach (var seat in game.world.Seats)
+            seat.InvocationDeck?.BeginGame(MulliganTrigger, happened);
+
         foreach (int player in game.world.PlayerOrder)
         {
             foreach (var card in game.world.SetupAbilities.PlayerSetupCards(game.world, player)
