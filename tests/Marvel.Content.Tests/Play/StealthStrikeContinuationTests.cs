@@ -207,7 +207,12 @@ public sealed class StealthStrikeContinuationTests
             attack["effect"] = new JsonObject { ["seq"] = new JsonArray(attack["effect"]!.DeepClone(), sequence[1]!.DeepClone()) };
             sequence.RemoveAt(1);
         }
-        if (suspended) root["cards"]!.AsArray().Add(JsonNode.Parse("""
+        if (suspended)
+        {
+            // This synthetic response replaces the printed support in this fixture.
+            var rows = root["cards"]!.AsArray();
+            rows.Remove(rows.Single(row => (string?)row!["card"] == "08023"));
+            rows.Add(JsonNode.Parse("""
             {"card":"08023","abilities":[{
               "trigger":{"event":"WhenCardDefeated","timing":"Response","subject":"game"},
               "effect":{"choose":{"options":[
@@ -216,6 +221,7 @@ public sealed class StealthStrikeContinuationTests
               ]}}
             }]}
             """));
+        }
         return new AbilityRunner(AbilityCatalog.Parse(root.ToJsonString()));
     }
 }
