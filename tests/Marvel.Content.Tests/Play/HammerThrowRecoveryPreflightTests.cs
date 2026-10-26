@@ -73,23 +73,18 @@ public sealed class HammerThrowRecoveryPreflightTests
         Assert.Empty(world.Agenda.Outstanding);
     }
 
-    [Theory]
-    [InlineData("health")]
-    [InlineData("hosted")]
-    public void RecoveryRefusesRelevantHealthDependenciesOrDefeatInterruptBeforeTargetMutation(string dependency)
+    [Fact]
+    public void RecoveryRefusesRelevantHealthDependenciesBeforeTargetMutation()
     {
         var world = ThorActualFixture.Board("06001a");
-        var runner = Runner(helmet: dependency == "health" ? """
+        var runner = Runner(helmet: """
             {"if":{"test":{"atLeast":{"value":{"damageOn":{"titled":"Loki"}},"count":1}},
             "then":{"grant":{"card":"you","keyword":"health","amount":5}}}}
-            """ : null);
+            """);
         world.Abilities = runner;
         var loki = world.CreateCard("06028", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var hammer = world.CreateCard("06009", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
-        if (dependency == "hosted")
-            world.CreateCard("01185", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), loki.ObjectId));
-        else if (dependency == "health")
-            world.CreateCard("06010", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("06010", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         var card = world.CreateCard("06005", world.Seats[0].Hand);
         var first = world.CreateCard("01090", world.Seats[0].Hand);
         var second = world.CreateCard("01003", world.Seats[0].Hand);
@@ -100,7 +95,7 @@ public sealed class HammerThrowRecoveryPreflightTests
         var rng = world.Random.Generator.GetState();
         var error = Assert.Throws<RulesNotImplementedException>(() =>
             Sequence.Answer(world, world.Facts, runner, target, Decision.Take(loki.ObjectId), []));
-        Assert.Contains(dependency == "hosted" ? "step-6 interrupt" : "unprojected defeat window", error.Message);
+        Assert.Contains("unprojected defeat window", error.Message);
         Assert.Equal(before, world.Digest().Canonical());
         Assert.Equal(rng.Words, world.Random.Generator.GetState().Words);
         Assert.Equal(rng.Index, world.Random.Generator.GetState().Index);
@@ -134,10 +129,14 @@ public sealed class HammerThrowRecoveryPreflightTests
         Assert.Equal(DeckType.UpgradesArea, hammer.Area.Type);
     }
 
-    internal static AbilityRunner Runner(string? continuation = null, string? helmet = null)
+    internal static AbilityRunner Runner(string? continuation = null, string? helmet = null, string? recovery = null)
     {
         var book = JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
-        book["cards"]!.AsArray().Add(JsonNode.Parse(Loki));
+        if (!book["cards"]!.AsArray().Any(row => row!["card"]!.GetValue<string>() == "06028"))
+            book["cards"]!.AsArray().Add(JsonNode.Parse(Loki));
+        if (recovery is not null)
+            book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "01185")!
+                ["abilities"]![0]!["effect"] = JsonNode.Parse(recovery);
         if (helmet is not null)
             book["cards"]!.AsArray().Single(row => row!["card"]!.GetValue<string>() == "06010")!
                 ["abilities"]![0]!["effect"] = JsonNode.Parse(helmet);

@@ -7,7 +7,7 @@ using static Marvel.Cards.Run.AbilityInitiationPrimitives;
 
 namespace Marvel.Cards.Run;
 
-/// <summary>Bounds opaque self-recovery without reading an encounter deck.</summary>
+/// <summary>Bounds opaque minion recovery without reading an encounter deck.</summary>
 internal static class AbilityProjectedRecoveryWindow
 {
     internal static AbilityPowerState Defer(AbilityPowerState state, Card subject, AbilityAdmissionScope cast)
@@ -30,10 +30,38 @@ internal static class AbilityProjectedRecoveryWindow
         var candidates = AbilityWindowAdmission.Waiting(cast.Context.Program, cast.World, occurrence,
             WindowKind.Interrupt, cast.Context.ResourceAbilities)
             .Where(candidate => !state.Discarded.Contains(candidate.Card.ObjectId)).ToArray();
-        return candidates.Length > 0 && candidates.All(candidate => candidate.Card == subject
-            && candidate.Ability.Trigger.Timing == AbilityType.ForcedInterrupt
+        return candidates.Length > 0 && candidates.All(candidate => candidate.Ability.Trigger.Timing == AbilityType.ForcedInterrupt
             && candidate.Ability.When is null && candidate.Ability.Cost is null
-            && IsSelfRecovery(candidate.Ability.Effect));
+            && (candidate.Card == subject && IsSelfRecovery(candidate.Ability.Effect)
+                || IsAttachedRecovery(candidate, subject, cast)));
+    }
+
+    private static bool IsAttachedRecovery(AbilityWindowAdmission.Candidate candidate,
+        Card subject, AbilityAdmissionScope cast)
+    {
+        var card = candidate.Card;
+        if (card.Area.Host != subject.ObjectId
+            || !DeckTypes.IsInPlay(card.Area.Type)
+            || StateFields.Modified(cast.World, card, "permanent", cast.World.Facts, cast.World.Players) > 0)
+            return false;
+        // The live interrupt owns healing, its attachment departure and first-player
+        // ordering. Only this exact full-heal/self-discard body is opaque here.
+        return candidate.Ability.Effect is AbilityEffect.Sequence
+        {
+            Effects: [AbilityEffect.Heal
+            {
+                Card: AbilityCardSelection.Bound { Binding: AbilityCardBinding.AttachedTo },
+                Amount: AbilityNumber.CardValue
+                {
+                    Card: AbilityCardSelection.Bound { Binding: AbilityCardBinding.AttachedTo },
+                    Property: AbilityCardNumberProperty.Damage,
+                },
+            }, AbilityEffect.CardAction
+            {
+                Instruction: AbilityCardInstruction.Discard,
+                Selection: AbilityCardSelection.Bound { Binding: AbilityCardBinding.This },
+            }],
+        };
     }
 
     private static bool IsSelfRecovery(AbilityEffect effect) => effect is AbilityEffect.EachTime
