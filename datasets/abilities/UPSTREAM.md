@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
-| Records | 595 printed card faces, including explicit empty rows |
+| Records | 651 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -296,3 +296,11 @@ prevention rows and the final two response rows complete the seven-face batch.
 Every row has independent authority review. Exact membership and starting-counter
 checks remain explicit. The product is not yet publicly admitted; focused source
 and combined evidence is recorded in `docs/content/black-widow-delivery-checkpoint.md`.
+
+Doctor Strange reprint research adds six faces (MARVEL-799): 09017 The Power of
+Protection, 09018 Med Team, 09022 Energy, 09023 Genius, 09024 Strength and
+09025 Avengers Mansion. Their generated printed rules, attributes and traits
+match the Core printings exactly. Actual-row payment, counter lifecycle, target
+and non-first-player recipient tests gate these interpretations. See
+[the reprint evidence](../../docs/content/doctor-strange-reprints-evidence.md).
+Doctor Strange remains outside complete-product public admission.

@@ -14,12 +14,12 @@ public sealed class BlackWidowFinalResponseCardTests
     {
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
-        Assert.Equal(645, rows.Length);
+        Assert.Equal(651, rows.Length);
         string[] added = ["08030", "08031"];
         Assert.Equal(added,
-            rows.TakeLast(2).Select(row => row.GetProperty("card").GetString()));
+            rows.Skip(643).Take(2).Select(row => row.GetProperty("card").GetString()));
         Assert.Equal(34, AuthoredCards.Book.Authored.Count(face => face.StartsWith("08", StringComparison.Ordinal)));
-        Assert.All(rows.TakeLast(2), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
+        Assert.All(rows.Skip(643).Take(2), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.DoesNotContain("09020", AuthoredCards.Book.Authored);
     }
 

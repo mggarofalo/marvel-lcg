@@ -220,6 +220,7 @@ public sealed class AbilityDataAnUnauthoredCardSaysSoRatherThanDoingNothingTests
         permitted.UnionWith(["08006", "08008", "08017", "08032"]);
 
         permitted.UnionWith(["08030", "08031"]);
+        permitted.UnionWith(["09017", "09018", "09022", "09023", "09024", "09025"]);
         Assert.Equal(permitted.Order(StringComparer.Ordinal), AuthoredCards.Book.Authored.Order(StringComparer.Ordinal));
     }
 
