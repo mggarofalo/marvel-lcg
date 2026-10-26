@@ -191,3 +191,35 @@ existing Special and citation cases pass. These final logs are
 `Source/evidence/invocation-empty-choice-root-restored-build.log` and
 `invocation-empty-choice-root-focused.log`; earlier 172-case evidence precedes
 that test-only extraction. Normal hooks and independent review follow.
+
+Independent review of `bf51629a` against `081c443a` accepts the bounded empty
+scheme-choice repair and fixed-source discard binding classification. The
+allowance recognizes only a direct schemes query whose body removes threat from
+`chosen`; it does not bypass whole-ability target legality, cost payment, or
+dependent completion. Neither card ids nor a main-scheme substitution govern it.
+The current RR 1.8 target and partial-resolution clauses remain consistent with
+the two audited Invocation rulings cited above. No production finding or change
+is part of this review.
+
+Three additional synthetic cases in `InvocationEmptyChoiceReviewTests` challenge
+that structural boundary with the same exhaust cost and a valid confusion
+sibling. The direct empty choice resolves the sibling, exhausts its source and
+returns to the root without a prompt; nested removal and dependent-choice bodies
+remain unavailable and preserve the complete fixture snapshot. This documents
+the present bounded support rather than claiming those broader shapes are fully
+implemented.
+
+Independent evidence outside the repository under `C:/Users/mggar/Source/`:
+
+- `invocation-empty-choice-independent-build.log`: nonincremental Release content
+  build, zero warnings/errors.
+- `invocation-empty-choice-independent-reviewed-content.log`: all 996 affected
+  content cases pass, including whole ActionAbility, TargetReference, Invocation,
+  Master, Spell Mastery, Covert Ops, Special and citation test classes.
+- `invocation-empty-choice-independent-rules.log`: all 19 selected Invocation
+  deck, rules-graph and citation cases pass.
+- `invocation-empty-choice-independent-hooks.log`: normal review-commit hooks.
+
+This verdict does not implement or accept Vapors status replacement, generic
+empty choices, production Invocation rows, Doctor Strange pack admission or a new
+native interaction. Integrated wider checks remain with the delivery lead.
