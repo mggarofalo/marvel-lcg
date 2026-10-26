@@ -106,6 +106,78 @@ public sealed class GreenGoblinActivationReplacementTests
         Assert.Empty(events);
     }
 
+    [Rule("rr:replacement-effect.1")]
+    [Fact]
+    public void LastMadnessDuringSchemeFlipsBothFacesAndStartsInfamy()
+    {
+        // 02006b: “If there are no madness counters here, flip Green Goblin
+        // and State of Madness.” The newly active 02006a starts with 2 per hero.
+        var (world, facts, villain, environment, _) = Board("02001b");
+        environment.PlaceTokens("c_madness", -2);
+        world.Agenda.Add(new PhaseStep(new EnemySchemeOperation(), 1, 2,
+            Subject: villain.ObjectId, Seat: 0));
+        var events = new List<GameEvent>();
+
+        Sequence.Finish(world, facts, new NoCardAbilities(), events);
+
+        Assert.Equal("02001a", villain.FaceId);
+        Assert.Equal("02006a", environment.FaceId);
+        Assert.Equal(0, environment.Tokens["c_madness"]);
+        Assert.Equal(2, environment.Tokens["c_infamy"]);
+        Assert.Equal(0, world.TheCardIn(DeckType.MainSchemesArea)!
+            .Tokens.GetValueOrDefault("k_threat"));
+        Assert.Contains(events, item => item is CardsFlipped flip
+            && flip.Cards.Contains(villain.ObjectId));
+    }
+
+    [Rule("rr:in-play-and-out-of-play.6")]
+    [Fact]
+    public void LastInfamyExposesGoblinAndInvokesHisReveal()
+    {
+        // 02006a flips both cards at zero; the pack insert says changing form
+        // triggers Green Goblin's “When Revealed” ability.
+        var (world, facts, villain, environment, _) = Board("02001a");
+        environment.PlaceTokens("c_infamy", -1);
+        var abilities = new RevealRecorder();
+        world.Abilities = abilities;
+        var events = new List<GameEvent>();
+
+        GreenGoblinTransition.RemoveCounters(world, environment, "infamy", 5,
+            "Test", events);
+
+        Assert.Equal("02001b", villain.FaceId);
+        Assert.Equal("02006b", environment.FaceId);
+        Assert.Equal(0, environment.Tokens["c_infamy"]);
+        Assert.Equal(2, environment.Tokens["c_madness"]);
+        Assert.Equal([villain.ObjectId], abilities.Revealed);
+    }
+
+    [Rule("rr:villain-defeat.3")]
+    [Theory]
+    [InlineData("02001a", "02002a")]
+    [InlineData("02001b", "02002b")]
+    public void DefeatPromotesTheNextStageOnTheSameSide(string face, string nextFace)
+    {
+        // pack:mc02:new-rules#when-a-villain-stage-is-defeated requires the
+        // same side; rr:villain-defeat.3 carries hosted cards to that stage.
+        var (world, facts, villain, environment, _) = Board(face);
+        var next = world.CreateCard("02002a,02002b", world.AreaOf(DeckType.VillainDeck));
+        var status = world.CreateCard("status", world.AreaOf(
+            DeckType.StatusArea, villain.Area.PlayArea, villain.ObjectId));
+
+        var events = new List<GameEvent>();
+        var damage = DamagePlacement.Resolve(world, facts,
+            new DamageRequest(world.Seats[0].IdentityCard, villain, 14, "Test", "Damage"), events);
+        Sequence.Finish(world, facts, new NoCardAbilities(), events);
+
+        Assert.True(damage.IsComplete);
+        Assert.Equal(nextFace, next.FaceId);
+        Assert.Same(next, world.TheCardIn(DeckType.VillainArea));
+        Assert.Equal(next.ObjectId, status.Area.Host);
+        Assert.Equal(face.EndsWith('a') ? "02006a" : "02006b", environment.FaceId);
+        Assert.Equal(0, next.Damage);
+    }
+
     private static (World World, Facts Facts, Card Villain, Card Environment, Card Boost)
         Board(string face)
     {
@@ -140,6 +212,18 @@ public sealed class GreenGoblinActivationReplacementTests
         }
     }
 
+    private sealed class RevealRecorder : NoCardAbilities
+    {
+        public List<int> Revealed { get; } = [];
+
+        public override AbilityExecutionResult WhenRevealed(
+            World world, AbilityExecution entry, Card card, int player)
+        {
+            Revealed.Add(card.ObjectId);
+            return base.WhenRevealed(world, entry, card, player);
+        }
+    }
+
     private sealed class Facts : ICardFacts
     {
         public CardKind Kind(string face) => face switch
@@ -154,8 +238,15 @@ public sealed class GreenGoblinActivationReplacementTests
         };
 
         public IReadOnlyList<string> Traits(string face) => [];
+        public string Title(string face) => face switch
+        {
+            "02001a" or "02002a" or "02003a" => "Norman Osborn",
+            "02001b" or "02002b" or "02003b" => "Green Goblin",
+            _ => face,
+        };
         public IReadOnlyDictionary<string, string> Attributes(string face) =>
             face == "scheme" ? new Dictionary<string, string> { ["TargetThreat"] = "99" }
+                : face.StartsWith("0200") ? new Dictionary<string, string> { ["HP"] = "14" }
                 : new Dictionary<string, string>();
         public long PrintedValue(string face, string attribute, int players, long fallback = 0) =>
             Attributes(face).TryGetValue(attribute, out string? value)

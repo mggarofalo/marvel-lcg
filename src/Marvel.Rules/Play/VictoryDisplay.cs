@@ -192,8 +192,12 @@ public static class VictoryDisplay
     {
         var deck = world.AreaOf(DeckType.VillainDeck);
         var following = deck.Cards.Count > 0 ? deck.Cards[^1] : null;
+        string? followingFace = following is not null
+            && villain.FaceId is ("02001a" or "02002a" or "02003a" or "02001b" or "02002b" or "02003b")
+            ? following.Faces.FirstOrDefault(face => face == following.FaceId[..5] + villain.FaceId[^1])
+            : null;
         bool carriesToFollowing = following is not null && string.Equals(
-            facts.Title(villain.FaceId), facts.Title(following.FaceId),
+            facts.Title(villain.FaceId), facts.Title(followingFace ?? following.FaceId),
             StringComparison.Ordinal);
         var constantsEnding = world.Effects.PreflightConstantsEnding(
             villain, includeHostedCards: !carriesToFollowing);
@@ -224,6 +228,10 @@ public static class VictoryDisplay
             world.Finish(Outcome.PlayersWin);
             return;
         }
+
+        // pack:mc02:new-rules#when-a-villain-stage-is-defeated: the next
+        // Risky Business stage enters on the defeated stage's side.
+        if (followingFace is not null) next.TurnTo(followingFace);
 
         var area = world.AreaOf(DeckType.VillainArea);
         World.MoveToTop(next, area);

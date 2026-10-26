@@ -69,15 +69,23 @@ internal static class GreenGoblinActivationReplacement
                 $"{villain.FaceId} replacement requires in-play {environmentFace}");
         string field = "c_" + counter;
         long before = environment.Tokens.GetValueOrDefault(field);
-        long after = Math.Max(0, checked(before + amount));
-        environment.PlaceTokens(field, after - before);
+        var events = new List<GameEvent>();
+        if (amount < 0)
+            GreenGoblinTransition.RemoveCounters(world, environment, counter, -amount,
+                step.What, events);
+        else
+        {
+            long after = checked(before + amount);
+            environment.PlaceTokens(field, amount);
+            events.Add(new FieldSet(environment.ObjectId, field, before, after)
+            {
+                Trigger = step.What,
+                Verb = "Place_Counter",
+            });
+        }
         invocation.Occurrence.Resolution.Resolve(invocation.Ability);
         world.Agenda.Cancel(step, invocation.Occurrence);
-        return invocation.Finish([new FieldSet(environment.ObjectId, field, before, after)
-        {
-            Trigger = step.What,
-            Verb = amount > 0 ? "Place_Counter" : "Remove_Counter",
-        }]);
+        return invocation.Finish(events);
     }
 
     private static (string? EnvironmentFace, string Counter, long Amount) Replacement(

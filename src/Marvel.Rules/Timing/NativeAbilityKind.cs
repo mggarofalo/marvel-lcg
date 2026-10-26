@@ -9,4 +9,6 @@ public enum NativeAbilityKind
     Retaliate,
     /// <summary>The printed Risky Business villain activation replacement.</summary>
     GreenGoblinActivationReplacement,
+    /// <summary>The printed Norman Osborn damage replacement.</summary>
+    GreenGoblinDamageReplacement,
 }
