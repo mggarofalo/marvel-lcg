@@ -36,3 +36,24 @@ Verification (Release):
   `thor-e7-restoredbuild.log`, `thor-e7-restored.log`.
 
 Independent review and integrated broader gates belong to the lead packet.
+
+Independent engine review of `2fd09081`:
+
+- Approved for the bounded synthetic E7 selector prerequisite; no production
+  Family Feud row or complete Thor acceptance is claimed.
+- Added `InPlayCardCensusReviewTests`: effective profile traits replace printed
+  traits; lasting gained traits participate; an exhausted, printed-text-blanked
+  Asgard minion still counts. The rule excludes traits from the printed text box.
+- An independently enumerated set of every in-play area contributes exactly once.
+  All remaining engine area kinds, including revealing, boosting, processing,
+  concealed piles and storage, contribute no physical cards or search signal.
+- A singular census after projected departure raises during action preflight,
+  before its exhaustion cost. The same-cost, unchanged-placement control commits
+  exhaustion and discards the selected card through ordinary play.
+- A synthetic two-scheme threat batch captures one aggregate count. Its first
+  placement interrupt discards the sole Asgard card; both separate placements
+  still receive the original amount, and the agenda completes.
+- Focused Release filter covering census author/review tests, rule citations and
+  global support query review: 20 passed. Log: `%TEMP%/thor-e7-independent.log`.
+- No production implementation changes or unresolved correctness findings.
+  Broader integration/platform gates remain the lead's responsibility.
