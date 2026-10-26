@@ -140,3 +140,21 @@ View contributions, source departure/expiry and fresh-host persistence. Two
 compiled mutants distinguished stale amounts and inherent-only traits. The
 review added tests only and found no production defect. Quake's separate review
 keeps the synthetic reentry limitation explicit in its own evidence document.
+
+
+The complete Content run at `3c5bd705` reports **6286 passed / 8 failed** out of
+6294 (`widow-21face-full-content.log`). MARVEL-783 owns remediation: repeated
+attachment choice, direct-runner Surge lifecycle expectations, a Quincarrier
+fixture collision in Stealth Strike, and the affected Core transcript. This is
+not a green full suite. Independent replay-v27 review `20d03741` found no
+production defect, preserved the entire historical fixture tree byte-for-byte
+against main, added eleven route/RNG/rejection checks, and passed 45 focused
+Server plus eight release-policy checks and normal hooks.
+
+MARVEL-779 prevention/cancellation source `bcc7005b` has thirteen focused cases
+but remains unintegrated pending edge-case proof and review. MARVEL-780's
+Counterattack/Rapid Response probes `038f6d16` / `dd0b7e15` are compiled red
+characterizations, not implemented gameplay: three cases need an actual received
+attack-damage amount (MARVEL-781), and five need exact defeated ally/controller
+return eligibility (MARVEL-782). These red packets do not enter the integration
+branch until their independent engine pairs restore them.

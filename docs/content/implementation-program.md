@@ -47,7 +47,7 @@ and exact replay. Existing defeats cover both scenarios in Standard and Expert;
 multiplayer, restart and native proofs remain recorded. Environment-layout
 review MARVEL-732 remains a separate UI decision, not a content gate.
 
-Thor is the active integration candidate at `707a0ed1` on `feat/thor-completion`.
+Thor is merged and agent-accepted in PR #452 at `c14a045c`.
 All 35 faces (611 total) have independent review. Complete public admission,
 the verified 40-card starter, custom-deck ownership and fresh-host continuation
 are integrated with independent setup review. Reviewed engine prerequisites
@@ -66,15 +66,19 @@ the explicit victory/defeat matrix applies to scenario packs. Heimdall's native 
 150% footer fix pass final affected checks with inspected captures. Lightning
 Strike's actual combined payment explanation (MARVEL-761) is independently
 reviewed and integrated through `63937f6d`, including bounded partial-coverage
-search. Rendered 100%/150% payment journeys pass. Combined
-managed/replay/platform certification and the Thor PR remain open. The
+search. Rendered 100%/150% payment journeys pass. All eleven final managed/replay/platform CI jobs passed on `286d0d44`;
+the PR is merged. The
 [checkpoint](thor-delivery-checkpoint.md) records exact evidence boundaries.
 
 Black Widow's 34 faces and bounded prerequisites are mapped in its
 [executable handoff](research/remaining/black-widow-implementation-handoff.md).
-The first nonpublic Preparation resolution receipt (MARVEL-762) is being
-implemented separately; it does not expand Thor's candidate or admit Black
-Widow. Independent review precedes dependent production card authoring.
+Black Widow is the active integration candidate with 21/34 faces and 632 total
+ability rows. Preparation receipts, Safe House cost selection, Stealth Strike,
+Spy restrictions, boost cancellation, Surge, partial Covert Ops, live lasting
+amounts and captured actor binding have independent mechanism review. Public
+admission remains closed; thirteen faces and pack-wide proof remain. Replay v27
+and protocol 41 are integrated with focused history and release checks, under
+independent review.
 
 The intermittent Linux drag assertion from an earlier CI run remains recorded
 in MARVEL-752. Its strict assertion now captures gesture geometry; focused
@@ -83,7 +87,8 @@ product fix or relaxed assertion was substituted for evidence.
 
 ## Delivery order and shared capability queue
 
-Work through one integrated pack candidate at a time, starting with Green Goblin plus Ms. Marvel as the first delivery. A source acquisition or narrowly owned review may run beside it when paths and integration capacity are independent. Within later waves, choose the first source-ready pack whose characteristic capability yields reusable proof; the table order is the default until evidence changes the dependency. Do not bulk author all cards or admit an incomplete pack to manufacture an early public journey. Before whole-pack admission, use nonpublic engine tests for characteristic mechanics. When complete, use the normal `DatasetGameFactory` and session/client path for setup, action, save and restart.
+Work through one integrated pack candidate at a time. Green Goblin, Ms. Marvel
+and Thor are accepted; Black Widow is current. A source acquisition or narrowly owned review may run beside it when paths and integration capacity are independent. Within later waves, choose the first source-ready pack whose characteristic capability yields reusable proof; the table order is the default until evidence changes the dependency. Do not bulk author all cards or admit an incomplete pack to manufacture an early public journey. Before whole-pack admission, use nonpublic engine tests for characteristic mechanics. When complete, use the normal `DatasetGameFactory` and session/client path for setup, action, save and restart.
 
 | Order | Shared capability and first proving pack | Required boundary/proof; later reuse |
 |---:|---|---|
@@ -104,9 +109,9 @@ The ordering is a dependency graph, not a claim that every earlier hero must fin
 Green Goblin and Ms. Marvel are accepted in PR #451; their closed prerequisites
 and public proof do not reenter the queue. The next delivery sequence is:
 
-1. Certify and merge Thor PR #452, exact candidate `4c6f5af9`, then update
-   MARVEL-563 and its reviewed prerequisite children. All 35 faces and the
-   verified starter are implemented; see [Thor checkpoint](thor-delivery-checkpoint.md).
+1. Thor PR #452 is merged; MARVEL-563 and its twenty prerequisite children are
+   Done. The reviewed 35 faces, verified starter and full CI acceptance are the
+   regression baseline; see [Thor checkpoint](thor-delivery-checkpoint.md).
 2. Integrate Black Widow's independently reviewed engine and face packets on the
    Thor squash merge. The [Black Widow checkpoint](black-widow-delivery-checkpoint.md)
    identifies nine integrated faces, three pending review, and explicit remaining
