@@ -10,7 +10,8 @@ internal static class AttachedUpgradeCostBound
     internal static void Validate(World world, Card source, int player, AbilityCost? cost,
         IReadOnlyList<int> paying)
     {
-        if (cost is not AbilityCost.ExhaustChosen { From: AbilityCardQuery.UpgradesOnYourHero }) return;
+        if (cost is not (AbilityCost.ExhaustChosen { From: AbilityCardQuery.UpgradesOnYourHero }
+            or AbilityCost.ExhaustChosen { CaptureBasicUsePower: true })) return;
         // rr:cost.5: costs "must be paid simultaneously". Resource abilities can
         // change the selected copy, so this bounded primitive admits no generation.
         if (paying.Count != 0)

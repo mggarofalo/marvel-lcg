@@ -111,7 +111,7 @@ internal static class AbilityCostLowering
             throw new RulesNotImplementedException(
                 "discardUntilMinionEngaged in a compound arrow cost requires simultaneous payment");
         if (builder.Any(cost => cost is AbilityCost.ExhaustChosen
-                { From: AbilityCardQuery.UpgradesOnYourHero }))
+                { From: AbilityCardQuery.UpgradesOnYourHero } or AbilityCost.ExhaustChosen { CaptureBasicUsePower: true }))
             throw new RulesNotImplementedException(
                 "attached-upgrade exhaustion in a compound arrow cost requires simultaneous payment");
         return new(builder.MoveToImmutable());
@@ -161,7 +161,7 @@ internal static class AbilityCostLowering
 
     internal static AbilityCost.ExhaustChosen ExhaustChosenCost(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "from", "count", "upTo", "anyNumber", "trait");
+        var fields = Fields(value, location, "from", "count", "upTo", "anyNumber", "trait", "matchingBasicPower");
         var from = SelectCards(Required(fields, "from", location), location.Child("from"));
         if (from is not AbilityCardSelection.Query
             { Kind: AbilityCardQuery.HeroesAndAllies or AbilityCardQuery.CharactersYouControl or AbilityCardQuery.AlliesYouControl or AbilityCardQuery.UpgradesOnYourHero } query)
@@ -184,7 +184,14 @@ internal static class AbilityCostLowering
             FixedWord(any, location.Child("anyNumber"), "true");
             range = new AbilityCostRange.Any();
         }
-        return new(query.Kind, range) { Trait = OptionalText(fields, "trait", location) };
+        bool capture = fields.TryGetValue("matchingBasicPower", out var marker);
+        if (capture)
+        {
+            FixedWord(marker!, location.Child("matchingBasicPower"), "true");
+            if (query.Kind != AbilityCardQuery.AlliesYouControl || range is not AbilityCostRange.Exact { Count: 1 })
+                throw location.Error("matching basic power requires exactly one controlled ally");
+        }
+        return new(query.Kind, range) { Trait = OptionalText(fields, "trait", location), CaptureBasicUsePower = capture };
     }
 
     internal static AbilityCost.Heal HealCost(AbilityValue value, AbilityLocation location)

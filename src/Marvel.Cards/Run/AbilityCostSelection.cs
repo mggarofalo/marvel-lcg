@@ -24,13 +24,21 @@ internal static class AbilityCostSelection
             var range = Range(discard.Range, hand.Count);
             return new TargetRequest([.. hand.Select(card => card.ObjectId)], range.Min, range.Max);
         }
-        if (cost is AbilityCost.ExhaustChosen exhaust)
-        {
-            var cards = Choices(world, player, exhaust).Where(card => card.Ready).ToList();
-            var range = Range(exhaust.Range, cards.Count);
-            return new TargetRequest([.. cards.Select(card => card.ObjectId)], range.Min, range.Max);
-        }
-        return null;
+        return cost is AbilityCost.ExhaustChosen exhaust
+            ? ExhaustRequest(world, player, exhaust) : null;
+    }
+
+    private static TargetRequest ExhaustRequest(World world, int player, AbilityCost.ExhaustChosen exhaust)
+    {
+        var cards = Choices(world, player, exhaust).Where(card => card.Ready
+            && (!exhaust.CaptureBasicUsePower || world.Agenda.Occurrence?.BasicUse is { } use
+                && use.IsCurrent(world) && BasicUseAllyReceipt.Power(world, card, use) > 0)).ToList();
+        var range = Range(exhaust.Range, cards.Count);
+        return new TargetRequest([.. cards.Select(card => card.ObjectId)], range.Min, range.Max)
+        { Details = exhaust.CaptureBasicUsePower && world.Agenda.Occurrence?.BasicUse is { } current
+            ? cards.ToDictionary(card => card.ObjectId, card =>
+                $"Exhaust {world.Facts.Title(card.FaceId)}; add its current {BasicUseAllyReceipt.Power(world, card, current)} {(current.Field == "attack" ? "ATK" : "THW")} to this basic {current.Field} only; no consequential damage")
+            : null };
     }
 
     internal static IReadOnlyList<Card> HandCandidates(World world, Card source, int player) =>

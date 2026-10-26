@@ -169,7 +169,8 @@ public static class BasicPowerStatus
         // controller's identity. Retain that distinction in defeat attribution.
         Threat.Remove(
             world, facts, world.ThreatAbilities, new ThreatRemovalRequest(scheme,
-            ThwartStatSubstitution.Modified(world, character, power),
+            checked(ThwartStatSubstitution.Modified(world, character, power)
+                + (world.Agenda.Occurrence?.BasicUse?.Bonus ?? 0)),
             ThwartVerb, ThwartVerb, By: LabeledAbilities.IdentityPlayer(world, character))
             { ResponsiblePlayer = player, ByThwarting = true }, events);
     }

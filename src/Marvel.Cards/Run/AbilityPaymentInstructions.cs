@@ -23,7 +23,7 @@ internal static class AbilityPaymentInstructions
     }
     internal sealed record DiscardHand(Area Hand, ImmutableArray<BoundCard> Cards) : Step;
     internal sealed record RandomDiscardHand(Area Hand, ImmutableArray<BoundCard> Cards, int Count) : Step;
-    internal sealed record ExhaustSelected(ImmutableArray<BoundCard> Cards) : Step;
+    internal sealed record ExhaustSelected(ImmutableArray<BoundCard> Cards, bool CaptureBasicUsePower = false) : Step;
     internal sealed record TakeDamage(BoundCard Target, long Amount) : Step;
     internal sealed record Exhaust(BoundCard Target) : Step;
     internal sealed record DiscardBound(BoundCard Target) : Step;

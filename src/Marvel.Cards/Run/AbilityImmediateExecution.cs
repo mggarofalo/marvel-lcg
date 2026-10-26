@@ -34,7 +34,12 @@ internal static class AbilityImmediateExecution
     {
         var use = context.Admission.Query.Occurrence.BasicUse
             ?? throw new RulesNotImplementedException("basic-use bonus requires its exact occurrence");
-        use.Increase(bonus.Amount);
+        if (!use.IsCurrent(context.Admission.World)) return new(true, false);
+        long amount = bonus.MatchingAlly
+            ? BasicUseAllyReceipt.Read(context.Admission.Expressions.Results, context.Admission.World, use)
+            : bonus.Amount;
+        if (amount <= 0) return new(true, false);
+        use.Increase(amount);
         return new(true, true);
     }
 

@@ -15,7 +15,7 @@ internal static class AbilityLeafTargetAvailability
     internal static bool HasTargets(AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
     {
         "cancelBoostIcons" => cast.Occurrence.BoostIcons is { Remaining: > 0 } icons && icons.IsCurrent(cast.World),
-        "boostBasicUse" => cast.Occurrence.BasicUse is not null,
+        "boostBasicUse" => BasicUseAllyReceipt.CanApply((AbilityEffect.BoostBasicUse)node, cast.Context),
         "modifyPlayedEvent" => AbilityPlayedEventModifier.CanModify(EffectOf<AbilityEffect.ModifyPlayedEvent>(node, cast), cast.Context),
         "revealFromVillainDeck" => AbilitySelectedDeckReveal.HasTarget(node, cast),
         "reveal" or "returnToHand" =>

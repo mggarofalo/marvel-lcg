@@ -1291,6 +1291,25 @@ Compound arrow sequences containing this relation raise before execution because
 their simultaneous-payment transaction is not represented. This prerequisite
 neither authors 06015 nor admits Thor or Teamwork.
 
+`WhenHeroBasicUseInitiated` additionally names a hero's basic attack or thwart.
+The isolated `boostBasicUse: "exhaustedAllyPower"` effect requires a standalone
+`exhaustChosen` cost with `from: {query: "alliesYouControl"}`, `count: 1`, and
+`matchingBasicPower: "true"`. It snapshots the selected physical ally's current
+modified matching ATK or THW after exhaustion, with no consequential damage.
+The receipt retains incarnation and controller across suspension; a departed,
+reentered or foreign-controlled copy cannot contribute its captured power.
+An already paid continuation may finish while its bonus fizzles. The basic use's
+nominal attack/thwart selects the ally statistic even if the hero substitutes
+another statistic for its own power. The bonus belongs only to that occurrence.
+
+This engine-chosen bounded shape permits one matching application directly or
+inside sequential effects. Matching applications inside another power, branch,
+choice or repetition, unpaired effects/costs and compound matching costs are
+rejected at lowering. Cost selection requires the live agenda occurrence;
+out-of-agenda direct matching invocations are refused before payment. Positive
+adjusted event prices and supplied generators are outside this payment boundary.
+This mechanism does not author the 06032 ability-book row or admit its product.
+
 Attached-upgrade costs additionally refuse any supplied resource payment during
 preparation, including gratuitous generation at price zero. Event-price preflight
 raises for a positive adjusted price or required icons before payment. A discount

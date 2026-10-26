@@ -51,6 +51,8 @@ public abstract record AbilityCost
     {
         /// <summary>Required current trait of the character paying this cost.</summary>
         public string? Trait { get; init; }
+        /// <summary>Capture the selected ally's matching modified power for one basic use.</summary>
+        public bool CaptureBasicUsePower { get; init; }
     }
     /// <summary>Heal a positive amount of damage from the cost's card.</summary>
     public sealed record Heal(AbilityCostCard Card, long Amount) : AbilityCost;

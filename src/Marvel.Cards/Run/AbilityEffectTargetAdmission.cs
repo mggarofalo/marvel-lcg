@@ -149,7 +149,7 @@ internal static class AbilityEffectTargetAdmission
             // rr:target.3.4: "at least one of those effects must be able to
             // affect the target." Deferring resolution retains the bound target.
             "cancelBoostIcons" => BoostCancellationTargetLegality(cast),
-            "boostBasicUse" => BasicUseLegality(cast),
+            "boostBasicUse" => BasicUseLegality((AbilityEffect.BoostBasicUse)node, cast),
             "modifyPlayedEvent" => AbilityPlayedEventModifier.CanModify(EffectOf<AbilityEffect.ModifyPlayedEvent>(node, cast), cast.Context)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "afterActivation" => TargetLegalityOf(EffectBody(node), cast, bindingMayChange),
@@ -237,6 +237,8 @@ internal static class AbilityEffectTargetAdmission
             && AbilityProgramQueries.CanTakeDamage(cast.World, cast.Context.Program, to, cast.Source)
                 ? TargetLegality.Valid : TargetLegality.Invalid;
     }
-    private static TargetLegality BasicUseLegality(AbilityAdmissionScope cast) =>
-        cast.Occurrence.BasicUse is not null ? TargetLegality.Valid : TargetLegality.Invalid;
+    private static TargetLegality BasicUseLegality(
+        AbilityEffect.BoostBasicUse effect, AbilityAdmissionScope cast) =>
+        BasicUseAllyReceipt.CanApply(effect, cast.Context)
+            ? TargetLegality.Valid : TargetLegality.Invalid;
 }
