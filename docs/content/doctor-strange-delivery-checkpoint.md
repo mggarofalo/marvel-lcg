@@ -61,14 +61,14 @@ Combined integration at `05cb51c2` passes all 122 selected Invocation, Master,
 Spell Mastery, Covert Ops, Black Panther and next-Special tests. Evidence:
 `Source/evidence/strange-integrated-master-top-discard.log`.
 
-Next: MARVEL-808 authors actual identity, Wong, Master and Winds rows against
+MARVEL-808 adds actual identity, Wong, Master and Winds rows against
 these reviewed mechanics. MARVEL-809 implements the separate Vapors status
 replacement prerequisite. MARVEL-803's four response events await independent
 acceptance of MARVEL-804's full-healing-cost repair; the unchanged previously
 supported mixed damage/healing regression is a required gate, not an unsupported
 boundary waiver. Remaining production rows, other Invocations, whole-pack
 admission, save/UI contracts and complete pack proof remain open. The integrated
-book still has 654 rows and nine of the 40 Strange faces.
+book now has 659 rows and 14 of the 40 Strange faces.
 
 Combined integration at `e9584f11` passes 89 focused Content checks covering
 Spell Mastery, actual Strange rows, both printed-prerequisite spellings,
@@ -77,3 +77,20 @@ Supreme test, all nine constant-card checks pass. Logs:
 `Source/evidence/strange-combined-d1-constants-content.log` and
 `strange-combined-supreme-review.log`. These are focused integration results,
 not whole-pack certification.
+
+D1 production source `ede4159f` and independent review `febb7986` are integrated
+as `d7acab49` and `60a1239a`. All 654 predecessor raw JSON objects are unchanged;
+the five added faces are 09001a/b, 09002, 09005 and 09036. Independent evidence
+passes 164 affected Content cases, 23 lifecycle/ruling/citation cases, the host
+stale-revision control, offline card-data check and normal hooks. Five authored
+mutants distinguish the costs, limit, return and draw behavior. A sixth review
+mutant removes the printed hero-form restriction and kills its targeted control.
+
+The form-rejection fixture now explicitly tests the same Spell Mastery program
+across both faces; the production alter-ego correctly has a different action.
+A separate legal form-change control rejects the earlier answer without state
+mutation, then executes the fresh action. The direct-world-mutation ordinal alias
+is documented rather than claimed fixed. See
+[D1 production evidence](doctor-strange-d1-production-rows.md). The integrated
+`src`, `tests` and `datasets` trees at `60a1239a` exactly match the reviewed
+`febb7986` trees; intervening lead commits only update delivery documentation.
