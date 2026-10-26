@@ -181,8 +181,9 @@ internal static class AbilityEffectLowering
 
     internal static AbilityEffect.Damage DamageEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "cards", "amount", "attack");
-        return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "attack", location));
+        var fields = Fields(value, location, "cards", "amount", "attack", "ignoresTough");
+        return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "attack", location))
+        { IgnoresTough = Marker(fields, "ignoresTough", location) };
     }
 
     internal static AbilityEffect.AttackDamage AttackDamageEffect(AbilityValue value, AbilityLocation location)

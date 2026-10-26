@@ -26,7 +26,7 @@ internal static class AbilityPowerHealthTrace
 {
     internal static AbilityPowerState ApplyPowerDamage(
         AbilityPowerState reachability, IReadOnlyList<Card> cards,
-        long amount, Card first, AbilityAdmissionScope cast)
+        long amount, Card first, AbilityAdmissionScope cast, bool ignoresTough = false)
     {
         if (amount <= 0)
         {
@@ -51,7 +51,7 @@ internal static class AbilityPowerHealthTrace
                 Discarded = discarded,
             };
             var assignment = DamageAssignment.AfterReplacement(
-                landed, landed > 0 && PowerTough(state, card, cast));
+                landed, !ignoresTough && landed > 0 && PowerTough(state, card, cast));
             if (assignment.Dealt <= 0)
             {
                 continue;

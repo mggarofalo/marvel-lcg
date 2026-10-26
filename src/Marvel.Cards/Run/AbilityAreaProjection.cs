@@ -104,8 +104,8 @@ internal sealed class AbilityAreaProjection
 
 
 
-    internal void DealProjected(AreaProjectionState state, Card target, long amount, long repetitions) =>
-        new AbilityAreaDamageProjection(this).DealProjected(state, target, amount, repetitions);
+    internal void DealProjected(AreaProjectionState state, Card target, long amount, long repetitions, bool ignoresTough = false) =>
+        new AbilityAreaDamageProjection(this).DealProjected(state, target, amount, repetitions, ignoresTough);
 
     internal List<AreaProjectionState> TraceSequence(
         IEnumerable<AbilityEffect> sequence,

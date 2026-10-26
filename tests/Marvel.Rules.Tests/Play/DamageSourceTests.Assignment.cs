@@ -96,6 +96,34 @@ public sealed partial class DamageSourceTests
         Assert.Equal(tough && replaced == 0, Statuses.Has(world, target, Statuses.Tough));
     }
 
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(3, 2)]
+    [InlineData(3, 0)]
+    public void IgnoringToughPreservesItsPhysicalCardAndOtherPrevention(long amount, long taken)
+    {
+        // Synthetic damage property, motivated by printed 06006: "This damage ignores
+        // tough status card". It changes only Tough, leaving step-three prevention.
+        var facts = new Printed();
+        var world = Board(facts);
+        var target = world.CreateCard("target", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var tough = Statuses.Give(world, target, Statuses.Tough);
+        var abilities = new AssignmentModifiers(amount, taken);
+        world.Abilities = abilities;
+        var result = DamagePlacement.Resolve(world, facts,
+            new(world.Seats[0].IdentityCard, target, amount, "test", "Deal_Damage") { IgnoresTough = true }, []);
+        Assert.Equal(amount, result.Dealt);
+        Assert.Equal(taken, result.Taken);
+        Assert.Equal(taken, target.Damage);
+        Assert.Same(tough, Assert.Single(Statuses.On(world, target, Statuses.Tough)));
+        Assert.Equal(amount > 0, abilities.VisitedStepThree);
+        world.Abilities = new NoCardAbilities();
+        DamagePlacement.Resolve(world, facts,
+            new(world.Seats[0].IdentityCard, target, 1, "test", "Deal_Damage"), []);
+        Assert.False(Statuses.Has(world, target, Statuses.Tough));
+        Assert.Equal(taken, target.Damage);
+    }
+
     private sealed class AssignmentModifiers(long replaced, long taken) : NoCardAbilities
     {
         public bool VisitedStepThree { get; private set; }

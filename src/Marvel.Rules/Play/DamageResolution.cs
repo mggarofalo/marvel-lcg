@@ -5,15 +5,15 @@ using Marvel.Rules.Timing;
 namespace Marvel.Rules.Play;
 
 /// <summary>Executes damage replacement, placement and defeat as one owned procedure.</summary>
-internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequest request, AbilityExecution execution, AbilityExecution? completion = null)
+internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequest request, AbilityExecution execution, AbilityExecution? completion = null, int? targetIncarnation = null)
 {
-    private readonly int incarnation = request.Target.Incarnation;
+    private readonly int incarnation = targetIncarnation ?? request.Target.Incarnation;
     private DamageReplacement? replacement;
     private bool placed;
     private Damage.PlacedDamage? placement;
     private EffectCompletion? excessThreat;
     private readonly int priorDefeats = request.RecordDefeatOn?.Defeats.Count ?? 0;
-    internal DamageResult Result { get; } = new(completion ?? execution) { Target = request.Target.ObjectId, TargetIncarnation = request.Target.Incarnation };
+    internal DamageResult Result { get; } = new(completion ?? execution) { Target = request.Target.ObjectId, TargetIncarnation = targetIncarnation ?? request.Target.Incarnation };
     internal AbilityExecution Execution => execution;
 
     internal void Continue(List<GameEvent> events)
@@ -37,8 +37,7 @@ internal sealed class DamageResolution(World world, ICardFacts facts, DamageRequ
             return;
         }
         AttackDamageAccounting.ValidateBoostPlacement(world, request.ActivationId);
-        var damage = DamagePlacement.PrepareAfterReplacement(world, facts, request.Source, request.Target,
-            replacement.ResolvedAmount, request.Trigger, events);
+        var damage = DamagePlacement.PrepareAfterReplacement(world, facts, request with { Amount = replacement.ResolvedAmount }, events);
         DamagePlacement.ApplyPlaced(world, facts, damage, request.Trigger, request.Verb, events);
         Settle(damage, events);
     }

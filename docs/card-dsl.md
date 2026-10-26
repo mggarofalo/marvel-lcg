@@ -1313,3 +1313,30 @@ use the declared type; an undeclared wild does not imply energy. Without an
 explicit allocation, the existing deterministic `Resources.Paid` selection
 excludes overpayment. The receipt is transient engine data reconstructed by
 command replay; it adds no card state or digest field.
+`dealDamage` accepts `ignoresTough: 1`, an engine-chosen marker for one
+instruction's damage instances. It bypasses Tough prevention without discarding
+those physical status cards, and leaves damage replacement, other prevention,
+and defeat handling intact. It creates no attack or piercing context. Direct
+damage recipients retain their physical incarnation. Multi-recipient damage
+finishes all replacements and prevention before placing every share, then settles
+defeat windows. The property is retained in area, labelled-power and repeated-effect projections. Unsupported
+follow-on projections still raise before costs; in particular, a changing
+singular area query and unprojected defeat windows remain unsupported.
+
+This prerequisite is synthetic coverage for Thor E3 (MARVEL-745), motivated by
+printed `06006` and its vendored non-attack erratum. It does not admit Lightning
+Strike or implement its energy payment.
+
+Simultaneous direct damage follows vendored ruling `3eb442853617fe14`: drones
+remain in play when Ultron III’s damage eligibility is fixed, even if the same
+damage defeats every drone. The direct procedure creates no attack aftermath.
+
+The replacement/prevention/placement barrier does not establish simultaneous
+defeat-window eligibility for every recipient. Settlement currently completes
+one recipient’s damage steps 6–8 before the next recipient begins step 6.
+Vendored ruling `304a4798e0b453b4` says each damage step resolves simultaneously;
+this remaining boundary requires independent review and a distinguishing control
+where an earlier departure changes a later defeat interrupt. Lightning Strike
+admission remains withheld pending that review and any required defeat-stage
+barrier. Save/replay and frozen-route compatibility also require integration
+evidence against the eventual admitted candidate.

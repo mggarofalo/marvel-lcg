@@ -74,7 +74,11 @@ public abstract record AbilityEffect
     /// <summary>Assign a positive remaining value to the selected hit-point dial.</summary>
     public sealed record SetHitPoints(AbilityCardSelection Card, long Remaining) : AbilityEffect;
     /// <summary>Deal ordinary damage, optionally using the attack event verb.</summary>
-    public sealed record Damage(AbilityCardSelection Cards, AbilityNumber Amount, bool AttackVerb) : AbilityEffect;
+    public sealed record Damage(AbilityCardSelection Cards, AbilityNumber Amount, bool AttackVerb) : AbilityEffect
+    {
+        /// <summary>Bypasses Tough only for this instruction's damage instances.</summary>
+        public bool IgnoresTough { get; init; }
+    }
     /// <summary>Deal attack damage with its attack-specific rule handling.</summary>
     public sealed record AttackDamage(AbilityCardSelection Cards, AbilityNumber Amount, bool Overkill) : AbilityEffect
     {

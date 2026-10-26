@@ -192,20 +192,22 @@ internal static class AbilityDamageAndThreatExecution
         AbilityEffectBoundary.Begin(context, state);
         long amount = ModifiedAbilityDamage(AbilityAmounts.SaturatingMultiply(
             Amount(damage.Amount, context), multiplier), context);
-        string verb = damage.AttackVerb ? "Attack" : "Deal_Damage";
         state.Damage = new(context.Occurrence);
-        bool suspended = false;
-        var occurrence = context.World.Agenda.Occurrence;
-        foreach (var target in Every(damage.Cards, context))
-        {
-            var result = DamagePlacement.Resolve(context.World, context.World.Facts,
-                new DamageRequest(context.Source, target, amount, context.Trigger, verb,
-                    AbilityEffectAttribution.IdentityPlayer(context))
-                    { RecordDefeatOn = occurrence, ActivationId = context.DamageActivationId }, context.Events);
-            suspended |= !result.IsComplete;
-            state.Damage.Add(result, amount, context.Power == BasicPowers.AttackVerb);
-        }
-        if (suspended) state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
+        var requests = Every(damage.Cards, context).Select(target =>
+            new DamageRequest(context.Source, target, amount, context.Trigger,
+                damage.AttackVerb ? "Attack" : "Deal_Damage", AbilityEffectAttribution.IdentityPlayer(context))
+            {
+                RecordDefeatOn = context.World.Agenda.Occurrence,
+                ActivationId = context.DamageActivationId,
+                IgnoresTough = damage.IgnoresTough,
+            }).ToArray();
+        if (requests.Length > 1)
+            state.Damage.Add(SimultaneousDirectDamage.Resolve(context.World, context.World.Facts, requests, context.Events),
+                amount, context.Power == BasicPowers.AttackVerb);
+        else if (requests.Length == 1)
+            state.Damage.Add(DamagePlacement.Resolve(context.World, context.World.Facts, requests[0], context.Events),
+                amount, context.Power == BasicPowers.AttackVerb);
+        if (!state.Damage.IsComplete) state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
     }
 
     private static long ModifiedAbilityDamage(long amount, AbilityDamageAndThreatContext context)
