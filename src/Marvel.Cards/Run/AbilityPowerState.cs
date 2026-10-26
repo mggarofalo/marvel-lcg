@@ -21,5 +21,6 @@ internal readonly record struct AbilityPowerState(
     // Prefix settlement is still checked; dependent reads must reject this state.
     internal string? UnprojectedStageEntry { get; init; }
     internal bool DefeatWindowDeferred { get; init; }
+    internal bool RecoveryWindowDeferred { get; init; }
     internal bool EncounterCardsChanged { get; init; }
 }

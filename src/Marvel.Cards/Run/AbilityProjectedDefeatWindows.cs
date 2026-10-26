@@ -73,7 +73,8 @@ internal static class AbilityProjectedDefeatWindows
         if (AbilityPowerContinuationDependencies.IsIndependent(node)) return;
         if (state.UnprojectedStageEntry is { } reason)
             throw new RulesNotImplementedException(reason);
-        if (state.DefeatWindowDeferred && !AbilityDefeatReceiptProjection.PreservesReads(node))
+        if (state.DefeatWindowDeferred && !AbilityDefeatReceiptProjection.PreservesReads(node)
+            && !(state.RecoveryWindowDeferred && AbilityProjectedRecoveryWindow.PreservesReads(node, cast)))
             throw new RulesNotImplementedException("A labelled-power continuation reads the board after an unprojected defeat window.");
         if (!state.EncounterCardsChanged) return;
         if (!AbilityEncounterDealProjection.PreservesReads(node))
