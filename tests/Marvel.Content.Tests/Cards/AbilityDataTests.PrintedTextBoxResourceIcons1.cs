@@ -40,6 +40,10 @@ public sealed class AbilityDataPrintedTextBoxResourceIconsTests : AbilityDataTes
             ["01064"] = new("snoop", 3, Uses: true),
             ["01066"] = new("arrow", 4, Uses: false),
             ["01080"] = new("medical", 3, Uses: true),
+            // Both Risky Business environments enter with "2 [per player]" counters;
+            // their zero-counter clause flips them instead of discarding a uses card.
+            ["02006a"] = new("infamy", 2, Uses: false) { PerPlayer = true },
+            ["02006b"] = new("madness", 2, Uses: false) { PerPlayer = true },
             ["03012"] = new("arrow", 4, Uses: false),
             ["03034"] = new("mental", 3, Uses: true),
             ["04042"] = new("attack", 3, Uses: true),
