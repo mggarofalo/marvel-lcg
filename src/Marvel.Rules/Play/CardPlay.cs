@@ -10,7 +10,7 @@ using static Marvel.Rules.Play.CardEntry;
 namespace Marvel.Rules.Play;
 
 /// <summary>
-/// Playing a card from hand â€” <c>rr:play-put-into-play</c>,
+/// Playing a card from hand — <c>rr:play-put-into-play</c>,
 /// <c>rr:initiating-abilities</c>.
 /// </summary>
 /// <remarks>
@@ -107,7 +107,7 @@ public static class CardPlay
     /// </remarks>
 
     /// <summary>
-    /// Plays a card â€” <c>rr:initiating-abilities</c> steps 1 to 7.
+    /// Plays a card — <c>rr:initiating-abilities</c> steps 1 to 7.
     /// </summary>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
@@ -245,7 +245,7 @@ public static class CardPlay
         AllyCardEntry.Put(world, facts, abilities, ally, controller, trigger, events);
 
     /// <summary>
-    /// Spends resources to pay a cost â€” <c>rr:initiating-abilities.step.5</c>.
+    /// Spends resources to pay a cost — <c>rr:initiating-abilities.step.5</c>.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -255,14 +255,14 @@ public static class CardPlay
     /// </para>
     /// <para>
     /// Shared by a card being played and an ability being triggered, because
-    /// <c>rr:cost</c> is one rule for both â€” "a cost is anything a player must
+    /// <c>rr:cost</c> is one rule for both — "a cost is anything a player must
     /// do or pay in order to initiate an ability", and playing a card is
     /// initiating one.
     /// </para>
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
-    /// <param name="hands">Whose hands may pay â€” see <see cref="Paying"/>.</param>
+    /// <param name="hands">Whose hands may pay — see <see cref="Paying"/>.</param>
     /// <param name="paying">The cards discarded to pay, by object id.</param>
     /// <param name="cost">How many resources are needed.</param>
     /// <param name="required">Specific types that must be among them, or empty.</param>
