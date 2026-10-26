@@ -1,5 +1,3 @@
-using Marvel.Cards.Dsl;
-using Marvel.Cards.Run;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -20,15 +18,8 @@ public sealed class GreenGoblinBoostFlipTests : CoreCardTestBase
         // by a Boost ability, Norman's 0 ATK plus the boost icons deals damage.
         // The attack has passed his "would attack" interrupt window.
         // 02011: "Place 1 infamy counter on Criminal Enterprise. If you cannot,
-        // remove 1 madness counter from State of Madness." No Criminal Enterprise
-        // is in play, so this test-local row implements that printed branch.
-        var runner = new AbilityRunner(AbilityCatalog.Parse("""
-            {"cards":[{"card":"02011","abilities":[{
-              "trigger":{"event":"WhenCardRevealed","timing":"Boost","subject":"this"},
-              "effect":{"removeCounters":{"card":{"titled":"State of Madness"},
-                "counter":"madness","count":1}}
-            }]}]}
-            """));
+        // remove 1 madness counter from State of Madness."
+        var runner = Marvel.Content.Tests.Cards.AuthoredCards.Runner();
         var world = Hero("01001a");
         world.Abilities = runner;
         var hero = world.Seats[0].IdentityCard;

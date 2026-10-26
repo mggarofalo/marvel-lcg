@@ -14336,6 +14336,444 @@
         "perPlayer": true
       },
       "abilities": []
+    },
+    {
+      "card": "02007",
+      "name": "Hired Gun",
+      "note": "Printed 02007. Boost places 1 infamy on Criminal Enterprise or removes 1 madness from State of Madness. Named selectors follow the live face; native counter exhaustion owns flips. Printed keywords and icons are read from card facts. When revealed, choose boost or 2 infamy when Criminal Enterprise is present; otherwise only the facedown boost can resolve.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Criminal Enterprise"
+                }
+              },
+              "then": {
+                "choose": {
+                  "descriptions": [
+                    "Give the villain 1 facedown boost card",
+                    "Place 2 infamy counters on Criminal Enterprise"
+                  ],
+                  "options": [
+                    {
+                      "giveAdditionalBoost": {
+                        "enemy": {
+                          "query": "villain"
+                        }
+                      }
+                    },
+                    {
+                      "placeCounters": {
+                        "card": {
+                          "titled": "Criminal Enterprise"
+                        },
+                        "counter": "infamy",
+                        "count": 2
+                      }
+                    }
+                  ]
+                }
+              },
+              "else": {
+                "giveAdditionalBoost": {
+                  "enemy": {
+                    "query": "villain"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Criminal Enterprise"
+                }
+              },
+              "then": {
+                "placeCounters": {
+                  "card": {
+                    "titled": "Criminal Enterprise"
+                  },
+                  "counter": "infamy",
+                  "count": 1
+                }
+              },
+              "else": {
+                "removeCounters": {
+                  "card": {
+                    "titled": "State of Madness"
+                  },
+                  "counter": "madness",
+                  "count": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02008",
+      "name": "Private Security Specialist",
+      "note": "Printed 02008. Boost places 1 infamy on Criminal Enterprise or removes 1 madness from State of Madness. Named selectors follow the live face; native counter exhaustion owns flips. Printed keywords and icons are read from card facts.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Criminal Enterprise"
+                }
+              },
+              "then": {
+                "placeCounters": {
+                  "card": {
+                    "titled": "Criminal Enterprise"
+                  },
+                  "counter": "infamy",
+                  "count": 1
+                }
+              },
+              "else": {
+                "removeCounters": {
+                  "card": {
+                    "titled": "State of Madness"
+                  },
+                  "counter": "madness",
+                  "count": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02009",
+      "name": "Collapsing Bridge",
+      "note": "Printed 02009. Boost places 1 infamy on Criminal Enterprise or removes 1 madness from State of Madness. Named selectors follow the live face; native counter exhaustion owns flips. Printed keywords and icons are read from card facts.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Criminal Enterprise"
+                }
+              },
+              "then": {
+                "placeCounters": {
+                  "card": {
+                    "titled": "Criminal Enterprise"
+                  },
+                  "counter": "infamy",
+                  "count": 1
+                }
+              },
+              "else": {
+                "removeCounters": {
+                  "card": {
+                    "titled": "State of Madness"
+                  },
+                  "counter": "madness",
+                  "count": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02010",
+      "name": "Oscorp Manufacturing",
+      "note": "Printed 02010. Only Norman Osborn adds 1 per-player threat on reveal; ordinary side-scheme entry initializes printed starting threat. Acceleration is read from card facts.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "titleInPlay": "Norman Osborn"
+              },
+              "then": {
+                "placeThreat": {
+                  "scheme": "this",
+                  "amount": {
+                    "perPlayer": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02011",
+      "name": "Payoff",
+      "note": "Printed 02011. Boost places 1 infamy on Criminal Enterprise or removes 1 madness from State of Madness. Named selectors follow the live face; native counter exhaustion owns flips. Printed keywords and icons are read from card facts.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Criminal Enterprise"
+                }
+              },
+              "then": {
+                "placeCounters": {
+                  "card": {
+                    "titled": "Criminal Enterprise"
+                  },
+                  "counter": "infamy",
+                  "count": 1
+                }
+              },
+              "else": {
+                "removeCounters": {
+                  "card": {
+                    "titled": "State of Madness"
+                  },
+                  "counter": "madness",
+                  "count": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02012",
+      "name": "All in a Day's Work",
+      "note": "Printed 02012. Boost places 1 infamy on Criminal Enterprise or removes 1 madness from State of Madness. Named selectors follow the live face; native counter exhaustion owns flips. Printed keywords and icons are read from card facts. When revealed, place 2 infamy or remove up to 2 available madness, including the last single counter.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Criminal Enterprise"
+                }
+              },
+              "then": {
+                "placeCounters": {
+                  "card": {
+                    "titled": "Criminal Enterprise"
+                  },
+                  "counter": "infamy",
+                  "count": 2
+                }
+              },
+              "else": {
+                "if": {
+                  "test": {
+                    "atLeast": {
+                      "value": {
+                        "countersOn": {
+                          "card": {
+                            "titled": "State of Madness"
+                          },
+                          "counter": "madness"
+                        }
+                      },
+                      "count": 2
+                    }
+                  },
+                  "then": {
+                    "removeCounters": {
+                      "card": {
+                        "titled": "State of Madness"
+                      },
+                      "counter": "madness",
+                      "count": 2
+                    }
+                  },
+                  "else": {
+                    "removeCounters": {
+                      "card": {
+                        "titled": "State of Madness"
+                      },
+                      "counter": "madness",
+                      "count": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "titled": "Criminal Enterprise"
+                }
+              },
+              "then": {
+                "placeCounters": {
+                  "card": {
+                    "titled": "Criminal Enterprise"
+                  },
+                  "counter": "infamy",
+                  "count": 1
+                }
+              },
+              "else": {
+                "removeCounters": {
+                  "card": {
+                    "titled": "State of Madness"
+                  },
+                  "counter": "madness",
+                  "count": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02013",
+      "name": "Mad Genius",
+      "note": "Printed 02013. Live villain title selects the form-qualified branch. First player chooses among hero-form identities tied for least remaining health (rr:first-player.1). The completed activation receipt determines no-attack surge, including stun cancellation. Norman mills the resolving player deck by total infamy.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "titleInPlay": "Green Goblin"
+              },
+              "then": {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "query": "heroes"
+                    }
+                  },
+                  "then": {
+                    "chooseCard": {
+                      "chooser": "firstPlayer",
+                      "from": {
+                        "minBy": {
+                          "of": {
+                            "query": "heroes"
+                          },
+                          "by": "remainingHealth"
+                        }
+                      },
+                      "effect": {
+                        "seq": [
+                          {
+                            "enemyAttacks": {
+                              "enemies": {
+                                "titled": "Green Goblin"
+                              },
+                              "against": "chosen"
+                            }
+                          },
+                          {
+                            "if": {
+                              "test": {
+                                "not": {
+                                  "atLeast": {
+                                    "value": {
+                                      "result": "activationMade"
+                                    },
+                                    "count": 1
+                                  }
+                                }
+                              },
+                              "then": {
+                                "gainSurge": 1
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "else": {
+                    "gainSurge": 1
+                  }
+                }
+              },
+              "else": {
+                "if": {
+                  "test": {
+                    "titleInPlay": "Norman Osborn"
+                  },
+                  "then": {
+                    "discardTop": {
+                      "from": "yourDeck",
+                      "count": {
+                        "countersOn": {
+                          "card": {
+                            "titled": "Criminal Enterprise"
+                          },
+                          "counter": "infamy"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

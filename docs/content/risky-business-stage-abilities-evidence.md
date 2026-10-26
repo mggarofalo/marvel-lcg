@@ -42,3 +42,50 @@ encounter cards 02007–02013, complete scenario recipes/modes and their integra
 evidence. Whole-pack admission, Mutagen Formula and remaining modular content
 remain separate. This packet supplies no native UI, save/restart or complete-game
 claim. Broader combined-candidate checks belong to the lead integration lane.
+
+## MARVEL-690 encounter packet — 2026-10-25
+
+Implemented 02007–02013 against generated `datasets/cards/cards.json` and the
+Green Goblin deep research record. This is a nonpublic research-board packet;
+main schemes, setup, admission and product acceptance remain outside its claim.
+It extends reviewed stage/environment base `dfb25d44` without engine edits.
+
+Hired Gun offers the resolving player a facedown villain boost versus 2 infamy;
+when Criminal Enterprise is absent, only the boost instruction can resolve.
+The five printed shared boost abilities place infamy or remove madness from the
+live environment face. All in a Day's Work removes two madness when available
+and the last single counter otherwise, using fixed-count DSL branches because
+the removal primitive requires sufficient counters. Native counter exhaustion
+handles the physical flip. Oscorp Manufacturing adds its per-player reveal
+threat only during Norman's form. Mad Genius selects hero-form identities by
+remaining health, delegates ties to the first player, uses the actual completed
+activation receipt for surge, and mills only the revealing player's deck during
+Norman's form. Printed guard and scheme icons remain card-fact behavior.
+
+`RiskyBusinessEncounterAbilityTests` has 23 passing cases covering each shared
+boost in both environment forms, two-counter placement/removal and last-counter
+flip, Oscorp in both forms, both Hired Gun options and unavailable-infamy choice,
+nonzero resolving seat ownership, Norman's infamy-count mill, least-health attack,
+stun cancellation surge, nonzero first-player tie ownership and no-hero surge.
+`GreenGoblinBoostFlipTests` now executes the actual authored Payoff rather than a
+test-local approximation; its existing mid-attack Norman-zero-ATK assertions pass.
+
+Focused Release run: **26 passed, 0 failed**, including those classes and
+`RuleCitationTests`. Command:
+
+```
+dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --filter "FullyQualifiedName~RiskyBusinessEncounterAbilityTests|FullyQualifiedName~GreenGoblinBoostFlipTests|FullyQualifiedName~RuleCitationTests" --nologo
+```
+
+Two data mutants were tested with `--no-build`, reading the modified ability
+book at runtime, and restored byte-for-byte in a `finally` block. Oscorp's
+Norman condition changed to Green Goblin: killed by both form cases. Mad Genius
+minimum changed to maximum remaining health: killed by the attack case. Temporary
+logs are `%TEMP%/risky-encounter-tests.log`,
+`%TEMP%/risky-encounter-mutant-oscorp-form.log` and
+`%TEMP%/risky-encounter-mutant-mad-genius-rank.log`.
+
+Remaining integration work includes the main schemes/setup packet and independent
+review of this exact encounter diff. This focused evidence does not establish
+public admission, full scenario play, restart/native behavior or whole-pack
+completion. Broader combined-candidate checks belong to the lead integration lane.
