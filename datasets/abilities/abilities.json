@@ -14122,6 +14122,53 @@
       }]
     },
     {
+      "card": "02038",
+      "name": "Scorpion",
+      "note": "Quickstrike is printed and engine-owned. After Scorpion attacks and damages a character, stun that character. The completed attack's damaged target, not merely the originally attacked identity, receives the status (rr:attack-enemy-activation.step.6; rr:status-cards.1).",
+      "abilities": [{
+        "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "this", "target": "friendly" },
+        "when": { "attackDamaged": "trigger.target" },
+        "effect": { "giveStatus": { "card": "trigger.target", "status": "stunned" } }
+      }]
+    },
+    {
+      "card": "02039",
+      "name": "Gang-Up",
+      "note": "Hero reveal makes the villain and each minion engaged with the revealing player attack in sequence; alter-ego reveal gains surge. Each attack is a separate enemy activation (rr:attack-enemy-activation.1; rr:surge.1).",
+      "abilities": [{
+        "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+        "effect": { "if": {
+          "test": { "inForm": { "player": "you", "form": "hero" } },
+          "then": { "seq": [
+            { "enemyAttacks": { "enemies": { "query": "villain" } } },
+            { "enemyAttacks": { "enemies": { "query": "minionsEngagedWithYou" } } }
+          ] },
+          "else": { "gainSurge": 1 }
+        } }
+      }]
+    },
+    {
+      "card": "02040",
+      "name": "Tail Sweep",
+      "note": "On reveal Scorpion attacks the revealing player's hero if able; if no attack was made, that player is stunned. A canceled attack does not count as made (rr:activation.7). As a boost, stun the activating player independently of whether damage was dealt (rr:boost-boost-icon.2).",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+          "effect": { "seq": [
+            { "enemyAttacks": { "enemies": { "titled": "Scorpion" } } },
+            { "if": {
+              "test": { "not": { "atLeast": { "value": { "result": "activationMade" }, "count": 1 } } },
+              "then": { "giveStatus": { "card": "you", "status": "stunned" } }
+            } }
+          ] }
+        },
+        {
+          "trigger": { "event": "WhenCardRevealed", "timing": "Boost", "subject": "this" },
+          "effect": { "giveStatus": { "card": "you", "status": "stunned" } }
+        }
+      ]
+    },
+    {
       "card": "03033",
       "name": "Expert Defense",
       "note": "Hero Interrupt (defense): When your hero defends against an attack, it gets +3 DEF for that attack. Uses the committed hero-defense occurrence, including RR1.8 defense-labeled initiation.",
