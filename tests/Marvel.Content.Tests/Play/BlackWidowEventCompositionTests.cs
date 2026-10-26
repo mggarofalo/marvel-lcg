@@ -29,21 +29,22 @@ public sealed class BlackWidowEventCompositionTests
     }
 
     [Theory]
-    [InlineData(false, "cannot initiate this action")]
-    [InlineData(true, "without exactly one saveable thwart power")]
-    public void DiagnosticCovertOpsNoSchemeCompositionsRejectBeforePayment(bool conditional, string reason)
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:target.3")]
+    [Rule("rr:labeled-ability.4")]
+    public void CovertOpsConfusesWithoutAnyRemovableThreatInEitherForm(bool hero)
     {
-        // These are explicit capability diagnostics, not correct Covert Ops behavior.
-        // RR target.3 and ruling 0fc2a7cc9197e127 permit confusion alone.
-        var world = Board();
-        world.Abilities = Runner(conditional);
+        // "A target is valid ... if any part of that ability can affect that target."
+        // Ruling 0fc2a7cc9197e127: confusion alone still counts as a thwart.
+        var world = Board(hero);
         var main = world.TheCardIn(DeckType.MainSchemesArea)!;
         main.PlaceTokens("k_threat", -main.Tokens.GetValueOrDefault("k_threat"));
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => PlayEvent(world, "08003"));
-        Assert.Contains(reason, thrown.Message);
-        Assert.Equal(4, world.Seats[1].Hand.Cards.Count);
-        Assert.All(world.Seats[1].Hand.Cards, card => Assert.Same(world.Seats[1].Hand, card.Area));
-        Assert.False(Statuses.Has(world, world.TheCardIn(DeckType.VillainArea)!, Statuses.Confused));
+        var source = PlayEvent(world, "08003");
+        Sequence.Finish(world, world.Facts, world.Abilities!, []);
+        Assert.True(Statuses.Has(world, world.TheCardIn(DeckType.VillainArea)!, Statuses.Confused));
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Empty(world.Seats[1].Hand.Cards);
         Assert.Equal(0, main.Tokens["k_threat"]);
         Assert.False(world.Agenda.IsBusy);
     }

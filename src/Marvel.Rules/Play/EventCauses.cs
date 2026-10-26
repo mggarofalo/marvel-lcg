@@ -22,6 +22,6 @@ internal static class EventCauses
         new(occurrence, kind, source, target)
         {
             SourceTitle = AttackCompletion.SubjectTitle(world, world.Facts, source),
-            TargetTitle = AttackCompletion.SubjectTitle(world, world.Facts, target),
+            TargetTitle = target >= 0 ? AttackCompletion.SubjectTitle(world, world.Facts, target) : string.Empty,
         };
 }

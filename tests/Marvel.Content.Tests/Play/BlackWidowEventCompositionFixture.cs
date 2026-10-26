@@ -11,21 +11,18 @@ namespace Marvel.Content.Tests.Play;
 // Full printed event interpretations are test-local; this fixture does not admit the pack.
 internal static class BlackWidowEventCompositionFixture
 {
-    internal static AbilityRunner Runner(bool conditional = false)
+    internal static AbilityRunner Runner(bool observeThwart = false)
     {
         var book = JsonNode.Parse(AuthoredCards.Text)!;
         foreach (var row in JsonNode.Parse(Rows)!["cards"]!.AsArray())
             book["cards"]!.AsArray().Add(row!.DeepClone());
-        if (conditional)
+        if (observeThwart)
         {
-            var row = book["cards"]!.AsArray().Single(card => card!["card"]!.GetValue<string>() == "08003")!;
-            var effects = row["abilities"]![0]!["effect"]!["seq"]!.AsArray();
-            var choice = effects[0]!.DeepClone();
-            effects[0] = new JsonObject { ["if"] = new JsonObject
-            {
-                ["test"] = JsonNode.Parse("{\"exists\":{\"query\":\"thwartableSchemes\"}}"),
-                ["then"] = choice,
-            } };
+            var identity = book["cards"]!.AsArray().Single(card => card!["card"]!.GetValue<string>() == "08001a")!;
+            identity["abilities"] = JsonNode.Parse("""
+                [{"trigger":{"event":"WhenCharacterThwarts","timing":"Response","actor":"you"},
+                  "effect":{"draw":{"player":"you","count":1}}}]
+                """);
         }
         return new(AbilityCatalog.Parse(book.ToJsonString()));
     }
@@ -59,12 +56,14 @@ internal static class BlackWidowEventCompositionFixture
             "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
             "labels": ["thwart"],
             "effect": { "seq": [
-              { "chooseCard": { "from": { "query": "thwartableSchemes" }, "effect": {
+              { "if": { "test": { "exists": { "query": "thwartableSchemes" } }, "then": { "chooseCard": { "from": { "query": "thwartableSchemes" }, "effect": {
                 "thwart": { "target": "chosen", "effect": { "seq": [
                   { "removeThreat": { "scheme": "chosen", "amount": 4 } },
                   { "giveStatus": { "card": { "query": "villain" }, "status": "confused" } }
                 ] } }
-              } } }
+              } } }, "else": { "thwart": { "effect": {
+                "giveStatus": { "card": { "query": "villain" }, "status": "confused" }
+              } } } } }
             ] }
           }] },
           { "card": "08004", "abilities": [{

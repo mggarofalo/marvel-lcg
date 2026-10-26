@@ -1,3 +1,4 @@
+using static Marvel.Cards.Dsl.AbilityPowerLowering;
 using static Marvel.Cards.Dsl.AbilityStructuralLowering;
 using static Marvel.Cards.Dsl.AbilityLowering;
 using static Marvel.Cards.Dsl.AbilityBookLowering;

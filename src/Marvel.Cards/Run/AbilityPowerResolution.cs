@@ -43,7 +43,7 @@ internal static class AbilityPowerResolution
             PowerActor = occurrence.Actor >= 0 ? world.Cards[occurrence.Actor] : null,
         };
         if (thwart.SurgeGained) cast.GainedKeywords.Add("surge");
-        cast.Choose(world.Cards[thwart.Scheme]);
+        if (thwart.Scheme >= 0) cast.Choose(world.Cards[thwart.Scheme]);
         execution.ResolvePower(cast, continuation, occurrence);
     }
 

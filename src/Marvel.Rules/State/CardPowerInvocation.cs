@@ -11,7 +11,7 @@ namespace Marvel.Rules.State;
 /// it intact when the scheduled power resolves.
 /// </remarks>
 public sealed record CardPowerInvocation(
-    int Player, Card Source, Card Target, long Amount, string Trigger)
+    int Player, Card Source, Card? Target, long Amount, string Trigger)
 {
     /// <summary>Explicit recipients validated together before a multi-target interpreter continuation starts.</summary>
     /// <remarks>The default retains the ordinary single-target contract. The continuation owns damage resolution.</remarks>

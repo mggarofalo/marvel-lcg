@@ -1,79 +1,40 @@
 # Black Widow event first composition
 
-Base `6447b459`, 2026-10-26. These are nonpublic, test-local full printed
-interpretations of `08003` Covert Ops and `08004` Dance of Death. No production
-ability row, setup, admission or engine source changes are included.
+Engine prerequisite MARVEL-775, based on `bcb4dd68` (probe base `6447b459`).
+Full printed interpretations remain test-local. No production ability book,
+setup, or public admission changes are included.
 
 Printed authority is `datasets/cards/cards.json`. Covert Ops costs three and is
-an Action (thwart): remove four threat from a scheme, then confuse the villain.
-Dance of Death costs three and is a Hero Action with no outer attack label:
-perform three attacks dealing one, two and three damage in order.
+an Action (thwart): remove four threat from a scheme; confuse the villain.
+RR 1.8 `target.3` permits a target affected by any part of an ability.
+`labeled-ability.4` classifies its whole resolution as a thwart; `.6` cancels the
+whole ability except costs when the identity is confused. Vendored ruling
+`0fc2a7cc9197e127` (October 2024, scope 1.6) expressly allows confusion alone,
+including under Patrol, and counts that resolution as a thwart. That answer is
+consistent with current RR 1.8.
 
-Current RR 1.8 `rr:labeled-ability.6` cancels the entire labeled ability except
-costs. `rr:attack-player-ability-type.3` makes Dance's three instances separate
-attacks; `.3.1` distinguishes modifiers to one attack. `rr:target.3` permits an
-ability when any part can affect its target. Vendored Covert Ops ruling
-`0fc2a7cc9197e127` (October 2024, scope 1.6) expressly permits confusion alone
-without a valid scheme target. It is consistent with current target rules.
-Historical Dance rulings `455cba4abf6a78cf`, `4bbba517135f51fc` and
-`98c1b2bd0b2ab525` agree with the current separate-attack rule; they do not
-replace current RR 1.8 damage/actual-defeat timing.
+The conditional interpretation now supports an explicit scheme-less thwart
+containing one independent villain status effect. A matched guarded scheme
+choice and identical fallback status retain one thwart power in either branch.
+Structural preflight remains active on both branches; other conditional and
+power-suspension shapes retain their existing gates. The normal saved power
+continuation preserves performer, source, owning occurrence, and response window.
+No main scheme is invented: subject and target are -1 and target facts absent.
+Visible event causes retain their readable actor, omit target identity, and say
+that actor thwarts. Concealed source/target facts remain filtered.
 
-## Observations
+Focused evidence lives outside the repository under
+`C:/Users/mggar/AppData/Local/Temp/widow-events-proof/partial-*.log`.
+Content checks cover both forms, seat 1, four-threat removal, confusion-only,
+whole-ability cancellation and costs, already-confused/no-effect rejection,
+Patrol, actor/no-scheme occurrence and one response, repeated offer purity and
+future RNG/state parity, unsupported neighboring shapes, event initiation, and
+Hydra Patrol continuation regressions. View checks cover targetless wording,
+absent target anchors/facts and concealed participant filtering.
 
-`BlackWidowEventCompositionTests` provides eleven cases:
-
-- Covert Ops removes exactly four and confuses in either form.
-- Confusion on the second player's identity cancels both sentences, pays all
-  three resources, and preserves the first player's confusion, with six or zero
-  threat on the main scheme.
-- An already-confused villain permits removal of the remaining two threat;
-  without threat, that same status cannot alone make the event legal.
-- Dance offers three separate choices with settled cumulative damage between
-  them; stun cancels only the first attack. All choices belong to the second
-  player. Another case targets villain, another seat's minion, then the villain
-  again, dealing four and two damage respectively.
-- Two explicit diagnostics preserve unsupported Covert Ops compositions. They
-  assert engine rejection rather than claiming correct confusion-only behavior.
-
-Covert Ops' confuse sentence is inside its one thwart body. An independent tail
-trial with an already-confused villain compiled but failed while constructing
-the scheme choice (`requires a choice and has no legal option`); it is not the
-final interpretation.
-
-## Remaining mechanism
-
-With no valid scheme, the unconditional `chooseCard(thwartableSchemes)` requires
-a choice before the thwart and rejects initiation, despite the valid villain
-confusion effect. Guarding that choice with `if exists(thwartableSchemes)` cannot
-represent a branch that merely confuses: `AbilityInitiation.ValidatePowerLabels`
-requires `GuaranteesOneLabeledPower` on every branch and raises
-`has a thwart label without exactly one saveable thwart power`.
-
-The power representation requires a concrete scheme: `CanTargetThwart` admits a
-scheme and `AbilityStructuralPowerExecution.Power` requires a reconstructable
-target. `automaticTarget` still requires a scheme, honors Patrol, and is for an
-already-determined target; assigning the main scheme would invent a target for
-the confusion-only resolution. Omitting the outer label would lose its whole
-ability status cancellation and its classification as a thwart. These are not
-sound substitutes. The next engine packet must support a labeled thwart
-resolution without a scheme target when only its independent effect resolves,
-including its ownership, status cancellation and completion occurrence.
-
-## Evidence and limits
-
-External evidence directory:
-`C:/Users/mggar/AppData/Local/Temp/widow-events-proof/`.
-`seat-correct.log` and `compiled-red-probe.cs` preserve the first compiled
-confusion-only failure; `conditional.log` and `conditional-red-*.cs` preserve the
-conditional trial. `extended.log` and `independent-tail-rejected-fixture.cs`
-preserve the independent-tail counterexample. `full-body.log` passes thirteen
-cases including rule-citation checks on the final full-body composition.
-
-The compiled final Dance damage mutation three to four fails the unstunned and
-stunned expectations (six/five versus seven/six). A restored nonincremental
-Release build and the same focused/citation checks pass. No full suite or native
-journey was run. Retaliation, intervening defeat/retargeting, attack modifiers,
-post-first-attack stun and public admission remain unverified. Covert Ops is
-blocked on its legal targetless partial effect; neither event is production
-readiness evidence.
+Dance of Death's original full-body probe remains unchanged. Its separate attack
+choices and stun behavior are covered by the focused composition checks; wider
+Dance modifiers/defeat/retargeting and public admission remain outside this packet.
+No full suite, native journey, or pack readiness claim is made.
+`partial-restored-build.log` records the forced nonincremental restored Release build. `partial-restored.log` passes 30 content checks, including rule citation validation and the mismatched fallback negative control. `partial-view.log` passes 81 presentation/visibility checks. `partial-mutant.log` records the compiled targetless-admission mutation rejected by both confusion-only form cases; restored sources pass the same checks.
+`partial-decomposed-content.log` and `partial-decomposed-view.log` record the final responsibility split for lowering, recipient admission, and saved power scheduling: the same 30 Content and 81 View checks pass. The compiled mutant evidence above predates this behavior-preserving decomposition. Normal commit hooks remain enabled; no complexity baseline or thresholds are changed.

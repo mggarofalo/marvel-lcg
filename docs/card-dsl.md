@@ -1441,3 +1441,14 @@ follows completion of the exhaustion cost. If the captured card has left its
 selected area or incarnation while payment settles, recovery has no remaining
 card to move. This contract adds no wire, RNG, digest or save fields and changes
 no already authored ability or existing replay prompt.
+
+A `thwart` with no `target` represents only an independent villain-status sentence.
+Its body must be a single `giveStatus` over `villain`; `automaticTarget` and other
+bodies are rejected. This engine spelling preserves one saved thwart occurrence,
+its performer, and no thwarted-scheme facts. RR 1.8 `target.3`,
+`labeled-ability.4`, and ruling `0fc2a7cc9197e127` permit Covert Ops to resolve
+confusion alone, including when Patrol prevents thwarting the main scheme.
+A conditional guarded by `exists(thwartableSchemes)` may choose from that same
+query for removal plus status, or use an identical independent status sentence.
+Both branches retain the same outer thwart label and its whole-ability cancellation.
+Other power suspension and conditional admission shapes retain their existing gates.

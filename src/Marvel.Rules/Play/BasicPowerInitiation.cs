@@ -200,6 +200,8 @@ public static class BasicPowerInitiation
             world, facts, power.Player, power.Source, [AttackVerb], events);
         if (attacker is null) return false;
 
+        if (power.Target is null)
+            throw new RulesNotImplementedException("a card attack requires an enemy target");
         if (!Attackable(world, facts, power.Player).Any(card => card.ObjectId == power.Target.ObjectId)
             || !world.DamageAbilities.CanTakeDamage(world, power.Target, power.Source))
         {

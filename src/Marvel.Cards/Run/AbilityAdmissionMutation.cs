@@ -102,7 +102,9 @@ internal static class AbilityAdmissionMutation
             PreflightDependentOutcomesAfterMutation(effect, cast);
             PreflightInitiationConstraints(
                 effect, cast, requireCurrentTargets: requireCurrentTargets);
-            if (HasLabelledPower(effect) && !CanInitiate(effect, cast)) valid = false;
+            if (HasLabelledPower(effect)
+                && !AbilityIndependentThwart.IsSchemeAlternative(conditional)
+                && !CanInitiate(effect, cast)) valid = false;
         }
         return valid;
     }

@@ -32,7 +32,11 @@ internal static class VisibilityEventFilter
         };
 
     private static EventCause? KeepCause(EventCause? cause, HashSet<int> readable) =>
-        cause is not null && readable.Contains(cause.Source) && readable.Contains(cause.Target) ? cause : null;
+        cause is not null && readable.Contains(cause.Source)
+            ? cause.Kind == EventCauseKind.Thwart && cause.Target == -1
+                ? cause with { TargetTitle = string.Empty }
+                : readable.Contains(cause.Target) ? cause : null
+            : null;
 
     private static bool HasReadableAbility(GameEvent happened, HashSet<int> readable) =>
         happened.AbilitySource is { } source && readable.Contains(source);

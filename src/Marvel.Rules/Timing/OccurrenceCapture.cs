@@ -45,7 +45,7 @@ internal static class OccurrenceCapture
             Actor: actor,
             Target: scheme,
             ActorFacts: OccurrenceCard.Capture(world.Cards[actor], facts),
-            TargetFacts: OccurrenceCard.Capture(world.Cards[scheme], facts));
+            TargetFacts: scheme >= 0 ? OccurrenceCard.Capture(world.Cards[scheme], facts) : null);
     }
 
     internal static Occurrence Threat(

@@ -51,6 +51,7 @@ public static class EventPresenter
             Intention = happened.Cause is { } causal ? causal.Kind switch
             {
                 EventCauseKind.Scheme => $"{causal.SourceTitle} schemes against {causal.TargetTitle}",
+                EventCauseKind.Thwart when causal.Target == -1 => $"{causal.SourceTitle} thwarts",
                 EventCauseKind.Thwart => $"{causal.SourceTitle} thwarts {causal.TargetTitle}",
                 _ => null,
             } : null,

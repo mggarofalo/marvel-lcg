@@ -77,7 +77,9 @@ internal static class AbilityPowerTargetAdmission
             LabeledAbilities.Performer(cast.World, cast.World.Facts, Resolver(cast), cast.Source)))
             return false;
         var power = EffectOf<AbilityEffect.Power>(node, cast);
-        var target = power.Target!;
+        if (power.Target is null)
+            return TargetLegalityOf(power.Effect, cast) == TargetLegality.Valid;
+        var target = power.Target;
         if (cast.Chosen is null && BindingCanChange(target)
             && cast.Reachability.PriorBindingCandidates.Count > 0)
         {
@@ -88,6 +90,12 @@ internal static class AbilityPowerTargetAdmission
             return false;
         }
 
+        return CanTargetScheme(power, cast, scheme);
+    }
+
+    private static bool CanTargetScheme(
+        AbilityEffect.Power power, AbilityAdmissionScope cast, Card scheme)
+    {
         if (power.AutomaticTarget)
         {
             return BasicThwartPowers.CanAutomaticallyThwart(
@@ -107,10 +115,10 @@ internal static class AbilityPowerTargetAdmission
         bool crisisException = BasicThwartPowers.CanAutomaticallyThwart(
                 cast.World, cast.World.Facts, Resolver(cast), scheme)
             && CrisisIgnoringRemovalCanAffect(
-                EffectBody(node), cast, scheme);
+                power.Effect, cast, scheme);
         if (crisisException)
         {
-            cast.ValidateCrisisIgnoringThwart(node);
+            cast.ValidateCrisisIgnoringThwart(power);
         }
         return crisisException;
     }

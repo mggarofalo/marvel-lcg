@@ -69,7 +69,7 @@ internal static class AbilityResolutionEffectChoices
     internal static void SchedulePower(this AbilityResolutionExecution execution, SchedulePowerCommand command, AbilityResolutionState cast)
     {
         var continuationChosen = cast.CaptureCurrentSelection();
-        cast.Choose(command.Target);
+        if (command.Target is { } target) cast.Choose(target);
         var capture = execution.Capture(cast, command.AbilityIndex, continuationChosen);
         var power = new CardPowerInvocation(
             execution.Resolver(cast), cast.Source, command.Target, command.Amount, cast.Trigger)
