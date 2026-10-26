@@ -297,12 +297,18 @@ internal static class AbilityEffectLowering
 
     internal static AbilityEffect.PayOrEffect PayAlternative(AbilityValue value, AbilityLocation location, bool exhaustOnly)
     {
-        var fields = Fields(value, location, "resources", "otherwise");
+        var fields = Fields(value, location, "resources", "generic", "otherwise");
         var otherwise = LowerEffect(Required(fields, "otherwise", location), location.Child("otherwise"));
         if (exhaustOnly && otherwise is not AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust })
         {
             throw location.Child("otherwise").Error("payOrExhaust requires an exhaust alternative");
         }
-        return new(ResourceString(Required(fields, "resources", location), location.Child("resources")), otherwise, exhaustOnly);
+        string resources = fields.TryGetValue("resources", out var required)
+            ? ResourceString(required, location.Child("resources")) : string.Empty;
+        int generic = fields.TryGetValue("generic", out var count)
+            ? PositiveCount(count, location.Child("generic")) : 0;
+        if (resources.Length == 0 && generic == 0)
+            throw location.Error("expected resources or a positive generic resource count");
+        return new(resources, otherwise, exhaustOnly) { Generic = generic };
     }
 }

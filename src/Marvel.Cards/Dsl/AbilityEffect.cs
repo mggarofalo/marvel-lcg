@@ -117,7 +117,13 @@ public abstract record AbilityEffect
     /// <summary>Shuffle an engine-supported search area.</summary>
     public sealed record Shuffle(AbilitySearchArea Area) : AbilityEffect;
     /// <summary>Pay resources or resolve the alternative effect.</summary>
-    public sealed record PayOrEffect(string Resources, AbilityEffect Otherwise, bool ExhaustOnly) : AbilityEffect;
+    public sealed record PayOrEffect(string Resources, AbilityEffect Otherwise, bool ExhaustOnly) : AbilityEffect
+    {
+        /// <summary>Additional resources with no required type.</summary>
+        public int Generic { get; init; }
+        /// <summary>Total resources required, including unrestricted resources.</summary>
+        public int Amount => checked(Resources.Length + Generic);
+    }
     /// <summary>Grant a live trait, continuously or until a timing point.</summary>
     public sealed record GrantTrait(AbilityCardSelection Cards, string Trait, bool EachCard, string? Until) : AbilityEffect;
     /// <summary>Grant a supported modifier, continuously or until a timing point.</summary>

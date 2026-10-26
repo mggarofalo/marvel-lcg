@@ -17,15 +17,15 @@ internal static class AbilityPaymentChoiceDescription
         var sources = CardPayment.Generators(
             world, world.Facts, world.Seats[context.Player], context.ResourceAbilities, abilitySource: context.Expressions.Source);
         bool payable = Resources.Pays(string.Concat(sources.SelectMany(source => source.Generates)),
-            payment.Resources.Length, payment.Resources);
+            payment.Amount, payment.Resources);
         var offers = new List<Affordance>();
         if (payable)
         {
             offers.Add(new Affordance(0, AbilityStructuralExecution.ChooseVerb,
                 context.Expressions.Source.ObjectId, World.Scenario, "spend",
                 Costs: [new CostOption(context.Expressions.Source.ObjectId,
-                    payment.Resources.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    [payment.Resources], Sources: sources)])
+                    payment.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    payment.Resources.Length == 0 ? [] : [payment.Resources], Sources: sources)])
             {
                 DisplayLabel = "Spend resources", CommitLabel = "Spend resources",
             });
