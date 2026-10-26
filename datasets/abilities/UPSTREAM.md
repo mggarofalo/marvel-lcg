@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
-| Records | 562 printed card faces, including explicit empty rows |
+| Records | 565 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -131,7 +131,7 @@ Nakia uses the controlled player's one-use player-phase reduction, preserving it
 across form changes and rejected payments. Suit uses the event resource restriction
 and explicit hero form; ruling:5b44b2adcc60d4b7 distinguishes an event ability's
 own cost from a selected ally's cost. `MsMarvelPersonaTests` and
-`MsMarvelSuitCardTests` exercise these rows. Bruno (05007) remains unauthored pending optional bounded stored-card selection. See `docs/content/ms-marvel-persona-evidence.md`.
+`MsMarvelSuitCardTests` exercise these rows. Bruno (05007) uses reviewed optional bounded stored-card selection. See `docs/content/ms-marvel-persona-evidence.md`.
 
 
 Aamir/resource reprint packet adds seven actual Ms. Marvel research faces:
@@ -156,3 +156,12 @@ control and the printed one-per-player limit. Morale Boost expires at round end.
 `MsMarvelAdditionalEventTests` exercise the unmodified full book. Melee, Tackle
 and Concussive Blow remain unauthored pending the engine gaps recorded in
 `docs/content/ms-marvel-ally-condition-evidence.md`. Public admission stays closed.
+
+Bruno Carrelli (05007), Tackle (05015) and Concussive Blow (05031) add three
+research faces (23 of 34 Ms. Marvel faces; 565 total). Bruno stores one own-hand
+card facedown with his alter-ego action and retrieves zero through three stored
+cards with his separate Action in either form; both abilities pay exhaustion.
+The events use committed physical-resource payment and RR1.8 `rr:target.3.4`.
+Bruno ruling `ruling:6768213a7e0f4606` confirms stored cards are out of play.
+The queried FAQ has no entry for these three faces. Actual full-book tests are
+`MsMarvelBrunoCardTests` and `MsMarvelStatusCardTests`. Public admission stays closed.

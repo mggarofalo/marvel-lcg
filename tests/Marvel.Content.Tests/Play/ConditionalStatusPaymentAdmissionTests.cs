@@ -109,6 +109,9 @@ public sealed class ConditionalStatusPaymentAdmissionTests
         bool root, bool existing, bool wild)
     {
         var book = JsonNode.Parse(AuthoredCards.Text)!;
+        var rows = book["cards"]!.AsArray();
+        foreach (var row in rows.Where(row => row!["card"]!.GetValue<string>() == face).ToArray())
+            rows.Remove(row);
         string give = $$$$$$"""{"giveStatus":{"card":"chosen","status":"{{{{{{status}}}}}}"}}""";
         const string damage = """{"dealAttackDamage":{"cards":"chosen","amount":3}}""";
         string Attack(string body) => $$$$$$"""{"chooseCard":{"from":{"query":"attackableEnemies"},"effect":{"attack":{"target":"chosen","effect":{{{{{{body}}}}}}}}}}""";

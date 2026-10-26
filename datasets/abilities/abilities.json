@@ -16889,6 +16889,194 @@
           }
         }
       ]
+    },
+    {
+      "card": "05007",
+      "name": "Bruno Carrelli",
+      "note": "Printed 05007. Facedown stored cards are out of play (rr:in-play-and-out-of-play.10; ruling:6768213a7e0f4606). Storage selects one own-hand card in alter-ego form. The separate Action retrieves up to three in either form after paying exhaustion; an empty selection retains the cost.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "cardsIn": {
+                  "area": "yourHand"
+                }
+              },
+              "effect": {
+                "storeBeneath": {
+                  "cards": "chosen",
+                  "host": "this",
+                  "faceUp": "false"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "chooseCardsToHand": {
+              "from": {
+                "query": "beneathThis"
+              },
+              "maximum": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05015",
+      "name": "Tackle",
+      "note": "Printed 05015. Current rr:target.3.4 permits a target when either the status or payment-dependent damage can affect it. The physical-resource branch reads committed payment; the attack wrapper preserves attack permissions and consequences.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "paidWithResource": "R"
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "query": "attackableEnemies"
+                  },
+                  "effect": {
+                    "attack": {
+                      "target": "chosen",
+                      "effect": {
+                        "seq": [
+                          {
+                            "giveStatus": {
+                              "card": "chosen",
+                              "status": "stunned"
+                            }
+                          },
+                          {
+                            "dealAttackDamage": {
+                              "cards": "chosen",
+                              "amount": 3
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "else": {
+                "chooseCard": {
+                  "from": {
+                    "query": "attackableEnemies"
+                  },
+                  "effect": {
+                    "attack": {
+                      "target": "chosen",
+                      "effect": {
+                        "giveStatus": {
+                          "card": "chosen",
+                          "status": "stunned"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05031",
+      "name": "Concussive Blow",
+      "note": "Printed 05031. Current rr:target.3.4 permits a target when either the status or payment-dependent damage can affect it. The physical-resource branch reads committed payment; the attack wrapper preserves attack permissions and consequences.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "paidWithResource": "R"
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "query": "attackableEnemies"
+                  },
+                  "effect": {
+                    "attack": {
+                      "target": "chosen",
+                      "effect": {
+                        "seq": [
+                          {
+                            "giveStatus": {
+                              "card": "chosen",
+                              "status": "confused"
+                            }
+                          },
+                          {
+                            "dealAttackDamage": {
+                              "cards": "chosen",
+                              "amount": 3
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "else": {
+                "chooseCard": {
+                  "from": {
+                    "query": "attackableEnemies"
+                  },
+                  "effect": {
+                    "attack": {
+                      "target": "chosen",
+                      "effect": {
+                        "giveStatus": {
+                          "card": "chosen",
+                          "status": "confused"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
