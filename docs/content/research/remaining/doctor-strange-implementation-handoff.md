@@ -170,7 +170,7 @@ and client integration. Serialize shared book/agenda/authority edits with Widow.
 |---|---|---|
 | `09001a` | Doctor Strange | **P D1**: top-only Special, exact cost plus exhaust; zero-cost Winds still exhausts; failed payment leaves all state unchanged. No event-play trigger. |
 | `09001b` | Stephen Strange | **P D1**: setup five, Natural Talent top-discard once per phase; form changes do not reset use, phase transitions do; no player-deck discard. |
-| `09002` | Wong | **P D1/C**: exhaust once for either one identity heal or Invocation top discard; at full health, discard branch remains available. Foreign seat's deck excluded. |
+| `09002` | Wong | **P D1/C**: exhaust once for either one controller-identity heal or the game's typed Invocation top discard; at full health, discard branch remains available. Under foreign control, "your identity" follows the controller but "the Invocation deck" remains Strange's bound deck (reviewed in `doctor-strange-top-discard-evidence.md`). |
 | `09003` | Astral Projection | **C D3**: chosen scheme loses 3 plus printed numeric boost count; star is not numeric; encounter top stays in place and only authorized viewer sees it. |
 | `09004` | Magic Blast | **C D3**: 5 then discard player-deck top; physical/energy/mental/wild branches, separate energy 2-damage instance, departed enemy not retargeted. Final player-deck card resets before event cleanup (`d1f9f33e3ae4ba2f`, `e4ea1bf855e41aac`). |
 | `09005` | Master of the Mystic Arts | **P D1**: pay event and printed Invocation costs together; Special discards, exposes/recycles, then same physical card returns to top. No hero exhaustion cost. |
