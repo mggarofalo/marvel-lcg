@@ -19989,6 +19989,93 @@
           }
         }
       ]
+    },
+    {
+      "card": "09009",
+      "name": "Cloak of Levitation",
+      "note": "Printed 09009: the constant grants Aerial to you in both forms; the Hero Action exhausts this card to ready Doctor Strange. Research content, outside complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "grant": {
+              "card": "you",
+              "trait": "AERIAL"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "ready": {
+              "titled": "Doctor Strange"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09011",
+      "name": "The Eye of Agamotto",
+      "note": "Printed 09011: Hero Resource, exhaust this source to generate one wild resource. Research content, outside complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "printedResources": "G",
+          "effect": {
+            "generate": "G"
+          }
+        }
+      ]
+    },
+    {
+      "card": "09026",
+      "name": "The Sorcerer Supreme",
+      "note": "Printed 09026: current Mystic identity play prerequisite is read by the printed-card contract. The hand-size constant applies only in hero form. Research content, outside complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "inForm": {
+                  "player": "you",
+                  "form": "hero"
+                }
+              },
+              "then": {
+                "grant": {
+                  "card": "you",
+                  "keyword": "hand_size",
+                  "amount": 1
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

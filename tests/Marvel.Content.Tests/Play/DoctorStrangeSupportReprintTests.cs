@@ -96,9 +96,9 @@ public sealed class DoctorStrangeSupportReprintTests
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
         string[] faces = ["09017", "09018", "09022", "09023", "09024", "09025"];
-        Assert.Equal(651, rows.Length);
-        Assert.Equal(faces, rows.Skip(645).Select(row => row.GetProperty("card").GetString()));
-        Assert.Equal(faces, AuthoredCards.Book.Authored.Where(face => face.StartsWith("09", StringComparison.Ordinal)).Order());
+        Assert.Equal(654, rows.Length);
+        Assert.Equal(faces, rows.Skip(645).Take(6).Select(row => row.GetProperty("card").GetString()));
+        Assert.Equal(faces.Concat(new List<string> { "09009", "09011", "09026" }).Order(), AuthoredCards.Book.Authored.Where(face => face.StartsWith("09", StringComparison.Ordinal)).Order());
         Assert.DoesNotContain("11028", AuthoredCards.Book.Authored);
         Assert.DoesNotContain("09003", AuthoredCards.Book.Authored);
     }
