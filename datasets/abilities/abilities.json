@@ -18224,6 +18224,63 @@
         "trigger": { "timing": "Constant", "subject": "this" },
         "effect": { "grant": { "card": "attachedTo", "keyword": "target_threat", "amount": 4 } }
       } ]
+    },
+    {
+      "card": "06012",
+      "name": "Valkyrie",
+      "note": "The entry response deals two damage, or three when this physical entry has an energy payment receipt. Putting into play cannot reuse an earlier payment.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "minions"
+              },
+              "effect": {
+                "if": {
+                  "test": {
+                    "paidWithResource": "Y"
+                  },
+                  "then": {
+                    "dealDamage": {
+                      "cards": "chosen",
+                      "amount": 3
+                    }
+                  },
+                  "else": {
+                    "dealDamage": {
+                      "cards": "chosen",
+                      "amount": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06020",
+      "name": "Heimdall",
+      "note": "The optional entry response privately looks at up to three physical encounter cards, discards one, and returns the others in the chosen top-to-bottom order (rr:look-looked-at; ruling:2001c6705b63bf4f).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "inspectDiscardOrderEncounterTop": 3
+          }
+        }
+      ]
     }
   ]
 }

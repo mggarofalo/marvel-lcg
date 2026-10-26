@@ -498,6 +498,12 @@ for subsequent effects. Only the acting seat receives those prompt context
 faces; acknowledgement revokes that visibility. The pending decision excludes
 intervening game actions. This inspection does not support pre-then completion.
 
+`inspectDiscardOrderEncounterTop: 3` privately retains up to three physical
+encounter top cards, discards one chosen card, then asks for the remaining
+physical cards in top-to-bottom order. The cards remain in that deck during
+inspection; only the acting seat sees their faces until the ordered return.
+The discard follows ordinary encounter-deck reset rules.
+
 `heroAndAllyTargets` selects hero-form identities and allies. The existing
 `heroesAndAllies` selector includes identities in either form for effects that
 name friendly characters; it is not appropriate when printed text names heroes.
