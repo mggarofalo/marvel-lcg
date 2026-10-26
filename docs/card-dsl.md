@@ -1120,3 +1120,10 @@ icon declares its own type (`rr:wild-resource.1`, `.1.1`). Pricing retains the
 constraint in `ResourceCost.DistinctTypes`; preparation snapshots the selected
 allocation, validates it before any cost, and retains it while resource generators
 suspend. Event printed costs combined with this arrow cost remain unsupported.
+
+Ordinary single arrow prices keep an implicit resource component. Their durable
+prompt has `Components: null`, with typed requirements such as `["Y"]` or the
+generic requirement `[""]`. Combined event and simultaneous ordinary prices retain
+that generic requirement on the corresponding explicit component. These are
+engine choices preserving exact replay-v24 prompt identity; distinct-resource
+prices carry an explicit component to retain their additional constraint.

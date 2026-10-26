@@ -65,7 +65,9 @@ internal static class AbilityPaymentPricing
             Rule: [letters],
             Sources: CardPayment.Generators(
                 world, world.Facts, world.Seats[player], resourceAbilities, abilitySource: card),
-            Components: [Component(spend)]);
+            // Engine choice: ordinary single costs use the implicit component
+            // so their durable replay-v24 prompt shape remains stable.
+            Components: spend.DistinctTypes ? [Component(spend)] : null);
     }
 
     internal static ResourceCost Component(AbilityCost.Spend spend) =>
