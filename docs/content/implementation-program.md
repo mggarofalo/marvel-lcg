@@ -25,18 +25,16 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 
 ## Current integration checkpoint
 
-PRs #446, #447 and #448 are merged. Main is `08f330df`; #448 passed all eleven
-CI checks at `98fc5194`, with local Release build, 6,072 unit tests, 1,567
-integration tests (one existing opt-in skip), and 122 acceptance tests. Risky
-Business and all four Goblin modular sets are authored. PR #449 at `aec3a3d3`
-completes all 57 Goblin faces and seven Ms. Marvel faces, with independent
-review including Overconfidence and the MARVEL-720 expired boost fix. Its
-managed CI gate is green; platform/native/package gates remain pending.
+PRs #446 through #449 are merged. Main is `bc7c91a5`; #449 passed all eleven
+CI checks at `aec3a3d3`, including both platform/native legs and the Windows
+package gate. It contains all 57 Goblin faces and seven Ms. Marvel faces,
+with independent review including Overconfidence and the expired boost fix.
 
 Ms. Marvel's exact-event modifier mechanism, including indirect damage, printed
 removal caps and payment-dependent preflight, has independent review. The next
-candidate `272600c6` adds reviewed public Goblin admission and Nakia/Suit,
-bringing Ms. Marvel to nine of 34 faces. Ten complete public Goblin games cover
+candidate branch `feat/goblin-playable-delivery` adds reviewed public Goblin
+admission, Nakia/Suit, Aamir, resource/reprint rows and four ally/condition rows,
+bringing its authored Ms. Marvel inventory to 20 of 34 faces. Ten complete public Goblin games cover
 all modes, defeats and most promotions, including two games that exposed and
 now prove MARVEL-726's reviewed Heroic Strike/Soldier continuation fix.
 Four additional public-session tests prove dependent-choice restart against
@@ -44,14 +42,19 @@ uninterrupted events, fingerprints and RNG. Winning games, Expert Mutagen
 promotion, multiplayer complete games and selected native evidence remain open.
 Whole-pack acceptance remains open; no routine owner approval is required.
 
-MARVEL-724 bottom movement is implemented at `26b3823f` and in independent
-review. MARVEL-723 distinct arrow payment is held for correction: its reviewer
-proved an ordinary saved-prompt shape regression under unchanged replay v24.
-The approved distinct-allocation foundation does not approve that later path.
-Bruno's bounded stored-card retrieval (725), actual Aamir/Red Dagger, remaining
-aspect/basic/reprint faces and obligation/nemesis authoring follow their
-prerequisites. Canonical Plane records retain current revisions and distinguish
-prerequisites from complete playable products.
+Bottom movement (724), distinct arrow payment (723), bounded stored-card
+retrieval (725), conditional status payment (729), and defeat-payment atomicity
+(731) have independent approval. The saved ordinary-price shape regression is
+corrected; actual Red Dagger rejection and retry are independently verified.
+Bruno, Tackle and Concussive Blow are the next three authored rows undergoing
+verification. Melee's sequential two-enemy attack (728) is in implementation.
+The public multiplayer failure exposed an attached Spider-Tracer defeat
+observer; fix `30574a1e` passes all four original modes and is in independent
+review (730). Environment display and receipt reflow are independently reviewed;
+specific visual acceptance is separate in MARVEL-732 with inspected captures.
+The last full candidate Content run passed 4,959 tests at `fdaf4a9e`; later
+integrations still require combined gates. Canonical Plane records retain
+current revisions and distinguish prerequisites from complete playable products.
 
 ## Delivery order and shared capability queue
 
@@ -84,7 +87,7 @@ The remaining delivery queue is:
 2. Finish Ms. Marvel's shared prerequisites with independent review: distinct
    arrow payment (723), bottom placement (724), bounded stored-card retrieval
    (725). Author the dependent actual rows only after their mechanisms pass.
-3. Serialize the remaining 25 Ms. Marvel faces into the ability book: signature
+3. Serialize the remaining 14 Ms. Marvel faces into the ability book: signature
    gaps, aspect/basic/reprints, obligation and nemesis. Every row needs printed
    authority, relevant rulings and characteristic behavior evidence; catalog
    presence alone does not implement a reprint.
