@@ -61,14 +61,14 @@ Combined integration at `05cb51c2` passes all 122 selected Invocation, Master,
 Spell Mastery, Covert Ops, Black Panther and next-Special tests. Evidence:
 `Source/evidence/strange-integrated-master-top-discard.log`.
 
-MARVEL-808 adds actual identity, Wong, Master and Winds rows against
-these reviewed mechanics. MARVEL-809 implements the separate Vapors status
-replacement prerequisite. MARVEL-803's four response events await independent
-acceptance of MARVEL-804's full-healing-cost repair; the unchanged previously
-supported mixed damage/healing regression is a required gate, not an unsupported
-boundary waiver. Remaining production rows, other Invocations, whole-pack
-admission, save/UI contracts and complete pack proof remain open. The integrated
-book now has 659 rows and 14 of the 40 Strange faces.
+MARVEL-808's five actual D1 faces and MARVEL-810's Sanctum/Brother rows are
+reviewed and integrated. The book now has 661 rows and 16 of the 40 Strange faces.
+MARVEL-809's status-replacement prerequisite is also reviewed and integrated.
+Next, MARVEL-813 authors Crimson Bands, Images and Vapors. Mystical Studies waits
+on MARVEL-812's exact printed-set search predicate. MARVEL-803's four events wait
+on MARVEL-804's healing-cost acceptance, including the retained counter-dependent
+invalid-offer control. Remaining faces, setup/admission, save/UI contracts and
+complete pack proof remain open.
 
 Combined integration at `e9584f11` passes 89 focused Content checks covering
 Spell Mastery, actual Strange rows, both printed-prerequisite spellings,
@@ -94,3 +94,19 @@ is documented rather than claimed fixed. See
 [D1 production evidence](doctor-strange-d1-production-rows.md). The integrated
 `src`, `tests` and `datasets` trees at `60a1239a` exactly match the reviewed
 `febb7986` trees; intervening lead commits only update delivery documentation.
+Vapors prerequisite `7e2b9c14` and independent review `e1577aa7` are integrated
+as `68abb2f1` and `52033c88`. Independent controls cover all six status replacement
+directions, exact physical hosts and events, and empty/unsupported resolution
+boundaries. Source and review evidence is under `research/remaining/vapors-status-*`.
+No production Invocation row or public contract certification is implied.
+
+Sanctum/Brother source `5e07f642` and review `72c0af60` are integrated as
+`22a787d1` and `1edebb22`. All 659 predecessor raw objects are unchanged.
+Independent review passes 134 relevant cases, 129 architecture cases and normal
+hooks, adding query-purity/unprobed continuation and optional entry-response
+controls. See [search evidence](research/remaining/doctor-strange-search-evidence.md).
+
+Combined integration at `1edebb22` passes all 181 selected D1, search, status,
+Invocation, Master, Spell Mastery, ability-data and citation cases. Log:
+`Source/evidence/strange-integrated-d1-search-vapors.log`. These are focused
+integration checks, not complete-pack certification.
