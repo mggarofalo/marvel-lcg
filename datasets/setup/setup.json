@@ -3204,7 +3204,7 @@
   "counts": {
     "campaigns": 39,
     "encounter_sets": 14,
-    "heroes": 9
+    "heroes": 10
   },
   "encounter_sets": {
     "running_interference": {
@@ -3835,6 +3835,67 @@
         "04052"
       ],
       "aspect_rule": "equal_two_aspects"
+    },
+    "thor": {
+      "hero": [
+        "06001a,06001b"
+      ],
+      "hero_deck": [
+        "06002",
+        "06003",
+        "06003",
+        "06003",
+        "06004",
+        "06005",
+        "06005",
+        "06005",
+        "06006",
+        "06006",
+        "06007",
+        "06008",
+        "06008",
+        "06009",
+        "06010"
+      ],
+      "name": "Thor",
+      "nemesis_set_icon": "thor_nemesis",
+      "nemesis_set": [
+        "06027",
+        "06028",
+        "06029",
+        "06029",
+        "06030"
+      ],
+      "obligations": [
+        "06026"
+      ],
+      "player_deck": [
+        "06011",
+        "06012",
+        "06013",
+        "06013",
+        "06014",
+        "06014",
+        "06014",
+        "06015",
+        "06015",
+        "06015",
+        "06016",
+        "06016",
+        "06017",
+        "06018",
+        "06018",
+        "06018",
+        "06019",
+        "06020",
+        "06021",
+        "06021",
+        "06021",
+        "06022",
+        "06023",
+        "06024",
+        "06025"
+      ]
     }
   },
   "note": "Authored scenario, hero, and encounter-set setup recipes, admitted by complete-product runtime gates: what a scenario is dealt from is printed in its rules insert rather than on any card, so there is nothing to derive it from and no upstream to copy it from. Gated by SetupDatasetTests -- see datasets/setup/UPSTREAM.md.",

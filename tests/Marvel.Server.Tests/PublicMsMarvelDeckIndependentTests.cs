@@ -9,7 +9,7 @@ public sealed class PublicMsMarvelDeckIndependentTests
 {
     private static readonly string[] ReviewedHeroes =
         ["black_panther", "captain_america", "captain_marvel", "hawkeye", "iron_man",
-            "ms_marvel", "she_hulk", "spider_man", "spider_woman"];
+            "ms_marvel", "she_hulk", "spider_man", "spider_woman", "thor"];
 
     [Theory]
     [InlineData("05030", "she_hulk")]
@@ -43,14 +43,14 @@ public sealed class PublicMsMarvelDeckIndependentTests
     }
 
     [Fact]
-    public void AdjacentThorRemainsExcludedWhileAllNineReviewedHeroesAreDiscoverable()
+    public void AdjacentBlackWidowRemainsExcludedWhileAllTenCandidateHeroesAreDiscoverable()
     {
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         Assert.Equal(ReviewedHeroes,
             factory.DiscoverSetup().Heroes.Select(hero => hero.Key).Order(StringComparer.Ordinal));
-        Assert.DoesNotContain(factory.DiscoverDecks().Cards, card => card.Face.StartsWith("06", StringComparison.Ordinal));
-        var rejected = new EngineHost(factory).Exchange(EngineRequest.OpenGame("thor", "adjacent-thor",
-            new GameSpecification("rhino", ["thor"], [], 3)));
+        Assert.DoesNotContain(factory.DiscoverDecks().Cards, card => card.Face.StartsWith("08", StringComparison.Ordinal));
+        var rejected = new EngineHost(factory).Exchange(EngineRequest.OpenGame("black-widow", "adjacent-black-widow",
+            new GameSpecification("rhino", ["black_widow"], [], 3)));
         Assert.NotNull(rejected.Error);
         Assert.Null(rejected.Capability);
     }
