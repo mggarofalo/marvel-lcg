@@ -54,7 +54,7 @@
       "note": "Interrupt (defense): When you would take any amount of damage from an attack, prevent all of that damage. The attack-damage step carries rr:damage.step.1's imminent-damage condition, and the one-use replacement is consumed by that damage only.",
       "abilities": [
         {
-          "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Interrupt", "target": "you" },
+          "trigger": { "event": "WhenDamageWouldBeDealt", "damage": "taken", "timing": "Interrupt", "target": "you" },
           "labels": [ "defense" ],
           "when": { "isYourIdentity": "trigger.target" },
           "effect": { "preventDamage": "trigger.target" }
@@ -171,7 +171,7 @@
           }
         },
         {
-          "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Interrupt", "target": "you", "form": "hero" },
+          "trigger": { "event": "WhenDamageWouldBeDealt", "damage": "taken", "timing": "Interrupt", "target": "you", "form": "hero" },
           "when": { "isYourIdentity": "trigger.target" },
           "cost": { "discard": "this" },
           "effect": { "preventDamage": { "card": "trigger.target", "amount": 3 } }
@@ -13536,7 +13536,7 @@
       "abilities": [
         {
           "trigger": {
-            "event": "WhenDamageWouldBeDealt",
+            "event": "WhenDamageWouldBeDealt", "damage": "taken",
             "timing": "Interrupt",
             "target": "you"
           },
@@ -16426,7 +16426,7 @@
       "abilities": [
         {
           "trigger": {
-            "event": "WhenDamageWouldBeDealt",
+            "event": "WhenDamageWouldBeDealt", "damage": "taken",
             "timing": "Interrupt",
             "target": "you",
             "form": "hero"

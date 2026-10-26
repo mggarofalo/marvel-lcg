@@ -152,3 +152,13 @@ Rebuild precedes the restored suite. Logs outside the repository:
 
 This worker evidence does not certify the pending ability-book migration,
 integration-wide managed verification or independent re-review.
+
+The follow-up migration annotates exactly those four existing optional card
+triggers with `taken`, preserving every other ability-book byte. It leaves the
+two mandatory soak rows unqualified. The migration passes 118 focused cases,
+including the real Backflip, Shield Block and Wiggle Room/Morphogenetics paths,
+stacked synthetic Energy Barrier prevention, typed qualifier validation, forced
+replacements and actual attack completion. The run is recorded at
+`C:/Users/mggar/Source/marvel736-taken-migration.log`. Integration with the
+concurrent Melee append, broader verification and independent re-review remain
+delivery-lead responsibilities.
