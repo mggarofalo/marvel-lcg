@@ -99,26 +99,27 @@ Work through one integrated pack candidate at a time, starting with Green Goblin
 
 The ordering is a dependency graph, not a claim that every earlier hero must finish before any later engine probe. Existing RoRS/core mechanisms are reusable only after the new characteristic case proves their behavior. `datasets/abilities/abilities.json`, `datasets/cards/**`, `datasets/marvelsdb/**`, rules references, `Agenda.cs`, and `AbilityRunner.cs` are collision-sensitive under `.parallel-sensitive`; serialize overlapping edits, including apparently different cards. Reviewers work from raw printed authority, rulings, diff and evidence; new engine capabilities and complete-pack admission require an independent reviewer. Do not leave permanent per-pack workers running.
 
-## First integrated delivery: Green Goblin plus Ms. Marvel
+## Active delivery queue
 
-MARVEL-559/561 are the canonical parents. Completed prerequisites stay closed;
-use the current checkpoint above and the linked Plane children for exact status.
-The remaining delivery queue is:
+Green Goblin and Ms. Marvel are accepted in PR #451; their closed prerequisites
+and public proof do not reenter the queue. The next delivery sequence is:
 
-1. Complete Goblin public proof (693): reviewed admission, all four modes,
-   complete games including victories, characteristic pending-choice restart,
-   multiplayer and native interactions. The Soldier continuation finding (726)
-   is independently fixed and its original public failures now complete.
-2. Finish combined Ms. Marvel public proof. All remaining engine prerequisites
-   and actual rows are independently reviewed; per-card implementation is complete.
-3. Complete meaningful pending-choice persistence and whole-game evidence for
-   the admitted candidate, preserving its per-face authority and review ledger.
-4. Admit the complete Ms. Marvel pack with verified starter, missing-face and
-   wrong-recipe controls, public legal setup, characteristic action/restart and
-   complete Core/RoRS games. Select native checks by new interaction class.
-5. Run final combined gates at the exact integrated revision, merge and update
-   each canonical parent separately. Continue to Thor and the remaining first
-   wave packs using their existing research and source-qualified starters.
+1. Certify and merge Thor PR #452, exact candidate `4c6f5af9`, then update
+   MARVEL-563 and its reviewed prerequisite children. All 35 faces and the
+   verified starter are implemented; see [Thor checkpoint](thor-delivery-checkpoint.md).
+2. Integrate Black Widow's independently reviewed engine and face packets on the
+   Thor squash merge. The [Black Widow checkpoint](black-widow-delivery-checkpoint.md)
+   identifies nine integrated faces, three pending review, and explicit remaining
+   capabilities. Complete all 34 faces before opening public admission.
+3. Prove complete Black Widow setup/custom decks, characteristic nested response
+   persistence, nemesis/obligation and representative complete games; select
+   native checks by changed interaction, certify the exact candidate, then merge.
+4. Continue Doctor Strange and Hulk using existing source-qualified starters and
+   research packets. First prove Invocation deck/identity-specific mechanisms;
+   serialize shared interpreter and ability-book changes and independently review.
+5. Advance the dependency groups and eleven-wave ledger above through Fear No
+   Evil. Source-incomplete products retain their explicit acquisition gates;
+   each completed product closes its own canonical parent with evidence.
 
 Original starter dividers for Thor, Black Widow, Doctor Strange and Hulk are
 pinned and reviewed under `datasets/rules-packs/mc06` through `mc09`. Each has
