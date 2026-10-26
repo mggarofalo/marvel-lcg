@@ -18,3 +18,27 @@ and `AllyControllerPowerTests` establish the intended attribution.
 Do not replace recorded outcomes to accommodate a changed engine. Investigate
 divergence, preserve the original evidence, and make any compatibility decision
 explicit. Running tests reads these files without modifying them.
+
+The seed-10 history is explicitly incompatible with the current damage-window
+eligibility correction. `SchemeDefeatReplayBoundaryTests` pins its original gzip
+SHA-256, verifies setup and every prompt, event and fingerprint through decision
+29, then verifies the original four-event prefix at decision 30. Crossbones has
+strength 2 against Spider-Man's defense 3; the attack completes with zero damage
+instead of offering the recorded Backflip. Strict production journal comparison
+rejects the changed seven-event result. The research policy is not an admitted
+simulation-replay policy, so these tests compare its recorded decisions directly.
+Seed 13 still replays its complete original history exactly.
+
+A separate current legal game uses the seed-10 decision intentions, with Backflip
+at 31 applied to the ensuing minion's positive damage, and intentions 75/76
+ordered as minion selection followed by Backflip. It retains the exact support
+defeat events at 49, completes all 90 decisions, and replays every new prompt,
+event, RNG count and fingerprint to the same current terminal state. The new
+journal exists only in test memory; neither historical recording is rewritten.
+
+`PhotonicBlastGameRegressionTests` uses generated current games. Comparing the
+11/277 game against `d649560f` first diverges at decision 7: defense reduces the
+attack to zero, so Cosmic Flight is not offered. The lethal first-stage
+Crossbones Photonic Blast now occurs at 37 (health 5 to 0), retains its draw and
+stage transition, and continues to the complete game's replay. The minion case
+at 1/267/14 remains, with explicit lethal damage and defeat checks for both cases.
