@@ -161,6 +161,7 @@ internal static class AbilityEffectTargetAdmission
             "placeAtRandom" => Find(EffectOf<AbilityEffect.PlaceAtRandom>(node, cast).Host, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "draw" => DrawTargetLegality((AbilityEffect.Draw)node, cast, bindingMayChange),
+            "discardUntil" => DiscardUntilTargetLegality(node, cast),
             "search" => HasSearchableArea(node, cast)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "grantCharactersWithTrait" => TraitGroupTargetLegality((AbilityEffect.GrantTraitCharacters)node, cast),
@@ -181,6 +182,13 @@ internal static class AbilityEffectTargetAdmission
             ? TargetLegality.Valid : TargetLegality.Invalid,
         _ => TargetLegality.None,
     };
+    private static TargetLegality DiscardUntilTargetLegality(
+        AbilityEffect node, AbilityAdmissionScope cast)
+    {
+        if (node is not AbilityEffect.DiscardUntil { From: AbilitySearchArea.YourDeck })
+            return TargetLegality.None;
+        return HasPartialResolutionTargets(node, cast) ? TargetLegality.Valid : TargetLegality.Invalid;
+    }
 
     private static TargetLegality TraitGroupTargetLegality(
         AbilityEffect.GrantTraitCharacters grant, AbilityAdmissionScope cast) =>

@@ -164,11 +164,15 @@ public abstract record AbilityEffect
     public sealed record PlaceAtRandom(AbilityPlayerSelection Players, AbilityNumber Count, AbilityCardSelection Host) : AbilityEffect;
     /// <summary>Discard cards from a supported deck or the named players' decks.</summary>
     public sealed record DiscardTop(AbilitySearchArea From, AbilityPlayerSelection? Players, AbilityNumber Count) : AbilityEffect;
-    /// <summary>Discard from the encounter deck until a matching card is found.</summary>
-    public sealed record DiscardUntil(CardKind Kind, string? Trait, AbilityDiscardUntilResult Result) : AbilityEffect
+    /// <summary>Discard from a bounded deck until a printed match is found.</summary>
+    public sealed record DiscardUntil(CardKind? Kind, string? Trait, AbilityDiscardUntilResult Result) : AbilityEffect
     {
         /// <summary>The player explicitly instructed to reveal the match, or the resolving player.</summary>
         public AbilityPlayer Player { get; init; } = AbilityPlayer.You;
+        /// <summary>The deck whose current contents bound the discard.</summary>
+        public AbilitySearchArea From { get; init; } = AbilitySearchArea.EncounterDeck;
+        /// <summary>The printed identity set required for a player-deck match.</summary>
+        public string? Set { get; init; }
     }
     /// <summary>Move selected cards into a deck and shuffle it.</summary>
     public sealed record ShuffleInto(AbilityCardSelection Cards, AbilitySearchArea Deck) : AbilityEffect;

@@ -52,6 +52,37 @@ public static class PlayerDeck
         return discarded;
     }
 
+    /// <summary>Discard from the current deck until a printed identity-set card is discarded.</summary>
+    /// <remarks>
+    /// rr:player-deck.3: "no further cards are discarded from the newly shuffled deck."
+    /// Discard.Card performs the immediate reset and encounter deal under .1.
+    /// The returned physical card remains the match even if that reset moved it.
+    /// rr:identity-specific-card.3 identifies these cards by their set icon.
+    /// </remarks>
+    public static Card? DiscardUntil(
+        World world, int player, string set, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentException.ThrowIfNullOrEmpty(set);
+        ArgumentNullException.ThrowIfNull(events);
+        var deck = world.Seats[player].Deck;
+        int remaining = deck.Cards.Count;
+        int start = events.Count;
+        Card? found = null;
+        for (int index = 0; index < remaining; index++)
+        {
+            var card = deck.Cards[^1];
+            Discard.Card(world, card, trigger, events);
+            if (StringComparer.Ordinal.Equals(world.Facts.EncounterSet(card.FaceId), set))
+            {
+                found = card;
+                break;
+            }
+        }
+        ActivityBatches.Complete(events, start, "Discard", player);
+        return found;
+    }
+
     /// <summary>
     /// Rebuild a player's deck from their discard pile if it is time to.
     /// </summary>
