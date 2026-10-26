@@ -47,45 +47,53 @@ public sealed class MsMarvelDefenseIndependentReviewTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData("01104", "05013")]
-    [InlineData("01191", "05013")]
-    [InlineData("01104", "01078")]
-    [InlineData("01191", "01078")]
+    [InlineData("01104", "05013", 1)]
+    [InlineData("01104", "05013", 0)]
+    [InlineData("01191", "05013", 1)]
+    [InlineData("01191", "05013", 0)]
+    [InlineData("01104", "01078", 1)]
+    [InlineData("01104", "01078", 0)]
+    [InlineData("01191", "01078", 1)]
+    [InlineData("01191", "01078", 0)]
     [Rule("rr:cancel.4")]
     [Rule("rr:surge.1")]
-    public void FullCrossSeatRevealCancelsOnlyWhenRevealedAndDiscardsAfterNestedAttack(string face, string sourceFace)
+    public void FullCrossSeatRevealCancelsOnlyWhenRevealedAndDiscardsAfterNestedAttack(string face, string sourceFace, int payer)
     {
         // "The card is still regarded as revealed" and goes to encounter discard.
         // Printed 01104 heals Rhino; canceling that text leaves his damage intact.
         // rr:surge.1: "The surge keyword is equivalent" to a When Revealed ability.
+        int revealer = 1 - payer;
         var world = Board();
         var runner = AuthoredCards.Runner();
         world.Abilities = runner;
         var villain = world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
         villain.TakeDamage(5);
-        var source = world.CreateCard(sourceFace, world.Seats[1].Hand);
-        var payment = world.CreateCard("01089", world.Seats[1].Hand);
-        var treachery = world.CreateCard(face, world.AreaOf(DeckType.RevealingArea, PlayArea.Of(0)));
+        var source = world.CreateCard(sourceFace, world.Seats[payer].Hand);
+        var payment = world.CreateCard("01089", world.Seats[payer].Hand);
+        var treachery = world.CreateCard(face, world.AreaOf(DeckType.RevealingArea, PlayArea.Of(revealer)));
         world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard),
-            1, 4, Subject: treachery.ObjectId, Seat: 0));
+            1, 4, Subject: treachery.ObjectId, Seat: revealer));
         var events = new List<GameEvent>();
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
         var offer = Assert.Single(prompt.Affordances, a => a.AnchorId == source.ObjectId);
+        Assert.Equal(payer, prompt.Player);
         Sequence.Answer(world, Cards, runner, prompt, new Decision(offer.Id, [], [payment.ObjectId]), events);
         Assert.Equal(DeckType.RevealingArea, source.Area.Type);
         var defense = Assert.IsType<Prompt>(Sequence.Work(world, Cards, runner, events));
         Assert.Equal(DeckType.RevealingArea, source.Area.Type);
-        Assert.Equal(1, world.Attack!.Player);
+        Assert.Equal(payer, world.Attack!.Player);
         Sequence.Answer(world, Cards, runner, defense, Decision.Decline, events);
         Finish(world, runner, events);
         Assert.Equal(5, villain.Damage);
-        Assert.Equal(2, world.Seats[1].IdentityCard.Damage);
-        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(2, world.Seats[payer].IdentityCard.Damage);
+        Assert.Equal(0, world.Seats[revealer].IdentityCard.Damage);
         Assert.Equal(DeckType.DiscardPile, source.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, treachery.Area.Type);
         Assert.Single(events.OfType<WhenRevealedCanceled>());
-        Assert.True(world.Seats[0].IdentityCard.Ready);
-        Assert.Empty(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards);
+        Assert.True(world.Seats[revealer].IdentityCard.Ready);
+        Assert.Empty(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(revealer)).Cards);
+        Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
+        Assert.Equal(Outcome.Unfinished, world.Result);
         Assert.Null(world.Attack);
     }
 

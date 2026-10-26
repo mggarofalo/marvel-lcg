@@ -71,3 +71,34 @@ Full content regression and normal commit-hook results are recorded in
 `C:/Users/mggar/Source/generation-why-{content,hooks}.log`. This packet supplies
 engine/content evidence for independent review; no native or public Ms. Marvel
 journey is claimed.
+
+## Independent actual-face review
+
+Reviewed exact candidate `4086334599a08e29e53fb780786e0fa379167a7f`,
+including the Core correction `600e18b3a253b88a8fd61100b43b0b3c0d52a8a2`.
+Raw joined card facts and vendored ruling `ruling:e8654dd34b58be12` agree
+with the row. Inspection of `AbilityCardDiscardExecution.DiscardTop` confirms
+that the numeric count is evaluated before the player-deck loop; there is no
+intervening player response window inside that synchronous instruction. The
+existing prerequisite tests distinguish frozen amounts, empty/exact exhaustion,
+effective support membership and projections; these remain synthetic contracts.
+The actual full-reveal tests independently retain exact physical discards,
+both revealing seats, non-Persona and out-of-play exclusions, zero-count RNG
+purity, short-deck reset, starting threat and subsequent hazard dealing.
+
+Independent Release focused and restored runs pass 108 cases, covering actual
+05026, global-count contracts, both-direction Get Behind Me! tests, ability data
+and lowering, and the unchanged pinned Core card-face transcripts. Logs are
+`C:/Users/mggar/Source/generation-core-independent-{focused,restored}.log`.
+
+Two separate actual-row data mutants are rejected by the actual-face tests:
+changing `PERSONA` to `LOCATION` fails the zero-count control (expected zero,
+actual two discards); changing the recipient from `each` to `you` fails three
+cases because the other player's deck is untouched. Logs are
+`generation-core-independent-generation-{trait,recipient}.log` in that external
+directory. Each mutant uses the compiled candidate tests, changes only data,
+and restores the exact original bytes in `finally`; no compiled mutant exists.
+
+Verdict: accepted for this authored face and its existing engine contracts.
+This is engine/content acceptance; complete Ms. Marvel public admission and a
+public/native whole-pack journey remain separate work.
