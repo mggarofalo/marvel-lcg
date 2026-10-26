@@ -106,3 +106,47 @@ behavior and contains no such restriction. The new row omits it; the valid-data
 mutant restoring that restriction fails the cross-seat test. Core 01078 is
 unchanged in this packet and requires a separately reviewed correction and
 behavior/transcript consequences.
+
+## Independent packet review
+
+Reviewed `cc73d82694d215f2cc565fca56b38edb14ee7ecf` against joined raw cards
+05012/13/14/17/18 and 01078, FAQ 05012/17, and the Rules Reference.
+No correctness finding in the two authored faces. Acceptance is limited to
+nonpublic prepared engine states; public admission and PR 450 remain unchanged.
+The 05025/05027 discovery-inventory correction is already included in this base;
+this review does not introduce or duplicate it.
+
+`MsMarvelDefenseIndependentReviewTests` adds five cases: complete repeated Nova
+attacks controlled by seat two, single/double energy payment, another seat's
+energy excluded with own-energy eligibility control, and full cross-seat reveals
+of Hard to Keep Down and Exhaustion. The full reveal proves canceled healing,
+correct paying-hero attack, event staging throughout nested attack, eventual
+physical event/treachery disposal, and no remaining attack/agenda. RR1.8
+`rr:surge.1` defines Surge as a When Revealed ability, so Exhaustion's Surge is
+canceled together with its identity exhaustion.
+
+Three valid parsed/lowered data mutants fail the intended assertions: Nova damage
+2 to 1 (2 failures), energy cost to mental (3 failures), and Get Behind Me!
+restricted to revealing seat (2 failures). Logs are external:
+`C:/Users/mggar/Source/ms-defense-independent-{novaDamage,novaCost,revealingSeat}.log`.
+Dataset bytes are restored in finally; a forced rebuild follows source restoration.
+The final focused/data/citation command is the command above with filter
+`FullyQualifiedName~MsMarvelDefense|FullyQualifiedName~AbilityData|FullyQualifiedName~AbilityProgramTests|FullyQualifiedName~RuleCitationTests`;
+55 passed. Logs: `ms-defense-independent-rebuild.log` and
+`ms-defense-independent-final.log` under `C:/Users/mggar/Source/`.
+
+Separate 01078 reproduction: the joined raw catalog names it Get Behind Me!, with
+identical text to 05013. Substitute only physical source 05013 with 01078 in the
+full cross-seat reveal; both reveal cases fail because no interrupt is offered.
+External source/log: `C:/Users/mggar/Source/ms-defense-core01078-repro.cs` and
+`ms-defense-core01078-repro.log`. No Core row or engine change is bundled.
+
+Energy Barrier's preserved external row/test was independently loaded, rebuilt,
+and rerun. The one FAQ probe fails at Sequence.Finish with an unresolved second
+WhenDamageWouldBeDealt interrupt after the first Barrier prevents the only damage.
+Log: `C:/Users/mggar/Source/ms-defense-independent-barrier-repro.log`.
+The exploratory source and row are restored out of this tree afterward.
+Preemptive Strike and Lockjaw remain real unimplemented capabilities: aggregate
+boost-flip timing supplies no per-card canceled-icon receipt, while
+CardPlayOrigin.CanPlayEvent rejects non-events and grants only hand/storage event
+origins. Neither face is authored or claimed accepted here.
