@@ -78,6 +78,7 @@ public static class CardPayment
             amount = Math.Max(0, amount - modifier.Amount);
         }
 
+        amount = Math.Max(0, amount - world.CardPlayAbilities.SelfPlayCostReduction(world, card, seat.Index));
         amount = AllyPlayHistory.AdjustCost(world, card, amount);
         return new AdjustedCardCost(amount, modifiers);
     }

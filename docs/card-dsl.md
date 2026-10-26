@@ -1260,3 +1260,13 @@ This bounded spelling retains the existing positive-X requirement. It does not
 admit zero-X variants whose other effects or modifiers make them significant,
 or sequences containing variable arrow costs. Synthetic payment coverage does
 not admit Lightning Strike, ignore-tough damage, or Thor's product.
+
+`reduceSelfCostPerEngagedMinion` takes a positive integer and requires a direct,
+unconditional Constant ability on `this`. It reads only the physical candidate
+in the playing seat's hand and counts that seat's current engaged minions. It
+supplies a read-only reduction to the existing card payment calculation, stacks
+with existing discounts, and stops at zero. It registers no continuous effect
+from the hand and consumes no resource or RNG state. The engine chooses this
+bounded instruction and pricing-port spelling; printed 06011 supplies the
+behavior. The accepted cost snapshot survives resource-generator suspension.
+This mechanism does not admit the Thor product or author its actual ability row.

@@ -66,6 +66,8 @@ internal static class AbilityBookLowering
         Index(effect, address, effects);
         AbilityStoragePermissionLowering.Validate(ability, effect, location, effects
             .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
+        AbilitySelfPlayCostLowering.Validate(ability, effect, location, effects
+            .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
         AbilityAllyCostLowering.Validate(ability, effect, location, effects
             .Where(pair => pair.Key.Card == ability.Card && pair.Key.Ability == ordinal).Select(pair => pair.Value));
         AbilityAttackKeywordLowering.Validate(ability, ordinal, effects, location);

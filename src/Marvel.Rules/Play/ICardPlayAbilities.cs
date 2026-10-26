@@ -12,5 +12,8 @@ public interface ICardPlayAbilities : ICardPlacementAbilities, IEncounterCardAbi
 {
     /// <summary>Whether selected identities require first-ally history, including their inactive forms.</summary>
     bool RequiresAllyPlayHistory(World world);
+
+    /// <summary>Read-only reduction supplied by this candidate's own printed play-cost text.</summary>
+    long SelfPlayCostReduction(World world, Card card, int player);
 }
 #pragma warning restore CS1591
