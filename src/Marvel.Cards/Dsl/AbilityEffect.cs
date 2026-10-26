@@ -108,6 +108,8 @@ public abstract record AbilityEffect
     public sealed record PreventThreat(AbilityNumber Amount) : AbilityEffect;
     /// <summary>Prevent damage to the interrupted occurrence's recipient.</summary>
     public sealed record PreventDamage(AbilityNumber Amount) : AbilityEffect;
+    /// <summary>Increase every damage or removal instance of the paid event.</summary>
+    public sealed record ModifyPlayedEvent(string Kind, int Amount) : AbilityEffect;
     /// <summary>Gain this many instances of Surge.</summary>
     public sealed record GainSurge(long Instances) : AbilityEffect;
     /// <summary>An operation whose authored argument is a fixed marker.</summary>

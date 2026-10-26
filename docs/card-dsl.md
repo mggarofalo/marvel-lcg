@@ -1074,3 +1074,14 @@ is discard order, including after the encounter deck resets; current discard-pil
 membership is not the selection. The string form continues to require at most one
 physical match for its named face. Putting the card into play does not reveal it.
 The object spelling and printed-trait filter are engine choices.
+
+
+`modifyPlayedEvent: { "quantity": "damage", "amount": 2 }` increases every
+instance of damage from the physical event in `WhenEventPlayInitiated`.
+`quantity: "threatRemoval"` instead increases actual removal, independently of
+threat prevention. The quantity names and positive fixed amount syntax are engine
+choices. The modifier is retired at event disposal, before recovery responses,
+including canceled event plays. Controller, hero form and printed trait conditions
+remain explicit authored trigger requirements. This mechanism alone does not admit
+Embiggen!, Shrink, or Ms. Marvel's pack; printed removal caps and characteristic
+nested/cancellation/prevention proofs remain separate delivery work.

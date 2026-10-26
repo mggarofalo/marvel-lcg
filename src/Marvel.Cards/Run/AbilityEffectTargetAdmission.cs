@@ -142,6 +142,8 @@ internal static class AbilityEffectTargetAdmission
         {
             // rr:target.3.4: "at least one of those effects must be able to
             // affect the target." Deferring resolution retains the bound target.
+            "modifyPlayedEvent" => AbilityPlayedEventModifier.Target(cast.Context) is not null
+                ? TargetLegality.Valid : TargetLegality.Invalid,
             "afterActivation" => TargetLegalityOf(EffectBody(node), cast, bindingMayChange),
             // rr:target.1 includes "you"; rr:target.3.5 excludes a target
             // that "cannot perform" the requested game function.

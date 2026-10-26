@@ -24,6 +24,7 @@ internal static class AbilityEffectLowering
         var argument = node.Argument;
         return node.Kind switch
         {
+            "modifyPlayedEvent" => PlayedEventModifier(argument, child),
             "seq" => new AbilityEffect.Sequence(Effects(argument, child)),
             "and" => new AbilityEffect.Simultaneous(Effects(argument, child)),
             "if" => ConditionalEffect(argument, child),
