@@ -32,7 +32,8 @@ public sealed class CoreInterruptContextTests
         var current = world.CreateCard(AuthoredCards.ImTough, dealt);
         var next = world.CreateCard("01109", dealt);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
-        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4, Subject: current.ObjectId, Seat: 0));
+        world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard,
+            new EncounterRevealOrigin(current.ObjectId, Places.Reference(dealt), Dealt: true)), Round: 1, Number: 4, Subject: current.ObjectId, Seat: 0));
         var events = new List<GameEvent>();
 
         var prompt = Sequence.Work(world, Cards, runner, events)!;

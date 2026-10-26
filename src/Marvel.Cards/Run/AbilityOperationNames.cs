@@ -171,6 +171,7 @@ internal static class AbilityOperationNames
         AbilityEffect.Fixed instruction => instruction.Instruction switch
         {
             AbilityFixedInstruction.UseAttackForThwart => "useAttackForThwart",
+            AbilityFixedInstruction.ReadyUndamagedDefender => "readyUndamagedDefender",
             AbilityFixedInstruction.AdvanceMainScheme => "advanceMainScheme",
             AbilityFixedInstruction.CancelBoostAbility => "cancelBoostAbility",
             AbilityFixedInstruction.CancelBoostIcons => "cancelBoostIcons",

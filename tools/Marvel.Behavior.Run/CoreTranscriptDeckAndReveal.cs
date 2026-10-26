@@ -99,7 +99,9 @@ internal static class CoreTranscriptDeckAndReveal
             DeckType.DealtEncounterCardsDeck, PlayArea.Of(seat));
         World.MoveToTop(card, queue);
         context.World.Agenda.Add(new PhaseStep(
-            new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4,
+            new RevealStageOperation(RevealStageKind.RevealEncounterCard,
+                new EncounterRevealOrigin(card.ObjectId, Places.Reference(queue), Dealt: true)),
+            Round: 1, Number: 4,
             Subject: card.ObjectId, Seat: seat));
         context.Events.Clear();
         SetPendingPrompt(context, Sequence.Work(
@@ -118,7 +120,9 @@ internal static class CoreTranscriptDeckAndReveal
             DeckType.DealtEncounterCardsDeck, PlayArea.Of(seat));
         World.MoveToTop(card, queue);
         context.World.Agenda.Add(new PhaseStep(
-            new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4,
+            new RevealStageOperation(RevealStageKind.RevealEncounterCard,
+                new EncounterRevealOrigin(card.ObjectId, Places.Reference(queue), Dealt: true)),
+            Round: 1, Number: 4,
             Subject: card.ObjectId, Seat: seat));
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
@@ -139,7 +143,9 @@ internal static class CoreTranscriptDeckAndReveal
             DeckType.DealtEncounterCardsDeck, PlayArea.Of(seat));
         World.MoveToTop(card, queue);
         context.World.Agenda.Add(new PhaseStep(
-            new RevealStageOperation(RevealStageKind.RevealEncounterCard), Round: 1, Number: 4,
+            new RevealStageOperation(RevealStageKind.RevealEncounterCard,
+                new EncounterRevealOrigin(card.ObjectId, Places.Reference(queue), Dealt: true)),
+            Round: 1, Number: 4,
             Subject: card.ObjectId, Seat: seat));
         context.Events.Clear();
         context.CurrentPrompt = "<none>";

@@ -1651,3 +1651,13 @@ Invocation Special resolution pays an ability cost and never consumes it.
 The instruction spelling and effect/receipt keys are engine choices.
 The actual-text Physical Toll candidate remains test-local; this capability does
 not admit 09027 or Doctor Strange into public setup.
+
+`readyUndamagedDefender: "you"` installs a delayed instruction during the
+resolving player's live committed hero-defense occurrence. It captures that
+physical hero's incarnation and the exact attack activation in `World.Effects`.
+At that attack's end, before responses, it readies the same in-play hero only
+if the attack placed no damage on that hero and readiness is permitted. Separate
+boost or ability damage does not disqualify the ready. Other activations cannot
+consume it; departure/reentry cannot transfer it to a new copy. Activation
+completion retires an unused registration. This fixed spelling and effect key
+are engine choices; it is not a general delayed-effect scripting interface.

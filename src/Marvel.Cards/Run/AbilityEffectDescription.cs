@@ -13,6 +13,8 @@ internal static class AbilityEffectDescription
     {
         AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.UseAttackForThwart } =>
             "Use ATK instead of THW for this thwart, including ally consequential damage",
+        AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.ReadyUndamagedDefender } =>
+            "At the end of this attack, ready your defending hero if it took no damage from that attack",
         AbilityEffect.BoostBasicUse { MatchingAlly: true } => "Add the exhausted ally's matching modified power to this basic use only; no ally consequential damage",
         AbilityEffect.BoostBasicUse bonus => $"Add {bonus.Amount} ATK for this basic attack only",
         AbilityEffect.ModifyPlayedEvent modifier =>

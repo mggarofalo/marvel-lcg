@@ -332,3 +332,14 @@ The accepted owner-deck, physical status-host and exact upgrade-host pricing
 prerequisites supply their execution. Actual-row evidence and inventory gates
 are recorded in docs/content/doctor-strange-final-support-rows.md. This authors
 research content only; setup and public product admission remain unchanged.
+
+MARVEL-823 appends Astral Projection (09003), Magic Blast (09004) and Protective
+Ward (09007): 678 rows, 33/40 Doctor Strange faces. All 673 predecessor row
+objects outside Core 01004/01075 retain their raw text. Those two Core rows add
+only the scoped encounter-reveal origin condition; their other programs remain
+unchanged. Generated datasets/cards/cards.json supplies printed authority.
+Current RR 1.8 costs, AND, labeled powers and cancellation govern; the September
+14, 2026 ruling 7075a85e02f2203e governs encounter-origin eligibility. Actual-row
+behavior, preserved inventory and mutation evidence are recorded in
+[the signature event evidence](../../docs/content/doctor-strange-final-signature-events.md).
+No starting counters, setup, engine or complete-product public admission changes.

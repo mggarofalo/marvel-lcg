@@ -148,7 +148,7 @@ internal static class AbilityEffectTargetAdmission
 
     internal static TargetLegality OtherTargetLegality(
         AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange) =>
-        node.OperationName() switch
+        CombatTimingLegality(node, cast) ?? (node.OperationName() switch
         {
             // ruling:8c9c9d30f4c01189: an Invocation can affect itself by
             // entering its discard pile even when its other targets are invalid.
@@ -166,12 +166,6 @@ internal static class AbilityEffectTargetAdmission
             "changeForm" or "replaceStatus" or "removeStatuses" => CharacterChangeTargetLegality(node, cast),
             "enemyAttacks" or "enemySchemes" =>
                 CardsLegality(Every(ActivationOf(node, cast).Enemies, cast)),
-            "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source)
-                ? TargetLegality.Valid : TargetLegality.Invalid,
-            "useAttackForThwart" => ThwartStatSubstitution.CanUseAttack(cast.World, cast.Occurrence)
-                ? TargetLegality.Valid : TargetLegality.Invalid,
-            "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false }
-            ? TargetLegality.Valid : TargetLegality.Invalid,
             "attachCards" => AbilityAttachmentExecution.Target((AbilityEffect.AttachCards)node, cast),
             "chooseStatusRecipients" => AbilityStatusRecipients.Target((AbilityEffect.ChooseStatusRecipients)node, cast.Context),
             "chooseCardsToHand" => AbilityGroupRetrieval.Target((AbilityEffect.ChooseCardsToHand)node, cast.Context),
@@ -191,6 +185,20 @@ internal static class AbilityEffectTargetAdmission
             "peekTop" => AbilityDeckPeek.Decks(cast.World).Count > 0
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             _ => TargetLegality.None,
+        });
+
+    private static TargetLegality? CombatTimingLegality(AbilityEffect node, AbilityAdmissionScope cast) =>
+        node.OperationName() switch
+        {
+            "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source)
+                ? TargetLegality.Valid : TargetLegality.Invalid,
+            "readyUndamagedDefender" => UndamagedDefenseReady.CanInstall(cast.World, cast.Occurrence, cast.Player)
+                ? TargetLegality.Valid : TargetLegality.Invalid,
+            "useAttackForThwart" => ThwartStatSubstitution.CanUseAttack(cast.World, cast.Occurrence)
+                ? TargetLegality.Valid : TargetLegality.Invalid,
+            "preventAttackDamage" => cast.World.Attack is { PreventAllDamage: false }
+                ? TargetLegality.Valid : TargetLegality.Invalid,
+            _ => null,
         };
 
     private static TargetLegality InvocationDiscardTargetLegality(AbilityAdmissionScope cast) =>

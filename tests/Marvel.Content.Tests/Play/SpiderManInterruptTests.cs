@@ -65,7 +65,9 @@ public sealed class SpiderManInterruptTests : SpiderManCardTestBase
             AuthoredCards.ImTough, world.AreaOf(DeckType.RevealingArea));
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var occurrence = new Occurrence(
-            1, [Steps.CardRevealed], Subject: treachery.ObjectId, Player: 0);
+            1, [Steps.CardRevealed], Subject: treachery.ObjectId, Player: 0)
+        { RevealOrigin = new EncounterRevealOrigin(treachery.ObjectId,
+            Places.Reference(world.AreaOf(DeckType.EncounterDeck))) };
         var ability = Assert.Single(
             runner.Waiting(world, occurrence, WindowKind.Interrupt),
             pending => pending.Card == sense.ObjectId);

@@ -68,7 +68,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "form": "hero", "player": "trigger.player" },
-          "when": { "isKind": { "card": "trigger.subject", "kind": "treachery" } },
+          "when": {"and": [{ "isKind": { "card": "trigger.subject", "kind": "treachery" } }, {"revealedFromEncounterDeck": "trigger"}]},
           "effect": { "cancelWhenRevealed": "trigger.subject" }
         }
       ]
@@ -246,6 +246,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "Interrupt", "subject": "game", "player": "trigger.player" },
+          "when": {"revealedFromEncounterDeck": "trigger"},
           "cost": { "seq": [
             { "exhaust": "this" },
             { "spend": "B" }
@@ -20840,6 +20841,248 @@
           },
           "effect": {
             "reduceUpgradeCostOnThis": 1
+          }
+        }
+      ]
+    },
+    {
+      "card": "09003",
+      "name": "Astral Projection",
+      "note": "Printed choose-scheme arrow cost precedes the labelled thwart. Independent removal and private encounter-top inspection resolve in the chosen order, then the numeric boost-icon receipt removes additional threat from that exact scheme incarnation.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "labels": [
+            "thwart"
+          ],
+          "cost": {
+            "chooseScheme": "chosen"
+          },
+          "effect": {
+            "thwart": {
+              "target": "chosen",
+              "effect": {
+                "seq": [
+                  {
+                    "and": [
+                      {
+                        "removeThreat": {
+                          "scheme": "chosen",
+                          "amount": 3
+                        }
+                      },
+                      {
+                        "inspectEncounterTop": {
+                          "count": 1,
+                          "result": "boostIconsLookedAt"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": {
+                        "result": "boostIconsLookedAt"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09004",
+      "name": "Magic Blast",
+      "note": "Printed Hero Action (attack). The chosen exact enemy takes 5 damage and the player discards their top card. The discard receipt tests presence, not icon count (ruling 59bea1238c870653); wild applies every branch. The energy 2 is a separate damage instance (e4ea1bf855e41aac). Deck reset precedes event discard (d1f9f33e3ae4ba2f).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "chooseCard": {
+              "from": {
+                "query": "attackableEnemies"
+              },
+              "effect": {
+                "attack": {
+                  "target": "chosen",
+                  "effect": {
+                    "seq": [
+                      {
+                        "and": [
+                          {
+                            "dealAttackDamage": {
+                              "cards": "chosen",
+                              "amount": 5
+                            }
+                          },
+                          {
+                            "discardTop": {
+                              "from": "yourDeck",
+                              "count": 1
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "or": [
+                              {
+                                "discardedWithResource": "R"
+                              },
+                              {
+                                "discardedWithResource": "G"
+                              }
+                            ]
+                          },
+                          "then": {
+                            "giveStatus": {
+                              "card": "chosen",
+                              "status": "stunned"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "or": [
+                              {
+                                "discardedWithResource": "Y"
+                              },
+                              {
+                                "discardedWithResource": "G"
+                              }
+                            ]
+                          },
+                          "then": {
+                            "dealAttackDamage": {
+                              "cards": "chosen",
+                              "amount": 2
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "test": {
+                            "or": [
+                              {
+                                "discardedWithResource": "B"
+                              },
+                              {
+                                "discardedWithResource": "G"
+                              }
+                            ]
+                          },
+                          "then": {
+                            "giveStatus": {
+                              "card": "chosen",
+                              "status": "confused"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "09007",
+      "name": "Protective Ward",
+      "note": "Printed Hero Interrupt permits another player's treachery reveal and cancels all effects, including keywords, while revelation and discard remain (rr:cancel.4). The encounter-origin receipt includes first-dealt cards from any source, but excludes direct separate-zone reveals (ruling:7075a85e02f2203e).",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Interrupt",
+            "subject": "game",
+            "form": "hero"
+          },
+          "when": {
+            "and": [
+              {
+                "isKind": {
+                  "card": "trigger.subject",
+                  "kind": "treachery"
+                }
+              },
+              {
+                "revealedFromEncounterDeck": "trigger"
+              }
+            ]
+          },
+          "effect": {
+            "seq": [
+              {
+                "cancelOccurrence": "trigger"
+              },
+              {
+                "discard": "trigger.subject"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09014",
+      "name": "Iron Fist",
+      "note": "Corrected printed Interrupt (faq:09014). Ordinary entry counters do not discard this ally at zero. Stun and damage affect the exact attacked enemy before basic attack damage; rr:consequential-damage.2.2 explicitly describes lethal interruption.",
+      "startingCounters": {
+        "type": "mystic",
+        "count": 2,
+        "uses": false
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "Interrupt",
+            "actor": "this",
+            "target": "enemy"
+          },
+          "cost": {
+            "removeCounters": {
+              "card": "this",
+              "counter": "mystic",
+              "count": 1
+            }
+          },
+          "effect": {
+            "and": [
+              {
+                "giveStatus": {
+                  "card": "trigger.target",
+                  "status": "stunned"
+                }
+              },
+              {
+                "dealDamage": {
+                  "cards": "trigger.target",
+                  "amount": 1
+                }
+              }
+            ]
           }
         }
       ]

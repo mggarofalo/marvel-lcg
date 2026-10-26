@@ -7,6 +7,7 @@ using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Setup;
+using Marvel.Rules.Timing;
 using Marvel.Content.Setup;
 using Marvel.Tests;
 using Xunit;
@@ -37,8 +38,11 @@ internal sealed record RedSkullFixture(World World, AbilityRunner Runner)
     internal Card Card(string face, DeckType zone = DeckType.RevealingArea) => World.CreateCard(face, World.AreaOf(zone));
     internal Card Reveal(string face, int player = 0)
     {
-        var card = Card(face);
-        World.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard), 1, 2, Subject: card.ObjectId, Seat: player));
+        var card = Card(face, DeckType.EncounterDeck);
+        var origin = new EncounterRevealOrigin(card.ObjectId, Places.Reference(card.Area));
+        World.MoveToTop(card, World.AreaOf(DeckType.RevealingArea));
+        World.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCard, origin),
+            1, 2, Subject: card.ObjectId, Seat: player));
         return card;
     }
 

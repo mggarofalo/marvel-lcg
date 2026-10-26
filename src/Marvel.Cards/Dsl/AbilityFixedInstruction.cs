@@ -10,6 +10,8 @@ public enum AbilityFixedInstruction
     AdvanceMainScheme,
     /// <summary>Use ATK instead of THW for the current thwart.</summary>
     UseAttackForThwart,
+    /// <summary>Ready the captured defending hero if that attack causes it no damage.</summary>
+    ReadyUndamagedDefender,
     /// <summary>Cancel the current occurrence.</summary>
     CancelOccurrence,
     /// <summary>Cancel numeric icons on the exact faceup boost card.</summary>

@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Actual 09003 printed body in a nonpublic fixture; resource/interrupt rows are synthetic.
+// Actual production Astral row on a nonpublic board; resource/interrupt controls are synthetic.
 public sealed class AstralFullCostContinuationTests
 {
     private const string Body = """
@@ -171,13 +171,15 @@ public sealed class AstralFullCostContinuationTests
     }
 
     private static AbilityRunner Runner(string body = Body) =>
+        body != Body ? DoctorStrangeAbilityFixture.WithReplacements(JsonNode.Parse($$$$"""
+        [{"card":"09003","abilities":[{
+          "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
+          "labels":["thwart"],"cost":{"chooseScheme":"chosen"},
+          "effect":{"thwart":{"target":"chosen","effect":{{{{body}}}}}}
+        }]}]
+        """)!.AsArray()) :
         DoctorStrangeAbilityFixture.WithReplacements(JsonNode.Parse($$$$"""
         [
-          {"card":"09003","abilities":[{
-            "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
-            "labels":["thwart"],"cost":{"chooseScheme":"chosen"},
-            "effect":{"thwart":{"target":"chosen","effect":{{{{body}}}}}}
-          }]},
           {"card":"01030","abilities":[{
             "trigger":{"event":"WhenActionTriggered","timing":"Resource","subject":"game"},
             "cost":{"dealDamage":{"cards":"this","amount":2}},"effect":{"generate":"GG"}

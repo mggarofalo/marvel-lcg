@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Printed 09003 body with a synthetic, nonpublic ability row.
+// Production Astral on nonpublic boards; altered bodies are explicit synthetic controls.
 public sealed class AstralFullCostReviewTests
 {
     private const string Body = """
@@ -117,6 +117,8 @@ public sealed class AstralFullCostReviewTests
     }
 
     private static AbilityRunner Runner(JsonNode body) =>
+        JsonNode.DeepEquals(body, JsonNode.Parse(Body))
+            ? Marvel.Content.Tests.Cards.AuthoredCards.Runner() :
         DoctorStrangeAbilityFixture.WithReplacements(JsonNode.Parse($$$$"""
         [{"card":"09003","abilities":[{
           "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},

@@ -88,6 +88,7 @@ internal static class AbilityEffectLowering
             "preventDamage" => PreventDamageEffect(argument, child),
             "gainSurge" => new AbilityEffect.GainSurge(Integer(argument, child)),
             "useAttackForThwart" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.UseAttackForThwart),
+            "readyUndamagedDefender" => FixedEffect(argument, child, "you", AbilityFixedInstruction.ReadyUndamagedDefender),
             "advanceMainScheme" => FixedEffect(argument, child, "next", AbilityFixedInstruction.AdvanceMainScheme),
             "cancelBoostAbility" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostAbility),
             "cancelBoostIcons" => FixedEffect(argument, child, "trigger", AbilityFixedInstruction.CancelBoostIcons),

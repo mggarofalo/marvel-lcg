@@ -9,24 +9,38 @@ that accepted baseline. The reviewed 38-commit Strange stack now ends at
 `22d67804` (pre-rebase head `4d95d05c`). Earlier hashes below name the revisions
 actually tested and remain evidence references. No source packets were dropped.
 
-Latest integration candidate: 675 authored rows, 30 of the 40 Strange faces.
+Latest integration candidate: 679 authored rows, 34 of the 40 Strange faces.
 Clea, Night Nurse and ally Iron Man source `a2714257` and independent content
 review `be3bc369` are combined with owner-discard source `43c0b046`, elimination
 reset repair `a6bb7ddd` and independent closure `7cdb2e23`. All 672 predecessor
 ability objects are retained unchanged. Public admission stays closed.
 
-The remaining ten faces are 09003, 09004, 09007, 09014, 09015, and 09027–09031.
+The remaining six faces are 09015 and 09027–09031.
 The three signature events have reviewed prerequisites: reveal origin
 `530f156e`, simultaneous powers and Magic Blast stage repair `00f23ff2`, and
 Astral pre-arrow target/payment/inspection continuation `1abb96a2`. Their combined
 Content check passes 1,178 cases. Their actual rows and matching Core reveal-origin
-restrictions are authored at `4131304f`; independent review `fec49e75` requires
-truthful reveal-origin receipts in older transcript/fixture helpers before acceptance.
-The initial broad run with transcript repair passed 7,152 of 7,154 Content tests;
-the two Media Coverage fixture failures are repaired. All 7,154 now pass on that
-source candidate; independent repair closure remains separate.
-Iron Fist authoring and the separate Desperate Defense engine prerequisite
-(MARVEL-833) are active. No failed gate is waived by these checkpoints.
+restrictions from `4131304f` are integrated with review `fec49e75`, truthful fixture
+repair `f3aa192c` and independent closure `ed18c390`. The source's complete Content
+lane passes 7,154 cases; closure passes 233 and kills a null-origin helper mutant
+with 46 failures while preserving 22 controls. Missing, wrong-card and direct-discard
+origin negatives remain effective. No transcript assertion is weakened.
+
+Actual Iron Fist source `deb79660` and review `6065b8a7` are integrated. All 678
+predecessor raw rows are unchanged. Independent repeat-attack cases kill an
+unprinted once-per-round mutant that the original twelve cases did not detect;
+the restored review selection passes 272 cases. The separate Desperate Defense
+engine source `011e9bdb` and review `e57d23d` (MARVEL-833) are integrated; actual
+09015 remains to author. Its delayed ready uses the original hero and exact attack,
+excluding separate boost damage. The review includes a genuinely queued second
+activation. The lead added the missing fixed-operation documentation and extracted
+queued-villain test preparation to satisfy normal complexity checks; all four
+review cases passed afterward with unchanged assertions.
+
+The combined signature-event, Iron Fist and defense candidate passes 408 Content
+checks and 20 Rules checks. Logs are `strange-events-iron-fist-defense-integrated.log`
+and `strange-undamaged-defense-integrated-rules.log` under `Source/evidence/`.
+The earlier signature-only integration passed 357 cases before the latter packets.
 
 Physical Toll's next-event price and Invocation interaction meaning are independently
 reviewed and integrated at `4f1a5512`. Combined Content checks pass 1,060 cases;

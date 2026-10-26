@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-// Synthetic observer/action pair isolates the origin requirement before admission.
+// Actual Ward with synthetic observer/action controls on a nonpublic board.
 public sealed class DoctorStrangeWardOriginTests
 {
     [Theory]
@@ -18,8 +18,13 @@ public sealed class DoctorStrangeWardOriginTests
     [InlineData("encounterDiscardPile", false)]
     [InlineData("encounterDeck", true, true)]
     [InlineData("encounterDiscardPile", true, true)]
+    [InlineData("encounterDeck", false, false, false, true, "01190")]
+    [InlineData("encounterDeck", false, false, true, false, "01190")]
+    [InlineData("encounterDeck", false, false, true, true, "01101")]
+    [InlineData("playerDeck", true, true)]
     [Rule("rr:cancel.4")]
-    public void FullRevealOffersWardOnlyForEncounterDeckOrigin(string origin, bool eligible, bool dealt = false)
+    public void FullRevealOffersWardOnlyForEncounterDeckOrigin(string origin, bool eligible, bool dealt = false,
+        bool hero = true, bool funded = true, string face = "01190")
     {
         // A canceled treachery is "still regarded as revealed" and discarded.
         // Protective Ward's generated text additionally requires encounter-deck origin.
@@ -28,38 +33,33 @@ public sealed class DoctorStrangeWardOriginTests
             [
              {"card":"01092","abilities":[{
               "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this"},
-              "effect":{"reveal":{"cardsIn":{"area":"ORIGIN","title":"Shadow of the Past"}}}}]},
-             {"card":"09007","abilities":[{
-              "trigger":{"event":"WhenCardRevealed","timing":"Interrupt","subject":"game","form":"hero"},
-              "when":{"and":[{"isKind":{"card":"trigger.subject","kind":"treachery"}},{"revealedFromEncounterDeck":"trigger"}]},
-              "effect":{"seq":[{"cancelOccurrence":"trigger"},{"discard":"trigger.subject"}]}}]},
-             {"card":"01005","abilities":[{
-              "trigger":{"event":"WhenCardRevealed","timing":"Interrupt","subject":"game","form":"hero"},
-              "when":{"isKind":{"card":"trigger.subject","kind":"treachery"}},
+              "effect":{"reveal":{"cardsIn":{"area":"ORIGIN","title":"TARGET"}}}}]},
+             {"card":"01030","abilities":[{
+              "trigger":{"event":"WhenCardRevealed","timing":"Interrupt","subject":"game"},
               "effect":{"dealDamage":{"cards":"you","amount":1}}}]}
             ]
-            """.Replace("ORIGIN", origin, StringComparison.Ordinal))!.AsArray());
+            """.Replace("ORIGIN", origin == "playerDeck" ? "encounterDeck" : origin, StringComparison.Ordinal)
+                .Replace("TARGET", world.Facts.Title(face), StringComparison.Ordinal))!.AsArray());
         world.Abilities = runner;
-        var area = world.AreaOf(origin switch
-        {
-            "encounterDeck" => DeckType.EncounterDeck,
-            "encounterDiscardPile" => DeckType.EncounterDiscardPile,
-            _ => throw new ArgumentException(origin),
-        });
-        var treachery = world.CreateCard("01190", area);
-        Assert.Equal("Shadow of the Past", world.Facts.Title(treachery.FaceId));
+        if (!hero) world.Seats[1].IdentityCard.TurnTo("01001b");
+        var treachery = CreateEncounterCard(world, face, origin);
+        var area = treachery.Area;
         var source = world.CreateCard("01092", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
         var ward = world.CreateCard("09007", world.Seats[1].Hand);
-        world.CreateCard("01005", world.Seats[1].Hand);
+        world.CreateCard("01030", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
         var payment = world.CreateCard("01088", world.Seats[1].Hand);
-        var action = Assert.Single(runner.Actions(world, 0), a => a.Card == source.ObjectId);
+        if (!funded) World.MoveToTop(payment, world.AreaOf(DeckType.RemovedArea));
         var events = new List<GameEvent>();
         if (dealt)
         {
             Deal.EncounterCard(world, treachery, 0, "synthetic identified deal", events);
             world.Agenda.Add(new PhaseStep(new RevealStageOperation(RevealStageKind.RevealEncounterCards), 1, 4, Plan: true));
         }
-        else events.AddRange(runner.ExecuteAction(world, new PlayerAction(action, [], [])).Events);
+        else
+        {
+            var action = Assert.Single(runner.Actions(world, 0), a => a.Card == source.ObjectId);
+            events.AddRange(runner.ExecuteAction(world, new PlayerAction(action, [], [])).Events);
+        }
         var reveal = Sequence.Work(world, world.Facts, runner, events)!;
         Assert.Equal(treachery.ObjectId, world.Agenda.Occurrence!.Subject);
         Assert.Equal(DeckType.RevealingArea, treachery.Area.Type);
@@ -73,7 +73,7 @@ public sealed class DoctorStrangeWardOriginTests
         if (!eligible)
         {
             Assert.Equal(DeckType.HandsArea, ward.Area.Type);
-            Assert.Equal(DeckType.HandsArea, payment.Area.Type);
+            Assert.Equal(funded ? DeckType.HandsArea : DeckType.RemovedArea, payment.Area.Type);
             return;
         }
         var offer = Assert.Single(reveal.Affordances, a => a.AnchorId == ward.ObjectId);
@@ -88,6 +88,23 @@ public sealed class DoctorStrangeWardOriginTests
         Assert.False(world.Agenda.IsBusy);
         Assert.False(world.IsOver);
     }
+    private static Card CreateEncounterCard(World world, string face, string origin)
+    {
+        var area = origin == "playerDeck" ? world.Seats[0].Deck
+            : world.AreaOf(OriginDeckType(origin));
+        var card = world.CreateCard(face, origin == "playerDeck"
+            ? world.AreaOf(DeckType.EncounterDeck) : area);
+        if (origin == "playerDeck") World.MoveToTop(card, area);
+        return card;
+    }
+
+    private static DeckType OriginDeckType(string origin) => origin switch
+    {
+        "encounterDeck" => DeckType.EncounterDeck,
+        "encounterDiscardPile" => DeckType.EncounterDiscardPile,
+        _ => throw new ArgumentException(origin),
+    };
+
     [Theory]
     [InlineData("you")]
     [InlineData("encounterDeck")]
