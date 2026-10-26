@@ -15655,6 +15655,313 @@
           }
         }
       ]
+    },
+    {
+      "card": "02019",
+      "name": "Goblin Glider",
+      "note": "Printed 02019: attach to the enemy with the highest printed hit points and without another Goblin Glider attached; if unable, gain surge. Rank the eligible enemies by printedHealth, not remaining or modified health (rr:attach-to). Printed ATK+1 is read by StateFields under rr:attachment.1. Hero Action spends two energy resources to discard this card. Selector and resource-code spellings are engine choices. The queried MarvelCDB FAQ has no entry for this face. Printed text and numeric attributes match reprint 02033.",
+      "attachTo": {
+        "maxBy": {
+          "of": {
+            "withoutAnotherCopyAttached": {
+              "query": "enemies"
+            }
+          },
+          "by": "printedHealth"
+        }
+      },
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "not": {
+                  "exists": {
+                    "withoutAnotherCopyAttached": {
+                      "query": "enemies"
+                    }
+                  }
+                }
+              },
+              "then": {
+                "gainSurge": 1
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "YY"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ]
+    },
+    {
+      "card": "02020",
+      "name": "Hysteria",
+      "note": "Printed authority: datasets/cards/cards.json 02020. Selector, event and resource spellings are engine choices. The queried vendored MarvelCDB FAQ has no entry for this face.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedInterrupt",
+            "event": "WhenAttackInitiated",
+            "actor": "attachedTo"
+          },
+          "effect": {
+            "giveAdditionalBoost": {
+              "enemy": "attachedTo"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "ForcedInterrupt",
+            "event": "WhenEnemySchemes",
+            "subject": "attachedTo"
+          },
+          "effect": {
+            "giveAdditionalBoost": {
+              "enemy": "attachedTo"
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Action",
+            "event": "WhenActionTriggered",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "BB"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ],
+      "attachTo": {
+        "titled": "Green Goblin"
+      }
+    },
+    {
+      "card": "02021",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "attachedTo",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discard": "this"
+              },
+              {
+                "indirectDamage": {
+                  "among": {
+                    "query": "charactersYouControl"
+                  },
+                  "amount": 2
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "hero"
+          },
+          "cost": {
+            "spend": "RR"
+          },
+          "effect": {
+            "discard": "this"
+          }
+        }
+      ],
+      "name": "Pumpkin Bombs",
+      "note": "Printed 02021: attach to the villain. After the villain attacks you, discard this attachment and take 2 indirect damage. rr:you-your.7 binds the completed attack player, including ally defense; rr:defend-defense.5.1 transfers that player when another player defends. The completed attack retains this binding across the source discard. rr:stun-stunned.7 excludes canceled attacks. Hero Action spends two physical resources to discard this card. The queried MarvelCDB FAQ has no entry; vendored ruling:e6531edb529e342d agrees on ally defense. Printed text and numeric attributes match reprint 02034.",
+      "attachTo": {
+        "query": "villain"
+      }
+    },
+    {
+      "card": "02022",
+      "name": "Goblin Knight",
+      "note": "Printed authority: datasets/cards/cards.json 02022. Selector, event and resource spellings are engine choices. The queried vendored MarvelCDB FAQ has no entry for this face.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "ForcedResponse",
+            "event": "WhenAttackEnds",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "effect": {
+            "seq": [
+              {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 1
+                }
+              },
+              {
+                "recruitDiscarded": {
+                  "trait": "GOBLIN"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "afterActivation": {
+              "effect": {
+                "shuffleInto": {
+                  "cards": "this",
+                  "deck": "encounterDeck"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02023",
+      "name": "Goblin Soldier",
+      "note": "Printed authority: datasets/cards/cards.json 02023. Selector, event and resource spellings are engine choices. The queried vendored MarvelCDB FAQ has no entry for this face.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenDefeated",
+            "event": "WhenCardDefeated",
+            "subject": "this"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": {
+                "inPlayerArea": {
+                  "area": "identity",
+                  "player": "engagedPlayer"
+                }
+              },
+              "amount": 1
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "engagedWithYou"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02024",
+      "name": "Goblin Thrall",
+      "note": "Printed authority: datasets/cards/cards.json 02024. Selector, event and resource spellings are engine choices. The queried vendored MarvelCDB FAQ has no entry for this face.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "putIntoPlay": {
+              "card": "this",
+              "where": "engagedWithYou"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02025",
+      "name": "Monster",
+      "note": "Printed authority: datasets/cards/cards.json 02025. Selector, event and resource spellings are engine choices. The queried vendored MarvelCDB FAQ has no entry for this face.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "WhenRevealed",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "hasStatus": {
+                  "card": "you",
+                  "status": "stunned"
+                }
+              },
+              "then": {
+                "dealDamage": {
+                  "cards": "you",
+                  "amount": 2
+                }
+              },
+              "else": {
+                "giveStatus": {
+                  "card": "you",
+                  "status": "stunned"
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "timing": "Boost",
+            "event": "WhenCardRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "afterActivation": {
+              "effect": {
+                "shuffleInto": {
+                  "cards": "this",
+                  "deck": "encounterDeck"
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

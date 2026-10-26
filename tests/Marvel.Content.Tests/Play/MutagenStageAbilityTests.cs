@@ -91,13 +91,6 @@ public sealed class MutagenStageAbilityTests : CoreCardTestBase
     }
 
     [Theory]
-    [InlineData("02019")]
-    [InlineData("02020")]
-    [InlineData("02021")]
-    [InlineData("02022")]
-    [InlineData("02023")]
-    [InlineData("02024")]
-    [InlineData("02025")]
     [InlineData("02026")]
     [InlineData("02027")]
     [InlineData("02028")]

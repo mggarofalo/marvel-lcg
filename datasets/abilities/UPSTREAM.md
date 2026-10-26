@@ -81,4 +81,18 @@ Printed cards are authoritative; ruling `ruling:9a1cb4d914aa6778` confirms that
 attack overkill to the identity satisfies "attacks and damages you".
 `MutagenStageAbilityTests`, `MutagenEscalationTests` and
 `MutagenFormulaSetupTests` exercise actual authored rows. Remaining encounters
-02019–02032 fail closed; Green Goblin public admission remains excluded.
+02026–02032 fail closed; Green Goblin public admission remains excluded.
+
+
+Mutagen Formula encounter research adds 02019–02025. Glider and Bombs are exact
+printed-text, stat and annotation reprints of 02033/02034. Hysteria separates
+attack initiation (actor) and scheme initiation (subject) in the existing engine
+trigger vocabulary. Knight uses the physical discard receipt; Soldier and Thrall
+use ordinary boost entry; Knight and Monster defer their exact source shuffle
+until activation completion. Monster branches on the initial stunned state.
+The vendored MarvelCDB FAQ contains no entry for these seven faces. Relevant
+vendored rulings include ruling:e6531edb529e342d (attacks with ally defense),
+ruling:6fd4652a06512d03 (Thrall Guard limits initiation), and
+ruling:cef917d276a31694 (Soldier defeat resolves between printed sentences).
+Focused tests cover characteristic paths; the evidence document explicitly
+records outstanding review and proof. Public Green Goblin admission stays closed.
