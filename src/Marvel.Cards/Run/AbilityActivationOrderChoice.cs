@@ -24,7 +24,8 @@ internal static class AbilityActivationOrderChoice
         // the first player decides the order in which they are resolved."
         // This takes precedence while another enemy activation is active.
         // Outside one, rr:activation.5 gives a single attacked player their order.
-        bool nested = context.Expressions.World.Activation is not null;
+        bool nested = context.Expressions.World.Activation is not null
+            || context.Expressions.World.Agenda.EnclosingActivationId() >= 0;
         int attackedPlayer = !nested && schedule.Targets.Length == enemies.Count && attackedSeats.Count == 1
             ? attackedSeats[0] : context.Expressions.World.FirstPlayer;
         return new Prompt(attackedPlayer, Question.Order, TimingPriority.Untimed,
