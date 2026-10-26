@@ -54,3 +54,79 @@ serialized. No other worktree process was terminated.
 
 Independent review is still required for these two admitted rows and the
 withheld probes. No native UI or full-pack readiness is claimed.
+
+## Independent review of actual batch B
+
+Reviewed source revision `1bf3b627ea19ee107e5eecf95f558d6afde68e52` in
+`C:/Users/mggar/Source/marvel-thor-b-review`, branch `review/thor-b`.
+Verdict: approve the two authored rows (`06001a`, `06004`) for integration into
+the nonpublic research candidate. This is not whole-pack or public admission.
+
+The joined printed text gives Thor a response after engaging a minion, drawing
+two, once per phase. `WhenMinionEngaged`, destination-player subject, hero form
+and `limitPerPhase: 1` match that instruction. Existing actual-row tests verify
+destination seat one, a second engagement in the same phase, and renewed use
+after both player and villain phase endings. New independent tests verify that
+alter-ego engagement and declining a response consume no use, while changing
+form does not refresh a spent use. `rr:engage.2/.3`, `rr:limit`, and the vendored
+`06014` FAQ support these boundaries. No FAQ entry exists for the queried
+`06001a` or `06004`. Rulings `ruling:0e6ffd0bb9270f47` and
+`ruling:dc752ffec50b2356` also exclude re-engagement with the same player.
+
+For Asgard's printed cost is one (`attributes.Cost`); its alter-ego action
+searches the owner's deck and discard for an Asgard trait match, adds one chosen
+physical card to hand, and shuffles. The row follows that text. Independent
+observations distinguish matching Asgard cards in one's deck/discard from one's
+hand/play area, another seat's deck/discard, and nonmatching cards. Existing
+tests prove payment, form restriction, either searched area and no-match shuffle.
+The retained Worthy tests separately distinguish named Mjolnir searches from
+trait searches and check the round limit. The authored-face inventory gate
+passes with exactly the two additions, 587 to 589. The transfer review correctly
+uses the actual Thor row and retains synthetic bodies only for the transfer and
+reveal controls; it no longer appends another Thor response to the same book.
+
+The new `ThorBatchBReviewTests` captures digest, RNG and pending work before any
+query, tests a rejected foreign choice after costs have committed, then compares
+completion against an unprobed control. `ThorSearchPrivacyReviewTests` executes
+actual For Asgard and confirms restricted viewers receive no foreign private
+choice or hidden candidate identifiers; the answering seat sees offered matches,
+not unrelated hidden deck cards. The unchosen deck card is concealed again after
+completion. This establishes candidate exposure scope/lifetime, not a native UI
+claim or a general full-deck inspection interface.
+
+Review evidence under the existing external evidence directory:
+
+- `independent-review-focused.log`: 47 passed, including both new content tests,
+  actual Thor/For Asgard, retained engagement and Worthy tests, and ability-data
+  admission/lowering checks.
+- `independent-review-privacy.log`: 5 passed, including the new actual-card
+  privacy test and existing search/public-situation controls.
+- `independent-review-commit.log`: normal pre-commit policy evidence.
+
+An initial review fixture called the lower-level `CardPlay.Play` path rather
+than the offered event action, and obtained no search prompt. The final probes
+execute `runner.ExecuteAction` with the actual offered action, matching the
+player-intent path. The logs above are the corrected passing runs. Existing
+data-mutant logs were inspected as supplemental evidence; review did not rerun
+those mutations. No engine or ability-book changes were made by the reviewer.
+
+### Withheld probes: authority clarification
+
+Hammer Throw says "deal 8 damage to an enemy and return Mjolnir to your hand."
+`rr:and` makes those effects simultaneous; `rr:response` places the optional
+Chase Them Down response after its triggering defeat. Consequently, observing
+Mjolnir already returned at that response does **not** establish a timing bug.
+The preserved probe's expectation that Mjolnir remain in play through that
+response must be corrected before it can serve as an acceptance test. This
+review does not approve the withheld row or its full attack/overkill behavior.
+
+Get Over Here has separate damage and conditional engagement sentences.
+`rr:ability.4` requires sentence order; `rr:defeat.1` discards a defeated minion,
+and `rr:ability.1` prevents the later engagement from interacting with that
+discarded card without explicit out-of-play text. The next implementation must
+bind the same physical enemy while requiring it still be a living in-play minion
+after damage and intervening timing, and skip engagement/Thor response on defeat.
+It must also retain nonlethal transfer, same-seat exclusion and Aerial checks.
+Whether this needs selector composition or an engine capability remains to be
+proved in an isolated implementation packet; this review did not reintroduce the
+withheld rows or rerun their probes.
