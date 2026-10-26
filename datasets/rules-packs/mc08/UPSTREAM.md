@@ -22,5 +22,5 @@ The divider uses local card numbers; the canonical IDs below map to datasets/car
 | Nemesis, outside player deck | 09028 Baron Mordo ×1; 09029 Open the Dark Dimension ×1; 09030 Counterspell ×2; 09031 Thoughtcasting ×1 | 5 |
 | Invocation deck, separate from player deck | 09032 Crimson Bands of Cyttorak ×1; 09033 Images of Ikonn ×1; 09034 Seven Rings of Raggadorr ×1; 09035 Vapors of Valtorr ×1; 09036 Winds of Watoomb ×1 | 5 |
 
-Player starter total: 40 cards (15 hero + 17 aspect + 8 basic), with identity 09001a/b separate. Obligation and nemesis are not shuffled into the starting player deck. Extra customization cards 09037–09040 are absent from this printed starter; their playable quantities must follow the pack inventory rather than a marketing total.
+Player starter total: 40 cards (15 hero + 17 aspect + 8 basic), with identity 09001a/b separate. Obligation and nemesis are not shuffled into the starting player deck. Extra customization cards 09037–09039 are absent from this printed starter; their playable quantities must follow the pack inventory rather than a marketing total.
 The five Invocation cards form the separate printed Invocation deck; they do not increase the 40-card player starter. Setup/shuffle/top-card rules still come from the pinned product insert and printed identity abilities.
