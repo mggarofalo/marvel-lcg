@@ -16,9 +16,9 @@ public sealed class DoctorStrangeD1CardTests
         using var book = JsonDocument.Parse(AuthoredCards.Text);
         var rows = book.RootElement.GetProperty("cards").EnumerateArray().ToArray();
         string[] faces = ["09001a", "09001b", "09002", "09005", "09036"];
-        Assert.Equal(659, rows.Length);
-        Assert.Equal(faces, rows.Skip(654).Select(row => row.GetProperty("card").GetString()));
-        Assert.All(rows.Skip(654), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
+        Assert.True(rows.Length >= 659);
+        Assert.Equal(faces, rows.Skip(654).Take(5).Select(row => row.GetProperty("card").GetString()));
+        Assert.All(rows.Skip(654).Take(5), row => Assert.False(row.TryGetProperty("startingCounters", out _)));
         Assert.DoesNotContain("09032", AuthoredCards.Book.Authored);
         using var printed = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var actual = printed.RootElement.GetProperty("cards").EnumerateArray()

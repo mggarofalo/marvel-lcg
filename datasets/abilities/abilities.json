@@ -20221,5 +20221,113 @@
         }
       ]
     }
+,
+    {
+      "card": "09008",
+      "name": "Sanctum Sanctorum",
+      "note": "Printed 09008: exhaust in alter-ego, shuffle one physical Spell from your own discard before the independent draw. Current rr:target.2.3 permits the draw with no Spell when the player deck is nonempty. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "if": {
+                  "test": {
+                    "exists": {
+                      "cardsIn": {
+                        "area": "yourDiscardPile",
+                        "trait": "SPELL"
+                      }
+                    }
+                  },
+                  "then": {
+                    "chooseCard": {
+                      "from": {
+                        "cardsIn": {
+                          "area": "yourDiscardPile",
+                          "trait": "SPELL"
+                        }
+                      },
+                      "effect": {
+                        "shuffleInto": {
+                          "cards": "chosen",
+                          "deck": "yourDeck"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "draw": {
+                  "player": "you",
+                  "count": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09012",
+      "name": "Brother Voodoo",
+      "note": "Printed 09012: the entry response chooses an exact Event among the top five cards of the controller player deck, then shuffles that entire deck even with no match. The top bound precedes printed-kind filtering. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardEntersPlay",
+            "timing": "Response",
+            "subject": "this"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "area": "yourDeck",
+                    "top": 5,
+                    "kind": "Event"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "area": "yourDeck",
+                      "top": 5,
+                      "kind": "Event"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "addToHand": "chosen"
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "shuffle": "yourDeck"
+              }
+            }
+          }
+        }
+      ]
+    }
   ]
 }
