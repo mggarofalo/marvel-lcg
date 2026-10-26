@@ -35,6 +35,7 @@ static func _return_in_order(smoke, group: Array[int]) -> bool:
         "one discarded physical encounter leaves an uncommitted ordered return"): return false
     if not await smoke.ui.click(smoke.ui.named("Affordance%d" % smoke.witness.Anchor("Heimdall"))): return false
     for id in [group[2], group[0]]:
+        if not await _reach_target(smoke, "Target%d" % id): return false
         if not await smoke.ui.click(smoke.ui.named("Target%d" % id)): return false
     if Array(smoke.witness.SelectedTargets()) != [group[2], group[0]]: return false
     if "top-to-bottom" not in smoke._visible_text(smoke.main): return false
@@ -43,11 +44,26 @@ static func _return_in_order(smoke, group: Array[int]) -> bool:
     return await smoke.ui.expect(func(): return smoke.witness.Revision() == 4 and smoke.witness.DecisionKind() == "PlayerAction",
         "one explicit ordered-return commitment conceals the deck and returns to play")
 
+static func _reach_target(smoke, node_name: String) -> bool:
+    var locator = smoke.ui.named(node_name)
+    if not await smoke.ui.expect_visible(locator): return false
+    # Real Tab navigation exercises the scrolling body's focus-following access.
+    for step in range(40):
+        if smoke.render_viewport.gui_get_focus_owner() == locator.all()[0]:
+            return await smoke.ui.expect_fully_visible_enabled(locator)
+        if not await smoke.ui.press_key(KEY_TAB): return false
+    return await smoke.ui.expect(func(): return false, "Tab reaches ordered target " + node_name, 0)
+
 static func _choices(smoke, prefix: String) -> Array:
     return smoke.main.find_children(prefix + "*", "Button", true, false).filter(func(button): return button.is_visible_in_tree())
 
 static func _click_commit(smoke, label: String, revision: int) -> bool:
-    if not await smoke.ui.expect_visible(smoke.ui.button(label)): return false
+    if not await smoke.ui.expect_fully_visible_enabled(smoke.ui.button(label)): return false
+    var frame: Control = smoke._search_frame()
+    if frame != null:
+        if not await smoke.ui.expect(func():
+            return frame.get_global_rect().encloses(smoke.ui.button(label).all()[0].get_global_rect()),
+            "complete commitment rectangle inside decision modal"): return false
     if smoke.witness.Revision() != revision: return false
     return await smoke.ui.click(smoke.ui.button(label))
 

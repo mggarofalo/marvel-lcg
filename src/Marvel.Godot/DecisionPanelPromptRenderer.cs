@@ -38,18 +38,24 @@ internal static class DecisionPanelPromptRenderer
         bool search = !panel.LocalDecision.IsOpen && panel.CompleteChoicesOpen && DecisionCardChoices.IsChoice(composer.Prompt);
         if (!panel.PaymentModalOpen && !search && !DecisionDialogLayout.Automatic(composer.Prompt))
             AddActionSummary(body, selected, composer, panel.LocalDecision.IsOpen);
-        if (search || panel.AbilityWindowOpen)
+        InstallBody(panel, composer.Prompt, body, search);
+        panel.InstallLayout(body, CreateCommitBar(panel));
+    }
+
+    private static void InstallBody(DecisionPanel panel, Prompt prompt, VBoxContainer body, bool search)
+    {
+        if (search && prompt.Asking != Question.Order || panel.AbilityWindowOpen)
         {
             panel.LayoutHost.AddChild(body);
         }
         else
         {
+            // Ordered galleries include target controls below their cards. Bound
+            // that body so its minimum height cannot displace the commitment bar.
             ScrollContainer scroll = CreateScroll(panel);
             scroll.AddChild(body);
             panel.LayoutHost.AddChild(scroll);
         }
-
-        panel.InstallLayout(body, CreateCommitBar(panel));
     }
 
     private static Container CreateCommitBar(DecisionPanel panel)
