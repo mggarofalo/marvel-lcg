@@ -1604,3 +1604,30 @@ tests do not certify those contracts or native interactions.
 source receipt. Direct encounter-deck reveals and first-dealt encounter cards
 qualify; a direct reveal from a discard or separate area does not. The receipt
 is captured before staging movement and belongs to that one revelation.
+
+### Scheme choice before the arrow
+
+`cost: {"chooseScheme":"chosen"}` commits one current in-play main or side
+scheme before any printed resource payment or labelled effect cancellation.
+The bounded shape is a standalone cost on an Action with only the `thwart`
+label and an outer `thwart` power targeting `chosen`. Compound costs and other
+envelopes fail during lowering. It uses the existing scheme relation rather
+than a renderer interpretation of card text.
+
+The action describes exactly one mandatory target and the choice as a cost.
+Missing, duplicate and non-scheme answers fail before payment. The selected
+physical area/incarnation becomes the existing `chosen` continuation binding;
+subsequent instructions do not reopen a recipient choice. Confusion still pays
+the choice and event price before replacing the thwart. This capability does
+not itself add support for simultaneous effects within a power.
+
+This cost admits constant removal from `chosen`, independent draws for `you`,
+and sequences of those instructions. It also admits the complete Astral
+Projection shape: a two-effect `and` pairing removal of 3 threat from `chosen`
+with `inspectEncounterTop` of 1 card into `boostIconsLookedAt`, followed by
+removal of that numeric result from `chosen`. Both authored pair orders are
+recognized. Other body shapes fail during lowering. If payment suspends and the
+chosen area/incarnation departs, both removals apply nothing while the private
+inspection still completes. Independent drawing likewise survives departure
+through the ordinary labelled thwart lifecycle. Confusion cancels the complete
+effect after costs.

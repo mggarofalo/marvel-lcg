@@ -23,6 +23,7 @@ internal static class AbilityCostLowering
         var argument = node.Argument;
         return node.Kind switch
         {
+            "chooseScheme" => SchemeCost(argument, child),
             "invocationTop" => InvocationCost(argument, child),
             "seq" => CostSequence(argument, child),
             "exhaust" => new AbilityCost.Exhaust(CostCard(argument, child)),
@@ -51,6 +52,12 @@ internal static class AbilityCostLowering
             "takeDamage" => DamageCost(argument, child, mustTakeAll: true),
             _ => throw child.Error($"'{node.Kind}' is not a cost operation"),
         };
+    }
+
+    private static AbilityCost.ChooseScheme SchemeCost(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "chosen");
+        return new();
     }
 
     private static AbilityCost.InvocationTop InvocationCost(AbilityValue value, AbilityLocation location)

@@ -9,6 +9,8 @@ internal static class AbilityDiscardReceiptAdmission
     internal static AbilityAdmissionResult? Admit(CompiledCardAbility ability,
         AbilityAdmissionContext context, IReadOnlyList<int>? selected)
     {
+        if (ability.Cost is AbilityCost.ChooseScheme)
+            return AbilitySchemeChoice.Admit(ability, context, selected);
         if (AbilityCostSelection.DiscardChoice(ability.Cost) is { } choice)
             return AbilityDiscardChoiceAdmission.Admit(ability, context, choice, selected);
         return PhysicalReceipts(ability, context, selected);

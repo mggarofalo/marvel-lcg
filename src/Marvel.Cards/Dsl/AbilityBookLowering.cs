@@ -77,6 +77,7 @@ internal static class AbilityBookLowering
         var compiledCost = ability.Cost is { } syntaxCost
             ? LowerCost(Syntax(syntaxCost), location with { Path = "cost" }) : null;
         AbilityDiscardChoiceLowering.Validate(ability, compiledCost, effect, location);
+        AbilitySchemeChoiceLowering.Validate(ability, compiledCost, effect, location);
         return new CompiledCardAbility(ability.Card, ability.Name, ability.Trigger, effect,
         compiledCost,
         ability.When is { } when ? LowerCondition(Syntax(when), location with { Path = "when" }) : null,

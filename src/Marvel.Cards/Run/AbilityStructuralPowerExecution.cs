@@ -27,8 +27,13 @@ internal static class AbilityStructuralPowerExecution
             AbilityPowerKind.Thwart => BasicPowers.ThwartVerb,
             _ => throw new InvalidOperationException("A defense power is not scheduled"),
         };
-        target ??= power.Target is { } selector ? Find(selector, context) : null;
-        if (target is null && (power.Kind != AbilityPowerKind.Thwart || power.Target is not null))
+        // rr:labeled-ability.4: the ability is "a thwart made by that player's identity".
+        // The existing targetless power lifecycle retains independent effects;
+        // the paid choice never authorizes a replacement scheme.
+        bool departed = AbilitySchemeCostBinding.HasDeparted(context.Program, context.AbilityFace,
+            power, context.Expressions.Bindings);
+        target = ResolveTarget(context, power, target, departed);
+        if (!departed && target is null && (power.Kind != AbilityPowerKind.Thwart || power.Target is not null))
             return new Unsupported($"'{context.SourceFace}' cannot find the target of its {verb}");
 
         var selected = PowerAdmission(context, power, target, targets);
@@ -44,6 +49,10 @@ internal static class AbilityStructuralPowerExecution
                 context.Player, context.Expressions.Source, target)) target = null;
         return SchedulePower(context, power, target, targets, amount, verb);
     }
+
+    private static Card? ResolveTarget(AbilityStructuralContext context, AbilityEffect.Power power,
+        Card? target, bool departed) => departed ? null
+        : target ?? (power.Target is { } selector ? Find(selector, context) : null);
 
     private static AbilityStructuralTransition SchedulePower(
         AbilityStructuralContext context, AbilityEffect.Power power, Card? target,

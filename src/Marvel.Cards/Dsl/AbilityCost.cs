@@ -59,6 +59,8 @@ public abstract record AbilityCost
     }
     /// <summary>Choose one trait-filtered physical card in your discard pile before payment.</summary>
     public sealed record ChooseFromDiscard(string Trait) : AbilityCost;
+    /// <summary>Choose one in-play scheme before paying for a thwart event.</summary>
+    public sealed record ChooseScheme : AbilityCost;
     /// <summary>Heal a positive amount of damage from the cost's card.</summary>
     public sealed record Heal(AbilityCostCard Card, long Amount) : AbilityCost;
     /// <summary>Deal damage, or require that all of it be taken to pay the cost.</summary>

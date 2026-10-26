@@ -84,6 +84,7 @@ internal static class AbilityPaymentRules
             // generated is not read at all. So the question is a count and not
             // a sum, and a card with no printed `RES` pays it.
             AbilityCost.RandomDiscardFromHand random => AbilityRandomHandCost.CanPay(world, card, player, random),
+            AbilityCost.ChooseScheme => AbilitySchemeChoice.Candidates(world, card, player).Count > 0,
             AbilityCost.ChooseFromDiscard choice => AbilityCostSelection.DiscardCandidates(world, player, choice).Count > 0,
             AbilityCost.DiscardFromHand discard => AbilityCostSelection.HandCandidates(world, card, player).Count
                 >= AbilityCostSelection.Range(discard.Range, int.MaxValue).Min,

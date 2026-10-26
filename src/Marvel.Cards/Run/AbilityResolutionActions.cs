@@ -99,7 +99,7 @@ internal static class AbilityResolutionActions
             AbilityPaymentSelection.Capture(paying, [], values, allocations: allocations));
         // rr:cost.5: costs "must be paid simultaneously". Capture the chosen
         // physical incarnation before exhaustion and retain it through cost work.
-        if (AbilityCostSelection.DiscardChoice(found.Cost) is not null)
+        if (AbilityCostSelection.BindsChosen(found.Cost))
             cast.Choose(world.Cards[chosen.Single()]);
         cast.TrackResolution(ability.Ordinal);
         if (eventPayment is not null)

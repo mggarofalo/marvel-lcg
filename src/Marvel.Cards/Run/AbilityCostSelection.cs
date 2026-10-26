@@ -13,6 +13,8 @@ internal static class AbilityCostSelection
     // discard or exhaust cost asks the payer to choose.
     internal static TargetRequest? Ask(World world, Card source, int player, AbilityCost? cost)
     {
+        if (cost is AbilityCost.ChooseScheme)
+            return new TargetRequest([.. AbilitySchemeChoice.Candidates(world, source, player).Select(card => card.ObjectId)], 1, 1);
         if (cost is AbilityCost.InvocationTop)
             return new TargetRequest(AbilityInvocationPayment.Top(world, player) is { } top ? [top.ObjectId] : [], 1, 1);
         if (cost is AbilityCost.Sequence sequence)
@@ -50,6 +52,9 @@ internal static class AbilityCostSelection
         [.. world.Areas.Where(area => area.Type == DeckType.DiscardPile && area.PlayArea == PlayArea.Of(player))
             .SelectMany(area => area.Cards)
             .Where(card => card.Owner == player && Traits.Has(world, card, choice.Trait, world.Facts))];
+
+    internal static bool BindsChosen(AbilityCost? cost) =>
+        cost is AbilityCost.ChooseScheme || DiscardChoice(cost) is not null;
 
     internal static AbilityCost.ChooseFromDiscard? DiscardChoice(AbilityCost? cost) => cost switch
     {

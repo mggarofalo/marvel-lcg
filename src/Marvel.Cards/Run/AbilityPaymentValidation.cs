@@ -94,6 +94,7 @@ internal sealed class AbilityPaymentValidation(
         AbilityCost step, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
         IReadOnlyDictionary<string, long>? values, AbilityCost? completeCost)
     {
+        if (ValidateChoiceCost(step, paying, chosen)) return;
         if (step is AbilityCost.Heal heal)
         {
             ValidateHealing(heal, paying, completeCost);
@@ -101,18 +102,26 @@ internal sealed class AbilityPaymentValidation(
         }
         if (step is AbilityCost.SpendEnergy)
             ValidateEnergySpend(step, paying, values);
-        else if (step is AbilityCost.ChooseFromDiscard choice)
-        {
-            if (paying.Count != 0 || chosen.Count != 1
-                || !AbilityCostSelection.DiscardCandidates(world, player, choice).Any(card => card.ObjectId == chosen[0]))
-                throw new RulesNotImplementedException("chooseFromDiscard requires one current own-discard card and no resource payment");
-        }
         else if (step is AbilityCost.DiscardFromHand discard)
             ValidateHandDiscard(discard, chosen);
         else if (step is AbilityCost.ExhaustChosen exhaust)
             ValidateChosenExhaust(exhaust, chosen);
         else if (!Payable(world, source, player, step, program, resourceAbilities))
             throw new RulesNotImplementedException($"'{source.FaceId}' cannot pay its compiled cost");
+    }
+
+    private bool ValidateChoiceCost(AbilityCost step, IReadOnlyList<int> paying, IReadOnlyList<int> chosen)
+    {
+        if (step is AbilityCost.ChooseScheme)
+        {
+            AbilitySchemeChoice.Validate(world, source, player, chosen);
+            return true;
+        }
+        if (step is not AbilityCost.ChooseFromDiscard choice) return false;
+        if (paying.Count != 0 || chosen.Count != 1
+            || !AbilityCostSelection.DiscardCandidates(world, player, choice).Any(card => card.ObjectId == chosen[0]))
+            throw new RulesNotImplementedException("chooseFromDiscard requires one current own-discard card and no resource payment");
+        return true;
     }
 
     private void ValidateHealing(AbilityCost.Heal heal, IReadOnlyList<int> paying, AbilityCost? completeCost)
