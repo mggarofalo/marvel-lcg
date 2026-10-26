@@ -49,3 +49,24 @@ Evidence outside the repository, under `C:/Users/mggar/Source/`:
 Final focused verification and normal commit hooks also run on the committed
 packet. Independent engine review and integrated broader checks remain with the
 delivery lead. This packet does not establish complete Doctor Strange admission.
+
+Independent engine review of `b3b566af` found a blocking admission gap. The
+minimized synthetic Special in
+`MasterOfMysticArtsReviewTests.SyntheticSpecialStillReturnsWhenOnlyItsSelfDiscardChangesState`
+heals a full-health identity, then discards itself. The child procedure is skipped:
+`ResolveSpecial` in `AbilityResolutionRevelation` gates execution through
+`AbilityEntryAdmission`; healing has invalid target legality, while
+`discardInvocation` falls through to no target legality. Their combined legality
+is invalid. Master nevertheless resumes its completed-procedure receipt and
+returns the original from `AdditionalDeck`, without the required self-discard or
+intermediate reveal. Self-discard must count as an affected target for these
+Invocation semantics. Production repair and a retest are required before acceptance.
+
+Independent evidence, outside the repository:
+
+- `strange-master-independent-focused.log`: the original 47 focused cases pass.
+- `strange-master-independent-review.log`: 54 pass, one intentional regression
+  fails; includes exhausted Strange and a synthetic choice after discard that
+  observes the intermediate public top before exact-card return, with and
+  without recycling. No production ability rows are added.
+- `strange-master-independent-deck.log`: all 17 Invocation deck cases pass.

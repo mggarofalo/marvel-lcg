@@ -13,7 +13,7 @@ namespace Marvel.Content.Tests.Play;
 internal static class SpellMasteryFixture
 {
     private static readonly CardCatalog Cards = CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
-    private static AbilityRunner Runner(bool paid, bool unsupported, bool choice) => new(AbilityCatalog.Parse("""
+    private static AbilityRunner Runner(bool paid, bool unsupported, bool choice, string? special = null) => new(AbilityCatalog.Parse("""
         {"cards":[{"card":"09001a","abilities":[{
           "name":"Spell Mastery",
           "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"this","form":"hero"},
@@ -33,7 +33,9 @@ internal static class SpellMasteryFixture
           "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
           "effect":{"draw":{"player":"you","count":1}}
         }]}]}
-        """.Replace("09036", paid && !unsupported ? "09032" : "09036", StringComparison.Ordinal)
+        """.Replace("""{"seq":[{"draw":{"player":"you","count":3}},{"discardInvocation":"this"}]}""",
+            special ?? """{"seq":[{"draw":{"player":"you","count":3}},{"discardInvocation":"this"}]}""", StringComparison.Ordinal)
+        .Replace("09036", paid && !unsupported ? "09032" : "09036", StringComparison.Ordinal)
         .Replace("""{"draw":{"player":"you","count":3}}""", paid
             ? """{"if":{"test":{"finalStep":"true"},"then":{"draw":{"player":"you","count":9}},"else":{"draw":{"player":"you","count":3}}}}"""
             : """{"draw":{"player":"you","count":3}}""", StringComparison.Ordinal)
@@ -45,9 +47,16 @@ internal static class SpellMasteryFixture
         offer => offer.AnchorId == hero.ObjectId && offer.Verb == Game.ActionVerb);
 
     internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) Board(int player, bool last = false, bool paid = false, bool live = false, bool unsupported = false,
-        int master = 0, bool choice = false)
+        int master = 0, bool choice = false) =>
+        CreateBoard(Runner(paid, unsupported, choice), player, last, paid, live, master);
+
+    // Synthetic Special control: a real decision can occur after the Invocation has left its deck.
+    internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) BoardWithSpecial(string special, bool last) =>
+        CreateBoard(Runner(false, false, false, special), 1, last, false, false, 1);
+
+    private static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) CreateBoard(
+        AbilityRunner runner, int player, bool last, bool paid, bool live, int master)
     {
-        var runner = Runner(paid, unsupported, choice);
         // Master mode 3 supplies a fixed shuffle control whose resolved copy is below the new top.
         var world = new World(Cards, player + 1, Seed(master));
         for (int index = 0; index <= player; index++)
