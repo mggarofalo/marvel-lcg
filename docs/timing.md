@@ -560,3 +560,17 @@ the event finishes its effects and reaches its owner's discard pile.
 This is runtime bookkeeping reconstructed from the session's accepted decision
 trace, not a new save field or card-digest field. Diagnostic ability and
 resolution JSON omits generation zero and retains a later generation explicitly.
+
+## Paid event initiation
+
+`WhenEventPlayInitiated` is the engine-selected condition for the point after
+printed and arrow costs finish and before the event effect body begins
+(`rr:initiating-abilities.step.6`). An observed interrupt suspends the paid event
+through the existing cost continuation, including an event played inside another
+interrupt or response window. The physical event remains faceup out of play.
+Declining or resolving the initiation interrupt resumes the event once.
+
+This condition is separate from `WhenCardPlayed`, whose completion responses
+follow the event's effects and discard. The initiation occurrence is omitted
+when no interrupt observes it. The condition supplies timing only; event-specific
+damage or threat modifiers and their lifetime require their own implementation.

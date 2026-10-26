@@ -241,6 +241,13 @@ public sealed class Agenda
             Seat: player
         ) { OccurrenceId = nextPlayerActionOccurrence-- });
 
+    /// <summary>Open the paid event's initiation window before its effects resolve.</summary>
+    public void NowEventPlayInitiated(int round, int subject, int player) =>
+        this.Now(new PhaseStep(
+            new LifecycleOperation(LifecycleKind.EventPlayInitiated), round, 0,
+            Subject: subject, Seat: player)
+        { OccurrenceId = nextPlayerActionOccurrence-- });
+
     /// <summary>
     /// Move work scheduled by the applying occurrence ahead of its response window.
     /// </summary>

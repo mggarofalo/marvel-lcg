@@ -11,6 +11,7 @@ public sealed record LifecycleOperation(LifecycleKind Kind) : AgendaOperation
     {
         LifecycleKind.CardPlayed => Steps.CardPlayed,
         LifecycleKind.EventPlayed => Steps.EventPlayed,
+        LifecycleKind.EventPlayInitiated => EventPlayTiming.Initiated,
         LifecycleKind.CardEntersPlay => Steps.CardEntersPlay,
         LifecycleKind.FormChanged => Steps.FormChanged,
         LifecycleKind.BasicRecoveryUsed => BasicPowerTiming.RecoveryUsed,
