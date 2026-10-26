@@ -5,6 +5,12 @@ forced and optional attack-end responses and is zero without a completed attack.
 
 # The card DSL
 
+`villainAndMinionsEngagedWithYou` selects the current villain and every effective
+minion engaged with the resolving player. It follows the active villain and
+projected stage/engagement changes, excludes other players' minions, and can feed
+one simultaneous `dealDamage`. The query spelling and villain-first ordering are
+engine choices. This primitive does not itself admit Lightning Strike.
+
 `blankPrintedTextUntilEndOfPhase: "this"` is an engine spelling for a standalone
 self-blank Action on a live nonpermanent minion. It suppresses the whole printed
 text box for every player until the phase scheduler expires the lasting effect.

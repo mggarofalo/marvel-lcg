@@ -23,6 +23,7 @@ internal sealed class CardQueryEvaluator(
         AbilityCardQuery.Villains, AbilityCardQuery.Enemies, AbilityCardQuery.AttackableEnemies,
         AbilityCardQuery.AttackableMinions, AbilityCardQuery.ThwartableSchemes,
         AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
+        AbilityCardQuery.VillainAndMinionsEngagedWithYou,
     ];
     private static readonly ImmutableArray<AbilityCardQuery> ControlledQueries =
     [
@@ -106,6 +107,11 @@ internal sealed class CardQueryEvaluator(
 
     private IReadOnlyList<Card> EvaluateEnemies(AbilityCardQuery query) => query switch
     {
+        // Engine choice: villain first, followed by the engaged area's physical order.
+        AbilityCardQuery.VillainAndMinionsEngagedWithYou =>
+            [.. Evaluate(AbilityCardQuery.Villain),
+                .. Evaluate(AbilityCardQuery.MinionsEngagedWithYou)
+                    .Where(card => EffectiveCards.Kind(card, cast.World.Facts) == CardKind.Minion)],
         // rr:engage.1: engagement is the player's engaged-enemy area.
         AbilityCardQuery.MinionsEngagedWithYou =>
             [.. InArea(cast.World, DeckType.EngagedEnemiesArea, PlayArea.Of(cast.Player))],

@@ -114,6 +114,7 @@ internal static class AbilitySelectorLowering
         "charactersYouControlExceptCost" => AbilityCardQuery.CharactersYouControlExceptCost,
         "upgradesYouControl" => AbilityCardQuery.UpgradesYouControl,
         "enemiesEngagedWithChosenPlayer" => AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
+        "villainAndMinionsEngagedWithYou" => AbilityCardQuery.VillainAndMinionsEngagedWithYou,
         "upgradesOnYourHero" => AbilityCardQuery.UpgradesOnYourHero,
         "alliesYouControl" => AbilityCardQuery.AlliesYouControl,
         "allies" => AbilityCardQuery.Allies,

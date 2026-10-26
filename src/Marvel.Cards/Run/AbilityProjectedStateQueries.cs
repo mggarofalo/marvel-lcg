@@ -14,14 +14,9 @@ internal static class AbilityProjectedStateQueries
         AbilityAdmissionContext context)
     {
         AbilityInPlayCardQuery.ValidateProjection(selector, state);
-        if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.OtherVillainSideSchemes })
-            return [.. AbilityOtherVillainSchemeQuery.InAreas(context, state)];
-        if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.VillainOfAttachedScheme })
-            return [.. AbilityAttachedSchemeVillainQuery.InAreas(context, state)];
-        if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.ActiveVillainSideScheme })
-            return [.. AbilityActiveSchemeQuery.InAreas(context.World, state)];
-        if (selector is AbilityCardSelection.Query rankedQuery && AbilityEncounterSchemeQueries.IsRanked(rankedQuery.Kind))
-            return [.. AbilityEncounterSchemeQueries.InAreas(rankedQuery.Kind, context.World, state)];
+        if (selector is AbilityCardSelection.Query relation
+            && AbilityProjectedRelationQueries.Select(relation.Kind, state, context) is { } related)
+            return related;
         var found = ProjectedCandidates(selector, state, context)
             .Where(card => !state.Departed.Contains(card.ObjectId))
             .ToList();

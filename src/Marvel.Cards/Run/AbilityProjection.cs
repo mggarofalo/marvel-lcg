@@ -43,7 +43,7 @@ internal static class AbilityProjection
         AbilityCardSelection.WithTrait or AbilityCardSelection.WithStatus or AbilityCardSelection.EnemiesWithTrait
             or AbilityCardSelection.Ranked or AbilityCardSelection.WithoutAnotherCopyAttached => true,
         AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.AttackableEnemies
-            or AbilityCardQuery.MinionsEngagedWithYou
+            or AbilityCardQuery.VillainAndMinionsEngagedWithYou or AbilityCardQuery.MinionsEngagedWithYou
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer or AbilityCardQuery.UpgradesYouControl
             or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.UpgradesAndSupportsYouControl
             or AbilityCardQuery.CardsYouControl or AbilityCardQuery.OtherVillainSideSchemes or AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme
@@ -56,7 +56,7 @@ internal static class AbilityProjection
         if (!HasLivingVillain(cast.World)) return false;
         return selector switch
         {
-            AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.Villain
+            AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.VillainAndMinionsEngagedWithYou or AbilityCardQuery.Villain
                 or AbilityCardQuery.Villains or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters
                 || AbilityEncounterSchemeQueries.IsRanked(query.Kind),
             AbilityCardSelection.Titled titled => PotentialStages(cast.World)

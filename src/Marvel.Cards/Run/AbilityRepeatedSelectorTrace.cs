@@ -86,7 +86,7 @@ internal static class AbilityRepeatedSelectorTrace
     internal static bool SelectorCanTrackVillain(
         AbilityCardSelection selector, Card current, AbilityAdmissionScope cast) => selector switch
         {
-            AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.Villain
+            AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.VillainAndMinionsEngagedWithYou or AbilityCardQuery.Villain
                 or AbilityCardQuery.Villains or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters
                 || AbilityEncounterSchemeQueries.IsRanked(query.Kind),
             AbilityCardSelection.Titled titled => string.Equals(
@@ -120,14 +120,8 @@ internal static class AbilityRepeatedSelectorTrace
     internal static bool TraceQueryMatches(
         AbilityCardQuery query, Card candidate, AbilitySelectorTraceContext trace)
     {
-        if (query == AbilityCardQuery.OtherVillainSideSchemes)
-            return AbilityOtherVillainSchemeQuery.InTrace(trace).Contains(candidate);
-        if (query == AbilityCardQuery.VillainOfAttachedScheme)
-            return AbilityAttachedSchemeVillainQuery.InTrace(trace).Contains(candidate);
-        if (query == AbilityCardQuery.ActiveVillainSideScheme)
-            return AbilityActiveSchemeQuery.InTrace(trace).Contains(candidate);
-        if (AbilityEncounterSchemeQueries.IsRanked(query))
-            return AbilityEncounterSchemeQueries.InTrace(query, trace).Contains(candidate);
+        if (TraceRelation(query, trace) is { } related)
+            return related.Contains(candidate);
         if (query == AbilityCardQuery.CardsInPlay)
             throw new RulesNotImplementedException("cardsInPlay in a repeated projection requires complete projected placement");
         var cast = trace.Cast;
@@ -140,6 +134,9 @@ internal static class AbilityRepeatedSelectorTrace
         return query switch
         {
             AbilityCardQuery.Villain => candidate.ObjectId == trace.CurrentVillain,
+            AbilityCardQuery.VillainAndMinionsEngagedWithYou =>
+                candidate.ObjectId == trace.CurrentVillain
+                || IsEngagedMinion(kind, candidate, cast.Player, engagement),
             AbilityCardQuery.Villains => villain,
             AbilityCardQuery.Enemies => villain
                 || kind == CardKind.Minion,
@@ -165,6 +162,16 @@ internal static class AbilityRepeatedSelectorTrace
                 card.ObjectId == candidate.ObjectId),
         };
     }
+
+    private static IEnumerable<Card>? TraceRelation(
+        AbilityCardQuery query, AbilitySelectorTraceContext trace) => query switch
+    {
+        AbilityCardQuery.OtherVillainSideSchemes => AbilityOtherVillainSchemeQuery.InTrace(trace),
+        AbilityCardQuery.VillainOfAttachedScheme => AbilityAttachedSchemeVillainQuery.InTrace(trace),
+        AbilityCardQuery.ActiveVillainSideScheme => AbilityActiveSchemeQuery.InTrace(trace),
+        _ when AbilityEncounterSchemeQueries.IsRanked(query) => AbilityEncounterSchemeQueries.InTrace(query, trace),
+        _ => null,
+    };
 
     private static bool IsCharacter(bool villain, CardKind kind) =>
         villain || kind is CardKind.Minion or CardKind.Hero or CardKind.AlterEgo or CardKind.Ally;

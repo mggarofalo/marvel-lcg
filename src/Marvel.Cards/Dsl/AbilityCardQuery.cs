@@ -74,6 +74,8 @@ public enum AbilityCardQuery
     UpgradesYouControl,
     /// <summary>The authored enemiesEngagedWithChosenPlayer relation.</summary>
     EnemiesEngagedWithChosenPlayer,
+    /// <summary>The current villain and each effective minion engaged with the resolving player.</summary>
+    VillainAndMinionsEngagedWithYou,
     /// <summary>The authored alliesYouControl relation.</summary>
     AlliesYouControl,
     /// <summary>The authored allies relation.</summary>

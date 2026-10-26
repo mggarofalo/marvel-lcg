@@ -19,12 +19,8 @@ internal static class AbilitySelectionAreaReads
         if (Operand(selection) is { } child) Collect(child, areas);
         switch (selection)
         {
-            case AbilityCardSelection.Query { Kind: AbilityCardQuery.Villains }:
-                areas.Add(DeckType.VillainArea); break;
-            case AbilityCardSelection.Query query when ReadsPairedScheme(query.Kind):
-                areas.Add(DeckType.VillainArea);
-                areas.Add(DeckType.SideSchemesArea);
-                break;
+            case AbilityCardSelection.Query query:
+                areas.UnionWith(QueryAreas(query.Kind)); break;
             case AbilityCardSelection.FirstAvailable fallback:
                 foreach (var option in fallback.Options) Collect(option, areas);
                 break;
@@ -38,10 +34,19 @@ internal static class AbilitySelectionAreaReads
                 or AbilityCardSelection.WithoutAnotherCopyAttached or AbilityCardSelection.Discardable
                 or AbilityCardSelection.Ranked:
             case AbilityCardSelection.DefeatedWithProfile or AbilityCardSelection.Bound
-                or AbilityCardSelection.Query or AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait: break;
+                or AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait: break;
             default: throw new InvalidOperationException("Unknown compiled selector in area-dependency analysis");
         }
     }
+
+    private static IEnumerable<DeckType> QueryAreas(AbilityCardQuery query) => query switch
+    {
+        AbilityCardQuery.VillainAndMinionsEngagedWithYou =>
+            [DeckType.VillainArea, DeckType.EngagedEnemiesArea],
+        AbilityCardQuery.Villains => [DeckType.VillainArea],
+        _ when ReadsPairedScheme(query) => [DeckType.VillainArea, DeckType.SideSchemesArea],
+        _ => [],
+    };
 
     private static bool ReadsPairedScheme(AbilityCardQuery query) =>
         query is AbilityCardQuery.OtherVillainSideSchemes or AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme || AbilityEncounterSchemeQueries.IsRanked(query);

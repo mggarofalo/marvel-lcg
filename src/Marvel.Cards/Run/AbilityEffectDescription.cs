@@ -134,7 +134,7 @@ internal static class AbilityEffectDescription
             or AbilityCardQuery.AttackableEnemies
             or AbilityCardQuery.Minions
             or AbilityCardQuery.AttackableMinions
-            or AbilityCardQuery.MinionsEngagedWithYou
+            or AbilityCardQuery.VillainAndMinionsEngagedWithYou or AbilityCardQuery.MinionsEngagedWithYou
             or AbilityCardQuery.EnemiesEngagedWithChosenPlayer } => "enemy",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.Schemes
             or AbilityCardQuery.ThwartableSchemes
