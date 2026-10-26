@@ -60,8 +60,11 @@ independent identities do:
 
 Replay v23 consumes every prevention committed to one damage instance, including
 stacked Cosmic Flights, and preserves separate resolutions when a recovered event
-is replayed in the same window, including suspended payment. These corrections
-change existing Core traces independently of expansion content. There is no named
+is replayed in the same window, including suspended payment. It also assigns
+ordinary simultaneous activations to the attacked player and nested activations
+to the first player, deferring attack-end response activations until the enclosing
+attack finishes. These corrections change existing Core traces, including
+Gang-Up, independently of expansion content. There is no named
 v22 source admission: v22 saves are quarantined unchanged before replay. Frozen
 v19/v20/v21 sources retain explicitly named v23 routes that verify every original
 gameplay fact and reject divergent histories. Protocol 37, schema 7, RNG and digest

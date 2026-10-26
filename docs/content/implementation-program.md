@@ -52,22 +52,34 @@ MARVEL-559/561 are the two canonical parents. Green Goblin implementation is alr
 
 The integrated prerequisite candidate includes reviewed 682 activation replacement,
 689 flip/damage mechanics, 705 status-aware selection and 711 activation ordering.
-689 still needs stage-appropriate authored reveal coverage with the complete Risky
-Business rows; its component tests are not full scenario acceptance. A Mess of
+689's stage-appropriate authored reveals and promotion are covered by the eight
+stage/environment faces. Seven Risky Business encounter faces are also authored
+and independently reviewed; main schemes and setup remain in 690. A Mess of
 Things has all four executable faces and its exact five-card research recipe.
 683's pinned Ms. Marvel divider and starter are integrated, as is 698's Phoenix
-Burning Hunger source correction. These changes do not admit Green Goblin or
+Burning Hunger source correction. Thor's original starter divider and numbered
+nemesis components are pinned for 563/702, including reconciliation of the
+divider's swapped nemesis quantities. These changes do not admit Green Goblin or
 Ms. Marvel. Record final combined verification and merge on MARVEL-703 before
 closing individual prerequisites.
 
-The next timing packet is 684, exact played-event recovery for Morphogenetics,
-with a separate engine reviewer. Goblin scenario authoring 690/691 and remaining
+684's exact played-event recovery, same-window event replay and stacked prevention
+are implemented and independently reviewed. Replay v23 covers these corrections
+and 711's changed activation ordering; its named predecessor routes verify exact
+histories and otherwise quarantine incompatible saves unchanged. Goblin scenario
+authoring 690/691 and remaining
 modular authoring 692 follow the reviewed contracts. The latter has explicit
 shared prerequisites: 706 persistent boost/stage healing, 707 encounter-mill
 receipts and Electro recruitment, 708 resource-constrained hand discard, 709 live
 attachment prohibitions, and 710 repeated player-revealed abilities. Each packet
 first proves whether existing primitives suffice, then extends only the missing
 behavior. Serialize ability-book integration and shared timing changes.
+
+MARVEL-712 supplies main-scheme When Completed resolution before advancement,
+first proved by Hostile Takeover (02004b). The existing timing enum alone does
+not execute that printed clause. Queue its engine implementation/reviewer pair
+after 684's shared timing work, before completing 690's main-scheme authoring
+and setup. Preserve actual source and effect ordering through suspended choices.
 
 MARVEL-695 is merged in PR #445 with all eleven CI checks passing. The focused
 Wrecking Crew UI review remains MARVEL-694; neither is a content dependency.

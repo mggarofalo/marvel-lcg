@@ -157,7 +157,8 @@ public sealed class RiskyBusinessEncounterAbilityTests : CoreCardTestBase
     [Rule("rr:first-player.1")]
     public void MadGeniusHeroTieAsksNonzeroFirstPlayer()
     {
-        // "The first player resolves ... conflicts ... that players cannot resolve."
+        // "If an encounter card targets a specific player or card, and there are multiple
+        // eligible targets, the first player selects among the eligible options."
         var world = Board(true);
         world.FirstPlayer = 1;
         var source = world.CreateCard("02013", world.AreaOf(DeckType.RevealingArea));
