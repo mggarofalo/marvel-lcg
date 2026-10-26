@@ -60,6 +60,9 @@ public class NoCardAbilities : ICardAbilities
     public virtual AbilityExecutionResult WhenRevealed(World world, AbilityExecution entry, Card card, int player) => world.Agenda.Executions.FinishBatch(entry, []);
 
     /// <inheritdoc/>
+    public virtual void RequireWhenRevealed(string face) { }
+
+    /// <inheritdoc/>
     public virtual IReadOnlyList<PendingAbility> WhenRevealedAbilities(
         World world, Card card, int player) => [];
 

@@ -17,6 +17,8 @@ public static class GreenGoblinTransition
         long before = environment.Tokens.GetValueOrDefault(key);
         long removed = Math.Min(before, amount);
         if (removed == 0) return 0;
+        if (before == removed && counter == "infamy")
+            world.EncounterAbilities.RequireWhenRevealed(villain.FaceId[..5] + "b");
         environment.PlaceTokens(key, -removed);
         events.Add(new FieldSet(environment.ObjectId, key, before, before - removed)
         {

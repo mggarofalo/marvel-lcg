@@ -2,6 +2,7 @@ using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -10,6 +11,79 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class GreenGoblinDamageReplacementTests
 {
+    [Fact]
+    public void MissingGoblinRevealRejectsBeforeTheLastInfamyIsRemoved()
+    {
+        var runner = new AbilityRunner(AbilityBook.None);
+        var world = new World(new Facts(), 1) { Abilities = runner };
+        world.CreateSeat("p0");
+        var villain = world.CreateCard("02001a,02001b", world.AreaOf(DeckType.VillainArea));
+        var environment = world.CreateCard("02006a,02006b", world.AreaOf(DeckType.EnvironmentArea));
+        environment.PlaceTokens("c_infamy", 1);
+        var events = new List<GameEvent>();
+        var before = (world.Digest().Canonical(), world.Random.Generator.WordsConsumed);
+
+        Assert.Throws<RulesNotImplementedException>(() =>
+            GreenGoblinTransition.RemoveCounters(world, environment, "infamy", 1, "Test", events));
+
+        Assert.Equal(before, (world.Digest().Canonical(), world.Random.Generator.WordsConsumed));
+        Assert.Equal("02001a", villain.FaceId);
+        Assert.Equal("02006a", environment.FaceId);
+        Assert.Equal(1, environment.Tokens["c_infamy"]);
+        Assert.Empty(events);
+        Assert.Empty(world.Agenda.Outstanding);
+    }
+
+    [Rule("rr:indirect-damage.1")]
+    [Fact]
+    public void PrintedGoblinRevealSuspendsForAllocationAndCompletes()
+    {
+        // 02001b: “Deal 3 indirect damage to each player in hero form.”
+        var runner = StageOneRevealRunner();
+        var facts = new Facts();
+        var world = new World(facts, 1) { Abilities = runner };
+        world.CreateSeat("p0");
+        var hero = world.CreateCard("hero", world.Seats[0].Hero);
+        world.Seats[0].IdentityCard = hero;
+        var ally = world.CreateCard("ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var villain = world.CreateCard("02001a,02001b", world.AreaOf(DeckType.VillainArea));
+        var environment = world.CreateCard("02006a,02006b", world.AreaOf(DeckType.EnvironmentArea));
+        environment.PlaceTokens("c_infamy", 1);
+        var events = new List<GameEvent>();
+
+        GreenGoblinTransition.RemoveCounters(world, environment, "infamy", 1, "Test", events);
+        var prompt = Sequence.Work(world, facts, runner, events);
+        Assert.NotNull(prompt);
+        Assert.Equal(Question.Element, prompt.Asking);
+        Assert.Equal(0, hero.Damage);
+        Assert.Equal(0, ally.Damage);
+        Assert.Contains(world.Agenda.Outstanding,
+            step => step.What == Steps.ResolveEachPlayer);
+        var allocation = Assert.Single(prompt.Affordances);
+        Assert.Equal(3, allocation.Targets!.Min);
+
+        Sequence.Answer(world, facts, runner, prompt!,
+            Decision.Take(allocation.Id, [ally.ObjectId, hero.ObjectId, hero.ObjectId], []), events);
+        Sequence.Finish(world, facts, runner, events);
+
+        Assert.Equal("02001b", villain.FaceId);
+        Assert.Equal("02006b", environment.FaceId);
+        Assert.Equal(1, ally.Damage);
+        Assert.Equal(2, hero.Damage);
+        Assert.Empty(world.Agenda.Outstanding);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    private static AbilityRunner StageOneRevealRunner() => new(AbilityCatalog.Parse("""
+        {"cards":[{"card":"02001b","abilities":[{
+          "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
+          "effect":{"eachPlayer":{"effect":{"if":{
+            "test":{"inForm":{"player":"you","form":"hero"}},
+            "then":{"indirectDamage":{"among":{"query":"heroesAndAllies"},"amount":3}}
+          }}}}
+        }]}]}
+        """));
+
     [Fact]
     public void AuthoredCounterRemovalUsesTheSameFormTransition()
     {
@@ -66,16 +140,11 @@ public sealed class GreenGoblinDamageReplacementTests
         // 02001a: “When Norman Osborn would take any amount of damage, remove
         // that many infamy counters from Criminal Enterprise instead.”
         // ruling:e4ea1bf855e41aac confirms that a later instance sees Goblin.
-        // The synthetic book marks the Goblin reveal as understood but silent;
-        // the printed reveal's damage belongs to the separate content packet.
-        var runner = new AbilityRunner(new AbilityBook([], new HashSet<string>
-        {
-            "02001b",
-        }));
+        var runner = StageOneRevealRunner();
         var facts = new Facts();
         var world = new World(facts, 1) { Abilities = runner };
         world.CreateSeat("p0");
-        var identity = world.CreateCard("hero", world.Seats[0].Hero);
+        var identity = world.CreateCard("alterego", world.Seats[0].Hero);
         world.Seats[0].IdentityCard = identity;
         var villain = world.CreateCard("02001a,02001b", world.AreaOf(DeckType.VillainArea));
         var environment = world.CreateCard("02006a,02006b", world.AreaOf(DeckType.EnvironmentArea));
@@ -119,6 +188,8 @@ public sealed class GreenGoblinDamageReplacementTests
         public CardKind Kind(string face) => face switch
         {
             "hero" => CardKind.Hero,
+            "alterego" => CardKind.AlterEgo,
+            "ally" => CardKind.Ally,
             "02001a" or "02001b" => CardKind.EncounterVillain,
             "02006a" or "02006b" => CardKind.Environment,
             _ => CardKind.Treachery,
@@ -134,6 +205,8 @@ public sealed class GreenGoblinDamageReplacementTests
         public IReadOnlyDictionary<string, string> Attributes(string face) =>
             face is "02001a" or "02001b"
                 ? new Dictionary<string, string> { ["HP"] = "14" }
+                : face == "hero" ? new Dictionary<string, string> { ["HP"] = "10" }
+                : face == "ally" ? new Dictionary<string, string> { ["HP"] = "3" }
                 : new Dictionary<string, string>();
         public long PrintedValue(string face, string attribute, int players, long fallback = 0) =>
             Attributes(face).TryGetValue(attribute, out string? value)
