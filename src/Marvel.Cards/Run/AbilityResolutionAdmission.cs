@@ -92,7 +92,8 @@ internal static class AbilityResolutionAdmission
         AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
         {
             "indirectDamage" => HasPartialResolutionTargets(node, cast)
-                && Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) > 0,
+                && AbilityEventModifiers.DamageAmount(cast.World, cast.Source,
+                    Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast)) > 0,
             "dealDamage" => HasPartialResolutionTargets(node, cast)
                 && Amount(EffectOf<AbilityEffect.Damage>(node, cast).Amount, cast) > 0,
             "dealAttackDamage" => HasPartialResolutionTargets(node, cast)

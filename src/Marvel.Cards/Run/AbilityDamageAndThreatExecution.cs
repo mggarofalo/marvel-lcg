@@ -129,7 +129,8 @@ internal static class AbilityDamageAndThreatExecution
     private static void Indirect(AbilityEffect.IndirectDamage damage, AbilityEffect node,
         AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state)
     {
-        long amount = Amount(damage.Amount, context);
+        long amount = AbilityEventModifiers.DamageAmount(
+            context.World, context.Source, Amount(damage.Amount, context));
         var eligible = Assignable(Every(damage.Among, context), context);
         if (amount <= 0 || eligible.Count == 0) return;
         if (eligible.Count == 1)

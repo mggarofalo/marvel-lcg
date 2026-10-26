@@ -27,7 +27,8 @@ internal static class AbilityLeafTargetAvailability
                 ReplaceableDefenseDefender(cast)),
         "grantUntil" => Find(GrantSelectionOf(node, cast), cast) is not null,
         "dealEncounterCard" => Find(EffectOf<AbilityEffect.DealEncounterCard>(node, cast).Card, cast) is not null,
-        "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) <= 0
+        "indirectDamage" => AbilityEventModifiers.DamageAmount(cast.World, cast.Source,
+            Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast)) <= 0
             || Assignable(DamageSelectionOf(node, cast), cast).Count > 0,
         "dealDamage" or "dealAttackDamage" => DamageTargets(DamageSelectionOf(node, cast), cast).Count > 0,
         "placeThreat" => Every(ThreatSelectionOf(node, cast), cast).Count > 0,

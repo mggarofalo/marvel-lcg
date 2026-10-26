@@ -166,12 +166,16 @@ internal static class AbilityStructuralExecution
             : new Unsupported($"'{context.SourceFace}' cannot pay the offered resources");
     }
 
+    private static long IndirectAmount(AbilityStructuralContext context, AbilityEffect.IndirectDamage damage) =>
+        AbilityEventModifiers.DamageAmount(context.Expressions.World,
+            context.Expressions.Source, Amount(damage.Amount, context));
+
     internal static Prompt DescribeIndirectDamage(
         AbilityStructuralContext context, AbilityEffect.IndirectDamage damage)
     {
         var domain = DamageContext(context);
         var eligible = AbilityDamageAndThreatExecution.Assignable(damage.Among, domain);
-        long amount = Amount(damage.Amount, context);
+        long amount = IndirectAmount(context, damage);
         long share = Math.Min(amount, eligible.Sum(card =>
             AbilityDamageAndThreatExecution.Room(card, domain)));
         return new Prompt(context.Player, Question.Element, TimingPriority.Untimed,
@@ -181,7 +185,11 @@ internal static class AbilityStructuralExecution
                 new TargetRequest([.. eligible.Select(card => card.ObjectId)], (int)share, (int)share,
                     Rule: "rr:indirect-damage.1", AllowRepeated: true,
                     MaximumOccurrences: eligible.ToDictionary(card => card.ObjectId,
-                        card => checked((int)AbilityDamageAndThreatExecution.Room(card, domain)))))]);
+                        card => checked((int)AbilityDamageAndThreatExecution.Room(card, domain)))))])
+        {
+            DisplayQuestion = $"Assign {share} indirect damage",
+            Description = $"Assign {share} damage among the eligible characters, up to each character's remaining health.",
+        };
     }
 
     internal static AbilityStructuralTransition AnswerIndirectDamage(
@@ -189,7 +197,7 @@ internal static class AbilityStructuralExecution
     {
         var domain = DamageContext(context);
         var eligible = AbilityDamageAndThreatExecution.Assignable(damage.Among, domain);
-        long expected = Math.Min(Amount(damage.Amount, context), eligible.Sum(card =>
+        long expected = Math.Min(IndirectAmount(context, damage), eligible.Sum(card =>
             AbilityDamageAndThreatExecution.Room(card, domain)));
         if (answer.IsDecline || answer.Targets.Count != expected)
             return new Unsupported($"'{context.SourceFace}' requires {expected} indirect damage assignment(s) and {answer.Targets.Count} were chosen");

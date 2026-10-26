@@ -297,6 +297,8 @@ internal static class AbilityPowerStateMutation
             _ => Amount(DamageAmountOf(node, cast), cast),
         };
         long amount = SaturatingMultiply(authored, multiplier);
+        if (node is AbilityEffect.IndirectDamage)
+            amount = AbilityEventModifiers.DamageAmount(cast.World, cast.Source, amount);
         var first = cast.World.Seats[cast.World.FirstPlayer].IdentityCard;
         return ApplyPowerDamage(state, cards, amount, first, cast);
     }
