@@ -13,6 +13,8 @@ namespace Marvel.Acceptance.Tests.Play;
 public sealed class GreenGoblinGameTests(ITestOutputHelper output)
 {
     [Theory]
+    [InlineData("mutagen_formula", "captain_america", 11u, Outcome.PlayersLose, "02014,02015")]
+    [InlineData("mutagen_formula_expert", "captain_america", 23u, Outcome.PlayersLose, "02015")]
     [InlineData("risky_business", "spider_man", 1u, Outcome.PlayersLose, "02001a,02001b")]
     [InlineData("risky_business_expert", "spider_man", 2u, Outcome.PlayersLose, "02002a,02002b")]
     [InlineData("mutagen_formula", "spider_man", 3u, Outcome.PlayersLose, "02014,02015")]
@@ -74,5 +76,3 @@ public sealed class GreenGoblinGameTests(ITestOutputHelper output)
         result?.Information,
     });
 }
-
-

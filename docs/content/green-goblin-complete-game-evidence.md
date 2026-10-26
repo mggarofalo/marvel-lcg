@@ -73,3 +73,51 @@ search log has a stale Captain America output label, while its executable policy
 used Spider-Man. Victory, Expert Mutagen promotion, multiplayer complete games,
 pending-choice restart and native interaction remain unproved by this packet.
 
+
+## MARVEL-726 independent engine review
+
+Engine revision reviewed: `f4a1f89904fc784bb7fbd6d8d58cee8c21bb8a28`.
+Review worktree also contains complete-game proof commit
+`cd7b9243953ca6fe8a2f959197e86a14d3303f89` (cherry-pick `c1809f4d`).
+No production changes were made by the reviewer. Review found no correctness
+blocker in character own-defeat deferral, would-defeat refusal, subsequent-target
+refusal, or opaque continuation refusal within this focused scope.
+
+Independent checks retain five cases: Press the Advantage checks the original
+enemy's status after lethal/nonlethal Goblin Soldier settlement; Photonic Blast
+settles Soldier damage with/without the engaged identity's Tough and then draws
+the exact next card after energy payment; a synthetic live-board conditional
+refuses before exhaustion even when both branches are fixed draws.
+
+Windows Release focused command:
+
+```powershell
+dotnet test tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj -c Release --filter 'FullyQualifiedName~SoldierDefeatIndependentReviewTests|FullyQualifiedName~HeroicStrikeMinionDefeatTests|FullyQualifiedName~ActionAbilityPowerTraceWouldBeDefeatedInterruptRaisesTests|FullyQualifiedName~RuleCitationTests' --logger 'console;verbosity=normal'
+```
+
+Result: 19/19, comprising 17 behavioral cases and two citation checks.
+Log: `%TEMP%/soldier-review-focused.log`.
+
+The public Mutagen Formula Captain America games replay every decision against
+a second production game, including digest, RNG consumption, prompts and results:
+
+```powershell
+dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj -c Release --filter 'FullyQualifiedName~GreenGoblinGameTests&DisplayName~captain_america&DisplayName~mutagen_formula' --logger 'console;verbosity=detailed'
+```
+
+Result: 2/2. Standard seed 11: PlayersLose, round 6, 59 decisions, 12 cards,
+9 payments, 6 attacks, stages 02014/02015, 260 RNG words.
+Expert seed 23: PlayersLose, round 4, 40 decisions, 8 cards, 5 payments,
+3 attacks, stage 02015, 225 RNG words.
+Log: `%TEMP%/soldier-review-public-games-final.log`.
+
+The supplied temporary reproduction expected only stage 02014 for Standard
+seed 11. Its first replay completed and failed only that stage assertion, since
+the corrected resolution also reaches stage 02015. That initial result is retained
+in `%TEMP%/soldier-review-public-games.log`; the newly added permanent seed 11
+case records both observed stages. The original eight proof rows are unchanged.
+
+This is focused engine/regression evidence. It does not establish native UI,
+whole-pack acceptance, other seeded games, or cross-platform CI. The reviewer did
+not edit production code or run additional mutants; implementation-author mutant
+evidence remains a separate claim.
