@@ -235,6 +235,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
     [InlineData(29)]
     [InlineData(36)]
     [InlineData(37)]
+    [InlineData(38)]
     public void UnsupportedVersionIsRejectedBeforeItCanOpenAGame(int version)
     {
         // The protocol includes active attack context. Older endpoints are
@@ -242,7 +243,7 @@ public sealed class EngineHostAuthoredSetupChoicesTests : EngineHostTestBase
         var factory = new UnusedFactory();
         var host = new EngineHost(factory);
         var rejected = host.Exchange(new EngineRequest(version, "old-client", EngineProtocol.Open, "game", Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
-        Assert.Equal(38, EngineProtocol.Version);
+        Assert.Equal(39, EngineProtocol.Version);
         Assert.Equal(EngineProtocol.Version, rejected.Version);
         Assert.Equal("unsupported_version", rejected.Error?.Code);
         Assert.Equal(0, factory.Calls);

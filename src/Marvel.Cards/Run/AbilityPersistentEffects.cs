@@ -26,6 +26,8 @@ internal static class AbilityPersistentEffects
 
     private static PersistentEffect? Single(AbilityEffect effect) => effect switch
     {
+        _ when AbilityPrintedTextDescription.IsPhaseBlanking(effect) =>
+            new("BlankPrintedText", "Source", Until: Marvel.Rules.Timing.TimingPoints.EndOfPhase),
         AbilityEffect.ChooseCard { From: AbilityCardSelection.Query { Kind: AbilityCardQuery.Schemes },
             Effect: AbilityEffect.RemoveThreat { Schemes: AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen },
                 Amount: AbilityNumber.Constant amount, IgnoresCrisis: false, OverridesCannotFrom: null } }

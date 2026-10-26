@@ -51,6 +51,11 @@ public sealed class RobotActualReviewTests
         Assert.DoesNotContain("printedTextBlanked", offer.Description);
         Assert.Contains("blank", offer.DisplayLabel, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("phase", offer.CommitLabel, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(robot!.ObjectId, offer.AnchorId);
+        Assert.Equal(0, offer.AnchorPlayer);
+        var price = Assert.Single(offer.CostOptions);
+        Assert.Equal("1", price.Cost);
+        Assert.Equal(["B"], price.Rule);
     }
 
     [Fact]
@@ -67,5 +72,11 @@ public sealed class RobotActualReviewTests
         var action = Assert.Single(facts.Abilities, ability => ability.Trigger.Timing == "Action");
         Assert.NotEmpty(action.Effects);
         Assert.DoesNotContain(action.Effects, effect => effect.Field == "printedTextBlanked");
+        var effect = Assert.Single(action.Effects);
+        Assert.Equal("BlankPrintedText", effect.Operation);
+        Assert.Equal("Source", effect.Target);
+        Assert.Equal(TimingPoints.EndOfPhase, effect.Until);
+        Assert.Null(effect.Amount);
+        Assert.Null(effect.Field);
     }
 }

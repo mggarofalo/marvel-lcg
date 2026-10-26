@@ -82,10 +82,16 @@ internal static class CardSourceSummary
             "Discard" => $"discard {Role(value.Target)}",
             "RedirectAllDamage" => $"All damage → {Role(value.Target, here: true)}",
             "RemoveThreat" => $"remove {value.Amount} threat from {Role(value.Target)}",
+            "BlankPrintedText" => $"blank {Role(value.Target)} card's printed text box",
             "Grant" => value.Field == "overkill" ? "overkill" : $"{value.Field} {value.Amount?.ToString(CultureInfo.InvariantCulture)}",
             _ => value.Operation,
         };
-        if (value.Until is { } until) text += until == "EndOfAttack" ? " until attack ends" : $" until {until}";
+        if (value.Until is { } until) text += until switch
+        {
+            "EndOfAttack" => " until attack ends",
+            "EndOfPhase" => " until the end of the phase",
+            _ => $" until {until}",
+        };
         if (value.After is { } after) text += after == "WhenAttackEnds" ? " after attack" : $" after {after}";
         if (value.Condition is { } condition)
             text += $" when {condition.Counter} {Role(condition.Target, here: true)} ≥{condition.Minimum}";

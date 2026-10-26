@@ -76,3 +76,30 @@ semantic proof remains blocked on the concrete missing description. No full
 suite, native UI, public Ms. Marvel admission or hosted persistence claim is made.
 
 Request changes: the committed offer regression requires a readable blanking description and phase duration, plus action and commitment captions. The committed persistent-action regression rejects disclosure of the internal numeric field while requiring a nonempty action body. These are intentionally red review evidence pending the lead-owned production correction.
+
+## Semantic correction (protocol 39)
+
+The engine recognizes the checked self-only, phase-bound blanking body and supplies
+an offer description, action caption and commitment caption: blank this card's
+printed text box until the end of the phase. The persistent description emits
+`BlankPrintedText`, source target and phase expiry, with neither an internal field
+nor numeric amount. View projects that supplied meaning; Godot renders the operation
+and duration alongside the existing hero restriction and mental resource cost.
+Protocol 39 explicitly rejects protocol 38 peers; save/replay identities are unchanged.
+No gameplay, ability data, or public admission changed.
+
+Windows Release focused evidence in `C:/Users/mggar/Source/robot-semantics-*.log`:
+
+- `content-restored`: actual Robot and blanking regressions, 23 pass.
+- `view-restored`: actual projection, ordinary Grant control and Core persistent facts, 11 pass.
+- `godot`: actual projected summary, ordinary source summaries and client predecessor rejection, 6 pass.
+- `server`: both transports preserve actual projected meaning, both reject protocol 38,
+  and existing table/encounter/version contracts remain green, 20 pass.
+- `mutant`: inverted persistent blanking matcher compiles and fails both new tests:
+  actual blanking falls back to Grant; ordinary retaliate is incorrectly classified
+  as blanking. Original source restored, Cards rebuilt nonincrementally with zero
+  warnings/errors, then the same View tests plus Content regressions pass.
+
+These are bounded semantic and regression checks. Independent review and combined
+integration gates remain lead-owned; no new native interaction or full-product
+acceptance claim is made.

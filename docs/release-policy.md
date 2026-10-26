@@ -1,5 +1,11 @@
 # Release identity, signing and compatibility
 
+Protocol 39 adds the persistent-effect operation `BlankPrintedText`. Its source
+target and phase duration describe blanking without exposing an internal numeric
+modifier. Protocol 38 endpoints cannot understand this operation and are rejected
+by the strict version boundary. This presentation change leaves session schema,
+engine replay, RNG, state digest and runtime dataset identities unchanged.
+
 Protocol 37 adds explicit scenario mode, ordered component-version choices and
 modular-set availability to setup discovery. Game requests still identify an
 authored recipe key; save formats and replay semantics are unchanged by these
@@ -51,7 +57,7 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `37` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `39` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
 | Engine replay contract | `engine-replay-v24` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
