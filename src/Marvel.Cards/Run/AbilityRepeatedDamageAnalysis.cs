@@ -286,7 +286,7 @@ internal static class AbilityRepeatedDamageAnalysis
         if (TraceCardNamed(
             EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast)
             is not { } entering) return [];
-        if (AbilityProgramQueries.On(cast.Context.Program, entering.Card).Any(ability =>
+        if (AbilityProgramQueries.ActiveOn(cast.World, cast.Context.Program, entering.Card).Any(ability =>
             ability.Trigger.Timing == AbilityType.Constant))
         {
             throw new RulesNotImplementedException(

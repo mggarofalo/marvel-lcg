@@ -93,7 +93,7 @@ internal static class AbilityPowerHealthTrace
             foreach (var source in cast.World.Areas
                 .Where(area => DeckTypes.IsInPlay(area.Type))
                 .SelectMany(area => area.Cards)
-                .Where(card => AbilityProgramQueries.On(cast.Context.Program, card).Any(ability =>
+                .Where(card => AbilityProgramQueries.ActiveOn(cast.World, cast.Context.Program, card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant)))
             {
                 sources.Add(source.ObjectId);
@@ -117,7 +117,7 @@ internal static class AbilityPowerHealthTrace
                 var source = cast.World.Cards[sourceId];
                 var constantCast = cast.ForConstant(source);
                 traced = 0;
-                foreach (var ability in AbilityProgramQueries.On(cast.Context.Program, source).Where(ability =>
+                foreach (var ability in AbilityProgramQueries.ActiveOn(cast.World, cast.Context.Program, source).Where(ability =>
                     ability.Trigger.Timing == AbilityType.Constant))
                 {
                     if (!TryTraceConstantHealth(

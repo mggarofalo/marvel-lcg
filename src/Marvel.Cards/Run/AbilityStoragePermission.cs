@@ -12,7 +12,7 @@ internal static class AbilityStoragePermission
     {
         if (Host(world, card, player) is not { } host) return false;
         // Effective profiles have no printed abilities; the storage permission cannot survive blanking.
-        return AbilityProgramQueries.On(program, host).Any(ability =>
+        return AbilityProgramQueries.ActiveOn(world, program, host).Any(ability =>
             ability.Trigger.Timing == AbilityType.Constant
             && ability.Effect is AbilityEffect.AllowPlayBeneath permission
             && EffectiveCards.Kind(card, world.Facts) == permission.Kind

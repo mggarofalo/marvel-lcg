@@ -37,7 +37,7 @@ internal static class AbilityResolutionRevelation
         ArgumentNullException.ThrowIfNull(card);
         execution.RequireWhenRevealed(card.FaceId);
 
-        return [.. execution.On(card)
+        return [.. AbilityProgramQueries.ActiveOn(world, execution.program, card)
             .Where(ability => ability.Trigger.Timing == AbilityType.WhenRevealed)
             .Select((ability, ordinal) => (Ability: ability, Ordinal: ordinal))
             .Where(entry => string.Equals(entry.Ability.Trigger.Event, Steps.CardRevealed, StringComparison.Ordinal)
@@ -57,7 +57,7 @@ internal static class AbilityResolutionRevelation
         // Authored-and-does-nothing is distinct from an unread face.
         execution.RequireWhenRevealed(card.FaceId);
 
-        var reveals = execution.On(card)
+        var reveals = AbilityProgramQueries.ActiveOn(world, execution.program, card)
             .Where(ability => ability.Trigger.Timing == AbilityType.WhenRevealed)
             .Select((ability, ordinal) => (Ability: ability, Ordinal: ordinal))
             .Where(entry => string.Equals(
@@ -98,7 +98,7 @@ internal static class AbilityResolutionRevelation
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(occurrence);
 
-        var authored = execution.On(card)
+        var authored = AbilityProgramQueries.ActiveOn(world, execution.program, card)
             .Where(ability => ability.Trigger.Timing == AbilityType.WhenRevealed)
             .Select((ability, ordinal) => (ability, ordinal))
             .Where(entry => string.Equals(
@@ -149,7 +149,7 @@ internal static class AbilityResolutionRevelation
         // Revealed" and a "Boost" -- would otherwise pass on the strength of
         // the half somebody had written, and the other half would go back to
         // being silent.
-        var boosts = execution.On(card)
+        var boosts = AbilityProgramQueries.ActiveOn(world, execution.program, card)
             .Where(ability => ability.Trigger.Timing == AbilityType.Boost)
             .ToList();
 
@@ -193,7 +193,7 @@ internal static class AbilityResolutionRevelation
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
 
-        var ability = execution.On(card).SingleOrDefault(candidate =>
+        var ability = AbilityProgramQueries.ActiveOn(world, execution.program, card).SingleOrDefault(candidate =>
             candidate.Trigger.Timing == AbilityType.Special)
             ?? throw new RulesNotImplementedException(
                 $"card '{card.FaceId}' has no authored Special ability");

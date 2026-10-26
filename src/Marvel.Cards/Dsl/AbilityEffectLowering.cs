@@ -106,6 +106,7 @@ internal static class AbilityEffectLowering
             "revealAuxiliaryTop" => new AbilityEffect.RevealAuxiliaryTop(AbilityAuxiliaryDeckLowering.Deck(argument, child)),
             "shuffle" => new AbilityEffect.Shuffle(SearchArea(argument, child)),
             "payOrEffect" or "payOrExhaust" => AbilityPaymentAlternativeLowering.PayAlternative(argument, child, node.Kind == "payOrExhaust"),
+            "blankPrintedTextUntilEndOfPhase" => AbilityPrintedTextLowering.Lower(argument, child),
             "grant" or "grantEach" or "grantUntil" => GrantEffect(argument, child, node.Kind == "grantEach", node.Kind == "grantUntil"),
             "grantCharactersWithTrait" => AbilityTraitGroupLowering.Lower(argument, child),
             "grantCharactersControlledBy" => GrantControlledEffect(argument, child),

@@ -22,7 +22,7 @@ internal static class AbilityResolutionLifecycle
         var occurrence = new Occurrence(
             0, [Steps.CardEntersPlay], Subject: card.ObjectId,
             Player: execution.ControllerOf(world, card));
-        execution.RunOrdered(execution.On(card).Where(ability =>
+        execution.RunOrdered(AbilityProgramQueries.ActiveOn(world, execution.program, card).Where(ability =>
             ability.Trigger.Timing == AbilityType.WhenRevealed
             && string.Equals(ability.Trigger.Event, Steps.CardEntersPlay, StringComparison.Ordinal)),
             ability => new AbilityResolutionState(
@@ -45,7 +45,7 @@ internal static class AbilityResolutionLifecycle
         {
             var occurrence = new Occurrence(0, ["WhenActivationCompleted"],
                 Actor: enemy.ObjectId, Player: result.Player);
-            execution.RunOrdered(execution.On(enemy).Where(ability =>
+            execution.RunOrdered(AbilityProgramQueries.ActiveOn(world, execution.program, enemy).Where(ability =>
                 ability.Trigger.Timing == AbilityType.ForcedResponse
                 && string.Equals(ability.Trigger.Event, "WhenActivationCompleted", StringComparison.Ordinal)),
                 ability => new AbilityResolutionState(world, enemy, occurrence, result.Player, events)

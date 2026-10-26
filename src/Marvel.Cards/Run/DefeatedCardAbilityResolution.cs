@@ -41,6 +41,7 @@ internal static class DefeatedCardAbilityResolution
     private static PendingAbility[] Own(AbilityResolutionExecution execution, World world,
         Card card, Defeated defeated)
     {
+        if (PrintedText.IsBlanked(world, card)) return [];
         var written = execution.On(card)
             .Where(ability => ability.Trigger.Timing == AbilityType.WhenDefeated)
             .ToList();

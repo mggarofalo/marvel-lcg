@@ -15,6 +15,7 @@ public static class CardValues
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
         (long value, CardValueBaseKind kind) = Base(card, field, facts, players);
+        if (PrintedText.IsBlanked(world, card) && PrintedText.IsTextKeywordField(field)) value = 0;
         return Evaluate(world, card, field, facts, players, value, kind);
     }
 

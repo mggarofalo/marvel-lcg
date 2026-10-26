@@ -14,7 +14,7 @@ internal static class AbilityTargetDamageProtection
         foreach (var owner in world.Cards.Where(card => DeckTypes.IsInPlay(card.Area.Type)
                      && excluded?.Contains(card.ObjectId) != true))
         {
-            var constants = AbilityProgramQueries.On(program, owner)
+            var constants = AbilityProgramQueries.ActiveOn(world, program, owner)
                 .Where(ability => ability.Trigger.Timing == AbilityType.Constant).ToArray();
             if (constants.Length == 0) continue;
             var bindings = new AbilityQueryContext(world, owner, new Occurrence(0, []),

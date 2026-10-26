@@ -36,7 +36,7 @@ internal sealed class AbilityConstantQueries
         if (!constantFaces.Contains(card.FaceId)) return [];
 
         var found = new List<ContinuousEffect>();
-        foreach (var ability in AbilityProgramQueries.On(program, card))
+        foreach (var ability in AbilityProgramQueries.ActiveOn(world, program, card))
         {
             if (ability.Trigger.Timing != AbilityType.Constant) continue;
 

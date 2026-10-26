@@ -37,6 +37,7 @@ internal static class AbilityBookLowering
             SchemeDestinations = LowerSchemeDestinations(book),
         };
         AbilityProfileReferences.Validate(book, program.Profiles);
+        AbilityPrintedTextLowering.Validate(program);
         return program;
     }
 

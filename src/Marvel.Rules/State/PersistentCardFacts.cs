@@ -15,7 +15,8 @@ public static class PersistentCardFacts
             ? new PersistentCardRelation("Attached", card.Area.Host, controller >= 0 ? controller : null)
             : new PersistentCardRelation(controller >= 0 ? "Controlled" : "Shared", null,
                 controller >= 0 ? controller : null);
+        bool blanked = Timing.PrintedText.IsBlanked(world, card);
         return new(CardSourceSnapshot.Capture(card, world.Facts), relation,
-            abilities.Abilities, abilities.HasUnresolvedAbilities);
+            blanked ? [] : abilities.Abilities, !blanked && abilities.HasUnresolvedAbilities);
     }
 }

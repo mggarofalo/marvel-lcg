@@ -17,7 +17,7 @@ internal sealed class AbilityProjectedConstantQueries(AreaProjectionState state)
             .Where(source => !state.Departed.Contains(source.ObjectId))
             .DistinctBy(source => source.ObjectId);
         return sources
-            .Any(source => AbilityProgramQueries.On(current.Program, source)
+            .Any(source => AbilityProgramQueries.ActiveOn(current.World, current.Program, source)
                 .Where(ability =>
                     ability.Trigger.Timing == AbilityType.Constant)
                 .Any(ability => ConditionalGrant(

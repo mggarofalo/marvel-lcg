@@ -24,7 +24,7 @@ internal static class AbilityPowerCardMovement
         var entry = EffectOf<AbilityEffect.PutIntoPlay>(node, cast);
         var card = Find(entry.Card, cast);
         if (card is null) return state;
-        if (AbilityProgramQueries.On(cast.Context.Program, card).Any(ability =>
+        if (AbilityProgramQueries.ActiveOn(cast.World, cast.Context.Program, card).Any(ability =>
                 ability.Trigger.Timing == AbilityType.Constant))
         {
             throw new RulesNotImplementedException(

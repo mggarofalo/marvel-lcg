@@ -14,6 +14,10 @@ internal static class AbilityProgramQueries
     internal static IReadOnlyList<CompiledCardAbility> On(AbilityProgram program, Card card) =>
         EffectiveCards.HasProfile(card) ? [] : program.On(card.FaceId);
 
+    internal static IReadOnlyList<CompiledCardAbility> ActiveOn(
+        World world, AbilityProgram program, Card card) =>
+        PrintedText.IsBlanked(world, card) ? [] : On(program, card);
+
     internal static string ResourcesGeneratedBy(
         World world, AbilityProgram program, Card source, Card? payingFor)
     {
@@ -26,7 +30,7 @@ internal static class AbilityProgramQueries
 
         string classes = world.Facts.Attributes(payingFor.FaceId)
             .GetValueOrDefault("Class", string.Empty);
-        bool doubles = On(program, source).Any(ability =>
+        bool doubles = ActiveOn(world, program, source).Any(ability =>
             ability.Trigger.Timing == AbilityType.Constant
             && ability.Effect is AbilityEffect.DoubleResourceFor multiplier
             && classes.Split(';').Contains(
@@ -42,7 +46,7 @@ internal static class AbilityProgramQueries
         ArgumentNullException.ThrowIfNull(candidates);
 
         var enemy = world.Cards[attack.Enemy];
-        bool requiresControlledAlly = On(program, enemy).Any(ability =>
+        bool requiresControlledAlly = ActiveOn(world, program, enemy).Any(ability =>
             ability.Trigger.Timing == AbilityType.Constant
             && ability.Effect is AbilityEffect.Fixed
             { Instruction: AbilityFixedInstruction.RequireAllyDefender });
@@ -121,7 +125,7 @@ internal static class AbilityProgramQueries
                     && area.PlayArea == PlayArea.Of(player))
                 .SelectMany(area => area.Cards)
                 .Where(card => AbilityCardQueries.ControllerOf(world, card) == player
-                    && On(program, card).Any(
+                    && ActiveOn(world, program, card).Any(
                         ability => ability.Trigger.Timing == AbilityType.Setup)),
         ];
     }
@@ -157,7 +161,7 @@ internal static class AbilityProgramQueries
         {
             if (discarded?.Contains(card.ObjectId) == true
                 || EffectiveCards.HasProfile(card)) continue;
-            foreach (var ability in On(program, card).Where(ability =>
+            foreach (var ability in ActiveOn(world, program, card).Where(ability =>
                          ability.Trigger.Timing == AbilityType.Constant))
             {
                 var bindings = new AbilityQueryContext(
@@ -181,7 +185,7 @@ internal static class AbilityProgramQueries
         if (!DeckTypes.IsInPlay(target.Area.Type)) return true;
         if (AbilityTargetDamageProtection.Prevents(world, program, target)) return false;
         if (EffectiveCards.HasProfile(target)) return true;
-        foreach (var ability in On(program, target).Where(ability =>
+        foreach (var ability in ActiveOn(world, program, target).Where(ability =>
                      ability.Trigger.Timing == AbilityType.Constant))
         {
             var bindings = new AbilityQueryContext(

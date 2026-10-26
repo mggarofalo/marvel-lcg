@@ -62,7 +62,7 @@ internal static class AbilityWindowAdmission
 
     private static bool CanHostWindowAbility(World world, Card card)
     {
-        if (EffectiveCards.HasProfile(card)) return false;
+        if (EffectiveCards.HasProfile(card) || PrintedText.IsBlanked(world, card)) return false;
         bool playableEvent = CardPlayOrigin.CanPlayEvent(world, card, card.Owner);
         return DeckTypes.IsInPlay(card.Area.Type) || playableEvent;
     }

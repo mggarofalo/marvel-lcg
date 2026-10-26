@@ -1,0 +1,39 @@
+using Marvel.Rules.Timing;
+
+namespace Marvel.Cards.Dsl;
+
+/// <summary>Lowers the directly scoped, phase-bound printed-text instruction.</summary>
+internal static class AbilityPrintedTextLowering
+{
+    // The admitted minion vocabulary has no alternate win/loss instruction.
+    // rr:winning-the-game.1.1: "Alternate win or loss conditions cannot be
+    // blanked or canceled." Such instructions require their own protection
+    // contract; a minion kind alone is not evidence that all text is blankable.
+    internal static void Validate(AbilityProgram program)
+    {
+        foreach (var ability in program.Abilities)
+        {
+            var nodes = program.Effects.Where(pair => pair.Key.Card == ability.Card
+                && pair.Key.Ability == ability.Address.Ability).Select(pair => pair.Value);
+            if (!nodes.Any(node => node is AbilityEffect.GrantField { Field: PrintedText.Blanked })) continue;
+            if (ability.Trigger.Timing != AbilityType.Action)
+                throw new AbilityException("printed-text blanking is admitted only as a standalone action");
+            if (ability.Effect is not AbilityEffect.GrantField
+                { Field: PrintedText.Blanked, Cards: AbilityCardSelection.Bound
+                    { Binding: AbilityCardBinding.This }, Until: TimingPoints.EndOfPhase,
+                    EachCard: false, Amount: AbilityNumber.Constant { Value: 1 } })
+                throw new AbilityException("printed-text blanking requires a standalone body; projected later effects are unsupported");
+        }
+    }
+
+    internal static AbilityEffect Lower(AbilityValue value, AbilityLocation location)
+    {
+        AbilityLowering.FixedWord(value, location, "this");
+        // The engine chooses a nonnumeric grant spelling so existing immutable
+        // duration and target analyses share the same fixed target contract.
+        return new AbilityEffect.GrantField(
+            new AbilityCardSelection.Bound(AbilityCardBinding.This),
+            PrintedText.Blanked, new AbilityNumber.Constant(1), false,
+            TimingPoints.EndOfPhase);
+    }
+}
