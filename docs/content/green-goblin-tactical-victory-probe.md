@@ -69,3 +69,50 @@ Verdict: the admitted Risky Business Standard winning transcript survives the
 corrected ally-entry behavior with unchanged policy. This is focused acceptance
 evidence, not a complete Green Goblin authority audit, final integrated CI result,
 native UI acceptance, or winning proof for the other three modes.
+
+## Bounded Expert strategy investigation (2026-10-26)
+
+Base `67446424` was probed in the isolated `marvel-lcg-goblin-expert`
+worktree. Seed 1 and the recommended Goblin Gimmicks modular were retained
+throughout. No production code, card data, world state or RNG was changed.
+Each probe retained exact-answer replay, every-observation comparison and the
+policy query-purity observation. These failed attempts do not discharge the
+Risky Business Expert winning proof. The reviewed Standard policy and
+winning proof remain unchanged.
+
+| Probe | Expert ending | Standard ending |
+| --- | --- | --- |
+| Reviewed policy baseline | Main-scheme loss, round 17 / 160 decisions | Win, round 13 / 139 decisions |
+| Defend without Shield Block; return to hero at 7 health | Main-scheme loss, round 22 / 233 decisions | Win, round 18 / 180 decisions |
+| Above, plus earlier readying and main-scheme threat control at 3 | HP loss, round 17 / 164 decisions | Win, round 13 / 125 decisions |
+| Above, plus draw/setup and permanent cards before attack events | HP loss, round 13 / 125 decisions | Win, round 16 / 168 decisions |
+| Above, with six Norman building rounds and return at 9 health | Main-scheme loss, round 17 / 171 decisions | Win, round 23 / 244 decisions |
+| Reviewed policy with legal custom Justice deck in Expert only | Main-scheme loss, round 14 / 127 decisions | Original starter proof retained |
+
+These are strategy experiments, not engine-rule changes. The baseline trace
+shows nine recoveries after large undefended attacks. Defending more often
+reduces damage but can leave Captain America exhausted; aggressive threat
+control also consumes attacks needed to remove Norman's infamy counters.
+The permanent-first experiment repeatedly flipped Norman while injured and
+then needed another alter-ego recovery. Longer building failed to make progress
+against stage II before scheme loss. These observations justify stopping this
+threshold investigation rather than accepting a defeat as a victory.
+
+The custom deck used the 15 admitted Captain America signature cards plus
+Daredevil, Jessica Jones, Mockingbird, Nick Fury, Avengers Mansion, Helicarrier,
+three For Justice!, three Surveillance Team, two The Power of Justice, Heroic
+Intuition, three First Aid, three Emergency, Energy, Genius, Strength and
+Interrogation Room. The public `AssessDeck` accepted it before both games were
+created with the public `GameSpecification.PlayerDecks` API. The reason for
+trying Justice was to free basic attacks by controlling threat with cards;
+this one legal construction did not establish a winning strategy.
+
+Command for each probe:
+`dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj -c Release --filter FullyQualifiedName~GreenGoblinVictoryTests --logger 'console;verbosity=detailed'`.
+Logs are outside the repository at `C:/Users/mggar/Source/`, named
+`goblin-expert-{baseline,defense,ready-threat,invest,build,justice}.log`.
+The final failed custom-deck proof source is preserved there as
+`goblin-expert-justice-probe.cs`; it retains the victory assertion and must not
+be mistaken for an admitted passing test. No exploratory policy change is
+retained. Expert victory is unproven by this investigation; Mutagen was not
+probed here. This note does not reinterpret the pack acceptance criteria.
