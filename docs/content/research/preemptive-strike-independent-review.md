@@ -5,6 +5,59 @@ worktree `C:/Users/mggar/Source/marvel-preemptive-review`, branch
 `review/preemptive-boost`, on 2026-10-26. Verdict: **changes required**.
 No authored ability-book row or public admission for 05014 is included.
 
+## Independent actual-row review, 2026-10-26
+
+Reviewed `2851eb04` in isolated worktree
+`C:/Users/mggar/Source/marvel-lcg-preemptive-actual-review`, branch
+`review/preemptive-actual-controls`. Verdict: **approved for the actual 05014
+ability row and the scoped engine behavior**. This does not establish public
+pack admission, native interaction readiness or full managed/platform acceptance.
+
+Raw authority was independently rechecked: joined printed 05014 in
+`datasets/cards/cards.json`, plus vendored rulings `1ea208998735ef4b`,
+`33d8c914aa86d19f` and `937d6ff4f970a1da` in `datasets/rulings/rulings.json`.
+The actual row expresses the Hero Interrupt, villain attack faceup condition and
+Defense label. Its dependent cancellation captures the number actually cancelled
+before reflecting that quantity to the triggering villain. Earlier independently
+reviewed engine controls and the actual full-book individual-card positives
+remain consistent with these authorities.
+
+`PreemptiveStrikeActualRowReviewTests` extracts the actual 05014 JSON row from
+`AuthoredCards.Text`, without copying its trigger or effect, and appends one
+explicitly synthetic generic faceup observer to an isolated catalog. This allows
+inspection of otherwise absent interrupt prompts; it is not a public factory or
+whole-pack journey. Six cases establish:
+
+- A two-icon villain attack offers the actual event alongside the generic
+  observer. Either the attacked hero or the other hero can pay, cancel both
+  icons, deal two damage, discard the event and become the completed attack's
+  defender. The paying hero takes the unmodified two attack damage; the other
+  hero takes none.
+- A villain scheme does not offer the event, both standalone and synthetically
+  suspended under an outer attack. The latter isolates scheduler occurrence
+  binding rather than claiming a printed simultaneous activation.
+- A minion attack with a preassigned boost card does not offer the event.
+- An alter-ego payer cannot use it during another player's hero-form attack.
+  This has the same affordable event, observer and two-icon contribution as the
+  corresponding eligible hero control.
+
+Independent Windows Release evidence under `C:/Users/mggar/Source/`:
+
+- `preemptive-actual-restored-focused.log`: **21 pass**, the six actual-row
+  cases, actual full-book individual cancellation cases, attack-faceup controls
+  and rule-citation checks. `preemptive-actual-restored-build.log` records the
+  forced `--no-incremental` restored Release build with zero warnings/errors.
+- Data mutants alter only the actual 05014 row, load through the same test
+  catalog and fail for distinguishing observations: generic faceup trigger
+  (`preemptive-actual-mutant-generic.log`, two scheme failures); enemy actor
+  (`preemptive-actual-mutant-actor.log`, minion offer failure); omitted hero form
+  (`preemptive-actual-mutant-form.log`, alter-ego offer failure); omitted Defense
+  label (`preemptive-actual-mutant-label.log`, both payer cases fail on damage or
+  defender identity). Each mutant exits 1; the restored same focused set passes.
+- Dataset bytes are restored in `finally`; no production or ability-book edits
+  are included. Normal architecture, complexity and file-length commit hooks
+  apply to this tests/evidence packet.
+
 ## Independent final review of attack-only faceup repair, 2026-10-26
 
 Reviewed `fb2e770a5a1f8405bfd5f990b2f12f23e3b241a3` in isolated worktree
