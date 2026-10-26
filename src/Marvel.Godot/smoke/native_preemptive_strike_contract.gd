@@ -3,7 +3,7 @@ extends RefCounted
 # Prepared cross-pack component scene; actual authored 05014, no public Ms Marvel admission.
 static func run(smoke) -> bool:
     if not await smoke.ui.expect(func(): return smoke.witness.Revision() == 0 and \
-        "Rhino" in smoke._visible_text(smoke.main) and "Spider-Man" in smoke._visible_text(smoke.main),
+        _readable_context(smoke._visible_text(smoke.main)),
         "individual boost interrupt identifies the attacking villain and answering hero"): return false
     await _capture(smoke, "preemptive-strike-interrupt")
     if not await smoke.ui.click(smoke.ui.button("Preemptive Strike")): return false
@@ -20,7 +20,7 @@ static func _pay(smoke) -> bool:
     if not await smoke.ui.expect(func(): return smoke._payment_modal() != null,
         "actual boost interrupt opens resource payment"): return false
     var copy: String = smoke._visible_text(smoke._payment_modal())
-    if "Preemptive Strike" not in copy or "Pay 1" not in copy or "Spider-Man" not in copy or "Rhino" not in copy:
+    if "Preemptive Strike" not in copy or "Pay 1" not in copy or not _readable_context(copy):
         smoke._fail("interrupt payment lacks its actual source and one-resource cost: " + copy)
         return false
     var submit: Button = smoke._payment_button("Submit")
@@ -44,3 +44,8 @@ static func _capture(smoke, filename: String) -> void:
     var directory := OS.get_environment("MARVEL_UI_EVIDENCE_DIRECTORY")
     DirAccess.make_dir_recursive_absolute(directory)
     smoke.render_viewport.get_texture().get_image().save_png(directory.path_join(filename + ".png"))
+
+static func _readable_context(copy: String) -> bool:
+    return "Rhino" in copy and "Spider-Man" in copy and "Boost card revealed" in copy and \
+        "WhenBoostCardTurnedFaceup" not in copy and "2 uncancelled boost icons" in copy and \
+        "Boost abilities and later effects can change the result" in copy

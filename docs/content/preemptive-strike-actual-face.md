@@ -23,5 +23,27 @@ passes 179 cases. A data mutant replaces the captured damage amount with one;
 both actual two-icon cases fail. Original bytes are restored and all 179 pass.
 Logs: `C:/Users/mggar/Source/preemptive-actual-{tests,mutant,restored}.log`.
 
-Independent actual-row review and characteristic native defense evidence remain.
-Public Ms. Marvel admission is still closed pending full-pack integration.
+Independent actual-row review `a9397e56` adds scheme/nested-scheme, minion,
+alter-ego and both-payer controls; all 21 focused checks pass and all four
+actual-row mutants are distinguished. Native component commit `6d7422c7`
+uses actual viewport selection/payment, asserts two cancelled icons, two reflected
+damage, remaining attack damage and exactly one commitment. It is a prepared
+cross-pack component, not an opening-deal game.
+
+Public Ms. Marvel admission is integrated at `5034a368`. Native inspection found
+a raw timing identifier and missing known boost count. `e6600ade` supplies the
+readable stage; `76525061` supplies the current revealed card's uncancelled icon
+count from the engine receipt, with explicit uncertainty about later effects.
+Both payer cases and the next physical card distinguish two icons from one;
+the pre-reveal defender choice discloses neither. A compiled constant-zero mutant
+fails both cases; restoration passes all 21. Logs outside the repository:
+`C:/Users/mggar/Source/boost-current-icons-{mutant,restored}.log`.
+The strengthened native contract passes headless at integrated `2388a528`
+(`C:/Users/mggar/Source/preemptive-icons-headless/results.jsonl`).
+
+The hosted rendered rerun also passes (100%, 1920x1080, reduced motion).
+Lead inspected `C:/Users/mggar/Source/preemptive-icons-hosted-rendered/preemptive-strike-payment.png`:
+the payment surface names Rhino, Spider-Man and Sandman's two current icons,
+retains uncertainty, and shows the selected resource and explicit commitment.
+An earlier direct standalone invocation omitted the prepared authoritative host
+and correctly failed scene setup; that is not counted as a gameplay pass.

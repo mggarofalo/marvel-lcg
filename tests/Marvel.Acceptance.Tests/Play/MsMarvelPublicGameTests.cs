@@ -37,7 +37,9 @@ public sealed class MsMarvelPublicGameTests(ITestOutputHelper output)
         {
             Assert.True(policy.Answered < 2000, $"{scenario}, seed={seed}: {prompt.Label}");
             if (prompt.Asking == Question.TurnOption) acting.Add(prompt.Player);
+            string beforePolicy = Observe(game);
             var answer = policy.Answer(game);
+            Assert.Equal(beforePolicy, Observe(game));
             if (answer.Spent.Count > 0) paid.Add(prompt.Player);
             var chosen = prompt.Affordances.FirstOrDefault(offer => offer.Id == answer.Affordance);
             if (chosen?.PlaysCard == true) played.Add(prompt.Player);
@@ -78,5 +80,3 @@ public sealed class MsMarvelPublicGameTests(ITestOutputHelper output)
         result?.Information,
     });
 }
-
-

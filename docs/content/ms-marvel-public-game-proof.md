@@ -28,3 +28,13 @@ Final focused checks:
 Raw local logs are outside the repository: `%LOCALAPPDATA%/Temp/ms-public-games-final.log` and `%LOCALAPPDATA%/Temp/ms-bruno-public-final.log`. The fixtures are executable public decision journeys in the named tests, rather than opaque prepared boards.
 
 This packet does not prove public Melee sequential-target persistence, expert modes, every Rise of Red Skull scenario, campaign continuation, victory, all card interactions, native UI comprehension, or Linux certification. It does not change the accepted product boundary or replace independent authority/admission review and the final combined gates.
+
+Lead independent integration review inspected the actual factory setup and the
+separate-store Bruno replay. The proof adds no board/deck manipulation; stored
+card anonymity and post-retrieval physical identity are distinct assertions.
+The game loop additionally compares observations before and after each policy
+query, so its read-only selection cannot silently alter the live game.
+
+The integrated query-purity variant and existing Goblin victory proof pass all
+eight focused Acceptance cases (`ms-integrated-public-games.log`). Separate public
+Melee restart proof is recorded in [its evidence](ms-marvel-melee-public-restart.md).

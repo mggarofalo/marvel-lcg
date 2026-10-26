@@ -1,16 +1,16 @@
 # The setup dataset — authored
 
-What Core Set, Rise of Red Skull, Captain America and Wrecking Crew games are
-dealt from: scenario, villain and main scheme decks, encounter sets, and eight
-admitted printed starter decks. The Ms. Marvel starter, Risky Business modes,
-A Mess of Things and Goblin Gimmicks modular sets are declared research and
-excluded by runtime admission.
+What Core Set, Rise of Red Skull, Captain America, Wrecking Crew and Green
+Goblin games are dealt from: scenario, villain and main scheme decks, encounter
+sets, and printed starter decks. The complete Ms. Marvel integration candidate
+also admits its pinned starter, obligation and nemesis; declared data alone never
+admits a product without its complete face and recipe gates.
 
 | | |
 |---|---|
 | Kind | authored |
-| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel (research); Green Goblin (Risky Business and modular research recipes) |
-| Records | 39 scenario modes, 9 heroes, 14 encounter sets; runtime admission exposes 35 modes, 8 heroes and 10 sets |
+| Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel; Green Goblin (both scenarios and four modular sets) |
+| Records | 39 scenario modes, 9 heroes, 14 encounter sets; candidate runtime admission exposes 39 modes, 9 heroes and 14 sets |
 | Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, complete-product admission |
 
 ## Why it is authored
@@ -56,7 +56,8 @@ and proves that the accepted complete product enters runtime admission.
 Ms. Marvel's 40-card starter, obligation and five-card nemesis set follow the
 pinned FFG divider photograph and transcription in `datasets/rules-packs/mc05/UPSTREAM.md`.
 `MsMarvelSetupTests` checks the exact quantities, ordinary deck legality and
-continued exclusion from runtime discovery until complete product acceptance.
+complete candidate admission. Independent admission tests close the whole product
+when any required face or pinned recipe component is missing or incorrect.
 
 A Mess of Things uses the set membership and printed faces in
 `datasets/cards/cards.json`. Physical quantities follow the pinned MarvelSDB
