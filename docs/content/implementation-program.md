@@ -75,11 +75,41 @@ attachment prohibitions, and 710 repeated player-revealed abilities. Each packet
 first proves whether existing primitives suffice, then extends only the missing
 behavior. Serialize ability-book integration and shared timing changes.
 
-MARVEL-712 supplies main-scheme When Completed resolution before advancement,
-first proved by Hostile Takeover (02004b). The existing timing enum alone does
-not execute that printed clause. Queue its engine implementation/reviewer pair
-after 684's shared timing work, before completing 690's main-scheme authoring
-and setup. Preserve actual source and effect ordering through suspended choices.
+MARVEL-712's reviewed main-scheme When Completed resolution is integrated in
+the next candidate, including Hostile Takeover (02004b), both forced-interrupt
+orders, suspended choices, advancement and final loss. All four Risky Business
+main-scheme faces and Standard/Expert research recipes have independent review
+and production Dealer coverage at 1–4 players. The combined content suite passed
+4,332 tests before the later packets below; that run does not certify those additions.
+
+The next candidate also contains reviewed 709 live prohibitions and actual
+All Tied Up authoring. MARVEL-713 supplies the explicit resolving player needed
+by encounter attachment placement; it preserves player-card ownership defaults
+and explicit-host overrides. Its independent review includes both seats and forms.
+706's generic payment alternative is reviewed, while existing persistent boosts,
+printed-stage healing and completed-attack player binding passed characteristic
+tests. Goblin Gimmicks authoring follows that proof. 685's player-deck search and
+its composed-effect refusal are independently reviewed and integrated: hidden-deck
+changes cannot precede an unresolved dependent lookup. 707's exact encounter
+discard receipts are in implementation. Public Green Goblin and Ms. Marvel
+admission remains closed.
+
+Original starter dividers for Thor, Black Widow, Doctor Strange and Hulk are
+pinned and reviewed under `datasets/rules-packs/mc06` through `mc09`. Each has
+a verified 40-card player starter; Doctor Strange's five Invocation cards form
+a separate deck. These resolve those portions of 702 without closing its global
+queue or establishing playable hero support.
+
+PR #446 merged as `fb97804c` after all eleven CI checks passed on `3dff9bbc`.
+Its exact local candidate passed the Release build, 5,858 unit, 1,564 integration
+(one existing opt-in skip) and 122 acceptance tests. Prerequisites 682–684,
+689, 698, 705 and 711 are Done; the pack parents remain open.
+
+The next candidate's failed-attachment cleanup (714) also corrects admitted
+Core/RoRS behavior, including Genetically Enhanced without a legal minion host.
+MARVEL-715 therefore supplies replay v24 and explicit predecessor/quarantine
+evidence before integration can be accepted. Keeping the existing phase-step
+spelling does not make the changed game history compatible by itself.
 
 MARVEL-695 is merged in PR #445 with all eleven CI checks passing. The focused
 Wrecking Crew UI review remains MARVEL-694; neither is a content dependency.
