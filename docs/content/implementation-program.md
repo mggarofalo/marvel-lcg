@@ -25,32 +25,37 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 
 ## Current integration checkpoint
 
-PRs #446 through #449 are merged; main is `bc7c91a5`. Draft
-[PR #450](https://github.com/mggarofalo/marvel-lcg/pull/450) is frozen at
-`0d2a33ab` for CI. It admits all 57 Green Goblin faces, four scenario modes and
-four modular sets, and contains 25 of 34 Ms. Marvel faces without admitting that
-incomplete hero pack. Local Release build and 140 acceptance checks passed;
-final CI remains the combined platform/package/native evidence. Ten complete
-solo Goblin games ended in defeat; four multiplayer games and pending-choice
-restart proofs also pass. Winning-game evidence remains outstanding. Environment
-placement review is separately recorded with screenshots in MARVEL-732.
+[PR #450](https://github.com/mggarofalo/marvel-lcg/pull/450) is merged at
+`d649560f`; all eleven CI jobs passed on its final candidate. It admits all
+57 Green Goblin faces, four scenario modes and four modular sets, and contains
+25 of 34 Ms. Marvel faces without admitting that incomplete hero pack. Ten
+complete solo Goblin games ended in defeat; four multiplayer games and
+pending-choice restart proofs also pass. A separate ordinary-action tactical
+policy now wins Risky Business Standard (seed 1, round 13, 139 decisions) and
+replays every observation exactly at `62649761`; that packet still needs
+independent review and integration. The other three modes still need winning
+evidence. Environment placement review remains separate in MARVEL-732.
 
-The next candidate, `feat/ms-marvel-completion`, has 27 of 34 Ms. Marvel faces
-and 569 total authored faces. Reviewed Nova and Get Behind Me! are integrated;
-the matching Core Get Behind Me! cross-seat correction awaits independent review.
-The reviewed global Persona/support count prerequisite is integrated and actual
-Generation Why? authoring is in progress. Melee's reviewed staged-attack engine
-and modifier-consumption correction are integrated at `7c4448fe`; 107 combined
-focused checks pass. Actual Melee authoring and interaction/persistence proof
-remain separate from that prerequisite acceptance.
+The next candidate, `feat/ms-marvel-completion`, has **32 of 34 Ms. Marvel
+faces and 574 total authored faces** at `93b11189`. Nova, Get Behind Me!,
+Generation Why?, Melee, Energy Barrier, Edison's Giant Robot and Harvest are
+now authored. The Core Get Behind Me! cross-seat correction and the actual
+Generation Why?, Melee and Energy Barrier rows have independent approval.
+Melee's sequential target interaction has inspected native evidence. Robot's
+actual gameplay is reviewed; its corrected semantic descriptions and protocol
+39 contract are in independent rereview. Harvest's engine receipt is reviewed;
+its actual authored row still needs independent review. The latest integrated
+focused run passed 286 checks; this is not final whole-pack certification.
 
-Energy Barrier's remaining-damage interrupt prerequisite is implemented at
-`2da3094e` and under independent review. Robot's timed printed-text blanking is a
-private implementation checkpoint. Harvest's committed exhaustion receipt,
-Preemptive Strike's individual boost cancellation, and Lockjaw's ordinary play
-from discard remain queued prerequisites. These seven remaining faces keep
-Ms. Marvel's public admission closed. Canonical Plane records retain packet
-revisions and acceptance state; a prerequisite does not establish a playable pack.
+Lockjaw (05018) and Preemptive Strike (05014) are the remaining faces.
+Lockjaw's discard-origin prerequisite exposed stale-payment information loss
+and duplicate ally-entry responses; those shared fixes are being reviewed
+before integration. Preemptive Strike's individual boost-card interrupt and
+cancellation receipt are under independent review before card authoring.
+Public Ms. Marvel admission stays closed until all faces, the verified starter,
+and pack-level setup, gameplay, restart and interaction evidence are complete.
+Canonical Plane records retain packet revisions and acceptance state; an
+implemented prerequisite does not establish a playable pack.
 
 ## Delivery order and shared capability queue
 
@@ -80,11 +85,11 @@ The remaining delivery queue is:
    complete games including victories, characteristic pending-choice restart,
    multiplayer and native interactions. The Soldier continuation finding (726)
    is independently fixed and its original public failures now complete.
-2. Finish Ms. Marvel's shared prerequisites with independent review: distinct
-   arrow payment (723), bottom placement (724), bounded stored-card retrieval
-   (725). Author the dependent actual rows only after their mechanisms pass.
-3. Serialize the remaining nine Ms. Marvel faces into the ability book: signature
-   gaps, aspect/basic/reprints, obligation and nemesis. Every row needs printed
+2. Finish the remaining Lockjaw and Preemptive Strike prerequisites and their
+   independent reviews. Distinct arrow payment (723), bottom placement (724)
+   and stored-card retrieval (725) are merged and closed.
+3. Serialize the final two Ms. Marvel faces into the ability book and finish
+   actual-row review for Harvest and Robot semantics. Every row needs printed
    authority, relevant rulings and characteristic behavior evidence; catalog
    presence alone does not implement a reprint.
 4. Admit the complete Ms. Marvel pack with verified starter, missing-face and
