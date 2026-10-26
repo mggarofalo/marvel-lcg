@@ -21,7 +21,13 @@ public sealed class DamageTriggerConditionTests
     [InlineData("WhenDamageWouldBeDealt", "Interrupt", "null")]
     [InlineData("WhenDamageWouldBeDealt", "Interrupt", "true")]
     [InlineData("WhenDamageWouldBeDealt", "Interrupt", "1")]
+    [InlineData("WhenDamageWouldBeDealt", "Interrupt", "{}")]
+    [InlineData("WhenDamageWouldBeDealt", "Interrupt", "[]")]
+    [InlineData("WhenDamageWouldBeDealt", "Interrupt", "\"\"")]
     [InlineData("WhenAttackInitiated", "Interrupt", "\"taken\"")]
+    [InlineData("WhenAttackInitiated", "ForcedInterrupt", "\"dealt\"")]
+    [InlineData("WhenDamageWouldBeDealt", "Action", "\"taken\"")]
+    [InlineData("WhenDamageWouldBeDealt", "ForcedResponse", "\"dealt\"")]
     [InlineData("WhenDamageWouldBeDealt", "Response", "\"taken\"")]
     [InlineData("WhenDamageWouldBeDealt", "Response", "\"dealt\"")]
     public void InvalidDamageQualifierIsRejected(string condition, string timing, string value)

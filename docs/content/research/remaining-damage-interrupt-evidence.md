@@ -162,3 +162,53 @@ replacements and actual attack completion. The run is recorded at
 `C:/Users/mggar/Source/marvel736-taken-migration.log`. Integration with the
 concurrent Melee append, broader verification and independent re-review remain
 delivery-lead responsibilities.
+
+## Independent review of the corrected contract and migration
+
+Reviewed `34c2b5b7` in `marvel-damage-trigger-review`, including the four-row
+migration. Read the actual printed 01003/01017/03005/05005/05017 text, raw
+vendored faq:05017 and rr:prevent.1/.1.1 and rr:interrupt.3.1/.4. The four
+migrated conditions all describe taking damage; the two unqualified mandatory
+soak rows continue observing dealt damage. There is no 05017 ability-book row.
+
+`FinalDamageTriggerReviewTests` adds eight independent cases. Each actual
+migrated card is offered before prevention and after one point of prevention,
+then is absent after a second point covers the two-damage occurrence. Its stale
+preflight rejects without card mutation, spending prevention, or rewriting the
+fixed dealt amount. Four synthetic forced-trigger cases distinguish omitted
+and explicit dealt conditions from taken, with a positive taken control before
+prevention. These synthetic rows do not author Energy Barrier.
+
+Qualifier validation gains six malformed-value/timing combinations. The
+existing stacked-barrier stale-preflight case now compares complete RNG state
+and consumption, registered effects, pending agenda, timing stage and current
+window after an actual earlier barrier resolution. The retained independent
+attack-completion case proves `AttackCompleted`, cleared attack/activation and
+frozen dealt 1 / placed 0, rather than treating an absent activation as proof.
+Production direct and indirect attack preparation attach their actual
+`DamageReplacement`; `DamagePlacement.Replace` attaches the same context for
+other damage. Unknown-amount synthetic occurrences deliberately retain their
+existing behavior.
+
+Four distinguishing mutations were checked independently. A compiled mandatory
+admission exemption fails the forced-taken case (the remaining preflight guard
+rejects the wrongly discovered ability). Removing the four dataset annotations
+fails all four actual-card cases. A compiled taken-default parser fails the
+default parser and forced-default behavior checks; four additional failures are
+secondary catalog-lowering failures. A compiled preflight bypass fails the
+strengthened stale-barrier rejection. All sources and data are restored
+byte-for-byte in `finally`; every source restoration has a forced Release
+Rebuild before the restored verification. Evidence logs are outside the tree:
+
+- `C:/Users/mggar/Source/marvel736-final-review-baseline.log`
+- `C:/Users/mggar/Source/marvel736-final-review-{forced,book,default,preflight}-mutant.log`
+- `C:/Users/mggar/Source/marvel736-final-review-{forced,default,preflight}-restore.log`
+- `C:/Users/mggar/Source/marvel736-final-review-final.log`
+
+The restored focused run passes 81 tests, including actual Shield Block,
+Morphogenetics/Wiggle Room, indirect damage, forced replacements, residual
+eligibility and rule-citation validation. **Independent verdict: accept this
+bounded engine contract and four-row migration.** No blocking finding remains
+within that scope. This is not complete Energy Barrier face admission, a public
+pack journey, native interaction acceptance or integration-wide certification;
+the delivery lead still owns the combined broader gates.
