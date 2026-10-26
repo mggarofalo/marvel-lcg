@@ -155,6 +155,24 @@ public sealed class BoostCancellationIndependentReviewTests : CoreCardTestBase
     }
 
     [Fact]
+    public void VillainSchemeFaceupDoesNotOfferTheAttackOnlyInterrupt()
+    {
+        // 05014: "while the villain attacks"; a Defense label alone permits
+        // abilities outside attacks under rr:defend-defense.4.8.
+        var runner = Runner();
+        var world = Board(runner);
+        var source = world.CreateCard("05014", world.Seats[0].Hand);
+        world.CreateCard("01089", world.Seats[0].Hand);
+        world.CreateCard("01102", world.AreaOf(DeckType.EncounterDeck));
+        world.Agenda.Add(new PhaseStep(new EnemySchemeOperation(), 1, 2,
+            Subject: world.TheCardIn(DeckType.VillainArea)!.ObjectId, Seat: 0));
+        var prompt = Sequence.Work(world, Cards, runner, []);
+        Assert.False(world.Activation!.Attacking);
+        Assert.Equal(2, world.Agenda.Occurrence!.BoostIcons!.Remaining);
+        Assert.DoesNotContain(prompt?.Affordances ?? [], a => a.AnchorId == source.ObjectId);
+    }
+
+    [Fact]
     public void PaymentThatLeftHandIsRejectedWithoutConsumingTheFaceupWindow()
     {
         var control = ResolveAfterStalePayment(false);
@@ -179,6 +197,14 @@ public sealed class BoostCancellationIndependentReviewTests : CoreCardTestBase
         var pending = world.Agenda.Outstanding.ToArray();
         if (reject)
         {
+            for (int i = 0; i < 3; i++)
+            {
+                Assert.Equal(2, occurrence!.BoostIcons!.Remaining);
+                var waiting = runner.Waiting(world, occurrence, Marvel.Rules.Timing.WindowKind.Interrupt);
+                Assert.NotEmpty(waiting);
+                foreach (var ability in waiting) _ = runner.Describe(world, ability);
+            }
+            Assert.Equal(before, Snapshot());
             Assert.Throws<RulesNotImplementedException>(() => Sequence.Answer(world, Cards, runner, prompt,
                 new Decision(offer.Id, [], [stale.ObjectId]), events));
             Assert.Equal(before, Snapshot());

@@ -5,6 +5,51 @@ worktree `C:/Users/mggar/Source/marvel-preemptive-review`, branch
 `review/preemptive-boost`, on 2026-10-26. Verdict: **changes required**.
 No authored ability-book row or public admission for 05014 is included.
 
+## Independent final review of live-count repair, 2026-10-26
+
+Reviewed `40bbdc74f6ca74629b6a684adb1f729225d3dfe3` in
+`C:/Users/mggar/Source/marvel-preemptive-live-icons`. The live-count finding is
+resolved. **Changes remain required before authoring 05014**: its synthetic
+interpretation is offered when a villain's scheme boost card turns faceup.
+Raw joined 05014 requires "while the villain attacks". A Defense label does not
+enforce this restriction: `AttackAbilityDefense.CanUseDefenseAbility` expressly
+permits abilities outside attacks under `rr:defend-defense.4.8`.
+
+`VillainSchemeFaceupDoesNotOfferTheAttackOnlyInterrupt` queues a villain scheme
+with a hero-form paying identity, an affordable event and a two-icon boost card.
+It reaches that exact scheme faceup window and fails because the event is offered.
+This is a synthetic admission regression, not public content coverage. The actual
+interpretation needs an engine-owned predicate that binds the attack requirement
+to this faceup activation, including when other attack context is suspended.
+
+Independent Windows Release evidence outside the repository:
+
+- `preemptive-independent-final-content.log`: **31 pass**, individual
+  cancellation, independent review controls, existing boost/activation/Goblin
+  cases and rule citations, before the added scheme control.
+- `preemptive-independent-final-rules.log`: **55 pass**, all Rules Boost cases,
+  Wrecking attack routing and rule citations.
+- `preemptive-independent-final-review-controls.log`: **8 pass, 1 fail**;
+  only the new scheme restriction assertion fails. The stale-payment control
+  now repeats `Remaining`, `Waiting` and `Describe` queries after taking its
+  baseline and before rejection. Card digest, full RNG state/consumption,
+  activation/attack, pending frames and events remain unchanged; subsequent
+  completion matches the unprobed control. No separate information-signal
+  inspection is claimed.
+
+The raw 05014 text and all three cited rulings were rechecked. Live admission,
+dependent quantity projection, preparation and actual cancellation consistently
+read the modified quantity. Actual cancelled icons remain separate, so a second
+event cannot reuse them and later star-added icons survive. Exact activation,
+world, incarnation and outstanding-occurrence guards remain. The adapted Rules
+tests preserve event order, numeric contribution, damage and discard routing
+assertions while driving the queued attack and explicit defender choice. Their
+encounter reserve prevents unrelated deck exhaustion.
+
+This verdict approves the scoped live-count repair, not the missing attack-only
+interpretation or full managed/cross-platform acceptance. Review changes own
+tests and this evidence record only; no production or ability-book edits.
+
 ## Live-count repair candidate, 2026-10-26
 
 The repair on `fix/preemptive-live-icons`, based on review commit `2c69a87d`,
