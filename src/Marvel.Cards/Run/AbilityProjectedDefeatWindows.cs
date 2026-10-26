@@ -71,7 +71,8 @@ internal static class AbilityProjectedDefeatWindows
     internal static void ValidateContinuation(AbilityEffect node, AbilityPowerState state, AbilityAdmissionScope cast)
     {
         if (AbilityPowerContinuationDependencies.IsIndependent(node)) return;
-        if (state.UnprojectedStageEntry is { } reason)
+        if (state.UnprojectedStageEntry is { } reason
+            && !AbilityStageEntryDependencies.PreservesReads(node, state, cast))
             throw new RulesNotImplementedException(reason);
         if (state.DefeatWindowDeferred && !AbilityDefeatReceiptProjection.PreservesReads(node)
             && !(state.RecoveryWindowDeferred && AbilityProjectedRecoveryWindow.PreservesReads(node, state, cast)))
