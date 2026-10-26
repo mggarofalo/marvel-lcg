@@ -36,6 +36,12 @@ internal sealed class NativeSceneGameFactory(string contract) : IGameFactory, IS
 
     private OpenedGame CreateScene(GameSpecification specification)
     {
+        if (contract == "defeat-context")
+        {
+            OpenedGame opened = DefeatContextNativeScene.Create(cards, setup, abilities);
+            prepared = opened.Game;
+            return opened;
+        }
         if (contract == "dense-table") return DenseTable();
         bool wakanda = contract.StartsWith("wakanda", StringComparison.Ordinal);
         string hero = Hero();

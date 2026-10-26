@@ -36,7 +36,7 @@ internal static class DecisionCopy
     public static string ActionSummary(AffordancePresentation view)
     {
         ArgumentNullException.ThrowIfNull(view);
-        string?[] parts = [Choice(view), view.SourceState,
+        string?[] parts = [Choice(view), view.ContextDescription, view.SourceState,
             view.CostDescription is { Length: > 0 } cost ? $"Costs: {cost}." : null,
             view.Description, view.Consequence];
         return string.Join("\n", parts.Where(part => !string.IsNullOrWhiteSpace(part)).Distinct());
@@ -59,13 +59,13 @@ internal static class DecisionCopy
     internal static string CompactActionSummary(AffordancePresentation view)
     {
         // Source state stays on its visible card; the dock retains commitments and effects.
-        string?[] parts = [view.CostDescription, view.Description, view.Consequence];
+        string?[] parts = [view.ContextDescription, view.CostDescription, view.Description, view.Consequence];
         return string.Join(" · ", parts.Where(part => !string.IsNullOrWhiteSpace(part)).Distinct());
     }
 
     internal static string AbilityDetail(AffordancePresentation view, string label, string? choice)
     {
-        string?[] parts = [choice, view.CostDescription, view.Description, view.Consequence];
+        string?[] parts = [view.ContextDescription, choice, view.CostDescription, view.Description, view.Consequence];
         return string.Join("\n", parts.Where(part => !string.IsNullOrWhiteSpace(part)
             && !TooltipPolicy.Restates(label, part)).Distinct());
     }

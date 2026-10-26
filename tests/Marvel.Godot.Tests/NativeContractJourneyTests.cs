@@ -79,9 +79,15 @@ public sealed class NativeContractJourneyTests
         if (contract == "variable-payment") VerifyVariable(server, mutations);
         if (contract == "repeated-targets") VerifyRepeated(server, mutations);
         VerifyCardChoices(contract, server, mutations);
+        VerifyAbilityContracts(contract, server, mutations);
+    }
+
+    private static void VerifyAbilityContracts(string contract, NativeContractServer server, EngineRequest[] mutations)
+    {
         if (contract == "lockjaw-discard") LockjawNativeAssertions.Verify(server, mutations);
         if (contract == "melee-sequential") MeleeNativeAssertions.Verify(server, mutations);
         if (contract == "preemptive-strike") PreemptiveStrikeNativeAssertions.Verify(server, mutations);
+        if (contract == "defeat-context") DefeatContextNativeAssertions.Verify(server, mutations);
         if (contract.StartsWith("bruno-", StringComparison.Ordinal)) BrunoNativeAssertions.Verify(contract, server, mutations);
     }
 

@@ -59,7 +59,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         Rebuild();
     }
     private VBoxContainer? content;
-    private VBoxContainer? commit;
+    private Container? commit;
     internal bool submitting;
     internal bool mulliganChoiceSheetOpen;
     private bool compactMulliganChrome;
@@ -270,7 +270,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         ThemeTypeVariation = GodotThemeVariations.TightStack;
     }
 
-    internal void InstallLayout(VBoxContainer body, VBoxContainer commitBar)
+    internal void InstallLayout(VBoxContainer body, Container commitBar)
     {
         content = body;
         commit = commitBar;
@@ -281,8 +281,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             .AddChild(control);
 
     internal void AddCommit(Control control) =>
-        (commit ?? throw new InvalidOperationException("decision commit bar is unavailable"))
-            .AddChild(control);
+        DecisionPanelPromptRenderer.AddCommit(this, commit, control);
 
     internal void BindAnchors(Control control, params int[] ids)
     {

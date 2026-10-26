@@ -52,6 +52,7 @@
     }
   },
   "cases": [
+    {"id":"contract-defeat-context-100-reduced","script":"res://smoke/native_contract_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"disabled","viewport":"1920x1080","players":1,"timeoutSeconds":100,"markers":["NATIVE_CONTRACT_OK defeat-context"],"contract":"defeat-context","evidenceKind":"synthetic-component"},
     {"id":"contract-lockjaw-discard-100-reduced","script":"res://smoke/native_contract_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"disabled","viewport":"1920x1080","players":1,"timeoutSeconds":100,"markers":["NATIVE_CONTRACT_OK lockjaw-discard"],"contract":"lockjaw-discard","evidenceKind":"prepared-cross-pack-component"},
     {"id":"contract-preemptive-strike-100-reduced","script":"res://smoke/native_contract_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"disabled","viewport":"1920x1080","players":1,"timeoutSeconds":100,"markers":["NATIVE_CONTRACT_OK preemptive-strike"],"contract":"preemptive-strike","evidenceKind":"prepared-cross-pack-component"},
     {"id":"contract-melee-sequential-100-reduced","script":"res://smoke/native_contract_smoke.gd","profiles":["representative","exhaustive"],"scale":100,"motion":"disabled","viewport":"1920x1080","players":1,"timeoutSeconds":100,"markers":["NATIVE_CONTRACT_OK melee-sequential"],"contract":"melee-sequential","evidenceKind":"prepared-cross-pack-component"},

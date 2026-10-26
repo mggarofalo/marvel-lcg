@@ -38,7 +38,7 @@ internal static class DecisionPanelPromptRenderer
         bool search = !panel.LocalDecision.IsOpen && panel.CompleteChoicesOpen && DecisionCardChoices.IsChoice(composer.Prompt);
         if (!panel.PaymentModalOpen && !search && !DecisionDialogLayout.Automatic(composer.Prompt))
             AddActionSummary(body, selected, composer, panel.LocalDecision.IsOpen);
-        if (search)
+        if (search || panel.AbilityWindowOpen)
         {
             panel.LayoutHost.AddChild(body);
         }
@@ -49,15 +49,19 @@ internal static class DecisionPanelPromptRenderer
             panel.LayoutHost.AddChild(scroll);
         }
 
-        var commit = new VBoxContainer
-        {
-            Name = "CommitBar",
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        panel.LayoutHost.AddChild(new HSeparator());
-        panel.LayoutHost.AddChild(commit);
-        panel.InstallLayout(body, commit);
+        panel.InstallLayout(body, CreateCommitBar(panel));
+    }
+
+    private static Container CreateCommitBar(DecisionPanel panel)
+    {
+        Container commit = panel.AbilityWindowOpen ? new HBoxContainer() : new VBoxContainer();
+        commit.Name = "CommitBar";
+        commit.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        commit.ThemeTypeVariation = GodotThemeVariations.TightStack;
+        Node commitHost = panel.AbilityWindows.Footer ?? panel.LayoutHost;
+        commitHost.AddChild(new HSeparator());
+        commitHost.AddChild(commit);
+        return commit;
     }
 
     private static ScrollContainer CreateScroll(DecisionPanel panel)
@@ -74,6 +78,18 @@ internal static class DecisionPanelPromptRenderer
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
             VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
         };
+    }
+
+    internal static void AddCommit(DecisionPanel panel, Container? commit, Control control)
+    {
+        if (panel.AbilityWindowOpen && control is not Button)
+        {
+            panel.AddContent(control);
+            return;
+        }
+        control.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        (commit ?? throw new InvalidOperationException("decision commit bar is unavailable"))
+            .AddChild(control);
     }
 
     private static void AddActionSummary(
