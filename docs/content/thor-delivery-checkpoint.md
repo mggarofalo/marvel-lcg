@@ -1,5 +1,21 @@
 # Thor delivery checkpoint
 
+## Certification run 40335536213
+
+PR #452 candidate `4c6f5af9` passed managed correctness, the Windows package,
+Linux platform gates and all four native shards. Windows platform integration
+passed 129 architecture, 975 Godot (one environment-dependent skip), 36 release
+and 524 server tests. The integration step took 33.93 minutes. The whole job hit
+its 40-minute budget during the final hosted-client smoke, after its build passed;
+that smoke and later steps therefore have no passing result from this run.
+Both required aggregate checks correctly failed because their dependency was
+canceled. Logs remain in `C:/Users/mggar/Source/evidence/thor-ci-windows-platform.log`.
+
+Routine platform jobs have a 60-minute bounded budget for integration and hosted
+smoke checks; individual process deadlines, assertions, required checks and the
+90-minute exhaustive limit are unchanged. The new exact candidate must complete
+certification before merge. No passing result is inferred from the canceled job.
+
 MARVEL-563, runtime integration `63937f6d`, 2026-10-26. The branch contains a complete
 public Thor admission candidate; it is not merged or accepted. This record
 supplements the 35-face implementation handoff and does not replace complete
