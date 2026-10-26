@@ -101,12 +101,14 @@ Code paths checked, rather than inferred from primitive names:
 **E0 — complete and independently review engagement correction first.**
 `69459de2` supplies physical subject, destination seat, no same-seat engagement,
 and entry/transfer continuation, demonstrated by synthetic `ThorEngagementTests`.
-Independent review `dd609c45` found Quickstrike completion was placed before the
-optional response. The correction belongs to the separate timing worker: keyword
-initiation/its interrupts and engagement responses must have their authority-
-derived order before the initiated attack finishes. Do not reuse the earlier
-document's claim that Quickstrike must finish before Thor draws. The pending
-replay-v26 work follows that review; this handoff does not certify it. Once fixed,
+Independent review `dd609c45` found interpreted transfer offered Thor's optional
+response before pending Quickstrike. `rr:quickstrike.1` defines the keyword as a
+forced response; `rr:ability.step.4` orders forced responses before optional
+responses. Correction `64448751`, independently approved in `67314c81`, finishes
+Quickstrike before Thor's response and retains the surrounding interpreted
+continuation through nested choices or decline. The next delivery still needs
+replay-v26 compatibility proof because real Core Hawkeye ordering also changed.
+Using the reviewed correction,
 prove actual `06001a`/`06014` rows and replay/save across suspended engagement,
 including per-phase usage and destination seat. No new starter research needed.
 
