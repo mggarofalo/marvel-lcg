@@ -507,3 +507,11 @@ contract is defined in [release-policy.md](release-policy.md). The RNG,
 card-state digest and save envelope retain their existing formats. Supporting
 travel, reveal and installation receipts may share one presentation beat; every
 raw event remains available in diagnostics.
+
+Protocol 38 adds an engine-authored `distinct_types` requirement to resource-cost
+components. A true value requires different declared resource types within that
+component. Wild icons may each declare any of the four types. The field is omitted
+when false, preserving the spelling of ordinary costs. Protocol 37 peers are rejected
+by the existing strict version boundary before gameplay; additive data is not assumed
+safe for a peer that disallows unknown members. The engine owns allocation and
+assessment. This contract does not admit Red Dagger or another expansion ability.

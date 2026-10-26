@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Marvel.Rules.Prompts;
 
 /// <summary>One component of a simultaneous resource payment.</summary>
@@ -6,6 +8,10 @@ public sealed record ResourceCost(
     IReadOnlyList<string>? Rule = null,
     bool Printed = false)
 {
+    /// <summary>Every paid resource must have a different declared type.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool DistinctTypes { get; init; }
+
     /// <summary>Declarations this icon may make toward this component, before whole-payment assessment.</summary>
     public IReadOnlyList<char> Declarations(char icon) =>
         [.. Marvel.Rules.Play.Resources.Types.Where(declared =>

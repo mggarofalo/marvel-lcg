@@ -13,10 +13,15 @@ public sealed record ResourceCostComponentRecord(
     [property: JsonRequired] bool Printed,
     [property: JsonRequired] char? RepeatedResource = null)
 {
+    /// <summary>Whether all paid declarations must have different types.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool DistinctTypes { get; init; }
+
     /// <summary>Captures one engine-authored payment component.</summary>
     public static ResourceCostComponentRecord From(ResourceCost component)
     {
         ArgumentNullException.ThrowIfNull(component);
-        return new(component.Cost, JournalValues.OptionalList(component.Rule), component.Printed, component.RepeatedResource);
+        return new(component.Cost, JournalValues.OptionalList(component.Rule), component.Printed, component.RepeatedResource)
+        { DistinctTypes = component.DistinctTypes };
     }
 }

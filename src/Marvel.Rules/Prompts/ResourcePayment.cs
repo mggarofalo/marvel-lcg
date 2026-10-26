@@ -147,7 +147,8 @@ public static class ResourcePayment
     {
         if (Resolve(cost, values) is not { } resolved) return false;
         string assigned = paid.ToString();
-        return assigned.Length == resolved.Amount
+        return (!cost.DistinctTypes || assigned.Distinct().Count() == assigned.Length)
+            && assigned.Length == resolved.Amount
             && Resources.PaysDeclared(assigned, resolved.Amount, resolved.Required);
     }
 
@@ -200,70 +201,6 @@ public static class ResourcePayment
         List<Slot>? slots = Slots(costs, values);
         if (slots is null) return null;
 
-        var icons = sources
-            .SelectMany(source => source.Generates.Select(resource =>
-                new Icon(source.Effect, resource)))
-            .ToList();
-        if (icons.Count < slots.Count)
-        {
-            return null;
-        }
-
-        return new AllocationSearch(slots, icons).Allocate();
+        return new ResourceAllocationSearch(slots, sources).Allocate();
     }
-
-    private sealed class AllocationSearch(List<Slot> slots, List<Icon> icons)
-    {
-        private readonly bool[] used = new bool[icons.Count];
-        private readonly Choice[] choices = new Choice[slots.Count];
-
-        internal IReadOnlyList<ResourceAllocation>? Allocate() => Search(0) ? Collapse() : null;
-
-        private bool Search(int slotIndex)
-        {
-            if (slotIndex == slots.Count) return true;
-            Slot slot = slots[slotIndex];
-            foreach (int index in Candidates(slot))
-            {
-                used[index] = true;
-                choices[slotIndex] = new Choice(icons[index].Source, slot.Component,
-                    slot.Required ?? icons[index].Printed);
-                if (Search(slotIndex + 1)) return true;
-                used[index] = false;
-            }
-            return false;
-        }
-
-        private IEnumerable<int> Candidates(Slot slot)
-        {
-            IEnumerable<int> candidates = Enumerable.Range(0, icons.Count)
-                .Where(index => !used[index]
-                    && Accepts(icons[index].Printed, slot.Required, slot.Printed));
-            return slot.Required is { } required
-                ? candidates.OrderBy(index => icons[index].Printed == required ? 0 : 1)
-                : candidates;
-        }
-
-        private IReadOnlyList<ResourceAllocation> Collapse()
-        {
-            var order = new List<(int Source, int Cost)>();
-            var paid = new Dictionary<(int Source, int Cost), System.Text.StringBuilder>();
-            foreach (Choice choice in choices)
-            {
-                var key = (choice.Source, choice.Component);
-                if (!paid.TryGetValue(key, out var declared))
-                {
-                    declared = new System.Text.StringBuilder();
-                    paid.Add(key, declared);
-                    order.Add(key);
-                }
-                declared.Append(choice.Declared);
-            }
-            return [.. order.Select(key =>
-                new ResourceAllocation(key.Source, key.Cost, paid[key].ToString()))];
-        }
-    }
-
-    private readonly record struct Icon(int Source, char Printed);
-    private readonly record struct Choice(int Source, int Component, char Declared);
 }

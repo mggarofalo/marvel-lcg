@@ -14,9 +14,9 @@ internal static class ResourcePaymentRequirements
             if (Resolve(costs[component], values) is not { } resolved) return null;
             (int amount, string required) = resolved;
             slots.AddRange(required.Select(resource =>
-                new Slot(component, resource, costs[component].Printed)));
+                new Slot(component, resource, costs[component].Printed, costs[component].DistinctTypes)));
             slots.AddRange(Enumerable.Repeat(
-                new Slot(component, Required: null, costs[component].Printed),
+                new Slot(component, Required: null, costs[component].Printed, costs[component].DistinctTypes),
                 amount - required.Length));
         }
         return slots;
@@ -33,9 +33,13 @@ internal static class ResourcePaymentRequirements
             if (required.Length != 0 || !Resources.Types.Contains(repeated)) return null;
             required = new string(repeated, (int)amount);
         }
-        return required.Length > amount || required.Any(resource => !Resources.Types.Contains(resource))
-            ? null : ((int)amount, required);
+        return ValidRequirements(cost, amount, required) ? ((int)amount, required) : null;
     }
+
+    private static bool ValidRequirements(ResourceCost cost, long amount, string required) =>
+        required.Length <= amount && required.All(Resources.Types.Contains)
+        && (!cost.DistinctTypes || amount <= Resources.Types.Length
+            && required.Distinct().Count() == required.Length);
 
     internal static bool Amount(
         string written,
@@ -57,5 +61,5 @@ internal static class ResourcePaymentRequirements
         || printed == required
         || !printedCost && printed == Resources.Wild;
 
-    internal readonly record struct Slot(int Component, char? Required, bool Printed);
+    internal readonly record struct Slot(int Component, char? Required, bool Printed, bool DistinctTypes);
 }
