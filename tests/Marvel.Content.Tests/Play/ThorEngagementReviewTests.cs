@@ -134,13 +134,10 @@ public sealed class ThorEngagementReviewTests : CoreCardTestBase
 
     private static AbilityRunner TransferRunner()
     {
-        // Nonpublic ability bodies isolate engagement from full Thor admission.
+        // The actual Thor row observes a synthetic transfer without public pack admission.
         // Vulture's synthetic reveal damage distinguishes an accidental reveal.
         var local = AbilityCatalog.Parse("""
             {"cards":[
-              {"card":"06001a","abilities":[{"limitPerPhase":1,
-                "trigger":{"event":"WhenMinionEngaged","timing":"Response","subject":"you","form":"hero"},
-                "effect":{"draw":{"player":"you","count":2}}}]},
               {"card":"06003","abilities":[{
                 "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
                 "effect":{"putIntoPlay":{"card":{"titled":"Vulture"},"where":"engagedWithYou"}}}]},

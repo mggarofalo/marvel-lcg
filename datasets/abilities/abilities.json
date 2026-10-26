@@ -17798,6 +17798,84 @@
           }
         }
       ]
+    },
+    {
+      "card": "06001a",
+      "name": "Thor",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; Thor research remains outside public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenMinionEngaged",
+            "timing": "Response",
+            "subject": "you",
+            "form": "hero"
+          },
+          "limitPerPhase": 1,
+          "effect": {
+            "draw": {
+              "player": "you",
+              "count": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "06004",
+      "name": "For Asgard!",
+      "note": "Executable interpretation of joined printed text in datasets/cards/cards.json; Thor research remains outside public admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Action",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "if": {
+              "test": {
+                "exists": {
+                  "cardsIn": {
+                    "areas": [
+                      "yourDeck",
+                      "yourDiscardPile"
+                    ],
+                    "trait": "ASGARD"
+                  }
+                }
+              },
+              "then": {
+                "chooseCard": {
+                  "from": {
+                    "cardsIn": {
+                      "areas": [
+                        "yourDeck",
+                        "yourDiscardPile"
+                      ],
+                      "trait": "ASGARD"
+                    }
+                  },
+                  "effect": {
+                    "seq": [
+                      {
+                        "addToHand": "chosen"
+                      },
+                      {
+                        "shuffle": "yourDeck"
+                      }
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "shuffle": "yourDeck"
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
