@@ -19083,6 +19083,285 @@
           }
         }
       ]
+    },
+    {
+      "card": "08023",
+      "name": "Quincarrier",
+      "note": "Printed 08023. The catalog enforces the current identity Avenger trait when played; the resource itself has no form or spending-purpose restriction.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Resource",
+            "subject": "this"
+          },
+          "cost": {
+            "exhaust": "this"
+          },
+          "effect": {
+            "generate": "G"
+          },
+          "printedResources": "G"
+        }
+      ]
+    },
+    {
+      "card": "08025",
+      "name": "Burn Notice",
+      "note": "Printed 08025. Optional form change precedes the alternatives. The highest-cost discard ranks removable controlled Preparations; rr:first-player.1 gives tied highest choices to the first player. Surge applies only when that discard cannot occur.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "descriptions": [
+                    "Change to alter-ego form",
+                    "Remain in your current form"
+                  ],
+                  "options": [
+                    {
+                      "changeForm": {
+                        "player": "you",
+                        "to": "alter-ego"
+                      }
+                    },
+                    {
+                      "seq": []
+                    }
+                  ]
+                }
+              },
+              {
+                "choose": {
+                  "descriptions": [
+                    "Exhaust Natasha Romanoff and remove Burn Notice from the game",
+                    "Discard your highest-cost Preparation, or gain surge if none can be discarded; discard Burn Notice"
+                  ],
+                  "options": [
+                    {
+                      "then": {
+                        "effect": {
+                          "exhaust": "yourAlterEgo"
+                        },
+                        "then": {
+                          "removeFromGame": "this"
+                        }
+                      }
+                    },
+                    {
+                      "seq": [
+                        {
+                          "if": {
+                            "test": {
+                              "exists": {
+                                "discardable": {
+                                  "withTrait": {
+                                    "cards": {
+                                      "query": "cardsYouControl"
+                                    },
+                                    "trait": "PREPARATION"
+                                  }
+                                }
+                              }
+                            },
+                            "then": {
+                              "chooseCard": {
+                                "chooser": "firstPlayer",
+                                "from": {
+                                  "maxBy": {
+                                    "of": {
+                                      "discardable": {
+                                        "withTrait": {
+                                          "cards": {
+                                            "query": "cardsYouControl"
+                                          },
+                                          "trait": "PREPARATION"
+                                        }
+                                      }
+                                    },
+                                    "by": "cost"
+                                  }
+                                },
+                                "effect": {
+                                  "discard": "chosen"
+                                }
+                              }
+                            },
+                            "else": {
+                              "gainSurge": 1
+                            }
+                          }
+                        },
+                        {
+                          "discard": "this"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "08026",
+      "name": "Taskmaster",
+      "note": "Printed 08026. The constant reads the engaged player's live upgrades. Boost reads the activation's resolving player and grants both stats for that activation only; grant/query spellings are engine choices.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grant": {
+                  "card": "this",
+                  "keyword": "scheme",
+                  "amount": {
+                    "count": {
+                      "inPlayerArea": {
+                        "area": "upgrades",
+                        "player": "engagedPlayer"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "grant": {
+                  "card": "this",
+                  "keyword": "attack",
+                  "amount": {
+                    "count": {
+                      "inPlayerArea": {
+                        "area": "upgrades",
+                        "player": "engagedPlayer"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Boost",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "grantUntil": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "keyword": "scheme",
+                  "amount": {
+                    "count": {
+                      "query": "upgradesYouControl"
+                    }
+                  },
+                  "until": "EndOfActivation"
+                }
+              },
+              {
+                "grantUntil": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "keyword": "attack",
+                  "amount": {
+                    "count": {
+                      "query": "upgradesYouControl"
+                    }
+                  },
+                  "until": "EndOfActivation"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "08029",
+      "name": "Deadly Shot",
+      "note": "Printed 08029. Discard selection is restricted to upgrades controlled by the revealing player. The following threat or damage sentence is nondependent and still resolves when no upgrade exists.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "form": "alter-ego"
+          },
+          "effect": {
+            "seq": [
+              {
+                "chooseCard": {
+                  "from": {
+                    "discardable": {
+                      "query": "upgradesYouControl"
+                    }
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              },
+              {
+                "placeThreat": {
+                  "scheme": {
+                    "query": "mainScheme"
+                  },
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this",
+            "form": "hero"
+          },
+          "effect": {
+            "seq": [
+              {
+                "chooseCard": {
+                  "from": {
+                    "discardable": {
+                      "query": "upgradesYouControl"
+                    }
+                  },
+                  "effect": {
+                    "discard": "chosen"
+                  }
+                }
+              },
+              {
+                "dealDamage": {
+                  "cards": "you",
+                  "amount": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

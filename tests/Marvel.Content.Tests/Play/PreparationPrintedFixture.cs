@@ -35,6 +35,7 @@ internal sealed class PreparationPrintedFixture
               ]}}
             }]}
             """)!;
+        rows.Remove(rows.Single(row => row!["card"]!.GetValue<string>() == "08023"));
         rows.Add(observer);
         if (tail is not null)
             bite["abilities"]![0]!["effect"]!["attack"]!["effect"]!["seq"]![1] =

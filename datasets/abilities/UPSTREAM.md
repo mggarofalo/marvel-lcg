@@ -260,3 +260,11 @@ PreparationResourceTests/IndependentTests and SafeHouseCostChoiceTests/Suspensio
 exercise actual rows with explicitly labelled synthetic suspension support.
 Public Black Widow admission remains excluded pending complete pack delivery.
 See docs/content/black-widow-preparation-batch.md for evidence and limits.
+
+
+The next Black Widow batch adds actual 08023, 08025, 08026 and 08029: 632
+rows and 21/34 Black Widow faces. The existing 628 rows retain their exact raw
+prefix/order/semantics. No starting counters or public admission changes.
+Quake 08012 remains unauthored: a compiled characteristic incarnation probe
+found that the completed scheme actor selector damages a departed/reentered
+copy. See `docs/content/black-widow-allies-encounters.md` for bounded evidence.
