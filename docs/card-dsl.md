@@ -15,6 +15,14 @@ Special procedure completes, including its intermediate discard/reveal/reset.
 These spellings are engine choices. Production Doctor Strange rows use them on
 nonpublic research boards; complete pack admission remains separate.
 
+`statusCards` selects physical statuses on live characters. `replaceStatus` takes
+`card: "chosen"` and a fixed `status` of `tough`, `stunned`, or `confused`.
+The destination must differ from the selected kind and obey the host's status
+limits and restrictions. A nested three-option `choose` filters illegal kinds;
+an independent empty replacement sentence does not suppress Invocation self-discard.
+Replacement emits `Replace_Status`, rather than `Give_Status`. These vocabulary
+spellings are engine choices, used by production Vapors on nonpublic boards.
+
 `defeatedAllyInYourDiscardPile: "you"` selects the exact physical ally from the
 current defeat receipt when its captured controller was the resolving player,
 its incarnation has not reentered play, and it is currently in that player's
@@ -498,10 +506,10 @@ placeAtRandom placeCounters placeThreat power powerAmount powerTargets cardsDisc
 preventDamage preventDamageFrom preventDamageWhile preventThreat
 preventThreatRemoval printedResourceCountDiscarded putIntoPlay
 recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters
-removeFromGame removeThreat replaceThreatWithDamage requireAllyDefender
+removeFromGame removeThreat replaceStatus replaceThreatWithDamage requireAllyDefender
 resolveSpecials returnOwnedToHand returnToHand revealTop scheme schemes search
 shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend
-spendEnergyX startingCounters takeDamage then threatCause thwartDifferentSchemes thwartSchemes
+spendEnergyX startingCounters statusCards takeDamage then threatCause thwartDifferentSchemes thwartSchemes
 thwartableSchemes titleInPlay titled tokensOn topEncounterDiscardBoostPlusOne
 undefendedAttack until upgradesAndSupportsYouControl
 upgradesYouControl wasDefeated withStatus withTrait within withoutAnotherCopyAttached
@@ -1544,3 +1552,46 @@ other search filters and never broadens the named areas. `top` bounds the physic
 search range before set or other criteria apply. Omitting `set` retains existing
 search behavior. This prerequisite does not author Mystical Studies or admit the
 Doctor Strange product.
+
+### Independent enemy selection and self-discard
+
+An independent `chooseCard(enemies)` sentence with a sequential body of
+`giveStatus(chosen)` and positive constant ordinary `dealDamage(chosen)` can be
+empty while another sentence still resolves. This bounded engine composition
+uses the complete body to determine eligible enemies; it adds no fallback enemy
+and does not create status or damage when none is eligible. Attack damage,
+ignore-Tough damage, computed quantities, nested choices and dependent `then`
+predecessors retain their existing admission gates. Whole-ability target and
+partial-effect checks still apply, and costs do not supply a valid target.
+
+Current RR 1.8 `rr:target.2`, `.3.4`, `.3.7` and `rr:ability.4` govern this
+sentence boundary. Rulings `8883bc6b0af1c9b8` (May 2024) and
+`8c9c9d30f4c01189` (November 2023) agree: the choose sentence limits itself,
+and an Invocation's independent self-discard supplies a valid target. The older
+pre-1.5 Vapors answer `5bafad5aafa9093b` is superseded on that question.
+Test-local printed Crimson (09032) plus synthetic damage prohibition proves
+Spell Mastery and Master of the Mystic Arts payment, discard, top disclosure,
+recycling and exact physical return; this prerequisite authors no ability-book
+row and admits no product.
+
+### Bounded distinct status recipients
+
+`chooseStatusRecipients` accepts `from`, a fixed `status` and positive `maximum`.
+It uses the ordinary bounded distinct `TargetRequest` and ability continuation:
+the resolving player confirms one complete subset of zero through the maximum
+before any character receives a status card. Candidates are in-play characters
+that can receive the status according to `Statuses.Count` and `Statuses.Limit`,
+including enemies. No candidates skips this instruction; independent later
+instructions still resolve. Zero selected supplies no successful effect.
+The engine chooses this spelling and physical-id commit order. Candidate
+consequences, resolving seat, source and optional count are engine-authored prompt
+facts. Unsupported dependent/projection compositions retain explicit refusal.
+
+This prerequisite tests actual printed Seven Rings of Raggadorr (09034) through
+Spell Mastery and Master of the Mystic Arts with a test-local Special. It authors
+no production row and admits no product. Before public delivery, View/Decisions/
+Protocol must preserve the complete-subset prompt, source/cost context and
+independent Invocation discard/return consequence; native grouped staging,
+unstaging, explicit zero confirmation, multiplayer authority, stale answers and
+visible result comprehension remain downstream acceptance obligations. Engine
+tests do not certify those contracts or native interactions.

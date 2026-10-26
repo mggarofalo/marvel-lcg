@@ -19,6 +19,11 @@ internal sealed class AbilityChoiceAnswer(
 
     internal List<Marvel.Rules.Events.GameEvent> Apply(AbilityEffect choice)
     {
+        if (choice is AbilityEffect.ChooseStatusRecipients recipients)
+        {
+            AbilityStatusRecipients.Commit(execution.StructuralContext(cast), cast, recipients, input);
+            return Continue();
+        }
         string operation = choice.OperationName();
         if (choice is AbilityEffect.MoveThreat move)
         {

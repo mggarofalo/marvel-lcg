@@ -11,14 +11,6 @@ namespace Marvel.Content.Tests.Play;
 /// <summary>Nonpublic Invocation target admission with actual Images and synthetic controls.</summary>
 public sealed class InvocationEmptyChoiceTests
 {
-    private const string Images = """
-        {"seq":[
-          {"giveStatus":{"card":{"query":"villain"},"status":"confused"}},
-          {"chooseCard":{"from":{"query":"schemes"},"effect":{"removeThreat":{"scheme":"chosen","amount":4}}}},
-          {"discardInvocation":"this"}
-        ]}
-        """;
-
     [Theory]
     [InlineData(false, false)]
     [InlineData(false, true)]
@@ -28,9 +20,9 @@ public sealed class InvocationEmptyChoiceTests
     public void ImagesChoiceSelfDiscardsThroughBothArrowsWhenOtherEffectsCannotChangeState(bool master, bool last)
     {
         // "Each Invocation card always has a valid target" includes its own discard.
-        // Test-local 09033 follows its printed confuse, remove four, discard instructions.
+        // Production 09033 follows its printed confuse, remove four, discard instructions.
         // The genuine scheme choice has no eligible targets and must not ask for an answer.
-        var (world, game, deck, _) = BoardWithSpecial(Images, last, "09033", master ? 1 : 0);
+        var (world, game, deck, _) = BoardActual("09033", last, master);
         var hero = world.Seats[1].IdentityCard;
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         world.CreateCard(Statuses.Confused, world.AreaOf(DeckType.StatusArea, host: villain.ObjectId));
@@ -75,7 +67,7 @@ public sealed class InvocationEmptyChoiceTests
     [InlineData(true, true)]
     public void ImagesChoosesAnEligibleSchemeBeforeSelfDiscardAndExactReturn(bool master, bool last)
     {
-        var (world, game, deck, _) = BoardWithSpecial(Images, last, "09033", master ? 1 : 0);
+        var (world, game, deck, _) = BoardActual("09033", last, master);
         var hero = world.Seats[1].IdentityCard;
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var main = world.TheCardIn(DeckType.MainSchemesArea)!;
@@ -97,6 +89,11 @@ public sealed class InvocationEmptyChoiceTests
         Assert.Same(original, deck.PublicTop);
         Assert.Equal(6, side.Tokens["k_threat"]);
         Assert.Equal(1, Statuses.Count(world, villain, Statuses.Confused));
+        string before = Snapshot(world);
+        var prompt = game.Pending;
+        Assert.ThrowsAny<Exception>(() => game.Resolve(Decision.Take(main.ObjectId)));
+        Assert.Equal(before, Snapshot(world));
+        Assert.Same(prompt, game.Pending);
         var second = game.Resolve(Decision.Take(side.ObjectId));
         var events = first.Events.Concat(second.Events).ToList();
 
@@ -120,6 +117,11 @@ public sealed class InvocationEmptyChoiceTests
         Assert.Single(deck.Deck.Cards, card => card.FaceUp);
         Assert.True(game.IsRootPrompt);
         Assert.Empty(world.Agenda.Outstanding);
+        before = Snapshot(world);
+        prompt = game.Pending;
+        Assert.ThrowsAny<Exception>(() => game.Resolve(Decision.Take(side.ObjectId)));
+        Assert.Equal(before, Snapshot(world));
+        Assert.Same(prompt, game.Pending);
     }
 
 

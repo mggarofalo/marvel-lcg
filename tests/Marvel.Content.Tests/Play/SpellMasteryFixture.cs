@@ -51,8 +51,16 @@ internal static class SpellMasteryFixture
     internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) BoardWithSpecial(string special, bool last, string face = "09036", int master = 1) =>
         CreateBoard(Runner(false, false, false, special, face), 1, last, face, false, master);
 
+    internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) BoardActual(
+        string face, bool last, bool master) =>
+        CreateBoard(Marvel.Content.Tests.Cards.AuthoredCards.Runner(), 1, last, face, false, master ? 1 : 0);
+
     internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) BoardInAlterEgo() =>
         CreateBoard(Runner(false, false, false), 1, false, "09036", false, 1, false);
+
+    internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) BoardActualWithRunner(
+        AbilityRunner runner, string face, bool master, bool last = false) =>
+        CreateBoard(runner, 1, last, face, false, master ? 1 : 0);
 
     internal static (World World, Game Game, InvocationDeck Deck, AbilityRunner Runner) BoardWithSpellMasteryOnBothForms()
     {

@@ -64,6 +64,7 @@ internal static class AbilityResolutionChoices
         this AbilityResolutionExecution execution, Card source, AbilityType? tier,
         PhaseStep? persisted, AbilityEffect choice, AbilityResolutionState cast)
     {
+        if (choice is AbilityEffect.ChooseStatusRecipients recipients) return AbilityStatusRecipients.Describe(execution.StructuralContext(cast), recipients);
         if (choice is AbilityEffect.AttackAnotherEnemy staged) return AbilityStagedAttack.Describe(cast, staged, execution.program);
         var structural = execution.StructuralContext(cast);
         string operation = choice.OperationName();

@@ -20428,6 +20428,105 @@
           }
         }
       ]
+    },
+    {
+      "card": "09033",
+      "name": "Images of Ikonn",
+      "note": "Printed Special confuses the villain and removes four threat from a chosen scheme, then independently discards this physical Invocation. Ineffective main effects do not suppress its self-discard. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Special",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "giveStatus": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "status": "confused"
+                }
+              },
+              {
+                "chooseCard": {
+                  "from": {
+                    "query": "schemes"
+                  },
+                  "effect": {
+                    "removeThreat": {
+                      "scheme": "chosen",
+                      "amount": 4
+                    }
+                  }
+                }
+              },
+              {
+                "discardInvocation": "this"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "09035",
+      "name": "Vapors of Valtorr",
+      "note": "Printed Special replaces the chosen physical status with a different legal kind on the same character, then independently discards this physical Invocation. Replacement is not giving a status. Research content; no complete-product admission.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenActionTriggered",
+            "timing": "Special",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "chooseCard": {
+                  "from": {
+                    "query": "statusCards"
+                  },
+                  "effect": {
+                    "choose": {
+                      "descriptions": [
+                        "Replace with tough",
+                        "Replace with stunned",
+                        "Replace with confused"
+                      ],
+                      "options": [
+                        {
+                          "replaceStatus": {
+                            "card": "chosen",
+                            "status": "tough"
+                          }
+                        },
+                        {
+                          "replaceStatus": {
+                            "card": "chosen",
+                            "status": "stunned"
+                          }
+                        },
+                        {
+                          "replaceStatus": {
+                            "card": "chosen",
+                            "status": "confused"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "discardInvocation": "this"
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

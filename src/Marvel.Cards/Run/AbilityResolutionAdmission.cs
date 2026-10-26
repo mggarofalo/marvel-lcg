@@ -136,6 +136,7 @@ internal static class AbilityResolutionAdmission
             // Target availability is the only state-dependent precondition
             // these currently expressible effects carry. Their own resolver
             // performs any further rule-specific work.
+            "chooseStatusRecipients" => AbilityStatusRecipients.Candidates((AbilityEffect.ChooseStatusRecipients)node, cast.Context).Count > 0,
             "generate" or "soakDamage" or "preventDamage" or "cancelWhenRevealed"
                 or "cancelOccurrence"
                 or "dealEncounterCards" or "dealEncounterCard"
@@ -170,7 +171,7 @@ internal static class AbilityResolutionAdmission
     {
         if (node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
             or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop"
-            or "discardHandCards" or "discardResourceIcons" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
+            or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle" or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall"
             or "legalPractice" or "payOrEffect")
         {
             throw new RulesNotImplementedException(

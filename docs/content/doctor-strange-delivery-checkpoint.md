@@ -4,7 +4,7 @@ Canonical parent: MARVEL-565. The [40-face handoff](research/remaining/doctor-st
 defines complete scope. This branch contains nonpublic prerequisites, not admitted
 Doctor Strange content.
 
-Latest integration: 665 authored rows, 20 of the 40 Strange faces. Exact printed-set
+Latest integration: 667 authored rows, 22 of the 40 Strange faces. Exact printed-set
 search source `4261d57f` and review `f7e59a6c` are integrated at `36628a0b`; its
 combined search checks pass 40 cases. Four response-event rows from `4953b480`
 and independent event review `de7310c9` now accompany the complete healing-cost
@@ -24,6 +24,18 @@ The merged sequence assessor receives costs already expanded by
 nested costs into the complete payment context. Images/Vapors and Crimson
 prerequisite review are accepted but await integration. Public admission remains
 closed until the complete pack and its integration evidence are ready.
+
+Images/Vapors production source `06fcca2a` and independent review `706fa8bf`
+are integrated, preserving all 665 predecessor raw objects. Crimson's prerequisite
+source `b0eb9178` and review `4e192432` are integrated; its production row remains
+to author. Combined content/Invocation/Black Widow checks pass 479 cases with no
+failures or skips (`Source/evidence/strange-invocation-crimson-integration.log`).
+Seven Rings prerequisite source `8733cc9b` and independent review `5fe8b7ad` are
+also integrated. Its final combined selection/Invocation/Crimson checks pass 127
+cases (`Source/evidence/strange-seven-rings-integration.log`). The existing fixture
+keeps one optional-last-card overload; DSL documentation preserves exact-set,
+independent enemy choice and complete status-subset contracts together.
+The Seven Rings production row and downstream native/contract proof remain open.
 
 Reviewed lifecycle source 3a20ae07 and review dd5b2f4a reuse player-owned additional
 deck/discard zones with exact physical binding, seeded shuffle, post-mulligan top

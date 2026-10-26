@@ -22,7 +22,7 @@ internal static class AbilityStructuralExecution
             "seq" or "and" or "then" or "otherwise" or "eachPlayer" or "if"
             or "forEach" or "eachTime" or "choose" or "chooseCard"
             or "resolveSpecials" or "payOrExhaust" or "payOrEffect"
-            or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop" or "discardHandCards" or "discardResourceIcons" or "chooseCardsToHand" or "chooseDiscardToShuffle"
+            or "chooseTopForHand" or "peekTop" or "inspectEncounterTop" or "inspectDiscardOrderEncounterTop" or "discardHandCards" or "discardResourceIcons" or "chooseStatusRecipients" or "chooseCardsToHand" or "chooseDiscardToShuffle"
             or "distributeThreat" or "thwartDifferentSchemes" or "makeTheCall" or "legalPractice"
             or "attack" or "defense" or "thwart" or "thwartSchemes"
             or "placeThreat" or "enemyAttacks" or "enemySchemes");
@@ -53,6 +53,8 @@ internal static class AbilityStructuralExecution
                 ? AskFor(context, discard) : new Complete(context.Frames),
             AbilityEffect.DiscardResourceIcons discard => AbilityResourceIconDiscard.Required(context, discard) > 0
                 ? AskFor(context, discard) : new Complete(context.Frames),
+            AbilityEffect.ChooseStatusRecipients group => AbilityStatusRecipients.Candidates(group, context.Admission()).Count > 0
+                ? AskFor(context, group) : new Complete(context.Frames),
             AbilityEffect.ChooseCardsToHand group => AskFor(context, group),
             AbilityEffect.ChooseDiscardToShuffle discard => AskFor(context, discard),
             AbilityEffect.ThwartGroup group when group.Selection is AbilityThwartSelection.Different or AbilityThwartSelection.Distributed =>

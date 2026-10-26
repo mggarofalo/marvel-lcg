@@ -8,18 +8,9 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Test-local printed Vapors through the nonpublic Invocation lifecycle.</summary>
+/// <summary>Production printed Vapors through the nonpublic Invocation lifecycle.</summary>
 public sealed class VaporsStatusReplacementTests
 {
-    private const string Special = """
-        {"seq":[{"chooseCard":{"from":{"query":"statusCards"},"effect":{"choose":{
-          "descriptions":["Replace with tough","Replace with stunned","Replace with confused"],
-          "options":[{"replaceStatus":{"card":"chosen","status":"tough"}},
-          {"replaceStatus":{"card":"chosen","status":"stunned"}},
-          {"replaceStatus":{"card":"chosen","status":"confused"}}]}}}},
-          {"discardInvocation":"this"}]}
-        """;
-
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -27,7 +18,7 @@ public sealed class VaporsStatusReplacementTests
     public void NonFirstStrangeReplacesExactStatusOnSameCharacterThroughBothArrows(bool master)
     {
         // "A character cannot have more than one status card of each type at a time."
-        var (world, game, deck, _) = BoardWithSpecial(Special, false, "09035", master ? 1 : 0);
+        var (world, game, deck, _) = BoardActual("09035", false, master);
         var host = world.Seats[0].IdentityCard;
         var old = Statuses.Give(world, host, Statuses.Stunned);
         var other = Statuses.Give(world, world.TheCardIn(DeckType.VillainArea)!, Statuses.Tough);
@@ -66,7 +57,7 @@ public sealed class VaporsStatusReplacementTests
     public void NoReplaceableStatusStillDiscardsAndReveals(bool master, bool blocked)
     {
         // "You can trigger the Special on Vapors ... even when there isn't a status card in play."
-        var (world, game, deck, _) = BoardWithSpecial(Special, false, "09035", master ? 1 : 0);
+        var (world, game, deck, _) = BoardActual("09035", false, master);
         if (blocked)
         {
             var host = world.TheCardIn(DeckType.VillainArea)!;
@@ -90,7 +81,7 @@ public sealed class VaporsStatusReplacementTests
     public void BlockedCardsAndDuplicateDestinationsAreFiltered(bool master)
     {
         // "This character cannot have confused or stunned status cards."
-        var (world, game, deck, _) = BoardWithSpecial(Special, false, "09035", master ? 1 : 0);
+        var (world, game, deck, _) = BoardActual("09035", false, master);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         world.Effects.Register(new Marvel.Rules.Timing.ContinuousEffect(
             Marvel.Rules.Timing.EffectSource.LastingEffect, "stalwart", Amount: 1,

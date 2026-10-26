@@ -72,6 +72,7 @@ internal static class AbilityOperationNames
         AbilityEffect.AllowPlayFromDiscard => "allowPlayFromDiscard",
         AbilityEffect.AttachCards => "attachCards",
         AbilityEffect.ReleaseBeneath => "releaseBeneath",
+        AbilityEffect.ChooseStatusRecipients => "chooseStatusRecipients",
         AbilityEffect.ChooseCardsToHand => "chooseCardsToHand",
         AbilityEffect.StoreBeneath => "storeBeneath",
         AbilityEffect.InitializeAuxiliaryDeck => "initializeAuxiliaryDeck",

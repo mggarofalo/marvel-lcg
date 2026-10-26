@@ -24,6 +24,9 @@ public abstract record AbilityEffect
     /// <summary>Select up to a bounded number of physical out-of-play cards to add to your hand.</summary>
     public sealed record ChooseCardsToHand(AbilityCardSelection From, int Maximum) : AbilityEffect;
 
+    /// <summary>Select one bounded distinct group before giving each character a status.</summary>
+    public sealed record ChooseStatusRecipients(AbilityCardSelection From, string Status, int Maximum) : AbilityEffect;
+
     /// <summary>Select a distinct second enemy within the current attack, then deal constant damage.</summary>
     public sealed record AttackAnotherEnemy(long Amount) : AbilityEffect;
 

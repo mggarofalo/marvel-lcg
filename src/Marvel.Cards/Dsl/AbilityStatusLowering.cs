@@ -8,6 +8,16 @@ namespace Marvel.Cards.Dsl;
 /// <summary>Compiles the fixed kinds and selections of status operations.</summary>
 internal static class AbilityStatusLowering
 {
+    internal static AbilityEffect.ChooseStatusRecipients Recipients(AbilityValue value, AbilityLocation location)
+    {
+        var fields = Fields(value, location, "from", "status", "maximum");
+        string status = Text(Required(fields, "status", location), location.Child("status"));
+        if (status is not (Statuses.Tough or Statuses.Stunned or Statuses.Confused))
+            throw location.Child("status").Error($"'{status}' is not a supported status");
+        return new(Selected(fields, "from", location), status,
+            AbilityCostLowering.PositiveCount(Required(fields, "maximum", location), location.Child("maximum")));
+    }
+
     internal static AbilityEffect.ReplaceStatus Replacement(AbilityValue value, AbilityLocation location)
     {
         var status = Given(value, location);

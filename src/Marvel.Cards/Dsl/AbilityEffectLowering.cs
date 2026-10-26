@@ -72,6 +72,7 @@ internal static class AbilityEffectLowering
             "moveDamage" or "moveAttackDamage" => MoveDamageEffect(argument, child, node.Kind == "moveAttackDamage"),
             "indirectDamage" => IndirectEffect(argument, child),
             "replaceStatus" => AbilityStatusLowering.Replacement(argument, child),
+            "chooseStatusRecipients" => AbilityStatusLowering.Recipients(argument, child),
             "giveStatus" => AbilityStatusLowering.Given(argument, child),
             "removeStatuses" => AbilityStatusRemovalLowering.Lower(argument, child),
             "changeForm" => FormEffect(argument, child),
