@@ -25,16 +25,13 @@ internal static class AbilityResolutionPreventionAndDefeat
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(events);
 
-        var preventions = world.Effects.Active().Where(effect =>
-            string.Equals(effect.Kind, "preventDamage", StringComparison.Ordinal)
-            && effect.Affects == target.ObjectId).ToList();
+        var preventions = DamagePrevention.Active(world, target).ToList();
         foreach (var prevention in preventions)
         {
             if (!world.Effects.Use(prevention)) continue;
             // rr:prevent.1: prevention modifies the damage before it is taken.
             // Every interrupt to this damage has resolved before this boundary.
-            long prevented = prevention.Amount <= 0 ? amount : prevention.Amount;
-            amount = Math.Max(0, amount - prevented);
+            amount = DamagePrevention.After(amount, prevention.Amount);
         }
         return amount;
     }
@@ -48,9 +45,7 @@ internal static class AbilityResolutionPreventionAndDefeat
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(events);
 
-        var prevention = world.Effects.Active().Where(effect =>
-            string.Equals(effect.Kind, "preventDamage", StringComparison.Ordinal)
-            && effect.Affects == target.ObjectId).ToList();
+        var prevention = DamagePrevention.Active(world, target).ToList();
         foreach (var effect in prevention)
         {
             world.Effects.Use(effect);

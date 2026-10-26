@@ -15,7 +15,7 @@ internal sealed class AbilityPaymentValidation(
 {
     internal void Validate(
         AbilityCost? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
-        IReadOnlyDictionary<string, long>? values)
+        IReadOnlyDictionary<string, long>? values, AbilityCost? completeCost = null)
     {
         if (cost is null)
         {
@@ -49,7 +49,7 @@ internal sealed class AbilityPaymentValidation(
                      step => step is not AbilityCost.Spend))
         {
             ValidateNonResourceCost(
-                step, paying, chosen, values);
+                step, paying, chosen, values, completeCost ?? cost);
         }
     }
 
@@ -92,8 +92,13 @@ internal sealed class AbilityPaymentValidation(
 
     private void ValidateNonResourceCost(
         AbilityCost step, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
-        IReadOnlyDictionary<string, long>? values)
+        IReadOnlyDictionary<string, long>? values, AbilityCost? completeCost)
     {
+        if (step is AbilityCost.Heal heal)
+        {
+            ValidateHealing(heal, paying, completeCost);
+            return;
+        }
         if (step is AbilityCost.SpendEnergy)
             ValidateEnergySpend(step, paying, values);
         else if (step is AbilityCost.ChooseFromDiscard choice)
@@ -108,6 +113,13 @@ internal sealed class AbilityPaymentValidation(
             ValidateChosenExhaust(exhaust, chosen);
         else if (!Payable(world, source, player, step, program, resourceAbilities))
             throw new RulesNotImplementedException($"'{source.FaceId}' cannot pay its compiled cost");
+    }
+
+    private void ValidateHealing(AbilityCost.Heal heal, IReadOnlyList<int> paying, AbilityCost? completeCost)
+    {
+        if (!new AbilityHealingCostAvailability(world, source, player, program, resourceAbilities)
+                .CanPay(heal, paying, completeCost))
+            throw new RulesNotImplementedException($"'{source.FaceId}' cannot pay its full healing cost");
     }
 
     private void ValidateEnergySpend(

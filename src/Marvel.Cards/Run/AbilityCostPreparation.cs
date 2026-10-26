@@ -21,6 +21,7 @@ internal sealed class AbilityCostPreparation
     private readonly int incarnation;
     private readonly AbilityPaymentSelection selection;
     private Marvel.Rules.Prompts.CostOption? resourcePrice;
+    private AbilityCost? completeCost;
     private readonly ImmutableArray<Step>.Builder ordered =
         ImmutableArray.CreateBuilder<Step>();
 
@@ -44,6 +45,7 @@ internal sealed class AbilityCostPreparation
     internal AbilityCostPayment Build(AbilityCost? cost)
     {
         cost = AbilityInvocationPayment.Expand(world, player, cost);
+        completeCost = cost;
         AttachedUpgradeCostBound.Validate(world, source, player, cost, paying);
         var price = AbilityPaymentPricing.Price(world, source, player, cost, resourceAbilities);
         // Engine choice: a standalone discard-source arrow cannot consume resource generators.
@@ -73,7 +75,7 @@ internal sealed class AbilityCostPreparation
     private void PrepareSteps(AbilityCost? component)
     {
         new AbilityPaymentValidation(world, source, player, program, resourceAbilities)
-            .Validate(component, paying, selected, variables);
+            .Validate(component, paying, selected, variables, completeCost);
         if (component is null or AbilityCost.ChooseFromDiscard) return;
         if (component is AbilityCost.Sequence sequence)
         {

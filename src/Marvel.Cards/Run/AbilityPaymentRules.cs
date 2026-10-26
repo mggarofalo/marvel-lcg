@@ -24,13 +24,16 @@ internal static class AbilityPaymentRules
     /// </remarks>
     internal static bool Payable(
         World world, Card card, int player, AbilityCost? cost,
-        AbilityProgram program, IResourceCardAbilities resourceAbilities)
+        AbilityProgram program, IResourceCardAbilities resourceAbilities, AbilityCost? completeCost = null)
     {
         if (AbilityInvocationPayment.Contains(cost)
             && AbilityInvocationPayment.Top(world, player) is null)
             return false;
-        return ExpandedCostPayable(world, card, player,
-            AbilityInvocationPayment.Expand(world, player, cost), program, resourceAbilities);
+        cost = AbilityInvocationPayment.Expand(world, player, cost);
+        return cost is AbilityCost.Heal healing
+            ? new AbilityHealingCostAvailability(world, card, player, program, resourceAbilities)
+                .CanPay(healing, completeCost: completeCost ?? cost)
+            : ExpandedCostPayable(world, card, player, cost, program, resourceAbilities);
     }
 
     private static bool ExpandedCostPayable(
@@ -86,8 +89,6 @@ internal static class AbilityPaymentRules
                 >= AbilityCostSelection.Range(discard.Range, int.MaxValue).Min,
             AbilityCost.ExhaustChosen exhaust => AbilityCostSelection.Choices(world, player, exhaust)
                 .Count(card => card.Ready) >= AbilityCostSelection.Range(exhaust.Range, int.MaxValue).Min,
-
-            AbilityCost.Heal heal => CostTarget(world, card, player, heal.Card) is { Damage: > 0 },
 
             AbilityCost.Damage damage => CostTarget(
                     world, card, player, damage.Card) is { } takingTarget
@@ -154,7 +155,7 @@ internal static class AbilityPaymentRules
 
         return steps.Where(step => step is not (AbilityCost.Spend or AbilityCost.RemoveCounters))
             .All(step => Payable(
-                world, card, player, step, program, resourceAbilities));
+                world, card, player, step, program, resourceAbilities, cost));
     }
 
     private static bool ResourcePayable(World world, Card card, int player,
