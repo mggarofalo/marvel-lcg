@@ -70,6 +70,67 @@ public sealed class ActionAbilityTypedActivationsActivationKeepsCompiledPriority
         Assert.Equal(world.TheCardIn(DeckType.VillainArea)!.ObjectId, attack.Subject);
     }
 
+    [Rule("rr:activation.5")]
+    [Fact]
+    public void ExplicitAttackTargetOwnsActivationOrderEvenWhenAbilityPlayerDiffers()
+    {
+        // "against you ... in the order of your choice" follows the attacked
+        // player's snapshot, not the player who initiated the ability.
+        var (runner, _) = MutableEffectRunner("enemyAttacks",
+            """{"enemies":{"query":"minionsEngagedWithYou"},"against":"trigger.target"}""", false);
+        Card? source = null;
+        Card? first = null;
+        Card? second = null;
+        var (_, world) = Playing(board =>
+        {
+            source = InPlay(board, AuthoredCards.AuntMay);
+            var engaged = board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0));
+            first = board.CreateCard(AuthoredCards.Shocker, engaged);
+            second = board.CreateCard(AuthoredCards.Shocker, engaged);
+        }, heroes: ["spider_man", "captain_marvel"], abilities: runner);
+        var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == source!.ObjectId);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var occurrence = Occurrence.ForAttack(18, [Steps.TurnAction], world, CardCatalogData,
+            villain.ObjectId, world.Seats[1].IdentityCard.ObjectId, player: 0);
+        runner.ResolveWindow(world, occurrence, action, new Decision(action.Card, [], []));
+
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, CardCatalogData, runner, []));
+        Assert.Equal(Question.Order, prompt.Asking);
+        Assert.Equal(1, prompt.Player);
+        var offer = Assert.Single(prompt.Affordances);
+        Assert.Equal(1, offer.AnchorPlayer);
+        Assert.Equal([first!.ObjectId, second!.ObjectId], offer.Targets!.Legal);
+        var answer = Decision.Take(offer.Id, [second.ObjectId, first.ObjectId], []);
+        Assert.Equal(DecisionRejection.UnauthorizedActor,
+            DecisionAssessment.Assess(prompt, answer, actor: 0).Rejection);
+        Assert.True(DecisionAssessment.Assess(prompt, answer, actor: 1).IsAccepted);
+    }
+
+    [Fact]
+    public void MultiSeatEngagedHeroBatchKeepsOneTableWideOrder()
+    {
+        var (runner, _) = MutableEffectRunner("enemyAttacks",
+            """{"enemies":{"query":"minions"},"against":"engagedHero"}""", false);
+        Card? source = null;
+        var (_, world) = Playing(board =>
+        {
+            source = InPlay(board, AuthoredCards.AuntMay);
+            board.CreateCard(AuthoredCards.Shocker,
+                board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            board.CreateCard(AuthoredCards.Shocker,
+                board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
+            board.Seats[1].IdentityCard.TurnTo("01010a");
+        }, hero: true, heroes: ["spider_man", "captain_marvel"], abilities: runner);
+        var action = Assert.Single(runner.Actions(world, 0), ability => ability.Card == source!.ObjectId);
+        runner.ResolveWindow(world, new Occurrence(19, [Steps.TurnAction], Player: 0),
+            action, new Decision(action.Card, [], []));
+
+        var prompt = Assert.IsType<Prompt>(Sequence.Work(world, CardCatalogData, runner, []));
+        Assert.Equal(Question.Order, prompt.Asking);
+        Assert.Equal(world.FirstPlayer, prompt.Player);
+        Assert.Equal(2, Assert.Single(prompt.Affordances).Targets!.Legal.Count);
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
