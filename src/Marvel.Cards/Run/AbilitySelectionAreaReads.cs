@@ -45,6 +45,7 @@ internal static class AbilitySelectionAreaReads
         AbilityCardQuery.VillainAndMinionsEngagedWithYou =>
             [DeckType.VillainArea, DeckType.EngagedEnemiesArea],
         AbilityCardQuery.Villains => [DeckType.VillainArea],
+        AbilityCardQuery.InvocationTop => [DeckType.AdditionalDeck],
         _ when ReadsPairedScheme(query) => [DeckType.VillainArea, DeckType.SideSchemesArea],
         _ => [],
     };

@@ -1511,3 +1511,14 @@ qualify; boost ability damage, nested nonattack damage and damage costs do not
 borrow an enclosing attack. The spelling and occurrence marker are engine choices.
 Backflip combines this condition with its identity target and remaining damage.
 A defense label alone does not impose it (`rr:defend-defense.4.8`).
+
+`query: "invocationTop"` selects only the public physical top of the unique
+initialized typed Invocation deck, independently of the resolving player.
+Natural Talent and Wong say **the** Invocation deck; Wong's separate heal uses
+**your identity** and follows his controller. Before public exposure or without
+a top, the query selects no card. Multiple initialized typed decks on a
+synthetic research board raise `RulesNotImplementedException` rather than
+selecting a seat. This spelling and ambiguity policy are engine choices.
+An explicit `discard` uses ordinary discard routing, separate Invocation
+recycling and top disclosure. This primitive creates no Special execution path
+or public pack admission.

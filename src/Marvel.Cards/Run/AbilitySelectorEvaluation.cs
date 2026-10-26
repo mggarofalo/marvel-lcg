@@ -24,9 +24,9 @@ internal sealed class AbilitySelectorEvaluation(
             {
                 Kind:
             AbilityCardQuery.Villain or AbilityCardQuery.MainScheme or AbilityCardQuery.YourAsideMinion
-            or AbilityCardQuery.YourAsideSideScheme or AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme
+            or AbilityCardQuery.InvocationTop or AbilityCardQuery.YourAsideSideScheme or AbilityCardQuery.ActiveVillainSideScheme or AbilityCardQuery.VillainOfAttachedScheme
             } query)
-            return AbilityCardQueries.Cards(query.Kind, context).SingleOrDefault();
+            return FindQuery(query);
         if (selector is AbilityCardSelection.Last last)
         {
             if (admitSingularArea is not null && !admitSingularArea(AbilitySelectionAreaReads.For(last)))
@@ -38,6 +38,13 @@ internal sealed class AbilitySelectorEvaluation(
             return AbilityDefeatedAllySelection.Find(context);
         throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' uses a selector whose single-card resolution is not implemented");
+    }
+
+    private Card? FindQuery(AbilityCardSelection.Query query)
+    {
+        if (query.Kind == AbilityCardQuery.InvocationTop && admitSingularArea is not null
+            && !admitSingularArea(AbilitySelectionAreaReads.For(query))) return null;
+        return Every(query).SingleOrDefault();
     }
 
     private Card? FindInAreas(AbilityCardSelection.InAreas areas)
@@ -231,6 +238,7 @@ internal sealed class AbilitySelectorEvaluation(
 
     private bool ExplicitlySelectsOutOfPlayCard(AbilityCardSelection selector, Card target) => selector switch
     {
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.InvocationTop } => Every(selector).Contains(target),
         AbilityCardSelection.InAreas areas => CardsIn(areas).Any(card => card.ObjectId == target.ObjectId),
         AbilityCardSelection.WithTrait trait => ExplicitlySelectsOutOfPlayCard(trait.Cards, target),
         AbilityCardSelection.WithStatus => false,

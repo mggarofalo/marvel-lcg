@@ -6,6 +6,8 @@ namespace Marvel.Cards.Dsl;
 /// <summary>Named card queries implemented by the engine.</summary>
 public enum AbilityCardQuery
 {
+    /// <summary>The public physical top of the unique typed Invocation deck.</summary>
+    InvocationTop,
     /// <summary>The authored villain relation.</summary>
     Villain,
     /// <summary>Controlled upgrades physically attached to the resolving hero.</summary>

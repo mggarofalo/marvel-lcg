@@ -44,8 +44,8 @@ internal sealed class CardQueryEvaluator(
 
     internal IReadOnlyList<Card> Evaluate(AbilityCardQuery query)
     {
-        if (query == AbilityCardQuery.CardsInPlay)
-            return AbilityInPlayCardQuery.Live(cast);
+        if (query is AbilityCardQuery.InvocationTop or AbilityCardQuery.CardsInPlay)
+            return EvaluatePublicCards(query);
         if (query == AbilityCardQuery.OtherVillainSideSchemes)
             return AbilityOtherVillainSchemeQuery.Live(cast);
         if (query == AbilityCardQuery.VillainOfAttachedScheme)
@@ -61,6 +61,10 @@ internal sealed class CardQueryEvaluator(
         if (BoardQueries.Contains(query)) return EvaluateBoard(query);
         throw new InvalidOperationException("Unknown compiled card query");
     }
+
+    private IReadOnlyList<Card> EvaluatePublicCards(AbilityCardQuery query) =>
+        query == AbilityCardQuery.InvocationTop
+            ? AbilityInvocationTopQuery.Live(cast.World) : AbilityInPlayCardQuery.Live(cast);
 
     private IReadOnlyList<Card> EvaluateScenario(AbilityCardQuery query) => query switch
     {
