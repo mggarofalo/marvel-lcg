@@ -51,7 +51,6 @@ internal static class BlackWidowEventCompositionFixture
 
     internal const string Rows = """
         { "cards": [
-          { "card": "08001a", "abilities": [] },
           { "card": "08003", "abilities": [{
             "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this" },
             "labels": ["thwart"],

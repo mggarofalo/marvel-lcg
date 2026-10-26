@@ -51,16 +51,16 @@ internal sealed class EspionageSurgeFixture
     private static AbilityRunner CreateRunner(bool printed, bool gained, bool cancel)
     {
         var root = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
+        // This keyword fixture isolates Surge and the actual Synth-Suit response.
+        // Widow's Bite is covered by the separate Preparation composition tests.
+        var identity = root["cards"]!.AsArray().Single(r => (string?)r!["card"] == "08001a")!;
+        identity["abilities"] = new System.Text.Json.Nodes.JsonArray();
         var rows = System.Text.Json.Nodes.JsonNode.Parse("""
             {"cards":[
               {"card":"08033","abilities":[{
                 
                 "trigger":{"event":"WhenSurgeWouldResolve","timing":"Interrupt","subject":"game"},
                 "cost":{"discard":"this"},"effect":{"draw":{"player":"you","count":2}}
-              }]},
-              {"card":"08009","abilities":[{
-                "trigger":{"event":"WhenPreparationAbilityResolved","timing":"Response","subject":"you","form":"hero"},
-                "cost":{"exhaust":"this"},"effect":{"ready":"you"}
               }]}
             ]}
             """)!["cards"]!.AsArray();
