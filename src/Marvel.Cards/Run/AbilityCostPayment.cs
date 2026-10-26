@@ -27,6 +27,9 @@ internal sealed class AbilityCostPayment
     private DamageCostReceipt? damagePayment;
     private readonly List<DamageCostReceipt> damageCosts = [];
     private bool settled;
+    private AbilityMinionEntryCost? minionEntry;
+    internal bool HasMinionEntryCost => minionEntry is not null;
+    internal bool Unpaid => minionEntry is { IsComplete: true, Paid: false };
     private long? requiredTakenDamage;
 
     internal AbilityCostPayment(
@@ -59,6 +62,9 @@ internal sealed class AbilityCostPayment
             throw new InvalidOperationException("resource payment resumed before its owned work completed");
         resourcePayment = null;
         CompleteDamagePayment();
+        if (minionEntry is { IsComplete: false })
+            throw new InvalidOperationException("minion entry cost resumed before entry completed");
+        if (Unpaid) nextStep = steps.Length;
         while (nextStep < steps.Length)
         {
             var step = steps[nextStep++];
@@ -93,6 +99,10 @@ internal sealed class AbilityCostPayment
     {
         switch (step)
         {
+            case DeckCost { Cost: AbilityCost.DiscardUntilMinionEngaged }:
+                minionEntry = AbilityMinionEntryCost.Begin(world, player, trigger, events);
+                outcome.Suspended = true;
+                return true;
             case DeckCost deck:
                 outcome.Discarded.AddRange(AbilityDeckCosts.Pay(world, player, deck.Cost, trigger, events));
                 return true;

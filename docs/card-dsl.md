@@ -630,6 +630,18 @@ pending. Live resolution recomputes the amount from the resulting state.
 
 ## Costs and legality
 
+`cost: {"discardUntilMinionEngaged":"you"}` discards from the encounter deck
+until a minion is discarded, then puts that exact physical minion into play
+engaged with the resolving player. These two instructions together are the arrow
+cost. Offers inspect available counts and legal effects, without inspecting
+hidden deck identities. The retained payment waits for entry, Quickstrike and
+engagement responses before initiating the effect once. A no-match or prevented
+entry leaves the cost unpaid and completes the event without its effect;
+encounter exhaustion still resets the deck and adds acceleration. The current
+Defender clarifications are pinned in `datasets/rules-graph.json` as
+`ruling:6e301a347a5392fb` and `ruling:a1f4982cfebcd768`.
+
+
 Target selection and payment are separate. A target answers what the effect will
 act on. A payment records what the player spent to initiate it.
 

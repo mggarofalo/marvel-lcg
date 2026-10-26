@@ -17,6 +17,12 @@ internal static class AbilityPaymentResumption
             return false;
         }
         cast.PendingPayment = null;
+        if (payment.StopsEffect)
+        {
+            execution.DiscardEvent(cast.Source, cast);
+            cast.CompleteResolution();
+            return false;
+        }
         if (!payment.Cancelled) return true;
         AbilityEventInitiation.CompleteCancellation(execution, cast);
         return false;

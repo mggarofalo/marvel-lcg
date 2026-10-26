@@ -32,6 +32,7 @@ internal static class AbilityCostDescription
         AbilityCost.ReturnSourceToHand => $"Return {world.Facts.Title(source.FaceId)} to its owner's hand",
         AbilityCost.DiscardTop discard => $"Discard {discard.Count} from the top of "
             + (discard.From == AbilitySearchArea.YourDeck ? "your deck" : "the encounter deck"),
+        AbilityCost.DiscardUntilMinionEngaged => "Discard encounter cards until a minion is discarded; put it into play engaged with you",
         AbilityCost.DealEncounterToYou => "Deal yourself a facedown encounter card",
         AbilityCost.Exhaust exhaust => $"Exhaust {Name(world, source, player, exhaust.Card)}",
         AbilityCost.ConsumeCampaignCard consume => $"Discard {Name(world, source, player, consume.Card)} and remove it from the campaign",

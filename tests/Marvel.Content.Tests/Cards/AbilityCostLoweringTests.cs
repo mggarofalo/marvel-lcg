@@ -8,6 +8,13 @@ public sealed class AbilityCostLoweringTests
     private static readonly AbilityLocation Location = new("01005", 0, "cost");
 
     [Fact]
+    public void DiscardAndEngageLowersAsOneArrowCost()
+    {
+        Assert.IsType<AbilityCost.DiscardUntilMinionEngaged>(Lower("""{"discardUntilMinionEngaged":"you"}"""));
+        Assert.Throws<AbilityException>(() => Lower("""{"discardUntilMinionEngaged":"firstPlayer"}"""));
+    }
+
+    [Fact]
     public void NamedReturnRetainsItsPrintedTitle()
     {
         Assert.Equal(new AbilityCost.ReturnTitledToHand("Captain America's Shield"),

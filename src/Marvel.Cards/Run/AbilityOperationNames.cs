@@ -16,6 +16,7 @@ internal static class AbilityOperationNames
         AbilityCost.ReturnSourceToHand => "returnToHand",
         AbilityCost.ReturnTitledToHand => "returnTitledToHand",
         AbilityCost.DiscardTop => "discardTop",
+        AbilityCost.DiscardUntilMinionEngaged => "discardUntilMinionEngaged",
         AbilityCost.DealEncounterToYou => "dealEncounterCard",
         AbilityCost.ConsumeCampaignCard => "consumeCampaignCard",
         AbilityCost.RemoveCounters => "removeCounters",

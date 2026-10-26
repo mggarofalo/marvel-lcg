@@ -4,6 +4,7 @@ namespace Marvel.Cards.Run;
 internal abstract class AbilityPaymentPlan
 {
     internal virtual bool Cancelled => false;
+    internal virtual bool StopsEffect => false;
 
     internal abstract bool Commit(AbilityResolutionExecution execution, AbilityResolutionState cast);
 }

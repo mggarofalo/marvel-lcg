@@ -21,6 +21,8 @@ public abstract record AbilityCost
     public sealed record ReturnTitledToHand(string Title) : AbilityCost;
     /// <summary>Discard an exact number from the top of the specified deck.</summary>
     public sealed record DiscardTop(AbilitySearchArea From, int Count) : AbilityCost;
+    /// <summary>Discard until a minion is found, then put that physical minion into play engaged with you.</summary>
+    public sealed record DiscardUntilMinionEngaged : AbilityCost;
     /// <summary>Deal one facedown encounter card to the resolving player.</summary>
     public sealed record DealEncounterToYou : AbilityCost;
     /// <summary>Discard a campaign TECH reward and permanently remove its saved instance.</summary>

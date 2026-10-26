@@ -30,6 +30,7 @@ internal static class AbilityCostLowering
             "returnToHand" => ReturnCost(argument, child),
             "returnTitledToHand" => new AbilityCost.ReturnTitledToHand(NamedCostTitle(argument, child)),
             "discardTop" => DeckDiscardCost(argument, child),
+            "discardUntilMinionEngaged" => MinionEntryCost(argument, child),
             "dealEncounterCard" => EncounterCardCost(argument, child),
             "consumeCampaignCard" => new AbilityCost.ConsumeCampaignCard(CostCard(argument, child)),
             "removeCounters" => RemoveCounterCost(argument, child),
@@ -78,6 +79,12 @@ internal static class AbilityCostLowering
         if (area is not (AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck))
             throw location.Error("a deck discard cost requires yourDeck or encounterDeck");
         return new(area, PositiveCount(Required(fields, "count", location), location.Child("count")));
+    }
+
+    private static AbilityCost.DiscardUntilMinionEngaged MinionEntryCost(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "you");
+        return new();
     }
 
     private static AbilityCost.DealEncounterToYou EncounterCardCost(AbilityValue value, AbilityLocation location)
