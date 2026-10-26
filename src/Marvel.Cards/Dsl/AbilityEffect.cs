@@ -200,8 +200,12 @@ public abstract record AbilityEffect
         /// <summary>Whether selected cards must have different printed titles.</summary>
         public bool DifferentTitles { get; init; } = true;
     }
-    /// <summary>Discard hand cards providing one or two printed resource icons, as far as possible.</summary>
-    public sealed record DiscardResourceIcons(int Count) : AbilityEffect;
+    /// <summary>Discard a minimal hand-card group providing the requested printed icons, as far as possible.</summary>
+    public sealed record DiscardResourceIcons(AbilityNumber Count) : AbilityEffect
+    {
+        /// <summary>Eligible printed resource types; empty means any type.</summary>
+        public string Resources { get; init; } = "";
+    }
     /// <summary>Choose a counted set of cards from your hand to discard.</summary>
     public sealed record DiscardHandCards(AbilityNumber Count) : AbilityEffect;
     /// <summary>Place named counters on a card.</summary>

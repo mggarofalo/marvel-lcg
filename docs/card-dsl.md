@@ -788,9 +788,14 @@ re-running their printed host selection.
 
 `floorDiv` takes a numeric `value` and a positive integer `divisor`, returning
 mathematical floor division. Stall Tactics uses complete pairs of delay counters.
-`discardResourceIcons: 1` or `2` asks the resolving player to discard a minimal
-hand-card group containing that many printed icons, or all available icons when
-fewer exist. It does not generate resources or permit resource abilities.
+`discardResourceIcons: <number expression>` asks the resolving player to discard
+a minimal hand-card group containing that many printed icons, or all available
+eligible icons when fewer exist. Zero skips the choice. The object form
+`{ "count": <number expression>, "resources": "BR" }` restricts eligible icons
+to mental or physical; resource letters use the existing `B`, `Y`, `R`, `G`
+encoding. Omitted `resources` permits any type. This effect does not generate
+resources or permit resource abilities. Wild remains its own printed type
+(`rr:wild-resource.3`) and does not satisfy a mental or physical restriction.
 `cardsYouControl` selects in-play controlled player cards; `discardable` filters
 identity/main-scheme and permanent restrictions. `otherEnvironments` selects live
 environments other than the triggering occurrence's subject.

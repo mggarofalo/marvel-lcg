@@ -163,6 +163,7 @@ internal static class AbilityPlayerBindingAnalysis
     private static bool ContainsOther(AbilityEffect effect) => effect switch
     {
         AbilityEffect.DiscardHandCards => true,
+        AbilityEffect.DiscardResourceIcons => true,
         AbilityEffect.RecruitDiscarded => true,
         AbilityEffect.DiscardUntil discard => discard.Player == AbilityPlayer.You,
         AbilityEffect.AttachCards attach => Contains(attach.Cards) || Contains(attach.Host),
@@ -176,7 +177,7 @@ internal static class AbilityPlayerBindingAnalysis
             or AbilityEffect.AllowPlayBeneath or AbilityEffect.ReduceFirstAllyCost or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun
             or AbilityEffect.ChooseTopForHand or AbilityEffect.ChooseDiscardToShuffle
-            or AbilityEffect.DiscardHandWithResource or AbilityEffect.DiscardResourceIcons
+            or AbilityEffect.DiscardHandWithResource
             or AbilityEffect.RecoverDiscardedByResource or AbilityEffect.GrantTraitCharacters => false,
         _ => throw new InvalidOperationException(
             "Unknown compiled effect in player-binding analysis"),
