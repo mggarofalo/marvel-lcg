@@ -18166,6 +18166,64 @@
           }
         }
       ]
+    },
+    {
+      "card": "06017",
+      "name": "Hall of Heroes",
+      "note": "Identity defeat credit includes events and upgrades, and excludes allies and supports (rr:you-your). Glory is an ordinary counter pool, without Uses departure.",
+      "abilities": [
+        {
+          "trigger": { "event": "WhenCardDefeated", "timing": "Response", "subject": "game" },
+          "when": { "and": [ { "isKind": { "card": "defeated", "kind": "minion" } }, { "defeatedByYou": "you" } ] },
+          "effect": { "placeCounters": { "card": "this", "counter": "glory", "count": 1 } }
+        },
+        {
+          "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game", "form": "alter-ego" },
+          "cost": { "seq": [ { "exhaust": "this" }, { "removeCounters": { "card": "this", "counter": "glory", "count": 3 } } ] },
+          "effect": { "draw": { "player": "you", "count": 3 } }
+        }
+      ]
+    },
+    {
+      "card": "06018",
+      "name": "Battle Fury",
+      "attachTo": { "query": "identitiesWithinPerPlayerLimit" },
+      "note": "The completed hero attack must defeat its minion target. The damage cost must be taken in full under the card's vendored ruling; discard and damage settle before readying.",
+      "abilities": [ {
+        "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "you", "target": "enemy", "form": "hero" },
+        "when": { "and": [ { "isKind": { "card": "trigger.target", "kind": "minion" } }, { "wasDefeated": "trigger.target" } ] },
+        "cost": { "seq": [ { "takeDamage": { "cards": "you", "amount": 1 } }, { "discard": "this" } ] },
+        "effect": { "ready": "you" }
+      } ]
+    },
+    {
+      "card": "06019",
+      "name": "Jarnbjorn",
+      "note": "Basic and labelled hero attacks qualify. This response deals nonattack damage to any enemy, with physical or wild payment, and therefore does not trigger itself.",
+      "abilities": [ {
+        "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "you", "target": "enemy", "form": "hero" },
+        "cost": { "spend": "R" },
+        "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 2 } } } }
+      } ]
+    },
+    {
+      "card": "06030",
+      "name": "Trickster",
+      "note": "Only the physical receipt of this three-card discard contributes distinct printed card types, including cards shuffled by a deck reset.",
+      "abilities": [ {
+        "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+        "effect": { "seq": [ { "discardTop": { "from": "yourDeck", "count": 3 } }, { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": { "distinctCardTypesDiscarded": "game" } } } ] }
+      } ]
+    },
+    {
+      "card": "06031",
+      "name": "Under Surveillance",
+      "attachTo": { "query": "mainScheme" },
+      "note": "The attached main scheme gains four total target threat, independent of player count. Printed max one per scheme is enforced by ordinary placement.",
+      "abilities": [ {
+        "trigger": { "timing": "Constant", "subject": "this" },
+        "effect": { "grant": { "card": "attachedTo", "keyword": "target_threat", "amount": 4 } }
+      } ]
     }
   ]
 }
