@@ -34,7 +34,8 @@ Ms. Marvel's exact-event modifier mechanism, including indirect damage, printed
 removal caps and payment-dependent preflight, has independent review. The next
 candidate branch `feat/goblin-playable-delivery` adds reviewed public Goblin
 admission, Nakia/Suit, Aamir, resource/reprint rows and four ally/condition rows,
-bringing its authored Ms. Marvel inventory to 20 of 34 faces. Ten complete public Goblin games cover
+including Bruno, Tackle and Concussive Blow, bringing its authored Ms. Marvel
+inventory to 23 of 34 faces. Ten complete public Goblin games cover
 all modes, defeats and most promotions, including two games that exposed and
 now prove MARVEL-726's reviewed Heroic Strike/Soldier continuation fix.
 Four additional public-session tests prove dependent-choice restart against
@@ -46,14 +47,17 @@ Bottom movement (724), distinct arrow payment (723), bounded stored-card
 retrieval (725), conditional status payment (729), and defeat-payment atomicity
 (731) have independent approval. The saved ordinary-price shape regression is
 corrected; actual Red Dagger rejection and retry are independently verified.
-Bruno, Tackle and Concussive Blow are the next three authored rows undergoing
-verification. Melee's sequential two-enemy attack (728) is in implementation.
+Bruno, Tackle and Concussive Blow passed independent review, including actual
+second-seat retrieval, status-attack consequences and payment rejection/retry.
+Melee's sequential two-enemy attack (728) is in implementation.
 The public multiplayer failure exposed an attached Spider-Tracer defeat
-observer; fix `30574a1e` passes all four original modes and is in independent
-review (730). Environment display and receipt reflow are independently reviewed;
+observer; fix `30574a1e` passes all four original modes and has independent
+approval (730), retained in `c17e8341`. Environment display and receipt reflow are independently reviewed;
 specific visual acceptance is separate in MARVEL-732 with inspected captures.
-The last full candidate Content run passed 4,959 tests at `fdaf4a9e`; later
-integrations still require combined gates. Canonical Plane records retain
+The full candidate Content run passed 5,030 tests at `1bc18fec`. The subsequent
+integration lane found a prohibited default interface method and two outdated
+Goblin discovery/research expectations. Corrections and later card integrations
+still require combined gates. Canonical Plane records retain
 current revisions and distinguish prerequisites from complete playable products.
 
 ## Delivery order and shared capability queue
@@ -87,7 +91,7 @@ The remaining delivery queue is:
 2. Finish Ms. Marvel's shared prerequisites with independent review: distinct
    arrow payment (723), bottom placement (724), bounded stored-card retrieval
    (725). Author the dependent actual rows only after their mechanisms pass.
-3. Serialize the remaining 14 Ms. Marvel faces into the ability book: signature
+3. Serialize the remaining 11 Ms. Marvel faces into the ability book: signature
    gaps, aspect/basic/reprints, obligation and nemesis. Every row needs printed
    authority, relevant rulings and characteristic behavior evidence; catalog
    presence alone does not implement a reprint.

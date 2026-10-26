@@ -27,11 +27,16 @@ Both authored decorators forward preparation. Ordinary, defeat-choice,
 defeat-resumption and automatic mandatory callers commit their trigger only
 after successful preparation and before costs can suspend.
 
-The default interface implementation is expressly restricted to providers
-without answer-dependent validation or costs. The production no-card provider
-fits that restriction. Native retaliation and activation replacement do not
+Integration note: the full architecture lane rejected the original default
+interface body in `NarrowPortsCannotSilentlySupplyCardBehavior`. The lead moved
+that forwarder into `NoCardAbilities`; the boundary assertion is unchanged.
+This correction requires combined verification beyond the original review.
+
+The explicit no-card provider supplies a preparation forwarder for resolvers
+without answer-dependent validation or costs. The narrow interface requires an
+implementation; it supplies no default behavior. Native retaliation and activation replacement do not
 take player-selected costs or recipients; they retain their native dispatch.
-This default is not a rollback guarantee for arbitrary custom resolvers.
+This forwarder is not a rollback guarantee for arbitrary custom resolvers.
 The prepared body is consumed synchronously by the engine, with no intervening
 player decision. Accepted costs and nested effects retain the existing
 continuation semantics. The existing suspended distinct-resource test also

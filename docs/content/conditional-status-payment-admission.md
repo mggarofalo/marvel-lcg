@@ -36,3 +36,13 @@ Evidence outside the repository under `C:/Users/mggar/Source/`:
 
 Separate engine review and integration gates remain with the lead. No broad or native
 suite was run for this bounded packet.
+
+Independent review accepted `430a85f3`: 37 focused cases cover rejected/retried
+payments, unselected and foreign sources, Stalwart and query purity. Removing
+the final receipt guard killed four intended controls; a forced restored build
+passed. The nine additional controls are retained in
+`ConditionalStatusPaymentReviewTests`. External evidence is
+`C:/Users/mggar/Source/status-review-conditional-{baseline,mutant-finalguard,restored,restored-build}.log`.
+Integration with prepared window payment preserves receipt validation before
+the payment plan is returned; 32 combined payment/window controls passed at
+`4e9a46c2` (`fifth-window-payment-integrated.log`).

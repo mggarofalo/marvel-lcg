@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
@@ -11,7 +9,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Independent review of test-local printed conditional status attacks.</summary>
+/// <summary>Independent review of authored conditional status attacks.</summary>
 public sealed class ConditionalStatusPaymentReviewTests
 {
     [Theory]
@@ -125,15 +123,7 @@ public sealed class ConditionalStatusPaymentReviewTests
     private static (Game Game, World World, AbilityRunner Runner, Card Card, Card Wild, Card Mental)
         Prepare(string face, string status, bool stalwart = false)
     {
-        var book = JsonNode.Parse(AuthoredCards.Text)!;
-        book["cards"]!.AsArray().Add(JsonNode.Parse("""
-            {"card":"__FACE__","abilities":[{"trigger":{"event":"WhenActionTriggered",
-            "timing":"Action","subject":"this","form":"hero"},"effect":{
-            "chooseCard":{"from":{"query":"attackableEnemies"},"effect":{"attack":{
-            "target":"chosen","effect":{"seq":[{"giveStatus":{"card":"chosen","status":"__STATUS__"}},
-            {"if":{"test":{"paidWithResource":"R"},"then":{"dealAttackDamage":{"cards":"chosen","amount":3}}}}]}}}}}}]}
-            """.Replace("__FACE__", face, StringComparison.Ordinal).Replace("__STATUS__", status, StringComparison.Ordinal)));
-        var runner = new AbilityRunner(AbilityCatalog.Parse(book.ToJsonString()));
+        var runner = AuthoredCards.Runner();
         Card? card = null;
         Card? wild = null;
         Card? mental = null;

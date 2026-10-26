@@ -81,3 +81,9 @@ Verification on the reviewed production revision plus these review tests:
 
 Verdict: accept this engine continuation fix. This review makes no complete-pack,
 native interaction, broad-suite or second-platform acceptance claim.
+
+The first review commit attempt exceeded the test-method complexity limit.
+Controller theory data now names the integer seat directly, preserving both
+ownership cases without redundant conditionals. All ten affected controls and
+normal hooks passed; the retained review commit is `c17e8341`. Final logs are
+`photonic-review-layout-focused.log` and `photonic-review-layout-commit.log`.
