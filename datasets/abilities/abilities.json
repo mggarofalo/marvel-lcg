@@ -17208,6 +17208,65 @@
           }
         }
       ]
+    },
+    {
+      "card": "05012",
+      "name": "Nova",
+      "note": "Printed Interrupt: when an enemy initiates an attack against you, spend an energy resource to deal 2 damage to that enemy. You names the attacked player, including an attack subsequently defended by an ally. No exhaust or form restriction is printed.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackInitiated",
+            "timing": "Interrupt",
+            "actor": "enemy",
+            "player": "you"
+          },
+          "cost": {
+            "spend": "Y"
+          },
+          "effect": {
+            "dealDamage": {
+              "cards": "trigger.actor",
+              "amount": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "05013",
+      "name": "Get Behind Me!",
+      "note": "Printed Hero Interrupt cancels a revealed treachery's When Revealed effects and makes the villain attack the resolving player. No restriction to the revealing player is printed; a different hero may interrupt. rr:cancel.4 leaves the revealed card itself unchanged.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "Interrupt",
+            "subject": "game",
+            "form": "hero"
+          },
+          "when": {
+            "isKind": {
+              "card": "trigger.subject",
+              "kind": "treachery"
+            }
+          },
+          "effect": {
+            "seq": [
+              {
+                "cancelWhenRevealed": "trigger.subject"
+              },
+              {
+                "enemyAttacks": {
+                  "enemies": {
+                    "query": "villain"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

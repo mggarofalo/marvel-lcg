@@ -4,7 +4,7 @@
 |---|---|
 | Kind | authored |
 | Product boundary | Core Set, Rise of Red Skull, Captain America and Wrecking Crew; Green Goblin and Ms. Marvel research rows remain publicly excluded |
-| Records | 567 printed card faces, including explicit empty rows |
+| Records | 569 printed card faces, including explicit empty rows |
 | Authorities | Generated `datasets/cards/`, vendored Rules Reference, expansion rulebooks and published rulings |
 | Gated by | Ability admission/lowering tests, complete-product admission, actual-card tests, campaign acceptance and executable Core behavioral transcripts |
 
@@ -167,3 +167,5 @@ The queried FAQ has no entry for these three faces. Actual full-book tests are
 `MsMarvelBrunoCardTests` and `MsMarvelStatusCardTests`. Public admission stays closed.
 
 Home by Dawn and Thomas Edison add two whole Ms. Marvel research faces (25 of 34; 567 total). Printed authority is `datasets/cards/cards.json`. Thomas follows the engaged player per vendored `ruling:3aba0c6abbd5c2ad`; tests cover foreign damage sources and live engagement. No public admission changes.
+
+Nova (05012) and Get Behind Me! (05013) add two Ms. Marvel research faces. Printed authority is datasets/cards/cards.json. MsMarvelDefenseCardTests exercises actual rows, energy payment, multiplayer cancellation, nested attack completion and Nova defeating its attacker (faq:05012). Energy Barrier, Preemptive Strike and Lockjaw remain unauthored pending dedicated engine support; see docs/content/research/ms-marvel-defense-basic-evidence.md. No public admission follows.
