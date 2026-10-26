@@ -22,6 +22,9 @@ func _run() -> void:
         _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Captain Marvel")
     elif contract in ["dense-table", "card-look"]:
         _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Iron Man")
+    elif contract == "heimdall-order":
+        # Fixture configuration only; all subsequent game decisions use viewport input.
+        _select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Thor")
     if not await _pointer_activate(_button_named("Start game")): return
     witness.Bind(main)
     ui = preload("res://smoke/automation/ui_driver.gd").new(main, render_viewport, _fail)
@@ -31,6 +34,7 @@ func _run() -> void:
     print("NATIVE_CONTRACT_STAGE ready " + contract)
     var passed := false
     match contract:
+        "heimdall-order": passed = await preload("res://smoke/native_heimdall_contract.gd").run(self)
         "defeat-context": passed = await preload("res://smoke/native_defeat_context_contract.gd").run(self)
         "lockjaw-discard": passed = await preload("res://smoke/native_lockjaw_contract.gd").run(self)
         "melee-sequential": passed = await preload("res://smoke/native_melee_contract.gd").run(self)
@@ -58,6 +62,7 @@ func _run() -> void:
 func _scene_ready() -> bool:
     if not witness.CanResolve(): return false
     if contract == "dense-table": return true
+    if contract == "heimdall-order": return witness.DecisionKind() == "Response"
     if contract == "repeated-targets": return witness.HasRepeatedTargets()
     if contract == "preemptive-strike": return witness.DecisionKind() == "Interrupt"
     if contract == "defeat-context": return witness.DecisionKind() == "Interrupt"

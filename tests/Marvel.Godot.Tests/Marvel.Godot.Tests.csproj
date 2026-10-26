@@ -25,6 +25,10 @@
     <Compile Include="../Shared/PolicyTargetSelection.cs" Link="PolicyTargetSelection.cs" />
     <Compile Include="../Shared/PresentationAssemblyPolicy.cs" Link="PresentationAssemblyPolicy.cs" />
     <Compile Include="../Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
+    <Compile Include="../Shared/Rule.cs" Link="Rule.cs" />
+    <Compile Include="../Shared/RuleCitations.cs" Link="RuleCitations.cs" />
+    <Compile Include="../Shared/Citation.cs" Link="Citation.cs" />
+    <Compile Include="../Shared/RuleCitationTests.cs" Link="RuleCitationTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
