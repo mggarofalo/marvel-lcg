@@ -126,6 +126,10 @@ public interface ICardFacts
     /// <param name="faceId">A printed card id.</param>
     string? RequiredIdentityTrait(string faceId) => null;
 
+    /// <summary>The trait required on a character the acting player controls to play this card, or null.</summary>
+    /// <param name="faceId">A printed card id.</param>
+    string? RequiredControlledCharacterTrait(string faceId) => null;
+
     /// <summary>
     /// How many consequential damage icons sit beneath one of an ally's
     /// powers — <c>rr:consequential-damage</c>.

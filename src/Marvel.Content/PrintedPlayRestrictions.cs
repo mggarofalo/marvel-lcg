@@ -3,6 +3,21 @@ namespace Marvel.Content;
 /// <summary>Reads explicit printed prerequisites from canonical plain card text.</summary>
 internal static class PrintedPlayRestrictions
 {
+    internal static string? ControlledCharacterTrait(string printed)
+    {
+        const string prefix = "Play only if you control a ";
+        const string suffix = " character";
+        foreach (string sentence in printed.Split(['.', '\n']))
+        {
+            string text = sentence.Trim();
+            if (text.StartsWith(prefix, StringComparison.Ordinal)
+                && text.EndsWith(suffix, StringComparison.Ordinal)
+                && text.Length > prefix.Length + suffix.Length)
+                return CardCatalog.TraitKey(text[prefix.Length..^suffix.Length].ToUpperInvariant());
+        }
+        return null;
+    }
+
     internal static string? IdentityTrait(string printed)
     {
         const string prefix = "Play only if your identity has the ";

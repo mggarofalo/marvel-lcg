@@ -124,6 +124,9 @@ public sealed class CardCatalog : ICardFacts
     /// <inheritdoc />
     public string? RequiredIdentityTrait(string faceId) => PrintedPlayRestrictions.IdentityTrait(Find(faceId).Text);
 
+    /// <inheritdoc />
+    public string? RequiredControlledCharacterTrait(string faceId) => PrintedPlayRestrictions.ControlledCharacterTrait(Find(faceId).Text);
+
     /// <summary>Reads a printed "[type] form only" play restriction.</summary>
     /// <param name="printed">The card's printed text, or null.</param>
     public static string? RequiredFormOf(string? printed) => PrintedPlayRestrictions.Form(printed);
