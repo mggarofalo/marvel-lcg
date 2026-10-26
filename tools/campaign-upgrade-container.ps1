@@ -4,7 +4,7 @@ param(
     [Parameter(Mandatory)][string]$Image,
     [Parameter(Mandatory)][string]$GodotBin,
     [Parameter(Mandatory)][string]$ArtifactCommit,
-    [string]$ReplayContract = 'engine-replay-v24'
+    [string]$ReplayContract = 'engine-replay-v25'
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
