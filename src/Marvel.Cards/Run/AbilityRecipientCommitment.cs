@@ -15,6 +15,15 @@ internal static class AbilityRecipientCommitment
     internal static bool Resume(AbilityResolutionExecution execution,
         AbilityResolutionState cast, CompiledCardAbility ability)
     {
+        if (AbilityCostSelection.DiscardChoice(ability.Cost) is not null)
+        {
+            // rr:ability: resolve as much as possible. A chosen cost card that
+            // departed its selected area or incarnation is never replaced.
+            if (cast.CaptureChosen() is { } selected && cast.Chosen is not null
+                && selected.Card.Area.Id == selected.Area)
+                execution.Run(ability, cast);
+            return true;
+        }
         if (!cast.Results.Remove(PendingRecipient, out long recipient)) return false;
         var choice = Choice(cast.World, cast.Source, ability)
             ?? throw new RulesNotImplementedException("The committed recipient has no supported effect.");

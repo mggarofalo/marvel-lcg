@@ -32,6 +32,7 @@ internal static class AbilityOperationNames
             AbilityCostRange.Any => "discardAnyFromHand",
             _ => throw new InvalidOperationException("Unknown discard cost range"),
         },
+        AbilityCost.ChooseFromDiscard => "chooseFromDiscard",
         AbilityCost.ExhaustChosen => "exhaustChosen",
         AbilityCost.Heal => "heal",
         AbilityCost.Damage damage => damage.MustTakeAll ? "takeDamage" : "dealDamage",

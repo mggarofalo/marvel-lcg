@@ -96,6 +96,12 @@ internal sealed class AbilityPaymentValidation(
     {
         if (step is AbilityCost.SpendEnergy)
             ValidateEnergySpend(step, paying, values);
+        else if (step is AbilityCost.ChooseFromDiscard choice)
+        {
+            if (paying.Count != 0 || chosen.Count != 1
+                || !AbilityCostSelection.DiscardCandidates(world, player, choice).Any(card => card.ObjectId == chosen[0]))
+                throw new RulesNotImplementedException("chooseFromDiscard requires one current own-discard card and no resource payment");
+        }
         else if (step is AbilityCost.DiscardFromHand discard)
             ValidateHandDiscard(discard, chosen);
         else if (step is AbilityCost.ExhaustChosen exhaust)

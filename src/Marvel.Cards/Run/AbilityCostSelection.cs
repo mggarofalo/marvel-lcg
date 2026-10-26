@@ -18,6 +18,8 @@ internal static class AbilityCostSelection
             return sequence.Costs.Select(step => Ask(world, source, player, step))
                 .SingleOrDefault(request => request is not null);
         }
+        if (cost is AbilityCost.ChooseFromDiscard choice)
+            return new TargetRequest([.. DiscardCandidates(world, player, choice).Select(card => card.ObjectId)], 1, 1);
         if (cost is AbilityCost.DiscardFromHand discard)
         {
             var hand = HandCandidates(world, source, player);
@@ -40,6 +42,19 @@ internal static class AbilityCostSelection
                 $"Exhaust {world.Facts.Title(card.FaceId)}; add its current {BasicUseAllyReceipt.Power(world, card, current)} {(current.Field == "attack" ? "ATK" : "THW")} to this basic {current.Field} only; no consequential damage")
             : null };
     }
+
+    internal static IReadOnlyList<Card> DiscardCandidates(World world, int player,
+        AbilityCost.ChooseFromDiscard choice) =>
+        [.. world.Areas.Where(area => area.Type == DeckType.DiscardPile && area.PlayArea == PlayArea.Of(player))
+            .SelectMany(area => area.Cards)
+            .Where(card => card.Owner == player && Traits.Has(world, card, choice.Trait, world.Facts))];
+
+    internal static AbilityCost.ChooseFromDiscard? DiscardChoice(AbilityCost? cost) => cost switch
+    {
+        AbilityCost.ChooseFromDiscard choice => choice,
+        AbilityCost.Sequence sequence => sequence.Costs.Select(DiscardChoice).SingleOrDefault(choice => choice is not null),
+        _ => null,
+    };
 
     internal static IReadOnlyList<Card> HandCandidates(World world, Card source, int player) =>
         [.. world.Seats[player].Hand.Cards.Where(card => card != source)];

@@ -68,7 +68,7 @@ internal sealed class AbilityCostPreparation
     {
         new AbilityPaymentValidation(world, source, player, program, resourceAbilities)
             .Validate(component, paying, selected, variables);
-        if (component is null) return;
+        if (component is null or AbilityCost.ChooseFromDiscard) return;
         if (component is AbilityCost.Sequence sequence)
         {
             PrepareSequence(sequence);

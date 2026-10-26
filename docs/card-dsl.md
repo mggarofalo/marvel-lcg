@@ -1425,3 +1425,19 @@ where an earlier departure changes a later defeat interrupt. Lightning Strike
 admission remains withheld pending that review and any required defeat-stage
 barrier. Save/replay and frozen-route compatibility also require integration
 evidence against the eventual admitted candidate.
+
+### Choosing a discard card before the arrow
+
+The bounded cost `{"seq":[{"exhaust":"this"},{"chooseFromDiscard":"PREPARATION"}]}`
+requires one explicit own-discard card in the activation's target request before
+any exhaustion is paid. Its only admitted effect is `{"addToHand":"chosen"}` in
+an unlabelled Action. This models the cost-side choice printed on Safe House #29
+(08005); it does not admit Black Widow as a playable product.
+
+Lowering refuses other cost/effect compositions. The engine validates the exact
+selection before paying, preserves the existing incarnation-aware chosen binding
+across suspended payment, and never substitutes a different discard card. Recovery
+follows completion of the exhaustion cost. If the captured card has left its
+selected area or incarnation while payment settles, recovery has no remaining
+card to move. This contract adds no wire, RNG, digest or save fields and changes
+no already authored ability or existing replay prompt.

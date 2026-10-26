@@ -54,6 +54,8 @@ public abstract record AbilityCost
         /// <summary>Capture the selected ally's matching modified power for one basic use.</summary>
         public bool CaptureBasicUsePower { get; init; }
     }
+    /// <summary>Choose one trait-filtered physical card in your discard pile before payment.</summary>
+    public sealed record ChooseFromDiscard(string Trait) : AbilityCost;
     /// <summary>Heal a positive amount of damage from the cost's card.</summary>
     public sealed record Heal(AbilityCostCard Card, long Amount) : AbilityCost;
     /// <summary>Deal damage, or require that all of it be taken to pay the cost.</summary>

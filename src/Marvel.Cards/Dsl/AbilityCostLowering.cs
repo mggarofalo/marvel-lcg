@@ -44,6 +44,7 @@ internal static class AbilityCostLowering
             "discardUpToFromHand" => new AbilityCost.DiscardFromHand(new AbilityCostRange.UpTo(PositiveCount(argument, child))),
             "discardAnyFromHand" => AnyDiscardCost(argument, child),
             "exhaustChosen" => ExhaustChosenCost(argument, child),
+            "chooseFromDiscard" => new AbilityCost.ChooseFromDiscard(NamedCostTitle(argument, child)),
             "heal" => HealCost(argument, child),
             "dealDamage" => DamageCost(argument, child, mustTakeAll: false),
             "takeDamage" => DamageCost(argument, child, mustTakeAll: true),

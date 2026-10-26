@@ -22,6 +22,7 @@ internal static class AbilityPlayerBindingAnalysis
     {
         null => false,
         AbilityCost.ReturnSourceToHand => false,
+        AbilityCost.ChooseFromDiscard => true,
         AbilityCost.DiscardTop discard => discard.From == AbilitySearchArea.YourDeck,
         AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DealEncounterToYou or AbilityCost.RandomDiscardFromHand => true,
         AbilityCost.Sequence sequence => sequence.Costs.Any(Contains),
