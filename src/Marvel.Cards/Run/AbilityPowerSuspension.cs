@@ -112,8 +112,12 @@ internal static class AbilityPowerSuspension
         {
             bool mayChange = stateMayChange || index > 0;
             result.Add((children[index], mayChange, bindingMayChange, state));
-            if (index + 1 < children.Count)
+            if (index + 1 < children.Count
+                && !children.Skip(index + 1).All(AbilityPowerContinuationDependencies.IsIndependent))
             {
+                // Only a later projected read needs this abstract result. A
+                // terminal independent tail runs on the settled live board;
+                // predicting its predecessor's defeat windows adds no evidence.
                 state = PowerStateAfter(children[index], cast, mayChange, bindingMayChange, state);
             }
         }

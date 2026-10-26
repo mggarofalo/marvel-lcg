@@ -18,9 +18,9 @@ internal sealed class PreparationPrintedFixture
             "when":{"isKind":{"card":"trigger.subject","kind":"minion"}},
             "cost":{"discard":"this"},"labels":["attack"],
             "effect":{"attack":{"target":"trigger.subject","effect":{"seq":[
-              {"dealAttackDamage":{"cards":"trigger.subject","amount":2}},
-              {"if":{"test":{"isInPlay":"trigger.subject"},
-                "then":{"giveStatus":{"card":"trigger.subject","status":"stunned"}}}}
+              {"dealAttackDamage":{"cards":"chosen","amount":2}},
+              {"if":{"test":{"isInPlay":"chosen"},
+                "then":{"giveStatus":{"card":"chosen","status":"stunned"}}}}
             ]}}}
           }]},
           {"card":"08001a","abilities":[{
@@ -40,7 +40,7 @@ internal sealed class PreparationPrintedFixture
           }]}
         ]}
         """;
-    internal AbilityRunner Runner { get; } = CreateRunner();
+    internal AbilityRunner Runner { get; }
     internal World World { get; }
     internal Card Hero { get; }
     internal Card Bite { get; }
@@ -49,16 +49,24 @@ internal sealed class PreparationPrintedFixture
     internal Card Minion { get; }
     internal List<GameEvent> Events { get; } = [];
 
-    private static AbilityRunner CreateRunner()
+    private static AbilityRunner CreateRunner(bool boardRead, string? interruptEffect)
     {
         var root = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(RepositoryPaths.Dataset("abilities", "abilities.json")))!;
-        foreach (var row in System.Text.Json.Nodes.JsonNode.Parse(Rows)!["cards"]!.AsArray())
+        var rows = System.Text.Json.Nodes.JsonNode.Parse(Rows)!["cards"]!.AsArray();
+        if (boardRead)
+            rows[0]!["abilities"]![0]!["effect"]!["attack"]!["effect"]!["seq"]!.AsArray()
+                .Add(System.Text.Json.Nodes.JsonNode.Parse("""{"dealDamage":{"cards":"you","amount":{"count":{"cardsIn":{"area":"encounterDeck"}}}}}"""));
+        if (interruptEffect is not null)
+            rows[2]!["abilities"]![0]!["effect"] = System.Text.Json.Nodes.JsonNode.Parse(interruptEffect);
+        foreach (var row in rows)
             root["cards"]!.AsArray().Add(row!.DeepClone());
         return new AbilityRunner(AbilityCatalog.Parse(root.ToJsonString()));
     }
 
-    internal PreparationPrintedFixture(string minion = "01167", bool reveal = false)
+    internal PreparationPrintedFixture(string minion = "01167", bool reveal = false,
+        bool boardRead = false, string? interruptEffect = null)
     {
+        Runner = CreateRunner(boardRead, interruptEffect);
         World = new World(Cards, 2, 12345) { Abilities = Runner };
         var first = World.CreateSeat("Spider-Man");
         first.IdentityCard = World.CreateCard("01001a", first.Hero);

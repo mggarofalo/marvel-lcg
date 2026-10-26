@@ -94,7 +94,8 @@ public sealed class PreparationPrintedResolutionTests
                 Decision.Take(int.MaxValue), f.Events));
             Assert.Equal(before, f.World.Digest().Canonical());
             Assert.Equal(pending, f.World.Agenda.Outstanding.ToArray());
-            Assert.Equal(random, f.World.Random.Generator.GetState());
+            Assert.Equal(random.Words, f.World.Random.Generator.GetState().Words);
+            Assert.Equal(random.Index, f.World.Random.Generator.GetState().Index);
             Sequence.Answer(f.World, f.Cards, f.Runner, choice, Decision.Take(choice.Affordances[0].Id), f.Events);
             prompt = Work(f);
         }
@@ -102,10 +103,83 @@ public sealed class PreparationPrintedResolutionTests
         Assert.False(Statuses.Has(f.World, f.Minion, Statuses.Stunned));
         Assert.Single(f.World.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards);
         Assert.Equal(2, prompt.Affordances.Count);
-        Sequence.Answer(f.World, f.Cards, f.Runner, prompt, Decision.Decline, f.Events);
+        var receiptWindow = f.World.Agenda.Occurrence;
+        Assert.IsType<ResolvedPreparationAbility>(receiptWindow!.ActorFacts?.PreparationAbility);
+        string beforeResponse = f.World.Digest().Canonical();
+        var responsePending = f.World.Agenda.Outstanding.ToArray();
+        var responseRandom = f.World.Random.Generator.GetState();
+        Assert.Throws<RulesNotImplementedException>(() => Sequence.Answer(f.World, f.Cards, f.Runner,
+            prompt, Decision.Take(int.MaxValue), f.Events));
+        Assert.Equal(beforeResponse, f.World.Digest().Canonical());
+        Assert.Equal(responsePending, f.World.Agenda.Outstanding.ToArray());
+        Assert.Equal(responseRandom.Words, f.World.Random.Generator.GetState().Words);
+        Assert.Equal(responseRandom.Index, f.World.Random.Generator.GetState().Index);
+        Answer(f, prompt, f.Hero.ObjectId);
+        ChooseEnemy(f);
+        var suitResponse = Work(f);
+        Assert.Same(receiptWindow, f.World.Agenda.Occurrence);
+        Assert.Single(suitResponse.Affordances);
+        Answer(f, suitResponse, f.Suit.ObjectId);
         Assert.Null(Sequence.Work(f.World, f.Cards, f.Runner, f.Events));
-        Assert.False(f.Hero.Ready);
-        Assert.True(f.Suit.Ready);
+        Assert.True(f.Hero.Ready);
+        Assert.False(f.Suit.Ready);
+        Assert.Equal(1, f.Villain.Damage);
+        Assert.Empty(f.World.Agenda.Outstanding);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:leaves-play.1")]
+    [Rule("rr:resolve.2")]
+    public void FinalStunCannotFollowADepartedOrReenteredRecipient(bool reenter)
+    {
+        // A departing card "is considered to be a new copy of the card".
+        // Damage already applied still resolves the Preparation ability.
+        string movement = reenter
+            ? """{"seq":[{"discard":"trigger.subject"},{"putIntoPlay":{"card":"trigger.subject","where":"engagedWithYou"}}]}"""
+            : """{"discard":"trigger.subject"}""";
+        var f = new PreparationPrintedFixture("01182", interruptEffect:
+            "{\"choose\":{\"options\":[" + movement + ", {\"giveStatus\":{\"card\":\"you\",\"status\":\"confused\"}}]}}");
+        var observer = f.World.CreateCard("08023",
+            f.World.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+        var entry = EntryResponse(f);
+        int incarnation = f.Minion.Incarnation;
+        f.Minion.TakeDamage(2);
+        Answer(f, entry, f.Bite.ObjectId);
+        Answer(f, Work(f), observer.ObjectId);
+        var choice = Work(f);
+        Sequence.Answer(f.World, f.Cards, f.Runner, choice, Decision.Take(choice.Affordances[0].Id), f.Events);
+        var response = Work(f);
+        Assert.Equal(reenter ? DeckType.EngagedEnemiesArea : DeckType.EncounterDiscardPile, f.Minion.Area.Type);
+        if (reenter) Assert.True(f.Minion.Incarnation > incarnation);
+        Assert.False(Statuses.Has(f.World, f.Minion, Statuses.Stunned));
+        Assert.Equal(0, f.Minion.Damage);
+        Assert.Equal(2, response.Affordances.Count);
+        Sequence.Answer(f.World, f.Cards, f.Runner, response, Decision.Decline, f.Events);
+        Assert.Null(Sequence.Work(f.World, f.Cards, f.Runner, f.Events));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NonterminalReadAfterOpaqueDefeatStillRefusesBeforePayment(bool nested)
+    {
+        // Engine boundary: a later board read needs a supported projected state.
+        var f = new PreparationPrintedFixture("01182", boardRead: true);
+        if (nested) f.World.CreateCard("08023",
+            f.World.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+        var entry = EntryResponse(f);
+        f.Minion.TakeDamage(2);
+        string before = f.World.Digest().Canonical();
+        var pending = f.World.Agenda.Outstanding.ToArray();
+        var random = f.World.Random.Generator.GetState();
+        Assert.Throws<RulesNotImplementedException>(() => Answer(f, entry, f.Bite.ObjectId));
+        Assert.Equal(before, f.World.Digest().Canonical());
+        Assert.Equal(pending, f.World.Agenda.Outstanding.ToArray());
+        Assert.Equal(random.Words, f.World.Random.Generator.GetState().Words);
+        Assert.Equal(random.Index, f.World.Random.Generator.GetState().Index);
+        Assert.Equal(DeckType.UpgradesArea, f.Bite.Area.Type);
     }
 
     private static Prompt EntryResponse(PreparationPrintedFixture f)

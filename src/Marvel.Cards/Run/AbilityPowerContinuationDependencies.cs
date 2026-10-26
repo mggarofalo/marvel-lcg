@@ -27,6 +27,12 @@ internal static class AbilityPowerContinuationDependencies
         // fall back to a live paid-resource effect; neither its truth nor a
         // later draw's cards are needed to prove these branches cannot suspend.
         AbilityCondition.PaidWithResource => true,
+        // A retained recipient may depart or reenter during damage settlement.
+        // Its incarnation-bound presence is decided live, after that work ends.
+        AbilityCondition.IsInPlay
+        {
+            Card: AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen },
+        } => true,
         // The value stays a runtime decision. A bound status lookup can be
         // evaluated after settlement without choosing a new card or recipient.
         AbilityCondition.CardText

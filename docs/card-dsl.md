@@ -694,6 +694,17 @@ Damage descriptions report uncertainty without turning it into a predicted
 health value. See [shared domain calculations](architecture-domain-calculations.md)
 for the ownership boundary and remaining extraction candidates.
 
+A labelled-power sequence may finish with an independent live tail, including
+`giveStatus` on `chosen` guarded by `isInPlay: "chosen"`. The targeted power
+retains that recipient's incarnation; use `chosen` inside its body when later
+instructions must affect the same copy. Departure makes the guard false, even
+if the physical card reenters before the tail runs. Damage and its defeat
+interrupts, choices and responses settle before the tail and ability completion.
+The engine does not project an earlier sequence result solely for such a tail.
+If any later instruction needs a projected board read, ordinary projection and
+unsupported-window guards still apply before costs. This bounded composition
+does not predict hidden encounter draws or admit Black Widow content.
+
 `AbilityInitiationEvidence` holds the checks that live resolution must retain,
 including label validation and scoped target exceptions. It belongs to one
 ability resolution, not the shared program. Payment or suspension cannot erase
