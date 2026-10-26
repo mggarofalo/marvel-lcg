@@ -4,7 +4,7 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
-/// <summary>Discards a revealed treachery after its initiated effects finish.</summary>
+/// <summary>Discards revealed treacheries and attachments unable to enter play.</summary>
 internal static class EncounterRevealDiscard
 {
     internal static void Schedule(
@@ -17,7 +17,13 @@ internal static class EncounterRevealDiscard
         // treachery whose last effect initiates activations faceup until all of
         // them finish. `Then` places this behind any activations or choices the
         // When Revealed text just scheduled.
-        if (EffectiveCards.Kind(card, facts) == CardKind.Treachery)
+        // rr:attach-to.3: "If such a card cannot remain in its prior state or
+        // game area, discard it." An attachment whose placement failed stays
+        // staged through its When Revealed effects and leaves before responses.
+        if (EffectiveCards.Kind(card, facts) == CardKind.Treachery
+            || (EffectiveCards.Kind(card, facts) == CardKind.Attachment
+                && card.Area.Type == DeckType.RevealingArea
+                && world.PlacementAbilities.AttachmentTargets(world, card, player) is not null))
         {
             world.Agenda.Then(new PhaseStep(
                 new RevealStageOperation(RevealStageKind.DiscardRevealedTreachery),
@@ -42,11 +48,13 @@ internal static class EncounterRevealDiscard
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
         var card = world.Cards[step.Subject];
-        // The area check keeps an ability that moved the treachery from being
-        // undone. The kind check makes a reconstructed agenda refuse stale or
-        // malformed continuation data rather than discarding another type.
-        if (EffectiveCards.Kind(card, facts) != CardKind.Treachery
-            || card.Area.Type != DeckType.RevealingArea)
+        // Cards that entered play or moved elsewhere during their text are
+        // outside this cleanup. The scheduled operation spelling is an engine
+        // ledger choice shared by both revealed-card cleanup cases.
+        if (card.Area.Type != DeckType.RevealingArea
+            || (EffectiveCards.Kind(card, facts) != CardKind.Treachery
+                && (EffectiveCards.Kind(card, facts) != CardKind.Attachment
+                    || world.PlacementAbilities.AttachmentTargets(world, card, step.Seat) is null)))
         {
             return;
         }
