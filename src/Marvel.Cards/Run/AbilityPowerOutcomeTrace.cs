@@ -92,7 +92,8 @@ internal static class AbilityPowerOutcomeTrace
         AbilityEffect node, AbilityAdmissionScope cast, AbilityPowerState state)
     {
         var removal = EffectOf<AbilityEffect.RemoveThreat>(node, cast);
-        long wanted = Amount(removal.Amount, cast);
+        long wanted = AbilityEventModifiers.ThreatRemovalAmount(removal,
+            cast.World, cast.Source, Amount(removal.Amount, cast));
         var valid = PowerEvery(removal.Schemes, cast, state)
             .Where(scheme => CanRemovePowerThreat(node, scheme, cast, state));
         return [CombinedOutcomes(valid.Select(scheme =>

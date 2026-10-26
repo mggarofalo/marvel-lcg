@@ -252,7 +252,7 @@ internal static class AbilityRepeatedEffectAnalysis
         long own = node.OperationName() == "removeThreat"
             && Every(ThreatSelectionOf(node, cast), cast).Any(candidate =>
                 candidate.ObjectId == scheme.ObjectId)
-                ? Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast)
+                ? AbilityEventModifiers.ThreatRemovalAmount(EffectOf<AbilityEffect.RemoveThreat>(node, cast), cast.World, cast.Source, Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast))
                 : 0;
         return MutationTotal(
             node, cast, assumed, binding, own,

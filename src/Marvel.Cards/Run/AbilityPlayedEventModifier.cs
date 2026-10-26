@@ -23,6 +23,19 @@ internal static class AbilityPlayedEventModifier
             && card.Owner == context.Query.Player ? card : null;
     }
 
+    internal static bool CanModify(AbilityEffect.ModifyPlayedEvent modifier, AbilityAdmissionContext context)
+    {
+        var card = Target(context);
+        if (card is null) return false;
+        return modifier.Kind != "eventThreatRemoval"
+            || context.Program.On(card.FaceId).Any(ability => RemovesThreat(ability.Effect));
+    }
+
+    // FAQ 05011: prevention-only events have no threat-removal instance to modify.
+    private static bool RemovesThreat(AbilityEffect effect) =>
+        effect is AbilityEffect.RemoveThreat
+        || AbilityEffectStructure.AllEffectChildren(effect).Any(RemovesThreat);
+
     internal static AbilityImmediateResult Run(
         AbilityEffect.ModifyPlayedEvent modifier, AbilityImmediateContext context)
     {

@@ -242,10 +242,12 @@ internal static class AbilityEffectLowering
 
     internal static AbilityEffect.RemoveThreat RemoveThreatEffect(AbilityValue value, AbilityLocation location)
     {
-        var fields = Fields(value, location, "scheme", "amount", "ignoresCrisis", "overridesCannotFrom");
+        var fields = Fields(value, location, "scheme", "amount", "ignoresCrisis", "overridesCannotFrom", "maximum");
         return new(Selected(fields, "scheme", location), Numeric(fields, "amount", location),
             Boolean(fields, "ignoresCrisis", location),
-            fields.TryGetValue("overridesCannotFrom", out var source) ? SelectCards(source, location.Child("overridesCannotFrom")) : null);
+            fields.TryGetValue("overridesCannotFrom", out var source) ? SelectCards(source, location.Child("overridesCannotFrom")) : null)
+        { Maximum = fields.TryGetValue("maximum", out var maximum)
+            ? NonnegativeCount(maximum, location.Child("maximum")) : null };
     }
 
     internal static AbilityEffect.PreventDamage PreventDamageEffect(AbilityValue value, AbilityLocation location)

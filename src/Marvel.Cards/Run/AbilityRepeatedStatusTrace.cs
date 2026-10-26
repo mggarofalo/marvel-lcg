@@ -233,7 +233,7 @@ internal static class AbilityRepeatedStatusTrace
         var scheme = Find(ThreatSelectionOf(node, cast), cast);
         return scheme is not null
             && scheme.Tokens.GetValueOrDefault("k_threat") > 0
-            && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
+            && AbilityEventModifiers.ThreatRemovalAmount(EffectOf<AbilityEffect.RemoveThreat>(node, cast), cast.World, cast.Source, Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast)) > 0
             && CanRemoveThreatFrom(node, cast, scheme);
     }
 

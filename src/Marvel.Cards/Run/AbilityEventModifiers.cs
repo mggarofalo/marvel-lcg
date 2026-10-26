@@ -1,3 +1,4 @@
+using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
@@ -9,6 +10,15 @@ internal static class AbilityEventModifiers
 {
     internal static long DamageAmount(World world, Card source, long amount) =>
         AbilityAmounts.SaturatingSum(amount, [Amount(world, source, "eventDamage")]);
+
+    internal static long ThreatRemovalAmount(AbilityEffect.RemoveThreat removal,
+        World world, Card source, long amount, long multiplier = 1)
+    {
+        long modified = AbilityAmounts.SaturatingSum(
+            AbilityAmounts.SaturatingMultiply(amount, multiplier),
+            [Amount(world, source, "eventThreatRemoval")]);
+        return removal.Maximum is { } maximum ? Math.Min(modified, maximum) : modified;
+    }
 
     internal static long Amount(World world, Card source, string kind) =>
         AbilityAmounts.SaturatingSum(0, Effects(world, source, kind).Select(effect => effect.Amount));

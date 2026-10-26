@@ -14,7 +14,7 @@ internal static class AbilityLeafTargetAvailability
     /// <summary>Target existence for leaf options without a dedicated partial-resolution check.</summary>
     internal static bool HasTargets(AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
     {
-        "modifyPlayedEvent" => AbilityPlayedEventModifier.Target(cast.Context) is not null,
+        "modifyPlayedEvent" => AbilityPlayedEventModifier.CanModify(EffectOf<AbilityEffect.ModifyPlayedEvent>(node, cast), cast.Context),
         "revealFromVillainDeck" => AbilitySelectedDeckReveal.HasTarget(node, cast),
         "reveal" or "returnToHand" =>
             Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Count > 0,

@@ -58,9 +58,8 @@ internal static class AbilityThreatExecution
         var schemes = Every(removal.Schemes, context);
         if (schemes.Count == 0) throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' would remove threat from a scheme that is not there");
-        long requested = AbilityAmounts.SaturatingSum(
-            AbilityAmounts.SaturatingMultiply(Amount(removal.Amount, context), multiplier),
-            [AbilityEventModifiers.Amount(context.World, context.Source, "eventThreatRemoval")]);
+        long requested = AbilityEventModifiers.ThreatRemovalAmount(removal,
+            context.World, context.Source, Amount(removal.Amount, context), multiplier);
         return RemoveFromSchemes(removal, context, state,
             schemes.Where(scheme => !BlockedByCrisis(removal, context, scheme)).ToArray(), requested);
     }

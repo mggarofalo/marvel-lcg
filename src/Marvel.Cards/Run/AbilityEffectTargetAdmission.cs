@@ -144,7 +144,7 @@ internal static class AbilityEffectTargetAdmission
         {
             // rr:target.3.4: "at least one of those effects must be able to
             // affect the target." Deferring resolution retains the bound target.
-            "modifyPlayedEvent" => AbilityPlayedEventModifier.Target(cast.Context) is not null
+            "modifyPlayedEvent" => AbilityPlayedEventModifier.CanModify(EffectOf<AbilityEffect.ModifyPlayedEvent>(node, cast), cast.Context)
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "afterActivation" => TargetLegalityOf(EffectBody(node), cast, bindingMayChange),
             // rr:target.1 includes "you"; rr:target.3.5 excludes a target
@@ -215,7 +215,7 @@ internal static class AbilityEffectTargetAdmission
         AbilityEffect node, AbilityAdmissionScope cast) =>
         Every(ThreatSelectionOf(node, cast), cast).Any(scheme =>
             scheme.Tokens.GetValueOrDefault("k_threat") > 0
-            && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
+            && AbilityEventModifiers.ThreatRemovalAmount(EffectOf<AbilityEffect.RemoveThreat>(node, cast), cast.World, cast.Source, Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast)) > 0
             && CanRemoveThreatFrom(node, cast, scheme))
             ? TargetLegality.Valid : TargetLegality.Invalid;
 

@@ -306,7 +306,9 @@ internal static class AbilityRepeatedDamageAnalysis
             : EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount;
         return [.. Every(ThreatSelectionOf(node, cast), cast).Select(scheme =>
             new DamageTransfer(
-                0, scheme.ObjectId, Amount(amount, cast),
+                0, scheme.ObjectId, removes
+                    ? AbilityEventModifiers.ThreatRemovalAmount(EffectOf<AbilityEffect.RemoveThreat>(node, cast),
+                        cast.World, cast.Source, Amount(amount, cast)) : Amount(amount, cast),
                 RemovesThreat: removes, PlacesThreat: !removes))];
     }
 

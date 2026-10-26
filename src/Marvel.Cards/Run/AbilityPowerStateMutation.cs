@@ -96,9 +96,9 @@ internal static class AbilityPowerStateMutation
         AbilityEffect node, AbilityAdmissionScope cast,
         AbilityPowerState state, long multiplier)
     {
-        long removed = SaturatingMultiply(
-            Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast),
-            multiplier);
+        var removal = EffectOf<AbilityEffect.RemoveThreat>(node, cast);
+        long removed = AbilityEventModifiers.ThreatRemovalAmount(removal,
+            cast.World, cast.Source, Amount(removal.Amount, cast), multiplier);
         foreach (var scheme in PowerEvery(
             EffectOf<AbilityEffect.RemoveThreat>(node, cast).Schemes, cast, state))
         {
