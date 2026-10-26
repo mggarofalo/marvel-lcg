@@ -61,6 +61,11 @@ internal static class AbilityAdmissionAreaDependencies
         AbilityEffect? effect, AbilityAdmissionContext context, HashSet<DeckType> areas)
     {
         if (effect is null) return;
+        if (effect is AbilityEffect.ResolveInvocation or AbilityEffect.DiscardInvocation)
+        {
+            areas.Add(DeckType.AdditionalDeck);
+            return;
+        }
         Type type = effect.GetType();
         if (OrderedContainerTypes.Contains(type))
             CollectOrderedContainer(effect, context, areas);

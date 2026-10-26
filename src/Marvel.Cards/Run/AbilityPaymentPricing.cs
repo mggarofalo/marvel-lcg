@@ -20,6 +20,8 @@ internal static class AbilityPaymentPricing
         World world, Card card, int player, AbilityCost? cost,
         IResourceCardAbilities resourceAbilities)
     {
+        if (cost is AbilityCost.InvocationTop)
+            return Price(world, card, player, AbilityInvocationPayment.Expand(world, player, cost), resourceAbilities);
         if (cost is AbilityCost.Sequence sequence)
             return SequencePrice(world, card, player, sequence, resourceAbilities);
 

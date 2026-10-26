@@ -33,6 +33,7 @@ internal static class AbilityStructuralExecution
             return AskFor(context, effect);
         return effect switch
         {
+            AbilityEffect.ResolveInvocation => AbilityInvocationPayment.Resolve(context),
             AbilityEffect.Sequence sequence => new StartSequenceCommand(sequence),
             AbilityEffect.Simultaneous simultaneous => Simultaneous(context, simultaneous),
             AbilityEffect.Dependent dependent => new StartDependentCommand(dependent),

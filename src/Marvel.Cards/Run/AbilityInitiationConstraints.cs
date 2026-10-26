@@ -110,6 +110,7 @@ internal static class AbilityInitiationConstraints
 
     internal static bool CanInitiateLeaf(AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
     {
+        "resolveInvocation" => AbilityInvocationPayment.Top(cast.World, cast.Player) is not null,
         "resolveSpecials" when cast.HasContinuation =>
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' continues after ordered Special abilities, "

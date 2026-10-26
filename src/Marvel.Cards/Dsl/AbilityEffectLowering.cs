@@ -25,6 +25,8 @@ internal static class AbilityEffectLowering
         var argument = node.Argument;
         return node.Kind switch
         {
+            "discardInvocation" => InvocationDiscard(argument, child),
+            "resolveInvocation" => InvocationEffect(argument, child),
             "attackAnotherEnemy" => AbilityStagedAttackLowering.Lower(argument, child),
             "boostBasicUse" => argument is AbilityValue.Word { Value: "exhaustedAllyPower" }
                 ? new AbilityEffect.BoostBasicUse(0, MatchingAlly: true)
@@ -292,5 +294,15 @@ internal static class AbilityEffectLowering
         return new(instruction);
     }
 
+    private static AbilityEffect.ResolveInvocation InvocationEffect(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "you");
+        return new();
+    }
+    private static AbilityEffect.DiscardInvocation InvocationDiscard(AbilityValue value, AbilityLocation location)
+    {
+        FixedWord(value, location, "this");
+        return new();
+    }
 }
 

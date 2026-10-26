@@ -13,6 +13,8 @@ internal static class AbilityCostSelection
     // discard or exhaust cost asks the payer to choose.
     internal static TargetRequest? Ask(World world, Card source, int player, AbilityCost? cost)
     {
+        if (cost is AbilityCost.InvocationTop)
+            return new TargetRequest(AbilityInvocationPayment.Top(world, player) is { } top ? [top.ObjectId] : [], 1, 1);
         if (cost is AbilityCost.Sequence sequence)
         {
             return sequence.Costs.Select(step => Ask(world, source, player, step))

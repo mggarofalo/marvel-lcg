@@ -23,6 +23,7 @@ internal static class AbilityOperationNames
         AbilityCost.Spend { DistinctTypes: true } => "spendDistinct",
         AbilityCost.Spend { Generic: > 0 } => "spendAny",
         AbilityCost.Spend spend => spend.PrintedOnly ? "spendPrinted" : "spend",
+        AbilityCost.InvocationTop => "invocationTop",
         AbilityCost.SpendEnergy => "spendEnergyX",
         AbilityCost.RandomDiscardFromHand => "discardRandomFromHand",
         AbilityCost.DiscardFromHand discard => discard.Range switch
@@ -41,6 +42,8 @@ internal static class AbilityOperationNames
 
     internal static string OperationName(this AbilityEffect effect) => effect switch
     {
+        AbilityEffect.DiscardInvocation => "discardInvocation",
+        AbilityEffect.ResolveInvocation => "resolveInvocation",
         AbilityEffect.AttackAnotherEnemy => "attackAnotherEnemy",
         AbilityEffect.BoostBasicUse => "boostBasicUse",
         AbilityEffect.ModifyPlayedEvent => "modifyPlayedEvent",

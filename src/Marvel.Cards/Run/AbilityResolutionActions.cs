@@ -89,6 +89,7 @@ internal static class AbilityResolutionActions
         // before step 6 resolves.
         var recipientChoice = AbilityRecipientCommitment.Validate(execution, cast, found, chosen);
         AbilityEventThreatFacts.Validate(execution, cast, found);
+        AbilityInvocationPayment.Capture(cast, found.Cost, chosen);
         var arrowPayment = AbilityCostPayment.Prepare(
             world, card, cast.Player, found.Cost, execution.program, execution.resourceAbilities,
             AbilityPaymentSelection.Capture(paying, recipientChoice is null ? chosen : [], values,

@@ -24,6 +24,17 @@ internal static class AbilityPaymentRules
     /// </remarks>
     internal static bool Payable(
         World world, Card card, int player, AbilityCost? cost,
+        AbilityProgram program, IResourceCardAbilities resourceAbilities)
+    {
+        if (AbilityInvocationPayment.Contains(cost)
+            && AbilityInvocationPayment.Top(world, player) is null)
+            return false;
+        return ExpandedCostPayable(world, card, player,
+            AbilityInvocationPayment.Expand(world, player, cost), program, resourceAbilities);
+    }
+
+    private static bool ExpandedCostPayable(
+        World world, Card card, int player, AbilityCost? cost,
         AbilityProgram program, IResourceCardAbilities resourceAbilities) =>
         cost switch
         {
@@ -112,7 +123,7 @@ internal static class AbilityPaymentRules
         World world, Card card, int player, AbilityCost.Sequence cost,
         AbilityProgram program, IResourceCardAbilities resourceAbilities)
     {
-        var steps = cost.Costs;
+        var steps = ((AbilityCost.Sequence)AbilityInvocationPayment.Expand(world, player, cost)!).Costs;
         if (!PhysicalCostsPayable(world, card, player, cost))
         {
             return false;

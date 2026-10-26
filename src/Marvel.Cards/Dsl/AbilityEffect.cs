@@ -9,6 +9,12 @@ public abstract record AbilityEffect
 {
     private AbilityEffect() { }
 
+    /// <summary>Resolve the Special of the exact Invocation captured before payment.</summary>
+    public sealed record ResolveInvocation : AbilityEffect;
+
+    /// <summary>Place this Invocation in its own discard pile and refresh its public top.</summary>
+    public sealed record DiscardInvocation : AbilityEffect;
+
     /// <summary>Increase only the current basic use, optionally from its selected ally receipt.</summary>
     public sealed record BoostBasicUse(int Amount, bool MatchingAlly = false) : AbilityEffect;
 

@@ -43,6 +43,7 @@ internal sealed class AbilityCostPreparation
 
     internal AbilityCostPayment Build(AbilityCost? cost)
     {
+        cost = AbilityInvocationPayment.Expand(world, player, cost);
         AttachedUpgradeCostBound.Validate(world, source, player, cost, paying);
         var price = AbilityPaymentPricing.Price(world, source, player, cost, resourceAbilities);
         // Engine choice: a standalone discard-source arrow cannot consume resource generators.

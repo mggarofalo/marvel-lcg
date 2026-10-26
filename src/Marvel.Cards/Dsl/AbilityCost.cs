@@ -7,6 +7,9 @@ public abstract record AbilityCost
 {
     private AbilityCost() { }
 
+    /// <summary>Pay the current public Invocation top and bind that physical card.</summary>
+    public sealed record InvocationTop : AbilityCost;
+
     /// <summary>Costs paid together in authored order, subject to engine atomicity rules.</summary>
     public sealed record Sequence(ImmutableArray<AbilityCost> Costs) : AbilityCost;
     /// <summary>Exhaust the source or resolving identity.</summary>

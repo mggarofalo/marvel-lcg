@@ -22,7 +22,7 @@ internal static class AbilityPlayerBindingAnalysis
     {
         null => false,
         AbilityCost.ReturnSourceToHand => false,
-        AbilityCost.ChooseFromDiscard => true,
+        AbilityCost.ChooseFromDiscard or AbilityCost.InvocationTop => true,
         AbilityCost.DiscardTop discard => discard.From == AbilitySearchArea.YourDeck,
         AbilityCost.DiscardUntilMinionEngaged or AbilityCost.DealEncounterToYou or AbilityCost.RandomDiscardFromHand => true,
         AbilityCost.Sequence sequence => sequence.Costs.Any(Contains),
@@ -164,6 +164,7 @@ internal static class AbilityPlayerBindingAnalysis
 
     private static bool ContainsOther(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.ResolveInvocation or AbilityEffect.DiscardInvocation => true,
         AbilityEffect.DiscardHandCards => true,
         AbilityEffect.DiscardResourceIcons => true,
         AbilityEffect.RecruitDiscarded => true,
