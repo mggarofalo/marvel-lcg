@@ -75,9 +75,7 @@ public sealed class DiscardPlayDecisionTests
         var pending = world.Agenda.Outstanding.ToArray();
         var effects = world.Effects.Registered.ToArray();
         var answer = invalid == "self-payment" ? valid with { Resources = paying } : valid;
-        if (invalid is "deck" or "foreign-owner")
-            Assert.Throws<RulesNotImplementedException>(() => game.Resolve(answer));
-        else Assert.Throws<ArgumentException>(() => game.Resolve(answer));
+        Assert.Throws<ArgumentException>(() => game.Resolve(answer));
         Assert.Same(prompt, game.Pending);
         Assert.Equal(before, world.Digest().Canonical());
         Assert.Equal(random.Words, world.Random.Generator.GetState().Words);
@@ -86,6 +84,14 @@ public sealed class DiscardPlayDecisionTests
         Assert.Equal(pending, world.Agenda.Outstanding);
         Assert.Equal(effects, world.Effects.Registered);
         Assert.Single(new Resolution(world, game.Pending, []).Information, item => item.Kind == InformationKind.Reveal);
+
+        if (invalid == "foreign-owner") ally.TransferLinkedOwnership(0);
+        if (invalid == "deck") World.MoveToTop(ally, Pile(world, 0));
+        var retry = PaidDecision.Take(offer, valid.Spent) with { Targets = [world.Seats[0].IdentityCard.ObjectId] };
+        game.Resolve(retry);
+        Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
+        Assert.True(game.IsRootPrompt);
+        Assert.Empty(world.Agenda.Outstanding);
     }
 
     [Theory]
