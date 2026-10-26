@@ -56,7 +56,7 @@
         {
           "trigger": { "event": "WhenDamageWouldBeDealt", "damage": "taken", "timing": "Interrupt", "target": "you" },
           "labels": [ "defense" ],
-          "when": { "isYourIdentity": "trigger.target" },
+          "when": { "and": [ { "isYourIdentity": "trigger.target" }, { "damageFromAttack": "trigger" } ] },
           "effect": { "preventDamage": "trigger.target" }
         }
       ]

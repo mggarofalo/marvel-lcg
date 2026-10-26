@@ -1504,3 +1504,10 @@ Stun cancels both sentences after costs; zero remaining icons cannot admit an
 otherwise ineffective ability. Explicit player-selected targets and all other
 attack body shapes keep their existing target validation. This adds no general
 targetless attack syntax, public pack admission, protocol or save format change.
+
+`damageFromAttack: "trigger"` tests the exact imminent damage assignment owned by
+this occurrence. Attack step damage, indirect attack assignments, and overkill
+qualify; boost ability damage, nested nonattack damage and damage costs do not
+borrow an enclosing attack. The spelling and occurrence marker are engine choices.
+Backflip combines this condition with its identity target and remaining damage.
+A defense label alone does not impose it (`rr:defend-defense.4.8`).

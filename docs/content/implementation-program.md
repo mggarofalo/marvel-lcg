@@ -72,13 +72,16 @@ the PR is merged. The
 
 Black Widow's 34 faces and bounded prerequisites are mapped in its
 [executable handoff](research/remaining/black-widow-implementation-handoff.md).
-Black Widow is the active integration candidate with 21/34 faces and 632 total
-ability rows. Preparation receipts, Safe House cost selection, Stealth Strike,
-Spy restrictions, boost cancellation, Surge, partial Covert Ops, live lasting
-amounts and captured actor binding have independent mechanism review. Public
-admission remains closed; thirteen faces and pack-wide proof remain. Replay v27
-and protocol 41 are integrated with focused history and release checks, under
-independent review.
+Black Widow is the active integration candidate with all 34 playable faces and
+645 total ability rows. All card packets and engine prerequisites have independent
+review. The verified starter and complete public admission are integrated; focused
+combined admission checks pass 11 Content and 11 Server cases. Pack-wide public
+games, final regression certification and native explanation fixes remain open.
+Prepared native Safe House and Preparation journeys pass eight profiles, but
+MARVEL-792 tracks visible cost/consequence defects before final UI acceptance.
+Replay v27 and protocol 41 describe the unpublished combined candidate; released
+main remains replay v26. Doctor Strange's complete 40-face handoff and repaired
+pinned Invocation rules extract are integrated for the next engine slice.
 
 The intermittent Linux drag assertion from an earlier CI run remains recorded
 in MARVEL-752. Its strict assertion now captures gesture geometry; focused

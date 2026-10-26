@@ -27,6 +27,12 @@ public sealed class EspionageSurgeTests
         Assert.Equal(DeckType.DiscardPile, f.Espionage[0].Area.Type);
         Assert.Empty(f.World.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(1)).Cards);
         Assert.IsType<ResolvedPreparationAbility>(f.World.Agenda.Occurrence!.ActorFacts!.PreparationAbility);
+        var suitOffer = Assert.Single(response.Affordances, offer => offer.AnchorId == f.Suit!.ObjectId);
+        Assert.Equal("Exhaust Synth-Suit", suitOffer.CostDescription);
+        Assert.Equal("Ready Black Widow.", suitOffer.Description);
+        Assert.Equal(1, suitOffer.AnchorPlayer);
+        Assert.False(f.Hero.Ready);
+        Assert.True(f.Suit!.Ready);
         f.Answer(response, f.Suit!.ObjectId);
         f.Finish();
         Assert.True(f.Hero.Ready);

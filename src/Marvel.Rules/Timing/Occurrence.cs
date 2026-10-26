@@ -102,7 +102,11 @@ public sealed record Occurrence
     [JsonIgnore]
     public Play.DamageReplacement? Damage { get; internal set; }
 
-    /// <summary>The exact nonattack damage-taking assignment, reconstructed during replay.</summary>
+    /// <summary>Whether this exact imminent assignment is damage from an attack.</summary>
+    [JsonIgnore]
+    public bool DamageFromAttack { get; internal init; }
+
+    /// <summary>The exact damage-taking assignment, reconstructed during replay.</summary>
     [JsonIgnore]
     public Play.DirectDamagePrevention? DirectDamage { get; internal set; }
 

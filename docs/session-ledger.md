@@ -698,6 +698,10 @@ required before the host advertises a campaign or starts its first attempt.
 
 The current replay identity is `engine-replay-v27`. Dynamic lasting amounts follow
 current game state, and captured actors cannot follow a reentered incarnation.
+This identity also covers occurrence-local attack-damage eligibility, optional
+overkill prevention and interrupted damage costs. These changes belong to one
+unpublished Black Widow candidate; intermediate authoring revisions do not define
+separate supported replay identities. Released main at `c14a045c` uses v26.
 V26 saves have no named source admission and remain unchanged. Explicit frozen
 v19/v20/v21 routes verify every original fact before changing metadata. Protocol
 41 and save schema 7 apply.

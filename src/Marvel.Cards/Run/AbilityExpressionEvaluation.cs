@@ -162,6 +162,7 @@ internal sealed class AbilityExpressionEvaluation(
 
     private bool TestFact(AbilityConditionFact fact) => fact switch
     {
+        AbilityConditionFact.DamageFromAttack => context.Occurrence.DamageFromAttack,
         AbilityConditionFact.InAttackChain => context.World.Agenda.Current?.AttackOrigin is not null,
         AbilityConditionFact.FinalStep => context.FinalStep,
         AbilityConditionFact.CanMakeTheCall => CanMakeTheCall(),

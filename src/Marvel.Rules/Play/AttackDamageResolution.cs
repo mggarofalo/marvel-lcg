@@ -19,6 +19,7 @@ internal sealed class AttackDamageResolution
     private readonly int priorDefeats;
     private DamageReplacement? replacement;
     private Damage.PlacedDamage? placed;
+    private DirectDamagePrevention? spillPrevention;
     private Damage.Outcome outcome;
     private AttackDamageResult? spill;
     private bool aftermath;
@@ -102,9 +103,18 @@ internal sealed class AttackDamageResolution
         remaining = Math.Max(0, DamagePlacement.Health(world, facts, request.Target) - request.Target.Damage);
         kind = EffectiveCards.Kind(request.Target, facts);
         controller = kind == CardKind.Ally ? request.Target.Area.PlayArea.Player : -1;
-        placed = DamagePlacement.PrepareAfterReplacement(world, facts,
-            new DamageRequest(request.Source, request.Target, replacement.ResolvedAmount, request.Trigger, request.Verb)
-            { PreventAllDamage = request.EnemyAttack?.PreventAllDamage == true }, events);
+        var assignment = new DamageRequest(request.Source, request.Target, replacement.ResolvedAmount,
+            request.Trigger, request.Verb)
+        { PreventAllDamage = request.EnemyAttack?.PreventAllDamage == true, FromAttack = true };
+        if (spillOnly)
+        {
+            // rr:overkill.2: excess is "damage from an attack" and has its own recipient.
+            spillPrevention ??= DirectDamagePrevention.Begin(world, assignment, replacement,
+                DamagePlacement.PrepareAfterReplacement(world, facts, assignment, events));
+            if (!spillPrevention.IsComplete) return false;
+            placed = spillPrevention.Placement;
+        }
+        else placed = DamagePlacement.PrepareAfterReplacement(world, facts, assignment, events);
         DamagePlacement.ApplyPlaced(world, facts, placed, request.Trigger, request.Verb, events);
         return Settle(events);
     }
@@ -152,7 +162,7 @@ internal sealed class AttackDamageResolution
         }
         replacement ??= DamagePlacement.Replace(world,
             new(request.Source, request.Target, request.Amount, request.Trigger, request.Verb,
-                LabeledAbilities.IdentityPlayer(world, request.Attacker)) { RecordDefeatOn = Execution.Occurrence }, events);
+                LabeledAbilities.IdentityPlayer(world, request.Attacker)) { RecordDefeatOn = Execution.Occurrence, FromAttack = true }, events);
     }
 
     private long Excess => Math.Max(0, placed!.Taken - remaining);

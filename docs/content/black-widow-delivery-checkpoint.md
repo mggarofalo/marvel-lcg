@@ -2,16 +2,19 @@
 
 Canonical parent: MARVEL-564. This record supplements the
 [34-face implementation handoff](research/remaining/black-widow-implementation-handoff.md),
-which defines the complete scope and authority. Black Widow is not publicly admitted.
+which defines the complete scope and authority. The candidate admits Black Widow;
+final regression certification and merge remain outstanding.
 
 ## Integrated candidate
 
 `feat/black-widow-completion` contains the complete 34-face authored book,
 based on Thor's certified squash merge `c14a045c`; the final six-face integration
 has parent `c1decfff`. Every row and its engine prerequisite has independent
-review. The verified printed starter is declared. Public admission and pack-wide
-proof remain outstanding. A separate preexisting Focused Rage/Energy Barrier
-cost-interruption gap is tracked as MARVEL-788 and under implementation.
+review. The verified printed starter, public admission, eight complete public games
+and reviewed damage-cost interruption are integrated. Native cost/consequence
+repairs have independent managed and rendered evidence. Historical replay
+regressions remain under exact-event audit in MARVEL-783; the candidate is not
+accepted or merged until these and final CI resolve.
 
 Earlier integration evidence follows; these runs do not certify the current head.
 All 6,104 Content tests passed on prerequisite revision `f601932b` (2026-10-26);
@@ -247,3 +250,41 @@ identified cost-payment path; no claim of complete cost interruption is made her
 The combined occurrence receipts exceeded the 300-line class gate. Exact trigger-use and event-play generation bookkeeping now lives in the cohesive TriggerUses owner, with unchanged Occurrence entry points and serialized facts. All 82 Timing checks and the 227 combined Content checks pass after extraction (widow-trigger-uses-rules.log and widow-34face-final-focused.log). No architecture baseline was expanded.
 
 MARVEL-788 damage-cost implementation845668e3 and independent review1c36a519 are integrated. Actual Focused Rage/Energy Barrier use, decline and nested targeting now preserve unpaid-cost semantics; compound attempts retain actual damage without treating incomplete taking costs as paid. Combined63 Content and3 strict-JSON fresh-host checks pass in widow-damage-cost-integrated-{content,server}.log. No archived bytes, schema or new product admission changed.
+
+
+## Public admission and native integration
+
+Public admission source `e6f3bba7` and independent review `4e4e5424` are
+integrated, including the independently inspected starter, quantity/ownership
+controls and fresh-host response continuation. Combined focused checks pass
+11 Content and 11 Server cases in `widow-public-integrated-{content,server}.log`.
+Reviewed Backflip source `a9d871ae` and review `fdf06785` restore exact attack
+damage eligibility and overkill prevention without changing pinned Core assertions.
+Prepared native source `469e0484` contributes two journeys passing eight profiles;
+MARVEL-792 remains open for visible cost/consequence explanation defects.
+
+The replay review raised intermediate-v27 compatibility. Remote main was verified
+at `c14a045c`, whose build identity is v26. V27 is the unpublished aggregate
+Black Widow candidate, covering all integrated semantic changes; no intermediate
+worker revision is admitted as a supported predecessor. Existing explicit frozen
+v19/v20/v21 routes still require complete original-history verification on the
+final candidate, and v26 remains quarantined unchanged. This is an explicit
+compatibility decision, not a claim that same-candidate restart proves upgrades.
+
+
+## Final regression and public-game review
+
+Public games `0705558e` have independent source/evidence review: seven starter
+cases and the custom Counterattack case pass with exact production-host journal
+comparison and strict replay. Counters report accepted activations, not an
+unsupported claim that each counted activation completed without suspension.
+
+Full combined Content: 6,555 passed and two obsolete synthetic Backflip fixture
+failures. Both fixture helpers now consume actual authored 01003, retaining every
+original assertion. Root and independent focused checks pass all six indirect
+cases. Logs: `widow-combined-content-full.log`, `widow-indirect-fixture-restored.log`
+and `widow-fixture-independent-review.log`. This does not relabel the full run green.
+Server historical campaign differences are separately audited before changing
+expectations; archived bytes and strict event verification remain intact.
+
+Full combined Server completed: 581 passed, three historical campaign expectation failures under MARVEL-783. Exact audit identifies frozen legacy Backflip rows exposed by the direct-damage prevention window. No archive is rewritten; final rejection/control evidence is pending integration.

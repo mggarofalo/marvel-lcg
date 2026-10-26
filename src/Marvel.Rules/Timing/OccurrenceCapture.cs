@@ -22,7 +22,8 @@ internal static class OccurrenceCapture
             Actor: actor,
             Target: target,
             ActorFacts: OccurrenceCard.Capture(world.Cards[actor], facts),
-            TargetFacts: target >= 0 ? OccurrenceCard.Capture(world.Cards[target], facts) : null);
+            TargetFacts: target >= 0 ? OccurrenceCard.Capture(world.Cards[target], facts) : null)
+        { DamageFromAttack = conditions.Contains(Play.Steps.DamageWouldBeDealt, StringComparer.Ordinal) };
     }
 
     internal static Occurrence Thwart(

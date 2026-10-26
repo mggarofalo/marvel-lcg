@@ -37,7 +37,7 @@ internal static class IndirectAttackResolution
         }
         operation.Replacement ??= DamagePlacement.Replace(world,
             new DamageRequest(attacker, target, operation.Amount, Steps.AttackInitiated, "Attack")
-                { RecordDefeatOn = procedure }, events);
+                { RecordDefeatOn = procedure, FromAttack = true }, events);
         if (!operation.Replacement.IsComplete) return null;
         long amount = target.Incarnation == operation.Replacement.TargetIncarnation
             && DeckTypes.IsInPlay(target.Area.Type) ? operation.Replacement.ResolvedAmount : 0;

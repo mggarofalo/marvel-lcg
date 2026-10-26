@@ -71,7 +71,7 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
         if (showSource) frame!.AddText($"WindowSource{offer.Id}", offer.SourceName ?? offer.Anchor, GodotThemeVariations.Caption);
         if (offer.WindowChoices.Count == 0)
         {
-            Button button = frame!.AddButton($"WindowAction{offer.Id}", ContextLabel(offer, offer.DisplayLabel ?? offer.Label),
+            Button button = frame!.AddButton($"WindowAction{offer.Id}", DecisionCopy.AbilityLabel(offer, offer.DisplayLabel ?? offer.Label),
                 () => panel.SelectAffordance(offer.Id, generation), panel.submitting);
             button.SetMeta("table_mutation", true);
             AttachPreview(button, offer);
@@ -79,15 +79,12 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
         }
         foreach (var choice in offer.WindowChoices)
         {
-            Button button = frame!.AddButton($"WindowChoice{offer.Id}_{choice.TargetId?.ToString() ?? "Immediate"}", ContextLabel(offer, choice.Label),
+            Button button = frame!.AddButton($"WindowChoice{offer.Id}_{choice.TargetId?.ToString() ?? "Immediate"}", DecisionCopy.AbilityLabel(offer, choice.Label, choice.Description),
                 () => Commit(draft, generation, offer.Id, choice.TargetId), panel.submitting);
             button.SetMeta("table_mutation", true);
             AttachPreview(button, offer, choice.Description);
         }
     }
-
-    private static string ContextLabel(AffordancePresentation offer, string label) =>
-        offer.ContextDescription is { } context ? $"{label}\n{context}" : label;
 
     private static void AttachPreview(Button button, AffordancePresentation offer, string? choice = null)
     {

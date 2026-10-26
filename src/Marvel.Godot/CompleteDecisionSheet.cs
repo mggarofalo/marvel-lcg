@@ -17,6 +17,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
     private DecisionComposer? draft;
     private int focusGeneration;
     private Label notice = null!;
+    private Label selectedSummary = null!;
     private Main main = null!;
     private Node inspectorParent = null!;
 
@@ -108,11 +109,24 @@ internal sealed class CompleteDecisionSheet : IDisposable
             if (!string.IsNullOrWhiteSpace(prompt.Resolution))
                 content.AddChild(DecisionPanel.Text(prompt.Resolution, GodotThemeVariations.Body, wrap: true));
         }
+        selectedSummary = DecisionPanel.Text(string.Empty, GodotThemeVariations.Body, wrap: true);
+        selectedSummary.Name = "CompleteChoiceSummary";
+        content.AddChild(selectedSummary);
+        panel.ProgressChanged += RefreshSummary;
+        RefreshSummary(null);
         panel.Reparent(content);
         panel.Visible = true;
         panel.CustomMinimumSize = Vector2.Zero;
         panel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         panel.SetCompleteChoicesVisibility(true);
+    }
+
+    private void RefreshSummary(DecisionProgressPresentation? _)
+    {
+        var prompt = panel.composer is { } composer && panel.world is { } world
+            ? Marvel.View.PromptPresentation.From(composer.Prompt, world) : null;
+        selectedSummary.Text = TableDraftSummary.From(panel.composer, prompt, panel.world) ?? string.Empty;
+        selectedSummary.Visible = selectedSummary.Text.Length > 0;
     }
 
     private Control openerFallback = null!;
@@ -227,6 +241,7 @@ internal sealed class CompleteDecisionSheet : IDisposable
 
     public void Dispose()
     {
+        panel.ProgressChanged -= RefreshSummary;
         if (GodotObject.IsInstanceValid(layer) && !layer.IsQueuedForDeletion()) layer.QueueFree();
     }
 

@@ -48,32 +48,22 @@ public abstract class IndirectDamageTestBase
           "effect":{"heal":{"card":"this","amount":{"damageOn":"this"}}}
         }]}]}
         """));
-    protected static AbilityRunner BackflipRunner() => new(AbilityCatalog.Parse("""
-        {"cards":[{"card":"01003","abilities":[{
-          "trigger":{"event":"WhenDamageWouldBeDealt","timing":"Interrupt",
-                     "target":"you"},
-          "when":{"isYourIdentity":"trigger.target"},
-          "effect":{"preventDamage":"trigger.target"}
-        }]}]}
-        """));
-    protected static AbilityRunner ForcedSoakAndBackflipRunner() => new(AbilityCatalog.Parse("""
-        {"cards":[
-          {"card":"01003","abilities":[{
-            "trigger":{"event":"WhenDamageWouldBeDealt","timing":"Interrupt",
-                       "target":"you"},
-            "when":{"isYourIdentity":"trigger.target"},
-            "effect":{"preventDamage":"trigger.target"}
-          }]},
-          {"card":"01098","abilities":[{
-            "trigger":{"event":"WhenDamageWouldBeDealt","timing":"ForcedInterrupt",
-                       "subject":"attachedTo"},
-            "effect":{"seq":[
-              {"soakDamage":{"onto":"this"}},
-              {"discard":"this"}
-            ]}
-          }]}
-        ]}
-        """));
+    protected static AbilityRunner BackflipRunner() => new(new AbilityBook(
+        [.. AuthoredCards.Book.On("01003")], new HashSet<string> { "01003" }));
+
+    protected static AbilityRunner ForcedSoakAndBackflipRunner()
+    {
+        // The replacement attachment is synthetic; Backflip keeps its authored attack-only restriction.
+        var soak = AbilityCatalog.Parse("""
+            {"cards":[{"card":"01098","abilities":[{
+              "trigger":{"event":"WhenDamageWouldBeDealt","timing":"ForcedInterrupt",
+                         "subject":"attachedTo"},
+              "effect":{"seq":[{"soakDamage":{"onto":"this"}},{"discard":"this"}]}
+            }]}]}
+            """);
+        return new(new AbilityBook([.. AuthoredCards.Book.On("01003"), .. soak.Abilities],
+            new HashSet<string> { "01003", "01098" }));
+    }
     protected static AbilityRunner DeclinedDefeatAndSideSchemeRunner() => new(AbilityCatalog.Parse("""
             {"cards":[
               {"card":"01020","abilities":[{

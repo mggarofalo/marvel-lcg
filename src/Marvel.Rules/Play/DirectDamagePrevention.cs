@@ -3,7 +3,7 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
-/// <summary>Owns optional prevention for one exact nonattack damage recipient.</summary>
+/// <summary>Owns optional prevention for one exact damage recipient.</summary>
 public sealed class DirectDamagePrevention
 {
     private readonly Card target;
@@ -19,7 +19,7 @@ public sealed class DirectDamagePrevention
             Subject: target.ObjectId, Player: target.Owner, Actor: request.Source.ObjectId,
             Target: target.ObjectId, ActorFacts: OccurrenceCard.Capture(request.Source, world.Facts),
             TargetFacts: OccurrenceCard.Capture(target, world.Facts))
-        { Damage = replacement, DirectDamage = this };
+        { Damage = replacement, DirectDamage = this, DamageFromAttack = request.FromAttack };
     }
     internal Occurrence Occurrence { get; }
     internal bool IsComplete { get; private set; }
