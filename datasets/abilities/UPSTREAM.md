@@ -74,3 +74,11 @@ repeats reveal effects finitely and has an alter-ego mental removal action.
 The printed authority is `datasets/cards/cards.json`; `faq:02049` and vendored
 rulings `ruling:49dc5a965dcd4028` and `ruling:c516c82788ea8d77` distinguish
 cancellation and villain promotion. Green Goblin remains publicly excluded.
+
+Mutagen Formula adds seven authored research faces: Green Goblin I–III
+(02014–02016), Unleashing the Mutagen (02017a/b), and Mutagen Cloud (02018a/b).
+Printed cards are authoritative; ruling `ruling:9a1cb4d914aa6778` confirms that
+attack overkill to the identity satisfies "attacks and damages you".
+`MutagenStageAbilityTests`, `MutagenEscalationTests` and
+`MutagenFormulaSetupTests` exercise actual authored rows. Remaining encounters
+02019–02032 fail closed; Green Goblin public admission remains excluded.

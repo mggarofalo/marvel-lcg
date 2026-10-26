@@ -97,15 +97,8 @@ public sealed class MutagenEscalationTests : CoreCardTestBase
 
     private static (World World, Card Scheme) Mutagen(int players)
     {
-        // Engine choice: the existing additive constant field represents X on
-        // the generated zero placeholder. Authorship is confined to this fixture.
-        var runner = new AbilityRunner(AbilityCatalog.Parse("""
-            {"cards":[{"card":"02018b","abilities":[{
-              "trigger":{"timing":"Constant"},
-              "effect":{"grant":{"card":"this","keyword":"escalation_threat",
-                "amount":{"count":{"enemiesWithTrait":"GOBLIN"}}}}
-            }]}]}
-            """));
+        // The actual authored constant represents X on the generated zero placeholder.
+        var runner = Marvel.Content.Tests.Cards.AuthoredCards.Runner();
         var world = Hero("01001a", players);
         var scheme = world.CreateCard("02018b", world.AreaOf(DeckType.MainSchemesArea));
         world.Abilities = runner;

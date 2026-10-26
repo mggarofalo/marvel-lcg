@@ -10,7 +10,7 @@ excluded by runtime admission.
 |---|---|
 | Kind | authored |
 | Declared products | Marvel Champions Core Set; Rise of Red Skull; The Wrecking Crew; Captain America; Ms. Marvel (research); Green Goblin (Risky Business and modular research recipes) |
-| Records | 37 scenario modes, 9 heroes, 12 encounter sets; runtime admission exposes 35 modes, 8 heroes and 10 sets |
+| Records | 39 scenario modes, 9 heroes, 14 encounter sets; runtime admission exposes 35 modes, 8 heroes and 10 sets |
 | Gated by | `SetupDatasetTests`, `RiseOfRedSkullSetupDataTests`, `CaptainAmericaSetupTests`, `MsMarvelSetupTests`, `MessOfThingsSetupTests`, `RiskyBusinessSetupTests`, complete-product admission |
 
 ## Why it is authored
@@ -32,7 +32,7 @@ Rise of Red Skull printed faces before exposing its runtime recipes.
 - every named encounter or modular set is defined;
 - every scenario has valid main schemes and villain stages;
 - every hero has two identity faces, an obligation, and a nemesis set;
-- the declared products contain 37 authored modes, 9 heroes, and 14 sets;
+- the declared products contain 39 authored modes, 9 heroes, and 14 sets;
 - required encounter sets remain fixed when optional modular sets change;
 - the header counts match the file.
 
@@ -90,3 +90,15 @@ have one copy each and 02049 has two, five physical cards and four distinct
 faces. Generated printed set facts and the pinned MarvelSDB
 `gob_encounter.json` above supply membership and quantities.
 `RunningInterferenceSetupTests` gates composition and public exclusion.
+
+Mutagen Formula Standard/Expert research recipes follow printed 02017a Contents
+and `pack:mc02:how-to-use-this-pack`. The same pinned gob_encounter snapshot
+supplies 26 physical encounter cards: 02019–02022×1 each, 02023×4, 02024×6,
+02025×1, 02026×2, 02027×1, 02028×2, 02029×2, 02030–02031×1 each, 02032×2.
+The full scenario has 21 distinct faces on 31 physical cards (33 printed face
+instances counting both scheme sides); each mode allocates only its selected
+two villain stages. The default module is Goblin Gimmicks. Printed setup recruits
+one Thrall per player from the assembled deck, shuffles, and advances to 1B.
+Expert stage II deals two encounter cards per player during setup.
+`MutagenFormulaSetupTests` checks exact composition and 1–4-player production
+setup in both modes with a chosen Core module. Public admission stays closed.

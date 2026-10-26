@@ -15424,6 +15424,237 @@
           }
         }
       ]
+    },
+    {
+      "card": "02014",
+      "name": "Green Goblin",
+      "note": "Printed attacks and damages you requires the completed attack receipt after prevention, including overkill to the identity. Stage reveal deals encounter cards without revealing them.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "when": {
+            "attackDamagedYou": "you"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "mainScheme"
+              },
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02015",
+      "name": "Green Goblin",
+      "note": "Printed attacks and damages you requires the completed attack receipt after prevention, including overkill to the identity. Stage reveal deals encounter cards without revealing them.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "dealEncounterCards": {
+                  "player": "you",
+                  "count": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "when": {
+            "attackDamagedYou": "you"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "mainScheme"
+              },
+              "amount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02016",
+      "name": "Green Goblin",
+      "note": "Printed attacks and damages you requires the completed attack receipt after prevention, including overkill to the identity. Stage reveal deals encounter cards without revealing them.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "effect": {
+                "dealEncounterCards": {
+                  "player": "you",
+                  "count": 3
+                }
+              }
+            }
+          }
+        },
+        {
+          "trigger": {
+            "event": "WhenAttackEnds",
+            "timing": "ForcedResponse",
+            "actor": "this",
+            "player": "trigger.player"
+          },
+          "when": {
+            "attackDamagedYou": "you"
+          },
+          "effect": {
+            "placeThreat": {
+              "scheme": {
+                "query": "mainScheme"
+              },
+              "amount": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02017a",
+      "name": "Unleashing the Mutagen",
+      "note": "Printed setup puts one Goblin Thrall engaged with each player, then shuffles. Engine choice: select the last object-id copy of identical Thralls from the assembled deck. Appendix II owns the advance to 1B.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Setup",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "eachPlayer": {
+                  "order": "playerOrder",
+                  "effect": {
+                    "putIntoPlay": {
+                      "card": {
+                        "last": {
+                          "inObjectIdOrder": {
+                            "cardsIn": {
+                              "area": "encounterDeck",
+                              "title": "Goblin Thrall"
+                            }
+                          }
+                        }
+                      },
+                      "where": "engagedWithYou"
+                    }
+                  }
+                }
+              },
+              {
+                "shuffle": "encounterDeck"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "02017b",
+      "name": "Unleashing the Mutagen",
+      "note": "Printed When Completed resolves before advancement. In player order only players without an engaged Goblin minion discard three encounter cards; recruitDiscarded retains the first physical Goblin minion of that receipt through deck reset.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenMainSchemeCompleted",
+            "timing": "WhenCompleted",
+            "subject": "this"
+          },
+          "effect": {
+            "eachPlayer": {
+              "order": "playerOrder",
+              "effect": {
+                "if": {
+                  "test": {
+                    "not": {
+                      "exists": {
+                        "withTrait": {
+                          "cards": {
+                            "query": "minionsEngagedWithYou"
+                          },
+                          "trait": "GOBLIN"
+                        }
+                      }
+                    }
+                  },
+                  "then": {
+                    "seq": [
+                      {
+                        "discardTop": {
+                          "from": "encounterDeck",
+                          "count": 3
+                        }
+                      },
+                      {
+                        "recruitDiscarded": {
+                          "trait": "GOBLIN"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "card": "02018a",
+      "name": "Mutagen Cloud",
+      "note": "Printed advance to 2B uses generic main-scheme stage entry; no separate ability advances twice.",
+      "abilities": []
+    },
+    {
+      "card": "02018b",
+      "name": "Mutagen Cloud",
+      "note": "Printed X counts living Goblin enemies including Green Goblin once, without a per-player multiplier. Engine choice: additive escalation_threat on the generated zero placeholder represents X. Final completion loses through generic main-scheme completion.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant"
+          },
+          "effect": {
+            "grant": {
+              "card": "this",
+              "keyword": "escalation_threat",
+              "amount": {
+                "count": {
+                  "enemiesWithTrait": "GOBLIN"
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
