@@ -63,3 +63,49 @@ Aerial ignore-Tough damage; it is not in the authored book.
 
 Independent content review, integrated save/replay and native evidence remain
 separate. No broader readiness or product acceptance is claimed here.
+
+## Independent actual-row review
+
+Reviewed candidate `0bde0100` in the isolated `review/valkyrie-heimdall-actual`
+tree. The two rows agree with generated printed 06012/06020. Valkyrie's entry
+response has no response resource cost; its bonus depends on the original card
+price, and its minion selector includes other players' minions. Heimdall's
+optional response retains three physical top cards and permits a chosen discard
+and return order. `rr:response`, `rr:wild-resource.1`, `rr:look-looked-at.1`,
+`rr:discard.5` and vendored `ruling:2001c6705b63bf4f` support those boundaries.
+The vendored MarvelCDB FAQ lists both faces as queried without card entries.
+No authority or production behavior finding was identified in this scope.
+
+The reviewer inspected the actual payment, no-price reentry, no-minion,
+foreign-minion/invalid-target retry, short-deck/reset and second-seat privacy
+tests. Synthetic opposite response costs remain separately identified as
+mechanism evidence: they are not a feature of printed Valkyrie.
+
+`ThorEntryReplayReviewFactory` uses the existing `IDurableGameFactory` seam,
+the full authored book and a deterministic prepared Core board. It does not
+admit Thor or establish public setup. New actual-row tests use composer-created
+payment and verify both energy- and physical-declared doubled wilds across
+restart at entry response and minion selection. Heimdall restarts at its discard
+and order prompts, rejects a duplicate physical card without changing the save,
+then returns the chosen physical cards. Stored-session JSON round trips into a
+fresh store, events are compared through the durable journal, and resumed
+digests, complete RNG states, consumption and pending prompts match an
+uninterrupted control. Final completed traces restart again.
+
+Review evidence lives at `C:/Users/mggar/Source/thor-vh-review-evidence/`.
+`review-server.trx` records 12 passing new actual-row, existing synthetic
+payment/inspection and citation checks. The review data mutants change only
+Valkyrie's energy predicate to physical and Heimdall's count to two;
+`actual-mutants.trx` records two intended failures on physical-price damage and
+looked-at group size. The energy-positive case still passes because its price
+also includes a physical icon; the physical-only negative control distinguishes
+the wrong predicate.
+Restored-source runs are recorded separately in `restored-server.trx`,
+`review-content.trx` and `review-privacy.trx`.
+
+Two initial review-fixture mistakes are retained in logs: the helper initially
+reused an older store after restart, and an assertion compared a private
+`AreaReordered` event with filtered client events instead of the durable journal.
+Neither is an engine finding. Native interaction, complete pack admission,
+historical compatibility and final combined-branch certification remain outside
+this bounded review.
