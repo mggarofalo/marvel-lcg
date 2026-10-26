@@ -1,4 +1,6 @@
 using Marvel.Rules.State;
+using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Xunit;
 
 namespace Marvel.Content.Tests.Play;
@@ -75,5 +77,24 @@ public sealed class OrdinaryArrowPriceCompatibilityReviewTests
         Assert.Collection(price.Components!,
             printed => { Assert.Equal("3", printed.Cost); Assert.Null(printed.Rule); },
             arrow => { Assert.Equal("2", arrow.Cost); Assert.Equal(["Y"], arrow.Rule); });
+    }
+
+    [Fact]
+    public void CombinedEventWithOrdinarySequenceAcceptsItsAdvertisedAllocation()
+    {
+        var runner = Runner("01005", "Action", """{"draw":{"player":"you","count":1}}""",
+            cost: """{"seq":[{"spendAny":1},{"spend":"Y"}]}""");
+        var (_, world) = Playing(_ => { }, abilities: runner);
+        var source = world.CreateCard("01005", world.Seats[0].Hand);
+        var payment = new List<int>();
+        foreach (string face in new[] { "01088", "01089", "01090" })
+            payment.Add(world.CreateCard(face, world.Seats[0].Hand).ObjectId);
+        var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
+        var price = Assert.Single(runner.Describe(world, action).CostOptions);
+        var allocation = ResourcePayment.Allocate(price, payment);
+        Assert.NotNull(allocation);
+        runner.ExecuteAction(world, new PlayerAction(action, payment, [], Allocations: allocation));
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.All(payment, id => Assert.Equal(DeckType.DiscardPile, world.Cards[id].Area.Type));
     }
 }
