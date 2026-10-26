@@ -33,8 +33,9 @@ complete solo Goblin games ended in defeat; four multiplayer games and
 pending-choice restart proofs also pass. A separate ordinary-action tactical
 policy now wins Risky Business Standard (seed 1, round 13, 139 decisions) and
 replays every observation exactly at `62649761`; that packet has independent
-review and is integrated. The remaining scenario victory requirement is recorded
-below. Environment placement review remains separate in MARVEL-732.
+review and is integrated. A Mutagen Standard victory is now also independently reviewed in the next
+candidate (fixed seed 3, legal custom Captain America Leadership deck, round 13,
+130 public decisions with exact replay). Environment placement review remains separate in MARVEL-732.
 
 The next candidate, `feat/ms-marvel-completion`, now has **all 34 Ms. Marvel
 faces and 576 total authored faces**. Every actual row and engine prerequisite
@@ -60,7 +61,8 @@ merge remain before Ms. Marvel acceptance.
 
 Risky Business Standard's independently reviewed winning proof is integrated,
 including exact replay and survival of the ally-entry correction. Mutagen
-Formula still needs a complete victory. The canonical parent requires victory
+Formula Standard now has a complete independently reviewed victory (`43563c33`),
+integrated with the Ms. Marvel candidate and awaiting its final combined gates. The canonical parent requires victory
 and defeat for each scenario plus an explicit difficulty/mode matrix; it does
 not separately require a victory at every difficulty. Existing complete defeats
 cover both scenarios in Standard and Expert. Bounded unsuccessful Expert and
@@ -69,9 +71,11 @@ losses as victories.
 
 Thor's engagement prerequisite is isolated under MARVEL-741. Independent review
 `dd609c45` found interpreted transfers offer Thor's response before Quickstrike;
-a focused implementation packet is correcting that timing. The review also proves
+correction `64448751` and independent review `67314c81` now prove the timing. The review also proves
 a real Core Hawkeye timing change against the base, so the next delivery needs
-replay v26 compatibility evidence. Thor is excluded from this Ms. Marvel candidate.
+replay v26 compatibility evidence. Thor is excluded from this Ms. Marvel candidate. Its next isolated candidate
+`feat/thor-pack-delivery` has the corrected engine; eleven actual faces are being
+authored and replay-v26 compatibility is a separate implementation/review packet.
 
 ## Delivery order and shared capability queue
 

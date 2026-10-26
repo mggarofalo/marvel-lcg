@@ -79,3 +79,14 @@ of later integration/cherry-pick commit IDs:
 
 Independent review, broader acceptance/integration suites, native UI, Expert
 victory and cross-platform CI are outside this focused evidence claim.
+
+## Independent integration review
+
+Lead reviewed all three test/policy sources at `43563c33`: the tactical policy
+reads only offered identities, the answering hand and public in-play areas;
+resource allocations are validated by engine-owned functions. It does not inspect
+future deck order, rewrite state, consume RNG or change the production catalog.
+The exact legal custom recipe, both villain stages, terminal victory, query purity
+and independent replay assertions are retained. The original Risky proof is
+unchanged. This is evidence for Standard seed 3, not a claim of Expert victory
+or a generally strong policy. Final combined acceptance and CI remain required.
