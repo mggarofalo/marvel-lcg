@@ -125,12 +125,11 @@ internal static class AbilityPowerOutcomeTrace
         };
         foreach (var card in current.Where(card => !state.Discarded.Contains(card.ObjectId)))
         {
+            // rr:target.4.1: the ability "does not resolve against" invalid targets.
+            if (node.OperationName() == "ready"
+                && !AbilityProjectedCharacterPermissions.CanReady(card, cast, state)) continue;
             possibilities = NextReadinessPossibilities(
-                possibilities,
-                node.OperationName() == "ready"
-                    && !AbilityProjectedCharacterPermissions.CanReady(card, cast, state)
-                        ? PowerReadiness.Ready : PowerReady(card, state),
-                node.OperationName() == "exhaust");
+                possibilities, PowerReady(card, state), node.OperationName() == "exhaust");
         }
         return [.. possibilities.Select(ReadinessResolution)];
     }
