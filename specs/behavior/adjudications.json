@@ -52239,6 +52239,36 @@
       ]
     },
     {
+      "id": "ruling:0a7e7b33c1e95fa3",
+      "fingerprint": "sha256:ea0ae43d450a48ca0b56a0ecf8cd1ff3c312a228c068f397a3b765e0a1483e20",
+      "obligations": [
+        {
+          "key": "simultaneous-card-and-ability-costs",
+          "summary": "The event resource cost and its ability cost are paid together, allowing generated resources to cover both.",
+          "disposition": "narrower",
+          "reason": "The Core simultaneous-cost obligation already carries this proposition.",
+          "target": "behavior:rr:cost.5:simultaneous-costs",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "echo-discount-includes-ally-cost",
+          "summary": "Echo reduces the overall Make the Call cost including its ally ability cost.",
+          "disposition": "outside-core",
+          "reason": "Photographic Reflexes requires Echo, absent from Core.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "ruling:0acffe2425e3585b",
       "fingerprint": "sha256:e19cd43f2e34332c6a17135e55e30f9cfb8be1c929fc9f5e5b88006ba124c279",
       "obligations": [
@@ -52535,6 +52565,24 @@
           "summary": "I have a question about Ronan himself, the minion card. It says “when the villain phase begins, Ronan engages the hero with the fewest remaining hitpoints.” If he was already engaged with Thor, and Thor was the lowest hitpoints, would be “re-engage” Thor and allow Thor to draw two cards? Unfortunately, an enemy engaged with you cannot engage you again without engaging someone else first. So Thor will not draw cards if an enemy already engaged with him is instructed to engage him.",
           "disposition": "outside-core",
           "reason": "The ruling belongs to the Ronan (Kree Fanatic Modular Set) product surface, which is absent from a legal Core Set game.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "ruling:0e81e8420f565f88",
+      "fingerprint": "sha256:f03bc16c85002aa164ce9e88d07917e591086baf07e92a487c552b5490e38445",
+      "obligations": [
+        {
+          "key": "source-disposition",
+          "summary": "Rogue dynamically gains the target character attributes while its lasting effect remains applicable.",
+          "disposition": "outside-core",
+          "reason": "Both Rogue hero and Rogue ally require expansion cards absent from a legal Core Set game.",
           "target": null,
           "implementation": null,
           "work_item": null,
@@ -56070,6 +56118,24 @@
       ]
     },
     {
+      "id": "ruling:3afe400fe54de60a",
+      "fingerprint": "sha256:190d1959e603ae19f44b2f87f9fef64af8bd7ac62baed94e6fa7fff447abb841",
+      "obligations": [
+        {
+          "key": "source-disposition",
+          "summary": "Separate ability damage does not prevent Unflappable after an attack deals no damage.",
+          "disposition": "outside-core",
+          "reason": "Unflappable and Luke Cage are expansion cards absent from the Core Set.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "ruling:3b07d611edbfcd53",
       "fingerprint": "sha256:eca2edd5fb2fd221e1cc88514399b75df0f28b77b127b46ef205541860b9f3e3",
       "obligations": [
@@ -58306,6 +58372,24 @@
       ]
     },
     {
+      "id": "ruling:54c5c3949c0791ab",
+      "fingerprint": "sha256:f592604f3876b022be5ae6129fddaefe038358660279ede27dea044f91f2ffd1",
+      "obligations": [
+        {
+          "key": "source-disposition",
+          "summary": "Elektra resolves her own boost cards for basic recovery and with enemy boost cards when defending, and cannot use Venom-placed boost cards.",
+          "disposition": "outside-core",
+          "reason": "Elektra and the Venom scenario are absent from the Core Set.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "ruling:54fcaebb6f606325",
       "fingerprint": "sha256:eb24a10a33394edcbd8b6ffe9522360c9c12be8a350e255ec93338e1f249f17e",
       "obligations": [
@@ -60266,6 +60350,60 @@
       ]
     },
     {
+      "id": "ruling:6b756402a689cade",
+      "fingerprint": "sha256:c88c5209f3ddba6b7b7e11ca32f867f2d7ea9cb0b335e6759bfd6228974db321",
+      "obligations": [
+        {
+          "key": "surge-is-when-revealed",
+          "summary": "Surge is a When Revealed ability and is included when a card refers to those abilities.",
+          "disposition": "narrower",
+          "reason": "The current RR explicitly defines the keyword as the named triggered ability.",
+          "target": "behavior:rr:surge.1:published-result",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "enhanced-spider-sense-cancels-surge",
+          "summary": "Enhanced Spider-Sense cancels both the printed When Revealed ability and surge.",
+          "disposition": "narrower",
+          "reason": "The printed Core cancellation obligation covers When Revealed effects, including the keyword.",
+          "target": "behavior:card:01004:when-treachery-card-is-revealed-from-encounter",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "same-timing-player-order",
+          "summary": "Surge, incite and other When Revealed effects share a timing point and may be ordered by the players.",
+          "disposition": "narrower",
+          "reason": "The Core simultaneous-trigger obligation carries the ordering rule; incite requires expansion material.",
+          "target": "behavior:rr:simultaneous-resolution:published-result",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "planned-boost-wording",
+          "summary": "Change of Venue and similar boost instructions are planned to receive non-surge wording.",
+          "disposition": "outside-core",
+          "reason": "The named Fear No Evil card is outside Core and a planned erratum does not replace current printed text.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "ruling:6b8365c68f3f5759",
       "fingerprint": "sha256:6f6a6c434a10faf7063db6664f069c0955c70751e67ba7f4585a4e04027e4bcb",
       "obligations": [
@@ -60616,6 +60754,36 @@
           "summary": "64 – So with dealing and taking damage, does a character TAKE all the damage it’s dealt even when it more than it’s remaining HP? For example The Venom villain is on his first stage, with 5hp remaining. The Tooth and Nail side scheme is out, with 6 Threat on it. A character deals 6 damage to Venom, how much threat comes off of tooth and nail, 5 or 6? Yes, a character can “take” damage in excess of their remaining HP, as long as that much damage was dealt (and not prevented, and not indirect damage). Say an attack dealt 6 damage to Venom when he has 5 HP left; he has still taken 6 damage, and 6 threat is then removed from Tooth and Nail.",
           "disposition": "outside-core",
           "reason": "The ruling requires expansion material (Tooth and Nail, Venom) absent from a legal Core Set game.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "ruling:7075a85e02f2203e",
+      "fingerprint": "sha256:2f33c800298828b5fded7f90645fd92c5f07af0ee16bd93535208cb2084e91cc",
+      "obligations": [
+        {
+          "key": "core-reveal-origin-restriction",
+          "summary": "Black Widow requires an encounter-deck reveal, including a dealt encounter card.",
+          "disposition": "narrower",
+          "reason": "The existing Core printed-trigger obligation carries the origin qualifier; Core encounter cards are dealt or directly revealed from the encounter deck.",
+          "target": "behavior:card:01075:when-card-is-revealed-from-encounter-deck",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "separate-zone-and-player-deck-reveals",
+          "summary": "Direct reveals from separate zones do not qualify, whereas first-dealt encounter cards from a player deck do.",
+          "disposition": "outside-core",
+          "reason": "Tracksuit Mafia, Wheel of Genres, Alert Level and Mysterio are expansion surfaces absent from a legal Core Set game; Return the Favor is not adjudicated by this source.",
           "target": null,
           "implementation": null,
           "work_item": null,
@@ -61858,6 +62026,24 @@
           "summary": "I have questions regarding the card Spiritual Meditation, which has the effect: “Draw 2 cards. Choose and discard 1 card from your hand.” Do the Choose rules prevent me from playing Spiritual Meditation when it is the only card in my hand? The Choose rules say that if there is no valid target, then the ability cannot be initiated. Would the single Spiritual Meditation in my hand be a valid Choose target just to initiate the ability? Am I able to change the Choose target after initiating the ability? More specifically, am I allowed to Choose one of the 2 drawn cards by Spiritual Meditations first sentence after Choosing a card that was already in my hand to initiate the ability in the first place? When you determine if the card’s ability can be initiated, you can make that determination based on the first part of the Action, drawing 2 cards. So yes, you could still play it in that situation. If it helps, the designers have informed me that the “choose” clause under Initiating Abilities is mainly intended for cards where their only ability is a choose ability. We may adjust the rules reference to make this clearer.",
           "disposition": "outside-core",
           "reason": "The ruling belongs to the Expansion card questions product surface, which is absent from a legal Core Set game.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "ruling:8030652dc5113609",
+      "fingerprint": "sha256:f9a50cd4409ed86a8517bc76a1c1470694fa82140f8eb8083a73b16656c53779",
+      "obligations": [
+        {
+          "key": "source-disposition",
+          "summary": "A player may control Echo nemesis Kingpin while his damage restriction applies.",
+          "disposition": "outside-core",
+          "reason": "Echo nemesis Kingpin and the control-changing cards require expansion material absent from Core.",
           "target": null,
           "implementation": null,
           "work_item": null,
@@ -63320,6 +63506,24 @@
       ]
     },
     {
+      "id": "ruling:9196106259a1f1a4",
+      "fingerprint": "sha256:822b4f6f0cc4ab55f121e9cb28d4ce28e1a62a513789c71ca35a3193cdbd0f27",
+      "obligations": [
+        {
+          "key": "source-disposition",
+          "summary": "Exactly defending an attack compares the modified DEF or applicable ATK value.",
+          "disposition": "outside-core",
+          "reason": "The exactly-defend abilities on Hercules and Luke Cage are absent from the Core Set.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "ruling:91af48d6b34ac91f",
       "fingerprint": "sha256:ce32abf808bbce83bceb112176bd9bfede55cd8f6f98d81213be897c33fe0c09",
       "obligations": [
@@ -63580,6 +63784,24 @@
           "summary": "For the minion: Black Order Infantry. Their “When Defeated” ability is giving villain a tough status card. If my attack with overkill defeated the minion, which of the scenario is correct? A: Damage villain first then give it “Tough” B: Give the villain “Tough” first, then remove “Tough” with overkill. I think it may be A, as the overkill is a simultaneous damage to both villain and minion, then the “When Defeated” ability set in. Since the damage would be dealt simultaneously, the villain would be given a tough status card AFTER overkill damage is applied & Black Order Infantry triggers its “When Defeated” effect.",
           "disposition": "outside-core",
           "reason": "The ruling belongs to the Mad Titan’s Shadow product surface, which is absent from a legal Core Set game.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "ruling:95f5bab9a8a768fd",
+      "fingerprint": "sha256:9eb687efd45d19410c2f4877c4525b25ebda2aa6c2974061758273f73eb5b6c3",
+      "obligations": [
+        {
+          "key": "source-disposition",
+          "summary": "A set-aside nemesis blocked by uniqueness is discarded and deals one encounter card; Shadow of the Past does not gain surge.",
+          "disposition": "outside-core",
+          "reason": "A matching unique villain or other conflicting nemesis title requires expansion material; legal Core hero and scenario combinations do not create this conflict.",
           "target": null,
           "implementation": null,
           "work_item": null,
@@ -64986,6 +65208,24 @@
           "summary": "Some questions. 1.Can you choose to change energy or mass form with cards like “Threat or menace” from the down to earth encounter set? Or do effects like that mean specifically Hero, Alter-Ego forms? 2.If your resolving a villain attack activation and a minion comes into play from a boost ability (weapons runner) and has quick strike(the mojo files),how do you handle this situation? 3. Does the upgrade you choose need to have been exhausted for you to draw a card with the ability on the spider-man (Otto octavius) basic ally? 1. Yes; unless specified by the ability text, “you may change form” means you may change Energy form, Mass form, or Hero/Alter-Ego form. 2. If a minion enters play from a boost ability and has Quickstrike, the minion will interrupt the villain’s attack to make its own attack (you’d pause Step 3 of the villain’s attack). Once the minion’s attack finishes, you’d continue resolving the villain’s attack (Steps 3-4). 3. Yes, the upgrade you target with Spider-Man: Otto Octavius’ Response ability must be exhausted if you want to draw 1 card.",
           "disposition": "outside-core",
           "reason": "The ruling belongs to the Expansion card questions product surface, which is absent from a legal Core Set game.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "ruling:a956304c470dac6c",
+      "fingerprint": "sha256:8a7d00119d4da162d35ddd1b87fd1ae32b7de362e806771f36bca8fe6d5a320b",
+      "obligations": [
+        {
+          "key": "source-disposition",
+          "summary": "A set-aside nemesis blocked by uniqueness is discarded and deals one encounter card; Shadow of the Past does not gain surge.",
+          "disposition": "outside-core",
+          "reason": "A matching unique villain or other conflicting nemesis title requires expansion material; legal Core hero and scenario combinations do not create this conflict.",
           "target": null,
           "implementation": null,
           "work_item": null,
@@ -67302,6 +67542,24 @@
       ]
     },
     {
+      "id": "ruling:c7901bd3e9f887e9",
+      "fingerprint": "sha256:27376ef0f85f4fdf2124e418d6602c4741889209674a949455f8555aa9576605",
+      "obligations": [
+        {
+          "key": "source-disposition",
+          "summary": "Iron Fist hero heals himself with his Forced Response.",
+          "disposition": "outside-core",
+          "reason": "The Iron Fist hero is absent from Core; this is not the different ally printing.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
       "id": "ruling:c8268c2138f6c809",
       "fingerprint": "sha256:0e949116e4828ef6ccb9d073fa6b85e7a0be3a3f3ea100fff26d825d2d3cff06",
       "obligations": [
@@ -67310,6 +67568,24 @@
           "summary": "I’ve seen a ruling that preventing damage with a card like side step which has the same timing as a tough status card would have priority and the tough would remain. Trying to understand. So is there a difference between damage “reducing” effects and damage “preventing” effects. Groot’s hero ability would now function that he would lose his growth counters while tough when taking damage and would hurt him alot 😦 Trying to understand if the goal is to have damage “reducing” effects like the vision hero in intangible form where he reduces all damage from attacks by 2 as a constant ability or the victor mancha ally that reduces damage from attacks by 1 also as a constant ability in that your reducing the damage that would have been dealt and the tough never receives it so the tough remains. VS “Preventing” effects like “side step” and “shield block” that would directly compete with Tough. I will do my best to address your questions. Note, some of the rulings we made recently are no longer accurate, and we plan to address many of them in our next rules reference update. The following notes are our current rulings on this subject. First, status cards like “Tough” should have priority over constant effects and interrupts. This means that if Groot was Tough and was dealt damage, “Tough” would get discarded before any growth counters were removed. This also means that Tough would have priority over the text on Side Step and Shield Block—Tough would get discarded first, before interrupts could resolve. Let me know if you have other questions in light of this information.",
           "disposition": "outside-core",
           "reason": "The ruling belongs to the Expansion card questions product surface, which is absent from a legal Core Set game.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "ruling:c82f28717ddc2679",
+      "fingerprint": "sha256:439e3cf77a4c2265ed3f2ca43b7a56b2812b0ef2dd7fd0679fbe304c618b4efd",
+      "obligations": [
+        {
+          "key": "source-disposition",
+          "summary": "Metal Bracer reduces damage dealt and can reduce an attack to zero damage dealt.",
+          "disposition": "outside-core",
+          "reason": "Luke Cage and Metal Bracer are absent from the Core Set.",
           "target": null,
           "implementation": null,
           "work_item": null,
@@ -68318,6 +68594,24 @@
           "summary": "I have a question about the Adam Warlock ally and how the response ability interacts with cards that have multiple printed resources. The rule book clarifies the Hulk ally’s forced response and the Salvage resource card from Rocket Raccoon. Based on this, I assume the Adam Warlock ally discarding Salvage would likewise trigger two responses related to the mental and the wild resource. With a card like Vibranium since the resource icons are both wild it would only trigger one response to a printed wild, correct? However, if the discarded card was Shawarma (having three unique printed resources) it would trigger three responses correct? The Adam Warlock ally functions similarly to the Hulk ally, where if there are multiple different resources on the discarded card (ex. Shawarma), Adam Warlock can resolve multiple effects. However, if Adam Warlock ever discarded a card with multiple of the same resources on it (ex. Vibranium), then he could only resolve one effect for that card.",
           "disposition": "outside-core",
           "reason": "The ruling belongs to the Adam Warlock product surface, which is absent from a legal Core Set game.",
+          "target": null,
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        }
+      ]
+    },
+    {
+      "id": "ruling:d7c29493c75f9d8a",
+      "fingerprint": "sha256:b238a372f236cb553d7384d500bc0a8172c3922158004c88adc66f24f2172545",
+      "obligations": [
+        {
+          "key": "source-disposition",
+          "summary": "The Kingpin main-scheme action independently removes available threat and shuffles the encounter deck before its then clause, with no printed use limit.",
+          "disposition": "outside-core",
+          "reason": "The Kings Gambit main scheme is absent from the Core Set.",
           "target": null,
           "implementation": null,
           "work_item": null,

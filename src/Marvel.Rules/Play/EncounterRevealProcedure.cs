@@ -65,7 +65,8 @@ internal static class EncounterRevealProcedure
         // scheduled first; the other way round, this heading runs again with
         // the card still in the queue and schedules itself forever.
         world.Agenda.Then(new PhaseStep(
-            new RevealStageOperation(RevealStageKind.RevealEncounterCard),
+            new RevealStageOperation(RevealStageKind.RevealEncounterCard,
+                new EncounterRevealOrigin(next.Card.ObjectId, Places.Reference(next.Card.Area), Dealt: true)),
             step.Round,
             4,
             Index: step.Index,

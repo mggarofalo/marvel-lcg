@@ -12,8 +12,8 @@ committed so the index can be regenerated and checked offline.
 | | |
 |---|---|
 | Upstream | https://hallofheroeslcg.com |
-| Harvested | 2026-08-31 |
-| Latest observed ruling | 2026-08 |
+| Latest page refresh | 2026-10-26 (post-RRG 1.7/1.8 only; other page pins retained) |
+| Latest observed ruling | 2026-10 |
 | Harvester | `tools/Marvel.Rulings.Harvest` |
 
 ## What is here
@@ -24,7 +24,7 @@ pages/post-rrg-1-5.html          chronological rulings scoped to RRG 1.5
 pages/post-rrg-1-6.html          chronological rulings scoped to RRG 1.6
 pages/post-rrg-1-7.html          chronological rulings scoped to RRG 1.7 and 1.8
 pages.manifest.json              byte length and SHA-256 of every vendored page
-rulings.json                     1,100 citable entries derived from those pages
+rulings.json                     1,113 citable entries derived from those pages
 ```
 
 There is no post-1.8 page. Hall of Heroes titles the last source “post-RRG 1.7
@@ -36,7 +36,7 @@ There is no post-1.8 page. Hall of Heroes titles the last source “post-RRG 1.7
 8fc4a5b08e2bf8b46004a0fbfb89aeb369fb24e53dbbaa5298b70ca928679b3b  official-ffg-rulings.html
 72c4800ed7cc6aefa5c98fc6b36a561760937d1fb8dcb03e06da3dca3ee8147c  post-rrg-1-5.html
 edf164a75000b6dd160203b3f897d004b6d11f0eacf1b098322329e678a494d0  post-rrg-1-6.html
-dd6a3f230e93f0a6b914d91f3de1751bf271bc0a7898ec3976424854f71eda47  post-rrg-1-7.html
+e7d9c30db1f22244fc6decd756e7a8a83281c6c72c20b0430ed3c5e6373e7d28  post-rrg-1-7.html
 ```
 
 ## Identity and change detection
@@ -110,3 +110,11 @@ to Fantasy Flight Games designers, rules specialists, official FAQs, and
 printed rule inserts, transcribed by the Hall of Heroes community. They are
 vendored here as a research authority for engine and spec authors, not for
 redistribution as a product.
+
+The 2026-10-26 scoped refresh retains all 1,100 prior ruling IDs and content
+hashes and the three older page files byte-for-byte. It adds 13 records from the
+current post-RRG 1.7/1.8 page. September 14 reveal-origin clarification
+`ruling:7075a85e02f2203e` is pinned to the three matching printed cancellation
+triggers in `../rules-graph.json`; other newly vendored records are research
+authority, not newly implemented behavior. See
+`docs/content/encounter-reveal-authority.md` for the scope and offline checks.

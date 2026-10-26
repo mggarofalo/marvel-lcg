@@ -26,6 +26,7 @@ internal static class AbilityConditionLowering
             "and" => new AbilityCondition.All(Conditions(argument, child)),
             "or" => new AbilityCondition.Any(Conditions(argument, child)),
             "not" => new AbilityCondition.Negated(LowerCondition(argument, child)),
+            "revealedFromEncounterDeck" => Flag(argument, child, "trigger", AbilityConditionFact.RevealedFromEncounterDeck),
             "damageFromAttack" => Flag(argument, child, "trigger", AbilityConditionFact.DamageFromAttack),
             "inAttackChain" => Flag(argument, child, "attack", AbilityConditionFact.InAttackChain),
             "finalStep" => Flag(argument, child, "true", AbilityConditionFact.FinalStep),

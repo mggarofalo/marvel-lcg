@@ -48,7 +48,7 @@ internal static class AbilityResolutionCardMovement
             execution.Capture(cast, execution.AbilityOrdinal(instruction, cast)));
         int round = cast.World.Agenda.Current?.Round ?? 0;
         var child = new PhaseStep(
-            new RevealStageOperation(RevealStageKind.RevealEncounterCard), round, 4,
+            new RevealStageOperation(RevealStageKind.RevealEncounterCard, reveal.Origin), round, 4,
             Index: reveal.Player, Subject: reveal.Card, Seat: reveal.Player);
         var continuation = AbilityContinuations.Step(capture, AbilityContinuationStage.Resume, round, plan: true);
         if (cast.World.Agenda.Current is not null) cast.World.Agenda.Now([child, continuation]);

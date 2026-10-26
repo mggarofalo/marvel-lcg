@@ -87,6 +87,10 @@ public sealed record Occurrence
     /// <summary>Stable facts about <see cref="Target"/>.</summary>
     public OccurrenceCard? TargetFacts { get; }
 
+    /// <summary>The exact reveal source, reconstructed from its scheduled operation.</summary>
+    [JsonIgnore]
+    public EncounterRevealOrigin? RevealOrigin { get; init; }
+
     /// <summary>Whether the exact paid event's reachable body removes threat at initiation.</summary>
     [JsonIgnore]
     public bool? EventRemovesThreat { get; init; }

@@ -62,6 +62,20 @@ public sealed class CardRulingRelationshipTests
     }
 
     [Fact]
+    public void RevealOriginClarificationIsScopedToMatchingPrintedTriggers()
+    {
+        using var graph = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("rules-graph.json")));
+        var current = graph.RootElement.GetProperty("card_clarifications")
+            .GetProperty("ruling:7075a85e02f2203e");
+        Assert.Equal("01004,01075,09007", string.Join(",", current.GetProperty("cards")
+            .EnumerateObject().Select(card => card.Name)));
+        Assert.Equal("ruling:2d5b4da522e21bb6", Assert.Single(current.GetProperty("supersedes")
+            .EnumerateObject()).Name);
+        Assert.Contains("ruling:7075a85e02f2203e", RuleCitations.Citable);
+        Assert.Contains("Return the Favor", current.GetProperty("why").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void MarkedForDeathExplicitlySupersedesItsInPlayInterpretation()
     {
         using var graph = JsonDocument.Parse(File.ReadAllText(RepositoryPaths.Dataset("rules-graph.json")));

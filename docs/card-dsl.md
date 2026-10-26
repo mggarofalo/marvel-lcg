@@ -1599,3 +1599,8 @@ independent Invocation discard/return consequence; native grouped staging,
 unstaging, explicit zero confirmation, multiplayer authority, stale answers and
 visible result comprehension remain downstream acceptance obligations. Engine
 tests do not certify those contracts or native interactions.
+
+`revealedFromEncounterDeck: "trigger"` tests the triggering revelation's exact
+source receipt. Direct encounter-deck reveals and first-dealt encounter cards
+qualify; a direct reveal from a discard or separate area does not. The receipt
+is captured before staging movement and belongs to that one revelation.

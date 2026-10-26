@@ -4,7 +4,7 @@ using Marvel.Rules.Timing;
 namespace Marvel.Rules.Play;
 
 /// <summary>State owned by the RevealStage procedure.</summary>
-public sealed record RevealStageOperation(RevealStageKind Kind) : AgendaOperation
+public sealed record RevealStageOperation(RevealStageKind Kind, EncounterRevealOrigin? Origin = null) : AgendaOperation
 {
     /// <inheritdoc/>
     public override string What => Kind switch

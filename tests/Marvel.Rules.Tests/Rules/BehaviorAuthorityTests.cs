@@ -43,7 +43,7 @@ public sealed class BehaviorAuthorityTests
         Assert.Equal(1218, sources.Count(source => source.Kind == "rule"));
         Assert.Equal(209, sources.Count(source => source.Kind == "card"));
         Assert.Equal(63, sources.Count(source => source.Kind == "faq"));
-        Assert.Equal(1100, sources.Count(source => source.Kind == "ruling"));
+        Assert.Equal(1113, sources.Count(source => source.Kind == "ruling"));
         Assert.Equal(64, sources.Count(source => source.Kind == "setup"));
         Assert.Equal(sources.Count, sources.Select(source => source.Id).Distinct().Count());
 
@@ -115,11 +115,11 @@ public sealed class BehaviorAuthorityTests
         var catalog = Catalog.Build();
 
         Assert.Equal(2, catalog.Version);
-        Assert.Equal(2654, catalog.Sources.Count);
-        Assert.Equal(4414, catalog.Sources.Sum(source => source.Obligations.Count));
+        Assert.Equal(2667, catalog.Sources.Count);
+        Assert.Equal(4432, catalog.Sources.Sum(source => source.Obligations.Count));
         Assert.All(catalog.Sources, source => Assert.NotEmpty(source.Obligations));
         Assert.Equal(
-            4414,
+            4432,
             catalog.Sources.SelectMany(source => source.Obligations)
                 .Select(obligation => obligation.Id)
                 .Distinct(StringComparer.Ordinal)

@@ -162,6 +162,7 @@ internal sealed class AbilityExpressionEvaluation(
 
     private bool TestFact(AbilityConditionFact fact) => fact switch
     {
+        AbilityConditionFact.RevealedFromEncounterDeck => RevealedFromEncounterDeck(),
         AbilityConditionFact.DamageFromAttack => context.Occurrence.DamageFromAttack,
         AbilityConditionFact.InAttackChain => context.World.Agenda.Current?.AttackOrigin is not null,
         AbilityConditionFact.FinalStep => context.FinalStep,
@@ -181,6 +182,12 @@ internal sealed class AbilityExpressionEvaluation(
             && string.Equals(defeat.How, "Consequential_Damage", StringComparison.Ordinal),
         _ => throw new InvalidOperationException("Unknown compiled condition fact"),
     };
+
+    private bool RevealedFromEncounterDeck()
+    {
+        return context.Occurrence.RevealOrigin is { FromEncounterDeck: true } origin
+            && origin.Card == context.Occurrence.Subject && context.Occurrence.Is(Steps.CardRevealed);
+    }
 
     private bool AttackDamagedIdentity() => context.World.FinishedAttack is { } completed
             && completed.Enemy == context.Occurrence.Actor

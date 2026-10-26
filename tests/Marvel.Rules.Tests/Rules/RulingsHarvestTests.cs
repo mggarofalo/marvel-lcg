@@ -187,7 +187,7 @@ public sealed class RulingsHarvestTests
             RepositoryPaths.Dataset("rulings", "rulings.json")));
         var rulings = json.RootElement.GetProperty("rulings").EnumerateArray().ToList();
 
-        Assert.Equal(1100, rulings.Count);
+        Assert.Equal(1113, rulings.Count);
         Assert.Equal(rulings.Count, rulings.Select(ItemId).Distinct(StringComparer.Ordinal).Count());
         Assert.Equal(4, rulings.Select(ItemVia).Distinct(StringComparer.Ordinal).Count());
         Assert.Contains(rulings, item =>

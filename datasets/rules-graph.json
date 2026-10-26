@@ -32,6 +32,22 @@
     }
   },
   "card_clarifications": {
+    "ruling:7075a85e02f2203e": {
+      "ruling_hash": "sha256:2f33c800298828b5fded7f90645fd92c5f07af0ee16bd93535208cb2084e91cc",
+      "cards": {
+        "01004": "sha256:807dc27228235bd8f96e90e2b817f27997d829fb6f9fc8a3105a248ea741bd0c",
+        "01075": "sha256:ce09b7fe02f394a2ca48f525ad9849be3606fe5a0692f33cfb6144d81f5374f8",
+        "09007": "sha256:0c23dc3170bafdffcea46925cc5a047970a6a6ff76f963a57eb90f51bde3733a"
+      },
+      "references": [
+        "rr:deal-deal-an-encounter-card",
+        "rr:reveal"
+      ],
+      "supersedes": {
+        "ruling:2d5b4da522e21bb6": "sha256:4fb716f67e2e27e81872ec726020a1db0182e6397657f63977c144c9a541bda2"
+      },
+      "why": "The September 14, 2026 answer (RR scope 1.7-1.8) distinguishes encounter cards first dealt to a player, including cards originating in a player deck, from cards revealed directly in separate game zones. Applied to the shared printed from-the-encounter-deck trigger on Enhanced Spider-Sense, Black Widow and Protective Ward, it supersedes the older blanket equivalence to any reveal. The dealt-card interpretation is retained. This scoped relationship does not adjudicate Return the Favor's separately described discard-then-reveal instruction or change unrelated parts of the older answer."
+    },
     "ruling:b07d53e12625ab23": {
       "ruling_hash": "sha256:eab706034466af8f3530e852a59ac9426fe1ca1bf5ba2290c389d1b4ddfa9b94",
       "cards": {
