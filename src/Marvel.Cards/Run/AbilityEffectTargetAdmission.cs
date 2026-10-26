@@ -142,8 +142,9 @@ internal static class AbilityEffectTargetAdmission
             // rr:target.3.4: "at least one of those effects must be able to
             // affect the target." Deferring resolution retains the bound target.
             "afterActivation" => TargetLegalityOf(EffectBody(node), cast, bindingMayChange),
-            "removeStatuses" => AbilityStatusRemoval.Candidates((AbilityEffect.RemoveStatuses)node, cast).Count > 0
-                ? TargetLegality.Valid : TargetLegality.Invalid,
+            // rr:target.1 includes "you"; rr:target.3.5 excludes a target
+            // that "cannot perform" the requested game function.
+            "changeForm" or "removeStatuses" => CharacterChangeTargetLegality(node, cast),
             "enemyAttacks" or "enemySchemes" =>
                 CardsLegality(Every(ActivationOf(node, cast).Enemies, cast)),
             "reflectAttackDamage" => PlayerAttackReflection.CanInstall(cast.World, cast.Source)
@@ -170,6 +171,16 @@ internal static class AbilityEffectTargetAdmission
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             _ => TargetLegality.None,
         };
+
+    private static TargetLegality CharacterChangeTargetLegality(
+        AbilityEffect node, AbilityAdmissionScope cast) => node.OperationName() switch
+    {
+        "changeForm" => CanChangeForm(FormChangeOf(node, cast), cast)
+            ? TargetLegality.Valid : TargetLegality.Invalid,
+        "removeStatuses" => AbilityStatusRemoval.Candidates((AbilityEffect.RemoveStatuses)node, cast).Count > 0
+            ? TargetLegality.Valid : TargetLegality.Invalid,
+        _ => TargetLegality.None,
+    };
 
     private static TargetLegality TraitGroupTargetLegality(
         AbilityEffect.GrantTraitCharacters grant, AbilityAdmissionScope cast) =>

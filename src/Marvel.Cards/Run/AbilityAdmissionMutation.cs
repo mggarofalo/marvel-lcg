@@ -183,6 +183,7 @@ internal static class AbilityAdmissionMutation
             : [Seat(change.Player, cast)];
         ulong ChangeOne(ulong state, int seat)
         {
+            if (!AbilityProjectedCharacterPermissions.PriorCanChangeForm(seat, cast)) return state;
             ulong bit = PlayerSeat(seat);
             return Forms.In(
                     cast.World, cast.World.Seats[seat], cast.World.Facts, change.Form)

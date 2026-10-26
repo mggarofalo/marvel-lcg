@@ -11,6 +11,10 @@ internal static class AbilityAdmissionFacts
         World world, int player, string form) =>
         Forms.In(world, world.Seats[player], world.Facts, form);
 
+    internal static bool CanChangeForm(World world, int player, string form) =>
+        !AlreadyInForm(world, player, form)
+        && FormChangePermissions.CanChange(world, world.Seats[player].IdentityCard);
+
     internal static bool CanAdvanceMainScheme(World world) =>
         world.TheCardIn(DeckType.MainSchemesArea) is not null
         && world.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0;

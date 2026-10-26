@@ -146,12 +146,17 @@ internal static class AbilityProgramQueries
         return new AbilitySelectorEvaluation(context, null, program).Every(selector);
     }
 
-    internal static bool CanReady(World world, AbilityProgram program, Card target)
+    internal static bool CanReady(
+        World world, AbilityProgram program, Card target,
+        HashSet<int>? discarded = null, long? prohibition = null)
     {
+        if (prohibition is { } projected
+            ? projected > 0 : !ReadinessPermissions.CanReady(world, target)) return false;
         foreach (var card in world.Areas.Where(area => DeckTypes.IsInPlay(area.Type))
                      .SelectMany(area => area.Cards))
         {
-            if (EffectiveCards.HasProfile(card)) continue;
+            if (discarded?.Contains(card.ObjectId) == true
+                || EffectiveCards.HasProfile(card)) continue;
             foreach (var ability in On(program, card).Where(ability =>
                          ability.Trigger.Timing == AbilityType.Constant))
             {

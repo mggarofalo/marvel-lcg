@@ -81,6 +81,9 @@ internal static class AbilityPowerSuspension
             return PowerConditionalChildren(
                 node, cast, stateMayChange, bindingMayChange, reachability);
         }
+        if (node.OperationName() is "then" or "otherwise")
+            return AbilityPowerDependentChildren.Of(
+                node, cast, stateMayChange, bindingMayChange, reachability);
         return GuardChildren(node, cast, stateMayChange, bindingMayChange, null)
             .Select(child =>
                 (child.Node, child.StateMayChange, child.BindingMayChange,

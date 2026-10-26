@@ -57,6 +57,8 @@ internal static class AbilityPowerStateMutation
         foreach (var card in PowerEvery(
             EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, state))
         {
+            if (value == PowerReadiness.Ready
+                && !AbilityProjectedCharacterPermissions.CanReady(card, cast, state)) continue;
             state = SetPowerReady(state, card, value);
         }
         return state;
@@ -223,21 +225,18 @@ internal static class AbilityPowerStateMutation
     {
         string status = EffectOf<AbilityEffect.GiveStatus>(node, cast).Status;
         if (status == Statuses.Tough) return GiveTough(state, cards, cast);
-        var changes = new HashSet<(int Card, string Status)>(state.StatusChanges);
-        var counts = new Dictionary<(int Card, string Status), int>(state.StatusCounts);
-        var discarded = new HashSet<int>(state.Discarded);
-        var engagement = new Dictionary<int, int>(state.Engagement);
+        state = state with
+        {
+            StatusChanges = new HashSet<(int Card, string Status)>(state.StatusChanges),
+            StatusCounts = new Dictionary<(int Card, string Status), int>(state.StatusCounts),
+            Discarded = new HashSet<int>(state.Discarded),
+            Engagement = new Dictionary<int, int>(state.Engagement),
+        };
         foreach (var card in cards)
         {
-            GiveVulnerableStatus(
-                card, status, cast, state.Modifiers,
-                discarded, engagement, counts, changes);
+            GiveVulnerableStatus(card, status, cast, state);
         }
-        return state with
-        {
-            StatusChanges = changes, StatusCounts = counts,
-            Discarded = discarded, Engagement = engagement,
-        };
+        return state;
     }
 
     private static AbilityPowerState GiveTough(
@@ -252,26 +251,22 @@ internal static class AbilityPowerStateMutation
     }
 
     private static void GiveVulnerableStatus(
-        Card card, string status, AbilityAdmissionScope cast,
-        Dictionary<(int Card, string Field), long> modifiers,
-        HashSet<int> discarded, Dictionary<int, int> engagement,
-        Dictionary<(int Card, string Status), int> counts,
-        HashSet<(int Card, string Status)> changes)
+        Card card, string status, AbilityAdmissionScope cast, AbilityPowerState state)
     {
         var key = (card.ObjectId, status);
-        int current = counts.GetValueOrDefault(
+        int current = state.StatusCounts.GetValueOrDefault(
             key, Statuses.Count(cast.World, card, status));
-        int limit = TraceStatusLimit(card, status, cast, discarded, modifiers);
+        int limit = TraceStatusLimit(card, status, cast, state.Discarded, state.Modifiers);
         if (current >= limit) return;
         int changed = current + 1;
-        TraceSetStatusCount(card, status, changed, cast, counts, changes);
+        TraceSetStatusCount(card, status, changed, cast, state.StatusCounts, state.StatusChanges);
         if (!TraceStatusMakesVulnerable(
-            card, status, changed, limit, cast, discarded, modifiers)) return;
+            card, status, changed, limit, cast, state.Discarded, state.Modifiers)) return;
         foreach (int leaving in PowerLeavingTree(card, cast))
         {
-            discarded.Add(leaving);
-            TraceStatusesLeave(leaving, cast, counts, changes);
-            engagement.Remove(leaving);
+            state.Discarded.Add(leaving);
+            TraceStatusesLeave(leaving, cast, state.StatusCounts, state.StatusChanges);
+            state.Engagement.Remove(leaving);
         }
     }
 

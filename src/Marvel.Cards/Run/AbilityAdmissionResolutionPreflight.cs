@@ -113,30 +113,12 @@ internal static class AbilityAdmissionResolutionPreflight
         AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange = false,
         bool bindingMayChange = false, AbilityEffect? repeatedEffect = null)
     {
+        if (node.OperationName() == "seq")
+            return AbilityOrderedPowerPreflight.ContainsUnsupported(
+                node, cast, stateMayChange, bindingMayChange, repeatedEffect);
         if (node.OperationName() == "eachPlayer")
-        {
-            int original = cast.Player;
-            try
-            {
-                var players = AbilityEachPlayerSelection.Players(node, cast.Context.Expressions);
-                foreach (int player in players)
-                {
-                    cast.RestorePlayer(player);
-                    if (ContainsUnsupportedPower(
-                        EffectBody(node), cast,
-                        stateMayChange, bindingMayChange,
-                        players.Count > 1 ? EffectBody(node) : repeatedEffect))
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            }
-            finally
-            {
-                cast.RestorePlayer(original);
-            }
-        }
+            return AbilityPlayerPowerPreflight.ContainsUnsupported(
+                node, cast, stateMayChange, bindingMayChange, repeatedEffect);
         if (node.OperationName() is "attack" or "thwart")
         {
             var prior = cast.CaptureChosen();
@@ -201,7 +183,7 @@ internal static class AbilityAdmissionResolutionPreflight
         }
         if (operation == "if")
         {
-            return ConditionalGuardChildren(
+            return AbilityConditionalGuardReachability.Of(
                 node, cast, stateMayChange, bindingMayChange, repeatedEffect);
         }
         if (operation is "then" or "otherwise")
@@ -252,31 +234,6 @@ internal static class AbilityAdmissionResolutionPreflight
         }
         return count == 0;
     }
-
-    private static IEnumerable<(
-        AbilityEffect Node, bool StateMayChange, bool BindingMayChange)>
-        ConditionalGuardChildren(
-            AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
-            bool bindingMayChange, AbilityEffect? repeatedEffect)
-    {
-        var test = ConditionalOf(node, cast).Test;
-        bool canSwitch = stateMayChange
-            || cast.Reachability.PaymentMayMutate && PaymentCanChange(test)
-            || bindingMayChange && BindingCanChange(test)
-            || repeatedEffect is not null
-                && RepeatedEffectCanChange(test, repeatedEffect, cast);
-        var branches = canSwitch
-            ? ConditionalBranches((AbilityEffect.Conditional)node)
-                .Where(value => value is not null)
-            : ActiveConditionalBranch(node, test, cast);
-        return branches.Select(value => (value, stateMayChange, bindingMayChange));
-    }
-
-    private static IEnumerable<AbilityEffect> ActiveConditionalBranch(
-        AbilityEffect node, AbilityCondition test, AbilityAdmissionScope cast) =>
-        ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active
-            ? [active]
-            : [];
 
     private static IEnumerable<(
         AbilityEffect Node, bool StateMayChange, bool BindingMayChange)>

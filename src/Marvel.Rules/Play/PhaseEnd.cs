@@ -249,7 +249,8 @@ public static class PhaseEnd
 
             foreach (var card in area.Cards)
             {
-                if (card.Ready)
+                if (card.Ready || !ReadinessPermissions.CanReady(world, card)
+                    || !world.ReadinessAbilities.CanReady(world, card, card))
                 {
                     continue;
                 }
