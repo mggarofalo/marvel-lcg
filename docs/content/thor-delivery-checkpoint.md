@@ -1,8 +1,65 @@
 # Thor delivery checkpoint
 
-MARVEL-563, integration `4e349723`, 2026-10-26. Thor remains outside public
-admission. This record supplements the 35-face implementation handoff and does
-not replace complete pack acceptance.
+MARVEL-563, integration `707a0ed1`, 2026-10-26. The branch contains a complete
+public Thor admission candidate; it is not merged or accepted. This record
+supplements the 35-face implementation handoff and does not replace complete
+pack acceptance.
+
+## Current closing work
+
+The verified starter, all 35 faces and custom decks are admitted by the candidate
+at `290c32b9`, with independent setup review `cf2973bd`. Review evidence includes
+1,043 setup checks, 14 focused server checks, 897 restored Thor checks, two
+authority checks and the offline behavior catalog. The compiled equal-length
+nemesis miscomposition mutant was killed. Source evidence is recorded in
+[setup admission](thor-setup-admission-evidence.md).
+
+Heimdall's actual private inspection and ordered return are integrated through
+`df8f8fab`. The original 150% capture exposed a clipped commitment button;
+MARVEL-760's bounded scrolling body fixes it. The final source passes 26 managed
+checks and six affected native cases. The lead inspected the final 150% capture:
+cause, selection progress, exact order and the full commitment are visible.
+See [native inspection](thor-native-inspection-evidence.md) and
+[footer evidence](ordered-return-footer-evidence.md).
+
+MARVEL-759 is independently reviewed and integrated through `707a0ed1`: Hammer
+Throw finishes through admitted villain-stage reveal effects before its exact
+Mjolnir return.
+The first public starter run completed eight games and exposed two genuine
+promotion failures. The Rhino fix completes all ten with unchanged decisions;
+broader terminal-return handling has 52 source checks. Independent review adds
+actual Absorbing Man's existing-environment branch, health-loss settlement and
+elimination, and nested nonterminal refusal. The restored review passes 53
+Hammer Throw checks and all ten unchanged public games; a compiled terminal
+admission mutant kills the intended health-settlement cases. See the
+[independent stage review](thor-hammer-terminal-stage-review.md). All ten public
+outcomes are losses; victory evidence remains open.
+
+Actual Lightning Strike printed-plus-energy payment native proof exposed
+MARVEL-761: the generic payment progress omits useful remaining typed cost after
+choosing X. The managed prepared fixture proves actual payment and damage, but
+the native journey stops at that explanation. The fix must extend engine-owned
+progress facts; the renderer may not recreate allocation rules. Final combined
+managed/replay/platform checks remain open. These are agent-owned gates, not a
+content approval request.
+
+The combined Release build at `707a0ed1` passes with zero warnings. All 6,037
+Content tests pass. The unit run exposed two stale authority-total assertions;
+the corrected exact totals are 2,653 sources and 4,413 obligations, including
+the single Thor setup addition. All 1,112 Rules tests pass after that correction.
+
+The integration run passes 129 architecture and 36 release checks. Its server
+failures identify outdated public hero/quantity inventories, a Thor face still
+used as an unsupported example, and the historical comparison's null versus
+empty per-offer context field. The corrected admission/comparison selection
+passes all 14 tests. Only the parsed comparison copy gains protocol 40's empty
+context list; original archive hashes and complete response equality remain
+enforced. The socket composition test timed out in the concurrent run and passes
+unchanged in isolation. Preserve both results; final platform CI remains required.
+Logs are `C:/Users/mggar/Source/evidence/thor-combined-{build,unit,integration}.log`,
+`thor-rules-count-corrected.log`, `thor-admission-and-predecessor-corrected.log`
+and `thor-socket-isolated-rerun.log` in that evidence directory. These precede
+integration of the typed payment-progress fix and are not final certification.
 
 All 35 actual Thor faces have independent review. Lightning Strike and Get Over
 Here are integrated at `17ae7218`/`1c2a63a4`; Loki is authored at `ad1ec15a`

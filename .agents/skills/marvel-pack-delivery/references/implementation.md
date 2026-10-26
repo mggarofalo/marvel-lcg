@@ -116,6 +116,11 @@ to Rise of Red Skull; its declared counts cover every research recipe. Preserve
 separate accepted-product counts until the product admission gate actually changes.
 Also update `ExpansionSetupAuthorityTests`: its independent source inventory and
 product reasons must include new research recipes without claiming Core transcripts.
+Include `BehaviorAuthorityTests` source and obligation totals, and both-transport
+public deck catalog inventories. Audit unsupported-content fixtures that name the
+new pack: replace their example with a catalogued, still-unsupported face while
+preserving every rejection assertion. Supported identity faces have zero permitted
+player-deck quantity; unsupported faces remain absent from the quantity map.
 Whole-game replays supplement focused rules evidence; record whether they exercise
 victory, defeat, promotion and campaign continuation rather than inferring it.
 

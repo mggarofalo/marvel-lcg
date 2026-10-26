@@ -47,23 +47,32 @@ and exact replay. Existing defeats cover both scenarios in Standard and Expert;
 multiplayer, restart and native proofs remain recorded. Environment-layout
 review MARVEL-732 remains a separate UI decision, not a content gate.
 
-Thor is the active pack. Its integration branch was rebuilt from merged main
-as `feat/thor-completion`; the old branch is retained as evidence.
-Candidate `4e349723` contains all 35 independently reviewed Thor faces (611 total),
-including Lightning Strike, Get Over Here and Loki. Reviewed
-engine prerequisites include engagement, replay v26, typed variable payment,
-original ally-play receipts, private inspection, basic-use costs, simultaneous
-direct-damage barriers and exact causal-recipient meaning (protocol 40). Native
-recipient/payment checks pass at 100% and 150%; captures were inspected. Public
-Thor admission remains closed. See the [checkpoint](thor-delivery-checkpoint.md)
-for exact revisions and evidence boundaries. Living-target guard (757), selector,
-payment and Hammer Throw recovery preflight (758) are integrated. Loki's proposed
-overkill change (756) was rejected: RR 1.8 requires actual defeat and supersedes
-the older rulings used by that proposal. Current-rule actual-book evidence is
-integrated. The full Content suite passed 5,867 checks before the subsequent
-reviewed preflight integration; 73 combined Hammer/Loki checks pass afterward.
-Complete public pack proof remains. Black Widow's next bounded prerequisites and
-all 34 faces are mapped in its [executable handoff](research/remaining/black-widow-implementation-handoff.md).
+Thor is the active integration candidate at `707a0ed1` on `feat/thor-completion`.
+All 35 faces (611 total) have independent review. Complete public admission,
+the verified 40-card starter, custom-deck ownership and fresh-host continuation
+are integrated with independent setup review. Reviewed engine prerequisites
+include engagement, replay v26, typed variable payment, original ally-play
+receipts, private inspection, basic-use costs, simultaneous direct-damage
+barriers and exact causal-recipient meaning (protocol 40). Current RR 1.8
+requires actual defeat for overkill; the historical Loki/overkill proposal was
+rejected and current-rule actual-book evidence is integrated.
+
+Hammer Throw now survives admitted villain-stage reveals and its exact upgrade
+return. Independent review adds actual two-player Absorbing Man stage effects,
+health settlement/elimination and nested continuation refusal; 53 restored
+Hammer Throw checks and all ten unchanged public replay games pass. These games
+are losses, so victory proof remains open. Heimdall's native ordered return and
+150% footer fix pass final affected checks with inspected captures. Lightning
+Strike's actual combined payment exposes a remaining-cost explanation gap
+(MARVEL-761); its separate engine-owned progress fix is in flight. Combined
+managed/replay/platform certification and the Thor PR remain open. The
+[checkpoint](thor-delivery-checkpoint.md) records exact evidence boundaries.
+
+Black Widow's 34 faces and bounded prerequisites are mapped in its
+[executable handoff](research/remaining/black-widow-implementation-handoff.md).
+The first nonpublic Preparation resolution receipt (MARVEL-762) is being
+implemented separately; it does not expand Thor's candidate or admit Black
+Widow. Independent review precedes dependent production card authoring.
 
 The intermittent Linux drag assertion from an earlier CI run remains recorded
 in MARVEL-752. Its strict assertion now captures gesture geometry; focused

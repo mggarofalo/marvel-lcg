@@ -11,7 +11,7 @@ public sealed class StandaloneProductDiscoveryTests
     {
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
         var discovery = factory.DiscoverSetup();
-        string[] heroes = ["black_panther", "captain_america", "captain_marvel", "hawkeye", "iron_man", "ms_marvel", "she_hulk", "spider_man", "spider_woman"];
+        string[] heroes = ["black_panther", "captain_america", "captain_marvel", "hawkeye", "iron_man", "ms_marvel", "she_hulk", "spider_man", "spider_woman", "thor"];
         Assert.Equal(heroes,
             discovery.Heroes.Select(hero => hero.Key).Order(StringComparer.Ordinal));
         string[] scenarios = ["rhino", "klaw", "ultron", "crossbones", "absorbing_man", "taskmaster", "zola", "red_skull",
