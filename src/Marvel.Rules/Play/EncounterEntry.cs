@@ -24,7 +24,7 @@ public static class EncounterEntry
         && world.Cards[request.Card].Incarnation == request.Incarnation
         && world.Cards[request.Card].Area.Id == request.Area;
 
-    internal static bool WillEnter(World world, Card card, CardEntryPlacement? placement = null)
+    internal static bool WillEnter(World world, Card card, int player, CardEntryPlacement? placement = null)
     {
         if (DeckTypes.IsInPlay(card.Area.Type) || Uniqueness.IsBlocked(world, world.Facts, card)) return false;
         return EffectiveCards.Kind(card, world.Facts) switch
@@ -32,7 +32,7 @@ public static class EncounterEntry
             CardKind.Minion or CardKind.Environment or CardKind.EncounterSideScheme => true,
             CardKind.Obligation => RevealKeywords.Names(world, world.Facts, card) is null or >= 0,
             CardKind.Attachment => placement?.AttachmentTarget is { } host ? HostInPlay(world, host)
-                : world.PlacementAbilities.AttachmentTargets(world, card) is { Count: > 0 },
+                : world.PlacementAbilities.AttachmentTargets(world, card, player) is { Count: > 0 },
             CardKind.Ally or CardKind.Support => placement?.SetupController is not null,
             _ => false,
         };

@@ -57,12 +57,12 @@ internal static class AbilityProgramQueries
             : new DefenderChoice(candidates, Required: false);
     }
 
-    internal static int? AttachesTo(World world, AbilityProgram program, Card card)
+    internal static int? AttachesTo(World world, AbilityProgram program, Card card, int? player = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
 
-        var candidates = AttachmentCandidates(world, program, card);
+        var candidates = AttachmentCandidates(world, program, card, player);
         return candidates is null ? null : candidates.Count switch
         {
             0 => null,
@@ -75,12 +75,12 @@ internal static class AbilityProgramQueries
     }
 
     internal static IReadOnlyList<int>? AttachmentTargets(
-        World world, AbilityProgram program, Card card)
+        World world, AbilityProgram program, Card card, int? player = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
 
-        return AttachmentCandidates(world, program, card) is { } candidates
+        return AttachmentCandidates(world, program, card, player) is { } candidates
             ? [.. candidates.Select(candidate => candidate.ObjectId)]
             : null;
     }
@@ -134,14 +134,14 @@ internal static class AbilityProgramQueries
     }
 
     private static IReadOnlyList<Card>? AttachmentCandidates(
-        World world, AbilityProgram program, Card card)
+        World world, AbilityProgram program, Card card, int? player)
     {
         if (program.AttachTo.GetValueOrDefault(card.FaceId) is not { } selector) return null;
 
         // Attachment placement asks a board question; it neither resolves an
         // ability nor emits events, so its bindings are a query context.
         var context = new AbilityQueryContext(
-            world, card, new Occurrence(0, []), card.Owner, card.Incarnation,
+            world, card, new Occurrence(0, []), player ?? card.Owner, card.Incarnation,
             null, null, null, []);
         return new AbilitySelectorEvaluation(context, null, program).Every(selector);
     }

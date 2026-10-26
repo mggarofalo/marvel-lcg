@@ -13,13 +13,7 @@ namespace Marvel.Rules.Play;
 public interface IThreatCardAbilities : IEncounterCardAbilities
 {
     /// <summary>Validate completion text and report whether its interrupt window is needed.</summary>
-    bool ObservesMainSchemeCompletion(World world, Card scheme)
-    {
-        if (world.Facts.HasWhenCompleted(scheme.FaceId))
-            throw new RulesNotImplementedException(
-                $"card '{scheme.FaceId}' has unsupported When Completed text");
-        return false;
-    }
+    bool ObservesMainSchemeCompletion(World world, Card scheme);
 
     bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1);
 

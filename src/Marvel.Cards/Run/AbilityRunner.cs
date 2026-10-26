@@ -67,10 +67,10 @@ public sealed class AbilityRunner : ICardAbilities
     public DamageProjection PreviewDamageReplacement(World world, Card target, Card source, long amount) => damageProjection.PreviewDamageReplacement(world, target, source, amount);
     public DefeatProjection? PreviewDefeatReplacement(World world, Card target, long maximumHealth) => damageProjection.PreviewDefeatReplacement(world, target, maximumHealth);
     public bool CanReady(World world, Card target, Card source) => AbilityProgramQueries.CanReady(world, program, target);
-    public int? AttachesTo(World world, Card card) => AbilityProgramQueries.AttachesTo(world, program, card);
+    public int? AttachesTo(World world, Card card, int? player = null) => AbilityProgramQueries.AttachesTo(world, program, card, player);
     public int? SetupController(World world, Card card) => AbilityProgramQueries.SetupController(world, program, card);
     public void ValidateForPlay(World world) => AbilityProgramQueries.ValidateForPlay(world, program);
-    public IReadOnlyList<int>? AttachmentTargets(World world, Card card) => AbilityProgramQueries.AttachmentTargets(world, program, card);
+    public IReadOnlyList<int>? AttachmentTargets(World world, Card card, int? player = null) => AbilityProgramQueries.AttachmentTargets(world, program, card, player);
     public IReadOnlyList<Card> PlayerSetupCards(World world, int player) => AbilityProgramQueries.PlayerSetupCards(world, program, player);
     public IReadOnlyList<PendingAbility> Actions(World world, int player) => offerQueries.Actions(world, player);
 

@@ -51,11 +51,12 @@ public readonly record struct PhaseStep(
 
         if (Operation is EncounterEntryOperation entry)
             return new Occurrence(id, EncounterEntry.IsCurrent(world, entry.Entry)
-                && EncounterEntry.WillEnter(world, world.Cards[Subject], entry.Entry.Placement)
+                && EncounterEntry.WillEnter(world, world.Cards[Subject], entry.Entry.Player, entry.Entry.Placement)
                     ? [Steps.CardEntersPlay] : [], Subject, Seat);
         return What switch
         {
-            Steps.RevealEncounterCard => new Occurrence(id, EncounterEntry.WillEnter(world, world.Cards[Subject])
+            Steps.RevealEncounterCard => new Occurrence(id, EncounterEntry.WillEnter(world, world.Cards[Subject],
+                EncounterRevealExposure.RevealingPlayer(world, world.Cards[Subject], Seat))
                 ? [Steps.CardRevealed, Steps.CardEntersPlay] : Conditions, Subject,
                 EncounterRevealExposure.RevealingPlayer(world, world.Cards[Subject], Seat)),
             Steps.PlaceThreat => VillainPhaseThreat(id, world, facts),

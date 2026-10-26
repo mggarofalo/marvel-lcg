@@ -157,7 +157,7 @@ internal static class EncounterRevealProcedure
         }
 
         if (EffectiveCards.Kind(card, facts) == CardKind.Attachment
-            && abilities.AttachmentTargets(world, card) is { Count: > 1 } targets)
+            && abilities.AttachmentTargets(world, card, player) is { Count: > 1 } targets)
         {
             world.Agenda.ThenContinuation(new PhaseStep(
                 new AttachmentTargetOperation(Candidates: [.. targets], Origin: revealOccurrence),
