@@ -107,6 +107,44 @@ public sealed class InvocationDeck
         RefreshTop(trigger, events);
     }
 
+    internal static void RefreshAfterMovement(World world, Card card, string trigger, List<GameEvent> events)
+    {
+        // pack:mc08:the-invocation-deck: "If the Invocation deck is ever empty,
+        // shuffle the Invocation discard pile back into the Invocation deck."
+        if (ForCard(world, card) is { } deck) deck.RefreshTop(trigger, events);
+    }
+
+    /// <summary>Shuffle a host's bound physical Invocations into their own deck.</summary>
+    public static void ShuffleFromBeneath(World world, Card host, string trigger, List<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(events);
+        if (!world.Cards.Contains(host) || !DeckTypes.IsInPlay(host.Area.Type))
+            throw new ArgumentException("return requires this world's in-play host", nameof(host));
+        var stored = BeneathCards.Of(world, host);
+        if (stored.Count == 0) return;
+        var deck = ForCard(world, stored[0]);
+        if (deck is null || !deck.duringGame
+            || stored.Any(card => !ReferenceEquals(ForCard(world, card), deck)))
+            throw new ArgumentException("stored cards must belong to one bound Invocation deck", nameof(host));
+        // Printed return instructions run before the host's departure. Validation
+        // precedes all movement, concealment and random consumption.
+        if (deck.PublicTop is { } top)
+        {
+            top.TurnFaceDown();
+            events.Add(new CardsFlipped([top.ObjectId], false) { Trigger = trigger, Verb = "Conceal" });
+        }
+        foreach (var card in stored)
+        {
+            Move(card, deck.Deck, trigger, "Shuffle_Into", events);
+            events.Add(new CardDetached(card.ObjectId, host.ObjectId) { Trigger = trigger, Verb = "Return" });
+        }
+        // 09029: "Shuffle the Invocation card under here into the Invocation deck."
+        deck.Shuffle(trigger, events);
+        deck.RefreshTop(trigger, events);
+    }
+
     internal void RefreshTop(string trigger, List<GameEvent> events)
     {
         // pack:mc08:the-invocation-deck: "If the Invocation deck is ever empty,

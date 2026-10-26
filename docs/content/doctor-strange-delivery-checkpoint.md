@@ -37,6 +37,18 @@ keeps one optional-last-card overload; DSL documentation preserves exact-set,
 independent enemy choice and complete status-subset contracts together.
 The Seven Rings production row and downstream native/contract proof remain open.
 
+Hosted Invocation source `76866793` and independent review `68dd71c6` are
+integrated. The printed Open the Dark Dimension return is a When Defeated
+instruction; ordinary non-defeat departure instead uses separate-discard cleanup.
+Source full View (370) and Rules (1,173) pass; source full Content has 6,751 passes
+and four inherited inventory-count failures already reconciled in this branch.
+Independent review passes 37 Content, 35 View and 17 Rules checks, including
+discard preservation, multiple-host isolation and all-five-hosted recovery.
+The integrated Content selection passes 146 cases, with no failures/skips:
+`Source/evidence/strange-hosted-integration-content.log`. See
+[hosted prerequisite evidence](doctor-strange-hosted-invocation-prerequisite.md).
+The production 09029 row and public save/replay/native proofs remain open.
+
 Reviewed lifecycle source 3a20ae07 and review dd5b2f4a reuse player-owned additional
 deck/discard zones with exact physical binding, seeded shuffle, post-mulligan top
 reveal and penalty-free immediate recycling. Independent Rules 1,156 and View 365

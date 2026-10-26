@@ -10,6 +10,12 @@ internal static class AbilityBeneathReleaseExecution
 {
     internal static AbilityDeckAndRevealResult Run(AbilityEffect.ReleaseBeneath effect, AbilityDeckAndRevealContext context)
     {
+        if (effect.InvocationDeck)
+        {
+            bool returned = BeneathCards.Of(context.World, context.Source).Count > 0;
+            InvocationDeck.ShuffleFromBeneath(context.World, context.Source, context.Trigger, context.Events);
+            return new(true, returned, null, ImmutableDictionary<string, long>.Empty);
+        }
         bool applied = effect.RemoveHost || BeneathCards.Of(context.World, context.Source).Count > 0;
         var state = new AbilityCardStateContext(context.Expressions, context.Trigger,
             context.Events, context.CardPlayAbilities, context.Readiness, new AbilityCardStateResult());

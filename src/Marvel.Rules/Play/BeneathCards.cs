@@ -40,6 +40,7 @@ public static class BeneathCards
         { Trigger = trigger, Verb = "Store_Beneath" });
         events.Add(new CardAttached(card.ObjectId, host.ObjectId) { Trigger = trigger, Verb = "Store_Beneath" });
         ending.Complete(trigger, events);
+        InvocationDeck.RefreshAfterMovement(world, card, trigger, events);
     }
 
     /// <summary>Returns the host's stored cards in stable physical area and card order.</summary>

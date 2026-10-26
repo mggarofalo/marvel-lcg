@@ -31,7 +31,11 @@ public abstract record AbilityEffect
     public sealed record AttackAnotherEnemy(long Amount) : AbilityEffect;
 
     /// <summary>Return this host's stored cards to their owners, optionally removing the host.</summary>
-    public sealed record ReleaseBeneath(bool RemoveHost, bool Rescue = false) : AbilityEffect;
+    public sealed record ReleaseBeneath(bool RemoveHost, bool Rescue = false) : AbilityEffect
+    {
+        /// <summary>Shuffle the stored physical Invocations into their bound deck.</summary>
+        public bool InvocationDeck { get; init; }
+    }
 
     /// <summary>Attach selected encounter attachments to a specified host.</summary>
     public sealed record AttachCards(AbilityCardSelection Cards, AbilityCardSelection Host) : AbilityEffect;
