@@ -17077,6 +17077,137 @@
           }
         }
       ]
+    },
+    {
+      "card": "05025",
+      "name": "Home by Dawn",
+      "note": "Printed obligation: optional alter-ego change; exhaust that alter-ego to remove, or discard one controlled Persona support. Surge follows when no support can be discarded.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "choose": {
+                  "descriptions": [
+                    "Change to alter-ego form",
+                    "Remain in your current form"
+                  ],
+                  "options": [
+                    {
+                      "changeForm": {
+                        "player": "you",
+                        "to": "alter-ego"
+                      }
+                    },
+                    {
+                      "seq": []
+                    }
+                  ]
+                }
+              },
+              {
+                "choose": {
+                  "descriptions": [
+                    "Exhaust Kamala Khan and remove Home by Dawn from the game",
+                    "Discard a Persona support you control, or gain surge if none can be discarded; discard Home by Dawn"
+                  ],
+                  "options": [
+                    {
+                      "then": {
+                        "effect": {
+                          "exhaust": "yourAlterEgo"
+                        },
+                        "then": {
+                          "removeFromGame": "this"
+                        }
+                      }
+                    },
+                    {
+                      "seq": [
+                        {
+                          "if": {
+                            "test": {
+                              "exists": {
+                                "discardable": {
+                                  "withTrait": {
+                                    "cards": {
+                                      "query": "supportsYouControl"
+                                    },
+                                    "trait": "PERSONA"
+                                  }
+                                }
+                              }
+                            },
+                            "then": {
+                              "chooseCard": {
+                                "from": {
+                                  "discardable": {
+                                    "withTrait": {
+                                      "cards": {
+                                        "query": "supportsYouControl"
+                                      },
+                                      "trait": "PERSONA"
+                                    }
+                                  }
+                                },
+                                "effect": {
+                                  "discard": "chosen"
+                                }
+                              }
+                            },
+                            "else": {
+                              "gainSurge": 1
+                            }
+                          }
+                        },
+                        {
+                          "discard": "this"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "card": "05027",
+      "name": "Thomas Edison",
+      "note": "Printed damage prohibition follows the engaged player, regardless of the source controller. Thomas himself occupies one engaged-minion slot; at least two means another minion is engaged. Vendored ruling confirms all players are prohibited while that engaged player has another minion.",
+      "abilities": [
+        {
+          "trigger": {
+            "timing": "Constant",
+            "subject": "this"
+          },
+          "effect": {
+            "preventDamageWhile": {
+              "card": "this",
+              "condition": {
+                "atLeast": {
+                  "value": {
+                    "count": {
+                      "inPlayerArea": {
+                        "area": "engagedEnemies",
+                        "player": "engagedPlayer"
+                      }
+                    }
+                  },
+                  "count": 2
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
