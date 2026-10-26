@@ -57,6 +57,8 @@ public sealed class IndividualBoostCancellationTests : CoreCardTestBase
             prompt = Sequence.Work(world, Cards, runner, events)!;
         }
         Assert.True(prompt is not null, $"No offer; boosted {string.Join(",", events.OfType<BoostResolved>().Select(e => e.Icons))}");
+        Assert.Contains("Boost card revealed", prompt.Description);
+        Assert.DoesNotContain(BoostFaceupOperation.Faceup, prompt.Description);
         var occurrence = world.Agenda.Occurrence!;
         Assert.Equal(first.ObjectId, occurrence.Subject);
         Assert.Equal(2, occurrence.BoostIcons!.Remaining);
