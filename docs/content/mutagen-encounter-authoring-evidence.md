@@ -41,24 +41,20 @@ two. The non-reset recruitment case fails because two encounter cards remain
 instead of one; the reset case passes. The same restored cases are included in
 the 89 passing tests. Mutant log: `%TEMP%/mutagen-encounter-mutant.log`.
 
-## Blocking timing finding
+## Queued activation proof
 
-The ordinary attack/scheme delayed shuffle passes, but acceptance of the seven
-faces is not complete. With actual Hysteria providing two boosts, the root attack
-reveals actual Hydra Jet-Trooper (04146), then actual Knight/Monster. At the
-additional attack's defender prompt, the Knight/Monster source remains in the
-root villain's boost deck. Its delayed shuffle has not resolved. Both faces fail
-the same assertion. `rr:activation.8.2` states: "All abilities triggered by the
-initial activation resolve before subsequent activations initiate."
+The corrected actual-card probe uses Hysteria to reveal Hydra Jet-Trooper and
+Knight/Monster during one activation. At the target player's second defense
+prompt, exactly one attack has completed and the exact Knight/Monster source is
+already back in the encounter deck; its other physical copy remains discarded.
+Both completed attacks target player one. This proves the source shuffle belongs
+to the containing activation and precedes the queued activation.
 
-The focused failure log is `%TEMP%/mutagen-encounter-proof.log`. The complete
-reviewable failing test is preserved as
-`docs/content/mutagen-delayed-shuffle-repro.cs.txt`; copy it to the Content.Tests
-Play directory and select `MutagenDelayedShuffleReproTests` to reproduce. It is
-stored as evidence outside the compiled green test selection because the required
-engine fix and independent engine review belong to a separate packet. No card DSL
-workaround, assertion weakening or engine change is included here. The positive
-queued-activation acceptance check must join the executable suite with that fix.
+An earlier probe counted defense prompts from both players as separate attacks;
+its reported timing gap was a fixture mistake, not an established engine defect.
+The corrected probe is executable in `MutagenEncounterTests`. The final restored
+selection passes 91 tests, zero failed. Log:
+`%TEMP%/mutagen-encounter-corrected-proof.log`.
 
 Public admission stays closed. No whole-game, replay/native or product readiness
 is claimed. Remaining 02026–02032 authoring and whole-product proof are separate.

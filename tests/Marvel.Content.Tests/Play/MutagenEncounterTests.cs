@@ -1,4 +1,5 @@
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -147,6 +148,53 @@ public sealed class MutagenEncounterTests : CoreCardTestBase
         Assert.Equal(3, main.Tokens["k_threat"]);
         Assert.All(f.World.Seats, seat => Assert.Equal(0, seat.IdentityCard.Damage));
         Assert.Null(f.World.Activation);
+    }
+
+    [Theory]
+    [InlineData("02022")]
+    [InlineData("02025")]
+    [Rule("rr:activation.8")]
+    public void DeferredShuffleBelongsToContainingActivationBeforeQueuedBoostlessAttack(string face)
+    {
+        // 04146 queues a boostless attack after this activation. Both actual boost rows
+        // must keep their own source and the non-first activation player.
+        // rr:activation.8: additional activation "resolves after the current activation".
+        var world = Hero("01001a", 2);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        var villain = world.CreateCard("02014", world.AreaOf(DeckType.VillainArea));
+        world.CreateCard("02018b", world.AreaOf(DeckType.MainSchemesArea));
+        world.CreateCard("02020", world.AreaOf(DeckType.UpgradesArea, PlayArea.Villains, villain.ObjectId));
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        for (int i = 0; i < 8; i++) world.CreateCard("01186", deck);
+        var source = world.CreateCard(face, deck);
+        var queued = world.CreateCard("04146", deck);
+        var other = world.CreateCard(face, world.AreaOf(DeckType.EncounterDiscardPile));
+        world.Agenda.Add(new PhaseStep(new EnemyAttackOperation(), 1, 2,
+            Subject: villain.ObjectId, Seat: 1));
+        var events = new List<GameEvent>();
+        int defenses = 0;
+        for (int i = 0; i < 20; i++)
+        {
+            var prompt = Sequence.Work(world, Cards, runner, events);
+            if (prompt is null) break;
+            if (prompt.Asking == Question.Defender && prompt.Player == 1 && ++defenses == 2)
+            {
+                Assert.Equal(1, prompt.Player);
+                Assert.Same(deck, source.Area);
+                Assert.Equal(DeckType.EncounterDiscardPile, other.Area.Type);
+                Assert.Single(events.OfType<AttackCompleted>());
+            }
+            Assert.True(prompt.Cancellable, prompt.Description);
+            Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
+        }
+        Assert.Equal(2, defenses);
+        Assert.Equal(2, events.OfType<AttackCompleted>().Count());
+        Assert.All(events.OfType<AttackCompleted>(), attack =>
+            Assert.Equal(world.Seats[1].IdentityCard.ObjectId, attack.Target));
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+        Assert.Equal(DeckType.EncounterDiscardPile, queued.Area.Type);
+        Assert.Null(world.Activation);
     }
 
     private static RedSkullFixture Create(bool fill = true)
