@@ -10,9 +10,12 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed class BlackWidowIdentitySearchTests
 {
+    private static readonly string[] PreparationFaces = ["08006", "08008", "08010", "08017", "08018"];
+
     [Fact]
     [Rule("rr:limit")]
     [Rule("rr:form-change-form.2")]
+    [Rule("rr:play-put-into-play.3")]
     public void ActualNatashaDrawIsOwnPlayOnlyAndBothPhaseBoundariesRestoreUse()
     {
         // "When a player changes form, only the form changes." The printed limit is once per phase.
@@ -21,6 +24,10 @@ public sealed class BlackWidowIdentitySearchTests
         var runner = Runner();
         var put = world.CreateCard("08017", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(1)));
         Reveal.EnterPlay(world, world.Facts, put, [], abilities: runner);
+        // "A card that is put into play is not considered to have been played."
+        // The isolated upgrade entry owns an entry lifecycle, without a card-play lifecycle.
+        world.Agenda.Then(new PhaseStep(new LifecycleOperation(LifecycleKind.CardEntersPlay),
+            0, 0, Subject: put.ObjectId, Seat: 1));
         Assert.Null(Sequence.Work(world, world.Facts, runner, []));
         PlayCard(world, "08017", 0);
         Assert.Null(Sequence.Work(world, world.Facts, runner, []));
@@ -55,7 +62,7 @@ public sealed class BlackWidowIdentitySearchTests
         var runner = AuthoredCards.Runner();
         var seat = world.Seats[1];
         for (int i = 0; i < count; i++)
-            world.CreateCard("08017", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(1)));
+            world.CreateCard(PreparationFaces[i], world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(1)));
         world.CreateCard("08017", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0)));
         world.CreateCard("08017", world.AreaOf(DeckType.DiscardPile, PlayArea.Of(1)));
         world.CreateCard("08011", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1)));
