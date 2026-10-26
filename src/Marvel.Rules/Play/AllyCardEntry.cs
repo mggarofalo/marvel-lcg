@@ -88,7 +88,10 @@ public static class AllyCardEntry
         else
         {
             Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
-            Entered(world, ally, controller);
         }
+        // rr:triggering-condition.1: each response triggers once per occurrence.
+        // This path owns the entry window; ordinary play owns its combined
+        // played/entry window. Both wait for the mandatory ally-limit choice.
+        Entered(world, ally, controller);
     }
 }

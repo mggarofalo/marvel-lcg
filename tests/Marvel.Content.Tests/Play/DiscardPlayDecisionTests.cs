@@ -109,6 +109,9 @@ public sealed class DiscardPlayDecisionTests
             },{
               "trigger":{"timing":"ForcedResponse","event":"WhenCardEntersPlay","subject":"this"},
               "effect":{"draw":{"player":"you","count":1}}
+            },{
+              "trigger":{"timing":"Response","event":"WhenCardPlayed","subject":"this"},
+              "effect":{"draw":{"player":"you","count":1}}
             }]}]}
             """));
         Card ally = null!;
@@ -138,9 +141,62 @@ public sealed class DiscardPlayDecisionTests
         Assert.Equal(DeckType.DiscardPile, chosen.Area.Type);
         Assert.Equal(3, ally.Area.Cards.Count);
         Assert.Equal(afterPayment + 1, world.Seats[1].Hand.Cards.Count);
+        Assert.False(game.IsRootPrompt);
+        Assert.Contains(ally.ObjectId, game.Pending!.ContextCardIds);
+        var response = Assert.Single(game.Pending.Affordances, item => item.AnchorId == ally.ObjectId);
+        game.Resolve(Decision.Take(response.Id));
+        Assert.Equal(afterPayment + 2, world.Seats[1].Hand.Cards.Count);
         Assert.True(game.IsRootPrompt);
         Assert.Empty(world.Agenda.Outstanding);
         Assert.False(result.IsOver);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Rule("rr:ally-limit")]
+    [Rule("rr:play-put-into-play.3")]
+    public void PutIntoPlayHasOneEntryResponseAndNoPlayedResponse(bool atLimit)
+    {
+        // "This occurs before abilities that resolve upon entering play."
+        // "A card that is put into play is not considered to have been played."
+        var runner = new AbilityRunner(AbilityCatalog.Parse("""
+            {"cards":[{"card":"05018","abilities":[{
+              "trigger":{"timing":"ForcedResponse","event":"WhenCardEntersPlay","subject":"this"},
+              "effect":{"draw":{"player":"you","count":1}}
+            },{
+              "trigger":{"timing":"Response","event":"WhenCardPlayed","subject":"this"},
+              "effect":{"draw":{"player":"you","count":1}}
+            }]}]}
+            """));
+        Card ally = null!;
+        Card chosen = null!;
+        var (_, world) = Playing(board =>
+        {
+            ally = board.CreateCard("05018", Pile(board, 0));
+            if (!atLimit) return;
+            var area = board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
+            chosen = board.CreateCard("01067", area);
+            board.CreateCard("01068", area);
+            board.CreateCard("01070", area);
+        }, abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var events = new List<GameEvent>();
+        CardPlay.PutAllyIntoPlay(world, world.Facts, runner, ally, 0, "synthetic", events);
+        var prompt = Sequence.Work(world, world.Facts, runner, events);
+        if (atLimit)
+        {
+            Assert.NotNull(prompt);
+            Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+            var discard = Assert.Single(prompt.Affordances, item => item.AnchorId == chosen.ObjectId);
+            Sequence.Answer(world, world.Facts, runner, prompt, Decision.Take(discard.Id), events);
+            prompt = Sequence.Work(world, world.Facts, runner, events);
+            Assert.Equal(DeckType.DiscardPile, chosen.Area.Type);
+        }
+        Assert.Null(prompt);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(DeckType.AlliesArea, ally.Area.Type);
+        Assert.Empty(world.Agenda.Outstanding);
     }
 
     private static Area Pile(World world, int player) => world.AreaOf(

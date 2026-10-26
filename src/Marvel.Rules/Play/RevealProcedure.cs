@@ -39,7 +39,7 @@ internal static class RevealProcedure
             case Steps.ChoosePostRevealAbility:
                 return ChoosePostRevealAbility(world, step);
             case Steps.FinalizeAllyEntry:
-                FinalizeAllyEntry(world, facts, step.Subject, step.Seat, events);
+                FinalizeAllyEntry(world, facts, step.Subject, events);
                 break;
             default:
                 throw new RulesNotImplementedException(
@@ -248,14 +248,13 @@ internal static class RevealProcedure
     }
 
     internal static void FinalizeAllyEntry(
-        World world, ICardFacts facts, int allyId, int player,
+        World world, ICardFacts facts, int allyId,
         List<GameEvent> events)
     {
         var ally = world.Cards[allyId];
         if (ally.Area.Type == DeckType.AlliesArea)
         {
             Reveal.EnterPlay(world, facts, ally, events, abilities: world.CardPlayAbilities);
-            CardEntry.Entered(world, ally, player);
         }
     }
 }
