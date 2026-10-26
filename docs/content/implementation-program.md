@@ -1,16 +1,16 @@
 # Remaining content implementation program
 
-**Tracking:** Content Expansion module and [MARVEL-703](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/b26d754d-4e0e-486c-8a04-f0e9b968cdb2). **Planning baseline:** `b16183e2`, 2026-10-25. This is an execution queue, not evidence that a researched pack runs. The canonical product records are MARVEL-559–622. Captain America (560) and Wrecking Crew (562) are implemented and agent-accepted in [PR #439](https://github.com/mggarofalo/marvel-lcg/pull/439); the remaining **62** are the scope here. Core and Rise of Red Skull are the accepted regression baseline. MARVEL-630 is Done and additive-content compatibility has been integrated; MARVEL-696's all-pack research is Done. Do not reopen either based on historical notes. The independent Wrecking Crew UI review MARVEL-694 and layout fix MARVEL-695 stay separate from this content queue.
+**Tracking:** Content Expansion module and [MARVEL-703](https://plane.wallingford.me/dev/projects/cd677658-41d9-4576-b055-5f2a726b3c85/issues/b26d754d-4e0e-486c-8a04-f0e9b968cdb2). **Planning baseline:** `b16183e2`, 2026-10-25. This is an execution queue, not evidence that a researched pack runs. The canonical product records are MARVEL-559–622. Captain America (560) and Wrecking Crew (562) are implemented and agent-accepted in [PR #439](https://github.com/mggarofalo/marvel-lcg/pull/439); the original remaining scope was **62**. Green Goblin (559) and Ms. Marvel (561) are now also merged and agent-accepted in [PR #451](https://github.com/mggarofalo/marvel-lcg/pull/451), leaving **60** canonical packs. Core and Rise of Red Skull are the accepted regression baseline. MARVEL-630 is Done and additive-content compatibility has been integrated; MARVEL-696's all-pack research is Done. Do not reopen either based on historical notes. The independent Wrecking Crew UI review MARVEL-694 and layout fix MARVEL-695 stay separate from this content queue.
 
 The [research coverage ledger](research/remaining/README.md), its ten paired narrative/face-inventory packets, [source review](research/remaining/source-review.md), and [independent review](research/remaining/independent-review.md) supply MARVEL-563–622 handoffs. [Green Goblin](research/green-goblin-deep-research.md) and [Ms. Marvel](research/ms-marvel-deep-research.md) have their own deeper packets. Their examples are first slices; the canonical parent acceptance criteria still require every playable face and mode. The current source gaps are recorded below, without turning them into invented card behavior.
 
 ## Complete pack-to-wave ledger
 
-The existing Content Expansion module defines these **11 planning waves**. Ranges are inclusive, and a box owns its included heroes, scenarios, modular sets and campaign, even where those components also appear in another deck. This mapping covers each of the 64 canonical parents exactly once; the two accepted parents are shown only to make the subtraction auditable. A wave is a delivery grouping, not proof of a published release or a command to admit its packs together. Each parent keeps its own implementation, evidence and acceptance state.
+The existing Content Expansion module defines these **11 planning waves**. Ranges are inclusive, and a box owns its included heroes, scenarios, modular sets and campaign, even where those components also appear in another deck. This mapping covers each of the 64 canonical parents exactly once; the four accepted parents are shown only to make the subtraction auditable. A wave is a delivery grouping, not proof of a published release or a command to admit its packs together. Each parent keeps its own implementation, evidence and acceptance state.
 
 | Existing wave | Canonical pack parents | Remaining |
 |---|---|---:|
-| Core-era expansions | 559 Green Goblin; **560 Captain America accepted**; 561 Ms. Marvel; **562 Wrecking Crew accepted**; 563 Thor; 564 Black Widow; 565 Doctor Strange; 566 Hulk | 6 |
+| Core-era expansions | **559 Green Goblin accepted**; **560 Captain America accepted**; **561 Ms. Marvel accepted**; **562 Wrecking Crew accepted**; 563 Thor; 564 Black Widow; 565 Doctor Strange; 566 Hulk | 4 |
 | Rise of Red Skull cycle | 567 Ronan Modular Set; 568 The Once and Future Kang; 569 Ant-Man; 570 Wasp; 571 Quicksilver; 572 Scarlet Witch | 6 |
 | Galaxy's Most Wanted cycle | 573 The Galaxy's Most Wanted; 574 Star-Lord; 575 Gamora; 576 Drax; 577 Venom | 5 |
 | Mad Titan's Shadow cycle | 578 The Mad Titan's Shadow; 579 Nebula; 580 War Machine; 581 The Hood; 582 Valkyrie; 583 Vision | 6 |
@@ -21,61 +21,49 @@ The existing Content Expansion module defines these **11 planning waves**. Range
 | Agents of S.H.I.E.L.D. cycle | 607 Agents of S.H.I.E.L.D.; 608 Black Panther (Shuri); 609 Silk; 610 Falcon; 611 Winter Soldier; 612 Trickster Takeover | 6 |
 | Civil War cycle | 613 Civil War; 614 Synthezoid Smackdown; 615 Wonder Man; 616 Hercules | 4 |
 | Fear No Evil cycle | 617 Fear No Evil; 618 Jessica Jones; 619 Luke Cage; 620 Elektra; 621 Iron Fist; 622 Shadowland | 6 |
-| **Total** | **64 parents, including 2 accepted** | **62** |
+| **Total** | **64 parents, including 4 accepted** | **60** |
 
 ## Current integration checkpoint
 
-[PR #450](https://github.com/mggarofalo/marvel-lcg/pull/450) is merged at
-`d649560f`; all eleven CI jobs passed on its final candidate. It admits all
-57 Green Goblin faces, four scenario modes and four modular sets, and contains
-25 of 34 Ms. Marvel faces without admitting that incomplete hero pack. Ten
-complete solo Goblin games ended in defeat; four multiplayer games and
-pending-choice restart proofs also pass. A separate ordinary-action tactical
-policy now wins Risky Business Standard (seed 1, round 13, 139 decisions) and
-replays every observation exactly at `62649761`; that packet has independent
-review and is integrated. A Mutagen Standard victory is now also independently reviewed in the next
-candidate (fixed seed 3, legal custom Captain America Leadership deck, round 13,
-130 public decisions with exact replay). Environment placement review remains separate in MARVEL-732.
+[PR #451](https://github.com/mggarofalo/marvel-lcg/pull/451) is merged at
+`71ac4975a3d6899715c0b5e29cf29bb84231a9db`. All eleven CI jobs passed on exact
+candidate `d7993ebf` in run `40300681863`, including managed correctness,
+Windows/Linux platform and native gates, and the Windows package check.
 
-The next candidate, `feat/ms-marvel-completion`, now has **all 34 Ms. Marvel
-faces and 576 total authored faces**. Every actual row and engine prerequisite
-has independent review, including final Preemptive Strike review `a9397e56`.
-Melee, Lockjaw and Preemptive Strike have native interaction proof; the source
-heading and boost-stage wording findings have targeted fixes. Robot's semantic
-contract is protocol 39. Corrected Core ally-entry behavior uses replay v25 with
-reviewed quarantine and named verification routes; no historical fact is rewritten.
+Ms. Marvel is agent-accepted: all 34 playable faces, verified 40-card starter,
+public setup/custom decks, seven complete public games, and exact fresh-host
+continuation for Morphogenetics, Bruno and Melee. The local acceptance lane
+passed all 150 tests; CI certified the final candidate. Protocol 39 and replay
+v25 carry the reviewed semantic and ally-entry changes. Original historical
+journal bytes remain unchanged with explicit rejection and separate current
+legal replay evidence where corrected behavior differs.
 
-Public Ms. Marvel admission at `5034a368` pins all faces and the verified 40-card
-starter, obligation and nemesis. Setup covers 1–4 seats across Core/RoRS modes;
-normal starter seed 3 exercises Teen Spirit, Big Hands and pending Morphogenetics
-through save/restart against an uninterrupted control. Setup 823 and focused
-Server 22 checks pass. Independent admission review (`d05c28ca`) passes
-268 Content and 27 Server checks. Seven fixed-seed public games complete with
-exact replay and query-purity checks: five solo Core/RoRS scenarios and two
-Ms. Marvel/Captain Marvel games, all honestly recorded as defeats. A natural
-Bruno retrieval choice also survives restart, rejects an invalid answer atomically,
-and matches uninterrupted continuation (`0999d19a`). A prior 33-face checkpoint passed all 5,260 Content checks; the
-integrated boost prerequisite passed all 1,098 Rules checks. These are scoped
-results, not final combined certification. Final whole-pack/platform gates and
-merge remain before Ms. Marvel acceptance.
+Green Goblin is also agent-accepted. PR #450 admitted all 57 faces, four modes
+and four modular sets; PR #451 completes the scenario victory evidence. Risky
+Business Standard wins with the printed Captain America starter, seed 1, round
+13, 139 decisions. Mutagen Formula Standard wins with a legal Captain America
+Leadership deck, seed 3, round 13, 130 decisions. Both have independent review
+and exact replay. Existing defeats cover both scenarios in Standard and Expert;
+multiplayer, restart and native proofs remain recorded. Environment-layout
+review MARVEL-732 remains a separate UI decision, not a content gate.
 
-Risky Business Standard's independently reviewed winning proof is integrated,
-including exact replay and survival of the ally-entry correction. Mutagen
-Formula Standard now has a complete independently reviewed victory (`43563c33`),
-integrated with the Ms. Marvel candidate and awaiting its final combined gates. The canonical parent requires victory
-and defeat for each scenario plus an explicit difficulty/mode matrix; it does
-not separately require a victory at every difficulty. Existing complete defeats
-cover both scenarios in Standard and Expert. Bounded unsuccessful Expert and
-Mutagen strategy probes are recorded without changing the engine or presenting
-losses as victories.
+Thor is the active pack. Its integration branch was rebuilt from merged main
+as `feat/thor-completion` at `dfd27afc`; the old branch is retained as evidence.
+It contains 19 independently reviewed Thor faces (595 total), engagement
+semantics, replay v26, Worthy search meaning, the standalone Defender cost,
+in-play census, variable typed payment, candidate self-pricing and basic-attack
+Weapon costs. Public Thor admission remains closed. See the per-face handoff
+and [checkpoint](thor-delivery-checkpoint.md) for evidence boundaries. The
+private inspection prerequisite is under independent review. Simultaneous
+damage defeat stages are being repaired against preserved independent failing
+probes; Lightning Strike is withheld. The next actual-row packet covers Hammer
+Throw, Hercules and Mean Swing; Valkyrie's ally-entry payment receipt needs a
+separate engine fix.
 
-Thor's engagement prerequisite is isolated under MARVEL-741. Independent review
-`dd609c45` found interpreted transfers offer Thor's response before Quickstrike;
-correction `64448751` and independent review `67314c81` now prove the timing. The review also proves
-a real Core Hawkeye timing change against the base, so the next delivery needs
-replay v26 compatibility evidence. Thor is excluded from this Ms. Marvel candidate. Its next isolated candidate
-`feat/thor-pack-delivery` has the corrected engine; eleven actual faces are being
-authored and replay-v26 compatibility is a separate implementation/review packet.
+The intermittent Linux drag assertion from an earlier CI run remains recorded
+in MARVEL-752. Its strict assertion now captures gesture geometry; focused
+Windows/Linux checks and all four final CI native shards pass. No speculative
+product fix or relaxed assertion was substituted for evidence.
 
 ## Delivery order and shared capability queue
 
