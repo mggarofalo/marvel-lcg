@@ -135,6 +135,7 @@ internal static class AbilityOperationNames
             AbilityCardInstruction.ReturnOwnedToDiscard => "returnOwnedToDiscard",
             AbilityCardInstruction.ReturnOwnedToHand => "returnOwnedToHand",
             AbilityCardInstruction.AddToHand => "addToHand",
+            AbilityCardInstruction.PlaceOnBottomOfDeck => "placeOnBottomOfDeck",
             AbilityCardInstruction.Reveal => "reveal",
             AbilityCardInstruction.RevealFromVillainDeck => "revealFromVillainDeck",
             AbilityCardInstruction.AttachTo => "attachTo",

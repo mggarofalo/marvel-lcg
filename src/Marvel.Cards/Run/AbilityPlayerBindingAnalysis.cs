@@ -89,7 +89,8 @@ internal static class AbilityPlayerBindingAnalysis
 
     private static bool ContainsBasicCard(AbilityEffect effect) => effect switch
     {
-        AbilityEffect.CardAction action => Contains(action.Selection),
+        AbilityEffect.CardAction action => action.Instruction == AbilityCardInstruction.PlaceOnBottomOfDeck
+            || Contains(action.Selection),
         AbilityEffect.Heal heal => Contains(heal.Card) || Contains(heal.Amount),
         AbilityEffect.SetHitPoints assignment => Contains(assignment.Card),
         AbilityEffect.Damage damage => Contains(damage.Cards) || Contains(damage.Amount),

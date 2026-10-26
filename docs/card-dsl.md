@@ -1100,3 +1100,13 @@ including canceled event plays. Controller, hero form and printed trait conditio
 remain explicit authored trigger requirements. This mechanism alone does not admit
 Embiggen!, Shrink, or Ms. Marvel's pack; printed removal caps and characteristic
 nested/cancellation/prevention proofs remain separate delivery work.
+
+### Ordered deck-bottom placement
+
+`{"placeOnBottomOfDeck":"chosen"}` moves one selected card to the resolving
+player's deck at its bottom, preserving the other cards' order without shuffling.
+The selection uses the same typed selectors as other card instructions. A
+`chooseCard` over `cardsIn: { area: "yourDiscardPile" }` supplies an exact discard
+selection. The committed movement supplies completion evidence for `then`; an
+absent or blocked card does not complete the instruction. Normal draw and deck
+reset rules apply to a following draw.

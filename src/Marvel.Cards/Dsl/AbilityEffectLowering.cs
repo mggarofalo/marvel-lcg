@@ -118,6 +118,7 @@ internal static class AbilityEffectLowering
             "discardAtRandom" or "placeAtRandom" => RandomCardsEffect(argument, child, node.Kind == "placeAtRandom"),
             "discardTop" => DiscardTopEffect(argument, child),
             "discardUntil" => DiscardUntilEffect(argument, child),
+            "placeOnBottomOfDeck" => CardInstruction(argument, child, AbilityCardInstruction.PlaceOnBottomOfDeck),
             "shuffleInto" => ShuffleIntoEffect(argument, child),
             "search" => SearchEffect(argument, child),
             "putIntoPlay" => PutIntoPlayEffect(argument, child),

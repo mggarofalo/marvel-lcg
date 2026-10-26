@@ -164,7 +164,7 @@ internal static class AbilityAreaMovementProjection
     {
         if (effect.OperationName() is "draw" or "drawToHandSize"
             or "drawToPrintedHandSize" or "search"
-            or "shuffleInto" or "dealEncounterCard" or "dealEncounterCards"
+            or "placeOnBottomOfDeck" or "shuffleInto" or "dealEncounterCard" or "dealEncounterCards"
             or "revealTop" or "discardTop" or "discardUntil"
             or "engageTopAsMinion" or "indirectDamage" or "discardFromHand"
             or "returnOwnedToHand" or "addToHand" or "returnOwnedToDiscard"

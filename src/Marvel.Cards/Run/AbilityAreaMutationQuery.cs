@@ -54,7 +54,7 @@ internal sealed class AbilityAreaMutationQuery(
         string operation = effect.OperationName();
         if (DeckOperationChange(effect) is { } deckChange) return deckChange;
         if (operation is "discard" or "removeFromGame" or "returnToHand"
-            or "returnOwnedToHand" or "addToHand" or "returnOwnedToDiscard"
+            or "placeOnBottomOfDeck" or "returnOwnedToHand" or "addToHand" or "returnOwnedToDiscard"
             or "reveal" or "putIntoPlay")
         {
             return CardMovementChange(effect);
@@ -116,6 +116,8 @@ internal sealed class AbilityAreaMutationQuery(
             "returnToHand" or "returnOwnedToHand" or "addToHand" => SelectedCardMoves(
                 EffectOf<AbilityEffect.CardAction>(effect, context).Selection,
                 DeckType.HandsArea),
+            "placeOnBottomOfDeck" => SelectedCardMoves(
+                EffectOf<AbilityEffect.CardAction>(effect, context).Selection, DeckType.PlayerDeck),
             "reveal" => SelectedCardMoves(
                 EffectOf<AbilityEffect.CardAction>(effect, context).Selection,
                 DeckType.RevealingArea),

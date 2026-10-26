@@ -32,6 +32,8 @@ internal static class AbilityDeckAndRevealExecution
             AbilityEffect.StoreBeneath store => AbilityBeneathExecution.Run(store, context),
             AbilityEffect.InitializeAuxiliaryDeck or AbilityEffect.RevealAuxiliaryTop =>
                 AbilityAuxiliaryDeckExecution.Run(effect, context),
+            AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PlaceOnBottomOfDeck } bottom =>
+                AbilityDeckBottomMovement.Run(bottom.Selection, context),
             AbilityEffect.Shuffle shuffle => Shuffle(shuffle, context),
             AbilityEffect.ShuffleInto shuffle => ShuffleInto(shuffle, context),
             AbilityEffect.Search search => Search(search, context),

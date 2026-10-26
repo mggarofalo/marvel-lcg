@@ -22,6 +22,8 @@ internal static class AbilityCompletion
         {
             "moveActiveCounter" => Amount(committed.OfType<FieldSet>().Count(item =>
                 item.Field == "active_villain" && item.From == 0 && item.To == 1), requested),
+            "placeOnBottomOfDeck" => Amount(committed.OfType<CardsMoved>()
+                .Where(item => item.Verb == "Place_On_Bottom").Sum(item => (long)item.Cards.Count), requested),
             "placeThreat" => AbilityStructuralOutcome.None,
             "giveStatus" => Amount(committed.OfType<CardAttached>().Count(item => item.Verb == "Give_Status"), requested),
             "draw" => Amount(committed.OfType<CardsMoved>().Where(item => item.Verb == "Draw")
@@ -44,6 +46,7 @@ internal static class AbilityCompletion
         AbilityResolutionState cast) => effect switch
     {
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.MoveActiveCounter } => 1,
+        AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PlaceOnBottomOfDeck } => 1,
         AbilityEffect.Draw draw => draw.Count * (long)(draw.Players is AbilityPlayerSelection.AllPlayers ? cast.World.PlayerOrder.Count() : 1),
         AbilityEffect.GiveStatus status => execution.Every(status.Cards, cast).Count,
         AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust } action =>

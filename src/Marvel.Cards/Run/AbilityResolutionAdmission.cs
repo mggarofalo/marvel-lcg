@@ -201,6 +201,8 @@ internal static class AbilityResolutionAdmission
                 ? AdmissionResolution.Full : AdmissionResolution.None,
             "putIntoPlay" when node is AbilityEffect.PutIntoPlay { AllyUnderYourControl: true } entry =>
                 AbilityAllyEntry.HasTarget(entry, cast) ? AdmissionResolution.Full : AdmissionResolution.None,
+            "placeOnBottomOfDeck" => AbilityDeckBottomMovement.Resolution(
+                ((AbilityEffect.CardAction)node).Selection, cast),
             "exhaust" => ResolutionOfCards(
                 Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast), card => card.Ready),
             "ready" => ResolutionOfCards(

@@ -247,7 +247,7 @@ internal static class AbilityInitiationPrimitives
         node is AbilityEffect.DelayedStun
         || node.OperationName() is "removeFromGame" or "exhaust" or "ready" or "revealFromVillainDeck" or "reveal"
             or "returnToHand" or "returnOwnedToHand" or "soakDamage"
-            or "addToHand" or "giveStatus" or "attachTo" or "grantUntil"
+            or "placeOnBottomOfDeck" or "addToHand" or "giveStatus" or "attachTo" or "grantUntil"
             or "discard" or "heal" or "placeCounters" or "shuffleInto" or "search"
             or "indirectDamage" or "dealDamage" or "moveDamage"
             or "dealAttackDamage" or "moveAttackDamage" or "placeThreat"
