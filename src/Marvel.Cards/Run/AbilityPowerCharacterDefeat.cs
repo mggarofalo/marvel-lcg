@@ -42,7 +42,7 @@ internal static class AbilityPowerCharacterDefeat
         }
         if (AbilityProjectedDefeatWindows.CanProjectEncounterDeal(state, damaged, cast))
             state = state with { EncounterCardsChanged = true };
-        else if (AbilityProjectedDefeatWindows.CanDeferOwnDefeat(state, damaged, cast))
+        else if (AbilityProjectedDefeatWindows.CanDeferDefeat(state, damaged, cast))
             // The live damage procedure owns this window. Only continuations whose
             // suspension is independent of its unknown board changes may follow.
             state = state with { DefeatWindowDeferred = true };

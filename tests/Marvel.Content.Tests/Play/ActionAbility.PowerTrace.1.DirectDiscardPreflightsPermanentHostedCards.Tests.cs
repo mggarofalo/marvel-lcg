@@ -187,7 +187,7 @@ public sealed class ActionAbilityPowerTraceDirectDiscardPreflightsPermanentHoste
             tracer = board.CreateCard("01007", board.AreaOf(DeckType.UpgradesArea, minion.Area.PlayArea, minion.ObjectId, 0));
             board.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 1);
         }, hero: true, abilities: runner));
-        Assert.Contains("defeat-triggered ability", refused.Message);
+        Assert.Contains("unprojected defeat window", refused.Message);
         Assert.True(source!.Ready);
         Assert.Equal(0, minion!.Damage);
         Assert.Equal(minion.ObjectId, tracer!.Area.Host);

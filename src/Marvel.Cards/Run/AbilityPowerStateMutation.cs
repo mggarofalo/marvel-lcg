@@ -130,7 +130,7 @@ internal static class AbilityPowerStateMutation
     private static AbilityPowerState DefeatSideScheme(
         AbilityPowerState state, Card scheme, AbilityAdmissionScope cast)
     {
-        if (AbilityProjectedDefeatWindows.CanDeferOwnDefeat(state, scheme, cast))
+        if (AbilityProjectedDefeatWindows.CanDeferDefeat(state, scheme, cast))
             state = state with { DefeatWindowDeferred = true };
         else if (AbilityProjectedDefeatWindows.HasWork(state, scheme, cast))
         {
