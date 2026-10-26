@@ -1,60 +1,63 @@
 # Thor delivery checkpoint
 
-MARVEL-563, integration `ecdc64fd`, 2026-10-26. Thor remains outside public
-admission. This checkpoint supplements the per-face implementation handoff;
-it does not replace its 35-face inventory or the complete pack proof contract.
+MARVEL-563, integration `8bcf3050`, 2026-10-26. Thor remains outside public
+admission. This record supplements the 35-face implementation handoff and does
+not replace complete pack acceptance.
 
-Twenty-two actual faces have independent review: `06001a`, `06001b`, `06002`,
-`06003`, `06004`, `06005`, `06007`, `06008`, `06009`, `06010`, `06011`,
-`06013`, `06015`, `06016`, `06021`, `06022`, `06023`, `06024`, `06025`,
-`06027`, `06033`, and `06034`. The authored book contains 598 faces.
-The verified starter source is retained in
+Thirty-two actual faces have independent review. The remaining faces are
+`06006` Lightning Strike, `06014` Get Over Here, and `06028` Loki. The authored
+book contains 608 faces. The verified starter source is retained in
 [thor-starter-source.md](research/remaining/thor-starter-source.md).
 
-Reviewed engine prerequisites include exact engagement timing, replay v26,
-Worthy search meaning, the standalone discard-and-engage cost, the complete
-in-play census, and combined printed-price/X-energy payment. Their evidence
-documents distinguish synthetic engine tests from actual authored rows and
-public product admission. Variable-payment review additionally proves JSON
-save round-trips, fresh-host continuation and deterministic replay through a
-synthetic durable factory; its complete Content suite passed 5,535 tests.
+Reviewed and integrated prerequisites include engagement timing, replay v26,
+Worthy search meaning, the standalone discard-and-engage cost, in-play census,
+variable typed payment, candidate self-pricing, basic-use Weapon and ally costs,
+original ally-play payment receipts, private encounter inspection, simultaneous
+direct-damage defeat barriers, and exact causal recipients in offers. The latter
+uses protocol 40. These are engine capabilities, not public Thor admission.
 
-Combined focused checks at `2de3fe58` passed 110 tests. The subsequent
-Defender/Family Feud packet passed 79 author checks and 116 independent checks,
-with independently killed data mutants. These results do not certify the
-eventual complete pack or later combined revisions.
+Actual Valkyrie and Heimdall have independent review. Odin's Anger, Frost Giant
+and Teamwork were integrated as `9cabbc97` and `8bcf3050`; their evidence is in
+[thor-nemesis-teamwork-evidence.md](thor-nemesis-teamwork-evidence.md). The book
+merge retained all 605 existing rows and appended exactly those three faces.
+The combined Thor, ability-data, citation and Lightning-composition selection
+passes 767 checks at `8bcf3050`; log `C:/Users/mggar/Source/evidence/thor-32faces-integration.log`.
 
-Hercules pricing, basic-use/Weapon costs, private encounter inspection and the
-seven additional actual faces now have independent review. At `ecdc64fd`, the
-rebuilt integration passed 152 focused Content checks and 13 inspection View
-checks. External logs are `C:/Users/mggar/Source/thor-rebuilt-*.log`.
-Inspection review includes JSON restart, replay, socket and privacy evidence.
-Teamwork matching ally power is completing adversarial verification; Valkyrie's
-original ally-play receipt is in independent review as MARVEL-753, candidate
-`96c4da97`. Neither pending mechanism establishes an authored face yet.
+Lightning Strike's selector and future-energy admission prerequisites are reviewed
+and integrated through `eab43672`. At `6b5f5ef7`, the original two synthetic
+composition probes pass within 33 focused checks, and all 129 architecture checks
+pass. The reviewed causal-recipient field is registered explicitly in the View
+member inventory. These probes do not substitute for actual Lightning Strike
+authoring and independent review.
 
-The first ignore-Tough candidate is withheld. Its flag and projection plumbing
-are useful, but its proposed sequential recipient coordinator conflicts with
-simultaneous damage: `ruling:3eb442853617fe14` says Ground Stomp cannot damage
-Ultron III by first removing his drones; `ruling:304a4798e0b453b4` requires
-simultaneous targets to share each damage-processing step. A fresh implementation
-packet must supply the correct barrier and independent review. The rejected
-candidate's focused checks are not acceptance evidence for that timing, and its
-compilation-failing mutation attempts are not killed mutants. The replacement
-shared-stage implementation now passes independent timing probes and 38 complete
-Core/Captain America games. Exact per-offer recipient meaning remains a finding;
-its correction must pass review before integration. Lightning Strike is withheld.
+The causal-recipient UI fix is integrated at `cd2be273`. Headless and rendered
+100%/150% native checks pass; inspected captures show distinct recipient context
+and reachable payment controls. See [defeat-recipient-context.md](defeat-recipient-context.md).
+Earlier timing review includes 38 complete Core/Captain America games; this is
+prerequisite regression evidence, not final combined Thor certification.
 
-Hammer Throw's earlier probe also encoded a wrong expectation: `rr:and` makes
-its damage and Mjolnir return simultaneous, so a later after-defeat response does
-not require Mjolnir to remain in play. Get Over Here must retain only the same
-living in-play target after damage; a defeated target cannot be brought back.
+## Remaining dependencies
 
-PR #451 is merged as `71ac4975`; `feat/thor-completion` is rebuilt from that
-main with Thor-owned commits. The original branch is retained as evidence.
-Thirteen faces remain: `06006`, `06012`, `06014`, `06017`, `06018`, `06019`,
-`06020`, `06026`, `06028`, `06029`, `06030`, `06031`, and `06032`.
-Complete their actual-card proofs, then verify printed starter/public admission,
-public games, meaningful pending save/restart, native interaction and final
-integrated gates/replay routes. Ordinary content acceptance is agent-owned;
-materially new UI requires inspected captures and a focused Plane review item.
+- MARVEL-757 supplies an incarnation-aware in-play condition for Get Over Here.
+  Source `9ed19527` is in independent review. A defeated or departed target must
+  not be brought back; reentry of the same physical card is a different binding.
+- MARVEL-756 corrects overkill before Loki's recovery. Source `8265a038` passes
+  its author checks, but independent review demonstrates that primary and spill
+  recipients do not yet share all defeat-stage barriers. It is not accepted or
+  integrated. Excess damage reaching the villain before Loki heals does not
+  authorize completing the villain's defeat before Loki's would-defeat window.
+- MARVEL-758 addresses Hammer Throw's refusal of Loki's recovery interrupt in
+  power preflight. Its implementation must preserve sound dependency analysis;
+  passing a narrowly prepared board does not establish all legal pack play.
+
+The historical Loki red log checks spill before advancing the sequence. It does
+not itself prove the reported post-resolution failure. New recovery and shared
+stage probes supply the distinguishing evidence; retain the original log without
+relabeling it as a completed-resolution observation.
+
+After these dependencies, author and independently review the three remaining
+faces. Then verify the printed starter and complete public admission, legal
+custom decks, whole public games, meaningful pending save/restart, relevant native
+interactions, and final integrated managed/platform/replay gates. Ordinary content
+acceptance is agent-owned; materially new UI needs inspected captures and a
+focused Plane review item.

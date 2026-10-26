@@ -49,19 +49,18 @@ review MARVEL-732 remains a separate UI decision, not a content gate.
 
 Thor is the active pack. Its integration branch was rebuilt from merged main
 as `feat/thor-completion`; the old branch is retained as evidence.
-Candidate `ecdc64fd` contains 22 independently reviewed Thor faces (598 total), engagement
-semantics, replay v26, Worthy search meaning, the standalone Defender cost,
-in-play census, variable typed payment, candidate self-pricing and basic-attack
-Weapon costs. Public Thor admission remains closed. See the per-face handoff
-and [checkpoint](thor-delivery-checkpoint.md) for evidence boundaries. The
-private inspection prerequisite has independent ordering, privacy, transport and
-save/replay review. Hammer Throw, Hercules and Mean Swing have actual-row review.
-The rebuilt candidate passed 152 focused Content checks. Simultaneous damage
-defeat stages passed independent timing probes and 38 complete Core/Captain
-America games; exact per-offer recipient meaning is being corrected before
-integration. Lightning Strike remains withheld. Valkyrie's original ally-play
-payment receipt (MARVEL-753) is in independent review; Teamwork is completing
-adversarial verification. Thirteen faces and complete public pack proof remain.
+Candidate `8bcf3050` contains 32 independently reviewed Thor faces (608 total),
+including Valkyrie, Heimdall, Odin's Anger, Frost Giant and Teamwork. Reviewed
+engine prerequisites include engagement, replay v26, typed variable payment,
+original ally-play receipts, private inspection, basic-use costs, simultaneous
+direct-damage barriers and exact causal-recipient meaning (protocol 40). Native
+recipient/payment checks pass at 100% and 150%; captures were inspected. Public
+Thor admission remains closed. See the [checkpoint](thor-delivery-checkpoint.md)
+for exact revisions and evidence boundaries. Lightning Strike's selector and
+payment dependencies are integrated; its actual row remains to author. Get Over
+Here awaits independent review of the living-target guard (757). Loki awaits
+correct primary/spill defeat-stage ordering (756) and Hammer Throw recovery
+preflight (758). Three faces and complete public pack proof remain.
 
 The intermittent Linux drag assertion from an earlier CI run remains recorded
 in MARVEL-752. Its strict assertion now captures gesture geometry; focused
