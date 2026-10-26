@@ -15,6 +15,16 @@ namespace Marvel.Server.Tests;
 /// <summary>A deterministic synthetic payment scene behind the supported durable factory seam.</summary>
 internal sealed class VariableEventReplayReviewFactory : IDurableGameFactory
 {
+    private readonly string effect;
+    private readonly string generated;
+
+    internal VariableEventReplayReviewFactory(string? effect = null, string generated = "YYY")
+    {
+        this.effect = effect
+            ?? """{"placeCounters":{"card":"you","counter":"test","count":{"result":"energy"}}}""";
+        this.generated = generated;
+    }
+
     public SessionCompatibility Compatibility { get; } = DatasetGameFactory.Load(RepositoryPaths.Root).Compatibility;
     internal Game Game { get; private set; } = null!;
     internal int Source { get; private set; }
@@ -29,18 +39,19 @@ internal sealed class VariableEventReplayReviewFactory : IDurableGameFactory
               {"card":"06006","abilities":[{
                 "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
                 "cost":{"spendEnergyX":"Y"},
-                "effect":{"placeCounters":{"card":"you","counter":"test","count":{"result":"energy"}}}
+                "effect":EFFECT
               }]},
               {"card":"01030","abilities":[{
                 "trigger":{"event":"WhenActionTriggered","timing":"Resource","subject":"game"},
-                "cost":{"dealDamage":{"cards":"this","amount":2}},"effect":{"generate":"YYY"}
+                "cost":{"dealDamage":{"cards":"this","amount":2}},"effect":{"generate":"GENERATED"}
               }]},
               {"card":"01092","abilities":[{
                 "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
                 "effect":{"draw":{"player":"you","count":1}}
               }]}
             ]}
-            """));
+            """.Replace("EFFECT", effect, StringComparison.Ordinal)
+                .Replace("GENERATED", generated, StringComparison.Ordinal)));
         var world = WorldSetup.DealWithoutCardAbilities(cards,
             Blueprints.From(Dealer.DealOrder(setup, "rhino", ["spider_man"]), cards),
             [setup.Hero("spider_man").Name], specification.Seed);

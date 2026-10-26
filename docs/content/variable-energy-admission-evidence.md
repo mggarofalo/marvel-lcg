@@ -65,3 +65,43 @@ The cohesive lowering correction is integrated separately as prerequisite commit
 `415ca1f2`. It moves the damage-family lowering responsibility without changing
 the baseline. The payment commit's normal hook result is recorded separately in
 `future-energy-final-commit.log`.
+
+## Independent review of `8ac6a0bd`
+
+The isolated review found no production correctness gap in the bounded event
+spelling. It checked that admission uses the adjusted combined printed/X price,
+separate icon allocation, positive-X bounds and declared typed/wild receipts;
+actual selection is validated before payment commits. The existing focused cases
+also distinguish inactive branches, zero effects, suspended generators, query
+purity and both interrupt/response adapters.
+
+`VariableEnergyAdmissionReplayTests` adds an independent synthetic durable proof
+through `IDurableGameFactory`, `EngineHost`, strict `SessionSaveJson` and
+`SessionReplay`. Its damage is X minus one only when the selected payment includes
+a declared physical resource. An affordable X=1 and an affordable X=2 declaration
+that selects the zero-effect branch both reject without changing the save or
+board. A valid X=2 retry suspends during its resource generator's defeat window.
+Strict JSON retains the selected generator, X and separate printed/X allocations;
+replay and host restart retain the pending prompt, state and RNG. Declining the
+window then produces the same events and one damage in uninterrupted, replayed
+and restarted execution.
+
+The final restored non-incremental Server test-project build passed with zero
+warnings/errors. Its focused replay filter passed three cases; the Content
+admission/payment filter passed 38 cases. UTF-8 logs are outside the repository:
+
+- `C:/Users/mggar/Source/future-energy-independent-restored-build.log`
+- `C:/Users/mggar/Source/future-energy-independent-server.log`
+- `C:/Users/mggar/Source/future-energy-independent-content.log`
+
+Two additional compiled mutants failed at their intended rejection assertions:
+omitting selected energy validation accepted X=1, while adding a fabricated
+physical resource to the validation receipt accepted the wrong X=2 declaration.
+Their logs are `future-energy-independent-mutant.log` and
+`future-energy-independent-receipt-mutant.log` in the same external directory.
+Every mutation was restored before the final non-incremental build and replay
+run. Normal hooks are recorded in `future-energy-independent-commit.log`.
+
+This review adds tests and evidence only. It does not establish actual Lightning
+Strike authoring, public Thor admission, native interaction acceptance, full
+integrated-suite success or cross-platform CI. Those remain integration work.
