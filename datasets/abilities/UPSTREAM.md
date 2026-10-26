@@ -203,3 +203,10 @@ Edison's Giant Robot (05028) adds one actual research face (31 of 34 Ms. Marvel;
 form restriction, multiplayer damage, suppression, expiry and reentry. The
 standalone timed self-blank opcode has independent bounded engine review; the
 actual row requires separate content review. Public admission stays closed.
+
+Harvest (05029) adds one face (32 of 34 Ms. Marvel; 574 total). Its printed
+When Revealed exhausts all Persona supports, heals for each actual exhaustion
+and gains surge only when none exhausted. The committed effect receipt differs
+from exhaustion costs and remains zero when every Persona is already exhausted.
+HarvestEffectReceiptTests uses the full book for normal and zero/surge reveals;
+synthetic continuation variants isolate the receipt. Public admission stays closed.

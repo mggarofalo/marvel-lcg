@@ -17437,6 +17437,59 @@
           }
         }
       ]
+    },
+    {
+      "card": "05029",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardRevealed",
+            "timing": "WhenRevealed",
+            "subject": "this"
+          },
+          "effect": {
+            "seq": [
+              {
+                "exhaust": {
+                  "withTrait": {
+                    "cards": {
+                      "query": "supports"
+                    },
+                    "trait": "PERSONA"
+                  }
+                }
+              },
+              {
+                "heal": {
+                  "card": {
+                    "query": "villain"
+                  },
+                  "amount": {
+                    "result": "exhausted"
+                  }
+                }
+              },
+              {
+                "if": {
+                  "test": {
+                    "not": {
+                      "atLeast": {
+                        "value": {
+                          "result": "exhausted"
+                        },
+                        "count": 1
+                      }
+                    }
+                  },
+                  "then": {
+                    "gainSurge": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

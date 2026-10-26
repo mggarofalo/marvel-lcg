@@ -1,4 +1,5 @@
 using Marvel.Cards.Dsl;
+using Marvel.Content.Tests.Cards;
 using Marvel.Cards.Run;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -9,7 +10,7 @@ using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
-/// <summary>Actual printed Harvest body injected without authoring or admitting its row.</summary>
+/// <summary>Actual full-book Harvest encounters and isolated receipt variants.</summary>
 public sealed class HarvestEffectReceiptTests : CoreCardTestBase
 {
     private const string Persona = """
@@ -113,7 +114,7 @@ public sealed class HarvestEffectReceiptTests : CoreCardTestBase
 
     private static RedSkullFixture Create(string body)
     {
-        var runner = new AbilityRunner(AbilityCatalog.Parse($$$$$$"""
+        var runner = body == Body ? AuthoredCards.Runner() : new AbilityRunner(AbilityCatalog.Parse($$$$$$"""
             {"cards":[{"card":"05029","abilities":[{
               "trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
               "effect":{{{{{{body}}}}}}}]},{"card":"01101","abilities":[]}]}
