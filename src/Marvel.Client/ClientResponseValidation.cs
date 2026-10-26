@@ -246,6 +246,7 @@ internal static class ClientResponseValidation
 
     private static bool CompleteAffordance(Affordance option) =>
         option is not null && option.Verb is not null && option.Label is not null
+        && CompleteContext(option.ContextCardIds)
         && CompleteTargets(option.Targets) && CompleteCosts(option.Costs);
 
     private static bool CompleteTargets(TargetRequest? targets) => targets is null

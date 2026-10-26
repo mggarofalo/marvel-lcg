@@ -15,17 +15,22 @@ internal static class DefeatWindowEligibility
             ?? throw new InvalidOperationException("a defeat window has no occurrence");
         bool beforeDefeat = operation.Kind is DefeatAbilityKind.ChooseWouldBeDefeated
             or DefeatAbilityKind.ResumeWouldBeDefeated;
-        var candidates = operation.Window.OwnAbilities.Where(ability => ability.TriggeringDefeat is not { } defeat
-            || world.Cards[ability.Card].Incarnation == defeat.Incarnation
-                && DeckTypes.IsInPlay(world.Cards[ability.Card].Area.Type)).Concat(
+        var candidates = operation.Window.OwnAbilities.Where(ability => EligibleOwn(world, ability)).Concat(
             abilities.Waiting(world, occurrence, WindowKind.Interrupt)
                 .Where(ability => beforeDefeat || !operation.Window.OwnAbilities.Any(own =>
                     own.Card == ability.Card && own.Type == ability.Type && own.Ordinal == ability.Ordinal)));
+        if (beforeDefeat) candidates = candidates.Select(ability => ability with
+        { TriggeringWouldDefeat = occurrence.Subject });
         var tiers = AbilityWindow.Tiers(candidates, WindowKind.Interrupt, occurrence);
         if (tiers.Count == 0) return [];
         var (forced, optional) = AbilityWindow.Split(tiers[0]);
         return AbilityOfferHandles.Assign(forced.Count > 0 ? forced : optional, world.Cards.Count);
     }
+
+    private static bool EligibleOwn(World world, PendingAbility ability) =>
+        ability.TriggeringDefeat is not { } defeat
+        || world.Cards[ability.Card].Incarnation == defeat.Incarnation
+            && DeckTypes.IsInPlay(world.Cards[ability.Card].Area.Type);
 
     internal static Occurrence Origin(World world, IWindowAbilities abilities,
         PhaseStep step, PendingAbility ability) =>
@@ -46,7 +51,8 @@ internal static class DefeatWindowEligibility
                 || DamagePlacement.Health(world, world.Facts, card) - card.Damage > 0) continue;
             foreach (var tier in AbilityWindow.Tiers(
                 abilities.Waiting(world, source.Origin, WindowKind.Interrupt), WindowKind.Interrupt, source.Origin))
-                candidates.AddRange(tier.Abilities.Select(ability => (source.Origin, ability)));
+                candidates.AddRange(tier.Abilities.Select(ability =>
+                    (source.Origin, ability with { TriggeringWouldDefeat = source.Origin.Subject })));
         }
         if (candidates.Count == 0) return [];
         var first = candidates.Min(candidate => (AbilityTypes.PriorityOf(candidate.Ability.Type),

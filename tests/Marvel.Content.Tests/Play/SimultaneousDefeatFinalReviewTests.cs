@@ -93,6 +93,18 @@ public sealed class SimultaneousDefeatFinalReviewTests
         var prompt = Assert.IsType<Prompt>(Sequence.Work(world, Cards, world.Abilities, []));
         Assert.Equal(2, prompt.Affordances.Select(offer => offer.Id).Distinct().Count());
         Assert.Equal(2, prompt.Affordances.Select(offer => JsonSerializer.Serialize(offer with { Id = 0 })).Distinct().Count());
+        Assert.Equal(new[] { recipient.ObjectId, second.ObjectId },
+            prompt.Affordances.Select(offer => Assert.Single(offer.ContextCardIds)));
+        Assert.All(prompt.Affordances, offer =>
+        {
+            Assert.Equal(first.ObjectId, offer.AnchorId);
+            Assert.Null(offer.Targets);
+            Assert.Empty(offer.WindowChoices);
+            Assert.Contains("before", offer.DisplayLabel);
+            Assert.Contains("would be defeated", offer.CommitLabel);
+        });
+        Assert.Equal(new[] { recipient.ObjectId, second.ObjectId }, prompt.ContextCardIds);
+        Assert.Contains("cards", prompt.DisplayQuestion);
     }
 
     private static string RunObserved(bool probe)

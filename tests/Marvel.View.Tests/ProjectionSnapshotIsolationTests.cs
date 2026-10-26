@@ -79,6 +79,7 @@ public sealed class ProjectionSnapshotIsolationTests
             DisplayLabel = "Display", CommitLabel = "Commit", CostDescription = "Exhaust source",
             DeferredTargetSelection = true, DirectRecipientCommit = true,
             SelectionSourceId = source,
+            ContextCardIds = new[] { source },
         };
         return new Prompt(0, Question.TurnOption, TimingPriority.Untimed, "Trigger", "Prompt", true, new[] { option })
         {
@@ -90,6 +91,7 @@ public sealed class ProjectionSnapshotIsolationTests
     private static void CorruptCollections(Prompt prompt)
     {
         Affordance offer = prompt.Affordances[0];
+        ((IList<int>)offer.ContextCardIds)[0] = -999;
         TargetRequest targets = offer.Targets!;
         int source = targets.Legal[0];
         ((IList<int>)targets.Legal)[0] = -999;

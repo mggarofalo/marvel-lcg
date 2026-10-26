@@ -101,7 +101,13 @@ internal static class DefeatProcedure
                 ? $"order abilities before card {step.Subject} is defeated"
                 : $"interrupt before card {step.Subject} is defeated",
             !mandatory,
-            [.. offered.Select(ability => abilities.Describe(world, ability))]);
+            [.. offered.Select(ability => abilities.Describe(world, ability))])
+        {
+            DisplayQuestion = mandatory ? "Order abilities before cards would be defeated"
+                : "Interrupt before cards would be defeated?",
+            Description = "Resolve interrupts before any of these cards are defeated.",
+            ContextCardIds = [.. offered.Select(ability => ability.TriggeringWouldDefeat ?? step.Subject).Distinct()],
+        };
     }
 
     internal static void ResumeWouldBeDefeated(

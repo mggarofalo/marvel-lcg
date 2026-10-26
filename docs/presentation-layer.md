@@ -336,7 +336,7 @@ visibility configuration, durable sessions and shutdown behavior.
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Both endpoints must use
-protocol 39. Setup and decisions replay under engine-replay-v24, with session
+protocol 40. Setup and decisions replay under engine-replay-v26, with session
 schema 7 retaining the exact ordered decks. Requests carry engine-authored
 commitments and explicit payment allocations; authorized responses include
 readable choices, active attack participants, attack completion events and
@@ -525,3 +525,5 @@ remain separate semantic facts. Protocol 38 peers are rejected before gameplay
 because their persistent-effect vocabulary cannot explain the new operation.
 This presentation-only extension changes no session, replay, RNG, digest or
 dataset identity and does not admit Ms. Marvel publicly.
+
+Protocol 40 adds `Affordance.ContextCardIds`: prompt-local causal card identities, separate from source anchors, effect targets and complete window intentions. View owns their filtered copied storage and readable copy/location descriptions; Godot displays those descriptions beside the corresponding offer. This field grants no targeting or selection authority.

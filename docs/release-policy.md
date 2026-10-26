@@ -1,5 +1,11 @@
 # Release identity, signing and compatibility
 
+Protocol 40 adds per-offer `ContextCardIds`, identifying causal cards independently
+of source anchors and effect targets. View filters and copies the identities and
+names readable physical copies in their location. Protocol 39 peers are rejected.
+This presentation repair is included in the unpublished replay v26 boundary;
+session schema 7, RNG, state digest and runtime datasets are unchanged.
+
 Protocol 39 adds the persistent-effect operation `BlankPrintedText`. Its source
 target and phase duration describe blanking without exposing an internal numeric
 modifier. Protocol 38 endpoints cannot understand this operation and are rejected
@@ -57,7 +63,7 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `39` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `40` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `7` | The strict persisted JSON shape changes. |
 | Engine replay contract | `engine-replay-v26` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |

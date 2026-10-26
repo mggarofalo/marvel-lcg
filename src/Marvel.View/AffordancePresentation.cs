@@ -24,6 +24,12 @@ public sealed record AffordancePresentation(
     /// <summary>Complete current intentions; an empty list retains explicit composition.</summary>
     public IReadOnlyList<WindowChoice> WindowChoices { get; init; } = [];
 
+    /// <summary>Authorized identities causing this exact offer, without selection authority.</summary>
+    public IReadOnlyList<int> ContextCardIds { get; init; } = [];
+
+    /// <summary>Readable causal card instances, including copy and location distinctions.</summary>
+    public string? ContextDescription { get; init; }
+
     /// <summary>Readable engine-authored choice name, without changing command identity.</summary>
     public string? DisplayLabel { get; init; }
 

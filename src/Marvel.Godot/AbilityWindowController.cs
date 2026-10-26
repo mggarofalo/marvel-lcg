@@ -68,6 +68,8 @@ internal sealed class AbilityWindowController(DecisionPanel panel) : IDisposable
     private void AddOffer(DecisionComposer draft, AffordancePresentation offer, int generation, bool showSource)
     {
         if (showSource) frame!.AddText($"WindowSource{offer.Id}", offer.SourceName ?? offer.Anchor, GodotThemeVariations.Caption);
+        if (offer.ContextDescription is { } context)
+            frame!.AddText($"WindowContext{offer.Id}", context, GodotThemeVariations.Caption);
         if (offer.WindowChoices.Count == 0)
         {
             Button button = frame!.AddButton($"WindowAction{offer.Id}", offer.DisplayLabel ?? offer.Label,

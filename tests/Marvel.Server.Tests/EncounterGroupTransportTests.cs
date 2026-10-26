@@ -14,7 +14,7 @@ public sealed class EncounterGroupTransportTests
     {
         var source = Response();
         var restored = EngineJson.Snapshot(source);
-        Assert.Equal(39, restored.Version);
+        Assert.Equal(40, restored.Version);
         var group = Assert.Single(restored.World!.EncounterGroups);
         Assert.Equal(source.World!.EncounterGroups[0], group with { Stages = source.World.EncounterGroups[0].Stages });
         Assert.Equal([10, 11], group.Stages);

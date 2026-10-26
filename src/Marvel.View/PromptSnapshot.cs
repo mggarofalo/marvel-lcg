@@ -14,6 +14,9 @@ internal static class PromptSnapshot
 
     private static Affordance Copy(Affordance option, IReadOnlySet<int> readable) => option with
     {
+        ContextCardIds = option.ContextCardIds.Where(readable.Contains).ToArray(),
+        DisplayLabel = option.ContextCardIds.All(readable.Contains) ? option.DisplayLabel : null,
+        CommitLabel = option.ContextCardIds.All(readable.Contains) ? option.CommitLabel : null,
         Targets = option.Targets is { } targets ? Copy(targets) : null,
         Costs = option.Costs?.Select(Copy).ToArray(),
         SelectionSourceId = option.SelectionSourceId is { } source && readable.Contains(source)
