@@ -18544,6 +18544,44 @@
       ],
       "name": "Get Over Here!",
       "note": "Printed 06014 and vendored MarvelCDB FAQ 06014: attack a minion, then engage the surviving enemy with Aerial. An already engaged enemy cannot engage the same player again. Retained incarnation and in-play guard spellings are engine choices."
+    },
+    {
+      "card": "06028",
+      "name": "Loki",
+      "note": "Printed 06028 and mandatory Forced Interrupt erratum in datasets/marvelcdb-faq/faq.json. The physical top discard is tested after discard and any deck reset; treachery heals all damage on this Loki incarnation instead of defeat. Current RR 1.8 overkill requires actual defeat, so healing prevents excess damage and defeat credit. Receipt syntax is an engine choice.",
+      "abilities": [
+        {
+          "trigger": {
+            "event": "WhenCardWouldBeDefeated",
+            "timing": "ForcedInterrupt",
+            "subject": "this"
+          },
+          "effect": {
+            "forEachDiscarded": {
+              "effect": {
+                "discardTop": {
+                  "from": "encounterDeck",
+                  "count": 1
+                }
+              },
+              "when": {
+                "isKind": {
+                  "card": "that",
+                  "kind": "treachery"
+                }
+              },
+              "then": {
+                "heal": {
+                  "card": "this",
+                  "amount": {
+                    "damageOn": "this"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }
