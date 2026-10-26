@@ -19,7 +19,7 @@ internal sealed class AbilityInitiationPayment(
                 cast.Suspend();
                 return false;
             }
-            cast.PaidWith(eventPayment.Paid);
+            ApplyEventReceipt(cast);
         }
         execution.ApplyPayment(
             arrowPayment.Commit(cast.Execution!, execution.cardPlayAbilities, cast.Trigger, cast.Events), cast);
@@ -41,6 +41,12 @@ internal sealed class AbilityInitiationPayment(
             }
         }
         return true;
+    }
+
+    private void ApplyEventReceipt(AbilityResolutionState cast)
+    {
+        cast.PaidWith(eventPayment!.Paid);
+        if (eventPayment.Energy is { } energy) cast.Results["energy"] = energy;
     }
 
     private static bool EffectCanInitiate(AbilityResolutionExecution execution, AbilityResolutionState cast)

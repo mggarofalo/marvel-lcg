@@ -237,6 +237,14 @@ internal static class AbilityPaymentRules
             return false;
         }
 
+        if (ability.Cost is AbilityCost.SpendEnergy)
+        {
+            var price = AbilityPaymentPricing.CombinedPrice(world, card, player, ability, resourceAbilities)!;
+            var sources = price.Generators.Where(source => discarded is null || !discarded.Contains(source.Effect))
+                .Select(source => source.Effect).ToArray();
+            return ResourcePayment.Allocate(price, sources, new Dictionary<string, long> { ["X"] = 1 }) is not null;
+        }
+
         long cost = CardPayment.CostOf(
             world, world.Facts, world.Seats[player], card).Amount;
         string required = Resources.Required(world, card, world.Facts)
@@ -250,6 +258,11 @@ internal static class AbilityPaymentRules
         return AbilityHandDiscardAvailability.CanPay(ability.Cost,
             AbilityCostSelection.HandCandidates(world, card, player), generators, cost, required, discardCount);
     }
+
+    internal static bool EventPaysResources(World world, Card card, AbilityCost? cost) =>
+        EffectiveCards.Kind(card, world.Facts) == CardKind.Event
+        && (cost is AbilityCost.SpendEnergy
+            || ResourceRequirement(cost, card).Length + GenericResourceAmount(cost) > 0);
 
     internal static int GenericResourceAmount(AbilityCost? cost) => cost switch
     {

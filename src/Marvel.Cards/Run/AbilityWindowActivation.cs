@@ -23,11 +23,10 @@ internal static class AbilityWindowActivation
             AbilityPaymentSelection.Capture(paying,
                 cast.Results.ContainsKey(AbilityRecipientCommitment.PendingRecipient) ? [] : chosen,
                 answer.DefinedValues,
-                resourcesPaidByEvent: EffectiveCards.Kind(card, world.Facts) == CardKind.Event
-                    && (ResourceRequirement(found.Cost, card).Length + GenericResourceAmount(found.Cost)) > 0, allocations: answer.Allocations));
+                resourcesPaidByEvent: EventPaysResources(world, card, found.Cost), allocations: answer.Allocations));
         var eventPayment = AbilityEventPayment.Prepare(
-            world, card, cast.Player, paying, found,
-            execution.resourceAbilities, answer.Allocated);
+            world, card, cast.Player, found, execution.resourceAbilities,
+            AbilityPaymentSelection.Capture(paying, [], answer.DefinedValues, allocations: answer.Allocated));
         if (eventPayment is not null)
             AbilityPaymentReceiptAdmission.Validate(found, execution.AdmissionContext(cast), eventPayment.PreviewPaid);
         return new AbilityInitiationPayment(eventPayment, arrowPayment);

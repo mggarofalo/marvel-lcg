@@ -1245,3 +1245,18 @@ Out-of-play areas, including beneath-card storage in either orientation, do not
 contribute or produce search information. This engine selector does not admit
 Thor or author its actual ability row. Area-changing and repeated projections
 requiring complete projected placement explicitly refuse this selector.
+
+### Variable energy arrow cost with a printed event price
+
+An event whose sole arrow cost is `spendEnergyX: "Y"` uses one payment with
+separate components for its adjusted printed price and X energy. The displayed
+sum (for example `1+X`) is an engine spelling; the component contracts own
+allocation. The player defines positive X and assigns each used physical icon
+once. Wild declarations, overgeneration and suspended resource abilities use the
+ordinary payment pipeline. Printed-price reductions affect only that component;
+the committed `result: "energy"` remains the chosen X.
+
+This bounded spelling retains the existing positive-X requirement. It does not
+admit zero-X variants whose other effects or modifiers make them significant,
+or sequences containing variable arrow costs. Synthetic payment coverage does
+not admit Lightning Strike, ignore-tough damage, or Thor's product.
