@@ -36,10 +36,10 @@ another identity and its controller's ally cannot use it. These are prepared
 replacement/discovery probes, not full damage continuation. The existing actual
 paid-entry tests cover both forms, all three uses and reflected continuation
 after final-counter disposal. Twelve focused cases pass. A temporary data mutant
-removing the identity predicate fails the own-ally exclusion case; three controls
-pass. Original book bytes were restored, and the same twelve cases pass again.
+removing the explicit identity predicate survives all four cases: target:you independently enforces the recipient restriction. This does not establish a killed mutant. Original book bytes were restored, and the same twelve cases pass again.
 External evidence: C:/Users/mggar/Source/energy-barrier-review-{final,identity-mutant,restored}.log.
 
 Independent verdict: accept this bounded actual Energy Barrier face. No blocker
 remains in this scope. Public Ms. Marvel admission, hosted journeys, native
 interaction and integration-wide gates are not established by this review.
+
